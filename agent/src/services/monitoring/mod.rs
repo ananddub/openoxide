@@ -4,7 +4,6 @@ use crate::{docker::api::DockerApi, store::Store};
 use auto_di::singleton;
 
 pub mod lifecycle;
-pub mod logs;
 pub mod metrics;
 pub mod shell;
 pub mod state;
@@ -45,16 +44,9 @@ impl MonitoringService {
 
     pub async fn watch_container_states(
         &self,
-        controls: tonic::Streaming<crate::api::proto::LifecycleControl>,
+        request: crate::api::proto::WatchRequest,
     ) -> Result<tonic::Response<lifecycle::LifecycleStream>, tonic::Status> {
-        lifecycle::LifecycleService::watch((*self.docker).clone(), controls).await
-    }
-
-    pub fn stream_logs(
-        &self,
-        request: crate::api::proto::LogStreamRequest,
-    ) -> tonic::Response<logs::LogStream> {
-        logs::LogsService::stream((*self.docker).clone(), request)
+        lifecycle::LifecycleService::watch((*self.docker).clone(), request).await
     }
 
     pub async fn shell(

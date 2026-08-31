@@ -3,7 +3,7 @@ import {Globe, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useDomainCreate, useDomainDelete, useDomainUpdate} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {ComposeDomainsTable} from './domains/compose-domains-table';
 import {ComposeDomainModal} from './domains/compose-domain-modal';
@@ -57,9 +57,9 @@ export function ComposeDomainsTab({
 	}, [compose, fetchedYaml]);
 
 	// Mutations
-	const createMutation = $api.useMutation('post', '/domains');
-	const updateMutation = $api.useMutation('patch', '/domains/{id}');
-	const deleteMutation = $api.useMutation('delete', '/domains/{id}');
+	const createMutation = useDomainCreate();
+	const updateMutation = useDomainUpdate();
+	const deleteMutation = useDomainDelete();
 
 	const domains = Array.isArray(passedDomains) ? passedDomains : [];
 	const isLoading = passedIsLoading ?? false;
@@ -68,16 +68,14 @@ export function ComposeDomainsTab({
 		try {
 			if (editingDomain?.id) {
 				await updateMutation.mutateAsync({
-					params: {path: {id: editingDomain.id}},
-					body: formData as any,
+					id: editingDomain.id,
+					...formData,
 				});
 				toast.success('Compose domain route updated');
 			} else {
 				await createMutation.mutateAsync({
-					body: {
-						...formData,
-						compose_id: composeId,
-					} as any,
+					...formData,
+					compose_id: composeId,
 				});
 				toast.success('Compose domain route created');
 			}
@@ -89,7 +87,7 @@ export function ComposeDomainsTab({
 
 	const handleDelete = async (id: number) => {
 		try {
-			await deleteMutation.mutateAsync({params: {path: {id}}});
+			await deleteMutation.mutateAsync(id);
 			toast.success('Compose domain route deleted');
 		} catch (err: any) {
 			toast.error(formatApiError(err));

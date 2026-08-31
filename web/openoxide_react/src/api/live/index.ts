@@ -25,5 +25,7 @@ export * from './schedules';
 export * from './servers';
 export * from './settings';
 export * from './ssh_keys';
+export * from './swarm';
 export * from './tags';
+export * from './traefik';
 export * from './vault';

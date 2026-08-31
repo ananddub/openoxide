@@ -1,5 +1,11 @@
-import {createServiceClient, useConnectQuery} from './query';
+import {createServiceClient, useConnectMutation, useConnectQuery, useResourceListQuery} from './query';
 import {DatabaseService, DatabaseKind, type Database} from '#/gen/connect/openoxide/api/v1/database_pb';
+import {DatabaseNetworkService} from '#/gen/connect/openoxide/api/v1/database_network_pb';
+import type {
+	AdvancedConfig,
+	Mount,
+	SwarmSettings,
+} from '#/gen/connect/openoxide/api/v1/database_pb';
 
 export type DatabasePayload = {
 	id: bigint;
@@ -93,4 +99,370 @@ export function useRedisGet(id: bigint) {
 
 export function useLibsqlGet(id: bigint) {
 	return useDatabaseGet(DatabaseKind.LIBSQL, id);
+}
+
+/** Create a database of the given kind (legacy REST: POST /databases/{kind}). */
+export function useDatabaseCreate() {
+	return useConnectMutation(
+		(input: {
+			kind: DatabaseKind;
+			name: string;
+			description?: string;
+			environment_id: number | bigint;
+			server_id?: number | bigint;
+			docker_image?: string;
+			database_name?: string;
+			database_user?: string;
+			database_password?: string;
+			external_port?: number | bigint;
+			args?: string[];
+			env_var?: string;
+			network_ids?: string[];
+		}) =>
+			databaseClient.createDatabase({
+				kind: input.kind,
+				name: input.name,
+				description: input.description,
+				environmentId: BigInt(input.environment_id),
+				serverId: input.server_id !== undefined ? BigInt(input.server_id) : undefined,
+				dockerImage: input.docker_image,
+				databaseName: input.database_name,
+				databaseUser: input.database_user,
+				databasePassword: input.database_password,
+				externalPort: input.external_port !== undefined ? BigInt(input.external_port) : undefined,
+				args: input.args ?? [],
+				envVar: input.env_var,
+				networkIds: input.network_ids ?? [],
+			}),
+	);
+}
+
+/** Update a database of the given kind by id (legacy REST: PATCH /databases/{kind}/{id}). */
+export function useDatabaseUpdate() {
+	return useConnectMutation(
+		(input: {
+			kind: DatabaseKind;
+			id: number | bigint;
+			name?: string;
+			description?: string;
+			docker_image?: string;
+			database_name?: string;
+			database_user?: string;
+			database_password?: string;
+			external_port?: number | bigint;
+			command?: string;
+			args?: string[];
+			env_var?: string;
+			memory_limit?: string;
+			cpu_limit?: string;
+			replicas?: number | bigint;
+			server_id?: number | bigint;
+			network_ids?: string[];
+		}) =>
+			databaseClient.updateDatabase({
+				kind: input.kind,
+				id: BigInt(input.id),
+				name: input.name,
+				description: input.description,
+				dockerImage: input.docker_image,
+				databaseName: input.database_name,
+				databaseUser: input.database_user,
+				databasePassword: input.database_password,
+				externalPort: input.external_port !== undefined ? BigInt(input.external_port) : undefined,
+				command: input.command,
+				args: input.args ?? [],
+				envVar: input.env_var,
+				memoryLimit: input.memory_limit,
+				cpuLimit: input.cpu_limit,
+				replicas: input.replicas !== undefined ? BigInt(input.replicas) : undefined,
+				serverId: input.server_id !== undefined ? BigInt(input.server_id) : undefined,
+				networkIds: input.network_ids ?? [],
+			}),
+	);
+}
+
+/** Delete a database of the given kind by id (legacy REST: DELETE /databases/{kind}/{id}). */
+export function useDatabaseDelete() {
+	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
+		databaseClient.deleteDatabase({kind: input.kind, id: BigInt(input.id)}),
+	);
+}
+
+/** Deploy a database of the given kind by id (legacy REST: POST /databases/{kind}/{id}/deploy). */
+export function useDatabaseDeploy() {
+	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
+		databaseClient.deploy({kind: input.kind, id: BigInt(input.id)}),
+	);
+}
+
+/** Redeploy a database of the given kind by id. */
+export function useDatabaseRedeploy() {
+	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
+		databaseClient.redeploy({kind: input.kind, id: BigInt(input.id)}),
+	);
+}
+
+/** Reload a database's configuration by id. */
+export function useDatabaseReload() {
+	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
+		databaseClient.reload({kind: input.kind, id: BigInt(input.id)}),
+	);
+}
+
+/** Start a stopped database of the given kind by id. */
+export function useDatabaseStart() {
+	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
+		databaseClient.start({kind: input.kind, id: BigInt(input.id)}),
+	);
+}
+
+/** Stop a running database of the given kind by id. */
+export function useDatabaseStop() {
+	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
+		databaseClient.stop({kind: input.kind, id: BigInt(input.id)}),
+	);
+}
+
+/** Cancel the running deployment of a database of the given kind by id. */
+export function useDatabaseCancel() {
+	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
+		databaseClient.cancel({kind: input.kind, id: BigInt(input.id)}),
+	);
+}
+
+/** Map a legacy kind string ('postgres', 'mysql', ...) to the proto enum. */
+export function parseDatabaseKind(kind: string): DatabaseKind {
+	const value = String(kind || '').toLowerCase();
+	if (value.includes('mariadb')) return DatabaseKind.MARIADB;
+	if (value.includes('mysql')) return DatabaseKind.MYSQL;
+	if (value.includes('mongo')) return DatabaseKind.MONGO;
+	if (value.includes('redis')) return DatabaseKind.REDIS;
+	if (value.includes('libsql')) return DatabaseKind.LIBSQL;
+	return DatabaseKind.POSTGRES;
+}
+
+export type DatabaseSwarmSettingsPayload = {
+	health_check_swarm?: string | null;
+	restart_policy_swarm?: string | null;
+	placement_swarm?: string | null;
+	update_config_swarm?: string | null;
+	rollback_config_swarm?: string | null;
+	mode_swarm?: string | null;
+	labels_swarm?: string | null;
+	network_swarm?: string | null;
+	endpoint_spec_swarm?: string | null;
+	ulimits_swarm?: string | null;
+	stop_grace_period_swarm?: number | null;
+};
+
+function toSwarmSettingsPayload(
+	settings: SwarmSettings,
+): DatabaseSwarmSettingsPayload {
+	return {
+		health_check_swarm: settings.healthCheck ?? null,
+		restart_policy_swarm: settings.restartPolicy ?? null,
+		placement_swarm: settings.placement ?? null,
+		update_config_swarm: settings.updateConfig ?? null,
+		rollback_config_swarm: settings.rollbackConfig ?? null,
+		mode_swarm: settings.mode ?? null,
+		labels_swarm: settings.labels ?? null,
+		network_swarm: settings.network ?? null,
+		endpoint_spec_swarm: settings.endpointSpec ?? null,
+		ulimits_swarm: settings.ulimits ?? null,
+		stop_grace_period_swarm:
+			settings.stopGracePeriod != null && settings.stopGracePeriod !== 0n
+				? Number(settings.stopGracePeriod)
+				: null,
+	};
+}
+
+/** Swarm settings for a database (legacy REST: GET /database-management/{kind}/{id}/swarm-settings). */
+export function useDatabaseSwarmSettings(kind: DatabaseKind, id: bigint) {
+	return useConnectQuery<DatabaseSwarmSettingsPayload>(
+		['databases', 'swarm-settings', kind.toString(), id.toString()],
+		async () =>
+			toSwarmSettingsPayload(await databaseClient.getSwarmSettings({kind, id})),
+		{enabled: id > 0n},
+	);
+}
+
+/** Replace a database's swarm settings (legacy REST: PUT /database-management/{kind}/{id}/swarm-settings). */
+export function useDatabaseUpdateSwarmSettings() {
+	return useConnectMutation(
+		(input: {
+			kind: DatabaseKind;
+			id: number | bigint;
+			values: DatabaseSwarmSettingsPayload;
+		}) =>
+			databaseClient.updateSwarmSettings({
+				kind: input.kind,
+				id: BigInt(input.id),
+				settings: {
+					healthCheck: input.values.health_check_swarm ?? undefined,
+					restartPolicy: input.values.restart_policy_swarm ?? undefined,
+					placement: input.values.placement_swarm ?? undefined,
+					updateConfig: input.values.update_config_swarm ?? undefined,
+					rollbackConfig: input.values.rollback_config_swarm ?? undefined,
+					mode: input.values.mode_swarm ?? undefined,
+					labels: input.values.labels_swarm ?? undefined,
+					network: input.values.network_swarm ?? undefined,
+					endpointSpec: input.values.endpoint_spec_swarm ?? undefined,
+					ulimits: input.values.ulimits_swarm ?? undefined,
+					stopGracePeriod:
+						input.values.stop_grace_period_swarm != null
+							? BigInt(input.values.stop_grace_period_swarm)
+							: undefined,
+				},
+			}),
+	);
+}
+
+export type DatabaseMountPayload = {
+	id: number;
+	mount_type: string;
+	host_path?: string | null;
+	volume_name?: string | null;
+	file_path?: string | null;
+	content?: string | null;
+	mount_path: string;
+};
+
+function toMountPayload(mount: Mount): DatabaseMountPayload {
+	return {
+		id: Number(mount.id),
+		mount_type: mount.mountType,
+		host_path: mount.hostPath ?? null,
+		volume_name: mount.volumeName ?? null,
+		file_path: mount.filePath ?? null,
+		content: mount.content ?? null,
+		mount_path: mount.mountPath,
+	};
+}
+
+/** Mounts attached to a database (legacy REST: GET /database-management/{kind}/{id}/mounts). */
+export function useDatabaseMountList(kind: DatabaseKind, id: bigint) {
+	return useConnectQuery<DatabaseMountPayload[]>(
+		['databases', 'mounts', kind.toString(), id.toString()],
+		async () => {
+			const response = await databaseClient.listMounts({kind, id});
+			return response.mounts.map(toMountPayload);
+		},
+		{enabled: id > 0n},
+	);
+}
+
+type DatabaseMountInput = {
+	kind: DatabaseKind;
+	database_id: number | bigint;
+	mount_type: string;
+	host_path?: string;
+	volume_name?: string;
+	file_path?: string;
+	content?: string;
+	mount_path: string;
+};
+
+/** Attach a mount to a database (legacy REST: POST /database-management/{kind}/{id}/mounts). */
+export function useDatabaseMountCreate() {
+	return useConnectMutation((input: DatabaseMountInput) =>
+		databaseClient.createMount({
+			kind: input.kind,
+			databaseId: BigInt(input.database_id),
+			mountType: input.mount_type,
+			hostPath: input.host_path,
+			volumeName: input.volume_name,
+			filePath: input.file_path,
+			content: input.content,
+			mountPath: input.mount_path,
+		}),
+	);
+}
+
+/** Update a database mount by id (legacy REST: PUT /database-management/{kind}/{database_id}/mounts/{id}). */
+export function useDatabaseMountUpdate() {
+	return useConnectMutation(
+		(input: DatabaseMountInput & {id: number | bigint}) =>
+			databaseClient.updateMount({
+				kind: input.kind,
+				databaseId: BigInt(input.database_id),
+				id: BigInt(input.id),
+				mountType: input.mount_type,
+				hostPath: input.host_path,
+				volumeName: input.volume_name,
+				filePath: input.file_path,
+				content: input.content,
+				mountPath: input.mount_path,
+			}),
+	);
+}
+
+/** Remove a database mount by id (legacy REST: DELETE /database-management/{kind}/{database_id}/mounts/{id}). */
+export function useDatabaseMountDelete() {
+	return useConnectMutation(
+		(input: {kind: DatabaseKind; database_id: number | bigint; id: number | bigint}) =>
+			databaseClient.deleteMount({
+				kind: input.kind,
+				databaseId: BigInt(input.database_id),
+				id: BigInt(input.id),
+			}),
+	);
+}
+
+export type DatabaseAdvancedConfigPayload = {
+	settings: Record<string, string>;
+	replication_role: string;
+};
+
+/** Postgres advanced configuration (legacy REST: GET /database-management/postgres/{id}/advanced-config). */
+export function useDatabasePostgresAdvancedConfig(id: bigint) {
+	return useConnectQuery<DatabaseAdvancedConfigPayload>(
+		['databases', 'postgres-config', id.toString()],
+		async () => {
+			const config: AdvancedConfig = await databaseClient.getPostgresAdvancedConfig(
+				{kind: DatabaseKind.POSTGRES, id},
+			);
+			return {
+				settings: config.config ? (JSON.parse(config.config) as Record<string, string>) : {},
+				replication_role: config.replicationRole || 'STANDALONE',
+			};
+		},
+		{enabled: id > 0n},
+	);
+}
+
+/** Update postgres advanced configuration (legacy REST: PUT /database-management/postgres/{id}/advanced-config). */
+export function useDatabaseUpdatePostgresAdvancedConfig() {
+	return useConnectMutation(
+		(input: {
+			id: number | bigint;
+			replication_role: string;
+			settings: Record<string, string>;
+		}) =>
+			databaseClient.updatePostgresAdvancedConfig({
+				kind: DatabaseKind.POSTGRES,
+				id: BigInt(input.id),
+				config: {
+					replicationRole: input.replication_role,
+					config: JSON.stringify(input.settings),
+				},
+			}),
+	);
+}
+
+const databaseNetworkClient = createServiceClient(DatabaseNetworkService);
+
+export type DatabaseNetworkPayload = {
+	id: number | string;
+	name: string;
+	docker_network_name: string;
+	server_id?: number | string | null;
+	[key: string]: unknown;
+};
+
+/** Database networks across servers (legacy REST: GET /database-networks). */
+export function useDatabaseNetworkList() {
+	return useResourceListQuery<DatabaseNetworkPayload>(
+		['database-networks', 'list'],
+		() => databaseNetworkClient.listNetworks({}),
+	);
 }

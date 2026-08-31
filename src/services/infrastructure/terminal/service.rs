@@ -7,7 +7,7 @@ use tokio_util::sync::CancellationToken;
 use crate::api::connect::generated::openoxide::api::v1::{
     OpenTerminalRequest, TerminalEvent, TerminalKind, execution_command_request,
 };
-use crate::services::observability::monitoring::proto::{ShellAction, ShellMessage};
+use crate::services::observability::monitoring::proto::{ShellMessage, ShellOpen};
 use crate::services::observability::monitoring::service::MonitoringService;
 
 use super::events::{SessionEvents, TerminalSize};
@@ -126,16 +126,20 @@ impl TerminalService {
             .map_err(|error| format!("could not resolve Agent service: {error}"))?;
         let shell = SanitizedShell::parse(request.shell.as_deref(), "sh");
         let open = ShellMessage {
-            server_id,
-            action: ShellAction::Open as i32,
-            container: request
-                .container
-                .clone()
-                .unwrap_or_else(|| "app".to_owned()),
-            shell: shell.as_str().to_owned(),
-            cols: size.cols as u32,
-            rows: size.rows as u32,
-            ..Default::default()
+            payload: Some(
+                crate::services::observability::monitoring::proto::shell_message::Payload::Open(
+                    ShellOpen {
+                        server_id,
+                        container: request
+                            .container
+                            .clone()
+                            .unwrap_or_else(|| "app".to_owned()),
+                        shell: shell.as_str().to_owned(),
+                        cols: u32::from(size.cols),
+                        rows: u32::from(size.rows),
+                    },
+                ),
+            ),
         };
         let (sender, stream) = monitoring
             .open_agent_shell(server_id, open)

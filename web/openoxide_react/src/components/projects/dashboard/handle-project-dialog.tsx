@@ -12,7 +12,7 @@ import {Input} from '#/components/ui/input';
 import {Label} from '#/components/ui/label';
 import {Textarea} from '#/components/ui/textarea';
 import {TagSelector} from '#/components/shared/tag-selector';
-import {$api} from '#/api/query';
+import {useProjectCreate, useProjectUpdate} from '#/api/live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {getTagsFromDescription} from '#/hooks/projects/use-projects-list';
@@ -41,8 +41,8 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 	const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
 	const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-	const createMutation = $api.useMutation('post', '/projects');
-	const updateMutation = $api.useMutation('patch', '/projects/{id}');
+	const createMutation = useProjectCreate();
+	const updateMutation = useProjectUpdate();
 
 	// Reset & populate form when modal opens or project changes
 	React.useEffect(() => {
@@ -87,11 +87,9 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 		try {
 			if (isEditing && project) {
 				await updateMutation.mutateAsync({
-					params: {path: {id: project.id}},
-					body: {
-						name: name.trim(),
-						description: finalDescription || undefined,
-					},
+					id: project.id,
+					name: name.trim(),
+					description: finalDescription || undefined,
 				});
 				toast.success('Project updated successfully');
 			} else {
@@ -101,12 +99,10 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 					return;
 				}
 				await createMutation.mutateAsync({
-					body: {
-						name: name.trim(),
-						description: finalDescription || undefined,
-						env_var: '',
-						organization_id: activeOrgId,
-					},
+					name: name.trim(),
+					description: finalDescription || undefined,
+					environment_variables: '',
+					organization_id: activeOrgId,
 				});
 				toast.success('Project created successfully');
 			}

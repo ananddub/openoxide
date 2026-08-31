@@ -4,7 +4,9 @@ use dashmap::DashMap;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
-use crate::services::observability::monitoring::proto::{ShellAction, ShellMessage};
+use crate::services::observability::monitoring::proto::{
+    shell_message, ShellClose, ShellInput, ShellMessage, ShellResize,
+};
 
 use super::events::TerminalSize;
 
@@ -22,38 +24,21 @@ pub enum TerminalSessionHandle {
     },
 }
 
-async fn agent_message(
-    sender: &tokio::sync::Mutex<mpsc::Sender<ShellMessage>>,
-    action: ShellAction,
-    data: Vec<u8>,
-    size: TerminalSize,
-    what: &str,
-) -> Result<(), String> {
-    let sender = sender.lock().await;
-    sender
-        .send(ShellMessage {
-            action: action as i32,
-            data,
-            cols: size.cols as u32,
-            rows: size.rows as u32,
-            ..Default::default()
-        })
-        .await
-        .map_err(|error| format!("could not {what} Agent shell: {error}"))
-}
-
 impl TerminalSessionHandle {
     pub async fn send_input(&self, data: &[u8]) -> Result<(), String> {
         match self {
             Self::AgentShell { sender } => {
-                agent_message(
-                    sender,
-                    ShellAction::Input,
-                    data.to_vec(),
-                    TerminalSize { cols: 0, rows: 0 },
-                    "write input to",
-                )
-                .await
+                let message = ShellMessage {
+                    payload: Some(shell_message::Payload::Input(ShellInput {
+                        data: data.to_vec(),
+                    })),
+                };
+                sender
+                    .lock()
+                    .await
+                    .send(message)
+                    .await
+                    .map_err(|error| format!("could not write input to Agent shell: {error}"))
             }
             Self::RusshShell { terminal } => terminal
                 .write(data)
@@ -65,12 +50,35 @@ impl TerminalSessionHandle {
     pub async fn resize(&self, size: TerminalSize) -> Result<(), String> {
         match self {
             Self::AgentShell { sender } => {
-                agent_message(sender, ShellAction::Resize, Vec::new(), size, "resize").await
+                let message = ShellMessage {
+                    payload: Some(shell_message::Payload::Resize(ShellResize {
+                        cols: u32::from(size.cols),
+                        rows: u32::from(size.rows),
+                    })),
+                };
+                sender
+                    .lock()
+                    .await
+                    .send(message)
+                    .await
+                    .map_err(|error| format!("could not resize Agent shell: {error}"))
             }
             Self::RusshShell { terminal } => terminal
                 .resize(size.cols, size.rows)
                 .await
                 .map_err(|error| format!("could not resize SSH terminal: {error}")),
+        }
+    }
+
+    async fn close_agent_shell(&self) {
+        if let Self::AgentShell { sender } = self {
+            let _ = sender
+                .lock()
+                .await
+                .send(ShellMessage {
+                    payload: Some(shell_message::Payload::Close(ShellClose {})),
+                })
+                .await;
         }
     }
 }
@@ -86,16 +94,7 @@ impl TerminalSessionEntry {
     /// close when dropped).
     pub async fn terminate(self) {
         self.cancel.cancel();
-        if let TerminalSessionHandle::AgentShell { sender } = self.session {
-            let _ = sender
-                .lock()
-                .await
-                .send(ShellMessage {
-                    action: ShellAction::Close as i32,
-                    ..Default::default()
-                })
-                .await;
-        }
+        self.session.close_agent_shell().await;
     }
 }
 

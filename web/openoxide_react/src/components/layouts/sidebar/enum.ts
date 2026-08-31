@@ -2,7 +2,6 @@ import {
 	House,
 	LayoutDashboard,
 	Folder,
-	Rocket,
 	BarChartHorizontal,
 	Clock,
 	GalleryVerticalEnd,

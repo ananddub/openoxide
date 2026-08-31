@@ -1,4 +1,4 @@
-import {createServiceClient, useResourceListQuery} from './query';
+import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
 import {PermissionService} from '#/gen/connect/openoxide/api/v1/permission_pb';
 
 /**
@@ -61,5 +61,29 @@ export function usePermissionGroupList() {
 	return useResourceListQuery<PermissionGroupPayload>(
 		['permission-groups', 'list'],
 		() => permissionClient.listGroups({}),
+	);
+}
+
+/** Add a member to the active organization (email/role fields in the payload). */
+export function useMemberAdd() {
+	return useConnectMutation((input: Record<string, unknown>) =>
+		permissionClient.addMember({payload: JSON.stringify(input)}),
+	);
+}
+
+/** Update an organization member's role by member id (role in the payload). */
+export function useMemberUpdateRole() {
+	return useConnectMutation((input: {id: number | bigint; role: string}) =>
+		permissionClient.updateMemberRole({
+			id: BigInt(input.id),
+			payload: JSON.stringify({role: input.role}),
+		}),
+	);
+}
+
+/** Remove an organization member by member id (legacy REST: DELETE users/{id}/org-members). */
+export function useMemberRemove() {
+	return useConnectMutation((id: number | bigint) =>
+		permissionClient.removeMember({id: BigInt(id)}),
 	);
 }

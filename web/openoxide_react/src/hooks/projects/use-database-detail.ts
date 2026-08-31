@@ -1,5 +1,4 @@
 import {useState, useMemo, useEffect} from 'react';
-import {client} from '#/api/client';
 import {formatApiError} from '#/api/utils';
 import {toast} from 'sonner';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
@@ -12,6 +11,13 @@ import {
 	useLibsqlGet,
 	useScheduleListByDatabase,
 	useBackupListVolumeBackups,
+	useDatabaseDeploy,
+	useDatabaseRedeploy,
+	useDatabaseReload,
+	useDatabaseStart,
+	useDatabaseStop,
+	useDatabaseUpdate,
+	parseDatabaseKind,
 } from '#/api/live';
 
 import {useAppStore} from '#/stores/app-store';
@@ -21,6 +27,22 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const [actionLoading, setActionLoading] = useState<
 		'deploy' | 'reload' | 'start' | 'stop' | null
 	>(null);
+
+	// Connect mutations used by handleAction / handleUpdateEnv below; the
+	// kind is resolved per call from the current database row.
+	const deployMutation = useDatabaseDeploy();
+	const redeployMutation = useDatabaseRedeploy();
+	const reloadMutation = useDatabaseReload();
+	const startMutation = useDatabaseStart();
+	const stopMutation = useDatabaseStop();
+	const updateMutation = useDatabaseUpdate();
+	const databaseActionMutations = {
+		deploy: deployMutation.mutateAsync,
+		redeploy: redeployMutation.mutateAsync,
+		reload: reloadMutation.mutateAsync,
+		start: startMutation.mutateAsync,
+		stop: stopMutation.mutateAsync,
+	};
 
 	// 0ms Instant Zustand Store Read with fallback to overviewServices
 	const databases = useAppStore(state => state.databases);
@@ -310,20 +332,25 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		);
 
 		try {
-			const kind = (currentKind || targetKind || 'postgres').toLowerCase();
-			const endpoint = `/${kind}/{id}/${action}` as any;
-			const res = await client.POST(endpoint, {
-				params: {path: {id: dbId}},
-			} as any);
-
-			const resObj = res as Record<string, unknown>;
-			if (resObj?.error) {
-				toast.error(formatApiError(resObj.error));
-				setLocalStatusOverride(null);
-				return;
+			const kind = parseDatabaseKind(
+				currentKind || targetKind || 'postgres',
+			);
+			const actionInput = {kind, id: dbId};
+			if (action === 'deploy') {
+				await databaseActionMutations.deploy(actionInput);
+			} else if (action === 'redeploy') {
+				await databaseActionMutations.redeploy(actionInput);
+			} else if (action === 'reload') {
+				await databaseActionMutations.reload(actionInput);
+			} else if (action === 'start') {
+				await databaseActionMutations.start(actionInput);
+			} else if (action === 'stop') {
+				await databaseActionMutations.stop(actionInput);
 			}
 
-			toast.success(`${kind.toUpperCase()} ${action} triggered`);
+			toast.success(
+				`${(currentKind || targetKind || 'postgres').toUpperCase()} ${action} triggered`,
+			);
 			refetchAll();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -335,18 +362,14 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 
 	const handleUpdateEnv = async (patchData: Record<string, unknown>) => {
 		try {
-			const kind = (currentKind || targetKind || 'postgres').toLowerCase();
-			const endpoint = `/${kind}/{id}` as any;
-			const res = await client.PATCH(endpoint, {
-				params: {path: {id: dbId}},
-				body: patchData,
-			} as any);
-
-			const resObj = res as Record<string, unknown>;
-			if (resObj?.error) {
-				toast.error(formatApiError(resObj.error));
-				return;
-			}
+			const kind = parseDatabaseKind(
+				currentKind || targetKind || 'postgres',
+			);
+			await updateMutation.mutateAsync({
+				kind,
+				id: dbId,
+				...patchData,
+			} as Parameters<typeof updateMutation.mutateAsync>[0]);
 
 			toast.success('Database settings updated');
 			refetchAll();

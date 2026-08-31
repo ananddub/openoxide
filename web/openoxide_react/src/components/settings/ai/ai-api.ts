@@ -1,64 +1,83 @@
-import { client } from "#/api/client";
-import type { components } from "#/types/api.d.ts";
+import {AiService} from '#/gen/connect/openoxide/api/v1/ai_pb';
+import {createServiceClient, useConnectQuery} from '#/api/live/query';
+import {readResource, readResourceList} from '#/api/live/resource';
 
-type CreateAiSetting = components["schemas"]["CreateAiSettingDto"];
-type UpdateAiSetting = components["schemas"]["UpdateAiSettingDto"];
+export type AiSettingPayload = {
+	id: number;
+	provider: string;
+	api_url: string;
+	api_key: string;
+	model: string;
+	organization_id: number;
+	created_at: number;
+	updated_at: number;
+};
 
-function ensure<T>(result: { data?: T; error?: unknown }) {
-  if (result.error) throw new Error(String(result.error));
-  return result.data as T;
+export type AiModelPayload = {
+	id?: string;
+	model?: string;
+	name?: string;
+	[key: string]: unknown;
+};
+
+const aiClient = createServiceClient(AiService);
+
+/** All configured AI providers. */
+export function useAiSettingsList() {
+	return useConnectQuery(['ai_settings', 'list'], async () =>
+		readResourceList<AiSettingPayload>(await aiClient.listSettings({})),
+	);
 }
 
 export async function listAiSettings() {
-  return ensure(await client.GET("/api/ai/settings"));
+	return readResourceList<AiSettingPayload>(await aiClient.listSettings({}));
 }
 
-export async function createAiSetting(body: CreateAiSetting) {
-  return ensure(await client.POST("/api/ai/settings", { body }));
+export async function createAiSetting(body: Partial<AiSettingPayload>) {
+	return readResource<AiSettingPayload>(
+		await aiClient.createSettings({payload: JSON.stringify(body)}),
+	);
 }
 
-export async function updateAiSetting(id: number, body: UpdateAiSetting) {
-  return ensure(
-    await client.PUT("/api/ai/settings/{id}", {
-      params: { path: { id } },
-      body,
-    }),
-  );
+export async function updateAiSetting(
+	id: number,
+	body: Partial<AiSettingPayload>,
+) {
+	return readResource<AiSettingPayload>(
+		await aiClient.updateSettings({
+			id: BigInt(id),
+			payload: JSON.stringify(body),
+		}),
+	);
 }
 
 export async function deleteAiSetting(id: number) {
-  return ensure(
-    await client.DELETE("/api/ai/settings/{id}", { params: { path: { id } } }),
-  );
+	await aiClient.deleteSettings({id: BigInt(id)});
 }
 
 export async function discoverAiModels(body: {
-  api_url: string;
-  api_key: string;
+	api_url: string;
+	api_key: string;
 }) {
-  return ensure(await client.POST("/api/ai/models/discover", { body }));
+	return readResourceList<AiModelPayload>(
+		await aiClient.discoverModels({payload: JSON.stringify(body)}),
+	);
 }
 
 export async function discoverSettingModels(id: number) {
-  return ensure(
-    await client.GET("/api/ai/settings/{id}/models", {
-      params: { path: { id } },
-    }),
-  );
+	return readResourceList<AiModelPayload>(
+		await aiClient.listModels({id: BigInt(id)}),
+	);
 }
 
 export async function testAiConnection(body: {
-  api_url: string;
-  api_key: string;
-  model: string;
+	api_url: string;
+	api_key: string;
+	model: string;
 }) {
-  return ensure(await client.POST("/api/ai/connection/test", { body }));
+	return aiClient.testConnection({payload: JSON.stringify(body)});
 }
 
 export async function testAiSetting(id: number) {
-  return ensure(
-    await client.POST("/api/ai/settings/{id}/test", {
-      params: { path: { id } },
-    }),
-  );
+	return aiClient.testSettings({id: BigInt(id)});
 }

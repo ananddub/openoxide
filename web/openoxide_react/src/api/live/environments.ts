@@ -1,4 +1,4 @@
-import {createServiceClient, useConnectQuery} from './query';
+import {createServiceClient, useConnectMutation, useConnectQuery} from './query';
 import {EnvironmentService, type Environment} from '#/gen/connect/openoxide/api/v1/environment_pb';
 
 export type EnvironmentPayload = {
@@ -49,5 +49,59 @@ export function useEnvironmentListByProject(projectId: bigint) {
 			return response.environments.map(toEnvironmentPayload);
 		},
 		{enabled: projectId > 0n},
+	);
+}
+
+/** Create an environment in a project (legacy REST: POST /environments). */
+export function useEnvironmentCreate() {
+	return useConnectMutation(
+		(input: {
+			name: string;
+			description?: string;
+			environment_variables?: string;
+			is_default?: boolean;
+			project_id: number | bigint;
+		}) =>
+			environmentClient.createEnvironment({
+				name: input.name,
+				description: input.description,
+				environmentVariables: input.environment_variables ?? '',
+				isDefault: input.is_default ?? false,
+				projectId: BigInt(input.project_id),
+			}),
+	);
+}
+
+/** Update an environment by id (legacy REST: PATCH /environments/{id}). */
+export function useEnvironmentUpdate() {
+	return useConnectMutation(
+		(input: {
+			id: number | bigint;
+			name?: string;
+			description?: string;
+			environment_variables?: string;
+			is_default?: boolean;
+		}) =>
+			environmentClient.updateEnvironment({
+				id: BigInt(input.id),
+				name: input.name,
+				description: input.description,
+				environmentVariables: input.environment_variables,
+				isDefault: input.is_default,
+			}),
+	);
+}
+
+/** Mark an environment as its project's default by id. */
+export function useEnvironmentSetDefault() {
+	return useConnectMutation((id: number | bigint) =>
+		environmentClient.setDefaultEnvironment({id: BigInt(id)}),
+	);
+}
+
+/** Delete an environment by id (legacy REST: DELETE /environments/{id}). */
+export function useEnvironmentDelete() {
+	return useConnectMutation((id: number | bigint) =>
+		environmentClient.deleteEnvironment({id: BigInt(id)}),
 	);
 }

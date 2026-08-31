@@ -3,7 +3,8 @@ use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 
 use crate::api::connect::generated::openoxide::api::v1::TerminalOutputStream;
-use crate::services::observability::monitoring::proto::{ShellAction, ShellMessage};
+use crate::services::observability::monitoring::proto::shell_message::Payload;
+use crate::services::observability::monitoring::proto::ShellMessage;
 
 use super::events::SessionEvents;
 use super::registry::TerminalSessionRegistry;
@@ -66,23 +67,23 @@ impl AgentPump {
             tokio::select! {
                 _ = self.cancel.cancelled() => break,
                 result = self.stream.message() => match result {
-                    Ok(Some(message)) => match ShellAction::try_from(message.action).unwrap_or_default() {
-                        ShellAction::Stdout => {
-                            if !self.events.emit_output(TerminalOutputStream::Stdout, message.data).await {
+                    Ok(Some(message)) => match message.payload {
+                        Some(Payload::Stdout(output)) => {
+                            if !self.events.emit_output(TerminalOutputStream::Stdout, output.data).await {
                                 break;
                             }
                         }
-                        ShellAction::Stderr => {
-                            if !self.events.emit_output(TerminalOutputStream::Stderr, message.data).await {
+                        Some(Payload::Stderr(output)) => {
+                            if !self.events.emit_output(TerminalOutputStream::Stderr, output.data).await {
                                 break;
                             }
                         }
-                        ShellAction::Exit => {
-                            exit_code = Some(message.exit_code);
+                        Some(Payload::Exit(exit)) => {
+                            exit_code = Some(exit.exit_code);
                             break;
                         }
-                        ShellAction::Error => {
-                            let _ = self.events.emit_error(message.error).await;
+                        Some(Payload::Error(error)) => {
+                            let _ = self.events.emit_error(error.message).await;
                             exit_code = Some(-1);
                             break;
                         }

@@ -3,7 +3,11 @@ import {Calendar, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {
+	useScheduleCreate,
+	useScheduleDelete,
+	useScheduleRun,
+} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {useAppStore} from '#/stores/app-store';
 import {useOrganizationStore} from '#/stores/organization-store';
@@ -17,13 +21,11 @@ import {
 interface ComposeSchedulesTabProps {
 	compose: any;
 	schedules?: any[];
-	isLoading?: boolean;
 }
 
 export function ComposeSchedulesTab({
 	compose,
 	schedules: passedSchedules,
-	isLoading: passedIsLoading,
 }: ComposeSchedulesTabProps) {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [fetchedYaml, setFetchedYaml] = useState<string>('');
@@ -70,9 +72,9 @@ export function ComposeSchedulesTab({
 	const isLoading = false;
 
 	// Mutations
-	const createMutation = $api.useMutation('post', '/schedules');
-	const runMutation = $api.useMutation('post', '/schedules/{id}/trigger');
-	const deleteMutation = $api.useMutation('delete', '/schedules/{id}');
+	const createMutation = useScheduleCreate();
+	const runMutation = useScheduleRun();
+	const deleteMutation = useScheduleDelete();
 
 	const handleCreate = async (data: {
 		name: string;
@@ -82,16 +84,14 @@ export function ComposeSchedulesTab({
 	}) => {
 		try {
 			await createMutation.mutateAsync({
-				body: {
-					name: data.name,
-					compose_id: compose?.id,
-					organization_id: activeOrg?.id || 1,
-					service_name: data.serviceName,
-					command: data.command,
-					cron_expression: data.cronExpr,
-					schedule_type: 'COMPOSE',
-					schedule_action: 'EXEC',
-				} as any,
+				name: data.name,
+				compose_id: compose?.id,
+				organization_id: activeOrg?.id || 1,
+				service_name: data.serviceName,
+				command: data.command,
+				cron_expression: data.cronExpr,
+				schedule_type: 'COMPOSE',
+				schedule_action: 'EXEC',
 			});
 			toast.success('Compose schedule task created successfully');
 		} catch (err: any) {
@@ -101,7 +101,7 @@ export function ComposeSchedulesTab({
 
 	const handleRun = async (id: number) => {
 		try {
-			await runMutation.mutateAsync({params: {path: {id}}});
+			await runMutation.mutateAsync(id);
 			toast.success('Schedule task executed');
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -110,7 +110,7 @@ export function ComposeSchedulesTab({
 
 	const handleDelete = async (id: number) => {
 		try {
-			await deleteMutation.mutateAsync({params: {path: {id}}});
+			await deleteMutation.mutateAsync(id);
 			toast.success('Schedule task deleted');
 		} catch (err: any) {
 			toast.error(formatApiError(err));

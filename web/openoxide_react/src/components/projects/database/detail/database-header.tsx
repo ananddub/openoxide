@@ -48,7 +48,6 @@ export function DatabaseHeader({
 	setActiveTab,
 	refetch,
 	onOpenDeleteDialog,
-	onAction,
 	tabs,
 }: DatabaseHeaderProps) {
 	const kind = (
@@ -57,20 +56,6 @@ export function DatabaseHeader({
 		detectedKind ||
 		''
 	).toLowerCase();
-	const statusStr = (
-		database?.status ||
-		database?.app_status ||
-		''
-	).toUpperCase();
-	const isRunning = [
-		'RUNNING',
-		'DONE',
-		'HEALTHY',
-		'SUCCESS',
-		'ACTIVE',
-		'OK',
-	].includes(statusStr);
-
 	const getIcon = () => {
 		if (kind.includes('postgres'))
 			return <PostgresqlIcon className="size-6 shrink-0" />;

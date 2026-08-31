@@ -47,7 +47,6 @@ impl AgentGrpc {
 
 #[service(middleware = [AgentMiddleware])]
 impl AgentService for AgentGrpc {
-    type StreamLogsStream = crate::services::monitoring::logs::LogStream;
     type WatchContainerStatesStream = crate::services::monitoring::lifecycle::LifecycleStream;
     type ShellStream = crate::services::monitoring::shell::ShellStream;
     type ExecTaskStream = std::pin::Pin<
@@ -96,18 +95,11 @@ impl AgentService for AgentGrpc {
 
     async fn watch_container_states(
         &self,
-        request: tonic::Request<tonic::Streaming<proto::LifecycleControl>>,
+        request: tonic::Request<proto::WatchRequest>,
     ) -> Result<tonic::Response<Self::WatchContainerStatesStream>, tonic::Status> {
-        self.service
-            .watch_container_states(request.into_inner())
-            .await
-    }
-
-    async fn stream_logs(
-        &self,
-        request: tonic::Request<proto::LogStreamRequest>,
-    ) -> Result<tonic::Response<Self::StreamLogsStream>, tonic::Status> {
-        Ok(self.service.stream_logs(request.into_inner()))
+        let request = request.into_inner();
+        self.check_server_id(request.server_id)?;
+        self.service.watch_container_states(request).await
     }
 
     async fn shell(
@@ -133,7 +125,7 @@ impl AgentService for AgentGrpc {
 
     async fn upload_file(
         &self,
-        request: tonic::Request<tonic::Streaming<proto::FileUploadChunk>>,
+        request: tonic::Request<tonic::Streaming<proto::FileUploadMessage>>,
     ) -> Result<tonic::Response<proto::FileUploadResult>, tonic::Status> {
         Ok(tonic::Response::new(
             self.file_transfer.upload(request.into_inner()).await?,

@@ -96,9 +96,12 @@ export function AiProviderDialog({
             api_url: form.api_url,
             api_key: form.api_key,
           });
-      setModels(data.models || []);
-      if (data.models?.[0] && !form.model) set("model", data.models[0]);
-      toast.success(`${data.models?.length || 0} models discovered`);
+      const discovered = data.map(model =>
+        String(model.model ?? model.name ?? ''),
+      );
+      setModels(discovered);
+      if (discovered[0] && !form.model) set("model", discovered[0]);
+      toast.success(`${discovered.length} models discovered`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not discover models",

@@ -12,7 +12,6 @@ import {Button} from '#/components/ui/button';
 import {cn} from '#/api/utils';
 import type {Schedule} from '#/hooks/use-schedules';
 import {useAppStore} from '#/stores/app-store';
-import {useOrganizationStore} from '#/stores/organization-store';
 
 interface ScheduleCardProps {
 	schedule: Schedule;
@@ -34,7 +33,6 @@ export function ScheduleCard({
 	const s = schedule;
 	const isEnabled = s.enabled === 1;
 
-	const activeOrg = useOrganizationStore(state => state.activeOrg);
 	const projectsList = useAppStore(state => state.projects || []);
 
 	// Find linked server details if any

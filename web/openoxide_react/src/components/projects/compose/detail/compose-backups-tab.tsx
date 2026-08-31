@@ -17,7 +17,6 @@ import {
 interface ComposeBackupsTabProps {
 	compose: any;
 	backups?: any[];
-	isLoading?: boolean;
 	databaseId?: number;
 	databaseKind?: string;
 }
@@ -25,7 +24,6 @@ interface ComposeBackupsTabProps {
 export function ComposeBackupsTab({
 	compose,
 	backups: passedBackups,
-	isLoading: passedIsLoading,
 	databaseId,
 	databaseKind,
 }: ComposeBackupsTabProps) {

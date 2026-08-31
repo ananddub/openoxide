@@ -32,7 +32,7 @@ import {
 import {useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import {toast} from 'sonner';
-import {client} from '#/api/client';
+import {swarmInfo} from '#/api/live';
 
 import type {RemoteServerResponse, SwarmTokens} from '#/types/api-helpers';
 import type {TaggedSwarmNode} from '#/components/swarm/swarm-nodes-list';
@@ -135,10 +135,10 @@ export function JoinTokensModal({
 	const selectedIdentityQuery = useQuery({
 		queryKey: ['swarm-node-identity', selectedRemoteServerId],
 		queryFn: async () => {
-			const {data} = await client.POST('/swarm/info', {
-				body: {server_id: parseInt(selectedRemoteServerId, 10)},
-			});
-			return data ?? null;
+			const data = await swarmInfo(
+				parseInt(selectedRemoteServerId, 10),
+			);
+			return (data as {node_id?: string} | null) ?? null;
 		},
 		enabled: !!selectedRemoteServerId,
 		staleTime: 10_000,

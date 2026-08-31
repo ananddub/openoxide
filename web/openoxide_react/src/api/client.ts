@@ -1,7 +1,7 @@
-import createFetchClient, {type Middleware} from 'openapi-fetch';
-import type {paths} from '#/types/api.d.ts';
 import {useAuthStore} from '#/stores/auth-store';
 import {getActiveOrganizationId} from '#/stores/organization-context';
+import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
+import {createServiceClient} from '#/api/live/query';
 
 const AUTH_STORAGE_KEY = 'openoxide-auth-session';
 
@@ -35,6 +35,8 @@ let refreshRetryAfter = 0;
 let refreshRetryToken = '';
 const REFRESH_RETRY_COOLDOWN_MS = 15_000;
 
+const authClient = createServiceClient(AuthService);
+
 export function applyOrganizationHeader(request: Request) {
 	const organizationId = getActiveOrganizationId();
 	if (organizationId && !request.url.includes('/organizations')) {
@@ -42,6 +44,11 @@ export function applyOrganizationHeader(request: Request) {
 	}
 }
 
+/**
+ * Refreshes the access token through the ConnectRPC AuthService and
+ * rewrites the stored session in the legacy REST-era shape (user.user_id /
+ * tokens.access_token snake_case), which the stores and interceptors read.
+ */
 export async function refreshAccessToken(): Promise<string | null> {
 	if (refreshPromise) return refreshPromise;
 
@@ -66,44 +73,39 @@ export async function refreshAccessToken(): Promise<string | null> {
 			)
 				return null;
 
-			const refreshRes = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({refresh_token: refreshToken}),
-			});
-
-			if (!refreshRes.ok) {
-				if ([400, 401, 403].includes(refreshRes.status)) {
-					useAuthStore.getState().logout();
-				} else {
-					refreshRetryToken = refreshToken;
-					refreshRetryAfter = Date.now() + REFRESH_RETRY_COOLDOWN_MS;
-				}
+			const response = await authClient.refresh({refreshToken});
+			if (!response.user || !response.tokens) {
+				useAuthStore.getState().logout();
 				return null;
 			}
 
-			const newSession = await refreshRes.json();
+			const newSession = {
+				user: {
+					user_id: Number(response.user.id),
+					email: response.user.email,
+					first_name: response.user.firstName,
+					last_name: response.user.lastName,
+					avatar: response.user.avatar,
+				},
+				tokens: response.tokens,
+			};
 			localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newSession));
 			refreshRetryToken = '';
 			refreshRetryAfter = 0;
 
-			if (newSession?.user) {
-				useAuthStore.getState().setAuth({
-					id: newSession.user.user_id,
-					email: newSession.user.email || '',
-					firstName: newSession.user.first_name,
-					lastName: newSession.user.last_name,
-				});
-			}
+			useAuthStore.getState().setAuth({
+				id: Number(response.user.id),
+				email: response.user.email || '',
+				firstName: response.user.firstName,
+				lastName: response.user.lastName,
+			});
 
-			return newSession?.tokens?.access_token || null;
+			return newSession.tokens.accessToken || null;
 		} catch {
-			if (refreshToken) {
-				refreshRetryToken = refreshToken;
-				refreshRetryAfter = Date.now() + REFRESH_RETRY_COOLDOWN_MS;
-			}
+			// A failed refresh means the session is gone; the cooldown keeps
+			// a broken backend from being hammered on every request.
+			refreshRetryToken = refreshToken;
+			refreshRetryAfter = Date.now() + REFRESH_RETRY_COOLDOWN_MS;
 			return null;
 		} finally {
 			refreshPromise = null;
@@ -111,79 +113,4 @@ export async function refreshAccessToken(): Promise<string | null> {
 	})();
 
 	return refreshPromise;
-}
-
-const authMiddleware: Middleware = {
-	async onRequest({request}) {
-		applyOrganizationHeader(request);
-		const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
-		if (sessionRaw && sessionRaw !== 'undefined') {
-			if (sessionRaw.length > 4000) {
-				localStorage.removeItem(AUTH_STORAGE_KEY);
-				useAuthStore.getState().logout();
-				return request;
-			}
-			try {
-				const session = JSON.parse(sessionRaw);
-				const accessToken = session?.tokens?.access_token;
-				if (accessToken) {
-					request.headers.set('Authorization', `Bearer ${accessToken}`);
-				}
-			} catch {}
-		}
-		return request;
-	},
-
-	async onResponse({request, response}) {
-		if (response.status !== 401) return response;
-
-		// Don't retry auth endpoints to avoid infinite loops
-		if (
-			request.url.includes('auth/login') ||
-			request.url.includes('auth/signup') ||
-			request.url.includes('auth/refresh')
-		) {
-			return response;
-		}
-
-		// Use single refresh promise mutex so parallel 401s don't bombard backend
-		const newAccessToken = await refreshAccessToken();
-		if (!newAccessToken) {
-			return response;
-		}
-
-		// Retry the original request with the new access token
-		const newRequest = request.clone();
-		newRequest.headers.set('Authorization', `Bearer ${newAccessToken}`);
-		return fetch(newRequest);
-	},
-};
-
-export const client = createFetchClient<paths>({
-	baseUrl: getApiBaseUrl(),
-	headers: {
-		'Content-Type': 'application/json',
-		Accept: 'application/json',
-	},
-});
-
-client.use(authMiddleware);
-
-export async function authFetch(
-	path: string,
-	options: RequestInit = {},
-): Promise<Response> {
-	const baseUrl = getApiBaseUrl();
-	const token = getAccessToken();
-
-	const headers = new Headers(options.headers || {});
-	if (token && !headers.has('Authorization')) {
-		headers.set('Authorization', `Bearer ${token}`);
-	}
-
-	const cleanPath = path.startsWith('/api') ? path.slice(4) : path;
-	const url = cleanPath.startsWith('http')
-		? cleanPath
-		: `${baseUrl}${cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`}`;
-	return fetch(url, {...options, headers});
 }

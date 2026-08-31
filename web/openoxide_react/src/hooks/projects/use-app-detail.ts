@@ -231,7 +231,7 @@ export function useAppDetail(appId: number) {
 				toast.success('Action cancelled successfully');
 			}
 			refetchAll();
-		} catch (err) {
+		} catch {
 			setLocalStatusOverride(null);
 			actionInFlight.current = false;
 			statusBeforeAction.current = null;
@@ -247,7 +247,7 @@ export function useAppDetail(appId: number) {
 			});
 			toast.success('Application settings updated');
 			refetchAll();
-		} catch (err) {
+		} catch {
 			toast.error('Failed to update application settings');
 		}
 	};

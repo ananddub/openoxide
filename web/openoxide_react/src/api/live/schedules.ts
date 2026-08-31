@@ -1,5 +1,7 @@
-import {createServiceClient, useResourceListQuery} from './query';
-import {ScheduleService} from '#/gen/connect/openoxide/api/v1/schedule_pb';
+import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+// Only ScheduleOperationsService is served by the backend (ScheduleService
+// has no controller), so the live layer targets the operations variant.
+import {ScheduleOperationsService} from '#/gen/connect/openoxide/api/v1/schedule_operations_pb';
 
 /**
  * Schedule JSON payload (backend `ScheduleResponseDto`). The linkage fields
@@ -31,55 +33,85 @@ export type SchedulePayload = {
 	[key: string]: unknown;
 };
 
-const scheduleClient = createServiceClient(ScheduleService);
-
-/** Payload ids deserialize from JSON as numbers; coerce before comparing. */
-function payloadIdEquals(value: unknown, expected: bigint): boolean {
-	if (value === undefined || value === null) return false;
-	try {
-		return BigInt(value as string | number | bigint) === expected;
-	} catch {
-		return false;
-	}
-}
+const scheduleClient = createServiceClient(ScheduleOperationsService);
 
 /** Schedules for an organization (legacy live: useScheduleListByOrganization). */
 export function useScheduleListByOrganization(organizationId: bigint) {
 	return useResourceListQuery<SchedulePayload>(
 		['schedules', 'list', organizationId.toString()],
-		() => scheduleClient.listSchedules({organizationId}),
+		() => scheduleClient.listOrganizationSchedules({organizationId}),
 	);
 }
 
 /**
  * Schedules attached to a compose (legacy live: useScheduleListByCompose).
- * ListSchedules only filters server-side by organization; the compose
- * linkage lives inside each JSON payload, so fetch all and filter
- * client-side on `compose_id`.
+ * The backend reads the compose id from the query's `organization_id` slot,
+ * so ListComposeSchedules filters server-side.
  */
 export function useScheduleListByCompose(composeId: bigint) {
-	const query = useResourceListQuery<SchedulePayload>(
+	return useResourceListQuery<SchedulePayload>(
 		['schedules', 'list', 'compose', composeId.toString()],
-		() => scheduleClient.listSchedules({}),
+		() => scheduleClient.listComposeSchedules({organizationId: composeId}),
 	);
-	return {
-		...query,
-		data: query.data?.filter((schedule) => payloadIdEquals(schedule.compose_id, composeId)),
-	};
 }
 
 /**
  * Schedules attached to a database (legacy live: useScheduleListByDatabase).
- * Same reason as compose: the database linkage only exists inside the JSON
- * payload, so filter client-side on `database_id`.
+ * ListDatabaseSchedules carries the database id in the query's
+ * `organization_id` slot; the backend currently returns an empty list for it.
  */
 export function useScheduleListByDatabase(databaseId: bigint) {
-	const query = useResourceListQuery<SchedulePayload>(
+	return useResourceListQuery<SchedulePayload>(
 		['schedules', 'list', 'database', databaseId.toString()],
-		() => scheduleClient.listSchedules({}),
+		() => scheduleClient.listDatabaseSchedules({organizationId: databaseId}),
 	);
-	return {
-		...query,
-		data: query.data?.filter((schedule) => payloadIdEquals(schedule.database_id, databaseId)),
-	};
+}
+
+/** Create a schedule (cron, command and linkage fields in the payload). */
+export function useScheduleCreate() {
+	return useConnectMutation((input: Record<string, unknown>) =>
+		scheduleClient.createSchedule({payload: JSON.stringify(input)}),
+	);
+}
+
+/** Update a schedule by id (fields to change in the payload). */
+export function useScheduleUpdate() {
+	return useConnectMutation((input: {id: number | bigint; [field: string]: unknown}) => {
+		const {id, ...body} = input;
+		return scheduleClient.updateSchedule({id: BigInt(id), payload: JSON.stringify(body)});
+	});
+}
+
+/** Delete a schedule by id. */
+export function useScheduleDelete() {
+	return useConnectMutation((id: number | bigint) =>
+		scheduleClient.deleteSchedule({id: BigInt(id)}),
+	);
+}
+
+/** Trigger an immediate schedule run by id (legacy REST: POST /schedules/{id}/trigger). */
+export function useScheduleRun() {
+	return useConnectMutation((id: number | bigint) =>
+		scheduleClient.triggerSchedule({id: BigInt(id)}),
+	);
+}
+
+/**
+ * Pause a schedule by id. There is no dedicated backend RPC; pausing is the
+ * legacy REST patch with `enabled: 0`.
+ */
+export function useSchedulePause() {
+	return useConnectMutation((id: number | bigint) =>
+		scheduleClient.updateSchedule({id: BigInt(id), payload: JSON.stringify({enabled: 0})}),
+	);
+}
+
+/**
+ * Resume a schedule by id. There is no dedicated backend RPC; resuming is
+ * the legacy REST patch with `enabled: 1`.
+ */
+export function useScheduleResume() {
+	return useConnectMutation((id: number | bigint) =>
+		scheduleClient.updateSchedule({id: BigInt(id), payload: JSON.stringify({enabled: 1})}),
+	);
 }

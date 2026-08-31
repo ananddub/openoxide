@@ -1,5 +1,6 @@
 use crate::api::proto::{
-    ExecTaskOutput, ExecTaskOutputKind, ExecTaskRequest, ShellAction, ShellMessage,
+    shell_message, ExecTaskOutput, ExecTaskOutputKind, ExecTaskRequest, ShellError, ShellExit,
+    ShellInput, ShellMessage, ShellOpen, ShellOutput,
 };
 use crate::docker::api::DockerApi;
 use std::pin::Pin;
@@ -121,26 +122,27 @@ impl ShellService {
             .message()
             .await?
             .ok_or_else(|| Status::invalid_argument("missing shell open message"))?;
-        if first.server_id <= 0
+        let open = match first.payload {
+            Some(shell_message::Payload::Open(open)) => open,
+            _ => return Err(Status::invalid_argument("first shell message must be open")),
+        };
+        if open.server_id <= 0
             || server_id != expected_server_id
-            || (expected_server_id != -1 && first.server_id != expected_server_id)
+            || (expected_server_id != -1 && open.server_id != expected_server_id)
         {
             return Err(Status::not_found(
                 "shell server_id does not match this agent",
             ));
         }
-        if first.action != ShellAction::Open as i32 {
-            return Err(Status::invalid_argument("first shell message must be open"));
+
+        if !open.container.is_empty() {
+            return Self::open_container(input, open).await;
         }
 
-        if !first.container.is_empty() {
-            return Self::open_container(input, first).await;
-        }
-
-        let shell = if first.shell.is_empty() {
+        let shell = if open.shell.is_empty() {
             "sh"
         } else {
-            first.shell.as_str()
+            open.shell.as_str()
         };
         let mut command = Command::new(shell);
         let mut child = command
@@ -169,11 +171,11 @@ impl ShellService {
             loop {
                 tokio::select! {
                     message = input.message() => match message {
-                        Ok(Some(message)) if message.action == ShellAction::Input as i32 => {
-                            if stdin.write_all(&message.data).await.is_err() { break; }
+                        Ok(Some(ShellMessage { payload: Some(shell_message::Payload::Input(ShellInput { data })) })) => {
+                            if stdin.write_all(&data).await.is_err() { break; }
                             let _ = stdin.flush().await;
                         }
-                        Ok(Some(message)) if message.action == ShellAction::Close as i32 => {
+                        Ok(Some(ShellMessage { payload: Some(shell_message::Payload::Close(_)) })) => {
                             let _ = stdin.shutdown().await;
                             break;
                         }
@@ -182,17 +184,17 @@ impl ShellService {
                     },
                     result = stdout.read(&mut out) => match result {
                         Ok(0) => {},
-                        Ok(size) => { if tx.send(Ok(ShellMessage { action: ShellAction::Stdout as i32, data: out[..size].to_vec(), ..Default::default() })).await.is_err() { break; } },
-                        Err(error) => { let _ = tx.send(Ok(ShellMessage { action: ShellAction::Error as i32, error: error.to_string(), ..Default::default() })).await; break; }
+                        Ok(size) => { if tx.send(Ok(stdout_message(&out[..size]))).await.is_err() { break; } },
+                        Err(error) => { let _ = tx.send(Ok(error_message(error.to_string()))).await; break; }
                     },
                     result = stderr.read(&mut err) => match result {
                         Ok(0) => {},
-                        Ok(size) => { if tx.send(Ok(ShellMessage { action: ShellAction::Stderr as i32, data: err[..size].to_vec(), ..Default::default() })).await.is_err() { break; } },
-                        Err(error) => { let _ = tx.send(Ok(ShellMessage { action: ShellAction::Error as i32, error: error.to_string(), ..Default::default() })).await; break; }
+                        Ok(size) => { if tx.send(Ok(stderr_message(&err[..size]))).await.is_err() { break; } },
+                        Err(error) => { let _ = tx.send(Ok(error_message(error.to_string()))).await; break; }
                     },
                     status = child.wait() => {
                         let code = status.ok().and_then(|status| status.code()).unwrap_or(-1);
-                        let _ = tx.send(Ok(ShellMessage { action: ShellAction::Exit as i32, exit_code: code, ..Default::default() })).await;
+                        let _ = tx.send(Ok(exit_message(code))).await;
                         break;
                     }
                 }
@@ -207,10 +209,10 @@ impl ShellService {
 
     async fn open_container(
         mut input: tonic::Streaming<ShellMessage>,
-        first: ShellMessage,
+        open: ShellOpen,
     ) -> Result<Response<ShellStream>, Status> {
         let docker = os::docker::DockerCli::new_local();
-        let mut target = first.container.clone();
+        let mut target = open.container.clone();
         if let Ok(containers) = docker.containers().ps().all().api().list().await {
             let search = target.to_lowercase();
             let clean_search = search.trim_end_matches("_db").trim_end_matches("-db");
@@ -231,10 +233,10 @@ impl ShellService {
                 };
             }
         }
-        let shell = if first.shell.is_empty() {
+        let shell = if open.shell.is_empty() {
             "sh".to_owned()
         } else {
-            first.shell.clone()
+            open.shell.clone()
         };
         let stream = docker
             .containers()
@@ -246,8 +248,8 @@ impl ShellService {
             .shell([shell])
             .await
             .map_err(|error| Status::internal(format!("could not start Docker shell: {error}")))?;
-        let cols = u16::try_from(first.cols.max(1)).unwrap_or(u16::MAX);
-        let rows = u16::try_from(first.rows.max(1)).unwrap_or(u16::MAX);
+        let cols = u16::try_from(open.cols.max(1)).unwrap_or(u16::MAX);
+        let rows = u16::try_from(open.rows.max(1)).unwrap_or(u16::MAX);
         let _ = stream.resize(cols, rows).await;
         let mut reader = stream.reader;
         let mut writer = stream.writer;
@@ -260,18 +262,18 @@ impl ShellService {
             loop {
                 tokio::select! {
                     message = input.message() => match message {
-                        Ok(Some(message)) if message.action == ShellAction::Input as i32 => {
-                            if writer.write_all(&message.data).await.is_err() { break; }
+                        Ok(Some(ShellMessage { payload: Some(shell_message::Payload::Input(ShellInput { data })) })) => {
+                            if writer.write_all(&data).await.is_err() { break; }
                             let _ = writer.flush().await;
                         }
-                        Ok(Some(message)) if message.action == ShellAction::Resize as i32 => {
-                            let cols = u16::try_from(message.cols.max(1)).unwrap_or(u16::MAX);
-                            let rows = u16::try_from(message.rows.max(1)).unwrap_or(u16::MAX);
+                        Ok(Some(ShellMessage { payload: Some(shell_message::Payload::Resize(resize)) })) => {
+                            let cols = u16::try_from(resize.cols.max(1)).unwrap_or(u16::MAX);
+                            let rows = u16::try_from(resize.rows.max(1)).unwrap_or(u16::MAX);
                             let _ = os::docker::handles::containers::socat::resize_container_exec(
                                 &socket_path, &exec_id, cols, rows,
                             ).await;
                         }
-                        Ok(Some(message)) if message.action == ShellAction::Close as i32 => {
+                        Ok(Some(ShellMessage { payload: Some(shell_message::Payload::Close(_)) })) => {
                             let _ = writer.shutdown().await;
                             break;
                         }
@@ -280,22 +282,14 @@ impl ShellService {
                     },
                     result = reader.read(&mut output) => match result {
                         Ok(0) => {
-                            let _ = tx.send(Ok(ShellMessage { action: ShellAction::Exit as i32, ..Default::default() })).await;
+                            let _ = tx.send(Ok(exit_message(0))).await;
                             break;
                         }
                         Ok(size) => {
-                            if tx.send(Ok(ShellMessage {
-                                action: ShellAction::Stdout as i32,
-                                data: output[..size].to_vec(),
-                                ..Default::default()
-                            })).await.is_err() { break; }
+                            if tx.send(Ok(stdout_message(&output[..size]))).await.is_err() { break; }
                         }
                         Err(error) => {
-                            let _ = tx.send(Ok(ShellMessage {
-                                action: ShellAction::Error as i32,
-                                error: error.to_string(),
-                                ..Default::default()
-                            })).await;
+                            let _ = tx.send(Ok(error_message(error.to_string()))).await;
                             break;
                         }
                     }
@@ -306,6 +300,34 @@ impl ShellService {
         Ok(Response::new(Box::pin(
             tokio_stream::wrappers::ReceiverStream::new(rx),
         )))
+    }
+}
+
+fn stdout_message(data: &[u8]) -> ShellMessage {
+    ShellMessage {
+        payload: Some(shell_message::Payload::Stdout(ShellOutput {
+            data: data.to_vec(),
+        })),
+    }
+}
+
+fn stderr_message(data: &[u8]) -> ShellMessage {
+    ShellMessage {
+        payload: Some(shell_message::Payload::Stderr(ShellOutput {
+            data: data.to_vec(),
+        })),
+    }
+}
+
+fn exit_message(code: i32) -> ShellMessage {
+    ShellMessage {
+        payload: Some(shell_message::Payload::Exit(ShellExit { exit_code: code })),
+    }
+}
+
+fn error_message(message: String) -> ShellMessage {
+    ShellMessage {
+        payload: Some(shell_message::Payload::Error(ShellError { message })),
     }
 }
 

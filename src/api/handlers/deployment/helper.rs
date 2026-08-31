@@ -79,6 +79,49 @@ pub fn empty_event_stream(
     futures::stream::empty()
 }
 
+/// Adapts a docker CLI stream (stdout = data, stderr = failure) into
+/// DeploymentEvents of the given kind. Each stdout chunk becomes one event
+/// carrying the raw `{{json .}}` output.
+pub fn docker_event_stream(
+    receiver: tokio::sync::mpsc::Receiver<crate::utils::docker::DockerStreamEvent>,
+    kind: &'static str,
+) -> impl futures::Stream<Item = Result<DeploymentEvent, ConnectError>> + Send + 'static {
+    use futures::StreamExt;
+    tokio_stream::wrappers::ReceiverStream::new(receiver).map(|event| {
+        let is_error = matches!(
+            event,
+            crate::utils::docker::DockerStreamEvent::Stderr(_)
+        );
+        let output = match event {
+            crate::utils::docker::DockerStreamEvent::Stdout(bytes) => bytes,
+            crate::utils::docker::DockerStreamEvent::Stderr(bytes) => bytes,
+        };
+        let payload = String::from_utf8_lossy(&output).into_owned();
+        let error = is_error.then(|| payload.clone());
+        Ok(DeploymentEvent {
+            r#type: kind.to_owned(),
+            timestamp: chrono::Utc::now().timestamp(),
+            payload,
+            error,
+        })
+    })
+}
+
+/// Adapts a deployment log line channel into log DeploymentEvents.
+pub fn log_line_stream(
+    receiver: tokio::sync::mpsc::Receiver<String>,
+) -> impl futures::Stream<Item = Result<DeploymentEvent, ConnectError>> + Send + 'static {
+    use futures::StreamExt;
+    tokio_stream::wrappers::ReceiverStream::new(receiver).map(|line| {
+        Ok(DeploymentEvent {
+            r#type: "log".to_owned(),
+            timestamp: chrono::Utc::now().timestamp(),
+            payload: line,
+            error: None,
+        })
+    })
+}
+
 pub fn sanitize_filename(value: &str) -> String {
     let sanitized: String = value
         .chars()

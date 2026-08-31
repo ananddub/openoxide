@@ -26,7 +26,6 @@ import {
 	Trash2,
 	ShieldCheck,
 	Shield,
-	AlertCircle,
 	Search,
 	Power,
 } from 'lucide-react';

@@ -1,6 +1,13 @@
 import {useState, useEffect} from 'react';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {
+	useComposeSetBitbucketSource,
+	useComposeSetCustomGitSource,
+	useComposeSetGiteaSource,
+	useComposeSetGithubSource,
+	useComposeSetGitlabSource,
+	useComposeSetRawSource,
+} from '#/api/live';
 import {useAppStore} from '#/stores/app-store';
 import {formatApiError} from '#/api/utils';
 import {ComposeDeployCard} from './compose-deploy-card';
@@ -57,30 +64,12 @@ export function ComposeGeneralTab({compose, onUpdated}: GeneralTabProps) {
 
 	const sshKeys = useAppStore(state => state.sshKeys || []);
 
-	const patchRawMutation = $api.useMutation(
-		'patch',
-		'/compose/{id}/source/raw',
-	);
-	const patchGithubMutation = $api.useMutation(
-		'patch',
-		'/compose/{id}/source/github',
-	);
-	const patchGitlabMutation = $api.useMutation(
-		'patch',
-		'/compose/{id}/source/gitlab',
-	);
-	const patchGiteaMutation = $api.useMutation(
-		'patch',
-		'/compose/{id}/source/gitea',
-	);
-	const patchBitbucketMutation = $api.useMutation(
-		'patch',
-		'/compose/{id}/source/bitbucket',
-	);
-	const patchGitMutation = $api.useMutation(
-		'patch',
-		'/compose/{id}/source/git',
-	);
+	const patchRawMutation = useComposeSetRawSource();
+	const patchGithubMutation = useComposeSetGithubSource();
+	const patchGitlabMutation = useComposeSetGitlabSource();
+	const patchGiteaMutation = useComposeSetGiteaSource();
+	const patchBitbucketMutation = useComposeSetBitbucketSource();
+	const patchGitMutation = useComposeSetCustomGitSource();
 
 	useEffect(() => {
 		if (compose) {
@@ -144,59 +133,45 @@ export function ComposeGeneralTab({compose, onUpdated}: GeneralTabProps) {
 			if (!compose?.id) return;
 			if (provider === 'RAW') {
 				await patchRawMutation.mutateAsync({
-					params: {path: {id: compose.id}},
-					body: {
-						compose_file: composeFile,
-					},
+					id: compose.id,
+					content: composeFile,
 				});
 			} else if (provider === 'GIT') {
 				await patchGitMutation.mutateAsync({
-					params: {path: {id: compose.id}},
-					body: {
-						custom_git_url: gitUrl,
-						custom_git_branch: gitBranch,
-						custom_git_build_path: gitBuildPath,
-						custom_git_ssh_key_id: gitSshKeyId,
-					} as any,
+					id: compose.id,
+					url: gitUrl,
+					branch: gitBranch,
 				});
 			} else if (provider === 'GITHUB') {
 				await patchGithubMutation.mutateAsync({
-					params: {path: {id: compose.id}},
-					body: {
-						owner: repoOwner,
-						repository: repoName,
-						branch: gitBranch,
-						build_path: gitBuildPath,
-					} as any,
+					id: compose.id,
+					owner: repoOwner,
+					repository: repoName,
+					branch: gitBranch,
+					build_path: gitBuildPath,
 				});
 			} else if (provider === 'GITLAB') {
 				await patchGitlabMutation.mutateAsync({
-					params: {path: {id: compose.id}},
-					body: {
-						gitlab_owner: repoOwner,
-						gitlab_repository: repoName,
-						gitlab_branch: gitBranch,
-						gitlab_build_path: gitBuildPath,
-					} as any,
+					id: compose.id,
+					owner: repoOwner,
+					repository: repoName,
+					branch: gitBranch,
+					build_path: gitBuildPath,
 				});
 			} else if (provider === 'GITEA') {
 				await patchGiteaMutation.mutateAsync({
-					params: {path: {id: compose.id}},
-					body: {
-						gitea_owner: repoOwner,
-						gitea_repository: repoName,
-						gitea_branch: gitBranch,
-						gitea_build_path: gitBuildPath,
-					} as any,
+					id: compose.id,
+					owner: repoOwner,
+					repository: repoName,
+					branch: gitBranch,
+					build_path: gitBuildPath,
 				});
 			} else if (provider === 'BITBUCKET') {
 				await patchBitbucketMutation.mutateAsync({
-					params: {path: {id: compose.id}},
-					body: {
-						bitbucket_owner: repoOwner,
-						bitbucket_repository: repoName,
-						bitbucket_branch: gitBranch,
-					} as any,
+					id: compose.id,
+					owner: repoOwner,
+					repository: repoName,
+					branch: gitBranch,
 				});
 			}
 			toast.success('Compose source settings saved successfully');

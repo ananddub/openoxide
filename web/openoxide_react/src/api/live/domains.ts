@@ -1,5 +1,7 @@
-import {createServiceClient, useResourceListQuery} from './query';
-import {DomainService} from '#/gen/connect/openoxide/api/v1/domain_pb';
+import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+// Only DomainOperationsService is served by the backend (DomainService has
+// no controller), so the live layer targets the operations variant.
+import {DomainOperationsService} from '#/gen/connect/openoxide/api/v1/domain_operations_pb';
 
 /** Legacy domain payload shape (snake_case REST DTO) with optional extras. */
 export type DomainPayload = {
@@ -24,7 +26,7 @@ export type DomainPayload = {
 	[key: string]: unknown;
 };
 
-const domainClient = createServiceClient(DomainService);
+const domainClient = createServiceClient(DomainOperationsService);
 
 /** Payload ids deserialize from JSON as numbers; coerce before comparing. */
 function payloadIdEquals(value: unknown, expected: bigint): boolean {
@@ -67,4 +69,26 @@ export function useDomainListByApplication(applicationId: bigint) {
 		...query,
 		data: query.data?.filter((domain) => payloadIdEquals(domain.application_id, applicationId)),
 	};
+}
+
+/** Create a domain (host, route, certificate and application_id/compose_id linkage in the payload). */
+export function useDomainCreate() {
+	return useConnectMutation((input: Record<string, unknown>) =>
+		domainClient.createDomain({payload: JSON.stringify(input)}),
+	);
+}
+
+/** Update a domain by id (fields to change in the payload). */
+export function useDomainUpdate() {
+	return useConnectMutation((input: {id: number | bigint; [field: string]: unknown}) => {
+		const {id, ...body} = input;
+		return domainClient.updateDomain({id: BigInt(id), payload: JSON.stringify(body)});
+	});
+}
+
+/** Delete a domain by id. */
+export function useDomainDelete() {
+	return useConnectMutation((id: number | bigint) =>
+		domainClient.deleteDomain({id: BigInt(id)}),
+	);
 }

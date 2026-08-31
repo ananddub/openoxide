@@ -5,10 +5,14 @@ package agent;
 // Query API the panel uses to read metrics collected by an agent.
 //
 // Agents are the only durable metric store. The panel authenticates to this
-// query API and proxies results to authorized browser clients.
+// query API and proxies results to authorized browser clients. Both sides
+// are built and deployed together from this repository, so the wire format
+// is versioned only to reject stale agents after a panel upgrade
+// (protocol_version).
 service AgentService {
   rpc GetAgentInfo(AgentInfoRequest) returns (AgentInfoResponse);
-  // Query historical server metrics
+  // Query historical server metrics. Host-static facts (cpu model, os, ...)
+  // ride once in `host`; points carry only the per-sample values.
   rpc GetServerMetrics(GetMetricsRequest) returns (ServerMetricsResponse);
 
   // Query historical container metrics
@@ -17,12 +21,8 @@ service AgentService {
   // Current Docker lifecycle state, including stopped/restarting containers.
   rpc GetContainerStates(GetMetricsRequest) returns (ContainerStatesResponse);
 
-  // Persistent lifecycle channel. The panel keeps the request stream open and
-  // the agent emits snapshots immediately when Docker state changes.
-  rpc WatchContainerStates(stream LifecycleControl) returns (stream ContainerStatesResponse);
-
-  // Tail a container's recent logs
-  rpc StreamLogs(LogStreamRequest) returns (stream LogChunk);
+  // Docker lifecycle snapshots, pushed whenever container state changes.
+  rpc WatchContainerStates(WatchRequest) returns (stream ContainerStatesResponse);
 
   // Persistent host or Docker shell session.
   rpc Shell(stream ShellMessage) returns (stream ShellMessage);
@@ -31,7 +31,9 @@ service AgentService {
   rpc ExecTask(ExecTaskRequest) returns (stream ExecTaskOutput);
 
   // Stream a host file to the agent and atomically install it at destination.
-  rpc UploadFile(stream FileUploadChunk) returns (FileUploadResult);
+  // The first message must carry the header; the rest are raw data chunks
+  // whose running byte count is checked against header.total_size.
+  rpc UploadFile(stream FileUploadMessage) returns (FileUploadResult);
 }
 
 message AgentInfoRequest {
@@ -46,13 +48,18 @@ message AgentInfoResponse {
   repeated string upload_roots = 5;
 }
 
-message FileUploadChunk {
+message FileUploadMessage {
+  oneof message {
+    FileUploadHeader header = 1;
+    bytes data = 2;
+  }
+}
+
+message FileUploadHeader {
   int64 server_id = 1;
   string destination = 2;
-  bytes data = 3;
-  bool finish = 4;
-  string checksum_sha256 = 5;
-  uint64 total_size = 6;
+  uint64 total_size = 3;
+  string checksum_sha256 = 4;
 }
 
 message FileUploadResult {
@@ -84,69 +91,44 @@ enum ExecTaskOutputKind {
   EXEC_TASK_OUTPUT_ERROR = 4;
 }
 
-message LogStreamRequest {
-  int64 application_id = 1;
-  int64 compose_id = 2;
-  string container_id = 3;
-  int32 tail_lines = 4;
-}
-
-message LogChunk {
-  string container_id = 1;
-  string log_line = 2;
-  int64 timestamp = 3;
-  bool is_stderr = 4;
-}
-
-message ShellMessage {
+message WatchRequest {
   int64 server_id = 1;
-  ShellAction action = 2;
-  string container = 3;
-  string shell = 4;
-  bytes data = 5;
-  uint32 cols = 6;
-  uint32 rows = 7;
-  int32 exit_code = 8;
-  string error = 9;
 }
 
-enum ShellAction {
-  SHELL_ACTION_UNSPECIFIED = 0;
-  SHELL_ACTION_OPEN = 1;
-  SHELL_ACTION_INPUT = 2;
-  SHELL_ACTION_RESIZE = 3;
-  SHELL_ACTION_CLOSE = 4;
-  SHELL_ACTION_STDOUT = 5;
-  SHELL_ACTION_STDERR = 6;
-  SHELL_ACTION_EXIT = 7;
-  SHELL_ACTION_ERROR = 8;
-}
-
+// Per-sample server metrics. Timestamps are unix seconds; host-static facts
+// live in ServerMetricsResponse.host.
 message ServerMetricPoint {
-  int64 id = 1;
-  string timestamp = 2;
-  double cpu = 3;
-  string cpu_model = 4;
-  int32 cpu_cores = 5;
-  int32 cpu_physical_cores = 6;
-  double cpu_speed = 7;
-  string os = 8;
-  string distro = 9;
-  string kernel = 10;
-  string arch = 11;
-  double mem_used = 12;
-  double mem_used_gb = 13;
-  double mem_total = 14;
-  uint64 uptime = 15;
-  double disk_used = 16;
-  double total_disk = 17;
-  double network_in = 18;
-  double network_out = 19;
+  int64 timestamp = 1;
+  double cpu = 2;
+  double mem_used_gb = 3;
+  double mem_total_gb = 4;
+  double disk_used_gb = 5;
+  double disk_total_gb = 6;
+  double network_in = 7;
+  double network_out = 8;
+  uint64 uptime = 9;
+}
+
+// Host facts that change only on reboot/upgrade. Sent once per response.
+message HostInfo {
+  string cpu_model = 1;
+  int32 cpu_cores = 2;
+  int32 cpu_physical_cores = 3;
+  double cpu_speed = 4;
+  string os = 5;
+  string distro = 6;
+  string kernel = 7;
+  string arch = 8;
+}
+
+message ServerMetricsResponse {
+  HostInfo host = 1;
+  repeated ServerMetricPoint metrics = 2;
 }
 
 message ContainerMetricPoint {
   int64 id = 1;
-  string timestamp = 2;
+  int64 timestamp = 2;
   string container_id = 3;
   string name = 4;
   double cpu_perc = 5;
@@ -164,10 +146,6 @@ message ContainerMetricPoint {
 message GetMetricsRequest {
   int64 server_id = 1;
   int32 limit = 2;
-}
-
-message ServerMetricsResponse {
-  repeated ServerMetricPoint metrics = 1;
 }
 
 message GetContainerMetricsRequest {
@@ -195,4 +173,53 @@ message ContainerStatesResponse {
   repeated ContainerStatePoint containers = 1;
 }
 
-message LifecycleControl {}
+message ShellMessage {
+  oneof payload {
+    ShellOpen open = 1;
+    ShellInput input = 2;
+    ShellResize resize = 3;
+    ShellClose close = 4;
+    ShellOutput stdout = 5;
+    ShellOutput stderr = 6;
+    ShellExit exit = 7;
+    ShellError error = 8;
+  }
+}
+
+// Client → agent: start a session (first message on the stream).
+message ShellOpen {
+  int64 server_id = 1;
+  string container = 2;
+  string shell = 3;
+  uint32 cols = 4;
+  uint32 rows = 5;
+}
+
+// Client → agent: PTY stdin bytes.
+message ShellInput {
+  bytes data = 1;
+}
+
+// Client → agent: PTY resize.
+message ShellResize {
+  uint32 cols = 1;
+  uint32 rows = 2;
+}
+
+// Client → agent: end the session.
+message ShellClose {}
+
+// Agent → client: PTY output bytes.
+message ShellOutput {
+  bytes data = 1;
+}
+
+// Agent → client: session ended.
+message ShellExit {
+  int32 exit_code = 1;
+}
+
+// Agent → client: failure before/while running the session.
+message ShellError {
+  string message = 1;
+}

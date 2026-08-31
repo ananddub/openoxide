@@ -22,7 +22,6 @@ import {formatApiError} from '#/api/utils';
 import {Server} from 'lucide-react';
 
 interface CreateAppDialogProps {
-	projectId?: number;
 	environmentId: number;
 	isOpen: boolean;
 	onClose?: () => void;
@@ -31,7 +30,6 @@ interface CreateAppDialogProps {
 }
 
 export function CreateAppDialog({
-	projectId,
 	environmentId,
 	isOpen,
 	onClose,

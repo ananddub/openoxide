@@ -9,10 +9,20 @@ import {
 	SelectContent,
 	SelectItem,
 } from '#/components/ui/select';
-import {useOrganizationStore} from '#/stores/organization-store';
 import {useAppStore} from '#/stores/app-store';
-import {$api} from '#/api/query';
-import {client} from '#/api/client';
+import {
+	useApplicationDeploy,
+	useApplicationStart,
+	useApplicationStop,
+	useComposeDeploy,
+	useComposeStart,
+	useComposeStop,
+	useDatabaseDeploy,
+	useDatabaseStart,
+	useDatabaseStop,
+	parseDatabaseKind,
+	useRemoteServerList,
+} from '#/api/live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {
@@ -40,14 +50,11 @@ export function OverviewServicesTab() {
 	const [pageSize, setPageSize] = useState(50);
 	const [pageIndex, setPageIndex] = useState(0);
 
-	const {activeOrg} = useOrganizationStore();
-	const orgId = activeOrg?.id || 1;
-
 	// Read directly from Realtime Zustand RAM Store (ZERO extra subscriptions!)
 	const storeServices = useAppStore(state => state.overviewServices || []);
 	const projectsToUse = useAppStore(state => state.projects || []);
 	const servers = useAppStore(state => state.servers || []);
-	const {data: remoteServers = []} = $api.useQuery('get', '/remote-servers');
+	const {data: remoteServers = []} = useRemoteServerList();
 	const serverDirectory =
 		(remoteServers as any[]).length > 0 ? (remoteServers as any[]) : servers;
 	const rawServices = storeServices;
@@ -56,14 +63,19 @@ export function OverviewServicesTab() {
 	const isLoading = isLiveLoading && rawServices.length === 0;
 
 	// App Mutations
-	const appStart = $api.useMutation('post', '/applications/{id}/start');
-	const appStop = $api.useMutation('post', '/applications/{id}/stop');
-	const appDeploy = $api.useMutation('post', '/applications/{id}/deploy');
+	const appStart = useApplicationStart();
+	const appStop = useApplicationStop();
+	const appDeploy = useApplicationDeploy();
 
 	// Compose Mutations
-	const composeStart = $api.useMutation('post', '/compose/{id}/start');
-	const composeStop = $api.useMutation('post', '/compose/{id}/stop');
-	const composeDeploy = $api.useMutation('post', '/compose/{id}/deploy');
+	const composeStart = useComposeStart();
+	const composeStop = useComposeStop();
+	const composeDeploy = useComposeDeploy();
+
+	// Database Mutations (kind resolved per action)
+	const dbDeploy = useDatabaseDeploy();
+	const dbStart = useDatabaseStart();
+	const dbStop = useDatabaseStop();
 
 	// Transform raw API data into OverviewServiceItem list
 	const allServices = useMemo<OverviewServiceItem[]>(() => {
@@ -173,13 +185,13 @@ export function OverviewServicesTab() {
 	const handleDeploy = async (svc: OverviewServiceItem) => {
 		try {
 			if (svc.type === 'APP') {
-				await appDeploy.mutateAsync({params: {path: {id: svc.id}}});
+				await appDeploy.mutateAsync(svc.id);
 			} else if (svc.type === 'COMPOSE') {
-				await composeDeploy.mutateAsync({params: {path: {id: svc.id}}});
+				await composeDeploy.mutateAsync(svc.id);
 			} else if (svc.dbKind) {
-				const k = svc.dbKind.toLowerCase();
-				await client.POST(`/${k}/{id}/deploy` as any, {
-					params: {path: {id: svc.id}},
+				await dbDeploy.mutateAsync({
+					kind: parseDatabaseKind(svc.dbKind),
+					id: svc.id,
 				});
 			}
 			toast.success(`Queued deployment for ${svc.name}`);
@@ -191,13 +203,13 @@ export function OverviewServicesTab() {
 	const handleStart = async (svc: OverviewServiceItem) => {
 		try {
 			if (svc.type === 'APP') {
-				await appStart.mutateAsync({params: {path: {id: svc.id}}});
+				await appStart.mutateAsync(svc.id);
 			} else if (svc.type === 'COMPOSE') {
-				await composeStart.mutateAsync({params: {path: {id: svc.id}}});
+				await composeStart.mutateAsync(svc.id);
 			} else if (svc.dbKind) {
-				const k = svc.dbKind.toLowerCase();
-				await client.POST(`/${k}/{id}/start` as any, {
-					params: {path: {id: svc.id}},
+				await dbStart.mutateAsync({
+					kind: parseDatabaseKind(svc.dbKind),
+					id: svc.id,
 				});
 			}
 			toast.success(`Starting ${svc.name}...`);
@@ -209,13 +221,13 @@ export function OverviewServicesTab() {
 	const handleStop = async (svc: OverviewServiceItem) => {
 		try {
 			if (svc.type === 'APP') {
-				await appStop.mutateAsync({params: {path: {id: svc.id}}});
+				await appStop.mutateAsync(svc.id);
 			} else if (svc.type === 'COMPOSE') {
-				await composeStop.mutateAsync({params: {path: {id: svc.id}}});
+				await composeStop.mutateAsync(svc.id);
 			} else if (svc.dbKind) {
-				const k = svc.dbKind.toLowerCase();
-				await client.POST(`/${k}/{id}/stop` as any, {
-					params: {path: {id: svc.id}},
+				await dbStop.mutateAsync({
+					kind: parseDatabaseKind(svc.dbKind),
+					id: svc.id,
 				});
 			}
 			toast.info(`Stopping ${svc.name}...`);

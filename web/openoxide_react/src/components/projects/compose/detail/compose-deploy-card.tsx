@@ -1,7 +1,13 @@
 import {useState, useEffect, useMemo} from 'react';
-import {useQueryClient, useMutationState} from '@tanstack/react-query';
-import {$api} from '#/api/query';
+import {useMutationState} from '@tanstack/react-query';
 import {toast} from 'sonner';
+import {
+	useComposeDeploy,
+	useComposeRedeploy,
+	useComposeReload,
+	useComposeStart,
+	useComposeStop,
+} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {ComposeConfirmDialog} from './cards/compose-confirm-dialog';
 import {ComposeDeployActions} from './cards/compose-deploy-actions';
@@ -32,8 +38,6 @@ export function ComposeDeployCard({
 	const [activeLoading, setActiveLoading] = useState<ActionType | null>(
 		null,
 	);
-
-	const queryClient = useQueryClient();
 
 	// Read deployments from Zustand RAM store
 	const storeDeployments = useAppStore(state => state.deployments || []);
@@ -151,14 +155,11 @@ export function ComposeDeployCard({
 	}, [compose?.id, deploymentRevision]);
 
 	// Mutations
-	const deployMutation = $api.useMutation('post', '/compose/{id}/deploy');
-	const reloadMutation = $api.useMutation('post', '/compose/{id}/reload');
-	const rebuildMutation = $api.useMutation(
-		'post',
-		'/compose/{id}/redeploy',
-	);
-	const startMutation = $api.useMutation('post', '/compose/{id}/start');
-	const stopMutation = $api.useMutation('post', '/compose/{id}/stop');
+	const deployMutation = useComposeDeploy();
+	const reloadMutation = useComposeReload();
+	const rebuildMutation = useComposeRedeploy();
+	const startMutation = useComposeStart();
+	const stopMutation = useComposeStop();
 
 	const executeAction = async (action: ActionType) => {
 		setConfirmAction(null);
@@ -174,37 +175,21 @@ export function ComposeDeployCard({
 			setActionInFlight(null);
 		}
 		try {
-			const path = {id: compose?.id};
-			const options = {actionName: action};
+			const id = compose?.id;
 			if (action === 'deploy') {
-				await deployMutation.mutateAsync({
-					params: {path},
-					...options,
-				} as any);
+				await deployMutation.mutateAsync(id);
 				toast.success('Compose stack deployment initiated');
 			} else if (action === 'reload') {
-				await reloadMutation.mutateAsync({
-					params: {path},
-					...options,
-				} as any);
+				await reloadMutation.mutateAsync(id);
 				toast.success('Compose stack reloaded');
 			} else if (action === 'rebuild') {
-				await rebuildMutation.mutateAsync({
-					params: {path},
-					...options,
-				} as any);
+				await rebuildMutation.mutateAsync(id);
 				toast.success('Compose stack rebuild initiated');
 			} else if (action === 'start') {
-				await startMutation.mutateAsync({
-					params: {path},
-					...options,
-				} as any);
+				await startMutation.mutateAsync(id);
 				toast.success('Compose stack started');
 			} else if (action === 'stop' || action === 'cancel') {
-				await stopMutation.mutateAsync({
-					params: {path},
-					...options,
-				} as any);
+				await stopMutation.mutateAsync(id);
 				toast.success(
 					action === 'stop'
 						? 'Compose stack stopped'
@@ -212,13 +197,7 @@ export function ComposeDeployCard({
 				);
 			}
 
-			// Pure native TanStack Query invalidation
-			await queryClient.invalidateQueries({
-				queryKey: ['get', '/compose/{id}'],
-			});
-			await queryClient.invalidateQueries({
-				queryKey: ['get', '/deployments'],
-			});
+			// Live queries refresh via the table-watch stream; notify the parent.
 			onUpdated?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));

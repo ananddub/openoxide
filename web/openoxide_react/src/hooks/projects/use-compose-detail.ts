@@ -3,11 +3,7 @@ import {toast} from 'sonner';
 import {$api} from '#/api/query';
 import type {ComposeResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
-import {
-	useDomainListByCompose,
-	useScheduleListByCompose,
-	useComposeGet,
-} from '#/api/live';
+import {useComposeGet} from '#/api/live';
 
 import {useAppStore, selectComposeById} from '#/stores/app-store';
 
@@ -179,7 +175,7 @@ export function useComposeDetail(composeId: number) {
 				toast.success('Compose stack cancellation requested');
 			}
 			refetchAll();
-		} catch (err) {
+		} catch {
 			toast.error(`Action failed: ${action}`);
 		}
 	};
@@ -192,7 +188,7 @@ export function useComposeDetail(composeId: number) {
 			});
 			toast.success('Compose settings updated');
 			refetchAll();
-		} catch (err) {
+		} catch {
 			toast.error('Failed to update compose settings');
 		}
 	};

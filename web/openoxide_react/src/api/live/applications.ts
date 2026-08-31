@@ -1,4 +1,4 @@
-import {createServiceClient, useConnectQuery} from './query';
+import {createServiceClient, useConnectMutation, useConnectQuery} from './query';
 import {
 	ApplicationService,
 	ApplicationSourceType,
@@ -94,5 +94,118 @@ export function useApplicationListByEnvironment(environmentId: bigint) {
 			return response.applications.map(toApplicationPayload);
 		},
 		{enabled: environmentId > 0n},
+	);
+}
+
+/**
+ * Create an application (legacy REST: POST /applications). Source and build
+ * types are the generated enum values (e.g. ApplicationSourceType.GITHUB).
+ */
+export function useApplicationCreate() {
+	return useConnectMutation(
+		(input: {
+			name: string;
+			description?: string;
+			environment_id: number | bigint;
+			server_id?: number | bigint;
+			source_type?: ApplicationSourceType;
+			build_type?: ApplicationBuildType;
+		}) =>
+			applicationClient.createApplication({
+				name: input.name,
+				description: input.description,
+				environmentId: BigInt(input.environment_id),
+				serverId: input.server_id !== undefined ? BigInt(input.server_id) : undefined,
+				sourceType: input.source_type ?? ApplicationSourceType.UNSPECIFIED,
+				buildType: input.build_type ?? ApplicationBuildType.UNSPECIFIED,
+			}),
+	);
+}
+
+/** Update an application by id (legacy REST: PATCH /applications/{id}). */
+export function useApplicationUpdate() {
+	return useConnectMutation(
+		(input: {
+			id: number | bigint;
+			name?: string;
+			description?: string;
+			build_type?: ApplicationBuildType;
+			trigger_type?: string;
+			env_var?: string;
+			server_id?: number | bigint;
+			build_server_id?: number | bigint;
+			registry_id?: number | bigint;
+			network_ids?: string[];
+			detach_rustploy_network?: boolean;
+		}) =>
+			applicationClient.updateApplication({
+				id: BigInt(input.id),
+				name: input.name,
+				description: input.description,
+				buildType: input.build_type,
+				triggerType: input.trigger_type,
+				envVar: input.env_var,
+				serverId: input.server_id !== undefined ? BigInt(input.server_id) : undefined,
+				buildServerId: input.build_server_id !== undefined ? BigInt(input.build_server_id) : undefined,
+				registryId: input.registry_id !== undefined ? BigInt(input.registry_id) : undefined,
+				networkIds: input.network_ids ?? [],
+				detachRustployNetwork: input.detach_rustploy_network,
+			}),
+	);
+}
+
+/** Delete an application by id (legacy REST: DELETE /applications/{id}). */
+export function useApplicationDelete() {
+	return useConnectMutation((id: number | bigint) =>
+		applicationClient.deleteApplication({id: BigInt(id)}),
+	);
+}
+
+/** Deploy an application by id (legacy REST: POST /applications/{id}/deploy). */
+export function useApplicationDeploy() {
+	return useConnectMutation((id: number | bigint) =>
+		applicationClient.deploy({id: BigInt(id)}),
+	);
+}
+
+/** Redeploy an application by id. */
+export function useApplicationRedeploy() {
+	return useConnectMutation((id: number | bigint) =>
+		applicationClient.redeploy({id: BigInt(id)}),
+	);
+}
+
+/** Rebuild an application by id. */
+export function useApplicationRebuild() {
+	return useConnectMutation((id: number | bigint) =>
+		applicationClient.rebuild({id: BigInt(id)}),
+	);
+}
+
+/** Reload an application's configuration by id. */
+export function useApplicationReload() {
+	return useConnectMutation((id: number | bigint) =>
+		applicationClient.reload({id: BigInt(id)}),
+	);
+}
+
+/** Start a stopped application by id (legacy REST: POST /applications/{id}/start). */
+export function useApplicationStart() {
+	return useConnectMutation((id: number | bigint) =>
+		applicationClient.start({id: BigInt(id)}),
+	);
+}
+
+/** Stop a running application by id (legacy REST: POST /applications/{id}/stop). */
+export function useApplicationStop() {
+	return useConnectMutation((id: number | bigint) =>
+		applicationClient.stop({id: BigInt(id)}),
+	);
+}
+
+/** Cancel the running deployment of an application by id. */
+export function useApplicationCancel() {
+	return useConnectMutation((id: number | bigint) =>
+		applicationClient.cancel({id: BigInt(id)}),
 	);
 }

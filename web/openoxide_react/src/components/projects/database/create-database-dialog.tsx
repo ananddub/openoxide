@@ -25,7 +25,7 @@ import {
 	RedisIcon,
 	LibsqlIcon,
 } from '#/components/icons/db-icons';
-import {$api} from '#/api/query';
+import {parseDatabaseKind, useDatabaseCreate} from '#/api/live';
 import {formatApiError, cn} from '#/api/utils';
 
 import type {
@@ -100,12 +100,7 @@ export function CreateDatabaseDialog({
 				...(servers || []),
 			];
 
-	const createPostgres = $api.useMutation('post', '/postgres');
-	const createMysql = $api.useMutation('post', '/mysql');
-	const createMariadb = $api.useMutation('post', '/mariadb');
-	const createMongo = $api.useMutation('post', '/mongo');
-	const createRedis = $api.useMutation('post', '/redis');
-	const createLibsql = $api.useMutation('post', '/libsql');
+	const createDatabase = useDatabaseCreate();
 
 	useEffect(() => {
 		if (isOpen) {
@@ -145,7 +140,9 @@ export function CreateDatabaseDialog({
 				serverId && serverId !== 'local' && !isNaN(Number(serverId))
 					? Number(serverId)
 					: undefined;
-			const body: Record<string, unknown> = {
+
+			const res: unknown = await createDatabase.mutateAsync({
+				kind: parseDatabaseKind(selectedKind),
 				name: name.trim(),
 				description: description.trim() || undefined,
 				environment_id: Number(environmentId),
@@ -155,67 +152,17 @@ export function CreateDatabaseDialog({
 						? Number(externalPort)
 						: undefined,
 				server_id: parsedServerId,
-			};
-
-			if (selectedKind !== 'libsql') {
-				body.database_password = dbPassword || undefined;
-			}
-			if (selectedKind !== 'redis' && selectedKind !== 'libsql') {
-				body.database_name = dbName.trim() || undefined;
-				body.database_user = dbUser.trim() || undefined;
-			}
-
-			let res: unknown;
-			switch (selectedKind) {
-				case 'postgres':
-					res = await createPostgres.mutateAsync({
-						body: body as unknown as {
-							environment_id: number;
-							name: string;
-						},
-					});
-					break;
-				case 'mysql':
-					res = await createMysql.mutateAsync({
-						body: body as unknown as {
-							environment_id: number;
-							name: string;
-						},
-					});
-					break;
-				case 'mariadb':
-					res = await createMariadb.mutateAsync({
-						body: body as unknown as {
-							environment_id: number;
-							name: string;
-						},
-					});
-					break;
-				case 'mongo':
-					res = await createMongo.mutateAsync({
-						body: body as unknown as {
-							environment_id: number;
-							name: string;
-						},
-					});
-					break;
-				case 'redis':
-					res = await createRedis.mutateAsync({
-						body: body as unknown as {
-							environment_id: number;
-							name: string;
-						},
-					});
-					break;
-				case 'libsql':
-					res = await createLibsql.mutateAsync({
-						body: body as unknown as {
-							environment_id: number;
-							name: string;
-						},
-					});
-					break;
-			}
+				database_password:
+					selectedKind !== 'libsql' ? dbPassword || undefined : undefined,
+				database_name:
+					selectedKind !== 'redis' && selectedKind !== 'libsql'
+						? dbName.trim() || undefined
+						: undefined,
+				database_user:
+					selectedKind !== 'redis' && selectedKind !== 'libsql'
+						? dbUser.trim() || undefined
+						: undefined,
+			});
 
 			const resObj = res as Record<string, unknown>;
 			if (resObj?.error) {

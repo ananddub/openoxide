@@ -1,6 +1,6 @@
 use crate::api::proto::{
     ContainerMetricPoint, ContainerMetricsResponse, GetContainerMetricsRequest, GetMetricsRequest,
-    ServerMetricPoint, ServerMetricsResponse,
+    HostInfo, ServerMetricPoint, ServerMetricsResponse,
 };
 use crate::store::Store;
 use tonic::{Response, Status};
@@ -27,31 +27,33 @@ impl MetricsService {
             "serving server metrics gRPC"
         );
 
+        // Host facts come from the newest sample; every point keeps only the
+        // values that actually change between samples.
+        let host = rows.iter().rev().next().map(|row| HostInfo {
+            cpu_model: row.cpu_model.clone(),
+            cpu_cores: row.cpu_cores,
+            cpu_physical_cores: row.cpu_physical_cores,
+            cpu_speed: row.cpu_speed,
+            os: row.os.clone(),
+            distro: row.distro.clone(),
+            kernel: row.kernel.clone(),
+            arch: row.arch.clone(),
+        });
         let metrics = rows
             .into_iter()
             .map(|row| ServerMetricPoint {
-                id: row.id.unwrap_or(0),
-                timestamp: row.timestamp,
+                timestamp: unix_timestamp(&row.timestamp),
                 cpu: row.cpu,
-                cpu_model: row.cpu_model,
-                cpu_cores: row.cpu_cores,
-                cpu_physical_cores: row.cpu_physical_cores,
-                cpu_speed: row.cpu_speed,
-                os: row.os,
-                distro: row.distro,
-                kernel: row.kernel,
-                arch: row.arch,
-                mem_used: row.mem_used,
                 mem_used_gb: row.mem_used_gb,
-                mem_total: row.mem_total,
-                uptime: row.uptime,
-                disk_used: row.disk_used,
-                total_disk: row.total_disk,
+                mem_total_gb: row.mem_total,
+                disk_used_gb: row.disk_used,
+                disk_total_gb: row.total_disk,
                 network_in: row.network_in,
                 network_out: row.network_out,
+                uptime: row.uptime,
             })
             .collect();
-        Ok(Response::new(ServerMetricsResponse { metrics }))
+        Ok(Response::new(ServerMetricsResponse { host, metrics }))
     }
 
     pub async fn containers(
@@ -69,7 +71,7 @@ impl MetricsService {
             .into_iter()
             .map(|row| ContainerMetricPoint {
                 id: row.id.unwrap_or(0),
-                timestamp: row.timestamp,
+                timestamp: unix_timestamp(&row.timestamp),
                 container_id: row.container_id,
                 name: row.name,
                 cpu_perc: row.cpu_perc,
@@ -86,6 +88,14 @@ impl MetricsService {
             .collect();
         Ok(Response::new(ContainerMetricsResponse { metrics }))
     }
+}
+
+/// The in-agent store persists RFC3339 strings; the wire format carries unix
+/// seconds, so the conversion happens exactly here, at the boundary.
+fn unix_timestamp(rfc3339: &str) -> i64 {
+    chrono::DateTime::parse_from_rfc3339(rfc3339)
+        .map(|value| value.timestamp())
+        .unwrap_or_default()
 }
 
 fn clamp_limit(raw: i64) -> i64 {
@@ -106,5 +116,11 @@ mod tests {
         assert_eq!(clamp_limit(-5), DEFAULT_LIMIT);
         assert_eq!(clamp_limit(10), 10);
         assert_eq!(clamp_limit(50_000), MAX_LIMIT);
+    }
+
+    #[test]
+    fn timestamps_convert_at_the_boundary() {
+        assert_eq!(unix_timestamp("2026-08-31T12:00:00Z"), 1_788_177_600);
+        assert_eq!(unix_timestamp("not a timestamp"), 0);
     }
 }

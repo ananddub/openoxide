@@ -1,5 +1,5 @@
 use super::state;
-use crate::api::proto::{ContainerStatesResponse, LifecycleControl};
+use crate::api::proto::{ContainerStatesResponse, WatchRequest};
 use crate::docker::api::DockerApi;
 use std::{pin::Pin, time::Duration};
 use tokio_stream::{Stream, StreamExt};
@@ -13,12 +13,11 @@ pub struct LifecycleService;
 impl LifecycleService {
     pub async fn watch(
         docker: DockerApi,
-        mut controls: tonic::Streaming<LifecycleControl>,
+        request: WatchRequest,
     ) -> Result<Response<LifecycleStream>, Status> {
-        controls
-            .message()
-            .await?
-            .ok_or_else(|| Status::invalid_argument("missing lifecycle subscription"))?;
+        if request.server_id <= 0 {
+            return Err(Status::invalid_argument("server_id is required"));
+        }
 
         let initial = state::StateService::current(&docker).await?;
         let (tx, rx) = tokio::sync::watch::channel(initial);
@@ -35,10 +34,6 @@ impl LifecycleService {
 
             loop {
                 tokio::select! {
-                    control = controls.message() => match control {
-                        Ok(Some(_)) => {}
-                        _ => break,
-                    },
                     _ = heartbeat.tick() => {
                         if let Ok(snapshot) = state::StateService::current(&docker).await { tx.send_replace(snapshot); }
                     }

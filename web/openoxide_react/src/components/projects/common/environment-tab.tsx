@@ -64,7 +64,7 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 			toast.success('Environment variables saved successfully');
 			setSaved(true);
 			setTimeout(() => setSaved(false), 2000);
-		} catch (err: any) {
+		} catch {
 			toast.error('Failed to save environment variables');
 		} finally {
 			setSaving(false);

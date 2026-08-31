@@ -1,5 +1,6 @@
 import {useState, useEffect, useCallback} from 'react';
-import {useAuthStore} from '#/stores/auth-store';
+import {createServiceClient} from '#/api/live/query';
+import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
 
 export type MonitoringEntityType = 'application' | 'database' | 'compose';
 
@@ -20,21 +21,7 @@ export interface ContainerMetrics {
 	pids: string;
 }
 
-function buildStatsUrl(
-	entityType: MonitoringEntityType,
-	id: number,
-	isLive: boolean,
-): string {
-	switch (entityType) {
-		case 'database':
-			return `/api/deployments/database/${id}/stats?stream=${isLive}`;
-		case 'compose':
-			return `/api/deployments/compose/${id}/stats?stream=${isLive}`;
-		case 'application':
-		default:
-			return `/api/deployments/application/${id}/stats?stream=${isLive}`;
-	}
-}
+const deploymentClient = createServiceClient(DeploymentService);
 
 function parseBytes(str?: string): number {
 	if (!str || typeof str !== 'string') return 0;
@@ -150,14 +137,17 @@ function parseStats(raw: unknown): ContainerMetrics | null {
 	};
 }
 
-const DISABLE_METRICS = false;
-
+/**
+ * Live docker stats for an application / database / compose project over
+ * the panel's ConnectRPC stream. Each event payload is raw
+ * `docker stats --format '{{json .}}'` output (one JSON object per line);
+ * the first object of a chunk drives the UI.
+ */
 export function useContainerMonitoring(
 	id: number,
 	entityType: MonitoringEntityType = 'application',
 	enabled = true,
 ) {
-	// All hooks declared unconditionally at the top — never reorder these
 	const [isLive, setIsLive] = useState(true);
 	const [isLoading, setIsLoading] = useState(false);
 	const [hasError, setHasError] = useState(false);
@@ -169,7 +159,7 @@ export function useContainerMonitoring(
 	}, []);
 
 	useEffect(() => {
-		if (!id || !enabled || DISABLE_METRICS) {
+		if (!id || !enabled) {
 			setIsLoading(false);
 			return;
 		}
@@ -181,115 +171,40 @@ export function useContainerMonitoring(
 		setHasError(false);
 		setRawStats(null);
 
-		const startStream = async () => {
+		const streamStats = async () => {
+			const request = {id: BigInt(id)};
 			try {
-				let accessToken =
-					useAuthStore.getState().tokens?.access_token || '';
-				if (!accessToken) {
-					const sessionRaw = localStorage.getItem(
-						'openoxide-auth-session',
-					);
-					if (sessionRaw) {
-						try {
-							const session = JSON.parse(sessionRaw);
-							accessToken =
-								session?.state?.tokens?.access_token ||
-								session?.tokens?.access_token ||
-								'';
-						} catch {}
-					}
-				}
-
-				const url = buildStatsUrl(entityType, id, isLive);
-				console.log(`[Monitoring] 🔌 Connecting → ${url}`);
-				const response = await fetch(url, {
-					headers: {
-						Authorization: accessToken ? `Bearer ${accessToken}` : '',
-					},
-					signal: controller.signal,
-				});
-
-				console.log(
-					`[Monitoring] 📡 Response status: ${response.status} ${response.statusText}`,
-				);
-
-				if (!response.ok) {
-					console.warn(
-						`[Monitoring] ❌ Bad response: ${response.status} for ${url}`,
-					);
-					if (isMounted) {
-						setIsLoading(false);
+				const call =
+					entityType === 'database'
+						? deploymentClient.streamDatabaseStats(request, {
+								signal: controller.signal,
+							})
+						: entityType === 'compose'
+							? deploymentClient.streamComposeStats(request, {
+									signal: controller.signal,
+								})
+							: deploymentClient.streamApplicationStats(request, {
+									signal: controller.signal,
+								});
+				for await (const event of call) {
+					if (!isMounted) return;
+					setIsLoading(false);
+					if (event.error) {
 						setHasError(true);
+						continue;
 					}
-					return;
-				}
-
-				const reader = response.body?.getReader();
-				const decoder = new TextDecoder();
-				if (!reader) {
-					console.warn(`[Monitoring] ❌ No readable body from ${url}`);
-					if (isMounted) {
-						setIsLoading(false);
-						setHasError(true);
-					}
-					return;
-				}
-
-				console.log(
-					`[Monitoring] ✅ Stream opened for ${entityType} id=${id}`,
-				);
-				if (isMounted) setIsLoading(false);
-
-				let buffer = '';
-				while (isMounted) {
-					const {done, value} = await reader.read();
-					if (done) break;
-
-					buffer += decoder.decode(value, {stream: true});
-					const lines = buffer.split('\n');
-					buffer = lines.pop() || '';
-
-					for (const line of lines) {
-						const trimmed = line.trim();
-						if (
-							!trimmed ||
-							trimmed.startsWith('event:') ||
-							trimmed.startsWith(':')
-						)
-							continue;
-
-						if (line.startsWith('data:')) {
-							const jsonStr = line.slice(5).trim();
-							if (jsonStr) {
-								try {
-									const data = JSON.parse(jsonStr);
-									console.log(
-										`[Monitoring] 📦 SSE event:`,
-										data.type,
-										data,
-									);
-									if (data.type === 'stats' && data.stats && isMounted) {
-										console.log(
-											`[Monitoring] 📊 Stats received:`,
-											data.stats,
-										);
-										setRawStats(data.stats);
-									}
-								} catch (e) {
-									console.warn(
-										`[Monitoring] ⚠️ JSON parse fail:`,
-										jsonStr,
-										e,
-									);
-								}
-							}
-						}
-					}
+					const firstLine = event.payload
+						.split('\n')
+						.map(line => line.trim())
+						.find(Boolean);
+					if (firstLine) setRawStats(firstLine);
+					// Live mode keeps consuming; one-shot mode stops after
+					// the first snapshot.
+					if (!isLive) break;
 				}
 			} catch (err: unknown) {
 				const isAbort = (err as {name?: string})?.name === 'AbortError';
 				if (!isAbort && isMounted) {
-					setIsLoading(false);
 					setHasError(true);
 				}
 			} finally {
@@ -297,7 +212,7 @@ export function useContainerMonitoring(
 			}
 		};
 
-		startStream();
+		void streamStats();
 
 		return () => {
 			isMounted = false;

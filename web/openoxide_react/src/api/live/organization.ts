@@ -1,4 +1,4 @@
-import {createServiceClient, useConnectQuery} from './query';
+import {createServiceClient, useConnectMutation, useConnectQuery} from './query';
 import {OrganizationService} from '#/gen/connect/openoxide/api/v1/organization_pb';
 import type {Organization} from '#/gen/connect/openoxide/api/v1/organization_pb';
 
@@ -52,5 +52,36 @@ export function useOrganizationGet(id: bigint) {
 			};
 		},
 		{enabled: id > 0n},
+	);
+}
+
+/** Create an organization (legacy REST: POST /organizations). */
+export function useOrganizationCreate() {
+	return useConnectMutation((input: {name: string; logo?: string; slug?: string}) =>
+		organizationClient.createOrganization({
+			name: input.name,
+			logo: input.logo,
+			slug: input.slug,
+		}),
+	);
+}
+
+/** Update an organization by id (legacy REST: PATCH /organizations/{id}). */
+export function useOrganizationUpdate() {
+	return useConnectMutation(
+		(input: {id: number | bigint; name?: string; logo?: string; slug?: string}) =>
+			organizationClient.updateOrganization({
+				id: BigInt(input.id),
+				name: input.name,
+				logo: input.logo,
+				slug: input.slug,
+			}),
+	);
+}
+
+/** Delete an organization by id (legacy REST: DELETE /organizations/{id}). */
+export function useOrganizationDelete() {
+	return useConnectMutation((id: number | bigint) =>
+		organizationClient.deleteOrganization({id: BigInt(id)}),
 	);
 }

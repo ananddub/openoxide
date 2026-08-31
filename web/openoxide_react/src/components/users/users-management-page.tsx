@@ -1,5 +1,4 @@
 import {useState, useMemo} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
 import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {toast} from 'sonner';
@@ -23,10 +22,8 @@ import {
 import {
 	AlertDialog,
 	AlertDialogAction,
-	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
-	AlertDialogFooter,
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from '#/components/ui/alert-dialog';
@@ -47,8 +44,6 @@ import {
 	Search,
 	MoreHorizontal,
 	Trash2,
-	UserCheck,
-	Clock,
 	XCircle,
 } from 'lucide-react';
 import {
@@ -60,7 +55,6 @@ import {
 import {useAppStore, type MemberItem} from '#/stores/app-store';
 
 export function UsersManagementPage() {
-	const queryClient = useQueryClient();
 	const members = useAppStore(state => state.members);
 	const invites = useAppStore(state => state.invites);
 	const userProfile = useAppStore(state => state.profile);

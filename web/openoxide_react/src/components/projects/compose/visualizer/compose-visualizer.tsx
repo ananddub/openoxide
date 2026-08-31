@@ -58,7 +58,7 @@ export function parseComposeFile(yaml: string): ComposeService[] {
 		let doc: any = null;
 		try {
 			doc = yamlLoad(cleanYaml);
-		} catch (e) {
+		} catch {
 			try {
 				doc = JSON.parse(cleanYaml);
 			} catch {}

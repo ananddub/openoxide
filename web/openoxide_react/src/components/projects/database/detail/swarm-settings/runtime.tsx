@@ -1,6 +1,6 @@
 import {Input} from '#/components/ui/input';
 import {Button} from '#/components/ui/button';
-import {Plus, Trash2} from 'lucide-react';
+import {Plus} from 'lucide-react';
 import type {SwarmKey} from './forms';
 import {SwarmSelectField} from './select-field';
 export function SwarmRuntimeForm({

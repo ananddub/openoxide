@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from 'react';
+import React, {useState} from 'react';
 import {$api} from '#/api/query';
 import {useQueryClient} from '@tanstack/react-query';
 import {formatApiError} from '#/api/utils';
@@ -15,16 +15,9 @@ import {
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
-import {Textarea} from '#/components/ui/textarea';
 import {useProjectsList} from '#/hooks/projects/use-projects-list';
 import {Badge} from '#/components/ui/badge';
-import {
-	Card,
-	CardHeader,
-	CardTitle,
-	CardDescription,
-	CardContent,
-} from '#/components/ui/card';
+import {Card} from '#/components/ui/card';
 import {
 	Dialog,
 	DialogContent,
@@ -102,7 +95,7 @@ export function VaultProvidersPage() {
 	const [formMount, setFormMount] = useState('secret');
 	const [formToken, setFormToken] = useState('');
 	const [formNamespace, setFormNamespace] = useState('');
-	const [formConfigJson, setFormConfigJson] = useState('');
+	const [, setFormConfigJson] = useState('');
 	const [formFields, setFormFields] = useState<Record<string, string>>({});
 	const [formAssignments, setFormAssignments] = useState('[]');
 	const [assignmentProject, setAssignmentProject] = useState('');

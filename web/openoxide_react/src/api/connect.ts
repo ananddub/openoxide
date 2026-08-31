@@ -1,6 +1,5 @@
 import {createClient, type Transport} from '@connectrpc/connect';
 import {createConnectTransport} from '@connectrpc/connect-web';
-import {useAuthStore} from '#/stores/auth-store';
 import {getActiveOrganizationId} from '#/stores/organization-context';
 import {getApiBaseUrl, refreshAccessToken} from './client';
 

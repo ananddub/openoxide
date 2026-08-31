@@ -1,12 +1,4 @@
 import {
-	Cpu,
-	HardDrive,
-	Database,
-	Network,
-	Disc,
-	Layers,
-} from 'lucide-react';
-import {
 	Card,
 	CardContent,
 	CardHeader,

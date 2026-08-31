@@ -3,13 +3,16 @@ import {
 	HeadContent,
 	createRootRoute,
 } from '@tanstack/react-router';
-import {client} from '#/api/client';
+import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
+import {createServiceClient} from '#/api/live/query';
 import {RootPending} from '#/components/pending';
 import {useAuthStore} from '#/stores/auth-store';
 import {TooltipProvider} from '#/components/ui/tooltip';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {Toaster} from '#/components/ui/sonner';
 import '#/styles/index.css';
+
+const authClient = createServiceClient(AuthService);
 
 export const Route = createRootRoute({
 	beforeLoad: async () => {
@@ -22,20 +25,20 @@ export const Route = createRootRoute({
 			return;
 		}
 		try {
-			const {data: res, response} = await client.GET('/auth/whoami');
-			if (res) {
+			const user = await authClient.whoAmI({});
+			if (user) {
 				useAuthStore.getState().setAuth({
-					id: res.user_id,
-					email: res.email || '',
-					firstName: res.first_name,
-					lastName: res.last_name,
+					id: Number(user.id),
+					email: user.email || '',
+					firstName: user.firstName,
+					lastName: user.lastName,
 				});
-			} else if (response.status === 401) {
-				useAuthStore.getState().logout();
 			}
 		} catch (error) {
+			// An expired/invalid session surfaces as a Connect error here;
+			// keep the stored session and let the interceptor attempt a
+			// refresh on the next authenticated call.
 			console.error('Failed to authenticate session:', error);
-			// useAuthStore.getState().logout();
 		}
 	},
 	component: RootComponent,

@@ -1,8 +1,7 @@
 import {createFileRoute} from '@tanstack/react-router';
-import {Settings, Building2, Users, Shield} from 'lucide-react';
+import {Building2} from 'lucide-react';
 import {useOrganizationStore} from '#/stores/organization-store';
 import {Badge} from '#/components/ui/badge';
-import {Button} from '#/components/ui/button';
 
 export const Route = createFileRoute('/_app/settings')({
 	component: SettingsIndexPage,

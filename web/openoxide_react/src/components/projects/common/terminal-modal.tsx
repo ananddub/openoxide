@@ -140,7 +140,7 @@ export function TerminalModal({app, open, onClose}: TerminalModalProps) {
 		const fitTerminal = () => {
 			try {
 				fitAddon.fit();
-			} catch (_) {}
+			} catch {}
 		};
 
 		fitTerminal();

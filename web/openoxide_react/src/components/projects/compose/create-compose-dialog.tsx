@@ -22,7 +22,6 @@ import {formatApiError} from '#/api/utils';
 import {Server} from 'lucide-react';
 
 interface CreateComposeDialogProps {
-	projectId?: number;
 	environmentId: number;
 	isOpen: boolean;
 	onClose?: () => void;
@@ -31,7 +30,6 @@ interface CreateComposeDialogProps {
 }
 
 export function CreateComposeDialog({
-	projectId,
 	environmentId,
 	isOpen,
 	onClose,

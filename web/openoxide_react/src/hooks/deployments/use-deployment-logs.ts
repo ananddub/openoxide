@@ -1,6 +1,10 @@
 import * as React from 'react';
 import {toast} from 'sonner';
+import {createServiceClient} from '#/api/live/query';
+import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
 import type {Deployment} from './use-deployments';
+
+const deploymentClient = createServiceClient(DeploymentService);
 
 export function extractLogLines(rawData: unknown): string[] {
 	if (!rawData) return [];
@@ -57,12 +61,16 @@ export function extractLogLines(rawData: unknown): string[] {
 	return [String(rawData)];
 }
 
+/**
+ * Streams a deployment's build log over the panel's ConnectRPC stream,
+ * appending lines as the deployment progresses. The stored `log_content`
+ * (if any) renders immediately while the stream catches up.
+ */
 export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 	const [logs, setLogs] = React.useState<string>('');
 	const [isLogsLoading, setIsLogsLoading] = React.useState(false);
 	const [copied, setCopied] = React.useState(false);
 
-	// Copy logs helper
 	const handleCopyLogs = () => {
 		navigator.clipboard.writeText(logs);
 		setCopied(true);
@@ -70,12 +78,11 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 		setTimeout(() => setCopied(false), 2000);
 	};
 
-	// Parse logs reader
 	React.useEffect(() => {
-		if (!selectedDeployment) return;
+		if (!selectedDeployment || selectedDeployment.id === undefined) return;
 
 		let isMounted = true;
-		let controller = new AbortController();
+		const controller = new AbortController();
 		setLogs('');
 		setIsLogsLoading(true);
 
@@ -83,84 +90,37 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 			log_content?: string;
 		};
 
-		// If deployment has stored log_content, initialize with it immediately
 		if (depWithLogs.log_content) {
 			setLogs(depWithLogs.log_content);
 		}
 
-		const readLogs = async () => {
+		const streamLogs = async () => {
 			try {
-				const sessionRaw = localStorage.getItem('openoxide-auth-session');
-				let accessToken = '';
-				if (sessionRaw) {
-					try {
-						const session = JSON.parse(sessionRaw);
-						accessToken = session?.tokens?.access_token || '';
-					} catch {}
-				}
-
-				const response = await fetch(
-					`/api/deployments/${selectedDeployment.id}/logs`,
-					{
-						headers: {
-							Authorization: accessToken ? `Bearer ${accessToken}` : '',
-						},
-						signal: controller.signal,
-					},
+				const call = deploymentClient.streamDeploymentLogs(
+					{id: BigInt(selectedDeployment.id as number)},
+					{signal: controller.signal},
 				);
-
-				if (!response.ok) {
-					if (isMounted && depWithLogs.log_content) {
-						setLogs(depWithLogs.log_content);
+				for await (const event of call) {
+					if (!isMounted) return;
+					if (event.error) {
+						setIsLogsLoading(false);
+						return;
 					}
-					setIsLogsLoading(false);
-					return;
-				}
-
-				const reader = response.body?.getReader();
-				if (!reader) {
-					if (isMounted && depWithLogs.log_content) {
-						setLogs(depWithLogs.log_content);
-					}
-					setIsLogsLoading(false);
-					return;
-				}
-
-				const decoder = new TextDecoder();
-				let buffer = '';
-				while (isMounted) {
-					const {done, value} = await reader.read();
-					if (done) {
-						if (buffer.trim()) {
-							const finalLines = extractLogLines(buffer);
-							if (finalLines.length > 0 && isMounted) {
-								setLogs(prev =>
-									prev
-										? `${prev}\n${finalLines.join('\n')}`
-										: finalLines.join('\n'),
-								);
-							}
-						}
-						break;
-					}
-
-					buffer += decoder.decode(value, {stream: true});
-					const rawLines = buffer.split('\n');
-					buffer = rawLines.pop() || '';
-
-					for (const rawLine of rawLines) {
-						const extracted = extractLogLines(rawLine);
-						if (extracted.length > 0 && isMounted) {
-							setLogs(prev =>
-								prev
-									? `${prev}\n${extracted.join('\n')}`
-									: extracted.join('\n'),
-							);
-						}
+					const lines = extractLogLines(event.payload);
+					if (lines.length > 0) {
+						setIsLogsLoading(false);
+						setLogs(prev =>
+							prev
+								? `${prev}\n${lines.join('\n')}`
+								: lines.join('\n'),
+						);
 					}
 				}
-			} catch (err: unknown) {
-				if ((err as {name?: string})?.name !== 'AbortError' && isMounted) {
+				if (isMounted) setIsLogsLoading(false);
+			} catch {
+				// Stream failed (network drop, abort); fall back to the
+				// stored snapshot.
+				if (isMounted) {
 					if (depWithLogs.log_content) {
 						setLogs(depWithLogs.log_content);
 					}
@@ -169,7 +129,7 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 			}
 		};
 
-		readLogs();
+		void streamLogs();
 
 		return () => {
 			isMounted = false;

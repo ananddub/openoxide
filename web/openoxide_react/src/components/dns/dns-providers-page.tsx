@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from 'react';
+import React, {useState} from 'react';
 import {$api} from '#/api/query';
 import {useQueryClient} from '@tanstack/react-query';
 import {formatApiError} from '#/api/utils';
@@ -6,23 +6,14 @@ import {
 	Globe,
 	Plus,
 	Trash2,
-	CheckCircle2,
 	AlertCircle,
-	ExternalLink,
-	ShieldCheck,
 	RefreshCw,
 	Pencil,
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Badge} from '#/components/ui/badge';
-import {
-	Card,
-	CardHeader,
-	CardTitle,
-	CardDescription,
-	CardContent,
-} from '#/components/ui/card';
+import {Card} from '#/components/ui/card';
 import {
 	Dialog,
 	DialogContent,

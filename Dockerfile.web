@@ -1,17 +1,17 @@
 # =============================================================================
-# Production Nginx Container for OpenOxide Web Dashboard
+# Production Caddy Container for OpenOxide Web Dashboard
 # =============================================================================
-FROM nginx:alpine
-
-# Remove default nginx configs & placeholders
-RUN rm -rf /etc/nginx/conf.d/* /usr/share/nginx/html/*
+# Serves the built React SPA and reverse-proxies the panel's ConnectRPC API
+# (with streaming support). TLS terminates at Traefik on the host; Caddy
+# only speaks plain HTTP inside the docker network.
+FROM caddy:2-alpine
 
 # Copy pre-built React SPA assets
-COPY web/openoxide_react/dist /usr/share/nginx/html
+COPY web/openoxide_react/dist /srv
 
-# Copy custom nginx configuration with SPA routing and WebSocket/API reverse proxy
-COPY web/openoxide_react/nginx.conf /etc/nginx/conf.d/default.conf
+# Copy Caddy configuration
+COPY web/openoxide_react/Caddyfile /etc/caddy/Caddyfile
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

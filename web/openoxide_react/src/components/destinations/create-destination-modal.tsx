@@ -9,7 +9,11 @@ import {
 	DialogTitle,
 } from '#/components/ui/dialog';
 import {DestinationFormFields} from '#/components/destinations/destination-form-fields';
-import {$api} from '#/api/query';
+import {
+	useDestinationCreate,
+	useDestinationTest,
+	useDestinationUpdate,
+} from '#/api/live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 
@@ -49,9 +53,9 @@ export function CreateDestinationModal({
 	>('idle');
 	const [submitting, setSubmitting] = useState(false);
 
-	const createMutation = $api.useMutation('post', '/destinations');
-	const updateMutation = $api.useMutation('patch', '/destinations/{id}');
-	const testMutation = $api.useMutation('post', '/destinations/test');
+	const createMutation = useDestinationCreate();
+	const updateMutation = useDestinationUpdate();
+	const testMutation = useDestinationTest();
 
 	const matchProvider = (raw?: string) => {
 		if (!raw) return 'aws';
@@ -130,16 +134,13 @@ export function CreateDestinationModal({
 			}
 			await Promise.race([
 				testMutation.mutateAsync({
-				body: {
 					provider: provider || 'aws',
 					bucket,
 					region: region || 'us-east-1',
 					endpoint: endpoint || '',
 					access_key: accessKey,
 					secret_access_key: secretKey,
-				},
-				parseAs: 'text',
-				} as any),
+				}),
 				new Promise<never>((_, reject) =>
 					setTimeout(() => reject(new Error('S3 connection test timed out')), 15_000),
 				),
@@ -167,16 +168,14 @@ export function CreateDestinationModal({
 		try {
 			if (editingDestination) {
 				await updateMutation.mutateAsync({
-					params: {path: {id: String(editingDestination.id)}},
-					body: {
-						name,
-						provider,
-						bucket,
-						region,
-						endpoint,
-						access_key: accessKey,
-						...(secretKey ? {secret_access_key: secretKey} : {}),
-					} as any,
+					id: String(editingDestination.id),
+					name,
+					provider,
+					bucket,
+					region,
+					endpoint,
+					access_key: accessKey,
+					...(secretKey ? {secret_access_key: secretKey} : {}),
 				});
 				toast.success('S3 Storage Destination updated');
 			} else {
@@ -185,16 +184,14 @@ export function CreateDestinationModal({
 					return;
 				}
 				await createMutation.mutateAsync({
-					body: {
-						name,
-						provider,
-						bucket,
-						region,
-						endpoint,
-						access_key: accessKey,
-						secret_access_key: secretKey,
-						organization_id: 1,
-					} as any,
+					name,
+					provider,
+					bucket,
+					region,
+					endpoint,
+					access_key: accessKey,
+					secret_access_key: secretKey,
+					organization_id: 1,
 				});
 				toast.success('S3 Storage Destination added successfully');
 			}

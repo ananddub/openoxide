@@ -1,6 +1,5 @@
 import {createFileRoute} from '@tanstack/react-router';
-import {Bell, Send, Mail, MessageSquare} from 'lucide-react';
-import {Badge} from '#/components/ui/badge';
+import {Send, Mail, MessageSquare} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 
 export const Route = createFileRoute('/_app/settings/notifications')({

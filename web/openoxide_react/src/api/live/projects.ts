@@ -1,6 +1,9 @@
-import {createServiceClient, useConnectQuery, useResourceListQuery} from './query';
+import {createServiceClient, useConnectMutation, useConnectQuery, useResourceListQuery} from './query';
 import {ProjectService} from '#/gen/connect/openoxide/api/v1/project_pb';
-import {AuthService, type User} from '#/gen/connect/openoxide/api/v1/auth_pb';
+import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
+// `User` is declared in common.proto, so it is exported from common_pb
+// (auth_pb only imports it for its own message fields).
+import type {User} from '#/gen/connect/openoxide/api/v1/common_pb';
 import type {Project} from '#/gen/connect/openoxide/api/v1/project_pb';
 
 export type ProjectPayload = {
@@ -60,9 +63,53 @@ export function useProjectGet(id: bigint) {
 	);
 }
 
+/** Create a project in an organization (legacy REST: POST /projects). */
+export function useProjectCreate() {
+	return useConnectMutation(
+		(input: {
+			name: string;
+			description?: string;
+			environment_variables?: string;
+			organization_id: number | bigint;
+		}) =>
+			projectClient.createProject({
+				name: input.name,
+				description: input.description,
+				environmentVariables: input.environment_variables ?? '',
+				organizationId: BigInt(input.organization_id),
+			}),
+	);
+}
+
+/** Update a project by id (legacy REST: PATCH /projects/{id}). */
+export function useProjectUpdate() {
+	return useConnectMutation(
+		(input: {
+			id: number | bigint;
+			name?: string;
+			description?: string;
+			environment_variables?: string;
+		}) =>
+			projectClient.updateProject({
+				id: BigInt(input.id),
+				name: input.name,
+				description: input.description,
+				environmentVariables: input.environment_variables,
+			}),
+	);
+}
+
+/** Delete a project by id (legacy REST: DELETE /projects/{id}). */
+export function useProjectDelete() {
+	return useConnectMutation((id: number | bigint) =>
+		projectClient.deleteProject({id: BigInt(id)}),
+	);
+}
+
 export type WhoAmIPayload = {
 	user_id: bigint;
-	email: string;
+	// The proto marks email optional, so it may be absent on the wire.
+	email?: string;
 	first_name?: string;
 	last_name?: string;
 	avatar?: string;
@@ -71,9 +118,10 @@ export type WhoAmIPayload = {
 /** Current user (legacy live: useAuthWhoAmI). */
 export function useAuthWhoAmI() {
 	return useConnectQuery<WhoAmIPayload>(['auth', 'whoami'], async () => {
+		// WhoAmI returns the common `User` message; its id field is `id`.
 		const user: User = await authClient.whoAmI({});
 		return {
-			user_id: user.userId,
+			user_id: user.id,
 			email: user.email,
 			first_name: user.firstName,
 			last_name: user.lastName,

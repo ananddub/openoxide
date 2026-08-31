@@ -1,17 +1,5 @@
 import {useState, useEffect, useRef} from 'react';
-import {
-	User,
-	KeyRound,
-	Plus,
-	Copy,
-	Check,
-	Trash2,
-	Loader2,
-	CheckCircle2,
-	Palette,
-	Upload,
-	Lock,
-} from 'lucide-react';
+import {User, Loader2, Palette, Upload} from 'lucide-react';
 import {$api} from '#/api/query';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
@@ -22,21 +10,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from '#/components/ui/card';
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from '#/components/ui/table';
 import {isSolidColorAvatar, getAvatarInitials} from '#/lib/avatar-utils';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
@@ -83,17 +56,6 @@ export function ProfilePage() {
 		setLastName(initialLastName);
 		setAvatarValue(initialAvatar);
 	}, [storeProfile, authUser]);
-	const {data: twoFactorStatus} = $api.useQuery(
-		'get',
-		'/auth/2fa/status' as any,
-	);
-
-	// Real API Tokens Query
-	const {
-		data: apiTokensData,
-		refetch: refetchApiTokens,
-		isLoading: isLoadingTokens,
-	} = $api.useQuery('get', '/auth/api-tokens' as any);
 
 	const updateUserMutation = $api.useMutation('patch', '/auth/user', {
 		onSuccess: (data: any) => {
@@ -118,15 +80,6 @@ export function ProfilePage() {
 		},
 	});
 
-	const createApiTokenMutation = $api.useMutation(
-		'post',
-		'/auth/api-tokens' as any,
-	);
-	const revokeApiTokenMutation = $api.useMutation(
-		'delete',
-		'/auth/api-tokens/{id}' as any,
-	);
-
 	const [firstName, setFirstName] = useState('');
 	const [lastName, setLastName] = useState('');
 	const [email, setEmail] = useState('');
@@ -136,18 +89,6 @@ export function ProfilePage() {
 
 	const colorInputRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
-
-	// API Keys Modal & State
-	const [isCreateKeyOpen, setIsCreateKeyOpen] = useState(false);
-	const [keyName, setKeyName] = useState('');
-	const [keyConfirmPassword, setKeyConfirmPassword] = useState('');
-	const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(
-		null,
-	);
-	const [copiedKeyId, setCopiedKeyId] = useState<string | number | null>(
-		null,
-	);
-	const [isCreatingKey, setIsCreatingKey] = useState(false);
 
 	const handleImageFileUpload = (
 		e: React.ChangeEvent<HTMLInputElement>,
@@ -182,62 +123,6 @@ export function ProfilePage() {
 		} catch {
 			// handled in onError callback
 		}
-	};
-
-	const handleCreateApiKey = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!keyName.trim()) {
-			toast.error('Please enter a key name');
-			return;
-		}
-		if (!keyConfirmPassword) {
-			toast.error('Account password is required to generate API Key');
-			return;
-		}
-
-		setIsCreatingKey(true);
-		try {
-			const res = (await createApiTokenMutation.mutateAsync({
-				body: {
-					name: keyName.trim(),
-					password: keyConfirmPassword,
-				},
-			} as any)) as any;
-
-			const tokenString = res?.token || '';
-			setNewlyCreatedKey(tokenString);
-			setKeyName('');
-			setKeyConfirmPassword('');
-			refetchApiTokens();
-			toast.success('API Key Created');
-		} catch (error) {
-			toast.error(formatApiError(error));
-		} finally {
-			setIsCreatingKey(false);
-		}
-	};
-
-	const handleDeleteApiKey = async (id: number | string) => {
-		try {
-			await revokeApiTokenMutation.mutateAsync({
-				params: {
-					path: {
-						id: Number(id),
-					},
-				},
-			} as any);
-			toast.success('API Key Revoked');
-			refetchApiTokens();
-		} catch (error) {
-			toast.error(formatApiError(error));
-		}
-	};
-
-	const handleCopyKey = (key: string, id: string | number) => {
-		navigator.clipboard.writeText(key);
-		setCopiedKeyId(id);
-		toast.success('Copied to clipboard');
-		setTimeout(() => setCopiedKeyId(null), 2000);
 	};
 
 	const userInitials = getAvatarInitials(

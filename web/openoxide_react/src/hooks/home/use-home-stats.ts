@@ -1,13 +1,11 @@
 import {useMemo} from 'react';
 import {useAuthStore} from '#/stores/auth-store';
-import {useOrganizationStore} from '#/stores/organization-store';
 import type {RecentDeploymentItem} from '#/components/home/recent-deployments-card';
 import {useAppStore} from '#/stores/app-store';
 import {useDeploymentRunning} from '#/api/live';
 
 export function useHomeStats() {
 	const user = useAuthStore(state => state.user);
-	const activeOrg = useOrganizationStore(state => state.activeOrg);
 	const firstName =
 		user?.firstName ||
 		(user?.email ? user.email.split('@')[0] : undefined);

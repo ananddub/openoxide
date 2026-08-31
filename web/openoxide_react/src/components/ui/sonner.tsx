@@ -19,7 +19,7 @@ export function showToastOnReload(
 			'pending_toast',
 			JSON.stringify({message, type}),
 		);
-	} catch (e) {}
+	} catch {}
 }
 
 const Toaster = ({...props}: ToasterProps) => {
@@ -40,7 +40,7 @@ const Toaster = ({...props}: ToasterProps) => {
 					}, 150);
 				}
 			}
-		} catch (e) {}
+		} catch {}
 	}, []);
 
 	// Right-click listener to immediately dismiss toast on right click

@@ -14,7 +14,7 @@ import {
 	DialogTrigger,
 } from '#/components/ui/dialog';
 import {Input} from '#/components/ui/input';
-import {$api} from '#/api/query';
+import {useTagCreate, useTagUpdate} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 
 const PRESET_COLORS = [
@@ -49,8 +49,8 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const colorInputRef = useRef<HTMLInputElement>(null);
 
-	const createMutation = $api.useMutation('post', '/tags' as any);
-	const patchMutation = $api.useMutation('patch', '/tags/{id}' as any);
+	const createMutation = useTagCreate();
+	const patchMutation = useTagUpdate();
 
 	useEffect(() => {
 		if (isOpen) {
@@ -78,19 +78,15 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 		try {
 			if (tagId) {
 				await patchMutation.mutateAsync({
-					params: {path: {id: tagId}},
-					body: {
-						name: trimmedName,
-						color: color || '#3b82f6',
-					},
+					id: tagId,
+					name: trimmedName,
+					color: color || '#3b82f6',
 				});
 				toast.success('Tag Updated');
 			} else {
 				await createMutation.mutateAsync({
-					body: {
-						name: trimmedName,
-						color: color || '#3b82f6',
-					},
+					name: trimmedName,
+					color: color || '#3b82f6',
 				});
 				toast.success('Tag Created');
 			}

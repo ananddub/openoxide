@@ -4,22 +4,19 @@ import {
 	Navigate,
 	createFileRoute,
 } from '@tanstack/react-router';
-import {client} from '#/api/client';
+import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
+import {createServiceClient} from '#/api/live/query';
 import {useAuthStore} from '#/stores/auth-store';
 import {AuthLeftPanel} from '#/components/auth/auth-left-panel';
+
+const authClient = createServiceClient(AuthService);
 
 export const Route = createFileRoute('/_auth')({
 	beforeLoad: async ({location}) => {
 		try {
 			// Verify setup status
-			const {data: res} = await (client.GET(
-				'/auth/setup' as any,
-				{},
-			) as Promise<{
-				data?: {isOwnerPresent: boolean};
-				error?: unknown;
-			}>);
-			const isOwnerPresent = res?.isOwnerPresent ?? true;
+			const status = await authClient.getSetupStatus({});
+			const isOwnerPresent = status.ownerPresent ?? true;
 			// Owner not present & user is not on signup
 			if (!isOwnerPresent && location.pathname !== '/singup') {
 				throw redirect({

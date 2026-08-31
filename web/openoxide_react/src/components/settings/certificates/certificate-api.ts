@@ -1,55 +1,88 @@
-import { client } from "#/api/client";
-import type { components } from "#/types/api.d.ts";
+import {CertificateService} from '#/gen/connect/openoxide/api/v1/certificate_pb';
+import {CertificateOperationsService} from '#/gen/connect/openoxide/api/v1/certificate_operations_pb';
+import {RemoteServerService} from '#/gen/connect/openoxide/api/v1/remote_server_pb';
+import {createServiceClient} from '#/api/live/query';
+import {readResource, readResourceList} from '#/api/live/resource';
 
-type CreateCertificate = components["schemas"]["CreateCertificateDto"];
-type PatchCertificate = components["schemas"]["PatchCertificateDto"];
-type RenewCertificate = components["schemas"]["RenewCertificateDto"];
+export type CertificatePayload = {
+	id: number;
+	organization_id: number;
+	name: string;
+	domain: string;
+	destination_id: string;
+	auto_renew: number;
+	created_at: number;
+	updated_at: number;
+};
 
-function ensure<T>(result: { data?: T; error?: unknown }) {
-  if (result.error) throw new Error(String(result.error));
-  return result.data as T;
-}
+export type CertificateRenewalPayload = {
+	id: number;
+	certificate_id: number;
+	status: string;
+	created_at: number;
+};
+
+export type RemoteServerPayload = {
+	id: number;
+	name: string;
+	ip_address: string;
+	[key: string]: unknown;
+};
+
+const certificateClient = createServiceClient(CertificateService);
+const certificateOpsClient = createServiceClient(CertificateOperationsService);
+const remoteServerClient = createServiceClient(RemoteServerService);
 
 export async function listCertificates() {
-  return ensure(await client.GET("/certificates"));
+	return readResourceList<CertificatePayload>(
+		await certificateClient.listCertificates({}),
+	);
 }
 
 export async function listRemoteServers() {
-  return ensure(await client.GET("/remote-servers"));
+	return readResourceList<RemoteServerPayload>(
+		await remoteServerClient.listRemoteServers({}),
+	);
 }
 
-export async function createCertificate(body: CreateCertificate) {
-  return ensure(await client.POST("/certificates", { body }));
+export async function createCertificate(
+	body: Partial<CertificatePayload>,
+) {
+	return readResource<CertificatePayload>(
+		await certificateClient.createCertificate({
+			payload: JSON.stringify(body),
+		}),
+	);
 }
 
-export async function updateCertificate(id: number, body: PatchCertificate) {
-  return ensure(
-    await client.PATCH("/certificates/{id}", {
-      params: { path: { id } },
-      body,
-    }),
-  );
+export async function updateCertificate(
+	id: number,
+	body: Partial<CertificatePayload>,
+) {
+	return readResource<CertificatePayload>(
+		await certificateClient.updateCertificate({
+			id: BigInt(id),
+			payload: JSON.stringify(body),
+		}),
+	);
 }
 
 export async function deleteCertificate(id: number) {
-  return ensure(
-    await client.DELETE("/certificates/{id}", { params: { path: { id } } }),
-  );
+	await certificateClient.deleteCertificate({id: BigInt(id)});
 }
 
 export async function listCertificateRenewals(id: number) {
-  return ensure(
-    await client.GET("/certificates/{id}/renewals", {
-      params: { path: { id } },
-    }),
-  );
+	return readResourceList<CertificateRenewalPayload>(
+		await certificateOpsClient.listRenewals({id: BigInt(id)}),
+	);
 }
 
-export async function renewCertificate(id: number, body: RenewCertificate) {
-  return ensure(
-    await client.POST("/certificates/{id}/renew", {
-      params: { path: { id } },
-      body,
-    }),
-  );
+export async function renewCertificate(
+	id: number,
+	body: Record<string, unknown>,
+) {
+	return certificateClient.renewCertificate({
+		id: BigInt(id),
+		payload: JSON.stringify(body),
+	});
 }

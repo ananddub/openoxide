@@ -137,8 +137,12 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, StreamTargetRequest>,
     ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        let _ = request.id;
-        Response::stream_ok(empty_event_stream())
+        let receiver = self
+            .service
+            .stream_application_stats(request.id, true)
+            .await
+            .map_err(map_error)?;
+        Response::stream_ok(docker_event_stream(receiver, "stats"))
     }
 
     #[permission(Deployment, CanRead)]
@@ -147,8 +151,12 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, StreamTargetRequest>,
     ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        let _ = request.id;
-        Response::stream_ok(empty_event_stream())
+        let receiver = self
+            .service
+            .stream_compose_stats(request.id, true)
+            .await
+            .map_err(map_error)?;
+        Response::stream_ok(docker_event_stream(receiver, "stats"))
     }
 
     #[permission(Deployment, CanRead)]
@@ -157,8 +165,12 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, StreamTargetRequest>,
     ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        let _ = request.id;
-        Response::stream_ok(empty_event_stream())
+        let receiver = self
+            .service
+            .stream_database_stats(request.id, true)
+            .await
+            .map_err(map_error)?;
+        Response::stream_ok(docker_event_stream(receiver, "stats"))
     }
 
     #[permission(Logs, CanRead)]
@@ -311,8 +323,12 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, GetDeploymentRequest>,
     ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        let _ = request.id;
-        Response::stream_ok(empty_event_stream())
+        let receiver = self
+            .service
+            .stream_deployment_log(request.id)
+            .await
+            .map_err(map_error)?;
+        Response::stream_ok(log_line_stream(receiver))
     }
 
     #[permission(Deployment, CanDeploy)]

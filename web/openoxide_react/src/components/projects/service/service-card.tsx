@@ -14,7 +14,24 @@ import {
 } from 'lucide-react';
 import {useNavigate, Link} from '@tanstack/react-router';
 import {cn} from '#/api/utils';
-import {$api} from '#/api/query';
+import {
+	useApplicationCancel,
+	useApplicationDelete,
+	useApplicationDeploy,
+	useApplicationStart,
+	useApplicationStop,
+	useComposeCancel,
+	useComposeDelete,
+	useComposeDeploy,
+	useComposeStart,
+	useComposeStop,
+	useDatabaseCancel,
+	useDatabaseDelete,
+	useDatabaseDeploy,
+	useDatabaseStart,
+	useDatabaseStop,
+	parseDatabaseKind,
+} from '#/api/live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {
@@ -122,53 +139,28 @@ export function ServiceCard({
 	const isStopped = !isStopping && !isStartingOrDeploying && !isRunning;
 
 	// App Mutations
-	const appStart = $api.useMutation('post', '/applications/{id}/start');
-	const appStop = $api.useMutation('post', '/applications/{id}/stop');
-	const appDeploy = $api.useMutation('post', '/applications/{id}/deploy');
-	const appCancel = $api.useMutation('post', '/applications/{id}/cancel');
-	const appDelete = $api.useMutation('delete', '/applications/{id}');
+	const appStart = useApplicationStart();
+	const appStop = useApplicationStop();
+	const appDeploy = useApplicationDeploy();
+	const appCancel = useApplicationCancel();
+	const appDelete = useApplicationDelete();
 
 	// Compose Mutations
-	const composeStart = $api.useMutation('post', '/compose/{id}/start');
-	const composeStop = $api.useMutation('post', '/compose/{id}/stop');
-	const composeDeploy = $api.useMutation('post', '/compose/{id}/deploy');
-	const composeCancel = $api.useMutation('post', '/compose/{id}/cancel');
-	const composeDelete = $api.useMutation('delete', '/compose/{id}');
+	const composeStart = useComposeStart();
+	const composeStop = useComposeStop();
+	const composeDeploy = useComposeDeploy();
+	const composeCancel = useComposeCancel();
+	const composeDelete = useComposeDelete();
 
 	// Database Mutations
-	const getDbKindPath = () => {
-		const k = (dbKind || '').toLowerCase();
-		if (k.includes('mysql')) return 'mysql';
-		if (k.includes('mariadb')) return 'mariadb';
-		if (k.includes('mongo')) return 'mongo';
-		if (k.includes('redis')) return 'redis';
-		if (k.includes('libsql')) return 'libsql';
-		return 'postgres';
-	};
+	const dbKindEnum = parseDatabaseKind(dbKind || 'postgres');
+	const dbStart = useDatabaseStart();
+	const dbStop = useDatabaseStop();
+	const dbDeploy = useDatabaseDeploy();
+	const dbCancel = useDatabaseCancel();
+	const dbDelete = useDatabaseDelete();
 
-	const dbKindPath = getDbKindPath();
-	const dbStart = $api.useMutation(
-		'post',
-		`/${dbKindPath}/{id}/start` as any,
-	);
-	const dbStop = $api.useMutation(
-		'post',
-		`/${dbKindPath}/{id}/stop` as any,
-	);
-	const dbDeploy = $api.useMutation(
-		'post',
-		`/${dbKindPath}/{id}/deploy` as any,
-	);
-	const dbCancel = $api.useMutation(
-		'post',
-		`/${dbKindPath}/{id}/cancel` as any,
-	);
-	const dbDelete = $api.useMutation(
-		'delete',
-		`/${dbKindPath}/{id}` as any,
-	);
-
-	const getStatusDotColor = (status: string) => {
+	const getStatusDotColor = () => {
 		if (isStopping) {
 			return 'bg-orange-500 animate-pulse';
 		}
@@ -245,11 +237,11 @@ export function ServiceCard({
 		if (isRunning || isStartingOrDeploying || isStopping) return;
 		try {
 			if (type === 'APP') {
-				await appStart.mutateAsync({params: {path: {id}}});
+				await appStart.mutateAsync(id);
 			} else if (type === 'COMPOSE') {
-				await composeStart.mutateAsync({params: {path: {id}}});
+				await composeStart.mutateAsync(id);
 			} else {
-				await dbStart.mutateAsync({params: {path: {id}}});
+				await dbStart.mutateAsync({kind: dbKindEnum, id});
 			}
 			toast.success(`Starting ${name}...`);
 		} catch (err) {
@@ -263,11 +255,11 @@ export function ServiceCard({
 		if (isStopped || isStopping) return;
 		try {
 			if (type === 'APP') {
-				await appStop.mutateAsync({params: {path: {id}}});
+				await appStop.mutateAsync(id);
 			} else if (type === 'COMPOSE') {
-				await composeStop.mutateAsync({params: {path: {id}}});
+				await composeStop.mutateAsync(id);
 			} else {
-				await dbStop.mutateAsync({params: {path: {id}}});
+				await dbStop.mutateAsync({kind: dbKindEnum, id});
 			}
 			toast.success(`Stopping ${name}...`);
 		} catch (err) {
@@ -281,11 +273,11 @@ export function ServiceCard({
 		if (isStopping) return;
 		try {
 			if (type === 'APP') {
-				await appCancel.mutateAsync({params: {path: {id}}});
+				await appCancel.mutateAsync(id);
 			} else if (type === 'COMPOSE') {
-				await composeCancel.mutateAsync({params: {path: {id}}});
+				await composeCancel.mutateAsync(id);
 			} else {
-				await dbCancel.mutateAsync({params: {path: {id}}});
+				await dbCancel.mutateAsync({kind: dbKindEnum, id});
 			}
 			toast.success(`Cancelling ${name}...`);
 		} catch (err) {
@@ -299,11 +291,11 @@ export function ServiceCard({
 		if (isStartingOrDeploying || isStopping) return;
 		try {
 			if (type === 'APP') {
-				await appDeploy.mutateAsync({params: {path: {id}}});
+				await appDeploy.mutateAsync(id);
 			} else if (type === 'COMPOSE') {
-				await composeDeploy.mutateAsync({params: {path: {id}}});
+				await composeDeploy.mutateAsync(id);
 			} else {
-				await dbDeploy.mutateAsync({params: {path: {id}}});
+				await dbDeploy.mutateAsync({kind: dbKindEnum, id});
 			}
 			toast.success(`Deploying ${name}...`);
 		} catch (err) {
@@ -320,11 +312,11 @@ export function ServiceCard({
 	const confirmDeleteService = async () => {
 		try {
 			if (type === 'APP') {
-				await appDelete.mutateAsync({params: {path: {id}}});
+				await appDelete.mutateAsync(id);
 			} else if (type === 'COMPOSE') {
-				await composeDelete.mutateAsync({params: {path: {id}}});
+				await composeDelete.mutateAsync(id);
 			} else {
-				await dbDelete.mutateAsync({params: {path: {id}}});
+				await dbDelete.mutateAsync({kind: dbKindEnum, id});
 			}
 			toast.success(`Deleted ${name}`);
 			onDeleted?.();
@@ -356,7 +348,7 @@ export function ServiceCard({
 							<span
 								className={cn(
 									'absolute -top-0.5 -right-0.5 size-2 rounded-full border-2 border-card',
-									getStatusDotColor(status),
+									getStatusDotColor(),
 								)}
 							/>
 						</div>
@@ -464,7 +456,7 @@ export function ServiceCard({
 							<span
 								className={cn(
 									'size-1.5 rounded-full',
-									getStatusDotColor(status),
+									getStatusDotColor(),
 								)}
 							/>
 							{status?.toLowerCase() || 'idle'}

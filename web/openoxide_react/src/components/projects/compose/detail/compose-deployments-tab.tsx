@@ -10,8 +10,13 @@ import {
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {toast} from 'sonner';
-import {useQueryClient} from '@tanstack/react-query';
-import {$api} from '#/api/query';
+import {
+	useComposeCancel,
+	useComposeDeploy,
+	useComposeRedeploy,
+	useDeploymentDelete,
+	useDeploymentDeleteByCompose,
+} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
 import {useAppStore} from '#/stores/app-store';
@@ -30,7 +35,6 @@ import {
 interface ComposeDeploymentsTabProps {
 	composeId: number;
 	deployments?: any[];
-	isLoading?: boolean;
 }
 
 const FINAL_STATES = [
@@ -68,7 +72,6 @@ const isBuildActive = (e: any) => {
 export function ComposeDeploymentsTab({
 	composeId,
 	deployments: passedDeployments,
-	isLoading: passedIsLoading,
 }: ComposeDeploymentsTabProps) {
 	const [activeLogId, setActiveLogId] = useState<number | null>(null);
 	const [liveLogs, setLiveLogs] = useState<string[]>([]);
@@ -88,31 +91,16 @@ export function ComposeDeploymentsTab({
 	// Initial state for activeLogId is null so modal never opens automatically on tab load
 
 	// Mutations
-	const deployMutation = $api.useMutation(
-		'post',
-		'/compose/{id}/deploy',
-	) as any;
-	const redeployMutation = $api.useMutation(
-		'post',
-		'/compose/{id}/redeploy',
-	) as any;
-	const cancelMutation = $api.useMutation(
-		'post',
-		'/compose/{id}/cancel',
-	) as any;
-	const deleteMutation = $api.useMutation(
-		'delete',
-		'/deployments/{id}',
-	) as any;
-	const clearComposeMutation = $api.useMutation(
-		'delete',
-		'/deployments/compose/{id}',
-	) as any;
+	const deployMutation = useComposeDeploy();
+	const redeployMutation = useComposeRedeploy();
+	const cancelMutation = useComposeCancel();
+	const deleteMutation = useDeploymentDelete();
+	const clearComposeMutation = useDeploymentDeleteByCompose();
 
 	const handleDeploy = async () => {
 		setIsTriggering(true);
 		try {
-			await deployMutation.mutateAsync({params: {path: {id: composeId}}});
+			await deployMutation.mutateAsync(composeId);
 			toast.success('Compose deployment triggered successfully');
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -124,9 +112,7 @@ export function ComposeDeploymentsTab({
 	const handleRedeploy = async () => {
 		setIsTriggering(true);
 		try {
-			await redeployMutation.mutateAsync({
-				params: {path: {id: composeId}},
-			});
+			await redeployMutation.mutateAsync(composeId);
 			toast.success('Compose redeploy triggered successfully');
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -140,9 +126,7 @@ export function ComposeDeploymentsTab({
 	const handleCancel = async () => {
 		setIsTriggering(true);
 		try {
-			await (cancelMutation as any).mutateAsync({
-				params: {path: {id: composeId}},
-			});
+			await cancelMutation.mutateAsync(composeId);
 			toast.success('Deployment cancellation requested');
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -241,23 +225,14 @@ export function ComposeDeploymentsTab({
 		};
 	}, [activeLogId, selectedEvent]);
 
-	const queryClient = useQueryClient();
-
 	const handleClearComposeDeployments = async () => {
 		try {
-			const res = await clearComposeMutation.mutateAsync({
-				params: {
-					path: {
-						id: composeId,
-					},
-				},
-			});
+			const res = await clearComposeMutation.mutateAsync(composeId);
 			const data = res as any;
 			useAppStore.getState().clearDeployments({composeId});
 			toast.success(
 				`Cleared ${data?.cleared_count || 0} compose deployment logs & history`,
 			);
-			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}
@@ -265,16 +240,9 @@ export function ComposeDeploymentsTab({
 
 	const handleDeleteSingleComposeDeployment = async (id: number) => {
 		try {
-			await deleteMutation.mutateAsync({
-				params: {
-					path: {
-						id,
-					},
-				},
-			});
+			await deleteMutation.mutateAsync(id);
 			useAppStore.getState().deleteDeployment(id);
 			toast.success(`Deployment #${id} deleted`);
-			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		}

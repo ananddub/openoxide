@@ -256,8 +256,8 @@ impl MonitoringService {
             return Err("cannot upload an empty file".into());
         }
         let capabilities = self.agent_info(server_id).await?;
-        if capabilities.protocol_version != "1" {
-            return Err("agent protocol version is unsupported".into());
+        if capabilities.protocol_version != "2" {
+            return Err("agent protocol version is unsupported; the agent must be upgraded to the latest build".into());
         }
         if !capabilities
             .capabilities
@@ -288,12 +288,24 @@ impl MonitoringService {
         let (sender, receiver) = tokio::sync::mpsc::channel(8);
         let source_path = source.to_path_buf();
         let destination = destination.to_owned();
-        let checksum_for_stream = checksum.clone();
         let producer = tokio::spawn(async move {
             let mut file = tokio::fs::File::open(&source_path)
                 .await
                 .map_err(|error| format!("open upload source: {error}"))?;
-            let mut cursor = 0u64;
+            // All metadata rides once in the header; data chunks stay raw.
+            sender
+                .send(proto::FileUploadMessage {
+                    message: Some(proto::file_upload_message::Message::Header(
+                        proto::FileUploadHeader {
+                            server_id,
+                            destination: destination.clone(),
+                            total_size,
+                            checksum_sha256: checksum.clone(),
+                        },
+                    )),
+                })
+                .await
+                .map_err(|_| "upload stream cancelled".to_owned())?;
             let mut buffer = vec![0u8; 64 * 1024];
             loop {
                 let count = file
@@ -303,19 +315,14 @@ impl MonitoringService {
                 if count == 0 {
                     break;
                 }
-                let count = count as u64;
                 sender
-                    .send(proto::FileUploadChunk {
-                        server_id,
-                        destination: destination.clone(),
-                        data: buffer[..count as usize].to_vec(),
-                        finish: cursor + count == total_size,
-                        checksum_sha256: checksum_for_stream.clone(),
-                        total_size,
+                    .send(proto::FileUploadMessage {
+                        message: Some(proto::file_upload_message::Message::Data(
+                            buffer[..count].to_vec(),
+                        )),
                     })
                     .await
                     .map_err(|_| "upload stream cancelled".to_owned())?;
-                cursor += count;
             }
             Ok::<(), String>(())
         });
@@ -378,31 +385,44 @@ impl MonitoringService {
             .get_server_metrics(request)
             .await
             .map_err(|error| format!("agent metric query failed: {error}"))?
-            .into_inner()
-            .metrics;
+            .into_inner();
         let _ = self.agent_auth.touch_seen(server_id).await;
+        let host = metrics.host;
         Ok(metrics
+            .metrics
             .into_iter()
             .map(|metric| ServerMetric {
-                timestamp: chrono::DateTime::parse_from_rfc3339(&metric.timestamp)
-                    .ok()
-                    .map(|value| value.timestamp()),
+                timestamp: (metric.timestamp > 0).then_some(metric.timestamp),
                 server_id,
                 cpu: metric.cpu,
-                cpu_model: metric.cpu_model,
-                cpu_cores: i64::from(metric.cpu_cores),
-                cpu_physical_cores: i64::from(metric.cpu_physical_cores),
-                cpu_speed: metric.cpu_speed,
-                os: metric.os,
-                distro: metric.distro,
-                kernel: metric.kernel,
-                arch: metric.arch,
-                mem_used: metric.mem_used,
+                cpu_model: host.as_ref().map_or_default(|host| host.cpu_model.clone()),
+                cpu_cores: host.as_ref().map_or(0, |host| i64::from(host.cpu_cores)),
+                cpu_physical_cores: host
+                    .as_ref()
+                    .map_or(0, |host| i64::from(host.cpu_physical_cores)),
+                cpu_speed: host.as_ref().map_or_default(|host| host.cpu_speed),
+                os: host.as_ref().map_or_default(|host| host.os.clone()),
+                distro: host.as_ref().map_or_default(|host| host.distro.clone()),
+                kernel: host.as_ref().map_or_default(|host| host.kernel.clone()),
+                arch: host.as_ref().map_or_default(|host| host.arch.clone()),
+                mem_used: metric.mem_total_gb
+                    * if metric.mem_total_gb > 0.0 {
+                        metric.mem_used_gb / metric.mem_total_gb
+                    } else {
+                        0.0
+                    }
+                    * 100.0,
                 mem_used_gb: metric.mem_used_gb,
-                mem_total: metric.mem_total,
+                mem_total: metric.mem_total_gb,
                 uptime: metric.uptime as i64,
-                disk_used: metric.disk_used,
-                total_disk: metric.total_disk,
+                disk_used: metric.disk_total_gb
+                    * if metric.disk_total_gb > 0.0 {
+                        metric.disk_used_gb / metric.disk_total_gb
+                    } else {
+                        0.0
+                    }
+                    * 100.0,
+                total_disk: metric.disk_total_gb,
                 network_in: metric.network_in,
                 network_out: metric.network_out,
             })
@@ -437,9 +457,7 @@ impl MonitoringService {
             .into_iter()
             .map(|metric| ContainerMetric {
                 id: (metric.id > 0).then_some(metric.id),
-                timestamp: chrono::DateTime::parse_from_rfc3339(&metric.timestamp)
-                    .map(|value| value.timestamp())
-                    .unwrap_or_default(),
+                timestamp: metric.timestamp,
                 container_id: metric.container_id,
                 container_name: metric.name,
                 metrics_json: serde_json::json!({
@@ -489,21 +507,8 @@ impl MonitoringService {
         server_id: i64,
     ) -> Result<tonic::Streaming<proto::ContainerStatesResponse>, String> {
         let mut client = self.client(server_id).await?;
-        let (tx, rx) = tokio::sync::mpsc::channel(4);
-        tx.send(proto::LifecycleControl {})
-            .await
-            .map_err(|_| "could not initialize lifecycle channel".to_string())?;
-        tokio::spawn(async move {
-            let mut ticker = tokio::time::interval(std::time::Duration::from_secs(10));
-            loop {
-                ticker.tick().await;
-                if tx.send(proto::LifecycleControl {}).await.is_err() {
-                    break;
-                }
-            }
-        });
         let request = self
-            .authenticated(server_id, tokio_stream::wrappers::ReceiverStream::new(rx))
+            .authenticated(server_id, proto::WatchRequest { server_id })
             .await?;
         client
             .watch_container_states(request)

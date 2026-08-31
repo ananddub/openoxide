@@ -1,4 +1,4 @@
-import {useQuery, type UseQueryResult} from '@tanstack/react-query';
+import {useMutation, useQuery, useQueryClient, type UseMutationResult, type UseQueryResult} from '@tanstack/react-query';
 import {createServiceClient} from '#/api/connect';
 import {readResourceList, readResource} from '#/api/live/resource';
 
@@ -51,6 +51,31 @@ export function useResourceQuery<Payload>(
 	return useConnectQuery(key, async () => {
 		const response = await fetcher();
 		return readResource<Payload>(response);
+	});
+}
+
+/**
+ * Mutation over a ConnectRPC client method. The table-watch stream
+ * invalidates affected queries on success, so no manual invalidation list
+ * is needed; pass `invalidate` only when a mutation must refresh something
+ * the stream cannot observe (e.g. agent-side state).
+ */
+export function useConnectMutation<Input, Output>(
+	mutate: (input: Input) => Promise<Output>,
+	options?: {
+		invalidate?: Array<unknown[]>;
+		onSuccess?: (data: Output, input: Input) => void | Promise<void>;
+	},
+): UseMutationResult<Output, Error, Input> {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: mutate,
+		onSuccess: async (data, input) => {
+			for (const key of options?.invalidate ?? []) {
+				await queryClient.invalidateQueries({queryKey: key});
+			}
+			await options?.onSuccess?.(data, input);
+		},
 	});
 }
 

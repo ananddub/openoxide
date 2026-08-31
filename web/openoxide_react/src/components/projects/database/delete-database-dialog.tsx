@@ -11,7 +11,7 @@ import {
 	DialogTitle,
 } from '#/components/ui/dialog';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {parseDatabaseKind, useDatabaseDelete} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 
 interface DeleteDatabaseDialogProps {
@@ -34,20 +34,8 @@ export function DeleteDatabaseDialog({
 		database?.database_kind ||
 		'postgres'
 	).toLowerCase();
-	let endpoint:
-		| '/postgres/{id}'
-		| '/mysql/{id}'
-		| '/mariadb/{id}'
-		| '/mongo/{id}'
-		| '/redis/{id}'
-		| '/libsql/{id}' = '/postgres/{id}';
-	if (kind.includes('mysql')) endpoint = '/mysql/{id}';
-	else if (kind.includes('mariadb')) endpoint = '/mariadb/{id}';
-	else if (kind.includes('mongo')) endpoint = '/mongo/{id}';
-	else if (kind.includes('redis')) endpoint = '/redis/{id}';
-	else if (kind.includes('libsql')) endpoint = '/libsql/{id}';
 
-	const deleteMutation = $api.useMutation('delete', endpoint as any);
+	const deleteMutation = useDatabaseDelete();
 
 	const dbName = database?.name || database?.app_name || 'database';
 
@@ -58,7 +46,8 @@ export function DeleteDatabaseDialog({
 		setIsSubmitting(true);
 		try {
 			await deleteMutation.mutateAsync({
-				params: {path: {id: database.id}},
+				kind: parseDatabaseKind(kind),
+				id: database.id,
 			});
 			toast.success('Database deleted successfully');
 			onClose();

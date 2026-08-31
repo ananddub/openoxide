@@ -21,7 +21,7 @@ impl FileTransferService {
 
     pub fn agent_info(&self) -> proto::AgentInfoResponse {
         proto::AgentInfoResponse {
-            protocol_version: "1".into(),
+            protocol_version: "2".into(),
             agent_version: env!("CARGO_PKG_VERSION").into(),
             capabilities: vec!["file_upload".into()],
             max_upload_bytes: self.config.max_upload_bytes,
@@ -31,7 +31,7 @@ impl FileTransferService {
 
     pub async fn upload(
         &self,
-        mut stream: tonic::Streaming<proto::FileUploadChunk>,
+        mut stream: tonic::Streaming<proto::FileUploadMessage>,
     ) -> Result<proto::FileUploadResult, tonic::Status> {
         let first = tokio::time::timeout(
             std::time::Duration::from_secs(self.config.upload_timeout_seconds),
@@ -42,22 +42,30 @@ impl FileTransferService {
         .ok_or_else(|| tonic::Status::invalid_argument("upload stream is empty"))?
         .map_err(|e| tonic::Status::invalid_argument(format!("read upload: {e}")))?;
 
-        if first.server_id != self.config.server_id {
+        // The first message carries all metadata; the rest are raw chunks.
+        let header = match first.message {
+            Some(proto::file_upload_message::Message::Header(header)) => header,
+            _ => {
+                return Err(tonic::Status::invalid_argument(
+                    "upload must start with a header message",
+                ))
+            }
+        };
+        if header.server_id != self.config.server_id {
             return Err(tonic::Status::not_found(
                 "upload server_id does not belong to this agent",
             ));
         }
-        let destination = validate_destination(&first.destination, &self.config.upload_roots)?;
-        if first.total_size == 0 || first.total_size > self.config.max_upload_bytes {
+        let destination = validate_destination(&header.destination, &self.config.upload_roots)?;
+        if header.total_size == 0 || header.total_size > self.config.max_upload_bytes {
             return Err(tonic::Status::invalid_argument("invalid upload size"));
         }
-        let expected = first.checksum_sha256.trim().to_ascii_lowercase();
+        let expected = header.checksum_sha256.trim().to_ascii_lowercase();
         if expected.len() != 64 || !expected.bytes().all(|b| b.is_ascii_hexdigit()) {
             return Err(tonic::Status::invalid_argument("invalid SHA-256 checksum"));
         }
 
-        let original_destination = first.destination.clone();
-        let total_size = first.total_size;
+        let total_size = header.total_size;
         let parent = destination
             .parent()
             .ok_or_else(|| tonic::Status::invalid_argument("destination has no parent"))?;
@@ -74,37 +82,37 @@ impl FileTransferService {
         let mut hasher = Sha256::new();
         let mut written = 0u64;
         let result = async {
-            let mut chunk = first;
-            loop {
-                if chunk.server_id != self.config.server_id
-                    || chunk.destination != original_destination
-                    || chunk.total_size != total_size
-                    || chunk.checksum_sha256.to_ascii_lowercase() != expected
-                {
-                    return Err(tonic::Status::invalid_argument("upload metadata changed"));
-                }
+            // End-of-stream (rather than a flag) marks completion: the byte
+            // count must match the header's declared total.
+            while let Some(chunk) = tokio::time::timeout(
+                std::time::Duration::from_secs(self.config.upload_timeout_seconds),
+                stream.next(),
+            )
+            .await
+            .map_err(|_| tonic::Status::deadline_exceeded("upload timed out"))?
+            {
+                let chunk = chunk.map_err(|e| {
+                    tonic::Status::invalid_argument(format!("read upload: {e}"))
+                })?;
+                let data = match chunk.message {
+                    Some(proto::file_upload_message::Message::Data(data)) => data,
+                    _ => {
+                        return Err(tonic::Status::invalid_argument(
+                            "upload metadata must not change mid-stream",
+                        ))
+                    }
+                };
                 let next = written
-                    .checked_add(chunk.data.len() as u64)
+                    .checked_add(data.len() as u64)
                     .ok_or_else(|| tonic::Status::invalid_argument("upload is too large"))?;
                 if next > total_size {
                     return Err(tonic::Status::invalid_argument(
                         "upload exceeds declared size",
                     ));
                 }
-                file.write_all(&chunk.data).await.map_err(internal)?;
-                hasher.update(&chunk.data);
+                file.write_all(&data).await.map_err(internal)?;
+                hasher.update(&data);
                 written = next;
-                if chunk.finish {
-                    break;
-                }
-                chunk = tokio::time::timeout(
-                    std::time::Duration::from_secs(self.config.upload_timeout_seconds),
-                    stream.next(),
-                )
-                .await
-                .map_err(|_| tonic::Status::deadline_exceeded("upload timed out"))?
-                .ok_or_else(|| tonic::Status::invalid_argument("upload ended before finish"))?
-                .map_err(|e| tonic::Status::invalid_argument(format!("read upload: {e}")))?;
             }
             if written != total_size || format!("{:x}", hasher.finalize()) != expected {
                 return Err(tonic::Status::invalid_argument(

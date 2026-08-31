@@ -1,4 +1,4 @@
-import {createServiceClient, useResourceListQuery} from './query';
+import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
 import {VaultService} from '#/gen/connect/openoxide/api/v1/vault_pb';
 
 export type VaultProviderAssignment = {
@@ -27,5 +27,64 @@ export function useVaultList() {
 	return useResourceListQuery<VaultProviderPayload>(
 		['vault_providers', 'list'],
 		() => vaultClient.listProviders({}),
+	);
+}
+
+/**
+ * Create a vault provider. The vault controller scopes strictly by the
+ * `organization_id` on the request (no header fallback), so the input
+ * carries it explicitly; provider fields ride in the payload.
+ */
+export function useVaultProviderCreate() {
+	return useConnectMutation((input: {organization_id: number | bigint; [field: string]: unknown}) => {
+		const {organization_id, ...body} = input;
+		return vaultClient.createProvider({
+			organizationId: BigInt(organization_id),
+			payload: JSON.stringify(body),
+		});
+	});
+}
+
+/** Update a vault provider by id (fields to change in the payload). */
+export function useVaultProviderUpdate() {
+	return useConnectMutation(
+		(input: {id: number | bigint; organization_id?: number | bigint; [field: string]: unknown}) => {
+			const {id, organization_id, ...body} = input;
+			return vaultClient.updateProvider({
+				id: BigInt(id),
+				organizationId: organization_id !== undefined ? BigInt(organization_id) : undefined,
+				payload: JSON.stringify(body),
+			});
+		},
+	);
+}
+
+/** Delete a vault provider by id. */
+export function useVaultProviderDelete() {
+	return useConnectMutation((input: {id: number | bigint; organization_id?: number | bigint}) =>
+		vaultClient.deleteProvider({
+			id: BigInt(input.id),
+			organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
+		}),
+	);
+}
+
+/** Test the connection of a stored vault provider by id. */
+export function useVaultProviderTest() {
+	return useConnectMutation((input: {id: number | bigint; organization_id?: number | bigint}) =>
+		vaultClient.testProvider({
+			id: BigInt(input.id),
+			organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
+		}),
+	);
+}
+
+/**
+ * Test unsaved vault credentials (provider_type/api_url/auth_token in the
+ * payload; nothing is persisted).
+ */
+export function useVaultTestConnection() {
+	return useConnectMutation((input: Record<string, unknown>) =>
+		vaultClient.testConnection({payload: JSON.stringify(input)}),
 	);
 }

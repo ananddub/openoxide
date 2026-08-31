@@ -1,4 +1,4 @@
-import {createServiceClient, useResourceListQuery, useResourceQuery} from './query';
+import {createServiceClient, useConnectMutation, useResourceListQuery, useResourceQuery} from './query';
 import {RegistryService} from '#/gen/connect/openoxide/api/v1/registry_pb';
 
 export type RegistryPayload = {
@@ -28,5 +28,47 @@ export function useRegistryGet(id: bigint) {
 	return useResourceQuery<RegistryPayload>(
 		['registries', 'get', id.toString()],
 		() => registryClient.getRegistry({id}),
+	);
+}
+
+/** Create a container registry (credentials in the payload). */
+export function useRegistryCreate() {
+	return useConnectMutation((input: Record<string, unknown>) =>
+		registryClient.createRegistry({payload: JSON.stringify(input)}),
+	);
+}
+
+/** Update a registry by id (fields to change in the payload). */
+export function useRegistryUpdate() {
+	return useConnectMutation((input: {id: number | bigint; [field: string]: unknown}) => {
+		const {id, ...body} = input;
+		return registryClient.updateRegistry({id: BigInt(id), payload: JSON.stringify(body)});
+	});
+}
+
+/** Delete a registry by id. */
+export function useRegistryDelete() {
+	return useConnectMutation((id: number | bigint) =>
+		registryClient.deleteRegistry({id: BigInt(id)}),
+	);
+}
+
+/**
+ * Test raw registry credentials (registry_url/username/password in the
+ * payload; nothing is persisted — legacy REST: POST /registries/test-raw).
+ */
+export function useRegistryTest() {
+	return useConnectMutation((input: {registry_url: string; username: string; password: string}) =>
+		registryClient.testRegistry({payload: JSON.stringify(input)}),
+	);
+}
+
+/** Rotate a stored registry's credentials (username/password in the payload). */
+export function useRegistryRotateCredentials() {
+	return useConnectMutation((input: {id: number | bigint; username: string; password: string}) =>
+		registryClient.rotateCredentials({
+			id: BigInt(input.id),
+			payload: JSON.stringify({username: input.username, password: input.password}),
+		}),
 	);
 }
