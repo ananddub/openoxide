@@ -6,5 +6,3 @@ pub mod compose;
 pub mod database;
 pub mod deployment_log;
 pub mod queue;
-pub mod resource;
-pub mod types;

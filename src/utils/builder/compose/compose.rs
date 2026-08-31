@@ -46,11 +46,6 @@ impl ComposeBuilder {
         self
     }
 
-    pub fn with_cgroup(mut self, cg: crate::utils::cgroup::Cgroup) -> Self {
-        self.ctx = self.ctx.with_cgroup(cg);
-        self
-    }
-
     pub async fn deploy(
         &self,
         spec: &ComposeSpec,
@@ -191,9 +186,7 @@ impl ComposeBuilder {
             deploy_cmd;
         };
 
-        let output = self
-            .ctx
-            .apply_cgroup(pipeline)?
+        let output = pipeline
             .execute_cancelled(&self.ctx.executor, cancel)
             .await?;
         if !output.stdout.is_empty() {
@@ -263,9 +256,7 @@ impl ComposeBuilder {
             up_cmd;
         };
 
-        let output = self
-            .ctx
-            .apply_cgroup(pipeline)?
+        let output = pipeline
             .execute_cancelled(&self.ctx.executor, cancel)
             .await
             .map_err(|e| {

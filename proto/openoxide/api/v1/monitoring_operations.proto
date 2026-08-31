@@ -9,6 +9,8 @@ service MonitoringOperationsService {
   rpc GetContainerStates(ResourceRequest) returns (ResourceListResponse);
   rpc CreateAgentToken(ResourceRequest) returns (ResourceResponse);
   rpc GetAgentStatus(ResourceRequest) returns (OperationResult);
+  rpc StartAgent(ResourceRequest) returns (OperationResult);
+  rpc StopAgent(ResourceRequest) returns (OperationResult);
   rpc RestartAgent(ResourceRequest) returns (OperationResult);
   rpc ReinstallAgent(ResourceRequest) returns (OperationResult);
   rpc ExportServerMetrics(ResourceRequest) returns (ResourceResponse);

@@ -7,8 +7,12 @@ FROM rust:slim-bookworm AS backend-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     clang build-essential musl-tools libclang-dev pkg-config libsqlite3-dev sqlite3 ca-certificates protobuf-compiler && \
-    rm -rf /var/lib/apt/lists/* && \
-    rustup target add x86_64-unknown-linux-musl
+    rm -rf /var/lib/apt/lists/*
+
+# Pinned nightly (1.100.0-nightly) matching rust-toolchain.toml
+RUN rustup toolchain install nightly-2026-08-30 --profile minimal \
+        --target x86_64-unknown-linux-musl && \
+    rustup default nightly-2026-08-30
 
 WORKDIR /usr/src/openoxide
 

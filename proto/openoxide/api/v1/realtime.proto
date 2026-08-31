@@ -1,0 +1,92 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+
+// Table-level change notifications. The server never streams row data over
+// this channel — only which tables changed within the caller's organization.
+// Clients react by refetching through their regular (permission-checked)
+// queries, so realtime routing inherits query-level access control.
+service RealtimeService {
+  // Opens a per-organization watch stream. The first event always carries
+  // every table (a resync snapshot) so subscribers can cover the gap between
+  // their initial fetch and the stream opening; subsequent events carry only
+  // the tables that changed. Events are coalesced, so a burst of commits on
+  // the same table collapses into one notification.
+  rpc WatchTables(Empty) returns (stream WatchTablesEvent);
+}
+
+message WatchTablesEvent {
+  // Tables whose rows changed since the previous event. An event listing all
+  // tables is a resync: clients should treat every watched query as stale.
+  repeated WatchedTable tables = 1;
+}
+
+// Every user-facing SQLite table that can invalidate frontend queries.
+// Internal churn tables (auth tokens, schedule execution locks) are
+// deliberately absent — they rotate too fast to be useful as signals.
+enum WatchedTable {
+  WATCHED_TABLE_UNSPECIFIED = 0;
+  WATCHED_TABLE_AI_GENERATIONS = 1;
+  WATCHED_TABLE_AI_SETTINGS = 2;
+  WATCHED_TABLE_ALERT_EVENTS = 3;
+  WATCHED_TABLE_ALERT_RULES = 4;
+  WATCHED_TABLE_APPLICATION_MIDDLEWARES = 5;
+  WATCHED_TABLE_AUDIT_LOGS = 6;
+  WATCHED_TABLE_BACKGROUND_POLICIES = 7;
+  WATCHED_TABLE_BACKUP_EXECUTIONS = 8;
+  WATCHED_TABLE_BACKUPS = 9;
+  WATCHED_TABLE_CERTIFICATE_RENEWALS = 10;
+  WATCHED_TABLE_CERTIFICATES = 11;
+  WATCHED_TABLE_DATABASE_NETWORKS = 12;
+  WATCHED_TABLE_DEPLOYMENTS = 13;
+  WATCHED_TABLE_DESTINATIONS = 14;
+  WATCHED_TABLE_DNS_PROVIDERS = 15;
+  WATCHED_TABLE_DOMAINS = 16;
+  WATCHED_TABLE_ENVIRONMENTS = 17;
+  WATCHED_TABLE_GIT_PROVIDERS = 18;
+  WATCHED_TABLE_GROUP_POLICY = 19;
+  WATCHED_TABLE_GROUPS = 20;
+  WATCHED_TABLE_HEALTH_REPORTS = 21;
+  WATCHED_TABLE_MONITORING_AGENTS = 22;
+  WATCHED_TABLE_MONITORING_MAINTENANCE_WINDOWS = 23;
+  WATCHED_TABLE_MONITORING_POLICY = 24;
+  WATCHED_TABLE_MOUNTS = 25;
+  WATCHED_TABLE_NOTIFICATION_DELIVERY_ATTEMPTS = 26;
+  WATCHED_TABLE_NOTIFICATION_RESOURCE_BINDINGS = 27;
+  WATCHED_TABLE_NOTIFICATIONS = 28;
+  WATCHED_TABLE_ORGANIZATION = 29;
+  WATCHED_TABLE_ORGANIZATION_INVITES = 30;
+  WATCHED_TABLE_ORGANIZATION_MEMBERS = 31;
+  WATCHED_TABLE_PATCHES = 32;
+  WATCHED_TABLE_POLICY = 33;
+  WATCHED_TABLE_PORTS = 34;
+  WATCHED_TABLE_PREVIEW_DEPLOYMENTS = 35;
+  WATCHED_TABLE_PROJECTS = 36;
+  WATCHED_TABLE_PROJECT_TAGS = 37;
+  WATCHED_TABLE_REDIRECTS = 38;
+  WATCHED_TABLE_REGISTRIES = 39;
+  WATCHED_TABLE_RESOURCE_ACCESS = 40;
+  WATCHED_TABLE_ROLLBACKS = 41;
+  WATCHED_TABLE_SCHEDULE_EXECUTIONS = 42;
+  WATCHED_TABLE_SCHEDULE_RUNTIME_POLICIES = 43;
+  WATCHED_TABLE_SCHEDULES = 44;
+  WATCHED_TABLE_SECURITY = 45;
+  WATCHED_TABLE_SERVER_CLEANUP_EXECUTIONS = 46;
+  WATCHED_TABLE_SERVER_MANAGEMENT = 47;
+  WATCHED_TABLE_SERVER_MIGRATIONS = 48;
+  WATCHED_TABLE_SERVER_PRIVATE_NETWORKS = 49;
+  WATCHED_TABLE_SERVERS = 50;
+  WATCHED_TABLE_SERVICE_APPLICATION = 51;
+  WATCHED_TABLE_SERVICE_COMPOSE = 52;
+  WATCHED_TABLE_SERVICE_DATABASE = 53;
+  WATCHED_TABLE_SERVICE_GIT = 54;
+  WATCHED_TABLE_SERVICES = 55;
+  WATCHED_TABLE_SETTINGS = 56;
+  WATCHED_TABLE_SSH_KEYS = 57;
+  WATCHED_TABLE_TAGS = 58;
+  WATCHED_TABLE_USER_POLICY = 59;
+  WATCHED_TABLE_USERS = 60;
+  WATCHED_TABLE_VAULT_PROVIDERS = 61;
+  WATCHED_TABLE_VOLUME_BACKUPS = 62;
+}

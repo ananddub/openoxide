@@ -5,6 +5,10 @@ FROM rust:alpine AS builder
 
 RUN apk add --no-cache musl-dev gcc build-base ca-certificates
 
+# Pinned nightly (1.100.0-nightly) matching rust-toolchain.toml
+RUN rustup toolchain install nightly-2026-08-30 --profile minimal && \
+    rustup default nightly-2026-08-30
+
 WORKDIR /usr/src/openoxide
 
 COPY Cargo.toml Cargo.lock ./

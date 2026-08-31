@@ -411,7 +411,6 @@ pub(crate) fn escape_arg(c: impl AsRef<str>) -> String {
 #[macro_use]
 pub mod macros;
 pub mod archive;
-pub mod cgroup;
 pub mod crypto;
 pub mod diagnostics;
 pub mod dir;

@@ -38,7 +38,11 @@
         rustToolchain =
           with inputs.fenix.packages.${prev.stdenv.hostPlatform.system};
           combine (
-            with stable;
+            with (toolchainOf {
+              channel = "nightly";
+              date = "2026-08-30";
+              sha256 = "sha256-2VCztJTN5rhEiWTheVqGUwv/fuXnKaSO1jQcbsPuWtE=";
+            });
             [
               clippy
               rustc

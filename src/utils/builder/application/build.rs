@@ -55,8 +55,7 @@ impl ApplicationBuilder {
                     builder = builder.env(k, v);
                 }
                 let pipeline = pipeline! { builder; };
-                self.ctx
-                    .apply_cgroup(pipeline)?
+                pipeline
                     .execute_cancelled(&self.ctx.executor, cancel)
                     .await?;
             }
@@ -77,8 +76,7 @@ impl ApplicationBuilder {
                     builder = builder.env(k, v);
                 }
                 let pipeline = pipeline! { builder; };
-                self.ctx
-                    .apply_cgroup(pipeline)?
+                pipeline
                     .execute_cancelled(&self.ctx.executor, cancel)
                     .await?;
             }
@@ -99,8 +97,7 @@ impl ApplicationBuilder {
                     builder = builder.env(k, v);
                 }
                 let pipeline = pipeline! { builder; };
-                self.ctx
-                    .apply_cgroup(pipeline)?
+                pipeline
                     .execute_cancelled(&self.ctx.executor, cancel)
                     .await?;
             }
@@ -157,8 +154,7 @@ impl ApplicationBuilder {
                     builder;
                     docker_build;
                 };
-                self.ctx
-                    .apply_cgroup(pipeline)?
+                pipeline
                     .execute_cancelled(&self.ctx.executor, cancel)
                     .await?;
             }
@@ -235,9 +231,7 @@ impl ApplicationBuilder {
         let build_cmd = builder.cancel_with(cancel.clone());
 
         let pipeline = pipeline! { build_cmd; };
-        let result = self
-            .ctx
-            .apply_cgroup(pipeline)?
+        let result = pipeline
             .execute_cancelled(&self.ctx.executor, cancel)
             .await;
 
@@ -290,8 +284,7 @@ impl ApplicationBuilder {
             .cancel_with(cancel.clone());
 
         let pipeline = pipeline! { build_cmd; };
-        self.ctx
-            .apply_cgroup(pipeline)?
+        pipeline
             .execute_cancelled(&self.ctx.executor, cancel)
             .await?;
         Ok(())

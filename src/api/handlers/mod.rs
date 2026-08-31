@@ -24,6 +24,7 @@ pub mod permission;
 pub mod preview;
 pub mod project;
 pub mod registry;
+pub mod realtime;
 pub mod schedule;
 pub mod server;
 pub mod settings;

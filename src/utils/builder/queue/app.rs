@@ -3,23 +3,16 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    core::config::Config,
-    services::{
-        compute::application::ApplicationOperation,
-        compute::compose::remote::{agent_executor, deployment_pid_file},
-    },
+    services::compute::application::ApplicationOperation,
     utils::{
         builder::errors::BuilderError,
         builder::{
             adapter::ApplicationSpecAdapter, application::ApplicationBuilder, custom_type::IdType,
             hash_state::ApplicationState, queue::queue::BuilderQueue,
         },
-        cgroup::{CgroupBuilder, CpuLimit, MemoryLimit},
         exec::CommandExecutor,
     },
 };
-
-use super::resource::{get_cpu_cores, get_total_memory_kb, parse_cpu_limit, parse_memory_limit};
 
 impl BuilderQueue {
     pub(crate) async fn execute_operation_app(
@@ -58,85 +51,9 @@ impl BuilderQueue {
             .cancellation_token(app_key.clone())
             .unwrap_or_else(CancellationToken::new);
 
-        let config = resolve::<Config>().await.map_err(|e| {
-            BuilderError::Execution(format!("could not resolve application config: {e}"))
-        })?;
-
-        let effective_server_id = crate::services::compute::compose::remote::agent_server_id(server_id)
-            .await
-            .map_err(BuilderError::Execution)?;
-        let executor = {
-            let pid_file = deployment_pid_file(deployment_id);
-            q.deployments_set_pid(&pid_file, deployment_id)
-                .await
-                .map_err(|e| {
-                    BuilderError::Execution(format!(
-                        "could not persist remote deployment pid file: {e}"
-                    ))
-                })?;
-            agent_executor(effective_server_id)
-                .await
-                .map_err(BuilderError::Execution)?
-        };
-
-        // Determine the build cgroup limits (SQLite -> dynamic resource fallbacks -> config values)
-        let mut mem_limit_str = None;
-        let mut cpu_limit_str = None;
-
-        if let Some(sid) = server_id {
-            if let Ok(server) = q.get_server_by_i_d(sid).await {
-                if let Some(val) = server.build_memory_limit {
-                    if !val.trim().is_empty() {
-                        mem_limit_str = Some(val);
-                    }
-                }
-                if let Some(val) = server.build_cpu_limit {
-                    if !val.trim().is_empty() {
-                        cpu_limit_str = Some(val);
-                    }
-                }
-            }
-        }
-
-        let mut mem_limit = mem_limit_str.as_deref().and_then(parse_memory_limit);
-        let mut cpu_limit = cpu_limit_str.as_deref().and_then(parse_cpu_limit);
-
-        if mem_limit.is_none() {
-            if let Some(total_kb) = get_total_memory_kb(&executor).await {
-                mem_limit = Some(MemoryLimit::KB(total_kb / 2));
-            }
-        }
-        if cpu_limit.is_none() {
-            if let Some(total_cores) = get_cpu_cores(&executor).await {
-                let half_cores = (total_cores / 2.0).max(1.0);
-                cpu_limit = Some(CpuLimit::Cores(half_cores));
-            }
-        }
-
-        if mem_limit.is_none() {
-            mem_limit = parse_memory_limit(&config.build_memory_limit);
-        }
-        if cpu_limit.is_none() {
-            cpu_limit = parse_cpu_limit(&config.build_cpu_limit);
-        }
-
-        // Apply/ensure the shared build cgroup is present with resolved limits
-        let mut cgroup = None;
-        if mem_limit.is_some() || cpu_limit.is_some() {
-            let mut builder = CgroupBuilder::new("openoxide-build", executor.clone());
-            if let Some(mem) = mem_limit {
-                builder = builder.memory(mem);
-            }
-            if let Some(cpu) = cpu_limit {
-                builder = builder.cpu(cpu);
-            }
-            let cg = builder.build();
-            if let Err(e) = cg.apply().await {
-                tracing::warn!(error = %e, "Failed to apply/ensure build cgroup, proceeding without limits");
-            } else {
-                cgroup = Some(cg);
-            }
-        }
+        let executor = self
+            .executor_for_deployment(server_id, deployment_id)
+            .await?;
 
         let (events_tx, events_rx) = mpsc::channel(6);
         tokio::spawn(super::deployment_log::record_builder_events(
@@ -148,16 +65,11 @@ impl BuilderQueue {
         let spec_snapshot = spec.clone();
 
         let events_tx_clone = events_tx.clone();
-        let cgroup_clone = cgroup.clone();
         let executor_clone = executor.clone();
         let build_future = async move {
-            let mut builder = ApplicationBuilder::new(executor_clone)
+            let builder = ApplicationBuilder::new(executor_clone)
                 .with_state(state, app_key)
                 .with_events(events_tx);
-
-            if let Some(cg) = cgroup_clone {
-                builder = builder.with_cgroup(cg);
-            }
 
             builder
                 .deploy(&spec, &cancel)
@@ -307,14 +219,12 @@ impl BuilderQueue {
 }
 
 fn format_versioned_image(image: &str, version: i64) -> String {
-    let base = if let Some(colon_pos) = image.rfind(':') {
-        if image[colon_pos..].contains('/') {
-            image
-        } else {
-            &image[..colon_pos]
-        }
-    } else {
-        image
-    };
-    format!("{}:v{}", base, version)
+    // Strip the tag only when the last `:` is a tag separator, not a registry
+    // port (`registry:5000/img`).
+    let base = image
+        .rsplit_once(':')
+        .filter(|(_, tag)| !tag.contains('/'))
+        .map(|(base, _)| base)
+        .unwrap_or(image);
+    format!("{base}:v{version}")
 }

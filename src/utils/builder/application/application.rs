@@ -40,11 +40,6 @@ impl ApplicationBuilder {
         self
     }
 
-    pub fn with_cgroup(mut self, cg: crate::utils::cgroup::Cgroup) -> Self {
-        self.ctx = self.ctx.with_cgroup(cg);
-        self
-    }
-
     pub async fn deploy(
         &self,
         spec: &ApplicationSpec,

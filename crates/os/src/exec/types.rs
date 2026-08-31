@@ -356,56 +356,6 @@ impl CommandExecutor {
         }
     }
 
-    pub async fn run_cancelled_in_cgroup<I, S>(
-        &self,
-        cgroup_path: Option<&str>,
-        program: &str,
-        args: I,
-        cancel: &CancellationToken,
-    ) -> ExecResult<ExecOutput>
-    where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
-    {
-        let args = args
-            .into_iter()
-            .map(|v| v.as_ref().to_string_lossy().into_owned())
-            .collect::<Vec<String>>();
-
-        let Some(path) = cgroup_path else {
-            return self.run_cancelled(program, &args, cancel).await;
-        };
-
-        let procs_path = format!("{}/cgroup.procs", path);
-        let wrapper = format!(
-            "echo $$ > {procs} || {{ echo \"CGROUP_ASSIGN_FAILED\" >&2; exit 1; }}; exec \"$@\"",
-            procs = procs_path
-        );
-
-        let mut sh_args = vec![
-            "-c".to_string(),
-            wrapper,
-            "--".to_string(),
-            program.to_string(),
-        ];
-        sh_args.extend(args);
-
-        match self.run_cancelled("sh", &sh_args, cancel).await {
-            Ok(output) => Ok(output),
-            Err(e) => {
-                let err_str = e.to_string();
-                if err_str.contains("CGROUP_ASSIGN_FAILED") {
-                    Err(ExecError::CommandFailed {
-                        code: Some(1),
-                        stderr: "CGROUP_ASSIGN_FAILED: cgroup assignment failed (permission denied or cgroup missing)".into(),
-                    })
-                } else {
-                    Err(e)
-                }
-            }
-        }
-    }
-
     pub async fn write_file(&self, path: &str, content: &str) -> ExecResult<ExecOutput> {
         self.run_with_stdin("tee", &[path], content).await
     }

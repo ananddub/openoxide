@@ -74,6 +74,61 @@ impl MonitoringLifecycleService {
         Ok(action("restart", "monitoring agent restarted"))
     }
 
+    /// Stops the agent container. The agent's own gRPC channel cannot be used
+    /// for this (stopping it kills the channel mid-request), so this always
+    /// goes out-of-band: the local agent is stopped through the Docker socket
+    /// mounted in the panel container, remote agents through their SSH
+    /// executor. `restart: unless-stopped` respects a manual stop, so the
+    /// agent stays down until `start_agent` is called.
+    pub async fn stop_agent(&self, server_id: i64) -> sqlx::Result<MonitoringActionDto> {
+        self.out_of_band_docker(server_id)
+            .await?
+            .stop_agent_container()
+            .await
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        Ok(action("stop", "monitoring agent stopped"))
+    }
+
+    /// Starts a stopped agent container. Out-of-band by necessity: a stopped
+    /// agent has no gRPC channel to receive the request through.
+    pub async fn start_agent(&self, server_id: i64) -> sqlx::Result<MonitoringActionDto> {
+        self.out_of_band_docker(server_id)
+            .await?
+            .start_agent_container()
+            .await
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        Ok(action("start", "monitoring agent started"))
+    }
+
+    /// Returns the local Docker socket API when `server_id` is the panel's own
+    /// host, or an SSH-backed docker client for a remote server.
+    async fn out_of_band_docker(&self, server_id: i64) -> sqlx::Result<OutOfBandDocker> {
+        let ip: Option<String> = sqlx::query_scalar(
+            "SELECT ip_address FROM servers WHERE id = ?",
+        )
+        .bind(server_id)
+        .fetch_optional(&self.queries.pool)
+        .await?;
+        let is_local = ip
+            .as_deref()
+            .is_some_and(|value| {
+                matches!(value, "openoxide-agent" | "localhost" | "127.0.0.1" | "openoxide-monitor")
+            })
+            // A missing server row can only be the local sentinel.
+            || ip.is_none();
+        if is_local {
+            Ok(OutOfBandDocker::Local)
+        } else {
+            let executor =
+                crate::services::compute::compose::remote::remote_executor(&self.queries.pool, server_id)
+                    .await
+                    .map_err(sqlx::Error::Protocol)?;
+            Ok(OutOfBandDocker::Remote(DockerCli::from_remote_executor(
+                executor,
+            )))
+        }
+    }
+
     /// Pull the published agent image and recreate the monitor only when the
     /// running container is backed by an older image.
     pub async fn update_agent_if_needed(&self, server_id: i64) -> sqlx::Result<bool> {
@@ -493,6 +548,101 @@ fn action(action: &str, message: &str) -> MonitoringActionDto {
         success: true,
         message: message.into(),
     }
+}
+
+/// Docker access that does not depend on the agent's gRPC channel — used for
+/// agent lifecycle recovery when the agent itself is down or being stopped.
+enum OutOfBandDocker {
+    /// Local host: Docker Engine API over the socket mounted into the panel
+    /// container. Works even with no agent running at all.
+    Local,
+    /// Remote host: docker CLI over the SSH executor.
+    Remote(DockerCli),
+}
+
+impl OutOfBandDocker {
+    async fn stop_agent_container(&self) -> Result<(), String> {
+        match self {
+            Self::Local => {
+                let api = local_docker_api();
+                match api
+                    .request("POST", &format!("/containers/{AGENT_CONTAINER_NAME}/stop"), None)
+                    .await
+                {
+                    // 204 on success; "already stopped" is idempotent success.
+                    Ok(_) => Ok(()),
+                    Err(error) if error.to_string().contains("already stopped") => Ok(()),
+                    Err(error) => Err(format!("failed to stop agent container: {error}")),
+                }
+            }
+            Self::Remote(docker) => {
+                // docker CLI exits non-zero when the container is already
+                // stopped, so inspect first for an idempotent result.
+                if let Ok(inspected) = docker.container(AGENT_CONTAINER_NAME).inspect().await {
+                    if !inspected.state.running {
+                        return Ok(());
+                    }
+                }
+                docker
+                    .containers()
+                    .stop(AGENT_CONTAINER_NAME)
+                    .run()
+                    .await
+                    .map(|_| ())
+                    .map_err(|error| format!("failed to stop agent container: {error}"))
+            }
+        }
+    }
+
+    async fn start_agent_container(&self) -> Result<(), String> {
+        match self {
+            Self::Local => {
+                let api = local_docker_api();
+                match api
+                    .request("POST", &format!("/containers/{AGENT_CONTAINER_NAME}/start"), None)
+                    .await
+                {
+                    Ok(_) => Ok(()),
+                    // "already started" is idempotent success.
+                    Err(error) if error.to_string().contains("already started") => Ok(()),
+                    Err(error) => {
+                        let error = error.to_string();
+                        if error.contains("No such container") || error.contains("404") {
+                            Err("agent container not found; use ReinstallAgent".to_string())
+                        } else {
+                            Err(format!("failed to start agent container: {error}"))
+                        }
+                    }
+                }
+            }
+            Self::Remote(docker) => {
+                if let Ok(inspected) = docker.container(AGENT_CONTAINER_NAME).inspect().await {
+                    if inspected.state.running {
+                        return Ok(());
+                    }
+                }
+                docker
+                    .containers()
+                    .start(AGENT_CONTAINER_NAME)
+                    .run()
+                    .await
+                    .map(|_| ())
+                    .map_err(|error| {
+                        if error.to_string().contains("No such container") {
+                            "agent container not found; use ReinstallAgent".to_string()
+                        } else {
+                            format!("failed to start agent container: {error}")
+                        }
+                    })
+            }
+        }
+    }
+}
+
+fn local_docker_api() -> crate::utils::docker::DockerApi {
+    crate::utils::docker::DockerApi::new(
+        std::env::var("SOCKET_PATH").unwrap_or_else(|_| "/var/run/docker.sock".into()),
+    )
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

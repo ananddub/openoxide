@@ -5,7 +5,6 @@ use crate::utils::{
         queue::common::builder_event_state_opt,
         spec::BuilderEvent,
     },
-    cgroup::Cgroup,
     docker::DockerCli,
     exec::{CommandExecutor, ExecError, ExecResult},
 };
@@ -24,7 +23,6 @@ pub mod patches;
 pub struct BuilderContext {
     pub executor: CommandExecutor,
     pub docker: DockerCli,
-    pub cgroup: Option<Cgroup>,
     events: Option<mpsc::Sender<BuilderEvent>>,
     state: Option<(Arc<ApplicationState>, IdType)>,
     pub health_timeout: Duration,
@@ -35,7 +33,6 @@ impl BuilderContext {
         Self {
             docker: DockerCli::from_executor(executor.clone()),
             executor,
-            cgroup: None,
             events: None,
             state: None,
             health_timeout: Duration::from_secs(120),
@@ -54,11 +51,6 @@ impl BuilderContext {
 
     pub fn with_health_timeout(mut self, timeout: Duration) -> Self {
         self.health_timeout = timeout;
-        self
-    }
-
-    pub fn with_cgroup(mut self, cg: Cgroup) -> Self {
-        self.cgroup = Some(cg);
         self
     }
 
@@ -110,56 +102,6 @@ impl BuilderContext {
             }
         }
     }
-
-    pub fn apply_cgroup<T: CgroupApplier>(&self, target: T) -> ExecResult<T> {
-        if let Some(ref cg) = self.cgroup {
-            target.apply_cgroup(cg)
-        } else {
-            Ok(target)
-        }
-    }
-}
-
-pub trait CgroupApplier {
-    fn apply_cgroup(self, cg: &Cgroup) -> ExecResult<Self>
-    where
-        Self: Sized;
-}
-
-impl CgroupApplier for crate::utils::exec::ScriptPipeline {
-    fn apply_cgroup(mut self, cg: &Cgroup) -> ExecResult<Self> {
-        for cmd in cg
-            .to_apply_commands()
-            .map_err(|e| ExecError::CommandFailed {
-                code: None,
-                stderr: e.to_string(),
-            })?
-        {
-            self = self.cmd(cmd);
-        }
-        self = self.cmd(cg.to_add_current_process_command());
-        Ok(self)
-    }
-}
-
-impl CgroupApplier for Vec<crate::utils::exec::script::dsl::ShellIR> {
-    fn apply_cgroup(self, cg: &Cgroup) -> ExecResult<Self> {
-        let mut prefix = Vec::new();
-        for cmd in cg
-            .to_apply_commands()
-            .map_err(|e| ExecError::CommandFailed {
-                code: None,
-                stderr: e.to_string(),
-            })?
-        {
-            prefix.push(crate::utils::exec::script::dsl::ShellIR::Raw(cmd));
-        }
-        prefix.push(crate::utils::exec::script::dsl::ShellIR::Raw(
-            cg.to_add_current_process_command(),
-        ));
-        prefix.extend(self);
-        Ok(prefix)
-    }
 }
 
 // ── Shared Validation Helpers ───────────────────────────────────────────────
@@ -199,35 +141,3 @@ pub mod mounts;
 pub mod source;
 pub mod traefik;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::utils::cgroup::builder::CgroupBuilder;
-    use crate::utils::exec::LocalExecutor;
-    use crate::utils::exec::script::sh;
-
-    #[test]
-    fn test_cgroup_applier_sh_dsl() {
-        let executor = CommandExecutor::Local(LocalExecutor::new());
-        let cg = CgroupBuilder::new("test/cgroup", executor.clone())
-            .with_base_path("/tmp/cgroup")
-            .build();
-
-        let ctx = BuilderContext::new(executor).with_cgroup(cg);
-
-        let script = sh!(
-            echo("hello inside cgroup");
-        );
-
-        let cgrouped_script = ctx.apply_cgroup(script).unwrap();
-        let bash = cgrouped_script
-            .iter()
-            .map(|s| s.to_bash())
-            .collect::<Vec<_>>()
-            .join("\n");
-
-        assert!(bash.contains("mkdir -p '/tmp/cgroup/test/cgroup'"));
-        assert!(bash.contains("cgroup.procs"));
-        assert!(bash.contains("hello inside cgroup"));
-    }
-}

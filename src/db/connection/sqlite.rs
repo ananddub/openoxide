@@ -39,6 +39,8 @@ pub async fn connect(config: Arc<Config>) -> SqlitePool {
         .await
         .expect("Failed to run database migrations");
 
+    crate::db::reactive::refresh_org_columns(&pool).await;
+
     // Performance Indexes for instant JWT auth check and fast query lookups
     let indexes = [
         "CREATE INDEX IF NOT EXISTS idx_jwt_tokens_jti ON jwt_tokens(jti);",

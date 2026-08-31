@@ -83,6 +83,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "proto/openoxide/api/v1/networking_operations.proto",
             "proto/openoxide/api/v1/database_network.proto",
             "proto/openoxide/api/v1/incoming_webhook.proto",
+            "proto/openoxide/api/v1/realtime.proto",
         ])
         .includes(&["proto"])
         .include_file("_connectrpc.rs")

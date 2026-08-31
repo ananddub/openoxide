@@ -24,6 +24,10 @@ services:
       - openoxide_data:/app/data
       # Host Kernel Modules (Required for WireGuard interface creation)
       - /lib/modules:/lib/modules:ro
+      # Docker socket for local agent lifecycle control (start/stop the
+      # openoxide-agent container when its gRPC channel is down). Deployments
+      # still go through the agent; this mount only enables recovery.
+      - /var/run/docker.sock:/var/run/docker.sock
       # Trust root used to verify TLS certificates presented by agents.
       # - ./agent-tls/ca.crt:/etc/openoxide/agent-tls/ca.crt:ro
 

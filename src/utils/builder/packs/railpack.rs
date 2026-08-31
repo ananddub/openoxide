@@ -130,39 +130,6 @@ impl<'a> RailpackPrepareBuilder<'a> {
             .run_cancelled("railpack", self.args.build(), cancel)
             .await
     }
-
-    pub async fn run_in_cgroup(
-        self,
-        cgroup_path: Option<&str>,
-        cancel: &CancellationToken,
-    ) -> ExecResult<ExecOutput> {
-        let docker = DockerCli::from_executor(self.executor.clone());
-        let name = "openoxide_buildkit".to_string();
-        let cointainer = docker
-            .containers()
-            .ps()
-            .filter(ContainerFilter::Name(name.clone()))
-            .list()
-            .await?;
-
-        if cointainer.is_empty() {
-            let _ = docker
-                .containers()
-                .create("moby/buildkit")
-                .name(name.clone())
-                .detach()
-                .restart(RestartPolicy::Always)
-                .privileged()
-                .run()
-                .await;
-        } else {
-            let _ = docker.container(name.clone()).start().run().await;
-        }
-
-        self.executor
-            .run_cancelled_in_cgroup(cgroup_path, "railpack", self.args.build(), cancel)
-            .await
-    }
 }
 
 impl crate::utils::exec::pipeline::IntoCommand for RailpackPrepareBuilder<'_> {

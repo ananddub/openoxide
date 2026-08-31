@@ -618,11 +618,6 @@ impl DatabaseBuilder {
         self
     }
 
-    pub fn with_cgroup(mut self, cg: crate::utils::cgroup::Cgroup) -> Self {
-        self.ctx = self.ctx.with_cgroup(cg);
-        self
-    }
-
     pub async fn deploy(
         &self,
         db_kind: DatabaseKind,
@@ -707,9 +702,7 @@ impl DatabaseBuilder {
             deploy_cmd;
         };
 
-        let result = self
-            .ctx
-            .apply_cgroup(pipeline)?
+        let result = pipeline
             .execute_cancelled(&self.ctx.executor, cancel)
             .await;
 

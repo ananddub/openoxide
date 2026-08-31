@@ -1,0 +1,4 @@
+[toolchain]
+channel = "nightly-2026-08-30" # 1.100.0-nightly (fd7ed57df)
+components = ["rustfmt", "clippy", "rust-src"]
+targets = ["x86_64-unknown-linux-musl"]

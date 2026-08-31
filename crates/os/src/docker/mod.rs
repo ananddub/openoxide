@@ -12,7 +12,6 @@ pub mod client;
 pub mod api;
 pub mod core;
 pub mod error;
-pub mod expand;
 pub mod handles;
 pub mod macros;
 pub mod query;

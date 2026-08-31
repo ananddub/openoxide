@@ -3,10 +3,7 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
-    services::compute::compose::{
-        ComposeOperation,
-        remote::{agent_executor, deployment_pid_file},
-    },
+    services::compute::compose::ComposeOperation,
     utils::{
         builder::errors::BuilderError,
         builder::{
@@ -56,22 +53,9 @@ impl BuilderQueue {
             .cancellation_token(compose_key.clone())
             .unwrap_or_else(CancellationToken::new);
 
-        let effective_server_id = crate::services::compute::compose::remote::agent_server_id(server_id)
-            .await
-            .map_err(BuilderError::Execution)?;
-        let executor = {
-            let pid_file = deployment_pid_file(deployment_id);
-            q.deployments_set_pid(&pid_file, deployment_id)
-                .await
-                .map_err(|e| {
-                    BuilderError::Execution(format!(
-                        "could not persist remote compose pid file: {e}"
-                    ))
-                })?;
-            agent_executor(effective_server_id)
-                .await
-                .map_err(BuilderError::Execution)?
-        };
+        let executor = self
+            .executor_for_deployment(server_id, deployment_id)
+            .await?;
 
         let (events_tx, events_rx) = mpsc::channel(64);
         tokio::spawn(super::deployment_log::record_builder_events(

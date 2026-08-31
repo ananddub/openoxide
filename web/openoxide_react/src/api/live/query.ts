@@ -11,10 +11,12 @@ import {readResourceList, readResource} from '#/api/live/resource';
  * Connect queries with refetch-based liveness.
  */
 
-// QueryClient defaults: 5 min staleTime, refetchOnWindowFocus off. For the
-// subset of resources that previously relied on socket push we use a shorter
-// staleTime (30s) so background tabs stay reasonably fresh.
-export const LIVE_STALE_TIME_MS = 30_000;
+// QueryClient defaults: 5 min staleTime, refetchOnWindowFocus off. Live
+// queries lean on the table-watch stream (useTableWatch) for freshness:
+// data is cached for 1 minute, and any table change in the active
+// organization invalidates the affected queries immediately — so a longer
+// staleTime no longer means stale screens, only fewer redundant fetches.
+export const LIVE_STALE_TIME_MS = 60_000;
 
 export function useConnectQuery<Output>(
 	key: unknown[],

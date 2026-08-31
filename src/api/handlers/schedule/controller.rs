@@ -249,11 +249,11 @@ impl ScheduleOperationsService for ScheduleController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
         let execution_id = request.organization_id.unwrap_or(0);
         self.service.get_by_id(request.id).await.map_err(map_sqlx_error)?;
-        let belongs = self.service.execution_exists(request.id, execution_id)
-            .await.map_err(map_sqlx_error)?;
-        if !belongs {
-            return Err(ConnectError::not_found("schedule execution not found"));
-        }
+        self.service
+            .execution_exists(request.id, execution_id)
+            .await
+            .map_err(map_sqlx_error)?
+            .ok_or_else(|| ConnectError::not_found("schedule execution not found"))?;
         let content = crate::services::automation::schedule::file_log::read(&format!(
             "schedule-{}-execution-{}", request.id, execution_id
         )).await.map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;

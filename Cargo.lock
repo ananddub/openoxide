@@ -3235,7 +3235,6 @@ dependencies = [
  "minijinja",
  "notify",
  "os",
- "paste",
  "prost",
  "prost-build",
  "protoc-bin-vendored",
@@ -3306,7 +3305,6 @@ dependencies = [
  "hyper-util",
  "ipnet",
  "libc",
- "paste",
  "poem-openapi",
  "russh",
  "russh-keys",
@@ -3419,12 +3417,6 @@ dependencies = [
  "getrandom 0.4.3",
  "phc",
 ]
-
-[[package]]
-name = "paste"
-version = "1.0.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
 name = "pbkdf2"

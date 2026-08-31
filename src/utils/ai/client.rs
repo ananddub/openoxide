@@ -204,19 +204,13 @@ fn validate_base_url(config: &AiProviderConfig) -> Result<String, String> {
 
 fn strip_json_fence(text: &str) -> &str {
     let trimmed = text.trim();
-    if let Some(without_open) = trimmed.strip_prefix("```json") {
-        return without_open
-            .strip_suffix("```")
-            .unwrap_or(without_open)
-            .trim();
-    }
-    if let Some(without_open) = trimmed.strip_prefix("```") {
-        return without_open
-            .strip_suffix("```")
-            .unwrap_or(without_open)
-            .trim();
-    }
     trimmed
+        .strip_circumfix("```json", "```")
+        .or_else(|| trimmed.strip_circumfix("```", "```"))
+        .or_else(|| trimmed.strip_prefix("```json"))
+        .or_else(|| trimmed.strip_prefix("```"))
+        .unwrap_or(trimmed)
+        .trim()
 }
 
 #[cfg(test)]

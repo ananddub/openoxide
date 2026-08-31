@@ -10,14 +10,50 @@ use crate::{
             NotificationTrigger,
         },
     },
-    utils::builder::{
-        custom_type::{DeployState, IdType},
-        queue::queue::BuilderQueue,
-        spec::BuilderEvent,
+    utils::{
+        builder::{
+            custom_type::{DeployState, IdType},
+            errors::BuilderError,
+            queue::queue::BuilderQueue,
+            spec::BuilderEvent,
+        },
+        exec::CommandExecutor,
     },
 };
 
 impl BuilderQueue {
+    /// Resolves the remote (or local) executor for a deployment and persists
+    /// its pid file so a panel restart can kill a stale build.
+    pub(super) async fn executor_for_deployment(
+        &self,
+        server_id: Option<i64>,
+        deployment_id: i64,
+    ) -> Result<CommandExecutor, BuilderError> {
+        use crate::services::compute::compose::remote::{agent_executor, deployment_pid_file};
+
+        let q = resolve::<crate::db::queries::FlashQueries>()
+            .await
+            .map_err(|e| {
+                BuilderError::Execution(format!("could not resolve FlashQueries: {e}"))
+            })?;
+
+        let effective_server_id =
+            crate::services::compute::compose::remote::agent_server_id(server_id)
+                .await
+                .map_err(BuilderError::Execution)?;
+        let pid_file = deployment_pid_file(deployment_id);
+        q.deployments_set_pid(&pid_file, deployment_id)
+            .await
+            .map_err(|e| {
+                BuilderError::Execution(format!(
+                    "could not persist remote deployment pid file: {e}"
+                ))
+            })?;
+        agent_executor(effective_server_id)
+            .await
+            .map_err(BuilderError::Execution)
+    }
+
     pub(super) async fn process(
         &self,
         deployment_id: i64,

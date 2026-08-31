@@ -1,9 +1,11 @@
 use std::{
+    collections::HashMap,
     future::Future,
-    sync::{Arc, Mutex, OnceLock},
+    sync::{Arc, Mutex, OnceLock, RwLock},
 };
 
 use sqlx::sqlite::{PreupdateHookResult, SqliteOperation};
+use sqlx::{Decode, Row};
 use tokio::sync::broadcast;
 
 static DB_POOL: OnceLock<sqlx::SqlitePool> = OnceLock::new();
@@ -23,6 +25,7 @@ pub enum DbChangeOperation {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DbChangeEvent {
     pub table: String,
+    pub organization_id: Option<i64>,
     pub old_row_id: Option<i64>,
     pub new_row_id: Option<i64>,
     pub operation: DbChangeOperation,
@@ -64,6 +67,12 @@ pub fn set_pool(pool: sqlx::SqlitePool) {
     let _ = DB_POOL.set(pool);
 }
 
+/// Re-discovers which tables carry an `organization_id` column. Called after
+/// migrations so new tables are picked up without restarting the panel.
+pub(crate) async fn refresh_org_columns(pool: &sqlx::SqlitePool) {
+    OrgColumnIndex::refresh(pool).await;
+}
+
 async fn publish_when_visible(changes: Vec<DbChangeEvent>) {
     if let Some(pool) = DB_POOL.get()
         && let Ok(mut connection) = pool.acquire().await
@@ -94,13 +103,14 @@ where
 }
 
 pub(crate) fn install_hooks(handle: &mut sqlx::sqlite::LockedSqliteHandle<'_>) {
+    let registry = OrgColumnIndex::global();
     let pending = Arc::new(Mutex::new(Vec::<DbChangeEvent>::new()));
     let runtime = tokio::runtime::Handle::current();
 
     let preupdate_pending = Arc::clone(&pending);
     handle.set_preupdate_hook(move |result| {
         if let Ok(mut changes) = preupdate_pending.lock() {
-            changes.push(change_event(result));
+            changes.push(change_event(result, registry));
         }
     });
 
@@ -142,9 +152,10 @@ pub(crate) fn install_hooks(handle: &mut sqlx::sqlite::LockedSqliteHandle<'_>) {
     });
 }
 
-fn change_event(result: PreupdateHookResult<'_>) -> DbChangeEvent {
+fn change_event(result: PreupdateHookResult<'_>, registry: &OrgColumnIndex) -> DbChangeEvent {
     DbChangeEvent {
         table: result.table.to_owned(),
+        organization_id: registry.organization_id(&result),
         old_row_id: result.get_old_row_id().ok(),
         new_row_id: result.get_new_row_id().ok(),
         operation: match result.operation {
@@ -153,5 +164,76 @@ fn change_event(result: PreupdateHookResult<'_>) -> DbChangeEvent {
             SqliteOperation::Delete => DbChangeOperation::Delete,
             _ => DbChangeOperation::Unknown,
         },
+    }
+}
+
+/// Resolves the `organization_id` column index for each table so the
+/// preupdate hook can route changes to an organization without issuing any
+/// schema reads on the hot path.
+///
+/// The index is discovered asynchronously right after migrations run
+/// (`refresh`) and shared by every pooled connection through `global()`.
+/// Tables without the column (or before the first refresh) resolve to `None`;
+/// such rows are not org-routable and the realtime layer treats them as
+/// global.
+struct OrgColumnIndex {
+    columns: RwLock<HashMap<String, Option<i32>>>,
+}
+
+impl OrgColumnIndex {
+    fn global() -> &'static Self {
+        static INDEX: OnceLock<OrgColumnIndex> = OnceLock::new();
+        INDEX.get_or_init(|| Self {
+            columns: RwLock::new(HashMap::new()),
+        })
+    }
+
+    pub(crate) async fn refresh(pool: &sqlx::SqlitePool) {
+        let tables = sqlx::query("SELECT name FROM sqlite_master WHERE type = 'table'")
+            .fetch_all(pool)
+            .await;
+        let Ok(tables) = tables else {
+            return;
+        };
+        let mut columns = HashMap::new();
+        for table in tables {
+            let Ok(name) = table.try_get::<String, _>(0) else {
+                continue;
+            };
+            // Table names come straight from sqlite_master, not user input;
+            // quoting keeps even a hostile table name a literal identifier.
+            let info = sqlx::query(sqlx::AssertSqlSafe(format!(
+                "PRAGMA table_info(\"{name}\")"
+            )))
+            .fetch_all(pool)
+            .await;
+            let Ok(info) = info else {
+                continue;
+            };
+            let index = info
+                .iter()
+                .enumerate()
+                .find_map(|(index, column)| {
+                    column
+                        .try_get::<String, _>(1)
+                        .is_ok_and(|column| column == "organization_id")
+                        .then_some(index as i32)
+                });
+            columns.insert(name, index);
+        }
+        if let Ok(mut self_columns) = Self::global().columns.write() {
+            *self_columns = columns;
+        }
+    }
+
+    fn organization_id(&self, result: &PreupdateHookResult<'_>) -> Option<i64> {
+        let index = *self.columns.read().ok()?.get(result.table)?;
+        let index = index?;
+        // Insert has no old row; Delete has no new row.
+        let value = match result.operation {
+            SqliteOperation::Delete => result.get_old_column_value(index),
+            _ => result.get_new_column_value(index),
+        };
+        Option::<i64>::decode(value.ok()?).ok().flatten()
     }
 }

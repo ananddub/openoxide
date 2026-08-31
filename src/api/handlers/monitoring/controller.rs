@@ -172,6 +172,40 @@ impl MonitoringOperationsService for MonitoringController {
     }
 
     #[permission(Alert, CanWrite)]
+    async fn start_agent<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        verify_server_organization(&self.agent_auth, request.id, auth.organization_id).await?;
+        let action = self.lifecycle.start_agent(request.id).await.map_err(internal)?;
+        let payload = serde_json::to_string(&action).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: action.success,
+            operation: "start_agent".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
+    }
+
+    #[permission(Alert, CanWrite)]
+    async fn stop_agent<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        verify_server_organization(&self.agent_auth, request.id, auth.organization_id).await?;
+        let action = self.lifecycle.stop_agent(request.id).await.map_err(internal)?;
+        let payload = serde_json::to_string(&action).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: action.success,
+            operation: "stop_agent".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
+    }
+
+    #[permission(Alert, CanWrite)]
     async fn restart_agent<'a>(
         &'a self,
         ctx: RequestContext,

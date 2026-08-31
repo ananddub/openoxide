@@ -3,7 +3,7 @@ pub mod background;
 pub mod backup;
 pub mod builder;
 pub use os::exec;
-pub use os::{cgroup, docker, git, rclone, ssh};
+pub use os::{docker, git, rclone, ssh};
 pub mod jwt;
 pub use os::macros;
 pub mod paths;
