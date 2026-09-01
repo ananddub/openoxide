@@ -3,11 +3,11 @@ import {Zap, RefreshCw, XCircle, Activity, Trash2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {toast} from 'sonner';
 import {useQueryClient} from '@tanstack/react-query';
-import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {useAppStore} from '#/stores/app-store';
 import {DatabaseDeploymentsModal} from './database-deployments-modal';
 import {DatabaseDeploymentsList} from './database-deployments-list';
+import {useDeploymentDelete} from '#/api/live';
 
 interface DatabaseDeploymentsTabProps {
 	dbId: number;
@@ -71,11 +71,8 @@ export function DatabaseDeploymentsTab({
 		dbDeployments.length > 0 ? dbDeployments : (passedDeployments ?? []);
 	const activeDeployment = events.find(isBuildActive);
 
-	const deleteMutation = $api.useMutation('delete', '/deployments/{id}');
-	const clearDbMutation = $api.useMutation(
-		'delete',
-		'/deployments/database/{id}',
-	);
+	const deleteMutation = useDeploymentDelete();
+	const clearDbMutation = useDeploymentDelete();
 
 	useEffect(() => {
 		if (!activeLogId) return;
@@ -171,8 +168,8 @@ export function DatabaseDeploymentsTab({
 	const handleClearDatabaseDeployments = async () => {
 		try {
 			const res = await clearDbMutation.mutateAsync({
-				params: {path: {id: dbId}},
-			});
+				id: dbId,
+					});
 			const data = res as any;
 			useAppStore.getState().clearDeployments({databaseId: dbId});
 			toast.success(

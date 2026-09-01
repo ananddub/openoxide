@@ -12,9 +12,9 @@ import {
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {useOrganizationStore} from '#/stores/organization-store';
+import {useScheduleCreate, useScheduleDelete, useScheduleRun, useScheduleUpdate} from '#/api/live';
 
 interface SchedulesTabProps {
 	app: any;
@@ -40,10 +40,10 @@ export function SchedulesTab({
 	const activeOrg = useOrganizationStore(state => state.activeOrg);
 
 	// Mutations
-	const createMutation = $api.useMutation('post', '/schedules');
-	const runMutation = $api.useMutation('post', '/schedules/{id}/trigger');
-	const patchMutation = $api.useMutation('patch', '/schedules/{id}');
-	const deleteMutation = $api.useMutation('delete', '/schedules/{id}');
+	const createMutation = useScheduleCreate();
+	const runMutation = useScheduleRun();
+	const patchMutation = useScheduleUpdate();
+	const deleteMutation = useScheduleDelete();
 
 	const handleCreate = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -108,7 +108,7 @@ export function SchedulesTab({
 		if (!deleteId) return;
 		setDeleting(true);
 		try {
-			await deleteMutation.mutateAsync({params: {path: {id: deleteId}}});
+			await deleteMutation.mutateAsync(deleteId);
 			toast.success('Schedule deleted successfully');
 			setDeleteId(null);
 			onRefresh?.();

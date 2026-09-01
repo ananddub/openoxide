@@ -8,7 +8,6 @@ import {
 } from '#/components/ui/dialog';
 import {Button} from '#/components/ui/button';
 import {ServerFormFields} from '#/components/remote-servers/server-form-fields';
-import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {
@@ -51,12 +50,9 @@ export function CreateServerModal({
 		'idle' | 'success' | 'failed'
 	>('idle');
 
-	const createMutation = $api.useMutation('post', '/remote-servers');
-	const patchMutation = $api.useMutation('patch', '/remote-servers/{id}');
-	const testDirectMutation = $api.useMutation(
-		'post',
-		'/servers/test-direct-connection' as any,
-	);
+	const createMutation = useRemoteServerCreate();
+	const patchMutation = useRemoteServerUpdate();
+	const testDirectMutation = useRemoteServerTestConnection();
 
 	useEffect(() => {
 		setTestResult('idle');

@@ -9,7 +9,6 @@ import {
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Textarea} from '#/components/ui/textarea';
-import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {Key, RefreshCw, Download} from 'lucide-react';
 import {downloadKeyFile} from '#/utils/ssh-key-utils';
@@ -33,11 +32,8 @@ export function CreateKeyModal({
 	const [generating, setGenerating] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 
-	const generatePairMutation = $api.useMutation(
-		'post',
-		'/ssh-keys/generate-pair',
-	);
-	const createMutation = $api.useMutation('post', '/ssh-keys');
+	const generatePairMutation = useSshKeyGeneratePair();
+	const createMutation = useSshKeyCreate();
 
 	const handleGeneratePair = async (type: 'ed25519' | 'rsa') => {
 		setGenerating(true);

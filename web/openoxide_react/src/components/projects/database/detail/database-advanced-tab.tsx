@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {Trash2, AlertTriangle, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useDatabaseRedeploy, parseDatabaseKind} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {DeleteDatabaseDialog} from '#/components/projects/database/delete-database-dialog';
 import {DatabaseAdvancedCustomCommand} from './database-advanced-custom-command';
@@ -32,24 +32,8 @@ export function DatabaseAdvancedTab({
 		database?.database_kind ||
 		'postgres'
 	).toLowerCase();
-
-	let endpoint:
-		| '/postgres/{id}'
-		| '/mysql/{id}'
-		| '/mariadb/{id}'
-		| '/mongo/{id}'
-		| '/redis/{id}'
-		| '/libsql/{id}' = '/postgres/{id}';
-	if (kind.includes('mysql')) endpoint = '/mysql/{id}';
-	else if (kind.includes('mariadb')) endpoint = '/mariadb/{id}';
-	else if (kind.includes('mongo')) endpoint = '/mongo/{id}';
-	else if (kind.includes('redis')) endpoint = '/redis/{id}';
-	else if (kind.includes('libsql')) endpoint = '/libsql/{id}';
-
-	const redeployDatabase = $api.useMutation(
-		'post',
-		`${endpoint}/redeploy` as any,
-	);
+	const dbKind = parseDatabaseKind(kind);
+	const redeployDatabase = useDatabaseRedeploy();
 	const [rebuilding, setRebuilding] = useState(false);
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -60,7 +44,8 @@ export function DatabaseAdvancedTab({
 				await onAction('deploy');
 			} else {
 				await redeployDatabase.mutateAsync({
-					params: {path: {id: database?.id}},
+					kind: dbKind,
+					id: database?.id,
 				});
 				toast.success('Database rebuild triggered');
 			}

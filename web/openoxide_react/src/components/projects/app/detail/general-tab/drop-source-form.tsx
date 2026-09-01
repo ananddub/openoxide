@@ -3,7 +3,7 @@ import {UploadCloud, Trash2, Save} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useApplicationSetDropSource} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {getApiBaseUrl} from '#/api/client';
 import {Progress} from '#/components/ui/progress';
@@ -22,10 +22,7 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 	const [saving, setSaving] = useState(false);
 	const [uploadProgress, setUploadProgress] = useState(0);
 
-	const patchDrop = $api.useMutation(
-		'patch',
-		'/applications/{id}/source/drop',
-	);
+	const patchDrop = useApplicationSetDropSource();
 
 	const handleFileSelect = (files: FileList | null) => {
 		if (files && files[0]) {

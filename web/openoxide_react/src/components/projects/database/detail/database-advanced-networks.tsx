@@ -3,16 +3,12 @@ import {Network, Save} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Switch} from '#/components/ui/switch';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useDatabaseNetworkList, useDatabaseUpdate, parseDatabaseKind} from '#/api/live';
 import {formatApiError} from '#/api/utils';
-import {databaseEndpoint} from './database-endpoint';
 
 export function DatabaseAdvancedNetworks({database, onUpdated}: any) {
-	const {data: networks} = $api.useQuery('get', '/database-networks');
-	const patchDatabase = $api.useMutation(
-		'patch',
-		databaseEndpoint(database) as any,
-	);
+	const {data: networks} = useDatabaseNetworkList();
+	const patchDatabase = useDatabaseUpdate();
 	const [selected, setSelected] = useState<string[]>([]);
 	const [detached, setDetached] = useState(false);
 	const [saving, setSaving] = useState(false);
@@ -46,12 +42,10 @@ export function DatabaseAdvancedNetworks({database, onUpdated}: any) {
 		setSaving(true);
 		try {
 			await patchDatabase.mutateAsync({
-				params: {path: {id: Number(database.id)}},
-				body: {
-					network_ids: selected,
-					detach_rustploy_network: detached ? 1 : 0,
-				},
-			} as any);
+				kind: parseDatabaseKind(database?.kind || 'postgres'),
+				id: Number(database.id),
+				network_ids: selected,
+			});
 			toast.success('Database networks updated');
 			onUpdated();
 		} catch (error) {

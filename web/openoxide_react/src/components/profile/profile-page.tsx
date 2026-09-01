@@ -1,6 +1,6 @@
 import {useState, useEffect, useRef} from 'react';
 import {User, Loader2, Palette, Upload} from 'lucide-react';
-import {$api} from '#/api/query';
+import {useUserUpdate} from '#/api/live';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
@@ -57,7 +57,7 @@ export function ProfilePage() {
 		setAvatarValue(initialAvatar);
 	}, [storeProfile, authUser]);
 
-	const updateUserMutation = $api.useMutation('patch', '/auth/user', {
+	const updateUserMutation = useUserUpdate({
 		onSuccess: (data: any) => {
 			if (data) {
 				useAuthStore.getState().setAuth({

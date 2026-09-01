@@ -4,20 +4,13 @@ import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Textarea} from '#/components/ui/textarea';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useDatabasePostgresAdvancedConfig, useDatabaseUpdatePostgresAdvancedConfig} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 
 export function DatabasePostgresConfig({database, onUpdated}: any) {
 	const id = Number(database?.id);
-	const {data, refetch} = $api.useQuery(
-		'get',
-		'/database-management/postgres/{id}/advanced-config',
-		{params: {path: {id}}},
-	);
-	const update = $api.useMutation(
-		'put',
-		'/database-management/postgres/{id}/advanced-config',
-	);
+	const {data, refetch} = useDatabasePostgresAdvancedConfig(BigInt(id));
+	const update = useDatabaseUpdatePostgresAdvancedConfig();
 	const [settings, setSettings] = useState('');
 	const [role, setRole] = useState('STANDALONE');
 	const [host, setHost] = useState('');

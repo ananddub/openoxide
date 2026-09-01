@@ -10,7 +10,14 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {
+	useApplicationSetBitbucketSource,
+	useApplicationSetCustomGitSource,
+	useApplicationSetDockerSource,
+	useApplicationSetGiteaSource,
+	useApplicationSetGithubSource,
+	useApplicationSetGitlabSource,
+} from '#/api/live';
 import {useAppStore} from '#/stores/app-store';
 import {formatApiError} from '#/api/utils';
 import {DropSourceForm} from './drop-source-form';
@@ -101,30 +108,12 @@ export function SourceSettingsCard({
 
 	const sshKeys = useAppStore(state => state.sshKeys || []);
 
-	const patchDocker = $api.useMutation(
-		'patch',
-		'/applications/{id}/source/docker',
-	);
-	const patchGit = $api.useMutation(
-		'patch',
-		'/applications/{id}/source/git',
-	);
-	const patchGithub = $api.useMutation(
-		'patch',
-		'/applications/{id}/source/github',
-	);
-	const patchGitlab = $api.useMutation(
-		'patch',
-		'/applications/{id}/source/gitlab',
-	);
-	const patchGitea = $api.useMutation(
-		'patch',
-		'/applications/{id}/source/gitea',
-	);
-	const patchBitbucket = $api.useMutation(
-		'patch',
-		'/applications/{id}/source/bitbucket',
-	);
+	const patchDocker = useApplicationSetDockerSource();
+	const patchGit = useApplicationSetCustomGitSource();
+	const patchGithub = useApplicationSetGithubSource();
+	const patchGitlab = useApplicationSetGitlabSource();
+	const patchGitea = useApplicationSetGiteaSource();
+	const patchBitbucket = useApplicationSetBitbucketSource();
 
 	useEffect(() => {
 		if (app) {
@@ -172,62 +161,52 @@ export function SourceSettingsCard({
 		try {
 			if (provider === 'DOCKER') {
 				await patchDocker.mutateAsync({
-					params: {path: {id: app.id}},
-					body: {
-						docker_image: dockerImage,
-						docker_username: dockerUsername || undefined,
-						docker_password: dockerPassword || undefined,
-						registry_url: registryUrl || undefined,
-					},
+					id: app.id,
+					image: dockerImage,
+					username: dockerUsername || undefined,
+					password: dockerPassword || undefined,
+					registry_url: registryUrl || undefined,
 				});
 			} else if (provider === 'GIT') {
 				await patchGit.mutateAsync({
-					params: {path: {id: app.id}},
-					body: {
-						custom_git_url: gitUrl,
-						custom_git_branch: gitBranch || 'main',
-						custom_git_build_path: gitBuildPath || '/',
-						custom_git_ssh_key_id: gitSshKeyId || undefined,
-					} as any,
+					id: app.id,
+					url: gitUrl,
+					repository: repoName || gitUrl,
+					owner: repoOwner || '',
+					branch: gitBranch || 'main',
+					build_path: gitBuildPath || '/',
+					ssh_key_id: gitSshKeyId || undefined,
 				});
 			} else if (provider === 'GITHUB') {
 				await patchGithub.mutateAsync({
-					params: {path: {id: app.id}},
-					body: {
-						owner: repoOwner,
-						repository: repoName,
-						branch: gitBranch,
-						build_path: gitBuildPath,
-					} as any,
+					id: app.id,
+					owner: repoOwner,
+					repository: repoName,
+					branch: gitBranch,
+					build_path: gitBuildPath,
 				});
 			} else if (provider === 'GITLAB') {
 				await patchGitlab.mutateAsync({
-					params: {path: {id: app.id}},
-					body: {
-						gitlab_owner: repoOwner,
-						gitlab_repository: repoName,
-						gitlab_branch: gitBranch,
-						gitlab_build_path: gitBuildPath,
-					} as any,
+					id: app.id,
+					owner: repoOwner,
+					repository: repoName,
+					branch: gitBranch,
+					build_path: gitBuildPath,
 				});
 			} else if (provider === 'GITEA') {
 				await patchGitea.mutateAsync({
-					params: {path: {id: app.id}},
-					body: {
-						gitea_owner: repoOwner,
-						gitea_repository: repoName,
-						gitea_branch: gitBranch,
-						gitea_build_path: gitBuildPath,
-					} as any,
+					id: app.id,
+					owner: repoOwner,
+					repository: repoName,
+					branch: gitBranch,
+					build_path: gitBuildPath,
 				});
 			} else if (provider === 'BITBUCKET') {
 				await patchBitbucket.mutateAsync({
-					params: {path: {id: app.id}},
-					body: {
-						bitbucket_owner: repoOwner,
-						bitbucket_repository: repoName,
-						bitbucket_branch: gitBranch,
-					} as any,
+					id: app.id,
+					owner: repoOwner,
+					repository: repoName,
+					branch: gitBranch,
 				});
 			}
 			toast.success('Source configuration saved');

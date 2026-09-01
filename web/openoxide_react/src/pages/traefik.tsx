@@ -1,7 +1,7 @@
 import {useState, useEffect, useMemo} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useTraefikFileContent, useTraefikFileContentUpdate, useTraefikFileTree, useTraefikHealth} from '#/api/live';
 import {useAppStore} from '#/stores/app-store';
 import {formatApiError} from '#/api/utils';
 
@@ -54,13 +54,7 @@ function TraefikPage() {
 		data: rawFileTree = [],
 		isLoading: isFilesLoading,
 		refetch: refetchFiles,
-	} = $api.useQuery('get', '/traefik/files/tree', {
-		params: {
-			query: {
-				server_id: parsedServerId,
-			} as any,
-		},
-	});
+	} = useTraefikFileTree(parsedServerId ? BigInt(parsedServerId) : 0n);
 
 	const fileTree: TraefikFileTreeNode[] = useMemo(() => {
 		const parseNode = (item: unknown): TraefikFileTreeNode => {
@@ -113,20 +107,9 @@ function TraefikPage() {
 		data: rawFileContent,
 		isLoading: isContentLoading,
 		refetch: refetchContent,
-	} = $api.useQuery(
-		'get',
-		'/traefik/files/content',
-		{
-			params: {
-				query: {
-					server_id: parsedServerId,
-					path: selectedFilePath || '',
-				} as any,
-			},
-		},
-		{
-			enabled: Boolean(selectedFilePath),
-		},
+	} = useTraefikFileContent(
+		parsedServerId ? BigInt(parsedServerId) : 0n,
+		selectedFilePath || '',
 	);
 
 	useEffect(() => {
@@ -143,13 +126,7 @@ function TraefikPage() {
 		data: rawHealth,
 		isLoading: isHealthLoading,
 		refetch: refetchHealth,
-	} = $api.useQuery('get', '/traefik/health', {
-		params: {
-			query: {
-				server_id: parsedServerId,
-			} as any,
-		},
-	});
+	} = useTraefikHealth();
 
 	const health: TraefikHealthResponse | null = useMemo(() => {
 		if (!rawHealth) return null;
@@ -171,21 +148,16 @@ function TraefikPage() {
 	const isDirty = originalContent !== editedContent;
 
 	// Mutation for Writing File Content
-	const writeFileMutation = $api.useMutation(
-		'put',
-		'/traefik/files/content',
-	);
+	const writeFileMutation = useTraefikFileContentUpdate();
 
 	const handleSave = async () => {
 		if (!selectedFilePath || isReadOnly) return;
 		setIsSaving(true);
 		try {
 			await writeFileMutation.mutateAsync({
-				body: {
-					server_id: parsedServerId,
-					path: selectedFilePath,
-					content: editedContent,
-				},
+				server_id: parsedServerId,
+				path: selectedFilePath,
+				content: editedContent,
 			});
 			toast.success(`Successfully saved ${selectedFilePath}`);
 			setOriginalContent(editedContent);

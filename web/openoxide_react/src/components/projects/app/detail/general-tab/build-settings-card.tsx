@@ -10,7 +10,7 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useApplicationUpdate} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {RadioGroup, RadioGroupItem} from '#/components/ui/radio-group';
 
@@ -102,11 +102,8 @@ export function BuildSettingsCard({
 		}
 	}, [app]);
 
-	const patchBuildType = $api.useMutation('patch', '/applications/{id}');
-	const patchBuildConfig = $api.useMutation(
-		'patch',
-		'/applications/{id}/build',
-	);
+	const patchBuildType = useApplicationUpdate();
+	const patchBuildConfig = useApplicationUpdate();
 
 	const handleSaveBuildType = async () => {
 		setSavingBuild(true);

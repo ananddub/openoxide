@@ -29,3 +29,4 @@ export * from './swarm';
 export * from './tags';
 export * from './traefik';
 export * from './vault';
+export * from './git_providers';

@@ -1,7 +1,6 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
 import {Button} from '#/components/ui/button';
 import {useDatabaseDetail} from '#/hooks/projects/use-database-detail';
-import {$api} from '#/api/query';
 import {useState} from 'react';
 
 import {DatabaseHeader} from '#/components/projects/database/detail/database-header';
@@ -71,7 +70,7 @@ function DatabaseDetailPage() {
 				'Advanced',
 			];
 
-	const patchDatabase = $api.useMutation('patch', '/postgres/{id}');
+	const patchDatabase = useDatabaseUpdate();
 
 	const handleUpdateEnv = async (body: Record<string, unknown>) => {
 		await patchDatabase.mutateAsync({

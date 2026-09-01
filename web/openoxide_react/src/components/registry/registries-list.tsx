@@ -8,7 +8,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
-import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react';
 
 import type {RegistryResponse} from '#/types/api-helpers';
+import {useRegistryTest, useRegistryUpdate} from '#/api/live';
 
 interface RegistriesListProps {
 	registries: RegistryResponse[];
@@ -41,14 +41,14 @@ export function RegistriesList({
 		Record<string, 'testing' | 'success' | 'failed' | undefined>
 	>({});
 
-	const testMutation = $api.useMutation('post', '/registries/{id}/test');
-	const patchMutation = $api.useMutation('patch', '/registries/{id}');
+	const testMutation = useRegistryTest();
+	const patchMutation = useRegistryUpdate();
 
 	const handleTestConnection = async (id: number | string) => {
 		const key = String(id);
 		setTestingMap(prev => ({...prev, [key]: 'testing'}));
 		try {
-			await testMutation.mutateAsync({params: {path: {id: Number(id)}}});
+			await testMutation.mutateAsync(Number(id));
 			setTestingMap(prev => ({...prev, [key]: 'success'}));
 			toast.success('Registry connection test passed');
 			setTimeout(() => {

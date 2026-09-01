@@ -14,7 +14,6 @@ import {
 import {toast} from 'sonner';
 import {Input} from '#/components/ui/input';
 import {Field, FieldLabel, FieldError} from '#/components/ui/field';
-import {$api} from '#/api/query';
 import {useQueryClient} from '@tanstack/react-query';
 import {useOrganizationStore} from '#/stores/organization-store';
 import {formatApiError} from '#/api/utils';
@@ -45,8 +44,8 @@ export function AddOrganization({
 	const queryClient = useQueryClient();
 	const orgList = useOrganizationStore(state => state.organizations);
 
-	const createMutation = $api.useMutation('post', '/organizations');
-	const patchMutation = $api.useMutation('patch', '/organizations/{id}');
+	const createMutation = useOrganizationCreate();
+	const patchMutation = useOrganizationUpdate();
 
 	const {
 		register,

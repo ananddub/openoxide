@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useGitProviderCreate, useGitProviderDelete, useGitProviderList, useGitProviderTest, useGitProviderUpdate} from '#/api/live';
 import {getApiBaseUrl} from '#/api/client';
 import {formatApiError} from '#/api/utils';
 import {
@@ -10,14 +10,11 @@ import {
 } from './git-provider-types';
 
 export function useGitProviders() {
-	const list = $api.useQuery('get', '/git-providers' as any, {} as any);
-	const create = $api.useMutation('post', '/git-providers/{kind}' as any);
-	const update = $api.useMutation(
-		'put',
-		'/git-providers/{id}/{kind}' as any,
-	);
-	const remove = $api.useMutation('delete', '/git-providers/{id}' as any);
-	const test = $api.useMutation('post', '/git-providers/{id}/test' as any);
+	const list = useGitProviderList();
+	const create = useGitProviderCreate();
+	const update = useGitProviderUpdate();
+	const remove = useGitProviderDelete();
+	const test = useGitProviderTest();
 
 	const [open, setOpen] = useState(false);
 	const [manifestOpen, setManifestOpen] = useState(false);

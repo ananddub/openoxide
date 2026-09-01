@@ -1,6 +1,6 @@
 import * as React from 'react';
+import {useDeploymentCancel, useDeploymentDelete, useDeploymentDeleteByApplication, useDeploymentList} from '#/api/live';
 import {useQueryClient} from '@tanstack/react-query';
-import {$api} from '#/api/query';
 
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
@@ -45,25 +45,15 @@ export function useDeployments() {
 	const [errorDetailDeployment, setErrorDetailDeployment] =
 		React.useState<Deployment | null>(null);
 
-	const cancelMutation = $api.useMutation(
-		'post',
-		'/deployments/{id}/cancel',
-	);
-	const deleteMutation = $api.useMutation('delete', '/deployments/{id}');
-	const clearAllMutation = $api.useMutation('delete', '/deployments');
+	const cancelMutation = useDeploymentCancel();
+	const deleteMutation = useDeploymentDelete();
+	const clearAllMutation = useDeploymentDeleteByApplication();
 
 	const {
 		data: apiDeployments,
 		isLoading: isApiLoading,
 		refetch,
-	} = $api.useQuery('get', '/deployments', {
-		params: {
-			query: {
-				limit: 200,
-				offset: 0,
-			},
-		},
-	});
+	} = useDeploymentList();
 
 	const storeDeployments = useAppStore(state => state.deployments);
 
@@ -103,13 +93,7 @@ export function useDeployments() {
 
 	const handleCancelDeployment = async (id: number) => {
 		try {
-			await cancelMutation.mutateAsync({
-				params: {
-					path: {
-						id,
-					},
-				},
-			});
+			await cancelMutation.mutateAsync(id);
 			toast.success('Deployment cancellation requested');
 			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
 			refetch();
@@ -120,13 +104,7 @@ export function useDeployments() {
 
 	const handleDeleteDeployment = async (id: number) => {
 		try {
-			await deleteMutation.mutateAsync({
-				params: {
-					path: {
-						id,
-					},
-				},
-			});
+			await deleteMutation.mutateAsync(id);
 			useAppStore.getState().deleteDeployment(id);
 			toast.success(`Deployment #${id} deleted`);
 			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
@@ -138,9 +116,7 @@ export function useDeployments() {
 
 	const handleClearAllDeployments = async () => {
 		try {
-			const res = await clearAllMutation.mutateAsync({
-				params: {query: {}},
-			});
+			const res = await clearAllMutation.mutateAsync(0);
 			const data = res as any;
 			useAppStore.getState().clearDeployments();
 			toast.success(

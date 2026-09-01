@@ -3,7 +3,7 @@ import {Eye, EyeOff, Pencil, Check, X, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useDatabaseUpdate, parseDatabaseKind} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 
 interface DatabaseInternalCredentialsCardProps {
@@ -22,6 +22,7 @@ export function DatabaseInternalCredentialsCard({
 	const [isSavingPassword, setIsSavingPassword] = useState(false);
 
 	const kind = (database?.kind || 'postgres').toLowerCase();
+	const dbKind = parseDatabaseKind(kind);
 	const isRedis = kind.includes('redis');
 	const isLibsql = kind.includes('libsql');
 
@@ -80,21 +81,7 @@ export function DatabaseInternalCredentialsCard({
 			: ''
 		: `${dbUser}:${currentPassword}`;
 	const internalConnStr = `${kind}://${userAuthPart}@${host}:${internalPort}${dbNamePath}`;
-
-	let endpoint:
-		| '/postgres/{id}'
-		| '/mysql/{id}'
-		| '/mariadb/{id}'
-		| '/mongo/{id}'
-		| '/redis/{id}'
-		| '/libsql/{id}' = '/postgres/{id}';
-	if (kind.includes('mysql')) endpoint = '/mysql/{id}';
-	else if (kind.includes('mariadb')) endpoint = '/mariadb/{id}';
-	else if (kind.includes('mongo')) endpoint = '/mongo/{id}';
-	else if (kind.includes('redis')) endpoint = '/redis/{id}';
-	else if (kind.includes('libsql')) endpoint = '/libsql/{id}';
-
-	const patchDatabase = $api.useMutation('patch', endpoint as any);
+	const patchDatabase = useDatabaseUpdate();
 
 	useEffect(() => {
 		setNewPassword(currentPassword);
@@ -109,8 +96,9 @@ export function DatabaseInternalCredentialsCard({
 		setIsSavingPassword(true);
 		try {
 			await patchDatabase.mutateAsync({
-				params: {path: {id: Number(database.id)}},
-				body: {database_password: newPassword.trim()} as any,
+				kind: dbKind,
+				id: Number(database.id),
+				database_password: newPassword.trim(),
 			});
 			toast.success('Password updated successfully');
 			setIsEditingPassword(false);

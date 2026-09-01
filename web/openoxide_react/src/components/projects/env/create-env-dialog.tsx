@@ -9,7 +9,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '#/components/ui/dialog';
-import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 
 interface CreateEnvDialogProps {
@@ -29,7 +28,7 @@ export function CreateEnvDialog({
 	const [description, setDescription] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const createMutation = $api.useMutation('post', '/environments');
+	const createMutation = useEnvironmentCreate();
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();

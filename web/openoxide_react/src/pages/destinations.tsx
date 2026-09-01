@@ -1,7 +1,6 @@
 import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {DestinationsHeader} from '#/components/destinations/destinations-header';
 import {DestinationsList} from '#/components/destinations/destinations-list';
@@ -10,6 +9,7 @@ import {CreateDestinationModal} from '#/components/destinations/create-destinati
 import {useAppStore} from '#/stores/app-store';
 
 import type {DestinationResponse} from '#/types/api-helpers';
+import {useDestinationDelete, useDestinationTest} from '#/api/live';
 
 export const Route = createFileRoute('/_app/destinations')({
 	component: DestinationsPage,
@@ -27,12 +27,12 @@ function DestinationsPage() {
 	const isLoading = false;
 
 	// Mutations
-	const deleteMutation = $api.useMutation('delete', '/destinations/{id}');
-	const testMutation = $api.useMutation('post', '/destinations/test');
+	const deleteMutation = useDestinationDelete();
+	const testMutation = useDestinationTest();
 
 	const handleDelete = async (id: string | number) => {
 		try {
-			await deleteMutation.mutateAsync({params: {path: {id: String(id)}}});
+			await deleteMutation.mutateAsync(String(id));
 			toast.success('S3 Storage Destination deleted successfully');
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));

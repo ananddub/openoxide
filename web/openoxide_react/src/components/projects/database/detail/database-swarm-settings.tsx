@@ -21,7 +21,7 @@ import {
 import {cn} from '#/api/utils';
 import {
 	swarmSections,
-	useDatabaseSwarmSettings,
+	useDatabaseSwarmSettingsState,
 } from './swarm-settings/state';
 
 export function DatabaseSwarmSettings({
@@ -31,7 +31,7 @@ export function DatabaseSwarmSettings({
 	database: any;
 	onUpdated: () => void;
 }) {
-	const state = useDatabaseSwarmSettings(database, onUpdated);
+	const state = useDatabaseSwarmSettingsState(database, onUpdated);
 	const [open, setOpen] = useState(false);
 	const menuItems = swarmSections.map(([id, label]) => ({
 		id,

@@ -16,9 +16,7 @@ import {useProjectCreate, useProjectUpdate} from '#/api/live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {getTagsFromDescription} from '#/hooks/projects/use-projects-list';
-import type {components} from '#/types/api.d.ts';
-
-type Project = components['schemas']['ProjectResponseDto'];
+type Project = Record<string, any>;
 
 type HandleProjectDialogProps = {
 	project?: Project | null;

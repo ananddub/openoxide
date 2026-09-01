@@ -77,7 +77,25 @@
       "Bash(finished_at *)",
       "Bash(\"\nyielded \"tags)",
       "Bash(\"), which silently broke model matching for every query\nending in a semicolon.\neof\n)\")",
-      "Bash(buf *)"
+      "Bash(buf *)",
+      "Bash(])",
+      "Bash(sub)",
+      "Bash(fs.writefilesync)",
+      "Bash(.length)",
+      "Bash(migeof)",
+      "Bash('src/components/projects/compose/create-compose-dialog.tsx': *)",
+      "Bash(],)",
+      "Bash('src/components/projects/app/create-app-dialog.tsx': *)",
+      "Bash('src/components/projects/app/detail/general-tab/drop-source-form.tsx': *)",
+      "Bash('src/components/projects/database/detail/database-advanced-networks.tsx': *)",
+      "Bash(const *)",
+      "Bash(fixes)",
+      "Bash(total++)",
+      "Bash(imports)",
+      "Bash(\\n/, *)",
+      "Bash(/)",
+      "Bash(else *)",
+      "Bash(\\n)"
     ]
   },
   "$version": 4

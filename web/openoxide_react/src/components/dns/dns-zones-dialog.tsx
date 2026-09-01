@@ -8,7 +8,7 @@ import {
 	Plus,
 	Trash2,
 } from 'lucide-react';
-import {$api} from '#/api/query';
+import {useDnsRecordCreate, useDnsRecordDelete, useDnsRecordList, useDnsZoneList} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {Badge} from '#/components/ui/badge';
 import {Button} from '#/components/ui/button';
@@ -43,30 +43,13 @@ export function DnsZonesDialog({provider}: Props) {
 	const [open, setOpen] = useState(false);
 	const [expanded, setExpanded] = useState<string | null>(null);
 	const [draft, setDraft] = useState<RecordDraft | null>(null);
-	const zonesQuery = $api.useQuery(
-		'get',
-		'/dns-providers/{id}/zones' as any,
-		{
-			params: {path: {id: provider.id}},
-			enabled: open,
-		} as any,
+	const zonesQuery = useDnsZoneList(BigInt(provider.id));
+	const recordsQuery = useDnsRecordList(
+		BigInt(provider.id),
+		expanded || '',
 	);
-	const recordsQuery = $api.useQuery(
-		'get',
-		'/dns-providers/{id}/zones/{zone_id}/records' as any,
-		{
-			params: {path: {id: provider.id, zone_id: expanded || ''}},
-			enabled: open && !!expanded,
-		} as any,
-	);
-	const upsert = $api.useMutation(
-		'post',
-		'/dns-providers/{id}/records' as any,
-	);
-	const remove = $api.useMutation(
-		'delete',
-		'/dns-providers/{id}/zones/{zone_id}/records/{record_id}' as any,
-	);
+	const upsert = useDnsRecordCreate();
+	const remove = useDnsRecordDelete();
 	const zones = (zonesQuery.data?.data || zonesQuery.data || []) as Array<{
 		id: string;
 		name: string;

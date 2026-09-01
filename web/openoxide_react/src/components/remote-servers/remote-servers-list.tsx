@@ -10,7 +10,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
-import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {globalServerConnStore} from '#/hooks/use-server-connection-store';
@@ -69,10 +68,7 @@ export function RemoteServersList({
 	const [storeVersion, setStoreVersion] = useState(0);
 	const [search, setSearch] = useState('');
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
-	const testConnMutation = $api.useMutation(
-		'post',
-		'/servers/{id}/test-connection',
-	);
+	const testConnMutation = useRemoteServerTestConnection();
 
 	useEffect(() => {
 		const unsubscribe = globalServerConnStore.subscribe(() =>

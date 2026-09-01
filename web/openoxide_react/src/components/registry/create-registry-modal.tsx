@@ -16,7 +16,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {Database, Plug, RefreshCw} from 'lucide-react';
@@ -52,10 +51,10 @@ export function CreateRegistryModal({
 		? serversData
 		: []) as unknown as RemoteServerResponse[];
 
-	const createMutation = $api.useMutation('post', '/registries');
-	const patchMutation = $api.useMutation('patch', '/registries/{id}');
-	const testMutation = $api.useMutation('post', '/registries/{id}/test');
-	const testRawMutation = $api.useMutation('post', '/registries/test-raw');
+	const createMutation = useRegistryCreate();
+	const patchMutation = useRegistryUpdate();
+	const testMutation = useRegistryTest();
+	const testRawMutation = useRegistryTest();
 
 	useEffect(() => {
 		if (initialData) {

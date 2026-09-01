@@ -1,10 +1,10 @@
+import {useVolumeBackupCreate, useVolumeBackupDelete, useVolumeBackupRestore, useVolumeBackupRun} from '#/api/live';
 import {useState, useMemo, useEffect} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {Database, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {useAppStore} from '#/stores/app-store';
 import {CreateBackupModal} from './backups/create-backup-modal';
@@ -81,16 +81,10 @@ export function ComposeBackupsTab({
 	const isLoading = false;
 
 	// Mutations
-	const createMutation = $api.useMutation('post', '/backups/volume');
-	const runMutation = $api.useMutation('post', '/backups/volume/{id}/run');
-	const restoreMutation = $api.useMutation(
-		'post',
-		'/backups/volume/{id}/restore',
-	);
-	const deleteMutation = $api.useMutation(
-		'delete',
-		'/backups/volume/{id}',
-	);
+	const createMutation = useVolumeBackupCreate();
+	const runMutation = useVolumeBackupRun();
+	const restoreMutation = useVolumeBackupRestore();
+	const deleteMutation = useVolumeBackupDelete();
 
 	const handleCreate = async (data: {
 		name: string;

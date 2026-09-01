@@ -12,7 +12,6 @@ import {
 } from '#/components/ui/dialog';
 import {TagBadge} from '#/components/shared/tag-badge';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
 
 interface TagItem {
 	id: number;
@@ -38,8 +37,8 @@ export function HandleTagModal({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const colorInputRef = useRef<HTMLInputElement>(null);
 
-	const createMutation = $api.useMutation('post', '/tags' as any);
-	const patchMutation = $api.useMutation('patch', '/tags/{id}' as any);
+	const createMutation = useTagCreate();
+	const patchMutation = useTagUpdate();
 
 	useEffect(() => {
 		if (tag) {

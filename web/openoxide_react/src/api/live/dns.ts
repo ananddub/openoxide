@@ -37,6 +37,18 @@ export function useDnsZoneList(providerId: bigint) {
 	);
 }
 
+/** DNS records of a zone (legacy REST: GET /dns-providers/{id}/zones/{zone_id}/records). */
+export function useDnsRecordList(providerId: bigint, zoneId: string) {
+	return useResourceListQuery<Record<string, unknown>>(
+		['dns', 'records', providerId.toString(), zoneId],
+		() =>
+			dnsClient.listRecords({
+				id: providerId,
+				payload: JSON.stringify({zone_id: zoneId}),
+			}),
+	);
+}
+
 /**
  * Create a DNS provider. The DNS controller scopes strictly by the
  * `organization_id` on the request (no header fallback), so the input

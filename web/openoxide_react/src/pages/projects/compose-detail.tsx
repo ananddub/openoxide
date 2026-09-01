@@ -1,7 +1,6 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
 import {Button} from '#/components/ui/button';
 import {useComposeDetail} from '#/hooks/projects/use-compose-detail';
-import {$api} from '#/api/query';
 
 import {ComposeHeader} from '#/components/projects/compose/detail/compose-header';
 
@@ -55,7 +54,7 @@ function ComposeDetailPage() {
 		handleAction,
 	} = useComposeDetail(parsedComposeId);
 
-	const patchCompose = $api.useMutation('patch', '/compose/{id}');
+	const patchCompose = useComposeUpdate();
 
 	const handleUpdateEnv = async (body: Record<string, unknown>) => {
 		await patchCompose.mutateAsync({

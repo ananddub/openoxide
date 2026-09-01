@@ -1,7 +1,7 @@
 import {useState, useMemo} from 'react';
 import {RefreshCw, AlertCircle, Zap} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {$api} from '#/api/query';
+import {useTraefikRequestLogs, useTraefikRequestsStatus} from '#/api/live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import type {RemoteServerItem} from './traefik-types';
@@ -60,13 +60,7 @@ export function TraefikRequestsView({
 		data: rawStatus,
 		isLoading: isStatusLoading,
 		refetch: refetchStatus,
-	} = $api.useQuery('get', '/traefik/requests/status', {
-		params: {
-			query: {
-				server_id: parsedServerId,
-			} as any,
-		},
-	});
+	} = useTraefikRequestsStatus();
 
 	const status = useMemo(() => {
 		if (!rawStatus)
@@ -83,22 +77,8 @@ export function TraefikRequestsView({
 		data: rawLogs,
 		isLoading: isLogsLoading,
 		refetch: refetchLogs,
-	} = $api.useQuery(
-		'get',
-		'/traefik/requests/logs',
-		{
-			params: {
-				query: {
-					server_id: parsedServerId,
-					page,
-					page_size: 25,
-					search: searchQuery || undefined,
-				} as any,
-			},
-		},
-		{
-			enabled: status.is_active,
-		},
+	} = useTraefikRequestLogs(
+		parsedServerId ? BigInt(parsedServerId) : 0n,
 	);
 
 	const logsData = useMemo(() => {
@@ -133,10 +113,7 @@ export function TraefikRequestsView({
 		};
 	}, [rawLogs, statusFilter]);
 
-	const toggleMutation = $api.useMutation(
-		'post',
-		'/traefik/requests/toggle',
-	);
+	const toggleMutation = useTraefikRequestsToggle();
 
 	const handleToggle = async (enable: boolean) => {
 		setIsToggling(true);

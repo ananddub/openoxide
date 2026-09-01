@@ -10,7 +10,6 @@ import {
 	DialogTitle,
 } from '#/components/ui/dialog';
 import Editor from '@monaco-editor/react';
-import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 
 interface EnvVariablesModalProps {
@@ -34,11 +33,8 @@ export function EnvVariablesModal({
 	const [envVars, setEnvVars] = useState(environment?.env_var || '');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const patchProjectMutation = $api.useMutation('patch', '/projects/{id}');
-	const patchEnvironmentMutation = $api.useMutation(
-		'patch',
-		'/environments/{id}',
-	);
+	const patchProjectMutation = useProjectUpdate();
+	const patchEnvironmentMutation = useEnvironmentUpdate();
 
 	useEffect(() => {
 		setProjectEnv(project.env_var || '');

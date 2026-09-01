@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {$api} from '#/api/query';
+import {useEnvironmentListByProject} from '#/api/live';
 import {useQueryClient} from '@tanstack/react-query';
 import {formatApiError} from '#/api/utils';
 import {
@@ -59,22 +59,10 @@ export function VaultProvidersPage() {
 	const updateVaultStore = useAppStore(state => state.updateVaultProvider);
 	const deleteVaultStore = useAppStore(state => state.deleteVaultProvider);
 
-	const createMutation = $api.useMutation(
-		'post',
-		'/vault-providers' as any,
-	);
-	const updateMutation = $api.useMutation(
-		'put',
-		'/vault-providers/{id}' as any,
-	);
-	const deleteMutation = $api.useMutation(
-		'delete',
-		'/vault-providers/{id}' as any,
-	);
-	const testMutation = $api.useMutation(
-		'post',
-		'/vault-providers/{id}/test' as any,
-	);
+	const createMutation = useVaultProviderCreate();
+	const updateMutation = useVaultProviderUpdate();
+	const deleteMutation = useVaultProviderDelete();
+	const testMutation = useVaultProviderTest();
 
 	const providers = storeProviders;
 	const isLoading = isVaultLoading && providers.length === 0;
@@ -100,13 +88,8 @@ export function VaultProvidersPage() {
 	const [formAssignments, setFormAssignments] = useState('[]');
 	const [assignmentProject, setAssignmentProject] = useState('');
 	const {projects} = useProjectsList();
-	const environmentsQuery = $api.useQuery(
-		'get',
-		'/environments/project/{project_id}' as any,
-		{
-			params: {path: {project_id: Number(assignmentProject) || 0}},
-			enabled: !!assignmentProject,
-		} as any,
+	const environmentsQuery = useEnvironmentListByProject(
+		BigInt(Number(assignmentProject) || 0),
 	);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -350,10 +333,7 @@ export function VaultProvidersPage() {
 		}
 	};
 
-	const testConnectionMutation = $api.useMutation(
-		'post',
-		'/vault-providers/test-connection' as any,
-	);
+	const testConnectionMutation = useVaultTestConnection();
 
 	const handleTestModalConnection = async () => {
 		if (

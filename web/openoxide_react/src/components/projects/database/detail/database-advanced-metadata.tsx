@@ -4,15 +4,11 @@ import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Textarea} from '#/components/ui/textarea';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useDatabaseUpdate} from '#/api/live';
 import {formatApiError} from '#/api/utils';
-import {databaseEndpoint} from './database-endpoint';
 
 export function DatabaseAdvancedMetadata({database, onUpdated}: any) {
-	const patchDatabase = $api.useMutation(
-		'patch',
-		databaseEndpoint(database) as any,
-	);
+	const patchDatabase = useDatabaseUpdate();
 	const [name, setName] = useState('');
 	const [description, setDescription] = useState('');
 	const [saving, setSaving] = useState(false);

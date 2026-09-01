@@ -13,7 +13,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from '#/components/ui/card';
-import {$api} from '#/api/query';
 import {useAppStore} from '#/stores/app-store';
 import {HandleTag} from './handle-tag';
 
@@ -27,7 +26,7 @@ export const TagManager = () => {
 	const [searchQuery, setSearchQuery] = useState('');
 	const rawTags = useAppStore(state => state.tags);
 	const isLoading = false;
-	const deleteMutation = $api.useMutation('delete', '/tags/{id}' as any);
+	const deleteMutation = useTagDelete();
 
 	const tags: TagItem[] = useMemo(() => {
 		return Array.isArray(rawTags) ? (rawTags as unknown as TagItem[]) : [];

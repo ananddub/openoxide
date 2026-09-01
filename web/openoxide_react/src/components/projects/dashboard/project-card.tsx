@@ -1,6 +1,6 @@
 import React, {useState, useMemo} from 'react';
 import {Link} from '@tanstack/react-router';
-import type {components} from '#/types/api.d.ts';
+
 import {
 	Folder,
 	MoreHorizontal,
@@ -22,7 +22,7 @@ import {useAppStore} from '#/stores/app-store';
 import {getTagsFromDescription} from '#/hooks/projects/use-projects-list';
 import {HandleProjectDialog} from './handle-project-dialog';
 
-type Project = components['schemas']['ProjectResponseDto'];
+type Project = Record<string, any>;
 
 type ProjectCardProps = {
 	project: Project;

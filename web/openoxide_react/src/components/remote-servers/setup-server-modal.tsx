@@ -8,7 +8,6 @@ import {
 } from '#/components/ui/dialog';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
-import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {
@@ -45,11 +44,8 @@ export function SetupServerModal({
 	> | null>(null);
 	const [advertiseAddr, setAdvertiseAddr] = useState('');
 
-	const testConnMutation = $api.useMutation(
-		'post',
-		'/servers/{id}/test-connection',
-	);
-	const auditMutation = $api.useMutation('post', '/servers/{id}/audit');
+	const testConnMutation = useRemoteServerTestConnection();
+	const auditMutation = useRemoteServerAudit();
 
 	const handleTestConnection = async () => {
 		if (!server?.id) return;

@@ -1,7 +1,6 @@
 import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
-import {$api} from '#/api/query';
-import {useRegistryList} from '#/api/live';
+import {useRegistryDelete, useRegistryList} from '#/api/live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {RegistryHeader} from '#/components/registry/registry-header';
@@ -35,7 +34,7 @@ function RegistryPage() {
 	const registries = Array.isArray(rawRegistries ?? [])
 		? ((rawRegistries ?? []) as unknown as RegistryResponse[])
 		: [];
-	const deleteMutation = $api.useMutation('delete', '/registries/{id}');
+	const deleteMutation = useRegistryDelete();
 
 	const handleOpenAdd = () => {
 		setEditingRegistry(null);
@@ -50,7 +49,7 @@ function RegistryPage() {
 	const confirmDelete = async () => {
 		if (!deletingId) return;
 		try {
-			await deleteMutation.mutateAsync({params: {path: {id: deletingId}}});
+			await deleteMutation.mutateAsync(deletingId);
 			toast.success('Registry deleted successfully');
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));

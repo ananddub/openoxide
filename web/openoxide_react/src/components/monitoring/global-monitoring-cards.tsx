@@ -8,7 +8,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '#/components/ui/card';
-import {$api} from '#/api/query';
+import {useDeploymentListContainers} from '#/api/live';
 import {useMonitoringContainerStates} from '#/api/live';
 import {useAppStore} from '#/stores/app-store';
 import {getAccessToken, refreshAccessToken} from '#/api/client';
@@ -490,10 +490,8 @@ export function GlobalMonitoringCards() {
 			setSelectedServerId(null);
 		}
 	}, [servers, selectedServerId]);
-	const {data: rawDockerContainers = []} = $api.useQuery(
-		'get',
-		'/deployments/docker/containers',
-		{params: {query: {server_id: effectiveServerId || undefined} as any}},
+	const {data: rawDockerContainers = []} = useDeploymentListContainers(
+		effectiveServerId ? Number(effectiveServerId) : null,
 	);
 
 

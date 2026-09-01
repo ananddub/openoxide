@@ -19,9 +19,9 @@ import {
 	DialogFooter,
 } from '#/components/ui/dialog';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {CreateVolumeBackupModal} from './create-volume-backup-modal';
+import {useVolumeBackupDelete, useVolumeBackupRestore, useVolumeBackupRun} from '#/api/live';
 
 interface VolumeBackupsTabProps {
 	app: any;
@@ -51,15 +51,9 @@ export function VolumeBackupsTab({
 	);
 
 	// Mutations
-	const runMutation = $api.useMutation('post', '/backups/volume/{id}/run');
-	const restoreMutation = $api.useMutation(
-		'post',
-		'/backups/volume/{id}/restore',
-	);
-	const deleteMutation = $api.useMutation(
-		'delete',
-		'/backups/volume/{id}',
-	);
+	const runMutation = useVolumeBackupRun();
+	const restoreMutation = useVolumeBackupRestore();
+	const deleteMutation = useVolumeBackupDelete();
 
 	const handleRunBackup = async (id: number) => {
 		setActiveActionId({id, action: 'run'});
@@ -94,8 +88,8 @@ export function VolumeBackupsTab({
 		if (!deleteTargetId) return;
 		try {
 			await deleteMutation.mutateAsync({
-				params: {path: {id: deleteTargetId}},
-			});
+				id: deleteTargetId,
+					});
 			toast.success('Volume backup configuration deleted');
 			onRefresh?.();
 		} catch (err: any) {

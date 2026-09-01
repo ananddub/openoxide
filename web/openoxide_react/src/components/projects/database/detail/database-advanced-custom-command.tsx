@@ -3,7 +3,7 @@ import {Terminal, Save, Plus, Trash2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useDatabaseUpdate, parseDatabaseKind} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 
 interface DatabaseAdvancedCustomCommandProps {
@@ -20,21 +20,8 @@ export function DatabaseAdvancedCustomCommand({
 		database?.database_kind ||
 		'postgres'
 	).toLowerCase();
-
-	let endpoint:
-		| '/postgres/{id}'
-		| '/mysql/{id}'
-		| '/mariadb/{id}'
-		| '/mongo/{id}'
-		| '/redis/{id}'
-		| '/libsql/{id}' = '/postgres/{id}';
-	if (kind.includes('mysql')) endpoint = '/mysql/{id}';
-	else if (kind.includes('mariadb')) endpoint = '/mariadb/{id}';
-	else if (kind.includes('mongo')) endpoint = '/mongo/{id}';
-	else if (kind.includes('redis')) endpoint = '/redis/{id}';
-	else if (kind.includes('libsql')) endpoint = '/libsql/{id}';
-
-	const patchDatabase = $api.useMutation('patch', endpoint as any);
+	const dbKind = parseDatabaseKind(kind);
+	const patchDatabase = useDatabaseUpdate();
 
 	const [dockerImage, setDockerImage] = useState(
 		database?.docker_image || '',
@@ -74,13 +61,12 @@ export function DatabaseAdvancedCustomCommand({
 		try {
 			const filteredArgs = argsList.filter(a => a.trim().length > 0);
 			await patchDatabase.mutateAsync({
-				params: {path: {id: database?.id}},
-				body: {
-					docker_image: dockerImage.trim() || undefined,
-					command: command.trim() || undefined,
-					args: filteredArgs.length > 0 ? filteredArgs : undefined,
-					env_var: envVar.trim() || undefined,
-				},
+				kind: dbKind,
+				id: database?.id,
+				docker_image: dockerImage.trim() || undefined,
+				command: command.trim() || undefined,
+				args: filteredArgs.length > 0 ? filteredArgs : undefined,
+				env_var: envVar.trim() || undefined,
 			});
 			toast.success('Custom image & command updated');
 			onUpdated();

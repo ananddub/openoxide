@@ -13,7 +13,6 @@ import {Switch} from '#/components/ui/switch';
 import {useAppStore} from '#/stores/app-store';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 
 interface CreateVolumeBackupModalProps {
@@ -38,7 +37,7 @@ export function CreateVolumeBackupModal({
 	const [turnOff, setTurnOff] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const createMutation = $api.useMutation('post', '/backups/volume');
+	const createMutation = useVolumeBackupCreate();
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();

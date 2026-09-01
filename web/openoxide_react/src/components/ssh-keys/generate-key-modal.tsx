@@ -15,7 +15,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {
@@ -49,11 +48,8 @@ export function GenerateKeyModal({
 	} | null>(null);
 	const [copiedCmd, setCopiedCmd] = useState(false);
 
-	const generatePairMutation = $api.useMutation(
-		'post',
-		'/ssh-keys/generate-pair' as any,
-	);
-	const createMutation = $api.useMutation('post', '/ssh-keys');
+	const generatePairMutation = useSshKeyGeneratePair();
+	const createMutation = useSshKeyCreate();
 
 	const handleGenerate = async (e: React.FormEvent) => {
 		e.preventDefault();

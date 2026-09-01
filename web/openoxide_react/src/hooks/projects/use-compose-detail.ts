@@ -1,9 +1,8 @@
 import {useState, useMemo, useEffect} from 'react';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
 import type {ComposeResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
-import {useComposeGet} from '#/api/live';
+import {useComposeCancel, useComposeDeploy, useComposeGet, useComposeReload, useComposeStart, useComposeStop, useComposeUpdate} from '#/api/live';
 
 import {useAppStore, selectComposeById} from '#/stores/app-store';
 
@@ -113,12 +112,12 @@ export function useComposeDetail(composeId: number) {
 		monitoring.triggerRefresh();
 	};
 
-	const deployMutation = $api.useMutation('post', '/composes/{id}/deploy');
-	const reloadMutation = $api.useMutation('post', '/composes/{id}/reload');
-	const startMutation = $api.useMutation('post', '/composes/{id}/start');
-	const stopMutation = $api.useMutation('post', '/composes/{id}/stop');
-	const cancelMutation = $api.useMutation('post', '/composes/{id}/cancel');
-	const patchMutation = $api.useMutation('patch', '/composes/{id}');
+	const deployMutation = useComposeDeploy();
+	const reloadMutation = useComposeReload();
+	const startMutation = useComposeStart();
+	const stopMutation = useComposeStop();
+	const cancelMutation = useComposeCancel();
+	const patchMutation = useComposeUpdate();
 
 	const handleAction = async (
 		action: 'deploy' | 'reload' | 'start' | 'stop' | 'cancel',
@@ -154,24 +153,24 @@ export function useComposeDetail(composeId: number) {
 		try {
 			if (action === 'deploy') {
 				await deployMutation.mutateAsync({
-					params: {path: {id: composeId}},
-				});
+				id: composeId,
+					});
 				toast.success('Compose stack deployment triggered');
 			} else if (action === 'reload') {
 				await reloadMutation.mutateAsync({
-					params: {path: {id: composeId}},
-				});
+				id: composeId,
+					});
 				toast.success('Compose stack reloaded');
 			} else if (action === 'start') {
-				await startMutation.mutateAsync({params: {path: {id: composeId}}});
+				await startMutation.mutateAsync(composeId);
 				toast.success('Compose stack started');
 			} else if (action === 'stop') {
-				await stopMutation.mutateAsync({params: {path: {id: composeId}}});
+				await stopMutation.mutateAsync(composeId);
 				toast.success('Compose stack stopped');
 			} else if (action === 'cancel') {
 				await cancelMutation.mutateAsync({
-					params: {path: {id: composeId}},
-				});
+				id: composeId,
+					});
 				toast.success('Compose stack cancellation requested');
 			}
 			refetchAll();
@@ -183,7 +182,7 @@ export function useComposeDetail(composeId: number) {
 	const handleUpdate = async (patchData: Partial<ComposeResponse>) => {
 		try {
 			await patchMutation.mutateAsync({
-				params: {path: {id: composeId}},
+				id: composeId,
 				body: patchData as any,
 			});
 			toast.success('Compose settings updated');

@@ -209,3 +209,104 @@ export function useApplicationCancel() {
 		applicationClient.cancel({id: BigInt(id)}),
 	);
 }
+
+// ---------------------------------------------------------------------------
+// Source-setting mutations (legacy REST: PATCH /applications/{id}/source/*).
+// Each hook takes the application id plus the provider-specific fields the
+// legacy REST body carried (snake_case in, camelCase to the proto).
+// ---------------------------------------------------------------------------
+
+export type GitSourceInput = {
+	id: number | bigint;
+	repository: string;
+	owner: string;
+	branch?: string;
+	build_path?: string;
+	provider_id?: number | bigint;
+	auto_deploy?: boolean;
+	ssh_key_id?: number | bigint;
+};
+
+export type DockerSourceInput = {
+	id: number | bigint;
+	image: string;
+	username?: string;
+	password?: string;
+	registry_url?: string;
+};
+
+export type CustomGitSourceInput = GitSourceInput & {url: string};
+
+function toGitFields(input: GitSourceInput) {
+	return {
+		id: BigInt(input.id),
+		repository: input.repository,
+		owner: input.owner,
+		branch: input.branch,
+		buildPath: input.build_path,
+		providerId: input.provider_id !== undefined ? BigInt(input.provider_id) : undefined,
+		autoDeploy: input.auto_deploy,
+		sshKeyId: input.ssh_key_id !== undefined ? BigInt(input.ssh_key_id) : undefined,
+	};
+}
+
+/** Point an application at a Docker image. */
+export function useApplicationSetDockerSource() {
+	return useConnectMutation((input: DockerSourceInput) =>
+		applicationClient.setDockerSource({
+			id: BigInt(input.id),
+			image: input.image,
+			username: input.username,
+			password: input.password,
+			registryUrl: input.registry_url,
+		}),
+	);
+}
+
+/** Point an application at a plain Git URL. */
+export function useApplicationSetCustomGitSource() {
+	return useConnectMutation((input: CustomGitSourceInput) =>
+		applicationClient.setCustomGitSource({
+			...toGitFields(input),
+			url: input.url,
+		}),
+	);
+}
+
+/** Point an application at a GitHub repository. */
+export function useApplicationSetGithubSource() {
+	return useConnectMutation((input: GitSourceInput) =>
+		applicationClient.setGithubSource(toGitFields(input)),
+	);
+}
+
+/** Point an application at a GitLab repository. */
+export function useApplicationSetGitlabSource() {
+	return useConnectMutation((input: GitSourceInput) =>
+		applicationClient.setGitlabSource(toGitFields(input)),
+	);
+}
+
+/** Point an application at a Gitea repository. */
+export function useApplicationSetGiteaSource() {
+	return useConnectMutation((input: GitSourceInput) =>
+		applicationClient.setGiteaSource(toGitFields(input)),
+	);
+}
+
+/** Point an application at a Bitbucket repository. */
+export function useApplicationSetBitbucketSource() {
+	return useConnectMutation((input: GitSourceInput) =>
+		applicationClient.setBitbucketSource(toGitFields(input)),
+	);
+}
+
+/** Switch an application to drop-upload (manual file) source. */
+export function useApplicationSetDropSource() {
+	return useConnectMutation((input: {id: number | bigint; build_path?: string}) =>
+		applicationClient.setDropSource({
+			id: BigInt(input.id),
+			buildPath: input.build_path,
+		}),
+	);
+}

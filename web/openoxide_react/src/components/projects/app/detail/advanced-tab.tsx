@@ -4,7 +4,7 @@ import {Trash2, AlertTriangle, Save} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useApplicationUpdate} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 
 interface AdvancedTabProps {
@@ -38,14 +38,8 @@ export function AdvancedTab({app, onUpdated}: AdvancedTabProps) {
 		app.replicas,
 	]);
 
-	const patchResources = $api.useMutation(
-		'patch',
-		'/applications/{id}/resources',
-	);
-	const deleteApplication = $api.useMutation(
-		'delete',
-		'/applications/{id}',
-	);
+	const patchResources = useApplicationUpdate();
+	const deleteApplication = useApplicationDelete();
 
 	const handleSaveResources = async () => {
 		setSaving(true);

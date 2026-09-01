@@ -323,7 +323,7 @@ export function ComposeArchitectureTab({
 			toast.success(`Domain updated successfully`);
 		} else {
 			await createDomainMutation.mutateAsync({...data, compose_id: composeId});
-			toast.success(`Domain attached to ${data.serviceName}`);
+			toast.success(`Domain attached to ${data.service_name}`);
 		}
 		queryClient.invalidateQueries();
 		setActiveModal(null);

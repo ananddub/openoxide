@@ -1,3 +1,4 @@
+import {useApplicationDeploy, useApplicationRedeploy, useDeploymentCancel, useDeploymentDelete} from '#/api/live';
 import {useAppStore} from '#/stores/app-store';
 import {useState, useEffect, useRef} from 'react';
 import {
@@ -14,7 +15,6 @@ import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {toast} from 'sonner';
 import {useQueryClient} from '@tanstack/react-query';
-import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {
 	AlertDialog,
@@ -77,23 +77,11 @@ export function DeploymentsTab({
 	const activeDeployment = events.find(isBuildActive);
 
 	// Mutations
-	const deployMutation = $api.useMutation(
-		'post',
-		'/applications/{id}/deploy',
-	);
-	const redeployMutation = $api.useMutation(
-		'post',
-		'/applications/{id}/redeploy',
-	);
-	const cancelMutation = $api.useMutation(
-		'post',
-		'/deployments/{id}/cancel',
-	);
-	const deleteMutation = $api.useMutation('delete', '/deployments/{id}');
-	const clearAppMutation = $api.useMutation(
-		'delete',
-		'/deployments/application/{id}',
-	);
+	const deployMutation = useApplicationDeploy();
+	const redeployMutation = useApplicationRedeploy();
+	const cancelMutation = useDeploymentCancel();
+	const deleteMutation = useDeploymentDelete();
+	const clearAppMutation = useDeploymentDelete();
 
 	// Realtime SSE log stream listener with JWT Authorization header
 	useEffect(() => {
@@ -204,7 +192,7 @@ export function DeploymentsTab({
 	const handleDeploy = async () => {
 		setIsTriggering(true);
 		try {
-			await deployMutation.mutateAsync({params: {path: {id: appId}}});
+			await deployMutation.mutateAsync(appId);
 			toast.success('Deployment triggered successfully');
 			onRefresh?.();
 		} catch (err: any) {
@@ -217,7 +205,7 @@ export function DeploymentsTab({
 	const handleRedeploy = async () => {
 		setIsTriggering(true);
 		try {
-			await redeployMutation.mutateAsync({params: {path: {id: appId}}});
+			await redeployMutation.mutateAsync(appId);
 			toast.success('Redeploy triggered successfully');
 			onRefresh?.();
 		} catch (err: any) {
@@ -234,8 +222,8 @@ export function DeploymentsTab({
 		setIsTriggering(true);
 		try {
 			await cancelMutation.mutateAsync({
-				params: {path: {id: cancelingId}},
-			});
+				id: cancelingId,
+					});
 			toast.success('Deployment cancellation requested');
 			onRefresh?.();
 		} catch (err: any) {

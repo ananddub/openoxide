@@ -95,12 +95,13 @@ export type DockerContainerPayload = {
 
 /**
  * Docker containers visible to the panel (legacy REST: GET
- * /deployments/docker/containers). ListContainers takes no server filter, so
- * unlike the REST endpoint this always lists the local panel server.
+ * /deployments/docker/containers?server_id=...). ListContainers has no
+ * server filter on the wire; the serverId only keys the query cache so
+ * callers can switch contexts (local server for any null/undefined id).
  */
-export function useDeploymentListContainers() {
+export function useDeploymentListContainers(serverId?: number | bigint | null) {
 	return useConnectQuery<DockerContainerPayload[]>(
-		['deployments', 'docker-containers'],
+		['deployments', 'docker-containers', String(serverId ?? 'local')],
 		async () => {
 			const response = await deploymentClient.listContainers({});
 			return response.containers.map((container) => ({

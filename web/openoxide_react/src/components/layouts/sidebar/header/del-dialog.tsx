@@ -11,7 +11,6 @@ import {
 } from '#/components/ui/dialog';
 import {toast} from 'sonner';
 import {cn} from '#/api/utils';
-import {$api} from '#/api/query';
 import {useQueryClient} from '@tanstack/react-query';
 
 type Props = {
@@ -31,7 +30,7 @@ export function DeleteOrganization({
 	const [isPending, setIsPending] = React.useState(false);
 	const queryClient = useQueryClient();
 
-	const deleteMutation = $api.useMutation('delete', '/organizations/{id}');
+	const deleteMutation = useOrganizationDelete();
 
 	const handleConfirm = async () => {
 		if (disabled) return;

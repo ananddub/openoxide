@@ -2,26 +2,30 @@ import {useState} from 'react';
 import {HardDrive, Package, Pencil, Plus, Trash2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {
+	useDatabaseMountCreate,
+	useDatabaseMountDelete,
+	useDatabaseMountList,
+	useDatabaseMountUpdate,
+	parseDatabaseKind,
+} from '#/api/live';
 import {formatApiError} from '#/api/utils';
-import {databaseKind} from './database-endpoint';
 import {
 	DatabaseVolumeDialog,
 	type DatabaseMount,
 } from './database-volume-dialog';
 
 export function DatabaseAdvancedVolumes({database, onUpdated}: any) {
-	const kind = databaseKind(database);
-	const base = '/database-management/{kind}/{id}/mounts' as any;
-	const item =
-		'/database-management/{kind}/{database_id}/mounts/{id}' as any;
-	const {data, refetch} = $api.useQuery('get', base, {
-		params: {path: {kind, id: Number(database?.id)}},
-	} as any);
+	const kind = parseDatabaseKind(database?.kind || 'postgres');
+	const databaseId = Number(database?.id);
+	const {data, refetch} = useDatabaseMountList(
+		kind,
+		BigInt(databaseId || 0),
+	);
 	const mounts = normalizeMounts(data);
-	const create = $api.useMutation('post', base);
-	const update = $api.useMutation('put', item);
-	const remove = $api.useMutation('delete', item);
+	const create = useDatabaseMountCreate();
+	const update = useDatabaseMountUpdate();
+	const remove = useDatabaseMountDelete();
 	const [open, setOpen] = useState(false);
 	const [editing, setEditing] = useState<DatabaseMount | null>(null);
 	const [saving, setSaving] = useState(false);
@@ -33,24 +37,18 @@ export function DatabaseAdvancedVolumes({database, onUpdated}: any) {
 		setSaving(true);
 		try {
 			const body = {
-				...value,
+				kind,
+				database_id: databaseId,
+				mount_type: value.mount_type,
 				volume_name: value.volume_name || undefined,
 				host_path: value.host_path || undefined,
 				file_path: value.file_path || undefined,
 				content: value.content ?? undefined,
+				mount_path: value.mount_path,
 			};
 			if (editing)
-				await update.mutateAsync({
-					params: {
-						path: {kind, database_id: Number(database.id), id: editing.id},
-					},
-					body,
-				} as any);
-			else
-				await create.mutateAsync({
-					params: {path: {kind, id: Number(database.id)}},
-					body,
-				} as any);
+				await update.mutateAsync({...body, id: editing.id});
+			else await create.mutateAsync(body);
 			toast.success(editing ? 'Volume updated' : 'Volume added');
 			setOpen(false);
 			await refetch();
@@ -64,10 +62,10 @@ export function DatabaseAdvancedVolumes({database, onUpdated}: any) {
 	const deleteMount = async (mount: DatabaseMount) => {
 		try {
 			await remove.mutateAsync({
-				params: {
-					path: {kind, database_id: Number(database.id), id: mount.id},
-				},
-			} as any);
+				kind,
+				database_id: databaseId,
+				id: mount.id,
+			});
 			toast.success('Volume removed');
 			await refetch();
 			onUpdated();

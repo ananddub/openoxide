@@ -1,5 +1,4 @@
 import React, {useState} from 'react';
-import {$api} from '#/api/query';
 import {useQueryClient} from '@tanstack/react-query';
 import {formatApiError} from '#/api/utils';
 import {
@@ -51,19 +50,10 @@ export function DnsProvidersPage() {
 	const updateDnsStore = useAppStore(state => state.updateDnsProvider);
 	const deleteDnsStore = useAppStore(state => state.deleteDnsProvider);
 
-	const createMutation = $api.useMutation('post', '/dns-providers' as any);
-	const updateMutation = $api.useMutation(
-		'put',
-		'/dns-providers/{id}' as any,
-	);
-	const deleteMutation = $api.useMutation(
-		'delete',
-		'/dns-providers/{id}' as any,
-	);
-	const testMutation = $api.useMutation(
-		'post',
-		'/dns-providers/{id}/test' as any,
-	);
+	const createMutation = useDnsProviderCreate();
+	const updateMutation = useDnsProviderUpdate();
+	const deleteMutation = useDnsProviderDelete();
+	const testMutation = useDnsProviderTest();
 
 	const providers = storeProviders;
 	const isLoading = isDnsLoading && providers.length === 0;
@@ -185,10 +175,7 @@ export function DnsProvidersPage() {
 		}
 	};
 
-	const testConnectionMutation = $api.useMutation(
-		'post',
-		'/dns-providers/test-connection' as any,
-	);
+	const testConnectionMutation = useDnsTestConnection();
 
 	const handleTestModalConnection = async () => {
 		if (!editingProvider && !formToken.trim()) {

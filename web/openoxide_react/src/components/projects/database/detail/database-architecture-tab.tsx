@@ -1,7 +1,6 @@
 import {useState, useMemo} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {ComposeVisualizer} from '#/components/projects/compose/visualizer/compose-visualizer';
 import {CreateBackupModal} from '#/components/projects/compose/detail/backups/create-backup-modal';
@@ -40,15 +39,9 @@ export function DatabaseArchitectureTab({
 						: 5432;
 	const externalPort = database?.external_port || undefined;
 
-	const createBackupMutation = $api.useMutation('post', '/backups/volume');
-	const patchBackupMutation = $api.useMutation(
-		'patch',
-		'/backups/volume/{id}',
-	);
-	const deleteBackupMutation = $api.useMutation(
-		'delete',
-		'/backups/volume/{id}',
-	);
+	const createBackupMutation = useVolumeBackupCreate();
+	const patchBackupMutation = useVolumeBackupUpdate();
+	const deleteBackupMutation = useVolumeBackupDelete();
 
 	const [activeModal, setActiveModal] = useState<
 		'domain' | 'backup' | 'terminal' | 'logs' | null

@@ -16,7 +16,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import {$api} from '#/api/query';
+import {useApplicationCreate} from '#/api/live';
 import {useAppStore} from '#/stores/app-store';
 import {formatApiError} from '#/api/utils';
 import {Server} from 'lucide-react';
@@ -41,7 +41,7 @@ export function CreateAppDialog({
 	const [serverId, setServerId] = useState<string>('local');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const createMutation = $api.useMutation('post', '/applications');
+	const createMutation = useApplicationCreate();
 	const serversList = useAppStore(state => state.servers || []);
 
 	const handleClose = () => {

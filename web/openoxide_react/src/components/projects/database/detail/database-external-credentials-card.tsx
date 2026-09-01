@@ -3,7 +3,7 @@ import {Eye, EyeOff, Check, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useDatabaseUpdate, parseDatabaseKind} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {useAppStore} from '#/stores/app-store';
 
@@ -22,6 +22,7 @@ export function DatabaseExternalCredentialsCard({
 
 	const servers = useAppStore(state => state.servers || []);
 	const kind = (database?.kind || 'postgres').toLowerCase();
+	const dbKind = parseDatabaseKind(kind);
 	const isRedis = kind.includes('redis');
 	const isLibsql = kind.includes('libsql');
 
@@ -90,21 +91,7 @@ export function DatabaseExternalCredentialsCard({
 			: ''
 		: `${dbUser}:${currentPassword}`;
 	const externalConnStr = `${kind}://${userAuthPart}@${serverIp}:${externalPort || internalPort}${dbNamePath}`;
-
-	let endpoint:
-		| '/postgres/{id}'
-		| '/mysql/{id}'
-		| '/mariadb/{id}'
-		| '/mongo/{id}'
-		| '/redis/{id}'
-		| '/libsql/{id}' = '/postgres/{id}';
-	if (kind.includes('mysql')) endpoint = '/mysql/{id}';
-	else if (kind.includes('mariadb')) endpoint = '/mariadb/{id}';
-	else if (kind.includes('mongo')) endpoint = '/mongo/{id}';
-	else if (kind.includes('redis')) endpoint = '/redis/{id}';
-	else if (kind.includes('libsql')) endpoint = '/libsql/{id}';
-
-	const patchDatabase = $api.useMutation('patch', endpoint as any);
+	const patchDatabase = useDatabaseUpdate();
 
 	useEffect(() => {
 		setExtPortInput(externalPort ? externalPort.toString() : '');
@@ -127,8 +114,9 @@ export function DatabaseExternalCredentialsCard({
 		setIsSavingPort(true);
 		try {
 			await patchDatabase.mutateAsync({
-				params: {path: {id: Number(database.id)}},
-				body: {external_port: parsedPort} as any,
+				kind: dbKind,
+				id: Number(database.id),
+				external_port: parsedPort,
 			});
 			toast.success('External Port updated');
 			if (onUpdated) onUpdated();

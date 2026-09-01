@@ -66,3 +66,51 @@ export function useTraefikFileContentUpdate() {
 			}),
 	);
 }
+
+/**
+ * Traefik health snapshot for a server (legacy REST: GET /traefik/health).
+ * Returns the backend's HealthDto JSON (is_healthy, rawdata_status,
+ * configuration_errors).
+ */
+export function useTraefikHealth() {
+	return useResourceQuery<{
+		is_healthy: boolean;
+		rawdata_status: string;
+		configuration_errors: string[];
+		[key: string]: unknown;
+	}>(['traefik', 'health'], async () => {
+		const response = await traefikClient.health({});
+		return JSON.parse(response.payload || '{}');
+	});
+}
+
+/**
+ * Traefik request-logging status (legacy REST: GET /traefik/requests/status).
+ * Returns whether request logging is currently enabled.
+ */
+export function useTraefikRequestsStatus() {
+	return useResourceQuery<{
+		enabled: boolean;
+		[key: string]: unknown;
+	}>(['traefik', 'requests-status'], async () => {
+		const response = await traefikClient.requestStatus({});
+		return JSON.parse(response.payload || '{}');
+	});
+}
+
+/** Toggle Traefik request logging on/off (legacy REST: POST /traefik/requests/toggle). */
+export function useTraefikRequestsToggle() {
+	return useConnectMutation((input: {enabled: boolean}) =>
+		traefikClient.toggleRequests({
+			payload: JSON.stringify({enabled: input.enabled}),
+		}),
+	);
+}
+
+/** Traefik request logs (legacy REST: GET /traefik/requests/logs). */
+export function useTraefikRequestLogs(serverId: bigint = 0n) {
+	return useResourceListQuery<Record<string, unknown>>(
+		['traefik', 'request-logs', serverId.toString()],
+		() => traefikClient.logs({organizationId: serverId}),
+	);
+}

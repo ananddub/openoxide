@@ -1,7 +1,17 @@
 import {useState, useMemo} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {
+	useDomainCreate,
+	useDomainDelete,
+	useDomainUpdate,
+	useScheduleCreate,
+	useScheduleDelete,
+	useScheduleUpdate,
+	useVolumeBackupCreate,
+	useVolumeBackupDelete,
+	useVolumeBackupUpdate,
+} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {ComposeVisualizer} from '#/components/projects/compose/visualizer/compose-visualizer';
 import {ComposeDomainModal} from '#/components/projects/compose/detail/domains/compose-domain-modal';
@@ -32,29 +42,17 @@ export function AppArchitectureTab({
 	const appId = app?.id;
 	const activeOrg = useOrganizationStore(state => state.activeOrg);
 
-	const createDomainMutation = $api.useMutation('post', '/domains');
-	const patchDomainMutation = $api.useMutation('patch', '/domains/{id}');
-	const deleteDomainMutation = $api.useMutation('delete', '/domains/{id}');
+	const createDomainMutation = useDomainCreate();
+	const patchDomainMutation = useDomainUpdate();
+	const deleteDomainMutation = useDomainDelete();
 
-	const createScheduleMutation = $api.useMutation('post', '/schedules');
-	const patchScheduleMutation = $api.useMutation(
-		'patch',
-		'/schedules/{id}',
-	);
-	const deleteScheduleMutation = $api.useMutation(
-		'delete',
-		'/schedules/{id}',
-	);
+	const createScheduleMutation = useScheduleCreate();
+	const patchScheduleMutation = useScheduleUpdate();
+	const deleteScheduleMutation = useScheduleDelete();
 
-	const createBackupMutation = $api.useMutation('post', '/backups/volume');
-	const patchBackupMutation = $api.useMutation(
-		'patch',
-		'/backups/volume/{id}',
-	);
-	const deleteBackupMutation = $api.useMutation(
-		'delete',
-		'/backups/volume/{id}',
-	);
+	const createBackupMutation = useVolumeBackupCreate();
+	const patchBackupMutation = useVolumeBackupUpdate();
+	const deleteBackupMutation = useVolumeBackupDelete();
 
 	const [activeModal, setActiveModal] = useState<
 		| 'domain'
@@ -156,9 +154,7 @@ export function AppArchitectureTab({
 		const domainId = domainData?.id;
 		if (!domainId) return;
 		try {
-			await deleteDomainMutation.mutateAsync({
-				params: {path: {id: domainId}},
-			});
+			await deleteDomainMutation.mutateAsync(domainId);
 			toast.success('Domain removed');
 			queryClient.invalidateQueries();
 			onRefresh?.();
@@ -171,9 +167,7 @@ export function AppArchitectureTab({
 		const scheduleId = scheduleData?.id;
 		if (!scheduleId) return;
 		try {
-			await deleteScheduleMutation.mutateAsync({
-				params: {path: {id: scheduleId}},
-			});
+			await deleteScheduleMutation.mutateAsync(scheduleId);
 			toast.success('Schedule removed');
 			queryClient.invalidateQueries();
 			onRefresh?.();
@@ -186,9 +180,7 @@ export function AppArchitectureTab({
 		const backupId = backupData?.id;
 		if (!backupId) return;
 		try {
-			await deleteBackupMutation.mutateAsync({
-				params: {path: {id: backupId}},
-			});
+			await deleteBackupMutation.mutateAsync(backupId);
 			toast.success('Backup rule removed');
 			queryClient.invalidateQueries();
 			onRefresh?.();
@@ -200,15 +192,10 @@ export function AppArchitectureTab({
 	const handleSaveDomain = async (data: DomainFormData) => {
 		try {
 			if (editingDomainData?.id) {
-				await patchDomainMutation.mutateAsync({
-					params: {path: {id: editingDomainData.id}},
-					body: data as any,
-				});
+				await patchDomainMutation.mutateAsync({id: editingDomainData.id, ...data});
 				toast.success('Domain updated successfully');
 			} else {
-				await createDomainMutation.mutateAsync({
-					body: {...data, application_id: appId} as any,
-				});
+				await createDomainMutation.mutateAsync({...data, application_id: appId});
 				toast.success('Domain attached successfully');
 			}
 			queryClient.invalidateQueries();
@@ -228,18 +215,15 @@ export function AppArchitectureTab({
 		try {
 			if (editingScheduleData?.id) {
 				await patchScheduleMutation.mutateAsync({
-					params: {path: {id: editingScheduleData.id}},
-					body: {
+						id: editingScheduleData.id,
 						name: data.name,
 						cron_expression: data.cronExpr,
 						command: data.command,
 						service_name: data.serviceName,
-					} as any,
-				});
+					});
 				toast.success('Schedule updated successfully');
 			} else {
 				await createScheduleMutation.mutateAsync({
-					body: {
 						name: data.name,
 						cron_expression: data.cronExpr,
 						command: data.command,
@@ -251,8 +235,7 @@ export function AppArchitectureTab({
 						schedule_action: 'EXEC',
 						shell_type: 'BASH',
 						enabled: 1,
-					} as any,
-				});
+					});
 				toast.success('Schedule created successfully');
 			}
 			queryClient.invalidateQueries();
@@ -275,20 +258,17 @@ export function AppArchitectureTab({
 		try {
 			if (editingBackupData?.id) {
 				await patchBackupMutation.mutateAsync({
-					params: {path: {id: editingBackupData.id}},
-					body: {
+						id: editingBackupData.id,
 						name: data.name,
 						volume_name: data.volumeName,
 						prefix: data.prefix || '',
 						service_name: data.serviceName,
 						turn_off: data.turnOff ? 1 : 0,
 						cron_expression: data.cronExpr,
-					} as any,
-				});
+					});
 				toast.success('Volume backup updated successfully');
 			} else {
 				await createBackupMutation.mutateAsync({
-					body: {
 						name: data.name,
 						volume_name: data.volumeName,
 						prefix: data.prefix || '',
@@ -300,8 +280,7 @@ export function AppArchitectureTab({
 						cron_expression: data.cronExpr,
 						application_id: appId,
 						destination_id: data.destinationId,
-					} as any,
-				});
+					});
 				toast.success('Volume backup created successfully');
 			}
 			queryClient.invalidateQueries({

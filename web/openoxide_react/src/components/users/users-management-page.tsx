@@ -1,5 +1,4 @@
 import {useState, useMemo} from 'react';
-import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
@@ -66,26 +65,11 @@ export function UsersManagementPage() {
 	const deleteInviteStore = useAppStore(state => state.deleteInvite);
 
 	// Mutations for invites and members
-	const addMemberMutation = $api.useMutation(
-		'post',
-		'/permission-groups/members' as any,
-	);
-	const inviteMutation = $api.useMutation(
-		'post',
-		'/permission-groups/invites' as any,
-	);
-	const cancelInviteMutation = $api.useMutation(
-		'delete',
-		'/permission-groups/invites/{invite_id}' as any,
-	);
-	const updateRoleMutation = $api.useMutation(
-		'put',
-		'/permission-groups/members/{user_id}/role' as any,
-	);
-	const removeMemberMutation = $api.useMutation(
-		'delete',
-		'/permission-groups/members/{user_id}' as any,
-	);
+	const addMemberMutation = useMemberAdd();
+	const inviteMutation = useInviteCreate();
+	const cancelInviteMutation = useInviteRemove();
+	const updateRoleMutation = useMemberUpdateRole();
+	const removeMemberMutation = useMemberRemove();
 
 	const isLoading = isMembersLoading && members.length === 0;
 

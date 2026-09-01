@@ -28,7 +28,6 @@ import {
 } from '#/components/ui/alert-dialog';
 import {TagBadge} from '#/components/shared/tag-badge';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {useAppStore} from '#/stores/app-store';
 
@@ -74,9 +73,9 @@ function MinimalTagsPage() {
 
 	const isLoading = false;
 
-	const createMutation = $api.useMutation('post', '/tags' as any);
-	const patchMutation = $api.useMutation('patch', '/tags/{id}' as any);
-	const deleteMutation = $api.useMutation('delete', '/tags/{id}' as any);
+	const createMutation = useTagCreate();
+	const patchMutation = useTagUpdate();
+	const deleteMutation = useTagDelete();
 
 	const filteredTags = useMemo(() => {
 		if (!searchQuery.trim()) return tagsList;

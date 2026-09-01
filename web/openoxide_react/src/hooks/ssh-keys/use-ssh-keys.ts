@@ -1,6 +1,5 @@
 import {useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
-import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 
@@ -18,11 +17,8 @@ export function useCreateSshKey(
 		'ed25519' | 'rsa' | null
 	>(null);
 
-	const createMutation = $api.useMutation('post', '/ssh-keys');
-	const generatePairMutation = $api.useMutation(
-		'post',
-		'/ssh-keys/generate-pair',
-	);
+	const createMutation = useSshKeyCreate();
+	const generatePairMutation = useSshKeyGeneratePair();
 
 	const handleGeneratePair = async (type: 'ed25519' | 'rsa') => {
 		setGeneratingType(type);
@@ -93,7 +89,7 @@ export function useCreateSshKey(
 export function useDeleteSshKey(keyId: number, onClose: () => void) {
 	const queryClient = useQueryClient();
 	const [deleting, setDeleting] = useState(false);
-	const deleteMutation = $api.useMutation('delete', '/ssh-keys/{id}');
+	const deleteMutation = useSshKeyDelete();
 
 	const handleDelete = async () => {
 		setDeleting(true);

@@ -1,10 +1,9 @@
 import {useState, useEffect, useMemo, useRef} from 'react';
-import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import type {ApplicationResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 import {useAppStore, selectApplicationById} from '#/stores/app-store';
-import {useApplicationGet} from '#/api/live';
+import {useApplicationCancel, useApplicationDeploy, useApplicationGet, useApplicationRebuild, useApplicationReload, useApplicationStart, useApplicationStop, useApplicationUpdate} from '#/api/live';
 
 export function useAppDetail(appId: number) {
 	const [activeTab, setActiveTab] = useState('General');
@@ -158,28 +157,13 @@ export function useAppDetail(appId: number) {
 		monitoring.triggerRefresh();
 	};
 
-	const deployMutation = $api.useMutation(
-		'post',
-		'/applications/{id}/deploy',
-	);
-	const reloadMutation = $api.useMutation(
-		'post',
-		'/applications/{id}/reload',
-	);
-	const rebuildMutation = $api.useMutation(
-		'post',
-		'/applications/{id}/rebuild',
-	);
-	const startMutation = $api.useMutation(
-		'post',
-		'/applications/{id}/start',
-	);
-	const stopMutation = $api.useMutation('post', '/applications/{id}/stop');
-	const cancelMutation = $api.useMutation(
-		'post',
-		'/applications/{id}/cancel',
-	);
-	const patchMutation = $api.useMutation('patch', '/applications/{id}');
+	const deployMutation = useApplicationDeploy();
+	const reloadMutation = useApplicationReload();
+	const rebuildMutation = useApplicationRebuild();
+	const startMutation = useApplicationStart();
+	const stopMutation = useApplicationStop();
+	const cancelMutation = useApplicationCancel();
+	const patchMutation = useApplicationUpdate();
 
 	const handleAction = async (
 		action: 'deploy' | 'reload' | 'rebuild' | 'start' | 'stop' | 'cancel',
@@ -212,22 +196,22 @@ export function useAppDetail(appId: number) {
 
 		try {
 			if (action === 'deploy') {
-				await deployMutation.mutateAsync({params: {path: {id: appId}}});
+				await deployMutation.mutateAsync(appId);
 				toast.success('Deployment triggered successfully');
 			} else if (action === 'reload') {
-				await reloadMutation.mutateAsync({params: {path: {id: appId}}});
+				await reloadMutation.mutateAsync(appId);
 				toast.success('Application reloaded successfully');
 			} else if (action === 'rebuild') {
-				await rebuildMutation.mutateAsync({params: {path: {id: appId}}});
+				await rebuildMutation.mutateAsync(appId);
 				toast.success('Rebuild triggered successfully');
 			} else if (action === 'start') {
-				await startMutation.mutateAsync({params: {path: {id: appId}}});
+				await startMutation.mutateAsync(appId);
 				toast.success('Application started successfully');
 			} else if (action === 'stop') {
-				await stopMutation.mutateAsync({params: {path: {id: appId}}});
+				await stopMutation.mutateAsync(appId);
 				toast.success('Application stopped successfully');
 			} else if (action === 'cancel') {
-				await cancelMutation.mutateAsync({params: {path: {id: appId}}});
+				await cancelMutation.mutateAsync(appId);
 				toast.success('Action cancelled successfully');
 			}
 			refetchAll();
@@ -242,7 +226,7 @@ export function useAppDetail(appId: number) {
 	const handleUpdate = async (patchData: Partial<ApplicationResponse>) => {
 		try {
 			await patchMutation.mutateAsync({
-				params: {path: {id: appId}},
+				id: appId,
 				body: patchData as any,
 			});
 			toast.success('Application settings updated');

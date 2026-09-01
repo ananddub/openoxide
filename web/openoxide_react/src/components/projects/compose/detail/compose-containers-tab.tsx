@@ -2,7 +2,7 @@ import {useState, useMemo} from 'react';
 import {Box, RefreshCw} from 'lucide-react';
 import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useComposeStart, useComposeStop, useDeploymentListContainers} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {ComposeContainersTable} from './containers/compose-containers-table';
 import {
@@ -33,15 +33,7 @@ export function ComposeContainersTab({
 		data: rawContainers = [],
 		refetch: refetchContainers,
 		isFetching,
-	} = $api.useQuery('get', '/deployments/docker/containers', {
-		params: {
-			query: {
-				query: {
-					server_id: serverId ? Number(serverId) : undefined,
-				},
-			},
-		},
-	});
+	} = useDeploymentListContainers(serverId ? Number(serverId) : null);
 
 	const serviceNames = useMemo(() => {
 		const extracted = extractServicesFromYaml(compose?.compose_file);
@@ -189,8 +181,8 @@ export function ComposeContainersTab({
 		return [];
 	}, [compose, rawContainers, serviceNames]);
 
-	const postAction = $api.useMutation('post', '/compose/{id}/start');
-	const stopAction = $api.useMutation('post', '/compose/{id}/stop');
+	const postAction = useComposeStart();
+	const stopAction = useComposeStop();
 
 	const handleContainerAction = async (
 		container: ContainerItem,
@@ -198,9 +190,9 @@ export function ComposeContainersTab({
 	) => {
 		try {
 			if (action === 'start' || action === 'restart') {
-				await postAction.mutateAsync({params: {path: {id: compose?.id}}});
+				await postAction.mutateAsync(compose?.id);
 			} else {
-				await stopAction.mutateAsync({params: {path: {id: compose?.id}}});
+				await stopAction.mutateAsync(compose?.id);
 			}
 			toast.success(
 				`Container '${container.name}' ${action}ed successfully`,

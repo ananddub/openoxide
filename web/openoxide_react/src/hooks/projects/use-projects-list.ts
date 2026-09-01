@@ -1,5 +1,4 @@
 import * as React from 'react';
-import {$api} from '#/api/query';
 import {useProjectListByOrganization} from '#/api/live';
 import {toast} from 'sonner';
 import {useOrganizationStore} from '#/stores/organization-store';
@@ -52,13 +51,10 @@ export function useProjectsList() {
 	const projects = Array.isArray(rawProjectsList) ? rawProjectsList : [];
 
 	// Create Project Mutation
-	const createProjectMutation = $api.useMutation('post', '/projects');
+	const createProjectMutation = useProjectCreate();
 
 	// Delete Project Mutation
-	const deleteProjectMutation = $api.useMutation(
-		'delete',
-		'/projects/{id}',
-	);
+	const deleteProjectMutation = useProjectDelete();
 
 	// Extract all unique tags present across all projects
 	const allTags = React.useMemo(() => {

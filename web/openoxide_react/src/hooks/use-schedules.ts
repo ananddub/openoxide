@@ -1,5 +1,4 @@
 import * as React from 'react';
-import {$api} from '#/api/query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {useOrganizationStore} from '#/stores/organization-store';
@@ -34,10 +33,10 @@ export function useSchedules() {
 	const servers = useAppStore(state => state.servers || []);
 
 	// Mutations
-	const createMutation = $api.useMutation('post', '/schedules');
-	const deleteMutation = $api.useMutation('delete', '/schedules/{id}');
-	const patchMutation = $api.useMutation('patch', '/schedules/{id}');
-	const runMutation = $api.useMutation('post', '/schedules/{id}/trigger');
+	const createMutation = useScheduleCreate();
+	const deleteMutation = useScheduleDelete();
+	const patchMutation = useScheduleUpdate();
+	const runMutation = useScheduleRun();
 
 	const handleDelete = async (id: number) => {
 		try {

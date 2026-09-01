@@ -1,11 +1,11 @@
 import {create} from 'zustand';
-import type {components} from '#/types/api.d.ts';
+
 import {
 	getActiveOrganizationId,
 	persistActiveOrganizationId,
 } from './organization-context';
 
-type Organization = components['schemas']['OrganizationResponseDto'];
+type Organization = Record<string, any>;
 
 type OrganizationState = {
 	organizations: Organization[];

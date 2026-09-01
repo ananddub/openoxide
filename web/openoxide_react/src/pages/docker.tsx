@@ -1,8 +1,7 @@
 import {useState, useMemo} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
-import {useDeploymentRunning} from '#/api/live';
+import {useDeploymentListContainers, useDeploymentRunning} from '#/api/live';
 import {DockerHeader} from '#/components/docker/docker-header';
 import {DockerContainersTable} from '#/components/docker/docker-containers-table';
 import {
@@ -34,16 +33,9 @@ function DockerPage() {
 		isLoading: isDockerLoading,
 		refetch,
 		isRefetching,
-	} = $api.useQuery('get', '/deployments/docker/containers', {
-		params: {
-			query: {
-				server_id:
-					selectedServerId !== 'local'
-						? Number(selectedServerId)
-						: undefined,
-			} as any,
-		},
-	});
+	} = useDeploymentListContainers(
+		selectedServerId !== 'local' ? Number(selectedServerId) : null,
+	);
 
 	// Active running deployments via ConnectRPC query
 	const {data: rawRunning, isLoading: isRunningLoading} =

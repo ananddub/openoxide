@@ -2,12 +2,12 @@ import {useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {Edit2, ExternalLink, Globe, Lock, LockOpen, Plus, RefreshCw, Trash2} from 'lucide-react';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
 import {formatApiError} from '#/api/utils';
 import {DomainDialog, type DomainFormData} from '#/components/projects/common/domain-dialog';
 import {Badge} from '#/components/ui/badge';
 import {Button} from '#/components/ui/button';
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '#/components/ui/table';
+import {useDomainCreate, useDomainDelete, useDomainUpdate} from '#/api/live';
 
 interface DomainsTabProps { app: any; domains?: any[]; onRefresh?: () => void; }
 
@@ -17,9 +17,9 @@ export function DomainsTab({app, domains: passedDomains, onRefresh}: DomainsTabP
 	const [deletingId, setDeletingId] = useState<number | null>(null);
 	const queryClient = useQueryClient();
 	const domains = Array.isArray(passedDomains) ? passedDomains : [];
-	const createDomain = $api.useMutation('post', '/domains');
-	const updateDomain = $api.useMutation('patch', '/domains/{id}');
-	const deleteDomain = $api.useMutation('delete', '/domains/{id}');
+	const createDomain = useDomainCreate();
+	const updateDomain = useDomainUpdate();
+	const deleteDomain = useDomainDelete();
 
 	const openCreate = () => { setEditingDomain(null); setDialogOpen(true); };
 	const saveDomain = async (data: DomainFormData) => {

@@ -1,6 +1,10 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {
+	useDatabaseSwarmSettings,
+	useDatabaseUpdateSwarmSettings,
+	parseDatabaseKind,
+} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import type {SwarmKey} from './forms';
 
@@ -24,21 +28,16 @@ const defaults: any = {
 	endpoint_spec_swarm: {Mode: 'vip'},
 };
 
-export function useDatabaseSwarmSettings(
+export function useDatabaseSwarmSettingsState(
 	database: any,
 	onUpdated: () => void,
 ) {
-	const kind = String(database?.kind || 'postgres').toLowerCase();
-	const endpoint = useMemo(
-		() => `/database-management/${kind}/{id}/swarm-settings`,
-		[kind],
+	const kind = parseDatabaseKind(database?.kind || 'postgres');
+	const query = useDatabaseSwarmSettings(
+		kind,
+		BigInt(database?.id || 0),
 	);
-	const query = $api.useQuery(
-		'get',
-		endpoint as any,
-		{params: {path: {id: database?.id}}} as any,
-	);
-	const save = $api.useMutation('put', endpoint as any);
+	const save = useDatabaseUpdateSwarmSettings();
 	const [active, setActive] = useState<SwarmKey>('mode_swarm');
 	const [values, setValues] = useState<any>({...defaults});
 	const [grace, setGrace] = useState('');
@@ -79,12 +78,15 @@ export function useDatabaseSwarmSettings(
 				if (key !== 'stop_grace_period_swarm') serialize(body, key, values[key]);
 			});
 			await save.mutateAsync({
-				params: {path: {id: database?.id}},
-				body: {
+				kind,
+				id: database?.id,
+				values: {
 					...body,
-					stop_grace_period_swarm: grace ? Number(grace) : null,
+					stop_grace_period_swarm: grace
+						? Number(grace)
+						: null,
 				},
-			} as any);
+			} as Parameters<typeof save.mutateAsync>[0]);
 			toast.success('Swarm settings updated');
 			onUpdated();
 			return true;
@@ -98,7 +100,7 @@ export function useDatabaseSwarmSettings(
 			setGrace('');
 			return;
 		}
-		setValues(old => ({...old, [active]: Array.isArray(old[active]) ? [] : {...(defaults[active] || {})}}));
+		setValues((old: any) => ({...old, [active]: Array.isArray(old[active]) ? [] : {...(defaults[active] || {})}}));
 	};
 	return {
 		active,
@@ -113,7 +115,7 @@ export function useDatabaseSwarmSettings(
 	};
 }
 
-function serialize(body: any, key: SwarmKey, value: any) {
+function serialize(body: any, key: string, value: any) {
 	if (key === 'stop_grace_period_swarm') return;
 	if (key === 'network_swarm') {
 		const networks = (Array.isArray(value) ? value : [])
@@ -172,7 +174,7 @@ function serialize(body: any, key: SwarmKey, value: any) {
 				return {Architecture, OS};
 			});
 	}
-	if (key !== 'labels_swarm') {
+	if (key !== 'labels_swarm' && key !== 'endpoint_spec_swarm') {
 		delete value.key;
 		delete value.value;
 		body[key] = Object.keys(value).length ? JSON.stringify(value) : null;

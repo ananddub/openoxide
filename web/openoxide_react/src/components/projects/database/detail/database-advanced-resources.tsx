@@ -3,7 +3,7 @@ import {Cpu, Save} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
-import {$api} from '#/api/query';
+import {useDatabaseUpdate, parseDatabaseKind} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 
 interface DatabaseAdvancedResourcesProps {
@@ -20,21 +20,8 @@ export function DatabaseAdvancedResources({
 		database?.database_kind ||
 		'postgres'
 	).toLowerCase();
-
-	let endpoint:
-		| '/postgres/{id}'
-		| '/mysql/{id}'
-		| '/mariadb/{id}'
-		| '/mongo/{id}'
-		| '/redis/{id}'
-		| '/libsql/{id}' = '/postgres/{id}';
-	if (kind.includes('mysql')) endpoint = '/mysql/{id}';
-	else if (kind.includes('mariadb')) endpoint = '/mariadb/{id}';
-	else if (kind.includes('mongo')) endpoint = '/mongo/{id}';
-	else if (kind.includes('redis')) endpoint = '/redis/{id}';
-	else if (kind.includes('libsql')) endpoint = '/libsql/{id}';
-
-	const patchDatabase = $api.useMutation('patch', endpoint as any);
+	const dbKind = parseDatabaseKind(kind);
+	const patchDatabase = useDatabaseUpdate();
 
 	const [replicas, setReplicas] = useState(
 		String(database?.replicas || '1'),
@@ -57,14 +44,11 @@ export function DatabaseAdvancedResources({
 		setSaving(true);
 		try {
 			await patchDatabase.mutateAsync({
-				params: {path: {id: database?.id}},
-				body: {
-					memory_reservation: memRes.trim() || undefined,
-					memory_limit: memLimit.trim() || undefined,
-					cpu_reservation: cpuRes.trim() || undefined,
-					cpu_limit: cpuLimit.trim() || undefined,
-					replicas: replicas ? parseInt(replicas) : 1,
-				},
+				kind: dbKind,
+				id: database?.id,
+				memory_limit: memLimit.trim() || undefined,
+				cpu_limit: cpuLimit.trim() || undefined,
+				replicas: replicas ? parseInt(replicas) : 1,
 			});
 			toast.success('Resource limits updated');
 			onUpdated();

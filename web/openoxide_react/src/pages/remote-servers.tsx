@@ -1,6 +1,5 @@
 import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
-import {$api} from '#/api/query';
 import {useAppStore} from '#/stores/app-store';
 import {RemoteServersHeader} from '#/components/remote-servers/remote-servers-header';
 import {RemoteServersList} from '#/components/remote-servers/remote-servers-list';
@@ -42,14 +41,8 @@ function RemoteServersPage() {
 	const sshKeys = (storeSshKeys ?? []) as unknown as SshKeyResponse[];
 	const isServersLoading = false;
 
-	const activateMutation = $api.useMutation(
-		'post',
-		'/remote-servers/{id}/activate',
-	);
-	const deactivateMutation = $api.useMutation(
-		'post',
-		'/remote-servers/{id}/deactivate',
-	);
+	const activateMutation = useRemoteServerActivate();
+	const deactivateMutation = useRemoteServerDeactivate();
 
 	const handleToggleStatus = async (server: RemoteServerResponse) => {
 		const isActive =
