@@ -4,6 +4,8 @@ use auto_di::singleton;
 use dashmap::DashMap;
 use tokio::sync::mpsc;
 
+use crate::api::connect::generated::openoxide::api::v1::WatchedTable;
+
 use super::pump::{ChangePump, SUBSCRIBER_QUEUE};
 use super::registry::TableRegistry;
 use super::types::TableChangeBatch;
@@ -63,6 +65,23 @@ impl SubscriptionLedger {
             .collect();
         for key in stale {
             self.remove(key);
+        }
+    }
+
+    /// Pushes a full-table resync batch to every subscriber, one per unique
+    /// organization. Used when the pump falls behind the broadcast channel
+    /// and missed change-sets can no longer be recovered.
+    pub(super) fn resync(&self, tables: Vec<WatchedTable>) {
+        let organizations: std::collections::HashSet<i64> = self
+            .entries
+            .iter()
+            .map(|entry| entry.organization_id)
+            .collect();
+        for organization_id in organizations {
+            self.deliver(TableChangeBatch {
+                organization_id,
+                tables: tables.clone(),
+            });
         }
     }
 }

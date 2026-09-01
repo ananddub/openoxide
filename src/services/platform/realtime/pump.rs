@@ -7,9 +7,9 @@ use super::service::SubscriptionLedger;
 use super::types::{TableBatcher, TableChangeBatch};
 
 /// Forwards committed database changes to the per-organization subscriber
-/// queues. One pump runs for the lifetime of the panel; if it ever exits,
-/// subscribers notice the dropped notification channel and terminate, which
-/// forces clients to reconnect and resync.
+/// queues. One pump runs for the lifetime of the panel; broadcast lag is
+/// recovered by pushing full-table resync batches instead of missed
+/// change-sets, so subscribers never rely on pump death to resync.
 pub struct ChangePump {
     registry: Arc<TableRegistry>,
     ledger: Arc<SubscriptionLedger>,
@@ -29,8 +29,20 @@ impl ChangePump {
     /// returns under normal operation.
     pub async fn run(self) {
         let mut receiver = event_bus().subscribe();
-        while let Ok(change_set) = receiver.recv().await {
-            self.dispatch(change_set);
+        loop {
+            match receiver.recv().await {
+                Ok(change_set) => self.dispatch(change_set),
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(missed)) => {
+                    // Missed change-sets are unrecoverable; the only safe
+                    // signal is a full-table resync to every subscriber.
+                    tracing::warn!(
+                        missed,
+                        "db event bus lagged, issuing full resync to subscribers"
+                    );
+                    self.ledger.resync(self.registry.all());
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+            }
         }
     }
 
