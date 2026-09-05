@@ -209,7 +209,7 @@ impl Queries {
         user_id: i64,
     ) -> Result<Vec<JwtTokensListSessionsRow>, sqlx::Error> {
         sqlx::query_as::<_, JwtTokensListSessionsRow>(
-            "SELECT session_id AS session_id, MIN(created_at) AS created_at, MAX(expired_at) AS expires_at, MAX(CASE WHEN is_blacklist = 0 AND expired_at > CURRENT_TIMESTAMP THEN 1 ELSE 0 END) != 0 AS active FROM jwt_tokens WHERE user_id = ? AND session_id IS NOT NULL GROUP BY session_id ORDER BY created_at DESC LIMIT 100;"
+            "SELECT session_id AS session_id, MIN(created_at) AS created_at, MAX(expired_at) AS expires_at, MAX(CASE WHEN is_blacklist = 0 AND expired_at > strftime('%s','now') THEN 1 ELSE 0 END) != 0 AS active FROM jwt_tokens WHERE user_id = ? AND session_id IS NOT NULL GROUP BY session_id ORDER BY created_at DESC LIMIT 100;"
         )
         .bind(user_id)
         .fetch_all(&self.pool)
@@ -238,7 +238,7 @@ impl Queries {
         jti: &str,
     ) -> Result<bool, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, bool>(
-            "SELECT EXISTS(SELECT 1 FROM jwt_tokens WHERE jti = ? AND COALESCE(is_blacklist, 0) = 0 AND expired_at > CURRENT_TIMESTAMP);"
+            "SELECT EXISTS(SELECT 1 FROM jwt_tokens WHERE jti = ? AND COALESCE(is_blacklist, 0) = 0 AND expired_at > strftime('%s','now'));"
         )
         .bind(jti)
         .fetch_one(&self.pool)

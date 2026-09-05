@@ -418,7 +418,7 @@ impl Queries {
         &self,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM jwt_tokens WHERE expired_at < CURRENT_TIMESTAMP;"
+            "DELETE FROM jwt_tokens WHERE expired_at < strftime('%s','now');"
         )
         .execute(&self.pool)
         .await?;

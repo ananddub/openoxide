@@ -10,7 +10,7 @@ INSERT INTO email_verification_tokens (user_id, token_hash, expires_at) VALUES (
 UPDATE email_verification_tokens
                SET used_at = CURRENT_TIMESTAMP
                WHERE token_hash = ? AND used_at IS NULL
-                 AND expires_at > CURRENT_TIMESTAMP
+                 AND expires_at > strftime('%s','now')
                RETURNING user_id AS user_id;
 
 -- name: EmailVerificationTokensComplete2 :exec

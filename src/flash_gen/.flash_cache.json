@@ -20,13 +20,13 @@
     "db/queries/dns_providers.sql": "a31ae08bd823da7847c37534883f581ab69265f2d05a1d78f1f4569458553d30",
     "db/queries/domains.sql": "a248579f31aef9c350fb027743046cca81b2fe6f2dd101c81b18d59c9e80695f",
     "db/queries/domains_patches_mounts.sql": "348e64c4d2970669be3ae50e48ccce3e42a763de82871f2400f7ac853b601134",
-    "db/queries/email_verification_tokens.sql": "543220963b594d174588b16be054dac468bcd28817b19518d7fa76c3c0770ee1",
+    "db/queries/email_verification_tokens.sql": "426eeea2036b3dbab62cdd1031af05b16ebaf3ead407b170a026e1f93e7b03ea",
     "db/queries/environments.sql": "88dbd51e31985aeb68b24dbac3cc227efefcbd3935a0cab7019fa139d6a8c912",
     "db/queries/git_providers.sql": "c9234569d25888a68ffe1127f8fc6b87afbb0378c0797cc6037dcabcc4f600ca",
     "db/queries/group_policy.sql": "38ad1258e3246a48ef25ccb64480eac4c145547b1e1335851709e52f4e951dd0",
     "db/queries/groups.sql": "742efa308c444186d1306c943aa1a7aec322561202d4c2b15956082870f656a2",
     "db/queries/health_report.sql": "64ffe643957ceb404a7a22910230e6f81ba891e1e6c0ca1b192bf72a246b67c3",
-    "db/queries/jwt_tokens.sql": "1f0e812e98863e658b85c7d48deefd919b725da3e73cce59c007487d6ea82a37",
+    "db/queries/jwt_tokens.sql": "d57c1eeb8d7761b55d01f464e222585828a3801902400c0f271fd4567d9d463a",
     "db/queries/misc_services_extra.sql": "b7ac77e2e421268c9a293579ac8acd4b067295f56fe45448d56dabe9d6925ed7",
     "db/queries/monitoring_agents.sql": "e77122a5e647c7d3683563bd4f3cdfb610d584a2cc333b5c0f5fc36256529a1d",
     "db/queries/monitoring_lifecycle.sql": "1d0202089361f24139c27c910f12c61240bafd7c3a7470c5dd02baf08ea9a2e8",
@@ -35,11 +35,11 @@
     "db/queries/notification_delivery.sql": "c575a14f11c6bb43ffe32f4f4828b5c9a79cef8787cf583f4163110bffa892cc",
     "db/queries/notifications.sql": "73413500f240a0faf3a2e51ca10e8cfe3c995898ff763c145e290000721f1e30",
     "db/queries/organization.sql": "26849ccfb4b81d4f0f6ce20a07c83f704c4d913e22d577e912b34188e76c6f84",
-    "db/queries/organization_invites.sql": "953e366bd87f675974e73fd9683cc7494996aea5329ef9252340e7118a3c8ed9",
+    "db/queries/organization_invites.sql": "f670937d14a2128f3a7f7dd949124e7ac89c586f5eb6df6f7ca852bd12861010",
     "db/queries/organization_members.sql": "d3da229fd1dfd56b56238d7edd08805b017ed5b19c55d5f77badfc30165c1279",
-    "db/queries/organizations.sql": "5add339e7924582ae7d24d41341abe73bc8c5e61d2e54a9064122a0b1bf4a710",
+    "db/queries/organizations.sql": "9e167328b396c0e2d482f0edae243e7f7099a206763084008d1d4ca1e7e33d00",
     "db/queries/overview.sql": "b01f6a03d5d53dd6f2392a3d1f5c344280988a118589fd184b8fa7f2e32c1d2c",
-    "db/queries/password_reset_tokens.sql": "e126975f8daab68730e2b2f9ef918f0148f722004070c9cfecbdc6e6ee0fe87d",
+    "db/queries/password_reset_tokens.sql": "c148b69e54f49831d6fdda4f0a427dfd7a2f42ed3f56de1444cfc44d4b5a7778",
     "db/queries/patches.sql": "984505fd2d0b8847a948cafeec95efe5bdf826f4afc1f8fef6769778ae5fe88b",
     "db/queries/permission_groups.sql": "c4c51fc23693bc975265b2b3433b62a3e523155c9a09cb2c5ed8e044316b4090",
     "db/queries/personal_access_tokens.sql": "205ae8cccda564daf179c9a78ebf87b15dd2ec6a2777402841ee8d0499e9a903",
@@ -57,7 +57,7 @@
     "db/queries/schedules.sql": "cbb4899278e2dad1b490e9c6948fdfe65c70a8cfd38294e0fbae969e73e960b0",
     "db/queries/security.sql": "80560bc7c4f114c0b8c3739e419b3a169a4cef6f64d9b1403a6e328b72b196f6",
     "db/queries/server_infra_extra.sql": "ba9dea2ce8a12291e8bd7b429cc65cb53c0ca6cf49723340d00620ba169f2835",
-    "db/queries/server_management.sql": "39ddec90b07eea1fbae61336db034942cc6815c2f79c531bb15988ff95c438c4",
+    "db/queries/server_management.sql": "9bcfa0834b4d396b59d19ddb3a465133c8d97ba62ba0e5c24cc6747bc51c8de3",
     "db/queries/server_migrations.sql": "610a8b86c8e0e06dd773cc8b40468e19a0bb8ae03d04a2fcc9a40a34494dbdff",
     "db/queries/server_private_networks.sql": "d2c89c0a64eb58eeccdffab9d190bd0a2d84c65c39f8f4b1e5035593793e5c5d",
     "db/queries/servers.sql": "98a8708c81e207a0ea0fb71e532d4b1df68e1ed4bd735ccf9c127074d97df3df",
@@ -72,7 +72,7 @@
     "db/queries/tags.sql": "019628957aff73ce9a4ffa2a7dafdccc8091664c7bbece79290231a852232679",
     "db/queries/two_factor.sql": "31ad7216136683ef91de35033a35cbd35a05a4dee7eff5caf90a9b1465800d8d",
     "db/queries/user_policy.sql": "e864b0a9d2293fc88d6639fe8100c49fbb4cf4b7c864fdb0cae6636bbed3049c",
-    "db/queries/users.sql": "4c210b7746e8bf7a62619adf801c5e24f4344119ab8d6f0a5c00fd02d8cc49f1",
+    "db/queries/users.sql": "7194f265fa86e2d416d5ecc45c41f6aa28acc9115bc96487dbe1c0b2ed2fea1d",
     "db/queries/vault_providers.sql": "e0b061c91e20a1fff715d7c3228c6d2aa8facaddbb07d607157958d88f406ea2",
     "db/queries/volume_backups.sql": "ba6db61cbd7f12712935ef92564c191730e2ecbcc82a1b9a7d27644e65b16fe5",
     "db/queries/webhooks.sql": "8b558208369473c96da535bbcee515a536e6acac6b9d6f28f5799cfd48bcb5b4"
@@ -213,10 +213,10 @@
       "organization_members"
     ],
     "db/queries/organizations.sql": [
-      "organization_members",
-      "om",
       "organization_invites",
-      "organization"
+      "organization",
+      "organization_members",
+      "om"
     ],
     "db/queries/overview.sql": [
       "domains",
@@ -225,9 +225,9 @@
       "services"
     ],
     "db/queries/password_reset_tokens.sql": [
+      "jwt_tokens",
       "password_reset_tokens",
-      "users",
-      "jwt_tokens"
+      "users"
     ],
     "db/queries/patches.sql": [
       "patches"
@@ -360,9 +360,9 @@
       "user_policy"
     ],
     "db/queries/users.sql": [
+      "jwt_tokens",
       "users",
-      "two_factor",
-      "jwt_tokens"
+      "two_factor"
     ],
     "db/queries/vault_providers.sql": [
       "vault_providers"
@@ -375,6 +375,6 @@
     ]
   },
   "generated_file_checksums": {},
-  "last_generation": "2026-09-05T17:22:04.825793902+05:30",
+  "last_generation": "2026-09-05T17:41:17.35282559+05:30",
   "OutDir": "src/flash_gen"
 }

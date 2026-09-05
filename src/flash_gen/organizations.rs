@@ -336,7 +336,7 @@ impl Queries {
         &self,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM organization_invites WHERE expired_at < CURRENT_TIMESTAMP AND status = 'PENDING';"
+            "DELETE FROM organization_invites WHERE expired_at < strftime('%s','now') AND status = 'PENDING';"
         )
         .execute(&self.pool)
         .await?;

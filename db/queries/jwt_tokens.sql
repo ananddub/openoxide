@@ -31,7 +31,7 @@ SELECT session_id FROM jwt_tokens WHERE jti = ?;
 SELECT session_id AS session_id,
                       MIN(created_at) AS created_at,
                       MAX(expired_at) AS expires_at,
-                      MAX(CASE WHEN is_blacklist = 0 AND expired_at > CURRENT_TIMESTAMP THEN 1 ELSE 0 END) != 0 AS active
+                      MAX(CASE WHEN is_blacklist = 0 AND expired_at > strftime('%s','now') THEN 1 ELSE 0 END) != 0 AS active
                FROM jwt_tokens
                WHERE user_id = ? AND session_id IS NOT NULL
                GROUP BY session_id
@@ -42,4 +42,4 @@ SELECT session_id AS session_id,
 UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = CURRENT_TIMESTAMP WHERE user_id = ? AND session_id = ? AND is_blacklist = 0;
 
 -- name: JwtTokensIsTokenActive :one
-SELECT EXISTS(SELECT 1 FROM jwt_tokens WHERE jti = ? AND COALESCE(is_blacklist, 0) = 0 AND expired_at > CURRENT_TIMESTAMP);
+SELECT EXISTS(SELECT 1 FROM jwt_tokens WHERE jti = ? AND COALESCE(is_blacklist, 0) = 0 AND expired_at > strftime('%s','now'));

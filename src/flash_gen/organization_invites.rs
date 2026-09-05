@@ -119,7 +119,7 @@ impl Queries {
         organization_id: i64,
     ) -> Result<Vec<OrganizationInvites>, sqlx::Error> {
         sqlx::query_as::<_, OrganizationInvites>(
-            "SELECT id AS id, email AS email, role AS role, status AS status, token AS token, group_id AS group_id, organization_id AS organization_id, invited_by AS invited_by, expired_at AS expired_at, created_at AS created_at FROM organization_invites WHERE organization_id = ? AND status = 'PENDING' AND expired_at > CURRENT_TIMESTAMP ORDER BY created_at DESC;"
+            "SELECT id AS id, email AS email, role AS role, status AS status, token AS token, group_id AS group_id, organization_id AS organization_id, invited_by AS invited_by, expired_at AS expired_at, created_at AS created_at FROM organization_invites WHERE organization_id = ? AND status = 'PENDING' AND expired_at > strftime('%s','now') ORDER BY created_at DESC;"
         )
         .bind(organization_id)
         .fetch_all(&self.pool)
@@ -132,7 +132,7 @@ impl Queries {
         token: &str,
     ) -> Result<OrganizationInvites, sqlx::Error> {
         sqlx::query_as::<_, OrganizationInvites>(
-            "SELECT id AS id, email AS email, role AS role, status AS status, token AS token, group_id AS group_id, organization_id AS organization_id, invited_by AS invited_by, expired_at AS expired_at, created_at AS created_at FROM organization_invites WHERE token = ? AND status = 'PENDING' AND expired_at > CURRENT_TIMESTAMP;"
+            "SELECT id AS id, email AS email, role AS role, status AS status, token AS token, group_id AS group_id, organization_id AS organization_id, invited_by AS invited_by, expired_at AS expired_at, created_at AS created_at FROM organization_invites WHERE token = ? AND status = 'PENDING' AND expired_at > strftime('%s','now');"
         )
         .bind(token)
         .fetch_one(&self.pool)

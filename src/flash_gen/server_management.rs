@@ -79,7 +79,7 @@ impl Queries {
         params: &ServerManagementFinishCleanupParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE server_cleanup_executions SET status = ?, stdout = ?, stderr = ?, finished_at = CURRENT_TIMESTAMP WHERE id = ?;"
+            "UPDATE server_cleanup_executions SET status = ?, stdout = ?, stderr = ?, finished_at = strftime('%s','now') WHERE id = ?;"
         )
         .bind(&params.status)
         .bind(&params.stdout)

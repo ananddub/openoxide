@@ -47,7 +47,7 @@ impl Queries {
         token_hash: &str,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "UPDATE email_verification_tokens SET used_at = CURRENT_TIMESTAMP WHERE token_hash = ? AND used_at IS NULL AND expires_at > CURRENT_TIMESTAMP RETURNING user_id AS user_id;"
+            "UPDATE email_verification_tokens SET used_at = CURRENT_TIMESTAMP WHERE token_hash = ? AND used_at IS NULL AND expires_at > strftime('%s','now') RETURNING user_id AS user_id;"
         )
         .bind(token_hash)
         .fetch_one(&self.pool)

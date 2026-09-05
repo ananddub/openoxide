@@ -93,7 +93,7 @@ SET is_blacklist = 1, blacklist_at = CURRENT_TIMESTAMP
 WHERE user_id = ? AND is_blacklist = 0;
 
 -- name: DeleteExpiredTokens :exec
-DELETE FROM jwt_tokens WHERE expired_at < CURRENT_TIMESTAMP;
+DELETE FROM jwt_tokens WHERE expired_at < strftime('%s','now');
 
 
 -- name: UsersGetAll :many

@@ -18,7 +18,7 @@ INSERT INTO server_cleanup_executions (server_id, policy) VALUES (?, ?);
 
 -- name: ServerManagementFinishCleanup :exec
 UPDATE server_cleanup_executions SET status = ?, stdout = ?, stderr = ?,
-               finished_at = CURRENT_TIMESTAMP WHERE id = ?;
+               finished_at = strftime('%s','now') WHERE id = ?;
 
 -- name: ServerManagementListCleanup :many
 SELECT id AS id, server_id, status, policy, stdout, stderr,
