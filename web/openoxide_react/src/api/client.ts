@@ -19,15 +19,11 @@ export function getAccessToken(): string {
 
 export const getApiBaseUrl = () => {
 	if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-	if (import.meta.env.DEV) return '/api';
-	if (typeof window !== 'undefined' && window.location.hostname) {
-		const host =
-			window.location.hostname === 'localhost'
-				? '127.0.0.1'
-				: window.location.hostname;
-		return `${window.location.protocol}//${host}:4000`;
-	}
-	return 'http://127.0.0.1:4000';
+	// Same-origin by default (the Caddy proxy in the dev stack and the
+	// embedded serving in production both expose the panel API on the UI
+	// origin) — mirrors the prototype's `baseUrl: ""` pattern. Cross-origin
+	// direct-panel callers can still pin VITE_API_URL.
+	return '';
 };
 
 let refreshPromise: Promise<string | null> | null = null;
@@ -68,7 +64,7 @@ export async function refreshAccessToken(): Promise<string | null> {
 			}
 
 			const session = JSON.parse(sessionRaw);
-			refreshToken = session?.tokens?.refresh_token || '';
+			refreshToken = session?.tokens?.refreshToken || session?.tokens?.refresh_token || '';
 			if (!refreshToken) {
 				logout();
 				return null;
