@@ -15,7 +15,7 @@ pub async fn FlashInitMigrate(pool: &sqlx::SqlitePool) -> Result<(), sqlx::Error
         let row = sqlx::query("SELECT checksum FROM _flash_migrations WHERE id = $1").bind(migration.id).fetch_optional(pool).await?;
         if let Some(row) = row { let checksum: String = row.try_get("checksum")?; if checksum != migration.checksum { return Err(sqlx::Error::Protocol(format!("applied migration {} checksum mismatch", migration.id).into())); } continue; }
         let mut tx = pool.begin().await?;
-        for statement in migration.statements { sqlx::query(statement).execute(&mut *tx).await?; }
+        for statement in migration.statements { sqlx::query(sqlx::AssertSqlSafe(*statement)).execute(&mut *tx).await?; }
         sqlx::query("INSERT INTO _flash_migrations (id, migration_name, checksum, started_at, finished_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)").bind(migration.id).bind(migration.name).bind(migration.checksum).execute(&mut *tx).await?;
         tx.commit().await?;
     }
