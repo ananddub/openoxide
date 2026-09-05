@@ -325,7 +325,7 @@ impl Queries {
         &self,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT OR IGNORE INTO groups (name) VALUES ('owner');"
+            "INSERT INTO groups (name, is_system, organization_id) SELECT 'owner', 1, NULL WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'owner');"
         )
         .execute(&self.pool)
         .await?;

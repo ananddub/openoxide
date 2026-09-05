@@ -81,7 +81,9 @@ UPDATE groups SET name = ?, created_at = ?, updated_at = ? WHERE id = ?;
 DELETE FROM groups WHERE id = ?;
 
 -- name: GroupsCreateOwnerGroupIfNotExists1 :exec
-INSERT OR IGNORE INTO groups (name) VALUES ('owner');
+INSERT INTO groups (name, is_system, organization_id)
+SELECT 'owner', 1, NULL
+WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'owner');
 
 -- name: GroupsCreateOwnerGroupIfNotExists2 :one
 SELECT id FROM groups WHERE name = 'owner';

@@ -19,8 +19,9 @@ use super::init::AuthController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl AuthService for AuthController {
-    // ── Public RPCs ──────────────────────────────────────────────────
+    // ── Public RPCs (no token required) ──────────────────────────────
 
+    #[public]
     async fn signup<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -34,6 +35,7 @@ impl AuthService for AuthController {
         Response::ok(auth_response_proto(result.user, result.tokens))
     }
 
+    #[public]
     async fn login<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -47,6 +49,7 @@ impl AuthService for AuthController {
         Response::ok(auth_response_proto(result.user, result.tokens))
     }
 
+    #[public]
     async fn refresh<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -56,6 +59,7 @@ impl AuthService for AuthController {
         Response::ok(auth_response_proto(result.user, result.tokens))
     }
 
+    #[public]
     async fn get_setup_status<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -68,6 +72,7 @@ impl AuthService for AuthController {
         })
     }
 
+    #[public]
     async fn request_password_reset<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -77,6 +82,7 @@ impl AuthService for AuthController {
         Response::ok(Empty::default())
     }
 
+    #[public]
     async fn reset_password<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -139,6 +145,7 @@ impl AuthService for AuthController {
         Response::ok(Empty::default())
     }
 
+    #[public]
     async fn confirm_email_verification<'a>(
         &'a self,
         _ctx: RequestContext,

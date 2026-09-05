@@ -24,7 +24,7 @@
     "db/queries/environments.sql": "88dbd51e31985aeb68b24dbac3cc227efefcbd3935a0cab7019fa139d6a8c912",
     "db/queries/git_providers.sql": "c9234569d25888a68ffe1127f8fc6b87afbb0378c0797cc6037dcabcc4f600ca",
     "db/queries/group_policy.sql": "38ad1258e3246a48ef25ccb64480eac4c145547b1e1335851709e52f4e951dd0",
-    "db/queries/groups.sql": "9c7028d13b065438aa9205257ba58f06126e4615799ecce673de5b416a99ac0b",
+    "db/queries/groups.sql": "742efa308c444186d1306c943aa1a7aec322561202d4c2b15956082870f656a2",
     "db/queries/health_report.sql": "64ffe643957ceb404a7a22910230e6f81ba891e1e6c0ca1b192bf72a246b67c3",
     "db/queries/jwt_tokens.sql": "062d5a71ba47344338db5739c7e9da8edf04a72bfbe8ddcff059950ec1d1400b",
     "db/queries/misc_services_extra.sql": "b7ac77e2e421268c9a293579ac8acd4b067295f56fe45448d56dabe9d6925ed7",
@@ -164,11 +164,11 @@
       "group_policy"
     ],
     "db/queries/groups.sql": [
-      "groups",
-      "policy",
       "p",
       "group_policy",
-      "perms"
+      "perms",
+      "groups",
+      "policy"
     ],
     "db/queries/health_report.sql": [
       "health_reports"
@@ -375,6 +375,6 @@
     ]
   },
   "generated_file_checksums": {},
-  "last_generation": "2026-08-30T13:48:34.539937391+05:30",
+  "last_generation": "2026-09-05T16:49:40.546215517+05:30",
   "OutDir": "src/flash_gen"
 }

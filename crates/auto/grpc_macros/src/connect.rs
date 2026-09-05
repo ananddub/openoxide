@@ -63,6 +63,14 @@ fn inject_auth_into_impl(impl_block: &mut syn::ImplItemFn, auth: bool) {
         return;
     }
 
+    // Public RPCs (signup/login/refresh/...) opt out with #[public]: no
+    // auth extraction, no permission check. The attribute is a directive
+    // for this macro only and is stripped from the output.
+    if impl_block.attrs.iter().any(|a| a.path().is_ident("public")) {
+        impl_block.attrs.retain(|a| !a.path().is_ident("public"));
+        return;
+    }
+
     let ctx_ident = match find_ctx_param_name(&impl_block.sig) {
         Some(ident) => ident,
         None => return,
