@@ -4,7 +4,7 @@ use bytes::Bytes;
 use connectrpc::{ConnectRpcBody, ConnectRpcService};
 use http_body_util::{BodyExt, Full, combinators::UnsyncBoxBody};
 use hyper::{
-    HeaderMap, Request, Response, body::Incoming, server::conn::http2,
+    HeaderMap, Method, Request, Response, body::Incoming, server::conn::http2,
 };
 use hyper_util::{
     rt::{TokioExecutor, TokioIo},
@@ -14,6 +14,8 @@ use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use tokio::net::TcpListener;
 use tokio_rustls::TlsAcceptor;
 use tower::Service;
+
+use crate::api::dashboard;
 
 type ResponseBody = UnsyncBoxBody<Bytes, Infallible>;
 
@@ -148,7 +150,7 @@ async fn dispatch(
             .map(|response| response.map(box_connect_body))
             .unwrap_or_else(|error| match error {})
     } else {
-        not_found()
+        dashboard::serve_spa(&method, uri.path())
     };
 
     apply_cors_headers(response.headers_mut());

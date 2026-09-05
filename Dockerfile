@@ -43,6 +43,25 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 # ── 2. Actual Source Build ─────────────────────────────────────────────────────
 COPY src/ src/
 
+# Build the dashboard SPA into web/openoxide_react/dist so rust-embed
+# bakes it into the panel binary (single-binary serving, prototype
+# pattern). lefthook's prepare step needs git hooks tooling that doesn't
+# exist in this image, hence --ignore-scripts.
+ARG BUN_VERSION=1.3.14
+ADD https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-x64.zip /tmp/bun.zip
+RUN apt-get update -qq && apt-get install -y -qq unzip >/dev/null && \
+    cd /tmp && unzip -q bun.zip && \
+    mv bun-linux-x64/bun /usr/local/bin/bun && chmod +x /usr/local/bin/bun && bun --version
+# Install deps first (only manifests — layer caches unless lockfile changes)
+COPY web/openoxide_react/package.json web/openoxide_react/bun.lock* web/openoxide_react/
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    cd web/openoxide_react && bun install --ignore-scripts
+
+# Full SPA source (index.html, src/, vite config) — after deps so the
+# dependency layer stays cached. node_modules/dist are dockerignored.
+COPY web/openoxide_react/ web/openoxide_react/
+RUN cd web/openoxide_react && bun run build
+
 # Invalidate the dummy binary and the SQLx migration embed point. The migration
 # macro reads SQL files at compile time, so recompile this module whenever the
 # copied db/migrations directory changes instead of reusing a stale Cargo cache.

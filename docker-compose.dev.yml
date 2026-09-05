@@ -114,21 +114,17 @@ services:
       COLLECTION_MODE: "auto"
       ROLLUP_SAMPLES: "1"
 
+  # The dashboard is embedded in the panel binary (rust-embed) and served
+  # over the panel's h2-only HTTPS listener on :4000. The standalone web
+  # container (Dockerfile.web.builder) is retired for the dev stack — the
+  # UI lives at https://localhost:4000 now.
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile.web.builder
-    image: dubeyanand/openoxide-web:dev
-    pull_policy: never
+    image: alpine/socat
     container_name: openoxide-web
     restart: unless-stopped
-
-    ports:
-      - "3001:80"
-
+    entrypoint: ["/bin/sh", "-c", "echo 'web container retired — dashboard is embedded in the panel (https://localhost:4000)'; sleep infinity"]
     depends_on:
       - openoxide
-
     networks:
       - openoxide-network
 
