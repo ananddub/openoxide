@@ -1,4 +1,4 @@
-import {sessionActions} from '#/stores/session-context';
+import {getSessionActions} from '#/stores/session-context';
 import {getActiveOrganizationId} from '#/stores/organization-context';
 import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
 import {createServiceClient} from '#/api/live/query';
@@ -54,7 +54,12 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 	refreshPromise = (async () => {
 		let refreshToken = '';
-		const {logout, setAuth} = sessionActions();
+		// The api layer may load before the provider mounts; fall back to
+		// no-ops so token refresh never crashes on early calls.
+		const {logout, setAuth} = getSessionActions() ?? {
+			logout: () => {},
+			setAuth: () => {},
+		};
 		try {
 			const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
 			if (!sessionRaw || sessionRaw === 'undefined') {

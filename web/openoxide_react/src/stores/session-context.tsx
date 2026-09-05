@@ -40,8 +40,19 @@ type SessionState = AuthState & OrganizationState;
 
 const SessionContext = createContext<SessionState | null>(null);
 
+// ── First-load handoff ──────────────────────────────────────────────────────
+// The router's root beforeLoad runs BEFORE the provider mounts, so it
+// cannot push the whoAmI result into context. It stashes the resolved
+// user here instead; SessionProvider reads it as its initial state.
+let pendingUser: User | null = null;
+
+/** Stashes the user resolved in beforeLoad for the provider's first mount. */
+export function setPendingUser(user: User | null) {
+	pendingUser = user;
+}
+
 export function SessionProvider({children}: {children: ReactNode}) {
-	const [user, setUser] = useState<User | null>(null);
+	const [user, setUser] = useState<User | null>(() => pendingUser);
 	const [organizations, setOrganizationsState] = useState<
 		Record<string, any>[]
 	>([]);
@@ -131,16 +142,15 @@ function setSessionRef(ref: {setAuth: (user: User) => void; logout: () => void})
 	sessionRef = ref;
 }
 
-/** Imperative auth actions for router guards / api layer. Never reactive. */
-export function sessionActions(): {
+/**
+ * Imperative auth actions for non-hook code. Returns null when the
+ * provider has not mounted yet (root beforeLoad on first page load) —
+ * callers should fall back to setPendingUser in that window.
+ */
+export function getSessionActions(): {
 	setAuth: (user: User) => void;
 	logout: () => void;
-} {
-	if (!sessionRef) {
-		throw new Error(
-			'sessionActions called before SessionProvider mounted (router beforeLoad runs inside the provider tree — ensure SessionProvider wraps RouterProvider)',
-		);
-	}
+} | null {
 	return sessionRef;
 }
 

@@ -6,8 +6,7 @@ import {
 import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
 import {createServiceClient} from '#/api/live/query';
 import {RootPending} from '#/components/pending';
-import {sessionActions} from '#/stores/session-context';
-import {SessionProvider} from '#/stores/session-context';
+import {SessionProvider, setPendingUser, getSessionActions} from '#/stores/session-context';
 import {TooltipProvider} from '#/components/ui/tooltip';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {Toaster} from '#/components/ui/sonner';
@@ -17,22 +16,29 @@ const authClient = createServiceClient(AuthService);
 
 export const Route = createRootRoute({
 	beforeLoad: async () => {
-		const {setAuth, logout} = sessionActions();
+		// First page load: the provider has not mounted yet, so push the
+		// whoAmI result into the pending handoff that SessionProvider
+		// consumes as its initial state. On client-side navigations the
+		// provider is live and imperative actions exist.
+		const live = getSessionActions();
 
 		const session = localStorage.getItem('openoxide-auth-session');
 		if (!session || session === 'undefined') {
-			logout();
+			if (live) live.logout();
+			else setPendingUser(null);
 			return;
 		}
 		try {
 			const user = await authClient.whoAmI({});
 			if (user) {
-				setAuth({
+				const mapped = {
 					id: Number(user.id),
 					email: user.email || '',
 					firstName: user.firstName,
 					lastName: user.lastName,
-				});
+				};
+				if (live) live.setAuth(mapped);
+				else setPendingUser(mapped);
 			}
 		} catch (error) {
 			// An expired/invalid session surfaces as a Connect error here;
