@@ -177,7 +177,7 @@ impl Queries {
         params: &JwtTokensInsertTokenParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO jwt_tokens (jti, role, user_id, expired_at, session_id, token_kind) VALUES (?, ?, ?, ?, ?, ?);"
+            "INSERT INTO jwt_tokens (jti, role, user_id, is_blacklist, expired_at, session_id, token_kind) VALUES (?, ?, ?, 0, ?, ?, ?);"
         )
         .bind(&params.jti)
         .bind(&params.role)
@@ -238,7 +238,7 @@ impl Queries {
         jti: &str,
     ) -> Result<bool, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, bool>(
-            "SELECT EXISTS(SELECT 1 FROM jwt_tokens WHERE jti = ? AND is_blacklist = 0 AND expired_at > CURRENT_TIMESTAMP);"
+            "SELECT EXISTS(SELECT 1 FROM jwt_tokens WHERE jti = ? AND COALESCE(is_blacklist, 0) = 0 AND expired_at > CURRENT_TIMESTAMP);"
         )
         .bind(jti)
         .fetch_one(&self.pool)

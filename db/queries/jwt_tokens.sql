@@ -22,7 +22,7 @@ UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = CURRENT_TIMESTAMP WHERE j
 UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = CURRENT_TIMESTAMP WHERE user_id = ? AND is_blacklist = 0;
 
 -- name: JwtTokensInsertToken :exec
-INSERT INTO jwt_tokens (jti, role, user_id, expired_at, session_id, token_kind) VALUES (?, ?, ?, ?, ?, ?);
+INSERT INTO jwt_tokens (jti, role, user_id, is_blacklist, expired_at, session_id, token_kind) VALUES (?, ?, ?, 0, ?, ?, ?);
 
 -- name: JwtTokensSessionIdForJti :one
 SELECT session_id FROM jwt_tokens WHERE jti = ?;
@@ -42,4 +42,4 @@ SELECT session_id AS session_id,
 UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = CURRENT_TIMESTAMP WHERE user_id = ? AND session_id = ? AND is_blacklist = 0;
 
 -- name: JwtTokensIsTokenActive :one
-SELECT EXISTS(SELECT 1 FROM jwt_tokens WHERE jti = ? AND is_blacklist = 0 AND expired_at > CURRENT_TIMESTAMP);
+SELECT EXISTS(SELECT 1 FROM jwt_tokens WHERE jti = ? AND COALESCE(is_blacklist, 0) = 0 AND expired_at > CURRENT_TIMESTAMP);
