@@ -35,6 +35,10 @@ services:
       # openoxide-agent container when its gRPC channel is down). Deployments
       # still go through the agent; this mount only enables recovery.
       - /var/run/docker.sock:/var/run/docker.sock
+      # TLS certificates for the h2-only HTTPS listener (mkcert dev certs:
+      # set TLS_CERT_PATH/TLS_KEY_PATH/MKCERT_CAROOT in .env to host paths)
+      - ${TLS_CERT_PATH:-./certs/cert.pem}:/app/certs/cert.pem:ro
+      - ${TLS_KEY_PATH:-./certs/key.pem}:/app/certs/key.pem:ro
 
     environment:
       PORT: "4000"
@@ -49,13 +53,15 @@ services:
       JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:-change_me_jwt_refresh}"
       METRICS_TOKEN: "${METRICS_TOKEN:-change_me_metrics_token}"
       OPENOXIDE_LOCAL_SERVER_ID: "${OPENOXIDE_LOCAL_SERVER_ID:-0}"
-      OPENOXIDE_SERVER_URL: "http://openoxide:4000"
+      OPENOXIDE_SERVER_URL: "https://openoxide:4000"
 
       SOCKET_PATH: "/var/run/docker.sock"
       BUILD_MEMORY_LIMIT: "8G"
       BUILD_CPU_LIMIT: "8"
       TOKIO_WORKER_THREADS: "4"
       RUST_LOG: "openoxide=info"
+      TLS_CERT_PATH: "/app/certs/cert.pem"
+      TLS_KEY_PATH: "/app/certs/key.pem"
 
     networks:
       - openoxide-network

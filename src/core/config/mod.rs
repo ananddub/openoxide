@@ -9,6 +9,10 @@ pub struct Config {
     /// Shared secret accepted only by monitoring-agent ingestion endpoints.
     /// Empty disables agent ingestion rather than silently accepting anonymous data.
     pub metrics_token: String,
+    /// PEM certificate chain + private key for the panel's HTTPS listener.
+    /// The panel speaks HTTP/2 only (no cleartext fallback) while TLS is on.
+    pub tls_cert_path: String,
+    pub tls_key_path: String,
 }
 
 #[singleton]
@@ -26,6 +30,10 @@ impl Config {
             std::env::var("SOCKET_PATH").unwrap_or_else(|_| "/var/run/docker.sock".to_string());
         let host = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
         let metrics_token = std::env::var("METRICS_TOKEN").unwrap_or_default();
+        let tls_cert_path =
+            std::env::var("TLS_CERT_PATH").unwrap_or_else(|_| "cert.pem".to_string());
+        let tls_key_path =
+            std::env::var("TLS_KEY_PATH").unwrap_or_else(|_| "key.pem".to_string());
         Ok(Config {
             database_url,
             port,
@@ -33,6 +41,8 @@ impl Config {
             secret_key,
             socket_path,
             metrics_token,
+            tls_cert_path,
+            tls_key_path,
         })
     }
 }

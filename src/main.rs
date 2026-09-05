@@ -41,15 +41,26 @@ async fn main() {
         .await
         .expect("failed to start background systems");
 
-    let port = resolve::<Config>().await.unwrap().port.clone();
-    let host = resolve::<Config>().await.unwrap().host.clone();
+    let config = resolve::<Config>().await.unwrap();
+    let (host, port) = (config.host.clone(), config.port);
 
     let listener = TcpListener::bind(format!("{}:{}", host, port))
         .await
         .unwrap();
 
-    tracing::info!("Listening on {}:{}", host, port);
-    openoxide::api::connect::serve(listener, connect_service)
+    let tls = openoxide::api::connect::tls_config(
+        &config.tls_cert_path,
+        &config.tls_key_path,
+    )
+    .unwrap_or_else(|error| {
+        panic!(
+            "TLS setup failed (cert: {}, key: {}): {} — the panel is HTTPS/HTTP-2 only, no cleartext fallback",
+            config.tls_cert_path, config.tls_key_path, error
+        )
+    });
+
+    tracing::info!("Listening on https://{}:{} (HTTP/2 only, ALPN [h2])", host, port);
+    openoxide::api::connect::serve(listener, connect_service, tls)
         .await
         .unwrap();
 }
