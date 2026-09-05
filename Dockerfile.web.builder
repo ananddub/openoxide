@@ -10,8 +10,10 @@
 FROM oven/bun:1-alpine AS build
 WORKDIR /app
 
+# lefthook's prepare script needs git hooks tooling that doesn't belong in
+# an image; skip lifecycle scripts, then install deps normally.
 COPY web/openoxide_react/package.json web/openoxide_react/bun.lock* ./
-RUN bun install --frozen-lockfile || bun install
+RUN bun install --ignore-scripts
 
 COPY web/openoxide_react/ ./
 RUN bun run build

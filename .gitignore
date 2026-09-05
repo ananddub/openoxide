@@ -29,3 +29,6 @@ errors3.txt
 /crates/todo-test/react/dist/
 /crates/todo-test/react/.vite/
 **/src/rustploy-live.generated.d.ts
+
+# TLS dev certificates (mkcert)
+certs/
