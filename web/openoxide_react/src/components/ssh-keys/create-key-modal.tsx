@@ -43,9 +43,14 @@ export function CreateKeyModal({
 				key_type: type,
 			});
 
-			if (res && res.payload && res.payload.private_key && res.payload.public_key) {
-				setPrivateKey(res.payload.private_key);
-				setPublicKey(res.payload.public_key);
+			// ResourceResponse wraps the pair as a JSON string payload.
+			const payload =
+				typeof res?.payload === 'string'
+					? JSON.parse(res.payload)
+					: (res?.payload ?? {});
+			if (payload.private_key && payload.public_key) {
+				setPrivateKey(payload.private_key);
+				setPublicKey(payload.public_key);
 				if (!name) {
 					setName(
 						`Auto-${type.toUpperCase()}-${Date.now().toString().slice(-4)}`,

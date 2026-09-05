@@ -64,7 +64,12 @@ export function GenerateKeyModal({
 			const res: any = await generatePairMutation.mutateAsync({
 				key_type: keyType,
 			});
-			setGeneratedKey(res?.payload ?? res);
+			// ResourceResponse wraps the pair as a JSON string payload.
+			const generated =
+				typeof res?.payload === 'string'
+					? JSON.parse(res.payload)
+					: (res?.payload ?? res);
+			setGeneratedKey(generated);
 			toast.success('Key Pair generated in memory!');
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
