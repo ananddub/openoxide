@@ -9,6 +9,13 @@ service ScheduleOperationsService {
   rpc ListDatabaseSchedules(ResourceQuery) returns (ResourceListResponse);
   rpc ListServerSchedules(ResourceQuery) returns (ResourceListResponse);
   rpc ListOrganizationSchedules(ResourceQuery) returns (ResourceListResponse);
+  rpc StreamGetSchedule(ResourceRequest) returns (stream ResourceResponse);
+  rpc StreamListApplicationSchedules(ResourceQuery) returns (stream ResourceListResponse);
+  rpc StreamListComposeSchedules(ResourceQuery) returns (stream ResourceListResponse);
+  rpc StreamListServerSchedules(ResourceQuery) returns (stream ResourceListResponse);
+  rpc StreamListOrganizationSchedules(ResourceQuery) returns (stream ResourceListResponse);
+  rpc StreamRuntimePolicy(ResourceRequest) returns (stream ResourceResponse);
+  rpc StreamListExecutions(ResourceQuery) returns (stream ResourceListResponse);
   rpc CreateSchedule(ResourceRequest) returns (ResourceResponse);
   rpc UpdateSchedule(ResourceRequest) returns (ResourceResponse);
   rpc DeleteSchedule(ResourceRequest) returns (Empty);

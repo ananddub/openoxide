@@ -6,6 +6,8 @@ import "openoxide/api/v1/common.proto";
 service RemoteServerService {
   rpc ListRemoteServers(ResourceQuery) returns (ResourceListResponse);
   rpc GetRemoteServer(ResourceRequest) returns (ResourceResponse);
+  rpc StreamListRemoteServers(ResourceQuery) returns (stream ResourceListResponse);
+  rpc StreamRemoteServer(ResourceRequest) returns (stream ResourceResponse);
   rpc CreateRemoteServer(ResourceRequest) returns (ResourceResponse);
   rpc UpdateRemoteServer(ResourceRequest) returns (ResourceResponse);
   rpc Activate(ResourceRequest) returns (OperationResult);

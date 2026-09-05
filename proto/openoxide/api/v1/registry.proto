@@ -6,6 +6,8 @@ import "openoxide/api/v1/common.proto";
 service RegistryService {
   rpc ListRegistries(ResourceQuery) returns (ResourceListResponse);
   rpc GetRegistry(ResourceRequest) returns (ResourceResponse);
+  rpc StreamListRegistries(ResourceQuery) returns (stream ResourceListResponse);
+  rpc StreamRegistry(ResourceRequest) returns (stream ResourceResponse);
   rpc CreateRegistry(ResourceRequest) returns (ResourceResponse);
   rpc UpdateRegistry(ResourceRequest) returns (ResourceResponse);
   rpc DeleteRegistry(ResourceRequest) returns (Empty);

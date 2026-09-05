@@ -1,9 +1,12 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
+use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     CertificateOperationsService, CertificateOperationsServiceExt, Empty, OperationResult,
     ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
 };
+use crate::db::reactive::realtime;
+use crate::flash_gen::models::Certificates;
 use crate::services::networking::certificate::{CreateCertificateDto, PatchCertificateDto, RenewCertificateDto};
 
 use super::helper::*;
@@ -23,6 +26,38 @@ impl CertificateOperationsService for CertificateController {
     }
 
     #[permission(Certificate, CanRead)]
+    async fn stream_list_certificates(
+        &self,
+        ctx: RequestContext,
+        _request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
+        >,
+    > {
+        let organization_id = auth.organization_id;
+        let stream = {
+            let sql = format!(
+                "SELECT * FROM certificates WHERE organization_id = {organization_id}"
+            );
+            realtime()
+                .watch_query::<Certificates>(sql)
+                .await
+                .map_err(map_error)?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ResourceListResponse {
+                items: rows
+                    .into_iter()
+                    .map(CertificateResponseDto::from)
+                    .map(cert_to_resource)
+                    .collect(),
+                ..Default::default()
+            })
+        }))
+    }
+
+    #[permission(Certificate, CanRead)]
     async fn get_certificate<'a>(
         &'a self,
         ctx: RequestContext,
@@ -30,6 +65,33 @@ impl CertificateOperationsService for CertificateController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let item = self.service.get_by_id(request.id, auth.organization_id).await.map_err(map_error)?;
         Response::ok(cert_to_resource(CertificateResponseDto::from(item)))
+    }
+
+    #[permission(Certificate, CanRead)]
+    async fn stream_certificate(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
+        >,
+    > {
+        let organization_id = auth.organization_id;
+        let id = request.id;
+        let stream = {
+            let sql = format!(
+                "SELECT * FROM certificates WHERE id = {id} AND organization_id = {organization_id}"
+            );
+            realtime()
+                .watch_query::<Certificates>(sql)
+                .await
+                .map_err(map_error)?
+        };
+        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
+            Some(item) => Ok(cert_to_resource(CertificateResponseDto::from(item))),
+            None => Err(ConnectError::not_found("certificate not found")),
+        }))
     }
 
     #[permission(Certificate, CanCreate)]

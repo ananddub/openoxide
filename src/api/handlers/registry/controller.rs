@@ -1,10 +1,13 @@
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, RegistryService, RegistryServiceExt, ResourceListResponse,
     ResourceQuery, ResourceRequest, ResourceResponse,
 };
 use crate::core::cache::{CacheEnum, CacheKey};
+use crate::db::reactive::realtime;
+use crate::flash_gen::models::Registries;
 use crate::services::platform::registry::{CreateRegistryDto, PatchRegistryDto};
 
 use super::helper::*;
@@ -12,6 +15,59 @@ use super::init::RegistryController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl RegistryService for RegistryController {
+    #[permission(Registry, CanRead)]
+    async fn stream_list_registries(
+        &self,
+        ctx: RequestContext,
+        _query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
+        >,
+    > {
+        let stream = {
+            let sql = "SELECT * FROM registries".to_string();
+            realtime()
+                .watch_query::<Registries>(sql)
+                .await
+                .map_err(map_sqlx_error)?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ResourceListResponse {
+                items: rows
+                    .into_iter()
+                    .map(RegistryResponseDto::from)
+                    .map(registry_to_resource)
+                    .collect(),
+                ..Default::default()
+            })
+        }))
+    }
+
+    #[permission(Registry, CanRead)]
+    async fn stream_registry(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
+        >,
+    > {
+        let id = request.id;
+        let stream = {
+            let sql = format!("SELECT * FROM registries WHERE id = {id}");
+            realtime()
+                .watch_query::<Registries>(sql)
+                .await
+                .map_err(map_sqlx_error)?
+        };
+        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
+            Some(item) => Ok(registry_to_resource(RegistryResponseDto::from(item))),
+            None => Err(ConnectError::not_found("registry not found")),
+        }))
+    }
+
     #[permission(Registry, CanRead)]
     async fn list_registries<'a>(
         &'a self,

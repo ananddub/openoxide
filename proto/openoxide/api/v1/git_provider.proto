@@ -6,6 +6,8 @@ import "openoxide/api/v1/common.proto";
 service GitProviderService {
   rpc ListGitProviders(ResourceQuery) returns (ResourceListResponse);
   rpc GetGitProvider(ResourceRequest) returns (ResourceResponse);
+  rpc StreamListGitProviders(ResourceQuery) returns (stream ResourceListResponse);
+  rpc StreamGitProvider(ResourceRequest) returns (stream ResourceResponse);
   rpc CreateGithubProvider(ResourceRequest) returns (ResourceResponse);
   rpc CreateGitlabProvider(ResourceRequest) returns (ResourceResponse);
   rpc CreateGiteaProvider(ResourceRequest) returns (ResourceResponse);

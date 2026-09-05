@@ -1,4 +1,5 @@
-use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
+use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     CreateProjectRequest, DeleteProjectRequest, Empty, GetProjectRequest, ListProjectsRequest,
@@ -6,12 +7,69 @@ use crate::api::connect::generated::openoxide::api::v1::{
     UpdateProjectRequest,
 };
 use crate::core::cache::{CacheEnum, CacheKey};
+use crate::db::reactive::realtime;
+use crate::flash_gen::models::Projects;
 
 use super::helper::*;
 use super::init::ProjectController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl ProjectService for ProjectController {
+    #[permission(Project, CanRead)]
+    async fn stream_get_project(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, GetProjectRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ProjectProto> + Send + use<>,
+        >,
+    > {
+        let organization_id = auth.organization_id;
+        let id = request.id;
+        let stream = {
+            let sql = format!(
+                "SELECT * FROM projects WHERE id = {id} AND organization_id = {organization_id}"
+            );
+            realtime()
+                .watch_query::<Projects>(sql)
+                .await
+                .map_err(map_db_error)?
+        };
+        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
+            Some(item) => Ok(project_to_proto(item)),
+            None => Err(ConnectError::not_found("project not found")),
+        }))
+    }
+
+    #[permission(Project, CanRead)]
+    async fn stream_list_projects(
+        &self,
+        ctx: RequestContext,
+        _request: ServiceRequest<'_, ListProjectsRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ListProjectsResponse> + Send + use<>,
+        >,
+    > {
+        let organization_id = auth.organization_id;
+        let stream = {
+            let sql = format!(
+                "SELECT * FROM projects WHERE organization_id = {organization_id}"
+            );
+            realtime()
+                .watch_query::<Projects>(sql)
+                .await
+                .map_err(map_db_error)?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ListProjectsResponse {
+                projects: rows.into_iter().map(project_to_proto).collect(),
+                ..Default::default()
+            })
+        }))
+    }
+
     #[permission(Project, CanRead)]
     async fn get_project<'a>(
         &'a self,

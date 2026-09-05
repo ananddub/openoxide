@@ -24,7 +24,7 @@ pub struct AlertService {
     rules_cache: RwLock<Option<Vec<ParsedRule>>>,
 }
 
-fn rule_from_flash(row: crate::flash_gen::models::AlertRules) -> AlertRule {
+pub(crate) fn rule_from_flash(row: crate::flash_gen::models::AlertRules) -> AlertRule {
     AlertRule {
         id: Some(row.id),
         name: row.name,

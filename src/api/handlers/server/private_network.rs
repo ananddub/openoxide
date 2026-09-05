@@ -1,9 +1,12 @@
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, ResourceRequest, ResourceResponse,
     ServerPrivateNetworkService, ServerPrivateNetworkServiceExt,
 };
+use crate::db::reactive::realtime;
+use crate::flash_gen::models::ServerPrivateNetworks;
 use crate::services::infrastructure::server::ServerPrivateNetworkService as AppServerPrivateNetworkService;
 
 use super::init::ServerPrivateNetworkController;
@@ -58,6 +61,35 @@ impl ServerPrivateNetworkService for ServerPrivateNetworkController {
                 ..Default::default()
             }),
         }
+    }
+
+    #[permission(Server, CanRead)]
+    async fn stream_network(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
+        >,
+    > {
+        let id = request.id;
+        let stream = {
+            let sql = format!("SELECT * FROM server_private_networks WHERE server_id = {id}");
+            realtime()
+                .watch_query::<ServerPrivateNetworks>(sql)
+                .await
+                .map_err(map_db_error)?
+        };
+        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
+            Some(network) => Ok(network_to_resource(network.server_id, &network)),
+            None => Ok(ResourceResponse {
+                id,
+                kind: "server_private_network".into(),
+                payload: String::new(),
+                ..Default::default()
+            }),
+        }))
     }
 
     #[permission(Server, CanCreate)]

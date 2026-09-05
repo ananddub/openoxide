@@ -8,6 +8,8 @@ import "buf/validate/validate.proto";
 service EnvironmentService {
   rpc GetEnvironment(GetEnvironmentRequest) returns (Environment);
   rpc ListEnvironments(ListEnvironmentsRequest) returns (ListEnvironmentsResponse);
+  rpc StreamGetEnvironment(GetEnvironmentRequest) returns (stream Environment);
+  rpc StreamListEnvironments(ListEnvironmentsRequest) returns (stream ListEnvironmentsResponse);
   rpc CreateEnvironment(CreateEnvironmentRequest) returns (Environment);
   rpc UpdateEnvironment(UpdateEnvironmentRequest) returns (Environment);
   rpc SetDefaultEnvironment(SetDefaultEnvironmentRequest) returns (Environment);

@@ -80,7 +80,10 @@ impl RealtimePool {
     ///     "SELECT * FROM orders WHERE status = 'PENDING'"
     /// ).await?;
     /// ```
-    pub async fn watch_query<T>(&self, query: &str) -> Result<impl Stream<Item = Vec<T>>, sqlx::Error>
+    pub async fn watch_query<T>(
+        &self,
+        query: impl Into<String> + Send,
+    ) -> Result<impl Stream<Item = Vec<T>>, sqlx::Error>
     where
         T: for<'r> FromRow<'r, sqlx::sqlite::SqliteRow> + Send + Unpin + 'static,
     {

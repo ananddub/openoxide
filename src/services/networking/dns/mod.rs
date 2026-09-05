@@ -229,7 +229,7 @@ impl DnsService {
         }
     }
 
-    fn into_dto(p: DnsProviders) -> DnsProviderDto {
+    pub(crate) fn into_dto(p: DnsProviders) -> DnsProviderDto {
         let p_type: DnsProviderType = p
             .provider_type
             .parse()

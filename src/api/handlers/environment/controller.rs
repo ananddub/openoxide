@@ -1,4 +1,5 @@
-use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
+use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     CreateEnvironmentRequest, DeleteEnvironmentRequest, Empty,
@@ -6,12 +7,64 @@ use crate::api::connect::generated::openoxide::api::v1::{
     GetEnvironmentRequest, ListEnvironmentsRequest, ListEnvironmentsResponse,
     SetDefaultEnvironmentRequest, UpdateEnvironmentRequest,
 };
+use crate::db::reactive::realtime;
+use crate::flash_gen::models::Environments;
 
 use super::helper::*;
 use super::init::EnvironmentController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl EnvironmentService for EnvironmentController {
+    #[permission(Environment, CanRead)]
+    async fn stream_get_environment(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, GetEnvironmentRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<EnvironmentProto> + Send + use<>,
+        >,
+    > {
+        let id = request.id;
+        let stream = {
+            let sql = format!("SELECT * FROM environments WHERE id = {id}");
+            realtime()
+                .watch_query::<Environments>(sql)
+                .await
+                .map_err(map_db_error)?
+        };
+        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
+            Some(item) => Ok(env_to_proto(item)),
+            None => Err(ConnectError::not_found("environment not found")),
+        }))
+    }
+
+    #[permission(Environment, CanRead)]
+    async fn stream_list_environments(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ListEnvironmentsRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ListEnvironmentsResponse> + Send + use<>,
+        >,
+    > {
+        let project_id = request.project_id;
+        let stream = {
+            let sql = format!("SELECT * FROM environments WHERE project_id = {project_id}");
+            realtime()
+                .watch_query::<Environments>(sql)
+                .await
+                .map_err(map_db_error)?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ListEnvironmentsResponse {
+                environments: rows.into_iter().map(env_to_proto).collect(),
+                ..Default::default()
+            })
+        }))
+    }
+
     #[permission(Environment, CanRead)]
     async fn get_environment<'a>(
         &'a self,

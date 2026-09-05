@@ -9,6 +9,10 @@ service NotificationOperationsService {
   rpc DeleteBinding(ResourceRequest) returns (Empty);
   rpc ListNotifications(ResourceQuery) returns (ResourceListResponse);
   rpc GetNotification(ResourceRequest) returns (ResourceResponse);
+  rpc StreamListDeliveryHistory(ResourceQuery) returns (stream ResourceListResponse);
+  rpc StreamListBindings(ResourceQuery) returns (stream ResourceListResponse);
+  rpc StreamListNotifications(ResourceQuery) returns (stream ResourceListResponse);
+  rpc StreamNotification(ResourceRequest) returns (stream ResourceResponse);
   rpc CreateNotification(ResourceRequest) returns (ResourceResponse);
   rpc UpdateNotification(ResourceRequest) returns (ResourceResponse);
   rpc ReplaceNotification(ResourceRequest) returns (ResourceResponse);

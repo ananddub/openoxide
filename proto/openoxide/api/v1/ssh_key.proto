@@ -6,6 +6,8 @@ import "openoxide/api/v1/common.proto";
 service SshKeyService {
   rpc ListKeys(ResourceQuery) returns (ResourceListResponse);
   rpc GetKey(ResourceRequest) returns (ResourceResponse);
+  rpc StreamListKeys(ResourceQuery) returns (stream ResourceListResponse);
+  rpc StreamKey(ResourceRequest) returns (stream ResourceResponse);
   rpc CreateKey(ResourceRequest) returns (ResourceResponse);
   rpc GenerateKey(ResourceRequest) returns (ResourceResponse);
   rpc GeneratePair(ResourceRequest) returns (ResourceResponse);

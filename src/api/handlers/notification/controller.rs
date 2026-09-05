@@ -1,10 +1,15 @@
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, NotificationOperationsService, NotificationOperationsServiceExt,
     OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
 };
-use crate::flash_gen::models::Notifications as Notification;
+use crate::db::reactive::realtime;
+use crate::flash_gen::models::{
+    NotificationDeliveryAttempts, NotificationResourceBindings,
+    Notifications as Notification,
+};
 use crate::flash_gen::notification_delivery::NotificationDeliveryCreateBindingParams;
 use crate::flash_gen::notifications::{
     CreateNotificationWithTriggersParams, UpdateNotificationFullParams,
@@ -27,6 +32,39 @@ impl NotificationOperationsService for NotificationController {
             .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
         let items = rows.into_iter().map(NotificationDeliveryAttemptDto::from).map(delivery_to_resource).collect();
         Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
+
+    #[permission(Notification, CanRead)]
+    async fn stream_list_delivery_history(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
+        >,
+    > {
+        let organization_id = request.organization_id.unwrap_or(auth.organization_id);
+        verify_scope(auth.organization_id, organization_id)?;
+        let stream = {
+            let sql = format!(
+                "SELECT * FROM notification_delivery_attempts WHERE organization_id = {organization_id} ORDER BY created_at DESC LIMIT 200"
+            );
+            realtime()
+                .watch_query::<NotificationDeliveryAttempts>(sql)
+                .await
+                .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ResourceListResponse {
+                items: rows
+                    .into_iter()
+                    .map(NotificationDeliveryAttemptDto::from)
+                    .map(delivery_to_resource)
+                    .collect(),
+                ..Default::default()
+            })
+        }))
     }
 
     #[permission(Notification, CanCreate)]
@@ -73,6 +111,39 @@ impl NotificationOperationsService for NotificationController {
         Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
+    #[permission(Notification, CanRead)]
+    async fn stream_list_bindings(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
+        >,
+    > {
+        let organization_id = request.organization_id.unwrap_or(auth.organization_id);
+        verify_scope(auth.organization_id, organization_id)?;
+        let stream = {
+            let sql = format!(
+                "SELECT * FROM notification_resource_bindings WHERE organization_id = {organization_id}"
+            );
+            realtime()
+                .watch_query::<NotificationResourceBindings>(sql)
+                .await
+                .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ResourceListResponse {
+                items: rows
+                    .into_iter()
+                    .map(NotificationResourceBindingDto::from)
+                    .map(binding_to_resource)
+                    .collect(),
+                ..Default::default()
+            })
+        }))
+    }
+
     #[permission(Notification, CanDelete)]
     async fn delete_binding<'a>(
         &'a self,
@@ -104,6 +175,36 @@ impl NotificationOperationsService for NotificationController {
     }
 
     #[permission(Notification, CanRead)]
+    async fn stream_list_notifications(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
+        >,
+    > {
+        let organization_id = request.organization_id.unwrap_or(auth.organization_id);
+        let stream = {
+            let sql = format!("SELECT * FROM notifications WHERE organization_id = {organization_id}");
+            realtime()
+                .watch_query::<Notification>(sql)
+                .await
+                .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ResourceListResponse {
+                items: rows
+                    .into_iter()
+                    .map(NotificationResponseDto::from)
+                    .map(notif_to_resource)
+                    .collect(),
+                ..Default::default()
+            })
+        }))
+    }
+
+    #[permission(Notification, CanRead)]
     async fn get_notification<'a>(
         &'a self,
         ctx: RequestContext,
@@ -116,6 +217,33 @@ impl NotificationOperationsService for NotificationController {
                 e => ConnectError::new(ErrorCode::Internal, e.to_string()),
             })?;
         Response::ok(notif_to_resource(NotificationResponseDto::from(item)))
+    }
+
+    #[permission(Notification, CanRead)]
+    async fn stream_notification(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
+        >,
+    > {
+        let organization_id = request.organization_id.unwrap_or(auth.organization_id);
+        let id = request.id;
+        let stream = {
+            let sql = format!(
+                "SELECT * FROM notifications WHERE id = {id} AND organization_id = {organization_id}"
+            );
+            realtime()
+                .watch_query::<Notification>(sql)
+                .await
+                .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?
+        };
+        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
+            Some(item) => Ok(notif_to_resource(NotificationResponseDto::from(item))),
+            None => Err(ConnectError::not_found(&format!("Notification {id} not found"))),
+        }))
     }
 
     #[permission(Notification, CanCreate)]

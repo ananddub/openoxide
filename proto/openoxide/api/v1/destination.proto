@@ -6,6 +6,8 @@ import "openoxide/api/v1/common.proto";
 service DestinationService {
   rpc ListDestinations(ResourceQuery) returns (ResourceListResponse);
   rpc GetDestination(ResourceRequest) returns (ResourceResponse);
+  rpc StreamListDestinations(ResourceQuery) returns (stream ResourceListResponse);
+  rpc StreamDestination(ResourceRequest) returns (stream ResourceResponse);
   rpc CreateDestination(ResourceRequest) returns (ResourceResponse);
   rpc UpdateDestination(ResourceRequest) returns (ResourceResponse);
   rpc DeleteDestination(ResourceRequest) returns (Empty);

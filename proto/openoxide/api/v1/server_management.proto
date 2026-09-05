@@ -5,6 +5,7 @@ import "openoxide/api/v1/common.proto";
 
 service ServerManagementService {
   rpc GetManagement(ResourceRequest) returns (ResourceResponse);
+  rpc StreamManagement(ResourceRequest) returns (stream ResourceResponse);
   rpc UpdateManagement(ResourceRequest) returns (ResourceResponse);
   rpc RepairAudit(ResourceRequest) returns (OperationResult);
   rpc ConfigureGpu(ResourceRequest) returns (OperationResult);

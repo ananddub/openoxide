@@ -6,6 +6,8 @@ import "openoxide/api/v1/common.proto";
 service DnsService {
   rpc ListProviders(ResourceQuery) returns (ResourceListResponse);
   rpc GetProvider(ResourceRequest) returns (ResourceResponse);
+  rpc StreamListProviders(ResourceQuery) returns (stream ResourceListResponse);
+  rpc StreamProvider(ResourceRequest) returns (stream ResourceResponse);
   rpc CreateProvider(ResourceRequest) returns (ResourceResponse);
   rpc UpdateProvider(ResourceRequest) returns (ResourceResponse);
   rpc DeleteProvider(ResourceRequest) returns (Empty);

@@ -1,10 +1,13 @@
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
     ScheduleOperationsService, ScheduleOperationsServiceExt, StreamQuery,
 };
 use crate::core::cache::CacheKey;
+use crate::db::reactive::realtime;
+use crate::flash_gen::models::{ScheduleExecutions, ScheduleRuntimePolicies, Schedules};
 use crate::services::automation::schedule::schedule::{CreateScheduleDto, PatchScheduleDto};
 
 use super::helper::*;
@@ -23,6 +26,30 @@ impl ScheduleOperationsService for ScheduleController {
     }
 
     #[permission(Schedule, CanRead)]
+    async fn stream_get_schedule(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
+        >,
+    > {
+        let id = request.id;
+        let stream = {
+            let sql = format!("SELECT * FROM schedules WHERE id = {id}");
+            realtime()
+                .watch_query::<Schedules>(sql)
+                .await
+                .map_err(map_sqlx_error)?
+        };
+        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
+            Some(schedule) => Ok(schedule_to_resource(ScheduleResponseDto::from(schedule))),
+            None => Err(ConnectError::not_found("schedule not found")),
+        }))
+    }
+
+    #[permission(Schedule, CanRead)]
     async fn list_application_schedules<'a>(
         &'a self,
         ctx: RequestContext,
@@ -35,6 +62,36 @@ impl ScheduleOperationsService for ScheduleController {
     }
 
     #[permission(Schedule, CanRead)]
+    async fn stream_list_application_schedules(
+        &self,
+        ctx: RequestContext,
+        query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
+        >,
+    > {
+        let application_id = query.organization_id.unwrap_or(0);
+        let stream = {
+            let sql = format!("SELECT * FROM schedules WHERE service_id = {application_id}");
+            realtime()
+                .watch_query::<Schedules>(sql)
+                .await
+                .map_err(map_sqlx_error)?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ResourceListResponse {
+                items: rows
+                    .into_iter()
+                    .map(ScheduleResponseDto::from)
+                    .map(schedule_to_resource)
+                    .collect(),
+                ..Default::default()
+            })
+        }))
+    }
+
+    #[permission(Schedule, CanRead)]
     async fn list_compose_schedules<'a>(
         &'a self,
         ctx: RequestContext,
@@ -44,6 +101,36 @@ impl ScheduleOperationsService for ScheduleController {
         let items = self.service.list_by_compose(compose_id).await.map_err(map_sqlx_error)?;
         let items = items.into_iter().map(ScheduleResponseDto::from).map(schedule_to_resource).collect();
         Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
+
+    #[permission(Schedule, CanRead)]
+    async fn stream_list_compose_schedules(
+        &self,
+        ctx: RequestContext,
+        query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
+        >,
+    > {
+        let compose_id = query.organization_id.unwrap_or(0);
+        let stream = {
+            let sql = format!("SELECT * FROM schedules WHERE service_id = {compose_id}");
+            realtime()
+                .watch_query::<Schedules>(sql)
+                .await
+                .map_err(map_sqlx_error)?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ResourceListResponse {
+                items: rows
+                    .into_iter()
+                    .map(ScheduleResponseDto::from)
+                    .map(schedule_to_resource)
+                    .collect(),
+                ..Default::default()
+            })
+        }))
     }
 
     #[permission(Schedule, CanRead)]
@@ -68,6 +155,36 @@ impl ScheduleOperationsService for ScheduleController {
     }
 
     #[permission(Schedule, CanRead)]
+    async fn stream_list_server_schedules(
+        &self,
+        ctx: RequestContext,
+        query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
+        >,
+    > {
+        let server_id = query.organization_id.unwrap_or(0);
+        let stream = {
+            let sql = format!("SELECT * FROM schedules WHERE server_id = {server_id}");
+            realtime()
+                .watch_query::<Schedules>(sql)
+                .await
+                .map_err(map_sqlx_error)?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ResourceListResponse {
+                items: rows
+                    .into_iter()
+                    .map(ScheduleResponseDto::from)
+                    .map(schedule_to_resource)
+                    .collect(),
+                ..Default::default()
+            })
+        }))
+    }
+
+    #[permission(Schedule, CanRead)]
     async fn list_organization_schedules<'a>(
         &'a self,
         ctx: RequestContext,
@@ -77,6 +194,36 @@ impl ScheduleOperationsService for ScheduleController {
         let items = self.service.list_by_organization(organization_id).await.map_err(map_sqlx_error)?;
         let items = items.into_iter().map(ScheduleResponseDto::from).map(schedule_to_resource).collect();
         Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
+
+    #[permission(Schedule, CanRead)]
+    async fn stream_list_organization_schedules(
+        &self,
+        ctx: RequestContext,
+        query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
+        >,
+    > {
+        let organization_id = query.organization_id.unwrap_or(0);
+        let stream = {
+            let sql = format!("SELECT * FROM schedules WHERE organization_id = {organization_id}");
+            realtime()
+                .watch_query::<Schedules>(sql)
+                .await
+                .map_err(map_sqlx_error)?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ResourceListResponse {
+                items: rows
+                    .into_iter()
+                    .map(ScheduleResponseDto::from)
+                    .map(schedule_to_resource)
+                    .collect(),
+                ..Default::default()
+            })
+        }))
     }
 
     #[permission(Schedule, CanCreate)]
@@ -161,6 +308,39 @@ impl ScheduleOperationsService for ScheduleController {
         })
     }
 
+    #[permission(Schedule, CanRead)]
+    async fn stream_runtime_policy(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
+        >,
+    > {
+        let id = request.id;
+        let stream = {
+            let sql = format!("SELECT * FROM schedule_runtime_policies WHERE schedule_id = {id}");
+            realtime()
+                .watch_query::<ScheduleRuntimePolicies>(sql)
+                .await
+                .map_err(map_sqlx_error)?
+        };
+        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
+            Some(policy) => {
+                let dto = ScheduleRuntimePolicyDto::from(policy);
+                let payload = serde_json::to_string(&dto).unwrap_or_default();
+                Ok(ResourceResponse {
+                    id,
+                    kind: "schedule_runtime_policy".into(),
+                    payload,
+                    ..Default::default()
+                })
+            }
+            None => Err(ConnectError::not_found("schedule runtime policy not found")),
+        }))
+    }
+
     #[permission(Schedule, CanDeploy)]
     async fn update_runtime_policy<'a>(
         &'a self,
@@ -207,6 +387,38 @@ impl ScheduleOperationsService for ScheduleController {
         let rows = self.service.list_executions(schedule_id, 200).await.map_err(map_sqlx_error)?;
         let items = rows.into_iter().map(ScheduleExecutionDto::from).map(execution_to_resource).collect();
         Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
+
+    #[permission(Schedule, CanRead)]
+    async fn stream_list_executions(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
+        >,
+    > {
+        let schedule_id = request.organization_id.unwrap_or(0);
+        let stream = {
+            let sql = format!(
+                "SELECT * FROM schedule_executions WHERE schedule_id = {schedule_id} ORDER BY started_at DESC LIMIT 200"
+            );
+            realtime()
+                .watch_query::<ScheduleExecutions>(sql)
+                .await
+                .map_err(map_sqlx_error)?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ResourceListResponse {
+                items: rows
+                    .into_iter()
+                    .map(ScheduleExecutionDto::from)
+                    .map(execution_to_resource)
+                    .collect(),
+                ..Default::default()
+            })
+        }))
     }
 
     #[permission(Schedule, CanRead)]

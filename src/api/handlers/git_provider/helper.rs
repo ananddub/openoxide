@@ -2,7 +2,91 @@ use connectrpc::{ConnectError, ErrorCode};
 use serde::{Deserialize, Serialize};
 
 use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
+use crate::flash_gen::models::GitProviders;
 use crate::services::integrations::git::{GitProviderConfigView, GitProviderView};
+use crate::utils::provider::GitProviderType;
+
+/// Mirror of `GitProviderService::view` (private to the service module) so
+/// realtime streams can map raw `GitProviders` rows into the same response
+/// DTO the REST get/list endpoints return. `webhook_configured` mirrors the
+/// `git_providers_has_webhook_secret` SQL (`webhook_secret` non-null and
+/// non-empty) straight from the row column.
+pub fn git_provider_response_from_model(row: GitProviders) -> GitProviderResponseDto {
+    let kind: Option<GitProviderType> = row.provider_type.parse().ok();
+    let value: serde_json::Value =
+        serde_json::from_str(&row.config_json).unwrap_or_default();
+
+    let text = |key: &str| value.get(key).and_then(|v| v.as_str()).map(str::to_string);
+    let present = |key: &str| value.get(key).is_some_and(|v| !v.is_null());
+
+    let (configured, config) = match kind {
+        Some(GitProviderType::Github) => (
+            present("app_id") && present("installation_id") && present("private_key"),
+            GitProviderConfigView {
+                app_name: text("app_name"),
+                app_id: value.get("app_id").and_then(|v| v.as_i64()),
+                client_id: text("client_id"),
+                installation_id: text("installation_id"),
+                has_client_secret: present("client_secret"),
+                has_private_key: present("private_key"),
+                ..Default::default()
+            },
+        ),
+        Some(GitProviderType::Gitlab) => (
+            present("access_token"),
+            GitProviderConfigView {
+                url: text("url"),
+                internal_url: text("internal_url"),
+                application_id: text("application_id"),
+                redirect_uri: text("redirect_uri"),
+                group_name: text("group_name"),
+                has_client_secret: present("secret"),
+                has_access_token: present("access_token"),
+                ..Default::default()
+            },
+        ),
+        Some(GitProviderType::Gitea) => (
+            present("access_token"),
+            GitProviderConfigView {
+                url: text("url"),
+                internal_url: text("internal_url"),
+                redirect_uri: text("redirect_uri"),
+                client_id: text("client_id"),
+                scopes: text("scopes"),
+                has_client_secret: present("client_secret"),
+                has_access_token: present("access_token"),
+                ..Default::default()
+            },
+        ),
+        Some(GitProviderType::Bitbucket) => (
+            present("api_token") || present("app_password"),
+            GitProviderConfigView {
+                username: text("username"),
+                email: text("email"),
+                workspace: text("workspace_name"),
+                has_app_password: present("app_password"),
+                has_api_token: present("api_token"),
+                ..Default::default()
+            },
+        ),
+        None => (false, GitProviderConfigView::default()),
+    };
+
+    GitProviderResponseDto::from(GitProviderView {
+        id: row.id,
+        name: row.name,
+        provider_type: row.provider_type,
+        shared: row.shared != 0,
+        configured,
+        webhook_configured: row
+            .webhook_secret
+            .as_deref()
+            .is_some_and(|secret| !secret.is_empty()),
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        config,
+    })
+}
 
 pub fn map_db_error(err: sqlx::Error) -> ConnectError {
     match &err {

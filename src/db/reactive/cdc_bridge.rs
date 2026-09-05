@@ -1,0 +1,72 @@
+use tokio::sync::broadcast;
+
+use sqlite_realtime::{RealtimeOp, RealtimePool};
+
+use super::bus::event_bus;
+use super::types::{DbChangeEvent, DbChangeOperation};
+
+/// Forwards committed change events from the realtime CDC engine
+/// (crates/realtime) into the application-wide [event_bus] so the
+/// WatchTables pump and any other bus consumers keep receiving changes.
+/// The engine drains per-commit events in commit order; org scoping is
+/// resolved by reading the row's `organization_id` after the commit
+/// (unavailable in the raw update hook, which only carries table+rowid).
+pub struct CdcBridge {
+    pool: sqlx::SqlitePool,
+}
+
+impl CdcBridge {
+    /// Spawns the forwarding task for the lifetime of the process.
+    pub fn spawn(realtime: &RealtimePool) {
+        let pool = realtime.inner().clone();
+        let mut events = realtime.handle().subscribe();
+        tokio::spawn(async move {
+            let bridge = Self { pool };
+            loop {
+                match events.recv().await {
+                    Ok(event) => bridge.forward(event).await,
+                    Err(broadcast::error::RecvError::Closed) => break,
+                    // Missed events only mean a missed wake-up for
+                    // table-level watchers; keep the bridge alive.
+                    Err(broadcast::error::RecvError::Lagged(_)) => continue,
+                }
+            }
+        });
+    }
+
+    async fn forward(&self, event: sqlite_realtime::RealtimeRawEvent) {
+        let operation = match event.op {
+            RealtimeOp::Insert => DbChangeOperation::Insert,
+            RealtimeOp::Update => DbChangeOperation::Update,
+            RealtimeOp::Delete => DbChangeOperation::Delete,
+            RealtimeOp::Unknown => DbChangeOperation::Unknown,
+        };
+        let organization_id = match operation {
+            DbChangeOperation::Delete | DbChangeOperation::Unknown => None,
+            _ => self.lookup_organization_id(&event.table, event.rowid).await,
+        };
+        event_bus().publish(vec![DbChangeEvent {
+            table: event.table,
+            organization_id,
+            old_row_id: (operation == DbChangeOperation::Delete).then_some(event.rowid),
+            new_row_id: (operation != DbChangeOperation::Delete).then_some(event.rowid),
+            operation,
+        }]);
+    }
+
+    async fn lookup_organization_id(&self, table: &str, rowid: i64) -> Option<i64> {
+        let sql = sqlx::AssertSqlSafe(format!(
+            "SELECT organization_id FROM \"{table}\" WHERE rowid = {rowid}"
+        ));
+        match sqlx::query_scalar::<_, i64>(sql)
+            .fetch_optional(&self.pool)
+            .await
+        {
+            Ok(value) => value,
+            Err(error) => {
+                tracing::debug!(table, rowid, error = %error, "org lookup failed for cdc event");
+                None
+            }
+        }
+    }
+}

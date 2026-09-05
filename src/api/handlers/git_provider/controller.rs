@@ -1,9 +1,12 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
+use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, GitProviderService, GitProviderServiceExt, OperationResult, ResourceListResponse,
     ResourceQuery, ResourceRequest, ResourceResponse,
 };
+use crate::db::reactive::realtime;
+use crate::flash_gen::models::GitProviders;
 use crate::services::integrations::git::{CreateProvider, ProviderCredentials, UpdateProvider};
 
 use super::helper::*;
@@ -11,6 +14,59 @@ use super::init::GitProviderController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl GitProviderService for GitProviderController {
+    #[permission(Application, CanRead)]
+    async fn stream_list_git_providers(
+        &self,
+        ctx: RequestContext,
+        _query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
+        >,
+    > {
+        let stream = {
+            let sql = "SELECT * FROM git_providers".to_string();
+            realtime()
+                .watch_query::<GitProviders>(sql)
+                .await
+                .map_err(map_db_error)?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ResourceListResponse {
+                items: rows
+                    .into_iter()
+                    .map(git_provider_response_from_model)
+                    .map(provider_to_resource)
+                    .collect(),
+                ..Default::default()
+            })
+        }))
+    }
+
+    #[permission(Application, CanRead)]
+    async fn stream_git_provider(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
+        >,
+    > {
+        let id = request.id;
+        let stream = {
+            let sql = format!("SELECT * FROM git_providers WHERE id = {id}");
+            realtime()
+                .watch_query::<GitProviders>(sql)
+                .await
+                .map_err(map_db_error)?
+        };
+        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
+            Some(item) => Ok(provider_to_resource(git_provider_response_from_model(item))),
+            None => Err(ConnectError::not_found("git provider not found")),
+        }))
+    }
+
     #[permission(Application, CanRead)]
     async fn list_git_providers<'a>(
         &'a self,

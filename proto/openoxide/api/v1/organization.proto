@@ -8,6 +8,7 @@ import "buf/validate/validate.proto";
 service OrganizationService {
   rpc GetOrganization(GetOrganizationRequest) returns (Organization);
   rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
+  rpc StreamGetOrganization(GetOrganizationRequest) returns (stream Organization);
   rpc CreateOrganization(CreateOrganizationRequest) returns (Organization);
   rpc UpdateOrganization(UpdateOrganizationRequest) returns (Organization);
   rpc DeleteOrganization(DeleteOrganizationRequest) returns (Empty);

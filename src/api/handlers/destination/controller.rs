@@ -1,10 +1,13 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
+use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     DestinationService, DestinationServiceExt, Empty, OperationResult, ResourceListResponse,
     ResourceQuery, ResourceRequest, ResourceResponse,
 };
 use crate::core::cache::{CacheEnum, CacheKey};
+use crate::db::reactive::realtime;
+use crate::flash_gen::models::Destinations;
 use crate::services::automation::destination::{CreateDestinationDto, PatchDestinationDto};
 
 use super::helper::*;
@@ -12,6 +15,72 @@ use super::init::DestinationController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl DestinationService for DestinationController {
+    #[permission(Database, CanRead)]
+    async fn stream_list_destinations(
+        &self,
+        ctx: RequestContext,
+        _query: ServiceRequest<'_, ResourceQuery>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
+        >,
+    > {
+        let organization_id = auth.organization_id;
+        let stream = {
+            let sql = format!(
+                "SELECT * FROM destinations WHERE organization_id = {organization_id}"
+            );
+            realtime()
+                .watch_query::<Destinations>(sql)
+                .await
+                .map_err(map_sqlx_error)?
+        };
+        Response::stream_ok(stream.map(move |rows| {
+            Ok(ResourceListResponse {
+                items: rows
+                    .into_iter()
+                    .map(DestinationResponseDto::from)
+                    .map(destination_to_resource)
+                    .collect(),
+                ..Default::default()
+            })
+        }))
+    }
+
+    #[permission(Database, CanRead)]
+    async fn stream_destination(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
+        >,
+    > {
+        let organization_id = auth.organization_id;
+        // Destination IDs are numeric strings in the payload JSON — extract
+        // from payload like the sibling get and validate as i64.
+        let id: DestinationId = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let id = id
+            .id
+            .parse::<i64>()
+            .map_err(|_| ConnectError::not_found("destination not found"))?;
+        let stream = {
+            let sql = format!(
+                "SELECT * FROM destinations WHERE id = {id} AND organization_id = {organization_id}"
+            );
+            realtime()
+                .watch_query::<Destinations>(sql)
+                .await
+                .map_err(map_sqlx_error)?
+        };
+        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
+            Some(item) => Ok(destination_to_resource(DestinationResponseDto::from(item))),
+            None => Err(ConnectError::not_found("destination not found")),
+        }))
+    }
+
     #[permission(Database, CanRead)]
     async fn list_destinations<'a>(
         &'a self,

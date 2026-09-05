@@ -60,7 +60,7 @@ pub trait RealtimeTypedExt {
         &self,
         handle: &RealtimeHandle,
         registry: Arc<LiveQueryRegistry>,
-        query: &str,
+        query: impl Into<String> + Send,
     ) -> impl std::future::Future<Output = Result<impl Stream<Item = Vec<T>>, sqlx::Error>> + Send
     where
         T: for<'r> FromRow<'r, sqlx::sqlite::SqliteRow> + Send + Unpin + 'static;
@@ -123,12 +123,12 @@ impl RealtimeTypedExt for SqlitePool {
         &self,
         handle: &RealtimeHandle,
         registry: Arc<LiveQueryRegistry>,
-        query: &str,
+        query: impl Into<String> + Send,
     ) -> Result<impl Stream<Item = Vec<T>>, sqlx::Error>
     where
         T: for<'r> FromRow<'r, sqlx::sqlite::SqliteRow> + Send + Unpin + 'static,
     {
-        let sql = query.to_string();
+        let sql = query.into();
         let pool = self.clone();
 
         // ── 1. Initial snapshot ───────────────────────────────────────────
