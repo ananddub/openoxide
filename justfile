@@ -1,3 +1,4 @@
+# ── Local dev ────────────────────────────────────────────────────────────────
 
 gen-mod:
     #!/usr/bin/env bash
@@ -77,8 +78,18 @@ gen-mod:
         add_if_missing "src/lib.rs" "$name"
     done < <(find src -mindepth 1 -maxdepth 1 -type d | sort)
 
+# Run the panel binary (openoxide) in the foreground.
 run:
     cargo run --bin openoxide
+
+# Build everything natively: panel (openoxide) + agent + web bundle.
+build-native:
+    cargo build --bin openoxide --bin agent
+    cd web/openoxide_react && bun run build
+
+# Build all three dev images (panel + agent + web).
+build-images:
+    docker compose -f docker-compose.dev.yml build
 
 # Run the standalone reactive Todo integration test app
 todo-dev:
@@ -91,9 +102,31 @@ todo-react:
 web:
     cd web/openoxide_react && bun run dev
 
-dev:
-    sudo pkill openoxide || true
-    cargo watch -x check -x 'run --bin openoxide'
+# Run the agent binary in the foreground.
+run-agent:
+    cargo run --bin agent
+
+# ── Full local stack (docker compose: panel + agent + web) ───────────────────
+
+# Start the full stack (panel :4000, agent :50051 internal, web :3001).
+up:
+    docker network create openoxide-network 2>/dev/null || true
+    docker compose -f docker-compose.dev.yml up -d --build
+
+# Stop the full stack.
+down:
+    docker compose -f docker-compose.dev.yml down
+
+# Tail all three services' logs.
+logs:
+    docker compose -f docker-compose.dev.yml logs -f
+
+# Restart everything after code changes (rebuild + up).
+restart:
+    docker compose -f docker-compose.dev.yml up -d --build --force-recreate
+
+# ── Docker (production/standalone) ──────────────────────────────────────────
+
 # Build the standalone Agent image
 docker-build-agent:
     docker build -f Dockerfile.agent -t openoxide-agent:latest .
@@ -122,7 +155,6 @@ compose-down:
 compose-logs:
     docker compose logs -f
 
-# Short aliases for compose up / down / logs
-up: compose-up
-down: compose-down
-logs: compose-logs
+# Aliases for the production stacks (unchanged behavior)
+up-prod: compose-up
+down-prod: compose-down

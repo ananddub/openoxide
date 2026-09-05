@@ -1,0 +1,136 @@
+# Full local stack: panel (openoxide) + agent + web (Caddy SPA + API proxy).
+# One command up, one command down — see justfile `up` / `down`.
+#
+# The web image builds the React SPA itself (bun install + vite build), so a
+# plain `docker compose -f docker-compose.dev.yml up --build` needs nothing
+# pre-built on the host.
+
+services:
+  openoxide:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dubeyanand/openoxide:dev
+    pull_policy: never
+    container_name: openoxide
+    restart: unless-stopped
+
+    ports:
+      - "4000:4000"
+      - "51820:51820/udp"
+
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+
+    devices:
+      - /dev/net/tun:/dev/net/tun
+
+    volumes:
+      # Panel database + runtime data (backups, logs, traefik config, etc.)
+      - openoxide_data:/app/data
+      # Host Kernel Modules (Required for WireGuard interface creation)
+      - /lib/modules:/lib/modules:ro
+      # Docker socket for local agent lifecycle control (start/stop the
+      # openoxide-agent container when its gRPC channel is down). Deployments
+      # still go through the agent; this mount only enables recovery.
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    environment:
+      PORT: "4000"
+      HOST: "0.0.0.0"
+      DATABASE_URL: "sqlite:///app/data/db.sqlite3"
+      MALLOC_ARENA_MAX: "2"
+      RUST_BACKTRACE: "1"
+
+      # ── Secrets — dev defaults, override via .env ──────────────────────────
+      SECRET_KEY: "${SECRET_KEY:-change_me_in_production}"
+      JWT_ACCESS_SECRET: "${JWT_ACCESS_SECRET:-change_me_jwt_access}"
+      JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET:-change_me_jwt_refresh}"
+      METRICS_TOKEN: "${METRICS_TOKEN:-change_me_metrics_token}"
+      OPENOXIDE_LOCAL_SERVER_ID: "${OPENOXIDE_LOCAL_SERVER_ID:-0}"
+      OPENOXIDE_SERVER_URL: "http://openoxide:4000"
+
+      SOCKET_PATH: "/var/run/docker.sock"
+      BUILD_MEMORY_LIMIT: "8G"
+      BUILD_CPU_LIMIT: "8"
+      TOKIO_WORKER_THREADS: "4"
+      RUST_LOG: "openoxide=info"
+
+    networks:
+      - openoxide-network
+
+    depends_on:
+      openoxide-agent:
+        condition: service_started
+
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  openoxide-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    image: dubeyanand/openoxide-agent:dev
+    pull_policy: never
+    container_name: openoxide-agent
+    restart: unless-stopped
+
+    networks:
+      - openoxide-network
+
+    volumes:
+      # The agent is the host Docker executor for monitoring, compose,
+      # deployment, backup and maintenance tasks.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # cgroup mode reads container metrics from here.
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      # Persistent task workspace for repositories, compose files and backup
+      # staging. Remote agents use their own host-local volume.
+      - agent_workspace:/app/workspace
+      # Traefik static/dynamic configuration and certificates. The agent owns
+      # host-side route updates, so this mount must remain read-write.
+      - /etc/openoxide/traefik:/etc/openoxide/traefik
+
+    environment:
+      # -1 is the local-Agent sentinel; the panel maps it to its actual local
+      # server row, so dev databases do not need a hard-coded id.
+      SERVER_ID: "-1"
+      MONITOR_DATABASE_URL: "memory://metrics"
+      GRPC_PORT: "50051"
+      REFRESH_RATE: "2"
+      RETENTION_DAYS: "7"
+      OPENOXIDE_SERVER_URL: "http://openoxide:4000"
+      METRICS_TOKEN: "${METRICS_TOKEN:-change_me_metrics_token}"
+      RUST_LOG: "agent=info"
+      COLLECTION_MODE: "auto"
+      ROLLUP_SAMPLES: "1"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web.builder
+    image: dubeyanand/openoxide-web:dev
+    pull_policy: never
+    container_name: openoxide-web
+    restart: unless-stopped
+
+    ports:
+      - "3001:80"
+
+    depends_on:
+      - openoxide
+
+    networks:
+      - openoxide-network
+
+volumes:
+  openoxide_data:
+  agent_workspace:
+
+networks:
+  openoxide-network:
+    name: openoxide-network
+    external: true
