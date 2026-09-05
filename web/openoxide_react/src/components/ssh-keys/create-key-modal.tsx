@@ -1,3 +1,4 @@
+import {useSshKeyCreate, useSshKeyGeneratePair} from '#/api/live/ssh_keys';
 import {useState} from 'react';
 import {
 	Dialog,

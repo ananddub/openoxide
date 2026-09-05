@@ -60,7 +60,10 @@ export function LogsTab({app}: LogsTabProps) {
 				if (sessionRaw) {
 					try {
 						const session = JSON.parse(sessionRaw);
-						accessToken = session?.tokens?.access_token || '';
+						accessToken =
+							session?.tokens?.accessToken ||
+							session?.tokens?.access_token ||
+							'';
 					} catch {}
 				}
 
@@ -69,8 +72,8 @@ export function LogsTab({app}: LogsTabProps) {
 					timestamps: String(timestamps),
 					follow: String(isLive),
 				});
-				if (application?.server_id) {
-					params.append('server_id', String(application.server_id));
+				if (app?.server_id) {
+					params.append('server_id', String(app.server_id));
 				}
 
 				const response = await fetch(
