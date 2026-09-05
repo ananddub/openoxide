@@ -2,6 +2,10 @@ import {useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
+import {
+	useRemoteServerDelete,
+	useRemoteServerTestConnection,
+} from '#/api/live';
 
 export function useDeleteServer(serverId: number, onClose: () => void) {
 	const queryClient = useQueryClient();
@@ -12,9 +16,7 @@ export function useDeleteServer(serverId: number, onClose: () => void) {
 		if (!serverId) return;
 		setDeleting(true);
 		try {
-			await deleteMutation.mutateAsync({
-				params: {path: {id: serverId}},
-			});
+			await deleteMutation.mutateAsync(serverId);
 			toast.success('Remote server deleted successfully');
 			queryClient.invalidateQueries({
 				queryKey: ['get', '/remote-servers'],
@@ -40,10 +42,7 @@ export function useTestServerConnection(serverId?: number) {
 
 		setTesting(true);
 		try {
-			const res = await testConnMutation.mutateAsync({
-				params: {path: {id: idToTest}},
-				body: {host_key_fingerprint: ''},
-			});
+			const res = await testConnMutation.mutateAsync(idToTest);
 			const data = res as Record<string, unknown>;
 			if (data.status === 'SUCCESS' || data.success) {
 				toast.success('Server connection test successful!');

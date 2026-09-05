@@ -87,3 +87,40 @@ export function useMemberRemove() {
 		permissionClient.removeMember({id: BigInt(id)}),
 	);
 }
+
+/** Create an invitation (email/role fields in the payload). */
+export function useInviteCreate() {
+	return useConnectMutation((input: Record<string, unknown>) =>
+		permissionClient.createInvite({payload: JSON.stringify(input)}),
+	);
+}
+
+/**
+ * Cancel an invitation by id. CancelInvite is a Resource-pattern request
+ * whose target id travels in the payload JSON.
+ */
+export function useInviteCancel() {
+	return useConnectMutation((id: number | bigint | string) =>
+		permissionClient.cancelInvite({payload: JSON.stringify({id})}),
+	);
+}
+
+/** Legacy member shape the former zustand `members` slice carried. */
+export type MemberItem = {
+	id: string;
+	user_id?: number;
+	email: string;
+	name?: string;
+	role: string;
+	avatar?: string;
+	banned?: boolean;
+	created_at?: number;
+};
+
+/** Legacy invite shape the former zustand `invites` slice carried. */
+export type InviteItem = {
+	id: string;
+	email: string;
+	role: string;
+	created_at?: number;
+};

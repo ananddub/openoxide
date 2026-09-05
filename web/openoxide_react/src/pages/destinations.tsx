@@ -6,10 +6,9 @@ import {DestinationsHeader} from '#/components/destinations/destinations-header'
 import {DestinationsList} from '#/components/destinations/destinations-list';
 import {CreateDestinationModal} from '#/components/destinations/create-destination-modal';
 
-import {useAppStore} from '#/stores/app-store';
+import {useDestinationList, useDestinationDelete, useDestinationTest} from '#/api/live';
 
 import type {DestinationResponse} from '#/types/api-helpers';
-import {useDestinationDelete, useDestinationTest} from '#/api/live';
 
 export const Route = createFileRoute('/_app/destinations')({
 	component: DestinationsPage,
@@ -20,11 +19,10 @@ function DestinationsPage() {
 	const [editingDestination, setEditingDestination] =
 		useState<DestinationResponse | null>(null);
 
-	const storeDestinations = useAppStore(state => state.destinations);
-
-	const destinations = (storeDestinations ??
+	// Live destinations query; the table-watch stream keeps it fresh.
+	const destinationsQuery = useDestinationList();
+	const destinations = (destinationsQuery.data ??
 		[]) as unknown as DestinationResponse[];
-	const isLoading = false;
 
 	// Mutations
 	const deleteMutation = useDestinationDelete();
@@ -48,16 +46,13 @@ function DestinationsPage() {
 		try {
 			await Promise.race([
 				testMutation.mutateAsync({
-				body: {
 					provider: destination.provider,
 					bucket: destination.bucket,
 					region: destination.region,
 					endpoint: destination.endpoint,
 					access_key: destination.access_key,
 					secret_access_key: destination.secret_access_key,
-				},
-				parseAs: 'text',
-				} as any),
+				}),
 				new Promise<never>((_, reject) =>
 					setTimeout(() => reject(new Error('S3 connection test timed out')), 15_000),
 				),
@@ -89,13 +84,13 @@ function DestinationsPage() {
 					setIsCreateOpen(true);
 				}}
 				onRefresh={() => {}}
-				isRefreshing={isLoading}
+				isRefreshing={destinationsQuery.isLoading}
 			/>
 
 			{/* Destinations Grid List Component (< 200 lines) */}
 			<DestinationsList
 				destinations={destinations}
-				isLoading={isLoading}
+				isLoading={destinationsQuery.isLoading}
 				onEdit={handleEdit}
 				onDelete={handleDelete}
 				onTest={handleTest}

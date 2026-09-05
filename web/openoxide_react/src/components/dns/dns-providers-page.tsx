@@ -1,6 +1,13 @@
 import React, {useState} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
 import {formatApiError} from '#/api/utils';
+import {
+	useDnsList,
+	useDnsProviderCreate,
+	useDnsProviderUpdate,
+	useDnsProviderDelete,
+	useDnsProviderTest,
+	useDnsTestConnection,
+} from '#/api/live';
 import {
 	Globe,
 	Plus,
@@ -29,7 +36,7 @@ import {
 } from '#/components/ui/select';
 import {toast} from 'sonner';
 import {CloudflareIcon, AwsIcon} from '#/components/icons/provider-icons';
-import {useAppStore} from '#/stores/app-store';
+import {useOrganizations} from '#/stores/session-context';
 import {DnsZonesDialog} from './dns-zones-dialog';
 
 export interface DnsProviderItem {
@@ -43,20 +50,19 @@ export interface DnsProviderItem {
 }
 
 export function DnsProvidersPage() {
-	const queryClient = useQueryClient();
-	const storeProviders = useAppStore(state => state.dnsProviders);
-	const isDnsLoading = useAppStore(state => state.isDnsLoading);
-	const addDnsStore = useAppStore(state => state.addDnsProvider);
-	const updateDnsStore = useAppStore(state => state.updateDnsProvider);
-	const deleteDnsStore = useAppStore(state => state.deleteDnsProvider);
+	const {activeOrg} = useOrganizations();
+
+	// Live DNS providers query; the table-watch stream (dns_providers
+	// table) invalidates it while mounted, so no zustand slice involved.
+	const providersQuery = useDnsList();
+	const providers = (providersQuery.data ?? []) as DnsProviderItem[];
 
 	const createMutation = useDnsProviderCreate();
 	const updateMutation = useDnsProviderUpdate();
 	const deleteMutation = useDnsProviderDelete();
 	const testMutation = useDnsProviderTest();
 
-	const providers = storeProviders;
-	const isLoading = isDnsLoading && providers.length === 0;
+	const isLoading = providersQuery.isLoading;
 
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [editingProvider, setEditingProvider] = useState<any | null>(null);
@@ -120,11 +126,9 @@ export function DnsProvidersPage() {
 						: undefined,
 				};
 
-				updateDnsStore(editingProvider.id, updatePayload);
-
 				await updateMutation.mutateAsync({
-					params: {path: {id: editingProvider.id}},
-					body: updatePayload,
+					id: editingProvider.id,
+					...updatePayload,
 				});
 				toast.success(`DNS Provider "${formName}" updated`);
 			} else {
@@ -140,18 +144,14 @@ export function DnsProvidersPage() {
 							: JSON.stringify(formToken.trim()),
 				};
 
-				const res: any = await createMutation.mutateAsync({
-					body: createPayload,
+				await createMutation.mutateAsync({
+					organization_id: Number(activeOrg?.id || 1),
+					...createPayload,
 				});
-
-				if (res.data || res) {
-					addDnsStore(res.data || res);
-				}
 
 				toast.success(`DNS Provider "${formName}" created successfully`);
 			}
 			setIsCreateOpen(false);
-			queryClient.invalidateQueries({queryKey: ['get', '/dns-providers']});
 		} catch (err) {
 			toast.error(formatApiError(err, 'Failed to save DNS provider'));
 		} finally {
@@ -162,14 +162,10 @@ export function DnsProvidersPage() {
 	const handleDeleteProvider = async () => {
 		if (!deleteTarget) return;
 		const targetId = deleteTarget.id;
-		deleteDnsStore(targetId);
 		try {
-			await deleteMutation.mutateAsync({
-				params: {path: {id: targetId}},
-			});
+			await deleteMutation.mutateAsync({id: targetId});
 			toast.success(`DNS Provider "${deleteTarget.name}" deleted`);
 			setDeleteTarget(null);
-			queryClient.invalidateQueries({queryKey: ['get', '/dns-providers']});
 		} catch (err) {
 			toast.error(formatApiError(err, 'Failed to delete DNS provider'));
 		}
@@ -186,10 +182,9 @@ export function DnsProvidersPage() {
 		setIsTestingModal(true);
 		try {
 			if (editingProvider) {
-				const res: any = await testMutation.mutateAsync({
-					params: {path: {id: editingProvider.id}},
+				const result = await testMutation.mutateAsync({
+					id: editingProvider.id,
 				});
-				const result = res.data || res;
 				if (result?.success) {
 					toast.success(
 						result.message || 'DNS API token verified successfully!',
@@ -201,20 +196,17 @@ export function DnsProvidersPage() {
 				}
 			} else {
 				// Call Rust backend proxy to bypass browser CORS & run official API test
-				const res: any = await testConnectionMutation.mutateAsync({
-					body: {
-						name: formName.trim() || 'Test',
-						provider_type: formType,
-						credentials_json:
-							formType === 'ROUTE53'
-								? JSON.stringify({
-										accessKeyId: formAccessKey.trim(),
-										secretAccessKey: formToken.trim(),
-									})
-								: JSON.stringify(formToken.trim()),
-					},
+				const result = await testConnectionMutation.mutateAsync({
+					name: formName.trim() || 'Test',
+					provider_type: formType,
+					credentials_json:
+						formType === 'ROUTE53'
+							? JSON.stringify({
+									accessKeyId: formAccessKey.trim(),
+									secretAccessKey: formToken.trim(),
+								})
+							: JSON.stringify(formToken.trim()),
 				});
-				const result = res.data || res;
 				if (result?.success) {
 					toast.success(
 						result.message || 'DNS API Token verified successfully!',

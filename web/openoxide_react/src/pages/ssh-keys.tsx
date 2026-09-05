@@ -6,7 +6,7 @@ import {CreateKeyModal} from '#/components/ssh-keys/create-key-modal';
 import {ViewKeyModal} from '#/components/ssh-keys/view-key-modal';
 import {DeleteKeyModal} from '#/components/ssh-keys/delete-key-modal';
 
-import {useAppStore} from '#/stores/app-store';
+import {useSshKeyItems} from '#/api/live';
 
 import type {SshKeyResponse} from '#/types/api-helpers';
 
@@ -21,10 +21,8 @@ function SshKeysPage() {
 	const [selectedKeyForDelete, setSelectedKeyForDelete] =
 		useState<SshKeyResponse | null>(null);
 
-	const storeSshKeys = useAppStore(state => state.sshKeys);
-
-	const sshKeys = (storeSshKeys ?? []) as unknown as SshKeyResponse[];
-	const isLoading = false;
+	const sshKeysQuery = useSshKeyItems();
+	const sshKeys = (sshKeysQuery.data ?? []) as unknown as SshKeyResponse[];
 
 	const handleOpenAdd = useCallback(() => setIsAddOpen(true), []);
 	const handleCloseAdd = useCallback(() => setIsAddOpen(false), []);
@@ -58,7 +56,7 @@ function SshKeysPage() {
 
 			<SshKeysList
 				keys={sshKeys}
-				isLoading={isLoading}
+				isLoading={sshKeysQuery.isLoading}
 				onViewKey={handleViewKey}
 				onDeleteKey={handleDeleteKey}
 			/>

@@ -2,9 +2,12 @@ import {useState, useEffect, useMemo} from 'react';
 import {
 	useProjectGet,
 	useEnvironmentListByProject,
+	useRemoteServerList,
+	useApplicationList,
+	useDatabaseList,
+	useComposeList,
+	useOverviewServices,
 } from '#/api/live';
-
-import {useAppStore} from '#/stores/app-store';
 
 function normalizeDatabaseKind(value: unknown): string {
 	const kind = String(value || '').toLowerCase();
@@ -26,17 +29,14 @@ export function useProjectDetails(projectId: number) {
 	const [showCreateCompose, setShowCreateCompose] = useState(false);
 	const [showCreateDatabase, setShowCreateDatabase] = useState(false);
 
-	// 0ms Instant Zustand Store Reads for Applications, Databases, Compose, and Overview Services
-	const storeProject = useAppStore(state =>
-		state.projects.find(p => String(p.id) === String(projectId)),
-	);
-	const servers = useAppStore(state => state.servers);
-	const applications = useAppStore(state => state.applications || []);
-	const databases = useAppStore(state => state.databases || []);
-	const composes = useAppStore(state => state.composes || []);
-	const overviewServices = useAppStore(
-		state => state.overviewServices || [],
-	);
+	// Org-wide service lists as live queries (table-watch keeps them
+	// fresh); shapes mirror the legacy store slices.
+	const serversQuery = useRemoteServerList();
+	const servers = serversQuery.data ?? [];
+	const applications = useApplicationList().data ?? [];
+	const databases = useDatabaseList().data ?? [];
+	const composes = useComposeList().data ?? [];
+	const overviewServices = useOverviewServices().data ?? [];
 	const getServerName = (service: any) => {
 		if (service?.server_name || service?.serverName)
 			return String(service.server_name || service.serverName);
@@ -48,9 +48,10 @@ export function useProjectDetails(projectId: number) {
 		return String(server?.name || `Server ${serverId}`);
 	};
 
-	// Queries
+	// Queries — live project query keyed ['projects','get',id]; the
+	// table-watch stream invalidates it on project changes while mounted.
 	const {data: liveProject} = useProjectGet(BigInt(projectId));
-	const project = liveProject || storeProject;
+	const project = liveProject || null;
 	const {data: envs = []} = useEnvironmentListByProject(BigInt(projectId));
 
 	// Read URL search params for persistent environment selection across navigations

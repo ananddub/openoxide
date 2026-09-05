@@ -21,7 +21,7 @@ import {TerminalModal} from '#/components/projects/common/terminal-modal';
 import {ComposeDirectContainerLogsModal} from '#/components/projects/compose/detail/logs/compose-direct-container-logs-modal';
 import {ComposeDirectDeployLogsModal} from '#/components/projects/compose/detail/deployments/compose-direct-deploy-logs-modal';
 import type {DomainFormData} from '#/components/projects/common/domain-dialog';
-import {useOrganizationStore} from '#/stores/organization-store';
+import {useOrganizations} from '#/stores/session-context';
 
 interface AppArchitectureTabProps {
 	app: any;
@@ -40,7 +40,7 @@ export function AppArchitectureTab({
 }: AppArchitectureTabProps) {
 	const queryClient = useQueryClient();
 	const appId = app?.id;
-	const activeOrg = useOrganizationStore(state => state.activeOrg);
+	const {activeOrg} = useOrganizations();
 
 	const createDomainMutation = useDomainCreate();
 	const patchDomainMutation = useDomainUpdate();

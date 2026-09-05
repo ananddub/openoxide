@@ -1,5 +1,4 @@
 import {useApplicationDeploy, useApplicationRedeploy, useDeploymentCancel, useDeploymentDelete} from '#/api/live';
-import {useAppStore} from '#/stores/app-store';
 import {useState, useEffect, useRef} from 'react';
 import {
 	Zap,
@@ -221,9 +220,7 @@ export function DeploymentsTab({
 		if (!cancelingId) return;
 		setIsTriggering(true);
 		try {
-			await cancelMutation.mutateAsync({
-				id: cancelingId,
-					});
+			await cancelMutation.mutateAsync(cancelingId);
 			toast.success('Deployment cancellation requested');
 			onRefresh?.();
 		} catch (err: any) {
@@ -258,15 +255,8 @@ export function DeploymentsTab({
 
 	const handleClearAppDeployments = async () => {
 		try {
-			const res = await clearAppMutation.mutateAsync({
-				params: {
-					path: {
-						id: appId,
-					},
-				},
-			});
+			const res = await clearAppMutation.mutateAsync(appId);
 			const data = res as any;
-			useAppStore.getState().clearDeployments({appId});
 			toast.success(
 				`Cleared ${data?.cleared_count || 0} deployment logs & history`,
 			);
@@ -279,14 +269,7 @@ export function DeploymentsTab({
 
 	const handleDeleteSingleAppDeployment = async (id: number) => {
 		try {
-			await deleteMutation.mutateAsync({
-				params: {
-					path: {
-						id,
-					},
-				},
-			});
-			useAppStore.getState().deleteDeployment(id);
+			await deleteMutation.mutateAsync(id);
 			toast.success(`Deployment #${id} deleted`);
 			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
 			onRefresh?.();

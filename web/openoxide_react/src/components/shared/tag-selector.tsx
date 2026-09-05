@@ -6,7 +6,7 @@ import {
 	Tags as TagsIcon,
 	Plus,
 } from 'lucide-react';
-import {useAppStore} from '#/stores/app-store';
+import {useTagListAll} from '#/api/live';
 import {TagBadge} from '#/components/shared/tag-badge';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
@@ -39,7 +39,9 @@ export function TagSelector({
 	variant = 'form',
 }: TagSelectorProps) {
 	const [searchQuery, setSearchQuery] = useState('');
-	const rawTags = useAppStore(state => state.tags || []);
+	// Live tags query keyed ['tags','list'] — table-watch invalidates it
+	// while this component is mounted.
+	const rawTags = useTagListAll().data;
 
 	const availableTags: TagItem[] = useMemo(() => {
 		return Array.isArray(rawTags) ? (rawTags as unknown as TagItem[]) : [];

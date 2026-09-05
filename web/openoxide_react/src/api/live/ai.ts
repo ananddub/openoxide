@@ -1,4 +1,4 @@
-import {createServiceClient, useResourceListQuery} from './query';
+import {createServiceClient, useConnectMutation, useResourceListQuery, useConnectQuery} from './query';
 import {AiService} from '#/gen/connect/openoxide/api/v1/ai_pb';
 
 export type AiSettingPayload = {
@@ -21,5 +21,30 @@ export function useAiListSettings() {
 	return useResourceListQuery<AiSettingPayload>(
 		['ai_settings', 'list'],
 		() => aiClient.listSettings({}),
+	);
+}
+
+/**
+ * AI provider settings with numeric coercion, matching the former zustand
+ * `aiSettings` slice data. Key prefix `['ai_settings']` matches the
+ * table-watch AI_SETTINGS entry.
+ */
+export function useAiSettingItems() {
+	return useConnectQuery<AiSettingPayload[]>(['ai_settings'], async () => {
+		const response = await aiClient.listSettings({});
+		return (response as any).items.map((item: Record<string, unknown>) => ({
+			...item,
+			id: Number(item.id),
+			organization_id: Number(item.organization_id),
+			created_at: Number(item.created_at),
+			updated_at: Number(item.updated_at),
+		})) as AiSettingPayload[];
+	});
+}
+
+/** Delete an AI provider setting by id (legacy REST: DELETE /ai/settings/{id}). */
+export function useAiSettingDelete() {
+	return useConnectMutation((id: number | bigint) =>
+		aiClient.deleteSettings({id: BigInt(id)}),
 	);
 }

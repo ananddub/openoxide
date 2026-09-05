@@ -1,4 +1,4 @@
-import {createServiceClient, useResourceListQuery} from './query';
+import {createServiceClient, useActiveOrgId, useResourceListQuery} from './query';
 import {OverviewService} from '#/gen/connect/openoxide/api/v1/overview_pb';
 
 /**
@@ -43,26 +43,41 @@ export type OverviewBackupItemPayload = {
 
 const overviewClient = createServiceClient(OverviewService);
 
-/** Organization-wide services (legacy live: useOverviewServices). */
-export function useOverviewServices(organizationId: bigint) {
+/**
+ * Organization-wide services (legacy live: useOverviewServices). Keyed under
+ * the `overview-services` prefix so the table-watch stream invalidates it on
+ * any SERVICES / SERVICE_APPLICATION / SERVICE_COMPOSE / SERVICE_DATABASE
+ * table change while mounted.
+ */
+export function useOverviewServices() {
+	const orgId = useActiveOrgId();
 	return useResourceListQuery<OverviewServiceItemPayload>(
-		['overview-services', 'list', organizationId.toString()],
-		() => overviewClient.listServices({organizationId}),
+		['overview-services', orgId.toString()],
+		() => overviewClient.listServices({organizationId: orgId}),
 	);
 }
 
-/** Organization-wide domains (legacy live: useOverviewDomains). */
-export function useOverviewDomains(organizationId: bigint) {
+/**
+ * Organization-wide domains (legacy live: useOverviewDomains). Same
+ * invalidation story via the `overview-domains` prefix (DOMAINS table).
+ */
+export function useOverviewDomains() {
+	const orgId = useActiveOrgId();
 	return useResourceListQuery<OverviewDomainItemPayload>(
-		['overview-domains', 'list', organizationId.toString()],
-		() => overviewClient.listDomains({organizationId}),
+		['overview-domains', orgId.toString()],
+		() => overviewClient.listDomains({organizationId: orgId}),
 	);
 }
 
-/** Organization-wide backups (legacy live: useOverviewBackups). */
-export function useOverviewBackups(organizationId: bigint) {
+/**
+ * Organization-wide backups (legacy live: useOverviewBackups). Invalidated
+ * via the `overview-backups` prefix (BACKUPS / BACKUP_EXECUTIONS /
+ * VOLUME_BACKUPS tables).
+ */
+export function useOverviewBackups() {
+	const orgId = useActiveOrgId();
 	return useResourceListQuery<OverviewBackupItemPayload>(
-		['overview-backups', 'list', organizationId.toString()],
-		() => overviewClient.listBackups({organizationId}),
+		['overview-backups', orgId.toString()],
+		() => overviewClient.listBackups({organizationId: orgId}),
 	);
 }

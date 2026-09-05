@@ -11,7 +11,7 @@ import { file_openoxide_api_v1_common } from "./common_pb";
  * Describes the file openoxide/api/v1/permission.proto.
  */
 export const file_openoxide_api_v1_permission: GenFile = /*@__PURE__*/
-  fileDesc("CiFvcGVub3hpZGUvYXBpL3YxL3Blcm1pc3Npb24ucHJvdG8SEG9wZW5veGlkZS5hcGkudjEyoQ4KEVBlcm1pc3Npb25TZXJ2aWNlEloKD0xpc3RQZXJtaXNzaW9ucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVgoNR2V0UGVybWlzc2lvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElkKEENyZWF0ZVBlcm1pc3Npb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJZChBVcGRhdGVQZXJtaXNzaW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USTgoQRGVsZXRlUGVybWlzc2lvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJVCgpMaXN0R3JvdXBzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJRCghHZXRHcm91cBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElQKC0NyZWF0ZUdyb3VwEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVAoLVXBkYXRlR3JvdXASIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJJCgtEZWxldGVHcm91cBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJXCgxMaXN0UG9saWNpZXMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElkKEUFzc2lnbk1lbWJlckdyb3VwEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJWCgtMaXN0TWVtYmVycxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USUQoJQWRkTWVtYmVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJYChBVcGRhdGVNZW1iZXJSb2xlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJKCgxSZW1vdmVNZW1iZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSVgoLTGlzdEludml0ZXMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElUKDENyZWF0ZUludml0ZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElQKDEFjY2VwdEludml0ZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSSgoMQ2FuY2VsSW52aXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElsKE1JlcGxhY2VVc2VyUG9saWNpZXMSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0YgZwcm90bzM", [file_openoxide_api_v1_common]);
+  fileDesc("CiFvcGVub3hpZGUvYXBpL3YxL3Blcm1pc3Npb24ucHJvdG8SEG9wZW5veGlkZS5hcGkudjEyuhMKEVBlcm1pc3Npb25TZXJ2aWNlEloKD0xpc3RQZXJtaXNzaW9ucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USYgoVU3RyZWFtTGlzdFBlcm1pc3Npb25zEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZTABElYKDUdldFBlcm1pc3Npb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJbChBTdHJlYW1QZXJtaXNzaW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2UwARJZChBDcmVhdGVQZXJtaXNzaW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWQoQVXBkYXRlUGVybWlzc2lvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlEk4KEERlbGV0ZVBlcm1pc3Npb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSVQoKTGlzdEdyb3VwcxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USXQoQU3RyZWFtTGlzdEdyb3VwcxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2UwARJRCghHZXRHcm91cBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElYKC1N0cmVhbUdyb3VwEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2UwARJUCgtDcmVhdGVHcm91cBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElQKC1VwZGF0ZUdyb3VwEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USSQoLRGVsZXRlR3JvdXASIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSVwoMTGlzdFBvbGljaWVzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJfChJTdHJlYW1MaXN0UG9saWNpZXMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlMAESWQoRQXNzaWduTWVtYmVyR3JvdXASIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElYKC0xpc3RNZW1iZXJzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJeChFTdHJlYW1MaXN0TWVtYmVycxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2UwARJRCglBZGRNZW1iZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElgKEFVwZGF0ZU1lbWJlclJvbGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0EkoKDFJlbW92ZU1lbWJlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJWCgtMaXN0SW52aXRlcxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USXgoRU3RyZWFtTGlzdEludml0ZXMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlMAESVQoMQ3JlYXRlSW52aXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVAoMQWNjZXB0SW52aXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJKCgxDYW5jZWxJbnZpdGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSWwoTUmVwbGFjZVVzZXJQb2xpY2llcxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHRiBnByb3RvMw", [file_openoxide_api_v1_common]);
 
 /**
  * @generated from service openoxide.api.v1.PermissionService
@@ -26,10 +26,26 @@ export const PermissionService: GenService<{
     output: typeof ResourceListResponseSchema;
   },
   /**
+   * @generated from rpc openoxide.api.v1.PermissionService.StreamListPermissions
+   */
+  streamListPermissions: {
+    methodKind: "server_streaming";
+    input: typeof ResourceQuerySchema;
+    output: typeof ResourceListResponseSchema;
+  },
+  /**
    * @generated from rpc openoxide.api.v1.PermissionService.GetPermission
    */
   getPermission: {
     methodKind: "unary";
+    input: typeof ResourceRequestSchema;
+    output: typeof ResourceResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.StreamPermission
+   */
+  streamPermission: {
+    methodKind: "server_streaming";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
   },
@@ -66,10 +82,26 @@ export const PermissionService: GenService<{
     output: typeof ResourceListResponseSchema;
   },
   /**
+   * @generated from rpc openoxide.api.v1.PermissionService.StreamListGroups
+   */
+  streamListGroups: {
+    methodKind: "server_streaming";
+    input: typeof ResourceQuerySchema;
+    output: typeof ResourceListResponseSchema;
+  },
+  /**
    * @generated from rpc openoxide.api.v1.PermissionService.GetGroup
    */
   getGroup: {
     methodKind: "unary";
+    input: typeof ResourceRequestSchema;
+    output: typeof ResourceResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.StreamGroup
+   */
+  streamGroup: {
+    methodKind: "server_streaming";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
   },
@@ -106,6 +138,14 @@ export const PermissionService: GenService<{
     output: typeof ResourceListResponseSchema;
   },
   /**
+   * @generated from rpc openoxide.api.v1.PermissionService.StreamListPolicies
+   */
+  streamListPolicies: {
+    methodKind: "server_streaming";
+    input: typeof ResourceQuerySchema;
+    output: typeof ResourceListResponseSchema;
+  },
+  /**
    * @generated from rpc openoxide.api.v1.PermissionService.AssignMemberGroup
    */
   assignMemberGroup: {
@@ -118,6 +158,14 @@ export const PermissionService: GenService<{
    */
   listMembers: {
     methodKind: "unary";
+    input: typeof ResourceQuerySchema;
+    output: typeof ResourceListResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.StreamListMembers
+   */
+  streamListMembers: {
+    methodKind: "server_streaming";
     input: typeof ResourceQuerySchema;
     output: typeof ResourceListResponseSchema;
   },
@@ -150,6 +198,14 @@ export const PermissionService: GenService<{
    */
   listInvites: {
     methodKind: "unary";
+    input: typeof ResourceQuerySchema;
+    output: typeof ResourceListResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.StreamListInvites
+   */
+  streamListInvites: {
+    methodKind: "server_streaming";
     input: typeof ResourceQuerySchema;
     output: typeof ResourceListResponseSchema;
   },

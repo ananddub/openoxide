@@ -11,7 +11,7 @@ import { file_openoxide_api_v1_common } from "./common_pb";
  * Describes the file openoxide/api/v1/tag.proto.
  */
 export const file_openoxide_api_v1_tag: GenFile = /*@__PURE__*/
-  fileDesc("ChpvcGVub3hpZGUvYXBpL3YxL3RhZy5wcm90bxIQb3Blbm94aWRlLmFwaS52MTLCBgoKVGFnU2VydmljZRJTCghMaXN0VGFncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USTwoGR2V0VGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUgoJQ3JlYXRlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUgoJVXBkYXRlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USRwoJRGVsZXRlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5Ek4KBkFkZFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSRwoJUmVtb3ZlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EloKD0xpc3RQcm9qZWN0VGFncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoQQXR0YWNoUHJvamVjdFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSTgoQRGV0YWNoUHJvamVjdFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common]);
+  fileDesc("ChpvcGVub3hpZGUvYXBpL3YxL3RhZy5wcm90bxIQb3Blbm94aWRlLmFwaS52MTLZCAoKVGFnU2VydmljZRJTCghMaXN0VGFncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USTwoGR2V0VGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWwoOU3RyZWFtTGlzdFRhZ3MSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlMAESVAoJU3RyZWFtVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2UwARJSCglDcmVhdGVUYWcSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJSCglVcGRhdGVUYWcSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJHCglEZWxldGVUYWcSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSTgoGQWRkVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJHCglSZW1vdmVUYWcSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSWgoPTGlzdFByb2plY3RUYWdzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJiChVTdHJlYW1MaXN0UHJvamVjdFRhZ3MSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlMAESWAoQQXR0YWNoUHJvamVjdFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSTgoQRGV0YWNoUHJvamVjdFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common]);
 
 /**
  * @generated from service openoxide.api.v1.TagService
@@ -30,6 +30,22 @@ export const TagService: GenService<{
    */
   getTag: {
     methodKind: "unary";
+    input: typeof ResourceRequestSchema;
+    output: typeof ResourceResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.TagService.StreamListTags
+   */
+  streamListTags: {
+    methodKind: "server_streaming";
+    input: typeof ResourceQuerySchema;
+    output: typeof ResourceListResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.TagService.StreamTag
+   */
+  streamTag: {
+    methodKind: "server_streaming";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
   },
@@ -78,6 +94,14 @@ export const TagService: GenService<{
    */
   listProjectTags: {
     methodKind: "unary";
+    input: typeof ResourceQuerySchema;
+    output: typeof ResourceListResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.TagService.StreamListProjectTags
+   */
+  streamListProjectTags: {
+    methodKind: "server_streaming";
     input: typeof ResourceQuerySchema;
     output: typeof ResourceListResponseSchema;
   },

@@ -1,6 +1,6 @@
 import {useState, useMemo} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
-import {useAppStore} from '#/stores/app-store';
+import {useRemoteServerList} from '#/api/live';
 import {TraefikRequestsView} from '#/components/traefik/traefik-requests';
 import type {RemoteServerItem} from '#/components/traefik/traefik-types';
 
@@ -12,8 +12,8 @@ function RequestsPage() {
 	const [selectedServerId, setSelectedServerId] =
 		useState<string>('local');
 
-	// Read Remote Servers list from Zustand RAM store
-	const rawServers = useAppStore(state => state.servers);
+	// Live servers query; the table-watch stream keeps it fresh.
+	const {data: rawServers} = useRemoteServerList();
 	const servers: RemoteServerItem[] = useMemo(() => {
 		const list = Array.isArray(rawServers) ? rawServers : [];
 		return list.map((item: unknown) => {

@@ -3,9 +3,8 @@ import {Eye, EyeOff, Check, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
-import {useDatabaseUpdate, parseDatabaseKind} from '#/api/live';
+import {useDatabaseUpdate, useRemoteServerList, parseDatabaseKind} from '#/api/live';
 import {formatApiError} from '#/api/utils';
-import {useAppStore} from '#/stores/app-store';
 
 interface DatabaseExternalCredentialsCardProps {
 	database: any;
@@ -20,7 +19,8 @@ export function DatabaseExternalCredentialsCard({
 	const [extPortInput, setExtPortInput] = useState('');
 	const [isSavingPort, setIsSavingPort] = useState(false);
 
-	const servers = useAppStore(state => state.servers || []);
+	// Live servers query; the table-watch stream keeps it fresh.
+	const {data: servers = []} = useRemoteServerList();
 	const kind = (database?.kind || 'postgres').toLowerCase();
 	const dbKind = parseDatabaseKind(kind);
 	const isRedis = kind.includes('redis');

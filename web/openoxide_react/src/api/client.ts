@@ -1,4 +1,4 @@
-import {useAuthStore} from '#/stores/auth-store';
+import {sessionActions} from '#/stores/session-context';
 import {getActiveOrganizationId} from '#/stores/organization-context';
 import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
 import {createServiceClient} from '#/api/live/query';
@@ -54,17 +54,18 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 	refreshPromise = (async () => {
 		let refreshToken = '';
+		const {logout, setAuth} = sessionActions();
 		try {
 			const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
 			if (!sessionRaw || sessionRaw === 'undefined') {
-				useAuthStore.getState().logout();
+				logout();
 				return null;
 			}
 
 			const session = JSON.parse(sessionRaw);
 			refreshToken = session?.tokens?.refresh_token || '';
 			if (!refreshToken) {
-				useAuthStore.getState().logout();
+				logout();
 				return null;
 			}
 			if (
@@ -75,7 +76,7 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 			const response = await authClient.refresh({refreshToken});
 			if (!response.user || !response.tokens) {
-				useAuthStore.getState().logout();
+				logout();
 				return null;
 			}
 
@@ -93,7 +94,7 @@ export async function refreshAccessToken(): Promise<string | null> {
 			refreshRetryToken = '';
 			refreshRetryAfter = 0;
 
-			useAuthStore.getState().setAuth({
+			setAuth({
 				id: Number(response.user.id),
 				email: response.user.email || '',
 				firstName: response.user.firstName,

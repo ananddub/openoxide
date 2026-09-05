@@ -4,3 +4,8 @@ plugins:
     out: web/openoxide_react/src/gen/connect
     opt:
       - target=ts
+  # TanStack Query hooks per unary RPC (useListCertificates, useGetProject, ...)
+  - local: web/openoxide_react/node_modules/.bin/protoc-gen-connect-query
+    out: web/openoxide_react/src/gen/connect
+    opt:
+      - target=ts

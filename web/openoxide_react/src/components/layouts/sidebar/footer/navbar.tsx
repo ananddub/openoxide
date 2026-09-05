@@ -12,10 +12,10 @@ import {
 	Sun,
 	Moon,
 } from 'lucide-react';
-import {useAuthStore} from '#/stores/auth-store';
+import {useAuthSession} from '#/stores/session-context';
 import {useNavigate} from '@tanstack/react-router';
 import {isSolidColorAvatar} from '#/lib/avatar-utils';
-import {useAppStore} from '#/stores/app-store';
+import {useProfile} from '#/api/live';
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -34,12 +34,11 @@ type Props = {
 
 // User account dropdown with quick nav links, theme toggle, and logout.
 export function UserNav({isCollapsed}: Props) {
-	const user = useAuthStore(state => state.user);
-	const logout = useAuthStore(state => state.logout);
+	const {user, logout} = useAuthSession();
 	const navigate = useNavigate();
 	const {theme, toggleTheme} = useTheme();
 
-	const profile = useAppStore(state => state.profile);
+	const profile = useProfile().data;
 
 	const displayEmail = profile?.email || user?.email || '';
 	const displayName =

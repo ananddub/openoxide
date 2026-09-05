@@ -1,8 +1,7 @@
 import {useState, useEffect, useMemo} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {toast} from 'sonner';
-import {useTraefikFileContent, useTraefikFileContentUpdate, useTraefikFileTree, useTraefikHealth} from '#/api/live';
-import {useAppStore} from '#/stores/app-store';
+import {useTraefikFileContent, useTraefikFileContentUpdate, useTraefikFileTree, useTraefikHealth, useRemoteServerList} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 
 import {TraefikHeader} from '#/components/traefik/traefik-header';
@@ -35,8 +34,8 @@ function TraefikPage() {
 	const parsedServerId =
 		selectedServerId !== 'local' ? Number(selectedServerId) : undefined;
 
-	// Read Remote Servers list from Zustand RAM store
-	const rawServers = useAppStore(state => state.servers);
+	// Live servers query; the table-watch stream keeps it fresh.
+	const {data: rawServers} = useRemoteServerList();
 	const servers: RemoteServerItem[] = useMemo(() => {
 		const list = Array.isArray(rawServers) ? rawServers : [];
 		return list.map((item: unknown) => {

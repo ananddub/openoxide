@@ -2,18 +2,35 @@ import {useState, useEffect, useMemo, useRef} from 'react';
 import {toast} from 'sonner';
 import type {ApplicationResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
-import {useAppStore, selectApplicationById} from '#/stores/app-store';
-import {useApplicationCancel, useApplicationDeploy, useApplicationGet, useApplicationRebuild, useApplicationReload, useApplicationStart, useApplicationStop, useApplicationUpdate} from '#/api/live';
+import {useApplicationCancel, useApplicationDeploy, useApplicationGet, useApplicationList, useApplicationRebuild, useApplicationReload, useApplicationStart, useApplicationStop, useApplicationUpdate, useDeploymentItems, useDomainItems, useOverviewServices, useScheduleListByOrganization, useBackupItems} from '#/api/live';
+import {useOrganizations} from '#/stores/session-context';
 
 export function useAppDetail(appId: number) {
 	const [activeTab, setActiveTab] = useState('General');
 	const [localStatusOverride, setLocalStatusOverride] = useState<
 		string | null
 	>(null);
+	const {activeOrg} = useOrganizations();
+	const orgId = BigInt(activeOrg?.id || 1);
 
-	// 100% Pure Centralized Zustand Store Resolution
-	const storeApp = useAppStore(state => selectApplicationById(state, appId));
-	const storeDeployments = useAppStore(state => state.deployments);
+	// Org-wide application lookup as live queries (table-watch keeps them
+	// fresh) — same fallback chain the legacy store selector used.
+	const applications = useApplicationList().data ?? [];
+	const overviewServices = useOverviewServices().data ?? [];
+	const storeApp = useMemo(
+		() =>
+			applications.find((a: any) => String(a.id) === String(appId)) ||
+			overviewServices.find(
+				(s: any) =>
+					String(s.id) === String(appId) &&
+					(s.service_type === 'APP' || s.type === 'application'),
+			) ||
+			null,
+		[applications, overviewServices, appId],
+	);
+	// Live deployments query; the table-watch stream (DEPLOYMENTS table)
+	// invalidates ['deployments'] while mounted.
+	const {data: storeDeployments = []} = useDeploymentItems();
 	const {data: liveApp} = useApplicationGet(BigInt(appId));
 	// Once the realtime store has the service, prefer it so live detail cache
 	// cannot overwrite deployment lifecycle updates with an older snapshot.
@@ -78,10 +95,11 @@ export function useAppDetail(appId: number) {
 		return () => window.clearTimeout(timeout);
 	}, [localStatusOverride]);
 
-	// Read raw arrays directly from Zustand store (Strict Reference Preservation for React 19 useSyncExternalStore)
-	const storeDomains = useAppStore(state => state.domains);
-	const storeSchedules = useAppStore(state => state.schedules);
-	const storeBackups = useAppStore(state => state.backups);
+	// Live queries; the table-watch stream (domains / schedules / backups
+	// tables) invalidates them while mounted, so no zustand slices involved.
+	const {data: storeDomains = []} = useDomainItems(orgId);
+	const {data: storeSchedules = []} = useScheduleListByOrganization(orgId);
+	const {data: storeBackups = []} = useBackupItems(orgId);
 
 	const domains = useMemo(
 		() =>
@@ -189,10 +207,9 @@ export function useAppDetail(appId: number) {
 					? 'STARTING'
 					: 'DEPLOYING';
 		setLocalStatusOverride(intermediateStatus);
-		(useAppStore.getState() as any).updateServiceStatus?.(
-			appId,
-			intermediateStatus,
-		);
+		// Legacy updateServiceStatus store write removed — table-watch
+		// invalidates ['applications'] when the action lands, refetching
+		// fresh status through the live query.
 
 		try {
 			if (action === 'deploy') {
@@ -227,7 +244,7 @@ export function useAppDetail(appId: number) {
 		try {
 			await patchMutation.mutateAsync({
 				id: appId,
-				body: patchData as any,
+				...(patchData as any),
 			});
 			toast.success('Application settings updated');
 			refetchAll();

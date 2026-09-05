@@ -58,7 +58,7 @@ export function VolumeBackupsTab({
 	const handleRunBackup = async (id: number) => {
 		setActiveActionId({id, action: 'run'});
 		try {
-			await runMutation.mutateAsync({params: {path: {id}}});
+			await runMutation.mutateAsync(id);
 			toast.success('Volume backup execution started successfully');
 			onRefresh?.();
 		} catch (err: any) {
@@ -71,10 +71,7 @@ export function VolumeBackupsTab({
 	const handleRestoreBackup = async (id: number) => {
 		setActiveActionId({id, action: 'restore'});
 		try {
-			await restoreMutation.mutateAsync({
-				params: {path: {id}},
-				body: {backup_file: ''},
-			});
+			await restoreMutation.mutateAsync({id, backup_file: ''});
 			toast.success('Volume restore process initiated successfully');
 			onRefresh?.();
 		} catch (err: any) {

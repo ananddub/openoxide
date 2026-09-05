@@ -16,8 +16,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import {useComposeCreate} from '#/api/live';
-import {useAppStore} from '#/stores/app-store';
+import {useComposeCreate, useRemoteServerList} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {Server} from 'lucide-react';
 
@@ -43,7 +42,8 @@ export function CreateComposeDialog({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const createMutation = useComposeCreate();
-	const serversList = useAppStore(state => state.servers || []);
+	// Live servers query; the table-watch stream keeps it fresh.
+	const {data: serversList = []} = useRemoteServerList();
 
 	const handleClose = () => {
 		onClose?.();
@@ -66,13 +66,12 @@ export function CreateComposeDialog({
 		setIsSubmitting(true);
 		try {
 			const res = await createMutation.mutateAsync({
-				body: {
-					name: name.trim(),
-					compose_type: composeType,
-					description: description.trim() || undefined,
-					environment_id: environmentId,
-					server_id: serverId === 'local' ? undefined : Number(serverId),
-				},
+				name: name.trim(),
+				// Note: the ConnectRPC CreateComposeRequest has no compose_type
+				// field; composeType stays a UI-only selection.
+				description: description.trim() || undefined,
+				environment_id: environmentId,
+				server_id: serverId === 'local' ? undefined : Number(serverId),
 			});
 			const resObj = res as Record<string, unknown>;
 			const composeObj = (resObj?.data || res) as any;
@@ -110,7 +109,7 @@ export function CreateComposeDialog({
 							<label className="text-xs font-semibold text-foreground">
 								Compose Type
 							</label>
-							<Select value={composeType} onValueChange={setComposeType}>
+							<Select value={composeType} onValueChange={value => setComposeType(value ?? 'DOCKER-COMPOSE')}>
 								<SelectTrigger className="w-full">
 									<SelectValue placeholder="Select type" />
 								</SelectTrigger>
@@ -129,7 +128,7 @@ export function CreateComposeDialog({
 							<label className="text-xs font-semibold text-foreground">
 								Target Server
 							</label>
-							<Select value={serverId} onValueChange={setServerId}>
+							<Select value={serverId} onValueChange={value => setServerId(value ?? 'local')}>
 								<SelectTrigger className="w-full">
 									<SelectValue placeholder="Select server">
 										{(() => {
@@ -179,7 +178,7 @@ export function CreateComposeDialog({
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => onOpenChange(false)}
+							onClick={() => onOpenChange?.(false)}
 							disabled={isSubmitting}>
 							Cancel
 						</Button>

@@ -1,10 +1,29 @@
-import {createServiceClient, useConnectMutation, useConnectQuery} from './query';
+import {createServiceClient, useActiveOrgId, useConnectMutation, useConnectQuery} from './query';
+import {OverviewService} from '#/gen/connect/openoxide/api/v1/overview_pb';
+import type {OverviewServiceItemPayload} from './overview';
 import {
 	ApplicationService,
 	ApplicationSourceType,
 	ApplicationBuildType,
 	type Application,
 } from '#/gen/connect/openoxide/api/v1/application_pb';
+
+/**
+ * Legacy app-store `ApplicationItem` shape (all-optional fields), kept so
+ * org-wide list consumers see the exact same payload as before.
+ */
+export type ApplicationItemPayload = {
+	id: number;
+	name?: string;
+	app_name?: string;
+	project_id?: number;
+	environment_id?: number;
+	status?: string;
+	server_id?: number;
+	server_name?: string;
+	created_at?: number;
+	updated_at?: number;
+};
 
 export type ApplicationPayload = {
 	id: bigint;
@@ -38,6 +57,7 @@ export type ApplicationPayload = {
 };
 
 const applicationClient = createServiceClient(ApplicationService);
+const overviewClient = createServiceClient(OverviewService);
 
 // Proto enums arrive as numbers; legacy payloads exposed lowercase value
 // names ('github', 'dockerfile', ...), so reverse-map to keep the wire shape.
@@ -94,6 +114,41 @@ export function useApplicationListByEnvironment(environmentId: bigint) {
 			return response.applications.map(toApplicationPayload);
 		},
 		{enabled: environmentId > 0n},
+	);
+}
+
+/**
+ * Organization-wide application list (legacy app-store `applications`
+ * slice). There is no org-wide Application RPC, so this derives from the
+ * overview services stream — the same source the legacy realtime sync fed
+ * the store from — and is keyed under the `applications` prefix so
+ * SERVICE_APPLICATION table changes invalidate it.
+ */
+export function useApplicationList() {
+	const orgId = useActiveOrgId();
+	return useConnectQuery<ApplicationItemPayload[]>(
+		['applications', orgId.toString()],
+		async () => {
+			const response = await overviewClient.listServices({
+				organizationId: orgId,
+			});
+			return response.items
+				.map((item) => JSON.parse(item.payload) as OverviewServiceItemPayload)
+				.filter((service) => service.service_type === 'APP')
+				.map((service) => ({
+					id: Number(service.id),
+					name: service.name,
+					app_name: service.name,
+					project_id: Number(service.project_id),
+					environment_id: Number(service.environment_id),
+					status: service.status,
+					server_id:
+						service.server_id === null ? undefined : Number(service.server_id),
+					server_name: service.server_name ?? undefined,
+					created_at: Number(service.created_at),
+					updated_at: Number(service.created_at),
+				} satisfies ApplicationItemPayload));
+		},
 	);
 }
 

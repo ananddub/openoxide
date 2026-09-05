@@ -7,20 +7,38 @@ import { AiProviderDialog } from "#/components/settings/ai/ai-provider-dialog";
 import { deleteAiSetting } from "#/components/settings/ai/ai-api";
 import { AiSettingsList } from "#/components/settings/ai/ai-settings-list";
 import type { AiSetting } from "#/components/settings/ai/ai-types";
-import { useAppStore } from "#/stores/app-store";
+import { useAiSettingItems, useConnectMutation } from "#/api/live";
 
 export const Route = createFileRoute("/_app/settings/ai")({
   component: AiSettingsPage,
 });
 
 function AiSettingsPage() {
-  const items = useAppStore((state) => state.aiSettings) as AiSetting[];
-  const loading =
-    useAppStore((state) => state.isWsConnected) === false && items.length === 0;
+  const itemsQuery = useAiSettingItems();
+  const items = (itemsQuery.data ?? []) as AiSetting[];
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<AiSetting | null>(null);
 
-  const load = async () => undefined;
+  // Cache invalidation comes from the table-watch stream (ai_settings
+  // table → refetch while this page is mounted).
+  const deleteMutation = useConnectMutation(
+    async (id: number) => {
+      await deleteAiSetting(id);
+      return id;
+    },
+    {
+      onSuccess: () => {
+        toast.success("AI configuration deleted");
+      },
+      onError: (error: unknown) => {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to delete AI configuration",
+        );
+      },
+    },
+  );
 
   const create = () => {
     setEditing(null);
@@ -34,17 +52,7 @@ function AiSettingsPage() {
 
   const remove = async (id: number) => {
     if (!confirm("Delete this AI configuration?")) return;
-    try {
-      await deleteAiSetting(id);
-      toast.success("AI configuration deleted");
-      await load();
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to delete AI configuration",
-      );
-    }
+    await deleteMutation.mutateAsync(id);
   };
 
   return (
@@ -87,7 +95,7 @@ function AiSettingsPage() {
 
         <AiSettingsList
           items={items}
-          loading={loading}
+          loading={itemsQuery.isLoading}
           onCreate={create}
           onEdit={edit}
           onDelete={remove}
@@ -99,7 +107,9 @@ function AiSettingsPage() {
         editing={editing}
         open={open}
         onOpenChange={setOpen}
-        onSaved={load}
+        onSaved={async () => {
+          /* table-watch invalidates ['ai_settings'] → refetch */
+        }}
       />
     </div>
   );

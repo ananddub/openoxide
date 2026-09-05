@@ -24,7 +24,7 @@ import {ComposeDirectContainerLogsModal} from './logs/compose-direct-container-l
 import {ComposeDirectDeployLogsModal} from './deployments/compose-direct-deploy-logs-modal';
 import {TerminalModal} from '#/components/projects/common/terminal-modal';
 import type {DomainFormData} from '#/components/projects/common/domain-dialog';
-import {useOrganizationStore} from '#/stores/organization-store';
+import {useOrganizations} from '#/stores/session-context';
 
 function buildRawGitUrl(compose: any): string | null {
 	if (!compose) return null;
@@ -101,7 +101,7 @@ export function ComposeArchitectureTab({
 }: ComposeArchitectureTabProps) {
 	const queryClient = useQueryClient();
 	const composeId = compose?.id;
-	const activeOrg = useOrganizationStore(state => state.activeOrg);
+	const {activeOrg} = useOrganizations();
 
 	// Modals State
 	const [activeModal, setActiveModal] = useState<
@@ -348,19 +348,17 @@ export function ComposeArchitectureTab({
 				toast.success('Schedule updated successfully');
 			} else {
 				await createScheduleMutation.mutateAsync({
-					body: {
-						name: data.name,
-						cron_expression: data.cronExpr,
-						command: data.command,
+					name: data.name,
+					cron_expression: data.cronExpr,
+					command: data.command,
 					compose_id: composeId,
 					organization_id: activeOrg?.id || 1,
-						app_name: compose?.app_name || data.serviceName,
-						service_name: data.serviceName,
-						schedule_type: 'compose',
-						schedule_action: 'exec',
-						shell_type: 'sh',
-						enabled: 1,
-					} as any,
+					app_name: compose?.app_name || data.serviceName,
+					service_name: data.serviceName,
+					schedule_type: 'compose',
+					schedule_action: 'exec',
+					shell_type: 'sh',
+					enabled: 1,
 				});
 				toast.success(`Schedule attached to ${data.serviceName}`);
 			}
@@ -395,22 +393,20 @@ export function ComposeArchitectureTab({
 				toast.success('Volume backup updated successfully');
 			} else {
 				await createBackupMutation.mutateAsync({
-					body: {
-						name: data.name,
-						volume_name: data.volumeName,
-						prefix: data.prefix || '',
-						service_type: 'compose',
-						app_name:
-							compose?.app_name ||
-							compose?.name ||
-							data.serviceName ||
-							'app',
-						service_name: data.serviceName,
-						turn_off: data.turnOff ? 1 : 0,
-						cron_expression: data.cronExpr,
-						compose_id: composeId,
-						destination_id: data.destinationId,
-					} as any,
+					name: data.name,
+					volume_name: data.volumeName,
+					prefix: data.prefix || '',
+					service_type: 'compose',
+					app_name:
+						compose?.app_name ||
+						compose?.name ||
+						data.serviceName ||
+						'app',
+					service_name: data.serviceName,
+					turn_off: data.turnOff ? 1 : 0,
+					cron_expression: data.cronExpr,
+					compose_id: composeId,
+					destination_id: data.destinationId,
 				});
 				toast.success(`Backup rule attached to ${data.serviceName}`);
 			}

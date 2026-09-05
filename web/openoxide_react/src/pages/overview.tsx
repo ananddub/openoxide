@@ -34,7 +34,8 @@ import {
 	TableRow,
 	TableCell,
 } from '#/components/ui/table';
-import {useAppStore} from '#/stores/app-store';
+import {useOrganizations} from '#/stores/session-context';
+import {useDomainItems, useBackupItems} from '#/api/live';
 import {useDeployments} from '#/hooks/deployments/use-deployments';
 import {DeploymentItem} from '#/components/deployments/deployment-item';
 import {DeploymentLogsDialog} from '#/components/deployments/deployment-logs-dialog';
@@ -65,9 +66,11 @@ function OverviewPage() {
 	const [deploySearch, setDeploySearch] = useState('');
 	const [deployStatusFilter, setDeployStatusFilter] = useState('all');
 
-	const rawDomains = useAppStore(state => state.domains);
-	const rawBackups = useAppStore(state => state.backups);
-
+	const {activeOrg} = useOrganizations();
+	const domainsQuery = useDomainItems(BigInt(activeOrg?.id || 1));
+	const backupsQuery = useBackupItems(BigInt(activeOrg?.id || 1));
+	const rawDomains = domainsQuery.data;
+	const rawBackups = backupsQuery.data;
 	// Live running deployments queue
 	const {data: runningDeployments = []} = useDeploymentRunning();
 

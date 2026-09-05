@@ -1,13 +1,12 @@
 import {useState} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
+import {useSshKeyCreate, useSshKeyGeneratePair, useSshKeyDelete} from '#/api/live';
 
 export function useCreateSshKey(
 	onClose: () => void,
 	onSuccess?: () => void,
 ) {
-	const queryClient = useQueryClient();
 	const [name, setName] = useState('');
 	const [description, setDescription] = useState('');
 	const [privateKey, setPrivateKey] = useState('');
@@ -23,11 +22,12 @@ export function useCreateSshKey(
 	const handleGeneratePair = async (type: 'ed25519' | 'rsa') => {
 		setGeneratingType(type);
 		try {
-			const res = await generatePairMutation.mutateAsync({
-				body: {key_type: type},
+			const res: any = await generatePairMutation.mutateAsync({
+				key_type: type,
 			});
-			setPublicKey(res.public_key || '');
-			setPrivateKey(res.private_key || '');
+			const pair = res?.payload ?? res;
+			setPublicKey(pair?.public_key || '');
+			setPrivateKey(pair?.private_key || '');
 			toast.success(
 				`Generated ${type.toUpperCase()} key pair! Fill in details and click Save.`,
 			);
@@ -52,15 +52,12 @@ export function useCreateSshKey(
 		setSubmitting(true);
 		try {
 			await createMutation.mutateAsync({
-				body: {
-					name: name.trim(),
-					description: description.trim() || undefined,
-					private_key: privateKey.trim(),
-					public_key: publicKey.trim() || undefined,
-				} as any,
+				name: name.trim(),
+				description: description.trim() || undefined,
+				private_key: privateKey.trim(),
+				public_key: publicKey.trim() || undefined,
 			});
 			toast.success('SSH Key created successfully');
-			queryClient.invalidateQueries({queryKey: ['get', '/ssh-keys']});
 			onSuccess?.();
 			onClose();
 		} catch (err: unknown) {
@@ -87,18 +84,14 @@ export function useCreateSshKey(
 }
 
 export function useDeleteSshKey(keyId: number, onClose: () => void) {
-	const queryClient = useQueryClient();
 	const [deleting, setDeleting] = useState(false);
 	const deleteMutation = useSshKeyDelete();
 
 	const handleDelete = async () => {
 		setDeleting(true);
 		try {
-			await deleteMutation.mutateAsync({
-				params: {path: {id: keyId}},
-			});
+			await deleteMutation.mutateAsync(keyId);
 			toast.success('SSH key deleted');
-			queryClient.invalidateQueries({queryKey: ['get', '/ssh-keys']});
 			onClose();
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));

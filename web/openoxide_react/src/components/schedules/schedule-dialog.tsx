@@ -20,7 +20,7 @@ import {
 import {formatApiError} from '#/api/utils';
 import type {Schedule} from '#/hooks/use-schedules';
 import {Clock, Terminal} from 'lucide-react';
-import {useAppStore} from '#/stores/app-store';
+import {useProjectListByOrganization} from '#/api/live';
 
 interface ScheduleDialogProps {
 	isOpen: boolean;
@@ -62,7 +62,12 @@ export function ScheduleDialog({
 	const [targetId, setTargetId] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const projectsList = useAppStore(state => state.projects || []);
+	// Live projects query keyed ['projects','list',org] — table-watch
+	// invalidates it while the schedules page is mounted.
+	const projectsQuery = useProjectListByOrganization(
+		BigInt(activeOrgId ?? 1),
+	);
+	const projectsList = (projectsQuery.data ?? []) as any[];
 
 	const allApplications = useMemo(() => {
 		if (!Array.isArray(projectsList)) return [];
@@ -171,12 +176,12 @@ export function ScheduleDialog({
 
 			if (editingSchedule?.id !== undefined) {
 				await patchMutation.mutateAsync({
-					params: {path: {id: editingSchedule.id}},
-					body,
+					id: editingSchedule.id,
+					...body,
 				});
 				toast.success('Schedule updated');
 			} else {
-				await createMutation.mutateAsync({body});
+				await createMutation.mutateAsync(body);
 				toast.success('Schedule created');
 			}
 			refetch();

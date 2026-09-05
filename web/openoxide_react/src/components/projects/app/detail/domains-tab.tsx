@@ -24,8 +24,8 @@ export function DomainsTab({app, domains: passedDomains, onRefresh}: DomainsTabP
 	const openCreate = () => { setEditingDomain(null); setDialogOpen(true); };
 	const saveDomain = async (data: DomainFormData) => {
 		try {
-			if (editingDomain?.id) await updateDomain.mutateAsync({params: {path: {id: editingDomain.id}}, body: data as any});
-			else await createDomain.mutateAsync({body: {...data, application_id: app.id} as any});
+			if (editingDomain?.id) await updateDomain.mutateAsync({id: editingDomain.id, ...data} as any);
+			else await createDomain.mutateAsync({...data, application_id: app.id} as any);
 			toast.success(editingDomain ? 'Domain updated successfully' : 'Domain added successfully');
 			await queryClient.invalidateQueries();
 			onRefresh?.();
@@ -34,7 +34,7 @@ export function DomainsTab({app, domains: passedDomains, onRefresh}: DomainsTabP
 
 	const removeDomain = async (id: number) => {
 		setDeletingId(id);
-		try { await deleteDomain.mutateAsync({params: {path: {id}}}); toast.success('Domain deleted successfully'); await queryClient.invalidateQueries(); onRefresh?.(); }
+		try { await deleteDomain.mutateAsync(id); toast.success('Domain deleted successfully'); await queryClient.invalidateQueries(); onRefresh?.(); }
 		catch (error) { toast.error(formatApiError(error)); }
 		finally { setDeletingId(null); }
 	};

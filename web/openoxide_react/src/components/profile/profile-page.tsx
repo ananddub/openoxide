@@ -1,6 +1,6 @@
 import {useState, useEffect, useRef} from 'react';
 import {User, Loader2, Palette, Upload} from 'lucide-react';
-import {useUserUpdate} from '#/api/live';
+import {useUserUpdate, useProfile} from '#/api/live';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
@@ -13,8 +13,7 @@ import {
 import {isSolidColorAvatar, getAvatarInitials} from '#/lib/avatar-utils';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {useAuthStore} from '#/stores/auth-store';
-import {useAppStore} from '#/stores/app-store';
+import {useAuthSession} from '#/stores/session-context';
 
 export interface ApiKeyItem {
 	id: string;
@@ -37,8 +36,8 @@ const PRESET_AVATARS = [
 ];
 
 export function ProfilePage() {
-	const storeProfile = useAppStore(state => state.profile);
-	const authUser = useAuthStore(state => state.user);
+	const {data: storeProfile} = useProfile();
+	const {user: authUser} = useAuthSession();
 	const isLoading = false;
 
 	useEffect(() => {
@@ -57,28 +56,9 @@ export function ProfilePage() {
 		setAvatarValue(initialAvatar);
 	}, [storeProfile, authUser]);
 
-	const updateUserMutation = useUserUpdate({
-		onSuccess: (data: any) => {
-			if (data) {
-				useAuthStore.getState().setAuth({
-					id: data.user_id,
-					email: data.email || '',
-					firstName: data.first_name,
-					lastName: data.last_name,
-				});
-				useAppStore.getState().setProfile({
-					id: data.user_id,
-					email: data.email || '',
-					name: `${data.first_name || ''} ${data.last_name || ''}`.trim(),
-					avatar: data.avatar,
-				} as any);
-			}
-			toast.success('Profile Updated Successfully');
-		},
-		onError: (err: any) => {
-			toast.error(formatApiError(err) || 'Error updating profile');
-		},
-	});
+	// Profile updates flow through AuthService.UpdateUser; the table-watch
+	// stream (USERS table → ['auth']) refetches useProfile() on change.
+	const updateUserMutation = useUserUpdate();
 
 	const [firstName, setFirstName] = useState('');
 	const [lastName, setLastName] = useState('');
@@ -114,14 +94,13 @@ export function ProfilePage() {
 		e.preventDefault();
 		try {
 			await updateUserMutation.mutateAsync({
-				body: {
-					first_name: firstName.trim() || undefined,
-					last_name: lastName.trim() || undefined,
-					avatar: avatarValue,
-				},
+				first_name: firstName.trim() || undefined,
+				last_name: lastName.trim() || undefined,
+				avatar: avatarValue,
 			});
-		} catch {
-			// handled in onError callback
+			toast.success('Profile Updated Successfully');
+		} catch (err) {
+			toast.error(formatApiError(err) || 'Error updating profile');
 		}
 	};
 

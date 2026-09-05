@@ -1,6 +1,7 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
 import {Button} from '#/components/ui/button';
 import {useDatabaseDetail} from '#/hooks/projects/use-database-detail';
+import {useDatabaseUpdate, parseDatabaseKind} from '#/api/live';
 import {useState} from 'react';
 
 import {DatabaseHeader} from '#/components/projects/database/detail/database-header';
@@ -74,8 +75,9 @@ function DatabaseDetailPage() {
 
 	const handleUpdateEnv = async (body: Record<string, unknown>) => {
 		await patchDatabase.mutateAsync({
-			params: {path: {id: parsedDbId}},
-			body,
+			kind: parseDatabaseKind(targetKind || (database?.kind as string) || ''),
+			id: parsedDbId,
+			...body,
 		});
 		refetchAll();
 	};

@@ -1,11 +1,30 @@
-import {createServiceClient, useConnectMutation, useConnectQuery, useResourceListQuery} from './query';
+import {createServiceClient, useActiveOrgId, useConnectMutation, useConnectQuery, useResourceListQuery} from './query';
 import {DatabaseService, DatabaseKind, type Database} from '#/gen/connect/openoxide/api/v1/database_pb';
+import {OverviewService} from '#/gen/connect/openoxide/api/v1/overview_pb';
+import type {OverviewServiceItemPayload} from './overview';
 import {DatabaseNetworkService} from '#/gen/connect/openoxide/api/v1/database_network_pb';
 import type {
 	AdvancedConfig,
 	Mount,
 	SwarmSettings,
 } from '#/gen/connect/openoxide/api/v1/database_pb';
+
+/**
+ * Legacy app-store `DatabaseItem` shape (all-optional fields), kept so
+ * org-wide list consumers see the exact same payload as before.
+ */
+export type DatabaseItemPayload = {
+	id: number;
+	name?: string;
+	kind?: string;
+	project_id?: number;
+	environment_id?: number;
+	status?: string;
+	server_id?: number;
+	server_name?: string;
+	created_at?: number;
+	updated_at?: number;
+};
 
 export type DatabasePayload = {
 	id: bigint;
@@ -33,6 +52,7 @@ export type DatabasePayload = {
 };
 
 const databaseClient = createServiceClient(DatabaseService);
+const overviewClient = createServiceClient(OverviewService);
 
 // The proto kind is a numeric enum; legacy payloads carried a lowercase
 // string ('postgres', 'redis', ...), so reverse-map to keep the wire shape.
@@ -61,6 +81,41 @@ function toDatabasePayload(database: Database): DatabasePayload {
 		created_at: database.createdAt,
 		updated_at: database.updatedAt,
 	};
+}
+
+/**
+ * Organization-wide database list (legacy app-store `databases` slice).
+ * There is no org-wide Database RPC, so this derives from the overview
+ * services stream — the same source the legacy realtime sync fed the store
+ * from — and is keyed under the `databases` prefix so SERVICE_DATABASE
+ * table changes invalidate it.
+ */
+export function useDatabaseList() {
+	const orgId = useActiveOrgId();
+	return useConnectQuery<DatabaseItemPayload[]>(
+		['databases', orgId.toString()],
+		async () => {
+			const response = await overviewClient.listServices({
+				organizationId: orgId,
+			});
+			return response.items
+				.map((item) => JSON.parse(item.payload) as OverviewServiceItemPayload)
+				.filter((service) => service.service_type === 'DATABASE')
+				.map((service) => ({
+					id: Number(service.id),
+					name: service.name,
+					kind: (service.db_kind ?? '').toLowerCase() || undefined,
+					project_id: Number(service.project_id),
+					environment_id: Number(service.environment_id),
+					status: service.status,
+					server_id:
+						service.server_id === null ? undefined : Number(service.server_id),
+					server_name: service.server_name ?? undefined,
+					created_at: Number(service.created_at),
+					updated_at: Number(service.created_at),
+				} satisfies DatabaseItemPayload));
+		},
+	);
 }
 
 /**

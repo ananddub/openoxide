@@ -19,12 +19,17 @@ import {
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {Database, Plug, RefreshCw} from 'lucide-react';
+import {
+	useRemoteServerList,
+	useRegistryCreate,
+	useRegistryUpdate,
+	useRegistryTest,
+} from '#/api/live';
 
 import type {
 	RegistryResponse,
 	RemoteServerResponse,
 } from '#/types/api-helpers';
-import {useAppStore} from '#/stores/app-store';
 
 interface CreateRegistryModalProps {
 	isOpen: boolean;
@@ -46,14 +51,13 @@ export function CreateRegistryModal({
 	const [serverId, setServerId] = useState<string>('local');
 	const [isTesting, setIsTesting] = useState(false);
 
-	const serversData = useAppStore(state => state.servers);
+	const {data: serversData} = useRemoteServerList();
 	const servers = (Array.isArray(serversData)
 		? serversData
 		: []) as unknown as RemoteServerResponse[];
 
 	const createMutation = useRegistryCreate();
 	const patchMutation = useRegistryUpdate();
-	const testMutation = useRegistryTest();
 	const testRawMutation = useRegistryTest();
 
 	useEffect(() => {
@@ -80,24 +84,19 @@ export function CreateRegistryModal({
 		}
 		setIsTesting(true);
 		try {
-			if (initialData?.id && !password) {
-				await testMutation.mutateAsync({
-					params: {path: {id: Number(initialData.id)}},
-				});
-			} else {
-				if (!password) {
-					toast.error('Password is required to test connection');
-					setIsTesting(false);
-					return;
-				}
-				await testRawMutation.mutateAsync({
-					body: {
-						registry_url: registryUrl,
-						username,
-						password,
-					} as any,
-				});
+			// The RegistryService only exposes a raw-credentials test
+			// (TestRegistry); there is no test-by-id RPC, so a password is
+			// always required — even when editing an existing registry.
+			if (!password) {
+				toast.error('Password is required to test connection');
+				setIsTesting(false);
+				return;
 			}
+			await testRawMutation.mutateAsync({
+				registry_url: registryUrl,
+				username,
+				password,
+			});
 			toast.success('Registry authentication test passed!');
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
@@ -119,14 +118,12 @@ export function CreateRegistryModal({
 
 			if (initialData?.id) {
 				await patchMutation.mutateAsync({
-					params: {path: {id: Number(initialData.id)}},
-					body: {
-						name,
-						registry_url: registryUrl,
-						username,
-						...(password ? {password} : {}),
-						server_id: srvIdNum,
-					} as any,
+					id: Number(initialData.id),
+					name,
+					registry_url: registryUrl,
+					username,
+					...(password ? {password} : {}),
+					server_id: srvIdNum,
 				});
 				toast.success('Registry updated successfully');
 			} else {
@@ -135,13 +132,11 @@ export function CreateRegistryModal({
 					return;
 				}
 				await createMutation.mutateAsync({
-					body: {
-						name,
-						registry_url: registryUrl,
-						username,
-						password,
-						server_id: srvIdNum,
-					} as any,
+					name,
+					registry_url: registryUrl,
+					username,
+					password,
+					server_id: srvIdNum,
 				});
 				toast.success('Registry added successfully');
 			}

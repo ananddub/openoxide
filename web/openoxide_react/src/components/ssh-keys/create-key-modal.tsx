@@ -38,13 +38,13 @@ export function CreateKeyModal({
 	const handleGeneratePair = async (type: 'ed25519' | 'rsa') => {
 		setGenerating(true);
 		try {
-			const res = await generatePairMutation.mutateAsync({
-				body: {key_type: type},
+			const res: any = await generatePairMutation.mutateAsync({
+				key_type: type,
 			});
 
-			if (res && res.private_key && res.public_key) {
-				setPrivateKey(res.private_key);
-				setPublicKey(res.public_key);
+			if (res && res.payload && res.payload.private_key && res.payload.public_key) {
+				setPrivateKey(res.payload.private_key);
+				setPublicKey(res.payload.public_key);
 				if (!name) {
 					setName(
 						`Auto-${type.toUpperCase()}-${Date.now().toString().slice(-4)}`,
@@ -71,12 +71,10 @@ export function CreateKeyModal({
 		setSubmitting(true);
 		try {
 			await createMutation.mutateAsync({
-				body: {
-					name,
-					description: description || undefined,
-					private_key: privateKey,
-					public_key: publicKey || '',
-				},
+				name,
+				description: description || undefined,
+				private_key: privateKey,
+				public_key: publicKey || '',
 			});
 			toast.success('SSH Key created successfully');
 			onSuccess();

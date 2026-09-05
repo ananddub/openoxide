@@ -60,12 +60,10 @@ export function GenerateKeyModal({
 
 		setGenerating(true);
 		try {
-			const res = await generatePairMutation.mutateAsync({
-				body: {
-					key_type: keyType,
-				} as any,
+			const res: any = await generatePairMutation.mutateAsync({
+				key_type: keyType,
 			});
-			setGeneratedKey(res as any);
+			setGeneratedKey(res?.payload ?? res);
 			toast.success('Key Pair generated in memory!');
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
@@ -79,12 +77,10 @@ export function GenerateKeyModal({
 		setSaving(true);
 		try {
 			await createMutation.mutateAsync({
-				body: {
-					name,
-					description: description || undefined,
-					public_key: generatedKey.public_key,
-					private_key: generatedKey.private_key,
-				},
+				name,
+				description: description || undefined,
+				public_key: generatedKey.public_key,
+				private_key: generatedKey.private_key,
 			});
 			toast.success(`SSH Key "${name}" saved to database!`);
 			onSuccess();

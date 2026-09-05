@@ -12,6 +12,7 @@ import {
 } from '#/components/ui/dialog';
 import {TagBadge} from '#/components/shared/tag-badge';
 import {toast} from 'sonner';
+import {useTagCreate, useTagUpdate} from '#/api/live';
 
 interface TagItem {
 	id: number;
@@ -62,19 +63,15 @@ export function HandleTagModal({
 		try {
 			if (tag?.id) {
 				await patchMutation.mutateAsync({
-					params: {path: {id: tag.id}},
-					body: {
-						name: trimmedName,
-						color: color || '#3b82f6',
-					},
+					id: tag.id,
+					name: trimmedName,
+					color: color || '#3b82f6',
 				});
 				toast.success('Tag Updated');
 			} else {
 				await createMutation.mutateAsync({
-					body: {
-						name: trimmedName,
-						color: color || '#3b82f6',
-					},
+					name: trimmedName,
+					color: color || '#3b82f6',
 				});
 				toast.success('Tag Created');
 			}

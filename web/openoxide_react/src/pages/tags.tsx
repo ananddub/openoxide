@@ -29,7 +29,7 @@ import {
 import {TagBadge} from '#/components/shared/tag-badge';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {useAppStore} from '#/stores/app-store';
+import {useTagCreate, useTagDelete, useTagListAll, useTagUpdate} from '#/api/live';
 
 export const Route = createFileRoute('/_app/tags')({
 	component: MinimalTagsPage,
@@ -63,15 +63,16 @@ function MinimalTagsPage() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 
-	const storeTags = useAppStore(state => state.tags);
+	// Live tags query keyed ['tags','list'] — the table-watch stream
+	// invalidates it on tag changes while this page is mounted.
+	const tagsListQuery = useTagListAll();
+	const isLoading = tagsListQuery.isLoading;
 
 	const tagsList: TagItem[] = useMemo(() => {
-		return Array.isArray(storeTags)
-			? (storeTags as unknown as TagItem[])
+		return Array.isArray(tagsListQuery.data)
+			? (tagsListQuery.data as unknown as TagItem[])
 			: [];
-	}, [storeTags]);
-
-	const isLoading = false;
+	}, [tagsListQuery.data]);
 
 	const createMutation = useTagCreate();
 	const patchMutation = useTagUpdate();
@@ -105,13 +106,15 @@ function MinimalTagsPage() {
 		try {
 			if (editingTag) {
 				await patchMutation.mutateAsync({
-					params: {path: {id: editingTag.id}},
-					body: {name: tagName.trim(), color: tagColor},
+					id: editingTag.id,
+					name: tagName.trim(),
+					color: tagColor,
 				});
 				toast.success('Tag updated');
 			} else {
 				await createMutation.mutateAsync({
-					body: {name: tagName.trim(), color: tagColor},
+					name: tagName.trim(),
+					color: tagColor,
 				});
 				toast.success('Tag created');
 			}
@@ -127,9 +130,7 @@ function MinimalTagsPage() {
 		if (!deleteTarget) return;
 		setIsDeleting(true);
 		try {
-			await deleteMutation.mutateAsync({
-				params: {path: {id: deleteTarget.id}},
-			});
+			await deleteMutation.mutateAsync(deleteTarget.id);
 			toast.success('Tag removed');
 			setDeleteTarget(null);
 		} catch (err: any) {

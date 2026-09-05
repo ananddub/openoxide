@@ -1,6 +1,7 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
 import {Button} from '#/components/ui/button';
 import {useComposeDetail} from '#/hooks/projects/use-compose-detail';
+import {useComposeUpdate} from '#/api/live';
 
 import {ComposeHeader} from '#/components/projects/compose/detail/compose-header';
 
@@ -57,10 +58,7 @@ function ComposeDetailPage() {
 	const patchCompose = useComposeUpdate();
 
 	const handleUpdateEnv = async (body: Record<string, unknown>) => {
-		await patchCompose.mutateAsync({
-			params: {path: {id: parsedComposeId}},
-			body,
-		});
+		await patchCompose.mutateAsync({id: parsedComposeId, ...body});
 		refetchAll();
 	};
 

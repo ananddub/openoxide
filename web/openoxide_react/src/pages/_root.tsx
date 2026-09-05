@@ -1,12 +1,13 @@
 import {
+	createRootRoute,
 	Outlet,
 	HeadContent,
-	createRootRoute,
 } from '@tanstack/react-router';
 import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
 import {createServiceClient} from '#/api/live/query';
 import {RootPending} from '#/components/pending';
-import {useAuthStore} from '#/stores/auth-store';
+import {sessionActions} from '#/stores/session-context';
+import {SessionProvider} from '#/stores/session-context';
 import {TooltipProvider} from '#/components/ui/tooltip';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {Toaster} from '#/components/ui/sonner';
@@ -16,18 +17,17 @@ const authClient = createServiceClient(AuthService);
 
 export const Route = createRootRoute({
 	beforeLoad: async () => {
-		const alreadyUser = useAuthStore.getState().user;
-		if (alreadyUser) return;
+		const {setAuth, logout} = sessionActions();
 
 		const session = localStorage.getItem('openoxide-auth-session');
 		if (!session || session === 'undefined') {
-			useAuthStore.getState().logout();
+			logout();
 			return;
 		}
 		try {
 			const user = await authClient.whoAmI({});
 			if (user) {
-				useAuthStore.getState().setAuth({
+				setAuth({
 					id: Number(user.id),
 					email: user.email || '',
 					firstName: user.firstName,
@@ -74,10 +74,12 @@ function RootComponent() {
 		<>
 			<HeadContent />
 			<QueryClientProvider client={queryClient}>
-				<TooltipProvider>
-					<Outlet />
-					<Toaster />
-				</TooltipProvider>
+				<SessionProvider>
+					<TooltipProvider>
+						<Outlet />
+						<Toaster />
+					</TooltipProvider>
+				</SessionProvider>
 			</QueryClientProvider>
 		</>
 	);

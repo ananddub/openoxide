@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, ShieldAlert, ShieldCheck } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
 import {
@@ -18,41 +18,50 @@ import { CertificateHistoryDialog } from "#/components/settings/certificates/cer
 import { CertificateList } from "#/components/settings/certificates/certificate-list";
 import {
   deleteCertificate,
-  listRemoteServers,
 } from "#/components/settings/certificates/certificate-api";
 import type {
   Certificate,
   RemoteServer,
 } from "#/components/settings/certificates/certificate-types";
-import { useAppStore } from "#/stores/app-store";
+import { useCertificateItems } from "#/api/live/certificates";
+import { useRemoteServerList } from "#/api/live/servers";
+import { useConnectMutation } from "#/api/live/query";
 
 export const Route = createFileRoute("/_app/settings/certificates")({
   component: CertificatesPage,
 });
 
 function CertificatesPage() {
-  const items = useAppStore((state) => state.certificates) as Certificate[];
-  const wsConnected = useAppStore((state) => state.isWsConnected);
-  const [servers, setServers] = useState<RemoteServer[]>([]);
+  const itemsQuery = useCertificateItems();
+  const serversQuery = useRemoteServerList();
+  const items = (itemsQuery.data ?? []) as unknown as Certificate[];
+  const servers = (serversQuery.data ?? []) as unknown as RemoteServer[];
   const [dialogOpen, setDialogOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selected, setSelected] = useState<Certificate | null>(null);
   const [deleting, setDeleting] = useState<Certificate | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      const remoteServers = await listRemoteServers();
-      setServers(remoteServers || []);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not load certificates",
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  // Cache invalidation comes from the table-watch stream (certificates
+  // table → refetch while this page is mounted); the mutation only needs
+  // error handling here.
+  const removeMutation = useConnectMutation(
+    async (certificate: Certificate) => {
+      await deleteCertificate(Number(certificate.id));
+      return certificate;
+    },
+    {
+      onSuccess: (certificate) => {
+        toast.success(`Certificate ${certificate.name} deleted`);
+      },
+      onError: (error: unknown) => {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Certificate could not be deleted",
+        );
+      },
+    },
+  );
 
   const create = () => {
     setSelected(null);
@@ -67,20 +76,6 @@ function CertificatesPage() {
   const history = (certificate: Certificate) => {
     setSelected(certificate);
     setHistoryOpen(true);
-  };
-
-  const remove = async (certificate: Certificate) => {
-    try {
-      await deleteCertificate(Number(certificate.id));
-      toast.success("Certificate deleted");
-      await load();
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Certificate could not be deleted",
-      );
-    }
   };
 
   return (
@@ -113,7 +108,7 @@ function CertificatesPage() {
       <CertificateList
         items={items}
         servers={servers}
-        loading={!wsConnected && items.length === 0}
+        loading={itemsQuery.isLoading}
         onCreate={create}
         onEdit={edit}
         onHistory={history}
@@ -125,13 +120,17 @@ function CertificatesPage() {
         servers={servers}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onSaved={load}
+        onSaved={async () => {
+          /* table-watch invalidates ['certificates'] → refetch */
+        }}
       />
       <CertificateHistoryDialog
         certificate={selected}
         open={historyOpen}
         onOpenChange={setHistoryOpen}
-        onRenewed={load}
+        onRenewed={async () => {
+          /* table-watch invalidates ['certificates'] → refetch */
+        }}
       />
       <AlertDialog
         open={deleting !== null}
@@ -152,7 +151,7 @@ function CertificatesPage() {
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={async () => {
-                if (deleting) await remove(deleting);
+                if (deleting) await removeMutation.mutateAsync(deleting);
                 setDeleting(null);
               }}
             >

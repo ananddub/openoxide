@@ -1,6 +1,7 @@
 import {createServiceClient, useConnectMutation, useConnectQuery, useResourceListQuery, useResourceQuery} from './query';
 import {readResource} from '#/api/live/resource';
 import {RemoteServerService} from '#/gen/connect/openoxide/api/v1/remote_server_pb';
+import {ServerControllerService} from '#/gen/connect/openoxide/api/v1/server_controller_pb';
 
 export type RemoteServerPayload = {
 	id: number;
@@ -21,9 +22,12 @@ export type RemoteServerPayload = {
 	updated_at: number;
 	build_memory_limit?: string;
 	build_cpu_limit?: string;
+	/** Legacy camelCase alias the zustand RemoteServerItem carried; components read `ip_address || ip`. */
+	ip?: string;
 };
 
 const remoteServerClient = createServiceClient(RemoteServerService);
+const serverControllerClient = createServiceClient(ServerControllerService);
 
 /** Remote servers (legacy live: useRemoteServerList). */
 export function useRemoteServerList() {
@@ -134,4 +138,18 @@ export function useRemoteServerRollbackMigration() {
 	return useConnectMutation((migrationId: string) =>
 		remoteServerClient.rollbackMigration({payload: migrationId}),
 	);
+}
+
+/**
+ * SSH/agent audit for a remote server (legacy live: useRemoteServerAudit).
+ * ResourceRequest takes the server id; OperationResult carries the audit
+ * report JSON in its (optional) payload field.
+ */
+export type ServerAuditPayload = Record<string, unknown>;
+
+export function useRemoteServerAudit() {
+	return useConnectMutation(async (id: number | bigint) => {
+		const response = await serverControllerClient.audit({id: BigInt(id)});
+		return JSON.parse(response.payload || '{}') as ServerAuditPayload;
+	});
 }

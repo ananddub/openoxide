@@ -7,8 +7,8 @@ import {
 	useComposeSetGithubSource,
 	useComposeSetGitlabSource,
 	useComposeSetRawSource,
+	useSshKeyItems,
 } from '#/api/live';
-import {useAppStore} from '#/stores/app-store';
 import {formatApiError} from '#/api/utils';
 import {ComposeDeployCard} from './compose-deploy-card';
 import {ComposeSourceCard} from './cards/compose-source-card';
@@ -62,7 +62,7 @@ export function ComposeGeneralTab({compose, onUpdated}: GeneralTabProps) {
 	);
 	const [savingSource, setSavingSource] = useState(false);
 
-	const sshKeys = useAppStore(state => state.sshKeys || []);
+	const sshKeys = useSshKeyItems().data ?? [];
 
 	const patchRawMutation = useComposeSetRawSource();
 	const patchGithubMutation = useComposeSetGithubSource();

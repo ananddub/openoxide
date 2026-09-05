@@ -1,6 +1,6 @@
 import {createFileRoute} from '@tanstack/react-router';
 import {Building2} from 'lucide-react';
-import {useOrganizationStore} from '#/stores/organization-store';
+import {useOrganizations} from '#/stores/session-context';
 import {Badge} from '#/components/ui/badge';
 
 export const Route = createFileRoute('/_app/settings')({
@@ -8,7 +8,7 @@ export const Route = createFileRoute('/_app/settings')({
 });
 
 function SettingsIndexPage() {
-	const activeOrg = useOrganizationStore(state => state.activeOrg);
+	const {activeOrg} = useOrganizations();
 
 	return (
 		<div className="mx-auto flex w-full max-w-7xl animate-in flex-col gap-6 p-6 duration-200 fade-in">

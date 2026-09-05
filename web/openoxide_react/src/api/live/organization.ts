@@ -122,3 +122,30 @@ export function useUserUpdate() {
 			}),
 	);
 }
+
+/** Legacy profile shape the former zustand `profile` slice carried. */
+export type ProfilePayload = {
+	id?: number;
+	email?: string;
+	name?: string;
+	role?: string;
+	avatar?: string;
+};
+
+/**
+ * Signed-in user's profile (the former zustand `profile` slice data).
+ * Key prefix `['auth']` matches the table-watch USERS entry, so profile
+ * updates refetch automatically.
+ */
+export function useProfile() {
+	return useConnectQuery<ProfilePayload>(['auth', 'profile'], async () => {
+		const user = await authClient.whoAmI({});
+		return {
+			id: Number(user.id),
+			email: user.email,
+			name:
+				`${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || undefined,
+			avatar: user.avatar,
+		};
+	});
+}

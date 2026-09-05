@@ -16,8 +16,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import {useApplicationCreate} from '#/api/live';
-import {useAppStore} from '#/stores/app-store';
+import {useApplicationCreate, useRemoteServerList} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {Server} from 'lucide-react';
 
@@ -42,7 +41,8 @@ export function CreateAppDialog({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const createMutation = useApplicationCreate();
-	const serversList = useAppStore(state => state.servers || []);
+	// Live servers query; the table-watch stream keeps it fresh.
+	const {data: serversList = []} = useRemoteServerList();
 
 	const handleClose = () => {
 		onClose?.();
@@ -64,12 +64,10 @@ export function CreateAppDialog({
 		setIsSubmitting(true);
 		try {
 			const res = await createMutation.mutateAsync({
-				body: {
-					name: name.trim(),
-					description: description.trim() || undefined,
-					environment_id: environmentId,
-					server_id: serverId === 'local' ? undefined : Number(serverId),
-				},
+				name: name.trim(),
+				description: description.trim() || undefined,
+				environment_id: environmentId,
+				server_id: serverId === 'local' ? undefined : Number(serverId),
 			});
 			const resObj = res as Record<string, unknown>;
 			const appObj = (resObj?.data || res) as any;
@@ -107,7 +105,7 @@ export function CreateAppDialog({
 							<label className="text-xs font-semibold text-foreground">
 								Target Server
 							</label>
-							<Select value={serverId} onValueChange={setServerId}>
+							<Select value={serverId} onValueChange={value => setServerId(value ?? 'local')}>
 								<SelectTrigger className="w-full">
 									<SelectValue placeholder="Select server">
 										{(() => {
@@ -157,7 +155,7 @@ export function CreateAppDialog({
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => onOpenChange(false)}
+							onClick={() => onOpenChange?.(false)}
 							disabled={isSubmitting}>
 							Cancel
 						</Button>

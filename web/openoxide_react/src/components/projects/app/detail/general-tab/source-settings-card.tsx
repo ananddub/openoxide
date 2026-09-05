@@ -17,8 +17,8 @@ import {
 	useApplicationSetGiteaSource,
 	useApplicationSetGithubSource,
 	useApplicationSetGitlabSource,
+	useSshKeyItems,
 } from '#/api/live';
-import {useAppStore} from '#/stores/app-store';
 import {formatApiError} from '#/api/utils';
 import {DropSourceForm} from './drop-source-form';
 import {
@@ -106,7 +106,7 @@ export function SourceSettingsCard({
 
 	const [savingSource, setSavingSource] = useState(false);
 
-	const sshKeys = useAppStore(state => state.sshKeys || []);
+	const sshKeys = useSshKeyItems().data ?? [];
 
 	const patchDocker = useApplicationSetDockerSource();
 	const patchGit = useApplicationSetCustomGitSource();

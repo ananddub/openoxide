@@ -4,10 +4,9 @@ import {Button} from '#/components/ui/button';
 import {toast} from 'sonner';
 import {useQueryClient} from '@tanstack/react-query';
 import {formatApiError} from '#/api/utils';
-import {useAppStore} from '#/stores/app-store';
 import {DatabaseDeploymentsModal} from './database-deployments-modal';
 import {DatabaseDeploymentsList} from './database-deployments-list';
-import {useDeploymentDelete} from '#/api/live';
+import {useDeploymentDelete, useDeploymentDeleteByDatabase, useDeploymentItems} from '#/api/live';
 
 interface DatabaseDeploymentsTabProps {
 	dbId: number;
@@ -63,8 +62,10 @@ export function DatabaseDeploymentsTab({
 	const [liveLogs, setLiveLogs] = useState<string[]>([]);
 	const [cancelingId, setCancelingId] = useState<number | null>(null);
 
-	const storeDeployments = useAppStore(state => state.deployments || []);
-	const dbDeployments = storeDeployments.filter(
+	// Live deployments query filtered to this database; the table-watch
+	// stream (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
+	const {data: allDeployments = []} = useDeploymentItems();
+	const dbDeployments = allDeployments.filter(
 		(d: any) => String(d.database_id) === String(dbId),
 	);
 	const events =
@@ -72,7 +73,7 @@ export function DatabaseDeploymentsTab({
 	const activeDeployment = events.find(isBuildActive);
 
 	const deleteMutation = useDeploymentDelete();
-	const clearDbMutation = useDeploymentDelete();
+	const clearDbMutation = useDeploymentDeleteByDatabase();
 
 	useEffect(() => {
 		if (!activeLogId) return;
@@ -167,11 +168,8 @@ export function DatabaseDeploymentsTab({
 
 	const handleClearDatabaseDeployments = async () => {
 		try {
-			const res = await clearDbMutation.mutateAsync({
-				id: dbId,
-					});
+			const res = await clearDbMutation.mutateAsync(dbId);
 			const data = res as any;
-			useAppStore.getState().clearDeployments({databaseId: dbId});
 			toast.success(
 				`Cleared ${data?.cleared_count || 0} database deployment logs & history`,
 			);
@@ -184,8 +182,7 @@ export function DatabaseDeploymentsTab({
 
 	const handleDeleteSingleDbDeployment = async (id: number) => {
 		try {
-			await deleteMutation.mutateAsync({params: {path: {id}}});
-			useAppStore.getState().deleteDeployment(id);
+			await deleteMutation.mutateAsync(id);
 			toast.success(`Deployment #${id} deleted`);
 			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
 			onRefresh?.();

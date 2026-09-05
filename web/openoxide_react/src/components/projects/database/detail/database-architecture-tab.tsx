@@ -2,6 +2,11 @@ import {useState, useMemo} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
+import {
+	useVolumeBackupCreate,
+	useVolumeBackupUpdate,
+	useVolumeBackupDelete,
+} from '#/api/live';
 import {ComposeVisualizer} from '#/components/projects/compose/visualizer/compose-visualizer';
 import {CreateBackupModal} from '#/components/projects/compose/detail/backups/create-backup-modal';
 import {TerminalModal} from '#/components/projects/common/terminal-modal';
@@ -113,9 +118,7 @@ export function DatabaseArchitectureTab({
 		const backupId = backupData?.id;
 		if (!backupId) return;
 		try {
-			await deleteBackupMutation.mutateAsync({
-				params: {path: {id: backupId}},
-			});
+			await deleteBackupMutation.mutateAsync(backupId);
 			toast.success('Backup rule removed');
 			queryClient.invalidateQueries();
 			onRefresh?.();
@@ -136,39 +139,35 @@ export function DatabaseArchitectureTab({
 		try {
 			if (editingBackupData?.id) {
 				await patchBackupMutation.mutateAsync({
-					params: {path: {id: editingBackupData.id}},
-					body: {
-						name: data.name,
-						volume_name: data.volumeName,
-						prefix: data.prefix || '',
-						service_name: data.serviceName,
-						turn_off: data.turnOff ? 1 : 0,
-						cron_expression: data.cronExpr,
-					} as any,
+					id: editingBackupData.id,
+					name: data.name,
+					volume_name: data.volumeName,
+					prefix: data.prefix || '',
+					service_name: data.serviceName,
+					turn_off: data.turnOff ? 1 : 0,
+					cron_expression: data.cronExpr,
 				});
 				toast.success('Volume backup updated successfully');
 			} else {
 				await createBackupMutation.mutateAsync({
-					body: {
-						name: data.name,
-						volume_name: data.volumeName,
-						prefix: data.prefix || '',
-						service_type: 'database',
-						app_name:
-							database?.app_name ||
-							database?.name ||
-							data.serviceName ||
-							'database',
-						service_name: data.serviceName,
-						turn_off: data.turnOff ? 1 : 0,
-						cron_expression: data.cronExpr,
-						postgres_id: kind.includes('postgres') ? dbId : undefined,
-						mysql_id: kind.includes('mysql') ? dbId : undefined,
-						mariadb_id: kind.includes('mariadb') ? dbId : undefined,
-						mongo_id: kind.includes('mongo') ? dbId : undefined,
-						libsql_id: kind.includes('libsql') ? dbId : undefined,
-						destination_id: data.destinationId,
-					} as any,
+					name: data.name,
+					volume_name: data.volumeName,
+					prefix: data.prefix || '',
+					service_type: 'database',
+					app_name:
+						database?.app_name ||
+						database?.name ||
+						data.serviceName ||
+						'database',
+					service_name: data.serviceName,
+					turn_off: data.turnOff ? 1 : 0,
+					cron_expression: data.cronExpr,
+					postgres_id: kind.includes('postgres') ? dbId : undefined,
+					mysql_id: kind.includes('mysql') ? dbId : undefined,
+					mariadb_id: kind.includes('mariadb') ? dbId : undefined,
+					mongo_id: kind.includes('mongo') ? dbId : undefined,
+					libsql_id: kind.includes('libsql') ? dbId : undefined,
+					destination_id: data.destinationId,
 				});
 				toast.success('Volume backup created successfully');
 			}

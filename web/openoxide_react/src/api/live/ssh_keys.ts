@@ -1,4 +1,4 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery, useResourceQuery} from './query';
+import {createServiceClient, useConnectMutation, useResourceListQuery, useConnectQuery, useResourceQuery} from './query';
 import {SshKeyService} from '#/gen/connect/openoxide/api/v1/ssh_key_pb';
 
 export type SshKeyPayload = {
@@ -21,6 +21,19 @@ export function useSshKeyList() {
 		['ssh_keys', 'list'],
 		() => sshKeyClient.listKeys({}),
 	);
+}
+
+/**
+ * SSH keys under the table-watch key prefix `['ssh_keys']` — the former
+ * zustand `sshKeys` slice data with the same payload shape.
+ */
+export function useSshKeyItems() {
+	return useConnectQuery<SshKeyPayload[]>(['ssh_keys'], async () => {
+		const response = await sshKeyClient.listKeys({});
+		return (response as any).items.map(
+			(item: {payload: string}) => JSON.parse(item.payload) as SshKeyPayload,
+		);
+	});
 }
 
 /** Single SSH key (legacy live: useSshKeyGet). */

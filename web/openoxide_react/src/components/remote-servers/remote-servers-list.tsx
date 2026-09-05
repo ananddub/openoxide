@@ -35,6 +35,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
+import {useRemoteServerTestConnection} from '#/api/live';
 import type {
 	RemoteServerResponse,
 	SshKeyResponse,
@@ -101,10 +102,7 @@ export function RemoteServersList({
 	const handleTestConnection = async (server: RemoteServerResponse) => {
 		globalServerConnStore.setStatus(server.id, 'testing');
 		try {
-			await testConnMutation.mutateAsync({
-				params: {path: {id: server.id}},
-				body: {host_key_fingerprint: ''},
-			});
+			await testConnMutation.mutateAsync(server.id);
 			globalServerConnStore.setStatus(server.id, 'success');
 			toast.success(`SSH connection verified for "${server.name}"`);
 		} catch (err: unknown) {

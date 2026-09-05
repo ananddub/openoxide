@@ -11,7 +11,7 @@ import {
 import {formatApiError} from '#/api/utils';
 import {ComposeConfirmDialog} from './cards/compose-confirm-dialog';
 import {ComposeDeployActions} from './cards/compose-deploy-actions';
-import {useAppStore} from '#/stores/app-store';
+import {useDeploymentItems} from '#/api/live';
 
 interface ComposeDeployCardProps {
 	compose: any;
@@ -39,8 +39,9 @@ export function ComposeDeployCard({
 		null,
 	);
 
-	// Read deployments from Zustand RAM store
-	const storeDeployments = useAppStore(state => state.deployments || []);
+	// Live deployments query filtered to this compose; the table-watch
+	// stream (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
+	const {data: storeDeployments = []} = useDeploymentItems();
 	const rawDeployments = useMemo(() => {
 		return storeDeployments.filter(
 			(d: any) => String(d.compose_id) === String(compose?.id),

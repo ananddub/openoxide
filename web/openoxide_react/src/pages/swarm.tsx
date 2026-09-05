@@ -11,8 +11,8 @@ import {
 	useSwarmNodeDemote,
 	useSwarmNodePromote,
 	useSwarmNodeRemove,
+	useRemoteServerList,
 } from '#/api/live';
-import {useAppStore} from '#/stores/app-store';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {SwarmHeader} from '#/components/swarm/swarm-header';
@@ -105,7 +105,8 @@ function SwarmPage() {
 	const [isTokensOpen, setIsTokensOpen] = useState(false);
 	const queryClient = useQueryClient();
 
-	const serversData = useAppStore(state => state.servers);
+	// Live servers query; the table-watch stream keeps it fresh.
+	const {data: serversData} = useRemoteServerList();
 	const servers = Array.isArray(serversData)
 		? (serversData as unknown as RemoteServerResponse[])
 		: [];

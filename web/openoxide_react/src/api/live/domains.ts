@@ -1,7 +1,10 @@
 import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+import {useOverviewDomains} from './overview';
 // Only DomainOperationsService is served by the backend (DomainService has
 // no controller), so the live layer targets the operations variant.
 import {DomainOperationsService} from '#/gen/connect/openoxide/api/v1/domain_operations_pb';
+
+type LiveRow = Record<string, any>;
 
 /** Legacy domain payload shape (snake_case REST DTO) with optional extras. */
 export type DomainPayload = {
@@ -91,4 +94,69 @@ export function useDomainDelete() {
 	return useConnectMutation((id: number | bigint) =>
 		domainClient.deleteDomain({id: BigInt(id)}),
 	);
+}
+
+/**
+ * Legacy domain item shape the former zustand `domains` slice carried
+ * (`domain` alias for `host`, numeric ids, uppercased certificate_type).
+ */
+export type DomainItemPayload = {
+	id: number;
+	domain: string;
+	host: string;
+	path: string;
+	internal_path: string;
+	port: number;
+	https: boolean;
+	strip_path: boolean;
+	certificate_type: string;
+	custom_cert_resolver?: string;
+	custom_entrypoint?: string;
+	middlewares: string;
+	domain_type?: string;
+	application_id?: number;
+	compose_id?: number;
+	service_name?: string;
+	project_name?: string;
+	created_at: number;
+	updated_at: number;
+};
+
+function toDomainItem(d: LiveRow): DomainItemPayload {
+	return {
+		id: Number(d.id),
+		domain: d.host,
+		host: d.host,
+		path: d.path || '/',
+		internal_path: d.internal_path || '/',
+		port: d.port || 80,
+		https: !!d.https,
+		strip_path: !!d.strip_path,
+		certificate_type: String(d.certificate_type || 'NONE').toUpperCase(),
+		custom_cert_resolver: d.custom_cert_resolver || undefined,
+		custom_entrypoint: d.custom_entrypoint || undefined,
+		middlewares: d.middlewares || '[]',
+		domain_type: d.domain_type,
+		application_id: d.application_id ? Number(d.application_id) : undefined,
+		compose_id: d.compose_id ? Number(d.compose_id) : undefined,
+		service_name: d.service_name,
+		project_name: d.project_name,
+		created_at: Number(d.created_at || 0),
+		updated_at: Number(d.updated_at || 0),
+	};
+}
+
+/**
+ * Legacy-shaped domains for the active organization (the former zustand
+ * `domains` slice data). Built over useOverviewDomains, whose key prefix
+ * `['overview-domains']` is invalidated by the table-watch DOMAINS entry,
+ * so mutations and backend changes refetch automatically.
+ */
+export function useDomainItems(organizationId?: bigint) {
+	void organizationId;
+	const query = useOverviewDomains();
+	return {
+		...query,
+		data: query.data?.map((d) => toDomainItem(d as unknown as LiveRow)),
+	};
 }

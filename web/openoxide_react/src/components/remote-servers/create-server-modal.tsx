@@ -11,6 +11,11 @@ import {ServerFormFields} from '#/components/remote-servers/server-form-fields';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {
+	useRemoteServerCreate,
+	useRemoteServerUpdate,
+	useRemoteServerTestConnection,
+} from '#/api/live';
+import {
 	Server,
 	RefreshCw,
 	CheckCircle2,
@@ -87,14 +92,14 @@ export function CreateServerModal({
 		setTestingConn(true);
 		setTestResult('idle');
 		try {
-			await testDirectMutation.mutateAsync({
-				body: {
-					ip_address: ipAddress,
-					port: parseInt(port) || 22,
-					username,
-					ssh_key_id: sshKeyId ? parseInt(sshKeyId) : undefined,
-				} as any,
-			});
+			// The ConnectRPC TestConnection RPC only tests a SAVED server by
+			// id (no raw-credential test exists in the proto), so the server
+			// must be saved before the connection can be verified.
+			if (!editingServer?.id) {
+				toast.error('Save the server first, then test the connection');
+				return;
+			}
+			await testDirectMutation.mutateAsync(editingServer.id);
 			setTestResult('success');
 			toast.success(`SSH Connection to "${name || ipAddress}" verified!`);
 		} catch (err: unknown) {
@@ -124,13 +129,10 @@ export function CreateServerModal({
 			};
 
 			if (editingServer?.id) {
-				await patchMutation.mutateAsync({
-					params: {path: {id: editingServer.id}},
-					body: payload as any,
-				});
+				await patchMutation.mutateAsync({id: editingServer.id, ...payload});
 				toast.success('Remote Server updated successfully');
 			} else {
-				await createMutation.mutateAsync({body: payload as any});
+				await createMutation.mutateAsync(payload);
 				toast.success('Remote Server added successfully');
 			}
 			onSuccess();

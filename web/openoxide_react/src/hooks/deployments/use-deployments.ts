@@ -1,14 +1,13 @@
 import * as React from 'react';
-import {useDeploymentCancel, useDeploymentDelete, useDeploymentDeleteByApplication, useDeploymentList} from '#/api/live';
+import {useDeploymentCancel, useDeploymentDelete, useDeploymentDeleteByApplication, useDeploymentItems} from '#/api/live';
 import {useQueryClient} from '@tanstack/react-query';
 
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import type {components} from '#/types/api';
+import type {DeploymentResponse} from '#/types/api-helpers';
 import {useDeploymentLogs} from './use-deployment-logs';
-import {useAppStore} from '#/stores/app-store';
 
-export type Deployment = components['schemas']['DeploymentResponseDto'];
+export type Deployment = DeploymentResponse;
 export type SortKey = 'created_at' | 'title' | 'status';
 
 const FINAL_STATES = [
@@ -53,19 +52,16 @@ export function useDeployments() {
 		data: apiDeployments,
 		isLoading: isApiLoading,
 		refetch,
-	} = useDeploymentList();
+	} = useDeploymentItems();
 
-	const storeDeployments = useAppStore(state => state.deployments);
-
+	// Live query is the single source of truth; the table-watch stream
+	// (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
 	const deployments = React.useMemo(() => {
-		if (Array.isArray(storeDeployments) && storeDeployments.length > 0) {
-			return storeDeployments as unknown as Deployment[];
-		}
 		if (Array.isArray(apiDeployments)) {
 			return apiDeployments as unknown as Deployment[];
 		}
 		return [];
-	}, [storeDeployments, apiDeployments]);
+	}, [apiDeployments]);
 
 	const isLoading =
 		isApiLoading && (!deployments || deployments.length === 0);
@@ -105,7 +101,6 @@ export function useDeployments() {
 	const handleDeleteDeployment = async (id: number) => {
 		try {
 			await deleteMutation.mutateAsync(id);
-			useAppStore.getState().deleteDeployment(id);
 			toast.success(`Deployment #${id} deleted`);
 			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
 			refetch();
@@ -118,7 +113,6 @@ export function useDeployments() {
 		try {
 			const res = await clearAllMutation.mutateAsync(0);
 			const data = res as any;
-			useAppStore.getState().clearDeployments();
 			toast.success(
 				`Cleared ${data?.cleared_count || 0} deployment logs & history`,
 			);

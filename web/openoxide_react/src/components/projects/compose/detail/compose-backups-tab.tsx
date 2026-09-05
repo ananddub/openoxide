@@ -1,12 +1,11 @@
-import {useVolumeBackupCreate, useVolumeBackupDelete, useVolumeBackupRestore, useVolumeBackupRun} from '#/api/live';
+import {useVolumeBackupCreate, useVolumeBackupDelete, useVolumeBackupRestore, useVolumeBackupRun, useBackupItems} from '#/api/live';
 import {useState, useMemo, useEffect} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
 import {Database, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {useAppStore} from '#/stores/app-store';
+import {useOrganizations} from '#/stores/session-context';
 import {CreateBackupModal} from './backups/create-backup-modal';
 import {ComposeBackupsTable} from './backups/compose-backups-table';
 import {
@@ -27,7 +26,6 @@ export function ComposeBackupsTab({
 	databaseId,
 	databaseKind,
 }: ComposeBackupsTabProps) {
-	const queryClient = useQueryClient();
 	const isDatabase = databaseId !== undefined;
 	const normalizedDatabaseKind = (databaseKind || compose?.kind || '').toLowerCase();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -59,8 +57,12 @@ export function ComposeBackupsTab({
 		return getComposeServiceNames(compose, fetchedYaml);
 	}, [compose, fetchedYaml]);
 
-	// Read volume backups directly from Zustand RAM Store
-	const storeBackups = useAppStore(state => state.backups || []);
+	// Live backups query; the table-watch stream (backups tables) keeps it
+	// fresh, so no zustand slice involved.
+	const {activeOrg} = useOrganizations();
+	const {data: storeBackups = []} = useBackupItems(
+		BigInt(activeOrg?.id || 1),
+	);
 
 	// Safe array normalization and filtering for current compose stack
 	const composeBackups = useMemo(() => {
@@ -116,23 +118,20 @@ export function ComposeBackupsTab({
 					}
 				: {compose_id: compose?.id};
 			await createMutation.mutateAsync({
-				body: {
-					name: data.name,
-					...databaseResource,
-					app_name: compose?.app_name,
-					service_name: data.serviceName,
-					volume_name: data.volumeName,
-					cron_expression: data.cronExpr,
-					prefix: data.prefix,
-					turn_off: data.turnOff ? 1 : 0,
-					destination_id: data.destinationId,
-					organization_id: compose?.organization_id,
-					service_type: isDatabase
-						? normalizedDatabaseKind.toUpperCase()
-						: 'COMPOSE',
-				} as any,
+				name: data.name,
+				...databaseResource,
+				app_name: compose?.app_name,
+				service_name: data.serviceName,
+				volume_name: data.volumeName,
+				cron_expression: data.cronExpr,
+				prefix: data.prefix,
+				turn_off: data.turnOff ? 1 : 0,
+				destination_id: data.destinationId,
+				organization_id: compose?.organization_id,
+				service_type: isDatabase
+					? normalizedDatabaseKind.toUpperCase()
+					: 'COMPOSE',
 			});
-			await queryClient.invalidateQueries();
 			toast.success('Volume backup rule created successfully');
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -141,7 +140,7 @@ export function ComposeBackupsTab({
 
 	const handleRun = async (id: number) => {
 		try {
-			await runMutation.mutateAsync({params: {path: {id}}});
+			await runMutation.mutateAsync(id);
 			toast.success('Volume snapshot triggered successfully');
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -150,10 +149,7 @@ export function ComposeBackupsTab({
 
 	const handleRestore = async (id: number) => {
 		try {
-			await restoreMutation.mutateAsync({
-				params: {path: {id}},
-				body: {backup_file: ''},
-			});
+			await restoreMutation.mutateAsync({id, backup_file: ''});
 			toast.success('Volume snapshot restore initiated');
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -162,7 +158,7 @@ export function ComposeBackupsTab({
 
 	const handleDelete = async (id: number) => {
 		try {
-			await deleteMutation.mutateAsync({params: {path: {id}}});
+			await deleteMutation.mutateAsync(id);
 			toast.success('Volume backup rule deleted');
 		} catch (err: any) {
 			toast.error(formatApiError(err));

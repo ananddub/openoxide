@@ -1,8 +1,7 @@
 import {useEffect} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {createServiceClient} from '#/api/connect';
-import {useAppStore} from '#/stores/app-store';
-import {useOrganizationStore} from '#/stores/organization-store';
+import {useOrganizations} from '#/stores/session-context';
 import {
 	RealtimeService,
 	WatchedTable,
@@ -100,16 +99,11 @@ const RESYNC_TABLE_COUNT = Object.keys(TABLE_QUERY_KEYS).length - 1;
  * when the stream drops, each reconnect starting with a fresh resync
  * event. The stream is aborted on unmount / organization switch so no
  * HTTP connection outlives the subscription.
- *
- * The stream's liveness also drives the app store's `isWsConnected` flag
- * (true while events are flowing, false on drop) — replacing the legacy
- * socket-era constant.
  */
 export function useTableWatch(): void {
 	const queryClient = useQueryClient();
-	const activeOrg = useOrganizationStore((state) => state.activeOrg);
+	const activeOrg = useOrganizations().activeOrg;
 	const orgId = activeOrg?.id || 1;
-	const setWsConnected = useAppStore((state) => state.setWsConnected);
 
 	useEffect(() => {
 		let closed = false;
@@ -138,7 +132,6 @@ export function useTableWatch(): void {
 				for await (const event of realtimeClient.watchTables({}, {signal: abort.signal})) {
 					if (closed || abort.signal.aborted) break;
 					attempt = 0;
-					setWsConnected(true);
 					invalidate(event);
 				}
 			} catch {
@@ -146,7 +139,6 @@ export function useTableWatch(): void {
 				// Reconnect below; the resync event heals any missed
 				// changes.
 			}
-			setWsConnected(false);
 			if (!closed && !abort.signal.aborted) {
 				attempt = Math.min(attempt + 1, 6);
 				timer = setTimeout(connect, Math.min(1000 * 2 ** attempt, 30_000));
@@ -159,5 +151,5 @@ export function useTableWatch(): void {
 			abort.abort();
 			if (timer) clearTimeout(timer);
 		};
-	}, [queryClient, orgId, setWsConnected]);
+	}, [queryClient, orgId]);
 }

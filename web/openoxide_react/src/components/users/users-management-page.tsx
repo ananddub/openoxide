@@ -51,27 +51,25 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
-import {useAppStore, type MemberItem} from '#/stores/app-store';
+import {useInviteCancel, useMemberAdd, useMemberRemove, useMemberUpdateRole, useInviteCreate, usePermissionGroupMembers, usePermissionGroupInvites, useProfile, type MemberItem, type InviteItem} from '#/api/live';
 
 export function UsersManagementPage() {
-	const members = useAppStore(state => state.members);
-	const invites = useAppStore(state => state.invites);
-	const userProfile = useAppStore(state => state.profile);
-	const isMembersLoading = useAppStore(state => state.isMembersLoading);
-	const addMemberStore = useAppStore(state => state.addMember);
-	const updateMemberStore = useAppStore(state => state.updateMember);
-	const deleteMemberStore = useAppStore(state => state.deleteMember);
-	const addInviteStore = useAppStore(state => state.addInvite);
-	const deleteInviteStore = useAppStore(state => state.deleteInvite);
+	// Live members/invites queries; the table-watch stream (ORGANIZATION_*
+	// tables) invalidates them while mounted, so no zustand slices involved.
+	const membersQuery = usePermissionGroupMembers();
+	const invitesQuery = usePermissionGroupInvites();
+	const members = (membersQuery.data ?? []) as unknown as MemberItem[];
+	const invites = (invitesQuery.data ?? []) as unknown as InviteItem[];
+	const userProfile = useProfile().data;
 
 	// Mutations for invites and members
 	const addMemberMutation = useMemberAdd();
 	const inviteMutation = useInviteCreate();
-	const cancelInviteMutation = useInviteRemove();
+	const cancelInviteMutation = useInviteCancel();
 	const updateRoleMutation = useMemberUpdateRole();
 	const removeMemberMutation = useMemberRemove();
 
-	const isLoading = isMembersLoading && members.length === 0;
+	const isLoading = membersQuery.isLoading;
 
 	// Tabs: "members" | "invitations"
 	const [activeTab, setActiveTab] = useState<'members' | 'invitations'>(
@@ -126,36 +124,18 @@ export function UsersManagementPage() {
 		setIsSubmitting(true);
 		try {
 			if (actionType === 'direct') {
-				const tempId = `mem_${Date.now()}`;
-				addMemberStore({
-					id: tempId,
-					email: inputEmail,
-					name: inputEmail.split('@')[0],
-					role: selectedRole.toLowerCase(),
-				});
 				await addMemberMutation.mutateAsync({
-					body: {
-						email: inputEmail,
-						role: selectedRole.toUpperCase(),
-					},
-				} as any);
+					email: inputEmail,
+					role: selectedRole.toUpperCase(),
+				});
 
 				toast.success(`User ${inputEmail} added successfully`);
 				setInputEmail('');
 			} else {
-				const tempId = String(Date.now());
-				addInviteStore({
-					id: tempId,
-					email: inputEmail,
-					role: selectedRole.toLowerCase(),
-					created_at: Math.floor(Date.now() / 1000),
-				});
 				await inviteMutation.mutateAsync({
-					body: {
-						email: inputEmail,
-						role: selectedRole.toUpperCase(),
-					},
-				} as any);
+					email: inputEmail,
+					role: selectedRole.toUpperCase(),
+				});
 
 				toast.success('Invitation sent successfully');
 				setActiveTab('invitations');
@@ -172,18 +152,11 @@ export function UsersManagementPage() {
 	const handleUpdateRole = async (newRole: string) => {
 		if (!editingRoleUser) return;
 		const targetId = editingRoleUser.id;
-		updateMemberStore(targetId, {role: newRole});
 		try {
 			await updateRoleMutation.mutateAsync({
-				params: {
-					path: {
-						user_id: Number(targetId),
-					},
-				},
-				body: {
-					role: newRole.toUpperCase(),
-				},
-			} as any);
+				id: Number(targetId),
+				role: newRole.toUpperCase(),
+			});
 			toast.success('User role updated');
 			setEditingRoleUser(null);
 		} catch (error) {
@@ -194,16 +167,9 @@ export function UsersManagementPage() {
 	const confirmDeleteUser = async () => {
 		if (!deleteTarget) return;
 		const targetId = deleteTarget.id;
-		deleteMemberStore(targetId);
 		setIsDeleting(true);
 		try {
-			await removeMemberMutation.mutateAsync({
-				params: {
-					path: {
-						user_id: Number(targetId),
-					},
-				},
-			} as any);
+			await removeMemberMutation.mutateAsync(Number(targetId));
 			toast.success('User removed from organization');
 			setDeleteTarget(null);
 		} catch (error) {
@@ -214,15 +180,8 @@ export function UsersManagementPage() {
 	};
 
 	const handleRevokeInvitation = async (id: string) => {
-		deleteInviteStore(id);
 		try {
-			await cancelInviteMutation.mutateAsync({
-				params: {
-					path: {
-						invite_id: Number(id),
-					},
-				},
-			} as any);
+			await cancelInviteMutation.mutateAsync(Number(id));
 			toast.success('Invitation revoked successfully');
 		} catch (error) {
 			toast.error(formatApiError(error));

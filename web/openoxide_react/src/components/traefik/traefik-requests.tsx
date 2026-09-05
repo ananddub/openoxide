@@ -1,7 +1,7 @@
 import {useState, useMemo} from 'react';
 import {RefreshCw, AlertCircle, Zap} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {useTraefikRequestLogs, useTraefikRequestsStatus} from '#/api/live';
+import {useTraefikRequestLogs, useTraefikRequestsStatus, useTraefikRequestsToggle} from '#/api/live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import type {RemoteServerItem} from './traefik-types';
@@ -118,12 +118,9 @@ export function TraefikRequestsView({
 	const handleToggle = async (enable: boolean) => {
 		setIsToggling(true);
 		try {
-			await toggleMutation.mutateAsync({
-				body: {
-					server_id: parsedServerId,
-					enable,
-				},
-			});
+			// The ToggleRequests RPC takes only the enable flag; the request
+			// log stream itself is per-server.
+			await toggleMutation.mutateAsync({enabled: enable});
 			toast.success(
 				enable
 					? 'Requests logging activated successfully!'

@@ -6,7 +6,7 @@ import {
 } from '@tanstack/react-router';
 import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
 import {createServiceClient} from '#/api/live/query';
-import {useAuthStore} from '#/stores/auth-store';
+import {useAuthSession} from '#/stores/session-context';
 import {AuthLeftPanel} from '#/components/auth/auth-left-panel';
 
 const authClient = createServiceClient(AuthService);
@@ -37,7 +37,7 @@ export const Route = createFileRoute('/_auth')({
 });
 
 function AuthLayout() {
-	const isAuth = useAuthStore(state => state.isAuth);
+	const {isAuth} = useAuthSession();
 	if (isAuth) return <Navigate to="/" replace />;
 	return (
 		<div className="flex min-h-svh w-screen bg-background">

@@ -10,7 +10,7 @@ import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Label} from '#/components/ui/label';
 import {Switch} from '#/components/ui/switch';
-import {useAppStore} from '#/stores/app-store';
+import {useDestinationList} from '#/api/live';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
@@ -32,7 +32,9 @@ export function CreateVolumeBackupModal({
 	const [volumeName, setVolumeName] = useState('');
 	const [cronExpr, setCronExpr] = useState('0 0 * * *');
 	const [prefix, setPrefix] = useState('volume-backups/');
-	const destinations = useAppStore(state => state.destinations || []);
+	// Live destinations query; the table-watch stream (destinations table)
+	// keeps it fresh.
+	const destinations = useDestinationList().data ?? [];
 	const [destinationId, setDestinationId] = useState('');
 	const [turnOff, setTurnOff] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,18 +51,16 @@ export function CreateVolumeBackupModal({
 		setIsSubmitting(true);
 		try {
 			await createMutation.mutateAsync({
-				body: {
-					name: name.trim(),
-					volume_name: volumeName.trim(),
-					cron_expression: cronExpr.trim(),
-					prefix: prefix.trim(),
-					destination_id: Number(destinationId),
-					organization_id: app?.organization_id || 1,
-					application_id: app?.id,
-					app_name: app?.app_name || app?.name || 'app',
-					service_type: 'standalone',
-					turn_off: turnOff ? 1 : 0,
-				},
+				name: name.trim(),
+				volume_name: volumeName.trim(),
+				cron_expression: cronExpr.trim(),
+				prefix: prefix.trim(),
+				destination_id: Number(destinationId),
+				organization_id: app?.organization_id || 1,
+				application_id: app?.id,
+				app_name: app?.app_name || app?.name || 'app',
+				service_type: 'standalone',
+				turn_off: turnOff ? 1 : 0,
 			});
 			toast.success('Volume backup configuration created successfully');
 			onSuccess();

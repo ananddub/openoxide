@@ -1,6 +1,5 @@
 import React, {useState} from 'react';
-import {useEnvironmentListByProject} from '#/api/live';
-import {useQueryClient} from '@tanstack/react-query';
+import {useEnvironmentListByProject, useVaultList, useVaultProviderCreate, useVaultProviderUpdate, useVaultProviderDelete, useVaultProviderTest, useVaultTestConnection} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {
 	Vault,
@@ -38,7 +37,7 @@ import {
 	HashicorpVaultIcon,
 	DopplerIcon,
 } from '#/components/icons/provider-icons';
-import {useAppStore} from '#/stores/app-store';
+import {useOrganizations} from '#/stores/session-context';
 
 export interface VaultProviderItem {
 	id: number;
@@ -52,20 +51,19 @@ export interface VaultProviderItem {
 }
 
 export function VaultProvidersPage() {
-	const queryClient = useQueryClient();
-	const storeProviders = useAppStore(state => state.vaultProviders);
-	const isVaultLoading = useAppStore(state => state.isVaultLoading);
-	const addVaultStore = useAppStore(state => state.addVaultProvider);
-	const updateVaultStore = useAppStore(state => state.updateVaultProvider);
-	const deleteVaultStore = useAppStore(state => state.deleteVaultProvider);
+	const {activeOrg} = useOrganizations();
+
+	// Live vault providers query; the table-watch stream (vault_providers
+	// table) invalidates it while mounted, so no zustand slice involved.
+	const providersQuery = useVaultList();
+	const providers = (providersQuery.data ?? []) as VaultProviderItem[];
 
 	const createMutation = useVaultProviderCreate();
 	const updateMutation = useVaultProviderUpdate();
 	const deleteMutation = useVaultProviderDelete();
 	const testMutation = useVaultProviderTest();
 
-	const providers = storeProviders;
-	const isLoading = isVaultLoading && providers.length === 0;
+	const isLoading = providersQuery.isLoading;
 
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [editingProvider, setEditingProvider] = useState<any | null>(null);
@@ -286,12 +284,9 @@ export function VaultProvidersPage() {
 					assignments,
 				};
 
-				// Optimistic Zustand update
-				updateVaultStore(editingProvider.id, updatePayload);
-
 				await updateMutation.mutateAsync({
-					params: {path: {id: editingProvider.id}},
-					body: updatePayload,
+					id: editingProvider.id,
+					...updatePayload,
 				});
 				toast.success(`Vault Provider "${formName}" updated`);
 			} else {
@@ -311,21 +306,14 @@ export function VaultProvidersPage() {
 					assignments,
 				};
 
-				const res: any = await createMutation.mutateAsync({
-					body: createPayload,
+				await createMutation.mutateAsync({
+					organization_id: Number(activeOrg?.id || 1),
+					...createPayload,
 				});
-
-				// Optimistic Zustand add
-				if (res.data || res) {
-					addVaultStore(res.data || res);
-				}
 
 				toast.success(`Vault Provider "${formName}" created successfully`);
 			}
 			setIsCreateOpen(false);
-			queryClient.invalidateQueries({
-				queryKey: ['get', '/vault-providers'],
-			});
 		} catch (err) {
 			toast.error(formatApiError(err, 'Failed to save vault provider'));
 		} finally {
@@ -348,10 +336,9 @@ export function VaultProvidersPage() {
 		setIsTestingModal(true);
 		try {
 			if (editingProvider) {
-				const res: any = await testMutation.mutateAsync({
-					params: {path: {id: editingProvider.id}},
+				const result = await testMutation.mutateAsync({
+					id: editingProvider.id,
 				});
-				const result = res.data || res;
 				if (result?.success) {
 					toast.success(result.message || 'Connection successful!');
 				} else {
@@ -359,17 +346,14 @@ export function VaultProvidersPage() {
 				}
 			} else {
 				// Call Rust backend proxy to bypass CORS and run live HTTP ping
-				const res: any = await testConnectionMutation.mutateAsync({
-					body: {
-						name: formName.trim() || 'Test',
-						provider_type: formType,
-						api_url: formUrl.trim(),
-						auth_token: formToken.trim(),
-						namespace: formNamespace.trim() || undefined,
-						config_json: JSON.stringify(providerConfig()),
-					},
+				const result = await testConnectionMutation.mutateAsync({
+					name: formName.trim() || 'Test',
+					provider_type: formType,
+					api_url: formUrl.trim(),
+					auth_token: formToken.trim(),
+					namespace: formNamespace.trim() || undefined,
+					config_json: JSON.stringify(providerConfig()),
 				});
-				const result = res.data || res;
 				if (result?.success) {
 					toast.success(
 						result.message || 'Vault connection verified successfully!',
@@ -390,16 +374,10 @@ export function VaultProvidersPage() {
 	const handleDeleteProvider = async () => {
 		if (!deleteTarget) return;
 		const targetId = deleteTarget.id;
-		deleteVaultStore(targetId);
 		try {
-			await deleteMutation.mutateAsync({
-				params: {path: {id: targetId}},
-			});
+			await deleteMutation.mutateAsync({id: targetId});
 			toast.success(`Vault Provider "${deleteTarget.name}" deleted`);
 			setDeleteTarget(null);
-			queryClient.invalidateQueries({
-				queryKey: ['get', '/vault-providers'],
-			});
 		} catch (err) {
 			toast.error(formatApiError(err, 'Failed to delete vault provider'));
 		}

@@ -7,7 +7,7 @@ import {
 	DialogTitle,
 } from '#/components/ui/dialog';
 import {Button} from '#/components/ui/button';
-import {useAppStore} from '#/stores/app-store';
+import {useSshKeyItems} from '#/api/live';
 import {toast} from 'sonner';
 import {
 	Copy,
@@ -37,9 +37,10 @@ export function ViewKeyModal({
 	const [copiedPrivate, setCopiedPrivate] = useState(false);
 	const [copiedCmd, setCopiedCmd] = useState(false);
 
-	// Read full SSH Key details directly from Zustand RAM Store
-	const storeSshKeys = useAppStore(state => state.sshKeys || []);
-	const fullKeyDetails = storeSshKeys.find(
+	// Live SSH keys query; the table-watch stream (ssh_keys table) keeps it
+	// fresh, so no zustand slice involved.
+	const {data: sshKeyItems = []} = useSshKeyItems();
+	const fullKeyDetails = sshKeyItems.find(
 		(k: any) => String(k.id) === String(sshKey?.id),
 	);
 	const activeKey = fullKeyDetails || sshKey;

@@ -8,9 +8,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from '#/components/ui/card';
-import {useDeploymentListContainers} from '#/api/live';
+import {useDeploymentListContainers, useRemoteServerList} from '#/api/live';
 import {useMonitoringContainerStates} from '#/api/live';
-import {useAppStore} from '#/stores/app-store';
 import {getAccessToken, refreshAccessToken} from '#/api/client';
 import {
 	Select,
@@ -460,7 +459,8 @@ export function GlobalMonitoringCards() {
 	// `0` was only a UI placeholder. Passing it to the monitoring endpoint made
 	// the local agent query an invalid server and left the dashboard stale.
 	const LOCAL_SERVER_ID = 0;
-	const servers = useAppStore(state => state.servers || []);
+	// Live servers query; the table-watch stream keeps it fresh.
+	const {data: servers = []} = useRemoteServerList();
 	const [selectedServerId, setSelectedServerId] = useState<number | null>(null);
 	const serverLabel = (server: any) => {
 		const isLocal =

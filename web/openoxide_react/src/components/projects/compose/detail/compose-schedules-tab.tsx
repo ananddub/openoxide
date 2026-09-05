@@ -7,10 +7,10 @@ import {
 	useScheduleCreate,
 	useScheduleDelete,
 	useScheduleRun,
+	useScheduleListByOrganization,
 } from '#/api/live';
 import {formatApiError} from '#/api/utils';
-import {useAppStore} from '#/stores/app-store';
-import {useOrganizationStore} from '#/stores/organization-store';
+import {useOrganizations} from '#/stores/session-context';
 import {CreateScheduleModal} from './schedules/create-schedule-modal';
 import {ComposeSchedulesTable} from './schedules/compose-schedules-table';
 import {
@@ -56,10 +56,13 @@ export function ComposeSchedulesTab({
 		return getComposeServiceNames(compose, fetchedYaml);
 	}, [compose, fetchedYaml]);
 
-	// Read schedules directly from Zustand RAM Store
+	// Live schedules query; the table-watch stream (schedules tables) keeps
+	// it fresh, so no zustand slice involved.
 	const composeId = compose?.id;
-	const activeOrg = useOrganizationStore(state => state.activeOrg);
-	const storeSchedules = useAppStore(state => state.schedules || []);
+	const {activeOrg} = useOrganizations();
+	const {data: storeSchedules = []} = useScheduleListByOrganization(
+		BigInt(activeOrg?.id || 1),
+	);
 
 	// Safe array normalization
 	const composeSchedules = useMemo(() => {

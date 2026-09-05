@@ -1,36 +1,35 @@
 import * as React from 'react';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {useOrganizationStore} from '#/stores/organization-store';
-import type {components} from '#/types/api';
-import {useScheduleListByOrganization} from '#/api/live';
+import {useOrganizations} from '#/stores/session-context';
+import type {ScheduleResponse} from '#/types/api-helpers';
+import {
+	useScheduleListByOrganization,
+	useScheduleCreate,
+	useScheduleDelete,
+	useScheduleUpdate,
+	useScheduleRun,
+	useRemoteServerList,
+} from '#/api/live';
 
-import {useAppStore} from '#/stores/app-store';
-
-export type Schedule = components['schemas']['ScheduleResponseDto'];
+export type Schedule = ScheduleResponse;
 
 export function useSchedules() {
-	const activeOrg = useOrganizationStore(state => state.activeOrg);
+	const {activeOrg} = useOrganizations();
 	const [searchQuery, setSearchQuery] = React.useState('');
 	const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 	const [editingSchedule, setEditingSchedule] =
 		React.useState<Schedule | null>(null);
 
-	const storeSchedules = useAppStore(state => state.schedules);
+	// Live schedules query; the table-watch stream (schedules tables)
+	// keeps it fresh, so no zustand slice or manual refetch is involved.
+	const schedulesQuery = useScheduleListByOrganization(
+		BigInt(activeOrg?.id ?? 1),
+	);
+	const schedules = schedulesQuery.data ?? [];
 
-	// Fetch schedules — query returns undefined while loading which falls back to Zustand store
-	const {data: rawSchedules, isLoading: isQueryLoading} =
-		useScheduleListByOrganization(BigInt(activeOrg?.id ?? 1));
-
-	const schedules =
-		rawSchedules && Array.isArray(rawSchedules) && rawSchedules.length > 0
-			? rawSchedules
-			: storeSchedules || [];
-
-	const loading = schedules.length === 0 && isQueryLoading;
-
-	// Remote servers list from Zustand RAM store
-	const servers = useAppStore(state => state.servers || []);
+	// Live servers query; the table-watch stream keeps it fresh.
+	const {data: servers = []} = useRemoteServerList();
 
 	// Mutations
 	const createMutation = useScheduleCreate();
@@ -40,13 +39,7 @@ export function useSchedules() {
 
 	const handleDelete = async (id: number) => {
 		try {
-			await deleteMutation.mutateAsync({
-				params: {
-					path: {
-						id,
-					},
-				},
-			});
+			await deleteMutation.mutateAsync(id);
 			toast.success('Schedule deleted successfully');
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
@@ -57,14 +50,8 @@ export function useSchedules() {
 		if (schedule.id === undefined) return;
 		try {
 			await patchMutation.mutateAsync({
-				params: {
-					path: {
-						id: schedule.id,
-					},
-				},
-				body: {
-					enabled: schedule.enabled ? 0 : 1,
-				},
+				id: schedule.id,
+				enabled: schedule.enabled ? 0 : 1,
 			});
 			toast.success(
 				`Schedule ${schedule.enabled ? 'paused' : 'resumed'} successfully`,
@@ -77,13 +64,7 @@ export function useSchedules() {
 	const handleRunManual = async (id: number) => {
 		try {
 			toast.loading('Triggering manual run...', {id: `run-${id}`});
-			const res = await runMutation.mutateAsync({
-				params: {
-					path: {
-						id,
-					},
-				},
-			});
+			const res: any = await runMutation.mutateAsync(id);
 			toast.success(res?.message || 'Manual run completed successfully', {
 				id: `run-${id}`,
 			});
@@ -117,7 +98,7 @@ export function useSchedules() {
 	return {
 		activeOrg,
 		schedules: filteredSchedules as unknown as Schedule[],
-		isLoading: loading,
+		isLoading: schedulesQuery.isLoading,
 		servers: (servers ?? []) as unknown as any[],
 		refetch: () => {},
 		searchQuery,

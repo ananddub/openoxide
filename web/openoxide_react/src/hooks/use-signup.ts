@@ -3,14 +3,14 @@ import {useMutation} from '@tanstack/react-query';
 import {useNavigate} from '@tanstack/react-router';
 import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
 import {createServiceClient} from '#/api/live/query';
-import {useAuthStore} from '#/stores/auth-store';
+import {useAuthSession} from '#/stores/session-context';
 import type {SignUpSchema} from '#/schema/signup.schema';
 
 const authClient = createServiceClient(AuthService);
 
 export function useSignup(onErrorCallback?: (msg: string) => void) {
 	const navigate = useNavigate();
-	const setAuth = useAuthStore(state => state.setAuth);
+	const {setAuth} = useAuthSession();
 
 	return useMutation({
 		mutationFn: (data: SignUpSchema) =>

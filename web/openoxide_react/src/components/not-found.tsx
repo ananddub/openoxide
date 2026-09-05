@@ -2,7 +2,7 @@ import {Link} from '@tanstack/react-router';
 import {Logo} from '#/components/shared/logo';
 import {buttonVariants} from '#/components/ui/button';
 import {ChevronLeft, AlertCircle} from 'lucide-react';
-import {useAuthStore} from '#/stores/auth-store';
+import {useAuthSession} from '#/stores/session-context';
 import {
 	SidebarInset,
 	SidebarProvider,
@@ -12,7 +12,7 @@ import {AppSidebar} from '#/components/layouts/sidebar';
 import {Separator} from '#/components/ui/separator';
 
 export const NotFound = () => {
-	const isAuth = useAuthStore(state => state.isAuth);
+	const isAuth = useAuthSession().isAuth;
 
 	if (isAuth) {
 		return (

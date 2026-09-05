@@ -11,7 +11,8 @@ import {
 import {Button} from '#/components/ui/button';
 import {cn} from '#/api/utils';
 import type {Schedule} from '#/hooks/use-schedules';
-import {useAppStore} from '#/stores/app-store';
+import {useProjectListByOrganization} from '#/api/live';
+import {useOrganizations} from '#/stores/session-context';
 
 interface ScheduleCardProps {
 	schedule: Schedule;
@@ -33,7 +34,13 @@ export function ScheduleCard({
 	const s = schedule;
 	const isEnabled = s.enabled === 1;
 
-	const projectsList = useAppStore(state => state.projects || []);
+	// Live projects query keyed ['projects','list',org] — table-watch
+	// invalidates it while the schedules page is mounted.
+	const {activeOrg} = useOrganizations();
+	const projectsQuery = useProjectListByOrganization(
+		BigInt(activeOrg?.id || 1),
+	);
+	const projectsList = (projectsQuery.data ?? []) as any[];
 
 	// Find linked server details if any
 	const linkedServer = servers.find(srv => srv.id === s.server_id);

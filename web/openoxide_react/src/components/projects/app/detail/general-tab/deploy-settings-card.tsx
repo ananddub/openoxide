@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {TerminalModal} from '#/components/projects/common/terminal-modal';
-import {useAppStore} from '#/stores/app-store';
+import {useDeploymentItems} from '#/api/live';
 
 interface DeploySettingsCardProps {
 	app: any;
@@ -40,8 +40,9 @@ export function DeploySettingsCard({
 	);
 	const [activeLoading, setActiveLoading] = useState<string | null>(null);
 
-	// Read deployments from Zustand RAM store
-	const storeDeployments = useAppStore(state => state.deployments || []);
+	// Live deployments query filtered to this app; the table-watch stream
+	// (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
+	const {data: storeDeployments = []} = useDeploymentItems();
 	const rawDeployments = useMemo(() => {
 		return storeDeployments.filter(
 			(d: any) => String(d.application_id) === String(app?.id),

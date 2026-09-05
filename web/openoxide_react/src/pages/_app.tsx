@@ -1,12 +1,5 @@
 import * as React from 'react';
-import {useAuthStore} from '#/stores/auth-store';
-import {
-	createFileRoute,
-	Navigate,
-	Outlet,
-	useLocation,
-	Link,
-} from '@tanstack/react-router';
+import {createFileRoute, Navigate, Outlet, useLocation, Link} from '@tanstack/react-router';
 import {
 	SidebarInset,
 	SidebarProvider,
@@ -14,46 +7,44 @@ import {
 } from '#/components/ui/sidebar';
 import {AppSidebar} from '#/components/layouts/sidebar';
 import {Separator} from '#/components/ui/separator';
-import {useAppStore} from '#/stores/app-store';
-import {useRealtimeSync} from '#/hooks/use-realtime-sync';
+import {useProjectGet, useApplicationList, useComposeList, useOverviewServices} from '#/api/live';
 import {useTableWatch} from '#/hooks/use-table-watch';
+import {useAuthSession} from '#/stores/session-context';
 
 function ProjectNameBreadcrumb({id}: {id: number}) {
-	const projects = useAppStore(state => state.projects || []);
-	const project = projects.find((p: any) => Number(p.id) === Number(id));
+	// Live query keyed ['projects','get',id] — table-watch refetches
+	// while the layout is mounted.
+	const {data: project} = useProjectGet(BigInt(id));
 	return <>{project?.name || `Project #${id}`}</>;
 }
 
+/** Shared ['overview-services'] query instance for the name breadcrumbs. */
+function useOverviewServicesData() {
+	return useOverviewServices().data ?? [];
+}
+
 function AppNameBreadcrumb({id}: {id: number}) {
-	const apps = useAppStore(state => state.applications || []);
-	const overviewServices = useAppStore(
-		state => state.overviewServices || [],
-	);
+	const apps = useApplicationList().data ?? [];
+	const overviewServices = useOverviewServicesData();
 	const app =
 		apps.find((a: any) => Number(a.id) === Number(id)) ||
 		overviewServices.find((s: any) => Number(s.id) === Number(id));
-	return <>{app?.name || app?.app_name || `App #${id}`}</>;
+	return <>{app?.name || `App #${id}`}</>;
 }
 
 function ComposeNameBreadcrumb({id}: {id: number}) {
-	const composes = useAppStore(state => state.composes || []);
-	const overviewServices = useAppStore(
-		state => state.overviewServices || [],
-	);
+	const composes = useComposeList().data ?? [];
+	const overviewServices = useOverviewServicesData();
 	const compose =
 		composes.find((c: any) => Number(c.id) === Number(id)) ||
 		overviewServices.find((s: any) => Number(s.id) === Number(id));
-	return <>{compose?.name || compose?.app_name || `Compose #${id}`}</>;
+	return <>{compose?.name || `Compose #${id}`}</>;
 }
 
 function DatabaseNameBreadcrumb({id}: {id: number}) {
-	const overviewServices = useAppStore(
-		state => state.overviewServices || [],
-	);
-	const db = overviewServices.find(
-		(s: any) => Number(s.id) === Number(id),
-	);
-	return <>{db?.name || db?.app_name || `DB #${id}`}</>;
+	const overviewServices = useOverviewServicesData();
+	const db = overviewServices.find((s: any) => Number(s.id) === Number(id));
+	return <>{db?.name || `DB #${id}`}</>;
 }
 
 function AppNotFoundPlaceholder() {
@@ -82,9 +73,8 @@ export const Route = createFileRoute('/_app')({
 });
 
 function AppLayout() {
-	useRealtimeSync();
 	useTableWatch();
-	const isAuth = useAuthStore(state => state.isAuth);
+	const {isAuth} = useAuthSession();
 	const location = useLocation();
 
 	if (!isAuth) return <Navigate to="/singin" replace />;

@@ -18,7 +18,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 } from '#/components/ui/dropdown';
-import {useAppStore} from '#/stores/app-store';
+import {useTagListAll, useOverviewServices} from '#/api/live';
 import {getTagsFromDescription} from '#/hooks/projects/use-projects-list';
 import {HandleProjectDialog} from './handle-project-dialog';
 
@@ -35,11 +35,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
 	const [isUpdateOpen, setIsUpdateOpen] = useState(false);
 
-	// Read real-time overview services and tags directly from Zustand RAM Store
-	const overviewServices = useAppStore(
-		state => state.overviewServices || [],
-	);
-	const availableTags = useAppStore(state => state.tags || []);
+	// Read real-time overview services from the live query keyed
+	// ['overview-services'] (table-watch refetches it while the dashboard
+	// is mounted); tags come from the live query keyed ['tags','list'].
+	const servicesQuery = useOverviewServices();
+	const overviewServices = servicesQuery.data ?? [];
+	const availableTags = useTagListAll().data ?? [];
 
 	const formatDate = (timestamp?: number) => {
 		if (!timestamp) return 'recently';
@@ -180,7 +181,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 									key={tag}
 									name={tag}
 									color={getTagColor(tag)}
-									size="sm"
 								/>
 							))}
 						</div>

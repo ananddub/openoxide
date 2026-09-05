@@ -13,7 +13,7 @@ import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {useOrganizationStore} from '#/stores/organization-store';
+import {useOrganizations} from '#/stores/session-context';
 import {useScheduleCreate, useScheduleDelete, useScheduleRun, useScheduleUpdate} from '#/api/live';
 
 interface SchedulesTabProps {
@@ -37,7 +37,7 @@ export function SchedulesTab({
 	const [deleting, setDeleting] = useState(false);
 
 	const schedules = Array.isArray(passedSchedules) ? passedSchedules : [];
-	const activeOrg = useOrganizationStore(state => state.activeOrg);
+	const {activeOrg} = useOrganizations();
 
 	// Mutations
 	const createMutation = useScheduleCreate();
@@ -56,18 +56,16 @@ export function SchedulesTab({
 			const appNameVal =
 				app.app_name || app.appName || app.name || 'application';
 			await createMutation.mutateAsync({
-				body: {
-					name,
-					cron_expression: cronExpression,
-					command,
-					application_id: app.id,
-					organization_id: activeOrg?.id || 1,
-					app_name: appNameVal,
-					enabled: 1,
-					schedule_type: 'APPLICATION',
-					schedule_action: 'EXEC',
-					shell_type: 'bash',
-				} as any,
+				name,
+				cron_expression: cronExpression,
+				command,
+				application_id: app.id,
+				organization_id: activeOrg?.id || 1,
+				app_name: appNameVal,
+				enabled: 1,
+				schedule_type: 'APPLICATION',
+				schedule_action: 'EXEC',
+				shell_type: 'bash',
 			});
 			toast.success('Schedule created successfully');
 			setIsCreateOpen(false);
@@ -82,7 +80,7 @@ export function SchedulesTab({
 
 	const handleRunNow = async (id: number) => {
 		try {
-			await runMutation.mutateAsync({params: {path: {id}}});
+			await runMutation.mutateAsync(id);
 			toast.success('Schedule triggered manually');
 			onRefresh?.();
 		} catch (err: any) {
@@ -93,10 +91,7 @@ export function SchedulesTab({
 	const handleToggleEnable = async (job: any) => {
 		const newStatus = job.enabled ? 0 : 1;
 		try {
-			await patchMutation.mutateAsync({
-				params: {path: {id: job.id}},
-				body: {enabled: newStatus} as any,
-			});
+			await patchMutation.mutateAsync({id: job.id, enabled: newStatus});
 			toast.success(`Schedule ${newStatus ? 'enabled' : 'paused'}`);
 			onRefresh?.();
 		} catch (err: any) {

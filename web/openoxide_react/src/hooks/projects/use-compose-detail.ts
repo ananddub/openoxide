@@ -2,19 +2,31 @@ import {useState, useMemo, useEffect} from 'react';
 import {toast} from 'sonner';
 import type {ComposeResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
-import {useComposeCancel, useComposeDeploy, useComposeGet, useComposeReload, useComposeStart, useComposeStop, useComposeUpdate} from '#/api/live';
-
-import {useAppStore, selectComposeById} from '#/stores/app-store';
+import {useComposeCancel, useComposeDeploy, useComposeGet, useComposeList, useComposeReload, useComposeStart, useComposeStop, useComposeUpdate, useDeploymentItems, useDomainItems, useOverviewServices, useScheduleListByOrganization, useBackupItems} from '#/api/live';
+import {useOrganizations} from '#/stores/session-context';
 
 export function useComposeDetail(composeId: number) {
 	const [activeTab, setActiveTab] = useState<string>('General');
 	const [localStatusOverride, setLocalStatusOverride] = useState<
 		string | null
 	>(null);
+	const {activeOrg} = useOrganizations();
+	const orgId = BigInt(activeOrg?.id || 1);
 
-	// 100% Pure Centralized Zustand Store Resolution
-	const storeCompose = useAppStore(state =>
-		selectComposeById(state, composeId),
+	// Org-wide compose lookup as live queries (table-watch keeps them
+	// fresh) — same fallback chain the legacy store selector used.
+	const composes = useComposeList().data ?? [];
+	const overviewServices = useOverviewServices().data ?? [];
+	const storeCompose = useMemo(
+		() =>
+			composes.find((c: any) => String(c.id) === String(composeId)) ||
+			overviewServices.find(
+				(s: any) =>
+					String(s.id) === String(composeId) &&
+					(s.service_type === 'COMPOSE' || s.type === 'compose'),
+			) ||
+			null,
+		[composes, overviewServices, composeId],
 	);
 	const {data: liveCompose} = useComposeGet(BigInt(composeId));
 	const rawCompose = liveCompose || storeCompose;
@@ -61,11 +73,14 @@ export function useComposeDetail(composeId: number) {
 		}
 	}, [composeStatus, localStatusOverride]);
 
-	// Read raw arrays directly from Zustand store (Strict Reference Preservation for React 19 useSyncExternalStore)
-	const storeDomains = useAppStore(state => state.domains);
-	const storeSchedules = useAppStore(state => state.schedules);
-	const storeBackups = useAppStore(state => state.backups);
-	const storeDeployments = useAppStore(state => state.deployments);
+	// Live queries; the table-watch stream (domains / schedules / backups
+	// tables) invalidates them while mounted, so no zustand slices involved.
+	const {data: storeDomains = []} = useDomainItems(orgId);
+	const {data: storeSchedules = []} = useScheduleListByOrganization(orgId);
+	const {data: storeBackups = []} = useBackupItems(orgId);
+	// Live deployments query; the table-watch stream (DEPLOYMENTS table)
+	// invalidates ['deployments'] while mounted.
+	const {data: storeDeployments = []} = useDeploymentItems();
 
 	const domains = useMemo(
 		() =>
@@ -120,7 +135,14 @@ export function useComposeDetail(composeId: number) {
 	const patchMutation = useComposeUpdate();
 
 	const handleAction = async (
-		action: 'deploy' | 'reload' | 'start' | 'stop' | 'cancel',
+		action:
+			| 'deploy'
+			| 'redeploy'
+			| 'rebuild'
+			| 'reload'
+			| 'start'
+			| 'stop'
+			| 'cancel',
 	) => {
 		const currentSt = (
 			compose?.compose_status ||
@@ -144,22 +166,16 @@ export function useComposeDetail(composeId: number) {
 					? 'STARTING'
 					: 'DEPLOYING';
 		setLocalStatusOverride(intermediateStatus);
-		(useAppStore.getState() as any).updateServiceStatus?.(
-			composeId,
-			intermediateStatus,
-			'compose',
-		);
+		// Legacy updateServiceStatus store write removed — table-watch
+		// invalidates ['composes'] when the action lands, refetching
+		// fresh status through the live query.
 
 		try {
 			if (action === 'deploy') {
-				await deployMutation.mutateAsync({
-				id: composeId,
-					});
+				await deployMutation.mutateAsync(composeId);
 				toast.success('Compose stack deployment triggered');
 			} else if (action === 'reload') {
-				await reloadMutation.mutateAsync({
-				id: composeId,
-					});
+				await reloadMutation.mutateAsync(composeId);
 				toast.success('Compose stack reloaded');
 			} else if (action === 'start') {
 				await startMutation.mutateAsync(composeId);
@@ -168,10 +184,13 @@ export function useComposeDetail(composeId: number) {
 				await stopMutation.mutateAsync(composeId);
 				toast.success('Compose stack stopped');
 			} else if (action === 'cancel') {
-				await cancelMutation.mutateAsync({
-				id: composeId,
-					});
+				await cancelMutation.mutateAsync(composeId);
 				toast.success('Compose stack cancellation requested');
+			} else if (action === 'rebuild' || action === 'redeploy') {
+				// Compose has no dedicated rebuild/redeploy RPC — a fresh
+				// deploy covers the same semantics.
+				await deployMutation.mutateAsync(composeId);
+				toast.success(`Compose stack ${action} triggered`);
 			}
 			refetchAll();
 		} catch {
@@ -183,7 +202,7 @@ export function useComposeDetail(composeId: number) {
 		try {
 			await patchMutation.mutateAsync({
 				id: composeId,
-				body: patchData as any,
+				...(patchData as any),
 			});
 			toast.success('Compose settings updated');
 			refetchAll();

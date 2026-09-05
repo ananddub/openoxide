@@ -1,8 +1,7 @@
 import {useState} from 'react';
 import {createFileRoute, Link} from '@tanstack/react-router';
 import {FolderOpen, Layers} from 'lucide-react';
-import {useAppStore} from '#/stores/app-store';
-import {useEnvironmentListByProject} from '#/api/live';
+import {useProjectGet, useEnvironmentListByProject} from '#/api/live';
 import {EnvDropdown} from '#/components/projects/env/env-dropdown';
 import {StackCanvas} from '#/components/projects/stack/stack-canvas';
 
@@ -15,10 +14,9 @@ function BlueprintPage() {
 	const projectId = Number(id);
 	const [selectedEnvId, setSelectedEnvId] = useState<number | undefined>();
 
-	const storeProjects = useAppStore(state => state.projects || []);
-	const project = storeProjects.find(
-		(p: any) => Number(p.id) === projectId,
-	);
+	// Live query keyed ['projects','get',id] — table-watch refetches
+	// while this page is mounted.
+	const {data: project} = useProjectGet(BigInt(projectId));
 	const {data: rawEnvs} = useEnvironmentListByProject(BigInt(projectId));
 	const envs = rawEnvs ?? [];
 

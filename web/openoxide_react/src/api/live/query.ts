@@ -1,5 +1,6 @@
 import {useMutation, useQuery, useQueryClient, type UseMutationResult, type UseQueryResult} from '@tanstack/react-query';
 import {createServiceClient} from '#/api/connect';
+import {useOrganizations} from '#/stores/session-context';
 import {readResourceList, readResource} from '#/api/live/resource';
 
 /**
@@ -17,6 +18,15 @@ import {readResourceList, readResource} from '#/api/live/resource';
 // organization invalidates the affected queries immediately — so a longer
 // staleTime no longer means stale screens, only fewer redundant fetches.
 export const LIVE_STALE_TIME_MS = 60_000;
+
+/**
+ * Active organization id for org-scoped list queries (falls back to the
+ * legacy default org 1, mirroring useTableWatch's org resolution).
+ */
+export function useActiveOrgId(): bigint {
+	const activeOrg = useOrganizations().activeOrg;
+	return BigInt(activeOrg?.id || 1);
+}
 
 export function useConnectQuery<Output>(
 	key: unknown[],
@@ -65,6 +75,7 @@ export function useConnectMutation<Input, Output>(
 	options?: {
 		invalidate?: Array<unknown[]>;
 		onSuccess?: (data: Output, input: Input) => void | Promise<void>;
+		onError?: (error: Error, input: Input) => void | Promise<void>;
 	},
 ): UseMutationResult<Output, Error, Input> {
 	const queryClient = useQueryClient();
@@ -75,6 +86,9 @@ export function useConnectMutation<Input, Output>(
 				await queryClient.invalidateQueries({queryKey: key});
 			}
 			await options?.onSuccess?.(data, input);
+		},
+		onError: async (error, input) => {
+			await options?.onError?.(error, input);
 		},
 	});
 }

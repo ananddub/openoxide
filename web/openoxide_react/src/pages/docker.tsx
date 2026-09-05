@@ -1,14 +1,13 @@
 import {useState, useMemo} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
 import {toast} from 'sonner';
-import {useDeploymentListContainers, useDeploymentRunning} from '#/api/live';
+import {useDeploymentListContainers, useDeploymentRunning, useRemoteServerList} from '#/api/live';
 import {DockerHeader} from '#/components/docker/docker-header';
 import {DockerContainersTable} from '#/components/docker/docker-containers-table';
 import {
 	DockerInspectModal,
 	type GlobalContainerItem,
 } from '#/components/docker/docker-inspect-modal';
-import {useAppStore} from '#/stores/app-store';
 
 export const Route = createFileRoute('/_app/docker')({
 	component: DockerPage,
@@ -24,8 +23,8 @@ function DockerPage() {
 
 	const [logsStream, setLogsStream] = useState<string[]>([]);
 
-	// Read remote servers from Zustand RAM store
-	const rawServers = useAppStore(state => state.servers);
+	// Live servers query; the table-watch stream keeps it fresh.
+	const {data: rawServers} = useRemoteServerList();
 
 	// Real API Query for system-wide Docker containers for selected server host
 	const {

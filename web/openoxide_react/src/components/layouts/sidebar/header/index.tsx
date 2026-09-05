@@ -8,7 +8,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from '#/components/ui/sidebar';
-import {useOrganizationStore} from '#/stores/organization-store';
+import {useOrganizations} from '#/stores/session-context';
 import {NotificationBell} from './notification';
 
 type Props = {
@@ -18,9 +18,7 @@ type Props = {
 
 export function HeaderDropdown({isCollapsed, isMobile}: Props) {
 	const {data: organizations} = useOrganizationListByOwner();
-	const setOrganizations = useOrganizationStore(
-		state => state.setOrganizations,
-	);
+	const {setOrganizations} = useOrganizations();
 
 	React.useEffect(() => {
 		if (organizations) {

@@ -13,7 +13,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '#/components/ui/card';
-import {useAppStore} from '#/stores/app-store';
+import {useTagDelete, useTagListAll} from '#/api/live';
 import {HandleTag} from './handle-tag';
 
 interface TagItem {
@@ -24,8 +24,11 @@ interface TagItem {
 
 export const TagManager = () => {
 	const [searchQuery, setSearchQuery] = useState('');
-	const rawTags = useAppStore(state => state.tags);
-	const isLoading = false;
+	// Live tags query keyed ['tags','list'] — table-watch invalidates it
+	// while this component is mounted.
+	const tagsQuery = useTagListAll();
+	const rawTags = tagsQuery.data;
+	const isLoading = tagsQuery.isLoading;
 	const deleteMutation = useTagDelete();
 
 	const tags: TagItem[] = useMemo(() => {

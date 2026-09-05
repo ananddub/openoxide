@@ -1,6 +1,11 @@
 import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
-import {useAppStore} from '#/stores/app-store';
+import {
+	useRemoteServerList,
+	useRemoteServerActivate,
+	useRemoteServerDeactivate,
+	useSshKeyItems,
+} from '#/api/live';
 import {RemoteServersHeader} from '#/components/remote-servers/remote-servers-header';
 import {RemoteServersList} from '#/components/remote-servers/remote-servers-list';
 import {CreateServerModal} from '#/components/remote-servers/create-server-modal';
@@ -33,13 +38,14 @@ function RemoteServersPage() {
 	const [privateNetworkServer, setPrivateNetworkServer] =
 		useState<RemoteServerResponse | null>(null);
 
-	const storeServers = useAppStore(state => state.servers);
-	const storeSshKeys = useAppStore(state => state.sshKeys);
+	// Live servers query; the table-watch stream keeps it fresh.
+	const serversQuery = useRemoteServerList();
+	const sshKeysQuery = useSshKeyItems();
 
-	const servers = (storeServers ??
+	const servers = (serversQuery.data ??
 		[]) as unknown as RemoteServerResponse[];
-	const sshKeys = (storeSshKeys ?? []) as unknown as SshKeyResponse[];
-	const isServersLoading = false;
+	const sshKeys = (sshKeysQuery.data ?? []) as unknown as SshKeyResponse[];
+	const isServersLoading = serversQuery.isLoading;
 
 	const activateMutation = useRemoteServerActivate();
 	const deactivateMutation = useRemoteServerDeactivate();
@@ -49,14 +55,10 @@ function RemoteServersPage() {
 			(server.server_status || 'ACTIVE').toUpperCase() === 'ACTIVE';
 		try {
 			if (isActive) {
-				await deactivateMutation.mutateAsync({
-					params: {path: {id: server.id}},
-				});
+				await deactivateMutation.mutateAsync(server.id);
 				toast.success(`Server "${server.name}" disabled`);
 			} else {
-				await activateMutation.mutateAsync({
-					params: {path: {id: server.id}},
-				});
+				await activateMutation.mutateAsync(server.id);
 				toast.success(`Server "${server.name}" activated`);
 			}
 		} catch (err: unknown) {

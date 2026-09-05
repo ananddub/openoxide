@@ -1,22 +1,25 @@
 import {useMemo} from 'react';
-import {useAuthStore} from '#/stores/auth-store';
 import type {RecentDeploymentItem} from '#/components/home/recent-deployments-card';
-import {useAppStore} from '#/stores/app-store';
-import {useDeploymentRunning} from '#/api/live';
+import {useAuthSession, useOrganizations} from '#/stores/session-context';
+import {useDeploymentItems, useDeploymentRunning, useProjectListByOrganization} from '#/api/live';
 
 export function useHomeStats() {
-	const user = useAuthStore(state => state.user);
+	const {user} = useAuthSession();
 	const firstName =
 		user?.firstName ||
 		(user?.email ? user.email.split('@')[0] : undefined);
 
-	const storeProjects = useAppStore(state => state.projects);
-	const storeDeployments = useAppStore(state => state.deployments);
-
-	const rawProjects = storeProjects || [];
-	const rawDeployments = storeDeployments || [];
-	const isProjectsLoading = false;
-	const isDeploymentsLoading = false;
+	// Live projects query keyed ['projects','list',org] — table-watch
+	// invalidates it while the home page is mounted.
+	const {activeOrg} = useOrganizations();
+	const orgId = activeOrg?.id || 1;
+	const projectsQuery = useProjectListByOrganization(BigInt(orgId));
+	const rawProjects = projectsQuery.data;
+	const isProjectsLoading = projectsQuery.isLoading;
+	// Live deployments query; the table-watch stream (DEPLOYMENTS table)
+	// invalidates ['deployments'] while mounted.
+	const {data: rawDeployments = [], isLoading: isDeploymentsLoading} =
+		useDeploymentItems();
 
 	// Fetch active running deployments (/deployments/running)
 	const {data: rawRunning, isLoading: isRunningLoading} =

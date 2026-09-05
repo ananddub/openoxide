@@ -9,7 +9,6 @@ import {
 	SelectContent,
 	SelectItem,
 } from '#/components/ui/select';
-import {useAppStore} from '#/stores/app-store';
 import {
 	useApplicationDeploy,
 	useApplicationStart,
@@ -22,7 +21,10 @@ import {
 	useDatabaseStop,
 	parseDatabaseKind,
 	useRemoteServerList,
+	useProjectListByOrganization,
+	useOverviewServices,
 } from '#/api/live';
+import {useOrganizations} from '#/stores/session-context';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {
@@ -50,17 +52,23 @@ export function OverviewServicesTab() {
 	const [pageSize, setPageSize] = useState(50);
 	const [pageIndex, setPageIndex] = useState(0);
 
-	// Read directly from Realtime Zustand RAM Store (ZERO extra subscriptions!)
-	const storeServices = useAppStore(state => state.overviewServices || []);
-	const projectsToUse = useAppStore(state => state.projects || []);
-	const servers = useAppStore(state => state.servers || []);
+	// Live query keyed ['overview-services'] — the table-watch stream
+	// refetches it on any services-table change while the tab is mounted.
+	const servicesQuery = useOverviewServices();
+	// Live projects query keyed ['projects','list',org] — table-watch
+	// invalidates it while the overview page is mounted.
+	const {activeOrg} = useOrganizations();
+	const projectsQuery = useProjectListByOrganization(
+		BigInt(activeOrg?.id || 1),
+	);
+	const projectsToUse = (projectsQuery.data ?? []) as any[];
 	const {data: remoteServers = []} = useRemoteServerList();
-	const serverDirectory =
-		(remoteServers as any[]).length > 0 ? (remoteServers as any[]) : servers;
-	const rawServices = storeServices;
-	const isLiveLoading = false;
+	// Live servers query; the table-watch stream keeps it fresh, so no
+	// zustand fallback is needed anymore.
+	const serverDirectory = remoteServers as any[];
+	const rawServices = servicesQuery.data ?? [];
 
-	const isLoading = isLiveLoading && rawServices.length === 0;
+	const isLoading = servicesQuery.isLoading && rawServices.length === 0;
 
 	// App Mutations
 	const appStart = useApplicationStart();
@@ -83,12 +91,8 @@ export function OverviewServicesTab() {
 
 		const uniqueServices = new Map<string, any>();
 		for (const svc of rawServices) {
-			const type = String(
-				svc.service_type || svc.type || svc.kind || 'APP',
-			).toUpperCase();
-			let dbKind = String(
-				svc.db_kind || svc.dbKind || svc.database_kind || '',
-			).toUpperCase();
+			const type = String(svc.service_type || 'APP').toUpperCase();
+			let dbKind = String(svc.db_kind || '').toUpperCase();
 			if (dbKind.includes('POSTGRES')) dbKind = 'POSTGRES';
 			else if (dbKind.includes('MARIADB')) dbKind = 'MARIADB';
 			else if (dbKind.includes('MYSQL')) dbKind = 'MYSQL';

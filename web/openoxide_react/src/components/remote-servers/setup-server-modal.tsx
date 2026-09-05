@@ -20,6 +20,10 @@ import {
 } from 'lucide-react';
 import {LogViewer} from '#/components/shared/log-viewer';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
+import {
+	useRemoteServerTestConnection,
+	useRemoteServerAudit,
+} from '#/api/live';
 
 import type {RemoteServerResponse} from '#/types/api-helpers';
 
@@ -51,10 +55,7 @@ export function SetupServerModal({
 		if (!server?.id) return;
 		setTestingConn(true);
 		try {
-			await testConnMutation.mutateAsync({
-				params: {path: {id: server.id}},
-				body: {host_key_fingerprint: ''},
-			});
+			await testConnMutation.mutateAsync(server.id);
 			toast.success(
 				`SSH Connection to ${server.name} verified successfully!`,
 			);
@@ -69,10 +70,7 @@ export function SetupServerModal({
 		if (!server?.id) return;
 		setAuditing(true);
 		try {
-			const res = await auditMutation.mutateAsync({
-				params: {path: {id: server.id}},
-				body: {host_key_fingerprint: ''},
-			});
+			const res = await auditMutation.mutateAsync(server.id);
 			setAuditResult(res as Record<string, unknown>);
 			toast.success('Server audit completed!');
 		} catch (err: unknown) {

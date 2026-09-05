@@ -4,7 +4,7 @@ import {Terminal as TerminalIcon, X} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
-import {useAppStore} from '#/stores/app-store';
+import {useDeploymentItems} from '#/api/live';
 
 interface ComposeDirectDeployLogsModalProps {
 	isOpen: boolean;
@@ -22,9 +22,10 @@ export function ComposeDirectDeployLogsModal({
 	const [liveLogs, setLiveLogs] = useState<string[]>([]);
 	const [isConnecting, setIsConnecting] = useState(true);
 
-	// Read deployments directly from Zustand RAM Store
-	const storeDeployments = useAppStore(state => state.deployments || []);
-	const rawDeployments = storeDeployments.filter(
+	// Live deployments query filtered to this compose; the table-watch
+	// stream (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
+	const {data: allDeployments = []} = useDeploymentItems();
+	const rawDeployments = allDeployments.filter(
 		(d: any) => String(d.compose_id) === String(composeId),
 	);
 	const isLoadingDeployments = false;

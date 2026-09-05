@@ -1,5 +1,23 @@
-import {createServiceClient, useConnectMutation, useConnectQuery} from './query';
+import {createServiceClient, useActiveOrgId, useConnectMutation, useConnectQuery} from './query';
 import {ComposeService, type Compose} from '#/gen/connect/openoxide/api/v1/compose_pb';
+import {OverviewService} from '#/gen/connect/openoxide/api/v1/overview_pb';
+import type {OverviewServiceItemPayload} from './overview';
+
+/**
+ * Legacy app-store `ComposeItem` shape (all-optional fields), kept so
+ * org-wide list consumers see the exact same payload as before.
+ */
+export type ComposeItemPayload = {
+	id: number;
+	name?: string;
+	project_id?: number;
+	environment_id?: number;
+	status?: string;
+	server_id?: number;
+	server_name?: string;
+	created_at?: number;
+	updated_at?: number;
+};
 
 export type ComposePayload = {
 	id: bigint;
@@ -17,6 +35,7 @@ export type ComposePayload = {
 };
 
 const composeClient = createServiceClient(ComposeService);
+const overviewClient = createServiceClient(OverviewService);
 
 function toComposePayload(compose: Compose): ComposePayload {
 	return {
@@ -33,6 +52,40 @@ function toComposePayload(compose: Compose): ComposePayload {
 		created_at: compose.createdAt,
 		updated_at: compose.updatedAt,
 	};
+}
+
+/**
+ * Organization-wide compose list (legacy app-store `composes` slice).
+ * There is no org-wide Compose RPC, so this derives from the overview
+ * services stream — the same source the legacy realtime sync fed the store
+ * from — and is keyed under the `composes` prefix so SERVICE_COMPOSE table
+ * changes invalidate it.
+ */
+export function useComposeList() {
+	const orgId = useActiveOrgId();
+	return useConnectQuery<ComposeItemPayload[]>(
+		['composes', orgId.toString()],
+		async () => {
+			const response = await overviewClient.listServices({
+				organizationId: orgId,
+			});
+			return response.items
+				.map((item) => JSON.parse(item.payload) as OverviewServiceItemPayload)
+				.filter((service) => service.service_type === 'COMPOSE')
+				.map((service) => ({
+					id: Number(service.id),
+					name: service.name,
+					project_id: Number(service.project_id),
+					environment_id: Number(service.environment_id),
+					status: service.status,
+					server_id:
+						service.server_id === null ? undefined : Number(service.server_id),
+					server_name: service.server_name ?? undefined,
+					created_at: Number(service.created_at),
+					updated_at: Number(service.created_at),
+				} satisfies ComposeItemPayload));
+		},
+	);
 }
 
 /** Single compose (legacy live: useComposeGet). */

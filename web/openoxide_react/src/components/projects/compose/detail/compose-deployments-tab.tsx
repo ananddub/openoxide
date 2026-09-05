@@ -16,10 +16,10 @@ import {
 	useComposeRedeploy,
 	useDeploymentDelete,
 	useDeploymentDeleteByCompose,
+	useDeploymentItems,
 } from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
-import {useAppStore} from '#/stores/app-store';
 import {ComposeDeploymentsList} from './deployments/compose-deployments-list';
 import {
 	AlertDialog,
@@ -77,9 +77,10 @@ export function ComposeDeploymentsTab({
 	const [liveLogs, setLiveLogs] = useState<string[]>([]);
 	const [isTriggering, setIsTriggering] = useState(false);
 
-	// Read deployments directly from Zustand RAM Store
-	const storeDeployments = useAppStore(state => state.deployments || []);
-	const rawDeployments = storeDeployments.filter(
+	// Live deployments query filtered to this compose; the table-watch
+	// stream (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
+	const {data: allDeployments = []} = useDeploymentItems();
+	const rawDeployments = allDeployments.filter(
 		(d: any) => String(d.compose_id) === String(composeId),
 	);
 	const deployments =
@@ -229,7 +230,6 @@ export function ComposeDeploymentsTab({
 		try {
 			const res = await clearComposeMutation.mutateAsync(composeId);
 			const data = res as any;
-			useAppStore.getState().clearDeployments({composeId});
 			toast.success(
 				`Cleared ${data?.cleared_count || 0} compose deployment logs & history`,
 			);
@@ -241,7 +241,6 @@ export function ComposeDeploymentsTab({
 	const handleDeleteSingleComposeDeployment = async (id: number) => {
 		try {
 			await deleteMutation.mutateAsync(id);
-			useAppStore.getState().deleteDeployment(id);
 			toast.success(`Deployment #${id} deleted`);
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));

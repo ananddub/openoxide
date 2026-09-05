@@ -1,8 +1,11 @@
 import * as React from 'react';
-import {useProjectListByOrganization} from '#/api/live';
+import {
+	useProjectCreate,
+	useProjectDelete,
+	useProjectListByOrganization,
+} from '#/api/live';
 import {toast} from 'sonner';
-import {useOrganizationStore} from '#/stores/organization-store';
-import {useAppStore} from '#/stores/app-store';
+import {useOrganizations} from '#/stores/session-context';
 import {formatApiError} from '#/api/utils';
 
 // Helper to extract hashtags (e.g. #prod, #api) from text (strips leading #)
@@ -24,30 +27,15 @@ export function useProjectsList() {
 	const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
 
 	// Get active organization from global layout switcher store
-	const activeOrg = useOrganizationStore(state => state.activeOrg);
+	const {activeOrg} = useOrganizations();
 	const orgId = activeOrg?.id || 1;
 
-	// Zustand Realtime Store Read & Mutators
-	const storeProjects = useAppStore(state => state.projects);
-	const setProjectsStore = useAppStore(state => state.setProjects);
-	const addProjectStore = useAppStore(state => state.addProject);
-	const deleteProjectStore = useAppStore(state => state.deleteProject);
-
-	// Fetch Projects for the active organization (ConnectRPC query with
-	// background refetch liveness)
+	// Live query is the store: the table-watch stream invalidates the
+	// `projects` prefix on table changes, refetching while mounted.
 	const {data: liveProjects, isLoading: isLoadingProjects} =
 		useProjectListByOrganization(BigInt(orgId));
 
-	// Keep Zustand store in sync with query data
-	React.useEffect(() => {
-		if (liveProjects && Array.isArray(liveProjects)) {
-			setProjectsStore(liveProjects as any);
-		}
-	}, [liveProjects, setProjectsStore]);
-
-	// Always prefer query data if available, fallback to Zustand RAM store
-	const rawProjectsList =
-		liveProjects !== undefined ? liveProjects : storeProjects;
+	const rawProjectsList = liveProjects ?? [];
 	const projects = Array.isArray(rawProjectsList) ? rawProjectsList : [];
 
 	// Create Project Mutation
@@ -122,18 +110,12 @@ export function useProjectsList() {
 
 		setIsSubmitting(true);
 		try {
-			const res = await createProjectMutation.mutateAsync({
-				body: {
-					name,
-					description: description || undefined,
-					env_var: envVar,
-					organization_id: orgId,
-				},
+			await createProjectMutation.mutateAsync({
+				name,
+				description: description || undefined,
+				environment_variables: envVar,
+				organization_id: orgId,
 			});
-
-			if (res) {
-				addProjectStore(res as any);
-			}
 
 			toast.success('Project created successfully');
 			setIsCreateOpen(false);
@@ -145,11 +127,8 @@ export function useProjectsList() {
 	};
 
 	const handleDeleteProject = async (id: number) => {
-		deleteProjectStore(id);
 		try {
-			await deleteProjectMutation.mutateAsync({
-				params: {path: {id}},
-			});
+			await deleteProjectMutation.mutateAsync(id);
 			toast.success('Project deleted');
 		} catch (error) {
 			toast.error(formatApiError(error));

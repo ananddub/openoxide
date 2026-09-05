@@ -17,10 +17,11 @@ import {
 	useDatabaseStart,
 	useDatabaseStop,
 	useDatabaseUpdate,
+	useDeploymentItems,
 	parseDatabaseKind,
+	useDatabaseList,
+	useOverviewServices,
 } from '#/api/live';
-
-import {useAppStore} from '#/stores/app-store';
 
 export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const [activeTab, setActiveTab] = useState('General');
@@ -44,9 +45,12 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		stop: stopMutation.mutateAsync,
 	};
 
-	// 0ms Instant Zustand Store Read with fallback to overviewServices
-	const databases = useAppStore(state => state.databases);
-	const overviewServices = useAppStore(state => state.overviewServices);
+	// 0ms Instant live-query reads: org-wide database list keyed
+	// ['databases'] plus the overview services stream keyed
+	// ['overview-services'] — the table-watch stream refetches both while
+	// this page is mounted.
+	const databases = useDatabaseList().data ?? [];
+	const overviewServices = useOverviewServices().data ?? [];
 
 	const storeDb = useMemo(() => {
 		const targetK = (targetKind || '').toLowerCase();
@@ -71,13 +75,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		});
 
 		if (service) {
-			const resolvedKind =
-				service.db_kind ||
-				service.dbKind ||
-				(service.kind && service.kind !== 'database'
-					? service.kind
-					: undefined) ||
-				targetKind;
+			const resolvedKind = service.db_kind || targetKind;
 			return {
 				id: service.id,
 				name: service.name,
@@ -246,6 +244,14 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		'ACTIVE',
 		'OK',
 	].includes(statusUpper);
+	const isBuilding = [
+		'QUEUED',
+		'BUILDING',
+		'STARTING',
+		'PREPARING',
+		'PENDING',
+		'DEPLOYING',
+	].includes(statusUpper);
 
 	// Schedules
 	const {data: rawSchedules, isLoading: isLoadingSchedules} =
@@ -280,7 +286,9 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		activeTab === 'Monitoring',
 	);
 
-	const allDeployments = useAppStore(state => state.deployments || []);
+	// Live deployments query filtered to this database; the table-watch
+	// stream (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
+	const {data: allDeployments = []} = useDeploymentItems();
 	const dbDeployments = useMemo(() => {
 		return allDeployments.filter(
 			(d: any) => String(d.database_id) === String(dbId),
@@ -323,13 +331,10 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 					? 'STARTING'
 					: 'DEPLOYING';
 
-		const kind = (currentKind || targetKind || 'postgres').toLowerCase();
 		setLocalStatusOverride(intermediateStatus);
-		(useAppStore.getState() as any).updateServiceStatus?.(
-			dbId,
-			intermediateStatus,
-			kind,
-		);
+		// Legacy updateServiceStatus store write removed — table-watch
+		// invalidates ['databases'] when the action lands, refetching
+		// fresh status through the live query.
 
 		try {
 			const kind = parseDatabaseKind(
@@ -381,7 +386,9 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	return {
 		database,
 		currentKind,
+		detectedKind,
 		isDeployed,
+		isBuilding,
 		schedules,
 		backups,
 		deployments: dbDeployments,

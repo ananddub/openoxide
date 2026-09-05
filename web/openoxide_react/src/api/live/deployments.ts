@@ -38,6 +38,46 @@ export function useDeploymentList() {
 	);
 }
 
+/**
+ * Live deployment list under the table-watch-managed `deployments` key
+ * prefix (DEPLOYMENTS table → refetch while the page is mounted). The
+ * query cache replaces the former zustand `deployments` slice; payload
+ * shape is the legacy snake_case one (id, application_id/compose_id/
+ * database_id, status, created_at, …) so consumers keep working
+ * unchanged.
+ */
+export type DeploymentItemPayload = {
+	id: number;
+	status: string;
+	application_id?: number | null;
+	compose_id?: number | null;
+	database_id?: number | null;
+	finished_at?: number | null;
+	state?: string;
+	last_state_at?: number | null;
+	error_message?: string | null;
+	log_content?: string | null;
+	title?: string;
+	description?: string | null;
+	created_at?: number | null;
+	[key: string]: unknown;
+};
+
+export function useDeploymentItems() {
+	return useConnectQuery<DeploymentItemPayload[]>(
+		['deployments'],
+		async () => {
+			const response = await deploymentClient.listDeployments({});
+			return response.deployments.map(
+				(deployment) =>
+					JSON.parse(
+						JSON.stringify(toDeploymentPayload(deployment)),
+					) as DeploymentItemPayload,
+			);
+		},
+	);
+}
+
 /** Currently running deployments (legacy live: useDeploymentRunning). */
 export function useDeploymentRunning() {
 	return useConnectQuery<DeploymentPayload[]>(

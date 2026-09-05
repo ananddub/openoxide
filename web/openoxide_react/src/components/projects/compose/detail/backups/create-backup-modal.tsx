@@ -13,7 +13,7 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import {toast} from 'sonner';
-import {useAppStore} from '#/stores/app-store';
+import {useDestinationList} from '#/api/live';
 
 interface CreateBackupModalProps {
 	isOpen: boolean;
@@ -54,7 +54,9 @@ export function CreateBackupModal({
 	const [cronExpr, setCronExpr] = useState('0 2 * * *');
 	const [prefix, setPrefix] = useState('');
 	const [turnOff, setTurnOff] = useState(false);
-	const destinations = useAppStore(state => state.destinations || []);
+	// Live destinations query; the table-watch stream (destinations table)
+	// keeps it fresh.
+	const destinations = useDestinationList().data ?? [];
 	const [destinationId, setDestinationId] = useState('');
 	const [saving, setSaving] = useState(false);
 

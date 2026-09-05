@@ -1,8 +1,11 @@
 import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+import {useOverviewBackups} from './overview';
 // Only BackupOperationsService is served by the backend (BackupService has
 // no controller), so both the database- and volume-backup hooks target the
 // operations variant.
 import {BackupOperationsService} from '#/gen/connect/openoxide/api/v1/backup_operations_pb';
+
+type LiveRow = Record<string, any>;
 
 export type VolumeBackupPayload = {
 	id: bigint;
@@ -123,8 +126,7 @@ export function useDatabaseBackupRun() {
 	);
 }
 
-/**
- * Restore a database backup by id. The backup file rides in the payload
+/** Restore a database backup by id. The backup file rides in the payload
  * (`{backup_file}`).
  */
 export function useDatabaseBackupRestore() {
@@ -134,4 +136,44 @@ export function useDatabaseBackupRestore() {
 			payload: JSON.stringify({backup_file: input.backup_file ?? ''}),
 		}),
 	);
+}
+
+/**
+ * Legacy backup item shape the former zustand `backups` slice carried
+ * (numeric id, `destination` name).
+ */
+export type BackupItemPayload = {
+	id: number;
+	name: string;
+	backup_type?: string;
+	status?: string;
+	destination?: string;
+	created_at: number;
+	[key: string]: unknown;
+};
+
+/**
+ * Organization-wide backups in the legacy item shape (the former zustand
+ * `backups` slice data). Built over useOverviewBackups, whose key prefix
+ * `['overview-backups']` is invalidated by the table-watch BACKUPS/
+ * BACKUP_EXECUTIONS/VOLUME_BACKUPS entries, so rule changes and run
+ * results refetch automatically.
+ */
+export function useBackupItems(organizationId?: bigint) {
+	void organizationId;
+	const query = useOverviewBackups();
+	return {
+		...query,
+		data: query.data?.map(
+			(b): BackupItemPayload => ({
+				...(b as unknown as LiveRow),
+				id: Number(b.id),
+				name: b.name,
+				backup_type: b.backup_type,
+				status: b.status,
+				destination: b.destination,
+				created_at: Number(b.created_at || 0),
+			}),
+		),
+	};
 }
