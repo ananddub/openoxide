@@ -18,15 +18,24 @@ struct DrainContext {
 
 /// Maps a live sqlite3 pointer to its attached handle so idempotent
 /// re-attaches reuse the existing reactor instead of spawning a duplicate.
-static HANDLES: std::sync::LazyLock<std::sync::Mutex<HashMap<usize, Arc<RealtimeHandle>>>> =
+/// Weak refs: when the last pool-side holder drops (connection replaced),
+/// the stale entry disappears automatically.
+static HANDLES: std::sync::LazyLock<std::sync::Mutex<HashMap<usize, std::sync::Weak<RealtimeHandle>>>> =
     std::sync::LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
 
-fn register_handle(ptr: usize, handle: Arc<RealtimeHandle>) {
-    HANDLES.lock().expect("handle registry poisoned").insert(ptr, handle);
+fn register_handle(ptr: usize, handle: &Arc<RealtimeHandle>) {
+    HANDLES
+        .lock()
+        .expect("handle registry poisoned")
+        .insert(ptr, Arc::downgrade(handle));
 }
 
 fn lookup_handle(ptr: usize) -> Option<Arc<RealtimeHandle>> {
-    HANDLES.lock().expect("handle registry poisoned").get(&ptr).cloned()
+    let mut map = HANDLES.lock().expect("handle registry poisoned");
+    // Prune dead entries while we're here so a replaced connection's old
+    // sqlite3 pointer reuse can't collide with a stale weak.
+    map.retain(|_, weak| weak.upgrade().is_some());
+    map.get(&ptr).and_then(|weak| weak.upgrade())
 }
 
 extern "C" fn drain_gateway(
@@ -128,7 +137,7 @@ impl RealtimeHandle {
             bus,
             _reactor_task: reactor_task,
         });
-        register_handle(raw_sqlite_ptr as usize, Arc::clone(&handle));
+        register_handle(raw_sqlite_ptr as usize, &handle);
         Ok(handle)
     }
 
@@ -146,24 +155,15 @@ impl RealtimeHandle {
     /// layers that re-open connections call this from their connect hook so
     /// every physical connection captures changes.
     pub fn attach_if_needed(raw_sqlite_ptr: *mut c_void) -> Result<Arc<Self>, String> {
-        let mut out_fd: c_int = -1;
-        let mut already: c_int = 0;
-        let rc = unsafe {
-            sqlite3_realtime_attach_if_needed(raw_sqlite_ptr, &mut out_fd, &mut already)
-        };
-        if rc != 0 {
-            return Err(format!(
-                "sqlite3_realtime_attach_if_needed failed with code {}",
-                rc
-            ));
+        // A live handle for this exact connection is reused as-is.
+        if let Some(existing) = lookup_handle(raw_sqlite_ptr as usize) {
+            return Ok(existing);
         }
 
-        if already == 1 {
-            return lookup_handle(raw_sqlite_ptr as usize)
-                .ok_or_else(|| "attached connection has no registered handle".to_string());
-        }
+        // Stale C-side context from a replaced connection that reused this
+        // pointer: clean it up before initializing fresh.
+        unsafe { sqlite3_realtime_cleanup(raw_sqlite_ptr) };
 
-        // Fresh attach: create the eventfd-driven handle (reactor included).
         Self::attach(raw_sqlite_ptr)
     }
 

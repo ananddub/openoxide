@@ -147,7 +147,7 @@ async fn test_full_live_join_reactive_stream_with_sqlite_pool() {
     let mut conn = pool.acquire().await.unwrap();
     let mut raw_handle = conn.lock_handle().await.unwrap();
     let raw_ptr = raw_handle.as_raw_handle().as_ptr() as *mut std::ffi::c_void;
-    let handle = RealtimeHandle::attach(raw_ptr).expect("Failed to attach RealtimeHandle");
+    let handle = RealtimeHandle::attach_if_needed(raw_ptr).expect("Failed to attach RealtimeHandle");
     drop(raw_handle);
     drop(conn);
 
@@ -247,7 +247,7 @@ async fn test_burst_write_throughput_and_debounce_efficiency() {
     let mut conn = pool.acquire().await.unwrap();
     let mut raw_handle = conn.lock_handle().await.unwrap();
     let raw_ptr = raw_handle.as_raw_handle().as_ptr() as *mut std::ffi::c_void;
-    let handle = RealtimeHandle::attach(raw_ptr).unwrap();
+    let handle = RealtimeHandle::attach_if_needed(raw_ptr).unwrap();
     drop(raw_handle);
     drop(conn);
 

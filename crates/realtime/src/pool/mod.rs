@@ -30,7 +30,9 @@ pub struct RealtimePool {
 }
 
 impl RealtimePool {
-    /// Initialize a `RealtimePool` by attaching the C realtime CDC engine to the SQLite connection.
+    /// Initialize a `RealtimePool` from a pool whose connections already
+    /// carry the CDC hooks (attached via `after_connect`). Idempotent —
+    /// re-attaching to an already-hooked connection reuses its live handle.
     pub async fn new(pool: SqlitePool) -> Result<Self, String> {
         let mut conn = pool
             .acquire()
@@ -43,7 +45,7 @@ impl RealtimePool {
             .map_err(|e| format!("Failed to lock handle: {}", e))?;
 
         let raw_ptr = raw_handle.as_raw_handle().as_ptr() as *mut std::ffi::c_void;
-        let handle = RealtimeHandle::attach(raw_ptr)?;
+        let handle = RealtimeHandle::attach_if_needed(raw_ptr)?;
         drop(raw_handle);
         drop(conn);
 
