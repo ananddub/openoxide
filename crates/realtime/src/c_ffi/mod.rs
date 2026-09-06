@@ -39,6 +39,11 @@ pub struct TypedChangeEvent<T> {
 
 unsafe extern "C" {
     pub fn sqlite3_realtime_init(db: *mut c_void, p_out_fd: *mut c_int) -> c_int;
+    pub fn sqlite3_realtime_attach_if_needed(
+        db: *mut c_void,
+        p_out_fd: *mut c_int,
+        p_already_attached: *mut c_int,
+    ) -> c_int;
     pub fn sqlite3_realtime_get_fd(db: *mut c_void) -> c_int;
     pub fn sqlite3_realtime_drain(
         db: *mut c_void,

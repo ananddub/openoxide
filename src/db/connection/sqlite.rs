@@ -22,8 +22,22 @@ pub async fn connect(config: Arc<Config>) -> SqlitePool {
     // Single-connection pool: the realtime CDC engine (crates/realtime)
     // attaches its hooks to the physical connection, so every write must
     // flow through the connection it owns. SQLite serializes this fine.
+    // after_connect guarantees a replacement connection (sqlx reconnect)
+    // carries the hooks too — without it the CDC events stop after any
+    // connection replacement.
     let pool = SqlitePoolOptions::new()
         .max_connections(1)
+        .after_connect(|connection, _metadata| {
+            Box::pin(async move {
+                let mut handle = connection.lock_handle().await?;
+                let raw_ptr = handle.as_raw_handle().as_ptr() as *mut std::ffi::c_void;
+                let realtime_handle = sqlite_realtime::RealtimeHandle::attach_if_needed(raw_ptr)
+                    .map_err(|error| sqlx::Error::Configuration(error.into()))?;
+                drop(handle);
+                crate::db::reactive::register_realtime_handle(realtime_handle);
+                Ok(())
+            })
+        })
         .connect_with(options)
         .await
         .expect("Failed to connect to SQLite database");
@@ -52,6 +66,8 @@ pub async fn connect(config: Arc<Config>) -> SqlitePool {
     // Attach the realtime CDC engine to the (single) physical connection
     // and forward its committed events into the DbEventBus so the existing
     // WatchTables pump keeps working alongside live query streams.
+    // NOTE: hooks themselves are attached in after_connect above; this only
+    // wires the event-forwarding bridge for the pool's current handle.
     let realtime_pool = crate::db::reactive::RealtimePool::new(pool.clone())
         .await
         .expect("Failed to attach realtime CDC engine to SQLite connection");

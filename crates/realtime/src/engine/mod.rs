@@ -1,8 +1,11 @@
 use std::ffi::{c_char, c_int, c_void, CStr};
+use std::collections::HashMap;
 use std::os::unix::io::RawFd;
 use std::sync::Arc;
 use tokio::io::unix::AsyncFd;
 use tokio::sync::broadcast;
+
+use crate::c_ffi::sqlite3_realtime_attach_if_needed;
 
 use crate::c_ffi::{
     sqlite3_realtime_cleanup, sqlite3_realtime_drain, sqlite3_realtime_init, RealtimeOp,
@@ -11,6 +14,19 @@ use crate::c_ffi::{
 
 struct DrainContext {
     events: Vec<RealtimeRawEvent>,
+}
+
+/// Maps a live sqlite3 pointer to its attached handle so idempotent
+/// re-attaches reuse the existing reactor instead of spawning a duplicate.
+static HANDLES: std::sync::LazyLock<std::sync::Mutex<HashMap<usize, Arc<RealtimeHandle>>>> =
+    std::sync::LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
+
+fn register_handle(ptr: usize, handle: Arc<RealtimeHandle>) {
+    HANDLES.lock().expect("handle registry poisoned").insert(ptr, handle);
+}
+
+fn lookup_handle(ptr: usize) -> Option<Arc<RealtimeHandle>> {
+    HANDLES.lock().expect("handle registry poisoned").get(&ptr).cloned()
 }
 
 extern "C" fn drain_gateway(
@@ -106,12 +122,14 @@ impl RealtimeHandle {
             }
         });
 
-        Ok(Arc::new(Self {
+        let handle = Arc::new(Self {
             db_handle: raw_sqlite_ptr,
             event_fd,
             bus,
             _reactor_task: reactor_task,
-        }))
+        });
+        register_handle(raw_sqlite_ptr as usize, Arc::clone(&handle));
+        Ok(handle)
     }
 
     pub fn get_fd(&self) -> RawFd {
@@ -120,6 +138,33 @@ impl RealtimeHandle {
 
     pub fn subscribe(&self) -> broadcast::Receiver<RealtimeRawEvent> {
         self.bus.subscribe()
+    }
+
+    /// Idempotent attach for pooled connections: attaches the CDC hooks if
+    /// the connection doesn't carry them yet and returns a live handle —
+    /// existing for an already-attached connection, fresh otherwise. Pool
+    /// layers that re-open connections call this from their connect hook so
+    /// every physical connection captures changes.
+    pub fn attach_if_needed(raw_sqlite_ptr: *mut c_void) -> Result<Arc<Self>, String> {
+        let mut out_fd: c_int = -1;
+        let mut already: c_int = 0;
+        let rc = unsafe {
+            sqlite3_realtime_attach_if_needed(raw_sqlite_ptr, &mut out_fd, &mut already)
+        };
+        if rc != 0 {
+            return Err(format!(
+                "sqlite3_realtime_attach_if_needed failed with code {}",
+                rc
+            ));
+        }
+
+        if already == 1 {
+            return lookup_handle(raw_sqlite_ptr as usize)
+                .ok_or_else(|| "attached connection has no registered handle".to_string());
+        }
+
+        // Fresh attach: create the eventfd-driven handle (reactor included).
+        Self::attach(raw_sqlite_ptr)
     }
 
     /// Return the raw `sqlite3*` handle as a `usize` for safe cross-thread transfer.

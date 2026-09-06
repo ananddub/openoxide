@@ -64,6 +64,15 @@ int sqlite3_realtime_drain(
 int sqlite3_realtime_cleanup(sqlite3 *db);
 
 /*
+** Idempotent attach: returns SQLITE_OK with *pAlreadyAttached set to 1 when
+** realtime is already attached to this connection; otherwise behaves exactly
+** like sqlite3_realtime_init (and sets *pAlreadyAttached to 0). Used by pool
+** layers that re-open connections — every pooled connection must carry the
+** change hooks.
+*/
+int sqlite3_realtime_attach_if_needed(sqlite3 *db, int *pOutEventFd, int *pAlreadyAttached);
+
+/*
 ** Query dependency analyzer callback signature.
 ** Called once for each table discovered in the query plan.
 */

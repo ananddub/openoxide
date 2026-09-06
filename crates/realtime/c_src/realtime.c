@@ -380,6 +380,28 @@ int sqlite3_realtime_get_fd(sqlite3 *db){
 ** Drain and process all committed change events.
 ** Returns the number of events processed.
 */
+int sqlite3_realtime_attach_if_needed(sqlite3 *db, int *pOutEventFd, int *pAlreadyAttached){
+  RealtimeContext *pExisting;
+
+  if( !db || !pOutEventFd || !pAlreadyAttached ) return SQLITE_MISUSE;
+
+  *pAlreadyAttached = 0;
+
+  pthread_mutex_lock(&g_registryLock);
+  pExisting = realtime_find_ctx(db);
+  pthread_mutex_unlock(&g_registryLock);
+
+  if( pExisting ){
+    /* Already carrying hooks — report the existing eventfd and do nothing.
+    ** Re-running init would hit the double-init guard (SQLITE_MISUSE). */
+    *pAlreadyAttached = 1;
+    *pOutEventFd = pExisting->eventFd;
+    return SQLITE_OK;
+  }
+
+  return sqlite3_realtime_init(db, pOutEventFd);
+}
+
 int sqlite3_realtime_drain(
   sqlite3 *db,
   sqlite3_realtime_callback xCallback,

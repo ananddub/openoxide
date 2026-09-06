@@ -35,38 +35,60 @@ impl CdcBridge {
     }
 
     async fn forward(&self, event: sqlite_realtime::RealtimeRawEvent) {
-        let operation = match event.op {
-            RealtimeOp::Insert => DbChangeOperation::Insert,
-            RealtimeOp::Update => DbChangeOperation::Update,
-            RealtimeOp::Delete => DbChangeOperation::Delete,
-            RealtimeOp::Unknown => DbChangeOperation::Unknown,
-        };
-        let organization_id = match operation {
-            DbChangeOperation::Delete | DbChangeOperation::Unknown => None,
-            _ => self.lookup_organization_id(&event.table, event.rowid).await,
-        };
-        event_bus().publish(vec![DbChangeEvent {
-            table: event.table,
-            organization_id,
-            old_row_id: (operation == DbChangeOperation::Delete).then_some(event.rowid),
-            new_row_id: (operation != DbChangeOperation::Delete).then_some(event.rowid),
-            operation,
-        }]);
+        forward_event_with_pool(&self.pool, event).await;
     }
 
     async fn lookup_organization_id(&self, table: &str, rowid: i64) -> Option<i64> {
-        let sql = sqlx::AssertSqlSafe(format!(
-            "SELECT organization_id FROM \"{table}\" WHERE rowid = {rowid}"
-        ));
-        match sqlx::query_scalar::<_, i64>(sql)
-            .fetch_optional(&self.pool)
-            .await
-        {
-            Ok(value) => value,
-            Err(error) => {
-                tracing::debug!(table, rowid, error = %error, "org lookup failed for cdc event");
-                None
-            }
+        lookup_organization_id(&self.pool, table, rowid).await
+    }
+}
+
+/// Standalone forwarder used by replacement pooled connections (sqlx
+/// reconnect) — same event mapping as the startup bridge.
+pub(super) async fn forward_event(event: sqlite_realtime::RealtimeRawEvent) {
+    let pool = event_bus_pool().await;
+    forward_event_with_pool(&pool, event).await;
+}
+
+async fn forward_event_with_pool(pool: &sqlx::SqlitePool, event: sqlite_realtime::RealtimeRawEvent) {
+    let operation = match event.op {
+        RealtimeOp::Insert => DbChangeOperation::Insert,
+        RealtimeOp::Update => DbChangeOperation::Update,
+        RealtimeOp::Delete => DbChangeOperation::Delete,
+        RealtimeOp::Unknown => DbChangeOperation::Unknown,
+    };
+    let organization_id = match operation {
+        DbChangeOperation::Delete | DbChangeOperation::Unknown => None,
+        _ => lookup_organization_id(pool, &event.table, event.rowid).await,
+    };
+    event_bus().publish(vec![DbChangeEvent {
+        table: event.table,
+        organization_id,
+        old_row_id: (operation == DbChangeOperation::Delete).then_some(event.rowid),
+        new_row_id: (operation != DbChangeOperation::Delete).then_some(event.rowid),
+        operation,
+    }]);
+}
+
+async fn lookup_organization_id(pool: &sqlx::SqlitePool, table: &str, rowid: i64) -> Option<i64> {
+    let sql = sqlx::AssertSqlSafe(format!(
+        "SELECT organization_id FROM \"{table}\" WHERE rowid = {rowid}"
+    ));
+    match sqlx::query_scalar::<_, i64>(sql)
+        .fetch_optional(pool)
+        .await
+    {
+        Ok(value) => value,
+        Err(error) => {
+            tracing::debug!(table, rowid, error = %error, "org lookup failed for cdc event");
+            None
         }
     }
+}
+
+/// The startup bridge holds its own pool clone; replacement-connection
+/// forwarders resolve the global pool lazily (it's set by then — a
+/// replacement connection only exists after startup).
+async fn event_bus_pool() -> sqlx::SqlitePool {
+    super::realtime().inner().clone()
 }
