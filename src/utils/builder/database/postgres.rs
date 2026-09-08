@@ -59,11 +59,16 @@ pub async fn build_postgres_stack(
             }
         }
     }
-    let advanced: BTreeMap<String, String> =
+    // postgres_config is an optional map of `-c key=value` server settings;
+    // an empty value means "no advanced config" (STANDALONE defaults).
+    let advanced: BTreeMap<String, String> = if postgres_config.trim().is_empty() {
+        BTreeMap::new()
+    } else {
         serde_json::from_str(&postgres_config).map_err(|error| ExecError::CommandFailed {
             code: None,
             stderr: format!("Invalid PostgreSQL advanced config: {error}"),
-        })?;
+        })?
+    };
     if !advanced.is_empty() || replication_role != "STANDALONE" {
         let full = command.get_or_insert_with(|| vec!["postgres".into()]);
         for (key, value) in advanced {
