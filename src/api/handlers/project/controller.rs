@@ -120,10 +120,12 @@ impl ProjectService for ProjectController {
         ctx: RequestContext,
         request: ServiceRequest<'_, CreateProjectRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ProjectProto> + Send + use<'a>> {
-        let org_id = request.organization_id;
+        let org_id = auth.organization_id;
+        let mut input = request.to_owned_message();
+        input.organization_id = org_id;
         let project = self
             .service
-            .create(request.to_owned_message())
+            .create(input)
             .await
             .map_err(map_db_error)?;
         self.cache.invalidate(&CacheKey::ProjectsList(org_id)).await;

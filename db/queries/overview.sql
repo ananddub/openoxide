@@ -25,7 +25,7 @@ JOIN projects p ON e.project_id = p.id
 LEFT JOIN servers sv ON s.server_id = sv.id
 LEFT JOIN service_database d ON d.service_id = s.id
 WHERE p.organization_id = ?
-  AND NOT (s.service_type = 'DATABASE' AND d.db_type = 'LIBSQL')
+  AND NOT (s.service_type = 'DATABASE' AND COALESCE(d.db_type, '') = 'LIBSQL')
 ORDER BY
     CASE s.service_type
         WHEN 'APPLICATION' THEN 0
