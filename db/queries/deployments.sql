@@ -97,8 +97,8 @@ SELECT id AS id, server_id AS server_id, pid AS pid
 -- name: DeploymentsCreateRunningDeployment :exec
 INSERT INTO deployments
                (title, description, status, state, log_path, operation, service_id,
-                server_id, started_at, last_state_at)
-               VALUES (?, ?, 'RUNNING', 'RUNNING', '', ?, ?, ?, ?, unixepoch());
+                server_id, is_preview_deployment, started_at, last_state_at)
+               VALUES (?, ?, 'RUNNING', 'RUNNING', '', ?, ?, ?, ?, 0, unixepoch());
 
 -- name: DeploymentsGetAll :many
 SELECT id AS id, title AS title, description AS description, status AS status, state AS state, log_path AS log_path, pid AS pid, error_message AS error_message, operation AS operation, is_preview_deployment AS is_preview_deployment, started_at AS started_at, last_state_at AS last_state_at, finished_at AS finished_at, service_id AS service_id, server_id AS server_id, created_at AS created_at, database_kind AS database_kind FROM deployments;
@@ -150,8 +150,8 @@ DELETE FROM deployments WHERE status NOT IN ('QUEUED', 'RUNNING');
 UPDATE deployments SET status = 'CANCELLED', state = 'CANCELLED', finished_at = unixepoch(), last_state_at = unixepoch() WHERE service_id = ? AND status = 'QUEUED';
 
 -- name: DeploymentsCreateQueuedDeployment :exec
-INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, last_state_at)
-               VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, unixepoch());
+INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, last_state_at)
+               VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, unixepoch());
 
 -- name: DeploymentsUpdateLogPath :exec
 UPDATE deployments SET log_path = ? WHERE id = ?;
@@ -233,8 +233,8 @@ UPDATE deployments SET status = 'CANCELLING', state = 'CANCEL_REQUESTED', last_s
 SELECT EXISTS(SELECT 1 FROM deployments WHERE service_id = ? AND status IN ('QUEUED', 'RUNNING')) AS exists_val;
 
 -- name: DeploymentsCreateQueuedComposeDeployment :exec
-INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, last_state_at)
-               VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, unixepoch());
+INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, last_state_at)
+               VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, unixepoch());
 
 -- name: DeploymentsHasRunningStatusComposeDeployment :one
 SELECT EXISTS(SELECT 1 FROM deployments WHERE service_id = ? AND status = 'RUNNING') AS exists_val;
@@ -246,8 +246,8 @@ UPDATE deployments SET state = 'CANCEL_REQUESTED', last_state_at = unixepoch() W
 SELECT EXISTS(SELECT 1 FROM deployments WHERE service_id = ? AND status IN ('QUEUED', 'RUNNING')) AS exists_val;
 
 -- name: DeploymentsCreateQueuedDatabaseDeployment :exec
-INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, database_kind, server_id, last_state_at)
-               VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, ?, unixepoch());
+INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, database_kind, server_id, is_preview_deployment, last_state_at)
+               VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, ?, 0, unixepoch());
 
 -- name: DeploymentsGetCancelInfo :one
 SELECT service_id, status FROM deployments WHERE id = ?;
@@ -392,11 +392,11 @@ SELECT service_type FROM services WHERE id = ?;
 -- returns the id. Split With/NoServer keeps a NULL server_id insertable.
 
 -- name: AppCoreQueueDeploymentWithServer :one
-INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, last_state_at)
-VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, unixepoch())
+INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, last_state_at)
+VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, unixepoch())
 RETURNING id;
 
 -- name: AppCoreQueueDeploymentNoServer :one
-INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, last_state_at)
-VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, unixepoch())
+INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, is_preview_deployment, last_state_at)
+VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, 0, unixepoch())
 RETURNING id;

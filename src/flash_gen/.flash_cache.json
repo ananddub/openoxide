@@ -12,10 +12,10 @@
     "db/queries/backups.sql": "7c7ab239d6759933ebe27162095b100c2393369e78c3973e7efc35c919cadc26",
     "db/queries/certificate_renewals.sql": "d27a565dc829456d6e8a0343b5fec7df1f5ab97a9d93bce9a76c4b6b4d0f3a6c",
     "db/queries/certificates.sql": "25f5e05b250209e43b7e3defcb75d8ce9b4e05594c53e2dcdb3548704f429192",
-    "db/queries/compose_extra.sql": "5de5e998a82522d7ce99e6696383f9b6d8c9a69d91b0e99978114ee490f791b7",
-    "db/queries/database_extra.sql": "d96521872275bc06b5355cb5cb56e90c0e676a1fccb86c9014364d225ae8d656",
+    "db/queries/compose_extra.sql": "9e769451fad7a3d031317af5aeffa5ca5669c9143b5cde6b179b014685cf5b7a",
+    "db/queries/database_extra.sql": "415a435e3bce1fc87a82edf1155229b010e40b8d6c12ad9bccdc1d1b0eee0cbe",
     "db/queries/database_networks.sql": "d8a91042e75660999ec81a7398a238fde65d86fd364a52ff1379da37f59dfec9",
-    "db/queries/deployments.sql": "09074e345032ddadeae704ee164b3d1af7287a442f02dbb4ac716a65e400171d",
+    "db/queries/deployments.sql": "0c579b1ed107ca24ccd3f97a437f4e78da481509b4654c2dcc17b892099c58ca",
     "db/queries/destinations.sql": "87ac3b840ddd6deb9a477f02958bd946992b60c8a8e651ec6560df92ca22d5d3",
     "db/queries/dns_providers.sql": "a31ae08bd823da7847c37534883f581ab69265f2d05a1d78f1f4569458553d30",
     "db/queries/domains.sql": "a248579f31aef9c350fb027743046cca81b2fe6f2dd101c81b18d59c9e80695f",
@@ -132,9 +132,9 @@
       "database_networks"
     ],
     "db/queries/deployments.sql": [
-      "preview_deployments",
       "deployments",
-      "services"
+      "services",
+      "preview_deployments"
     ],
     "db/queries/destinations.sql": [
       "destinations"
@@ -375,6 +375,6 @@
     ]
   },
   "generated_file_checksums": {},
-  "last_generation": "2026-09-08T11:37:54.30602013+05:30",
+  "last_generation": "2026-09-08T12:05:38.341635554+05:30",
   "OutDir": "src/flash_gen"
 }

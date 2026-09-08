@@ -70,7 +70,7 @@ pub struct DeploymentsCreateRunningDeploymentParams {
     pub operation: String,
     pub service_id: i64,
     pub server_id: i64,
-    pub started_at: i64,
+    pub is_preview_deployment: i64,
 }
 
 pub struct DeploymentsCreateParams {
@@ -404,14 +404,14 @@ impl Queries {
         params: &DeploymentsCreateRunningDeploymentParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, started_at, last_state_at) VALUES (?, ?, 'RUNNING', 'RUNNING', '', ?, ?, ?, ?, unixepoch());"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, started_at, last_state_at) VALUES (?, ?, 'RUNNING', 'RUNNING', '', ?, ?, ?, ?, 0, unixepoch());"
         )
         .bind(&params.title)
         .bind(&params.description)
         .bind(&params.operation)
         .bind(&params.service_id)
         .bind(&params.server_id)
-        .bind(&params.started_at)
+        .bind(&params.is_preview_deployment)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -638,7 +638,7 @@ impl Queries {
         params: &DeploymentsCreateQueuedDeploymentParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, unixepoch());"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, unixepoch());"
         )
         .bind(&params.title)
         .bind(&params.description)
@@ -897,7 +897,7 @@ impl Queries {
         params: &DeploymentsCreateQueuedComposeDeploymentParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, unixepoch());"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, unixepoch());"
         )
         .bind(&params.title)
         .bind(&params.description)
@@ -956,7 +956,7 @@ impl Queries {
         params: &DeploymentsCreateQueuedDatabaseDeploymentParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, database_kind, server_id, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, ?, unixepoch());"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, database_kind, server_id, is_preview_deployment, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, ?, 0, unixepoch());"
         )
         .bind(&params.title)
         .bind(&params.description)
@@ -1318,7 +1318,7 @@ impl Queries {
         params: &AppCoreQueueDeploymentWithServerParams,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, unixepoch()) RETURNING id;"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, unixepoch()) RETURNING id;"
         )
         .bind(&params.title)
         .bind(&params.description)
@@ -1336,7 +1336,7 @@ impl Queries {
         params: &AppCoreQueueDeploymentNoServerParams,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, unixepoch()) RETURNING id;"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, is_preview_deployment, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, 0, unixepoch()) RETURNING id;"
         )
         .bind(&params.title)
         .bind(&params.description)

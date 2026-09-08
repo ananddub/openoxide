@@ -87,7 +87,7 @@ impl Queries {
         params: &ComposeQueueDeploymentWithServerParams,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, unixepoch()) RETURNING id;"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, unixepoch()) RETURNING id;"
         )
         .bind(&params.title)
         .bind(&params.description)
@@ -105,7 +105,7 @@ impl Queries {
         params: &ComposeQueueDeploymentNoServerParams,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, unixepoch()) RETURNING id;"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, is_preview_deployment, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, 0, unixepoch()) RETURNING id;"
         )
         .bind(&params.title)
         .bind(&params.description)

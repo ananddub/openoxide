@@ -41,8 +41,8 @@ VALUES (?, ?, ?, ?, ?, ?)
 RETURNING service_id;
 
 -- name: DbCreateQueuedDatabaseDeploymentGlobal :one
-INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, database_kind, server_id, last_state_at)
-VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, NULL, unixepoch())
+INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, database_kind, server_id, is_preview_deployment, last_state_at)
+VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, NULL, 0, unixepoch())
 RETURNING id;
 
 -- name: DbCreateQueuedDatabaseDeploymentForServer :one
