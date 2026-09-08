@@ -46,8 +46,8 @@ VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, NULL, unixepoch())
 RETURNING id;
 
 -- name: DbCreateQueuedDatabaseDeploymentForServer :one
-INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, database_kind, server_id, last_state_at)
-VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, ?, unixepoch())
+INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, database_kind, server_id, is_preview_deployment, last_state_at)
+VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, ?, 0, unixepoch())
 RETURNING id;
 
 -- Per-column patch updates (old repositories used COALESCE per column;

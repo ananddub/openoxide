@@ -13,7 +13,7 @@
     "db/queries/certificate_renewals.sql": "d27a565dc829456d6e8a0343b5fec7df1f5ab97a9d93bce9a76c4b6b4d0f3a6c",
     "db/queries/certificates.sql": "25f5e05b250209e43b7e3defcb75d8ce9b4e05594c53e2dcdb3548704f429192",
     "db/queries/compose_extra.sql": "5de5e998a82522d7ce99e6696383f9b6d8c9a69d91b0e99978114ee490f791b7",
-    "db/queries/database_extra.sql": "d9a6433a06338b3607f37a021ef0442611b3dd00790a9549252bd5aaced506eb",
+    "db/queries/database_extra.sql": "d96521872275bc06b5355cb5cb56e90c0e676a1fccb86c9014364d225ae8d656",
     "db/queries/database_networks.sql": "d8a91042e75660999ec81a7398a238fde65d86fd364a52ff1379da37f59dfec9",
     "db/queries/deployments.sql": "09074e345032ddadeae704ee164b3d1af7287a442f02dbb4ac716a65e400171d",
     "db/queries/destinations.sql": "87ac3b840ddd6deb9a477f02958bd946992b60c8a8e651ec6560df92ca22d5d3",
@@ -375,6 +375,6 @@
     ]
   },
   "generated_file_checksums": {},
-  "last_generation": "2026-09-08T10:26:56.278591415+05:30",
+  "last_generation": "2026-09-08T11:37:54.30602013+05:30",
   "OutDir": "src/flash_gen"
 }
