@@ -16,10 +16,10 @@ UPDATE jwt_tokens SET jti = ?, role = ?, user_id = ?, is_blacklist = ?, blacklis
 DELETE FROM jwt_tokens WHERE id = ?;
 
 -- name: JwtTokensBlacklistByJti :exec
-UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = CURRENT_TIMESTAMP WHERE jti = ?;
+UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = strftime('%s','now') WHERE jti = ?;
 
 -- name: JwtTokensBlacklistAllByUser :exec
-UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = CURRENT_TIMESTAMP WHERE user_id = ? AND is_blacklist = 0;
+UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = strftime('%s','now') WHERE user_id = ? AND is_blacklist = 0;
 
 -- name: JwtTokensInsertToken :exec
 INSERT INTO jwt_tokens (jti, role, user_id, is_blacklist, expired_at, session_id, token_kind) VALUES (?, ?, ?, 0, ?, ?, ?);
@@ -39,7 +39,7 @@ SELECT session_id AS session_id,
                LIMIT 100;
 
 -- name: JwtTokensRevokeSession :exec
-UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = CURRENT_TIMESTAMP WHERE user_id = ? AND session_id = ? AND is_blacklist = 0;
+UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = strftime('%s','now') WHERE user_id = ? AND session_id = ? AND is_blacklist = 0;
 
 -- name: JwtTokensIsTokenActive :one
 SELECT EXISTS(SELECT 1 FROM jwt_tokens WHERE jti = ? AND COALESCE(is_blacklist, 0) = 0 AND expired_at > strftime('%s','now'));

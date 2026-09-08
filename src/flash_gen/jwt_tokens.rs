@@ -149,7 +149,7 @@ impl Queries {
         jti: &str,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = CURRENT_TIMESTAMP WHERE jti = ?;"
+            "UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = strftime('%s','now') WHERE jti = ?;"
         )
         .bind(jti)
         .execute(&self.pool)
@@ -163,7 +163,7 @@ impl Queries {
         user_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = CURRENT_TIMESTAMP WHERE user_id = ? AND is_blacklist = 0;"
+            "UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = strftime('%s','now') WHERE user_id = ? AND is_blacklist = 0;"
         )
         .bind(user_id)
         .execute(&self.pool)
@@ -223,7 +223,7 @@ impl Queries {
         session_id: &str,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = CURRENT_TIMESTAMP WHERE user_id = ? AND session_id = ? AND is_blacklist = 0;"
+            "UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = strftime('%s','now') WHERE user_id = ? AND session_id = ? AND is_blacklist = 0;"
         )
         .bind(user_id)
         .bind(session_id)

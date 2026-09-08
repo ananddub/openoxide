@@ -26,7 +26,7 @@
     "db/queries/group_policy.sql": "38ad1258e3246a48ef25ccb64480eac4c145547b1e1335851709e52f4e951dd0",
     "db/queries/groups.sql": "742efa308c444186d1306c943aa1a7aec322561202d4c2b15956082870f656a2",
     "db/queries/health_report.sql": "64ffe643957ceb404a7a22910230e6f81ba891e1e6c0ca1b192bf72a246b67c3",
-    "db/queries/jwt_tokens.sql": "d57c1eeb8d7761b55d01f464e222585828a3801902400c0f271fd4567d9d463a",
+    "db/queries/jwt_tokens.sql": "b2f194d83a051e588e3b744f86d5d94bf4364b298bb7eba45f2dfb292907ee9f",
     "db/queries/misc_services_extra.sql": "b7ac77e2e421268c9a293579ac8acd4b067295f56fe45448d56dabe9d6925ed7",
     "db/queries/monitoring_agents.sql": "e77122a5e647c7d3683563bd4f3cdfb610d584a2cc333b5c0f5fc36256529a1d",
     "db/queries/monitoring_lifecycle.sql": "1d0202089361f24139c27c910f12c61240bafd7c3a7470c5dd02baf08ea9a2e8",
@@ -375,6 +375,6 @@
     ]
   },
   "generated_file_checksums": {},
-  "last_generation": "2026-09-05T17:41:17.35282559+05:30",
+  "last_generation": "2026-09-08T10:26:56.278591415+05:30",
   "OutDir": "src/flash_gen"
 }
