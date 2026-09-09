@@ -24,8 +24,9 @@ pub async fn handle(
                 .trim_start_matches("/deployments/")
                 .trim_end_matches("/logs");
             // `docker/...` routes to the live docker-logs handler, not a
-            // deployment-id log file.
-            if id == "docker" {
+            // deployment-id log file (the rest of the path is
+            // `service/<name>/logs`).
+            if id == "docker" || id.starts_with("docker/") {
                 docker_service_logs(p, query).await
             } else {
                 deployment_log_file(id).await
