@@ -23,12 +23,13 @@ pub async fn handle(
             let id = p
                 .trim_start_matches("/deployments/")
                 .trim_end_matches("/logs");
-            deployment_log_file(id).await
-        }
-        (m, p)
-            if *m == Method::GET && p.starts_with("/deployments/docker/service/") =>
-        {
-            docker_service_logs(p, query).await
+            // `docker/...` routes to the live docker-logs handler, not a
+            // deployment-id log file.
+            if id == "docker" {
+                docker_service_logs(p, query).await
+            } else {
+                deployment_log_file(id).await
+            }
         }
         _ => Response::builder()
             .status(404)
