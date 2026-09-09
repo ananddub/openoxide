@@ -27,23 +27,16 @@ pub fn realtime() -> &'static sqlite_realtime::RealtimePool {
         .expect("realtime pool accessed before database startup")
 }
 
-/// Registers a CDC handle for a (possibly replacement) pooled connection and
-/// starts forwarding its committed events into the event bus. Called from
-/// the pool's `after_connect` for every physical connection, so a sqlx
-/// reconnect re-arms realtime capture instead of silently dropping it.
+/// Registers a CDC handle for a (possibly replacement) pooled connection.
+/// Spawns the event-forwarding task for THIS handle (deduped via the
+/// handle's internal OnceLock), so a sqlx reconnect re-arms realtime
+/// capture instead of silently dropping it. The previous handle — if any —
+/// drops here, which aborts its reactor, releases its hooks and closes its
+/// forwarder.
 pub fn register_realtime_handle(handle: std::sync::Arc<sqlite_realtime::RealtimeHandle>) {
-    static REGISTERED: OnceLock<()> = OnceLock::new();
-    // The first connection's bridge is wired by connect(); skip re-spawning
-    // for the same connection — attach_if_needed hands back the same handle.
-    if REGISTERED.set(()).is_err() {
-        // A replacement connection: spawn a fresh forwarder for its handle.
-        tokio::spawn(async move {
-            let mut events = handle.subscribe();
-            while let Ok(event) = events.recv().await {
-                cdc_bridge::forward_event(event).await;
-            }
-        });
-    }
+    handle.spawn_event_forwarder(|event| async move {
+        cdc_bridge::forward_event(event).await;
+    });
 }
 
 /// Re-discovers which tables carry an `organization_id` column.

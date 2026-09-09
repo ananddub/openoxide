@@ -75,12 +75,49 @@ pub struct RealtimeHandle {
     event_fd: RawFd,
     bus: broadcast::Sender<RealtimeRawEvent>,
     _reactor_task: tokio::task::JoinHandle<()>,
+    /// Ensures the event-forwarding task spawns at most once per handle.
+    forwarder_started: std::sync::OnceLock<()>,
+}
+
+impl Drop for RealtimeHandle {
+    fn drop(&mut self) {
+        // Stop the reactor first so it can't touch the C context while we
+        // tear it down, then release the hooks and the eventfd.
+        self._reactor_task.abort();
+        unsafe { sqlite3_realtime_cleanup(self.db_handle) };
+    }
 }
 
 unsafe impl Send for RealtimeHandle {}
 unsafe impl Sync for RealtimeHandle {}
 
 impl RealtimeHandle {
+    /// Spawns (at most once per handle) a task that forwards every drained
+    /// event to `on_event`. The forwarder exits when this handle is dropped
+    /// (its broadcast channel closes).
+    pub fn spawn_event_forwarder<F, Fut>(&self, on_event: F)
+    where
+        F: Fn(RealtimeRawEvent) -> Fut + Send + 'static,
+        Fut: std::future::Future<Output = ()> + Send + 'static,
+    {
+        if self.forwarder_started.set(()).is_err() {
+            return;
+        }
+        let mut rx = self.bus.subscribe();
+        tokio::spawn(async move {
+            loop {
+                match rx.recv().await {
+                    Ok(event) => on_event(event).await,
+                    Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                        tracing::warn!(missed = n, "realtime event forwarder lagged");
+                        continue;
+                    }
+                }
+            }
+        });
+    }
+
     /// Attach the realtime C engine to an active SQLite raw handle (*mut sqlite3)
     pub fn attach(raw_sqlite_ptr: *mut c_void) -> Result<Arc<Self>, String> {
         let mut out_fd: c_int = -1;
@@ -208,6 +245,7 @@ impl RealtimeHandle {
             event_fd,
             bus,
             _reactor_task: reactor_task,
+            forwarder_started: std::sync::OnceLock::new(),
         });
         register_handle(raw_sqlite_ptr as usize, &handle);
         Ok(handle)
@@ -248,13 +286,5 @@ impl RealtimeHandle {
     /// owns the underlying SQLite connection (i.e. inside `analyze_query_tables`).
     pub fn db_ptr(&self) -> usize {
         self.db_handle as usize
-    }
-}
-
-impl Drop for RealtimeHandle {
-    fn drop(&mut self) {
-        unsafe {
-            sqlite3_realtime_cleanup(self.db_handle);
-        }
     }
 }
