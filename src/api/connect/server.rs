@@ -149,6 +149,11 @@ async fn dispatch(
         outcome
             .map(|response| response.map(box_connect_body))
             .unwrap_or_else(|error| match error {})
+    } else if uri.path().starts_with("/api/") {
+        // Legacy REST surface (deployment log files, docker service logs) —
+        // plain-text endpoints that predate the Connect migration and don't
+        // fit its protocol.
+        return crate::api::rest::handle(&method, uri.path(), uri.query(), request.into_body()).await;
     } else {
         dashboard::serve_spa(&method, uri.path())
     };
