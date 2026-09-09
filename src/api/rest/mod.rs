@@ -40,7 +40,9 @@ pub async fn handle(
     }
 }
 
-/// GET /api/deployments/:id/logs — serves the deployment's log file.
+/// GET /api/deployments/:id/logs — serves the deployment's log file in
+/// SSE line framing (`data: <line>\n\n`), matching what the log viewers
+/// parse client-side.
 async fn deployment_log_file(id: &str) -> ResponseB {
     if !id.chars().all(|c| c.is_ascii_digit()) || id.is_empty() {
         return text_response(400, "{\"code\":\"invalid_argument\",\"message\":\"invalid deployment id\"}");
@@ -49,7 +51,13 @@ async fn deployment_log_file(id: &str) -> ResponseB {
     let path = crate::utils::paths::openoxide_paths()
         .deployment_log_file(id.parse::<i64>().unwrap_or(0));
     match tokio::fs::read_to_string(&path).await {
-        Ok(content) => text_response(200, &content),
+        Ok(content) => {
+            let sse: String = content
+                .lines()
+                .map(|line| format!("data: {line}\n\n"))
+                .collect();
+            text_response(200, &sse)
+        }
         Err(_) => text_response(
             404,
             "{\"code\":\"not_found\",\"message\":\"Log file not found\"}",
