@@ -17,9 +17,7 @@ import {
  * Server data lives in the TanStack Query cache — this context holds only
  * the two pieces of state that are genuinely session-scoped.
  *
- * Consumers use the `useAuthSession` / `useOrganizations` hooks; both
- * return the same shapes the old zustand stores exposed, so migration is
- * import-only.
+ * Consumers use the `useAuthSession` / `useOrganizations` hooks.
  */
 
 type AuthState = {

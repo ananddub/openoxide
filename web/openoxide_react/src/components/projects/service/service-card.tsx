@@ -462,7 +462,7 @@ export function ServiceCard({
 							{status?.toLowerCase() || 'idle'}
 						</span>
 						<span className="font-mono text-[10px] text-muted-foreground/70">
-							{new Date(createdAt * 1000).toLocaleDateString(undefined, {
+							{new Date(Number(createdAt) * 1000).toLocaleDateString(undefined, {
 								day: '2-digit',
 								month: 'short',
 							})}

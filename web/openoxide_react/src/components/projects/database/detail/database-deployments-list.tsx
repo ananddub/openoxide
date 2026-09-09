@@ -59,7 +59,7 @@ export function DatabaseDeploymentsList({
 								<span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
 									<Clock className="h-3 w-3" />
 									{e.created_at
-										? new Date(e.created_at * 1000).toLocaleDateString()
+										? new Date(Number(e.created_at) * 1000).toLocaleDateString()
 										: 'Just now'}
 								</span>
 

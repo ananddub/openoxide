@@ -7,6 +7,7 @@ import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
 import {createServiceClient} from '#/api/live/query';
 import {RootPending} from '#/components/pending';
 import {SessionProvider, setPendingUser, getSessionActions} from '#/stores/session-context';
+import {refreshAccessToken} from '#/api/client';
 import {TooltipProvider} from '#/components/ui/tooltip';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {Toaster} from '#/components/ui/sonner';
@@ -45,6 +46,26 @@ export const Route = createRootRoute({
 			// keep the stored session and let the interceptor attempt a
 			// refresh on the next authenticated call.
 			console.error('Failed to authenticate session:', error);
+		// The refresh endpoint is public, so silently rotate the token
+		// and retry once — a page reload must not kick the user to login
+		// just because 15 minutes passed since the last token mint.
+		try {
+			const newToken = await refreshAccessToken();
+			if (!newToken) return;
+			const retryUser = await authClient.whoAmI({});
+			if (retryUser) {
+				const mapped = {
+					id: Number(retryUser.id),
+					email: retryUser.email || '',
+					firstName: retryUser.firstName,
+					lastName: retryUser.lastName,
+				};
+				if (live) live.setAuth(mapped);
+				else setPendingUser(mapped);
+			}
+		} catch (retryError) {
+			console.error('Session refresh failed:', retryError);
+		}
 		}
 	},
 	component: RootComponent,
@@ -52,7 +73,14 @@ export const Route = createRootRoute({
 	errorComponent: RootError,
 });
 
-function RootError() {
+function RootError({error}: {error: unknown}) {
+	// The boundary swallows the actual failure unless it is logged; without
+	// this the screen gives no hint whether the cause was a render crash,
+	// a route validation error, or an auth failure.
+	console.error('[root-error]', error);
+	if (error instanceof Error && error.stack) {
+		console.error('[root-error] stack:', error.stack);
+	}
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-background p-6 text-sm text-muted-foreground">
 			<div className="rounded-lg border border-border bg-card px-5 py-4 shadow-sm">

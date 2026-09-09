@@ -44,7 +44,11 @@ export function useAiSettingItems() {
 
 /** Delete an AI provider setting by id (legacy REST: DELETE /ai/settings/{id}). */
 export function useAiSettingDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		aiClient.deleteSettings({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) => aiClient.deleteSettings({id: BigInt(id)}),
+		// Self-invalidation keeps the actor's own list deterministic even
+		// while the table-watch stream is reconnecting; the stream still
+		// syncs every other client.
+		{invalidate: [['ai_settings']]},
 	);
 }

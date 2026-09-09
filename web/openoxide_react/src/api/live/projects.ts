@@ -78,6 +78,7 @@ export function useProjectCreate() {
 				environmentVariables: input.environment_variables ?? '',
 				organizationId: BigInt(input.organization_id),
 			}),
+		{invalidate: [['projects']]},
 	);
 }
 
@@ -96,13 +97,16 @@ export function useProjectUpdate() {
 				description: input.description,
 				environmentVariables: input.environment_variables,
 			}),
+		{invalidate: [['projects']]},
 	);
 }
 
 /** Delete a project by id (legacy REST: DELETE /projects/{id}). */
 export function useProjectDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		projectClient.deleteProject({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			projectClient.deleteProject({id: BigInt(id)}),
+		{invalidate: [['projects']]},
 	);
 }
 

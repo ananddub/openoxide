@@ -1,6 +1,6 @@
 import {createServiceClient, useActiveOrgId, useConnectMutation, useConnectQuery, useResourceListQuery} from './query';
 import {DatabaseService, DatabaseKind, type Database} from '#/gen/connect/openoxide/api/v1/database_pb';
-import {OverviewService} from '#/gen/connect/openoxide/api/v1/overview_pb';
+import {OverviewOperationsService} from '#/gen/connect/openoxide/api/v1/overview_operations_pb';
 import type {OverviewServiceItemPayload} from './overview';
 import {DatabaseNetworkService} from '#/gen/connect/openoxide/api/v1/database_network_pb';
 import type {
@@ -10,8 +10,9 @@ import type {
 } from '#/gen/connect/openoxide/api/v1/database_pb';
 
 /**
- * Legacy app-store `DatabaseItem` shape (all-optional fields), kept so
- * org-wide list consumers see the exact same payload as before.
+ * Org-wide database list item (all-optional fields) derived from the
+ * overview services stream — keyed under the `databases` prefix so
+ * SERVICE_DATABASE table changes invalidate it.
  */
 export type DatabaseItemPayload = {
 	id: number;
@@ -52,7 +53,7 @@ export type DatabasePayload = {
 };
 
 const databaseClient = createServiceClient(DatabaseService);
-const overviewClient = createServiceClient(OverviewService);
+const overviewClient = createServiceClient(OverviewOperationsService);
 
 // The proto kind is a numeric enum; legacy payloads carried a lowercase
 // string ('postgres', 'redis', ...), so reverse-map to keep the wire shape.
@@ -95,7 +96,7 @@ export function useDatabaseList() {
 	return useConnectQuery<DatabaseItemPayload[]>(
 		['databases', orgId.toString()],
 		async () => {
-			const response = await overviewClient.listServices({
+			const response = await overviewClient.listOrganizationServices({
 				organizationId: orgId,
 			});
 			return response.items
@@ -189,6 +190,7 @@ export function useDatabaseCreate() {
 				envVar: input.env_var,
 				networkIds: input.network_ids ?? [],
 			}),
+		{invalidate: [['databases']]},
 	);
 }
 
@@ -233,55 +235,71 @@ export function useDatabaseUpdate() {
 				serverId: input.server_id !== undefined ? BigInt(input.server_id) : undefined,
 				networkIds: input.network_ids ?? [],
 			}),
+		{invalidate: [['databases']]},
 	);
 }
 
 /** Delete a database of the given kind by id (legacy REST: DELETE /databases/{kind}/{id}). */
 export function useDatabaseDelete() {
-	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
-		databaseClient.deleteDatabase({kind: input.kind, id: BigInt(input.id)}),
+	return useConnectMutation(
+		(input: {kind: DatabaseKind; id: number | bigint}) =>
+			databaseClient.deleteDatabase({kind: input.kind, id: BigInt(input.id)}),
+		{invalidate: [['databases']]},
 	);
 }
 
 /** Deploy a database of the given kind by id (legacy REST: POST /databases/{kind}/{id}/deploy). */
 export function useDatabaseDeploy() {
-	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
-		databaseClient.deploy({kind: input.kind, id: BigInt(input.id)}),
+	return useConnectMutation(
+		(input: {kind: DatabaseKind; id: number | bigint}) =>
+			databaseClient.deploy({kind: input.kind, id: BigInt(input.id)}),
+		// Deploys also insert a DEPLOYMENTS row, so refresh that list too.
+		{invalidate: [['databases'], ['deployments']]},
 	);
 }
 
 /** Redeploy a database of the given kind by id. */
 export function useDatabaseRedeploy() {
-	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
-		databaseClient.redeploy({kind: input.kind, id: BigInt(input.id)}),
+	return useConnectMutation(
+		(input: {kind: DatabaseKind; id: number | bigint}) =>
+			databaseClient.redeploy({kind: input.kind, id: BigInt(input.id)}),
+		{invalidate: [['databases'], ['deployments']]},
 	);
 }
 
 /** Reload a database's configuration by id. */
 export function useDatabaseReload() {
-	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
-		databaseClient.reload({kind: input.kind, id: BigInt(input.id)}),
+	return useConnectMutation(
+		(input: {kind: DatabaseKind; id: number | bigint}) =>
+			databaseClient.reload({kind: input.kind, id: BigInt(input.id)}),
+		{invalidate: [['databases']]},
 	);
 }
 
 /** Start a stopped database of the given kind by id. */
 export function useDatabaseStart() {
-	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
-		databaseClient.start({kind: input.kind, id: BigInt(input.id)}),
+	return useConnectMutation(
+		(input: {kind: DatabaseKind; id: number | bigint}) =>
+			databaseClient.start({kind: input.kind, id: BigInt(input.id)}),
+		{invalidate: [['databases']]},
 	);
 }
 
 /** Stop a running database of the given kind by id. */
 export function useDatabaseStop() {
-	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
-		databaseClient.stop({kind: input.kind, id: BigInt(input.id)}),
+	return useConnectMutation(
+		(input: {kind: DatabaseKind; id: number | bigint}) =>
+			databaseClient.stop({kind: input.kind, id: BigInt(input.id)}),
+		{invalidate: [['databases']]},
 	);
 }
 
 /** Cancel the running deployment of a database of the given kind by id. */
 export function useDatabaseCancel() {
-	return useConnectMutation((input: {kind: DatabaseKind; id: number | bigint}) =>
-		databaseClient.cancel({kind: input.kind, id: BigInt(input.id)}),
+	return useConnectMutation(
+		(input: {kind: DatabaseKind; id: number | bigint}) =>
+			databaseClient.cancel({kind: input.kind, id: BigInt(input.id)}),
+		{invalidate: [['databases'], ['deployments']]},
 	);
 }
 
@@ -369,6 +387,7 @@ export function useDatabaseUpdateSwarmSettings() {
 							: undefined,
 				},
 			}),
+		{invalidate: [['databases']]},
 	);
 }
 
@@ -419,17 +438,21 @@ type DatabaseMountInput = {
 
 /** Attach a mount to a database (legacy REST: POST /database-management/{kind}/{id}/mounts). */
 export function useDatabaseMountCreate() {
-	return useConnectMutation((input: DatabaseMountInput) =>
-		databaseClient.createMount({
-			kind: input.kind,
-			databaseId: BigInt(input.database_id),
-			mountType: input.mount_type,
-			hostPath: input.host_path,
-			volumeName: input.volume_name,
-			filePath: input.file_path,
-			content: input.content,
-			mountPath: input.mount_path,
-		}),
+	return useConnectMutation(
+		(input: DatabaseMountInput) =>
+			databaseClient.createMount({
+				kind: input.kind,
+				databaseId: BigInt(input.database_id),
+				mountType: input.mount_type,
+				hostPath: input.host_path,
+				volumeName: input.volume_name,
+				filePath: input.file_path,
+				content: input.content,
+				mountPath: input.mount_path,
+			}),
+		// Mount rows are keyed under the databases prefix (MOUNTS table is
+		// also mapped there in the table-watch stream).
+		{invalidate: [['databases']]},
 	);
 }
 
@@ -448,6 +471,7 @@ export function useDatabaseMountUpdate() {
 				content: input.content,
 				mountPath: input.mount_path,
 			}),
+		{invalidate: [['databases']]},
 	);
 }
 
@@ -460,6 +484,7 @@ export function useDatabaseMountDelete() {
 				databaseId: BigInt(input.database_id),
 				id: BigInt(input.id),
 			}),
+		{invalidate: [['databases']]},
 	);
 }
 
@@ -501,6 +526,7 @@ export function useDatabaseUpdatePostgresAdvancedConfig() {
 					config: JSON.stringify(input.settings),
 				},
 			}),
+		{invalidate: [['databases']]},
 	);
 }
 

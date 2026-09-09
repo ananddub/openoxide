@@ -31,7 +31,7 @@ describe('private network browser API flow', () => {
 		storage.setItem(
 			'openoxide-auth-session',
 			JSON.stringify({
-				tokens: {access_token: 'expired', refresh_token: 'refresh-token'},
+				tokens: {accessToken: 'expired', refreshToken: 'refresh-token'},
 			}),
 		);
 		const fetchMock = vi

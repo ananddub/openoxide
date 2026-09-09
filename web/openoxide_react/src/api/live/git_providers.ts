@@ -48,6 +48,7 @@ export function useGitProviderCreate() {
 				readResource<GitProviderPayload>(response),
 			);
 		},
+		{invalidate: [['git-providers']]},
 	);
 }
 
@@ -69,19 +70,24 @@ export function useGitProviderUpdate() {
 				readResource<GitProviderPayload>(response),
 			);
 		},
+		{invalidate: [['git-providers']]},
 	);
 }
 
 /** Delete a git provider by id (legacy REST: DELETE /git-providers/{id}). */
 export function useGitProviderDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		gitProviderClient.deleteGitProvider({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			gitProviderClient.deleteGitProvider({id: BigInt(id)}),
+		{invalidate: [['git-providers']]},
 	);
 }
 
 /** Test a saved provider's credentials (legacy REST: POST /git-providers/{id}/test). */
 export function useGitProviderTest() {
-	return useConnectMutation((id: number | bigint) =>
-		gitProviderClient.testGitProvider({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			gitProviderClient.testGitProvider({id: BigInt(id)}),
+		{invalidate: [['git-providers']]},
 	);
 }

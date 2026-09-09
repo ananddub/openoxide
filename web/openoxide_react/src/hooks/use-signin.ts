@@ -25,14 +25,13 @@ export function useSignin(onErrorCallback?: (msg: string) => void) {
 				);
 				return;
 			}
-			// The legacy REST payload shape is kept for the session cache —
-			// the connect interceptor and stores read this format.
+			// Session cache stores the proto-native camelCase shape.
 			const session = {
 				user: {
-					user_id: Number(res.user.id),
+					id: Number(res.user.id),
 					email: res.user.email,
-					first_name: res.user.firstName,
-					last_name: res.user.lastName,
+					firstName: res.user.firstName,
+					lastName: res.user.lastName,
 					avatar: res.user.avatar,
 				},
 				tokens: res.tokens,

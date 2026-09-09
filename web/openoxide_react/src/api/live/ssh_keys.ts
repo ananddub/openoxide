@@ -46,15 +46,23 @@ export function useSshKeyGet(id: bigint) {
 
 /** Create an SSH key from provided key material (name/description/public_key in the payload). */
 export function useSshKeyCreate() {
-	return useConnectMutation((input: {name: string; description?: string; public_key: string; private_key?: string}) =>
-		sshKeyClient.createKey({payload: JSON.stringify(input)}),
+	return useConnectMutation(
+		(input: {name: string; description?: string; public_key: string; private_key?: string}) =>
+			sshKeyClient.createKey({payload: JSON.stringify(input)}),
+		// The watch stream also invalidates this prefix, but refetching on
+		// mutation success keeps the actor's own list deterministic even
+		// while the stream is reconnecting (delete/insert latency must not
+		// depend on a live subscription).
+		{invalidate: [['ssh_keys']]},
 	);
 }
 
 /** Generate and store a new key pair server-side (name/description/key_type in the payload). */
 export function useSshKeyGenerate() {
-	return useConnectMutation((input: {name: string; description?: string; key_type?: string}) =>
-		sshKeyClient.generateKey({payload: JSON.stringify(input)}),
+	return useConnectMutation(
+		(input: {name: string; description?: string; key_type?: string}) =>
+			sshKeyClient.generateKey({payload: JSON.stringify(input)}),
+		{invalidate: [['ssh_keys']]},
 	);
 }
 
@@ -70,15 +78,23 @@ export function useSshKeyGeneratePair() {
 
 /** Update an SSH key by id (fields to change in the payload). */
 export function useSshKeyUpdate() {
-	return useConnectMutation((input: {id: number | bigint; [field: string]: unknown}) => {
-		const {id, ...body} = input;
-		return sshKeyClient.updateKey({id: BigInt(id), payload: JSON.stringify(body)});
-	});
+	return useConnectMutation(
+		(input: {id: number | bigint; [field: string]: unknown}) => {
+			const {id, ...body} = input;
+			return sshKeyClient.updateKey({id: BigInt(id), payload: JSON.stringify(body)});
+		},
+		{invalidate: [['ssh_keys']]},
+	);
 }
 
 /** Delete an SSH key by id. */
 export function useSshKeyDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		sshKeyClient.deleteKey({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) => sshKeyClient.deleteKey({id: BigInt(id)}),
+		// Delete CDC events fan out globally (the org lookup runs after the
+		// row is gone), so the stream does deliver them — but the deleting
+		// user should never wait on a 150ms coalesced stream tick to see
+		// their own row disappear.
+		{invalidate: [['ssh_keys']]},
 	);
 }

@@ -33,23 +33,30 @@ export function useRegistryGet(id: bigint) {
 
 /** Create a container registry (credentials in the payload). */
 export function useRegistryCreate() {
-	return useConnectMutation((input: Record<string, unknown>) =>
-		registryClient.createRegistry({payload: JSON.stringify(input)}),
+	return useConnectMutation(
+		(input: Record<string, unknown>) =>
+			registryClient.createRegistry({payload: JSON.stringify(input)}),
+		{invalidate: [['registries']]},
 	);
 }
 
 /** Update a registry by id (fields to change in the payload). */
 export function useRegistryUpdate() {
-	return useConnectMutation((input: {id: number | bigint; [field: string]: unknown}) => {
-		const {id, ...body} = input;
-		return registryClient.updateRegistry({id: BigInt(id), payload: JSON.stringify(body)});
-	});
+	return useConnectMutation(
+		(input: {id: number | bigint; [field: string]: unknown}) => {
+			const {id, ...body} = input;
+			return registryClient.updateRegistry({id: BigInt(id), payload: JSON.stringify(body)});
+		},
+		{invalidate: [['registries']]},
+	);
 }
 
 /** Delete a registry by id. */
 export function useRegistryDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		registryClient.deleteRegistry({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			registryClient.deleteRegistry({id: BigInt(id)}),
+		{invalidate: [['registries']]},
 	);
 }
 
@@ -63,12 +70,13 @@ export function useRegistryTest() {
 	);
 }
 
-/** Rotate a stored registry's credentials (username/password in the payload). */
 export function useRegistryRotateCredentials() {
-	return useConnectMutation((input: {id: number | bigint; username: string; password: string}) =>
-		registryClient.rotateCredentials({
-			id: BigInt(input.id),
-			payload: JSON.stringify({username: input.username, password: input.password}),
-		}),
+	return useConnectMutation(
+		(input: {id: number | bigint; username: string; password: string}) =>
+			registryClient.rotateCredentials({
+				id: BigInt(input.id),
+				payload: JSON.stringify({username: input.username, password: input.password}),
+			}),
+		{invalidate: [['registries']]},
 	);
 }

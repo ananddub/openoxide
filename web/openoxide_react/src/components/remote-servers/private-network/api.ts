@@ -12,8 +12,7 @@ function authHeaders(json = false): HeadersInit {
 		if (sessionRaw) {
 			const parsed = JSON.parse(sessionRaw);
 			token =
-				parsed?.state?.tokens?.access_token ||
-				parsed?.tokens?.access_token ||
+				parsed?.tokens?.accessToken ||
 				'';
 		}
 	} catch {

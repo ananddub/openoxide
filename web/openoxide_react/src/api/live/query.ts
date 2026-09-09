@@ -6,10 +6,9 @@ import {readResourceList, readResource} from '#/api/live/resource';
 /**
  * Live-data hook helpers over ConnectRPC queries.
  *
- * Replaces the former `virtual:openoxide-live` Socket.IO hooks. Data shape is
- * intentionally preserved (snake_case JSON payloads), so consumer components
- * keep working unchanged; only the transport moved from socket pushes to
- * Connect queries with refetch-based liveness.
+ * Payloads keep the backend DTO's snake_case JSON fields (Rust serde wire
+ * format); liveness comes from refetches driven by the realtime table-watch
+ * stream.
  */
 
 // QueryClient defaults: 5 min staleTime, refetchOnWindowFocus off. Live

@@ -1,30 +1,26 @@
 // @vitest-environment jsdom
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 
-import {applyOrganizationHeader} from './client';
-import {persistActiveOrganizationId} from '#/stores/organization-context';
+import {getAccessToken} from './client';
 
-describe('organization-scoped API client', () => {
+describe('auth session storage', () => {
 	beforeEach(() => {
 		localStorage.clear();
 		vi.restoreAllMocks();
 	});
 
-	it('sends the active organization on resource requests', () => {
-		persistActiveOrganizationId(3);
-		const request = new Request('http://localhost/api/applications/3');
+	it('reads the access token from the camelCase session', () => {
+		localStorage.setItem(
+			'openoxide-auth-session',
+			JSON.stringify({tokens: {accessToken: 'abc'}}),
+		);
 
-		applyOrganizationHeader(request);
-
-		expect(request.headers.get('X-Organization-Id')).toBe('3');
+		expect(getAccessToken()).toBe('abc');
 	});
 
-	it('does not scope the organization bootstrap list', () => {
-		persistActiveOrganizationId(3);
-		const request = new Request('http://localhost/api/organizations');
-
-		applyOrganizationHeader(request);
-
-		expect(request.headers.get('X-Organization-Id')).toBeNull();
+	it('returns empty for missing or malformed sessions', () => {
+		expect(getAccessToken()).toBe('');
+		localStorage.setItem('openoxide-auth-session', 'not-json');
+		expect(getAccessToken()).toBe('');
 	});
 });

@@ -69,30 +69,39 @@ export function useScheduleListByDatabase(databaseId: bigint) {
 
 /** Create a schedule (cron, command and linkage fields in the payload). */
 export function useScheduleCreate() {
-	return useConnectMutation((input: Record<string, unknown>) =>
-		scheduleClient.createSchedule({payload: JSON.stringify(input)}),
+	return useConnectMutation(
+		(input: Record<string, unknown>) =>
+			scheduleClient.createSchedule({payload: JSON.stringify(input)}),
+		{invalidate: [['schedules']]},
 	);
 }
 
 /** Update a schedule by id (fields to change in the payload). */
 export function useScheduleUpdate() {
-	return useConnectMutation((input: {id: number | bigint; [field: string]: unknown}) => {
-		const {id, ...body} = input;
-		return scheduleClient.updateSchedule({id: BigInt(id), payload: JSON.stringify(body)});
-	});
+	return useConnectMutation(
+		(input: {id: number | bigint; [field: string]: unknown}) => {
+			const {id, ...body} = input;
+			return scheduleClient.updateSchedule({id: BigInt(id), payload: JSON.stringify(body)});
+		},
+		{invalidate: [['schedules']]},
+	);
 }
 
 /** Delete a schedule by id. */
 export function useScheduleDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		scheduleClient.deleteSchedule({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			scheduleClient.deleteSchedule({id: BigInt(id)}),
+		{invalidate: [['schedules']]},
 	);
 }
 
 /** Trigger an immediate schedule run by id (legacy REST: POST /schedules/{id}/trigger). */
 export function useScheduleRun() {
-	return useConnectMutation((id: number | bigint) =>
-		scheduleClient.triggerSchedule({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			scheduleClient.triggerSchedule({id: BigInt(id)}),
+		{invalidate: [['schedules']]},
 	);
 }
 
@@ -101,8 +110,10 @@ export function useScheduleRun() {
  * legacy REST patch with `enabled: 0`.
  */
 export function useSchedulePause() {
-	return useConnectMutation((id: number | bigint) =>
-		scheduleClient.updateSchedule({id: BigInt(id), payload: JSON.stringify({enabled: 0})}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			scheduleClient.updateSchedule({id: BigInt(id), payload: JSON.stringify({enabled: 0})}),
+		{invalidate: [['schedules']]},
 	);
 }
 
@@ -111,7 +122,9 @@ export function useSchedulePause() {
  * the legacy REST patch with `enabled: 1`.
  */
 export function useScheduleResume() {
-	return useConnectMutation((id: number | bigint) =>
-		scheduleClient.updateSchedule({id: BigInt(id), payload: JSON.stringify({enabled: 1})}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			scheduleClient.updateSchedule({id: BigInt(id), payload: JSON.stringify({enabled: 1})}),
+		{invalidate: [['schedules']]},
 	);
 }

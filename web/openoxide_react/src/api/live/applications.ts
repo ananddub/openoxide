@@ -1,5 +1,5 @@
 import {createServiceClient, useActiveOrgId, useConnectMutation, useConnectQuery} from './query';
-import {OverviewService} from '#/gen/connect/openoxide/api/v1/overview_pb';
+import {OverviewOperationsService} from '#/gen/connect/openoxide/api/v1/overview_operations_pb';
 import type {OverviewServiceItemPayload} from './overview';
 import {
 	ApplicationService,
@@ -9,8 +9,8 @@ import {
 } from '#/gen/connect/openoxide/api/v1/application_pb';
 
 /**
- * Legacy app-store `ApplicationItem` shape (all-optional fields), kept so
- * org-wide list consumers see the exact same payload as before.
+ * Org-wide application list item (all-optional fields) derived from the
+ * overview services stream.
  */
 export type ApplicationItemPayload = {
 	id: number;
@@ -57,7 +57,7 @@ export type ApplicationPayload = {
 };
 
 const applicationClient = createServiceClient(ApplicationService);
-const overviewClient = createServiceClient(OverviewService);
+const overviewClient = createServiceClient(OverviewOperationsService);
 
 // Proto enums arrive as numbers; legacy payloads exposed lowercase value
 // names ('github', 'dockerfile', ...), so reverse-map to keep the wire shape.
@@ -129,7 +129,7 @@ export function useApplicationList() {
 	return useConnectQuery<ApplicationItemPayload[]>(
 		['applications', orgId.toString()],
 		async () => {
-			const response = await overviewClient.listServices({
+			const response = await overviewClient.listOrganizationServices({
 				organizationId: orgId,
 			});
 			return response.items
@@ -174,6 +174,7 @@ export function useApplicationCreate() {
 				sourceType: input.source_type ?? ApplicationSourceType.UNSPECIFIED,
 				buildType: input.build_type ?? ApplicationBuildType.UNSPECIFIED,
 			}),
+		{invalidate: [['applications']]},
 	);
 }
 
@@ -206,62 +207,80 @@ export function useApplicationUpdate() {
 				networkIds: input.network_ids ?? [],
 				detachRustployNetwork: input.detach_rustploy_network,
 			}),
+		{invalidate: [['applications']]},
 	);
 }
 
 /** Delete an application by id (legacy REST: DELETE /applications/{id}). */
 export function useApplicationDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		applicationClient.deleteApplication({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			applicationClient.deleteApplication({id: BigInt(id)}),
+		{invalidate: [['applications']]},
 	);
 }
 
 /** Deploy an application by id (legacy REST: POST /applications/{id}/deploy). */
 export function useApplicationDeploy() {
-	return useConnectMutation((id: number | bigint) =>
-		applicationClient.deploy({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			applicationClient.deploy({id: BigInt(id)}),
+		// Deploys also insert a DEPLOYMENTS row, so refresh that list too.
+		{invalidate: [['applications'], ['deployments']]},
 	);
 }
 
 /** Redeploy an application by id. */
 export function useApplicationRedeploy() {
-	return useConnectMutation((id: number | bigint) =>
-		applicationClient.redeploy({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			applicationClient.redeploy({id: BigInt(id)}),
+		{invalidate: [['applications'], ['deployments']]},
 	);
 }
 
 /** Rebuild an application by id. */
 export function useApplicationRebuild() {
-	return useConnectMutation((id: number | bigint) =>
-		applicationClient.rebuild({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			applicationClient.rebuild({id: BigInt(id)}),
+		{invalidate: [['applications'], ['deployments']]},
 	);
 }
 
 /** Reload an application's configuration by id. */
 export function useApplicationReload() {
-	return useConnectMutation((id: number | bigint) =>
-		applicationClient.reload({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			applicationClient.reload({id: BigInt(id)}),
+		{invalidate: [['applications']]},
 	);
 }
 
 /** Start a stopped application by id (legacy REST: POST /applications/{id}/start). */
 export function useApplicationStart() {
-	return useConnectMutation((id: number | bigint) =>
-		applicationClient.start({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			applicationClient.start({id: BigInt(id)}),
+		{invalidate: [['applications']]},
 	);
 }
 
 /** Stop a running application by id (legacy REST: POST /applications/{id}/stop). */
 export function useApplicationStop() {
-	return useConnectMutation((id: number | bigint) =>
-		applicationClient.stop({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			applicationClient.stop({id: BigInt(id)}),
+		{invalidate: [['applications']]},
 	);
 }
 
 /** Cancel the running deployment of an application by id. */
 export function useApplicationCancel() {
-	return useConnectMutation((id: number | bigint) =>
-		applicationClient.cancel({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			applicationClient.cancel({id: BigInt(id)}),
+		{invalidate: [['applications'], ['deployments']]},
 	);
 }
 
@@ -307,61 +326,75 @@ function toGitFields(input: GitSourceInput) {
 
 /** Point an application at a Docker image. */
 export function useApplicationSetDockerSource() {
-	return useConnectMutation((input: DockerSourceInput) =>
-		applicationClient.setDockerSource({
-			id: BigInt(input.id),
-			image: input.image,
-			username: input.username,
-			password: input.password,
-			registryUrl: input.registry_url,
-		}),
+	return useConnectMutation(
+		(input: DockerSourceInput) =>
+			applicationClient.setDockerSource({
+				id: BigInt(input.id),
+				image: input.image,
+				username: input.username,
+				password: input.password,
+				registryUrl: input.registry_url,
+			}),
+		{invalidate: [['applications']]},
 	);
 }
 
 /** Point an application at a plain Git URL. */
 export function useApplicationSetCustomGitSource() {
-	return useConnectMutation((input: CustomGitSourceInput) =>
-		applicationClient.setCustomGitSource({
-			...toGitFields(input),
-			url: input.url,
-		}),
+	return useConnectMutation(
+		(input: CustomGitSourceInput) =>
+			applicationClient.setCustomGitSource({
+				...toGitFields(input),
+				url: input.url,
+			}),
+		{invalidate: [['applications']]},
 	);
 }
 
 /** Point an application at a GitHub repository. */
 export function useApplicationSetGithubSource() {
-	return useConnectMutation((input: GitSourceInput) =>
-		applicationClient.setGithubSource(toGitFields(input)),
+	return useConnectMutation(
+		(input: GitSourceInput) =>
+			applicationClient.setGithubSource(toGitFields(input)),
+		{invalidate: [['applications']]},
 	);
 }
 
 /** Point an application at a GitLab repository. */
 export function useApplicationSetGitlabSource() {
-	return useConnectMutation((input: GitSourceInput) =>
-		applicationClient.setGitlabSource(toGitFields(input)),
+	return useConnectMutation(
+		(input: GitSourceInput) =>
+			applicationClient.setGitlabSource(toGitFields(input)),
+		{invalidate: [['applications']]},
 	);
 }
 
 /** Point an application at a Gitea repository. */
 export function useApplicationSetGiteaSource() {
-	return useConnectMutation((input: GitSourceInput) =>
-		applicationClient.setGiteaSource(toGitFields(input)),
+	return useConnectMutation(
+		(input: GitSourceInput) =>
+			applicationClient.setGiteaSource(toGitFields(input)),
+		{invalidate: [['applications']]},
 	);
 }
 
 /** Point an application at a Bitbucket repository. */
 export function useApplicationSetBitbucketSource() {
-	return useConnectMutation((input: GitSourceInput) =>
-		applicationClient.setBitbucketSource(toGitFields(input)),
+	return useConnectMutation(
+		(input: GitSourceInput) =>
+			applicationClient.setBitbucketSource(toGitFields(input)),
+		{invalidate: [['applications']]},
 	);
 }
 
 /** Switch an application to drop-upload (manual file) source. */
 export function useApplicationSetDropSource() {
-	return useConnectMutation((input: {id: number | bigint; build_path?: string}) =>
-		applicationClient.setDropSource({
-			id: BigInt(input.id),
-			buildPath: input.build_path,
-		}),
+	return useConnectMutation(
+		(input: {id: number | bigint; build_path?: string}) =>
+			applicationClient.setDropSource({
+				id: BigInt(input.id),
+				buildPath: input.build_path,
+			}),
+		{invalidate: [['applications']]},
 	);
 }

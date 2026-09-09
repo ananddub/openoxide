@@ -21,22 +21,29 @@ export function useTagListAll() {
 
 /** Create a tag (name + color in the payload). */
 export function useTagCreate() {
-	return useConnectMutation((input: {name: string; color: string}) =>
-		tagClient.createTag({payload: JSON.stringify(input)}),
+	return useConnectMutation(
+		(input: {name: string; color: string}) =>
+			tagClient.createTag({payload: JSON.stringify(input)}),
+		{invalidate: [['tags']]},
 	);
 }
 
 /** Update a tag (name + color in the payload). */
 export function useTagUpdate() {
-	return useConnectMutation((input: {id: number; name: string; color: string}) => {
-		const {id, ...body} = input;
-		return tagClient.updateTag({id: BigInt(id), payload: JSON.stringify(body)});
-	});
+	return useConnectMutation(
+		(input: {id: number; name: string; color: string}) => {
+			const {id, ...body} = input;
+			return tagClient.updateTag({id: BigInt(id), payload: JSON.stringify(body)});
+		},
+		{invalidate: [['tags'], ['projects']]},
+	);
 }
 
 /** Delete a tag by id. */
 export function useTagDelete() {
-	return useConnectMutation((id: number) =>
-		tagClient.deleteTag({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number) => tagClient.deleteTag({id: BigInt(id)}),
+		// Deleting a tag drops it from project cards, so refresh those too.
+		{invalidate: [['tags'], ['projects']]},
 	);
 }

@@ -1,4 +1,6 @@
 import {
+	Code,
+	ConnectError,
 	createClient,
 	type Interceptor,
 	type Transport,
@@ -15,23 +17,29 @@ function readAccessToken(): string {
 		const raw = localStorage.getItem(AUTH_STORAGE_KEY);
 		if (!raw || raw === 'undefined') return '';
 		const session = JSON.parse(raw);
-		// Connect RPC responses serialize proto fields camelCase
-		// (accessToken); legacy REST-era sessions used snake_case
-		// (access_token). Accept both.
-		return (
-			session?.tokens?.accessToken || session?.tokens?.access_token || ''
-		);
+		// Connect RPC responses serialize proto fields camelCase (accessToken).
+		return session?.tokens?.accessToken || '';
 	} catch {
 		return '';
 	}
 }
 
 /**
- * ConnectRPC interceptor (connect 2.x onion shape): attaches the bearer
- * token + active organization header, and replays a unary call once after
- * a token refresh when the backend rejects it as unauthenticated.
+ * Connect 2.x surfaces failed unary calls as thrown ConnectErrors —
+ * there is no response object to inspect. An expired/invalid access
+ * token arrives as the `unauthenticated` code (the wire maps HTTP 401
+ * onto it), which is the signal to refresh once and replay.
  */
+function isUnauthenticatedError(error: unknown): boolean {
+	return error instanceof ConnectError && error.code === Code.Unauthenticated;
+}
+
 export const authInterceptor: Interceptor = (next) => async (req) => {
+	// The refresh RPC itself must never enter the refresh-and-replay path:
+	// a rejected refresh would call refreshAccessToken again, which is
+	// already in flight (promise dedupe), deadlocking the await chain.
+	const isRefreshCall = req.url.endsWith('/AuthService/Refresh');
+
 	const headers = new Headers(req.header);
 	const token = readAccessToken();
 	if (token) headers.set('Authorization', `Bearer ${token}`);
@@ -40,18 +48,26 @@ export const authInterceptor: Interceptor = (next) => async (req) => {
 		headers.set('X-Organization-Id', String(organizationId));
 	}
 
-	const response = await next({...req, header: headers});
+	try {
+		return await next({...req, header: headers});
+	} catch (error) {
+		// Refresh-and-replay once on a rejection the backend marked as
+		// unauthenticated; everything else (permissions, transport,
+		// aborted calls) propagates untouched.
+		if (
+			isRefreshCall ||
+			!isUnauthenticatedError(error) ||
+			req.signal.aborted
+		)
+			throw error;
 
-	// Unary responses carry the HTTP status; refresh-and-replay once.
-	const status = (response as {response?: {status?: number}}).response?.status;
-	if (status !== 401 || req.signal.aborted) return response;
+		const newToken = await refreshAccessToken();
+		if (!newToken) throw error;
 
-	const newToken = await refreshAccessToken();
-	if (!newToken) return response;
-
-	const retryHeaders = new Headers(headers);
-	retryHeaders.set('Authorization', `Bearer ${newToken}`);
-	return next({...req, header: retryHeaders});
+		const retryHeaders = new Headers(headers);
+		retryHeaders.set('Authorization', `Bearer ${newToken}`);
+		return next({...req, header: retryHeaders});
+	}
 };
 
 /**

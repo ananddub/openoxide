@@ -86,8 +86,8 @@ async function fetchServerSwarm(
 			return {info, nodes: []};
 		}
 		const rawNodes = await swarmNodes(serverId ?? null);
-		// The Connect payload carries the same NodeDto fields the legacy
-		// api.d.ts type describes; the cast bridges the two type sources.
+		// The Connect payload carries the same NodeDto fields as the
+		// generated type; the cast bridges the two type sources.
 		const nodes = (rawNodes || []).map(n => ({
 			...n,
 			_serverId: serverId,

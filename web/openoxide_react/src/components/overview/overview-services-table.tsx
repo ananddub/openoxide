@@ -189,9 +189,11 @@ const renderStatusBadge = (statusStr: string) => {
 	);
 };
 
-const formatDate = (timestamp?: number) => {
-	if (!timestamp) return <span className="text-muted-foreground">—</span>;
-	const d = new Date(timestamp * 1000);
+const formatDate = (timestamp?: number | bigint) => {
+	// Proto int64 timestamps arrive as bigint — coerce before multiplying.
+	const seconds = Number(timestamp ?? 0);
+	if (!seconds) return <span className="text-muted-foreground">—</span>;
+	const d = new Date(seconds * 1000);
 	return (
 		<span className="font-mono text-xs text-muted-foreground">
 			{d.toLocaleDateString(undefined, {

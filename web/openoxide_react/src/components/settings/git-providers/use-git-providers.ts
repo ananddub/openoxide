@@ -115,8 +115,8 @@ export function useGitProviders() {
 			localStorage.getItem('openoxide-auth-session') || '{}',
 		);
 		const headers: Record<string, string> = {};
-		if (session?.tokens?.access_token)
-			headers.Authorization = `Bearer ${session.tokens.access_token}`;
+		if (session?.tokens?.accessToken)
+			headers.Authorization = `Bearer ${session.tokens.accessToken}`;
 		const org = localStorage.getItem('openoxide-active-organization-id');
 		if (org) headers['X-Organization-Id'] = org;
 		return headers;

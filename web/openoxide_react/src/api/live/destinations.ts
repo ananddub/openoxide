@@ -27,8 +27,10 @@ export function useDestinationList() {
 
 /** Create a backup destination (provider credentials in the payload). */
 export function useDestinationCreate() {
-	return useConnectMutation((input: Record<string, unknown>) =>
-		destinationClient.createDestination({payload: JSON.stringify(input)}),
+	return useConnectMutation(
+		(input: Record<string, unknown>) =>
+			destinationClient.createDestination({payload: JSON.stringify(input)}),
+		{invalidate: [['destinations']]},
 	);
 }
 
@@ -37,16 +39,21 @@ export function useDestinationCreate() {
  * reads from the payload JSON, so the id is merged back into the body.
  */
 export function useDestinationUpdate() {
-	return useConnectMutation((input: {id: string; [field: string]: unknown}) => {
-		const {id, ...body} = input;
-		return destinationClient.updateDestination({payload: JSON.stringify({...body, id})});
-	});
+	return useConnectMutation(
+		(input: {id: string; [field: string]: unknown}) => {
+			const {id, ...body} = input;
+			return destinationClient.updateDestination({payload: JSON.stringify({...body, id})});
+		},
+		{invalidate: [['destinations']]},
+	);
 }
 
 /** Delete a backup destination by its UUID id (carried in the payload). */
 export function useDestinationDelete() {
-	return useConnectMutation((id: string) =>
-		destinationClient.deleteDestination({payload: JSON.stringify({id})}),
+	return useConnectMutation(
+		(id: string) =>
+			destinationClient.deleteDestination({payload: JSON.stringify({id})}),
+		{invalidate: [['destinations']]},
 	);
 }
 

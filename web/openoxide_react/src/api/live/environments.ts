@@ -15,7 +15,7 @@ export type EnvironmentPayload = {
 const environmentClient = createServiceClient(EnvironmentService);
 
 // `environmentVariables` maps to `env_var`, the field name the legacy
-// environments payload exposed (see EnvironmentResponseDto in types/api.d.ts).
+// environments payload exposed by the Environment proto message.
 function toEnvironmentPayload(environment: Environment): EnvironmentPayload {
 	return {
 		id: environment.id,
@@ -69,6 +69,7 @@ export function useEnvironmentCreate() {
 				isDefault: input.is_default ?? false,
 				projectId: BigInt(input.project_id),
 			}),
+		{invalidate: [['environments']]},
 	);
 }
 
@@ -89,19 +90,24 @@ export function useEnvironmentUpdate() {
 				environmentVariables: input.environment_variables,
 				isDefault: input.is_default,
 			}),
+		{invalidate: [['environments']]},
 	);
 }
 
 /** Mark an environment as its project's default by id. */
 export function useEnvironmentSetDefault() {
-	return useConnectMutation((id: number | bigint) =>
-		environmentClient.setDefaultEnvironment({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			environmentClient.setDefaultEnvironment({id: BigInt(id)}),
+		{invalidate: [['environments']]},
 	);
 }
 
 /** Delete an environment by id (legacy REST: DELETE /environments/{id}). */
 export function useEnvironmentDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		environmentClient.deleteEnvironment({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			environmentClient.deleteEnvironment({id: BigInt(id)}),
+		{invalidate: [['environments']]},
 	);
 }

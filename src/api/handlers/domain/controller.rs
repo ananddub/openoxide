@@ -98,7 +98,11 @@ impl DomainOperationsService for DomainController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ResourceQuery>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let application_id = request.organization_id.unwrap_or(0);
+        // ResourceQuery has no dedicated parent-id slot; parent-scoped lists
+        // carry the parent in `environment_id` (same convention as
+        // stream_list_project_tags). organization_id is the caller's org and
+        // must never be interpreted as a service id.
+        let application_id = request.environment_id.unwrap_or(0);
         let items = self.service.list_by_application(application_id).await.map_err(map_error)?;
         let items = items.into_iter().map(DomainResponseDto::from).map(domain_to_resource).collect();
         Response::ok(ResourceListResponse { items, ..Default::default() })
@@ -114,7 +118,8 @@ impl DomainOperationsService for DomainController {
             impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
         >,
     > {
-        let application_id = request.organization_id.unwrap_or(0);
+        // Parent id rides in `environment_id` (see list_application_domains).
+        let application_id = request.environment_id.unwrap_or(0);
         let stream = {
             let sql = format!("SELECT * FROM domains WHERE service_id = {application_id}");
             realtime()
@@ -141,7 +146,8 @@ impl DomainOperationsService for DomainController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ResourceQuery>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let compose_id = request.organization_id.unwrap_or(0);
+        // Parent id rides in `environment_id` (see list_application_domains).
+        let compose_id = request.environment_id.unwrap_or(0);
         let items = self.service.list_by_compose(compose_id).await.map_err(map_error)?;
         let items = items.into_iter().map(DomainResponseDto::from).map(domain_to_resource).collect();
         Response::ok(ResourceListResponse { items, ..Default::default() })
@@ -157,7 +163,8 @@ impl DomainOperationsService for DomainController {
             impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
         >,
     > {
-        let compose_id = request.organization_id.unwrap_or(0);
+        // Parent id rides in `environment_id` (see list_application_domains).
+        let compose_id = request.environment_id.unwrap_or(0);
         let stream = {
             let sql = format!("SELECT * FROM domains WHERE service_id = {compose_id}");
             realtime()

@@ -66,32 +66,40 @@ export function usePermissionGroupList() {
 
 /** Add a member to the active organization (email/role fields in the payload). */
 export function useMemberAdd() {
-	return useConnectMutation((input: Record<string, unknown>) =>
-		permissionClient.addMember({payload: JSON.stringify(input)}),
+	return useConnectMutation(
+		(input: Record<string, unknown>) =>
+			permissionClient.addMember({payload: JSON.stringify(input)}),
+		{invalidate: [['permission-members']]},
 	);
 }
 
 /** Update an organization member's role by member id (role in the payload). */
 export function useMemberUpdateRole() {
-	return useConnectMutation((input: {id: number | bigint; role: string}) =>
-		permissionClient.updateMemberRole({
-			id: BigInt(input.id),
-			payload: JSON.stringify({role: input.role}),
-		}),
+	return useConnectMutation(
+		(input: {id: number | bigint; role: string}) =>
+			permissionClient.updateMemberRole({
+				id: BigInt(input.id),
+				payload: JSON.stringify({role: input.role}),
+			}),
+		{invalidate: [['permission-members']]},
 	);
 }
 
 /** Remove an organization member by member id (legacy REST: DELETE users/{id}/org-members). */
 export function useMemberRemove() {
-	return useConnectMutation((id: number | bigint) =>
-		permissionClient.removeMember({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			permissionClient.removeMember({id: BigInt(id)}),
+		{invalidate: [['permission-members']]},
 	);
 }
 
 /** Create an invitation (email/role fields in the payload). */
 export function useInviteCreate() {
-	return useConnectMutation((input: Record<string, unknown>) =>
-		permissionClient.createInvite({payload: JSON.stringify(input)}),
+	return useConnectMutation(
+		(input: Record<string, unknown>) =>
+			permissionClient.createInvite({payload: JSON.stringify(input)}),
+		{invalidate: [['permission-invites']]},
 	);
 }
 
@@ -100,8 +108,10 @@ export function useInviteCreate() {
  * whose target id travels in the payload JSON.
  */
 export function useInviteCancel() {
-	return useConnectMutation((id: number | bigint | string) =>
-		permissionClient.cancelInvite({payload: JSON.stringify({id})}),
+	return useConnectMutation(
+		(id: number | bigint | string) =>
+			permissionClient.cancelInvite({payload: JSON.stringify({id})}),
+		{invalidate: [['permission-invites']]},
 	);
 }
 

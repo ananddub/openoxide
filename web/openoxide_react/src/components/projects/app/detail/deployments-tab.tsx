@@ -96,7 +96,7 @@ export function DeploymentsTab({
 				if (sessionRaw) {
 					try {
 						const session = JSON.parse(sessionRaw);
-						accessToken = session?.tokens?.access_token || '';
+						accessToken = session?.tokens?.accessToken || '';
 					} catch {}
 				}
 
@@ -399,7 +399,7 @@ export function DeploymentsTab({
 										</span>
 										<span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
 											<Clock className="h-3 w-3" />
-											{new Date(e.created_at * 1000).toLocaleDateString()}
+											{new Date(Number(e.created_at) * 1000).toLocaleDateString()}
 										</span>
 
 										<Button

@@ -30,27 +30,33 @@ const TABLE_QUERY_KEYS: Record<WatchedTable, string[]> = {
 	[WatchedTable.AI_SETTINGS]: ['ai_settings'],
 	[WatchedTable.ALERT_EVENTS]: [],
 	[WatchedTable.ALERT_RULES]: [],
-	[WatchedTable.APPLICATION_MIDDLEWARES]: [],
+	// Middleware CRUD rides the domain dialogs (the domains table itself is
+	// untouched), so the domain lists need the explicit prefix here.
+	[WatchedTable.APPLICATION_MIDDLEWARES]: ['domains', 'overview-domains'],
 	[WatchedTable.AUDIT_LOGS]: [],
 	[WatchedTable.BACKGROUND_POLICIES]: ['settings'],
 	[WatchedTable.BACKUP_EXECUTIONS]: ['backups', 'overview-backups'],
 	[WatchedTable.BACKUPS]: ['backups', 'overview-backups'],
 	[WatchedTable.CERTIFICATE_RENEWALS]: ['certificates'],
 	[WatchedTable.CERTIFICATES]: ['certificates'],
-	[WatchedTable.DATABASE_NETWORKS]: [],
+	// Database networks feed the per-database network pickers and the
+	// `database-networks` registry list.
+	[WatchedTable.DATABASE_NETWORKS]: ['databases', 'database-networks'],
 	[WatchedTable.DEPLOYMENTS]: ['deployments'],
 	[WatchedTable.DESTINATIONS]: ['destinations'],
 	[WatchedTable.DNS_PROVIDERS]: ['dns_providers'],
 	[WatchedTable.DOMAINS]: ['domains', 'overview-domains'],
 	[WatchedTable.ENVIRONMENTS]: ['environments'],
-	[WatchedTable.GIT_PROVIDERS]: [],
+	[WatchedTable.GIT_PROVIDERS]: ['git-providers'],
 	[WatchedTable.GROUP_POLICY]: ['permission-groups'],
 	[WatchedTable.GROUPS]: ['permission-groups'],
 	[WatchedTable.HEALTH_REPORTS]: [],
 	[WatchedTable.MONITORING_AGENTS]: [],
 	[WatchedTable.MONITORING_MAINTENANCE_WINDOWS]: [],
 	[WatchedTable.MONITORING_POLICY]: [],
-	[WatchedTable.MOUNTS]: [],
+	// Database mounts and port mappings are keyed under the `databases`
+	// prefix (['databases', 'mounts', …] and the detail-tab port lists).
+	[WatchedTable.MOUNTS]: ['databases'],
 	[WatchedTable.NOTIFICATION_DELIVERY_ATTEMPTS]: ['notifications'],
 	[WatchedTable.NOTIFICATION_RESOURCE_BINDINGS]: ['notifications'],
 	[WatchedTable.NOTIFICATIONS]: ['notifications'],
@@ -59,8 +65,8 @@ const TABLE_QUERY_KEYS: Record<WatchedTable, string[]> = {
 	[WatchedTable.ORGANIZATION_MEMBERS]: ['permission-members'],
 	[WatchedTable.PATCHES]: [],
 	[WatchedTable.POLICY]: ['permission-groups'],
-	[WatchedTable.PORTS]: [],
-	[WatchedTable.PREVIEW_DEPLOYMENTS]: [],
+	[WatchedTable.PORTS]: ['databases'],
+	[WatchedTable.PREVIEW_DEPLOYMENTS]: ['deployments'],
 	[WatchedTable.PROJECTS]: ['projects'],
 	[WatchedTable.PROJECT_TAGS]: ['projects', 'tags'],
 	[WatchedTable.REDIRECTS]: [],
@@ -71,23 +77,35 @@ const TABLE_QUERY_KEYS: Record<WatchedTable, string[]> = {
 	[WatchedTable.SCHEDULE_RUNTIME_POLICIES]: ['schedules'],
 	[WatchedTable.SCHEDULES]: ['schedules'],
 	[WatchedTable.SECURITY]: [],
+	// Cleanup runs only refresh server status timestamps; no query exposes
+	// them yet.
 	[WatchedTable.SERVER_CLEANUP_EXECUTIONS]: [],
-	[WatchedTable.SERVER_MANAGEMENT]: [],
+	// Server-management writes (cleanup cron, metrics config) land inside
+	// the SERVERS-backed payloads, so the server lists must refetch.
+	[WatchedTable.SERVER_MANAGEMENT]: ['servers'],
 	[WatchedTable.SERVER_MIGRATIONS]: ['servers'],
 	[WatchedTable.SERVER_PRIVATE_NETWORKS]: ['servers'],
 	[WatchedTable.SERVERS]: ['servers'],
 	[WatchedTable.SERVICE_APPLICATION]: ['applications', 'overview-services'],
 	[WatchedTable.SERVICE_COMPOSE]: ['composes', 'overview-services'],
 	[WatchedTable.SERVICE_DATABASE]: ['databases', 'overview-services'],
-	[WatchedTable.SERVICE_GIT]: [],
+	// Git-source settings (provider/repo/branch per app or compose) are not
+	// mirrored into the SERVICE_* rows, so invalidate the service lists too.
+	[WatchedTable.SERVICE_GIT]: ['applications', 'composes'],
 	[WatchedTable.SERVICES]: ['overview-services'],
 	[WatchedTable.SETTINGS]: ['settings'],
 	[WatchedTable.SSH_KEYS]: ['ssh_keys'],
-	[WatchedTable.TAGS]: ['tags'],
+	// Tag renames/recolors surface on project cards (hashtags derive from the
+	// project description) and project dialogs, so projects is included.
+	[WatchedTable.TAGS]: ['tags', 'projects'],
 	[WatchedTable.USER_POLICY]: [],
 	[WatchedTable.USERS]: ['auth'],
 	[WatchedTable.VAULT_PROVIDERS]: ['vault_providers'],
 	[WatchedTable.VOLUME_BACKUPS]: ['backups', 'overview-backups'],
+	// Tables above left empty (AI_GENERATIONS, ALERT_*, AUDIT_LOGS,
+	// HEALTH_REPORTS, MONITORING_*, PATCHES, REDIRECTS, RESOURCE_ACCESS,
+	// ROLLBACKS, SECURITY, USER_POLICY) have no live query keys yet — the
+	// mutation files own their refresh until a query adopts these prefixes.
 };
 
 /** A resync event lists every watchable table minus the UNSPECIFIED entry. */
@@ -113,6 +131,7 @@ export function useTableWatch(): void {
 
 		const invalidate = (event: WatchTablesEvent) => {
 			if (event.tables.length >= RESYNC_TABLE_COUNT) {
+				console.info('[table-watch] resync → full invalidation');
 				queryClient.invalidateQueries();
 				return;
 			}
@@ -121,6 +140,9 @@ export function useTableWatch(): void {
 				for (const key of TABLE_QUERY_KEYS[table] ?? []) {
 					prefixes.add(key);
 				}
+			}
+			if (prefixes.size > 0) {
+				console.info('[table-watch] change →', [...prefixes]);
 			}
 			for (const key of prefixes) {
 				queryClient.invalidateQueries({queryKey: [key]});
@@ -134,10 +156,14 @@ export function useTableWatch(): void {
 					attempt = 0;
 					invalidate(event);
 				}
-			} catch {
+			} catch (error) {
 				// Stream failed (network drop, panel restart, abort).
 				// Reconnect below; the resync event heals any missed
-				// changes.
+				// changes. Surface the failure — a silently dying stream
+				// otherwise looks exactly like "realtime not working".
+				if (!closed && !abort.signal.aborted) {
+					console.warn('[table-watch] stream dropped, reconnecting', error);
+				}
 			}
 			if (!closed && !abort.signal.aborted) {
 				attempt = Math.min(attempt + 1, 6);

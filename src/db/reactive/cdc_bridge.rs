@@ -35,7 +35,13 @@ impl CdcBridge {
     }
 
     async fn forward(&self, event: sqlite_realtime::RealtimeRawEvent) {
-        forward_event_with_pool(&self.pool, event).await;
+        let forwarded = forward_event_with_pool(&self.pool, event).await;
+        tracing::info!(
+            table = %forwarded.table,
+            rowid = forwarded.new_row_id.unwrap_or(forwarded.old_row_id.unwrap_or(0)),
+            organization_id = ?forwarded.organization_id,
+            "cdc event forwarded to bus"
+        );
     }
 
     async fn lookup_organization_id(&self, table: &str, rowid: i64) -> Option<i64> {
@@ -50,7 +56,10 @@ pub(super) async fn forward_event(event: sqlite_realtime::RealtimeRawEvent) {
     forward_event_with_pool(&pool, event).await;
 }
 
-async fn forward_event_with_pool(pool: &sqlx::SqlitePool, event: sqlite_realtime::RealtimeRawEvent) {
+async fn forward_event_with_pool(
+    pool: &sqlx::SqlitePool,
+    event: sqlite_realtime::RealtimeRawEvent,
+) -> DbChangeEvent {
     let operation = match event.op {
         RealtimeOp::Insert => DbChangeOperation::Insert,
         RealtimeOp::Update => DbChangeOperation::Update,
@@ -61,13 +70,15 @@ async fn forward_event_with_pool(pool: &sqlx::SqlitePool, event: sqlite_realtime
         DbChangeOperation::Delete | DbChangeOperation::Unknown => None,
         _ => lookup_organization_id(pool, &event.table, event.rowid).await,
     };
-    event_bus().publish(vec![DbChangeEvent {
+    let change = DbChangeEvent {
         table: event.table,
         organization_id,
         old_row_id: (operation == DbChangeOperation::Delete).then_some(event.rowid),
         new_row_id: (operation != DbChangeOperation::Delete).then_some(event.rowid),
         operation,
-    }]);
+    };
+    event_bus().publish(vec![change.clone()]);
+    change
 }
 
 async fn lookup_organization_id(pool: &sqlx::SqlitePool, table: &str, rowid: i64) -> Option<i64> {

@@ -76,23 +76,30 @@ export function useDomainListByApplication(applicationId: bigint) {
 
 /** Create a domain (host, route, certificate and application_id/compose_id linkage in the payload). */
 export function useDomainCreate() {
-	return useConnectMutation((input: Record<string, unknown>) =>
-		domainClient.createDomain({payload: JSON.stringify(input)}),
+	return useConnectMutation(
+		(input: Record<string, unknown>) =>
+			domainClient.createDomain({payload: JSON.stringify(input)}),
+		{invalidate: [['domains']]},
 	);
 }
 
 /** Update a domain by id (fields to change in the payload). */
 export function useDomainUpdate() {
-	return useConnectMutation((input: {id: number | bigint; [field: string]: unknown}) => {
-		const {id, ...body} = input;
-		return domainClient.updateDomain({id: BigInt(id), payload: JSON.stringify(body)});
-	});
+	return useConnectMutation(
+		(input: {id: number | bigint; [field: string]: unknown}) => {
+			const {id, ...body} = input;
+			return domainClient.updateDomain({id: BigInt(id), payload: JSON.stringify(body)});
+		},
+		{invalidate: [['domains']]},
+	);
 }
 
 /** Delete a domain by id. */
 export function useDomainDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		domainClient.deleteDomain({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			domainClient.deleteDomain({id: BigInt(id)}),
+		{invalidate: [['domains']]},
 	);
 }
 

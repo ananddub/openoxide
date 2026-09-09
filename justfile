@@ -78,16 +78,28 @@ gen-mod:
         add_if_missing "src/lib.rs" "$name"
     done < <(find src -mindepth 1 -maxdepth 1 -type d | sort)
 
-# Run the panel binary (openoxide) in the foreground.
-run:
+# Run the panel binary (openoxide) in the foreground. Builds the web bundle
+# first — the SPA is RustEmbed'ed from web/openoxide_react/dist, so a stale
+# dist means the panel serves an outdated dashboard.
+run: web-build
     cargo run --bin openoxide
 
-# Build everything natively: panel (openoxide) + agent + web bundle.
-build-native:
-    cargo build --bin openoxide --bin agent
+# Build the web bundle and mark the embed module dirty. Release builds embed
+# dist at compile time, so dashboard.rs must be touched for cargo to pick up
+# new assets; debug builds read dist from disk at runtime (touch is harmless).
+web-build:
     cd web/openoxide_react && bun run build
+    touch src/api/dashboard.rs
 
-# Build all three dev images (panel + agent + web).
+# Type-check the frontend only (no bundle emitted).
+web-check:
+    cd web/openoxide_react && bunx tsc --noEmit
+
+# Build everything natively: panel (openoxide) + agent + web bundle.
+build-native: web-build
+    cargo build --bin openoxide --bin agent
+
+# Build all dev images (panel + agent).
 build-images:
     docker compose -f docker-compose.dev.yml build
 
@@ -106,9 +118,9 @@ web:
 run-agent:
     cargo run --bin agent
 
-# ── Full local stack (docker compose: panel + agent + web) ───────────────────
+# ── Full local stack (docker compose: panel + agent) ─────────────────────────
 
-# Start the full stack (panel :4000, agent :50051 internal, web :3001).
+# Start the full stack (panel :4000, agent :50051 internal).
 up:
     docker network create openoxide-network 2>/dev/null || true
     docker compose -f docker-compose.dev.yml up -d --build
@@ -117,13 +129,18 @@ up:
 down:
     docker compose -f docker-compose.dev.yml down
 
-# Tail all three services' logs.
+# Tail all services' logs.
 logs:
     docker compose -f docker-compose.dev.yml logs -f
 
-# Restart everything after code changes (rebuild + up).
+# Restart the dev stack (:4000). The panel image builds the SPA and the
+# binary from source inside the Docker build, so host builds are unnecessary.
 restart:
     docker compose -f docker-compose.dev.yml up -d --build --force-recreate
+
+# Native (non-docker) restart: fresh bundle + fresh binary, foreground.
+restart-native: web-build
+    cargo run --bin openoxide
 
 # ── Docker (production/standalone) ──────────────────────────────────────────
 

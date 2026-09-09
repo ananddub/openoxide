@@ -64,6 +64,9 @@ export function useTraefikFileContentUpdate() {
 					content: input.content,
 				}),
 			}),
+		// Traefik file writes are filesystem-side (no CDC table), so the
+		// tree and content queries must be invalidated directly.
+		{invalidate: [['traefik']]},
 	);
 }
 
@@ -100,10 +103,12 @@ export function useTraefikRequestsStatus() {
 
 /** Toggle Traefik request logging on/off (legacy REST: POST /traefik/requests/toggle). */
 export function useTraefikRequestsToggle() {
-	return useConnectMutation((input: {enabled: boolean}) =>
-		traefikClient.toggleRequests({
-			payload: JSON.stringify({enabled: input.enabled}),
-		}),
+	return useConnectMutation(
+		(input: {enabled: boolean}) =>
+			traefikClient.toggleRequests({
+				payload: JSON.stringify({enabled: input.enabled}),
+			}),
+		{invalidate: [['traefik']]},
 	);
 }
 

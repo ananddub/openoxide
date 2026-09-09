@@ -524,7 +524,7 @@ export function VaultProvidersPage() {
 											<span className="text-[11px] text-muted-foreground">
 												• Added{' '}
 												{new Date(
-													provider.created_at * 1000,
+													Number(provider.created_at) * 1000,
 												).toLocaleDateString()}
 											</span>
 										</div>

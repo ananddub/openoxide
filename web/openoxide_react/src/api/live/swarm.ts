@@ -52,18 +52,23 @@ export function useSwarmNodeAvailabilityUpdate() {
 					availability: input.availability,
 				}),
 			}),
+		// Docker swarm state is agent-side — the CDC stream never sees it —
+		// so these invalidate the swarm queries directly.
+		{invalidate: [['swarm']]},
 	);
 }
 
 /** Force-remove a swarm node from the cluster by node id. */
 export function useSwarmNodeRemove() {
-	return useConnectMutation((input: {server_id?: number | bigint | null; node_id: string}) =>
-		swarmClient.removeNode({
-			payload: JSON.stringify({
-				server_id: toServerId(input.server_id),
-				node_id: input.node_id,
+	return useConnectMutation(
+		(input: {server_id?: number | bigint | null; node_id: string}) =>
+			swarmClient.removeNode({
+				payload: JSON.stringify({
+					server_id: toServerId(input.server_id),
+					node_id: input.node_id,
+				}),
 			}),
-		}),
+		{invalidate: [['swarm']]},
 	);
 }
 
@@ -99,25 +104,29 @@ export async function swarmJoinTokens(
 
 /** Promote a worker node to manager. */
 export function useSwarmNodePromote() {
-	return useConnectMutation((input: {server_id?: number | bigint | null; node_id: string}) =>
-		swarmClient.promoteNode({
-			payload: JSON.stringify({
-				server_id: toServerId(input.server_id),
-				node_id: input.node_id,
+	return useConnectMutation(
+		(input: {server_id?: number | bigint | null; node_id: string}) =>
+			swarmClient.promoteNode({
+				payload: JSON.stringify({
+					server_id: toServerId(input.server_id),
+					node_id: input.node_id,
+				}),
 			}),
-		}),
+		{invalidate: [['swarm']]},
 	);
 }
 
 /** Demote a manager node to worker. */
 export function useSwarmNodeDemote() {
-	return useConnectMutation((input: {server_id?: number | bigint | null; node_id: string}) =>
-		swarmClient.demoteNode({
-			payload: JSON.stringify({
-				server_id: toServerId(input.server_id),
-				node_id: input.node_id,
+	return useConnectMutation(
+		(input: {server_id?: number | bigint | null; node_id: string}) =>
+			swarmClient.demoteNode({
+				payload: JSON.stringify({
+					server_id: toServerId(input.server_id),
+					node_id: input.node_id,
+				}),
 			}),
-		}),
+		{invalidate: [['swarm']]},
 	);
 }
 
@@ -126,13 +135,15 @@ export function useSwarmNodeDemote() {
  * manager node (it resets the node so it can join another cluster).
  */
 export function useSwarmLeave() {
-	return useConnectMutation((input: {server_id?: number | bigint | null; force?: boolean}) =>
-		swarmClient.leave({
-			payload: JSON.stringify({
-				server_id: toServerId(input.server_id),
-				force: input.force ?? false,
+	return useConnectMutation(
+		(input: {server_id?: number | bigint | null; force?: boolean}) =>
+			swarmClient.leave({
+				payload: JSON.stringify({
+					server_id: toServerId(input.server_id),
+					force: input.force ?? false,
+				}),
 			}),
-		}),
+		{invalidate: [['swarm']]},
 	);
 }
 
@@ -151,5 +162,6 @@ export function useSwarmJoin() {
 					role: input.role,
 				}),
 			}),
+		{invalidate: [['swarm']]},
 	);
 }

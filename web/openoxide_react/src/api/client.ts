@@ -11,12 +11,12 @@ export function getAccessToken(): string {
 		const raw = localStorage.getItem(AUTH_STORAGE_KEY);
 		if (!raw || raw === 'undefined') return '';
 		const session = JSON.parse(raw);
-		return session?.tokens?.access_token || '';
+		// Connect responses serialize proto fields camelCase (accessToken).
+		return session?.tokens?.accessToken || '';
 	} catch {
 		return '';
 	}
 }
-
 export const getApiBaseUrl = () => {
 	if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
 	// Same-origin by default (the Caddy proxy in the dev stack and the
@@ -33,17 +33,9 @@ const REFRESH_RETRY_COOLDOWN_MS = 15_000;
 
 const authClient = createServiceClient(AuthService);
 
-export function applyOrganizationHeader(request: Request) {
-	const organizationId = getActiveOrganizationId();
-	if (organizationId && !request.url.includes('/organizations')) {
-		request.headers.set('X-Organization-Id', String(organizationId));
-	}
-}
-
 /**
  * Refreshes the access token through the ConnectRPC AuthService and
- * rewrites the stored session in the legacy REST-era shape (user.user_id /
- * tokens.access_token snake_case), which the stores and interceptors read.
+ * rewrites the stored session (user.id / tokens.accessToken, camelCase).
  */
 export async function refreshAccessToken(): Promise<string | null> {
 	if (refreshPromise) return refreshPromise;
@@ -64,7 +56,7 @@ export async function refreshAccessToken(): Promise<string | null> {
 			}
 
 			const session = JSON.parse(sessionRaw);
-			refreshToken = session?.tokens?.refreshToken || session?.tokens?.refresh_token || '';
+			refreshToken = session?.tokens?.refreshToken || '';
 			if (!refreshToken) {
 				logout();
 				return null;
@@ -83,10 +75,10 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 			const newSession = {
 				user: {
-					user_id: Number(response.user.id),
+					id: Number(response.user.id),
 					email: response.user.email,
-					first_name: response.user.firstName,
-					last_name: response.user.lastName,
+					firstName: response.user.firstName,
+					lastName: response.user.lastName,
 					avatar: response.user.avatar,
 				},
 				tokens: response.tokens,

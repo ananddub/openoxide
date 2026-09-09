@@ -65,57 +65,68 @@ export type ServerMigrationPayload = {
 
 /** Create a remote server (SSH connection fields in the payload). */
 export function useRemoteServerCreate() {
-	return useConnectMutation((input: Record<string, unknown>) =>
-		remoteServerClient.createRemoteServer({payload: JSON.stringify(input)}),
+	return useConnectMutation(
+		(input: Record<string, unknown>) =>
+			remoteServerClient.createRemoteServer({payload: JSON.stringify(input)}),
+		{invalidate: [['servers']]},
 	);
 }
 
 /** Update a remote server by id (fields to change in the payload). */
 export function useRemoteServerUpdate() {
-	return useConnectMutation((input: {id: number | bigint; [field: string]: unknown}) => {
-		const {id, ...body} = input;
-		return remoteServerClient.updateRemoteServer({id: BigInt(id), payload: JSON.stringify(body)});
-	});
+	return useConnectMutation(
+		(input: {id: number | bigint; [field: string]: unknown}) => {
+			const {id, ...body} = input;
+			return remoteServerClient.updateRemoteServer({id: BigInt(id), payload: JSON.stringify(body)});
+		},
+		{invalidate: [['servers']]},
+	);
 }
 
 /** Delete a remote server by id. */
 export function useRemoteServerDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		remoteServerClient.deleteRemoteServer({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			remoteServerClient.deleteRemoteServer({id: BigInt(id)}),
+		{invalidate: [['servers']]},
 	);
 }
 
 /** Mark a remote server active by id. */
 export function useRemoteServerActivate() {
-	return useConnectMutation((id: number | bigint) =>
-		remoteServerClient.activate({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			remoteServerClient.activate({id: BigInt(id)}),
+		{invalidate: [['servers']]},
 	);
 }
 
 /** Mark a remote server inactive by id. */
 export function useRemoteServerDeactivate() {
-	return useConnectMutation((id: number | bigint) =>
-		remoteServerClient.deactivate({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			remoteServerClient.deactivate({id: BigInt(id)}),
+		{invalidate: [['servers']]},
 	);
 }
 
 /** Refresh the stored last-test timestamp for a remote server by id. */
 export function useRemoteServerTestConnection() {
-	return useConnectMutation((id: number | bigint) =>
-		remoteServerClient.testConnection({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			remoteServerClient.testConnection({id: BigInt(id)}),
+		{invalidate: [['servers']]},
 	);
 }
 
-/**
- * Migrate a remote server's dependencies to another server (the target
- * server id rides in the payload).
- */
 export function useRemoteServerMigrateDependencies() {
-	return useConnectMutation((input: {id: number | bigint; target_server_id: number | bigint}) =>
-		remoteServerClient.migrateDependencies({
-			id: BigInt(input.id),
-			payload: JSON.stringify({target_server_id: Number(input.target_server_id)}),
-		}),
+	return useConnectMutation(
+		(input: {id: number | bigint; target_server_id: number | bigint}) =>
+			remoteServerClient.migrateDependencies({
+				id: BigInt(input.id),
+				payload: JSON.stringify({target_server_id: Number(input.target_server_id)}),
+			}),
+		{invalidate: [['servers']]},
 	);
 }
 
@@ -135,8 +146,10 @@ export function useRemoteServerMigration(migrationId: string) {
 
 /** Roll back a dependency migration (migration id as a plain payload string). */
 export function useRemoteServerRollbackMigration() {
-	return useConnectMutation((migrationId: string) =>
-		remoteServerClient.rollbackMigration({payload: migrationId}),
+	return useConnectMutation(
+		(migrationId: string) =>
+			remoteServerClient.rollbackMigration({payload: migrationId}),
+		{invalidate: [['servers']]},
 	);
 }
 

@@ -42,10 +42,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 	const overviewServices = servicesQuery.data ?? [];
 	const availableTags = useTagListAll().data ?? [];
 
-	const formatDate = (timestamp?: number) => {
-		if (!timestamp) return 'recently';
-		const date = new Date(timestamp * 1000);
-		return date.toLocaleDateString();
+	// created_at is a Connect proto int64, so it arrives as a bigint at
+	// runtime; multiplying it directly throws a TypeError and crashes the
+	// card render — coerce to a number first.
+	const formatDate = (timestamp?: number | bigint) => {
+		const seconds = Number(timestamp ?? 0);
+		if (!seconds) return 'recently';
+		return new Date(seconds * 1000).toLocaleDateString();
 	};
 
 	// Calculate accurate total services & environments for this project from Zustand RAM store

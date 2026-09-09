@@ -44,7 +44,7 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 				form.append('drop_build_path', dropBuildPath || '/');
 				const sessionRaw = localStorage.getItem('openoxide-auth-session');
 				const accessToken = sessionRaw
-					? JSON.parse(sessionRaw)?.tokens?.access_token
+					? JSON.parse(sessionRaw)?.tokens?.accessToken
 					: undefined;
 				await new Promise<void>((resolve, reject) => {
 					const request = new XMLHttpRequest();

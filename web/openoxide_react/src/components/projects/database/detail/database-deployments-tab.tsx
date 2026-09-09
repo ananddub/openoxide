@@ -89,9 +89,7 @@ export function DatabaseDeploymentsTab({
 					try {
 						const parsed = JSON.parse(sessionRaw);
 						accessToken =
-							parsed?.tokens?.access_token ||
-							parsed?.state?.accessToken ||
-							parsed?.accessToken ||
+							parsed?.tokens?.accessToken ||
 							'';
 					} catch {}
 				}

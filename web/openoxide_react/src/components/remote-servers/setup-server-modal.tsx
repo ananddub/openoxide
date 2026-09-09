@@ -90,7 +90,7 @@ export function SetupServerModal({
 			if (sessionRaw) {
 				try {
 					const session = JSON.parse(sessionRaw);
-					accessToken = session?.tokens?.access_token || '';
+					accessToken = session?.tokens?.accessToken || '';
 				} catch {}
 			}
 

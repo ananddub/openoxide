@@ -1,5 +1,5 @@
 import {createServiceClient, useActiveOrgId, useResourceListQuery} from './query';
-import {OverviewService} from '#/gen/connect/openoxide/api/v1/overview_pb';
+import {OverviewOperationsService} from '#/gen/connect/openoxide/api/v1/overview_operations_pb';
 
 /**
  * Overview payloads mirror the legacy live shape (snake_case JSON payload of
@@ -41,7 +41,7 @@ export type OverviewBackupItemPayload = {
 	created_at: bigint;
 };
 
-const overviewClient = createServiceClient(OverviewService);
+const overviewClient = createServiceClient(OverviewOperationsService);
 
 /**
  * Organization-wide services (legacy live: useOverviewServices). Keyed under
@@ -53,7 +53,7 @@ export function useOverviewServices() {
 	const orgId = useActiveOrgId();
 	return useResourceListQuery<OverviewServiceItemPayload>(
 		['overview-services', orgId.toString()],
-		() => overviewClient.listServices({organizationId: orgId}),
+		() => overviewClient.listOrganizationServices({organizationId: orgId}),
 	);
 }
 
@@ -65,7 +65,7 @@ export function useOverviewDomains() {
 	const orgId = useActiveOrgId();
 	return useResourceListQuery<OverviewDomainItemPayload>(
 		['overview-domains', orgId.toString()],
-		() => overviewClient.listDomains({organizationId: orgId}),
+		() => overviewClient.listOrganizationDomains({organizationId: orgId}),
 	);
 }
 
@@ -78,6 +78,6 @@ export function useOverviewBackups() {
 	const orgId = useActiveOrgId();
 	return useResourceListQuery<OverviewBackupItemPayload>(
 		['overview-backups', orgId.toString()],
-		() => overviewClient.listBackups({organizationId: orgId}),
+		() => overviewClient.listOrganizationBackups({organizationId: orgId}),
 	);
 }

@@ -191,7 +191,7 @@ export function SchedulesTab({
 											<span className="flex items-center gap-1">
 												<Clock className="h-3 w-3" />{' '}
 												{new Date(
-													job.created_at * 1000,
+													Number(job.created_at) * 1000,
 												).toLocaleDateString()}
 											</span>
 										</div>

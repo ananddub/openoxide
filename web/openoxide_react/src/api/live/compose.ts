@@ -1,11 +1,12 @@
 import {createServiceClient, useActiveOrgId, useConnectMutation, useConnectQuery} from './query';
 import {ComposeService, type Compose} from '#/gen/connect/openoxide/api/v1/compose_pb';
-import {OverviewService} from '#/gen/connect/openoxide/api/v1/overview_pb';
+import {OverviewOperationsService} from '#/gen/connect/openoxide/api/v1/overview_operations_pb';
 import type {OverviewServiceItemPayload} from './overview';
 
 /**
- * Legacy app-store `ComposeItem` shape (all-optional fields), kept so
- * org-wide list consumers see the exact same payload as before.
+ * Org-wide compose list item (all-optional fields) derived from the
+ * overview services stream — keyed under the `composes` prefix so
+ * SERVICE_COMPOSE table changes invalidate it.
  */
 export type ComposeItemPayload = {
 	id: number;
@@ -35,7 +36,7 @@ export type ComposePayload = {
 };
 
 const composeClient = createServiceClient(ComposeService);
-const overviewClient = createServiceClient(OverviewService);
+const overviewClient = createServiceClient(OverviewOperationsService);
 
 function toComposePayload(compose: Compose): ComposePayload {
 	return {
@@ -66,7 +67,7 @@ export function useComposeList() {
 	return useConnectQuery<ComposeItemPayload[]>(
 		['composes', orgId.toString()],
 		async () => {
-			const response = await overviewClient.listServices({
+			const response = await overviewClient.listOrganizationServices({
 				organizationId: orgId,
 			});
 			return response.items
@@ -128,6 +129,7 @@ export function useComposeCreate() {
 				serverId: input.server_id !== undefined ? BigInt(input.server_id) : undefined,
 				composeFile: input.compose_file,
 			}),
+		{invalidate: [['composes']]},
 	);
 }
 
@@ -150,55 +152,71 @@ export function useComposeUpdate() {
 				serverId: input.server_id !== undefined ? BigInt(input.server_id) : undefined,
 				networkIds: input.network_ids ?? [],
 			}),
+		{invalidate: [['composes']]},
 	);
 }
 
 /** Delete a compose by id (legacy REST: DELETE /composes/{id}). */
 export function useComposeDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		composeClient.deleteCompose({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			composeClient.deleteCompose({id: BigInt(id)}),
+		{invalidate: [['composes']]},
 	);
 }
 
 /** Deploy a compose by id (legacy REST: POST /composes/{id}/deploy). */
 export function useComposeDeploy() {
-	return useConnectMutation((id: number | bigint) =>
-		composeClient.deploy({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			composeClient.deploy({id: BigInt(id)}),
+		// Deploys also insert a DEPLOYMENTS row, so refresh that list too.
+		{invalidate: [['composes'], ['deployments']]},
 	);
 }
 
 /** Redeploy a compose by id. */
 export function useComposeRedeploy() {
-	return useConnectMutation((id: number | bigint) =>
-		composeClient.redeploy({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			composeClient.redeploy({id: BigInt(id)}),
+		{invalidate: [['composes'], ['deployments']]},
 	);
 }
 
 /** Reload a compose's configuration by id. */
 export function useComposeReload() {
-	return useConnectMutation((id: number | bigint) =>
-		composeClient.reload({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			composeClient.reload({id: BigInt(id)}),
+		{invalidate: [['composes']]},
 	);
 }
 
 /** Start a stopped compose by id (legacy REST: POST /composes/{id}/start). */
 export function useComposeStart() {
-	return useConnectMutation((id: number | bigint) =>
-		composeClient.start({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			composeClient.start({id: BigInt(id)}),
+		{invalidate: [['composes']]},
 	);
 }
 
 /** Stop a running compose by id (legacy REST: POST /composes/{id}/stop). */
 export function useComposeStop() {
-	return useConnectMutation((id: number | bigint) =>
-		composeClient.stop({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			composeClient.stop({id: BigInt(id)}),
+		{invalidate: [['composes']]},
 	);
 }
 
 /** Cancel the running deployment of a compose by id (legacy REST: POST /compose/{id}/cancel). */
 export function useComposeCancel() {
-	return useConnectMutation((id: number | bigint) =>
-		composeClient.cancel({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			composeClient.cancel({id: BigInt(id)}),
+		{invalidate: [['composes'], ['deployments']]},
 	);
 }
 
@@ -211,6 +229,7 @@ export function useComposeSetRawSource() {
 				content: input.content,
 				fileName: input.file_name,
 			}),
+		{invalidate: [['composes']]},
 	);
 }
 
@@ -237,29 +256,37 @@ function toSetSourceRequest(input: ComposeSourceInput) {
 
 /** Point a compose at a GitHub repository (legacy REST: PATCH /compose/{id}/source/github). */
 export function useComposeSetGithubSource() {
-	return useConnectMutation((input: ComposeSourceInput) =>
-		composeClient.setGithubSource(toSetSourceRequest(input)),
+	return useConnectMutation(
+		(input: ComposeSourceInput) =>
+			composeClient.setGithubSource(toSetSourceRequest(input)),
+		{invalidate: [['composes']]},
 	);
 }
 
 /** Point a compose at a GitLab repository (legacy REST: PATCH /compose/{id}/source/gitlab). */
 export function useComposeSetGitlabSource() {
-	return useConnectMutation((input: ComposeSourceInput) =>
-		composeClient.setGitlabSource(toSetSourceRequest(input)),
+	return useConnectMutation(
+		(input: ComposeSourceInput) =>
+			composeClient.setGitlabSource(toSetSourceRequest(input)),
+		{invalidate: [['composes']]},
 	);
 }
 
 /** Point a compose at a Gitea repository (legacy REST: PATCH /compose/{id}/source/gitea). */
 export function useComposeSetGiteaSource() {
-	return useConnectMutation((input: ComposeSourceInput) =>
-		composeClient.setGiteaSource(toSetSourceRequest(input)),
+	return useConnectMutation(
+		(input: ComposeSourceInput) =>
+			composeClient.setGiteaSource(toSetSourceRequest(input)),
+		{invalidate: [['composes']]},
 	);
 }
 
 /** Point a compose at a Bitbucket repository (legacy REST: PATCH /compose/{id}/source/bitbucket). */
 export function useComposeSetBitbucketSource() {
-	return useConnectMutation((input: ComposeSourceInput) =>
-		composeClient.setBitbucketSource(toSetSourceRequest(input)),
+	return useConnectMutation(
+		(input: ComposeSourceInput) =>
+			composeClient.setBitbucketSource(toSetSourceRequest(input)),
+		{invalidate: [['composes']]},
 	);
 }
 
@@ -275,5 +302,6 @@ export function useComposeSetCustomGitSource() {
 				repository: input.url,
 				branch: input.branch,
 			}),
+		{invalidate: [['composes']]},
 	);
 }

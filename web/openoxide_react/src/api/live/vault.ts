@@ -36,13 +36,16 @@ export function useVaultList() {
  * carries it explicitly; provider fields ride in the payload.
  */
 export function useVaultProviderCreate() {
-	return useConnectMutation((input: {organization_id: number | bigint; [field: string]: unknown}) => {
-		const {organization_id, ...body} = input;
-		return vaultClient.createProvider({
-			organizationId: BigInt(organization_id),
-			payload: JSON.stringify(body),
-		});
-	});
+	return useConnectMutation(
+		(input: {organization_id: number | bigint; [field: string]: unknown}) => {
+			const {organization_id, ...body} = input;
+			return vaultClient.createProvider({
+				organizationId: BigInt(organization_id),
+				payload: JSON.stringify(body),
+			});
+		},
+		{invalidate: [['vault_providers']]},
+	);
 }
 
 /** Update a vault provider by id (fields to change in the payload). */
@@ -56,16 +59,19 @@ export function useVaultProviderUpdate() {
 				payload: JSON.stringify(body),
 			});
 		},
+		{invalidate: [['vault_providers']]},
 	);
 }
 
 /** Delete a vault provider by id. */
 export function useVaultProviderDelete() {
-	return useConnectMutation((input: {id: number | bigint; organization_id?: number | bigint}) =>
-		vaultClient.deleteProvider({
-			id: BigInt(input.id),
-			organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
-		}),
+	return useConnectMutation(
+		(input: {id: number | bigint; organization_id?: number | bigint}) =>
+			vaultClient.deleteProvider({
+				id: BigInt(input.id),
+				organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
+			}),
+		{invalidate: [['vault_providers']]},
 	);
 }
 

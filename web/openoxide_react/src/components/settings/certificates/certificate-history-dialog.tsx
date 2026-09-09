@@ -20,8 +20,11 @@ type Props = {
   onRenewed: () => Promise<void>;
 };
 
-const date = (timestamp?: number) =>
-  timestamp ? new Date(timestamp * 1000).toLocaleString() : "Not available";
+const date = (timestamp?: number | bigint) => {
+  // Proto int64 fields arrive as bigint at runtime — coerce first.
+  const seconds = Number(timestamp ?? 0);
+  return seconds ? new Date(seconds * 1000).toLocaleString() : "Not available";
+};
 
 export function CertificateHistoryDialog({
   certificate,

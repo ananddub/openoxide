@@ -47,7 +47,13 @@ impl ChangePump {
     }
 
     fn dispatch(&self, change_set: DbChangeSet) {
-        for batch in self.route(&change_set) {
+        let batches = self.route(&change_set);
+        tracing::info!(
+            tables = ?change_set.changes.iter().map(|c| c.table.as_str()).collect::<Vec<_>>(),
+            batches = batches.len(),
+            "change pump dispatched"
+        );
+        for batch in batches {
             self.ledger.deliver(batch);
         }
     }

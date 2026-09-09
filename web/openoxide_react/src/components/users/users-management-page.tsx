@@ -489,7 +489,7 @@ export function UsersManagementPage() {
 									<TableCell className="py-2.5 font-mono text-xs text-muted-foreground">
 										{invite.created_at
 											? new Date(
-													invite.created_at * 1000,
+													Number(invite.created_at) * 1000,
 												).toLocaleDateString()
 											: 'Recently'}
 									</TableCell>

@@ -1,8 +1,6 @@
-// Response/mutation payload types. These were previously derived from the
-// frozen OpenAPI schema (types/api.d.ts); since the ConnectRPC migration the
-// wire payloads still carry the same snake_case fields, so the types now
-// stand alone as structural definitions. Keep field names in sync with the
-// backend DTO JSON the live hooks parse.
+// Response/mutation payload types. The wire payloads carry the backend
+// DTO's snake_case fields, so these are structural definitions matching the
+// JSON the live hooks parse. Keep field names in sync with backend DTOs.
 
 type Payload = Record<string, any>;
 

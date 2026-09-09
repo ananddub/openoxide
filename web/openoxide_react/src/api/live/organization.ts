@@ -58,12 +58,14 @@ export function useOrganizationGet(id: bigint) {
 
 /** Create an organization (legacy REST: POST /organizations). */
 export function useOrganizationCreate() {
-	return useConnectMutation((input: {name: string; logo?: string; slug?: string}) =>
-		organizationClient.createOrganization({
-			name: input.name,
-			logo: input.logo,
-			slug: input.slug,
-		}),
+	return useConnectMutation(
+		(input: {name: string; logo?: string; slug?: string}) =>
+			organizationClient.createOrganization({
+				name: input.name,
+				logo: input.logo,
+				slug: input.slug,
+			}),
+		{invalidate: [['organizations']]},
 	);
 }
 
@@ -77,13 +79,16 @@ export function useOrganizationUpdate() {
 				logo: input.logo,
 				slug: input.slug,
 			}),
+		{invalidate: [['organizations']]},
 	);
 }
 
 /** Delete an organization by id (legacy REST: DELETE /organizations/{id}). */
 export function useOrganizationDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		organizationClient.deleteOrganization({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			organizationClient.deleteOrganization({id: BigInt(id)}),
+		{invalidate: [['organizations']]},
 	);
 }
 
@@ -120,6 +125,9 @@ export function useUserUpdate() {
 				lastName: input.last_name,
 				avatar: input.avatar,
 			}),
+		// The profile query is keyed ['auth', 'profile'] — the same prefix
+		// the table-watch USERS entry invalidates.
+		{invalidate: [['auth']]},
 	);
 }
 

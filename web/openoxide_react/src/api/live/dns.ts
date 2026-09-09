@@ -55,13 +55,16 @@ export function useDnsRecordList(providerId: bigint, zoneId: string) {
  * carries it explicitly; provider fields ride in the payload.
  */
 export function useDnsProviderCreate() {
-	return useConnectMutation((input: {organization_id: number | bigint; [field: string]: unknown}) => {
-		const {organization_id, ...body} = input;
-		return dnsClient.createProvider({
-			organizationId: BigInt(organization_id),
-			payload: JSON.stringify(body),
-		});
-	});
+	return useConnectMutation(
+		(input: {organization_id: number | bigint; [field: string]: unknown}) => {
+			const {organization_id, ...body} = input;
+			return dnsClient.createProvider({
+				organizationId: BigInt(organization_id),
+				payload: JSON.stringify(body),
+			});
+		},
+		{invalidate: [['dns_providers']]},
+	);
 }
 
 /** Update a DNS provider by id (fields to change in the payload). */
@@ -75,26 +78,31 @@ export function useDnsProviderUpdate() {
 				payload: JSON.stringify(body),
 			});
 		},
+		{invalidate: [['dns_providers']]},
 	);
 }
 
 /** Delete a DNS provider by id. */
 export function useDnsProviderDelete() {
-	return useConnectMutation((input: {id: number | bigint; organization_id?: number | bigint}) =>
-		dnsClient.deleteProvider({
-			id: BigInt(input.id),
-			organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
-		}),
+	return useConnectMutation(
+		(input: {id: number | bigint; organization_id?: number | bigint}) =>
+			dnsClient.deleteProvider({
+				id: BigInt(input.id),
+				organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
+			}),
+		{invalidate: [['dns_providers']]},
 	);
 }
 
 /** Test the connection of a stored DNS provider by id. */
 export function useDnsProviderTest() {
-	return useConnectMutation((input: {id: number | bigint; organization_id?: number | bigint}) =>
-		dnsClient.testProvider({
-			id: BigInt(input.id),
-			organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
-		}),
+	return useConnectMutation(
+		(input: {id: number | bigint; organization_id?: number | bigint}) =>
+			dnsClient.testProvider({
+				id: BigInt(input.id),
+				organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
+			}),
+		{invalidate: [['dns_providers']]},
 	);
 }
 
@@ -122,6 +130,9 @@ export function useDnsRecordCreate() {
 				payload: JSON.stringify(body),
 			});
 		},
+		// Records live at the DNS provider (no CDC table), so the zone and
+		// record queries must be invalidated directly.
+		{invalidate: [['dns']]},
 	);
 }
 
@@ -137,5 +148,6 @@ export function useDnsRecordDelete() {
 				organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
 				payload: JSON.stringify({zone_id: input.zone_id, name: input.name}),
 			}),
+		{invalidate: [['dns']]},
 	);
 }

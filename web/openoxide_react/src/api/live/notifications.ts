@@ -39,23 +39,30 @@ export function useNotificationListByOrganization(organization_id: bigint) {
  * `CreateNotificationDto`).
  */
 export function useNotificationCreate() {
-	return useConnectMutation((input: Record<string, unknown>) =>
-		notificationClient.createNotification({payload: JSON.stringify(input)}),
+	return useConnectMutation(
+		(input: Record<string, unknown>) =>
+			notificationClient.createNotification({payload: JSON.stringify(input)}),
+		{invalidate: [['notifications']]},
 	);
 }
 
 /** Update a notification by id (fields to change in the payload). */
 export function useNotificationUpdate() {
-	return useConnectMutation((input: {id: number | bigint; [field: string]: unknown}) => {
-		const {id, ...body} = input;
-		return notificationClient.updateNotification({id: BigInt(id), payload: JSON.stringify(body)});
-	});
+	return useConnectMutation(
+		(input: {id: number | bigint; [field: string]: unknown}) => {
+			const {id, ...body} = input;
+			return notificationClient.updateNotification({id: BigInt(id), payload: JSON.stringify(body)});
+		},
+		{invalidate: [['notifications']]},
+	);
 }
 
 /** Delete a notification by id. */
 export function useNotificationDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		notificationClient.deleteNotification({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			notificationClient.deleteNotification({id: BigInt(id)}),
+		{invalidate: [['notifications']]},
 	);
 }
 
