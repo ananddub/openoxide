@@ -101,10 +101,25 @@ impl RealtimeHandle {
         // new eventfd which we register until AsyncFd accepts it.
         let reactor_task = tokio::spawn(async move {
             let mut current_fd = event_fd;
+            // Bounded retries: each pass cleans up the stale context and
+            // re-inits, which yields a fresh eventfd (often the same fd
+            // number after fd reuse — still valid to register because the
+            // cleanup closed the old one). Give up after a few passes to
+            // avoid a hot loop on a genuinely broken fd.
             let async_fd = loop {
                 match AsyncFd::new(current_fd) {
                     Ok(fd) => break fd,
                     Err(error) => {
+                        if current_fd != event_fd {
+                            // A re-init'd fd also failed — the connection
+                            // itself is broken; don't spin forever.
+                            tracing::error!(
+                                error = %error,
+                                fd = current_fd,
+                                "re-initialized eventfd also failed, reactor exiting"
+                            );
+                            return;
+                        }
                         tracing::warn!(
                             error = %error,
                             db_ptr = db_ptr_usize,
@@ -117,12 +132,6 @@ impl RealtimeHandle {
                         let rc = unsafe { sqlite3_realtime_init(db_ptr, &mut fresh_fd) };
                         if rc != 0 {
                             tracing::error!(rc, "realtime re-init failed, reactor exiting");
-                            return;
-                        }
-                        if fresh_fd == current_fd {
-                            tracing::error!(
-                                "re-init returned the same dead fd, reactor exiting"
-                            );
                             return;
                         }
                         current_fd = fresh_fd;
