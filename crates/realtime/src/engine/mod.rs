@@ -95,12 +95,38 @@ impl RealtimeHandle {
         let bus_clone = bus.clone();
         let db_ptr_usize = raw_sqlite_ptr as usize;
 
+        // The eventfd can be stale when the reactor starts (sqlx replaced the
+        // connection between attach and spawn, leaving the fd invalid).
+        // Register with retries: on failure, cleanup + fresh init gives a
+        // new eventfd which we register until AsyncFd accepts it.
         let reactor_task = tokio::spawn(async move {
-            let async_fd = match AsyncFd::new(event_fd) {
-                Ok(fd) => fd,
-                Err(e) => {
-                    tracing::error!("Failed to register eventfd in tokio epoll: {}", e);
-                    return;
+            let mut current_fd = event_fd;
+            let async_fd = loop {
+                match AsyncFd::new(current_fd) {
+                    Ok(fd) => break fd,
+                    Err(error) => {
+                        tracing::warn!(
+                            error = %error,
+                            db_ptr = db_ptr_usize,
+                            "eventfd registration failed, re-initializing realtime hooks"
+                        );
+                        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                        let db_ptr = db_ptr_usize as *mut c_void;
+                        unsafe { sqlite3_realtime_cleanup(db_ptr) };
+                        let mut fresh_fd: c_int = -1;
+                        let rc = unsafe { sqlite3_realtime_init(db_ptr, &mut fresh_fd) };
+                        if rc != 0 {
+                            tracing::error!(rc, "realtime re-init failed, reactor exiting");
+                            return;
+                        }
+                        if fresh_fd == current_fd {
+                            tracing::error!(
+                                "re-init returned the same dead fd, reactor exiting"
+                            );
+                            return;
+                        }
+                        current_fd = fresh_fd;
+                    }
                 }
             };
 
