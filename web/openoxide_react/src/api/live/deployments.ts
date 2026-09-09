@@ -15,10 +15,18 @@ export type DeploymentPayload = {
 const deploymentClient = createServiceClient(DeploymentService);
 
 function toDeploymentPayload(deployment: Deployment): DeploymentPayload {
+	// Legacy consumers filter on flat resource ids; the proto carries them
+	// as resourceType ("Deploying Database"/"Database" etc.) + resourceId.
+	// Map back so database_id/application_id/compose_id filters keep working.
+	const rid = Number(deployment.resourceId);
+	const type = (deployment.resourceType || '').toLowerCase();
 	return {
 		id: deployment.id,
 		resource_type: deployment.resourceType,
 		resource_id: deployment.resourceId,
+		database_id: type.includes('database') ? rid : null,
+		application_id: type.includes('application') ? rid : null,
+		compose_id: type.includes('compose') ? rid : null,
 		status: deployment.status,
 		error: deployment.error,
 		logs: deployment.logs,
@@ -91,36 +99,46 @@ export function useDeploymentRunning() {
 
 /** Delete a single deployment by id (legacy REST: DELETE /deployments/{id}). */
 export function useDeploymentDelete() {
-	return useConnectMutation((id: number | bigint) =>
-		deploymentClient.deleteDeployment({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			deploymentClient.deleteDeployment({id: BigInt(id)}),
+		{invalidate: [['deployments']]},
 	);
 }
 
 /** Delete all finished deployments of an application (legacy REST: DELETE /deployments/app/{id}). */
 export function useDeploymentDeleteByApplication() {
-	return useConnectMutation((id: number | bigint) =>
-		deploymentClient.deleteApplicationDeployments({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			deploymentClient.deleteApplicationDeployments({id: BigInt(id)}),
+		{invalidate: [['deployments']]},
 	);
 }
 
 /** Delete all finished deployments of a compose (legacy REST: DELETE /deployments/compose/{id}). */
 export function useDeploymentDeleteByCompose() {
-	return useConnectMutation((id: number | bigint) =>
-		deploymentClient.deleteComposeDeployments({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			deploymentClient.deleteComposeDeployments({id: BigInt(id)}),
+		{invalidate: [['deployments']]},
 	);
 }
 
 /** Delete all finished deployments of a database (legacy REST: DELETE /deployments/database/{id}). */
 export function useDeploymentDeleteByDatabase() {
-	return useConnectMutation((id: number | bigint) =>
-		deploymentClient.deleteDatabaseDeployments({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			deploymentClient.deleteDatabaseDeployments({id: BigInt(id)}),
+		{invalidate: [['deployments']]},
 	);
 }
 
 /** Cancel a running deployment by id (legacy REST: POST /deployments/{id}/cancel). */
 export function useDeploymentCancel() {
-	return useConnectMutation((id: number | bigint) =>
-		deploymentClient.cancelDeployment({id: BigInt(id)}),
+	return useConnectMutation(
+		(id: number | bigint) =>
+			deploymentClient.cancelDeployment({id: BigInt(id)}),
+		{invalidate: [['deployments']]},
 	);
 }
 
