@@ -81,9 +81,9 @@ async fn docker_service_logs(path: &str, query: Option<&str>) -> ResponseB {
         .and_then(|v| v.parse::<usize>().ok())
         .unwrap_or(200);
 
-    let service = match auto_di::resolve::<std::sync::Arc<
+    let service = match auto_di::resolve::<
         crate::services::compute::engine::DeploymentService,
-    >>()
+    >()
     .await
     {
         Ok(service) => service,
