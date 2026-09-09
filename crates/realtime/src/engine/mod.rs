@@ -106,44 +106,81 @@ impl RealtimeHandle {
             // number after fd reuse — still valid to register because the
             // cleanup closed the old one). Give up after a few passes to
             // avoid a hot loop on a genuinely broken fd.
-            let async_fd = loop {
-                match AsyncFd::new(current_fd) {
-                    Ok(fd) => break fd,
-                    Err(error) => {
-                        if current_fd != event_fd {
-                            // A re-init'd fd also failed — the connection
-                            // itself is broken; don't spin forever.
-                            tracing::error!(
+            let mut async_fd = {
+                loop {
+                    match AsyncFd::new(current_fd) {
+                        Ok(fd) => break fd,
+                        Err(error) => {
+                            if current_fd != event_fd {
+                                // A re-init'd fd also failed — the connection
+                                // itself is broken; don't spin forever.
+                                tracing::error!(
+                                    error = %error,
+                                    fd = current_fd,
+                                    "re-initialized eventfd also failed, reactor exiting"
+                                );
+                                return;
+                            }
+                            tracing::warn!(
                                 error = %error,
-                                fd = current_fd,
-                                "re-initialized eventfd also failed, reactor exiting"
+                                db_ptr = db_ptr_usize,
+                                "eventfd registration failed, re-initializing realtime hooks"
                             );
-                            return;
+                            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                            let db_ptr = db_ptr_usize as *mut c_void;
+                            unsafe { sqlite3_realtime_cleanup(db_ptr) };
+                            let mut fresh_fd: c_int = -1;
+                            let rc = unsafe { sqlite3_realtime_init(db_ptr, &mut fresh_fd) };
+                            if rc != 0 {
+                                tracing::error!(rc, "realtime re-init failed, reactor exiting");
+                                return;
+                            }
+                            current_fd = fresh_fd;
                         }
-                        tracing::warn!(
-                            error = %error,
-                            db_ptr = db_ptr_usize,
-                            "eventfd registration failed, re-initializing realtime hooks"
-                        );
-                        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-                        let db_ptr = db_ptr_usize as *mut c_void;
-                        unsafe { sqlite3_realtime_cleanup(db_ptr) };
-                        let mut fresh_fd: c_int = -1;
-                        let rc = unsafe { sqlite3_realtime_init(db_ptr, &mut fresh_fd) };
-                        if rc != 0 {
-                            tracing::error!(rc, "realtime re-init failed, reactor exiting");
-                            return;
-                        }
-                        current_fd = fresh_fd;
                     }
                 }
             };
 
+            // Main event loop. A readable() error means the eventfd died
+            // (connection replaced under us) — rebuild the registration and
+            // continue instead of exiting, so CDC survives sqlx reconnects.
             loop {
-                let mut guard = match async_fd.readable().await {
+                let guard = match async_fd.readable().await {
                     Ok(g) => g,
-                    Err(_) => break,
+                    Err(error) => {
+                        tracing::warn!(
+                            error = %error,
+                            db_ptr = db_ptr_usize,
+                            "eventfd became unreadable, re-initializing realtime hooks"
+                        );
+                        // Drop the dead registration and rebuild from scratch.
+                        drop(async_fd);
+                        unsafe { sqlite3_realtime_cleanup(db_ptr_usize as *mut c_void) };
+                        let mut fresh_fd: c_int = -1;
+                        let rc = unsafe {
+                            sqlite3_realtime_init(db_ptr_usize as *mut c_void, &mut fresh_fd)
+                        };
+                        if rc != 0 {
+                            tracing::error!(rc, "realtime re-init failed, reactor exiting");
+                            return;
+                        }
+                        match AsyncFd::new(fresh_fd) {
+                            Ok(fd) => {
+                                tracing::info!(fd = fresh_fd, "realtime re-armed after reconnect");
+                                async_fd = fd;
+                                continue;
+                            }
+                            Err(retry_error) => {
+                                tracing::error!(
+                                    %retry_error,
+                                    "eventfd re-registration failed, reactor exiting"
+                                );
+                                return;
+                            }
+                        }
+                    }
                 };
+                let mut guard = guard;
 
                 let mut drain_ctx = DrainContext {
                     events: Vec::with_capacity(32),
