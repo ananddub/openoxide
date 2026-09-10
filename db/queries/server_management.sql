@@ -1,7 +1,9 @@
 -- Extracted from src/db/repository/server_management.rs. Do not edit repository SQL directly.
 
 -- name: ServerManagementGetOrCreate1 :exec
-INSERT INTO server_management (server_id) VALUES (?) ON CONFLICT(server_id) DO NOTHING;
+INSERT INTO server_management (server_id, maintenance_mode, maintenance_message, labels, cleanup_policy, gpu_enabled)
+VALUES (?, 0, NULL, '{}', json_object('containers', json('true'), 'images', json('true'), 'networks', json('true'), 'volumes', json('false'), 'packages', json('false')), 0)
+ON CONFLICT(server_id) DO NOTHING;
 
 -- name: ServerManagementGetOrCreate2 :one
 SELECT server_id AS server_id, maintenance_mode, maintenance_message,
@@ -10,7 +12,7 @@ SELECT server_id AS server_id, maintenance_mode, maintenance_message,
 
 -- name: ServerManagementUpdate :exec
 UPDATE server_management SET maintenance_mode = ?, maintenance_message = ?,
-               labels = ?, cleanup_policy = ?, gpu_enabled = ?, updated_at = CURRENT_TIMESTAMP
+               labels = ?, cleanup_policy = ?, gpu_enabled = ?, updated_at = strftime('%s','now')
                WHERE server_id = ?;
 
 -- name: ServerManagementStartCleanup :exec

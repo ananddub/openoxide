@@ -57,7 +57,7 @@
     "db/queries/schedules.sql": "cbb4899278e2dad1b490e9c6948fdfe65c70a8cfd38294e0fbae969e73e960b0",
     "db/queries/security.sql": "80560bc7c4f114c0b8c3739e419b3a169a4cef6f64d9b1403a6e328b72b196f6",
     "db/queries/server_infra_extra.sql": "ba9dea2ce8a12291e8bd7b429cc65cb53c0ca6cf49723340d00620ba169f2835",
-    "db/queries/server_management.sql": "9bcfa0834b4d396b59d19ddb3a465133c8d97ba62ba0e5c24cc6747bc51c8de3",
+    "db/queries/server_management.sql": "babd34bcea4dffd4fd1b57e9ce5cea322c223605b305dfbe1cd7534832b8aa73",
     "db/queries/server_migrations.sql": "610a8b86c8e0e06dd773cc8b40468e19a0bb8ae03d04a2fcc9a40a34494dbdff",
     "db/queries/server_private_networks.sql": "d2c89c0a64eb58eeccdffab9d190bd0a2d84c65c39f8f4b1e5035593793e5c5d",
     "db/queries/servers.sql": "98a8708c81e207a0ea0fb71e532d4b1df68e1ed4bd735ccf9c127074d97df3df",
@@ -106,9 +106,9 @@
       "backup_executions"
     ],
     "db/queries/backups.sql": [
-      "volume_backups",
       "destinations",
-      "backups"
+      "backups",
+      "volume_backups"
     ],
     "db/queries/certificate_renewals.sql": [
       "certificate_renewals"
@@ -117,10 +117,10 @@
       "certificates"
     ],
     "db/queries/compose_extra.sql": [
+      "deployments",
       "services",
       "mounts",
-      "patches",
-      "deployments"
+      "patches"
     ],
     "db/queries/database_extra.sql": [
       "services",
@@ -132,9 +132,9 @@
       "database_networks"
     ],
     "db/queries/deployments.sql": [
-      "deployments",
       "services",
-      "preview_deployments"
+      "preview_deployments",
+      "deployments"
     ],
     "db/queries/destinations.sql": [
       "destinations"
@@ -146,9 +146,9 @@
       "domains"
     ],
     "db/queries/domains_patches_mounts.sql": [
-      "mounts",
       "domains",
-      "patches"
+      "patches",
+      "mounts"
     ],
     "db/queries/email_verification_tokens.sql": [
       "email_verification_tokens",
@@ -164,11 +164,11 @@
       "group_policy"
     ],
     "db/queries/groups.sql": [
+      "groups",
+      "policy",
       "p",
       "group_policy",
-      "perms",
-      "groups",
-      "policy"
+      "perms"
     ],
     "db/queries/health_report.sql": [
       "health_reports"
@@ -180,8 +180,8 @@
       "ai_settings"
     ],
     "db/queries/monitoring_agents.sql": [
-      "monitoring_agents",
-      "services"
+      "services",
+      "monitoring_agents"
     ],
     "db/queries/monitoring_lifecycle.sql": [
       "monitoring_policy",
@@ -192,9 +192,9 @@
       "mounts"
     ],
     "db/queries/network.sql": [
+      "security",
       "redirects",
-      "ports",
-      "security"
+      "ports"
     ],
     "db/queries/notification_delivery.sql": [
       "notification_delivery_attempts",
@@ -213,10 +213,10 @@
       "organization_members"
     ],
     "db/queries/organizations.sql": [
-      "organization_invites",
       "organization",
       "organization_members",
-      "om"
+      "om",
+      "organization_invites"
     ],
     "db/queries/overview.sql": [
       "services",
@@ -225,9 +225,9 @@
       "volume_backups"
     ],
     "db/queries/password_reset_tokens.sql": [
-      "jwt_tokens",
       "password_reset_tokens",
-      "users"
+      "users",
+      "jwt_tokens"
     ],
     "db/queries/patches.sql": [
       "patches"
@@ -254,10 +254,10 @@
       "deployments"
     ],
     "db/queries/preview_env_extra.sql": [
+      "domains",
       "services",
       "service_git",
-      "service_application",
-      "domains"
+      "service_application"
     ],
     "db/queries/project_tags.sql": [
       "project_tags"
@@ -296,8 +296,8 @@
       "security"
     ],
     "db/queries/server_infra_extra.sql": [
-      "server_cleanup_executions",
-      "server_management"
+      "server_management",
+      "server_cleanup_executions"
     ],
     "db/queries/server_management.sql": [
       "server_management",
@@ -310,20 +310,20 @@
       "server_private_networks"
     ],
     "db/queries/servers.sql": [
-      "certificates",
-      "schedules",
       "servers",
       "services",
-      "service_application"
+      "service_application",
+      "certificates",
+      "schedules"
     ],
     "db/queries/service_application.sql": [
       "service_application",
       "services"
     ],
     "db/queries/service_compose.sql": [
+      "service_git",
       "service_compose",
-      "services",
-      "service_git"
+      "services"
     ],
     "db/queries/service_database.sql": [
       "service_database",
@@ -337,13 +337,13 @@
       "services"
     ],
     "db/queries/settings.sql": [
-      "ai_settings",
-      "settings"
+      "settings",
+      "ai_settings"
     ],
     "db/queries/ssh_keys.sql": [
+      "service_git",
       "ssh_keys",
-      "servers",
-      "service_git"
+      "servers"
     ],
     "db/queries/ssh_keys_registries.sql": [
       "ssh_keys",
@@ -360,9 +360,9 @@
       "user_policy"
     ],
     "db/queries/users.sql": [
-      "jwt_tokens",
       "users",
-      "two_factor"
+      "two_factor",
+      "jwt_tokens"
     ],
     "db/queries/vault_providers.sql": [
       "vault_providers"
@@ -375,6 +375,6 @@
     ]
   },
   "generated_file_checksums": {},
-  "last_generation": "2026-09-09T01:09:46.01996709+05:30",
+  "last_generation": "2026-09-10T02:13:24.412114075+05:30",
   "OutDir": "src/flash_gen"
 }

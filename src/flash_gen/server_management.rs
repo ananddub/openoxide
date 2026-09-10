@@ -17,7 +17,7 @@ impl Queries {
         server_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO server_management (server_id) VALUES (?) ON CONFLICT(server_id) DO NOTHING;"
+            "INSERT INTO server_management (server_id, maintenance_mode, maintenance_message, labels, cleanup_policy, gpu_enabled) VALUES (?, 0, NULL, '{}', json_object('containers', json('true'), 'images', json('true'), 'networks', json('true'), 'volumes', json('false'), 'packages', json('false')), 0) ON CONFLICT(server_id) DO NOTHING;"
         )
         .bind(server_id)
         .execute(&self.pool)
@@ -44,7 +44,7 @@ impl Queries {
         params: &ServerManagementUpdateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE server_management SET maintenance_mode = ?, maintenance_message = ?, labels = ?, cleanup_policy = ?, gpu_enabled = ?, updated_at = CURRENT_TIMESTAMP WHERE server_id = ?;"
+            "UPDATE server_management SET maintenance_mode = ?, maintenance_message = ?, labels = ?, cleanup_policy = ?, gpu_enabled = ?, updated_at = strftime('%s','now') WHERE server_id = ?;"
         )
         .bind(&params.maintenance_mode)
         .bind(&params.maintenance_message)
