@@ -1,8 +1,13 @@
 use std::convert::Infallible;
 
 use bytes::Bytes;
-use http_body_util::{BodyExt, Full, combinators::UnsyncBoxBody};
-use hyper::{Method, Response, body::Incoming, header::CONTENT_TYPE};
+use futures::StreamExt;
+use http_body_util::{BodyExt, Full, StreamBody, combinators::UnsyncBoxBody};
+use hyper::{Method, Response, body::Frame, body::Incoming, header::CONTENT_TYPE};
+
+mod log_tail;
+
+use crate::db::queries::FlashQueries;
 
 type ResponseB = Response<UnsyncBoxBody<Bytes, Infallible>>;
 
@@ -40,29 +45,40 @@ pub async fn handle(
     }
 }
 
-/// GET /api/deployments/:id/logs — serves the deployment's log file in
-/// SSE line framing (`data: <line>\n\n`), matching what the log viewers
-/// parse client-side.
+/// GET /api/deployments/:id/logs — live tail of the deployment's log file
+/// in SSE line framing (`data: <line>\n\n`). Streams existing content
+/// immediately, then appended lines as the builder writes them; ends when
+/// the deployment reaches a terminal state. A missing file 404s only when
+/// the deployment itself doesn't exist — a queued deployment may not have
+/// started writing yet.
 async fn deployment_log_file(id: &str) -> ResponseB {
     if !id.chars().all(|c| c.is_ascii_digit()) || id.is_empty() {
         return text_response(400, "{\"code\":\"invalid_argument\",\"message\":\"invalid deployment id\"}");
     }
 
-    let path = crate::utils::paths::openoxide_paths()
-        .deployment_log_file(id.parse::<i64>().unwrap_or(0));
-    match tokio::fs::read_to_string(&path).await {
-        Ok(content) => {
-            let sse: String = content
-                .lines()
-                .map(|line| format!("data: {line}\n\n"))
-                .collect();
-            text_response(200, &sse)
+    let deployment_id = id.parse::<i64>().unwrap_or(0);
+    let path = crate::utils::paths::openoxide_paths().deployment_log_file(deployment_id);
+
+    if !std::path::Path::new(&path).exists() {
+        let known = match auto_di::resolve::<FlashQueries>().await {
+            Ok(queries) => queries.deployments_get_by_id(deployment_id).await.is_ok(),
+            Err(_) => false,
+        };
+        if !known {
+            return text_response(
+                404,
+                "{\"code\":\"not_found\",\"message\":\"Log file not found\"}",
+            );
         }
-        Err(_) => text_response(
-            404,
-            "{\"code\":\"not_found\",\"message\":\"Log file not found\"}",
-        ),
     }
+
+    let stream = log_tail::DeploymentLogTail::stream(path, deployment_id)
+        .map(|bytes| Ok::<_, Infallible>(Frame::data(bytes)));
+    Response::builder()
+        .status(200)
+        .header(CONTENT_TYPE, "text/event-stream")
+        .body(StreamBody::new(stream).boxed_unsync())
+        .expect("streaming response is always valid")
 }
 
 /// GET /api/deployments/docker/service/:name/logs — fetches current docker
