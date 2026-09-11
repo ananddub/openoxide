@@ -13,6 +13,7 @@ interface DatabaseDeploymentsTabProps {
 	kind?: string;
 	database?: any;
 	deployments?: any[];
+	actionLoading?: string | null;
 	onRefresh?: () => void;
 	onAction?: (
 		action: 'deploy' | 'reload' | 'start' | 'stop' | 'redeploy' | 'cancel',
@@ -54,6 +55,7 @@ export function DatabaseDeploymentsTab({
 	kind = 'postgres',
 	database: _database,
 	deployments: passedDeployments,
+	actionLoading,
 	onRefresh,
 	onAction,
 }: DatabaseDeploymentsTabProps) {
@@ -61,6 +63,14 @@ export function DatabaseDeploymentsTab({
 	const [activeLogId, setActiveLogId] = useState<number | null>(null);
 	const [liveLogs, setLiveLogs] = useState<string[]>([]);
 	const [cancelingId, setCancelingId] = useState<number | null>(null);
+	// Optimistic hold: flips the header toggle to "Deploying..." the moment
+	// Deploy/Redeploy is clicked, without waiting for the QUEUED deployment
+	// row to round-trip through the table-watch invalidation. Released when
+	// the row lands (activeDeployment) or by the safety timeout if the
+	// trigger failed server-side and no row will arrive.
+	const [pendingTrigger, setPendingTrigger] = useState<
+		'deploy' | 'redeploy' | null
+	>(null);
 
 	// Live deployments query filtered to this database; the table-watch
 	// stream (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
@@ -74,6 +84,24 @@ export function DatabaseDeploymentsTab({
 
 	const deleteMutation = useDeploymentDelete();
 	const clearDbMutation = useDeploymentDeleteByDatabase();
+
+	const isTriggerPending =
+		pendingTrigger !== null ||
+		actionLoading === 'deploy' ||
+		actionLoading === 'redeploy';
+
+	// The optimistic QUEUED row always lands before the mutation resolves;
+	// if it never arrives (trigger failed), the timeout stops the button
+	// from being stuck in "Deploying..." forever.
+	useEffect(() => {
+		if (!pendingTrigger) return;
+		const timer = setTimeout(() => setPendingTrigger(null), 6000);
+		return () => clearTimeout(timer);
+	}, [pendingTrigger]);
+
+	useEffect(() => {
+		if (activeDeployment && pendingTrigger) setPendingTrigger(null);
+	}, [activeDeployment, pendingTrigger]);
 
 	useEffect(() => {
 		if (!activeLogId) return;
@@ -241,24 +269,40 @@ export function DatabaseDeploymentsTab({
 					<Button
 						variant="outline"
 						size="sm"
-						onClick={() => onAction?.('redeploy')}
-						disabled={!!activeDeployment}
+						onClick={() => {
+							setPendingTrigger('redeploy');
+							void onAction?.('redeploy');
+						}}
+						disabled={!!activeDeployment || isTriggerPending}
 						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50">
-						<RefreshCw className="h-3.5 w-3.5" /> Redeploy Container
+						<RefreshCw
+							className={`h-3.5 w-3.5 ${pendingTrigger === 'redeploy' ? 'animate-spin' : ''}`} />
+						{pendingTrigger === 'redeploy'
+							? 'Redeploying...'
+							: 'Redeploy Container'}
 					</Button>
-					{activeDeployment ? (
+					{activeDeployment || pendingTrigger === 'deploy' ? (
 						<Button
 							onClick={() =>
-								activeDeployment.id && setCancelingId(activeDeployment.id)
+								activeDeployment?.id &&
+								setCancelingId(activeDeployment.id)
 							}
+							disabled={!activeDeployment}
 							size="sm"
 							variant="destructive"
 							className="flex h-8 items-center gap-1.5 text-xs font-semibold">
-							<XCircle className="h-3.5 w-3.5" /> Cancel Build
+							<XCircle className="h-3.5 w-3.5" />
+							{pendingTrigger === 'deploy' && !activeDeployment
+								? 'Deploying...'
+								: 'Cancel Build'}
 						</Button>
 					) : (
 						<Button
-							onClick={() => onAction?.('deploy')}
+							onClick={() => {
+								setPendingTrigger('deploy');
+								void onAction?.('deploy');
+							}}
+							disabled={isTriggerPending}
 							size="sm"
 							className="flex h-8 items-center gap-1.5 bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90">
 							<Zap className="h-3.5 w-3.5" /> Deploy Database

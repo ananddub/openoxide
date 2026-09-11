@@ -16,6 +16,7 @@ import {
 	useDatabaseReload,
 	useDatabaseStart,
 	useDatabaseStop,
+	useDatabaseCancel,
 	useDatabaseUpdate,
 	useDeploymentItems,
 	parseDatabaseKind,
@@ -26,7 +27,7 @@ import {
 export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const [activeTab, setActiveTab] = useState('General');
 	const [actionLoading, setActionLoading] = useState<
-		'deploy' | 'reload' | 'start' | 'stop' | null
+		'deploy' | 'redeploy' | 'reload' | 'start' | 'stop' | 'cancel' | null
 	>(null);
 
 	// Connect mutations used by handleAction / handleUpdateEnv below; the
@@ -36,6 +37,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const reloadMutation = useDatabaseReload();
 	const startMutation = useDatabaseStart();
 	const stopMutation = useDatabaseStop();
+	const cancelMutation = useDatabaseCancel();
 	const updateMutation = useDatabaseUpdate();
 	const databaseActionMutations = {
 		deploy: deployMutation.mutateAsync,
@@ -43,6 +45,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 		reload: reloadMutation.mutateAsync,
 		start: startMutation.mutateAsync,
 		stop: stopMutation.mutateAsync,
+		cancel: cancelMutation.mutateAsync,
 	};
 
 	// 0ms Instant live-query reads: org-wide database list keyed
@@ -308,7 +311,7 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 	const handleAction = async (
 		action: 'deploy' | 'reload' | 'start' | 'stop' | 'redeploy' | 'cancel',
 	) => {
-		setActionLoading(action as any);
+		setActionLoading(action);
 		const currentSt = (
 			database?.app_status ||
 			database?.status ||
@@ -351,6 +354,8 @@ export function useDatabaseDetail(dbId: number, targetKind?: string) {
 				await databaseActionMutations.start(actionInput);
 			} else if (action === 'stop') {
 				await databaseActionMutations.stop(actionInput);
+			} else if (action === 'cancel') {
+				await databaseActionMutations.cancel(actionInput);
 			}
 
 			toast.success(

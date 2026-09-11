@@ -159,6 +159,7 @@ function DatabaseDetailPage() {
 						kind={detectedKind || 'postgres'}
 						database={database}
 						deployments={deployments}
+						actionLoading={actionLoading}
 						onRefresh={refetchAll}
 						onAction={handleAction}
 					/>
