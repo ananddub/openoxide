@@ -34,13 +34,35 @@ pub fn compose_to_proto(dto: &ComposeResponseDto) -> Compose {
         description: dto.description.clone(),
         environment_id: dto.environment_id,
         server_id: dto.server_id,
-        status: format!("{}:{}", dto.compose_status, dto.compose_type),
+        // Plain lifecycle status: the wire has no compose_type field, and
+        // every frontend consumer (header badge, deploy card, project list)
+        // compares status against bare values like RUNNING/STOPPED — the old
+        // "STATUS:TYPE" composite matched nothing and pinned the UI to STOPPED.
+        status: dto.compose_status.clone(),
         source_type: Some(dto.source_type.clone()),
         repository: dto.repository.clone(),
         branch: dto.branch.clone(),
         compose_file: Some(dto.compose_file.clone()),
         created_at: dto.created_at,
         updated_at: dto.updated_at,
+        owner: dto.owner.clone(),
+        gitlab_repository: dto.gitlab_repository.clone(),
+        gitlab_owner: dto.gitlab_owner.clone(),
+        gitlab_branch: dto.gitlab_branch.clone(),
+        gitea_repository: dto.gitea_repository.clone(),
+        gitea_owner: dto.gitea_owner.clone(),
+        gitea_branch: dto.gitea_branch.clone(),
+        bitbucket_repository: dto.bitbucket_repository.clone(),
+        bitbucket_owner: dto.bitbucket_owner.clone(),
+        bitbucket_branch: dto.bitbucket_branch.clone(),
+        custom_git_url: dto.custom_git_url.clone(),
+        custom_git_branch: dto.custom_git_branch.clone(),
+        build_path: dto.build_path.clone(),
+        custom_git_ssh_key_id: dto.custom_git_ssh_key_id,
+        command: Some(dto.command.clone()),
+        compose_path: Some(dto.compose_path.clone()),
+        compose_type: Some(dto.compose_type.clone()),
+        last_error: dto.last_error.clone(),
         ..Default::default()
     }
 }

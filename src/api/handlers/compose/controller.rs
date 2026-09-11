@@ -201,6 +201,7 @@ impl ComposeService for ComposeController {
             gitlab_branch: request.branch.map(str::to_owned).unwrap_or_else(|| "main".into()),
             gitlab_path_namespace: None,
             gitlab_provider_id: request.provider_id,
+            gitlab_build_path: request.build_path.map(str::to_owned),
         };
         let item = self.service.set_gitlab_source(request.id, dto).await.map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
@@ -218,6 +219,7 @@ impl ComposeService for ComposeController {
             bitbucket_owner: request.owner.to_owned(),
             bitbucket_branch: request.branch.map(str::to_owned).unwrap_or_else(|| "main".into()),
             bitbucket_provider_id: request.provider_id,
+            bitbucket_build_path: request.build_path.map(str::to_owned),
         };
         let item = self.service.set_bitbucket_source(request.id, dto).await.map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
@@ -234,6 +236,7 @@ impl ComposeService for ComposeController {
             gitea_owner: request.owner.to_owned(),
             gitea_branch: request.branch.map(str::to_owned).unwrap_or_else(|| "main".into()),
             gitea_provider_id: request.provider_id,
+            gitea_build_path: request.build_path.map(str::to_owned),
         };
         let item = self.service.set_gitea_source(request.id, dto).await.map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
@@ -248,7 +251,8 @@ impl ComposeService for ComposeController {
         let dto = PatchComposeCustomGitSourceDto {
             custom_git_url: request.repository.to_owned(),
             custom_git_branch: request.branch.map(str::to_owned).unwrap_or_else(|| "main".into()),
-            custom_git_ssh_key_id: None,
+            custom_git_ssh_key_id: request.ssh_key_id,
+            custom_git_build_path: request.build_path.map(str::to_owned),
         };
         let item = self.service.set_custom_git_source(request.id, dto).await.map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))

@@ -22,7 +22,7 @@ DELETE FROM service_git WHERE service_id = ?;
 INSERT INTO service_git (
     service_id, source_type, trigger_type, repository, owner, branch,
     github_provider_id, auto_deploy, watch_paths, enable_submodules
-) VALUES (?, 'GITHUB', ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, 'GITHUB', ?, ?, ?, ?, CASE WHEN ? = 0 THEN NULL ELSE ? END, ?, ?, ?)
 ON CONFLICT(service_id) DO UPDATE SET
     source_type = 'GITHUB', trigger_type = excluded.trigger_type,
     repository = excluded.repository, owner = excluded.owner, branch = excluded.branch,
@@ -41,7 +41,7 @@ INSERT INTO service_git (
     service_id, source_type, trigger_type, gitlab_project_id, gitlab_repository, gitlab_owner,
     gitlab_branch, gitlab_build_path, gitlab_path_namespace, gitlab_provider_id,
     auto_deploy, watch_paths, enable_submodules
-) VALUES (?, 'GITLAB', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, 'GITLAB', ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 0 THEN NULL ELSE ? END, ?, ?, ?)
 ON CONFLICT(service_id) DO UPDATE SET
     source_type = 'GITLAB', trigger_type = excluded.trigger_type,
     gitlab_project_id = excluded.gitlab_project_id, gitlab_repository = excluded.gitlab_repository,
@@ -60,7 +60,7 @@ ON CONFLICT(service_id) DO UPDATE SET
 INSERT INTO service_git (
     service_id, source_type, trigger_type, gitea_repository, gitea_owner, gitea_branch,
     gitea_build_path, gitea_provider_id, auto_deploy, watch_paths, enable_submodules
-) VALUES (?, 'GITEA', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, 'GITEA', ?, ?, ?, ?, ?, CASE WHEN ? = 0 THEN NULL ELSE ? END, ?, ?, ?)
 ON CONFLICT(service_id) DO UPDATE SET
     source_type = 'GITEA', trigger_type = excluded.trigger_type,
     gitea_repository = excluded.gitea_repository, gitea_owner = excluded.gitea_owner,
@@ -80,7 +80,7 @@ INSERT INTO service_git (
     service_id, source_type, trigger_type, bitbucket_repository, bitbucket_repository_slug,
     bitbucket_owner, bitbucket_branch, bitbucket_build_path, bitbucket_provider_id,
     auto_deploy, watch_paths, enable_submodules
-) VALUES (?, 'BITBUCKET', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, 'BITBUCKET', ?, ?, ?, ?, ?, ?, CASE WHEN ? = 0 THEN NULL ELSE ? END, ?, ?, ?)
 ON CONFLICT(service_id) DO UPDATE SET
     source_type = 'BITBUCKET', trigger_type = excluded.trigger_type,
     bitbucket_repository = excluded.bitbucket_repository,
@@ -100,7 +100,7 @@ ON CONFLICT(service_id) DO UPDATE SET
 INSERT INTO service_git (
     service_id, source_type, trigger_type, custom_git_url, custom_git_branch,
     custom_git_build_path, custom_git_ssh_key_id, auto_deploy, watch_paths, enable_submodules
-) VALUES (?, 'CUSTOM', ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, 'CUSTOM', ?, ?, ?, ?, CASE WHEN ? = 0 THEN NULL ELSE ? END, ?, ?, ?)
 ON CONFLICT(service_id) DO UPDATE SET
     source_type = 'CUSTOM', trigger_type = excluded.trigger_type,
     custom_git_url = excluded.custom_git_url, custom_git_branch = excluded.custom_git_branch,

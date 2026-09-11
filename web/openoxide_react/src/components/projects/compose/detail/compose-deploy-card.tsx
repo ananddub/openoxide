@@ -121,26 +121,6 @@ export function ComposeDeployCard({
 		}
 	}, [hasActiveDeployment, rawStatus]);
 
-	// Monitor status changes & TanStack Query interval refetches
-	useEffect(() => {
-		if (compose) {
-			console.log('[Compose Status Monitor]', {
-				composeId: compose.id,
-				composeStatus: compose.compose_status,
-				hasActiveDeployment,
-				pendingMutationAction,
-				isBuilding,
-				isRunning,
-				timestamp: new Date().toLocaleTimeString(),
-			});
-		}
-	}, [
-		compose,
-		hasActiveDeployment,
-		pendingMutationAction,
-		isBuilding,
-		isRunning,
-	]);
 
 	useEffect(() => {
 		console.debug('[Compose Deployments Live]', {

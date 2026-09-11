@@ -38,6 +38,7 @@ pub struct SetGithubSourceParams {
     pub owner: String,
     pub branch: String,
     pub github_provider_id: i64,
+    pub github_provider_id2: i64,
     pub auto_deploy: i64,
     pub watch_paths: String,
     pub enable_submodules: i64,
@@ -53,6 +54,7 @@ pub struct SetGitlabSourceParams {
     pub gitlab_build_path: String,
     pub gitlab_path_namespace: String,
     pub gitlab_provider_id: i64,
+    pub gitlab_provider_id2: i64,
     pub auto_deploy: i64,
     pub watch_paths: String,
     pub enable_submodules: i64,
@@ -66,6 +68,7 @@ pub struct SetGiteaSourceParams {
     pub gitea_branch: String,
     pub gitea_build_path: String,
     pub gitea_provider_id: i64,
+    pub gitea_provider_id2: i64,
     pub auto_deploy: i64,
     pub watch_paths: String,
     pub enable_submodules: i64,
@@ -80,6 +83,7 @@ pub struct SetBitbucketSourceParams {
     pub bitbucket_branch: String,
     pub bitbucket_build_path: String,
     pub bitbucket_provider_id: i64,
+    pub bitbucket_provider_id2: i64,
     pub auto_deploy: i64,
     pub watch_paths: String,
     pub enable_submodules: i64,
@@ -92,6 +96,7 @@ pub struct SetCustomGitSourceParams {
     pub custom_git_branch: String,
     pub custom_git_build_path: String,
     pub custom_git_ssh_key_id: i64,
+    pub custom_git_ssh_key_id2: i64,
     pub auto_deploy: i64,
     pub watch_paths: String,
     pub enable_submodules: i64,
@@ -224,7 +229,7 @@ impl Queries {
         params: &SetGithubSourceParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO service_git ( service_id, source_type, trigger_type, repository, owner, branch, github_provider_id, auto_deploy, watch_paths, enable_submodules ) VALUES (?, 'GITHUB', ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(service_id) DO UPDATE SET source_type = 'GITHUB', trigger_type = excluded.trigger_type, repository = excluded.repository, owner = excluded.owner, branch = excluded.branch, github_provider_id = excluded.github_provider_id, auto_deploy = excluded.auto_deploy, watch_paths = excluded.watch_paths, enable_submodules = excluded.enable_submodules, gitlab_project_id = NULL, gitlab_repository = NULL, gitlab_owner = NULL, gitlab_branch = NULL, gitlab_build_path = NULL, gitlab_path_namespace = NULL, gitea_repository = NULL, gitea_owner = NULL, gitea_branch = NULL, gitea_build_path = NULL, bitbucket_repository = NULL, bitbucket_repository_slug = NULL, bitbucket_owner = NULL, bitbucket_branch = NULL, bitbucket_build_path = NULL, custom_git_url = NULL, custom_git_branch = NULL, custom_git_build_path = NULL, custom_git_ssh_key_id = NULL;"
+            "INSERT INTO service_git ( service_id, source_type, trigger_type, repository, owner, branch, github_provider_id, auto_deploy, watch_paths, enable_submodules ) VALUES (?, 'GITHUB', ?, ?, ?, ?, CASE WHEN ? = 0 THEN NULL ELSE ? END, ?, ?, ?) ON CONFLICT(service_id) DO UPDATE SET source_type = 'GITHUB', trigger_type = excluded.trigger_type, repository = excluded.repository, owner = excluded.owner, branch = excluded.branch, github_provider_id = excluded.github_provider_id, auto_deploy = excluded.auto_deploy, watch_paths = excluded.watch_paths, enable_submodules = excluded.enable_submodules, gitlab_project_id = NULL, gitlab_repository = NULL, gitlab_owner = NULL, gitlab_branch = NULL, gitlab_build_path = NULL, gitlab_path_namespace = NULL, gitea_repository = NULL, gitea_owner = NULL, gitea_branch = NULL, gitea_build_path = NULL, bitbucket_repository = NULL, bitbucket_repository_slug = NULL, bitbucket_owner = NULL, bitbucket_branch = NULL, bitbucket_build_path = NULL, custom_git_url = NULL, custom_git_branch = NULL, custom_git_build_path = NULL, custom_git_ssh_key_id = NULL;"
         )
         .bind(&params.service_id)
         .bind(&params.trigger_type)
@@ -232,6 +237,7 @@ impl Queries {
         .bind(&params.owner)
         .bind(&params.branch)
         .bind(&params.github_provider_id)
+        .bind(&params.github_provider_id2)
         .bind(&params.auto_deploy)
         .bind(&params.watch_paths)
         .bind(&params.enable_submodules)
@@ -246,7 +252,7 @@ impl Queries {
         params: &SetGitlabSourceParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO service_git ( service_id, source_type, trigger_type, gitlab_project_id, gitlab_repository, gitlab_owner, gitlab_branch, gitlab_build_path, gitlab_path_namespace, gitlab_provider_id, auto_deploy, watch_paths, enable_submodules ) VALUES (?, 'GITLAB', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(service_id) DO UPDATE SET source_type = 'GITLAB', trigger_type = excluded.trigger_type, gitlab_project_id = excluded.gitlab_project_id, gitlab_repository = excluded.gitlab_repository, gitlab_owner = excluded.gitlab_owner, gitlab_branch = excluded.gitlab_branch, gitlab_build_path = excluded.gitlab_build_path, gitlab_path_namespace = excluded.gitlab_path_namespace, gitlab_provider_id = excluded.gitlab_provider_id, auto_deploy = excluded.auto_deploy, watch_paths = excluded.watch_paths, enable_submodules = excluded.enable_submodules, repository = NULL, owner = NULL, branch = NULL, gitea_repository = NULL, gitea_owner = NULL, gitea_branch = NULL, gitea_build_path = NULL, bitbucket_repository = NULL, bitbucket_repository_slug = NULL, bitbucket_owner = NULL, bitbucket_branch = NULL, bitbucket_build_path = NULL, custom_git_url = NULL, custom_git_branch = NULL, custom_git_build_path = NULL, custom_git_ssh_key_id = NULL;"
+            "INSERT INTO service_git ( service_id, source_type, trigger_type, gitlab_project_id, gitlab_repository, gitlab_owner, gitlab_branch, gitlab_build_path, gitlab_path_namespace, gitlab_provider_id, auto_deploy, watch_paths, enable_submodules ) VALUES (?, 'GITLAB', ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 0 THEN NULL ELSE ? END, ?, ?, ?) ON CONFLICT(service_id) DO UPDATE SET source_type = 'GITLAB', trigger_type = excluded.trigger_type, gitlab_project_id = excluded.gitlab_project_id, gitlab_repository = excluded.gitlab_repository, gitlab_owner = excluded.gitlab_owner, gitlab_branch = excluded.gitlab_branch, gitlab_build_path = excluded.gitlab_build_path, gitlab_path_namespace = excluded.gitlab_path_namespace, gitlab_provider_id = excluded.gitlab_provider_id, auto_deploy = excluded.auto_deploy, watch_paths = excluded.watch_paths, enable_submodules = excluded.enable_submodules, repository = NULL, owner = NULL, branch = NULL, gitea_repository = NULL, gitea_owner = NULL, gitea_branch = NULL, gitea_build_path = NULL, bitbucket_repository = NULL, bitbucket_repository_slug = NULL, bitbucket_owner = NULL, bitbucket_branch = NULL, bitbucket_build_path = NULL, custom_git_url = NULL, custom_git_branch = NULL, custom_git_build_path = NULL, custom_git_ssh_key_id = NULL;"
         )
         .bind(&params.service_id)
         .bind(&params.trigger_type)
@@ -257,6 +263,7 @@ impl Queries {
         .bind(&params.gitlab_build_path)
         .bind(&params.gitlab_path_namespace)
         .bind(&params.gitlab_provider_id)
+        .bind(&params.gitlab_provider_id2)
         .bind(&params.auto_deploy)
         .bind(&params.watch_paths)
         .bind(&params.enable_submodules)
@@ -271,7 +278,7 @@ impl Queries {
         params: &SetGiteaSourceParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO service_git ( service_id, source_type, trigger_type, gitea_repository, gitea_owner, gitea_branch, gitea_build_path, gitea_provider_id, auto_deploy, watch_paths, enable_submodules ) VALUES (?, 'GITEA', ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(service_id) DO UPDATE SET source_type = 'GITEA', trigger_type = excluded.trigger_type, gitea_repository = excluded.gitea_repository, gitea_owner = excluded.gitea_owner, gitea_branch = excluded.gitea_branch, gitea_build_path = excluded.gitea_build_path, gitea_provider_id = excluded.gitea_provider_id, auto_deploy = excluded.auto_deploy, watch_paths = excluded.watch_paths, enable_submodules = excluded.enable_submodules, repository = NULL, owner = NULL, branch = NULL, gitlab_project_id = NULL, gitlab_repository = NULL, gitlab_owner = NULL, gitlab_branch = NULL, gitlab_build_path = NULL, gitlab_path_namespace = NULL, bitbucket_repository = NULL, bitbucket_repository_slug = NULL, bitbucket_owner = NULL, bitbucket_branch = NULL, bitbucket_build_path = NULL, custom_git_url = NULL, custom_git_branch = NULL, custom_git_build_path = NULL, custom_git_ssh_key_id = NULL;"
+            "INSERT INTO service_git ( service_id, source_type, trigger_type, gitea_repository, gitea_owner, gitea_branch, gitea_build_path, gitea_provider_id, auto_deploy, watch_paths, enable_submodules ) VALUES (?, 'GITEA', ?, ?, ?, ?, ?, CASE WHEN ? = 0 THEN NULL ELSE ? END, ?, ?, ?) ON CONFLICT(service_id) DO UPDATE SET source_type = 'GITEA', trigger_type = excluded.trigger_type, gitea_repository = excluded.gitea_repository, gitea_owner = excluded.gitea_owner, gitea_branch = excluded.gitea_branch, gitea_build_path = excluded.gitea_build_path, gitea_provider_id = excluded.gitea_provider_id, auto_deploy = excluded.auto_deploy, watch_paths = excluded.watch_paths, enable_submodules = excluded.enable_submodules, repository = NULL, owner = NULL, branch = NULL, gitlab_project_id = NULL, gitlab_repository = NULL, gitlab_owner = NULL, gitlab_branch = NULL, gitlab_build_path = NULL, gitlab_path_namespace = NULL, bitbucket_repository = NULL, bitbucket_repository_slug = NULL, bitbucket_owner = NULL, bitbucket_branch = NULL, bitbucket_build_path = NULL, custom_git_url = NULL, custom_git_branch = NULL, custom_git_build_path = NULL, custom_git_ssh_key_id = NULL;"
         )
         .bind(&params.service_id)
         .bind(&params.trigger_type)
@@ -280,6 +287,7 @@ impl Queries {
         .bind(&params.gitea_branch)
         .bind(&params.gitea_build_path)
         .bind(&params.gitea_provider_id)
+        .bind(&params.gitea_provider_id2)
         .bind(&params.auto_deploy)
         .bind(&params.watch_paths)
         .bind(&params.enable_submodules)
@@ -294,7 +302,7 @@ impl Queries {
         params: &SetBitbucketSourceParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO service_git ( service_id, source_type, trigger_type, bitbucket_repository, bitbucket_repository_slug, bitbucket_owner, bitbucket_branch, bitbucket_build_path, bitbucket_provider_id, auto_deploy, watch_paths, enable_submodules ) VALUES (?, 'BITBUCKET', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(service_id) DO UPDATE SET source_type = 'BITBUCKET', trigger_type = excluded.trigger_type, bitbucket_repository = excluded.bitbucket_repository, bitbucket_repository_slug = excluded.bitbucket_repository_slug, bitbucket_owner = excluded.bitbucket_owner, bitbucket_branch = excluded.bitbucket_branch, bitbucket_build_path = excluded.bitbucket_build_path, bitbucket_provider_id = excluded.bitbucket_provider_id, auto_deploy = excluded.auto_deploy, watch_paths = excluded.watch_paths, enable_submodules = excluded.enable_submodules, repository = NULL, owner = NULL, branch = NULL, gitlab_project_id = NULL, gitlab_repository = NULL, gitlab_owner = NULL, gitlab_branch = NULL, gitlab_build_path = NULL, gitlab_path_namespace = NULL, gitea_repository = NULL, gitea_owner = NULL, gitea_branch = NULL, gitea_build_path = NULL, custom_git_url = NULL, custom_git_branch = NULL, custom_git_build_path = NULL, custom_git_ssh_key_id = NULL;"
+            "INSERT INTO service_git ( service_id, source_type, trigger_type, bitbucket_repository, bitbucket_repository_slug, bitbucket_owner, bitbucket_branch, bitbucket_build_path, bitbucket_provider_id, auto_deploy, watch_paths, enable_submodules ) VALUES (?, 'BITBUCKET', ?, ?, ?, ?, ?, ?, CASE WHEN ? = 0 THEN NULL ELSE ? END, ?, ?, ?) ON CONFLICT(service_id) DO UPDATE SET source_type = 'BITBUCKET', trigger_type = excluded.trigger_type, bitbucket_repository = excluded.bitbucket_repository, bitbucket_repository_slug = excluded.bitbucket_repository_slug, bitbucket_owner = excluded.bitbucket_owner, bitbucket_branch = excluded.bitbucket_branch, bitbucket_build_path = excluded.bitbucket_build_path, bitbucket_provider_id = excluded.bitbucket_provider_id, auto_deploy = excluded.auto_deploy, watch_paths = excluded.watch_paths, enable_submodules = excluded.enable_submodules, repository = NULL, owner = NULL, branch = NULL, gitlab_project_id = NULL, gitlab_repository = NULL, gitlab_owner = NULL, gitlab_branch = NULL, gitlab_build_path = NULL, gitlab_path_namespace = NULL, gitea_repository = NULL, gitea_owner = NULL, gitea_branch = NULL, gitea_build_path = NULL, custom_git_url = NULL, custom_git_branch = NULL, custom_git_build_path = NULL, custom_git_ssh_key_id = NULL;"
         )
         .bind(&params.service_id)
         .bind(&params.trigger_type)
@@ -304,6 +312,7 @@ impl Queries {
         .bind(&params.bitbucket_branch)
         .bind(&params.bitbucket_build_path)
         .bind(&params.bitbucket_provider_id)
+        .bind(&params.bitbucket_provider_id2)
         .bind(&params.auto_deploy)
         .bind(&params.watch_paths)
         .bind(&params.enable_submodules)
@@ -318,7 +327,7 @@ impl Queries {
         params: &SetCustomGitSourceParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO service_git ( service_id, source_type, trigger_type, custom_git_url, custom_git_branch, custom_git_build_path, custom_git_ssh_key_id, auto_deploy, watch_paths, enable_submodules ) VALUES (?, 'CUSTOM', ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(service_id) DO UPDATE SET source_type = 'CUSTOM', trigger_type = excluded.trigger_type, custom_git_url = excluded.custom_git_url, custom_git_branch = excluded.custom_git_branch, custom_git_build_path = excluded.custom_git_build_path, custom_git_ssh_key_id = excluded.custom_git_ssh_key_id, auto_deploy = excluded.auto_deploy, watch_paths = excluded.watch_paths, enable_submodules = excluded.enable_submodules, repository = NULL, owner = NULL, branch = NULL, gitlab_project_id = NULL, gitlab_repository = NULL, gitlab_owner = NULL, gitlab_branch = NULL, gitlab_build_path = NULL, gitlab_path_namespace = NULL, gitea_repository = NULL, gitea_owner = NULL, gitea_branch = NULL, gitea_build_path = NULL, bitbucket_repository = NULL, bitbucket_repository_slug = NULL, bitbucket_owner = NULL, bitbucket_branch = NULL, bitbucket_build_path = NULL;"
+            "INSERT INTO service_git ( service_id, source_type, trigger_type, custom_git_url, custom_git_branch, custom_git_build_path, custom_git_ssh_key_id, auto_deploy, watch_paths, enable_submodules ) VALUES (?, 'CUSTOM', ?, ?, ?, ?, CASE WHEN ? = 0 THEN NULL ELSE ? END, ?, ?, ?) ON CONFLICT(service_id) DO UPDATE SET source_type = 'CUSTOM', trigger_type = excluded.trigger_type, custom_git_url = excluded.custom_git_url, custom_git_branch = excluded.custom_git_branch, custom_git_build_path = excluded.custom_git_build_path, custom_git_ssh_key_id = excluded.custom_git_ssh_key_id, auto_deploy = excluded.auto_deploy, watch_paths = excluded.watch_paths, enable_submodules = excluded.enable_submodules, repository = NULL, owner = NULL, branch = NULL, gitlab_project_id = NULL, gitlab_repository = NULL, gitlab_owner = NULL, gitlab_branch = NULL, gitlab_build_path = NULL, gitlab_path_namespace = NULL, gitea_repository = NULL, gitea_owner = NULL, gitea_branch = NULL, gitea_build_path = NULL, bitbucket_repository = NULL, bitbucket_repository_slug = NULL, bitbucket_owner = NULL, bitbucket_branch = NULL, bitbucket_build_path = NULL;"
         )
         .bind(&params.service_id)
         .bind(&params.trigger_type)
@@ -326,6 +335,7 @@ impl Queries {
         .bind(&params.custom_git_branch)
         .bind(&params.custom_git_build_path)
         .bind(&params.custom_git_ssh_key_id)
+        .bind(&params.custom_git_ssh_key_id2)
         .bind(&params.auto_deploy)
         .bind(&params.watch_paths)
         .bind(&params.enable_submodules)

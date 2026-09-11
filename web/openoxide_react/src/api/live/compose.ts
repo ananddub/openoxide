@@ -27,9 +27,28 @@ export type ComposePayload = {
 	environment_id: bigint;
 	server_id?: bigint;
 	status: string;
+	compose_status: string;
 	source_type?: string;
 	repository?: string;
+	owner?: string;
 	branch?: string;
+	gitlab_repository?: string;
+	gitlab_owner?: string;
+	gitlab_branch?: string;
+	gitea_repository?: string;
+	gitea_owner?: string;
+	gitea_branch?: string;
+	bitbucket_repository?: string;
+	bitbucket_owner?: string;
+	bitbucket_branch?: string;
+	custom_git_url?: string;
+	custom_git_branch?: string;
+	command?: string;
+	compose_path?: string;
+	compose_type?: string;
+	build_path?: string;
+	custom_git_ssh_key_id?: bigint;
+	last_error?: string;
 	compose_file?: string;
 	created_at: bigint;
 	updated_at: bigint;
@@ -46,9 +65,33 @@ function toComposePayload(compose: Compose): ComposePayload {
 		environment_id: compose.environmentId,
 		server_id: compose.serverId,
 		status: compose.status,
-		source_type: compose.sourceType,
+		compose_status: compose.status,
+		// DB stores 'CUSTOM' for custom-git; the source card's provider id is
+		// 'GIT' (same collapse the application payload mapper does).
+		source_type:
+			compose.sourceType === 'CUSTOM' || compose.sourceType === 'CUSTOM_GIT'
+				? 'GIT'
+				: compose.sourceType,
 		repository: compose.repository,
+		owner: compose.owner,
 		branch: compose.branch,
+		gitlab_repository: compose.gitlabRepository,
+		gitlab_owner: compose.gitlabOwner,
+		gitlab_branch: compose.gitlabBranch,
+		gitea_repository: compose.giteaRepository,
+		gitea_owner: compose.giteaOwner,
+		gitea_branch: compose.giteaBranch,
+		bitbucket_repository: compose.bitbucketRepository,
+		bitbucket_owner: compose.bitbucketOwner,
+		bitbucket_branch: compose.bitbucketBranch,
+		custom_git_url: compose.customGitUrl,
+		custom_git_branch: compose.customGitBranch,
+		command: compose.command,
+		compose_path: compose.composePath,
+		compose_type: compose.composeType,
+		build_path: compose.buildPath,
+		custom_git_ssh_key_id: compose.customGitSshKeyId,
+		last_error: compose.lastError,
 		compose_file: compose.composeFile,
 		created_at: compose.createdAt,
 		updated_at: compose.updatedAt,
@@ -292,15 +335,27 @@ export function useComposeSetBitbucketSource() {
 
 /**
  * Point a compose at a custom Git URL (legacy REST: PATCH /compose/{id}/source/git).
- * The backend only consumes the URL and branch from the shared source request.
+ * The shared source request carries the build path and (for private repos)
+ * the SSH key id alongside url/branch.
  */
 export function useComposeSetCustomGitSource() {
 	return useConnectMutation(
-		(input: {id: number | bigint; url: string; branch?: string}) =>
+		(input: {
+			id: number | bigint;
+			url: string;
+			branch?: string;
+			build_path?: string;
+			ssh_key_id?: number | bigint;
+		}) =>
 			composeClient.setCustomGitSource({
 				id: BigInt(input.id),
 				repository: input.url,
 				branch: input.branch,
+				buildPath: input.build_path,
+				sshKeyId:
+					input.ssh_key_id !== undefined
+						? BigInt(input.ssh_key_id)
+						: undefined,
 			}),
 		{invalidate: [['composes']]},
 	);

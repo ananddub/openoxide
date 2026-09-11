@@ -1,5 +1,6 @@
 import {useState, useMemo, useEffect} from 'react';
 import {toast} from 'sonner';
+import {formatApiError} from '#/api/utils';
 import type {ComposeResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 import {useComposeCancel, useComposeDeploy, useComposeGet, useComposeList, useComposeReload, useComposeStart, useComposeStop, useComposeUpdate, useDeploymentItems, useDomainItems, useOverviewServices, useScheduleListByOrganization, useBackupItems} from '#/api/live';
@@ -193,8 +194,8 @@ export function useComposeDetail(composeId: number) {
 				toast.success(`Compose stack ${action} triggered`);
 			}
 			refetchAll();
-		} catch {
-			toast.error(`Action failed: ${action}`);
+		} catch (err: any) {
+			toast.error(formatApiError(err));
 		}
 	};
 
@@ -206,8 +207,8 @@ export function useComposeDetail(composeId: number) {
 			});
 			toast.success('Compose settings updated');
 			refetchAll();
-		} catch {
-			toast.error('Failed to update compose settings');
+		} catch (err: any) {
+			toast.error(formatApiError(err));
 		}
 	};
 

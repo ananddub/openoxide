@@ -68,6 +68,8 @@ pub struct ComposeRecord {
     pub bitbucket_branch: Option<String>,
     pub custom_git_url: Option<String>,
     pub custom_git_branch: Option<String>,
+    pub build_path: Option<String>,
+    pub custom_git_ssh_key_id: Option<i64>,
     pub command: String,
     pub compose_path: String,
     pub service_networks: String,
@@ -163,6 +165,20 @@ impl From<(crate::flash_gen::models::Services, crate::flash_gen::models::Service
             bitbucket_branch: git.and_then(|g| normalize(g.bitbucket_branch.clone())),
             custom_git_url: git.and_then(|g| normalize(g.custom_git_url.clone())),
             custom_git_branch: git.and_then(|g| normalize(g.custom_git_branch.clone())),
+            // Unified "path in repo": the source card seeds one build-path
+            // input regardless of provider, so collapse the per-provider
+            // columns (GITHUB has no build-path column — it keeps the card
+            // default, matching the pre-existing save behaviour).
+            build_path: git.and_then(|g| {
+                normalize(
+                    g.gitlab_build_path
+                        .clone()
+                        .or_else(|| g.gitea_build_path.clone())
+                        .or_else(|| g.bitbucket_build_path.clone())
+                        .or_else(|| g.custom_git_build_path.clone()),
+                )
+            }),
+            custom_git_ssh_key_id: git.and_then(|g| g.custom_git_ssh_key_id).filter(|v| *v != 0),
             command: service.command.unwrap_or_default(),
             compose_path: ext.compose_path,
             service_networks: ext.service_networks,

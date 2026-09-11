@@ -61,6 +61,26 @@ message Compose {
   optional string compose_file = 10;
   int64 created_at = 11;
   int64 updated_at = 12;
+  // Source round-trip: the source-settings card re-seeds from these after
+  // save/refetch. Without them every provider except GitHub-looked unset.
+  optional string owner = 13;
+  optional string gitlab_repository = 14;
+  optional string gitlab_owner = 15;
+  optional string gitlab_branch = 16;
+  optional string gitea_repository = 17;
+  optional string gitea_owner = 18;
+  optional string gitea_branch = 19;
+  optional string bitbucket_repository = 20;
+  optional string bitbucket_owner = 21;
+  optional string bitbucket_branch = 22;
+  optional string custom_git_url = 23;
+  optional string custom_git_branch = 24;
+  optional string command = 25;
+  optional string compose_path = 26;
+  optional string compose_type = 27;
+  optional string last_error = 28;
+  optional string build_path = 29;
+  optional int64 custom_git_ssh_key_id = 30;
 }
 message GetComposeRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];
@@ -103,6 +123,8 @@ message SetComposeSourceRequest {
   optional string branch = 4;
   optional string build_path = 5;
   optional int64 provider_id = 6;
+  // CUSTOM provider only: SSH key used to clone a private custom-git repo.
+  optional int64 ssh_key_id = 7;
 }
 message SetRawSourceRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];

@@ -131,6 +131,27 @@ export function ComposeGeneralTab({compose, onUpdated}: GeneralTabProps) {
 		setSavingSource(true);
 		try {
 			if (!compose?.id) return;
+			// Guard before hitting the server: an empty required field used to
+			// surface as an opaque "[not_found] related resource not found".
+			if (provider === 'RAW' && !composeFile.trim()) {
+				toast.error('Compose file content is required');
+				return;
+			}
+			if (provider === 'GIT' && !gitUrl.trim()) {
+				toast.error('Repository URL is required');
+				return;
+			}
+			if (
+				provider === 'GITHUB' ||
+				provider === 'GITLAB' ||
+				provider === 'GITEA' ||
+				provider === 'BITBUCKET'
+			) {
+				if (!repoOwner.trim() || !repoName.trim()) {
+					toast.error('Owner and repository are required');
+					return;
+				}
+			}
 			if (provider === 'RAW') {
 				await patchRawMutation.mutateAsync({
 					id: compose.id,
@@ -141,6 +162,8 @@ export function ComposeGeneralTab({compose, onUpdated}: GeneralTabProps) {
 					id: compose.id,
 					url: gitUrl,
 					branch: gitBranch,
+					build_path: gitBuildPath,
+					ssh_key_id: gitSshKeyId,
 				});
 			} else if (provider === 'GITHUB') {
 				await patchGithubMutation.mutateAsync({
@@ -172,6 +195,7 @@ export function ComposeGeneralTab({compose, onUpdated}: GeneralTabProps) {
 					owner: repoOwner,
 					repository: repoName,
 					branch: gitBranch,
+					build_path: gitBuildPath,
 				});
 			}
 			toast.success('Compose source settings saved successfully');

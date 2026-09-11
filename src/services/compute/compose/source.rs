@@ -31,6 +31,7 @@ impl ComposeService {
                 owner: input.owner,
                 branch: input.branch,
                 github_provider_id: input.github_provider_id.unwrap_or(0),
+                github_provider_id2: input.github_provider_id.unwrap_or(0),
                 auto_deploy: input.auto_deploy.unwrap_or(1),
                 watch_paths: current_watch_paths(git.as_ref()),
                 enable_submodules: current_enable_submodules(git.as_ref()),
@@ -54,12 +55,16 @@ impl ComposeService {
                 gitlab_repository: input.gitlab_repository,
                 gitlab_owner: input.gitlab_owner,
                 gitlab_branch: input.gitlab_branch,
-                gitlab_build_path: git
-                    .as_ref()
-                    .and_then(|git| git.gitlab_build_path.clone())
+                gitlab_build_path: input
+                    .gitlab_build_path
+                    .or_else(|| git.as_ref().and_then(|git| git.gitlab_build_path.clone()))
                     .unwrap_or_default(),
-                gitlab_path_namespace: input.gitlab_path_namespace.unwrap_or_default(),
+                gitlab_path_namespace: input
+                    .gitlab_path_namespace
+                    .or_else(|| git.as_ref().and_then(|git| git.gitlab_path_namespace.clone()))
+                    .unwrap_or_default(),
                 gitlab_provider_id: input.gitlab_provider_id.unwrap_or(0),
+                gitlab_provider_id2: input.gitlab_provider_id.unwrap_or(0),
                 auto_deploy: current_auto_deploy(git.as_ref()),
                 watch_paths: current_watch_paths(git.as_ref()),
                 enable_submodules: current_enable_submodules(git.as_ref()),
@@ -82,11 +87,12 @@ impl ComposeService {
                 gitea_repository: input.gitea_repository,
                 gitea_owner: input.gitea_owner,
                 gitea_branch: input.gitea_branch,
-                gitea_build_path: git
-                    .as_ref()
-                    .and_then(|git| git.gitea_build_path.clone())
+                gitea_build_path: input
+                    .gitea_build_path
+                    .or_else(|| git.as_ref().and_then(|git| git.gitea_build_path.clone()))
                     .unwrap_or_default(),
                 gitea_provider_id: input.gitea_provider_id.unwrap_or(0),
+                gitea_provider_id2: input.gitea_provider_id.unwrap_or(0),
                 auto_deploy: current_auto_deploy(git.as_ref()),
                 watch_paths: current_watch_paths(git.as_ref()),
                 enable_submodules: current_enable_submodules(git.as_ref()),
@@ -110,11 +116,12 @@ impl ComposeService {
                 bitbucket_repository_slug: input.bitbucket_repository_slug.unwrap_or_default(),
                 bitbucket_owner: input.bitbucket_owner,
                 bitbucket_branch: input.bitbucket_branch,
-                bitbucket_build_path: git
-                    .as_ref()
-                    .and_then(|git| git.bitbucket_build_path.clone())
+                bitbucket_build_path: input
+                    .bitbucket_build_path
+                    .or_else(|| git.as_ref().and_then(|git| git.bitbucket_build_path.clone()))
                     .unwrap_or_default(),
                 bitbucket_provider_id: input.bitbucket_provider_id.unwrap_or(0),
+                bitbucket_provider_id2: input.bitbucket_provider_id.unwrap_or(0),
                 auto_deploy: current_auto_deploy(git.as_ref()),
                 watch_paths: current_watch_paths(git.as_ref()),
                 enable_submodules: current_enable_submodules(git.as_ref()),
@@ -136,11 +143,18 @@ impl ComposeService {
                 trigger_type: current_trigger(git.as_ref()),
                 custom_git_url: input.custom_git_url,
                 custom_git_branch: input.custom_git_branch,
-                custom_git_build_path: git
-                    .as_ref()
-                    .and_then(|git| git.custom_git_build_path.clone())
+                custom_git_build_path: input
+                    .custom_git_build_path
+                    .or_else(|| git.as_ref().and_then(|git| git.custom_git_build_path.clone()))
                     .unwrap_or_default(),
-                custom_git_ssh_key_id: input.custom_git_ssh_key_id.unwrap_or(0),
+                custom_git_ssh_key_id: input
+                    .custom_git_ssh_key_id
+                    .or_else(|| git.as_ref().and_then(|git| git.custom_git_ssh_key_id))
+                    .unwrap_or(0),
+                custom_git_ssh_key_id2: input
+                    .custom_git_ssh_key_id
+                    .or_else(|| git.as_ref().and_then(|git| git.custom_git_ssh_key_id))
+                    .unwrap_or(0),
                 auto_deploy: current_auto_deploy(git.as_ref()),
                 watch_paths: current_watch_paths(git.as_ref()),
                 enable_submodules: current_enable_submodules(git.as_ref()),
@@ -255,6 +269,7 @@ pub struct PatchComposeGitlabSourceDto {
     pub gitlab_branch: String,
     pub gitlab_path_namespace: Option<String>,
     pub gitlab_provider_id: Option<i64>,
+    pub gitlab_build_path: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -263,6 +278,7 @@ pub struct PatchComposeGiteaSourceDto {
     pub gitea_owner: String,
     pub gitea_branch: String,
     pub gitea_provider_id: Option<i64>,
+    pub gitea_build_path: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -272,6 +288,7 @@ pub struct PatchComposeBitbucketSourceDto {
     pub bitbucket_owner: String,
     pub bitbucket_branch: String,
     pub bitbucket_provider_id: Option<i64>,
+    pub bitbucket_build_path: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -279,6 +296,7 @@ pub struct PatchComposeCustomGitSourceDto {
     pub custom_git_url: String,
     pub custom_git_branch: String,
     pub custom_git_ssh_key_id: Option<i64>,
+    pub custom_git_build_path: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
