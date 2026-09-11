@@ -5,6 +5,10 @@ export type DeploymentPayload = {
 	id: bigint;
 	resource_type: string;
 	resource_id: bigint;
+	title: string;
+	database_id: number | null;
+	application_id: number | null;
+	compose_id: number | null;
 	status: string;
 	error?: string;
 	logs?: string;
@@ -16,14 +20,18 @@ const deploymentClient = createServiceClient(DeploymentService);
 
 function toDeploymentPayload(deployment: Deployment): DeploymentPayload {
 	// Legacy consumers filter on flat resource ids; the proto carries them
-	// as resourceType ("Deploying Database"/"Database" etc.) + resourceId.
-	// Map back so database_id/application_id/compose_id filters keep working.
+	// as resourceType ("Deploying Database"/"Application deploy" etc.) +
+	// resourceId. Map back so database_id/application_id/compose_id filters
+	// keep working. resourceType is the deployment's human title on the wire
+	// (the backend fills it from deployments.title), so expose it as `title`
+	// too — the history rows render e.title.
 	const rid = Number(deployment.resourceId);
 	const type = (deployment.resourceType || '').toLowerCase();
 	return {
 		id: deployment.id,
 		resource_type: deployment.resourceType,
 		resource_id: deployment.resourceId,
+		title: deployment.resourceType,
 		database_id: type.includes('database') ? rid : null,
 		application_id: type.includes('application') ? rid : null,
 		compose_id: type.includes('compose') ? rid : null,
