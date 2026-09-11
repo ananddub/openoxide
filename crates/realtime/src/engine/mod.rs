@@ -83,6 +83,11 @@ impl Drop for RealtimeHandle {
     fn drop(&mut self) {
         // Stop the reactor first so it can't touch the C context while we
         // tear it down, then release the hooks and the eventfd.
+        tracing::info!(
+            db_ptr = self.db_handle as usize,
+            event_fd = self.event_fd,
+            "realtime: CDC handle dropped (reactor abort + hook release)"
+        );
         self._reactor_task.abort();
         unsafe { sqlite3_realtime_cleanup(self.db_handle) };
     }
@@ -248,6 +253,11 @@ impl RealtimeHandle {
             forwarder_started: std::sync::OnceLock::new(),
         });
         register_handle(raw_sqlite_ptr as usize, &handle);
+        tracing::info!(
+            db_ptr = raw_sqlite_ptr as usize,
+            event_fd,
+            "realtime: fresh CDC attach complete"
+        );
         Ok(handle)
     }
 
@@ -267,6 +277,10 @@ impl RealtimeHandle {
     pub fn attach_if_needed(raw_sqlite_ptr: *mut c_void) -> Result<Arc<Self>, String> {
         // A live handle for this exact connection is reused as-is.
         if let Some(existing) = lookup_handle(raw_sqlite_ptr as usize) {
+            tracing::debug!(
+                db_ptr = raw_sqlite_ptr as usize,
+                "realtime: reusing existing live CDC handle"
+            );
             return Ok(existing);
         }
 

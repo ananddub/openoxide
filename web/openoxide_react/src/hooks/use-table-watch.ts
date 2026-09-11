@@ -92,7 +92,15 @@ const TABLE_QUERY_KEYS: Record<WatchedTable, string[]> = {
 	// Git-source settings (provider/repo/branch per app or compose) are not
 	// mirrored into the SERVICE_* rows, so invalidate the service lists too.
 	[WatchedTable.SERVICE_GIT]: ['applications', 'composes'],
-	[WatchedTable.SERVICES]: ['overview-services'],
+	// The services row carries app_status for every service kind, so a
+	// status flip (e.g. STARTING → RUNNING after a database deploy) must
+	// refetch each kind's list/detail queries, not just the overview.
+	[WatchedTable.SERVICES]: [
+		'overview-services',
+		'applications',
+		'composes',
+		'databases',
+	],
 	[WatchedTable.SETTINGS]: ['settings'],
 	[WatchedTable.SSH_KEYS]: ['ssh_keys'],
 	// Tag renames/recolors surface on project cards (hashtags derive from the

@@ -39,6 +39,12 @@ pub fn set_pool(pool: sqlx::SqlitePool) {
     let _ = DB_POOL.set(pool);
 }
 
+/// The installed pool, or `None` before startup wired it (CDC forwards
+/// that early are dropped — subscribers can't exist yet).
+pub fn db_pool() -> Option<&'static sqlx::SqlitePool> {
+    DB_POOL.get()
+}
+
 pub(crate) async fn publish_when_visible(changes: Vec<DbChangeEvent>) {
     if let Some(pool) = DB_POOL.get()
         && let Ok(mut connection) = pool.acquire().await

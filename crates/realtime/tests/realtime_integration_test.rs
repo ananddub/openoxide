@@ -172,7 +172,7 @@ async fn test_full_live_join_reactive_stream_with_sqlite_pool() {
     ";
 
     let mut stream = pool
-        .watch_query_typed::<UserOrderJoin>(&handle, registry.clone(), join_sql)
+        .watch_query_typed::<UserOrderJoin>(handle.clone(), registry.clone(), join_sql)
         .await
         .expect("Failed to watch live JOIN query");
 
@@ -260,7 +260,7 @@ async fn test_burst_write_throughput_and_debounce_efficiency() {
     }
 
     let mut stream = pool
-        .watch_query_typed::<Metric>(&handle, registry.clone(), "SELECT id, cpu FROM metrics")
+        .watch_query_typed::<Metric>(handle.clone(), registry.clone(), "SELECT id, cpu FROM metrics")
         .await
         .unwrap();
 

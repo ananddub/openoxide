@@ -58,7 +58,7 @@ pub trait RealtimeTypedExt {
     /// ```
     fn watch_query_typed<T>(
         &self,
-        handle: &RealtimeHandle,
+        handle: Arc<RealtimeHandle>,
         registry: Arc<LiveQueryRegistry>,
         query: impl Into<String> + Send,
     ) -> impl std::future::Future<Output = Result<impl Stream<Item = Vec<T>>, sqlx::Error>> + Send
@@ -121,7 +121,7 @@ impl RealtimeTypedExt for SqlitePool {
 
     async fn watch_query_typed<T>(
         &self,
-        handle: &RealtimeHandle,
+        handle: Arc<RealtimeHandle>,
         registry: Arc<LiveQueryRegistry>,
         query: impl Into<String> + Send,
     ) -> Result<impl Stream<Item = Vec<T>>, sqlx::Error>

@@ -25,7 +25,7 @@ use crate::query::registry::LiveQueryRegistry;
 #[derive(Clone)]
 pub struct RealtimePool {
     pool: SqlitePool,
-    handle: Arc<RealtimeHandle>,
+    handle: Arc<std::sync::RwLock<Option<Arc<RealtimeHandle>>>>,
     registry: Arc<LiveQueryRegistry>,
 }
 
@@ -53,7 +53,7 @@ impl RealtimePool {
 
         Ok(Self {
             pool,
-            handle,
+            handle: Arc::new(std::sync::RwLock::new(Some(handle))),
             registry,
         })
     }
@@ -63,9 +63,34 @@ impl RealtimePool {
         &self.pool
     }
 
-    /// Access the `RealtimeHandle` if low-level eventfd access is needed.
-    pub fn handle(&self) -> &RealtimeHandle {
-        &self.handle
+    /// The handle attached to the pool's CURRENT physical connection, or
+    /// `None` while a connection replacement is in flight.
+    pub fn handle(&self) -> Option<Arc<RealtimeHandle>> {
+        self.handle
+            .read()
+            .expect("realtime handle lock poisoned")
+            .clone()
+    }
+
+    /// Installs the handle for the pool's current physical connection.
+    /// Called from `after_connect` when a recreated connection re-attaches
+    /// the CDC engine, so live query streams follow the pool instead of
+    /// polling a dead connection's eventfd.
+    pub fn set_handle(&self, handle: Arc<RealtimeHandle>) {
+        *self.handle.write().expect("realtime handle lock poisoned") = Some(handle);
+    }
+
+    /// Detaches and returns the current handle so the caller can drop it
+    /// BEFORE a replacement connection attaches. Ordering matters: SQLite
+    /// frees the old connection and the allocator may hand the same address
+    /// to the new one — a handle dropped after that attach would clean up
+    /// (by reused pointer) the NEW connection's C context and silently
+    /// kill event capture.
+    pub fn take_handle(&self) -> Option<Arc<RealtimeHandle>> {
+        self.handle
+            .write()
+            .expect("realtime handle lock poisoned")
+            .take()
     }
 
     /// Access the `LiveQueryRegistry` for diagnostics.
@@ -89,8 +114,24 @@ impl RealtimePool {
     where
         T: for<'r> FromRow<'r, sqlx::sqlite::SqliteRow> + Send + Unpin + 'static,
     {
+        let handle = match self.handle() {
+            Some(handle) => handle,
+            None => {
+                // Replacement attach in flight or pool built without one —
+                // resolve the handle from the CURRENT physical connection
+                // (attach_if_needed reuses the live handle for it).
+                let mut conn = self.pool.acquire().await?;
+                let mut raw_handle = conn.lock_handle().await?;
+                let raw_ptr =
+                    raw_handle.as_raw_handle().as_ptr() as *mut std::ffi::c_void;
+                drop(raw_handle);
+                drop(conn);
+                RealtimeHandle::attach_if_needed(raw_ptr)
+                    .map_err(|error| sqlx::Error::Configuration(error.into()))?
+            }
+        };
         self.pool
-            .watch_query_typed::<T>(&self.handle, self.registry.clone(), query)
+            .watch_query_typed::<T>(handle, self.registry.clone(), query)
             .await
     }
 }
