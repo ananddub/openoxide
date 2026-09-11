@@ -23,7 +23,7 @@ fn proto_to_source_type(value: &buffa::EnumValue<ApplicationSourceType>) -> Stri
         Some(ApplicationSourceType::Gitlab) => "GITLAB".into(),
         Some(ApplicationSourceType::Bitbucket) => "BITBUCKET".into(),
         Some(ApplicationSourceType::Gitea) => "GITEA".into(),
-        Some(ApplicationSourceType::CustomGit) => "CUSTOM_GIT".into(),
+        Some(ApplicationSourceType::CustomGit) => "CUSTOM".into(),
         Some(ApplicationSourceType::Docker) => "DOCKER".into(),
         Some(ApplicationSourceType::Drop) => "DROP".into(),
         _ => "GITHUB".into(),

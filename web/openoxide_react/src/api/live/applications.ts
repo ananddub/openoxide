@@ -59,16 +59,32 @@ export type ApplicationPayload = {
 const applicationClient = createServiceClient(ApplicationService);
 const overviewClient = createServiceClient(OverviewOperationsService);
 
-// Proto enums arrive as numbers; legacy payloads exposed lowercase value
-// names ('github', 'dockerfile', ...), so reverse-map to keep the wire shape.
+// Proto enums arrive as numbers. Consumers (source/build settings cards,
+// preview tab) compare against the uppercase wire names ('DOCKER',
+// 'NIXPACKS', 'GITHUB'), so reverse-map to those exact strings — the old
+// lowercase form never matched and silently reset the cards to defaults.
+// UNSPECIFIED collapses to '' so the cards' own fallbacks still apply.
+const enumName = (
+	enumObject: Record<string | number, string | number>,
+	value: string | number,
+): string => {
+	const name = enumObject[value];
+	return typeof name === 'string' && name !== 'UNSPECIFIED' ? name : '';
+};
+
+
 function toApplicationPayload(application: Application): ApplicationPayload {
+	// The custom-git card's provider id is 'GIT'; the proto enum name is
+	// 'CUSTOM_GIT' (DB discriminator 'CUSTOM'). Collapse both to the card id.
+	const sourceTypeName = enumName(ApplicationSourceType, application.sourceType);
+	const sourceType = sourceTypeName === 'CUSTOM_GIT' || sourceTypeName === 'CUSTOM' ? 'GIT' : sourceTypeName;
 	return {
 		id: application.id,
 		name: application.name,
 		description: application.description,
 		app_name: application.appName,
-		source_type: (ApplicationSourceType[application.sourceType] ?? '').toLowerCase(),
-		build_type: (ApplicationBuildType[application.buildType] ?? '').toLowerCase(),
+		source_type: sourceType,
+		build_type: enumName(ApplicationBuildType, application.buildType),
 		status: application.status,
 		last_error: application.lastError,
 		trigger_type: application.triggerType,

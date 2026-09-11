@@ -62,10 +62,10 @@
     "db/queries/server_private_networks.sql": "d2c89c0a64eb58eeccdffab9d190bd0a2d84c65c39f8f4b1e5035593793e5c5d",
     "db/queries/servers.sql": "98a8708c81e207a0ea0fb71e532d4b1df68e1ed4bd735ccf9c127074d97df3df",
     "db/queries/service_application.sql": "32277570b7b01d9efa573f56b5c1dd628d16c29b9befa0f8f5185b60f0139334",
-    "db/queries/service_compose.sql": "7e69660aba374493d892d8ea492103865821a432989c015be03e05ea3abfad5c",
+    "db/queries/service_compose.sql": "b414baf583eb0b3737e2e6c50c53f1242b327c11c28c4819356e27caf368b515",
     "db/queries/service_database.sql": "d6ddba6acbfefadd85865557e4519427097651b963b06015ac6efebca4e9bfcd",
     "db/queries/service_git.sql": "fde3029b742b1fe079e4436c6d9b2d124dcaeec6188db70f8bc2b4e0e41b4e93",
-    "db/queries/services.sql": "fa5a2fe110b13f83ab82e81b75842762e24db1529aa571efdf12c6c56b8c5e67",
+    "db/queries/services.sql": "68a9bf7118f89c0569b3bd02cc672a29c7212e18047c4b18d1f0bd3dd3caefd7",
     "db/queries/settings.sql": "b933b1178726a3ff7f6d2d05e68705b1d4dc2c0d178170441c9a1a7bba6de183",
     "db/queries/ssh_keys.sql": "f03d21a0ace9c9468d9f5d2ef12dc7946d50e750b6aa2e847551b94395a3010d",
     "db/queries/ssh_keys_registries.sql": "fc557cedfb248e1b57a27c19fa075b4c4c3f9814b785d0e42c7c8a3c086a663c",
@@ -375,6 +375,6 @@
     ]
   },
   "generated_file_checksums": {},
-  "last_generation": "2026-09-10T02:13:24.412114075+05:30",
+  "last_generation": "2026-09-11T15:35:16.40442888+05:30",
   "OutDir": "src/flash_gen"
 }

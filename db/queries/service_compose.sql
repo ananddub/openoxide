@@ -95,10 +95,10 @@ FROM services s
 JOIN service_compose c ON c.service_id = s.id
 JOIN environments e ON e.id = s.environment_id
 JOIN projects p ON p.id = e.project_id
+LEFT JOIN service_git g ON g.service_id = s.id
 LEFT JOIN git_providers gpgh ON gpgh.id = g.github_provider_id
 LEFT JOIN git_providers gpgl ON gpgl.id = g.gitlab_provider_id
 LEFT JOIN git_providers gpbb ON gpbb.id = g.bitbucket_provider_id
 LEFT JOIN git_providers gpgt ON gpgt.id = g.gitea_provider_id
 LEFT JOIN ssh_keys sk ON sk.id = g.custom_git_ssh_key_id
-LEFT JOIN service_git g ON g.service_id = s.id
 WHERE s.id = ?;

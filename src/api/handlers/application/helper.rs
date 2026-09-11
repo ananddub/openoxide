@@ -46,7 +46,9 @@ pub fn source_type_to_proto(s: &str) -> buffa::EnumValue<ApplicationSourceType> 
         "GITLAB" => ApplicationSourceType::Gitlab,
         "BITBUCKET" => ApplicationSourceType::Bitbucket,
         "GITEA" => ApplicationSourceType::Gitea,
-        "CUSTOM_GIT" => ApplicationSourceType::CustomGit,
+        // service_git stores the custom-git discriminator as 'CUSTOM';
+        // 'CUSTOM_GIT' is accepted for rows written before that.
+        "CUSTOM" | "CUSTOM_GIT" => ApplicationSourceType::CustomGit,
         "DOCKER" => ApplicationSourceType::Docker,
         "DROP" => ApplicationSourceType::Drop,
         _ => ApplicationSourceType::Unspecified,

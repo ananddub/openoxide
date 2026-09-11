@@ -1,5 +1,6 @@
 import {useState, useEffect, useMemo, useRef} from 'react';
 import {toast} from 'sonner';
+import {formatApiError} from '#/api/utils';
 import type {ApplicationResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 import {useApplicationCancel, useApplicationDeploy, useApplicationGet, useApplicationList, useApplicationRebuild, useApplicationReload, useApplicationStart, useApplicationStop, useApplicationUpdate, useDeploymentItems, useDomainItems, useOverviewServices, useScheduleListByOrganization, useBackupItems} from '#/api/live';
@@ -32,9 +33,12 @@ export function useAppDetail(appId: number) {
 	// invalidates ['deployments'] while mounted.
 	const {data: storeDeployments = []} = useDeploymentItems();
 	const {data: liveApp} = useApplicationGet(BigInt(appId));
-	// Once the realtime store has the service, prefer it so live detail cache
-	// cannot overwrite deployment lifecycle updates with an older snapshot.
-	const rawApp = storeApp || liveApp;
+	// Merge, don't prefer: storeApp (overview list) is fresher for lifecycle
+	// status, but its payload carries no source_type / docker_image /
+	// build_type — using it alone made the source card fall back to 'GIT'
+	// after every refetch. liveApp (GetApplication) owns those fields; the
+	// store copy layers on top so only its shared keys (status etc.) win.
+	const rawApp = liveApp ? { ...liveApp, ...(storeApp ?? {}) } : storeApp;
 	const actionInFlight = useRef(false);
 	const statusBeforeAction = useRef<string | null>(null);
 
@@ -232,11 +236,14 @@ export function useAppDetail(appId: number) {
 				toast.success('Action cancelled successfully');
 			}
 			refetchAll();
-		} catch {
+		} catch (err) {
 			setLocalStatusOverride(null);
 			actionInFlight.current = false;
 			statusBeforeAction.current = null;
-			toast.error(`Action failed: ${action}`);
+			// Surface the RPC's own message — a generic "Action failed"
+			// hid the builder's real error (e.g. a broken deployment
+			// config query) and made failed deploys look like no-ops.
+			toast.error(formatApiError(err));
 		}
 	};
 
