@@ -71,9 +71,15 @@ export function ComposeHeader({
 						className="h-8 w-8 rounded-lg border-border">
 						<RefreshCw className="h-3.5 w-3.5" />
 					</Button>
-					<StatusBadge status={compose?.compose_status || ''} error={(compose as any)?.last_error} />
+					<StatusBadge
+						status={compose?.compose_status || ''}
+						error={(compose as any)?.last_error}
+					/>
 					<span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/20 px-2.5 py-1 text-xs font-semibold text-muted-foreground select-none">
-						<Layers2 className="h-3.5 w-3.5" /> Docker Compose
+						<Layers2 className="h-3.5 w-3.5" />
+						{(compose as any)?.compose_type === 'STACK'
+							? 'Swarm Stack'
+							: 'Docker Compose'}
 					</span>
 				</div>
 			</div>

@@ -27,7 +27,9 @@ use crate::services::compute::compose::source::{
     PatchComposeBitbucketSourceDto, PatchComposeCustomGitSourceDto, PatchComposeGiteaSourceDto,
     PatchComposeGithubSourceDto, PatchComposeGitlabSourceDto, PatchComposeRawSourceDto,
 };
-use crate::services::compute::compose::ComposeOperation as AppComposeOperation;
+use crate::services::compute::compose::{
+    ComposeOperation as AppComposeOperation, ComposeType,
+};
 use super::helper::*;
 use super::init::ComposeController;
 
@@ -130,13 +132,21 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, CreateComposeRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
+        // Canonical spelling comes from the wire or the enum default; the
+        // DTO is typed so no caller can smuggle a non-canonical string in.
+        let compose_type = match request.compose_type {
+            None => ComposeType::DockerCompose,
+            Some(value) => ComposeType::from_str(value).ok_or_else(|| {
+                ConnectError::invalid_argument(format!("invalid compose_type: {value}"))
+            })?,
+        };
         let dto = CreateComposeDto {
             name: request.name.to_owned(),
             description: request.description.map(str::to_owned),
             environment_id: request.environment_id,
             server_id: request.server_id,
             source_type: "GITHUB".into(),
-            compose_type: "DOCKER_COMPOSE".into(),
+            compose_type,
             compose_file: request.compose_file.map(str::to_owned).unwrap_or_default(),
         };
         let item = self.service.create(dto).await.map_err(map_error)?;

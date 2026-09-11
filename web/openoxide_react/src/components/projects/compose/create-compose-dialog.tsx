@@ -67,8 +67,9 @@ export function CreateComposeDialog({
 		try {
 			const res = await createMutation.mutateAsync({
 				name: name.trim(),
-				// Note: the ConnectRPC CreateComposeRequest has no compose_type
-				// field; composeType stays a UI-only selection.
+				// Select values are the canonical ComposeType spellings the
+				// backend validates ('DOCKER-COMPOSE' | 'STACK').
+				compose_type: composeType,
 				description: description.trim() || undefined,
 				environment_id: environmentId,
 				server_id: serverId === 'local' ? undefined : Number(serverId),
@@ -117,7 +118,7 @@ export function CreateComposeDialog({
 									<SelectItem value="DOCKER-COMPOSE">
 										Docker Compose (YAML)
 									</SelectItem>
-									<SelectItem value="DOCKER-STACK">
+									<SelectItem value="STACK">
 										Docker Swarm Stack
 									</SelectItem>
 								</SelectContent>

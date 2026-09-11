@@ -1,0 +1,12 @@
+-- Migration: canonicalize compose_type spellings
+-- Created: 2026-09-12T00:00:00Z
+--
+-- sqlx executes the whole file as one script (no +migrate markers); keep it
+-- a single forward statement.
+--
+-- The unified schema's ComposeType enum canonical spellings are
+-- 'DOCKER-COMPOSE' / 'STACK' (see services/compute/compose/types.rs).
+-- The compose create handler historically inserted 'DOCKER_COMPOSE'
+-- (underscore), which ComposeType::from_str silently failed to match,
+-- so those rows fell back to the enum default on read. Normalize them.
+UPDATE service_compose SET compose_type = 'DOCKER-COMPOSE' WHERE compose_type = 'DOCKER_COMPOSE';

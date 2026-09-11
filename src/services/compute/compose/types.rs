@@ -1,12 +1,14 @@
 use os::string_enum;
 
 string_enum! {
-       #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-        pub enum ComposeType {
-                default = Stack;
-                DockerCompose => "DOCKER-COMPOSE",
-                Stack => "STACK"
-        }
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize)]
+    // Wire spelling == canonical enum strings: DOCKER-COMPOSE, STACK.
+    #[serde(rename_all = "SCREAMING-KEBAB-CASE")]
+    pub enum ComposeType {
+        default = Stack;
+        DockerCompose => "DOCKER-COMPOSE",
+        Stack => "STACK"
+    }
 }
 
 string_enum! {

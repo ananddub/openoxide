@@ -20,7 +20,7 @@ use crate::{
 };
 
 use super::{
-    crud::{CreateComposeDto, PatchComposeDto}, ComposeRecord, ComposeService,
+    crud::{CreateComposeDto, PatchComposeDto}, ComposeRecord, ComposeService, ComposeType,
 };
 
 pub struct ComposeManagementService {
@@ -86,7 +86,7 @@ impl ComposeManagementService {
                 environment_id: input.environment_id,
                 server_id: input.server_id,
                 source_type: "RAW".into(),
-                compose_type: "DOCKER-COMPOSE".into(),
+                compose_type: ComposeType::DockerCompose,
                 compose_file: input.compose_file,
             })
             .await?;

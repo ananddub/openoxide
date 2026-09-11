@@ -11,7 +11,7 @@ use crate::flash_gen::service_git::{CreateServiceGitParams, UpdateServiceGitTrig
 use crate::flash_gen::services::UpdateServiceCommandParams;
 
 use super::{
-    ComposeOperationResult, ComposeRecord, ComposeService,
+    ComposeOperationResult, ComposeRecord, ComposeService, ComposeType,
     queries::{
         ComposeDependencyCounts, compose_dependency_counts, generate_app_name,
         update_git_enable_submodules, update_git_watch_paths, update_service_identity,
@@ -125,7 +125,7 @@ impl ComposeService {
         self.queries
             .create_service_compose_simple(&CreateServiceComposeSimpleParams {
                 service_id: service.id,
-                compose_type: input.compose_type.clone(),
+                compose_type: input.compose_type.as_str().to_string(),
                 compose_file: input.compose_file.clone(),
             })
             .await?;
@@ -155,7 +155,12 @@ impl ComposeService {
             .or(current.description.as_deref());
         let env_var = input.env_var.as_deref().or(current.env_var.as_deref());
         let compose_file = input.compose_file.as_deref().unwrap_or(&current.compose_file);
-        let compose_type = input.compose_type.as_deref().unwrap_or(&ext.compose_type);
+        let compose_type = match input.compose_type {
+            Some(value) => value.as_str(),
+            None => ComposeType::from_str(&ext.compose_type)
+                .unwrap_or(ComposeType::DockerCompose)
+                .as_str(),
+        };
         let command = input.command.as_deref().or(Some(current.command.as_str()));
         let compose_path = input
             .compose_path
@@ -270,8 +275,7 @@ pub struct CreateComposeDto {
     pub server_id: Option<i64>,
     #[serde(default = "default_source_type")]
     pub source_type: String,
-    #[serde(default = "default_compose_type")]
-    pub compose_type: String,
+    pub compose_type: ComposeType,
     #[serde(default)]
     pub compose_file: String,
 }
@@ -282,7 +286,7 @@ pub struct PatchComposeDto {
     pub description: Option<String>,
     pub env_var: Option<String>,
     pub compose_file: Option<String>,
-    pub compose_type: Option<String>,
+    pub compose_type: Option<ComposeType>,
     pub trigger_type: Option<String>,
     pub command: Option<String>,
     pub enable_submodules: Option<i64>,
@@ -470,8 +474,4 @@ impl From<ComposeOperationResult> for ComposeOperationResponseDto {
 
 fn default_source_type() -> String {
     "GITHUB".into()
-}
-
-fn default_compose_type() -> String {
-    "DOCKER-COMPOSE".into()
 }

@@ -12,7 +12,7 @@ use crate::{
         mount::MountCreateComposeFileParams,
     },
     services::{
-        compute::compose::{ComposeOperation, ComposeService, crud::CreateComposeDto},
+        compute::compose::{ComposeOperation, ComposeService, ComposeType, crud::CreateComposeDto},
         networking::domain::{CreateDomainDto, DomainService},
     },
     utils::ai::{AiClient, AiProviderConfig, AiProviderKind},
@@ -354,7 +354,7 @@ impl AiService {
                 environment_id: input.environment_id,
                 server_id: input.server_id,
                 source_type: "RAW".into(),
-                compose_type: "DOCKER-COMPOSE".into(),
+                compose_type: ComposeType::DockerCompose,
                 compose_file: suggestion.docker_compose.clone(),
             })
             .await

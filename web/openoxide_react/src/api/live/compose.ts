@@ -164,6 +164,8 @@ export function useComposeCreate() {
 			environment_id: number | bigint;
 			server_id?: number | bigint;
 			compose_file?: string;
+			/** Canonical ComposeType: 'DOCKER-COMPOSE' | 'STACK'. */
+			compose_type?: string;
 		}) =>
 			composeClient.createCompose({
 				name: input.name,
@@ -171,6 +173,7 @@ export function useComposeCreate() {
 				environmentId: BigInt(input.environment_id),
 				serverId: input.server_id !== undefined ? BigInt(input.server_id) : undefined,
 				composeFile: input.compose_file,
+				composeType: input.compose_type,
 			}),
 		{invalidate: [['composes']]},
 	);

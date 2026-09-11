@@ -97,6 +97,9 @@ message CreateComposeRequest {
   int64 environment_id = 3 [(buf.validate.field).int64.gt = 0];
   optional int64 server_id = 4;
   optional string compose_file = 5;
+  // Canonical ComposeType spelling ("DOCKER-COMPOSE" | "STACK"); unset
+  // defaults to DOCKER-COMPOSE. Unknown values are rejected, not coerced.
+  optional string compose_type = 6;
 }
 message UpdateComposeRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];
