@@ -1,6 +1,8 @@
 import {useEffect} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
+import {Code, ConnectError} from '@connectrpc/connect';
 import {createServiceClient} from '#/api/connect';
+import {refreshAccessToken} from '#/api/client';
 import {useOrganizations} from '#/stores/session-context';
 import {
 	RealtimeService,
@@ -158,6 +160,14 @@ export function useTableWatch(): void {
 		};
 
 		const connect = async () => {
+			// A server-stream's `unauthenticated` arrives as an
+			// end-of-stream frame, never through the unary
+			// interceptor's refresh-and-replay — so an expired access
+			// token would otherwise re-fail every retry forever (the
+			// backoff pins at its 30s cap and the tab goes permanently
+			// stale). Detect it and heal via an explicit refresh,
+			// reconnecting immediately instead of backing off.
+			let authHealed = false;
 			try {
 				for await (const event of realtimeClient.watchTables({}, {signal: abort.signal})) {
 					if (closed || abort.signal.aborted) break;
@@ -169,13 +179,16 @@ export function useTableWatch(): void {
 				// Reconnect below; the resync event heals any missed
 				// changes. Surface the failure — a silently dying stream
 				// otherwise looks exactly like "realtime not working".
+				if (error instanceof ConnectError && error.code === Code.Unauthenticated) {
+					authHealed = (await refreshAccessToken().catch(() => null)) !== null;
+				}
 				if (!closed && !abort.signal.aborted) {
 					console.warn('[table-watch] stream dropped, reconnecting', error);
 				}
 			}
 			if (!closed && !abort.signal.aborted) {
-				attempt = Math.min(attempt + 1, 6);
-				timer = setTimeout(connect, Math.min(1000 * 2 ** attempt, 30_000));
+				attempt = authHealed ? 0 : Math.min(attempt + 1, 6);
+				timer = setTimeout(connect, authHealed ? 0 : Math.min(1000 * 2 ** attempt, 30_000));
 			}
 		};
 

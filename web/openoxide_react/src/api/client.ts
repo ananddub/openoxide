@@ -31,7 +31,10 @@ let refreshRetryAfter = 0;
 let refreshRetryToken = '';
 const REFRESH_RETRY_COOLDOWN_MS = 15_000;
 
-const authClient = createServiceClient(AuthService);
+// NOTE: created lazily inside refreshAccessToken(), never at module scope.
+// client.ts ↔ connect.ts ↔ query.ts is an import cycle; a module-level
+// createServiceClient() runs while connect.ts's transport is still
+// undefined (bundler-evaluated), which silently breaks every refresh call.
 
 /**
  * Refreshes the access token through the ConnectRPC AuthService and
@@ -67,7 +70,7 @@ export async function refreshAccessToken(): Promise<string | null> {
 			)
 				return null;
 
-			const response = await authClient.refresh({refreshToken});
+			const response = await createServiceClient(AuthService).refresh({refreshToken});
 			if (!response.user || !response.tokens) {
 				logout();
 				return null;
