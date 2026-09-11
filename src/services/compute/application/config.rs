@@ -87,8 +87,8 @@ impl ApplicationService {
         .bind(&input.build_stage)
         .bind(&input.publish_directory)
         .bind(input.static_spa.map(i64::from))
-        .bind(None::<String>)
-        .bind(None::<String>)
+        .bind(&input.railpack_version)
+        .bind(&input.heroku_version)
         .bind(&input.build_path)
         .bind(input.clean_cache.map(i64::from))
         .bind(id)
@@ -98,6 +98,7 @@ impl ApplicationService {
             || input.enable_submodules.is_some()
             || input.command.is_some()
             || input.args.is_some()
+            || input.auto_deploy.is_some()
         {
             sqlx::query(
                 "UPDATE services SET \
@@ -113,11 +114,13 @@ impl ApplicationService {
             sqlx::query(
                 "UPDATE service_git SET \
                  watch_paths = COALESCE(?, watch_paths), \
-                 enable_submodules = COALESCE(?, enable_submodules) \
+                 enable_submodules = COALESCE(?, enable_submodules), \
+                 auto_deploy = COALESCE(?, auto_deploy) \
                  WHERE service_id = ?;",
             )
             .bind(&input.watch_paths)
             .bind(input.enable_submodules.map(i64::from))
+            .bind(input.auto_deploy.map(i64::from))
             .bind(id)
             .execute(&self.queries.pool)
             .await?;

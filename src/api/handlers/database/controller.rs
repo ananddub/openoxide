@@ -542,7 +542,19 @@ impl DatabaseService for DatabaseController {
             .await
             .map_err(map_db_error)?;
         let replication_role = Some(config.replication_role.as_str().to_string());
-        let config_json = serde_json::to_string(&config.settings)
+        // Fold the replica connection fields back into the settings map so
+        // the card can round-trip them (the proto carries one JSON blob).
+        let mut settings = config.settings;
+        if let Some(host) = &config.primary_host {
+            settings.insert("primary_host".into(), host.clone());
+        }
+        if let Some(port) = config.primary_port {
+            settings.insert("primary_port".into(), port.to_string());
+        }
+        if let Some(user) = &config.replication_user {
+            settings.insert("replication_user".into(), user.clone());
+        }
+        let config_json = serde_json::to_string(&settings)
             .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
         Response::ok(AdvancedConfig {
             replication_role,
@@ -567,20 +579,33 @@ impl DatabaseService for DatabaseController {
         let replication_role_str = config.replication_role.as_deref().unwrap_or("STANDALONE");
         let replication_role = crate::services::compute::database::management::PostgresReplicationRole::from_str(replication_role_str)
             .ok_or_else(|| ConnectError::invalid_argument(format!("invalid replication role: {}", replication_role_str)))?;
-        let config_map = config
+        let config_map: std::collections::BTreeMap<String, String> = config
             .config
             .as_deref()
             .map(|s| serde_json::from_str(s))
             .transpose()
             .map_err(|e| ConnectError::invalid_argument(format!("invalid config JSON: {}", e)))?
             .unwrap_or_default();
+        // Replica connection fields ride inside the settings map (the proto
+        // carries one JSON blob); lift them into the DTO and strip them from
+        // the tunable-settings map (validate_postgres_settings rejects
+        // unknown keys). The GET handler folds them back for the card.
+        let take_str = |map: &std::collections::BTreeMap<String, String>, key: &str| {
+            map.get(key).filter(|v| !v.trim().is_empty()).cloned()
+        };
+        let mut settings = config_map.clone();
+        for key in ["primary_host", "primary_port", "replication_user", "replication_password"] {
+            settings.remove(key);
+        }
         let dto = PostgresAdvancedConfigDto {
-            settings: config_map,
+            settings,
             replication_role,
-            primary_host: None,
-            primary_port: None,
-            replication_user: None,
-            replication_password: None,
+            primary_host: take_str(&config_map, "primary_host"),
+            primary_port: config_map
+                .get("primary_port")
+                .and_then(|v| v.parse::<i64>().ok()),
+            replication_user: take_str(&config_map, "replication_user"),
+            replication_password: take_str(&config_map, "replication_password"),
         };
         let result = self
             .service

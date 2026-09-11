@@ -10,7 +10,8 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import {toast} from 'sonner';
-import {useApplicationUpdate} from '#/api/live';
+import {useApplicationUpdate, useApplicationUpdateBuildConfig} from '#/api/live';
+import {ApplicationBuildType} from '#/gen/connect/openoxide/api/v1/application_pb';
 import {formatApiError} from '#/api/utils';
 import {RadioGroup, RadioGroupItem} from '#/components/ui/radio-group';
 
@@ -46,12 +47,14 @@ export function BuildSettingsCard({
 	app,
 	onUpdated,
 }: BuildSettingsCardProps) {
+	// Ids are the wire enum names (ApplicationBuildType) so the value read
+	// back from GetApplication selects the same radio after a save.
 	const BUILD_TYPES: {id: string; label: string; isNew?: boolean}[] = [
 		{id: 'DOCKERFILE', label: 'Dockerfile'},
 		{id: 'RAILPACK', label: 'Railpack', isNew: true},
 		{id: 'NIXPACKS', label: 'Nixpacks'},
-		{id: 'HEROKU_BUILDPACKS', label: 'Heroku Buildpacks'},
-		{id: 'PAKETO_BUILDPACKS', label: 'Paketo Buildpacks'},
+		{id: 'HEROKU', label: 'Heroku Buildpacks'},
+		{id: 'PAKETO', label: 'Paketo Buildpacks'},
 		{id: 'STATIC', label: 'Static'},
 	];
 
@@ -76,7 +79,7 @@ export function BuildSettingsCard({
 	const [publishDirectory, setPublishDirectory] = useState(
 		app.publish_directory || '',
 	);
-	const [isStaticSpa, setIsStaticSpa] = useState(app.is_static_spa === 1);
+	const [isStaticSpa, setIsStaticSpa] = useState(!!app.is_static_spa);
 	const [railpackVersion, setRailpackVersion] = useState(
 		app.railpack_version || '0.15.4',
 	);
@@ -93,7 +96,7 @@ export function BuildSettingsCard({
 			setDockerBuildStage(app.docker_build_stage || '');
 			setHerokuVersion(app.heroku_version || '24');
 			setPublishDirectory(app.publish_directory || '');
-			setIsStaticSpa(app.is_static_spa === 1);
+			setIsStaticSpa(!!app.is_static_spa);
 			setRailpackVersion(app.railpack_version || '0.15.4');
 			setIsManualRailpack(
 				!RAILPACK_VERSIONS.includes(app.railpack_version as any) &&
@@ -103,36 +106,36 @@ export function BuildSettingsCard({
 	}, [app]);
 
 	const patchBuildType = useApplicationUpdate();
-	const patchBuildConfig = useApplicationUpdate();
+	const patchBuildConfig = useApplicationUpdateBuildConfig();
 
 	const handleSaveBuildType = async () => {
 		setSavingBuild(true);
 		try {
-			// Update general build type
+			// Build type rides UpdateApplication; the details ride the
+			// dedicated UpdateBuildConfig RPC (UpdateApplication has no
+			// dockerfile/publish-directory/version-pin fields at all).
 			await patchBuildType.mutateAsync({
-				params: {path: {id: app.id}},
-				body: {
-					build_type: buildType,
-				},
+				id: app.id,
+				build_type:
+					ApplicationBuildType[buildType as keyof typeof ApplicationBuildType],
 			});
 
-			// Update build-specific configuration details
 			await patchBuildConfig.mutateAsync({
-				params: {path: {id: app.id}},
-				body: {
-					dockerfile,
-					docker_context_path: dockerContextPath,
-					docker_build_stage: dockerBuildStage || undefined,
-					heroku_version: herokuVersion || undefined,
-					publish_directory: publishDirectory || undefined,
-					is_static_spa: isStaticSpa ? 1 : 0,
-					railpack_version: railpackVersion || undefined,
-				},
+				id: app.id,
+				dockerfile,
+				context_path: dockerContextPath,
+				build_stage: dockerBuildStage || undefined,
+				heroku_version:
+					buildType === 'HEROKU' ? herokuVersion || undefined : undefined,
+				publish_directory: publishDirectory || undefined,
+				static_spa: isStaticSpa,
+				railpack_version:
+					buildType === 'RAILPACK' ? railpackVersion || undefined : undefined,
 			});
 
 			toast.success('Build settings saved successfully');
 			onUpdated();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
 			setSavingBuild(false);
@@ -224,7 +227,7 @@ export function BuildSettingsCard({
 					</div>
 				)}
 
-				{buildType === 'HEROKU_BUILDPACKS' && (
+				{buildType === 'HEROKU' && (
 					<div className="flex flex-col gap-1.5">
 						<span className="text-xs font-bold text-muted-foreground">
 							Heroku Version / Stack (Optional)

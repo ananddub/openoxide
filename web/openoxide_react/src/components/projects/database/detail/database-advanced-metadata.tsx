@@ -4,7 +4,7 @@ import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Textarea} from '#/components/ui/textarea';
 import {toast} from 'sonner';
-import {useDatabaseUpdate} from '#/api/live';
+import {useDatabaseUpdate, parseDatabaseKind} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 
 export function DatabaseAdvancedMetadata({database, onUpdated}: any) {
@@ -23,9 +23,11 @@ export function DatabaseAdvancedMetadata({database, onUpdated}: any) {
 		setSaving(true);
 		try {
 			await patchDatabase.mutateAsync({
-				params: {path: {id: Number(database.id)}},
-				body: {name: name.trim(), description: description.trim()},
-			} as any);
+				kind: parseDatabaseKind(database?.kind || 'postgres'),
+				id: Number(database.id),
+				name: name.trim(),
+				description: description.trim(),
+			});
 			toast.success('Database details updated');
 			onUpdated();
 		} catch (error) {

@@ -4,7 +4,7 @@ import {Trash2, AlertTriangle, Save} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
-import {useApplicationUpdate} from '#/api/live';
+import {useApplicationDelete, useApplicationUpdateResourceConfig} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 
 interface AdvancedTabProps {
@@ -38,25 +38,23 @@ export function AdvancedTab({app, onUpdated}: AdvancedTabProps) {
 		app.replicas,
 	]);
 
-	const patchResources = useApplicationUpdate();
+	const patchResources = useApplicationUpdateResourceConfig();
 	const deleteApplication = useApplicationDelete();
 
 	const handleSaveResources = async () => {
 		setSaving(true);
 		try {
 			await patchResources.mutateAsync({
-				params: {path: {id: app.id}},
-				body: {
-					memory_reservation: memRes || undefined,
-					memory_limit: memLimit || undefined,
-					cpu_reservation: cpuRes || undefined,
-					cpu_limit: cpuLimit || undefined,
-					replicas: replicas ? parseInt(replicas) : 1,
-				},
+				id: app.id,
+				memory_reservation: memRes || undefined,
+				memory_limit: memLimit || undefined,
+				cpu_reservation: cpuRes || undefined,
+				cpu_limit: cpuLimit || undefined,
+				replicas: replicas ? parseInt(replicas) : 1,
 			});
 			toast.success('Resource limits saved successfully');
 			onUpdated();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
 			setSaving(false);
@@ -66,12 +64,10 @@ export function AdvancedTab({app, onUpdated}: AdvancedTabProps) {
 	const handleDeleteApp = async () => {
 		setDeleting(true);
 		try {
-			await deleteApplication.mutateAsync({
-				params: {path: {id: app.id}},
-			});
+			await deleteApplication.mutateAsync(app.id);
 			toast.success('Application deleted successfully');
-			navigate({to: `/projects/${app.project_id}` as any});
-		} catch (err: any) {
+			navigate({to: `/projects/${app.project_id}`});
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 			setDeleting(false);
 		}

@@ -8,9 +8,14 @@ import {
 	Terminal,
 	X,
 } from 'lucide-react';
+import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
 import {TerminalModal} from '#/components/projects/common/terminal-modal';
-import {useDeploymentItems} from '#/api/live';
+import {
+	useApplicationUpdateBuildConfig,
+	useDeploymentItems,
+} from '#/api/live';
+import {formatApiError} from '#/api/utils';
 
 interface DeploySettingsCardProps {
 	app: any;
@@ -32,13 +37,31 @@ export function DeploySettingsCard({
 	onUpdated,
 }: DeploySettingsCardProps) {
 	const [autoDeploy, setAutoDeploy] = useState(app.auto_deploy !== false);
-	const [cleanCache, setCleanCache] = useState(false);
+	const [cleanCache, setCleanCache] = useState(!!app.clean_cache);
 	const [showTerminal, setShowTerminal] = useState(false);
 
 	const [confirmAction, setConfirmAction] = useState<ActionType | null>(
 		null,
 	);
 	const [activeLoading, setActiveLoading] = useState<string | null>(null);
+
+	// Autodeploy + clean-cache ride the dedicated UpdateBuildConfig RPC —
+	// they were local-only state, so toggles silently reset on refetch.
+	const patchBuildConfig = useApplicationUpdateBuildConfig();
+	const persistFlag = async (
+		flag: 'auto_deploy' | 'clean_cache',
+		value: boolean,
+	) => {
+		if (flag === 'auto_deploy') setAutoDeploy(value);
+		else setCleanCache(value);
+		try {
+			await patchBuildConfig.mutateAsync({id: app.id, [flag]: value});
+		} catch (err: unknown) {
+			if (flag === 'auto_deploy') setAutoDeploy(!value);
+			else setCleanCache(!value);
+			toast.error(formatApiError(err));
+		}
+	};
 
 	// Live deployments query filtered to this app; the table-watch stream
 	// (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
@@ -84,6 +107,11 @@ export function DeploySettingsCard({
 		'active',
 		'ok',
 	].includes(rawStatus);
+	// Autodeploy is a webhook-driven service_git flag; it is meaningless
+	// for Docker/Drop sources (they have no repository to push to).
+	const isGitSource = !['DOCKER', 'DROP', 'NONE', ''].includes(
+		(app?.source_type || '').toUpperCase(),
+	);
 	const isBuilding =
 		hasActiveDeployment ||
 		['starting', 'building', 'queued', 'preparing'].includes(rawStatus) ||
@@ -260,8 +288,14 @@ export function DeploySettingsCard({
 					<label className="flex cursor-pointer items-center gap-2 select-none">
 						<button
 							type="button"
-							onClick={() => setAutoDeploy(!autoDeploy)}
-							className={`relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer items-center rounded-full transition-colors ${autoDeploy ? 'bg-primary' : 'bg-muted'}`}>
+							title={
+								isGitSource
+									? undefined
+									: 'Autodeploy applies to Git repository sources only'
+							}
+							disabled={!isGitSource}
+							onClick={() => void persistFlag('auto_deploy', !autoDeploy)}
+							className={`relative inline-flex h-4.5 w-8 shrink-0 items-center rounded-full transition-colors ${autoDeploy && isGitSource ? 'bg-primary' : 'bg-muted'} ${isGitSource ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
 							<span
 								className={`pointer-events-none block h-3 w-3 rounded-full bg-background shadow-lg transition-transform ${autoDeploy ? 'translate-x-4.5' : 'translate-x-0.5'}`}
 							/>
@@ -274,7 +308,7 @@ export function DeploySettingsCard({
 					<label className="flex cursor-pointer items-center gap-2 select-none">
 						<button
 							type="button"
-							onClick={() => setCleanCache(!cleanCache)}
+							onClick={() => void persistFlag('clean_cache', !cleanCache)}
 							className={`relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer items-center rounded-full transition-colors ${cleanCache ? 'bg-primary' : 'bg-muted'}`}>
 							<span
 								className={`pointer-events-none block h-3 w-3 rounded-full bg-background shadow-lg transition-transform ${cleanCache ? 'translate-x-4.5' : 'translate-x-0.5'}`}

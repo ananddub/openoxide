@@ -36,6 +36,22 @@ pub fn app_to_proto(value: crate::services::compute::application::ApplicationRec
         preview_port: value.preview_port,
         created_at: value.created_at,
         updated_at: value.updated_at,
+        dockerfile: value.dockerfile,
+        docker_context_path: value.docker_context_path,
+        docker_build_stage: value.docker_build_stage,
+        publish_directory: value.publish_directory,
+        is_static_spa: Some(value.is_static_spa),
+        railpack_version: value.railpack_version,
+        heroku_version: value.heroku_version,
+        build_path: value.build_path,
+        drop_build_path: value.drop_build_path,
+        clean_cache: Some(value.clean_cache),
+        auto_deploy: Some(value.auto_deploy),
+        memory_reservation: value.memory_reservation,
+        memory_limit: value.memory_limit,
+        cpu_reservation: value.cpu_reservation,
+        cpu_limit: value.cpu_limit,
+        replicas: value.replicas,
         ..Default::default()
     }
 }
@@ -62,6 +78,9 @@ pub fn build_type_to_proto(s: &str) -> buffa::EnumValue<ApplicationBuildType> {
         "DOCKERFILE" => ApplicationBuildType::Dockerfile,
         "NIXPACKS" => ApplicationBuildType::Nixpacks,
         "HEROKU" => ApplicationBuildType::Heroku,
+        "PAKETO_BUILDPACKS" => ApplicationBuildType::Paketo,
+        "RAILPACK" => ApplicationBuildType::Railpack,
+        "STATIC" => ApplicationBuildType::Static,
         _ => ApplicationBuildType::Unspecified,
     }
     .into()

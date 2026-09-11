@@ -255,8 +255,8 @@ export function useAppDetail(appId: number) {
 			});
 			toast.success('Application settings updated');
 			refetchAll();
-		} catch {
-			toast.error('Failed to update application settings');
+		} catch (err) {
+			toast.error(formatApiError(err));
 		}
 	};
 

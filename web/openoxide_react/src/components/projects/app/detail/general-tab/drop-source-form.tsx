@@ -63,10 +63,8 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 				});
 			} else {
 				await patchDrop.mutateAsync({
-					params: {path: {id: app.id}},
-					body: {
-						drop_build_path: dropBuildPath || '/',
-					},
+					id: app.id,
+					build_path: dropBuildPath || '/',
 				});
 			}
 			toast.success('Drop source configuration saved');

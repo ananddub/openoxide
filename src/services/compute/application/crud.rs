@@ -36,6 +36,11 @@ fn proto_to_build_type(value: &buffa::EnumValue<ApplicationBuildType>) -> String
         Some(ApplicationBuildType::Dockerfile) => "DOCKERFILE".into(),
         Some(ApplicationBuildType::Nixpacks) => "NIXPACKS".into(),
         Some(ApplicationBuildType::Heroku) => "HEROKU".into(),
+        // The builder's DB spellings (utils/builder/spec.rs) — the wire enum
+        // shortens PAKETO/RAILPACK/STATIC; the mapping keeps both aligned.
+        Some(ApplicationBuildType::Paketo) => "PAKETO_BUILDPACKS".into(),
+        Some(ApplicationBuildType::Railpack) => "RAILPACK".into(),
+        Some(ApplicationBuildType::Static) => "STATIC".into(),
         _ => "NIXPACKS".into(),
     }
 }

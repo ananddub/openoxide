@@ -105,6 +105,9 @@ enum ApplicationBuildType {
   APPLICATION_BUILD_TYPE_DOCKERFILE = 2;
   APPLICATION_BUILD_TYPE_NIXPACKS = 3;
   APPLICATION_BUILD_TYPE_HEROKU = 4;
+  APPLICATION_BUILD_TYPE_PAKETO = 5;
+  APPLICATION_BUILD_TYPE_RAILPACK = 6;
+  APPLICATION_BUILD_TYPE_STATIC = 7;
 }
 
 message Application {
@@ -136,6 +139,24 @@ message Application {
   optional int64 preview_port = 26;
   int64 created_at = 27;
   int64 updated_at = 28;
+  // Build/resource round-trip fields: the settings cards read these back
+  // after save; without them every card re-rendered blank defaults.
+  optional string dockerfile = 29;
+  optional string docker_context_path = 30;
+  optional string docker_build_stage = 31;
+  optional string publish_directory = 32;
+  optional bool is_static_spa = 33;
+  optional string railpack_version = 34;
+  optional string heroku_version = 35;
+  optional string build_path = 36;
+  optional string drop_build_path = 37;
+  optional bool clean_cache = 38;
+  optional bool auto_deploy = 39;
+  optional string memory_reservation = 40;
+  optional string memory_limit = 41;
+  optional string cpu_reservation = 42;
+  optional string cpu_limit = 43;
+  optional int64 replicas = 44;
 }
 message GetApplicationRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];
@@ -258,6 +279,11 @@ message UpdateBuildConfigRequest {
   optional bool clean_cache = 13;
   optional bool enable_submodules = 14;
   optional string watch_paths = 15;
+  // Railpack/Heroku version pins and the autodeploy switch (service_git)
+  // — the build-settings and deploy-settings cards persist through here.
+  optional string railpack_version = 16;
+  optional string heroku_version = 17;
+  optional bool auto_deploy = 18;
 }
 message UpdateResourceConfigRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];

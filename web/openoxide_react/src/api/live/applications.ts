@@ -52,6 +52,22 @@ export type ApplicationPayload = {
 	custom_git_branch?: string;
 	preview_wildcard?: string;
 	preview_port?: bigint;
+	dockerfile?: string;
+	docker_context_path?: string;
+	docker_build_stage?: string;
+	publish_directory?: string;
+	is_static_spa?: boolean;
+	railpack_version?: string;
+	heroku_version?: string;
+	build_path?: string;
+	drop_build_path?: string;
+	clean_cache?: boolean;
+	auto_deploy?: boolean;
+	memory_reservation?: string;
+	memory_limit?: string;
+	cpu_reservation?: string;
+	cpu_limit?: string;
+	replicas?: bigint;
 	created_at: bigint;
 	updated_at: bigint;
 };
@@ -105,6 +121,22 @@ function toApplicationPayload(application: Application): ApplicationPayload {
 		custom_git_branch: application.customGitBranch,
 		preview_wildcard: application.previewWildcard,
 		preview_port: application.previewPort,
+		dockerfile: application.dockerfile,
+		docker_context_path: application.dockerContextPath,
+		docker_build_stage: application.dockerBuildStage,
+		publish_directory: application.publishDirectory,
+		is_static_spa: application.isStaticSpa,
+		railpack_version: application.railpackVersion,
+		heroku_version: application.herokuVersion,
+		build_path: application.buildPath,
+		drop_build_path: application.dropBuildPath,
+		clean_cache: application.cleanCache,
+		auto_deploy: application.autoDeploy,
+		memory_reservation: application.memoryReservation,
+		memory_limit: application.memoryLimit,
+		cpu_reservation: application.cpuReservation,
+		cpu_limit: application.cpuLimit,
+		replicas: application.replicas,
 		created_at: application.createdAt,
 		updated_at: application.updatedAt,
 	};
@@ -222,6 +254,78 @@ export function useApplicationUpdate() {
 				registryId: input.registry_id !== undefined ? BigInt(input.registry_id) : undefined,
 				networkIds: input.network_ids ?? [],
 				detachRustployNetwork: input.detach_rustploy_network,
+			}),
+		{invalidate: [['applications']]},
+	);
+}
+
+/** Persist build-type details (dockerfile, context, publish dir, versions,
+ * clean cache, autodeploy) via the dedicated UpdateBuildConfig RPC. */
+export function useApplicationUpdateBuildConfig() {
+	return useConnectMutation(
+		(input: {
+			id: number | bigint;
+			build_args?: string;
+			build_secrets?: string;
+			dockerfile?: string;
+			context_path?: string;
+			build_stage?: string;
+			publish_directory?: string;
+			static_spa?: boolean;
+			create_env_file?: boolean;
+			command?: string;
+			args?: string;
+			build_path?: string;
+			clean_cache?: boolean;
+			enable_submodules?: boolean;
+			watch_paths?: string;
+			railpack_version?: string;
+			heroku_version?: string;
+			auto_deploy?: boolean;
+		}) =>
+			applicationClient.updateBuildConfig({
+				id: BigInt(input.id),
+				buildArgs: input.build_args,
+				buildSecrets: input.build_secrets,
+				dockerfile: input.dockerfile,
+				contextPath: input.context_path,
+				buildStage: input.build_stage,
+				publishDirectory: input.publish_directory,
+				staticSpa: input.static_spa,
+				createEnvFile: input.create_env_file,
+				command: input.command,
+				args: input.args,
+				buildPath: input.build_path,
+				cleanCache: input.clean_cache,
+				enableSubmodules: input.enable_submodules,
+				watchPaths: input.watch_paths,
+				railpackVersion: input.railpack_version,
+				herokuVersion: input.heroku_version,
+				autoDeploy: input.auto_deploy,
+			}),
+		{invalidate: [['applications']]},
+	);
+}
+
+/** Persist container resource limits via the dedicated UpdateResourceConfig
+ * RPC (the backend also live-applies memory/CPU to the running service). */
+export function useApplicationUpdateResourceConfig() {
+	return useConnectMutation(
+		(input: {
+			id: number | bigint;
+			memory_reservation?: string;
+			memory_limit?: string;
+			cpu_reservation?: string;
+			cpu_limit?: string;
+			replicas?: number | bigint;
+		}) =>
+			applicationClient.updateResourceConfig({
+				id: BigInt(input.id),
+				memoryReservation: input.memory_reservation,
+				memoryLimit: input.memory_limit,
+				cpuReservation: input.cpu_reservation,
+				cpuLimit: input.cpu_limit,
+				replicas: input.replicas !== undefined ? BigInt(input.replicas) : undefined,
 			}),
 		{invalidate: [['applications']]},
 	);

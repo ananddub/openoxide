@@ -19,17 +19,22 @@ export function DatabasePostgresConfig({database, onUpdated}: any) {
 	const [password, setPassword] = useState('');
 	const [saving, setSaving] = useState(false);
 
+	// The proto carries one JSON blob, so the backend folds the replica
+	// connection fields into the settings map on GET. Lift them back out for
+	// the form and show only the real postgresql.conf tunables in the box.
+	const REPLICA_KEYS = ['primary_host', 'primary_port', 'replication_user'];
 	useEffect(() => {
-		const config = data as any;
+		const all = data?.settings || {};
 		setSettings(
-			Object.entries(config?.settings || {})
+			Object.entries(all)
+				.filter(([key]) => !REPLICA_KEYS.includes(key))
 				.map(([key, value]) => `${key}=${value}`)
 				.join('\n'),
 		);
-		setRole(config?.replication_role || 'STANDALONE');
-		setHost(config?.primary_host || '');
-		setPort(String(config?.primary_port || 5432));
-		setUser(config?.replication_user || '');
+		setRole(data?.replication_role || 'STANDALONE');
+		setHost(all.primary_host || '');
+		setPort(all.primary_port || '5432');
+		setUser(all.replication_user || '');
 	}, [data]);
 
 	const save = async () => {
@@ -46,17 +51,16 @@ export function DatabasePostgresConfig({database, onUpdated}: any) {
 
 		setSaving(true);
 		try {
-			await update.mutateAsync({
-				params: {path: {id}},
-				body: {
-					settings: parsed,
-					replication_role: role as any,
-					primary_host: role === 'REPLICA' ? host.trim() : undefined,
-					primary_port: role === 'REPLICA' ? Number(port || 5432) : undefined,
-					replication_user: role === 'REPLICA' ? user.trim() : undefined,
-					replication_password: password.trim() || undefined,
-				},
-			});
+			// Replica fields ride inside the settings map; the backend lifts
+			// them into the DTO and keeps them for the next GET round-trip.
+			if (role === 'REPLICA') {
+				parsed.primary_host = host.trim();
+				parsed.primary_port = String(port || 5432);
+				parsed.replication_user = user.trim();
+				if (password.trim())
+					parsed.replication_password = password.trim();
+			}
+			await update.mutateAsync({id, replication_role: role, settings: parsed});
 			toast.success('PostgreSQL configuration updated');
 			setPassword('');
 			await refetch();

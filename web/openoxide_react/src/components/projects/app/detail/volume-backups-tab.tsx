@@ -84,9 +84,7 @@ export function VolumeBackupsTab({
 	const handleDelete = async () => {
 		if (!deleteTargetId) return;
 		try {
-			await deleteMutation.mutateAsync({
-				id: deleteTargetId,
-					});
+			await deleteMutation.mutateAsync(deleteTargetId);
 			toast.success('Volume backup configuration deleted');
 			onRefresh?.();
 		} catch (err: any) {
