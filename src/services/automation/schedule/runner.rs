@@ -161,7 +161,14 @@ impl ScheduleRunner {
             let schedule_id = schedule.id;
             let key = format!("schedule:{schedule_id}");
             let cron_expression = normalize_cron_expression(&schedule.cron_expression);
-            let timezone_name = schedule.timezone.as_deref().unwrap_or("UTC");
+            // The create path stores an unset timezone as "" (NOT NULL
+            // column), so blank must fall back to UTC like NULL does.
+            let timezone_name = schedule
+                .timezone
+                .as_deref()
+                .map(str::trim)
+                .filter(|name| !name.is_empty())
+                .unwrap_or("UTC");
             let timezone = match timezone_name.parse::<chrono_tz::Tz>() {
                 Ok(timezone) => timezone,
                 Err(error) => {

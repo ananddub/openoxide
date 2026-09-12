@@ -575,7 +575,20 @@ impl BackupOperationsService for BackupController {
         let dest_id = self.require_destination_id(dto.destination_id).await?;
         crate::services::automation::schedule::schedule::validate_backup_cron_expression(&dto.cron_expression)
             .map_err(map_error)?;
-        let service_id = self.verify_service_exists(dto.service_id).await
+        let service_id = self
+            .verify_service_exists(
+                dto.service_id
+                    .or(dto.application_id)
+                    .or(dto.compose_id)
+                    .or(dto.database_id)
+                    .or(dto.postgres_id)
+                    .or(dto.mysql_id)
+                    .or(dto.mariadb_id)
+                    .or(dto.mongo_id)
+                    .or(dto.redis_id)
+                    .or(dto.libsql_id),
+            )
+            .await
             .ok_or_else(|| ConnectError::invalid_argument("valid backup resource is required"))?;
         let created = self.queries.create_volume_backup(&CreateVolumeBackupParams {
             name: dto.name,

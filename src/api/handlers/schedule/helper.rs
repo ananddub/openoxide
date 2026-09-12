@@ -73,6 +73,11 @@ pub struct ScheduleResponseDto {
     pub timezone: Option<String>,
     pub enabled: i64,
     pub service_id: Option<i64>,
+    // Typed linkage mirrors for the detail-page filters: exactly one is set
+    // from (schedule_type, service_id), matching the overview-domain pattern.
+    pub application_id: Option<i64>,
+    pub compose_id: Option<i64>,
+    pub database_id: Option<i64>,
     pub server_id: Option<i64>,
     pub organization_id: Option<i64>,
     pub created_at: i64,
@@ -89,13 +94,22 @@ impl From<Schedules> for ScheduleResponseDto {
             app_name: value.app_name,
             service_name: value.service_name,
             shell_type: value.shell_type,
-            schedule_type: value.schedule_type,
             schedule_action: value.schedule_action,
             command: value.command,
             script: value.script,
             timezone: value.timezone,
             enabled: value.enabled,
             service_id: value.service_id,
+            application_id: (value.schedule_type == "APPLICATION")
+                .then_some(value.service_id)
+                .flatten(),
+            compose_id: (value.schedule_type == "COMPOSE")
+                .then_some(value.service_id)
+                .flatten(),
+            database_id: (value.schedule_type == "DATABASE")
+                .then_some(value.service_id)
+                .flatten(),
+            schedule_type: value.schedule_type,
             server_id: value.server_id,
             organization_id: value.organization_id,
             created_at: value.created_at,

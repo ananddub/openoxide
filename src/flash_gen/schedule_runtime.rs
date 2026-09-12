@@ -46,7 +46,7 @@ impl Queries {
         schedule_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO schedule_runtime_policies (schedule_id) VALUES (?) ON CONFLICT(schedule_id) DO NOTHING;"
+            "INSERT INTO schedule_runtime_policies ( schedule_id, retry_count, retry_delay_seconds, missed_run_policy, concurrency_policy, lease_seconds, notify_on_success, notify_on_failure, updated_at ) VALUES (?, 0, 60, 'SKIP', 'SKIP', 300, 0, 1, unixepoch()) ON CONFLICT(schedule_id) DO NOTHING;"
         )
         .bind(schedule_id)
         .execute(&self.pool)
@@ -143,7 +143,7 @@ impl Queries {
         params: &ScheduleRuntimeBeginParams,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "INSERT INTO schedule_executions (schedule_id, organization_id, trigger_kind, status, attempt, scheduled_at) VALUES (?, ?, ?, 'RUNNING', ?, ?) RETURNING id;"
+            "INSERT INTO schedule_executions (schedule_id, organization_id, trigger_kind, status, attempt, scheduled_at, started_at) VALUES (?, ?, ?, 'RUNNING', ?, ?, unixepoch()) RETURNING id;"
         )
         .bind(&params.schedule_id)
         .bind(&params.organization_id)

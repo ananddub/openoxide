@@ -39,6 +39,9 @@ pub struct OverviewListBackupsRow {
     pub name: String,
     pub enabled: i64,
     pub destination_id: i64,
+    pub service_id: Option<i64>,
+    pub service_type: String,
+    pub db_type: Option<String>,
     pub created_at: i64,
 }
 
@@ -48,6 +51,8 @@ pub struct OverviewListVolumeBackupsRow {
     pub name: Option<String>,
     pub enabled: Option<i64>,
     pub destination_id: Option<i64>,
+    pub service_id: Option<i64>,
+    pub service_type: Option<String>,
     pub created_at: Option<i64>,
 }
 
@@ -84,7 +89,7 @@ impl Queries {
         organization_id: i64,
     ) -> Result<Vec<OverviewListBackupsRow>, sqlx::Error> {
         sqlx::query_as::<_, OverviewListBackupsRow>(
-            "SELECT b.id AS id, b.app_name AS name, b.enabled AS enabled, b.destination_id AS destination_id, b.created_at AS created_at FROM backups b WHERE b.organization_id = ?;"
+            "SELECT b.id AS id, b.app_name AS name, b.enabled AS enabled, b.destination_id AS destination_id, b.service_id AS service_id, s.service_type AS service_type, d.db_type AS db_type, b.created_at AS created_at FROM backups b LEFT JOIN services s ON b.service_id = s.id LEFT JOIN service_database d ON d.service_id = b.service_id WHERE b.organization_id = ?;"
         )
         .bind(organization_id)
         .fetch_all(&self.pool)
@@ -97,7 +102,7 @@ impl Queries {
         organization_id: i64,
     ) -> Result<Vec<OverviewListVolumeBackupsRow>, sqlx::Error> {
         sqlx::query_as::<_, OverviewListVolumeBackupsRow>(
-            "SELECT vb.id AS id, vb.name AS name, vb.enabled AS enabled, vb.destination_id AS destination_id, vb.created_at AS created_at FROM volume_backups vb WHERE vb.organization_id = ?;"
+            "SELECT vb.id AS id, vb.name AS name, vb.enabled AS enabled, vb.destination_id AS destination_id, vb.service_id AS service_id, vb.service_type AS service_type, vb.created_at AS created_at FROM volume_backups vb WHERE vb.organization_id = ?;"
         )
         .bind(organization_id)
         .fetch_all(&self.pool)

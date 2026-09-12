@@ -1,7 +1,16 @@
 -- Schedule runtime: policies, execution locks, execution records.
 
 -- name: ScheduleRuntimeEnsurePolicy :exec
-INSERT INTO schedule_runtime_policies (schedule_id) VALUES (?) ON CONFLICT(schedule_id) DO NOTHING;
+-- The policy table has no column defaults, so the lazy-ensure row must bind
+-- neutral values itself: no retries, 60s backoff, skip missed runs, skip
+-- overlapping runs, 300s lease, failures-only notifications. Strings match
+-- the MissedRunPolicy/ConcurrencyPolicy enums (read path expects them).
+INSERT INTO schedule_runtime_policies (
+    schedule_id, retry_count, retry_delay_seconds, missed_run_policy,
+    concurrency_policy, lease_seconds, notify_on_success, notify_on_failure,
+    updated_at
+) VALUES (?, 0, 60, 'SKIP', 'SKIP', 300, 0, 1, unixepoch())
+ON CONFLICT(schedule_id) DO NOTHING;
 
 -- name: ScheduleRuntimeGetPolicy :one
 SELECT schedule_id AS schedule_id, retry_count AS retry_count, retry_delay_seconds AS retry_delay_seconds, missed_run_policy AS missed_run_policy, concurrency_policy AS concurrency_policy, lease_seconds AS lease_seconds, notify_on_success AS notify_on_success, notify_on_failure AS notify_on_failure, last_scheduled_at, updated_at AS updated_at FROM schedule_runtime_policies WHERE schedule_id=?;
@@ -19,7 +28,8 @@ DELETE FROM schedule_execution_locks WHERE schedule_id=? AND owner_id=?;
 UPDATE schedule_runtime_policies SET last_scheduled_at=?, updated_at=unixepoch() WHERE schedule_id=?;
 
 -- name: ScheduleRuntimeBegin :one
-INSERT INTO schedule_executions (schedule_id, organization_id, trigger_kind, status, attempt, scheduled_at) VALUES (?, ?, ?, 'RUNNING', ?, ?) RETURNING id;
+-- The row is created in RUNNING state, so started_at is set at insert time.
+INSERT INTO schedule_executions (schedule_id, organization_id, trigger_kind, status, attempt, scheduled_at, started_at) VALUES (?, ?, ?, 'RUNNING', ?, ?, unixepoch()) RETURNING id;
 
 -- name: ScheduleRuntimeGetExecutionSchedule :one
 SELECT schedule_id FROM schedule_executions WHERE id=?;

@@ -29,6 +29,22 @@ pub struct OverviewDomainItemDto {
     pub project_name: String,
 }
 
+/// Typed linkage mirrors so the compose/database/application detail tabs
+/// can filter their own rules (they match on compose_id / *_id / app_name).
+/// Flattened into the payload so the JSON stays top-level.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct BackupLinkage {
+    pub service_id: Option<i64>,
+    pub application_id: Option<i64>,
+    pub compose_id: Option<i64>,
+    pub postgres_id: Option<i64>,
+    pub mysql_id: Option<i64>,
+    pub mariadb_id: Option<i64>,
+    pub mongo_id: Option<i64>,
+    pub redis_id: Option<i64>,
+    pub libsql_id: Option<i64>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OverviewBackupItemDto {
     pub id: i64,
@@ -36,5 +52,7 @@ pub struct OverviewBackupItemDto {
     pub backup_type: String,
     pub status: String,
     pub destination: String,
+    #[serde(flatten)]
+    pub linkage: BackupLinkage,
     pub created_at: i64,
 }

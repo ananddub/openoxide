@@ -3,7 +3,9 @@ use std::sync::Arc;
 
 use crate::db::queries::FlashQueries;
 
-use super::types::{OverviewBackupItemDto, OverviewDomainItemDto, OverviewServiceItemDto};
+use super::types::{
+    BackupLinkage, OverviewBackupItemDto, OverviewDomainItemDto, OverviewServiceItemDto,
+};
 
 pub struct OverviewService {
     queries: Arc<FlashQueries>,
@@ -79,6 +81,14 @@ impl OverviewService {
 
         let mut items = Vec::new();
         for b in db_backups {
+            // DATABASE rows carry their kind in service_database.db_type;
+            // APPLICATION/COMPOSE rows key off the joined service_type.
+            let kind = if b.service_type == "DATABASE" {
+                b.db_type.as_deref().unwrap_or_default()
+            } else {
+                b.service_type.as_str()
+            };
+            let linkage = backup_linkage(kind, b.service_id);
             items.push(OverviewBackupItemDto {
                 id: b.id,
                 name: b.name,
@@ -89,6 +99,7 @@ impl OverviewService {
                     "DISABLED".into()
                 },
                 destination: format!("Destination #{}", b.destination_id),
+                linkage,
                 created_at: b.created_at,
             });
         }
@@ -99,6 +110,7 @@ impl OverviewService {
             .await?;
 
         for b in vol_backups {
+            let linkage = backup_linkage(&b.service_type.unwrap_or_default(), b.service_id);
             items.push(OverviewBackupItemDto {
                 id: b.id.unwrap_or_default(),
                 name: b.name.unwrap_or_default(),
@@ -112,10 +124,36 @@ impl OverviewService {
                     "Destination #{}",
                     b.destination_id.unwrap_or_default()
                 ),
+                linkage,
                 created_at: b.created_at.unwrap_or_default(),
             });
         }
 
         Ok(items)
+    }
+}
+
+/// Expands one (kind, service_id) pair into the typed linkage fields the
+/// detail-page tabs filter on. Unknown kinds leave every mirror unset; the
+/// app tab still matches those by app_name.
+fn backup_linkage(kind: &str, service_id: Option<i64>) -> BackupLinkage {
+    let upper = kind.to_ascii_uppercase();
+    let kind = match upper.as_str() {
+        "STANDALONE" => "APPLICATION",
+        "MONGODB" => "MONGO",
+        other => other,
+    };
+    let id = service_id.filter(|id| *id > 0);
+    let on = |target: &str| id.filter(|_| kind == target);
+    BackupLinkage {
+        service_id: id,
+        application_id: on("APPLICATION"),
+        compose_id: on("COMPOSE"),
+        postgres_id: on("POSTGRES"),
+        mysql_id: on("MYSQL"),
+        mariadb_id: on("MARIADB"),
+        mongo_id: on("MONGO"),
+        redis_id: on("REDIS"),
+        libsql_id: on("LIBSQL"),
     }
 }

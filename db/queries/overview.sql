@@ -66,8 +66,13 @@ SELECT
     b.app_name AS name,
     b.enabled AS enabled,
     b.destination_id AS destination_id,
+    b.service_id AS service_id,
+    s.service_type AS service_type,
+    d.db_type AS db_type,
     b.created_at AS created_at
 FROM backups b
+LEFT JOIN services s ON b.service_id = s.id
+LEFT JOIN service_database d ON d.service_id = b.service_id
 WHERE b.organization_id = ?;
 
 -- name: OverviewListVolumeBackups :many
@@ -76,6 +81,8 @@ SELECT
     vb.name AS name,
     vb.enabled AS enabled,
     vb.destination_id AS destination_id,
+    vb.service_id AS service_id,
+    vb.service_type AS service_type,
     vb.created_at AS created_at
 FROM volume_backups vb
 WHERE vb.organization_id = ?;

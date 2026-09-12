@@ -223,6 +223,17 @@ pub struct CreateVolumeBackupDto {
     pub destination_id: Option<i64>,
     pub organization_id: Option<i64>,
     pub service_id: Option<i64>,
+    // Typed linkage fields the detail-page forms send instead of a raw
+    // service_id; each resolves to the same services(id) row.
+    pub application_id: Option<i64>,
+    pub compose_id: Option<i64>,
+    pub database_id: Option<i64>,
+    pub postgres_id: Option<i64>,
+    pub mysql_id: Option<i64>,
+    pub mariadb_id: Option<i64>,
+    pub mongo_id: Option<i64>,
+    pub redis_id: Option<i64>,
+    pub libsql_id: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -256,12 +267,30 @@ pub struct VolumeBackupResponseDto {
     pub destination_id: i64,
     pub organization_id: i64,
     pub service_id: Option<i64>,
+    // Typed linkage mirrors the detail-page filters match on (compose tab
+    // checks compose_id, database tab checks the per-kind id).
+    pub application_id: Option<i64>,
+    pub compose_id: Option<i64>,
+    pub postgres_id: Option<i64>,
+    pub mysql_id: Option<i64>,
+    pub mariadb_id: Option<i64>,
+    pub mongo_id: Option<i64>,
+    pub redis_id: Option<i64>,
+    pub libsql_id: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
 }
 
 impl From<VolumeBackups> for VolumeBackupResponseDto {
     fn from(value: VolumeBackups) -> Self {
+        // service_type is consumed by the literal below; keep a borrow for
+        // the typed linkage mirrors.
+        let service_type = value.service_type.clone();
+        let on = |target: &str| {
+            (service_type == target)
+                .then_some(value.service_id)
+                .flatten()
+        };
         Self {
             id: value.id,
             name: value.name,
@@ -277,6 +306,14 @@ impl From<VolumeBackups> for VolumeBackupResponseDto {
             destination_id: value.destination_id,
             organization_id: value.organization_id,
             service_id: value.service_id,
+            application_id: on("APPLICATION").or_else(|| on("standalone")),
+            compose_id: on("COMPOSE"),
+            postgres_id: on("POSTGRES"),
+            mysql_id: on("MYSQL"),
+            mariadb_id: on("MARIADB"),
+            mongo_id: on("MONGO").or_else(|| on("MONGODB")),
+            redis_id: on("REDIS"),
+            libsql_id: on("LIBSQL"),
             created_at: value.created_at,
             updated_at: value.updated_at,
         }
