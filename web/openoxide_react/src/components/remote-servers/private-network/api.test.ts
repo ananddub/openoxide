@@ -1,163 +1,91 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
+
+import type {UpdatePrivateNetworkInput} from './types';
+
+const rpc = vi.hoisted(() => ({
+	getNetwork: vi.fn(),
+	updateNetwork: vi.fn(),
+	setup: vi.fn(),
+	health: vi.fn(),
+	repair: vi.fn(),
+	reSetup: vi.fn(),
+	rotateKeys: vi.fn(),
+	teardown: vi.fn(),
+}));
+
+vi.mock('#/api/live/query', () => ({
+	createServiceClient: () => rpc,
+}));
 
 import {privateNetworkApi} from './api';
 
-class MemoryStorage {
-	private values = new Map<string, string>();
-	getItem(key: string) {
-		return this.values.get(key) ?? null;
-	}
-	setItem(key: string, value: string) {
-		this.values.set(key, value);
-	}
-	removeItem(key: string) {
-		this.values.delete(key);
-	}
-	clear() {
-		this.values.clear();
-	}
-}
-
-const storage = new MemoryStorage();
-
-beforeEach(() => {
-	storage.clear();
-	vi.stubGlobal('localStorage', storage);
-	vi.restoreAllMocks();
-});
-
-describe('private network browser API flow', () => {
-	it('refreshes an expired token and retries the original request', async () => {
-		storage.setItem(
-			'openoxide-auth-session',
-			JSON.stringify({
-				tokens: {accessToken: 'expired', refreshToken: 'refresh-token'},
-			}),
-		);
-		const fetchMock = vi
-			.fn()
-			.mockResolvedValueOnce(
-				new Response('{"error":"invalid token"}', {status: 401}),
-			)
-			.mockResolvedValueOnce(
-				new Response(
-					JSON.stringify({
-						tokens: {access_token: 'fresh', refresh_token: 'next-refresh'},
-					}),
-					{
-						status: 200,
-						headers: {'Content-Type': 'application/json'},
-					},
-				),
-			)
-			.mockResolvedValueOnce(
-				new Response('null', {
-					status: 200,
-					headers: {'Content-Type': 'application/json'},
-				}),
-			);
-		vi.stubGlobal('fetch', fetchMock);
-
-		await expect(privateNetworkApi.get(13)).resolves.toBeNull();
-		expect(fetchMock).toHaveBeenCalledTimes(3);
-		expect(fetchMock.mock.calls[1][0]).toBe('/api/auth/refresh');
-		expect(
-			new Headers(fetchMock.mock.calls[2][1]?.headers).get(
-				'Authorization',
-			),
-		).toBe('Bearer fresh');
-	});
-
-	it('keeps the session when token refresh fails during a backend outage', async () => {
-		const session = JSON.stringify({
-			tokens: {
-				access_token: 'expired-outage',
-				refresh_token: 'outage-token',
-			},
+describe('private network ConnectRPC client', () => {
+	it('unwraps the config JSON payload from ResourceResponse', async () => {
+		rpc.getNetwork.mockResolvedValueOnce({
+			id: 13n,
+			kind: 'server_private_network',
+			payload: JSON.stringify({server_id: 13, status: 'ACTIVE'}),
 		});
-		storage.setItem('openoxide-auth-session', session);
-		const fetchMock = vi
-			.fn()
-			.mockResolvedValueOnce(
-				new Response('{"error":"invalid token"}', {status: 401}),
-			)
-			.mockResolvedValueOnce(new Response('Bad Gateway', {status: 502}));
-		vi.stubGlobal('fetch', fetchMock);
 
-		await expect(privateNetworkApi.get(13)).rejects.toThrow(
-			'invalid token',
-		);
-		expect(fetchMock).toHaveBeenCalledTimes(2);
-		expect(storage.getItem('openoxide-auth-session')).toBe(session);
-	});
-
-	it('surfaces the backend validation message instead of a generic 409', async () => {
-		vi.stubGlobal(
-			'fetch',
-			vi.fn().mockResolvedValue(
-				new Response(
-					JSON.stringify({error: 'managed WireGuard requires endpoint'}),
-					{
-						status: 409,
-						headers: {'Content-Type': 'application/json'},
-					},
-				),
-			),
-		);
-
-		await expect(
-			privateNetworkApi.update(10, {
-				connection_mode: 'MANAGED_WIREGUARD',
-				provider: 'WIREGUARD',
-				private_host: '10.77.11.2',
-				tunnel_address: '10.77.11.0/24',
-				public_key: null,
-				endpoint: null,
-				listen_port: 51820,
-				persistent_keepalive: 25,
-				dns_name: null,
-				routes: [],
-			}),
-		).rejects.toThrow('managed WireGuard requires endpoint');
-	});
-
-	it('calls the explicit re-setup route with the current token', async () => {
-		storage.setItem(
-			'openoxide-auth-session',
-			JSON.stringify({
-				tokens: {access_token: 'valid', refresh_token: 'refresh-token'},
-			}),
-		);
-		const response = {
+		await expect(privateNetworkApi.get(13)).resolves.toMatchObject({
 			server_id: 13,
+			status: 'ACTIVE',
+		});
+		expect(rpc.getNetwork).toHaveBeenCalledWith({id: 13n});
+	});
+
+	it('maps an empty payload to null (no network configured)', async () => {
+		rpc.getNetwork.mockResolvedValueOnce({id: 13n, kind: '', payload: ''});
+		await expect(privateNetworkApi.get(13)).resolves.toBeNull();
+	});
+
+	it('sends the update input as JSON payload', async () => {
+		rpc.updateNetwork.mockResolvedValueOnce({
+			id: 7n,
+			kind: '',
+			payload: JSON.stringify({server_id: 7, status: 'CONFIGURING'}),
+		});
+
+		const input = {
 			connection_mode: 'MANAGED_WIREGUARD',
 			provider: 'WIREGUARD',
-			private_host: '10.77.14.2',
-			tunnel_address: '10.77.14.0/24',
+			private_host: null,
+			tunnel_address: null,
 			public_key: null,
-			endpoint: 'panel.example.com:51820',
-			listen_port: 51820,
-			persistent_keepalive: 25,
-			status: 'CONFIGURING',
+			endpoint: null,
+			listen_port: null,
+			persistent_keepalive: null,
 			dns_name: null,
 			routes: [],
-			health_status: 'UNKNOWN',
-			health_error: null,
-		};
-		const fetchMock = vi.fn().mockResolvedValue(
-			new Response(JSON.stringify(response), {
-				status: 200,
-				headers: {'Content-Type': 'application/json'},
-			}),
-		);
-		vi.stubGlobal('fetch', fetchMock);
+		} satisfies UpdatePrivateNetworkInput;
+		const config = await privateNetworkApi.update(7, input);
 
-		await expect(privateNetworkApi.reSetup(13)).resolves.toMatchObject({
-			status: 'CONFIGURING',
+		expect(rpc.updateNetwork).toHaveBeenCalledWith({
+			id: 7n,
+			payload: JSON.stringify(input),
 		});
-		expect(fetchMock.mock.calls[0][0]).toBe(
-			'/api/servers/13/private-network/re-setup',
-		);
-		expect(fetchMock.mock.calls[0][1]?.method).toBe('POST');
+		expect(config.status).toBe('CONFIGURING');
+	});
+
+	it('reduces the health operation payload to status and error', async () => {
+		rpc.health.mockResolvedValueOnce({
+			success: true,
+			operation: 'health',
+			payload: JSON.stringify({status: 'HEALTHY', error: null}),
+		});
+
+		await expect(privateNetworkApi.health(3)).resolves.toEqual({
+			status: 'HEALTHY',
+			error: null,
+		});
+	});
+
+	it('teardown awaits the RPC and returns void', async () => {
+		rpc.teardown.mockResolvedValueOnce({
+			success: true,
+			operation: 'teardown',
+		});
+		await expect(privateNetworkApi.teardown(9)).resolves.toBeUndefined();
+		expect(rpc.teardown).toHaveBeenCalledWith({id: 9n});
 	});
 });

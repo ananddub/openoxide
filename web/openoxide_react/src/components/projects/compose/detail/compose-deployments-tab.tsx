@@ -20,6 +20,8 @@ import {
 } from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
+import {createServiceClient} from '#/api/live/query';
+import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
 import {ComposeDeploymentsList} from './deployments/compose-deployments-list';
 import {
 	AlertDialog,
@@ -31,6 +33,8 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from '#/components/ui/alert-dialog';
+
+const deploymentClient = createServiceClient(DeploymentService);
 
 interface ComposeDeploymentsTabProps {
 	composeId: number;
@@ -137,7 +141,7 @@ export function ComposeDeploymentsTab({
 		}
 	};
 
-	// Real-time log stream reader for active modal
+	// ConnectRPC log stream reader for active modal
 	useEffect(() => {
 		if (!activeLogId) return;
 
@@ -156,59 +160,16 @@ export function ComposeDeploymentsTab({
 
 		const startStream = async () => {
 			try {
-				const sessionRaw = localStorage.getItem('openoxide-auth-session');
-				let accessToken = '';
-				if (sessionRaw) {
-					try {
-						const session = JSON.parse(sessionRaw);
-						accessToken = session?.tokens?.accessToken || '';
-					} catch {}
-				}
-
-				const response = await fetch(
-					`/api/deployments/${activeLogId}/logs`,
-					{
-						headers: {
-							Authorization: accessToken ? `Bearer ${accessToken}` : '',
-						},
-						signal: controller.signal,
-					},
+				const call = deploymentClient.streamDeploymentLogs(
+					{id: BigInt(activeLogId)},
+					{signal: controller.signal},
 				);
 
-				if (!response.ok) {
-					if (isMounted && initialFallback) {
-						setLiveLogs(initialFallback.split('\n'));
-					}
-					return;
-				}
-
-				const reader = response.body?.getReader();
-				const decoder = new TextDecoder();
-				if (!reader) return;
-
-				let buffer = '';
-
-				while (isMounted) {
-					const {done, value} = await reader.read();
-					if (done) {
-						if (buffer.trim()) {
-							const finalLines = extractLogLines(buffer);
-							if (finalLines.length > 0 && isMounted) {
-								setLiveLogs(prev => [...prev, ...finalLines]);
-							}
-						}
-						break;
-					}
-
-					buffer += decoder.decode(value, {stream: true});
-					const lines = buffer.split('\n');
-					buffer = lines.pop() || '';
-
-					for (const line of lines) {
-						const extracted = extractLogLines(line);
-						if (extracted.length > 0 && isMounted) {
-							setLiveLogs(prev => [...prev, ...extracted]);
-						}
+				for await (const event of call) {
+					if (!isMounted) return;
+					const extracted = extractLogLines(event.payload);
+					if (extracted.length > 0 && isMounted) {
+						setLiveLogs(prev => [...prev, ...extracted]);
 					}
 				}
 			} catch (err: any) {
@@ -389,7 +350,7 @@ export function ComposeDeploymentsTab({
 								logs={liveLogs}
 								isLoading={liveLogs.length === 0}
 								isLive={true}
-								loadingText="Connecting to realtime SSE deployment stream..."
+							loadingText="Connecting to realtime deployment stream..."
 								emptyText="No deployment build log entries available."
 							/>
 						</div>

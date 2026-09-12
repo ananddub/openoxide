@@ -150,10 +150,17 @@ async fn dispatch(
             .map(|response| response.map(box_connect_body))
             .unwrap_or_else(|error| match error {})
     } else if uri.path().starts_with("/api/") {
-        // Legacy REST surface (deployment log files, docker service logs) —
-        // plain-text endpoints that predate the Connect migration and don't
-        // fit its protocol.
-        return crate::api::rest::handle(&method, uri.path(), uri.query(), request.into_body()).await;
+        // The legacy REST surface was fully retired: every former `/api/*`
+        // consumer now streams through ConnectRPC. 404 explicitly so stale
+        // clients fail fast instead of silently getting the SPA shell.
+        let body: Full<Bytes> = Full::new(Bytes::from_static(
+            br#"{"code":"not_found","message":"legacy REST API removed; use the ConnectRPC API"}"#,
+        ));
+        return Response::builder()
+            .status(404)
+            .header("content-type", "application/json")
+            .body(body.map_err(|error| match error {}).boxed_unsync())
+            .expect("static 404 response is always valid");
     } else {
         dashboard::serve_spa(&method, uri.path())
     };

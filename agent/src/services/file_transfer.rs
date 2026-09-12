@@ -21,7 +21,7 @@ impl FileTransferService {
 
     pub fn agent_info(&self) -> proto::AgentInfoResponse {
         proto::AgentInfoResponse {
-            protocol_version: "2".into(),
+            protocol_version: "3".into(),
             agent_version: env!("CARGO_PKG_VERSION").into(),
             capabilities: vec!["file_upload".into()],
             max_upload_bytes: self.config.max_upload_bytes,
@@ -51,7 +51,11 @@ impl FileTransferService {
                 ))
             }
         };
-        if header.server_id != self.config.server_id {
+        // Same rule as the gRPC query handlers: -1 marks the local Agent,
+        // which serves whatever server row the panel maps it to.
+        if header.server_id <= 0
+            || (self.config.server_id != -1 && header.server_id != self.config.server_id)
+        {
             return Err(tonic::Status::not_found(
                 "upload server_id does not belong to this agent",
             ));

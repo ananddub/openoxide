@@ -5,8 +5,14 @@ import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
 import {useApplicationSetDropSource} from '#/api/live';
 import {formatApiError} from '#/api/utils';
-import {getApiBaseUrl} from '#/api/client';
+import {createServiceClient} from '#/api/live/query';
+import {ApplicationService} from '#/gen/connect/openoxide/api/v1/application_pb';
 import {Progress} from '#/components/ui/progress';
+
+const applicationClient = createServiceClient(ApplicationService);
+
+// Matches the proto's max chunk size for UploadSourceRequest.
+const UPLOAD_CHUNK_BYTES = 4 * 1024 * 1024;
 
 interface DropSourceFormProps {
 	app: any;
@@ -39,28 +45,35 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 		setSaving(true);
 		try {
 			if (selectedZip) {
-				const form = new FormData();
-				form.append('file', selectedZip, selectedZip.name);
-				form.append('drop_build_path', dropBuildPath || '/');
-				const sessionRaw = localStorage.getItem('openoxide-auth-session');
-				const accessToken = sessionRaw
-					? JSON.parse(sessionRaw)?.tokens?.accessToken
-					: undefined;
-				await new Promise<void>((resolve, reject) => {
-					const request = new XMLHttpRequest();
-					request.open('POST', `${getApiBaseUrl()}/applications/${app.id}/source/upload`);
-					if (accessToken) request.setRequestHeader('Authorization', `Bearer ${accessToken}`);
-					request.upload.onprogress = event => {
-						if (event.lengthComputable) setUploadProgress(Math.round((event.loaded / event.total) * 100));
-					};
-					request.onload = () => {
-						if (request.status >= 200 && request.status < 300) resolve();
-						else reject(new Error('Upload failed. Please retry.'));
-					};
-					request.onerror = () => reject(new Error('Upload failed. Please retry.'));
-					request.onabort = () => reject(new Error('Upload failed. Please retry.'));
-					request.send(form);
-				});
+				const total = selectedZip.size;
+				let sent = 0;
+				const chunks = (async function* () {
+					for (let offset = 0; offset < total; offset += UPLOAD_CHUNK_BYTES) {
+						const slice = new Uint8Array(
+							await selectedZip
+								.slice(offset, Math.min(offset + UPLOAD_CHUNK_BYTES, total))
+								.arrayBuffer(),
+						);
+						sent += slice.length;
+						setUploadProgress(Math.min(99, Math.round((sent / total) * 100)));
+						yield {payload: {case: 'chunk' as const, value: slice}};
+					}
+				})();
+				await applicationClient.uploadSource(
+					(async function* () {
+						yield {
+							payload: {
+								case: 'header',
+								value: {
+									applicationId: BigInt(app.id),
+									buildPath: dropBuildPath || '/',
+								},
+							},
+						};
+						yield* chunks;
+					})(),
+				);
+				setUploadProgress(100);
 			} else {
 				await patchDrop.mutateAsync({
 					id: app.id,

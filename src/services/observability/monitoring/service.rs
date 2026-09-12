@@ -115,6 +115,35 @@ impl MonitoringService {
         Ok((sender, response.into_inner()))
     }
 
+    /// Proxies live container stats from the Agent's in-process Docker API
+    /// stream. Each frame is one `docker stats --format {{json .}}`-shaped
+    /// JSON document; no CLI subprocess is spawned anywhere on the path.
+    pub async fn stream_container_stats(
+        &self,
+        server_id: i64,
+        container_ids: Vec<String>,
+        stream: bool,
+    ) -> Result<tonic::Streaming<proto::StatsFrame>, String> {
+        let request = self
+            .authenticated(
+                server_id,
+                proto::StreamStatsRequest {
+                    server_id,
+                    container_ids,
+                    stream,
+                },
+            )
+            .await?;
+        let response = self
+            .client(server_id)
+            .await?
+            .stream_container_stats(request)
+            .await
+            .map_err(|error| format!("Agent stats stream failed to open: {error}"))?;
+        let _ = self.agent_auth.touch_seen(server_id).await;
+        Ok(response.into_inner())
+    }
+
     pub fn new(
         server_service: Arc<RemoteServerService>,
         config: Arc<Config>,
@@ -256,7 +285,7 @@ impl MonitoringService {
             return Err("cannot upload an empty file".into());
         }
         let capabilities = self.agent_info(server_id).await?;
-        if capabilities.protocol_version != "2" {
+        if capabilities.protocol_version != "3" {
             return Err("agent protocol version is unsupported; the agent must be upgraded to the latest build".into());
         }
         if !capabilities

@@ -2,9 +2,9 @@ use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceReque
 
 use crate::api::connect::generated::openoxide::api::v1::{
     CancelDeploymentRequest, ContainerList, ComposeLogsRequest, DeploymentEvent,
-    DeploymentService, DeploymentServiceExt, Empty, GetDeploymentRequest, ListDeploymentsRequest,
-    ListDeploymentsResponse, LogExport, LogTargetRequest, ResourceTargetRequest,
-    SearchLogsRequest, StreamTargetRequest,
+    DeploymentService, DeploymentServiceExt, DockerStatsRequest, Empty, GetDeploymentRequest,
+    ListDeploymentsRequest, ListDeploymentsResponse, LogExport, LogTargetRequest,
+    ResourceTargetRequest, SearchLogsRequest, StreamTargetRequest,
 };
 use crate::services::compute::engine::{
     CancelDeploymentResult, ComposeLogOptions, DeploymentListFilter, DockerLogOptions,
@@ -179,8 +179,16 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, LogTargetRequest>,
     ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        let _ = &request.target;
-        Response::stream_ok(empty_event_stream())
+        let receiver = self
+            .service
+            .stream_docker_container_logs(
+                request.server_id,
+                request.target.to_owned(),
+                docker_log_options(request.tail, request.timestamps, request.follow, None, None),
+            )
+            .await
+            .map_err(map_error)?;
+        Response::stream_ok(docker_event_stream(receiver, "log"))
     }
 
     #[permission(Deployment, CanRead)]
@@ -208,9 +216,14 @@ impl DeploymentService for DeploymentController {
     async fn stream_docker_stats(
         &self,
         _ctx: RequestContext,
-        _request: ServiceRequest<'_, Empty>,
+        request: ServiceRequest<'_, DockerStatsRequest>,
     ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        Response::stream_ok(empty_event_stream())
+        let receiver = self
+            .service
+            .stream_global_stats(request.server_id, true)
+            .await
+            .map_err(map_error)?;
+        Response::stream_ok(docker_event_stream(receiver, "stats"))
     }
 
     #[permission(Deployment, CanRead)]
@@ -237,8 +250,12 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, LogTargetRequest>,
     ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        let _ = &request.target;
-        Response::stream_ok(empty_event_stream())
+        let receiver = self
+            .service
+            .stream_docker_container_stats(request.server_id, request.target.to_owned(), true)
+            .await
+            .map_err(map_error)?;
+        Response::stream_ok(docker_event_stream(receiver, "stats"))
     }
 
     #[permission(Deployment, CanRead)]
@@ -247,8 +264,16 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, LogTargetRequest>,
     ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        let _ = &request.target;
-        Response::stream_ok(empty_event_stream())
+        let receiver = self
+            .service
+            .stream_docker_service_logs(
+                request.server_id,
+                request.target.to_owned(),
+                docker_log_options(request.tail, request.timestamps, request.follow, None, None),
+            )
+            .await
+            .map_err(map_error)?;
+        Response::stream_ok(docker_event_stream(receiver, "log"))
     }
 
     #[permission(Deployment, CanRead)]
@@ -279,8 +304,44 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeLogsRequest>,
     ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        let _ = &request.service;
-        Response::stream_ok(empty_event_stream())
+        // A compose id resolves to the project name the stack was deployed
+        // under; with no id the caller already passed a raw service name.
+        let (server_id, project_name, service) = match request.compose_id {
+            Some(compose_id) => {
+                let queries = auto_di::resolve::<crate::db::queries::FlashQueries>()
+                    .await
+                    .map_err(|error| {
+                        ConnectError::new(ErrorCode::Internal, error.to_string())
+                    })?;
+                let compose = queries
+                    .get_service_by_i_d(compose_id)
+                    .await
+                    .map_err(map_error)?;
+                (
+                    compose.server_id.or(request.server_id),
+                    Some(compose.app_name.clone()),
+                    request.service.map(str::to_owned),
+                )
+            }
+            None => (
+                request.server_id,
+                None,
+                request.service.map(str::to_owned),
+            ),
+        };
+        let options = ComposeLogOptions {
+            file: None,
+            project_directory: None,
+            project_name,
+            service,
+            logs: docker_log_options(request.tail, request.timestamps, request.follow, None, None),
+        };
+        let receiver = self
+            .service
+            .stream_docker_compose_logs(server_id, options)
+            .await
+            .map_err(map_error)?;
+        Response::stream_ok(docker_event_stream(receiver, "log"))
     }
 
     #[permission(Deployment, CanRead)]

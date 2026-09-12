@@ -7,6 +7,11 @@ import {formatApiError} from '#/api/utils';
 import {DatabaseDeploymentsModal} from './database-deployments-modal';
 import {DatabaseDeploymentsList} from './database-deployments-list';
 import {useDeploymentDelete, useDeploymentDeleteByDatabase, useDeploymentItems} from '#/api/live';
+import {createServiceClient} from '#/api/live/query';
+import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
+import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
+
+const deploymentClient = createServiceClient(DeploymentService);
 
 interface DatabaseDeploymentsTabProps {
 	dbId: number;
@@ -111,56 +116,15 @@ export function DatabaseDeploymentsTab({
 
 		const startStream = async () => {
 			try {
-				const sessionRaw = localStorage.getItem('openoxide-auth-session');
-				let accessToken = '';
-				if (sessionRaw) {
-					try {
-						const parsed = JSON.parse(sessionRaw);
-						accessToken =
-							parsed?.tokens?.accessToken ||
-							'';
-					} catch {}
-				}
-
-				const headers: Record<string, string> = {};
-				if (accessToken)
-					headers['Authorization'] = `Bearer ${accessToken}`;
-
-				const response = await fetch(
-					`/api/deployments/${activeLogId}/logs`,
-					{
-						headers,
-						signal: controller.signal,
-					},
+				const call = deploymentClient.streamDeploymentLogs(
+					{id: BigInt(activeLogId)},
+					{signal: controller.signal},
 				);
-
-				if (!response.ok)
-					throw new Error(`HTTP error! status: ${response.status}`);
-
-				const reader = response.body?.getReader();
-				const decoder = new TextDecoder();
-				let buffer = '';
-
-				if (reader) {
-					while (isMounted) {
-						const {done, value} = await reader.read();
-						if (done) break;
-						buffer += decoder.decode(value, {stream: true});
-						const lines = buffer.split('\n');
-						buffer = lines.pop() || '';
-						for (const line of lines) {
-							if (line.startsWith('data:')) {
-								try {
-									const parsed = JSON.parse(line.slice(5).trim());
-									if (parsed?.line && isMounted)
-										setLiveLogs(prev => [...prev, parsed.line]);
-								} catch {
-									if (isMounted)
-										setLiveLogs(prev => [...prev, line.slice(5)]);
-								}
-							}
-						}
-					}
+				for await (const event of call) {
+					if (!isMounted) return;
+					const lines = extractLogLines(event.payload);
+					if (lines.length > 0 && isMounted)
+						setLiveLogs(prev => [...prev, ...lines]);
 				}
 			} catch {}
 		};

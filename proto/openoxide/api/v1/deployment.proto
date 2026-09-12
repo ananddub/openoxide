@@ -18,7 +18,7 @@ service DeploymentService {
   rpc StreamDatabaseStats(StreamTargetRequest) returns (stream DeploymentEvent);
   rpc StreamContainerLogs(LogTargetRequest) returns (stream DeploymentEvent);
   rpc ExportContainerLogs(LogTargetRequest) returns (LogExport);
-  rpc StreamDockerStats(Empty) returns (stream DeploymentEvent);
+  rpc StreamDockerStats(DockerStatsRequest) returns (stream DeploymentEvent);
   rpc ListContainers(Empty) returns (ContainerList);
   rpc StreamContainerStats(LogTargetRequest) returns (stream DeploymentEvent);
   rpc StreamServiceLogs(LogTargetRequest) returns (stream DeploymentEvent);
@@ -63,16 +63,26 @@ message SearchLogsRequest {
 message StreamTargetRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];
 }
+// Global live container stats for the monitoring page. No server_id means
+// the panel host's Agent; the stream covers every running container.
+message DockerStatsRequest {
+  optional int64 server_id = 1;
+}
 message LogTargetRequest {
   string target = 1 [(buf.validate.field).string.min_len = 1];
   optional int64 server_id = 2;
   optional int64 tail = 3 [(buf.validate.field).int64 = {gte: 1, lte: 100000}];
   optional string filter = 4;
+  optional bool timestamps = 5;
+  optional bool follow = 6;
 }
 message ComposeLogsRequest {
   optional int64 compose_id = 1 [(buf.validate.field).int64.gt = 0];
   optional string service = 2 [(buf.validate.field).string.max_len = 255];
   optional int64 server_id = 3 [(buf.validate.field).int64.gt = 0];
+  optional bool timestamps = 4;
+  optional bool follow = 5;
+  optional int64 tail = 6 [(buf.validate.field).int64 = {gte: 1, lte: 100000}];
 }
 message ResourceTargetRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];

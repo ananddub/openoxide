@@ -285,6 +285,9 @@ fn source(a: &ApplicationGetSpecRowRow) -> Result<SourceSpec, AdapterError> {
                 .ok_or(AdapterError::MissingField("docker_image"))?,
             registry: None,
         }),
+        // The uploaded ZIP is already on disk (installed by the drop-upload
+        // flow before the build is queued); nothing to fetch.
+        SourceType::Drop => Ok(SourceSpec::Drop),
         _ => {
             let provider = GitProviderBuilder::new(source_type)
                 .github(a.owner.as_deref(), a.repository.as_deref())
@@ -344,14 +347,16 @@ fn build(a: &ApplicationGetSpecRowRow) -> Result<Option<BuildStrategy>, AdapterE
         return Ok(None);
     }
     let build_type = BuildType::from(a.build_type.as_deref().unwrap_or(""));
+    // The spec query collapses NULL build paths to ""; treat empty as unset.
+    let build_path = Some(a.build_path.as_str()).filter(|value| !value.is_empty());
     Ok(Some(match build_type {
         BuildType::Dockerfile => BuildStrategy::Dockerfile {
             dockerfile: join_relative(
-                a.build_path.as_deref(),
+                build_path,
                 a.dockerfile.as_deref().unwrap_or("Dockerfile"),
             ),
             context: join_relative(
-                a.build_path.as_deref(),
+                build_path,
                 a.docker_context_path.as_deref().unwrap_or("."),
             ),
             target: a.docker_build_stage.clone(),

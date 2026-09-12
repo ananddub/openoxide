@@ -1,4 +1,8 @@
 import {useApplicationDeploy, useApplicationRedeploy, useDeploymentCancel, useDeploymentDelete} from '#/api/live';
+import {createServiceClient} from '#/api/live/query';
+import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
+import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
+
 import {useState, useEffect, useRef} from 'react';
 import {
 	Zap,
@@ -25,6 +29,8 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from '#/components/ui/alert-dialog';
+
+const deploymentClient = createServiceClient(DeploymentService);
 
 interface DeploymentsTabProps {
 	appId: number;
@@ -82,7 +88,7 @@ export function DeploymentsTab({
 	const deleteMutation = useDeploymentDelete();
 	const clearAppMutation = useDeploymentDelete();
 
-	// Realtime SSE log stream listener with JWT Authorization header
+	// ConnectRPC deployment log stream
 	useEffect(() => {
 		if (!activeLogId) return;
 		setLiveLogs([]);
@@ -91,75 +97,14 @@ export function DeploymentsTab({
 
 		const startStream = async () => {
 			try {
-				let accessToken = '';
-				const sessionRaw = localStorage.getItem('openoxide-auth-session');
-				if (sessionRaw) {
-					try {
-						const session = JSON.parse(sessionRaw);
-						accessToken = session?.tokens?.accessToken || '';
-					} catch {}
-				}
-
-				const response = await fetch(
-					`/api/deployments/${activeLogId}/logs`,
-					{
-						headers: {
-							Authorization: accessToken ? `Bearer ${accessToken}` : '',
-						},
-						signal: controller.signal,
-					},
+				const call = deploymentClient.streamDeploymentLogs(
+					{id: BigInt(activeLogId)},
+					{signal: controller.signal},
 				);
-
-				if (!response.ok) {
-					if (isMounted)
-						setLiveLogs([
-							`Failed to stream logs: ${response.statusText} (${response.status})`,
-						]);
-					return;
-				}
-
-				const reader = response.body?.getReader();
-				const decoder = new TextDecoder();
-				if (!reader) return;
-
-				let buffer = '';
-				while (isMounted) {
-					const {done, value} = await reader.read();
-					if (done) break;
-
-					buffer += decoder.decode(value, {stream: true});
-					const lines = buffer.split('\n');
-					buffer = lines.pop() || '';
-
-					for (const line of lines) {
-						const trimmed = line.trim();
-						if (
-							!trimmed ||
-							trimmed.startsWith('event:') ||
-							trimmed.startsWith(':')
-						)
-							continue;
-
-						if (line.startsWith('data:')) {
-							try {
-								const jsonStr = line.slice(5).trim();
-								if (jsonStr) {
-									const data = JSON.parse(jsonStr);
-									if (data.line) {
-										if (isMounted)
-											setLiveLogs(prev => [...prev, data.line]);
-									} else if (data.message) {
-										if (isMounted)
-											setLiveLogs(prev => [...prev, data.message]);
-									}
-								}
-							} catch {
-								const rawContent = line.slice(5).trim();
-								if (rawContent && isMounted)
-									setLiveLogs(prev => [...prev, rawContent]);
-							}
-						}
-					}
+				for await (const event of call) {
+					if (!isMounted) return;
+					const lines = extractLogLines(event.payload);
+					if (lines.length > 0) setLiveLogs(prev => [...prev, ...lines]);
 				}
 			} catch (err: any) {
 				if (err.name !== 'AbortError' && isMounted) {

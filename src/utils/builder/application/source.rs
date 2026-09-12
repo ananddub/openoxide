@@ -35,6 +35,9 @@ impl ApplicationBuilder {
                 )
                 .await
             }
+            // The drop-upload flow already extracted the ZIP into the work
+            // directory before the build starts; nothing to fetch.
+            SourceSpec::Drop => Ok(()),
         }
     }
 

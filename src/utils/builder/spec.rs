@@ -53,6 +53,9 @@ pub enum SourceSpec {
         protocol: crate::utils::provider::CloneProtocol,
         auth: Option<crate::utils::git::types::GitAuth>,
     },
+    /// User-uploaded ZIP, already extracted into the work directory by the
+    /// drop-upload flow; the build reads the sources straight from disk.
+    Drop,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RegistryAuth {

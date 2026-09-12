@@ -56,6 +56,7 @@ impl AgentService for AgentGrpc {
                 + 'static,
         >,
     >;
+    type StreamContainerStatsStream = crate::services::monitoring::stats::StatsStream;
 
     async fn get_server_metrics(
         &self,
@@ -121,6 +122,15 @@ impl AgentService for AgentGrpc {
         )
         .await?;
         Ok(tonic::Response::new(Box::pin(stream)))
+    }
+
+    async fn stream_container_stats(
+        &self,
+        request: tonic::Request<proto::StreamStatsRequest>,
+    ) -> Result<tonic::Response<Self::StreamContainerStatsStream>, tonic::Status> {
+        let request = request.into_inner();
+        self.check_server_id(request.server_id)?;
+        self.service.stream_container_stats(request).await
     }
 
     async fn upload_file(

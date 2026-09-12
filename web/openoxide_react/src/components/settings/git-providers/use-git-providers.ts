@@ -1,8 +1,11 @@
 import {useState} from 'react';
 import {toast} from 'sonner';
 import {useGitProviderCreate, useGitProviderDelete, useGitProviderList, useGitProviderTest, useGitProviderUpdate} from '#/api/live';
-import {getApiBaseUrl} from '#/api/client';
+import {createServiceClient} from '#/api/live/query';
+import {GitProviderService} from '#/gen/connect/openoxide/api/v1/git_provider_pb';
 import {formatApiError} from '#/api/utils';
+
+const gitProviderClient = createServiceClient(GitProviderService);
 import {
 	type GitProviderKind,
 	type GitProviderFormState,
@@ -110,30 +113,11 @@ export function useGitProviders() {
 		};
 	};
 
-	const authHeaders = () => {
-		const session = JSON.parse(
-			localStorage.getItem('openoxide-auth-session') || '{}',
-		);
-		const headers: Record<string, string> = {};
-		if (session?.tokens?.accessToken)
-			headers.Authorization = `Bearer ${session.tokens.accessToken}`;
-		const org = localStorage.getItem('openoxide-active-organization-id');
-		if (org) headers['X-Organization-Id'] = org;
-		return headers;
-	};
-
 	const handleAuthorize = async (id: number) => {
 		try {
-			const response = await fetch(
-				`${getApiBaseUrl()}/git-providers/${id}/authorize`,
-				{
-					headers: authHeaders(),
-				},
-			);
-			if (!response.ok)
-				throw new Error('Authorization could not be started');
-			const data = await response.json();
-			if (!data.url)
+			const response = await gitProviderClient.authorize({id: BigInt(id)});
+			const data = response.payload ? JSON.parse(response.payload) : null;
+			if (!data?.url)
 				throw new Error('Provider returned no authorization URL');
 			window.open(data.url, '_blank', 'noopener,noreferrer');
 		} catch {

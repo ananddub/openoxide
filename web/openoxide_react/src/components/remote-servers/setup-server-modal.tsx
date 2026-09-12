@@ -24,6 +24,10 @@ import {
 	useRemoteServerTestConnection,
 	useRemoteServerAudit,
 } from '#/api/live';
+import {createServiceClient} from '#/api/live/query';
+import {ServerControllerService} from '#/gen/connect/openoxide/api/v1/server_controller_pb';
+
+const serverControllerClient = createServiceClient(ServerControllerService);
 
 import type {RemoteServerResponse} from '#/types/api-helpers';
 
@@ -85,69 +89,24 @@ export function SetupServerModal({
 		setSettingUp(true);
 		setSetupLogs([]);
 		try {
-			const sessionRaw = localStorage.getItem('openoxide-auth-session');
-			let accessToken = '';
-			if (sessionRaw) {
-				try {
-					const session = JSON.parse(sessionRaw);
-					accessToken = session?.tokens?.accessToken || '';
-				} catch {}
-			}
+			const call = serverControllerClient.streamSetupLogs({
+				id: BigInt(server.id),
+				filter: JSON.stringify({
+					host_key_fingerprint: '',
+					install_dependencies: true,
+					...(advertiseAddr.trim()
+						? {advertise_addr: advertiseAddr.trim()}
+						: {}),
+				}),
+			});
 
-			const response = await fetch(
-				`/api/servers/${server.id}/setup/logs`,
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: accessToken ? `Bearer ${accessToken}` : '',
-					},
-					body: JSON.stringify({
-						host_key_fingerprint: '',
-						install_dependencies: true,
-						...(advertiseAddr.trim()
-							? {advertise_addr: advertiseAddr.trim()}
-							: {}),
-					}),
-				},
-			);
-
-			if (!response.ok) {
-				throw new Error(await response.text());
-			}
-
-			const reader = response.body?.getReader();
-			if (!reader) {
-				throw new Error('Setup log stream is not readable');
-			}
-
-			const decoder = new TextDecoder();
-			let buffer = '';
 			let failedMessage = '';
-			while (true) {
-				const {done, value} = await reader.read();
-				if (done) break;
-
-				buffer += decoder.decode(value, {stream: true});
-				const rawLines = buffer.split('\n');
-				buffer = rawLines.pop() || '';
-
-				for (const rawLine of rawLines) {
-					const lines = extractLogLines(rawLine);
-					if (lines.length > 0) {
-						failedMessage ||=
-							lines.find(line => line.includes('Setup Server failed')) ||
-							'';
-						setSetupLogs(prev => [...prev, ...lines]);
-					}
-				}
-			}
-
-			if (buffer.trim()) {
-				const lines = extractLogLines(buffer);
+			for await (const event of call) {
+				const lines = extractLogLines(event.payload);
 				if (lines.length > 0) {
 					failedMessage ||=
-						lines.find(line => line.includes('Setup Server failed')) || '';
+						lines.find(line => line.includes('Setup Server failed')) ||
+						'';
 					setSetupLogs(prev => [...prev, ...lines]);
 				}
 			}

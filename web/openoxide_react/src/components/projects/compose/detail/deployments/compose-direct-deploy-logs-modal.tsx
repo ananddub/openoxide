@@ -5,6 +5,10 @@ import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
 import {useDeploymentItems} from '#/api/live';
+import {createServiceClient} from '#/api/live/query';
+import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
+
+const deploymentClient = createServiceClient(DeploymentService);
 
 interface ComposeDirectDeployLogsModalProps {
 	isOpen: boolean;
@@ -53,58 +57,24 @@ export function ComposeDirectDeployLogsModal({
 
 		const startStream = async () => {
 			try {
-				const sessionRaw = localStorage.getItem('openoxide-auth-session');
-				let accessToken = '';
-				if (sessionRaw) {
-					try {
-						const session = JSON.parse(sessionRaw);
-						accessToken = session?.tokens?.accessToken || '';
-					} catch {}
-				}
+				const call = deploymentClient.streamDeploymentLogs(
+					{id: BigInt(latestId)},
+					{signal: controller.signal},
+				);
+				setIsConnecting(false);
 
-				const response = await fetch(`/api/deployments/${latestId}/logs`, {
-					headers: {
-						Authorization: accessToken ? `Bearer ${accessToken}` : '',
-					},
-					signal: controller.signal,
-				});
-
-				if (isMounted) setIsConnecting(false);
-
-				if (!response.ok) {
-					if (isMounted && initialFallback) {
-						setLiveLogs(initialFallback.split('\n'));
+				for await (const event of call) {
+					if (!isMounted) return;
+					if (event.error) {
+						if (initialFallback)
+							setLiveLogs(prev =>
+								prev.length > 0 ? prev : initialFallback.split('\n'),
+							);
+						continue;
 					}
-					return;
-				}
-
-				const reader = response.body?.getReader();
-				const decoder = new TextDecoder();
-				if (!reader) return;
-
-				let buffer = '';
-
-				while (isMounted) {
-					const {done, value} = await reader.read();
-					if (done) {
-						if (buffer.trim()) {
-							const finalLines = extractLogLines(buffer);
-							if (finalLines.length > 0 && isMounted) {
-								setLiveLogs(prev => [...prev, ...finalLines]);
-							}
-						}
-						break;
-					}
-
-					buffer += decoder.decode(value, {stream: true});
-					const lines = buffer.split('\n');
-					buffer = lines.pop() || '';
-
-					for (const line of lines) {
-						const extracted = extractLogLines(line);
-						if (extracted.length > 0 && isMounted) {
-							setLiveLogs(prev => [...prev, ...extracted]);
-						}
+					const extracted = extractLogLines(event.payload);
+					if (extracted.length > 0 && isMounted) {
+						setLiveLogs(prev => [...prev, ...extracted]);
 					}
 				}
 			} catch (err: any) {

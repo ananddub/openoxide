@@ -1,100 +1,70 @@
-import {getApiBaseUrl, refreshAccessToken} from '#/api/client';
+import {createServiceClient} from '#/api/live/query';
+import {ServerPrivateNetworkService} from '#/gen/connect/openoxide/api/v1/server_private_network_pb';
 
 import type {
 	PrivateNetworkConfig,
 	UpdatePrivateNetworkInput,
 } from './types';
 
-function authHeaders(json = false): HeadersInit {
-	const sessionRaw = localStorage.getItem('openoxide-auth-session');
-	let token = '';
+const networkClient = createServiceClient(ServerPrivateNetworkService);
+
+function parseConfig(payload: string): PrivateNetworkConfig | null {
+	if (!payload) return null;
 	try {
-		if (sessionRaw) {
-			const parsed = JSON.parse(sessionRaw);
-			token =
-				parsed?.tokens?.accessToken ||
-				'';
-		}
+		return JSON.parse(payload) as PrivateNetworkConfig;
 	} catch {
-		// Invalid sessions are handled by the global authentication flow.
+		return null;
 	}
-	return {
-		Accept: 'application/json',
-		...(json ? {'Content-Type': 'application/json'} : {}),
-		...(token ? {Authorization: `Bearer ${token}`} : {}),
-	};
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-	let response = await fetch(`${getApiBaseUrl()}${path}`, init);
-	if (response.status === 401) {
-		const accessToken = await refreshAccessToken();
-		if (accessToken) {
-			const headers = new Headers(init?.headers);
-			headers.set('Authorization', `Bearer ${accessToken}`);
-			response = await fetch(`${getApiBaseUrl()}${path}`, {
-				...init,
-				headers,
-			});
-		}
-	}
-	if (!response.ok) {
-		const body = await response.text();
-		let message = body;
-		try {
-			const parsed = JSON.parse(body);
-			message = parsed?.error || parsed?.message || body;
-		} catch {
-			// Plain-text API errors are already user-readable.
-		}
-		throw new Error(message || `Request failed (${response.status})`);
-	}
-	if (response.status === 204) return undefined as T;
-	return response.json() as Promise<T>;
-}
-
-const pathFor = (serverId: number, action = '') =>
-	`/servers/${serverId}/private-network${action}`;
-
+/**
+ * Private-network operations over ConnectRPC. The panel handlers carry the
+ * config DTO as a JSON string in `ResourceResponse.payload` /
+ * `OperationResult.payload`; this module unwraps it back to the typed shape
+ * the modal consumes.
+ */
 export const privateNetworkApi = {
-	get: (serverId: number) =>
-		request<PrivateNetworkConfig | null>(pathFor(serverId), {
-			headers: authHeaders(),
-		}),
-	update: (serverId: number, input: UpdatePrivateNetworkInput) =>
-		request<PrivateNetworkConfig>(pathFor(serverId), {
-			method: 'PUT',
-			headers: authHeaders(true),
-			body: JSON.stringify(input),
-		}),
-	setup: (serverId: number) =>
-		request<PrivateNetworkConfig>(pathFor(serverId, '/setup'), {
-			method: 'POST',
-			headers: authHeaders(),
-		}),
-	health: (serverId: number) =>
-		request<{status: string; error: string | null}>(
-			pathFor(serverId, '/health'),
-			{headers: authHeaders()},
-		),
-	repair: (serverId: number) =>
-		request<PrivateNetworkConfig>(pathFor(serverId, '/repair'), {
-			method: 'POST',
-			headers: authHeaders(),
-		}),
-	reSetup: (serverId: number) =>
-		request<PrivateNetworkConfig>(pathFor(serverId, '/re-setup'), {
-			method: 'POST',
-			headers: authHeaders(),
-		}),
-	rotateKeys: (serverId: number) =>
-		request<PrivateNetworkConfig>(pathFor(serverId, '/rotate-keys'), {
-			method: 'POST',
-			headers: authHeaders(),
-		}),
-	teardown: (serverId: number) =>
-		request<void>(pathFor(serverId, '/teardown'), {
-			method: 'POST',
-			headers: authHeaders(),
-		}),
+	get: async (serverId: number): Promise<PrivateNetworkConfig | null> => {
+		const response = await networkClient.getNetwork({id: BigInt(serverId)});
+		return parseConfig(response.payload);
+	},
+	update: async (
+		serverId: number,
+		input: UpdatePrivateNetworkInput,
+	): Promise<PrivateNetworkConfig> => {
+		const response = await networkClient.updateNetwork({
+			id: BigInt(serverId),
+			payload: JSON.stringify(input),
+		});
+		return parseConfig(response.payload) as PrivateNetworkConfig;
+	},
+	setup: async (serverId: number): Promise<PrivateNetworkConfig> => {
+		const result = await networkClient.setup({id: BigInt(serverId)});
+		return parseConfig(result.payload ?? '') as PrivateNetworkConfig;
+	},
+	health: async (
+		serverId: number,
+	): Promise<{status: string; error: string | null}> => {
+		const result = await networkClient.health({id: BigInt(serverId)});
+		const parsed = result.payload ? JSON.parse(result.payload) : null;
+		return {
+			status: String(parsed?.status ?? 'UNKNOWN'),
+			error: parsed?.error ?? null,
+		};
+	},
+	repair: async (serverId: number): Promise<PrivateNetworkConfig> => {
+		const result = await networkClient.repair({id: BigInt(serverId)});
+		return parseConfig(result.payload ?? '') as PrivateNetworkConfig;
+	},
+	reSetup: async (serverId: number): Promise<PrivateNetworkConfig> => {
+		const result = await networkClient.reSetup({id: BigInt(serverId)});
+		return parseConfig(result.payload ?? '') as PrivateNetworkConfig;
+	},
+	rotateKeys: async (serverId: number): Promise<PrivateNetworkConfig> => {
+		const result = await networkClient.rotateKeys({id: BigInt(serverId)});
+		return parseConfig(result.payload ?? '') as PrivateNetworkConfig;
+	},
+	teardown: async (serverId: number): Promise<void> => {
+		await networkClient.teardown({id: BigInt(serverId)});
+	},
 };

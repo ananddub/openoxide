@@ -16,7 +16,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     SetDockerSourceRequest, SetDropSourceRequest, SetGiteaSourceRequest,
     SetGithubSourceRequest, SetGitlabSourceRequest, TriggerRollbackRequest,
     UpdateApplicationRequest, UpdateBuildConfigRequest, UpdatePreviewConfigRequest,
-    UpdateResourceConfigRequest,
+    UpdateResourceConfigRequest, UploadSourceRequest,
 };
 use crate::db::reactive::realtime;
 use crate::flash_gen::models::{
@@ -369,24 +369,116 @@ impl ApplicationService for ApplicationController {
     }
 
     // ── Upload source (client-streaming) ───────────────────────────────
-    // NOTE: upload_source is a client-streaming RPC. Each streamed chunk is
-    // an UploadSourceRequest carrying a base64 file segment. Multipart
-    // upload aggregation is not yet wired; reject until a chunked upload
-    // protocol is defined.
+    // First frame carries the header (application id + build path); the
+    // rest are raw ZIP segments (≤ 4 MiB each). The archive is staged on the
+    // panel, then installed through the Agent: upload → sanitize → extract
+    // into the application's code directory.
 
     #[permission(Application, CanCreate)]
     async fn upload_source<'a>(
         &'a self,
         _ctx: RequestContext,
-        _requests: connectrpc::InboundStream<
-            crate::api::connect::generated::openoxide::api::v1::UploadSourceRequest,
-        >,
+        mut requests: connectrpc::InboundStream<UploadSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
-        let error: ServiceResult<ApplicationProto> = Err(ConnectError::new(
-            ErrorCode::Unimplemented,
-            "upload_source requires client-streaming; use the REST endpoint instead",
+        use futures::StreamExt;
+
+        use crate::api::connect::generated::openoxide::api::v1::upload_source_request::Payload;
+
+        let first = requests
+            .next()
+            .await
+            .ok_or_else(|| ConnectError::invalid_argument("upload stream is empty"))?
+            .map_err(|error| ConnectError::new(ErrorCode::Internal, error.to_string()))?;
+        let Payload::Header(header) = first
+            .to_owned_message()
+            .payload
+            .ok_or_else(|| ConnectError::invalid_argument("first frame must carry the header"))?
+        else {
+            return Err(ConnectError::invalid_argument(
+                "first frame must carry the header",
+            ));
+        };
+
+        const MAX_UPLOAD_BYTES: u64 = 512 * 1024 * 1024;
+        let application_id = header.application_id;
+        let app = self
+            .service
+            .get_by_id(application_id)
+            .await
+            .map_err(map_db_error)?;
+
+        let staging = std::env::temp_dir().join(format!(
+            "openoxide-drop-{}.zip",
+            uuid::Uuid::new_v4()
         ));
-        error
+        let staged = async {
+            let mut file = tokio::fs::File::create(&staging)
+                .await
+                .map_err(|error| ConnectError::internal(format!("stage upload: {error}")))?;
+            let mut written = 0u64;
+            while let Some(message) = requests.next().await {
+                let message =
+                    message.map_err(|error| ConnectError::new(ErrorCode::Internal, error.to_string()))?;
+                match message.to_owned_message().payload {
+                    Some(Payload::Chunk(chunk)) => {
+                        written += chunk.len() as u64;
+                        if written > MAX_UPLOAD_BYTES {
+                            return Err(ConnectError::invalid_argument(
+                                "upload exceeds the 512 MiB limit",
+                            ));
+                        }
+                        tokio::io::AsyncWriteExt::write_all(&mut file, &chunk)
+                            .await
+                            .map_err(|error| {
+                                ConnectError::internal(format!("stage chunk: {error}"))
+                            })?;
+                    }
+                    Some(Payload::Header(_)) => {
+                        return Err(ConnectError::invalid_argument(
+                            "only one header frame is allowed",
+                        ));
+                    }
+                    None => {}
+                }
+            }
+            if written == 0 {
+                return Err(ConnectError::invalid_argument("upload contains no data"));
+            }
+            tokio::io::AsyncWriteExt::shutdown(&mut file)
+                .await
+                .map_err(|error| ConnectError::internal(format!("close upload: {error}")))?;
+            Ok::<u64, ConnectError>(written)
+        }
+        .await;
+        if staged.is_err() {
+            let _ = tokio::fs::remove_file(&staging).await;
+        }
+        staged?;
+
+        // Record the drop source first: it clears any previous git/docker
+        // source so the builder switches to the on-disk code directory.
+        let app = self
+            .service
+            .set_drop_source(
+                application_id,
+                SetDropSourceRequest {
+                    id: application_id,
+                    build_path: header.build_path,
+                },
+            )
+            .await
+            .map_err(map_db_error)?;
+
+        let install = crate::services::compute::application::source::install_drop_zip(
+            &app.app_name,
+            app.server_id,
+            &staging,
+        )
+        .await;
+        let _ = tokio::fs::remove_file(&staging).await;
+        install.map_err(ConnectError::internal)?;
+
+        Response::ok(app_to_proto(app))
     }
 
     // ── Build / Resource / Preview config ──────────────────────────────

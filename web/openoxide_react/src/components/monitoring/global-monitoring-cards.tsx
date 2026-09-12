@@ -10,7 +10,8 @@ import {
 } from '#/components/ui/card';
 import {useDeploymentListContainers, useRemoteServerList} from '#/api/live';
 import {useMonitoringContainerStates} from '#/api/live';
-import {getAccessToken, refreshAccessToken} from '#/api/client';
+import {createServiceClient} from '#/api/live/query';
+import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
 import {
 	Select,
 	SelectContent,
@@ -19,6 +20,8 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 
+
+const deploymentClient = createServiceClient(DeploymentService);
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function stripAnsi(str: string): string {
@@ -502,10 +505,9 @@ export function GlobalMonitoringCards() {
 	const [containersList, setContainersList] = useState<DockerStat[]>([]);
 	const [streamState, setStreamState] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
 
-	// SSE live stream
+	// ConnectRPC live stats stream: panel proxies the Agent's in-process
+	// Docker API stats (no CLI subprocess, no REST SSE).
 	useEffect(() => {
-		const DISABLE_METRICS = false;
-		if (DISABLE_METRICS) return;
 		let isMounted = true;
 		let controller: AbortController | null = null;
 		let retryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -516,45 +518,18 @@ export function GlobalMonitoringCards() {
 			setStreamState('connecting');
 			controller = new AbortController();
 			try {
-				let token = getAccessToken();
-				if (!token) token = (await refreshAccessToken()) || '';
-				const statsUrl = effectiveServerId
-					? `/api/deployments/docker/stats?stream=true&server_id=${effectiveServerId}`
-					: '/api/deployments/docker/stats?stream=true';
-				const res = await fetch(
-					statsUrl,
-					{
-						headers: {Authorization: token ? `Bearer ${token}` : ''},
-						signal: controller.signal,
-					},
+				const call = deploymentClient.streamDockerStats(
+					effectiveServerId ? {serverId: BigInt(effectiveServerId)} : {},
+					{signal: controller.signal},
 				);
-				if (res.status === 401) {
-					const refreshed = await refreshAccessToken();
-					if (refreshed) {
-						controller.abort();
-						throw new Error('retry metrics stream with refreshed token');
-					}
-				}
-				if (!res.ok || !res.body) throw new Error(`metrics stream returned ${res.status}`);
-				setStreamState('connected');
 				retryDelay = 2000;
 
-				const reader = res.body.getReader();
-				const dec = new TextDecoder();
-				let buf = '';
-
-				while (isMounted) {
-					const {done, value} = await reader.read();
-					if (done) break;
-					buf += dec.decode(value, {stream: true});
-					const lines = buf.split('\n');
-					buf = lines.pop() || '';
-					for (const line of lines) {
-						if (!line.startsWith('data:')) continue;
-						try {
-							const evt = JSON.parse(line.slice(5).trim());
-							if (evt.type === 'stats' && evt.stats) {
-								const stats = extractDockerStats(evt.stats);
+				for await (const evt of call) {
+					if (!isMounted) return;
+					setStreamState('connected');
+					try {
+						if (evt.type === 'stats' && evt.payload) {
+							const stats = extractDockerStats(evt.payload);
 								if (stats.length > 0 && isMounted) {
 									setContainersList([...stats]);
 
@@ -659,7 +634,6 @@ export function GlobalMonitoringCards() {
 							}
 						} catch {}
 					}
-				}
 				if (isMounted) throw new Error('metrics stream closed');
 			} catch {
 				if (!isMounted) return;

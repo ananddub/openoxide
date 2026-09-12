@@ -239,14 +239,10 @@ impl DeploymentService {
             }
         }
 
-        let handle = docker.containers();
-        let mut builder = handle.stats(resolved_target);
-        if !stream {
-            builder = builder.no_stream();
-        }
-
-        let cmd_args = builder.build_command_args();
-        Ok(spawn_docker_stream(docker, cmd_args))
+        let server_id = crate::services::compute::compose::remote::agent_server_id(server_id)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
+        agent_stats_stream(server_id, vec![resolved_target], stream).await
     }
 
     pub async fn stream_application_stats(
@@ -291,7 +287,10 @@ impl DeploymentService {
             }
         };
 
-        Ok(spawn_stats_stream(docker, targets, stream))
+        let agent_id = crate::services::compute::compose::remote::agent_server_id(server_id)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
+        agent_stats_stream(agent_id, targets, stream).await
     }
 
     pub async fn stream_compose_stats(
@@ -332,7 +331,10 @@ impl DeploymentService {
             }
         };
 
-        Ok(spawn_stats_stream(docker, targets, stream))
+        let agent_id = crate::services::compute::compose::remote::agent_server_id(server_id)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
+        agent_stats_stream(agent_id, targets, stream).await
     }
 
     pub async fn stream_database_stats(
@@ -376,7 +378,10 @@ impl DeploymentService {
             }
         };
 
-        Ok(spawn_stats_stream(docker, targets, stream))
+        let agent_id = crate::services::compute::compose::remote::agent_server_id(server_id)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
+        agent_stats_stream(agent_id, targets, stream).await
     }
 
     pub async fn stream_global_stats(
@@ -384,8 +389,11 @@ impl DeploymentService {
         server_id: Option<i64>,
         stream: bool,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
-        let docker = self.docker_for_server(server_id).await?;
-        Ok(spawn_stats_stream(docker, Vec::new(), stream))
+        let agent_id = crate::services::compute::compose::remote::agent_server_id(server_id)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
+        // Empty targets: the agent streams every running container.
+        agent_stats_stream(agent_id, Vec::new(), stream).await
     }
 
     pub async fn list_docker_containers(
@@ -564,22 +572,50 @@ impl DeploymentService {
     }
 }
 
-fn spawn_stats_stream(
-    docker: DockerCli,
+/// Proxies container stats from the Agent's in-process Docker API stream and
+/// repackages each frame as CLI-shaped stdout bytes, so every browser
+/// consumer costs zero subprocesses (previously one `docker stats` CLI per
+/// stream, ~11 MB RSS each on the Agent host).
+async fn agent_stats_stream(
+    server_id: i64,
     targets: Vec<String>,
     stream: bool,
-) -> mpsc::Receiver<DockerStreamEvent> {
-    let mut command = vec![
-        "container".into(),
-        "stats".into(),
-        "--format".into(),
-        "{{json .}}".into(),
-    ];
-    if !stream {
-        command.push("--no-stream".into());
-    }
-    command.extend(targets);
-    spawn_docker_stream(docker, command)
+) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
+    use auto_di::resolve;
+    use tokio_stream::StreamExt;
+
+    let monitoring = resolve::<crate::services::observability::monitoring::service::MonitoringService>()
+        .await
+        .map_err(|error| sqlx::Error::Protocol(format!("monitoring Agent unavailable: {error}")))?;
+    let mut frames = monitoring
+        .stream_container_stats(server_id, targets, stream)
+        .await
+        .map_err(sqlx::Error::Protocol)?;
+
+    let (sender, receiver) = mpsc::channel(128);
+    tokio::spawn(async move {
+        loop {
+            match frames.next().await {
+                Some(Ok(frame)) => {
+                    let mut line = frame.json_line;
+                    line.push('\n');
+                    if sender
+                        .send(DockerStreamEvent::Stdout(line.into_bytes()))
+                        .await
+                        .is_err()
+                    {
+                        break; // browser consumer went away; closes the gRPC stream
+                    }
+                }
+                Some(Err(error)) => {
+                    tracing::warn!(server_id, %error, "Agent stats stream failed");
+                    break;
+                }
+                None => break,
+            }
+        }
+    });
+    Ok(receiver)
 }
 
 fn spawn_docker_stream(

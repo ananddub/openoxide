@@ -1,8 +1,13 @@
+use std::path::Path;
+
 use crate::api::connect::generated::openoxide::api::v1::{
     SetBitbucketSourceRequest, SetCustomGitSourceRequest, SetDockerSourceRequest,
     SetDropSourceRequest, SetGiteaSourceRequest, SetGithubSourceRequest, SetGitlabSourceRequest,
 };
 use crate::core::cache::CacheKey;
+use crate::services::observability::monitoring::service::MonitoringService;
+use crate::utils::exec::CommandExecutor;
+use crate::utils::os::OsCli;
 
 use super::{ApplicationRecord, ApplicationService};
 
@@ -313,4 +318,68 @@ impl ApplicationService {
         self.cache.invalidate(&CacheKey::Application(id)).await;
         self.get_by_id(id).await
     }
+}
+
+/// Installs a drop-upload ZIP for an application: transfers the archive to
+/// the server's Agent, sanitizes it (path traversal / symlink stripping),
+/// wipes the previous code directory, and extracts the new sources into it.
+/// The panel and the local Agent share the same host paths, so the Agent's
+/// own base path resolves to the directory the builder later reads.
+pub async fn install_drop_zip(
+    app_name: &str,
+    server_id: Option<i64>,
+    zip_path: &Path,
+) -> Result<(), String> {
+    let server_id =
+        crate::services::compute::compose::remote::agent_server_id(server_id).await?;
+    let monitoring = auto_di::resolve::<MonitoringService>()
+        .await
+        .map_err(|e| format!("DI error: {e}"))?;
+
+    let code_dir = crate::utils::paths::openoxide_paths().application_code(app_name);
+    let uuid = uuid::Uuid::new_v4().to_string();
+    let remote_zip = format!("/tmp/openoxide-drop-{uuid}.zip");
+    let clean_zip = format!("/tmp/openoxide-drop-clean-{uuid}.zip");
+
+    monitoring
+        .upload_file(server_id, zip_path, &remote_zip)
+        .await
+        .map_err(|e| format!("Agent transfer failed: {e}"))?;
+    let cmd = CommandExecutor::Agent(monitoring.agent_executor(server_id));
+    let os = OsCli::new(&cmd);
+
+    let outcome = async {
+        os.archive(&remote_zip)
+            .zip()
+            .sanitize()
+            .to(&clean_zip)
+            .run()
+            .await
+            .map_err(|e| format!("ZIP validation failed: {e}"))?;
+        // Replace the previous source tree wholesale — a stale file must not
+        // survive into the new build.
+        os.dir(&code_dir)
+            .delete()
+            .run()
+            .await
+            .map_err(|e| format!("failed to clear previous sources: {e}"))?;
+        os.dir(&code_dir)
+            .create()
+            .run()
+            .await
+            .map_err(|e| format!("failed to create source directory: {e}"))?;
+        os.archive(&clean_zip)
+            .zip()
+            .extract_to(&code_dir)
+            .overwrite()
+            .run()
+            .await
+            .map_err(|e| format!("failed to unzip on server: {e}"))?;
+        Ok::<(), String>(())
+    }
+    .await;
+
+    let _ = os.file(&remote_zip).delete().run().await;
+    let _ = os.file(&clean_zip).delete().run().await;
+    outcome
 }

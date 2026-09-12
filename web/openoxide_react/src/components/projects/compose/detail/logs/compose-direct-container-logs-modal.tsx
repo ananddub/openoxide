@@ -3,6 +3,10 @@ import {createPortal} from 'react-dom';
 import {Terminal as TerminalIcon, X} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
+import {createServiceClient} from '#/api/live/query';
+import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
+
+const deploymentClient = createServiceClient(DeploymentService);
 
 interface ComposeDirectContainerLogsModalProps {
 	isOpen: boolean;
@@ -33,74 +37,37 @@ export function ComposeDirectContainerLogsModal({
 
 		const startStream = async () => {
 			try {
-				const sessionRaw = localStorage.getItem('openoxide-auth-session');
-				let accessToken = '';
-				if (sessionRaw) {
-					try {
-						const session = JSON.parse(sessionRaw);
-						accessToken = session?.tokens?.accessToken || '';
-					} catch {}
-				}
-
-				const streamUrl = `/api/deployments/docker/service/${activeService}/logs?tail=500&follow=true`;
-
-				const response = await fetch(streamUrl, {
-					headers: {
-						Authorization: accessToken ? `Bearer ${accessToken}` : '',
+				const call = deploymentClient.streamServiceLogs(
+					{
+						target: activeService,
+						serverId: compose?.server_id
+							? BigInt(compose.server_id)
+							: undefined,
+						tail: 500n,
+						follow: true,
 					},
-					signal: controller.signal,
-				});
-
-				if (isMounted) setIsLoading(false);
-
-				if (!response.ok) return;
-
-				const reader = response.body?.getReader();
-				const decoder = new TextDecoder();
-				if (!reader) return;
+					{signal: controller.signal},
+				);
+				setIsLoading(false);
 
 				let buffer = '';
-
-				while (isMounted) {
-					const {done, value} = await reader.read();
-					if (done) break;
-
-					buffer += decoder.decode(value, {stream: true});
+				for await (const event of call) {
+					if (!isMounted) return;
+					if (event.error) {
+						setStreamedLogs(prev => [...prev, event.error!]);
+						continue;
+					}
+					buffer += event.payload;
 					const lines = buffer.split('\n');
 					buffer = lines.pop() || '';
-
-					for (const line of lines) {
-						const trimmed = line.trim();
-						if (
-							!trimmed ||
-							trimmed.startsWith('event:') ||
-							trimmed.startsWith('id:') ||
-							trimmed.startsWith(':') ||
-							trimmed.includes('keep-alive')
-						) {
-							continue;
-						}
-
-						if (line.startsWith('data:')) {
-							try {
-								const jsonStr = line.slice(5).trim();
-								if (!jsonStr || jsonStr.includes('keep-alive')) continue;
-								const data = JSON.parse(jsonStr);
-								const text =
-									data.line !== undefined
-										? data.line
-										: data.message || jsonStr;
-								if (text && isMounted)
-									setStreamedLogs(prev => [...prev, text]);
-							} catch {
-								const raw = line.slice(5).trim();
-								if (raw && !raw.includes('keep-alive') && isMounted)
-									setStreamedLogs(prev => [...prev, raw]);
-							}
-						} else if (line.trim() && isMounted) {
-							setStreamedLogs(prev => [...prev, line]);
-						}
+					for (const rawLine of lines) {
+						const cleaned = rawLine.replace(/\r$/, '').trim();
+						if (!cleaned || cleaned.includes('keep-alive')) continue;
+						if (isMounted) setStreamedLogs(prev => [...prev, cleaned]);
 					}
+				}
+				if (buffer.trim() && isMounted) {
+					setStreamedLogs(prev => [...prev, buffer.trim()]);
 				}
 			} catch (err: any) {
 				if (err.name !== 'AbortError' && isMounted) {
@@ -115,7 +82,7 @@ export function ComposeDirectContainerLogsModal({
 			isMounted = false;
 			controller.abort();
 		};
-	}, [isOpen, activeService]);
+	}, [isOpen, activeService, compose?.server_id]);
 
 	if (!isOpen || typeof document === 'undefined') return null;
 

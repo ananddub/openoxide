@@ -197,7 +197,7 @@ SELECT
     a.docker_build_stage AS docker_build_stage,
     a.publish_directory AS publish_directory,
     a.is_static_spa AS is_static_spa,
-    a.build_path AS build_path,
+    COALESCE(CASE WHEN g.source_type IS NULL AND s.docker_image IS NULL AND a.drop_build_path IS NOT NULL THEN a.drop_build_path ELSE a.build_path END, '') AS build_path,
     COALESCE(s.command, '') AS command,
     s.args AS args,
     s.env_var AS env_var,

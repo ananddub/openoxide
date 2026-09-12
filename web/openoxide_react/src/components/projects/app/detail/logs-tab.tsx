@@ -2,6 +2,9 @@ import {useState, useEffect, useRef, useMemo} from 'react';
 import {RefreshCw, Download, Play, Square, Box} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
+import {createServiceClient} from '#/api/live/query';
+import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
+
 import {
 	Select,
 	SelectContent,
@@ -9,6 +12,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
+
+const deploymentClient = createServiceClient(DeploymentService);
 
 interface LogsTabProps {
 	app: any;
@@ -44,7 +49,8 @@ export function LogsTab({app}: LogsTabProps) {
 		app?.name ||
 		'app';
 
-	// Connect to backend Server-Sent Events (SSE) docker service log stream
+	// ConnectRPC log stream: panel tails the container/service logs on the
+	// Agent and pushes each chunk as a DeploymentEvent.
 	useEffect(() => {
 		if (!activeTarget) return;
 
@@ -55,109 +61,36 @@ export function LogsTab({app}: LogsTabProps) {
 
 		const startStream = async () => {
 			try {
-				let accessToken = '';
-				const sessionRaw = localStorage.getItem('openoxide-auth-session');
-				if (sessionRaw) {
-					try {
-						const session = JSON.parse(sessionRaw);
-						accessToken = session?.tokens?.accessToken || '';
-					} catch {}
-				}
-
-				const params = new URLSearchParams({
-					tail: lines,
-					timestamps: String(timestamps),
-					follow: String(isLive),
-				});
-				if (app?.server_id) {
-					params.append('server_id', String(app.server_id));
-				}
-
-				const response = await fetch(
-					`/api/deployments/docker/service/${encodeURIComponent(activeTarget)}/logs?${params.toString()}`,
+				const call = deploymentClient.streamServiceLogs(
 					{
-						headers: {
-							Authorization: accessToken ? `Bearer ${accessToken}` : '',
-						},
-						signal: controller.signal,
+						target: activeTarget,
+						serverId: app?.server_id ? BigInt(app.server_id) : undefined,
+						tail: BigInt(lines),
+						timestamps,
+						follow: isLive,
 					},
+					{signal: controller.signal},
 				);
-
-				if (!response.ok) {
-					if (isMounted) {
-						setStreamedLogs([
-							`Log stream notice: Container service '${activeTarget}' is not active or has no logs.`,
-						]);
-						setIsLoading(false);
-					}
-					return;
-				}
-
-				const reader = response.body?.getReader();
-				const decoder = new TextDecoder();
-				if (!reader) return;
-
-				if (isMounted) setIsLoading(false);
+				setIsLoading(false);
 
 				let buffer = '';
-				while (isMounted) {
-					const {done, value} = await reader.read();
-					if (done) break;
-
-					buffer += decoder.decode(value, {stream: true});
+				for await (const event of call) {
+					if (!isMounted) return;
+					if (event.error) {
+						setStreamedLogs(prev => [...prev, event.error!]);
+						continue;
+					}
+					buffer += event.payload;
 					const rawLines = buffer.split('\n');
 					buffer = rawLines.pop() || '';
-
 					for (const rawLine of rawLines) {
-						const trimmed = rawLine.trim();
-						if (
-							!trimmed ||
-							trimmed.startsWith('event:') ||
-							trimmed.includes('event: log') ||
-							trimmed.includes('event: deployment') ||
-							trimmed.startsWith('id:') ||
-							trimmed.startsWith(':') ||
-							trimmed.includes('keep-alive')
-						) {
-							continue;
-						}
-
-						let textToPush = '';
-						if (trimmed.startsWith('data:')) {
-							const jsonStr = trimmed.slice(5).trim();
-							if (!jsonStr || jsonStr.includes('keep-alive')) continue;
-							try {
-								const data = JSON.parse(jsonStr);
-								if (data.type === 'keep-alive') continue;
-								textToPush =
-									data.line !== undefined
-										? data.line
-										: data.data || data.message || jsonStr;
-							} catch {
-								textToPush = jsonStr;
-							}
-						} else {
-							textToPush = trimmed;
-						}
-
-						if (textToPush !== undefined) {
-							let cleaned = textToPush.replace(/\r?\n$/, '').trim();
-							if (
-								!cleaned ||
-								cleaned.startsWith('event:') ||
-								cleaned.includes('event: log') ||
-								cleaned.includes('event: deployment') ||
-								cleaned.includes('keep-alive')
-							) {
-								continue;
-							}
-							if (cleaned.startsWith('logs/')) cleaned = cleaned.slice(5);
-							else if (cleaned.startsWith('log/'))
-								cleaned = cleaned.slice(4);
-
-							if (isMounted) setStreamedLogs(prev => [...prev, cleaned]);
-						}
+						const cleaned = rawLine.replace(/\r$/, '').trim();
+						if (!cleaned || cleaned.includes('keep-alive')) continue;
+						if (isMounted) setStreamedLogs(prev => [...prev, cleaned]);
 					}
+				}
+				if (buffer.trim() && isMounted) {
+					setStreamedLogs(prev => [...prev, buffer.trim()]);
 				}
 			} catch (err: any) {
 				if (err.name !== 'AbortError' && isMounted) {

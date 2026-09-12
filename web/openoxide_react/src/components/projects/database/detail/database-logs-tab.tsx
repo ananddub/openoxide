@@ -1,5 +1,9 @@
 import {useState, useEffect} from 'react';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
+import {createServiceClient} from '#/api/live/query';
+import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
+
+const deploymentClient = createServiceClient(DeploymentService);
 
 interface DatabaseLogsTabProps {
 	database: any;
@@ -21,80 +25,38 @@ export function DatabaseLogsTab({database}: DatabaseLogsTabProps) {
 
 		const startStream = async () => {
 			try {
-				const sessionRaw = localStorage.getItem('openoxide-auth-session');
-				let accessToken = '';
-				if (sessionRaw) {
-					try {
-						const session = JSON.parse(sessionRaw);
-						accessToken = session?.tokens?.accessToken || '';
-					} catch {}
-				}
-
-				const serverIdParam = database?.server_id
-					? `&server_id=${database.server_id}`
-					: '';
-				const streamUrl = `/api/deployments/docker/service/${encodeURIComponent(appName)}/logs?tail=200&timestamps=false&follow=true${serverIdParam}`;
-
-				const response = await fetch(streamUrl, {
-					headers: {
-						Authorization: accessToken ? `Bearer ${accessToken}` : '',
+				const call = deploymentClient.streamServiceLogs(
+					{
+						target: appName,
+						serverId: database?.server_id
+							? BigInt(database.server_id)
+							: undefined,
+						tail: 200n,
+						timestamps: false,
+						follow: true,
 					},
-					signal: controller.signal,
-				});
-
-				if (!response.ok) {
-					setIsLoading(false);
-					return;
-				}
-
+					{signal: controller.signal},
+				);
 				setIsLoading(false);
-				const reader = response.body?.getReader();
-				const decoder = new TextDecoder();
-				if (!reader) return;
 
 				let buffer = '';
-				while (isMounted) {
-					const {done, value} = await reader.read();
-					if (done) break;
-
-					buffer += decoder.decode(value, {stream: true});
+				for await (const event of call) {
+					if (!isMounted) return;
+					if (event.error) {
+						setStreamedLogs(prev => [...prev, event.error!]);
+						continue;
+					}
+					buffer += event.payload;
 					const rawLines = buffer.split('\n');
 					buffer = rawLines.pop() || '';
-
-					for (const line of rawLines) {
-						const trimmed = line.trim();
-						if (
-							!trimmed ||
-							trimmed.startsWith('event:') ||
-							trimmed.includes('event: log') ||
-							trimmed.includes('event: deployment') ||
-							trimmed.startsWith('id:') ||
-							trimmed.startsWith(':') ||
-							trimmed.includes('keep-alive')
-						) {
-							continue;
-						}
-
-						if (line.startsWith('data:')) {
-							try {
-								const jsonStr = line.slice(5).trim();
-								if (!jsonStr || jsonStr.includes('keep-alive')) continue;
-								const data = JSON.parse(jsonStr);
-								const text =
-									data.line !== undefined
-										? data.line
-										: data.message || jsonStr;
-								if (text && isMounted)
-									setStreamedLogs(prev => [...prev, text]);
-							} catch {
-								const raw = line.slice(5).trim();
-								if (raw && !raw.includes('keep-alive') && isMounted)
-									setStreamedLogs(prev => [...prev, raw]);
-							}
-						} else if (line.trim() && isMounted) {
-							setStreamedLogs(prev => [...prev, line]);
-						}
+					for (const rawLine of rawLines) {
+						const cleaned = rawLine.replace(/\r$/, '').trim();
+						if (!cleaned || cleaned.includes('keep-alive')) continue;
+						if (isMounted) setStreamedLogs(prev => [...prev, cleaned]);
 					}
+				}
+				if (buffer.trim() && isMounted) {
+					setStreamedLogs(prev => [...prev, buffer.trim()]);
 				}
 			} catch (err: any) {
 				if (err.name !== 'AbortError' && isMounted) {

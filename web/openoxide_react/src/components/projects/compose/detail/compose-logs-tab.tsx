@@ -1,6 +1,12 @@
 import {useState, useEffect, useMemo} from 'react';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {ComposeLogsHeader} from './logs/compose-logs-header';
+import {createServiceClient} from '#/api/live/query';
+import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
+import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
+import {useDeploymentItems} from '#/api/live';
+
+const deploymentClient = createServiceClient(DeploymentService);
 
 interface ComposeLogsTabProps {
 	compose: any;
@@ -83,7 +89,17 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 	const activeService =
 		selectedContainer.trim() || servicesList[0] || 'app';
 
-	// Connect to backend Server-Sent Events (SSE) log stream
+	// ConnectRPC log streams. Container mode tails the compose project's
+	// service logs; build mode streams the latest deployment's build log
+	// (the old REST build endpoint never worked).
+	const {data: allDeployments = []} = useDeploymentItems();
+	const latestBuildDeploymentId = useMemo(() => {
+		const mine = allDeployments.filter(
+			(d: any) => String(d.compose_id) === String(compose?.id),
+		);
+		return mine.length > 0 ? Number(mine[0].id) : null;
+	}, [allDeployments, compose?.id]);
+
 	useEffect(() => {
 		let isMounted = true;
 		let controller = new AbortController();
@@ -93,89 +109,62 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 
 		const startStream = async () => {
 			try {
-				const sessionRaw = localStorage.getItem('openoxide-auth-session');
-				let accessToken = '';
-				if (sessionRaw) {
-					try {
-						const session = JSON.parse(sessionRaw);
-						accessToken = session?.tokens?.accessToken || '';
-					} catch {}
-				}
-
-				const tailParam = lines === 'all' ? '5000' : lines;
-				const serverIdParam = compose?.server_id
-					? `&server_id=${compose.server_id}`
-					: '';
-				const streamUrl =
-					logMode === 'build'
-						? `/api/deployments/compose/${compose?.id}/logs`
-						: `/api/deployments/docker/service/${encodeURIComponent(activeService)}/logs?tail=${tailParam}&timestamps=${timestamps}&follow=${isLive}${serverIdParam}`;
-
-				const response = await fetch(streamUrl, {
-					headers: {
-						Authorization: accessToken ? `Bearer ${accessToken}` : '',
-					},
-					signal: controller.signal,
-				});
-
-				if (!response.ok) {
+				if (logMode === 'build') {
+					if (!latestBuildDeploymentId) {
+						setIsLoading(false);
+						setStreamedLogs([
+							'No deployment build logs found for this compose stack.',
+						]);
+						return;
+					}
+					const call = deploymentClient.streamDeploymentLogs(
+						{id: BigInt(latestBuildDeploymentId)},
+						{signal: controller.signal},
+					);
 					setIsLoading(false);
+					for await (const event of call) {
+						if (!isMounted) return;
+						const logLines = extractLogLines(event.payload);
+						if (logLines.length > 0 && isMounted)
+							setStreamedLogs(prev => [...prev, ...logLines]);
+					}
 					return;
 				}
 
+				const tailParam = lines === 'all' ? 5000n : BigInt(lines);
+				const call = deploymentClient.streamComposeLogs(
+					{
+						composeId: compose?.id ? BigInt(compose.id) : undefined,
+						service: activeService,
+						serverId: compose?.server_id
+							? BigInt(compose.server_id)
+							: undefined,
+						tail: tailParam,
+						timestamps,
+						follow: isLive,
+					},
+					{signal: controller.signal},
+				);
 				setIsLoading(false);
-				const reader = response.body?.getReader();
-				const decoder = new TextDecoder();
-				if (!reader) return;
 
 				let buffer = '';
-				while (isMounted) {
-					const {done, value} = await reader.read();
-					if (done) break;
-
-					buffer += decoder.decode(value, {stream: true});
+				for await (const event of call) {
+					if (!isMounted) return;
+					if (event.error) {
+						setStreamedLogs(prev => [...prev, event.error!]);
+						continue;
+					}
+					buffer += event.payload;
 					const rawLines = buffer.split('\n');
 					buffer = rawLines.pop() || '';
-
-					for (const line of rawLines) {
-						const trimmed = line.trim();
-						if (
-							!trimmed ||
-							trimmed.startsWith('event:') ||
-							trimmed.includes('event: log') ||
-							trimmed.includes('event: deployment') ||
-							trimmed.startsWith('id:') ||
-							trimmed.startsWith(':') ||
-							trimmed.includes('keep-alive')
-						) {
-							continue;
-						}
-
-						if (line.startsWith('data:')) {
-							try {
-								const jsonStr = line.slice(5).trim();
-								if (!jsonStr || jsonStr.includes('keep-alive')) continue;
-								const data = JSON.parse(jsonStr);
-
-								if (data && typeof data === 'object') {
-									if (isMounted)
-										setStreamedLogs(prev => [
-											...prev,
-											JSON.stringify(data),
-										]);
-								} else if (data && isMounted) {
-									setStreamedLogs(prev => [...prev, String(data)]);
-								}
-							} catch {
-								const raw = line.slice(5).trim();
-								if (raw && !raw.includes('keep-alive') && isMounted) {
-									setStreamedLogs(prev => [...prev, raw]);
-								}
-							}
-						} else if (line.trim() && isMounted) {
-							setStreamedLogs(prev => [...prev, line]);
-						}
+					for (const rawLine of rawLines) {
+						const cleaned = rawLine.replace(/\r$/, '').trim();
+						if (!cleaned || cleaned.includes('keep-alive')) continue;
+						if (isMounted) setStreamedLogs(prev => [...prev, cleaned]);
 					}
+				}
+				if (buffer.trim() && isMounted) {
+					setStreamedLogs(prev => [...prev, buffer.trim()]);
 				}
 			} catch (err: any) {
 				if (err.name !== 'AbortError' && isMounted) {
@@ -198,6 +187,7 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 		timestamps,
 		isLive,
 		refetchTrigger,
+		latestBuildDeploymentId,
 	]);
 
 	const handleDownload = () => {

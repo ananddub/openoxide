@@ -30,6 +30,13 @@ service AgentService {
   // One-shot non-PTY command execution for deployment and maintenance tasks.
   rpc ExecTask(ExecTaskRequest) returns (stream ExecTaskOutput);
 
+  // Live per-container stats streamed over the agent's own Docker API
+  // connection, one `docker stats --format {{json .}}`-shaped JSON document
+  // per frame. Replaces the panel spawning a `docker stats` CLI process
+  // (~11 MB RSS each) per browser consumer. Empty container_ids means every
+  // running container; stream=false sends one sample per container and ends.
+  rpc StreamContainerStats(StreamStatsRequest) returns (stream StatsFrame);
+
   // Stream a host file to the agent and atomically install it at destination.
   // The first message must carry the header; the rest are raw data chunks
   // whose running byte count is checked against header.total_size.
@@ -222,4 +229,16 @@ message ShellExit {
 // Agent → client: failure before/while running the session.
 message ShellError {
   string message = 1;
+}
+
+message StreamStatsRequest {
+  int64 server_id = 1;
+  repeated string container_ids = 2;
+  bool stream = 3;
+}
+
+// One newline-terminated JSON stats document, CLI-shaped so panel-side
+// parsers do not change.
+message StatsFrame {
+  string json_line = 1;
 }
