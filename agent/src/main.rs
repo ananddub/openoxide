@@ -12,7 +12,12 @@ use tasks::{
     maintenance::retention::RetentionTask,
 };
 
-#[tokio::main]
+/// The agent's workload is a handful of interval loops plus a low-QPS gRPC
+/// server. The default multi-thread runtime spawns one worker + one blocking
+/// thread per core (64 threads on a 32-core host, all futex-idle at 0.1% CPU);
+/// each idle thread costs stack and TLS pages. Two workers cover the collector
+/// cadence and the gRPC accept loop with room to spare.
+#[tokio::main(worker_threads = 2)]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
 

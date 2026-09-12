@@ -6,9 +6,6 @@ pub enum MonitorError {
     #[error("Docker API error: {0}")]
     Docker(#[from] DockerError),
 
-    #[error("HTTP client error: {0}")]
-    HttpClient(#[from] reqwest::Error),
-
     #[error("gRPC error: {0}")]
     Grpc(#[from] tonic::Status),
 

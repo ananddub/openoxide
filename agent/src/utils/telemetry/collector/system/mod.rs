@@ -1,5 +1,7 @@
 use std::time::Duration;
-use sysinfo::{Disks, Networks, System};
+use sysinfo::{
+    CpuRefreshKind, Disks, MemoryRefreshKind, Networks, RefreshKind, System,
+};
 use tracing::debug;
 
 use super::{bytes_to_gb, bytes_to_mb};
@@ -25,8 +27,16 @@ struct HostInfo {
 
 impl SystemCollector {
     pub fn new() -> Self {
-        let mut system = System::new_all();
-        system.refresh_all();
+        // Only CPU + RAM are ever read from `system` (and the sample loop
+        // refreshes exactly those). new_all()/refresh_all() would also walk
+        // the whole /proc process table — hundreds of Process structs with
+        // cmd/environ/exe strings — and keep them alive for the agent's
+        // entire life, which this collector never reads.
+        let mut system = System::new_with_specifics(
+            RefreshKind::nothing()
+                .with_cpu(CpuRefreshKind::nothing().with_cpu_usage().with_frequency())
+                .with_memory(MemoryRefreshKind::nothing().with_ram()),
+        );
 
         let cpus = system.cpus();
         let logical_cores = cpus.len();
