@@ -13,6 +13,7 @@ string_enum! {
         Infisical => "INFISICAL",
         Doppler => "DOPPLER",
         Aws => "AWS",
+        AwsParameterStore => "AWS_PARAMETER_STORE",
         Scaleway => "SCALEWAY",
         Azure => "AZURE",
     }

@@ -85,6 +85,14 @@ impl VaultService {
                                     .await
                                     .map_err(VaultServiceError::ProviderError)?
                             }
+                            VaultProviderType::AwsParameterStore => {
+                                providers::aws_parameter_store::fetch(
+                                    provider.config_json.as_deref(),
+                                    ref_path,
+                                )
+                                .await
+                                .map_err(VaultServiceError::ProviderError)?
+                            }
                         };
                         resolved = resolved.replace(full_ref, &val);
                     } else {

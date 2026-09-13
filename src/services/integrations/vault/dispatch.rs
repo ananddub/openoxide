@@ -36,6 +36,11 @@ impl VaultService {
             VaultProviderType::Aws => providers::aws::test(provider.config_json.as_deref())
                 .await
                 .map_err(VaultServiceError::ProviderError),
+            VaultProviderType::AwsParameterStore => {
+                providers::aws_parameter_store::test(provider.config_json.as_deref())
+                    .await
+                    .map_err(VaultServiceError::ProviderError)
+            }
         }
     }
 
@@ -65,6 +70,11 @@ impl VaultService {
             VaultProviderType::Aws => providers::aws::test(config_json)
                 .await
                 .map_err(VaultServiceError::ProviderError),
+            VaultProviderType::AwsParameterStore => {
+                providers::aws_parameter_store::test(config_json)
+                    .await
+                    .map_err(VaultServiceError::ProviderError)
+            }
         }
     }
 
@@ -104,6 +114,11 @@ impl VaultService {
             VaultProviderType::Aws => providers::aws::list(provider.config_json.as_deref())
                 .await
                 .map_err(VaultServiceError::ProviderError),
+            VaultProviderType::AwsParameterStore => {
+                providers::aws_parameter_store::list(provider.config_json.as_deref())
+                    .await
+                    .map_err(VaultServiceError::ProviderError)
+            }
         }
     }
 }
