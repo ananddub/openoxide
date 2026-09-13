@@ -15,6 +15,11 @@ export const getOrganization = OrganizationService.method.getOrganization;
 export const listOrganizations = OrganizationService.method.listOrganizations;
 
 /**
+ * @generated from rpc openoxide.api.v1.OrganizationService.LeaveOrganization
+ */
+export const leaveOrganization = OrganizationService.method.leaveOrganization;
+
+/**
  * @generated from rpc openoxide.api.v1.OrganizationService.CreateOrganization
  */
 export const createOrganization = OrganizationService.method.createOrganization;

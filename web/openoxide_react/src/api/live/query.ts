@@ -56,11 +56,12 @@ export function useResourceListQuery<Payload>(
 export function useResourceQuery<Payload>(
 	key: unknown[],
 	fetcher: () => Promise<{payload: string}>,
+	options?: {enabled?: boolean},
 ): UseQueryResult<Payload> {
 	return useConnectQuery(key, async () => {
 		const response = await fetcher();
 		return readResource<Payload>(response);
-	});
+	}, options);
 }
 
 /**

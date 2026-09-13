@@ -1,4 +1,5 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+import {createServiceClient, useConnectMutation, useConnectQuery, useResourceListQuery} from './query';
+import {readResource} from '#/api/live/resource';
 import {PermissionService} from '#/gen/connect/openoxide/api/v1/permission_pb';
 
 /**
@@ -134,3 +135,90 @@ export type InviteItem = {
 	role: string;
 	created_at?: number;
 };
+
+// ---------------------------------------------------------------------------
+// Effective grants for the calling user (drives all UI permission gating).
+// ---------------------------------------------------------------------------
+
+export type MyPermissionsPayload = {
+	role: string;
+	organization_id: bigint;
+	actions: string[];
+};
+
+/**
+ * The caller's role + effective actions inside the ACTIVE organization.
+ * Keyed by organization id so switching organizations refetches; the
+ * transport attaches X-Organization-Id from persisted active-org state.
+ */
+export function useMyPermissions(organizationId: number | bigint | undefined) {
+	return useConnectQuery<MyPermissionsPayload>(
+		['my-permissions', String(organizationId ?? 0)],
+		async () =>
+			readResource<MyPermissionsPayload>(
+				await permissionClient.getMyPermissions({}),
+			),
+		{enabled: organizationId !== undefined && organizationId !== null},
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Permission groups (roles) and the policy catalog.
+// ---------------------------------------------------------------------------
+
+export type PermissionPolicyPayload = {
+	id: number;
+	action: string;
+};
+
+/** All policies (action strings like "app:create") for the group editor. */
+export function usePolicyList() {
+	return useResourceListQuery<PermissionPolicyPayload>(
+		['policies', 'list'],
+		() => permissionClient.listPolicies({}),
+	);
+}
+
+/** Create a permission group with its policy action ids. */
+export function usePermissionGroupCreate() {
+	return useConnectMutation(
+		(input: {name: string; actions: string[]}) =>
+			permissionClient.createGroup({payload: JSON.stringify(input)}),
+		{invalidate: [['permission-groups']]},
+	);
+}
+
+/** Update a permission group (name and/or action ids). */
+export function usePermissionGroupUpdate() {
+	return useConnectMutation(
+		(input: {id: number | bigint; name?: string; actions?: string[]}) => {
+			const {id, ...body} = input;
+			return permissionClient.updateGroup({
+				id: BigInt(id),
+				payload: JSON.stringify(body),
+			});
+		},
+		{invalidate: [['permission-groups']]},
+	);
+}
+
+/** Delete a permission group. */
+export function usePermissionGroupDelete() {
+	return useConnectMutation(
+		(id: number | bigint) =>
+			permissionClient.deleteGroup({id: BigInt(id)}),
+		{invalidate: [['permission-groups']]},
+	);
+}
+
+/** Attach a permission group to an organization member. */
+export function useMemberGroupAssign() {
+	return useConnectMutation(
+		(input: {member_id: number | bigint; group_id: number | bigint}) =>
+			permissionClient.assignMemberGroup({
+				id: BigInt(input.member_id),
+				payload: JSON.stringify({group_id: input.group_id}),
+			}),
+		{invalidate: [['permission-members']]},
+	);
+}

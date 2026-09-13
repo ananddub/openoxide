@@ -11,11 +11,14 @@ export type OrganizationPayload = {
 	owner_id: bigint;
 	created_at: bigint;
 	updated_at: bigint;
+	// Caller's effective role in this organization (ListOrganizations):
+	// OWNER / ADMIN / MEMBER.
+	role?: string;
 };
 
 const organizationClient = createServiceClient(OrganizationService);
 
-/** Organizations for the current owner (legacy live: useOrganizationListByOwner). */
+/** Every organization the signed-in user owns or joined, with their role. */
 export function useOrganizationListByOwner() {
 	return useConnectQuery<OrganizationPayload[]>(
 		['organizations', 'list'],
@@ -30,6 +33,7 @@ export function useOrganizationListByOwner() {
 					owner_id: organization.ownerId,
 					created_at: organization.createdAt,
 					updated_at: organization.updatedAt,
+					role: organization.role,
 				}),
 			);
 		},
@@ -53,6 +57,15 @@ export function useOrganizationGet(id: bigint) {
 			};
 		},
 		{enabled: id > 0n},
+	);
+}
+
+/** Leave an organization the caller is a member of (owners must delete). */
+export function useOrganizationLeave() {
+	return useConnectMutation(
+		(id: number | bigint) =>
+			organizationClient.leaveOrganization({id: BigInt(id)}),
+		{invalidate: [['organizations']]},
 	);
 }
 

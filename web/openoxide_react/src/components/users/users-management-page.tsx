@@ -52,6 +52,7 @@ import {
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
 import {useInviteCancel, useMemberAdd, useMemberRemove, useMemberUpdateRole, useInviteCreate, usePermissionGroupMembers, usePermissionGroupInvites, useProfile, type MemberItem, type InviteItem} from '#/api/live';
+import {usePermissions} from '#/hooks/use-permissions';
 
 export function UsersManagementPage() {
 	// Live members/invites queries; the table-watch stream (ORGANIZATION_*
@@ -61,6 +62,7 @@ export function UsersManagementPage() {
 	const members = (membersQuery.data ?? []) as unknown as MemberItem[];
 	const invites = (invitesQuery.data ?? []) as unknown as InviteItem[];
 	const userProfile = useProfile().data;
+	const {can, canAny} = usePermissions();
 
 	// Mutations for invites and members
 	const addMemberMutation = useMemberAdd();
@@ -204,14 +206,15 @@ export function UsersManagementPage() {
 					</p>
 				</div>
 
-				<Button
-					onClick={() => setIsCreateOpen(true)}
-					className="h-9 cursor-pointer gap-2 bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90">
-					<UserPlus className="size-4" />
-					<span>Add or Invite User</span>
-				</Button>
+				{canAny('member:create', 'invitation:create') && (
+					<Button
+						onClick={() => setIsCreateOpen(true)}
+						className="h-9 cursor-pointer gap-2 bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90">
+						<UserPlus className="size-4" />
+						<span>Add or Invite User</span>
+					</Button>
+				)}
 			</div>
-
 			{/* Simple & Minimal Tab & Filter Bar */}
 			<div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
 				{/* Clean Minimal Tab Switcher */}
@@ -415,18 +418,22 @@ export function UsersManagementPage() {
 													<DropdownMenuContent
 														align="end"
 														className="w-40">
-														<DropdownMenuItem
-															onClick={() => setEditingRoleUser(member)}
-															className="cursor-pointer gap-2 text-xs">
-															<Shield className="size-3.5 text-primary" />
-															<span>Change Role</span>
-														</DropdownMenuItem>
-														<DropdownMenuItem
-															onClick={() => setDeleteTarget(member)}
-															className="cursor-pointer gap-2 text-xs text-rose-400 focus:text-rose-400">
-															<Trash2 className="size-3.5" />
-															<span>Remove User</span>
-														</DropdownMenuItem>
+														{can('member:update') && (
+															<DropdownMenuItem
+																onClick={() => setEditingRoleUser(member)}
+																className="cursor-pointer gap-2 text-xs">
+																<Shield className="size-3.5 text-primary" />
+																<span>Change Role</span>
+															</DropdownMenuItem>
+														)}
+														{can('member:delete') && (
+															<DropdownMenuItem
+																onClick={() => setDeleteTarget(member)}
+																className="cursor-pointer gap-2 text-xs text-rose-400 focus:text-rose-400">
+																<Trash2 className="size-3.5" />
+																<span>Remove User</span>
+															</DropdownMenuItem>
+														)}
 													</DropdownMenuContent>
 												</DropdownMenu>
 											</TableCell>

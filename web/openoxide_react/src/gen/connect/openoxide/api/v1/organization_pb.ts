@@ -13,7 +13,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file openoxide/api/v1/organization.proto.
  */
 export const file_openoxide_api_v1_organization: GenFile = /*@__PURE__*/
-  fileDesc("CiNvcGVub3hpZGUvYXBpL3YxL29yZ2FuaXphdGlvbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MSKMAQoMT3JnYW5pemF0aW9uEgoKAmlkGAEgASgDEgwKBG5hbWUYAiABKAkSEQoEbG9nbxgDIAEoCUgAiAEBEgwKBHNsdWcYBCABKAkSEAoIb3duZXJfaWQYBSABKAMSEgoKY3JlYXRlZF9hdBgGIAEoAxISCgp1cGRhdGVkX2F0GAcgASgDQgcKBV9sb2dvIi0KFkdldE9yZ2FuaXphdGlvblJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiGgoYTGlzdE9yZ2FuaXphdGlvbnNSZXF1ZXN0IlIKGUxpc3RPcmdhbml6YXRpb25zUmVzcG9uc2USNQoNb3JnYW5pemF0aW9ucxgBIAMoCzIeLm9wZW5veGlkZS5hcGkudjEuT3JnYW5pemF0aW9uIm0KGUNyZWF0ZU9yZ2FuaXphdGlvblJlcXVlc3QSGAoEbmFtZRgBIAEoCUIKukgHcgUQARj/ARIRCgRsb2dvGAIgASgJSACIAQESEQoEc2x1ZxgDIAEoCUgBiAEBQgcKBV9sb2dvQgcKBV9zbHVnIoQBChlVcGRhdGVPcmdhbml6YXRpb25SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEhEKBG5hbWUYAiABKAlIAIgBARIRCgRsb2dvGAMgASgJSAGIAQESEQoEc2x1ZxgEIAEoCUgCiAEBQgcKBV9uYW1lQgcKBV9sb2dvQgcKBV9zbHVnIjAKGURlbGV0ZU9yZ2FuaXphdGlvblJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAy5wQKE09yZ2FuaXphdGlvblNlcnZpY2USWwoPR2V0T3JnYW5pemF0aW9uEigub3Blbm94aWRlLmFwaS52MS5HZXRPcmdhbml6YXRpb25SZXF1ZXN0Gh4ub3Blbm94aWRlLmFwaS52MS5Pcmdhbml6YXRpb24SbAoRTGlzdE9yZ2FuaXphdGlvbnMSKi5vcGVub3hpZGUuYXBpLnYxLkxpc3RPcmdhbml6YXRpb25zUmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuTGlzdE9yZ2FuaXphdGlvbnNSZXNwb25zZRJjChVTdHJlYW1HZXRPcmdhbml6YXRpb24SKC5vcGVub3hpZGUuYXBpLnYxLkdldE9yZ2FuaXphdGlvblJlcXVlc3QaHi5vcGVub3hpZGUuYXBpLnYxLk9yZ2FuaXphdGlvbjABEmEKEkNyZWF0ZU9yZ2FuaXphdGlvbhIrLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlT3JnYW5pemF0aW9uUmVxdWVzdBoeLm9wZW5veGlkZS5hcGkudjEuT3JnYW5pemF0aW9uEmEKElVwZGF0ZU9yZ2FuaXphdGlvbhIrLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlT3JnYW5pemF0aW9uUmVxdWVzdBoeLm9wZW5veGlkZS5hcGkudjEuT3JnYW5pemF0aW9uEloKEkRlbGV0ZU9yZ2FuaXphdGlvbhIrLm9wZW5veGlkZS5hcGkudjEuRGVsZXRlT3JnYW5pemF0aW9uUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHliBnByb3RvMw", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+  fileDesc("CiNvcGVub3hpZGUvYXBpL3YxL29yZ2FuaXphdGlvbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MSKoAQoMT3JnYW5pemF0aW9uEgoKAmlkGAEgASgDEgwKBG5hbWUYAiABKAkSEQoEbG9nbxgDIAEoCUgAiAEBEgwKBHNsdWcYBCABKAkSEAoIb3duZXJfaWQYBSABKAMSEgoKY3JlYXRlZF9hdBgGIAEoAxISCgp1cGRhdGVkX2F0GAcgASgDEhEKBHJvbGUYCCABKAlIAYgBAUIHCgVfbG9nb0IHCgVfcm9sZSIvChhMZWF2ZU9yZ2FuaXphdGlvblJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiLQoWR2V0T3JnYW5pemF0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACIaChhMaXN0T3JnYW5pemF0aW9uc1JlcXVlc3QiUgoZTGlzdE9yZ2FuaXphdGlvbnNSZXNwb25zZRI1Cg1vcmdhbml6YXRpb25zGAEgAygLMh4ub3Blbm94aWRlLmFwaS52MS5Pcmdhbml6YXRpb24ibQoZQ3JlYXRlT3JnYW5pemF0aW9uUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEhEKBGxvZ28YAiABKAlIAIgBARIRCgRzbHVnGAMgASgJSAGIAQFCBwoFX2xvZ29CBwoFX3NsdWcihAEKGVVwZGF0ZU9yZ2FuaXphdGlvblJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASEQoEbmFtZRgCIAEoCUgAiAEBEhEKBGxvZ28YAyABKAlIAYgBARIRCgRzbHVnGAQgASgJSAKIAQFCBwoFX25hbWVCBwoFX2xvZ29CBwoFX3NsdWciMAoZRGVsZXRlT3JnYW5pemF0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgADLBBQoTT3JnYW5pemF0aW9uU2VydmljZRJbCg9HZXRPcmdhbml6YXRpb24SKC5vcGVub3hpZGUuYXBpLnYxLkdldE9yZ2FuaXphdGlvblJlcXVlc3QaHi5vcGVub3hpZGUuYXBpLnYxLk9yZ2FuaXphdGlvbhJsChFMaXN0T3JnYW5pemF0aW9ucxIqLm9wZW5veGlkZS5hcGkudjEuTGlzdE9yZ2FuaXphdGlvbnNSZXF1ZXN0Gisub3Blbm94aWRlLmFwaS52MS5MaXN0T3JnYW5pemF0aW9uc1Jlc3BvbnNlElgKEUxlYXZlT3JnYW5pemF0aW9uEioub3Blbm94aWRlLmFwaS52MS5MZWF2ZU9yZ2FuaXphdGlvblJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EmMKFVN0cmVhbUdldE9yZ2FuaXphdGlvbhIoLm9wZW5veGlkZS5hcGkudjEuR2V0T3JnYW5pemF0aW9uUmVxdWVzdBoeLm9wZW5veGlkZS5hcGkudjEuT3JnYW5pemF0aW9uMAESYQoSQ3JlYXRlT3JnYW5pemF0aW9uEisub3Blbm94aWRlLmFwaS52MS5DcmVhdGVPcmdhbml6YXRpb25SZXF1ZXN0Gh4ub3Blbm94aWRlLmFwaS52MS5Pcmdhbml6YXRpb24SYQoSVXBkYXRlT3JnYW5pemF0aW9uEisub3Blbm94aWRlLmFwaS52MS5VcGRhdGVPcmdhbml6YXRpb25SZXF1ZXN0Gh4ub3Blbm94aWRlLmFwaS52MS5Pcmdhbml6YXRpb24SWgoSRGVsZXRlT3JnYW5pemF0aW9uEisub3Blbm94aWRlLmFwaS52MS5EZWxldGVPcmdhbml6YXRpb25SZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
 
 /**
  * @generated from message openoxide.api.v1.Organization
@@ -53,6 +53,14 @@ export type Organization = Message<"openoxide.api.v1.Organization"> & {
    * @generated from field: int64 updated_at = 7;
    */
   updatedAt: bigint;
+
+  /**
+   * Caller's role in this organization (OWNER/ADMIN/MEMBER); populated by
+   * ListOrganizations so the switcher can show per-org authority.
+   *
+   * @generated from field: optional string role = 8;
+   */
+  role?: string | undefined;
 };
 
 /**
@@ -61,6 +69,23 @@ export type Organization = Message<"openoxide.api.v1.Organization"> & {
  */
 export const OrganizationSchema: GenMessage<Organization> = /*@__PURE__*/
   messageDesc(file_openoxide_api_v1_organization, 0);
+
+/**
+ * @generated from message openoxide.api.v1.LeaveOrganizationRequest
+ */
+export type LeaveOrganizationRequest = Message<"openoxide.api.v1.LeaveOrganizationRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.LeaveOrganizationRequest.
+ * Use `create(LeaveOrganizationRequestSchema)` to create a new message.
+ */
+export const LeaveOrganizationRequestSchema: GenMessage<LeaveOrganizationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_organization, 1);
 
 /**
  * @generated from message openoxide.api.v1.GetOrganizationRequest
@@ -77,7 +102,7 @@ export type GetOrganizationRequest = Message<"openoxide.api.v1.GetOrganizationRe
  * Use `create(GetOrganizationRequestSchema)` to create a new message.
  */
 export const GetOrganizationRequestSchema: GenMessage<GetOrganizationRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_organization, 1);
+  messageDesc(file_openoxide_api_v1_organization, 2);
 
 /**
  * @generated from message openoxide.api.v1.ListOrganizationsRequest
@@ -90,7 +115,7 @@ export type ListOrganizationsRequest = Message<"openoxide.api.v1.ListOrganizatio
  * Use `create(ListOrganizationsRequestSchema)` to create a new message.
  */
 export const ListOrganizationsRequestSchema: GenMessage<ListOrganizationsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_organization, 2);
+  messageDesc(file_openoxide_api_v1_organization, 3);
 
 /**
  * @generated from message openoxide.api.v1.ListOrganizationsResponse
@@ -107,7 +132,7 @@ export type ListOrganizationsResponse = Message<"openoxide.api.v1.ListOrganizati
  * Use `create(ListOrganizationsResponseSchema)` to create a new message.
  */
 export const ListOrganizationsResponseSchema: GenMessage<ListOrganizationsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_organization, 3);
+  messageDesc(file_openoxide_api_v1_organization, 4);
 
 /**
  * @generated from message openoxide.api.v1.CreateOrganizationRequest
@@ -134,7 +159,7 @@ export type CreateOrganizationRequest = Message<"openoxide.api.v1.CreateOrganiza
  * Use `create(CreateOrganizationRequestSchema)` to create a new message.
  */
 export const CreateOrganizationRequestSchema: GenMessage<CreateOrganizationRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_organization, 4);
+  messageDesc(file_openoxide_api_v1_organization, 5);
 
 /**
  * @generated from message openoxide.api.v1.UpdateOrganizationRequest
@@ -166,7 +191,7 @@ export type UpdateOrganizationRequest = Message<"openoxide.api.v1.UpdateOrganiza
  * Use `create(UpdateOrganizationRequestSchema)` to create a new message.
  */
 export const UpdateOrganizationRequestSchema: GenMessage<UpdateOrganizationRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_organization, 5);
+  messageDesc(file_openoxide_api_v1_organization, 6);
 
 /**
  * @generated from message openoxide.api.v1.DeleteOrganizationRequest
@@ -183,7 +208,7 @@ export type DeleteOrganizationRequest = Message<"openoxide.api.v1.DeleteOrganiza
  * Use `create(DeleteOrganizationRequestSchema)` to create a new message.
  */
 export const DeleteOrganizationRequestSchema: GenMessage<DeleteOrganizationRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_organization, 6);
+  messageDesc(file_openoxide_api_v1_organization, 7);
 
 /**
  * @generated from service openoxide.api.v1.OrganizationService
@@ -204,6 +229,14 @@ export const OrganizationService: GenService<{
     methodKind: "unary";
     input: typeof ListOrganizationsRequestSchema;
     output: typeof ListOrganizationsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.OrganizationService.LeaveOrganization
+   */
+  leaveOrganization: {
+    methodKind: "unary";
+    input: typeof LeaveOrganizationRequestSchema;
+    output: typeof EmptySchema;
   },
   /**
    * @generated from rpc openoxide.api.v1.OrganizationService.StreamGetOrganization

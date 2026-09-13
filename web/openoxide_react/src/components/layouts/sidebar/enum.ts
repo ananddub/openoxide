@@ -5,7 +5,7 @@ import {
 	BarChartHorizontal,
 	Clock,
 	GalleryVerticalEnd,
-	Blocks,
+	// Blocks, // used by disabled Docker sidebar entry
 	PieChart,
 	Forward,
 	Activity,
@@ -24,7 +24,7 @@ import {
 	Bell,
 	BookIcon,
 	CircleHelp,
-	Globe,
+	// Globe, // used by disabled DNS Providers sidebar entry
 } from 'lucide-react';
 import type {LucideIcon} from 'lucide-react';
 
@@ -34,6 +34,9 @@ export type SingleNavItem = {
 	title: string;
 	to: string;
 	icon: LucideIcon;
+	// Optional action gate ("group:read"); hidden when the active
+	// organization's grants lack it. Owners/admins hold the * wildcard.
+	permission?: string;
 };
 
 // Nav item — either a single leaf or a collapsible group with children.
@@ -70,7 +73,9 @@ export const MENU: Menu = {
 		{title: 'Monitoring', icon: BarChartHorizontal, to: '/monitoring'},
 		{title: 'Schedules', icon: Clock, to: '/schedules'},
 		{title: 'Traefik', icon: GalleryVerticalEnd, to: '/traefik'},
-		{title: 'Docker', icon: Blocks, to: '/docker'},
+		// Disabled: host-wide Docker view leaks org-unmanaged containers into org context.
+		// Re-enable (or move under Remote Servers) when decided.
+		// {title: 'Docker', icon: Blocks, to: '/docker'},
 		{title: 'Swarm', icon: PieChart, to: '/swarm'},
 		{title: 'Requests', icon: Forward, to: '/requests'},
 	],
@@ -78,8 +83,19 @@ export const MENU: Menu = {
 		{title: 'Web Server', icon: Activity, to: '/settings/server'},
 		{title: 'Profile', icon: User, to: '/settings/profile'},
 		{title: 'Remote Servers', icon: Server, to: '/remote-servers'},
-		{title: 'Users', icon: Users, to: '/settings/users'},
-		{title: 'Audit Logs', icon: ClipboardList, to: '/settings/audit-logs'},
+		{title: 'Users', icon: Users, to: '/settings/users', permission: 'member:read'},
+		{
+			title: 'Permission Groups',
+			icon: ShieldCheck,
+			to: '/settings/groups',
+			permission: 'group:read',
+		},
+		{
+			title: 'Audit Logs',
+			icon: ClipboardList,
+			to: '/settings/audit-logs',
+			permission: 'audit_log:read',
+		},
 		{title: 'SSH Keys', icon: KeyRound, to: '/ssh-keys'},
 		{title: 'Organization', icon: Settings, to: '/settings'},
 		{title: 'Tags', icon: Tags, to: '/tags'},
@@ -91,7 +107,8 @@ export const MENU: Menu = {
 		{title: 'AI Settings', icon: Bot, to: '/settings/ai'},
 		{title: 'Registry', icon: Package, to: '/registry'},
 		{title: 'Vault Providers', icon: KeyRound, to: '/vault'},
-		{title: 'DNS Providers', icon: Globe, to: '/dns'},
+		// Disabled: DNS Providers (page kept on disk for future re-enable).
+		// {title: 'DNS Providers', icon: Globe, to: '/dns'},
 		{title: 'S3 Destinations', icon: Database, to: '/destinations'},
 		{
 			title: 'Certificates',

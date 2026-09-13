@@ -12,6 +12,7 @@ import {
 	SidebarRail,
 	useSidebar,
 } from '#/components/ui/sidebar';
+import {useCan} from '#/hooks/use-permissions';
 import {type NavItem, MENU} from './enum';
 import {Separator} from '#/components/ui/separator';
 import {SearchDialog} from './search/dialog';
@@ -25,14 +26,21 @@ type NavMenuGroupProps = {
 };
 
 // Renders a labeled group of nav items with high-contrast Dokploy color styling.
+// Items carrying a `permission` key are hidden unless the caller's effective
+// grants for the active organization include that action.
 function NavMenuGroup({label, items, currentPath}: NavMenuGroupProps) {
+	const can = useCan();
+	const visibleItems = items.filter(item => {
+		const required = 'permission' in item ? item.permission : undefined;
+		return !required || can(required);
+	});
 	return (
 		<SidebarGroup className="py-1">
 			<SidebarGroupLabel className="mb-1 px-2 font-mono text-[11px] font-semibold tracking-wider text-muted-foreground uppercase group-data-[collapsible=icon]:hidden">
 				{label}
 			</SidebarGroupLabel>
 			<SidebarMenu className="gap-0.5">
-				{items.map(item => {
+				{visibleItems.map(item => {
 					const isActive = (() => {
 						if (!item.to) return false;
 						if (item.to === '/') return currentPath === '/';

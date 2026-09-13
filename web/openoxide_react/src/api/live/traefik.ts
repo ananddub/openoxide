@@ -75,7 +75,7 @@ export function useTraefikFileContentUpdate() {
  * Returns the backend's HealthDto JSON (is_healthy, rawdata_status,
  * configuration_errors).
  */
-export function useTraefikHealth() {
+export function useTraefikHealth(options?: {enabled?: boolean}) {
 	return useResourceQuery<{
 		is_healthy: boolean;
 		rawdata_status: string;
@@ -84,7 +84,7 @@ export function useTraefikHealth() {
 	}>(['traefik', 'health'], async () => {
 		const response = await traefikClient.health({});
 		return JSON.parse(response.payload || '{}');
-	});
+	}, options);
 }
 
 /**

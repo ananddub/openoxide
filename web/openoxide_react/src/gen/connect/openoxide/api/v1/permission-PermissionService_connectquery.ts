@@ -60,6 +60,14 @@ export const deleteGroup = PermissionService.method.deleteGroup;
 export const listPolicies = PermissionService.method.listPolicies;
 
 /**
+ * Effective actions for the calling user inside the active organization
+ * (auth-only: every member may inspect their own grants to gate the UI).
+ *
+ * @generated from rpc openoxide.api.v1.PermissionService.GetMyPermissions
+ */
+export const getMyPermissions = PermissionService.method.getMyPermissions;
+
+/**
  * @generated from rpc openoxide.api.v1.PermissionService.AssignMemberGroup
  */
 export const assignMemberGroup = PermissionService.method.assignMemberGroup;
