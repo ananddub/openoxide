@@ -499,7 +499,7 @@ export function GlobalMonitoringCards() {
 
 
 	const {data: rawContainerStates} = useMonitoringContainerStates(
-		BigInt(effectiveServerId),
+		effectiveServerId ? BigInt(effectiveServerId) : null,
 	);
 
 	const [containersList, setContainersList] = useState<DockerStat[]>([]);

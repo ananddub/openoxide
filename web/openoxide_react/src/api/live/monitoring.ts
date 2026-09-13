@@ -1,5 +1,5 @@
-import {createServiceClient, useResourceQuery} from './query';
-import {MonitoringService} from '#/gen/connect/openoxide/api/v1/monitoring_pb';
+import {createServiceClient, useConnectQuery} from './query';
+import {MonitoringOperationsService} from '#/gen/connect/openoxide/api/v1/monitoring_operations_pb';
 
 /** Container state point from the monitoring agent (ContainerStatePoint JSON). */
 export type ContainerStatePayload = {
@@ -14,18 +14,26 @@ export type ContainerStatePayload = {
 	[key: string]: unknown;
 };
 
-const monitoringClient = createServiceClient(MonitoringService);
+const monitoringClient = createServiceClient(MonitoringOperationsService);
 
 /**
  * Container states for a server (legacy live: useMonitoringContainerStates).
- * GetContainerState wraps the whole state list inside a single
- * ResourceResponse payload, so the parsed result is an array. The optional
- * serverId keeps the legacy hook signature (consumers pass it) and scopes
- * the query cache per server; it maps to ResourceRequest.id.
+ * GetContainerStates wraps the whole state list inside a single
+ * `ResourceListResponse` item payload, so the parsed result is an array.
+ * `null` (server not picked yet) disables the query — firing it with id 0
+ * only produces a not-found round-trip.
  */
-export function useMonitoringContainerStates(serverId: bigint = 0n) {
-	return useResourceQuery<ContainerStatePayload[]>(
-		['monitoring', 'container-states', serverId.toString()],
-		() => monitoringClient.getContainerState({id: serverId, payload: ''}),
+export function useMonitoringContainerStates(serverId: bigint | null) {
+	return useConnectQuery<ContainerStatePayload[]>(
+		['monitoring', 'container-states', (serverId ?? 0n).toString()],
+		async () => {
+			const response = await monitoringClient.getContainerStates({
+				id: serverId ?? 0n,
+				payload: '',
+			});
+			const raw = response.items[0]?.payload;
+			return raw ? (JSON.parse(raw) as ContainerStatePayload[]) : [];
+		},
+		{enabled: serverId !== null},
 	);
 }
