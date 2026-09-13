@@ -1,9 +1,5 @@
 import {createServiceClient, useConnectMutation, useConnectQuery, useResourceListQuery} from './query';
 import {ProjectService} from '#/gen/connect/openoxide/api/v1/project_pb';
-import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
-// `User` is declared in common.proto, so it is exported from common_pb
-// (auth_pb only imports it for its own message fields).
-import type {User} from '#/gen/connect/openoxide/api/v1/common_pb';
 import type {Project} from '#/gen/connect/openoxide/api/v1/project_pb';
 
 export type ProjectPayload = {
@@ -17,7 +13,6 @@ export type ProjectPayload = {
 };
 
 const projectClient = createServiceClient(ProjectService);
-const authClient = createServiceClient(AuthService);
 
 /** Projects for an organization (legacy live: useProjectListByOrganization). */
 export function useProjectListByOrganization(organizationId: bigint) {
@@ -110,29 +105,6 @@ export function useProjectDelete() {
 	);
 }
 
-export type WhoAmIPayload = {
-	user_id: bigint;
-	// The proto marks email optional, so it may be absent on the wire.
-	email?: string;
-	first_name?: string;
-	last_name?: string;
-	avatar?: string;
-};
-
-/** Current user (legacy live: useAuthWhoAmI). */
-export function useAuthWhoAmI() {
-	return useConnectQuery<WhoAmIPayload>(['auth', 'whoami'], async () => {
-		// WhoAmI returns the common `User` message; its id field is `id`.
-		const user: User = await authClient.whoAmI({});
-		return {
-			user_id: user.id,
-			email: user.email,
-			first_name: user.firstName,
-			last_name: user.lastName,
-			avatar: user.avatar,
-		};
-	});
-}
 
 // Re-export so agents building sibling modules share the same helpers.
 export {useResourceListQuery, useConnectQuery};

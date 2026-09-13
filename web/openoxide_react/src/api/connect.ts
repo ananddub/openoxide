@@ -78,6 +78,7 @@ export const authInterceptor: Interceptor = (next) => async (req) => {
  * header are attached per request; a single 401 triggers one refresh and
  * one retry (mirrors the REST client middleware).
  */
+// Todo: IN production switch to binary true
 export const transport: Transport = createConnectTransport({
 	baseUrl: getApiBaseUrl(),
 	useBinaryFormat: false,
