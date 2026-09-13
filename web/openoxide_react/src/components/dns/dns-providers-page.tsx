@@ -71,11 +71,33 @@ export function DnsProvidersPage() {
 
 	// Form State
 	const [formName, setFormName] = useState('');
-	const [formType, setFormType] = useState<'CLOUDFLARE' | 'ROUTE53'>(
-		'CLOUDFLARE',
-	);
+	const [formType, setFormType] = useState<
+		'CLOUDFLARE' | 'ROUTE53' | 'HETZNER' | 'DIGITALOCEAN' | 'GODADDY'
+	>('CLOUDFLARE');
 	const [formToken, setFormToken] = useState('');
 	const [formAccessKey, setFormAccessKey] = useState('');
+
+	// Credential field layout per provider: single token, AWS pair, or
+	// key/secret pair. `formToken` is always the secret half.
+	const credentialKind = (type: string): 'token' | 'aws' | 'keypair' =>
+		type === 'ROUTE53' ? 'aws' : type === 'GODADDY' ? 'keypair' : 'token';
+
+	const buildCredentials = (): string => {
+		switch (credentialKind(formType)) {
+			case 'aws':
+				return JSON.stringify({
+					accessKeyId: formAccessKey.trim(),
+					secretAccessKey: formToken.trim(),
+				});
+			case 'keypair':
+				return JSON.stringify({
+					apiKey: formAccessKey.trim(),
+					apiSecret: formToken.trim(),
+				});
+			default:
+				return JSON.stringify({apiToken: formToken.trim()});
+		}
+	};
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const handleOpenCreate = () => {
@@ -95,9 +117,8 @@ export function DnsProvidersPage() {
 		);
 		setFormToken('');
 		try {
-			setFormAccessKey(
-				JSON.parse(provider.credentials_json || '{}').accessKeyId || '',
-			);
+			const creds = JSON.parse(provider.credentials_json || '{}');
+			setFormAccessKey(creds.accessKeyId || creds.apiKey || '');
 		} catch {
 			setFormAccessKey('');
 		}
@@ -117,12 +138,7 @@ export function DnsProvidersPage() {
 				const updatePayload: any = {
 					name: formName.trim(),
 					credentials_json: formToken.trim()
-						? formType === 'ROUTE53'
-							? JSON.stringify({
-									accessKeyId: formAccessKey.trim(),
-									secretAccessKey: formToken.trim(),
-								})
-							: JSON.stringify(formToken.trim())
+						? buildCredentials()
 						: undefined,
 				};
 
@@ -135,13 +151,7 @@ export function DnsProvidersPage() {
 				const createPayload: any = {
 					name: formName.trim(),
 					provider_type: formType,
-					credentials_json:
-						formType === 'ROUTE53'
-							? JSON.stringify({
-									accessKeyId: formAccessKey.trim(),
-									secretAccessKey: formToken.trim(),
-								})
-							: JSON.stringify(formToken.trim()),
+					credentials_json: buildCredentials(),
 				};
 
 				await createMutation.mutateAsync({
@@ -153,7 +163,7 @@ export function DnsProvidersPage() {
 			}
 			setIsCreateOpen(false);
 		} catch (err) {
-			toast.error(formatApiError(err, 'Failed to save DNS provider'));
+			toast.error(formatApiError(err));
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -167,7 +177,7 @@ export function DnsProvidersPage() {
 			toast.success(`DNS Provider "${deleteTarget.name}" deleted`);
 			setDeleteTarget(null);
 		} catch (err) {
-			toast.error(formatApiError(err, 'Failed to delete DNS provider'));
+			toast.error(formatApiError(err));
 		}
 	};
 
@@ -199,13 +209,7 @@ export function DnsProvidersPage() {
 				const result = await testConnectionMutation.mutateAsync({
 					name: formName.trim() || 'Test',
 					provider_type: formType,
-					credentials_json:
-						formType === 'ROUTE53'
-							? JSON.stringify({
-									accessKeyId: formAccessKey.trim(),
-									secretAccessKey: formToken.trim(),
-								})
-							: JSON.stringify(formToken.trim()),
+					credentials_json: buildCredentials(),
 				});
 				if (result?.success) {
 					toast.success(
@@ -219,7 +223,7 @@ export function DnsProvidersPage() {
 			}
 		} catch (err: any) {
 			toast.error(
-				err?.message || formatApiError(err, 'DNS Connection test failed'),
+				err?.message || formatApiError(err),
 			);
 		} finally {
 			setIsTestingModal(false);
@@ -242,6 +246,12 @@ export function DnsProvidersPage() {
 		switch (type.toUpperCase()) {
 			case 'CLOUDFLARE':
 				return 'Cloudflare DNS';
+			case 'HETZNER':
+				return 'Hetzner DNS';
+			case 'DIGITALOCEAN':
+				return 'DigitalOcean DNS';
+			case 'GODADDY':
+				return 'GoDaddy DNS';
 			default:
 				return type;
 		}
@@ -422,14 +432,34 @@ export function DnsProvidersPage() {
 											Amazon Route53
 										</div>
 									</SelectItem>
+									<SelectItem value="HETZNER">
+										<div className="flex items-center gap-2">
+											<Globe className="size-4 shrink-0 text-orange-500" />
+											Hetzner DNS
+										</div>
+									</SelectItem>
+									<SelectItem value="DIGITALOCEAN">
+										<div className="flex items-center gap-2">
+											<Globe className="size-4 shrink-0 text-sky-500" />
+											DigitalOcean DNS
+										</div>
+									</SelectItem>
+									<SelectItem value="GODADDY">
+										<div className="flex items-center gap-2">
+											<Globe className="size-4 shrink-0 text-green-600" />
+											GoDaddy DNS
+										</div>
+									</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
 
-						{formType === 'ROUTE53' && (
+						{credentialKind(formType) !== 'token' && (
 							<div className="space-y-1">
 								<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-									AWS Access Key ID
+									{formType === 'GODADDY'
+										? 'API Key'
+										: 'AWS Access Key ID'}
 								</label>
 								<Input
 									value={formAccessKey}
@@ -440,7 +470,9 @@ export function DnsProvidersPage() {
 						)}
 						<div className="space-y-1">
 							<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-								API Token / Secret Key
+								{formType === 'GODADDY'
+									? 'API Secret'
+									: 'API Token / Secret Key'}
 							</label>
 							<Input
 								type="password"

@@ -50,13 +50,11 @@ export function DnsZonesDialog({provider}: Props) {
 	);
 	const upsert = useDnsRecordCreate();
 	const remove = useDnsRecordDelete();
-	const zones = (zonesQuery.data?.data || zonesQuery.data || []) as Array<{
+	const zones = (zonesQuery.data || []) as Array<{
 		id: string;
 		name: string;
 	}>;
-	const records = (recordsQuery.data?.data ||
-		recordsQuery.data ||
-		[]) as Array<{
+	const records = (recordsQuery.data || []) as Array<{
 		id: string;
 		record_type: string;
 		name: string;
@@ -99,7 +97,7 @@ export function DnsZonesDialog({provider}: Props) {
 			setDraft(null);
 			await recordsQuery.refetch();
 		} catch (error) {
-			toast.error(formatApiError(error, 'Failed to save DNS record'));
+			toast.error(formatApiError(error));
 		}
 	};
 	const deleteRecord = async (recordId: string) => {
@@ -113,7 +111,7 @@ export function DnsZonesDialog({provider}: Props) {
 			toast.success('Record deleted');
 			await recordsQuery.refetch();
 		} catch (error) {
-			toast.error(formatApiError(error, 'Failed to delete DNS record'));
+			toast.error(formatApiError(error));
 		}
 	};
 
@@ -146,7 +144,7 @@ export function DnsZonesDialog({provider}: Props) {
 					)}
 					{zonesQuery.isError && (
 						<p className="text-sm text-destructive">
-							{formatApiError(zonesQuery.error, 'Failed to load zones')}
+							{formatApiError(zonesQuery.error)}
 						</p>
 					)}
 					{!zonesQuery.isLoading && !zones.length && (
@@ -242,8 +240,8 @@ export function DnsZonesDialog({provider}: Props) {
 								<div className="grid gap-3">
 									<Select
 										value={draft.recordType}
-										onValueChange={(value: 'A' | 'CNAME') =>
-											setDraft({...draft, recordType: value})
+										onValueChange={(value) =>
+											setDraft({...draft, recordType: value as 'A' | 'CNAME'})
 										}>
 										<SelectTrigger>
 											<SelectValue />

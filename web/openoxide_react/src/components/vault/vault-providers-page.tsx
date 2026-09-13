@@ -40,10 +40,14 @@ import {
 import {useOrganizations} from '#/stores/session-context';
 
 export interface VaultProviderItem {
+	// Mirrors `VaultProviderPayload` (backend VaultProviderDto wire shape).
 	id: number;
 	name: string;
 	provider_type: string;
-	credentials_json: string;
+	api_url: string;
+	auth_token: string;
+	namespace?: string;
+	config_json?: string;
 	organization_id: number;
 	created_at: number;
 	updated_at: number;
@@ -75,7 +79,13 @@ export function VaultProvidersPage() {
 	// Form State
 	const [formName, setFormName] = useState('');
 	const [formType, setFormType] = useState<
-		'HASHICORP' | 'INFISICAL' | 'DOPPLER' | 'AWS' | 'SCALEWAY' | 'AZURE'
+		| 'HASHICORP'
+		| 'INFISICAL'
+		| 'DOPPLER'
+		| 'AWS'
+		| 'AWS_PARAMETER_STORE'
+		| 'SCALEWAY'
+		| 'AZURE'
 	>('HASHICORP');
 	const [formUrl, setFormUrl] = useState('');
 	const [formMount, setFormMount] = useState('secret');
@@ -147,12 +157,15 @@ export function VaultProvidersPage() {
 				environmentSlug: field('environmentSlug'),
 				secretPath: field('secretPath') || '/',
 			};
-		if (formType === 'AWS')
+		if (formType === 'AWS' || formType === 'AWS_PARAMETER_STORE')
 			return {
 				region: field('region'),
 				accessKeyId: field('accessKeyId'),
 				secretAccessKey: field('secretAccessKey'),
 				endpoint: field('endpoint') || undefined,
+				...(formType === 'AWS_PARAMETER_STORE' && field('parameterPath')
+					? {parameterPath: field('parameterPath')}
+					: {}),
 			};
 		if (formType === 'AZURE')
 			return {
@@ -218,6 +231,17 @@ export function VaultProvidersPage() {
 				['region', 'Region', 'us-east-1'],
 				['accessKeyId', 'Access Key ID', 'AKIA...'],
 				['secretAccessKey', 'Secret Access Key', 'Secret access key'],
+				['endpoint', 'Endpoint (optional)', 'https://...'],
+			],
+			AWS_PARAMETER_STORE: [
+				['region', 'Region', 'us-east-1'],
+				['accessKeyId', 'Access Key ID', 'AKIA...'],
+				['secretAccessKey', 'Secret Access Key', 'Secret access key'],
+				[
+					'parameterPath',
+					'Path Prefix (optional)',
+					'/myapp — parameter discovery root',
+				],
 				['endpoint', 'Endpoint (optional)', 'https://...'],
 			],
 			DOPPLER: [
@@ -315,7 +339,7 @@ export function VaultProvidersPage() {
 			}
 			setIsCreateOpen(false);
 		} catch (err) {
-			toast.error(formatApiError(err, 'Failed to save vault provider'));
+			toast.error(formatApiError(err));
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -364,7 +388,7 @@ export function VaultProvidersPage() {
 			}
 		} catch (err: any) {
 			toast.error(
-				err?.message || formatApiError(err, 'Connection test failed'),
+				err?.message || formatApiError(err),
 			);
 		} finally {
 			setIsTestingModal(false);
@@ -379,7 +403,7 @@ export function VaultProvidersPage() {
 			toast.success(`Vault Provider "${deleteTarget.name}" deleted`);
 			setDeleteTarget(null);
 		} catch (err) {
-			toast.error(formatApiError(err, 'Failed to delete vault provider'));
+			toast.error(formatApiError(err));
 		}
 	};
 
@@ -417,6 +441,8 @@ export function VaultProvidersPage() {
 				return 'Infisical';
 			case 'AWS':
 				return 'AWS Secrets Manager';
+			case 'AWS_PARAMETER_STORE':
+				return 'AWS Parameter Store';
 			case 'AZURE':
 				return 'Azure Key Vault';
 			case 'SCALEWAY':
@@ -629,7 +655,13 @@ export function VaultProvidersPage() {
 										</div>
 									</SelectItem>
 									{(
-										['INFISICAL', 'AWS', 'AZURE', 'SCALEWAY'] as const
+										[
+											'INFISICAL',
+											'AWS',
+											'AWS_PARAMETER_STORE',
+											'AZURE',
+											'SCALEWAY',
+										] as const
 									).map(type => (
 										<SelectItem key={type} value={type}>
 											{getProviderLabel(type)}
@@ -724,6 +756,7 @@ export function VaultProvidersPage() {
 							<Select
 								value={assignmentProject}
 								onValueChange={value => {
+									if (!value) return;
 									setAssignmentProject(value);
 									toggleAssignment(Number(value));
 								}}>
@@ -751,9 +784,7 @@ export function VaultProvidersPage() {
 											Loading environments...
 										</p>
 									) : (
-										(
-											(environmentsQuery.data?.data ||
-												environmentsQuery.data ||
+											((environmentsQuery.data ||
 												[]) as any[]
 										).map(environment => {
 											const row = assignmentRows.find(
