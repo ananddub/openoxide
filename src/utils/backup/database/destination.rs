@@ -12,6 +12,9 @@ string_enum! {
         CloudflareR2 => "CLOUDFLARE_R2",
         Backblaze => "BACKBLAZE",
         B2 => "B2",
+        Minio => "MINIO",
+        Wasabi => "WASABI",
+        Custom => "CUSTOM",
         Gcs => "GCS",
         Gcp => "GCP",
         Google => "GOOGLE",
@@ -44,12 +47,20 @@ impl S3Destination {
             DestinationProvider::DoSpaces
             | DestinationProvider::DigitalOcean
             | DestinationProvider::Spaces => "DigitalOcean",
+            // rclone's s3 backend knows these gateways natively.
+            DestinationProvider::Minio => "Minio",
+            DestinationProvider::Wasabi => "Wasabi",
+            // Everything else (Backblaze via its S3 endpoint, GCS interop,
+            // and arbitrary custom gateways) is generic S3 with an explicit
+            // endpoint — rclone's "Other".
             DestinationProvider::Backblaze
             | DestinationProvider::B2
+            | DestinationProvider::Custom
             | DestinationProvider::Gcs
             | DestinationProvider::Gcp
-            | DestinationProvider::Google => "Other",
-            DestinationProvider::S3 | DestinationProvider::Aws => "Other",
+            | DestinationProvider::Google
+            | DestinationProvider::S3
+            | DestinationProvider::Aws => "Other",
         };
         RcloneTarget::S3 {
             provider: rclone_provider.to_string(),

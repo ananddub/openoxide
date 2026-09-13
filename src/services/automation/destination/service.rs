@@ -20,10 +20,14 @@ string_enum! {
         default = S3;
 
         S3 => "S3",
+        Aws => "AWS",
         R2 => "R2",
         CloudflareR2 => "CLOUDFLARE_R2",
         Backblaze => "BACKBLAZE",
         B2 => "B2",
+        Minio => "MINIO",
+        Wasabi => "WASABI",
+        Custom => "CUSTOM",
         Gcs => "GCS",
         Gcp => "GCP",
         Google => "GOOGLE",
@@ -44,6 +48,9 @@ string_enum! {
         S3 => "S3",
         R2 => "R2",
         Backblaze => "BACKBLAZE",
+        Minio => "MINIO",
+        Wasabi => "WASABI",
+        Custom => "CUSTOM",
         Gcs => "GCS",
         DoSpaces => "DO_SPACES",
     }
@@ -54,13 +61,16 @@ impl DestinationsProviderEnum {
         match DestinationProviderPreset::from(s) {
             DestinationProviderPreset::R2 | DestinationProviderPreset::CloudflareR2 => Self::R2,
             DestinationProviderPreset::Backblaze | DestinationProviderPreset::B2 => Self::Backblaze,
+            DestinationProviderPreset::Minio => Self::Minio,
+            DestinationProviderPreset::Wasabi => Self::Wasabi,
+            DestinationProviderPreset::Custom => Self::Custom,
             DestinationProviderPreset::Gcs
             | DestinationProviderPreset::Gcp
             | DestinationProviderPreset::Google => Self::Gcs,
             DestinationProviderPreset::DoSpaces
             | DestinationProviderPreset::DigitalOcean
             | DestinationProviderPreset::Spaces => Self::DoSpaces,
-            DestinationProviderPreset::S3 => Self::S3,
+            DestinationProviderPreset::S3 | DestinationProviderPreset::Aws => Self::S3,
         }
     }
 }
