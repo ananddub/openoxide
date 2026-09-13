@@ -1,25 +1,33 @@
-import {CertificateService} from '#/gen/connect/openoxide/api/v1/certificate_pb';
 import {CertificateOperationsService} from '#/gen/connect/openoxide/api/v1/certificate_operations_pb';
 import {RemoteServerService} from '#/gen/connect/openoxide/api/v1/remote_server_pb';
 import {createServiceClient} from '#/api/live/query';
 import {readResource, readResourceList} from '#/api/live/resource';
 
 export type CertificatePayload = {
-	id: number;
-	organization_id: number;
+	// Mirrors the backend `CertificateResponseDto` wire shape.
+	id: string;
 	name: string;
-	domain: string;
-	destination_id: string;
+	certificate_data: string;
+	has_private_key: boolean;
+	certificate_path: string;
 	auto_renew: number;
+	server_id?: string;
+	organization_id: number;
 	created_at: number;
 	updated_at: number;
 };
 
 export type CertificateRenewalPayload = {
+	// Mirrors the backend `CertificateRenewalDto` wire shape.
 	id: number;
 	certificate_id: number;
+	organization_id: number;
 	status: string;
-	created_at: number;
+	previous_expires_at?: number;
+	new_expires_at?: number;
+	error?: string;
+	started_at: number;
+	finished_at?: number;
 };
 
 export type RemoteServerPayload = {
@@ -29,8 +37,18 @@ export type RemoteServerPayload = {
 	[key: string]: unknown;
 };
 
-const certificateClient = createServiceClient(CertificateService);
-const certificateOpsClient = createServiceClient(CertificateOperationsService);
+/** Create/update request body (backend Create/PatchCertificateDto fields). */
+export type CertificateInput = {
+	name?: string;
+	certificate_data?: string;
+	private_key?: string;
+	certificate_path?: string;
+	auto_renew?: number;
+	server_id?: string;
+};
+
+const certificateClient = createServiceClient(CertificateOperationsService);
+
 const remoteServerClient = createServiceClient(RemoteServerService);
 
 export async function listCertificates() {
@@ -46,7 +64,7 @@ export async function listRemoteServers() {
 }
 
 export async function createCertificate(
-	body: Partial<CertificatePayload>,
+	body: CertificateInput,
 ) {
 	return readResource<CertificatePayload>(
 		await certificateClient.createCertificate({
@@ -57,7 +75,7 @@ export async function createCertificate(
 
 export async function updateCertificate(
 	id: number,
-	body: Partial<CertificatePayload>,
+	body: CertificateInput,
 ) {
 	return readResource<CertificatePayload>(
 		await certificateClient.updateCertificate({
@@ -73,7 +91,7 @@ export async function deleteCertificate(id: number) {
 
 export async function listCertificateRenewals(id: number) {
 	return readResourceList<CertificateRenewalPayload>(
-		await certificateOpsClient.listRenewals({id: BigInt(id)}),
+		await certificateClient.listRenewals({id: BigInt(id)}),
 	);
 }
 

@@ -1,5 +1,5 @@
 import {createServiceClient, useResourceListQuery, useConnectQuery} from './query';
-import {CertificateService} from '#/gen/connect/openoxide/api/v1/certificate_pb';
+import {CertificateOperationsService} from '#/gen/connect/openoxide/api/v1/certificate_operations_pb';
 
 export type CertificatePayload = {
 	id: string;
@@ -14,7 +14,7 @@ export type CertificatePayload = {
 	updated_at: number;
 };
 
-const certificateClient = createServiceClient(CertificateService);
+const certificateClient = createServiceClient(CertificateOperationsService);
 
 /** Certificates (legacy live: useCertificateList). */
 export function useCertificateList() {

@@ -47,7 +47,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "proto/openoxide/api/v1/git_provider.proto",
             "proto/openoxide/api/v1/dns.proto",
             "proto/openoxide/api/v1/vault.proto",
-            "proto/openoxide/api/v1/certificate.proto",
             "proto/openoxide/api/v1/certificate_operations.proto",
             "proto/openoxide/api/v1/domain.proto",
             "proto/openoxide/api/v1/domain_operations.proto",
