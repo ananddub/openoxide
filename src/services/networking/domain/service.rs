@@ -380,37 +380,83 @@ impl DomainService {
                 }
             }
             ComposeType::DockerCompose => {
-                use crate::utils::paths::openoxide_paths;
-                let paths = openoxide_paths();
-                let env_file = format!(
-                    "{}/{app_name}/.env",
-                    paths.compose_dir("").trim_end_matches('/')
+                // The compose files live on the server's filesystem (Agent
+                // executor), not the panel container — every read/write goes
+                // through OsCli, and the canonical paths come from the spec
+                // (RAW sources keep their file outside `source/`).
+                let adapter = crate::utils::builder::compose::adapter::db::ComposeSpecAdapter::new(
+                    self.queries.clone(),
                 );
-                let compose_file_path = format!(
-                    "{}/{app_name}/source/docker-compose.yml",
-                    paths.compose_dir("").trim_end_matches('/')
-                );
+                let spec = adapter
+                    .load(compose_id)
+                    .await
+                    .map_err(|e| format!("compose spec load failed: {e}"))?;
+                let compose_file_path = spec.compose_file_path();
+                let os = crate::utils::os::OsCli::new(&executor);
+                if let Some(parent) = std::path::Path::new(&compose_file_path).parent() {
+                    let _ = os
+                        .dir(parent.to_string_lossy().as_ref())
+                        .create()
+                        .run()
+                        .await;
+                }
 
-                if let Ok(raw_yaml) = tokio::fs::read_to_string(&compose_file_path).await {
-                    let adapter = crate::utils::builder::compose::adapter::db::ComposeSpecAdapter::new(
-                        self.queries.clone(),
-                    );
-                    if let Ok(spec) = adapter.load(compose_id).await {
+                // A wiped server workspace must not brick domain updates:
+                // RAW stacks keep their compose content in the database, so
+                // re-materialize the file when it is gone.
+                let raw_present = os
+                    .file(&compose_file_path)
+                    .exists()
+                    .run()
+                    .await
+                    .is_ok();
+                if !raw_present {
+                    if let crate::utils::builder::compose::spec::ComposeSource::Raw {
+                        content,
+                    } = &spec.source
+                    {
+                        let _ = os
+                            .file(&compose_file_path)
+                            .write(content)
+                            .execute()
+                            .await;
+                    }
+                }
+
+                if let Ok(output) = os.file(&compose_file_path).read().execute().await {
+                    if output.status.success() {
                         if let Ok(updated_yaml) =
                             crate::utils::builder::compose::labels::inject_compose_yaml_labels(
-                                &raw_yaml, &spec,
+                                &output.stdout, &spec,
                             )
                         {
-                            let _ = tokio::fs::write(&compose_file_path, updated_yaml).await;
+                            let _ = os
+                                .file(&compose_file_path)
+                                .write(&updated_yaml)
+                                .execute()
+                                .await;
                         }
                     }
+                }
+
+                // `compose up --env-file` hard-fails on a missing file; the
+                // builder writes it at deploy time, but a wiped workspace
+                // must not brick domain updates. Recreate it from the stored
+                // environment, mirroring the builder's env-file format.
+                if os.file(&spec.env_file).exists().run().await.is_err() {
+                    let env_text: String = spec
+                        .environment
+                        .iter()
+                        .map(|(key, value)| format!("{key}={value}\n"))
+                        .collect();
+                    let _ = os.file(&spec.env_file).write(env_text).execute().await;
                 }
 
                 docker
                     .compose()
                     .up()
                     .project(&app_name)
-                    .env_file(&env_file)
+                    .env_file(&spec.env_file)
                     .file(&compose_file_path)
                     .detach()
                     .no_build()

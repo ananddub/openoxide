@@ -14,6 +14,19 @@ impl TraefikService {
         Self
     }
 
+    /// Boot-time repair of the panel host's edge: rewrite a corrupt/missing
+    /// Traefik static config and make sure the `openoxide-traefik` container
+    /// exists and runs. Without this, domains attached to applications and
+    /// compose stacks route to nothing.
+    pub async fn ensure_local_edge(&self) -> Result<(), String> {
+        let executor = self.get_executor(None).await?;
+        let config = crate::utils::setup::SetupConfig::default();
+        let setup = crate::utils::setup::ServerSetup::new(executor, config);
+        setup.write_traefik_config().await.map_err(|e| e.to_string())?;
+        setup.ensure_traefik().await.map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
     pub fn structured_middleware(
         input: StructuredMiddlewareDto,
     ) -> Result<StructuredMiddlewareResponseDto, String> {

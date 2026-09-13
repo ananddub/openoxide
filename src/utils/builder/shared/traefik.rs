@@ -55,16 +55,20 @@ pub fn build_traefik_labels_for_network(
 
         let mut traefik = TraefikBuilder::new().enable().network(network);
 
-        let entrypoint =
-            domain
-                .entrypoint
-                .clone()
-                .map(Entrypoint::custom)
-                .unwrap_or(if domain.https {
-                    Entrypoint::WebSecure
-                } else {
-                    Entrypoint::Web
-                });
+        // A stored empty/whitespace entrypoint (older rows default to "") is
+        // "unset": emitting `entrypoints=""` makes Traefik reject the router.
+        let custom_entrypoint = domain
+            .entrypoint
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        let entrypoint = custom_entrypoint
+            .map(Entrypoint::custom)
+            .unwrap_or(if domain.https {
+                Entrypoint::WebSecure
+            } else {
+                Entrypoint::Web
+            });
 
         let router_name = format!("{app_name}-{}", domain.key);
 
@@ -132,14 +136,17 @@ pub fn build_traefik_labels_for_network(
             .finish();
 
         // --- HTTP → HTTPS redirect router ---
-        if domain.https && domain.entrypoint.is_none() {
+        // The service must be explicit: with several watched services on one
+        // container, Traefik's name-prefix auto-link refuses the router as
+        // ambiguous ("cannot be linked automatically with multiple Services").
+        if domain.https && custom_entrypoint.is_none() {
             let redirect_name = format!("{router_name}-redirect");
             traefik = traefik
                 .router(&redirect_name)
                 .rule(&rule)
                 .entrypoint(Entrypoint::Web)
                 .middleware("redirect-to-https@file")
-                .finish();
+                .service(&router_name);
         }
 
         builders
@@ -213,5 +220,49 @@ mod tests {
             .map(|v| v.split_once('=').map_or(v.as_str(), |(k, _)| k))
             .collect();
         assert_eq!(keys.len(), labels.len());
+    }
+    #[test]
+    fn empty_entrypoint_falls_back_to_default_entry_points() {
+        // Older domain rows store "" for custom_entrypoint; emitting
+        // `entrypoints=""` makes Traefik reject the whole router.
+        let mut blank = domain("1", "blank.test");
+        blank.https = true;
+        blank.entrypoint = Some("".into());
+        let labels = build_traefik_labels("api", &[blank]).remove("api").unwrap();
+
+        let main = labels
+            .iter()
+            .find(|label| {
+                label.starts_with("traefik.http.routers.api-1.entrypoints=")
+            })
+            .expect("main router entrypoint label");
+        assert_eq!(main.split_once('=').unwrap().1, "websecure");
+        // An empty entrypoint counts as unset, so the HTTPS redirect router
+        // must still be emitted on `web`.
+        let redirect = labels
+            .iter()
+            .find(|label| {
+                label.starts_with("traefik.http.routers.api-1-redirect.entrypoints=")
+            })
+            .expect("redirect router entrypoint label");
+        assert_eq!(redirect.split_once('=').unwrap().1, "web");
+    }
+
+    #[test]
+    fn custom_entrypoint_is_used_verbatim() {
+        let mut custom = domain("1", "custom.test");
+        custom.entrypoint = Some("edge".into());
+        let labels = build_traefik_labels("api", &[custom]).remove("api").unwrap();
+        assert!(
+            labels
+                .iter()
+                .any(|label| label == "traefik.http.routers.api-1.entrypoints=edge")
+        );
+        // A named entrypoint suppresses the automatic redirect router.
+        assert!(
+            !labels
+                .iter()
+                .any(|label| label.contains("api-1-redirect"))
+        );
     }
 }

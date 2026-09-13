@@ -235,8 +235,22 @@ impl ServerSetup {
         if os.dir(path).exists().run().await.is_ok() {
             os.dir(path).delete().run().await?;
         }
+        // The dynamic config directory may not exist yet on a fresh host;
+        // tee cannot create parents.
+        if let Some(parent) = std::path::Path::new(path).parent() {
+            let _ = os
+                .dir(parent.to_string_lossy().as_ref())
+                .create()
+                .run()
+                .await;
+        }
+        // A file that exists but is empty or holds a YAML `null` scalar is a
+        // broken install (Traefik refuses to start without a valid static
+        // config). Repair it even when `overwrite` is false.
         if !overwrite && os.file(path).exists().run().await.is_ok() {
-            return Ok(());
+            if is_valid_yaml_file(&os, path).await {
+                return Ok(());
+            }
         }
         os.file(path)
             .write(String::from_utf8_lossy(contents).as_ref())
@@ -876,6 +890,24 @@ fn setup_steps(install_dependencies: bool, build_server: bool) -> Vec<SetupStep>
         SetupStep::Agent,
     ]);
     completed
+}
+
+/// A setup-written Traefik YAML file is only trustworthy when it parses to a
+/// non-null mapping. An earlier bug (and accidental UI edits) could leave the
+/// literal scalar `null` or an empty file on disk, which makes Traefik refuse
+/// to start — treat those as missing so the config is rewritten.
+async fn is_valid_yaml_file(os: &crate::utils::os::OsCli<'_>, path: &str) -> bool {
+    let Ok(output) = os.file(path).read().execute().await else {
+        return false;
+    };
+    let text = output.stdout;
+    if text.trim().is_empty() {
+        return false;
+    }
+    matches!(
+        serde_yaml::from_str::<serde_yaml::Value>(&text),
+        Ok(serde_yaml::Value::Mapping(_))
+    )
 }
 
 #[cfg(test)]

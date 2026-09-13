@@ -222,8 +222,16 @@ impl TraefikService {
         }
 
         if path_str.ends_with(".yml") || path_str.ends_with(".yaml") {
-            let _parsed: serde_yaml::Value = serde_yaml::from_str(&payload.content)
+            let parsed: serde_yaml::Value = serde_yaml::from_str(&payload.content)
                 .map_err(|e| format!("YAML Syntax Validation Error: {}", e))?;
+            // `null` (or empty) parses as valid YAML but bricks Traefik: it
+            // refuses to start without a mapping-shaped static config.
+            if !matches!(parsed, serde_yaml::Value::Mapping(_)) {
+                return Err(
+                    "YAML Validation Error: config must be a mapping of settings, not a scalar or empty document"
+                        .to_string(),
+                );
+            }
         }
 
         let executor = self.get_executor(payload.server_id).await?;

@@ -29,6 +29,15 @@ impl BackgroundManager {
             .map_err(|error| format!("failed to resolve builder queue: {error}"))?;
         super::builder::start(builder).await?;
 
+        // The panel host's edge (Traefik config + container) is repaired in
+        // the background: it depends on the local Agent gRPC channel, which
+        // may still be booting. Retrying keeps a transient failure from
+        // leaving domains unrouted until the next restart.
+        let traefik = resolve::<crate::services::networking::traefik::TraefikService>()
+            .await
+            .map_err(|error| format!("failed to resolve traefik service: {error}"))?;
+        super::edge::start(traefik);
+
         let alerts = resolve::<AlertService>()
             .await
             .map_err(|error| format!("failed to resolve alert service: {error}"))?;
