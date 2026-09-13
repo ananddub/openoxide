@@ -146,7 +146,9 @@ function toDomainItem(d: LiveRow): DomainItemPayload {
 		domain_type: d.domain_type,
 		application_id: d.application_id ? Number(d.application_id) : undefined,
 		compose_id: d.compose_id ? Number(d.compose_id) : undefined,
-		service_name: d.service_name,
+		// The domain's own compose service name (not the joined app display
+		// name) — the edit dialog's service selector matches against this.
+		service_name: d.domain_service_name || d.service_name,
 		project_name: d.project_name,
 		created_at: Number(d.created_at || 0),
 		updated_at: Number(d.updated_at || 0),

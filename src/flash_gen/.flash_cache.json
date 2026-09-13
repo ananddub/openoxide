@@ -38,7 +38,7 @@
     "db/queries/organization_invites.sql": "f670937d14a2128f3a7f7dd949124e7ac89c586f5eb6df6f7ca852bd12861010",
     "db/queries/organization_members.sql": "d3da229fd1dfd56b56238d7edd08805b017ed5b19c55d5f77badfc30165c1279",
     "db/queries/organizations.sql": "9e167328b396c0e2d482f0edae243e7f7099a206763084008d1d4ca1e7e33d00",
-    "db/queries/overview.sql": "650f8afeaea75bcf86cca5089492c80b8717377756d3e8d4a4d291d303a6cc57",
+    "db/queries/overview.sql": "bad39b564fbcc29c5531f54dc1a8af22d244d00cec7168303e1bab1005681e52",
     "db/queries/password_reset_tokens.sql": "c148b69e54f49831d6fdda4f0a427dfd7a2f42ed3f56de1444cfc44d4b5a7778",
     "db/queries/patches.sql": "984505fd2d0b8847a948cafeec95efe5bdf826f4afc1f8fef6769778ae5fe88b",
     "db/queries/permission_groups.sql": "c4c51fc23693bc975265b2b3433b62a3e523155c9a09cb2c5ed8e044316b4090",
@@ -219,10 +219,10 @@
       "organization_invites"
     ],
     "db/queries/overview.sql": [
+      "volume_backups",
       "services",
       "domains",
-      "backups",
-      "volume_backups"
+      "backups"
     ],
     "db/queries/password_reset_tokens.sql": [
       "password_reset_tokens",
@@ -375,6 +375,6 @@
     ]
   },
   "generated_file_checksums": {},
-  "last_generation": "2026-09-12T20:03:33.455866428+05:30",
+  "last_generation": "2026-09-13T00:13:17.63656135+05:30",
   "OutDir": "src/flash_gen"
 }

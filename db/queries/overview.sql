@@ -51,6 +51,14 @@ SELECT
     dom.https AS https,
     dom.service_id AS service_id,
     s.service_type AS service_type,
+    dom.internal_path AS internal_path,
+    dom.custom_entrypoint AS custom_entrypoint,
+    dom.custom_cert_resolver AS custom_cert_resolver,
+    dom.strip_path AS strip_path,
+    dom.middlewares AS middlewares,
+    dom.domain_type AS domain_type,
+    dom.certificate_type AS certificate_type,
+    dom.service_name AS domain_service_name,
     COALESCE(s.name, dom.service_name, 'Service') AS service_name,
     COALESCE(p.name, 'Project') AS project_name
 FROM domains dom

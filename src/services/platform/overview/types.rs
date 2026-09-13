@@ -27,6 +27,17 @@ pub struct OverviewDomainItemDto {
     pub compose_id: Option<i64>,
     pub service_name: String,
     pub project_name: String,
+    // Full routing config: the detail-page edit dialogs hydrate from this
+    // list, so anything missing here gets silently reset on save (the
+    // certificate-type bug). Keep it aligned with the domains table.
+    pub internal_path: Option<String>,
+    pub custom_entrypoint: Option<String>,
+    pub custom_cert_resolver: Option<String>,
+    pub strip_path: bool,
+    pub middlewares: String,
+    pub domain_type: String,
+    pub certificate_type: String,
+    pub domain_service_name: Option<String>,
 }
 
 /// Typed linkage mirrors so the compose/database/application detail tabs

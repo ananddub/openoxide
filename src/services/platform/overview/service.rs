@@ -65,10 +65,17 @@ impl OverviewService {
                 compose_id: (r.service_type == "COMPOSE").then_some(r.service_id).flatten(),
                 service_name: r
                     .service_name
+                    .filter(|value| !value.trim().is_empty())
                     .unwrap_or_else(|| "Service".into()),
-                project_name: r
-                    .project_name
-                    .unwrap_or_else(|| "Project".into()),
+                project_name: r.project_name.unwrap_or_else(|| "Project".into()),
+                internal_path: r.internal_path,
+                custom_entrypoint: r.custom_entrypoint,
+                custom_cert_resolver: r.custom_cert_resolver,
+                strip_path: r.strip_path != 0,
+                middlewares: r.middlewares,
+                domain_type: r.domain_type,
+                certificate_type: r.certificate_type,
+                domain_service_name: r.domain_service_name,
             })
             .collect())
     }

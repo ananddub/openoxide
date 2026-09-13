@@ -29,6 +29,14 @@ pub struct OverviewListDomainsRow {
     pub https: i64,
     pub service_id: Option<i64>,
     pub service_type: String,
+    pub internal_path: Option<String>,
+    pub custom_entrypoint: Option<String>,
+    pub custom_cert_resolver: Option<String>,
+    pub strip_path: i64,
+    pub middlewares: String,
+    pub domain_type: String,
+    pub certificate_type: String,
+    pub domain_service_name: Option<String>,
     pub service_name: Option<String>,
     pub project_name: Option<String>,
 }
@@ -76,7 +84,7 @@ impl Queries {
         organization_id: i64,
     ) -> Result<Vec<OverviewListDomainsRow>, sqlx::Error> {
         sqlx::query_as::<_, OverviewListDomainsRow>(
-            "SELECT dom.id AS id, dom.host AS host, dom.path AS path, dom.port AS port, dom.https AS https, dom.service_id AS service_id, s.service_type AS service_type, COALESCE(s.name, dom.service_name, 'Service') AS service_name, COALESCE(p.name, 'Project') AS project_name FROM domains dom LEFT JOIN services s ON dom.service_id = s.id LEFT JOIN environments e ON s.environment_id = e.id LEFT JOIN projects p ON e.project_id = p.id WHERE p.organization_id = ? ORDER BY dom.created_at DESC;"
+            "SELECT dom.id AS id, dom.host AS host, dom.path AS path, dom.port AS port, dom.https AS https, dom.service_id AS service_id, s.service_type AS service_type, dom.internal_path AS internal_path, dom.custom_entrypoint AS custom_entrypoint, dom.custom_cert_resolver AS custom_cert_resolver, dom.strip_path AS strip_path, dom.middlewares AS middlewares, dom.domain_type AS domain_type, dom.certificate_type AS certificate_type, dom.service_name AS domain_service_name, COALESCE(s.name, dom.service_name, 'Service') AS service_name, COALESCE(p.name, 'Project') AS project_name FROM domains dom LEFT JOIN services s ON dom.service_id = s.id LEFT JOIN environments e ON s.environment_id = e.id LEFT JOIN projects p ON e.project_id = p.id WHERE p.organization_id = ? ORDER BY dom.created_at DESC;"
         )
         .bind(organization_id)
         .fetch_all(&self.pool)
