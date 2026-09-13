@@ -18,7 +18,13 @@ impl DnsService {
                 self.test_cloudflare_token(&provider.credentials_json).await
             }
             DnsProviderType::Route53 => self.test_route53(&provider.credentials_json).await,
-            _ => Err(Self::unsupported_provider(p_type)),
+            DnsProviderType::Hetzner => self.test_hetzner_token(&provider.credentials_json).await,
+            DnsProviderType::DigitalOcean => {
+                self.test_digitalocean_token(&provider.credentials_json).await
+            }
+            DnsProviderType::Godaddy => {
+                self.test_godaddy_credentials(&provider.credentials_json).await
+            }
         }
     }
 
@@ -30,7 +36,9 @@ impl DnsService {
         match provider_type {
             DnsProviderType::Cloudflare => self.test_cloudflare_token(credentials_json).await,
             DnsProviderType::Route53 => self.test_route53(credentials_json).await,
-            _ => Err(Self::unsupported_provider(provider_type)),
+            DnsProviderType::Hetzner => self.test_hetzner_token(credentials_json).await,
+            DnsProviderType::DigitalOcean => self.test_digitalocean_token(credentials_json).await,
+            DnsProviderType::Godaddy => self.test_godaddy_credentials(credentials_json).await,
         }
     }
 
@@ -48,7 +56,13 @@ impl DnsService {
                 self.list_cloudflare_zones(&provider.credentials_json).await
             }
             DnsProviderType::Route53 => self.list_route53_zones(&provider.credentials_json).await,
-            _ => Err(Self::unsupported_provider(p_type)),
+            DnsProviderType::Hetzner => self.list_hetzner_zones(&provider.credentials_json).await,
+            DnsProviderType::DigitalOcean => {
+                self.list_digitalocean_zones(&provider.credentials_json).await
+            }
+            DnsProviderType::Godaddy => {
+                self.list_godaddy_zones(&provider.credentials_json).await
+            }
         }
     }
 
@@ -71,7 +85,18 @@ impl DnsService {
                 self.list_route53_records(&provider.credentials_json, zone_id)
                     .await
             }
-            _ => Err(Self::unsupported_provider(p_type)),
+            DnsProviderType::Hetzner => {
+                self.list_hetzner_records(&provider.credentials_json, zone_id)
+                    .await
+            }
+            DnsProviderType::DigitalOcean => {
+                self.list_digitalocean_records(&provider.credentials_json, zone_id)
+                    .await
+            }
+            DnsProviderType::Godaddy => {
+                self.list_godaddy_records(&provider.credentials_json, zone_id)
+                    .await
+            }
         }
     }
 
@@ -94,7 +119,18 @@ impl DnsService {
                 self.upsert_route53_record(&provider.credentials_json, &body)
                     .await
             }
-            _ => Err(Self::unsupported_provider(p_type)),
+            DnsProviderType::Hetzner => {
+                self.upsert_hetzner_record(&provider.credentials_json, &body)
+                    .await
+            }
+            DnsProviderType::DigitalOcean => {
+                self.upsert_digitalocean_record(&provider.credentials_json, &body)
+                    .await
+            }
+            DnsProviderType::Godaddy => {
+                self.upsert_godaddy_record(&provider.credentials_json, &body)
+                    .await
+            }
         }
     }
 
@@ -118,7 +154,18 @@ impl DnsService {
                 self.delete_route53_record(&provider.credentials_json, zone_id, record_id)
                     .await
             }
-            _ => Err(Self::unsupported_provider(p_type)),
+            DnsProviderType::Hetzner => {
+                self.delete_hetzner_record(&provider.credentials_json, zone_id, record_id)
+                    .await
+            }
+            DnsProviderType::DigitalOcean => {
+                self.delete_digitalocean_record(&provider.credentials_json, zone_id, record_id)
+                    .await
+            }
+            DnsProviderType::Godaddy => {
+                self.delete_godaddy_record(&provider.credentials_json, zone_id, record_id)
+                    .await
+            }
         }
     }
 }

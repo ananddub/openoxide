@@ -11,16 +11,12 @@ impl DnsService {
         provider_type: DnsProviderType,
     ) -> Result<(), DnsServiceError> {
         match provider_type {
-            DnsProviderType::Cloudflare | DnsProviderType::Route53 => Ok(()),
-            _ => Err(Self::unsupported_provider(provider_type)),
+            DnsProviderType::Cloudflare
+            | DnsProviderType::Route53
+            | DnsProviderType::Hetzner
+            | DnsProviderType::DigitalOcean
+            | DnsProviderType::Godaddy => Ok(()),
         }
-    }
-
-    pub(super) fn unsupported_provider(provider_type: DnsProviderType) -> DnsServiceError {
-        DnsServiceError::ProviderError(format!(
-            "DNS provider '{}' is not implemented",
-            provider_type.as_str()
-        ))
     }
 
     pub(super) fn validate_provider_config(
@@ -34,9 +30,11 @@ impl DnsService {
             })?;
 
         let required = match provider_type {
-            DnsProviderType::Cloudflare => &["apiToken"][..],
+            DnsProviderType::Cloudflare
+            | DnsProviderType::Hetzner
+            | DnsProviderType::DigitalOcean => &["apiToken"][..],
             DnsProviderType::Route53 => &["accessKeyId", "secretAccessKey"][..],
-            _ => unreachable!(),
+            DnsProviderType::Godaddy => &["apiKey", "apiSecret"][..],
         };
         for field in required {
             if config[*field]

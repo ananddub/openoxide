@@ -16,8 +16,7 @@ mod dispatch;
 mod validation;
 
 string_enum! {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
-    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub enum DnsProviderType {
         default = Cloudflare;
 
@@ -26,6 +25,21 @@ string_enum! {
         Hetzner => "HETZNER",
         DigitalOcean => "DIGITALOCEAN",
         Godaddy => "GODADDY",
+    }
+}
+
+// Wire format is the canonical `string_enum` value (SCREAMING_SNAKE but not
+// word-split: `DIGITALOCEAN`, not serde's default `DIGITAL_OCEAN`).
+impl Serialize for DnsProviderType {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for DnsProviderType {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let raw = String::deserialize(deserializer)?;
+        Self::from_str(&raw).ok_or_else(|| serde::de::Error::custom(format!("unknown DNS provider type '{raw}'")))
     }
 }
 
