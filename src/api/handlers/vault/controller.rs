@@ -81,7 +81,7 @@ impl VaultService for VaultController {
         ctx: RequestContext,
         _query: ServiceRequest<'_, ResourceQuery>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let org_id = _query.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let items = self
             .service
             .list_providers(org_id)
@@ -100,7 +100,7 @@ impl VaultService for VaultController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let provider = self
             .service
             .get_provider(request.id, org_id)
@@ -115,7 +115,7 @@ impl VaultService for VaultController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let dto: CreateVaultProviderDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let provider = self
@@ -132,7 +132,7 @@ impl VaultService for VaultController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let dto: UpdateVaultProviderDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let provider = self
@@ -149,7 +149,7 @@ impl VaultService for VaultController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         self.service
             .delete_provider(request.id, org_id)
             .await
@@ -163,7 +163,7 @@ impl VaultService for VaultController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let result = self
             .service
             .test_connection(request.id, org_id)
@@ -210,7 +210,7 @@ impl VaultService for VaultController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let result = self
             .service
             .list_secret_names(request.id, org_id)
@@ -235,7 +235,7 @@ impl VaultService for VaultController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let assignments = self
             .service
             .get_assignments(request.id, org_id)
@@ -254,7 +254,7 @@ impl VaultService for VaultController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let assignments: Vec<VaultProviderAssignmentDto> = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let result = self

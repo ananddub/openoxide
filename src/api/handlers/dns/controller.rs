@@ -20,7 +20,7 @@ impl DnsService for DnsController {
         ctx: RequestContext,
         _query: ServiceRequest<'_, ResourceQuery>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let org_id = _query.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let items = self.service.list_providers(org_id).await.map_err(map_dns_error)?;
         let items = items.into_iter().map(provider_to_resource).collect();
         Response::ok(ResourceListResponse {
@@ -39,7 +39,7 @@ impl DnsService for DnsController {
             impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
         >,
     > {
-        let org_id = _query.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let stream = {
             let sql = format!("SELECT * FROM dns_providers WHERE organization_id = {org_id}");
             realtime()
@@ -65,7 +65,7 @@ impl DnsService for DnsController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let provider = self
             .service
             .get_provider(request.id, org_id)
@@ -84,7 +84,7 @@ impl DnsService for DnsController {
             impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
         >,
     > {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let id = request.id;
         let stream = {
             let sql = format!(
@@ -109,7 +109,7 @@ impl DnsService for DnsController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let dto: CreateDnsProviderDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let provider = self
@@ -126,7 +126,7 @@ impl DnsService for DnsController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let dto: UpdateDnsProviderDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let provider = self
@@ -143,7 +143,7 @@ impl DnsService for DnsController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         self.service
             .delete_provider(request.id, org_id)
             .await
@@ -157,7 +157,7 @@ impl DnsService for DnsController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let result = self
             .service
             .test_connection(request.id, org_id)
@@ -198,7 +198,7 @@ impl DnsService for DnsController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let zones = self
             .service
             .list_zones(request.id, org_id)
@@ -217,7 +217,7 @@ impl DnsService for DnsController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let dto: UpsertDnsRecordDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let records = self
@@ -238,7 +238,7 @@ impl DnsService for DnsController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let dto: UpsertDnsRecordDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let record = self
@@ -255,7 +255,7 @@ impl DnsService for DnsController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        let org_id = request.organization_id.unwrap_or(0);
+        let org_id = auth.organization_id;
         let dto: UpsertDnsRecordDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         self.service
