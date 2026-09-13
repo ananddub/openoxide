@@ -29,7 +29,7 @@ function RegistryPage() {
 		useState<RegistryResponse | null>(null);
 	const [deletingId, setDeletingId] = useState<number | null>(null);
 
-	const {data: rawRegistries, isLoading} = useRegistryList();
+	const {data: rawRegistries, isLoading, refetch} = useRegistryList();
 
 	const registries = Array.isArray(rawRegistries ?? [])
 		? ((rawRegistries ?? []) as unknown as RegistryResponse[])
@@ -62,7 +62,7 @@ function RegistryPage() {
 		<div className="mx-auto flex w-full max-w-7xl flex-col gap-3 p-4">
 			<RegistryHeader
 				onAddRegistry={handleOpenAdd}
-				onRefresh={() => {}}
+				onRefresh={() => void refetch()}
 				isRefreshing={isLoading}
 			/>
 
@@ -71,7 +71,6 @@ function RegistryPage() {
 				isLoading={isLoading}
 				onEdit={handleOpenEdit}
 				onDelete={id => setDeletingId(id)}
-				onRefresh={() => {}}
 			/>
 
 			<CreateRegistryModal

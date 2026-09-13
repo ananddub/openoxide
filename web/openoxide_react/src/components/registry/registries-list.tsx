@@ -20,14 +20,13 @@ import {
 } from 'lucide-react';
 
 import type {RegistryResponse} from '#/types/api-helpers';
-import {useRegistryTest, useRegistryUpdate} from '#/api/live';
+import {useRegistryTest} from '#/api/live';
 
 interface RegistriesListProps {
 	registries: RegistryResponse[];
 	isLoading: boolean;
 	onEdit: (item: RegistryResponse) => void;
 	onDelete: (id: number) => void;
-	onRefresh: () => void;
 }
 
 export function RegistriesList({
@@ -35,14 +34,12 @@ export function RegistriesList({
 	isLoading,
 	onEdit,
 	onDelete,
-	onRefresh,
 }: RegistriesListProps) {
 	const [testingMap, setTestingMap] = useState<
 		Record<string, 'testing' | 'success' | 'failed' | undefined>
 	>({});
 
 	const testMutation = useRegistryTest();
-	const patchMutation = useRegistryUpdate();
 
 	const handleTestConnection = async (id: number | string) => {
 		const key = String(id);
@@ -60,18 +57,8 @@ export function RegistriesList({
 		}
 	};
 
-	const handleSetDefault = async (id: number | string) => {
-		try {
-			await patchMutation.mutateAsync({
-				params: {path: {id: Number(id)}},
-				body: {registry_name: undefined},
-			});
-			toast.success('Set as default registry');
-			onRefresh();
-		} catch (err: unknown) {
-			toast.error(formatApiError(err));
-		}
-	};
+	// (No "Set as Default": the registry model has no default flag — each
+	// application pins its registry explicitly.)
 
 	if (isLoading) {
 		return (
@@ -133,11 +120,11 @@ export function RegistriesList({
 										<h4 className="truncate text-xs font-bold text-foreground">
 											{item.name || item.registry_name}
 										</h4>
-										{item.is_default && (
-											<span className="shrink-0 rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
-												Default
+										{item.image_prefix ? (
+											<span className="shrink-0 rounded border border-border/30 bg-muted/20 px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground">
+												{item.image_prefix}
 											</span>
-										)}
+										) : null}
 									</div>
 									<p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">
 										{item.registry_url || 'docker.io'}
@@ -185,13 +172,6 @@ export function RegistriesList({
 											Edit Registry
 										</DropdownMenuItem>
 
-										{!item.is_default && (
-											<DropdownMenuItem
-												className="flex cursor-pointer items-center rounded-lg px-2.5 py-1.5 text-xs font-medium hover:bg-muted"
-												onClick={() => handleSetDefault(item.id)}>
-												Set as Default
-											</DropdownMenuItem>
-										)}
 
 										<DropdownMenuSeparator className="my-1 border-border/50" />
 

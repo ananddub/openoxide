@@ -148,10 +148,17 @@ impl RegistryService for RegistryController {
     ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
         let dto: TestRegistryDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        self.service
-            .test_connection_raw(&dto.registry_url, &dto.username, &dto.password)
-            .await
-            .map_err(ConnectError::invalid_argument)?;
+        // `id` may ride the envelope (ResourceRequest.id) or the payload.
+        let saved_id = dto.id.or(if request.id != 0 { Some(request.id) } else { None });
+        let result = match saved_id {
+            Some(id) => self.service.test_connection(id).await,
+            None => {
+                self.service
+                    .test_connection_raw(&dto.registry_url, &dto.username, &dto.password)
+                    .await
+            }
+        };
+        result.map_err(ConnectError::invalid_argument)?;
         Response::ok(OperationResult {
             success: true,
             operation: "test_registry".into(),

@@ -10,7 +10,9 @@ pub fn map_sqlx_error(error: sqlx::Error) -> ConnectError {
         sqlx::Error::Database(e) if e.is_unique_violation() => {
             ConnectError::new(ErrorCode::AlreadyExists, e.message())
         }
-        sqlx::Error::Protocol(msg) => ConnectError::new(ErrorCode::AlreadyExists, msg.clone()),
+        // Validation and usage-conflict failures surface as Protocol errors;
+        // the client supplied the offending value either way.
+        sqlx::Error::Protocol(msg) => ConnectError::invalid_argument(msg.clone()),
         other => {
             tracing::error!(error = %other, "registry database operation failed");
             ConnectError::new(ErrorCode::Internal, "database operation failed")
@@ -37,8 +39,15 @@ pub struct RegistryTagsQuery {
 
 #[derive(Debug, serde::Deserialize)]
 pub struct TestRegistryDto {
+    /// Saved-registry test: only `id` is sent and the stored credentials are
+    /// used. Raw test (create dialog): url/username/password, nothing stored.
+    #[serde(default)]
+    pub id: Option<i64>,
+    #[serde(default)]
     pub registry_url: String,
+    #[serde(default)]
     pub username: String,
+    #[serde(default)]
     pub password: String,
 }
 

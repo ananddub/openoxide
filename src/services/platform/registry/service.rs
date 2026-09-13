@@ -25,6 +25,48 @@ struct RepositoryTagsResponse {
     tags: Vec<String>,
 }
 
+/// Registry URLs reach `docker login` as CLI arguments, so they must be a
+/// bare `hostname[:port]` (or empty for Docker Hub) — never a URL with a
+/// scheme/path and never shell metacharacters. Mirrors dokploy's
+/// `registryUrl` refine rule.
+fn validate_registry_url(value: &str) -> sqlx::Result<()> {
+    let value = value.trim();
+    if value.is_empty() {
+        return Ok(());
+    }
+    let host = match value.split_once(':') {
+        Some((host, port)) if !host.is_empty() && port.len() <= 5 && port.bytes().all(|b| b.is_ascii_digit()) => host,
+        Some(_) => return Err(sqlx::Error::Protocol("registry URL must be a valid hostname or hostname:port (e.g. registry.example.com or localhost:5000)".into())),
+        None => value,
+    };
+    let valid_host = (2..=255).contains(&host.len())
+        && host.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'-' | b'_'))
+        && !host.starts_with('-')
+        && !host.ends_with('-');
+    if !valid_host {
+        return Err(sqlx::Error::Protocol("registry URL must be a valid hostname or hostname:port (e.g. registry.example.com or localhost:5000)".into()));
+    }
+    Ok(())
+}
+
+/// Image prefixes become repository path segments in generated image names;
+/// restrict to lowercase OCI path characters (optionally with a port-suffixed
+/// host, e.g. `registry.local:5000/team`).
+fn validate_image_prefix(value: &str) -> sqlx::Result<()> {
+    let value = value.trim();
+    if value.is_empty() {
+        return Ok(());
+    }
+    let ok = value.len() <= 200
+        && value.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || matches!(b, b'/' | b'.' | b'-' | b'_' | b':' | b'~'))
+        && !value.starts_with('/')
+        && !value.ends_with('/');
+    if !ok {
+        return Err(sqlx::Error::Protocol("image prefix must be a lowercase repository path (a-z, 0-9, / . - _ : ~), e.g. myorg".into()));
+    }
+    Ok(())
+}
+
 #[singleton]
 impl RegistryService {
     fn new(queries: Arc<FlashQueries>) -> Self {
@@ -40,6 +82,10 @@ impl RegistryService {
     }
 
     pub async fn create(&self, input: CreateRegistryDto) -> sqlx::Result<Registries> {
+        validate_registry_url(&input.registry_url)?;
+        if let Some(prefix) = &input.image_prefix {
+            validate_image_prefix(prefix)?;
+        }
         let now = chrono::Utc::now().timestamp();
         let new_id = self
             .queries
@@ -58,6 +104,12 @@ impl RegistryService {
     }
 
     pub async fn patch(&self, id: i64, input: PatchRegistryDto) -> sqlx::Result<Registries> {
+        if let Some(v) = &input.registry_url {
+            validate_registry_url(v)?;
+        }
+        if let Some(Some(v)) = &input.image_prefix {
+            validate_image_prefix(v)?;
+        }
         let mut current = self.get_by_id(id).await?;
         let now = chrono::Utc::now().timestamp();
 
@@ -104,12 +156,60 @@ impl RegistryService {
         self.queries.registries_delete(id).await
     }
 
+    /// Anonymous reachability check: `GET /v2/` on the registry API.
+    /// 2xx/4xx-with-`Docker-Distribution-Api-Version` proves a registry is
+    /// there; a 401 means one exists but demands credentials.
+    async fn ping_registry(&self, registry_url: &str) -> Result<(), String> {
+        let host = registry_url.trim();
+        let host = host
+            .trim_start_matches("https://")
+            .trim_start_matches("http://")
+            .trim_end_matches('/');
+        let host = if host.is_empty() || host.contains("docker.io") {
+            "registry-1.docker.io"
+        } else {
+            host
+        };
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
+            .build()
+            .map_err(|e| e.to_string())?;
+        // Local registries commonly speak plain HTTP; try https then http.
+        let mut last_error = String::new();
+        for scheme in ["https", "http"] {
+            match client.get(format!("{scheme}://{host}/v2/")).send().await {
+                Ok(response) => {
+                    let status = response.status();
+                    let is_registry = response
+                        .headers()
+                        .contains_key("docker-distribution-api-version");
+                    if status.is_success() {
+                        return Ok(());
+                    }
+                    if u16::from(status) == 401 || is_registry {
+                        return Err(format!(
+                            "registry '{host}' is reachable but requires credentials"
+                        ));
+                    }
+                    last_error = format!("registry '{host}' responded {status}");
+                }
+                Err(error) => last_error = error.to_string(),
+            }
+        }
+        Err(format!("registry '{host}' unreachable: {last_error}"))
+    }
     pub async fn test_connection_raw(
         &self,
         registry_url: &str,
         username: &str,
         password: &str,
     ) -> Result<(), String> {
+        // No credentials stored: verify reachability with the registry's
+        // anonymous `GET /v2/` ping instead of `docker login` (which errors
+        // with "Must provide --username with --password-stdin").
+        if username.trim().is_empty() || password.trim().is_empty() {
+            return self.ping_registry(registry_url).await;
+        }
         let executor = crate::services::compute::compose::remote::agent_executor_for(None).await?;
         let docker = crate::utils::docker::DockerCli::from_executor(executor);
         let registry = if registry_url.trim().is_empty() || registry_url.contains("docker.io") {

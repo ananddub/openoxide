@@ -61,12 +61,22 @@ export function useRegistryDelete() {
 }
 
 /**
- * Test raw registry credentials (registry_url/username/password in the
- * payload; nothing is persisted — legacy REST: POST /registries/test-raw).
+ * Test registry credentials. Pass a saved registry id (stored credentials
+ * are used) or raw {registry_url, username, password} (nothing persisted —
+ * legacy REST: POST /registries/test-raw).
  */
 export function useRegistryTest() {
-	return useConnectMutation((input: {registry_url: string; username: string; password: string}) =>
-		registryClient.testRegistry({payload: JSON.stringify(input)}),
+	return useConnectMutation(
+		(
+			input:
+				| number
+				| bigint
+				| {registry_url: string; username: string; password: string},
+		) =>
+			registryClient.testRegistry({
+				id: typeof input === 'object' ? undefined : BigInt(input),
+				payload: JSON.stringify(typeof input === 'object' ? input : {}),
+			}),
 	);
 }
 
