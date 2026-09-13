@@ -20,6 +20,9 @@ service PermissionService {
   rpc DeleteGroup(ResourceRequest) returns (Empty);
   rpc ListPolicies(ResourceQuery) returns (ResourceListResponse);
   rpc StreamListPolicies(ResourceQuery) returns (stream ResourceListResponse);
+  // Effective actions for the calling user inside the active organization
+  // (auth-only: every member may inspect their own grants to gate the UI).
+  rpc GetMyPermissions(ResourceQuery) returns (ResourceResponse);
   rpc AssignMemberGroup(ResourceRequest) returns (OperationResult);
   rpc ListMembers(ResourceQuery) returns (ResourceListResponse);
   rpc StreamListMembers(ResourceQuery) returns (stream ResourceListResponse);

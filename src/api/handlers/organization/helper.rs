@@ -15,6 +15,17 @@ pub fn org_to_proto(org: crate::flash_gen::models::Organization) -> Organization
     }
 }
 
+/// `Organization` message with the caller's effective role attached
+/// (ListOrganizations; other callers leave it unset).
+pub fn org_with_role_to_proto(
+    org: crate::flash_gen::models::Organization,
+    role: String,
+) -> OrganizationProto {
+    let mut proto = org_to_proto(org);
+    proto.role = Some(role);
+    proto
+}
+
 pub fn map_db_error(err: sqlx::Error) -> ConnectError {
     match &err {
         sqlx::Error::RowNotFound => ConnectError::not_found("organization not found"),

@@ -11,10 +11,10 @@ pub enum CacheKey {
     Database(i64),
     ProjectsList(i64),
     EnvironmentsProject(i64),
-    ServersList,
-    SshKeysList,
-    DestinationsList,
-    RegistriesList,
+    /// Organization-scoped list caches: the active organization is part of
+    /// the key so switching workspaces never serves another org's rows.
+    DestinationsList(i64),
+    RegistriesList(i64),
     VolumeBackups,
     SchedulesCompose(i64),
     SchedulesApp(i64),
@@ -32,8 +32,6 @@ pub enum CacheEnum {
     Database(DatabaseRecord),
     ProjectsList(Vec<crate::flash_gen::models::Projects>),
     Environments(Vec<crate::flash_gen::models::Environments>),
-    ServersList(Vec<crate::flash_gen::models::Servers>),
-    SshKeysList(Vec<crate::flash_gen::models::SshKeys>),
     DestinationsList(Vec<crate::flash_gen::models::Destinations>),
     RegistriesList(Vec<crate::flash_gen::models::Registries>),
     VolumeBackups(Vec<crate::flash_gen::models::VolumeBackups>),

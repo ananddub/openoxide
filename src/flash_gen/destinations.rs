@@ -3,7 +3,6 @@
 
 use super::models::*;
 use super::db::Queries;
-use super::backups::UpdateDestinationParams;
 
 pub struct DestinationsCreateAndReturnParams {
     pub name: String,
@@ -18,16 +17,28 @@ pub struct DestinationsCreateAndReturnParams {
     pub updated_at: i64,
 }
 
-pub type DestinationsUpdateAndReturnParams = UpdateDestinationParams;
+pub struct DestinationsUpdateAndReturnParams {
+    pub name: String,
+    pub provider: String,
+    pub access_key: String,
+    pub secret_access_key: String,
+    pub bucket: String,
+    pub region: String,
+    pub endpoint: String,
+    pub id: i64,
+    pub organization_id: i64,
+}
 
 impl Queries {
-    /// DestinationsGetAll
-    pub async fn destinations_get_all(
+    /// DestinationsListByOrganization
+    pub async fn destinations_list_by_organization(
         &self,
+        organization_id: i64,
     ) -> Result<Vec<Destinations>, sqlx::Error> {
         sqlx::query_as::<_, Destinations>(
-            "SELECT * FROM destinations;"
+            "SELECT * FROM destinations WHERE organization_id = ? ORDER BY created_at DESC, id DESC;"
         )
+        .bind(organization_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -73,7 +84,7 @@ impl Queries {
         params: &DestinationsUpdateAndReturnParams,
     ) -> Result<Destinations, sqlx::Error> {
         sqlx::query_as::<_, Destinations>(
-            "UPDATE destinations SET name = ?, provider = ?, access_key = ?, secret_access_key = ?, bucket = ?, region = ?, endpoint = ? WHERE id = ? RETURNING *;"
+            "UPDATE destinations SET name = ?, provider = ?, access_key = ?, secret_access_key = ?, bucket = ?, region = ?, endpoint = ? WHERE id = ? AND organization_id = ? RETURNING *;"
         )
         .bind(&params.name)
         .bind(&params.provider)
@@ -83,6 +94,7 @@ impl Queries {
         .bind(&params.region)
         .bind(&params.endpoint)
         .bind(&params.id)
+        .bind(&params.organization_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -91,11 +103,13 @@ impl Queries {
     pub async fn destinations_delete(
         &self,
         id: i64,
+        organization_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM destinations WHERE id = ?;"
+            "DELETE FROM destinations WHERE id = ? AND organization_id = ?;"
         )
         .bind(id)
+        .bind(organization_id)
         .execute(&self.pool)
         .await?;
         Ok(())

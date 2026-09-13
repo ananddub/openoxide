@@ -82,13 +82,26 @@ impl ComposeTransferService {
             )));
         }
         // Old EnvironmentRepository::get_by_id returned Option; :one surfaces
-        // a miss as RowNotFound.
-        self.queries
+        // a miss as RowNotFound. The environment's project also supplies the
+        // organization that imported relations (domains) belong to.
+        let environment = self
+            .queries
             .environments_get_by_id(input.target_environment_id)
             .await
             .map_err(|error| match error {
                 sqlx::Error::RowNotFound => {
                     sqlx::Error::Protocol("target environment not found".into())
+                }
+                other => other,
+            })?;
+        let organization_id = self
+            .queries
+            .projects_get_by_id(environment.project_id)
+            .await
+            .map(|project| project.organization_id)
+            .map_err(|error| match error {
+                sqlx::Error::RowNotFound => {
+                    sqlx::Error::Protocol("target project not found".into())
                 }
                 other => other,
             })?;
@@ -151,7 +164,7 @@ impl ComposeTransferService {
 
         self.import_git_source(id, &bundle.compose).await?;
 
-        if let Err(error) = self.import_relations(id, &bundle).await {
+        if let Err(error) = self.import_relations(id, &bundle, organization_id).await {
             // ON DELETE CASCADE removes the created rows and relations.
             let _ = self.queries.delete_service(id).await;
             return Err(error);
@@ -277,7 +290,12 @@ impl ComposeTransferService {
         Ok(())
     }
 
-    async fn import_relations(&self, id: i64, bundle: &ComposeExportBundleDto) -> sqlx::Result<()> {
+    async fn import_relations(
+        &self,
+        id: i64,
+        bundle: &ComposeExportBundleDto,
+        organization_id: i64,
+    ) -> sqlx::Result<()> {
         for domain in &bundle.domains {
             self.queries
                 .domains_create_and_return(&DomainsCreateAndReturnParams {
@@ -294,6 +312,7 @@ impl ComposeTransferService {
                     domain_type: "COMPOSE".into(),
                     certificate_type: domain.certificate_type.clone(),
                     service_id: id,
+                    organization_id,
                 })
                 .await?;
         }

@@ -13,6 +13,7 @@ CREATE TABLE domains (
     domain_type TEXT NOT NULL,
     certificate_type TEXT NOT NULL,
     service_id BIGINT REFERENCES services(id) ON DELETE CASCADE,
+    organization_id BIGINT NOT NULL,
     created_at BIGINT NOT NULL,
     updated_at BIGINT NOT NULL
 );

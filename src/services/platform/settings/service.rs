@@ -27,7 +27,7 @@ impl SettingsService {
 
     pub async fn get(&self) -> sqlx::Result<SettingsResponseDto> {
         let setting = self.current().await?;
-        let policy = self.queries.background_policies_get().await?;
+        let policy = self.policy().await?;
         Ok(response(setting, &policy))
     }
 
@@ -35,20 +35,20 @@ impl SettingsService {
         let current = self.current().await?;
         let setting = Settings {
             id: current.id,
-            server_ip: input.server_ip.or(current.server_ip),
+            server_ip: patch(current.server_ip, input.server_ip),
             certificate_type: input
                 .certificate_type
                 .map(|value| value.as_str().to_owned())
                 .unwrap_or(current.certificate_type),
-            custom_cert_resolver: input.custom_cert_resolver.or(current.custom_cert_resolver),
+            custom_cert_resolver: patch(current.custom_cert_resolver, input.custom_cert_resolver),
             https: input.https.map(i64::from).unwrap_or(current.https),
-            host: input.host.or(current.host),
-            lets_encrypt_email: input.lets_encrypt_email.or(current.lets_encrypt_email),
+            host: patch(current.host, input.host),
+            lets_encrypt_email: patch(current.lets_encrypt_email, input.lets_encrypt_email),
             enable_docker_cleanup: input
                 .enable_docker_cleanup
                 .map(i64::from)
                 .unwrap_or(current.enable_docker_cleanup),
-            log_cleanup_cron: input.log_cleanup_cron.or(current.log_cleanup_cron),
+            log_cleanup_cron: patch(current.log_cleanup_cron, input.log_cleanup_cron),
             metrics_config: input.metrics_config.unwrap_or(current.metrics_config),
             created_at: current.created_at,
             updated_at: chrono::Utc::now().timestamp(),
@@ -70,7 +70,7 @@ impl SettingsService {
                 id: setting.id,
             })
             .await?;
-        let mut policy = self.queries.background_policies_get().await?;
+        let mut policy = self.policy().await?;
         if let Some(value) = input.panel_backup_cron {
             policy.panel_backup_cron = value;
         }
@@ -120,6 +120,19 @@ impl SettingsService {
         let row = self.queries.get_settings().await?;
         Ok(normalize(row))
     }
+
+    /// Read the singleton background-policies row, seeding defaults when the
+    /// row does not exist yet (fresh installs never insert it).
+    async fn policy(&self) -> sqlx::Result<BackgroundPoliciesGetRow> {
+        match self.queries.background_policies_get().await {
+            Ok(row) => Ok(row),
+            Err(sqlx::Error::RowNotFound) => {
+                self.queries.background_policies_seed().await?;
+                self.queries.background_policies_get().await
+            }
+            Err(error) => Err(error),
+        }
+    }
 }
 
 fn normalize(row: Settings) -> Settings {
@@ -130,6 +143,22 @@ fn normalize(row: Settings) -> Settings {
         lets_encrypt_email: norm(row.lets_encrypt_email),
         log_cleanup_cron: norm(row.log_cleanup_cron),
         ..row
+    }
+}
+
+/// PATCH semantics for optional text fields: absent keeps the current value,
+/// blank (empty/whitespace) clears it, anything else replaces it.
+fn patch(current: Option<String>, incoming: Option<String>) -> Option<String> {
+    match incoming {
+        None => current,
+        Some(value) => {
+            let value = value.trim().to_owned();
+            if value.is_empty() {
+                None
+            } else {
+                Some(value)
+            }
+        }
     }
 }
 

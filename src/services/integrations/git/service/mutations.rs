@@ -11,7 +11,11 @@ use super::{config_to_string, parse_config, BitbucketConfig, GitProviderService,
     GithubConfig, GitlabConfig};
 
 impl GitProviderService {
-    pub async fn create(&self, input: CreateProvider) -> sqlx::Result<(GitProviderView, String)> {
+    pub async fn create(
+        &self,
+        input: CreateProvider,
+        organization_id: i64,
+    ) -> sqlx::Result<(GitProviderView, String)> {
         let config_json = initial_config(&input.credentials)?;
         let provider = self
             .queries
@@ -21,6 +25,7 @@ impl GitProviderService {
                 config_json,
                 shared: i64::from(input.shared),
                 webhook_secret: String::new(),
+                organization_id,
             })
             .await?;
         let secret = generate_secret().map_err(sqlx::Error::Protocol)?;
@@ -31,11 +36,19 @@ impl GitProviderService {
         if rotated.is_empty() {
             return Err(sqlx::Error::RowNotFound);
         }
-        Ok((self.get(provider.id).await?, secret))
+        Ok((self.get(provider.id, organization_id).await?, secret))
     }
 
-    pub async fn update(&self, id: i64, input: UpdateProvider) -> sqlx::Result<GitProviderView> {
+    pub async fn update(
+        &self,
+        id: i64,
+        input: UpdateProvider,
+        organization_id: i64,
+    ) -> sqlx::Result<GitProviderView> {
         let current = self.queries.get_git_provider_by_i_d(id).await?;
+        if current.organization_id != organization_id {
+            return Err(sqlx::Error::RowNotFound);
+        }
         if current.provider_type != provider_type(&input.credentials).as_str() {
             return Err(sqlx::Error::Protocol(
                 "Git provider type cannot be changed".into(),
@@ -50,13 +63,14 @@ impl GitProviderService {
                 shared: i64::from(input.shared.unwrap_or(current.shared != 0)),
                 webhook_secret: current.webhook_secret.clone().unwrap_or_default(),
                 id,
+                organization_id,
             })
             .await?;
-        self.get(id).await
+        self.get(id, organization_id).await
     }
 
-    pub async fn rotate_secret(&self, id: i64) -> sqlx::Result<String> {
-        self.get(id).await?;
+    pub async fn rotate_secret(&self, id: i64, organization_id: i64) -> sqlx::Result<String> {
+        self.get(id, organization_id).await?;
         let secret = generate_secret().map_err(sqlx::Error::Protocol)?;
         let rotated = self
             .queries
@@ -68,8 +82,8 @@ impl GitProviderService {
         Ok(secret)
     }
 
-    pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
-        self.get(id).await?;
+    pub async fn delete(&self, id: i64, organization_id: i64) -> sqlx::Result<()> {
+        self.get(id, organization_id).await?;
         let usage = self
             .queries
             .count_services_using_git_provider(&CountServicesUsingGitProviderParams {
@@ -84,7 +98,7 @@ impl GitProviderService {
                 "Git provider is assigned to an application or compose project".into(),
             ));
         }
-        self.queries.delete_git_provider(id).await?;
+        self.queries.delete_git_provider(id, organization_id).await?;
         Ok(())
     }
 }

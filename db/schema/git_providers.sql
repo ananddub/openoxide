@@ -10,6 +10,7 @@ CREATE TABLE git_providers (
     config_json TEXT NOT NULL DEFAULT '{}',
     shared BIGINT NOT NULL,
     webhook_secret TEXT,
+    organization_id BIGINT NOT NULL,
     created_at BIGINT NOT NULL,
     updated_at BIGINT NOT NULL,
     CONSTRAINT git_provider_type_check CHECK (provider_type IN ('GITHUB', 'GITLAB', 'GITEA', 'BITBUCKET')),

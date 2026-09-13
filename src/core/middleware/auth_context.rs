@@ -56,17 +56,30 @@ impl AuthContext {
     }
 
     /// Organization resolution shared by both transports.
+    ///
+    /// A client-supplied organization is only honored when the caller is
+    /// actually a member of it (or owns it); otherwise it falls back to the
+    /// user's own first membership. A stale header (e.g. access to that
+    /// workspace was revoked) must never hard-block the session — the user
+    /// still needs ListOrganizations to switch workspaces — and the fallback
+    /// can only ever resolve to an organization they belong to.
     async fn resolve_organization(
         header: Option<&str>,
         user_id: i64,
     ) -> Result<i64, AuthError> {
-        if let Some(id) = header.and_then(|v| v.parse::<i64>().ok()) {
-            return Ok(id);
-        }
         let service = resolve::<PermissionService>()
             .await
             .map_err(|_| AuthError::ServiceUnavailable)?
             .clone();
+        if let Some(id) = header.and_then(|v| v.parse::<i64>().ok()) {
+            if service
+                .is_organization_member(user_id, id)
+                .await
+                .map_err(|_| AuthError::ServiceUnavailable)?
+            {
+                return Ok(id);
+            }
+        }
         service
             .resolve_organization(user_id)
             .await

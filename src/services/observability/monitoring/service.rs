@@ -548,7 +548,7 @@ impl MonitoringService {
 
     pub async fn server_ids(&self) -> Result<Vec<i64>, String> {
         self.server_service
-            .list()
+            .list_all_servers()
             .await
             .map(|servers| {
                 servers
@@ -571,7 +571,7 @@ impl MonitoringService {
 
     pub async fn remote_server_ids(&self) -> Result<Vec<i64>, String> {
         self.server_service
-            .list()
+            .list_all_servers()
             .await
             .map(|servers| {
                 servers
@@ -591,7 +591,7 @@ impl MonitoringService {
     pub async fn get_latest_metrics_per_server(&self) -> Result<Vec<ServerMetric>, String> {
         let servers = self
             .server_service
-            .list()
+            .list_all_servers()
             .await
             .map_err(|error| error.to_string())?;
         let mut latest = Vec::new();
@@ -608,7 +608,7 @@ impl MonitoringService {
     pub async fn get_latest_container_metrics(&self) -> Result<Vec<ContainerMetric>, String> {
         let servers = self
             .server_service
-            .list()
+            .list_all_servers()
             .await
             .map_err(|error| error.to_string())?;
         let mut latest = Vec::new();

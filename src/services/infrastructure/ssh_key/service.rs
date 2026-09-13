@@ -39,15 +39,19 @@ impl SshKeyService {
         Self { queries }
     }
 
-    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<SshKeys> {
-        self.queries.ssh_keys_get_by_id(id).await
+    pub async fn get_by_id(&self, id: i64, organization_id: i64) -> sqlx::Result<SshKeys> {
+        let key = self.queries.ssh_keys_get_by_id(id).await?;
+        if key.organization_id != organization_id {
+            return Err(sqlx::Error::RowNotFound);
+        }
+        Ok(key)
     }
 
-    pub async fn list(&self) -> sqlx::Result<Vec<SshKeys>> {
-        self.queries.ssh_keys_list_ordered().await
+    pub async fn list(&self, organization_id: i64) -> sqlx::Result<Vec<SshKeys>> {
+        self.queries.ssh_keys_list_by_organization(organization_id).await
     }
 
-    pub async fn create(&self, input: CreateSshKeyDto) -> sqlx::Result<SshKeys> {
+    pub async fn create(&self, input: CreateSshKeyDto, organization_id: i64) -> sqlx::Result<SshKeys> {
         let now = chrono::Utc::now().timestamp();
         self.queries
             .ssh_keys_create_and_return(&SshKeysCreateAndReturnParams {
@@ -55,6 +59,7 @@ impl SshKeyService {
                 description: input.description.unwrap_or_default(),
                 private_key: input.private_key,
                 public_key: input.public_key,
+                organization_id,
                 created_at: now,
                 updated_at: now,
             })
@@ -66,6 +71,7 @@ impl SshKeyService {
         name: String,
         description: Option<String>,
         key_type: &str,
+        organization_id: i64,
     ) -> sqlx::Result<SshKeys> {
         let kt = key_type.to_lowercase();
         if kt != "ed25519" && kt != "rsa" {
@@ -83,14 +89,20 @@ impl SshKeyService {
                 description: description.unwrap_or_default(),
                 private_key,
                 public_key,
+                organization_id,
                 created_at: now,
                 updated_at: now,
             })
             .await
     }
 
-    pub async fn patch(&self, id: i64, input: PatchSshKeyDto) -> sqlx::Result<SshKeys> {
-        let current = self.get_by_id(id).await?;
+    pub async fn patch(
+        &self,
+        id: i64,
+        input: PatchSshKeyDto,
+        organization_id: i64,
+    ) -> sqlx::Result<SshKeys> {
+        let current = self.get_by_id(id, organization_id).await?;
         let name = input.name.unwrap_or(current.name);
         let description = input.description.or(current.description);
         let private_key = input.private_key.unwrap_or(current.private_key);
@@ -103,16 +115,18 @@ impl SshKeyService {
                 private_key,
                 public_key,
                 id,
+                organization_id,
             })
             .await
     }
 
-    pub async fn mark_used(&self, id: i64) -> sqlx::Result<SshKeys> {
+    pub async fn mark_used(&self, id: i64, organization_id: i64) -> sqlx::Result<SshKeys> {
+        self.get_by_id(id, organization_id).await?;
         self.queries.ssh_keys_touch_and_return(id).await
     }
 
-    pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
-        self.get_by_id(id).await?;
+    pub async fn delete(&self, id: i64, organization_id: i64) -> sqlx::Result<()> {
+        self.get_by_id(id, organization_id).await?;
         let server_use = self.queries.ssh_keys_server_use_count(id).await?;
         let git_use = self.queries.ssh_keys_git_use_count(id).await?;
         if server_use > 0 || git_use > 0 {
@@ -120,6 +134,6 @@ impl SshKeyService {
                 "Cannot delete SSH Key: It is currently in use by an active server, application, or compose stack.".into(),
             ));
         }
-        self.queries.ssh_keys_delete(id).await
+        self.queries.ssh_keys_delete(id, organization_id).await
     }
 }

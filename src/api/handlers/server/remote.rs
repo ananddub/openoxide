@@ -70,7 +70,7 @@ impl RemoteServerService for RemoteServerController {
         ctx: RequestContext,
         _query: ServiceRequest<'_, ResourceQuery>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let items = self.service.list().await.map_err(map_db_error)?;
+        let items = self.service.list(auth.organization_id).await.map_err(map_db_error)?;
         let items = items
             .into_iter()
             .map(RemoteServerResponseDto::from)
@@ -89,8 +89,9 @@ impl RemoteServerService for RemoteServerController {
             impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
         >,
     > {
+        let organization_id = auth.organization_id;
         let stream = {
-            let sql = "SELECT * FROM servers".to_string();
+            let sql = format!("SELECT * FROM servers WHERE organization_id = {organization_id}");
             realtime()
                 .watch_query::<Servers>(sql)
                 .await
@@ -116,7 +117,7 @@ impl RemoteServerService for RemoteServerController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let server = self
             .service
-            .get_by_id(request.id)
+            .get_in_org(request.id, auth.organization_id)
             .await
             .map_err(map_db_error)?;
         Response::ok(server_to_resource(RemoteServerResponseDto::from(server)))
@@ -133,8 +134,9 @@ impl RemoteServerService for RemoteServerController {
         >,
     > {
         let id = request.id;
+        let organization_id = auth.organization_id;
         let stream = {
-            let sql = format!("SELECT * FROM servers WHERE id = {id}");
+            let sql = format!("SELECT * FROM servers WHERE id = {id} AND organization_id = {organization_id}");
             realtime()
                 .watch_query::<Servers>(sql)
                 .await
@@ -156,7 +158,7 @@ impl RemoteServerService for RemoteServerController {
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         dto.validate()
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let server = self.service.create(dto).await.map_err(map_db_error)?;
+        let server = self.service.create(dto, auth.organization_id).await.map_err(map_db_error)?;
         Response::ok(server_to_resource(RemoteServerResponseDto::from(server)))
     }
 
@@ -170,7 +172,7 @@ impl RemoteServerService for RemoteServerController {
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         dto.validate()
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let server = self.service.patch(request.id, dto).await.map_err(map_db_error)?;
+        let server = self.service.patch(request.id, dto, auth.organization_id).await.map_err(map_db_error)?;
         Response::ok(server_to_resource(RemoteServerResponseDto::from(server)))
     }
 
@@ -252,7 +254,10 @@ impl RemoteServerService for RemoteServerController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.delete(request.id).await.map_err(map_db_error)?;
+        self.service
+            .delete(request.id, auth.organization_id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 

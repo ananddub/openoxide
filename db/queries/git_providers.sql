@@ -3,30 +3,31 @@
 -- GITLAB: {"url":..., "internal_url":..., "application_id":..., "redirect_uri":..., "secret":..., "access_token":..., "refresh_token":..., "group_name":..., "expires_at":...}
 -- GITEA:  {"url":..., "internal_url":..., "redirect_uri":..., "client_id":..., "client_secret":..., "access_token":..., "refresh_token":..., "expires_at":..., "scopes":..., "last_authenticated_at":...}
 -- BITBUCKET: {"username":..., "email":..., "app_password":..., "api_token":..., "workspace_name":...}
+-- Organization-scoped: reads/writes filter by organization_id.
 
 -- name: GetGitProviderByID :one
 SELECT * FROM git_providers WHERE id = ?;
 
 -- name: ListGitProviders :many
-SELECT * FROM git_providers ORDER BY created_at DESC;
+SELECT * FROM git_providers WHERE organization_id = ? ORDER BY created_at DESC;
 
 -- name: ListGitProvidersByType :many
-SELECT * FROM git_providers WHERE provider_type = ? ORDER BY created_at DESC;
+SELECT * FROM git_providers WHERE provider_type = ? AND organization_id = ? ORDER BY created_at DESC;
 
 -- name: CreateGitProvider :one
-INSERT INTO git_providers (name, provider_type, config_json, shared, webhook_secret)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO git_providers (name, provider_type, config_json, shared, webhook_secret, organization_id)
+VALUES (?, ?, ?, ?, ?, ?)
 RETURNING *;
 
 -- name: UpdateGitProvider :one
-UPDATE git_providers SET name = ?, provider_type = ?, config_json = ?, shared = ?, webhook_secret = ? WHERE id = ?
+UPDATE git_providers SET name = ?, provider_type = ?, config_json = ?, shared = ?, webhook_secret = ? WHERE id = ? AND organization_id = ?
 RETURNING *;
 
 -- name: UpdateGitProviderConfig :exec
 UPDATE git_providers SET config_json = ? WHERE id = ?;
 
 -- name: DeleteGitProvider :exec
-DELETE FROM git_providers WHERE id = ?;
+DELETE FROM git_providers WHERE id = ? AND organization_id = ?;
 
 -- Webhook secret management (bool returns via COUNT / RETURNING row).
 

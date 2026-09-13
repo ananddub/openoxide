@@ -110,8 +110,28 @@ impl RemoteServerService {
         self.queries.servers_get_by_id(id).await
     }
 
-    pub async fn list(&self) -> sqlx::Result<Vec<Servers>> {
-        self.queries.servers_list_ordered().await
+    /// Reject access to a server that is not owned by the caller's active
+    /// organization. `get_by_id` stays organization-agnostic because the
+    /// deployment engine, monitoring reconciler and SSH plumbing resolve
+    /// servers by id with no request context; only the user-facing
+    /// controller paths call through this guard.
+    pub async fn get_in_org(&self, id: i64, organization_id: i64) -> sqlx::Result<Servers> {
+        let server = self.get_by_id(id).await?;
+        if server.organization_id != organization_id {
+            return Err(sqlx::Error::RowNotFound);
+        }
+        Ok(server)
+    }
+
+    pub async fn list(&self, organization_id: i64) -> sqlx::Result<Vec<Servers>> {
+        self.queries.servers_list_ordered(organization_id).await
+    }
+
+    /// Every server across all organizations. Only for background engine
+    /// loops (monitoring reconcile, alert evaluation) that have no request
+    /// organization; user-facing paths must use `list(organization_id)`.
+    pub async fn list_all_servers(&self) -> sqlx::Result<Vec<Servers>> {
+        self.queries.servers_get_all().await
     }
 
     pub async fn connection_details(
@@ -124,7 +144,11 @@ impl RemoteServerService {
         Ok((server, key))
     }
 
-    pub async fn create(&self, input: CreateRemoteServerDto) -> sqlx::Result<Servers> {
+    pub async fn create(
+        &self,
+        input: CreateRemoteServerDto,
+        organization_id: i64,
+    ) -> sqlx::Result<Servers> {
         let app_name = generate_app_name(&input.name);
         let server_type = input.server_type.as_str().to_owned();
 
@@ -140,12 +164,18 @@ impl RemoteServerService {
                 ssh_key_id: input.ssh_key_id.unwrap_or(0),
                 build_memory_limit: input.build_memory_limit.unwrap_or_default(),
                 build_cpu_limit: input.build_cpu_limit.unwrap_or_default(),
+                organization_id,
             })
             .await
     }
 
-    pub async fn patch(&self, id: i64, input: PatchRemoteServerDto) -> sqlx::Result<Servers> {
-        let current = self.get_by_id(id).await?;
+    pub async fn patch(
+        &self,
+        id: i64,
+        input: PatchRemoteServerDto,
+        organization_id: i64,
+    ) -> sqlx::Result<Servers> {
+        let current = self.get_in_org(id, organization_id).await?;
         self.queries
             .servers_update_and_return(&ServersUpdateAndReturnParams {
                 id,
@@ -183,6 +213,7 @@ impl RemoteServerService {
                     .build_cpu_limit
                     .or(current.build_cpu_limit)
                     .unwrap_or_default(),
+                organization_id,
             })
             .await
     }
@@ -235,8 +266,8 @@ impl RemoteServerService {
         Ok(server)
     }
 
-    pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
-        self.get_by_id(id).await?;
+    pub async fn delete(&self, id: i64, organization_id: i64) -> sqlx::Result<()> {
+        self.get_in_org(id, organization_id).await?;
         let dependencies = self.dependency_counts(id).await?;
         if dependencies.total() > 0 {
             return Err(sqlx::Error::Protocol(format!(
@@ -254,7 +285,7 @@ impl RemoteServerService {
         {
             let _ = private_network_service.disable(id).await;
         }
-        self.queries.servers_delete(id).await
+        self.queries.servers_delete(id, organization_id).await
     }
 
     async fn dependency_counts(&self, id: i64) -> sqlx::Result<ServerDependencyCounts> {

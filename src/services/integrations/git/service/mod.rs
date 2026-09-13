@@ -117,8 +117,8 @@ impl GitProviderService {
         }
     }
 
-    pub async fn list(&self) -> sqlx::Result<Vec<GitProviderView>> {
-        let rows = self.queries.list_git_providers().await?;
+    pub async fn list(&self, organization_id: i64) -> sqlx::Result<Vec<GitProviderView>> {
+        let rows = self.queries.list_git_providers(organization_id).await?;
         let mut output = Vec::with_capacity(rows.len());
         for row in rows {
             output.push(self.view(row).await?);
@@ -126,8 +126,11 @@ impl GitProviderService {
         Ok(output)
     }
 
-    pub async fn get(&self, id: i64) -> sqlx::Result<GitProviderView> {
+    pub async fn get(&self, id: i64, organization_id: i64) -> sqlx::Result<GitProviderView> {
         let row = self.queries.get_git_provider_by_i_d(id).await?;
+        if row.organization_id != organization_id {
+            return Err(sqlx::Error::RowNotFound);
+        }
         self.view(row).await
     }
 

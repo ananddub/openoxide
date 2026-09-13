@@ -19,6 +19,7 @@ pub struct RegistriesCreateParams {
     pub password: String,
     pub registry_url: String,
     pub registry_type: String,
+    pub organization_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -33,6 +34,7 @@ pub struct RegistriesUpdateParams {
     pub created_at: i64,
     pub updated_at: i64,
     pub id: i64,
+    pub organization_id: i64,
 }
 
 pub struct RegistriesUsageReferencesParams {
@@ -42,13 +44,15 @@ pub struct RegistriesUsageReferencesParams {
 }
 
 impl Queries {
-    /// RegistriesGetAll
-    pub async fn registries_get_all(
+    /// RegistriesListByOrganization
+    pub async fn registries_list_by_organization(
         &self,
+        organization_id: i64,
     ) -> Result<Vec<Registries>, sqlx::Error> {
         sqlx::query_as::<_, Registries>(
-            "SELECT id AS id, registry_name AS registry_name, image_prefix AS image_prefix, username AS username, password AS password, registry_url AS registry_url, registry_type AS registry_type, created_at AS created_at, updated_at AS updated_at FROM registries;"
+            "SELECT id AS id, registry_name AS registry_name, image_prefix AS image_prefix, username AS username, password AS password, registry_url AS registry_url, registry_type AS registry_type, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM registries WHERE organization_id = ? ORDER BY created_at DESC, id DESC;"
         )
+        .bind(organization_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -59,7 +63,7 @@ impl Queries {
         id: i64,
     ) -> Result<Registries, sqlx::Error> {
         sqlx::query_as::<_, Registries>(
-            "SELECT id AS id, registry_name AS registry_name, image_prefix AS image_prefix, username AS username, password AS password, registry_url AS registry_url, registry_type AS registry_type, created_at AS created_at, updated_at AS updated_at FROM registries WHERE id = ?;"
+            "SELECT id AS id, registry_name AS registry_name, image_prefix AS image_prefix, username AS username, password AS password, registry_url AS registry_url, registry_type AS registry_type, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM registries WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -72,7 +76,7 @@ impl Queries {
         params: &RegistriesCreateParams,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "INSERT INTO registries (registry_name, image_prefix, username, password, registry_url, registry_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id;"
+            "INSERT INTO registries (registry_name, image_prefix, username, password, registry_url, registry_type, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id;"
         )
         .bind(&params.registry_name)
         .bind(&params.image_prefix)
@@ -80,6 +84,7 @@ impl Queries {
         .bind(&params.password)
         .bind(&params.registry_url)
         .bind(&params.registry_type)
+        .bind(&params.organization_id)
         .bind(&params.created_at)
         .bind(&params.updated_at)
         .fetch_one(&self.pool)
@@ -92,7 +97,7 @@ impl Queries {
         params: &RegistriesUpdateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE registries SET registry_name = ?, image_prefix = ?, username = ?, password = ?, registry_url = ?, registry_type = ?, created_at = ?, updated_at = ? WHERE id = ?;"
+            "UPDATE registries SET registry_name = ?, image_prefix = ?, username = ?, password = ?, registry_url = ?, registry_type = ?, created_at = ?, updated_at = ? WHERE id = ? AND organization_id = ?;"
         )
         .bind(&params.registry_name)
         .bind(&params.image_prefix)
@@ -103,6 +108,7 @@ impl Queries {
         .bind(&params.created_at)
         .bind(&params.updated_at)
         .bind(&params.id)
+        .bind(&params.organization_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -112,11 +118,13 @@ impl Queries {
     pub async fn registries_delete(
         &self,
         id: i64,
+        organization_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM registries WHERE id = ?;"
+            "DELETE FROM registries WHERE id = ? AND organization_id = ?;"
         )
         .bind(id)
+        .bind(organization_id)
         .execute(&self.pool)
         .await?;
         Ok(())

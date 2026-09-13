@@ -5,3 +5,8 @@ SELECT panel_backup_cron, log_cleanup_cron, log_retention_days, panel_backup_ena
 
 -- name: BackgroundPoliciesUpdate :exec
 UPDATE background_policies SET panel_backup_cron = ?, log_cleanup_cron = ?, log_retention_days = ?, panel_backup_enabled = ?, log_cleanup_enabled = ?, updated_at = unixepoch() WHERE id = 1;
+
+-- name: BackgroundPoliciesSeed :exec
+INSERT OR IGNORE INTO background_policies
+    (id, panel_backup_cron, log_cleanup_cron, log_retention_days, panel_backup_enabled, log_cleanup_enabled, updated_at)
+VALUES (1, '0 3 * * *', '0 0 * * *', 30, 1, 1, unixepoch());

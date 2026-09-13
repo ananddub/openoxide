@@ -87,9 +87,9 @@ impl DestinationService for DestinationController {
         ctx: RequestContext,
         _query: ServiceRequest<'_, ResourceQuery>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        if let Some(CacheEnum::DestinationsList(cached)) =
-            self.cache.get(&CacheKey::DestinationsList).await
-        {
+        let organization_id = auth.organization_id;
+        let cache_key = CacheKey::DestinationsList(organization_id);
+        if let Some(CacheEnum::DestinationsList(cached)) = self.cache.get(&cache_key).await {
             let items = cached
                 .into_iter()
                 .map(DestinationResponseDto::from)
@@ -98,12 +98,9 @@ impl DestinationService for DestinationController {
             return Response::ok(ResourceListResponse { items, ..Default::default() });
         }
 
-        let items = self.service.list().await.map_err(map_sqlx_error)?;
+        let items = self.service.list(organization_id).await.map_err(map_sqlx_error)?;
         self.cache
-            .insert(
-                CacheKey::DestinationsList,
-                CacheEnum::DestinationsList(items.clone()),
-            )
+            .insert(cache_key, CacheEnum::DestinationsList(items.clone()))
             .await;
 
         let items = items
@@ -123,7 +120,7 @@ impl DestinationService for DestinationController {
         // Destination IDs are UUID strings — extract from payload JSON
         let id: DestinationId = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let dest = self.service.get_by_id(&id.id).await.map_err(map_sqlx_error)?;
+        let dest = self.service.get_by_id(&id.id, auth.organization_id).await.map_err(map_sqlx_error)?;
         Response::ok(destination_to_resource(DestinationResponseDto::from(dest)))
     }
 
@@ -135,8 +132,11 @@ impl DestinationService for DestinationController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let dto: CreateDestinationDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        // The authenticated organization always owns the row, whatever the
+        // body claims.
+        let dto = CreateDestinationDto { organization_id: auth.organization_id, ..dto };
         let created = self.service.create(dto).await.map_err(map_sqlx_error)?;
-        self.cache.invalidate(&CacheKey::DestinationsList).await;
+        self.cache.invalidate(&CacheKey::DestinationsList(auth.organization_id)).await;
         Response::ok(destination_to_resource(DestinationResponseDto::from(created)))
     }
 
@@ -151,8 +151,8 @@ impl DestinationService for DestinationController {
         // Destination IDs are UUID strings — extract the "id" field from payload
         let id: DestinationId = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let updated = self.service.patch(&id.id, dto).await.map_err(map_sqlx_error)?;
-        self.cache.invalidate(&CacheKey::DestinationsList).await;
+        let updated = self.service.patch(&id.id, dto, auth.organization_id).await.map_err(map_sqlx_error)?;
+        self.cache.invalidate(&CacheKey::DestinationsList(auth.organization_id)).await;
         Response::ok(destination_to_resource(DestinationResponseDto::from(updated)))
     }
 
@@ -165,8 +165,8 @@ impl DestinationService for DestinationController {
         // Destination IDs are UUID strings — extract from payload JSON
         let id: DestinationId = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        self.service.delete(&id.id).await.map_err(map_sqlx_error)?;
-        self.cache.invalidate(&CacheKey::DestinationsList).await;
+        self.service.delete(&id.id, auth.organization_id).await.map_err(map_sqlx_error)?;
+        self.cache.invalidate(&CacheKey::DestinationsList(auth.organization_id)).await;
         Response::ok(Empty::default())
     }
 

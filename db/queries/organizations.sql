@@ -14,6 +14,15 @@ SELECT * FROM organization WHERE name = ?;
 -- name: ListOrganizationsByOwner :many
 SELECT * FROM organization WHERE owner_id = ? ORDER BY created_at DESC;
 
+-- Organizations joined via membership (owner orgs come from
+-- ListOrganizationsByOwner; the service merges and derives roles).
+-- name: ListOrganizationsByMember :many
+SELECT o.*, om.role AS member_role
+FROM organization o
+JOIN organization_members om ON om.organization_id = o.id
+WHERE om.user_id = ?
+ORDER BY o.created_at DESC;
+
 -- name: CreateOrganization :one
 INSERT INTO organization (name, logo, slug, owner_id)
 VALUES (?, ?, ?, ?)

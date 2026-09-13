@@ -10,6 +10,7 @@ pub struct CreateGitProviderParams {
     pub config_json: String,
     pub shared: i64,
     pub webhook_secret: String,
+    pub organization_id: i64,
 }
 
 pub struct UpdateGitProviderParams {
@@ -19,6 +20,7 @@ pub struct UpdateGitProviderParams {
     pub shared: i64,
     pub webhook_secret: String,
     pub id: i64,
+    pub organization_id: i64,
 }
 
 impl Queries {
@@ -38,10 +40,12 @@ impl Queries {
     /// ListGitProviders
     pub async fn list_git_providers(
         &self,
+        organization_id: i64,
     ) -> Result<Vec<GitProviders>, sqlx::Error> {
         sqlx::query_as::<_, GitProviders>(
-            "SELECT * FROM git_providers ORDER BY created_at DESC;"
+            "SELECT * FROM git_providers WHERE organization_id = ? ORDER BY created_at DESC;"
         )
+        .bind(organization_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -50,11 +54,13 @@ impl Queries {
     pub async fn list_git_providers_by_type(
         &self,
         provider_type: &str,
+        organization_id: i64,
     ) -> Result<Vec<GitProviders>, sqlx::Error> {
         sqlx::query_as::<_, GitProviders>(
-            "SELECT * FROM git_providers WHERE provider_type = ? ORDER BY created_at DESC;"
+            "SELECT * FROM git_providers WHERE provider_type = ? AND organization_id = ? ORDER BY created_at DESC;"
         )
         .bind(provider_type)
+        .bind(organization_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -65,13 +71,14 @@ impl Queries {
         params: &CreateGitProviderParams,
     ) -> Result<GitProviders, sqlx::Error> {
         sqlx::query_as::<_, GitProviders>(
-            "INSERT INTO git_providers (name, provider_type, config_json, shared, webhook_secret) VALUES (?, ?, ?, ?, ?) RETURNING *;"
+            "INSERT INTO git_providers (name, provider_type, config_json, shared, webhook_secret, organization_id) VALUES (?, ?, ?, ?, ?, ?) RETURNING *;"
         )
         .bind(&params.name)
         .bind(&params.provider_type)
         .bind(&params.config_json)
         .bind(&params.shared)
         .bind(&params.webhook_secret)
+        .bind(&params.organization_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -82,7 +89,7 @@ impl Queries {
         params: &UpdateGitProviderParams,
     ) -> Result<GitProviders, sqlx::Error> {
         sqlx::query_as::<_, GitProviders>(
-            "UPDATE git_providers SET name = ?, provider_type = ?, config_json = ?, shared = ?, webhook_secret = ? WHERE id = ? RETURNING *;"
+            "UPDATE git_providers SET name = ?, provider_type = ?, config_json = ?, shared = ?, webhook_secret = ? WHERE id = ? AND organization_id = ? RETURNING *;"
         )
         .bind(&params.name)
         .bind(&params.provider_type)
@@ -90,6 +97,7 @@ impl Queries {
         .bind(&params.shared)
         .bind(&params.webhook_secret)
         .bind(&params.id)
+        .bind(&params.organization_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -114,11 +122,13 @@ impl Queries {
     pub async fn delete_git_provider(
         &self,
         id: i64,
+        organization_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM git_providers WHERE id = ?;"
+            "DELETE FROM git_providers WHERE id = ? AND organization_id = ?;"
         )
         .bind(id)
+        .bind(organization_id)
         .execute(&self.pool)
         .await?;
         Ok(())

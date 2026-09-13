@@ -3,7 +3,26 @@
 
 use super::models::*;
 use super::db::Queries;
-use super::domains::DomainsCreateParams;
+
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
+pub struct PrevEnvCreateDomainRow {
+    pub id: i64,
+    pub host: String,
+    pub https: i64,
+    pub port: Option<i64>,
+    pub path: Option<String>,
+    pub internal_path: Option<String>,
+    pub custom_entrypoint: Option<String>,
+    pub service_name: Option<String>,
+    pub custom_cert_resolver: Option<String>,
+    pub strip_path: i64,
+    pub middlewares: String,
+    pub domain_type: String,
+    pub certificate_type: String,
+    pub service_id: Option<i64>,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
 
 pub struct PrevEnvCloneServiceParams {
     pub name: String,
@@ -59,7 +78,23 @@ pub struct PrevEnvSetBitbucketSourceParams {
     pub service_id: i64,
 }
 
-pub type PrevEnvCreateDomainParams = DomainsCreateParams;
+pub struct PrevEnvCreateDomainParams {
+    pub host: String,
+    pub https: i64,
+    pub port: i64,
+    pub path: String,
+    pub internal_path: String,
+    pub custom_entrypoint: String,
+    pub service_name: String,
+    pub custom_cert_resolver: String,
+    pub strip_path: i64,
+    pub middlewares: String,
+    pub domain_type: String,
+    pub certificate_type: String,
+    pub service_id: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
 
 impl Queries {
     /// PrevEnvCloneService
@@ -237,8 +272,8 @@ impl Queries {
     pub async fn prev_env_create_domain(
         &self,
         params: &PrevEnvCreateDomainParams,
-    ) -> Result<Domains, sqlx::Error> {
-        sqlx::query_as::<_, Domains>(
+    ) -> Result<PrevEnvCreateDomainRow, sqlx::Error> {
+        sqlx::query_as::<_, PrevEnvCreateDomainRow>(
             "INSERT INTO domains (host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, service_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id AS id, host, https, port, path, internal_path, custom_entrypoint, service_name, custom_cert_resolver, strip_path, middlewares, domain_type, certificate_type, service_id, created_at, updated_at;"
         )
         .bind(&params.host)

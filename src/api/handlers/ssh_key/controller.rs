@@ -24,8 +24,9 @@ impl SshKeyService for SshKeyController {
             impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
         >,
     > {
+        let organization_id = auth.organization_id;
         let stream = {
-            let sql = "SELECT * FROM ssh_keys".to_string();
+            let sql = format!("SELECT * FROM ssh_keys WHERE organization_id = {organization_id}");
             realtime()
                 .watch_query::<SshKeys>(sql)
                 .await
@@ -54,8 +55,9 @@ impl SshKeyService for SshKeyController {
         >,
     > {
         let id = request.id;
+        let organization_id = auth.organization_id;
         let stream = {
-            let sql = format!("SELECT * FROM ssh_keys WHERE id = {id}");
+            let sql = format!("SELECT * FROM ssh_keys WHERE id = {id} AND organization_id = {organization_id}");
             realtime()
                 .watch_query::<SshKeys>(sql)
                 .await
@@ -73,7 +75,7 @@ impl SshKeyService for SshKeyController {
         ctx: RequestContext,
         _query: ServiceRequest<'_, ResourceQuery>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let items = self.service.list().await.map_err(map_db_error)?;
+        let items = self.service.list(auth.organization_id).await.map_err(map_db_error)?;
         let items = items.into_iter().map(SshKeyResponseDto::from).map(key_to_resource).collect();
         Response::ok(ResourceListResponse { items, ..Default::default() })
     }
@@ -84,7 +86,7 @@ impl SshKeyService for SshKeyController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let key = self.service.get_by_id(request.id).await.map_err(map_db_error)?;
+        let key = self.service.get_by_id(request.id, auth.organization_id).await.map_err(map_db_error)?;
         Response::ok(key_to_resource(SshKeyResponseDto::from(key)))
     }
 
@@ -96,7 +98,7 @@ impl SshKeyService for SshKeyController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let dto: CreateSshKeyDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let key = self.service.create(dto).await.map_err(map_db_error)?;
+        let key = self.service.create(dto, auth.organization_id).await.map_err(map_db_error)?;
         Response::ok(key_to_resource(SshKeyResponseDto::from(key)))
     }
 
@@ -108,7 +110,7 @@ impl SshKeyService for SshKeyController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let dto: GenerateSshKeyDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let key = self.service.generate(dto.name, dto.description, &dto.key_type)
+        let key = self.service.generate(dto.name, dto.description, &dto.key_type, auth.organization_id)
             .await.map_err(map_db_error)?;
         Response::ok(key_to_resource(SshKeyResponseDto::from(key)))
     }
@@ -140,7 +142,7 @@ impl SshKeyService for SshKeyController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let dto: PatchSshKeyDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let key = self.service.patch(request.id, dto).await.map_err(map_db_error)?;
+        let key = self.service.patch(request.id, dto, auth.organization_id).await.map_err(map_db_error)?;
         Response::ok(key_to_resource(SshKeyResponseDto::from(key)))
     }
 
@@ -150,7 +152,7 @@ impl SshKeyService for SshKeyController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        self.service.mark_used(request.id).await.map_err(map_db_error)?;
+        self.service.mark_used(request.id, auth.organization_id).await.map_err(map_db_error)?;
         Response::ok(OperationResult {
             success: true,
             operation: "mark_used".into(),
@@ -164,7 +166,7 @@ impl SshKeyService for SshKeyController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.delete(request.id).await.map_err(map_db_error)?;
+        self.service.delete(request.id, auth.organization_id).await.map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 }

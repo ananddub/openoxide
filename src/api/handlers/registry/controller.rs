@@ -74,19 +74,16 @@ impl RegistryService for RegistryController {
         ctx: RequestContext,
         _query: ServiceRequest<'_, ResourceQuery>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        if let Some(CacheEnum::RegistriesList(cached)) =
-            self.cache.get(&CacheKey::RegistriesList).await
-        {
+        let organization_id = auth.organization_id;
+        let cache_key = CacheKey::RegistriesList(organization_id);
+        if let Some(CacheEnum::RegistriesList(cached)) = self.cache.get(&cache_key).await {
             let items = cached.into_iter().map(RegistryResponseDto::from).map(registry_to_resource).collect();
             return Response::ok(ResourceListResponse { items, ..Default::default() });
         }
 
-        let items = self.service.list().await.map_err(map_sqlx_error)?;
+        let items = self.service.list(organization_id).await.map_err(map_sqlx_error)?;
         self.cache
-            .insert(
-                CacheKey::RegistriesList,
-                CacheEnum::RegistriesList(items.clone()),
-            )
+            .insert(cache_key, CacheEnum::RegistriesList(items.clone()))
             .await;
 
         let items = items.into_iter().map(RegistryResponseDto::from).map(registry_to_resource).collect();
@@ -99,7 +96,7 @@ impl RegistryService for RegistryController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let registry = self.service.get_by_id(request.id).await.map_err(map_sqlx_error)?;
+        let registry = self.service.get_by_id(request.id, auth.organization_id).await.map_err(map_sqlx_error)?;
         Response::ok(registry_to_resource(RegistryResponseDto::from(registry)))
     }
 
@@ -111,8 +108,8 @@ impl RegistryService for RegistryController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let dto: CreateRegistryDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let created = self.service.create(dto).await.map_err(map_sqlx_error)?;
-        self.cache.invalidate(&CacheKey::RegistriesList).await;
+        let created = self.service.create(dto, auth.organization_id).await.map_err(map_sqlx_error)?;
+        self.cache.invalidate(&CacheKey::RegistriesList(auth.organization_id)).await;
         Response::ok(registry_to_resource(RegistryResponseDto::from(created)))
     }
 
@@ -124,8 +121,8 @@ impl RegistryService for RegistryController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let dto: PatchRegistryDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let updated = self.service.patch(request.id, dto).await.map_err(map_sqlx_error)?;
-        self.cache.invalidate(&CacheKey::RegistriesList).await;
+        let updated = self.service.patch(request.id, dto, auth.organization_id).await.map_err(map_sqlx_error)?;
+        self.cache.invalidate(&CacheKey::RegistriesList(auth.organization_id)).await;
         Response::ok(registry_to_resource(RegistryResponseDto::from(updated)))
     }
 
@@ -135,8 +132,8 @@ impl RegistryService for RegistryController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.delete(request.id).await.map_err(map_sqlx_error)?;
-        self.cache.invalidate(&CacheKey::RegistriesList).await;
+        self.service.delete(request.id, auth.organization_id).await.map_err(map_sqlx_error)?;
+        self.cache.invalidate(&CacheKey::RegistriesList(auth.organization_id)).await;
         Response::ok(Empty::default())
     }
 
@@ -151,7 +148,7 @@ impl RegistryService for RegistryController {
         // `id` may ride the envelope (ResourceRequest.id) or the payload.
         let saved_id = dto.id.or(if request.id != 0 { Some(request.id) } else { None });
         let result = match saved_id {
-            Some(id) => self.service.test_connection(id).await,
+            Some(id) => self.service.test_connection(id, auth.organization_id).await,
             None => {
                 self.service
                     .test_connection_raw(&dto.registry_url, &dto.username, &dto.password)
@@ -173,7 +170,7 @@ impl RegistryService for RegistryController {
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
         let repositories = self.service
-            .repositories(request.id)
+            .repositories(request.id, auth.organization_id)
             .await
             .map_err(|e| ConnectError::new(ErrorCode::Unavailable, e))?;
         let payload = serde_json::to_string(&RegistryRepositoriesDto { repositories }).unwrap_or_default();
@@ -196,7 +193,7 @@ impl RegistryService for RegistryController {
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let repository = dto.repository.clone();
         let tags = self.service
-            .tags(request.id, &repository)
+            .tags(request.id, &repository, auth.organization_id)
             .await
             .map_err(|e| ConnectError::new(ErrorCode::Unavailable, e))?;
         let payload = serde_json::to_string(&RegistryTagsDto { repository, tags }).unwrap_or_default();
@@ -218,7 +215,7 @@ impl RegistryService for RegistryController {
         let dto: RotateRegistryCredentialsDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let registry = self.service
-            .rotate_credentials(request.id, dto.username, dto.password)
+            .rotate_credentials(request.id, dto.username, dto.password, auth.organization_id)
             .await
             .map_err(|e| ConnectError::invalid_argument(e))?;
         let payload = serde_json::to_string(&RegistryResponseDto::from(registry)).unwrap_or_default();
@@ -236,7 +233,7 @@ impl RegistryService for RegistryController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let rows = self.service.usage(request.id).await.map_err(map_sqlx_error)?;
+        let rows = self.service.usage(request.id, auth.organization_id).await.map_err(map_sqlx_error)?;
         let usage: Vec<RegistryUsageDto> = rows.into_iter().map(Into::into).collect();
         let payload = serde_json::to_string(&usage).unwrap_or_default();
         Response::ok(ResourceResponse {

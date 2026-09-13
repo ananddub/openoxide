@@ -4,12 +4,37 @@
 use super::models::*;
 use super::db::Queries;
 use super::compose_extra::ComposePatchCreateParams;
-use super::domains::DomainsCreateAndReturnParams;
-use super::domains::DomainsUpdateAndReturnParams;
 
-pub type CreateDomainParams = DomainsCreateAndReturnParams;
+pub struct CreateDomainParams {
+    pub host: String,
+    pub https: i64,
+    pub port: i64,
+    pub path: String,
+    pub internal_path: String,
+    pub custom_entrypoint: String,
+    pub service_name: String,
+    pub custom_cert_resolver: String,
+    pub strip_path: i64,
+    pub middlewares: String,
+    pub domain_type: String,
+    pub certificate_type: String,
+    pub service_id: i64,
+}
 
-pub type UpdateDomainParams = DomainsUpdateAndReturnParams;
+pub struct UpdateDomainParams {
+    pub host: String,
+    pub https: i64,
+    pub port: i64,
+    pub path: String,
+    pub internal_path: String,
+    pub custom_entrypoint: String,
+    pub service_name: String,
+    pub custom_cert_resolver: String,
+    pub strip_path: i64,
+    pub middlewares: String,
+    pub certificate_type: String,
+    pub id: i64,
+}
 
 pub type CreatePatchParams = ComposePatchCreateParams;
 

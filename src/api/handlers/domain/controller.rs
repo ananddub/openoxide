@@ -18,10 +18,10 @@ impl DomainOperationsService for DomainController {
     #[permission(Application, CanRead)]
     async fn list_domains<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         _request: ServiceRequest<'_, ResourceQuery>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let items = self.service.list_all().await.map_err(map_error)?;
+        let items = self.service.list_all(auth.organization_id).await.map_err(map_error)?;
         let items = items.into_iter().map(DomainResponseDto::from).map(domain_to_resource).collect();
         Response::ok(ResourceListResponse { items, ..Default::default() })
     }
@@ -29,15 +29,16 @@ impl DomainOperationsService for DomainController {
     #[permission(Application, CanRead)]
     async fn stream_list_domains(
         &self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         _request: ServiceRequest<'_, ResourceQuery>,
     ) -> ServiceResult<
         connectrpc::ServiceStream<
             impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
         >,
     > {
+        let organization_id = auth.organization_id;
         let stream = {
-            let sql = "SELECT * FROM domains".to_string();
+            let sql = format!("SELECT * FROM domains WHERE organization_id = {organization_id}");
             realtime()
                 .watch_query::<Domains>(sql)
                 .await
@@ -59,17 +60,17 @@ impl DomainOperationsService for DomainController {
     #[permission(Application, CanRead)]
     async fn get_domain<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let item = self.service.get_by_id(request.id).await.map_err(map_error)?;
+        let item = self.service.get_by_id(request.id, auth.organization_id).await.map_err(map_error)?;
         Response::ok(domain_to_resource(DomainResponseDto::from(item)))
     }
 
     #[permission(Application, CanRead)]
     async fn stream_domain(
         &self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<
         connectrpc::ServiceStream<
@@ -77,8 +78,11 @@ impl DomainOperationsService for DomainController {
         >,
     > {
         let id = request.id;
+        let organization_id = auth.organization_id;
         let stream = {
-            let sql = format!("SELECT * FROM domains WHERE id = {id}");
+            let sql = format!(
+                "SELECT * FROM domains WHERE id = {id} AND organization_id = {organization_id}"
+            );
             realtime()
                 .watch_query::<Domains>(sql)
                 .await
@@ -188,14 +192,14 @@ impl DomainOperationsService for DomainController {
     #[permission(Application, CanCreate)]
     async fn create_domain<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let dto: CreateDomainDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let app_id = dto.application_id;
         let comp_id = dto.compose_id;
-        let created = self.service.create(dto).await.map_err(map_error)?;
+        let created = self.service.create(dto, auth.organization_id).await.map_err(map_error)?;
         if let Some(id) = app_id {
             self.cache.invalidate(&CacheKey::DomainsApp(id)).await;
         }
@@ -208,12 +212,12 @@ impl DomainOperationsService for DomainController {
     #[permission(Application, CanCreate)]
     async fn update_domain<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let dto: PatchDomainDto = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let updated = self.service.patch(request.id, dto).await.map_err(map_error)?;
+        let updated = self.service.patch(request.id, dto, auth.organization_id).await.map_err(map_error)?;
         self.cache.invalidate_all().await;
         Response::ok(domain_to_resource(DomainResponseDto::from(updated)))
     }
@@ -221,10 +225,10 @@ impl DomainOperationsService for DomainController {
     #[permission(Application, CanDelete)]
     async fn delete_domain<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.delete(request.id).await.map_err(map_error)?;
+        self.service.delete(request.id, auth.organization_id).await.map_err(map_error)?;
         self.cache.invalidate_all().await;
         Response::ok(Empty::default())
     }

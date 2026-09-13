@@ -34,6 +34,73 @@ impl OrganizationService {
         self.queries.list_organizations_by_owner(owner_id).await
     }
 
+    /// Whether the user owns or joined the organization.
+    pub async fn is_member(&self, organization_id: i64, user_id: i64) -> sqlx::Result<bool> {
+        if self.queries.organization_members_role(user_id, organization_id).await.ok().flatten().is_some() {
+            return Ok(true);
+        }
+        match self.get_by_id(organization_id).await {
+            Ok(org) => Ok(org.owner_id == user_id),
+            Err(sqlx::Error::RowNotFound) => Ok(false),
+            Err(error) => Err(error),
+        }
+    }
+
+    /// Self-service exit: a member removes their own membership. Owners
+    /// must delete the organization instead (their membership row may not
+    /// even exist, and leaving an orphaned workspace is never allowed).
+    pub async fn leave(&self, organization_id: i64, user_id: i64) -> sqlx::Result<()> {
+        let org = self.get_by_id(organization_id).await?;
+        if org.owner_id == user_id {
+            return Err(sqlx::Error::Protocol(
+                "the organization owner cannot leave; delete the organization instead".into(),
+            ));
+        }
+        self.queries
+            .organization_members_remove_member(user_id, organization_id)
+            .await
+    }
+
+    /// Every organization the user can act inside — owned or joined via
+    /// membership — with the caller's effective role per organization.
+    /// Owned organizations always report OWNER even when a (stale) member
+    /// row carries a lesser role.
+    pub async fn list_for_user(
+        &self,
+        user_id: i64,
+    ) -> sqlx::Result<Vec<(Organization, String)>> {
+        let owned = self.queries.list_organizations_by_owner(user_id).await?;
+        let joined = self.queries.list_organizations_by_member(user_id).await?;
+        let mut result: Vec<(Organization, String)> = owned
+            .into_iter()
+            .map(|org| (org, "OWNER".to_string()))
+            .collect();
+        let seen: std::collections::HashSet<i64> =
+            result.iter().map(|(org, _)| org.id).collect();
+        for row in joined {
+            if seen.contains(&row.id) {
+                continue;
+            }
+            let role = row.member_role.clone().unwrap_or_else(|| "MEMBER".into());
+            result.push(
+                (
+                    Organization {
+                        id: row.id,
+                        name: row.name,
+                        logo: row.logo,
+                        slug: row.slug,
+                        owner_id: row.owner_id,
+                        created_at: row.created_at,
+                        updated_at: row.updated_at,
+                    },
+                    role,
+                ),
+            );
+        }
+        result.sort_by_key(|(org, _)| std::cmp::Reverse(org.created_at));
+        Ok(result)
+    }
+
     pub async fn create(
         &self,
         owner_id: i64,

@@ -61,12 +61,19 @@ impl PreviewDeploymentService {
                     outcome.skipped_permission += 1;
                     continue;
                 };
+                let provider_org = self
+                    .queries
+                    .get_git_provider_by_i_d(target.provider_id)
+                    .await
+                    .map_err(|error| error.to_string())?
+                    .organization_id;
                 let permission = providers
                     .collaborator_permission(
                         target.provider_id,
                         &event.owner,
                         &event.repository,
                         author,
+                        provider_org,
                     )
                     .await?;
                 if !permission.can_write {

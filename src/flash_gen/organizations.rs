@@ -8,6 +8,18 @@ use super::organization_members::OrganizationMembersUpdateRoleParams;
 use super::organization::OrganizationUpdateAndReturnParams;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
+pub struct ListOrganizationsByMemberRow {
+    pub id: i64,
+    pub name: String,
+    pub logo: Option<String>,
+    pub slug: String,
+    pub owner_id: i64,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub member_role: Option<String>,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct ListMembersByOrgRow {
     pub id: i64,
     pub role: Option<String>,
@@ -90,6 +102,19 @@ impl Queries {
             "SELECT * FROM organization WHERE owner_id = ? ORDER BY created_at DESC;"
         )
         .bind(owner_id)
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// ListOrganizationsByMember
+    pub async fn list_organizations_by_member(
+        &self,
+        user_id: i64,
+    ) -> Result<Vec<ListOrganizationsByMemberRow>, sqlx::Error> {
+        sqlx::query_as::<_, ListOrganizationsByMemberRow>(
+            "SELECT o.*, om.role AS member_role FROM organization o JOIN organization_members om ON om.organization_id = o.id WHERE om.user_id = ? ORDER BY o.created_at DESC;"
+        )
+        .bind(user_id)
         .fetch_all(&self.pool)
         .await
     }

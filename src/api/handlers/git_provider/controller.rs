@@ -25,7 +25,10 @@ impl GitProviderService for GitProviderController {
         >,
     > {
         let stream = {
-            let sql = "SELECT * FROM git_providers".to_string();
+            let sql = format!(
+                "SELECT * FROM git_providers WHERE organization_id = {}",
+                auth.organization_id
+            );
             realtime()
                 .watch_query::<GitProviders>(sql)
                 .await
@@ -55,7 +58,10 @@ impl GitProviderService for GitProviderController {
     > {
         let id = request.id;
         let stream = {
-            let sql = format!("SELECT * FROM git_providers WHERE id = {id}");
+            let sql = format!(
+                "SELECT * FROM git_providers WHERE id = {id} AND organization_id = {}",
+                auth.organization_id
+            );
             realtime()
                 .watch_query::<GitProviders>(sql)
                 .await
@@ -73,7 +79,11 @@ impl GitProviderService for GitProviderController {
         ctx: RequestContext,
         _query: ServiceRequest<'_, ResourceQuery>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let items = self.service.list().await.map_err(map_db_error)?;
+        let items = self
+            .service
+            .list(auth.organization_id)
+            .await
+            .map_err(map_db_error)?;
         let items = items
             .into_iter()
             .map(GitProviderResponseDto::from)
@@ -91,7 +101,11 @@ impl GitProviderService for GitProviderController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let provider = self.service.get(request.id).await.map_err(map_db_error)?;
+        let provider = self
+            .service
+            .get(request.id, auth.organization_id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(provider_to_resource(GitProviderResponseDto::from(provider)))
     }
 
@@ -116,7 +130,7 @@ impl GitProviderService for GitProviderController {
                     installation_id: dto.installation_id,
                     private_key: dto.private_key,
                 },
-            })
+            }, auth.organization_id)
             .await
             .map_err(map_db_error)?;
         let created = CreatedGitProviderResponseDto {
@@ -155,7 +169,7 @@ impl GitProviderService for GitProviderController {
                     refresh_token: dto.refresh_token,
                     group_name: dto.group_name,
                 },
-            })
+            }, auth.organization_id)
             .await
             .map_err(map_db_error)?;
         let created = CreatedGitProviderResponseDto {
@@ -194,7 +208,7 @@ impl GitProviderService for GitProviderController {
                     refresh_token: dto.refresh_token,
                     scopes: dto.scopes,
                 },
-            })
+            }, auth.organization_id)
             .await
             .map_err(map_db_error)?;
         let created = CreatedGitProviderResponseDto {
@@ -230,7 +244,7 @@ impl GitProviderService for GitProviderController {
                     api_token: dto.api_token,
                     workspace: dto.workspace,
                 },
-            })
+            }, auth.organization_id)
             .await
             .map_err(map_db_error)?;
         let created = CreatedGitProviderResponseDto {
@@ -270,6 +284,7 @@ impl GitProviderService for GitProviderController {
                         private_key: dto.private_key,
                     },
                 },
+                auth.organization_id,
             )
             .await
             .map_err(map_db_error)?;
@@ -302,6 +317,7 @@ impl GitProviderService for GitProviderController {
                         group_name: dto.group_name,
                     },
                 },
+                auth.organization_id,
             )
             .await
             .map_err(map_db_error)?;
@@ -334,6 +350,7 @@ impl GitProviderService for GitProviderController {
                         scopes: dto.scopes,
                     },
                 },
+                auth.organization_id,
             )
             .await
             .map_err(map_db_error)?;
@@ -363,6 +380,7 @@ impl GitProviderService for GitProviderController {
                         workspace: dto.workspace,
                     },
                 },
+                auth.organization_id,
             )
             .await
             .map_err(map_db_error)?;
@@ -375,7 +393,10 @@ impl GitProviderService for GitProviderController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.delete(request.id).await.map_err(map_db_error)?;
+        self.service
+            .delete(request.id, auth.organization_id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 
@@ -386,7 +407,7 @@ impl GitProviderService for GitProviderController {
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
         self.service
-            .test_connection(request.id)
+            .test_connection(request.id, auth.organization_id)
             .await
             .map_err(provider_error)?;
         Response::ok(OperationResult {
@@ -404,7 +425,7 @@ impl GitProviderService for GitProviderController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let webhook_secret = self
             .service
-            .rotate_secret(request.id)
+            .rotate_secret(request.id, auth.organization_id)
             .await
             .map_err(map_db_error)?;
         let resp = WebhookSecretResponseDto { webhook_secret };
@@ -425,7 +446,7 @@ impl GitProviderService for GitProviderController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
         let repos = self
             .service
-            .repositories(request.id)
+            .repositories(request.id, auth.organization_id)
             .await
             .map_err(provider_error)?;
         let items = repos
@@ -456,7 +477,7 @@ impl GitProviderService for GitProviderController {
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let refs = self
             .service
-            .branches(request.id, &query.owner, &query.repository)
+            .branches(request.id, &query.owner, &query.repository, auth.organization_id)
             .await
             .map_err(provider_error)?;
         let items = refs
@@ -487,7 +508,7 @@ impl GitProviderService for GitProviderController {
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let refs = self
             .service
-            .tags(request.id, &query.owner, &query.repository)
+            .tags(request.id, &query.owner, &query.repository, auth.organization_id)
             .await
             .map_err(provider_error)?;
         let items = refs
@@ -516,7 +537,7 @@ impl GitProviderService for GitProviderController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let info = self
             .service
-            .authorization(request.id)
+            .authorization(request.id, auth.organization_id)
             .await
             .map_err(provider_error)?;
         let payload = serde_json::to_string(&info).unwrap_or_default();
@@ -530,7 +551,7 @@ impl GitProviderService for GitProviderController {
 
     async fn o_auth_callback<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let dto: OAuthCallbackDto = serde_json::from_str(request.payload)
@@ -542,6 +563,7 @@ impl GitProviderService for GitProviderController {
                 &dto.state,
                 dto.code.as_deref(),
                 dto.installation_id.as_deref(),
+                auth.organization_id,
             )
             .await
             .map_err(provider_error)?;
@@ -555,7 +577,7 @@ impl GitProviderService for GitProviderController {
         request: ServiceRequest<'_, ResourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         self.service
-            .disconnect(request.id)
+            .disconnect(request.id, auth.organization_id)
             .await
             .map_err(provider_error)?;
         Response::ok(Empty::default())
@@ -576,6 +598,7 @@ impl GitProviderService for GitProviderController {
                 &query.owner,
                 &query.repository,
                 &query.username,
+                auth.organization_id,
             )
             .await
             .map_err(provider_error)?;
@@ -603,6 +626,7 @@ impl GitProviderService for GitProviderController {
                 &query.owner,
                 &query.repository,
                 &query.callback_url,
+                auth.organization_id,
             )
             .await
             .map_err(provider_error)?;
@@ -625,7 +649,13 @@ impl GitProviderService for GitProviderController {
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let info = self
             .service
-            .install_webhook(request.id, &dto.owner, &dto.repository, &dto.callback_url)
+            .install_webhook(
+                request.id,
+                &dto.owner,
+                &dto.repository,
+                &dto.callback_url,
+                auth.organization_id,
+            )
             .await
             .map_err(provider_error)?;
         let payload = serde_json::to_string(&info).unwrap_or_default();
@@ -647,7 +677,13 @@ impl GitProviderService for GitProviderController {
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let info = self
             .service
-            .recreate_webhook(request.id, &dto.owner, &dto.repository, &dto.callback_url)
+            .recreate_webhook(
+                request.id,
+                &dto.owner,
+                &dto.repository,
+                &dto.callback_url,
+                auth.organization_id,
+            )
             .await
             .map_err(provider_error)?;
         let payload = serde_json::to_string(&info).unwrap_or_default();
@@ -673,6 +709,7 @@ impl GitProviderService for GitProviderController {
                 &query.owner,
                 &query.repository,
                 &query.callback_url,
+                auth.organization_id,
             )
             .await
             .map_err(provider_error)?;

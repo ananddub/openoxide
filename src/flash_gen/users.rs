@@ -538,6 +538,19 @@ impl Queries {
         .await
     }
 
+    /// UsersIsPlatformOwner
+    pub async fn users_is_platform_owner(
+        &self,
+        id: i32,
+    ) -> Result<bool, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, bool>(
+            "SELECT EXISTS( SELECT 1 FROM users WHERE id = ? AND role = 'OWNER' AND id = (SELECT MIN(id) FROM users) ) AS is_owner;"
+        )
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
     /// UsersGetByEmail
     pub async fn users_get_by_email(
         &self,

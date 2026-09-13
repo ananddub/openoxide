@@ -105,6 +105,15 @@ pub struct AcceptOrganizationInviteDto {
     pub token: String,
 }
 
+/// Wire shape of GetMyPermissions: the caller's role inside the active
+/// organization plus its effective action list (`*` for owner/admin).
+#[derive(Debug, Serialize)]
+pub struct MyPermissionsDto {
+    pub role: String,
+    pub organization_id: i64,
+    pub actions: Vec<String>,
+}
+
 impl From<crate::flash_gen::models::OrganizationInvites> for OrganizationInviteDto {
     fn from(value: crate::flash_gen::models::OrganizationInvites) -> Self {
         Self {

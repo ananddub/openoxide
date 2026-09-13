@@ -85,13 +85,17 @@ impl DestinationService {
         Self { queries }
     }
 
-    pub async fn get_by_id(&self, id: &str) -> sqlx::Result<Destinations> {
+    pub async fn get_by_id(&self, id: &str, organization_id: i64) -> sqlx::Result<Destinations> {
         let id_i64 = id.parse::<i64>().map_err(|_| sqlx::Error::RowNotFound)?;
-        self.queries.destinations_get_by_id(id_i64).await
+        let destination = self.queries.destinations_get_by_id(id_i64).await?;
+        if destination.organization_id != organization_id {
+            return Err(sqlx::Error::RowNotFound);
+        }
+        Ok(destination)
     }
 
-    pub async fn list(&self) -> sqlx::Result<Vec<Destinations>> {
-        self.queries.destinations_get_all().await
+    pub async fn list(&self, organization_id: i64) -> sqlx::Result<Vec<Destinations>> {
+        self.queries.destinations_list_by_organization(organization_id).await
     }
 
     pub async fn create(&self, input: CreateDestinationDto) -> sqlx::Result<Destinations> {
@@ -116,8 +120,13 @@ impl DestinationService {
             .await
     }
 
-    pub async fn patch(&self, id: &str, input: PatchDestinationDto) -> sqlx::Result<Destinations> {
-        let mut current = self.get_by_id(id).await?;
+    pub async fn patch(
+        &self,
+        id: &str,
+        input: PatchDestinationDto,
+        organization_id: i64,
+    ) -> sqlx::Result<Destinations> {
+        let mut current = self.get_by_id(id, organization_id).await?;
         let id_i64 = id.parse::<i64>().map_err(|_| sqlx::Error::RowNotFound)?;
 
         if let Some(v) = input.name {
@@ -154,18 +163,22 @@ impl DestinationService {
                 region: current.region,
                 endpoint: current.endpoint,
                 id: id_i64,
+                organization_id,
             })
             .await
     }
 
-    pub async fn delete(&self, id: &str) -> sqlx::Result<()> {
+    pub async fn delete(&self, id: &str, organization_id: i64) -> sqlx::Result<()> {
         let id_i64 = id.parse::<i64>().map_err(|_| sqlx::Error::RowNotFound)?;
-        self.get_by_id(id).await?;
-        self.queries.destinations_delete(id_i64).await
+        self.get_by_id(id, organization_id).await?;
+        self.queries.destinations_delete(id_i64, organization_id).await
     }
 
-    pub async fn test_connection(&self, id: &str) -> Result<(), String> {
-        let dest = self.get_by_id(id).await.map_err(|e| e.to_string())?;
+    pub async fn test_connection(&self, id: &str, organization_id: i64) -> Result<(), String> {
+        let dest = self
+            .get_by_id(id, organization_id)
+            .await
+            .map_err(|e| e.to_string())?;
         self.test_connection_raw(
             &dest.provider,
             &dest.access_key,

@@ -121,6 +121,16 @@ INSERT INTO users (
                          two_factor_enable, is_registered, added_by, group_id,
                          created_at, updated_at;
 
+-- Platform owner = the setup account: the first registered user, still
+-- carrying the OWNER role. Signup hardcodes 'OWNER' for every account, so
+-- membership in that role alone must not grant cross-organization power.
+-- name: UsersIsPlatformOwner :one
+SELECT EXISTS(
+    SELECT 1 FROM users
+    WHERE id = ? AND role = 'OWNER'
+      AND id = (SELECT MIN(id) FROM users)
+) AS is_owner;
+
 -- name: UsersGetByEmail :one
 SELECT id AS id, email AS email, last_name AS last_name, first_name AS first_name, avatar AS avatar, role AS role, about_me AS about_me, password AS password, is_email_verify AS is_email_verify, email_verify_at AS email_verify_at, two_factor_enable AS two_factor_enable, is_registered AS is_registered, added_by AS added_by, group_id AS group_id, created_at AS created_at, updated_at AS updated_at
                FROM users WHERE email = ?;

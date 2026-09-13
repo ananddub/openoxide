@@ -13,6 +13,7 @@ CREATE TABLE servers (
     command TEXT NOT NULL,
     metrics_config TEXT NOT NULL,
     ssh_key_id BIGINT,
+    organization_id BIGINT NOT NULL,
     created_at BIGINT NOT NULL,
     updated_at BIGINT NOT NULL,
     build_memory_limit TEXT,

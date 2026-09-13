@@ -51,4 +51,16 @@ impl Queries {
         Ok(())
     }
 
+    /// BackgroundPoliciesSeed
+    pub async fn background_policies_seed(
+        &self,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "INSERT OR IGNORE INTO background_policies (id, panel_backup_cron, log_cleanup_cron, log_retention_days, panel_backup_enabled, log_cleanup_enabled, updated_at) VALUES (1, '0 3 * * *', '0 0 * * *', 30, 1, 1, unixepoch());"
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
 }

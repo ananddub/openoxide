@@ -127,6 +127,7 @@ pub struct ServersCreateAndReturnParams {
     pub ssh_key_id: i64,
     pub build_memory_limit: String,
     pub build_cpu_limit: String,
+    pub organization_id: i64,
 }
 
 pub struct ServersUpdateAndReturnParams {
@@ -145,6 +146,7 @@ pub struct ServersUpdateAndReturnParams {
     pub build_memory_limit: String,
     pub build_cpu_limit: String,
     pub id: i64,
+    pub organization_id: i64,
 }
 
 impl Queries {
@@ -641,7 +643,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<Servers>, sqlx::Error> {
         sqlx::query_as::<_, Servers>(
-            "SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit FROM servers;"
+            "SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit FROM servers;"
         )
         .fetch_all(&self.pool)
         .await
@@ -653,7 +655,7 @@ impl Queries {
         id: i64,
     ) -> Result<Servers, sqlx::Error> {
         sqlx::query_as::<_, Servers>(
-            "SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit FROM servers WHERE id = ?;"
+            "SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit FROM servers WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -725,11 +727,13 @@ impl Queries {
     pub async fn servers_delete(
         &self,
         id: i64,
+        organization_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM servers WHERE id = ?;"
+            "DELETE FROM servers WHERE id = ? AND organization_id = ?;"
         )
         .bind(id)
+        .bind(organization_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -764,10 +768,12 @@ impl Queries {
     /// ServersListOrdered
     pub async fn servers_list_ordered(
         &self,
+        organization_id: i64,
     ) -> Result<Vec<Servers>, sqlx::Error> {
         sqlx::query_as::<_, Servers>(
-            "SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit FROM servers ORDER BY created_at DESC, id DESC;"
+            "SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit FROM servers WHERE organization_id = ? ORDER BY created_at DESC, id DESC;"
         )
+        .bind(organization_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -778,7 +784,7 @@ impl Queries {
         params: &ServersCreateAndReturnParams,
     ) -> Result<Servers, sqlx::Error> {
         sqlx::query_as::<_, Servers>(
-            "INSERT INTO servers (name, description, ip_address, port, username, app_name, server_type, ssh_key_id, build_memory_limit, build_cpu_limit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit;"
+            "INSERT INTO servers (name, description, ip_address, port, username, app_name, server_type, ssh_key_id, build_memory_limit, build_cpu_limit, organization_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit;"
         )
         .bind(&params.name)
         .bind(&params.description)
@@ -790,6 +796,7 @@ impl Queries {
         .bind(&params.ssh_key_id)
         .bind(&params.build_memory_limit)
         .bind(&params.build_cpu_limit)
+        .bind(&params.organization_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -800,7 +807,7 @@ impl Queries {
         params: &ServersUpdateAndReturnParams,
     ) -> Result<Servers, sqlx::Error> {
         sqlx::query_as::<_, Servers>(
-            "UPDATE servers SET name = ?, description = ?, ip_address = ?, port = ?, username = ?, server_status = ?, server_type = ?, enable_docker_cleanup = ?, log_cleanup_cron = ?, command = ?, metrics_config = ?, ssh_key_id = ?, build_memory_limit = ?, build_cpu_limit = ? WHERE id = ? RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit;"
+            "UPDATE servers SET name = ?, description = ?, ip_address = ?, port = ?, username = ?, server_status = ?, server_type = ?, enable_docker_cleanup = ?, log_cleanup_cron = ?, command = ?, metrics_config = ?, ssh_key_id = ?, build_memory_limit = ?, build_cpu_limit = ? WHERE id = ? AND organization_id = ? RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit;"
         )
         .bind(&params.name)
         .bind(&params.description)
@@ -817,6 +824,7 @@ impl Queries {
         .bind(&params.build_memory_limit)
         .bind(&params.build_cpu_limit)
         .bind(&params.id)
+        .bind(&params.organization_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -828,7 +836,7 @@ impl Queries {
         id: i64,
     ) -> Result<Servers, sqlx::Error> {
         sqlx::query_as::<_, Servers>(
-            "UPDATE servers SET server_status = ? WHERE id = ? RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit;"
+            "UPDATE servers SET server_status = ? WHERE id = ? RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit;"
         )
         .bind(server_status)
         .bind(id)

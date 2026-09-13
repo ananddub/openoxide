@@ -9,10 +9,17 @@ impl GitProviderService {
         owner: &str,
         repository: &str,
         callback_url: &str,
+        organization_id: i64,
     ) -> Result<Option<ProviderWebhookInfo>, String> {
-        self.validate_webhook_callback(id, callback_url).await?;
+        self.validate_webhook_callback(id, callback_url, organization_id)
+            .await?;
         self.discovery
-            .webhook_status(&self.access(id).await?, owner, repository, callback_url)
+            .webhook_status(
+                &self.access(id, organization_id).await?,
+                owner,
+                repository,
+                callback_url,
+            )
             .await
     }
 
@@ -22,12 +29,14 @@ impl GitProviderService {
         owner: &str,
         repository: &str,
         callback_url: &str,
+        organization_id: i64,
     ) -> Result<ProviderWebhookInfo, String> {
-        self.validate_webhook_callback(id, callback_url).await?;
-        let secret = self.webhook_secret(id).await?;
+        self.validate_webhook_callback(id, callback_url, organization_id)
+            .await?;
+        let secret = self.webhook_secret(id, organization_id).await?;
         self.discovery
             .install_webhook(
-                &self.access(id).await?,
+                &self.access(id, organization_id).await?,
                 owner,
                 repository,
                 callback_url,
@@ -42,10 +51,17 @@ impl GitProviderService {
         owner: &str,
         repository: &str,
         callback_url: &str,
+        organization_id: i64,
     ) -> Result<bool, String> {
-        self.validate_webhook_callback(id, callback_url).await?;
+        self.validate_webhook_callback(id, callback_url, organization_id)
+            .await?;
         self.discovery
-            .remove_webhook(&self.access(id).await?, owner, repository, callback_url)
+            .remove_webhook(
+                &self.access(id, organization_id).await?,
+                owner,
+                repository,
+                callback_url,
+            )
             .await
     }
 
@@ -55,10 +71,12 @@ impl GitProviderService {
         owner: &str,
         repository: &str,
         callback_url: &str,
+        organization_id: i64,
     ) -> Result<ProviderWebhookInfo, String> {
-        self.validate_webhook_callback(id, callback_url).await?;
-        let access = self.access(id).await?;
-        let secret = self.webhook_secret(id).await?;
+        self.validate_webhook_callback(id, callback_url, organization_id)
+            .await?;
+        let access = self.access(id, organization_id).await?;
+        let secret = self.webhook_secret(id, organization_id).await?;
         self.discovery
             .remove_webhook(&access, owner, repository, callback_url)
             .await?;
@@ -67,7 +85,12 @@ impl GitProviderService {
             .await
     }
 
-    pub(super) async fn webhook_secret(&self, id: i64) -> Result<String, String> {
+    pub(super) async fn webhook_secret(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<String, String> {
+        self.provider_row(id, organization_id).await?;
         self.queries
             .git_providers_get_webhook_secret(id)
             .await
@@ -76,9 +99,17 @@ impl GitProviderService {
             .ok_or("Webhook secret is not configured".into())
     }
 
-    async fn validate_webhook_callback(&self, id: i64, callback_url: &str) -> Result<(), String> {
+    async fn validate_webhook_callback(
+        &self,
+        id: i64,
+        callback_url: &str,
+        organization_id: i64,
+    ) -> Result<(), String> {
         use crate::utils::provider::GitProviderType;
-        let provider = self.get(id).await.map_err(|error| error.to_string())?;
+        let provider = self
+            .get(id, organization_id)
+            .await
+            .map_err(|error| error.to_string())?;
         let provider_kind: Option<GitProviderType> = provider.provider_type.parse().ok();
         let kind = match provider_kind {
             Some(GitProviderType::Github) => "github",

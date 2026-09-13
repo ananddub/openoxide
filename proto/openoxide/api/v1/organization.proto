@@ -8,6 +8,7 @@ import "buf/validate/validate.proto";
 service OrganizationService {
   rpc GetOrganization(GetOrganizationRequest) returns (Organization);
   rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
+  rpc LeaveOrganization(LeaveOrganizationRequest) returns (Empty);
   rpc StreamGetOrganization(GetOrganizationRequest) returns (stream Organization);
   rpc CreateOrganization(CreateOrganizationRequest) returns (Organization);
   rpc UpdateOrganization(UpdateOrganizationRequest) returns (Organization);
@@ -22,6 +23,13 @@ message Organization {
   int64 owner_id = 5;
   int64 created_at = 6;
   int64 updated_at = 7;
+  // Caller's role in this organization (OWNER/ADMIN/MEMBER); populated by
+  // ListOrganizations so the switcher can show per-org authority.
+  optional string role = 8;
+}
+
+message LeaveOrganizationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
 }
 
 message GetOrganizationRequest {

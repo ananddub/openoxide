@@ -10,6 +10,7 @@ use crate::services::identity::permission::group_service::{
     AddOrganizationMemberDto, CreateOrganizationInviteDto, PermissionPolicyDto,
     ReplaceUserPoliciesDto, SavePermissionGroupDto,
 };
+use crate::services::identity::permission::PermissionGroupError;
 
 use super::helper::*;
 use super::init::PermissionGroupController;
@@ -344,6 +345,33 @@ impl proto::PermissionService for PermissionGroupController {
                 ..Default::default()
             })
         }))
+    }
+
+    // Auth-only: members must be able to read their own grants to gate the
+    // UI; the payload only ever describes the caller.
+    async fn get_my_permissions<'a>(
+        &'a self,
+        ctx: RequestContext,
+        _query: ServiceRequest<'_, proto::ResourceQuery>,
+    ) -> ServiceResult<impl connectrpc::Encodable<proto::ResourceResponse> + Send + use<'a>> {
+        let (role, actions) = self
+            .permissions
+            .my_permissions(auth.user_id(), auth.organization_id)
+            .await
+            .map_err(PermissionGroupError::from)
+            .map_err(map_error)?;
+        let payload = serde_json::to_string(&MyPermissionsDto {
+            role,
+            organization_id: auth.organization_id,
+            actions,
+        })
+        .unwrap_or_default();
+        Response::ok(proto::ResourceResponse {
+            id: auth.organization_id,
+            kind: "my_permissions".into(),
+            payload,
+            ..Default::default()
+        })
     }
 
     #[permission(Members, CanUpdate)]

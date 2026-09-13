@@ -32,11 +32,12 @@ impl DomainService {
         }
     }
 
-    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<DomainRecord> {
-        self.queries
-            .domains_get_record_by_id(id)
-            .await
-            .map(DomainRecord::from)
+    pub async fn get_by_id(&self, id: i64, organization_id: i64) -> sqlx::Result<DomainRecord> {
+        let record = self.queries.domains_get_record_by_id(id).await?;
+        if record.organization_id != organization_id {
+            return Err(sqlx::Error::RowNotFound);
+        }
+        Ok(DomainRecord::from(record))
     }
 
     pub async fn list_by_application(
@@ -52,12 +53,16 @@ impl DomainService {
         Ok(rows.into_iter().map(DomainRecord::from).collect())
     }
 
-    pub async fn list_all(&self) -> sqlx::Result<Vec<DomainRecord>> {
-        let rows = self.queries.domains_list_all().await?;
+    pub async fn list_all(&self, organization_id: i64) -> sqlx::Result<Vec<DomainRecord>> {
+        let rows = self.queries.domains_list_all(organization_id).await?;
         Ok(rows.into_iter().map(DomainRecord::from).collect())
     }
 
-    pub async fn create(&self, input: CreateDomainDto) -> sqlx::Result<DomainRecord> {
+    pub async fn create(
+        &self,
+        input: CreateDomainDto,
+        organization_id: i64,
+    ) -> sqlx::Result<DomainRecord> {
         validate_owner(input.application_id, input.compose_id)?;
         let certificate_type = input.certificate_type.to_uppercase();
         let port = input.port.or(Some(3000));
@@ -100,6 +105,7 @@ impl DomainService {
                     domain_type: domain_type.to_string(),
                     certificate_type,
                     service_id: service_id.unwrap_or(0),
+                    organization_id,
                 },
             )
             .await
@@ -109,8 +115,13 @@ impl DomainService {
         Ok(domain)
     }
 
-    pub async fn patch(&self, id: i64, input: PatchDomainDto) -> sqlx::Result<DomainRecord> {
-        let current = self.get_by_id(id).await?;
+    pub async fn patch(
+        &self,
+        id: i64,
+        input: PatchDomainDto,
+        organization_id: i64,
+    ) -> sqlx::Result<DomainRecord> {
+        let current = self.get_by_id(id, organization_id).await?;
         let host = input.host.unwrap_or(current.host);
         let https = input.https.map(bool_to_i64).unwrap_or(current.https);
         let port = input.port.or(current.port);
@@ -162,6 +173,7 @@ impl DomainService {
                     middlewares,
                     certificate_type,
                     id,
+                    organization_id,
                 },
             )
             .await
@@ -172,9 +184,9 @@ impl DomainService {
         Ok(domain)
     }
 
-    pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
-        let domain = self.get_by_id(id).await?;
-        self.queries.domains_delete(id).await?;
+    pub async fn delete(&self, id: i64, organization_id: i64) -> sqlx::Result<()> {
+        let domain = self.get_by_id(id, organization_id).await?;
+        self.queries.domains_delete(id, organization_id).await?;
         self.spawn_apply(&domain);
         Ok(())
     }

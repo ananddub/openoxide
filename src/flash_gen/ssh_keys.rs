@@ -10,6 +10,7 @@ pub struct SshKeysCreateParams {
     pub private_key: String,
     pub public_key: String,
     pub last_used_at: i64,
+    pub organization_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -23,6 +24,7 @@ pub struct SshKeysUpdateParams {
     pub created_at: i64,
     pub updated_at: i64,
     pub id: i64,
+    pub organization_id: i64,
 }
 
 pub struct SshKeysCreateAndReturnParams {
@@ -30,6 +32,7 @@ pub struct SshKeysCreateAndReturnParams {
     pub description: String,
     pub private_key: String,
     pub public_key: String,
+    pub organization_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -40,16 +43,19 @@ pub struct SshKeysUpdateAndReturnParams {
     pub private_key: String,
     pub public_key: String,
     pub id: i64,
+    pub organization_id: i64,
 }
 
 impl Queries {
-    /// SshKeysGetAll
-    pub async fn ssh_keys_get_all(
+    /// SshKeysListByOrganization
+    pub async fn ssh_keys_list_by_organization(
         &self,
+        organization_id: i64,
     ) -> Result<Vec<SshKeys>, sqlx::Error> {
         sqlx::query_as::<_, SshKeys>(
-            "SELECT id AS id, name AS name, description AS description, private_key AS private_key, public_key AS public_key, last_used_at AS last_used_at, created_at AS created_at, updated_at AS updated_at FROM ssh_keys;"
+            "SELECT id AS id, name AS name, description AS description, private_key AS private_key, public_key AS public_key, last_used_at AS last_used_at, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM ssh_keys WHERE organization_id = ? ORDER BY created_at DESC, id DESC;"
         )
+        .bind(organization_id)
         .fetch_all(&self.pool)
         .await
     }
@@ -60,7 +66,7 @@ impl Queries {
         id: i64,
     ) -> Result<SshKeys, sqlx::Error> {
         sqlx::query_as::<_, SshKeys>(
-            "SELECT id AS id, name AS name, description AS description, private_key AS private_key, public_key AS public_key, last_used_at AS last_used_at, created_at AS created_at, updated_at AS updated_at FROM ssh_keys WHERE id = ?;"
+            "SELECT id AS id, name AS name, description AS description, private_key AS private_key, public_key AS public_key, last_used_at AS last_used_at, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM ssh_keys WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -73,13 +79,14 @@ impl Queries {
         params: &SshKeysCreateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO ssh_keys (name, description, private_key, public_key, last_used_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?);"
+            "INSERT INTO ssh_keys (name, description, private_key, public_key, last_used_at, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
         )
         .bind(&params.name)
         .bind(&params.description)
         .bind(&params.private_key)
         .bind(&params.public_key)
         .bind(&params.last_used_at)
+        .bind(&params.organization_id)
         .bind(&params.created_at)
         .bind(&params.updated_at)
         .execute(&self.pool)
@@ -93,7 +100,7 @@ impl Queries {
         params: &SshKeysUpdateParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE ssh_keys SET name = ?, description = ?, private_key = ?, public_key = ?, last_used_at = ?, created_at = ?, updated_at = ? WHERE id = ?;"
+            "UPDATE ssh_keys SET name = ?, description = ?, private_key = ?, public_key = ?, last_used_at = ?, created_at = ?, updated_at = ? WHERE id = ? AND organization_id = ?;"
         )
         .bind(&params.name)
         .bind(&params.description)
@@ -103,6 +110,7 @@ impl Queries {
         .bind(&params.created_at)
         .bind(&params.updated_at)
         .bind(&params.id)
+        .bind(&params.organization_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -138,11 +146,13 @@ impl Queries {
     pub async fn ssh_keys_delete(
         &self,
         id: i64,
+        organization_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM ssh_keys WHERE id = ?;"
+            "DELETE FROM ssh_keys WHERE id = ? AND organization_id = ?;"
         )
         .bind(id)
+        .bind(organization_id)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -162,29 +172,19 @@ impl Queries {
         Ok(())
     }
 
-    /// SshKeysListOrdered
-    pub async fn ssh_keys_list_ordered(
-        &self,
-    ) -> Result<Vec<SshKeys>, sqlx::Error> {
-        sqlx::query_as::<_, SshKeys>(
-            "SELECT id AS id, name, description, private_key, public_key, last_used_at, created_at, updated_at FROM ssh_keys ORDER BY created_at DESC, id DESC;"
-        )
-        .fetch_all(&self.pool)
-        .await
-    }
-
     /// SshKeysCreateAndReturn
     pub async fn ssh_keys_create_and_return(
         &self,
         params: &SshKeysCreateAndReturnParams,
     ) -> Result<SshKeys, sqlx::Error> {
         sqlx::query_as::<_, SshKeys>(
-            "INSERT INTO ssh_keys (name, description, private_key, public_key, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id AS id, name, description, private_key, public_key, last_used_at, created_at, updated_at;"
+            "INSERT INTO ssh_keys (name, description, private_key, public_key, organization_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id AS id, name, description, private_key, public_key, last_used_at, organization_id, created_at, updated_at;"
         )
         .bind(&params.name)
         .bind(&params.description)
         .bind(&params.private_key)
         .bind(&params.public_key)
+        .bind(&params.organization_id)
         .bind(&params.created_at)
         .bind(&params.updated_at)
         .fetch_one(&self.pool)
@@ -197,13 +197,14 @@ impl Queries {
         params: &SshKeysUpdateAndReturnParams,
     ) -> Result<SshKeys, sqlx::Error> {
         sqlx::query_as::<_, SshKeys>(
-            "UPDATE ssh_keys SET name = ?, description = ?, private_key = ?, public_key = ? WHERE id = ? RETURNING id AS id, name, description, private_key, public_key, last_used_at, created_at, updated_at;"
+            "UPDATE ssh_keys SET name = ?, description = ?, private_key = ?, public_key = ? WHERE id = ? AND organization_id = ? RETURNING id AS id, name, description, private_key, public_key, last_used_at, organization_id, created_at, updated_at;"
         )
         .bind(&params.name)
         .bind(&params.description)
         .bind(&params.private_key)
         .bind(&params.public_key)
         .bind(&params.id)
+        .bind(&params.organization_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -214,7 +215,7 @@ impl Queries {
         id: i64,
     ) -> Result<SshKeys, sqlx::Error> {
         sqlx::query_as::<_, SshKeys>(
-            "UPDATE ssh_keys SET last_used_at = unixepoch() WHERE id = ? RETURNING id AS id, name, description, private_key, public_key, last_used_at, created_at, updated_at;"
+            "UPDATE ssh_keys SET last_used_at = unixepoch() WHERE id = ? RETURNING id AS id, name, description, private_key, public_key, last_used_at, organization_id, created_at, updated_at;"
         )
         .bind(id)
         .fetch_one(&self.pool)

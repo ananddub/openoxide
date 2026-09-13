@@ -242,6 +242,7 @@ pub struct Domains {
     pub domain_type: String,
     pub certificate_type: String,
     pub service_id: Option<i64>,
+    pub organization_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -276,6 +277,7 @@ pub struct GitProviders {
     pub config_json: String,
     pub shared: i64,
     pub webhook_secret: Option<String>,
+    pub organization_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -569,6 +571,7 @@ pub struct Registries {
     pub password: String,
     pub registry_url: String,
     pub registry_type: String,
+    pub organization_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -746,6 +749,7 @@ pub struct Servers {
     pub command: String,
     pub metrics_config: String,
     pub ssh_key_id: Option<i64>,
+    pub organization_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
     pub build_memory_limit: Option<String>,
@@ -918,6 +922,7 @@ pub struct SshKeys {
     pub private_key: String,
     pub public_key: String,
     pub last_used_at: Option<i64>,
+    pub organization_id: i64,
     pub created_at: i64,
     pub updated_at: i64,
 }

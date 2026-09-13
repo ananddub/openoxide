@@ -6,12 +6,24 @@ use super::{parse_config, BitbucketConfig, GitProviderService, GiteaConfig, Gith
     GitlabConfig};
 
 impl GitProviderService {
-    pub async fn test_connection(&self, id: i64) -> Result<(), String> {
-        self.discovery.test(&self.access(id).await?).await
+    pub async fn test_connection(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<(), String> {
+        self.discovery
+            .test(&self.access(id, organization_id).await?)
+            .await
     }
 
-    pub async fn repositories(&self, id: i64) -> Result<Vec<RepositoryInfo>, String> {
-        self.discovery.repositories(&self.access(id).await?).await
+    pub async fn repositories(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<Vec<RepositoryInfo>, String> {
+        self.discovery
+            .repositories(&self.access(id, organization_id).await?)
+            .await
     }
 
     pub async fn branches(
@@ -19,9 +31,14 @@ impl GitProviderService {
         id: i64,
         owner: &str,
         repository: &str,
+        organization_id: i64,
     ) -> Result<Vec<GitReferenceInfo>, String> {
         self.discovery
-            .branches(&self.access(id).await?, owner, repository)
+            .branches(
+                &self.access(id, organization_id).await?,
+                owner,
+                repository,
+            )
             .await
     }
 
@@ -30,9 +47,10 @@ impl GitProviderService {
         id: i64,
         owner: &str,
         repository: &str,
+        organization_id: i64,
     ) -> Result<Vec<GitReferenceInfo>, String> {
         self.discovery
-            .tags(&self.access(id).await?, owner, repository)
+            .tags(&self.access(id, organization_id).await?, owner, repository)
             .await
     }
 
@@ -42,15 +60,25 @@ impl GitProviderService {
         owner: &str,
         repository: &str,
         username: &str,
+        organization_id: i64,
     ) -> Result<CollaboratorPermission, String> {
         self.discovery
-            .collaborator_permission(&self.access(id).await?, owner, repository, username)
+            .collaborator_permission(
+                &self.access(id, organization_id).await?,
+                owner,
+                repository,
+                username,
+            )
             .await
     }
 
-    pub(super) async fn access(&self, id: i64) -> Result<ProviderAccess, String> {
+    pub(super) async fn access(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<ProviderAccess, String> {
         use crate::utils::provider::GitProviderType;
-        let row = self.provider_row(id).await?;
+        let row = self.provider_row(id, organization_id).await?;
         let provider_kind: GitProviderType = row
             .provider_type
             .parse()
@@ -82,7 +110,7 @@ impl GitProviderService {
             }
             GitProviderType::Gitea => {
                 let item: GiteaConfig =
-                    parse_config(&row.config_json).map_err(|error| error.to_string())?;
+                    parse_config(&row.config_json).map_err(|e| e.to_string())?;
                 Ok(ProviderAccess::Gitea {
                     base_url: item
                         .url

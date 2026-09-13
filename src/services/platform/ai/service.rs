@@ -366,7 +366,7 @@ impl AiService {
             }
         };
 
-        let result = self.finish_compose_setup(compose.id, &suggestion).await;
+        let result = self.finish_compose_setup(compose.id, &suggestion, organization_id).await;
         if let Err(error) = result {
             let _ = self.compose.delete(compose.id).await;
             self.release_deploy(id, organization_id).await;
@@ -457,6 +457,7 @@ impl AiService {
         &self,
         compose_id: i64,
         suggestion: &super::types::AiComposeSuggestion,
+        organization_id: i64,
     ) -> Result<(), String> {
         if !suggestion.env_variables.is_empty() {
             let env_var = suggestion
@@ -492,22 +493,25 @@ impl AiService {
         }
         for domain in &suggestion.domains {
             self.domain
-                .create(CreateDomainDto {
-                    host: domain.host.clone(),
-                    https: false,
-                    port: Some(domain.port),
-                    path: "/".into(),
-                    internal_path: "/".into(),
-                    custom_entrypoint: None,
-                    service_name: Some(domain.service_name.clone()),
-                    custom_cert_resolver: None,
-                    strip_path: false,
-                    middlewares: "[]".into(),
-                    domain_type: "COMPOSE".into(),
-                    certificate_type: "NONE".into(),
-                    application_id: None,
-                    compose_id: Some(compose_id),
-                })
+                .create(
+                    CreateDomainDto {
+                        host: domain.host.clone(),
+                        https: false,
+                        port: Some(domain.port),
+                        path: "/".into(),
+                        internal_path: "/".into(),
+                        custom_entrypoint: None,
+                        service_name: Some(domain.service_name.clone()),
+                        custom_cert_resolver: None,
+                        strip_path: false,
+                        middlewares: "[]".into(),
+                        domain_type: "COMPOSE".into(),
+                        certificate_type: "NONE".into(),
+                        application_id: None,
+                        compose_id: Some(compose_id),
+                    },
+                    organization_id,
+                )
                 .await
                 .map_err(db_error)?;
         }

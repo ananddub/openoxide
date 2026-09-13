@@ -10,36 +10,39 @@ struct PermissionAttr {
 fn parse_permission_attr(attrs: &[Attribute]) -> Option<PermissionAttr> {
     for attr in attrs {
         if attr.path().is_ident("permission") {
-            let meta = attr.meta.require_list().ok()?;
-            let tokens = meta.tokens.clone();
-            if let Ok(parsed) = syn::parse2::<Expr>(tokens) {
-                match &parsed {
-                    Expr::Tuple(tuple) if tuple.elems.len() == 2 => {
-                        let resource = match &tuple.elems[0] {
-                            Expr::Path(p) => p.path.segments.last()?.ident.clone(),
-                            _ => return None,
-                        };
-                        let operation = match &tuple.elems[1] {
-                            Expr::Path(p) => p.path.segments.last()?.ident.clone(),
-                            _ => return None,
-                        };
-                        return Some(PermissionAttr { resource, operation });
-                    }
-                    Expr::Path(p) => {
-                        let segs = &p.path.segments;
-                        if segs.len() >= 2 {
-                            return Some(PermissionAttr {
-                                resource: segs[0].ident.clone(),
-                                operation: segs[1].ident.clone(),
-                            });
-                        }
-                    }
-                    _ => {}
-                }
+            let Ok(meta) = attr.meta.require_list() else {
+                continue;
+            };
+            // `#[permission(Groups, CanCreate)]` carries a comma-separated
+            // token sequence, NOT a parenthesized tuple expression. Parsing
+            // it as a single `Expr` fails, which silently skipped the
+            // permission check for every attributed RPC.
+            let parsed = syn::parse2::<PermissionArgs>(meta.tokens.clone());
+            if let Ok(args) = parsed {
+                return Some(PermissionAttr {
+                    resource: args.resource,
+                    operation: args.operation,
+                });
             }
         }
     }
     None
+}
+
+/// `Resource, Operation` — the exact shape of the attribute tokens.
+struct PermissionArgs {
+    resource: Ident,
+    operation: Ident,
+}
+
+impl syn::parse::Parse for PermissionArgs {
+    fn parse(input: syn::parse::ParseStream<'_>) -> syn::Result<Self> {
+        let resource: Ident = input.parse()?;
+        input.parse::<syn::Token![,]>()?;
+        let operation: Ident = input.parse()?;
+        let _ = input.parse::<syn::Token![,]>(); // tolerate a trailing comma
+        Ok(Self { resource, operation })
+    }
 }
 
 /// Find the name of the `RequestContext` parameter in a method signature.
@@ -96,9 +99,9 @@ fn inject_auth_into_impl(impl_block: &mut syn::ImplItemFn, auth: bool) {
         let resource = perm.resource;
         let operation = perm.operation;
         let perm_stmt: Stmt = syn::parse_quote! {
-            auth.require_permission(
-                crate::services::permission::#resource::NAME,
-                crate::services::permission::#operation::NAME,
+            #auth_ident.require_permission(
+                <crate::services::identity::permission::#resource as crate::services::identity::permission::PermissionResource>::NAME,
+                <crate::services::identity::permission::#operation as crate::services::identity::permission::PermissionOperation>::NAME,
             ).await.map_err(|e| e.into_connect_error())?;
         };
         injected.push(perm_stmt);

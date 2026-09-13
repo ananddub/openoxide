@@ -73,15 +73,23 @@ impl RegistryService {
         Self { queries }
     }
 
-    pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Registries> {
-        self.queries.registries_get_by_id(id).await
+    pub async fn get_by_id(&self, id: i64, organization_id: i64) -> sqlx::Result<Registries> {
+        let registry = self.queries.registries_get_by_id(id).await?;
+        if registry.organization_id != organization_id {
+            return Err(sqlx::Error::RowNotFound);
+        }
+        Ok(registry)
     }
 
-    pub async fn list(&self) -> sqlx::Result<Vec<Registries>> {
-        self.queries.registries_get_all().await
+    pub async fn list(&self, organization_id: i64) -> sqlx::Result<Vec<Registries>> {
+        self.queries.registries_list_by_organization(organization_id).await
     }
 
-    pub async fn create(&self, input: CreateRegistryDto) -> sqlx::Result<Registries> {
+    pub async fn create(
+        &self,
+        input: CreateRegistryDto,
+        organization_id: i64,
+    ) -> sqlx::Result<Registries> {
         validate_registry_url(&input.registry_url)?;
         if let Some(prefix) = &input.image_prefix {
             validate_image_prefix(prefix)?;
@@ -96,21 +104,27 @@ impl RegistryService {
                 password: input.password,
                 registry_url: input.registry_url,
                 registry_type: input.registry_type,
+                organization_id,
                 created_at: now,
                 updated_at: now,
             })
             .await?;
-        self.queries.registries_get_by_id(new_id).await
+        self.get_by_id(new_id, organization_id).await
     }
 
-    pub async fn patch(&self, id: i64, input: PatchRegistryDto) -> sqlx::Result<Registries> {
+    pub async fn patch(
+        &self,
+        id: i64,
+        input: PatchRegistryDto,
+        organization_id: i64,
+    ) -> sqlx::Result<Registries> {
         if let Some(v) = &input.registry_url {
             validate_registry_url(v)?;
         }
         if let Some(Some(v)) = &input.image_prefix {
             validate_image_prefix(v)?;
         }
-        let mut current = self.get_by_id(id).await?;
+        let mut current = self.get_by_id(id, organization_id).await?;
         let now = chrono::Utc::now().timestamp();
 
         if let Some(v) = input.registry_name {
@@ -134,11 +148,11 @@ impl RegistryService {
         current.updated_at = now;
 
         self.update_row(id, &current).await?;
-        self.queries.registries_get_by_id(id).await
+        self.get_by_id(id, organization_id).await
     }
 
-    pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
-        self.get_by_id(id).await?;
+    pub async fn delete(&self, id: i64, organization_id: i64) -> sqlx::Result<()> {
+        self.get_by_id(id, organization_id).await?;
         let usage = self
             .queries
             .registries_usage_references(&RegistriesUsageReferencesParams {
@@ -153,7 +167,7 @@ impl RegistryService {
                 usage.len()
             )));
         }
-        self.queries.registries_delete(id).await
+        self.queries.registries_delete(id, organization_id).await
     }
 
     /// Anonymous reachability check: `GET /v2/` on the registry API.
@@ -244,15 +258,18 @@ impl RegistryService {
         }
     }
 
-    pub async fn test_connection(&self, id: i64) -> Result<(), String> {
-        let reg = self.get_by_id(id).await.map_err(|e| e.to_string())?;
+    pub async fn test_connection(&self, id: i64, organization_id: i64) -> Result<(), String> {
+        let reg = self
+            .get_by_id(id, organization_id)
+            .await
+            .map_err(|e| e.to_string())?;
         self.test_connection_raw(&reg.registry_url, &reg.username, &reg.password)
             .await
     }
 
-    pub async fn repositories(&self, id: i64) -> Result<Vec<String>, String> {
+    pub async fn repositories(&self, id: i64, organization_id: i64) -> Result<Vec<String>, String> {
         let registry = self
-            .get_by_id(id)
+            .get_by_id(id, organization_id)
             .await
             .map_err(|error| error.to_string())?;
         let url = api_url(&registry.registry_url, "/v2/_catalog?n=1000");
@@ -270,9 +287,14 @@ impl RegistryService {
         Ok(value.repositories)
     }
 
-    pub async fn tags(&self, id: i64, repository: &str) -> Result<Vec<String>, String> {
+    pub async fn tags(
+        &self,
+        id: i64,
+        repository: &str,
+        organization_id: i64,
+    ) -> Result<Vec<String>, String> {
         let registry = self
-            .get_by_id(id)
+            .get_by_id(id, organization_id)
             .await
             .map_err(|error| error.to_string())?;
         if repository.is_empty() || repository.contains("..") {
@@ -301,9 +323,10 @@ impl RegistryService {
         id: i64,
         username: String,
         password: String,
+        organization_id: i64,
     ) -> Result<Registries, String> {
         let current = self
-            .get_by_id(id)
+            .get_by_id(id, organization_id)
             .await
             .map_err(|error| error.to_string())?;
         self.test_connection_raw(&current.registry_url, &username, &password)
@@ -318,6 +341,7 @@ impl RegistryService {
                 registry_url: None,
                 registry_type: None,
             },
+            organization_id,
         )
         .await
         .map_err(|error| error.to_string())
@@ -326,8 +350,9 @@ impl RegistryService {
     pub async fn usage(
         &self,
         id: i64,
+        organization_id: i64,
     ) -> sqlx::Result<Vec<crate::flash_gen::registries::RegistriesUsageReferencesRow>> {
-        self.get_by_id(id).await?;
+        self.get_by_id(id, organization_id).await?;
         self.queries
             .registries_usage_references(&RegistriesUsageReferencesParams {
                 registry_id: id,
@@ -351,6 +376,7 @@ impl RegistryService {
                 created_at: r.created_at,
                 updated_at: r.updated_at,
                 id,
+                organization_id: r.organization_id,
             })
             .await
     }

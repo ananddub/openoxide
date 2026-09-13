@@ -22,14 +22,51 @@ impl PermissionService {
         Self { queries }
     }
 
+    /// The setup account (first registered user) is the only platform
+    /// owner. Signup hardcodes role='OWNER' on every account, so the role
+    /// alone must not grant cross-organization power — otherwise every
+    /// invited member would wildcard into their inviter's workspace.
     pub async fn is_platform_owner(&self, user_id: i64) -> Result<bool, sqlx::Error> {
-        match self.queries.get_user_by_i_d(user_id).await {
-            Ok(user) => Ok(user
-                .role
-                .is_some_and(|role| UserRole::from(role.as_str()) == UserRole::Owner)),
-            Err(sqlx::Error::RowNotFound) => Ok(false),
-            Err(error) => Err(error),
+        self.queries
+            .users_is_platform_owner(user_id as i32)
+            .await
+    }
+
+    /// The caller's effective role and granted actions inside one
+    /// organization. Owners (platform or org) and admins get the `*`
+    /// wildcard; members get their evaluated group/user policy actions.
+    /// Memberships are checked first so a non-member never learns the
+    /// organization's action catalog.
+    pub async fn my_permissions(
+        &self,
+        user_id: i64,
+        org_id: i64,
+    ) -> Result<(String, Vec<String>), sqlx::Error> {
+        if self.is_platform_owner(user_id).await? {
+            return Ok(("OWNER".into(), vec!["*".into()]));
         }
+        let member_role = match self.queries.organization_members_role(user_id, org_id).await {
+            Ok(role) => role,
+            Err(sqlx::Error::RowNotFound) => None,
+            Err(error) => return Err(error),
+        };
+        let role = match member_role.as_deref() {
+            Some(role) => role.to_ascii_uppercase(),
+            None => return Ok(("NONE".into(), Vec::new())),
+        };
+        if role == "OWNER" || role == "ADMIN" {
+            return Ok((role, vec!["*".into()]));
+        }
+        let actions = self
+            .queries
+            .groups_get_user_final_permissions(&GroupsGetUserFinalPermissionsParams {
+                user_id: user_id.to_string(),
+                org_id: org_id.to_string(),
+                user_id2: user_id.to_string(),
+                organization_id: org_id.to_string(),
+            })
+            .await?;
+        Ok((role, actions))
     }
 
     pub async fn resolve_organization(&self, user_id: i64) -> Result<Option<i64>, sqlx::Error> {
@@ -40,6 +77,30 @@ impl PermissionService {
         {
             Ok(organization_id) => Ok(Some(organization_id)),
             Err(sqlx::Error::RowNotFound) => Ok(None),
+            Err(error) => Err(error),
+        }
+    }
+
+    /// Whether the user owns or joined the organization (header scoping).
+    pub async fn is_organization_member(
+        &self,
+        user_id: i64,
+        organization_id: i64,
+    ) -> Result<bool, sqlx::Error> {
+        if self.is_platform_owner(user_id).await? {
+            return Ok(true);
+        }
+        if self
+            .queries
+            .organization_members_role(user_id, organization_id)
+            .await
+            .is_ok()
+        {
+            return Ok(true);
+        }
+        match self.queries.get_organization_by_i_d(organization_id).await {
+            Ok(org) => Ok(org.owner_id == user_id),
+            Err(sqlx::Error::RowNotFound) => Ok(false),
             Err(error) => Err(error),
         }
     }
