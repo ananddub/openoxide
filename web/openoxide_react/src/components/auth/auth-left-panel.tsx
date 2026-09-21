@@ -1,65 +1,69 @@
 import {Logo} from '#/components/shared/logo';
-import {AnimatedGradientText} from '#/components/ui/animated-gradient-text';
-import {AnimatedShinyText} from '#/components/ui/animated-shiny-text';
 
+/*
+ * Auth showcase band: the polarity-flipped ink surface from the reference.
+ * fixed #171717 regardless of theme, the brand mesh gradient as the ONLY
+ * decoration (hero scale, never miniaturised), sentence-case display type at
+ * weight 600 with negative tracking, mono caption labels. No emoji, no
+ * gradient text, no decoration grid lines.
+ */
 export const AuthLeftPanel = () => (
-	<div className="relative hidden flex-col justify-between overflow-hidden border-r border- bg-muted p-12 select-none lg:flex lg:w-1/2">
-		{/* Subtle grid pattern overlay */}
-		<div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-size-[24px_24px]" />
+	<div className="relative hidden flex-col justify-between overflow-hidden bg-[#171717] p-12 text-[#fafafa] select-none lg:flex lg:w-1/2">
+		{/* Brand mesh gradient (develop / preview / ship stops), hero scale. */}
+		<div
+			aria-hidden
+			className="pointer-events-none absolute inset-0 opacity-70"
+			style={{
+				background: [
+					'radial-gradient(55% 60% at 18% 8%, rgba(0,124,240,0.38), transparent 70%)',
+					'radial-gradient(45% 50% at 82% 0%, rgba(0,223,216,0.30), transparent 70%)',
+					'radial-gradient(50% 55% at 88% 72%, rgba(255,0,128,0.26), transparent 70%)',
+					'radial-gradient(42% 45% at 12% 92%, rgba(249,203,40,0.18), transparent 70%)',
+				].join(','),
+			}}
+		/>
+
 		{/* 1. LOGO */}
 		<div className="relative z-10 flex items-center gap-2">
-			<Logo className="size-8" />
-			<AnimatedShinyText className="text-lg font-bold tracking-tight text-foreground/80">
+			<Logo className="size-8 text-white" />
+			<span className="text-lg font-semibold tracking-tight text-white">
 				OpenOxide
-			</AnimatedShinyText>
+			</span>
 		</div>
-		{/* Center Content Section */}
+
+		{/* 2. Center content */}
 		<div className="relative z-10 my-auto flex max-w-lg flex-col gap-6">
-			{/* 2. Headline: Deploy anything. Own everything. */}
-			<div className="flex flex-col gap-1">
-				<AnimatedGradientText
-					className="block text-4xl leading-tight font-extrabold tracking-tight"
-					colorFrom="#22d3ee"
-					colorTo="#a855f7">
-					Deploy anything.
-				</AnimatedGradientText>
-				<AnimatedGradientText
-					className="block text-4xl leading-tight font-extrabold tracking-tight"
-					colorFrom="#a855f7"
-					colorTo="#22d3ee">
-					Own everything.
-				</AnimatedGradientText>
-			</div>
-			{/* 3. Small description */}
-			<p className="text-sm leading-relaxed text-muted-foreground">
+			<h1 className="text-4xl leading-[1.15] font-semibold tracking-[-0.03em] text-white">
+				Deploy anything. Own everything.
+			</h1>
+			<p className="max-w-[55ch] text-sm leading-relaxed text-white/60">
 				OpenOxide is the self-hosted developer platform that puts you in
 				full control. Build, deploy, and manage your applications and
 				Docker containers on your own servers.
 			</p>
-			<p className="text-sm text-muted-foreground/80 italic">
-				"The Open Source alternative to Netlify, Vercel, Heroku."
+			<p className="text-sm leading-relaxed text-white/80">
+				The open source alternative to Netlify, Vercel, and Heroku.
 			</p>
-			{/* 5. Features Badges: Fast, Docker, Self Hosted */}
-			<div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-semibold text-muted-foreground">
-				<span className="flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 shadow-sm">
-					<span>🚀</span> Fast
-				</span>
-				<span className="flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 shadow-sm">
-					<span>🐳</span> Docker
-				</span>
-				<span className="flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 shadow-sm">
-					<span>🔒</span> Self Hosted
-				</span>
+			{/* 3. Feature captions: mono label voice, hairline pills. */}
+			<div className="mt-2 flex flex-wrap items-center gap-2">
+				{['Fast', 'Docker', 'Self hosted'].map(label => (
+					<span
+						key={label}
+						className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 font-mono text-[11px] tracking-[0.08em] text-white/70 uppercase">
+						{label}
+					</span>
+				))}
 			</div>
 		</div>
-		{/* 6. Footer Social Links */}
+
+		{/* 4. Footer social links */}
 		<div className="relative z-10 flex gap-6">
 			<a
 				href="https://github.com/vajra-labs/goploy"
 				target="_blank"
 				rel="noopener noreferrer"
 				aria-label="GitHub"
-				className="text-muted-foreground/60 transition-colors hover:text-foreground">
+				className="text-white/50 transition-colors hover:text-white">
 				<div
 					className="size-5 bg-current"
 					style={{

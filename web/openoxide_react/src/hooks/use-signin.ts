@@ -20,9 +20,7 @@ export function useSignin(onErrorCallback?: (msg: string) => void) {
 			}),
 		onSuccess: res => {
 			if (!res.user) {
-				onErrorCallback?.(
-					'Invalid email or password. Please try again.',
-				);
+				onErrorCallback?.('Invalid email or password. Please try again.');
 				return;
 			}
 			// Session cache stores the proto-native camelCase shape.

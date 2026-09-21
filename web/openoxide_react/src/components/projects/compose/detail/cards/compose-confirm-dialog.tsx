@@ -46,7 +46,7 @@ export function ComposeConfirmDialog({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-			<div className="flex w-full max-w-md flex-col gap-4 rounded-xl bg-card p-5 shadow-2xl">
+			<div className="flex w-full max-w-md flex-col gap-4 rounded-xl bg-card p-5 shadow-lg">
 				<div>
 					<h3 className="text-sm font-bold text-foreground">
 						{getActionTitle(confirmAction)}

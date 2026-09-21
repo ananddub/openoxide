@@ -2,59 +2,70 @@
 // @generated from file openoxide/api/v1/notification_operations.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { NotificationOperationsService } from "./notification_operations_pb";
+import {NotificationOperationsService} from './notification_operations_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationOperationsService.ListDeliveryHistory
  */
-export const listDeliveryHistory = NotificationOperationsService.method.listDeliveryHistory;
+export const listDeliveryHistory =
+	NotificationOperationsService.method.listDeliveryHistory;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationOperationsService.CreateBinding
  */
-export const createBinding = NotificationOperationsService.method.createBinding;
+export const createBinding =
+	NotificationOperationsService.method.createBinding;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationOperationsService.ListBindings
  */
-export const listBindings = NotificationOperationsService.method.listBindings;
+export const listBindings =
+	NotificationOperationsService.method.listBindings;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationOperationsService.DeleteBinding
  */
-export const deleteBinding = NotificationOperationsService.method.deleteBinding;
+export const deleteBinding =
+	NotificationOperationsService.method.deleteBinding;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationOperationsService.ListNotifications
  */
-export const listNotifications = NotificationOperationsService.method.listNotifications;
+export const listNotifications =
+	NotificationOperationsService.method.listNotifications;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationOperationsService.GetNotification
  */
-export const getNotification = NotificationOperationsService.method.getNotification;
+export const getNotification =
+	NotificationOperationsService.method.getNotification;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationOperationsService.CreateNotification
  */
-export const createNotification = NotificationOperationsService.method.createNotification;
+export const createNotification =
+	NotificationOperationsService.method.createNotification;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationOperationsService.UpdateNotification
  */
-export const updateNotification = NotificationOperationsService.method.updateNotification;
+export const updateNotification =
+	NotificationOperationsService.method.updateNotification;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationOperationsService.ReplaceNotification
  */
-export const replaceNotification = NotificationOperationsService.method.replaceNotification;
+export const replaceNotification =
+	NotificationOperationsService.method.replaceNotification;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationOperationsService.DeleteNotification
  */
-export const deleteNotification = NotificationOperationsService.method.deleteNotification;
+export const deleteNotification =
+	NotificationOperationsService.method.deleteNotification;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationOperationsService.TestNotification
  */
-export const testNotification = NotificationOperationsService.method.testNotification;
+export const testNotification =
+	NotificationOperationsService.method.testNotification;

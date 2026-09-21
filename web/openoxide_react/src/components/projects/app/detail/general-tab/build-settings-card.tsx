@@ -1,83 +1,46 @@
 import {useState, useEffect} from 'react';
 import {Save, Info} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {Input} from '#/components/ui/input';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
+import {RadioGroup, RadioGroupItem} from '#/components/ui/radio-group';
 import {toast} from 'sonner';
-import {useApplicationUpdate, useApplicationUpdateBuildConfig} from '#/api/live';
+import {
+	useApplicationUpdate,
+	useApplicationUpdateBuildConfig,
+} from '#/api/live';
 import {ApplicationBuildType} from '#/gen/connect/openoxide/api/v1/application_pb';
 import {formatApiError} from '#/api/utils';
-import {RadioGroup, RadioGroupItem} from '#/components/ui/radio-group';
+import {
+	BUILD_TYPES,
+	RAILPACK_VERSIONS,
+	type BuildFields,
+} from './build-settings-card/build-types';
+import {BuildTypeFields} from './build-settings-card/build-type-fields';
+import {RailpackVersionField} from './build-settings-card/railpack-version-field';
 
 interface BuildSettingsCardProps {
 	app: any;
 	onUpdated: () => void;
 }
 
-export const RAILPACK_VERSIONS = [
-	'0.15.4',
-	'0.15.3',
-	'0.15.2',
-	'0.15.1',
-	'0.15.0',
-	'0.14.0',
-	'0.13.0',
-	'0.12.0',
-	'0.11.0',
-	'0.10.0',
-	'0.9.2',
-	'0.9.1',
-	'0.9.0',
-	'0.8.0',
-	'0.7.0',
-	'0.6.0',
-	'0.5.0',
-	'0.4.0',
-	'0.3.0',
-	'0.2.2',
-] as const;
+function fieldsFromApp(app: any): BuildFields {
+	return {
+		dockerfile: app.dockerfile || 'Dockerfile',
+		dockerContextPath: app.docker_context_path || '.',
+		dockerBuildStage: app.docker_build_stage || '',
+		herokuVersion: app.heroku_version || '24',
+		publishDirectory: app.publish_directory || '',
+	};
+}
 
 export function BuildSettingsCard({
 	app,
 	onUpdated,
 }: BuildSettingsCardProps) {
-	// Ids are the wire enum names (ApplicationBuildType) so the value read
-	// back from GetApplication selects the same radio after a save.
-	const BUILD_TYPES: {id: string; label: string; isNew?: boolean}[] = [
-		{id: 'DOCKERFILE', label: 'Dockerfile'},
-		{id: 'RAILPACK', label: 'Railpack', isNew: true},
-		{id: 'NIXPACKS', label: 'Nixpacks'},
-		{id: 'HEROKU', label: 'Heroku Buildpacks'},
-		{id: 'PAKETO', label: 'Paketo Buildpacks'},
-		{id: 'STATIC', label: 'Static'},
-	];
-
 	const [buildType, setBuildType] = useState<string>(
 		app.build_type || 'NIXPACKS',
 	);
-	const [savingBuild, setSavingBuild] = useState(false);
-
-	// Form field states
-	const [dockerfile, setDockerfile] = useState(
-		app.dockerfile || 'Dockerfile',
-	);
-	const [dockerContextPath, setDockerContextPath] = useState(
-		app.docker_context_path || '.',
-	);
-	const [dockerBuildStage, setDockerBuildStage] = useState(
-		app.docker_build_stage || '',
-	);
-	const [herokuVersion, setHerokuVersion] = useState(
-		app.heroku_version || '24',
-	);
-	const [publishDirectory, setPublishDirectory] = useState(
-		app.publish_directory || '',
+	const [fields, setFields] = useState<BuildFields>(() =>
+		fieldsFromApp(app),
 	);
 	const [isStaticSpa, setIsStaticSpa] = useState(!!app.is_static_spa);
 	const [railpackVersion, setRailpackVersion] = useState(
@@ -87,15 +50,12 @@ export function BuildSettingsCard({
 		!RAILPACK_VERSIONS.includes(app.railpack_version as any) &&
 			!!app.railpack_version,
 	);
+	const [savingBuild, setSavingBuild] = useState(false);
 
 	useEffect(() => {
 		if (app) {
 			setBuildType(app.build_type || 'NIXPACKS');
-			setDockerfile(app.dockerfile || 'Dockerfile');
-			setDockerContextPath(app.docker_context_path || '.');
-			setDockerBuildStage(app.docker_build_stage || '');
-			setHerokuVersion(app.heroku_version || '24');
-			setPublishDirectory(app.publish_directory || '');
+			setFields(fieldsFromApp(app));
 			setIsStaticSpa(!!app.is_static_spa);
 			setRailpackVersion(app.railpack_version || '0.15.4');
 			setIsManualRailpack(
@@ -108,6 +68,9 @@ export function BuildSettingsCard({
 	const patchBuildType = useApplicationUpdate();
 	const patchBuildConfig = useApplicationUpdateBuildConfig();
 
+	const onPatch = (patch: Partial<BuildFields>) =>
+		setFields(f => ({...f, ...patch}));
+
 	const handleSaveBuildType = async () => {
 		setSavingBuild(true);
 		try {
@@ -117,20 +80,26 @@ export function BuildSettingsCard({
 			await patchBuildType.mutateAsync({
 				id: app.id,
 				build_type:
-					ApplicationBuildType[buildType as keyof typeof ApplicationBuildType],
+					ApplicationBuildType[
+						buildType as keyof typeof ApplicationBuildType
+					],
 			});
 
 			await patchBuildConfig.mutateAsync({
 				id: app.id,
-				dockerfile,
-				context_path: dockerContextPath,
-				build_stage: dockerBuildStage || undefined,
+				dockerfile: fields.dockerfile,
+				context_path: fields.dockerContextPath,
+				build_stage: fields.dockerBuildStage || undefined,
 				heroku_version:
-					buildType === 'HEROKU' ? herokuVersion || undefined : undefined,
-				publish_directory: publishDirectory || undefined,
+					buildType === 'HEROKU'
+						? fields.herokuVersion || undefined
+						: undefined,
+				publish_directory: fields.publishDirectory || undefined,
 				static_spa: isStaticSpa,
 				railpack_version:
-					buildType === 'RAILPACK' ? railpackVersion || undefined : undefined,
+					buildType === 'RAILPACK'
+						? railpackVersion || undefined
+						: undefined,
 			});
 
 			toast.success('Build settings saved successfully');
@@ -173,12 +142,12 @@ export function BuildSettingsCard({
 						<span
 							className={`flex items-center gap-2 text-xs transition-colors ${
 								buildType === bt.id
-									? 'font-extrabold text-foreground'
+									? 'font-semibold text-foreground'
 									: 'font-medium text-muted-foreground hover:text-foreground'
 							}`}>
 							{bt.label}
 							{bt.isNew && (
-								<span className="rounded bg-[#3b82f6] px-1.5 py-0.5 text-[9px] leading-none font-extrabold text-white select-none">
+								<span className="rounded bg-[#3b82f6] px-1.5 py-0.5 text-[9px] leading-none font-semibold text-white select-none">
 									New
 								</span>
 							)}
@@ -189,152 +158,22 @@ export function BuildSettingsCard({
 
 			{/* Dynamic Form Sections */}
 			<div className="flex flex-col gap-4 border-t  pt-4">
-				{buildType === 'DOCKERFILE' && (
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-						<div className="flex flex-col gap-1.5">
-							<span className="text-xs font-bold text-muted-foreground">
-								Dockerfile Path
-							</span>
-							<Input
-								placeholder="Dockerfile"
-								value={dockerfile}
-								onChange={e => setDockerfile(e.target.value)}
-								className="border- bg-card font-mono text-xs"
-							/>
-						</div>
-						<div className="flex flex-col gap-1.5">
-							<span className="text-xs font-bold text-muted-foreground">
-								Docker Context Path
-							</span>
-							<Input
-								placeholder="."
-								value={dockerContextPath}
-								onChange={e => setDockerContextPath(e.target.value)}
-								className="border- bg-card font-mono text-xs"
-							/>
-						</div>
-						<div className="flex flex-col gap-1.5 sm:col-span-2">
-							<span className="text-xs font-bold text-muted-foreground">
-								Docker Build Stage (Optional)
-							</span>
-							<Input
-								placeholder="E.g. production"
-								value={dockerBuildStage}
-								onChange={e => setDockerBuildStage(e.target.value)}
-								className="border- bg-card text-xs"
-							/>
-						</div>
-					</div>
-				)}
-
-				{buildType === 'HEROKU' && (
-					<div className="flex flex-col gap-1.5">
-						<span className="text-xs font-bold text-muted-foreground">
-							Heroku Version / Stack (Optional)
-						</span>
-						<Input
-							placeholder="Default: 24"
-							value={herokuVersion}
-							onChange={e => setHerokuVersion(e.target.value)}
-							className="border- bg-card text-xs"
-						/>
-					</div>
-				)}
-
-				{buildType === 'NIXPACKS' && (
-					<div className="flex flex-col gap-1.5">
-						<span className="text-xs font-bold text-muted-foreground">
-							Publish Directory (Optional)
-						</span>
-						<Input
-							placeholder="e.g. dist"
-							value={publishDirectory}
-							onChange={e => setPublishDirectory(e.target.value)}
-							className="border- bg-card text-xs"
-						/>
-					</div>
-				)}
-
-				{buildType === 'STATIC' && (
-					<div className="flex items-center gap-3 rounded-lg bg-muted/20 p-3">
-						<button
-							type="button"
-							onClick={() => setIsStaticSpa(!isStaticSpa)}
-							className={`relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer items-center rounded-full transition-colors ${isStaticSpa ? 'bg-primary' : 'bg-muted'}`}>
-							<span
-								className={`pointer-events-none block h-3 w-3 rounded-full bg-background shadow-lg transition-transform ${isStaticSpa ? 'translate-x-4.5' : 'translate-x-0.5'}`}
-							/>
-						</button>
-						<div className="flex flex-col gap-0.5">
-							<span className="text-xs font-bold text-foreground">
-								Single Page Application (SPA)
-							</span>
-							<span className="text-[10px] text-muted-foreground">
-								Redirect all requests to index.html for clientside routers
-							</span>
-						</div>
-					</div>
-				)}
+				<BuildTypeFields
+					buildType={buildType}
+					fields={fields}
+					isStaticSpa={isStaticSpa}
+					onStaticSpaChange={setIsStaticSpa}
+					onPatch={onPatch}
+				/>
 
 				{buildType === 'RAILPACK' && (
-					<div className="flex flex-col gap-3">
-						<span className="text-xs font-bold text-muted-foreground">
-							Railpack Version
-						</span>
-						{isManualRailpack ? (
-							<div className="flex flex-col gap-2">
-								<Input
-									placeholder="Enter custom version (e.g. 0.15.4)"
-									value={railpackVersion}
-									onChange={e => setRailpackVersion(e.target.value)}
-									className="border- bg-card font-mono text-xs"
-								/>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									onClick={() => {
-										setIsManualRailpack(false);
-										setRailpackVersion('0.15.4');
-									}}
-									className="h-7 w-fit  text-[10px] font-semibold">
-									Use predefined versions
-								</Button>
-							</div>
-						) : (
-							<div className="flex flex-col gap-2">
-								<Select
-									value={railpackVersion}
-									onValueChange={val => {
-										if (val === 'manual') {
-											setIsManualRailpack(true);
-											setRailpackVersion('');
-										} else {
-											setRailpackVersion(val);
-										}
-									}}>
-									<SelectTrigger className="h-9 w-full border- bg-card text-xs">
-										<SelectValue placeholder="Select Railpack version" />
-									</SelectTrigger>
-									<SelectContent className="bg-popover">
-										<SelectItem
-											value="manual"
-											className="cursor-pointer text-xs font-bold text-primary hover:bg-muted">
-											✏️ Custom Version (Manual)
-										</SelectItem>
-										{RAILPACK_VERSIONS.map(v => (
-											<SelectItem
-												key={v}
-												value={v}
-												className="cursor-pointer font-mono text-xs hover:bg-muted">
-												v{v}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-						)}
-					</div>
+					<RailpackVersionField
+						version={railpackVersion}
+						isManual={isManualRailpack}
+						versions={RAILPACK_VERSIONS}
+						onVersionChange={setRailpackVersion}
+						onManualChange={setIsManualRailpack}
+					/>
 				)}
 			</div>
 

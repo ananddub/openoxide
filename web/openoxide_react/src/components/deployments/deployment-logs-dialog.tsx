@@ -40,7 +40,7 @@ export function DeploymentLogsDialog({
 		<Dialog
 			open={!!selectedDeployment}
 			onOpenChange={open => !open && onClose()}>
-			<DialogContent className="flex h-[650px] flex-col justify-between overflow-hidden border-zinc-800/80 bg-[#09090b] shadow-2xl shadow-primary/5 sm:max-w-4xl">
+			<DialogContent className="flex h-[650px] flex-col justify-between overflow-hidden border-zinc-800/80 bg-[#09090b] shadow-lg shadow-primary/5 sm:max-w-4xl">
 				<DialogHeader className="border-b border-zinc-800/50 pb-4">
 					<div className="flex items-center justify-between pr-6">
 						<div>

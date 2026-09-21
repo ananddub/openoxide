@@ -2,109 +2,117 @@
 // @generated from file openoxide/api/v1/traefik.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema, OperationResultSchema, ResourceListResponseSchema, ResourceQuerySchema, ResourceRequestSchema, ResourceResponseSchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
+import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
+import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
+import type {
+	EmptySchema,
+	OperationResultSchema,
+	ResourceListResponseSchema,
+	ResourceQuerySchema,
+	ResourceRequestSchema,
+	ResourceResponseSchema,
+} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
 
 /**
  * Describes the file openoxide/api/v1/traefik.proto.
  */
-export const file_openoxide_api_v1_traefik: GenFile = /*@__PURE__*/
-  fileDesc("Ch5vcGVub3hpZGUvYXBpL3YxL3RyYWVmaWsucHJvdG8SEG9wZW5veGlkZS5hcGkudjEyuAcKDlRyYWVmaWtTZXJ2aWNlElQKCUxpc3RGaWxlcxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVgoLR2V0RmlsZVRyZWUSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElcKDkdldEZpbGVDb250ZW50EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWQoRVXBkYXRlRmlsZUNvbnRlbnQSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0EkQKBkhlYWx0aBIXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJOChBHZXRSZXF1ZXN0U3RhdHVzEhcub3Blbm94aWRlLmFwaS52MS5FbXB0eRohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElYKDlRvZ2dsZVJlcXVlc3RzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJZCg5HZXRSZXF1ZXN0TG9ncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USSQoKR2V0VmVyc2lvbhIXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVQoNVXBkYXRlVmVyc2lvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSWQoQUmVuZGVyTWlkZGxld2FyZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlYgZwcm90bzM", [file_openoxide_api_v1_common]);
+export const file_openoxide_api_v1_traefik: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'Ch5vcGVub3hpZGUvYXBpL3YxL3RyYWVmaWsucHJvdG8SEG9wZW5veGlkZS5hcGkudjEyuAcKDlRyYWVmaWtTZXJ2aWNlElQKCUxpc3RGaWxlcxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVgoLR2V0RmlsZVRyZWUSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElcKDkdldEZpbGVDb250ZW50EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWQoRVXBkYXRlRmlsZUNvbnRlbnQSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0EkQKBkhlYWx0aBIXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJOChBHZXRSZXF1ZXN0U3RhdHVzEhcub3Blbm94aWRlLmFwaS52MS5FbXB0eRohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElYKDlRvZ2dsZVJlcXVlc3RzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJZCg5HZXRSZXF1ZXN0TG9ncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USSQoKR2V0VmVyc2lvbhIXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVQoNVXBkYXRlVmVyc2lvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSWQoQUmVuZGVyTWlkZGxld2FyZRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlYgZwcm90bzM',
+		[file_openoxide_api_v1_common],
+	);
 
 /**
  * @generated from service openoxide.api.v1.TraefikService
  */
 export const TraefikService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.ListFiles
-   */
-  listFiles: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.GetFileTree
-   */
-  getFileTree: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.GetFileContent
-   */
-  getFileContent: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.UpdateFileContent
-   */
-  updateFileContent: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.Health
-   */
-  health: {
-    methodKind: "unary";
-    input: typeof EmptySchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.GetRequestStatus
-   */
-  getRequestStatus: {
-    methodKind: "unary";
-    input: typeof EmptySchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.ToggleRequests
-   */
-  toggleRequests: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.GetRequestLogs
-   */
-  getRequestLogs: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.GetVersion
-   */
-  getVersion: {
-    methodKind: "unary";
-    input: typeof EmptySchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.UpdateVersion
-   */
-  updateVersion: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.RenderMiddleware
-   */
-  renderMiddleware: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_traefik, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.ListFiles
+	 */
+	listFiles: {
+		methodKind: 'unary';
+		input: typeof ResourceQuerySchema;
+		output: typeof ResourceListResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.GetFileTree
+	 */
+	getFileTree: {
+		methodKind: 'unary';
+		input: typeof ResourceQuerySchema;
+		output: typeof ResourceListResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.GetFileContent
+	 */
+	getFileContent: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.UpdateFileContent
+	 */
+	updateFileContent: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.Health
+	 */
+	health: {
+		methodKind: 'unary';
+		input: typeof EmptySchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.GetRequestStatus
+	 */
+	getRequestStatus: {
+		methodKind: 'unary';
+		input: typeof EmptySchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.ToggleRequests
+	 */
+	toggleRequests: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.GetRequestLogs
+	 */
+	getRequestLogs: {
+		methodKind: 'unary';
+		input: typeof ResourceQuerySchema;
+		output: typeof ResourceListResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.GetVersion
+	 */
+	getVersion: {
+		methodKind: 'unary';
+		input: typeof EmptySchema;
+		output: typeof ResourceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.UpdateVersion
+	 */
+	updateVersion: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.RenderMiddleware
+	 */
+	renderMiddleware: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_traefik, 0);

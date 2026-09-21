@@ -2,44 +2,52 @@
 // @generated from file openoxide/api/v1/certificate_operations.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { CertificateOperationsService } from "./certificate_operations_pb";
+import {CertificateOperationsService} from './certificate_operations_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.CertificateOperationsService.ListCertificates
  */
-export const listCertificates = CertificateOperationsService.method.listCertificates;
+export const listCertificates =
+	CertificateOperationsService.method.listCertificates;
 
 /**
  * @generated from rpc openoxide.api.v1.CertificateOperationsService.GetCertificate
  */
-export const getCertificate = CertificateOperationsService.method.getCertificate;
+export const getCertificate =
+	CertificateOperationsService.method.getCertificate;
 
 /**
  * @generated from rpc openoxide.api.v1.CertificateOperationsService.CreateCertificate
  */
-export const createCertificate = CertificateOperationsService.method.createCertificate;
+export const createCertificate =
+	CertificateOperationsService.method.createCertificate;
 
 /**
  * @generated from rpc openoxide.api.v1.CertificateOperationsService.UpdateCertificate
  */
-export const updateCertificate = CertificateOperationsService.method.updateCertificate;
+export const updateCertificate =
+	CertificateOperationsService.method.updateCertificate;
 
 /**
  * @generated from rpc openoxide.api.v1.CertificateOperationsService.DeleteCertificate
  */
-export const deleteCertificate = CertificateOperationsService.method.deleteCertificate;
+export const deleteCertificate =
+	CertificateOperationsService.method.deleteCertificate;
 
 /**
  * @generated from rpc openoxide.api.v1.CertificateOperationsService.ListDependencies
  */
-export const listDependencies = CertificateOperationsService.method.listDependencies;
+export const listDependencies =
+	CertificateOperationsService.method.listDependencies;
 
 /**
  * @generated from rpc openoxide.api.v1.CertificateOperationsService.RenewCertificate
  */
-export const renewCertificate = CertificateOperationsService.method.renewCertificate;
+export const renewCertificate =
+	CertificateOperationsService.method.renewCertificate;
 
 /**
  * @generated from rpc openoxide.api.v1.CertificateOperationsService.ListRenewals
  */
-export const listRenewals = CertificateOperationsService.method.listRenewals;
+export const listRenewals =
+	CertificateOperationsService.method.listRenewals;

@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/compose.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { ComposeService } from "./compose_pb";
+import {ComposeService} from './compose_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.ComposeService.GetCompose
@@ -137,17 +137,20 @@ export const updateResources = ComposeService.method.updateResources;
 /**
  * @generated from rpc openoxide.api.v1.ComposeService.ClearDeploymentHistory
  */
-export const clearDeploymentHistory = ComposeService.method.clearDeploymentHistory;
+export const clearDeploymentHistory =
+	ComposeService.method.clearDeploymentHistory;
 
 /**
  * @generated from rpc openoxide.api.v1.ComposeService.CleanupDeploymentQueue
  */
-export const cleanupDeploymentQueue = ComposeService.method.cleanupDeploymentQueue;
+export const cleanupDeploymentQueue =
+	ComposeService.method.cleanupDeploymentQueue;
 
 /**
  * @generated from rpc openoxide.api.v1.ComposeService.ForceKillDeployment
  */
-export const forceKillDeployment = ComposeService.method.forceKillDeployment;
+export const forceKillDeployment =
+	ComposeService.method.forceKillDeployment;
 
 /**
  * @generated from rpc openoxide.api.v1.ComposeService.ListMounts

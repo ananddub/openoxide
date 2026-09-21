@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/audit.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { AuditService } from "./audit_pb";
+import {AuditService} from './audit_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.AuditService.ListAuditLogs

@@ -1,13 +1,13 @@
-import {useVolumeBackupCreate, useVolumeBackupDelete, useVolumeBackupRestore, useVolumeBackupRun, useBackupItems} from '#/api/live';
+import {useBackupItems} from '#/api/live';
 import {useState, useMemo, useEffect} from 'react';
 import {Database, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
-import {toast} from 'sonner';
-import {formatApiError} from '#/api/utils';
 import {useOrganizations} from '#/stores/session-context';
 import {CreateBackupModal} from './backups/create-backup-modal';
 import {ComposeBackupsTable} from './backups/compose-backups-table';
+import {useVolumeBackupActions} from './backups/use-volume-backup-actions';
+import {filterResourceBackups} from './backups/backup-mappers';
 import {
 	buildRawGitUrl,
 	getComposeServiceNames,
@@ -27,7 +27,11 @@ export function ComposeBackupsTab({
 	databaseKind,
 }: ComposeBackupsTabProps) {
 	const isDatabase = databaseId !== undefined;
-	const normalizedDatabaseKind = (databaseKind || compose?.kind || '').toLowerCase();
+	const normalizedDatabaseKind = (
+		databaseKind ||
+		compose?.kind ||
+		''
+	).toLowerCase();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [fetchedYaml, setFetchedYaml] = useState<string>('');
 
@@ -67,103 +71,21 @@ export function ComposeBackupsTab({
 	// Safe array normalization and filtering for current compose stack
 	const composeBackups = useMemo(() => {
 		if (passedBackups && passedBackups.length > 0) return passedBackups;
-		return storeBackups.filter((backup: any) => {
-			if (!isDatabase) {
-				return Number(backup.compose_id) === Number(compose?.id);
-			}
-			return (
-				Number(backup.postgres_id) === databaseId ||
-				Number(backup.mysql_id) === databaseId ||
-				Number(backup.mariadb_id) === databaseId ||
-				Number(backup.mongo_id) === databaseId ||
-				Number(backup.libsql_id) === databaseId
-			);
+		return filterResourceBackups(storeBackups, {
+			isDatabase,
+			composeId: compose?.id,
+			databaseId,
 		});
 	}, [passedBackups, storeBackups, compose, databaseId, isDatabase]);
 	const isLoading = false;
 
-	// Mutations
-	const createMutation = useVolumeBackupCreate();
-	const runMutation = useVolumeBackupRun();
-	const restoreMutation = useVolumeBackupRestore();
-	const deleteMutation = useVolumeBackupDelete();
-
-	const handleCreate = async (data: {
-		name: string;
-		serviceName: string;
-		volumeName: string;
-		cronExpr: string;
-		prefix: string;
-		turnOff: boolean;
-		destinationId: number;
-	}) => {
-		try {
-			const databaseResource = isDatabase
-				? {
-						postgres_id: normalizedDatabaseKind.includes('postgres')
-							? databaseId
-							: undefined,
-						mysql_id: normalizedDatabaseKind.includes('mysql')
-							? databaseId
-							: undefined,
-						mariadb_id: normalizedDatabaseKind.includes('mariadb')
-							? databaseId
-							: undefined,
-						mongo_id: normalizedDatabaseKind.includes('mongo')
-							? databaseId
-							: undefined,
-						libsql_id: normalizedDatabaseKind.includes('libsql')
-							? databaseId
-							: undefined,
-					}
-				: {compose_id: compose?.id};
-			await createMutation.mutateAsync({
-				name: data.name,
-				...databaseResource,
-				app_name: compose?.app_name,
-				service_name: data.serviceName,
-				volume_name: data.volumeName,
-				cron_expression: data.cronExpr,
-				prefix: data.prefix,
-				turn_off: data.turnOff ? 1 : 0,
-				destination_id: data.destinationId,
-				organization_id: compose?.organization_id,
-				service_type: isDatabase
-					? normalizedDatabaseKind.toUpperCase()
-					: 'COMPOSE',
-			});
-			toast.success('Volume backup rule created successfully');
-		} catch (err: any) {
-			toast.error(formatApiError(err));
-		}
-	};
-
-	const handleRun = async (id: number) => {
-		try {
-			await runMutation.mutateAsync(id);
-			toast.success('Volume snapshot triggered successfully');
-		} catch (err: any) {
-			toast.error(formatApiError(err));
-		}
-	};
-
-	const handleRestore = async (id: number) => {
-		try {
-			await restoreMutation.mutateAsync({id, backup_file: ''});
-			toast.success('Volume snapshot restore initiated');
-		} catch (err: any) {
-			toast.error(formatApiError(err));
-		}
-	};
-
-	const handleDelete = async (id: number) => {
-		try {
-			await deleteMutation.mutateAsync(id);
-			toast.success('Volume backup rule deleted');
-		} catch (err: any) {
-			toast.error(formatApiError(err));
-		}
-	};
+	const {handleCreate, handleRun, handleRestore, handleDelete} =
+		useVolumeBackupActions({
+			compose,
+			isDatabase,
+			normalizedDatabaseKind,
+			databaseId,
+		});
 
 	return (
 		<div className="flex flex-col gap-6">

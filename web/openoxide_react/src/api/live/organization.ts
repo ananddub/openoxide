@@ -1,4 +1,8 @@
-import {createServiceClient, useConnectMutation, useConnectQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useConnectQuery,
+} from './query';
 import {OrganizationService} from '#/gen/connect/openoxide/api/v1/organization_pb';
 import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
 import type {Organization} from '#/gen/connect/openoxide/api/v1/organization_pb';
@@ -85,7 +89,12 @@ export function useOrganizationCreate() {
 /** Update an organization by id (legacy REST: PATCH /organizations/{id}). */
 export function useOrganizationUpdate() {
 	return useConnectMutation(
-		(input: {id: number | bigint; name?: string; logo?: string; slug?: string}) =>
+		(input: {
+			id: number | bigint;
+			name?: string;
+			logo?: string;
+			slug?: string;
+		}) =>
 			organizationClient.updateOrganization({
 				id: BigInt(input.id),
 				name: input.name,
@@ -165,7 +174,8 @@ export function useProfile() {
 			id: Number(user.id),
 			email: user.email,
 			name:
-				`${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || undefined,
+				`${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() ||
+				undefined,
 			avatar: user.avatar,
 		};
 	});

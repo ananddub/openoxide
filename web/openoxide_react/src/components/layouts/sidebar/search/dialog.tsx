@@ -87,7 +87,7 @@ export function SearchDialog() {
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogContent className="overflow-hidden rounded-xl bg-popover p-0 shadow-2xl sm:max-w-md">
+			<DialogContent className="overflow-hidden rounded-xl bg-popover p-0 shadow-lg sm:max-w-md">
 				<div className="flex items-center border-b  px-3 py-2">
 					<Search className="mr-2 size-4 shrink-0 text-muted-foreground" />
 					<input
@@ -121,14 +121,14 @@ export function SearchDialog() {
 												className={cn(
 													'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm outline-hidden transition-all duration-100',
 													isSelected
-														? 'bg-primary/10 font-medium text-primary'
-														: 'text-foreground hover:bg-muted/50 hover:text-foreground',
+														? 'bg-accent font-medium text-foreground'
+														: 'text-foreground hover:bg-accent/60 hover:text-foreground',
 												)}>
 												<route.icon
 													className={cn(
 														'size-4 shrink-0',
 														isSelected
-															? 'text-primary'
+															? 'text-foreground'
 															: 'text-muted-foreground',
 													)}
 												/>

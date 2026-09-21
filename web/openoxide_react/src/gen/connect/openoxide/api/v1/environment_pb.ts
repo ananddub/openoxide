@@ -2,282 +2,298 @@
 // @generated from file openoxide/api/v1/environment.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/environment.proto.
  */
-export const file_openoxide_api_v1_environment: GenFile = /*@__PURE__*/
-  fileDesc("CiJvcGVub3hpZGUvYXBpL3YxL2Vudmlyb25tZW50LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIskBCgtFbnZpcm9ubWVudBITCgJpZBgBIAEoA0IHukgEIgIgABIMCgRuYW1lGAIgASgJEhgKC2Rlc2NyaXB0aW9uGAMgASgJSACIAQESHQoVZW52aXJvbm1lbnRfdmFyaWFibGVzGAQgASgJEhIKCmlzX2RlZmF1bHQYBSABKAgSEgoKcHJvamVjdF9pZBgGIAEoAxISCgpjcmVhdGVkX2F0GAcgASgDEhIKCnVwZGF0ZWRfYXQYCCABKANCDgoMX2Rlc2NyaXB0aW9uIiMKFUdldEVudmlyb25tZW50UmVxdWVzdBIKCgJpZBgBIAEoAyI2ChdMaXN0RW52aXJvbm1lbnRzUmVxdWVzdBIbCgpwcm9qZWN0X2lkGAEgASgDQge6SAQiAiAAIk8KGExpc3RFbnZpcm9ubWVudHNSZXNwb25zZRIzCgxlbnZpcm9ubWVudHMYASADKAsyHS5vcGVub3hpZGUuYXBpLnYxLkVudmlyb25tZW50Iq4BChhDcmVhdGVFbnZpcm9ubWVudFJlcXVlc3QSGAoEbmFtZRgBIAEoCUIKukgHcgUQARj/ARIYCgtkZXNjcmlwdGlvbhgCIAEoCUgAiAEBEh0KFWVudmlyb25tZW50X3ZhcmlhYmxlcxgDIAEoCRISCgppc19kZWZhdWx0GAQgASgIEhsKCnByb2plY3RfaWQYBSABKANCB7pIBCICIABCDgoMX2Rlc2NyaXB0aW9uItsBChhVcGRhdGVFbnZpcm9ubWVudFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASEQoEbmFtZRgCIAEoCUgAiAEBEhgKC2Rlc2NyaXB0aW9uGAMgASgJSAGIAQESIgoVZW52aXJvbm1lbnRfdmFyaWFibGVzGAQgASgJSAKIAQESFwoKaXNfZGVmYXVsdBgFIAEoCEgDiAEBQgcKBV9uYW1lQg4KDF9kZXNjcmlwdGlvbkIYChZfZW52aXJvbm1lbnRfdmFyaWFibGVzQg0KC19pc19kZWZhdWx0IjMKHFNldERlZmF1bHRFbnZpcm9ubWVudFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiLwoYRGVsZXRlRW52aXJvbm1lbnRSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAMtsEChJFbnZpcm9ubWVudFNlcnZpY2USWAoOR2V0RW52aXJvbm1lbnQSJy5vcGVub3hpZGUuYXBpLnYxLkdldEVudmlyb25tZW50UmVxdWVzdBodLm9wZW5veGlkZS5hcGkudjEuRW52aXJvbm1lbnQSaQoQTGlzdEVudmlyb25tZW50cxIpLm9wZW5veGlkZS5hcGkudjEuTGlzdEVudmlyb25tZW50c1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLkxpc3RFbnZpcm9ubWVudHNSZXNwb25zZRJeChFDcmVhdGVFbnZpcm9ubWVudBIqLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlRW52aXJvbm1lbnRSZXF1ZXN0Gh0ub3Blbm94aWRlLmFwaS52MS5FbnZpcm9ubWVudBJeChFVcGRhdGVFbnZpcm9ubWVudBIqLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlRW52aXJvbm1lbnRSZXF1ZXN0Gh0ub3Blbm94aWRlLmFwaS52MS5FbnZpcm9ubWVudBJmChVTZXREZWZhdWx0RW52aXJvbm1lbnQSLi5vcGVub3hpZGUuYXBpLnYxLlNldERlZmF1bHRFbnZpcm9ubWVudFJlcXVlc3QaHS5vcGVub3hpZGUuYXBpLnYxLkVudmlyb25tZW50ElgKEURlbGV0ZUVudmlyb25tZW50Eioub3Blbm94aWRlLmFwaS52MS5EZWxldGVFbnZpcm9ubWVudFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5YgZwcm90bzM", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_environment: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'CiJvcGVub3hpZGUvYXBpL3YxL2Vudmlyb25tZW50LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIskBCgtFbnZpcm9ubWVudBITCgJpZBgBIAEoA0IHukgEIgIgABIMCgRuYW1lGAIgASgJEhgKC2Rlc2NyaXB0aW9uGAMgASgJSACIAQESHQoVZW52aXJvbm1lbnRfdmFyaWFibGVzGAQgASgJEhIKCmlzX2RlZmF1bHQYBSABKAgSEgoKcHJvamVjdF9pZBgGIAEoAxISCgpjcmVhdGVkX2F0GAcgASgDEhIKCnVwZGF0ZWRfYXQYCCABKANCDgoMX2Rlc2NyaXB0aW9uIiMKFUdldEVudmlyb25tZW50UmVxdWVzdBIKCgJpZBgBIAEoAyI2ChdMaXN0RW52aXJvbm1lbnRzUmVxdWVzdBIbCgpwcm9qZWN0X2lkGAEgASgDQge6SAQiAiAAIk8KGExpc3RFbnZpcm9ubWVudHNSZXNwb25zZRIzCgxlbnZpcm9ubWVudHMYASADKAsyHS5vcGVub3hpZGUuYXBpLnYxLkVudmlyb25tZW50Iq4BChhDcmVhdGVFbnZpcm9ubWVudFJlcXVlc3QSGAoEbmFtZRgBIAEoCUIKukgHcgUQARj/ARIYCgtkZXNjcmlwdGlvbhgCIAEoCUgAiAEBEh0KFWVudmlyb25tZW50X3ZhcmlhYmxlcxgDIAEoCRISCgppc19kZWZhdWx0GAQgASgIEhsKCnByb2plY3RfaWQYBSABKANCB7pIBCICIABCDgoMX2Rlc2NyaXB0aW9uItsBChhVcGRhdGVFbnZpcm9ubWVudFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASEQoEbmFtZRgCIAEoCUgAiAEBEhgKC2Rlc2NyaXB0aW9uGAMgASgJSAGIAQESIgoVZW52aXJvbm1lbnRfdmFyaWFibGVzGAQgASgJSAKIAQESFwoKaXNfZGVmYXVsdBgFIAEoCEgDiAEBQgcKBV9uYW1lQg4KDF9kZXNjcmlwdGlvbkIYChZfZW52aXJvbm1lbnRfdmFyaWFibGVzQg0KC19pc19kZWZhdWx0IjMKHFNldERlZmF1bHRFbnZpcm9ubWVudFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiLwoYRGVsZXRlRW52aXJvbm1lbnRSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAMtsEChJFbnZpcm9ubWVudFNlcnZpY2USWAoOR2V0RW52aXJvbm1lbnQSJy5vcGVub3hpZGUuYXBpLnYxLkdldEVudmlyb25tZW50UmVxdWVzdBodLm9wZW5veGlkZS5hcGkudjEuRW52aXJvbm1lbnQSaQoQTGlzdEVudmlyb25tZW50cxIpLm9wZW5veGlkZS5hcGkudjEuTGlzdEVudmlyb25tZW50c1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLkxpc3RFbnZpcm9ubWVudHNSZXNwb25zZRJeChFDcmVhdGVFbnZpcm9ubWVudBIqLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlRW52aXJvbm1lbnRSZXF1ZXN0Gh0ub3Blbm94aWRlLmFwaS52MS5FbnZpcm9ubWVudBJeChFVcGRhdGVFbnZpcm9ubWVudBIqLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlRW52aXJvbm1lbnRSZXF1ZXN0Gh0ub3Blbm94aWRlLmFwaS52MS5FbnZpcm9ubWVudBJmChVTZXREZWZhdWx0RW52aXJvbm1lbnQSLi5vcGVub3hpZGUuYXBpLnYxLlNldERlZmF1bHRFbnZpcm9ubWVudFJlcXVlc3QaHS5vcGVub3hpZGUuYXBpLnYxLkVudmlyb25tZW50ElgKEURlbGV0ZUVudmlyb25tZW50Eioub3Blbm94aWRlLmFwaS52MS5EZWxldGVFbnZpcm9ubWVudFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5YgZwcm90bzM',
+		[file_openoxide_api_v1_common, file_buf_validate_validate],
+	);
 
 /**
  * @generated from message openoxide.api.v1.Environment
  */
-export type Environment = Message<"openoxide.api.v1.Environment"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type Environment = Message<'openoxide.api.v1.Environment'> & {
+	/**
+	 * @generated from field: int64 id = 1;
+	 */
+	id: bigint;
 
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
+	/**
+	 * @generated from field: string name = 2;
+	 */
+	name: string;
 
-  /**
-   * @generated from field: optional string description = 3;
-   */
-  description?: string | undefined;
+	/**
+	 * @generated from field: optional string description = 3;
+	 */
+	description?: string | undefined;
 
-  /**
-   * @generated from field: string environment_variables = 4;
-   */
-  environmentVariables: string;
+	/**
+	 * @generated from field: string environment_variables = 4;
+	 */
+	environmentVariables: string;
 
-  /**
-   * @generated from field: bool is_default = 5;
-   */
-  isDefault: boolean;
+	/**
+	 * @generated from field: bool is_default = 5;
+	 */
+	isDefault: boolean;
 
-  /**
-   * @generated from field: int64 project_id = 6;
-   */
-  projectId: bigint;
+	/**
+	 * @generated from field: int64 project_id = 6;
+	 */
+	projectId: bigint;
 
-  /**
-   * @generated from field: int64 created_at = 7;
-   */
-  createdAt: bigint;
+	/**
+	 * @generated from field: int64 created_at = 7;
+	 */
+	createdAt: bigint;
 
-  /**
-   * @generated from field: int64 updated_at = 8;
-   */
-  updatedAt: bigint;
+	/**
+	 * @generated from field: int64 updated_at = 8;
+	 */
+	updatedAt: bigint;
 };
 
 /**
  * Describes the message openoxide.api.v1.Environment.
  * Use `create(EnvironmentSchema)` to create a new message.
  */
-export const EnvironmentSchema: GenMessage<Environment> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_environment, 0);
+export const EnvironmentSchema: GenMessage<Environment> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_environment, 0);
 
 /**
  * @generated from message openoxide.api.v1.GetEnvironmentRequest
  */
-export type GetEnvironmentRequest = Message<"openoxide.api.v1.GetEnvironmentRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type GetEnvironmentRequest =
+	Message<'openoxide.api.v1.GetEnvironmentRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GetEnvironmentRequest.
  * Use `create(GetEnvironmentRequestSchema)` to create a new message.
  */
-export const GetEnvironmentRequestSchema: GenMessage<GetEnvironmentRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_environment, 1);
+export const GetEnvironmentRequestSchema: GenMessage<GetEnvironmentRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_environment, 1);
 
 /**
  * @generated from message openoxide.api.v1.ListEnvironmentsRequest
  */
-export type ListEnvironmentsRequest = Message<"openoxide.api.v1.ListEnvironmentsRequest"> & {
-  /**
-   * @generated from field: int64 project_id = 1;
-   */
-  projectId: bigint;
-};
+export type ListEnvironmentsRequest =
+	Message<'openoxide.api.v1.ListEnvironmentsRequest'> & {
+		/**
+		 * @generated from field: int64 project_id = 1;
+		 */
+		projectId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListEnvironmentsRequest.
  * Use `create(ListEnvironmentsRequestSchema)` to create a new message.
  */
-export const ListEnvironmentsRequestSchema: GenMessage<ListEnvironmentsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_environment, 2);
+export const ListEnvironmentsRequestSchema: GenMessage<ListEnvironmentsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_environment, 2);
 
 /**
  * @generated from message openoxide.api.v1.ListEnvironmentsResponse
  */
-export type ListEnvironmentsResponse = Message<"openoxide.api.v1.ListEnvironmentsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Environment environments = 1;
-   */
-  environments: Environment[];
-};
+export type ListEnvironmentsResponse =
+	Message<'openoxide.api.v1.ListEnvironmentsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Environment environments = 1;
+		 */
+		environments: Environment[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListEnvironmentsResponse.
  * Use `create(ListEnvironmentsResponseSchema)` to create a new message.
  */
-export const ListEnvironmentsResponseSchema: GenMessage<ListEnvironmentsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_environment, 3);
+export const ListEnvironmentsResponseSchema: GenMessage<ListEnvironmentsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_environment, 3);
 
 /**
  * @generated from message openoxide.api.v1.CreateEnvironmentRequest
  */
-export type CreateEnvironmentRequest = Message<"openoxide.api.v1.CreateEnvironmentRequest"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
+export type CreateEnvironmentRequest =
+	Message<'openoxide.api.v1.CreateEnvironmentRequest'> & {
+		/**
+		 * @generated from field: string name = 1;
+		 */
+		name: string;
 
-  /**
-   * @generated from field: optional string description = 2;
-   */
-  description?: string | undefined;
+		/**
+		 * @generated from field: optional string description = 2;
+		 */
+		description?: string | undefined;
 
-  /**
-   * @generated from field: string environment_variables = 3;
-   */
-  environmentVariables: string;
+		/**
+		 * @generated from field: string environment_variables = 3;
+		 */
+		environmentVariables: string;
 
-  /**
-   * @generated from field: bool is_default = 4;
-   */
-  isDefault: boolean;
+		/**
+		 * @generated from field: bool is_default = 4;
+		 */
+		isDefault: boolean;
 
-  /**
-   * @generated from field: int64 project_id = 5;
-   */
-  projectId: bigint;
-};
+		/**
+		 * @generated from field: int64 project_id = 5;
+		 */
+		projectId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.CreateEnvironmentRequest.
  * Use `create(CreateEnvironmentRequestSchema)` to create a new message.
  */
-export const CreateEnvironmentRequestSchema: GenMessage<CreateEnvironmentRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_environment, 4);
+export const CreateEnvironmentRequestSchema: GenMessage<CreateEnvironmentRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_environment, 4);
 
 /**
  * @generated from message openoxide.api.v1.UpdateEnvironmentRequest
  */
-export type UpdateEnvironmentRequest = Message<"openoxide.api.v1.UpdateEnvironmentRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type UpdateEnvironmentRequest =
+	Message<'openoxide.api.v1.UpdateEnvironmentRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: optional string name = 2;
-   */
-  name?: string | undefined;
+		/**
+		 * @generated from field: optional string name = 2;
+		 */
+		name?: string | undefined;
 
-  /**
-   * @generated from field: optional string description = 3;
-   */
-  description?: string | undefined;
+		/**
+		 * @generated from field: optional string description = 3;
+		 */
+		description?: string | undefined;
 
-  /**
-   * @generated from field: optional string environment_variables = 4;
-   */
-  environmentVariables?: string | undefined;
+		/**
+		 * @generated from field: optional string environment_variables = 4;
+		 */
+		environmentVariables?: string | undefined;
 
-  /**
-   * @generated from field: optional bool is_default = 5;
-   */
-  isDefault?: boolean | undefined;
-};
+		/**
+		 * @generated from field: optional bool is_default = 5;
+		 */
+		isDefault?: boolean | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateEnvironmentRequest.
  * Use `create(UpdateEnvironmentRequestSchema)` to create a new message.
  */
-export const UpdateEnvironmentRequestSchema: GenMessage<UpdateEnvironmentRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_environment, 5);
+export const UpdateEnvironmentRequestSchema: GenMessage<UpdateEnvironmentRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_environment, 5);
 
 /**
  * @generated from message openoxide.api.v1.SetDefaultEnvironmentRequest
  */
-export type SetDefaultEnvironmentRequest = Message<"openoxide.api.v1.SetDefaultEnvironmentRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type SetDefaultEnvironmentRequest =
+	Message<'openoxide.api.v1.SetDefaultEnvironmentRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SetDefaultEnvironmentRequest.
  * Use `create(SetDefaultEnvironmentRequestSchema)` to create a new message.
  */
-export const SetDefaultEnvironmentRequestSchema: GenMessage<SetDefaultEnvironmentRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_environment, 6);
+export const SetDefaultEnvironmentRequestSchema: GenMessage<SetDefaultEnvironmentRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_environment, 6);
 
 /**
  * @generated from message openoxide.api.v1.DeleteEnvironmentRequest
  */
-export type DeleteEnvironmentRequest = Message<"openoxide.api.v1.DeleteEnvironmentRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type DeleteEnvironmentRequest =
+	Message<'openoxide.api.v1.DeleteEnvironmentRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.DeleteEnvironmentRequest.
  * Use `create(DeleteEnvironmentRequestSchema)` to create a new message.
  */
-export const DeleteEnvironmentRequestSchema: GenMessage<DeleteEnvironmentRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_environment, 7);
+export const DeleteEnvironmentRequestSchema: GenMessage<DeleteEnvironmentRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_environment, 7);
 
 /**
  * @generated from service openoxide.api.v1.EnvironmentService
  */
 export const EnvironmentService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.EnvironmentService.GetEnvironment
-   */
-  getEnvironment: {
-    methodKind: "unary";
-    input: typeof GetEnvironmentRequestSchema;
-    output: typeof EnvironmentSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.EnvironmentService.ListEnvironments
-   */
-  listEnvironments: {
-    methodKind: "unary";
-    input: typeof ListEnvironmentsRequestSchema;
-    output: typeof ListEnvironmentsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.EnvironmentService.CreateEnvironment
-   */
-  createEnvironment: {
-    methodKind: "unary";
-    input: typeof CreateEnvironmentRequestSchema;
-    output: typeof EnvironmentSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.EnvironmentService.UpdateEnvironment
-   */
-  updateEnvironment: {
-    methodKind: "unary";
-    input: typeof UpdateEnvironmentRequestSchema;
-    output: typeof EnvironmentSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.EnvironmentService.SetDefaultEnvironment
-   */
-  setDefaultEnvironment: {
-    methodKind: "unary";
-    input: typeof SetDefaultEnvironmentRequestSchema;
-    output: typeof EnvironmentSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.EnvironmentService.DeleteEnvironment
-   */
-  deleteEnvironment: {
-    methodKind: "unary";
-    input: typeof DeleteEnvironmentRequestSchema;
-    output: typeof EmptySchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_environment, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.EnvironmentService.GetEnvironment
+	 */
+	getEnvironment: {
+		methodKind: 'unary';
+		input: typeof GetEnvironmentRequestSchema;
+		output: typeof EnvironmentSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.EnvironmentService.ListEnvironments
+	 */
+	listEnvironments: {
+		methodKind: 'unary';
+		input: typeof ListEnvironmentsRequestSchema;
+		output: typeof ListEnvironmentsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.EnvironmentService.CreateEnvironment
+	 */
+	createEnvironment: {
+		methodKind: 'unary';
+		input: typeof CreateEnvironmentRequestSchema;
+		output: typeof EnvironmentSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.EnvironmentService.UpdateEnvironment
+	 */
+	updateEnvironment: {
+		methodKind: 'unary';
+		input: typeof UpdateEnvironmentRequestSchema;
+		output: typeof EnvironmentSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.EnvironmentService.SetDefaultEnvironment
+	 */
+	setDefaultEnvironment: {
+		methodKind: 'unary';
+		input: typeof SetDefaultEnvironmentRequestSchema;
+		output: typeof EnvironmentSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.EnvironmentService.DeleteEnvironment
+	 */
+	deleteEnvironment: {
+		methodKind: 'unary';
+		input: typeof DeleteEnvironmentRequestSchema;
+		output: typeof EmptySchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_environment, 0);

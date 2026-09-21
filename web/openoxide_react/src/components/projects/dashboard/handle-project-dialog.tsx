@@ -12,10 +12,7 @@ import {Input} from '#/components/ui/input';
 import {Label} from '#/components/ui/label';
 import {Textarea} from '#/components/ui/textarea';
 import {TagSelector} from '#/components/shared/tag-selector';
-import {useProjectCreate, useProjectUpdate} from '#/api/live';
-import {toast} from 'sonner';
-import {formatApiError} from '#/api/utils';
-import {getTagsFromDescription} from '#/hooks/projects/use-projects-list';
+import {useProjectForm} from './use-project-form';
 type Project = Record<string, any>;
 
 type HandleProjectDialogProps = {
@@ -33,97 +30,27 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 	activeOrgId,
 	onSuccess,
 }) => {
-	const isEditing = !!project;
-	const [name, setName] = React.useState('');
-	const [description, setDescription] = React.useState('');
-	const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
-	const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-	const createMutation = useProjectCreate();
-	const updateMutation = useProjectUpdate();
-
-	// Reset & populate form when modal opens or project changes
-	React.useEffect(() => {
-		if (isOpen) {
-			if (project) {
-				setName(project.name || '');
-				// Extract clean description (excluding hashtag block)
-				const cleanDesc = (project.description || '')
-					.replace(/#[\w-]+/g, '')
-					.trim();
-				setDescription(cleanDesc);
-
-				// Extract existing tags
-				const tags = getTagsFromDescription(project.description || '');
-				setSelectedTags(tags);
-			} else {
-				setName('');
-				setDescription('');
-				setSelectedTags([]);
-			}
-		}
-	}, [isOpen, project]);
-
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!name.trim()) {
-			toast.error('Project name is required');
-			return;
-		}
-
-		setIsSubmitting(true);
-
-		// Format description with hashtags block
-		let finalDescription = description.trim();
-		if (selectedTags.length > 0) {
-			const hashtagsString = selectedTags.map(t => `#${t}`).join(' ');
-			finalDescription = finalDescription
-				? `${finalDescription}\n\n${hashtagsString}`
-				: hashtagsString;
-		}
-
-		try {
-			if (isEditing && project) {
-				await updateMutation.mutateAsync({
-					id: project.id,
-					name: name.trim(),
-					description: finalDescription || undefined,
-				});
-				toast.success('Project updated successfully');
-			} else {
-				if (!activeOrgId) {
-					toast.error('Active organization required');
-					setIsSubmitting(false);
-					return;
-				}
-				await createMutation.mutateAsync({
-					name: name.trim(),
-					description: finalDescription || undefined,
-					environment_variables: '',
-					organization_id: activeOrgId,
-				});
-				toast.success('Project created successfully');
-			}
-
-			onOpenChange(false);
-			onSuccess?.();
-		} catch (err: any) {
-			toast.error(
-				formatApiError(
-					err,
-					isEditing
-						? 'Failed to update project'
-						: 'Failed to create project',
-				),
-			);
-		} finally {
-			setIsSubmitting(false);
-		}
-	};
+	const {
+		isEditing,
+		name,
+		setName,
+		description,
+		setDescription,
+		selectedTags,
+		setSelectedTags,
+		isSubmitting,
+		handleSubmit,
+	} = useProjectForm({
+		project,
+		isOpen,
+		activeOrgId,
+		onOpenChange,
+		onSuccess,
+	});
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onOpenChange}>
-			<DialogContent className="border- bg-card shadow-xl sm:max-w-lg">
+			<DialogContent className="border- bg-card shadow-md sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle className="text-xl font-bold text-foreground">
 						{isEditing ? 'Update project' : 'Add a project'}
@@ -148,7 +75,7 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 							onChange={e => setName(e.target.value)}
 							disabled={isSubmitting}
 							required
-							className="h-9 border- bg-card text-xs"
+							className="border- h-9 bg-card text-xs"
 						/>
 					</div>
 
@@ -165,7 +92,7 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 							value={description}
 							onChange={e => setDescription(e.target.value)}
 							disabled={isSubmitting}
-							className="min-h-[96px] border- bg-card text-xs placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+							className="border- min-h-[96px] bg-card text-xs placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
 						/>
 					</div>
 

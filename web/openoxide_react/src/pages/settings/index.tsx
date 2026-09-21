@@ -1,25 +1,17 @@
-import {createFileRoute, useNavigate, useSearch} from '@tanstack/react-router';
-import type {ComponentType} from 'react';
 import {
-	Bell,
-	Bot,
-	ClipboardList,
-	GitBranch,
-	Settings as SettingsIcon,
-	ShieldCheck,
-	User,
-	Users,
-} from 'lucide-react';
+	createFileRoute,
+	useNavigate,
+	useSearch,
+} from '@tanstack/react-router';
+import {Settings as SettingsIcon} from 'lucide-react';
 import {usePermissions} from '#/hooks/use-permissions';
 import {useAuthSession} from '#/stores/session-context';
-import {ProfilePage} from '#/components/profile/profile-page';
-import {UsersManagementPage} from '#/components/users/users-management-page';
-import {GroupsPage} from './groups';
-import {AuditLogsSettingsPage} from './audit-logs';
-import {GitProvidersPage} from './git-providers';
-import {NotificationsPage} from './notifications';
-import {AiSettingsPage} from './ai';
-import {CertificatesPage} from './certificates';
+import {Titlebar} from '#/components/shared/titlebar';
+import {
+	SETTINGS_TABS,
+	isSettingsTab,
+	type SettingsTabId,
+} from './settings-tabs';
 
 /**
  * Settings — Openship's layout: primary content on the left, a sticky
@@ -37,25 +29,6 @@ import {CertificatesPage} from './certificates';
  * settings.
  */
 
-type SettingsTabId =
-	| 'account'
-	| 'team'
-	| 'groups'
-	| 'audit'
-	| 'git'
-	| 'notifications'
-	| 'ai'
-	| 'certificates';
-
-type SettingsTab = {
-	id: SettingsTabId;
-	label: string;
-	icon: ComponentType<{className?: string; strokeWidth?: number}>;
-	component: ComponentType;
-	/** Action gate on the active org's grants; owners/admins hold `*`. */
-	permission?: string;
-};
-
 export const Route = createFileRoute('/_app/settings')({
 	component: SettingsPage,
 	validateSearch: (
@@ -64,67 +37,6 @@ export const Route = createFileRoute('/_app/settings')({
 		tab: isSettingsTab(search.tab) ? search.tab : undefined,
 	}),
 });
-
-const SETTINGS_TABS: SettingsTab[] = [
-	{
-		id: 'account',
-		label: 'Account',
-		icon: User,
-		component: ProfilePage,
-	},
-	{
-		id: 'team',
-		label: 'Team',
-		icon: Users,
-		component: UsersManagementPage,
-		permission: 'member:read',
-	},
-	{
-		id: 'groups',
-		label: 'Permission Groups',
-		icon: ShieldCheck,
-		component: GroupsPage,
-		permission: 'group:read',
-	},
-	{
-		id: 'audit',
-		label: 'Audit Log',
-		icon: ClipboardList,
-		component: AuditLogsSettingsPage,
-		permission: 'audit_log:read',
-	},
-	{
-		id: 'git',
-		label: 'Git Providers',
-		icon: GitBranch,
-		component: GitProvidersPage,
-	},
-	{
-		id: 'notifications',
-		label: 'Notifications',
-		icon: Bell,
-		component: NotificationsPage,
-	},
-	{
-		id: 'ai',
-		label: 'AI',
-		icon: Bot,
-		component: AiSettingsPage,
-	},
-	{
-		id: 'certificates',
-		label: 'Certificates',
-		icon: ShieldCheck,
-		component: CertificatesPage,
-	},
-];
-
-function isSettingsTab(value: unknown): value is SettingsTabId {
-	return (
-		typeof value === 'string' &&
-		SETTINGS_TABS.some(tab => tab.id === value)
-	);
-}
 
 function SettingsPage() {
 	const {tab} = useSearch({from: '/_app/settings'});
@@ -146,34 +58,38 @@ function SettingsPage() {
 		});
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
-			<div className="mb-2 flex flex-col gap-1">
-				<h1 className="text-2xl font-medium tracking-tight text-foreground/80">
+		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">			<Titlebar
+				breadcrumbs={[{label: 'Settings'}]}
+				separator>
+				{/* Mobile: pill strip (inside the header, above the hairline) */}
+				<div className="overflow-x-auto lg:hidden">
+					<div className="inline-flex items-center gap-1 rounded-xl bg-card p-1">
+						{visibleTabs.map(t => (
+							<button
+								key={t.id}
+								type="button"
+								onClick={() => select(t.id)}
+								className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+									t.id === active.id
+										? 'bg-foreground/[0.07] text-foreground'
+										: 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground'
+									}`}>
+								<t.icon className="size-[15px]" strokeWidth={1.7} />
+								{t.label}
+							</button>
+						))}
+					</div>
+				</div>
+			</Titlebar>
+
+			{/* Section title — centered below the hairline, plain text, no icon */}
+			<div className="flex flex-col items-center gap-1 text-center">
+				<h1 className="text-xl font-semibold tracking-[-0.02em] text-foreground">
 					Settings
 				</h1>
-				<p className="text-sm text-muted-foreground/70">
+				<p className="max-w-md text-[13px] text-muted-foreground">
 					Account, team, and platform preferences
 				</p>
-			</div>
-
-			{/* Mobile: pill strip (OpenShip SettingsMobileTabs) */}
-			<div className="overflow-x-auto lg:hidden">
-				<div className="inline-flex items-center gap-1 rounded-xl bg-card p-1">
-					{visibleTabs.map(t => (
-						<button
-							key={t.id}
-							type="button"
-							onClick={() => select(t.id)}
-							className={`inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-								t.id === active.id
-									? 'bg-foreground/[0.07] text-foreground'
-									: 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground'
-							}`}>
-							<t.icon className="size-[15px]" strokeWidth={1.7} />
-							{t.label}
-						</button>
-					))}
-				</div>
 			</div>
 
 			<div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
@@ -184,7 +100,7 @@ function SettingsPage() {
 
 				{/* Rail (right, sticky): identity card + pill nav card */}
 				<aside className="hidden space-y-3 lg:sticky lg:top-6 lg:block lg:self-start">
-					<div className="rounded-2xl bg-card p-4">
+					<div className="rounded-xl bg-card p-4">
 						<div className="flex items-center gap-3">
 							<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
 								<SettingsIcon
@@ -205,7 +121,7 @@ function SettingsPage() {
 						</div>
 					</div>
 
-					<div className="rounded-2xl bg-card p-3">
+					<div className="rounded-xl bg-card p-3">
 						<div className="space-y-1">
 							{visibleTabs.map(t => {
 								const isActive = t.id === active.id;

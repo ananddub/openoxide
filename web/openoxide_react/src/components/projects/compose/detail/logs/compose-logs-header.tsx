@@ -1,13 +1,4 @@
-import {
-	RefreshCw,
-	Play,
-	Square,
-	Box,
-	Download,
-	Hammer,
-	Terminal,
-} from 'lucide-react';
-import {Button} from '#/components/ui/button';
+import {Box, Hammer, Terminal} from 'lucide-react';
 import {
 	Select,
 	SelectContent,
@@ -15,6 +6,18 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
+import {
+	LogStreamControls,
+	type LogLevelOption,
+} from '#/components/projects/detail/logs/log-stream-controls';
+
+const LINE_OPTIONS: LogLevelOption[] = [
+	{value: '100', label: '100 Lines'},
+	{value: '300', label: '300 Lines'},
+	{value: '500', label: '500 Lines'},
+	{value: '1000', label: '1000 Lines'},
+	{value: 'all', label: 'All Lines'},
+];
 
 interface ComposeLogsHeaderProps {
 	logMode: 'container' | 'build';
@@ -62,7 +65,6 @@ export function ComposeLogsHeader({
 						</p>
 					</div>
 
-					{/* Premium Shadcn Service Select Dropdown */}
 					{logMode === 'container' && (
 						<Select
 							value={activeService}
@@ -116,76 +118,18 @@ export function ComposeLogsHeader({
 			</div>
 
 			{/* Filter Controls Action Bar */}
-			<div className="flex flex-wrap items-center justify-between gap-3 border-t  pt-2">
-				<div className="flex flex-wrap items-center gap-3">
-					<Button
-						variant={isLive ? 'default' : 'outline'}
-						size="sm"
-						onClick={() => setIsLive(!isLive)}
-						className="flex h-8 items-center gap-1.5 text-xs font-semibold">
-						{isLive ? (
-							<Square className="h-3 w-3 fill-current" />
-						) : (
-							<Play className="h-3 w-3 fill-current" />
-						)}
-						{isLive ? 'Live Stream' : 'Paused'}
-					</Button>
-
-					<label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground">
-						<input
-							type="checkbox"
-							checked={timestamps}
-							onChange={e => setTimestamps(e.target.checked)}
-							className="h-4 w-4 rounded accent-primary"
-						/>
-						Timestamps
-					</label>
-
-					{logMode === 'container' && (
-						<Select
-							value={lines}
-							onValueChange={val => val && setLines(val)}>
-							<SelectTrigger className="h-8 w-[120px] bg-muted/30 text-xs font-semibold">
-								<SelectValue placeholder="Lines" />
-							</SelectTrigger>
-							<SelectContent className="border- bg-card">
-								<SelectItem value="100" className="text-xs">
-									100 Lines
-								</SelectItem>
-								<SelectItem value="300" className="text-xs">
-									300 Lines
-								</SelectItem>
-								<SelectItem value="500" className="text-xs">
-									500 Lines
-								</SelectItem>
-								<SelectItem value="1000" className="text-xs">
-									1000 Lines
-								</SelectItem>
-								<SelectItem value="all" className="text-xs">
-									All Lines
-								</SelectItem>
-							</SelectContent>
-						</Select>
-					)}
-				</div>
-
-				<div className="flex items-center gap-2">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={onRefresh}
-						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted">
-						<RefreshCw className="h-3.5 w-3.5" /> Refresh
-					</Button>
-
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={onDownload}
-						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted">
-						<Download className="h-3.5 w-3.5" /> Download
-					</Button>
-				</div>
+			<div className="border-t  pt-2">
+				<LogStreamControls
+					isLive={isLive}
+					onToggleLive={() => setIsLive(!isLive)}
+					timestamps={timestamps}
+					onToggleTimestamps={setTimestamps}
+					lines={logMode === 'container' ? lines : undefined}
+					onLinesChange={logMode === 'container' ? setLines : undefined}
+					lineOptions={LINE_OPTIONS}
+					onRefresh={onRefresh}
+					onDownload={onDownload}
+				/>
 			</div>
 		</section>
 	);

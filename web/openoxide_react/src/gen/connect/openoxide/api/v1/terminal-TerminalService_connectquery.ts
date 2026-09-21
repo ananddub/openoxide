@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/terminal.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { TerminalService } from "./terminal_pb";
+import {TerminalService} from './terminal_pb';
 
 /**
  * Sends a command (input / resize / stop) to an open terminal session.

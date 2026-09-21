@@ -6,7 +6,7 @@
     "db/queries/alert_rule.sql": "c5037c3ce0c98143ab0c8c5b49fa3615c7b7aba4897319ed5b0e60638695325f",
     "db/queries/app_subresources_extra.sql": "12d6a325b87b41c3a9de92ceafcc68277d4de78763b59175be1f93153a7e9d8f",
     "db/queries/application_middlewares.sql": "c717af674afc38a8c3124696e58a7b3a7dd94c200737bcb1c5d854b91c2906a3",
-    "db/queries/application_migrations.sql": "d1eb583d5e2aaa57769fccb60341ab4f08aa4bf8f03ec5d26dfec9b01caa9bb0",
+    "db/queries/application_migrations.sql": "1e45feb8455b5254550db34162d9d25e1b6c6e0cb03a23f050dacb287083f34e",
     "db/queries/audit_logs.sql": "8cfd5c4fed48d2f39b2e1505409a7e19fb030205a5f083b59469ceeeebefc9c2",
     "db/queries/background_policies.sql": "fa9f9d302fef6f131c37f186e7d61924ac5ada8efb8d506d6f81b7fddeb9601e",
     "db/queries/backup_executions.sql": "eb0815f9c9ff7e117f0e0e421f40ccb66d401be83d72c7e2c0ae5a9ebf9977bd",
@@ -89,8 +89,8 @@
       "ai_settings"
     ],
     "db/queries/alert_rule.sql": [
-      "alert_rules",
-      "alert_events"
+      "alert_events",
+      "alert_rules"
     ],
     "db/queries/app_subresources_extra.sql": [
       "services"
@@ -128,10 +128,10 @@
       "patches"
     ],
     "db/queries/database_extra.sql": [
-      "service_database",
       "deployments",
       "service_compose",
-      "services"
+      "services",
+      "service_database"
     ],
     "db/queries/database_networks.sql": [
       "database_networks"
@@ -151,9 +151,9 @@
       "domains"
     ],
     "db/queries/domains_patches_mounts.sql": [
-      "mounts",
       "domains",
-      "patches"
+      "patches",
+      "mounts"
     ],
     "db/queries/email_verification_tokens.sql": [
       "email_verification_tokens",
@@ -169,11 +169,11 @@
       "group_policy"
     ],
     "db/queries/groups.sql": [
+      "groups",
       "policy",
       "p",
       "group_policy",
-      "perms",
-      "groups"
+      "perms"
     ],
     "db/queries/health_report.sql": [
       "health_reports"
@@ -221,11 +221,11 @@
       "organization_members"
     ],
     "db/queries/organizations.sql": [
-      "organization",
       "o",
       "organization_members",
       "om",
-      "organization_invites"
+      "organization_invites",
+      "organization"
     ],
     "db/queries/overview.sql": [
       "services",
@@ -263,20 +263,20 @@
       "deployments"
     ],
     "db/queries/preview_env_extra.sql": [
-      "domains",
       "services",
       "service_git",
-      "service_application"
+      "service_application",
+      "domains"
     ],
     "db/queries/project_tags.sql": [
       "project_tags"
     ],
     "db/queries/projects.sql": [
+      "project_tags",
       "projects",
       "environments",
       "tags",
-      "t",
-      "project_tags"
+      "t"
     ],
     "db/queries/registries.sql": [
       "registries",
@@ -346,13 +346,13 @@
       "services"
     ],
     "db/queries/settings.sql": [
-      "ai_settings",
-      "settings"
+      "settings",
+      "ai_settings"
     ],
     "db/queries/ssh_keys.sql": [
-      "service_git",
       "ssh_keys",
-      "servers"
+      "servers",
+      "service_git"
     ],
     "db/queries/ssh_keys_registries.sql": [
       "ssh_keys",
@@ -384,6 +384,6 @@
     ]
   },
   "generated_file_checksums": {},
-  "last_generation": "2026-09-20T19:41:51.225966662+05:30",
+  "last_generation": "2026-09-21T10:50:52.330455358+05:30",
   "OutDir": "src/flash_gen"
 }

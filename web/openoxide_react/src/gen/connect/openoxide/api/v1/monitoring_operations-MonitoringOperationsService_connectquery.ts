@@ -2,37 +2,43 @@
 // @generated from file openoxide/api/v1/monitoring_operations.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { MonitoringOperationsService } from "./monitoring_operations_pb";
+import {MonitoringOperationsService} from './monitoring_operations_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.GetLocalMetrics
  */
-export const getLocalMetrics = MonitoringOperationsService.method.getLocalMetrics;
+export const getLocalMetrics =
+	MonitoringOperationsService.method.getLocalMetrics;
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.GetServerMetrics
  */
-export const getServerMetrics = MonitoringOperationsService.method.getServerMetrics;
+export const getServerMetrics =
+	MonitoringOperationsService.method.getServerMetrics;
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.GetContainerMetrics
  */
-export const getContainerMetrics = MonitoringOperationsService.method.getContainerMetrics;
+export const getContainerMetrics =
+	MonitoringOperationsService.method.getContainerMetrics;
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.GetContainerStates
  */
-export const getContainerStates = MonitoringOperationsService.method.getContainerStates;
+export const getContainerStates =
+	MonitoringOperationsService.method.getContainerStates;
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.CreateAgentToken
  */
-export const createAgentToken = MonitoringOperationsService.method.createAgentToken;
+export const createAgentToken =
+	MonitoringOperationsService.method.createAgentToken;
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.GetAgentStatus
  */
-export const getAgentStatus = MonitoringOperationsService.method.getAgentStatus;
+export const getAgentStatus =
+	MonitoringOperationsService.method.getAgentStatus;
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.StartAgent
@@ -47,34 +53,41 @@ export const stopAgent = MonitoringOperationsService.method.stopAgent;
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.RestartAgent
  */
-export const restartAgent = MonitoringOperationsService.method.restartAgent;
+export const restartAgent =
+	MonitoringOperationsService.method.restartAgent;
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.ReinstallAgent
  */
-export const reinstallAgent = MonitoringOperationsService.method.reinstallAgent;
+export const reinstallAgent =
+	MonitoringOperationsService.method.reinstallAgent;
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.ExportServerMetrics
  */
-export const exportServerMetrics = MonitoringOperationsService.method.exportServerMetrics;
+export const exportServerMetrics =
+	MonitoringOperationsService.method.exportServerMetrics;
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.GetPrometheusMetrics
  */
-export const getPrometheusMetrics = MonitoringOperationsService.method.getPrometheusMetrics;
+export const getPrometheusMetrics =
+	MonitoringOperationsService.method.getPrometheusMetrics;
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.CreateMaintenanceWindow
  */
-export const createMaintenanceWindow = MonitoringOperationsService.method.createMaintenanceWindow;
+export const createMaintenanceWindow =
+	MonitoringOperationsService.method.createMaintenanceWindow;
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.ListMaintenanceWindows
  */
-export const listMaintenanceWindows = MonitoringOperationsService.method.listMaintenanceWindows;
+export const listMaintenanceWindows =
+	MonitoringOperationsService.method.listMaintenanceWindows;
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringOperationsService.DeleteMaintenanceWindow
  */
-export const deleteMaintenanceWindow = MonitoringOperationsService.method.deleteMaintenanceWindow;
+export const deleteMaintenanceWindow =
+	MonitoringOperationsService.method.deleteMaintenanceWindow;

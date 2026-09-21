@@ -1,7 +1,15 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
-import {FolderOpen, Box, Settings2, RefreshCw, Search, Plus} from 'lucide-react';
+import {
+	Box,
+	Settings2,
+	RefreshCw,
+	Search,
+	Plus,
+	FolderOpen,
+} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {EnvDropdown} from '#/components/projects/env/env-dropdown';
+import {Titlebar} from '#/components/shared/titlebar';
 import {ServiceCard} from '#/components/projects/service/service-card';
 import {ProjectModals} from '#/components/projects/dashboard/project-modals';
 import {ProjectDetailFilters} from '#/components/projects/dashboard/project-detail-filters';
@@ -42,60 +50,62 @@ function ProjectDetailPage() {
 
 	return (
 		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
-			{/* Header */}
-			<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-				<div className="flex flex-wrap items-center gap-2 text-sm font-medium">
-					<Link
-						to="/projects"
-						className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground">
-						<FolderOpen className="size-4" />
-						Projects
-					</Link>
-					<span className="text-muted-foreground/35">/</span>
-					<span className="font-bold text-foreground">
-						{project?.name || 'Loading...'}
-					</span>
-					<span className="text-muted-foreground/35">/</span>
-					<EnvDropdown
-						envs={envs}
-						selectedId={selectedEnvId}
-						onSelect={setSelectedEnvId}
-						onCreateNew={() => setShowCreateEnv(true)}
-					/>
-					<Settings2
-						onClick={() => setShowEnvVars(true)}
-						className="ml-1.5 size-4 shrink-0 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
-					/>
-				</div>
-
-				<div className="flex items-center gap-3">
-					<Button
-						variant="outline"
-						size="icon"
-						onClick={handleRefresh}
-						className="size-8 rounded-lg ">
-						<RefreshCw className="size-3.5" />
-					</Button>
-					<Button
-						variant="outline"
-						onClick={() => setShowProjectEnv(true)}
-						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted">
-						<Settings2 className="size-3.5" />
-						Project Env
-					</Button>
-					<Link
-						to="/projects/$id/create"
-						params={{id: String(projectId)}}
-						search={selectedEnvId ? {env: selectedEnvId} : {}}
-						className={
-							'flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-xs font-semibold text-primary-foreground shadow-lg shadow-primary/10 transition-colors hover:bg-primary/95' +
-							(!selectedEnvId ? ' pointer-events-none opacity-50' : '')
-						}>
-						<Plus className="size-3.5" />
-						Create Service
-					</Link>
-				</div>
-			</div>
+			{/* Vercel-style titlebar: breadcrumb + title + actions */}
+			<Titlebar
+				breadcrumbs={[
+					{label: 'Projects', to: '/projects', icon: FolderOpen},
+					{label: project?.name || 'Loading...'},
+				]}
+				breadcrumbExtras={
+					<>
+						<EnvDropdown
+							envs={envs}
+							selectedId={selectedEnvId}
+							onSelect={setSelectedEnvId}
+							onCreateNew={() => setShowCreateEnv(true)}
+						/>
+						<Settings2
+							onClick={() => setShowEnvVars(true)}
+							className="size-4 shrink-0 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
+						/>
+					</>
+				}
+				title={project?.name || 'Loading...'}
+				description={
+					totalServices > 0
+						? `${totalServices} services across ${envs.length} ${envs.length === 1 ? 'environment' : 'environments'}`
+						: 'Create and manage services for this project'
+				}
+				actions={
+					<>
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={handleRefresh}
+							className="size-8">
+							<RefreshCw className="size-3.5" />
+						</Button>
+						<Button
+							variant="outline"
+							onClick={() => setShowProjectEnv(true)}
+							className="h-8 gap-1.5 text-xs font-medium">
+							<Settings2 className="size-3.5" />
+							Project Env
+						</Button>
+						<Link
+							to="/projects/$id/create"
+							params={{id: String(projectId)}}
+							search={selectedEnvId ? {env: selectedEnvId} : {}}
+							className={
+								'flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90' +
+								(!selectedEnvId ? ' pointer-events-none opacity-50' : '')
+							}>
+							<Plus className="size-3.5" />
+							Create Service
+						</Link>
+					</>
+				}
+			/>
 
 			{/* Filters */}
 			<ProjectDetailFilters
@@ -114,7 +124,7 @@ function ProjectDetailPage() {
 					<div className="size-6 animate-spin rounded-full border-2  border-t-primary" />
 				</div>
 			) : totalServices === 0 ? (
-				<div className="flex flex-col items-center justify-center rounded-2xl  bg-card/10 py-20 backdrop-blur-[2px]">
+				<div className="flex flex-col items-center justify-center rounded-xl border bg-card py-20 backdrop-blur-[2px]">
 					<Box className="mb-3 size-12 text-muted-foreground/45" />
 					<h3 className="text-sm font-bold text-foreground">
 						No services configured
@@ -133,7 +143,7 @@ function ProjectDetailPage() {
 					</Link>
 				</div>
 			) : filteredServices.length === 0 ? (
-				<div className="flex flex-col items-center justify-center rounded-2xl  bg-card/5 py-16">
+				<div className="flex flex-col items-center justify-center rounded-xl  bg-card/5 py-16">
 					<Search className="mb-2.5 size-8 text-muted-foreground/40" />
 					<p className="text-xs font-semibold text-muted-foreground">
 						No services match your filters

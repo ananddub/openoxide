@@ -1,114 +1,12 @@
-import {useState, useMemo} from 'react';
-import {type NodeProps, type Node, Handle, Position} from '@xyflow/react';
+import {type NodeProps, type Node} from '@xyflow/react';
 import {SlidersHorizontal, HardDrive, Globe, Zap} from 'lucide-react';
-import {type ComposeService} from './compose-visualizer';
 import {
-	resolveLocalIcon,
-	isValidDockerImage,
-} from '#/lib/service-icon-resolver';
-import {siDocker} from 'simple-icons';
+	ServiceIcon,
+	NodeHandles,
+	type ComposeServiceNodeData,
+} from './compose-node-parts';
 
-export type ComposeServiceNodeData = ComposeService & {
-	onAddDomain?: (service: ComposeService) => void;
-	onAddSchedule?: (service: ComposeService) => void;
-	onAddBackup?: (service: ComposeService) => void;
-	onOpenTerminal?: (service: ComposeService) => void;
-	onViewLogs?: (service: ComposeService) => void;
-};
-
-// ─── 3-Tier Hybrid Icon Resolver ──────────────────────────────────────────────
-
-function ServiceIcon({image}: {image: string; name?: string}) {
-	const [failed, setFailed] = useState(false);
-
-	const cleanImageName = useMemo(() => {
-		if (!isValidDockerImage(image)) return '';
-		let n = image.split(':')[0].split('@')[0];
-		if (n.includes('/')) {
-			const parts = n.split('/');
-			n = parts[parts.length - 1];
-		}
-		return n.toLowerCase().trim();
-	}, [image]);
-
-	const known = useMemo(() => resolveLocalIcon(image), [image]);
-
-	if (known) {
-		const vb = known.viewBox || '0 0 24 24';
-		return (
-			<div
-				style={{
-					width: 36,
-					height: 36,
-					borderRadius: 9,
-					flexShrink: 0,
-					background: `${known.color}18`,
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'center',
-				}}>
-				<svg
-					viewBox={vb}
-					style={{width: 20, height: 20, fill: known.color}}>
-					{Array.isArray(known.paths) ? (
-						known.paths.map((p, idx) => <path key={idx} d={p} />)
-					) : (
-						<path d={known.path} />
-					)}
-				</svg>
-			</div>
-		);
-	}
-
-	if (cleanImageName && !failed) {
-		const iconUrl = `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/${cleanImageName}.svg`;
-		return (
-			<div
-				style={{
-					width: 36,
-					height: 36,
-					borderRadius: 9,
-					flexShrink: 0,
-					background: 'rgba(255,255,255,0.05)',
-					border: '1px solid rgba(255,255,255,0.08)',
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'center',
-					padding: 4,
-					overflow: 'hidden',
-				}}>
-				<img
-					src={iconUrl}
-					alt={cleanImageName}
-					onError={() => setFailed(true)}
-					style={{width: '100%', height: '100%', objectFit: 'contain'}}
-				/>
-			</div>
-		);
-	}
-
-	return (
-		<div
-			style={{
-				width: 36,
-				height: 36,
-				borderRadius: 9,
-				flexShrink: 0,
-				background: '#1e90ff18',
-				display: 'flex',
-				alignItems: 'center',
-				justifyContent: 'center',
-			}}>
-			<svg
-				viewBox="0 0 24 24"
-				style={{width: 18, height: 18, fill: '#1e90ff'}}>
-				<path d={siDocker.path} />
-			</svg>
-		</div>
-	);
-}
-
-// ─── Card ─────────────────────────────────────────────────────────────────────
+export type {ComposeServiceNodeData} from './compose-node-parts';
 
 export function ComposeServiceNode({
 	data,
@@ -146,7 +44,7 @@ export function ComposeServiceNode({
 						gap: 10,
 						marginBottom: 10,
 					}}>
-					<ServiceIcon image={data.image} name={data.name} />
+					<ServiceIcon image={data.image} />
 					<div style={{flex: 1, minWidth: 0}}>
 						<p
 							style={{
@@ -277,29 +175,7 @@ export function ComposeServiceNode({
 				))}
 			</div>
 
-			{/* Handles */}
-			<Handle
-				type="target"
-				position={Position.Left}
-				style={{
-					width: 8,
-					height: 8,
-					background: '#30363d',
-					border: '2px solid #0d1117',
-					left: -5,
-				}}
-			/>
-			<Handle
-				type="source"
-				position={Position.Right}
-				style={{
-					width: 8,
-					height: 8,
-					background: '#30363d',
-					border: '2px solid #0d1117',
-					right: -5,
-				}}
-			/>
+			<NodeHandles />
 		</div>
 	);
 }

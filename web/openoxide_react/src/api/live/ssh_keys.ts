@@ -1,4 +1,10 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery, useConnectQuery, useResourceQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+	useConnectQuery,
+	useResourceQuery,
+} from './query';
 import {SshKeyService} from '#/gen/connect/openoxide/api/v1/ssh_key_pb';
 
 export type SshKeyPayload = {
@@ -17,9 +23,8 @@ const sshKeyClient = createServiceClient(SshKeyService);
 
 /** SSH keys (legacy live: useSshKeyList). */
 export function useSshKeyList() {
-	return useResourceListQuery<SshKeyPayload>(
-		['ssh_keys', 'list'],
-		() => sshKeyClient.listKeys({}),
+	return useResourceListQuery<SshKeyPayload>(['ssh_keys', 'list'], () =>
+		sshKeyClient.listKeys({}),
 	);
 }
 
@@ -31,7 +36,8 @@ export function useSshKeyItems() {
 	return useConnectQuery<SshKeyPayload[]>(['ssh_keys'], async () => {
 		const response = await sshKeyClient.listKeys({});
 		return (response as any).items.map(
-			(item: {payload: string}) => JSON.parse(item.payload) as SshKeyPayload,
+			(item: {payload: string}) =>
+				JSON.parse(item.payload) as SshKeyPayload,
 		);
 	});
 }
@@ -47,8 +53,12 @@ export function useSshKeyGet(id: bigint) {
 /** Create an SSH key from provided key material (name/description/public_key in the payload). */
 export function useSshKeyCreate() {
 	return useConnectMutation(
-		(input: {name: string; description?: string; public_key: string; private_key?: string}) =>
-			sshKeyClient.createKey({payload: JSON.stringify(input)}),
+		(input: {
+			name: string;
+			description?: string;
+			public_key: string;
+			private_key?: string;
+		}) => sshKeyClient.createKey({payload: JSON.stringify(input)}),
 		// The watch stream also invalidates this prefix, but refetching on
 		// mutation success keeps the actor's own list deterministic even
 		// while the stream is reconnecting (delete/insert latency must not
@@ -81,7 +91,10 @@ export function useSshKeyUpdate() {
 	return useConnectMutation(
 		(input: {id: number | bigint; [field: string]: unknown}) => {
 			const {id, ...body} = input;
-			return sshKeyClient.updateKey({id: BigInt(id), payload: JSON.stringify(body)});
+			return sshKeyClient.updateKey({
+				id: BigInt(id),
+				payload: JSON.stringify(body),
+			});
 		},
 		{invalidate: [['ssh_keys']]},
 	);

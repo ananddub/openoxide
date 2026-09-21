@@ -46,8 +46,7 @@ export function DatabaseAdvancedVolumes({database, onUpdated}: any) {
 				content: value.content ?? undefined,
 				mount_path: value.mount_path,
 			};
-			if (editing)
-				await update.mutateAsync({...body, id: editing.id});
+			if (editing) await update.mutateAsync({...body, id: editing.id});
 			else await create.mutateAsync(body);
 			toast.success(editing ? 'Volume updated' : 'Volume added');
 			setOpen(false);
@@ -74,7 +73,7 @@ export function DatabaseAdvancedVolumes({database, onUpdated}: any) {
 		}
 	};
 	return (
-		<section className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-sm">
+		<section className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-sm">
 			<div className="flex flex-wrap items-start justify-between gap-4">
 				<div>
 					<h3 className="flex items-center gap-2 text-base font-bold">

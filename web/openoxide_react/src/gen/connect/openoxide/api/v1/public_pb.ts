@@ -2,105 +2,118 @@
 // @generated from file openoxide/api/v1/public.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/public.proto.
  */
-export const file_openoxide_api_v1_public: GenFile = /*@__PURE__*/
-  fileDesc("Ch1vcGVub3hpZGUvYXBpL3YxL3B1YmxpYy5wcm90bxIQb3Blbm94aWRlLmFwaS52MSI6ChZMaXN0R2l0QnJhbmNoZXNSZXF1ZXN0EiAKDnJlcG9zaXRvcnlfdXJsGAEgASgJQgi6SAVyA4gBASIrChdMaXN0R2l0QnJhbmNoZXNSZXNwb25zZRIQCghicmFuY2hlcxgBIAMoCSIyChVHZW5lcmF0ZURvbWFpblJlcXVlc3QSGQoEbmFtZRgBIAEoCUILukgIcgYQARg/aAEiKAoWR2VuZXJhdGVEb21haW5SZXNwb25zZRIOCgZkb21haW4YASABKAky3AEKDVB1YmxpY1NlcnZpY2USZgoPTGlzdEdpdEJyYW5jaGVzEigub3Blbm94aWRlLmFwaS52MS5MaXN0R2l0QnJhbmNoZXNSZXF1ZXN0Gikub3Blbm94aWRlLmFwaS52MS5MaXN0R2l0QnJhbmNoZXNSZXNwb25zZRJjCg5HZW5lcmF0ZURvbWFpbhInLm9wZW5veGlkZS5hcGkudjEuR2VuZXJhdGVEb21haW5SZXF1ZXN0Gigub3Blbm94aWRlLmFwaS52MS5HZW5lcmF0ZURvbWFpblJlc3BvbnNlYgZwcm90bzM", [file_buf_validate_validate]);
+export const file_openoxide_api_v1_public: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'Ch1vcGVub3hpZGUvYXBpL3YxL3B1YmxpYy5wcm90bxIQb3Blbm94aWRlLmFwaS52MSI6ChZMaXN0R2l0QnJhbmNoZXNSZXF1ZXN0EiAKDnJlcG9zaXRvcnlfdXJsGAEgASgJQgi6SAVyA4gBASIrChdMaXN0R2l0QnJhbmNoZXNSZXNwb25zZRIQCghicmFuY2hlcxgBIAMoCSIyChVHZW5lcmF0ZURvbWFpblJlcXVlc3QSGQoEbmFtZRgBIAEoCUILukgIcgYQARg/aAEiKAoWR2VuZXJhdGVEb21haW5SZXNwb25zZRIOCgZkb21haW4YASABKAky3AEKDVB1YmxpY1NlcnZpY2USZgoPTGlzdEdpdEJyYW5jaGVzEigub3Blbm94aWRlLmFwaS52MS5MaXN0R2l0QnJhbmNoZXNSZXF1ZXN0Gikub3Blbm94aWRlLmFwaS52MS5MaXN0R2l0QnJhbmNoZXNSZXNwb25zZRJjCg5HZW5lcmF0ZURvbWFpbhInLm9wZW5veGlkZS5hcGkudjEuR2VuZXJhdGVEb21haW5SZXF1ZXN0Gigub3Blbm94aWRlLmFwaS52MS5HZW5lcmF0ZURvbWFpblJlc3BvbnNlYgZwcm90bzM',
+		[file_buf_validate_validate],
+	);
 
 /**
  * @generated from message openoxide.api.v1.ListGitBranchesRequest
  */
-export type ListGitBranchesRequest = Message<"openoxide.api.v1.ListGitBranchesRequest"> & {
-  /**
-   * @generated from field: string repository_url = 1;
-   */
-  repositoryUrl: string;
-};
+export type ListGitBranchesRequest =
+	Message<'openoxide.api.v1.ListGitBranchesRequest'> & {
+		/**
+		 * @generated from field: string repository_url = 1;
+		 */
+		repositoryUrl: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListGitBranchesRequest.
  * Use `create(ListGitBranchesRequestSchema)` to create a new message.
  */
-export const ListGitBranchesRequestSchema: GenMessage<ListGitBranchesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_public, 0);
+export const ListGitBranchesRequestSchema: GenMessage<ListGitBranchesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_public, 0);
 
 /**
  * @generated from message openoxide.api.v1.ListGitBranchesResponse
  */
-export type ListGitBranchesResponse = Message<"openoxide.api.v1.ListGitBranchesResponse"> & {
-  /**
-   * @generated from field: repeated string branches = 1;
-   */
-  branches: string[];
-};
+export type ListGitBranchesResponse =
+	Message<'openoxide.api.v1.ListGitBranchesResponse'> & {
+		/**
+		 * @generated from field: repeated string branches = 1;
+		 */
+		branches: string[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListGitBranchesResponse.
  * Use `create(ListGitBranchesResponseSchema)` to create a new message.
  */
-export const ListGitBranchesResponseSchema: GenMessage<ListGitBranchesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_public, 1);
+export const ListGitBranchesResponseSchema: GenMessage<ListGitBranchesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_public, 1);
 
 /**
  * @generated from message openoxide.api.v1.GenerateDomainRequest
  */
-export type GenerateDomainRequest = Message<"openoxide.api.v1.GenerateDomainRequest"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
-};
+export type GenerateDomainRequest =
+	Message<'openoxide.api.v1.GenerateDomainRequest'> & {
+		/**
+		 * @generated from field: string name = 1;
+		 */
+		name: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GenerateDomainRequest.
  * Use `create(GenerateDomainRequestSchema)` to create a new message.
  */
-export const GenerateDomainRequestSchema: GenMessage<GenerateDomainRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_public, 2);
+export const GenerateDomainRequestSchema: GenMessage<GenerateDomainRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_public, 2);
 
 /**
  * @generated from message openoxide.api.v1.GenerateDomainResponse
  */
-export type GenerateDomainResponse = Message<"openoxide.api.v1.GenerateDomainResponse"> & {
-  /**
-   * @generated from field: string domain = 1;
-   */
-  domain: string;
-};
+export type GenerateDomainResponse =
+	Message<'openoxide.api.v1.GenerateDomainResponse'> & {
+		/**
+		 * @generated from field: string domain = 1;
+		 */
+		domain: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GenerateDomainResponse.
  * Use `create(GenerateDomainResponseSchema)` to create a new message.
  */
-export const GenerateDomainResponseSchema: GenMessage<GenerateDomainResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_public, 3);
+export const GenerateDomainResponseSchema: GenMessage<GenerateDomainResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_public, 3);
 
 /**
  * @generated from service openoxide.api.v1.PublicService
  */
 export const PublicService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.PublicService.ListGitBranches
-   */
-  listGitBranches: {
-    methodKind: "unary";
-    input: typeof ListGitBranchesRequestSchema;
-    output: typeof ListGitBranchesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.PublicService.GenerateDomain
-   */
-  generateDomain: {
-    methodKind: "unary";
-    input: typeof GenerateDomainRequestSchema;
-    output: typeof GenerateDomainResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_public, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.PublicService.ListGitBranches
+	 */
+	listGitBranches: {
+		methodKind: 'unary';
+		input: typeof ListGitBranchesRequestSchema;
+		output: typeof ListGitBranchesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.PublicService.GenerateDomain
+	 */
+	generateDomain: {
+		methodKind: 'unary';
+		input: typeof GenerateDomainRequestSchema;
+		output: typeof GenerateDomainResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_public, 0);

@@ -1,5 +1,12 @@
-import {createServiceClient, useConnectMutation, useConnectQuery} from './query';
-import {EnvironmentService, type Environment} from '#/gen/connect/openoxide/api/v1/environment_pb';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useConnectQuery,
+} from './query';
+import {
+	EnvironmentService,
+	type Environment,
+} from '#/gen/connect/openoxide/api/v1/environment_pb';
 
 export type EnvironmentPayload = {
 	id: bigint;
@@ -16,7 +23,9 @@ const environmentClient = createServiceClient(EnvironmentService);
 
 // `environmentVariables` maps to `env_var`, the field name the legacy
 // environments payload exposed by the Environment proto message.
-function toEnvironmentPayload(environment: Environment): EnvironmentPayload {
+function toEnvironmentPayload(
+	environment: Environment,
+): EnvironmentPayload {
 	return {
 		id: environment.id,
 		name: environment.name,
@@ -33,7 +42,8 @@ function toEnvironmentPayload(environment: Environment): EnvironmentPayload {
 export function useEnvironmentGet(id: bigint) {
 	return useConnectQuery<EnvironmentPayload>(
 		['environments', 'get', id.toString()],
-		async () => toEnvironmentPayload(await environmentClient.getEnvironment({id})),
+		async () =>
+			toEnvironmentPayload(await environmentClient.getEnvironment({id})),
 		{enabled: id > 0n},
 	);
 }

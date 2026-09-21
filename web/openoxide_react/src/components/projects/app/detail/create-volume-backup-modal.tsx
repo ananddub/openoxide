@@ -1,18 +1,24 @@
 import {useVolumeBackupCreate} from '#/api/live/backups';
 import {useState} from 'react';
 import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogFooter,
-} from '#/components/ui/dialog';
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+	SheetFooter,
+} from '#/components/ui/sheet';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Label} from '#/components/ui/label';
 import {Switch} from '#/components/ui/switch';
 import {useDestinationList} from '#/api/live';
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '#/components/ui/select';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 
@@ -76,19 +82,28 @@ export function CreateVolumeBackupModal({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[480px]">
-				<DialogHeader>
-					<DialogTitle>Configure Volume Backup</DialogTitle>
-				</DialogHeader>
-				<form onSubmit={handleSubmit} className="space-y-4 py-2">
+		<Sheet open={open} onOpenChange={onOpenChange}>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle>Configure Volume Backup</SheetTitle>
+				</SheetHeader>
+				<form
+					id="volume-backup-form"
+					onSubmit={handleSubmit}
+					className="flex flex-1 flex-col space-y-4 overflow-y-auto px-6 py-5">
 					<div className="space-y-1.5">
 						<Label>S3 Destination *</Label>
-						<Select value={destinationId} onValueChange={value => value && setDestinationId(value)}>
-							<SelectTrigger><SelectValue placeholder="Select S3 destination" /></SelectTrigger>
+						<Select
+							value={destinationId}
+							onValueChange={value => value && setDestinationId(value)}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select S3 destination" />
+							</SelectTrigger>
 							<SelectContent>
 								{destinations.map((destination: any) => (
-									<SelectItem key={destination.id} value={String(destination.id)}>
+									<SelectItem
+										key={destination.id}
+										value={String(destination.id)}>
 										{destination.name} ({destination.bucket})
 									</SelectItem>
 								))}
@@ -164,16 +179,19 @@ export function CreateVolumeBackupModal({
 						/>
 					</div>
 
-					<DialogFooter className="pt-3">
-						<Button
-							type="submit"
-							disabled={isSubmitting}
-							className="h-9 w-full bg-primary px-6 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:w-auto">
-							{isSubmitting ? 'Creating...' : 'Create Backup Rule'}
-						</Button>
-					</DialogFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+				<SheetFooter>
+					<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+						Cancel
+					</Button>
+					<Button
+						type="submit"
+						form="volume-backup-form"
+						disabled={isSubmitting}>
+						{isSubmitting ? 'Creating...' : 'Create Backup Rule'}
+					</Button>
+				</SheetFooter>
+			</SheetContent>
+		</Sheet>
 	);
 }

@@ -9,17 +9,11 @@ import {
 import {Button} from '#/components/ui/button';
 import {useSshKeyItems} from '#/api/live';
 import {toast} from 'sonner';
-import {
-	Copy,
-	Check,
-	Eye,
-	EyeOff,
-	Key,
-	Terminal,
-	Download,
-} from 'lucide-react';
+import {Copy, Check, Key, Download} from 'lucide-react';
 import type {SshKeyResponse} from '#/types/api-helpers';
 import {downloadKeyFile} from '#/utils/ssh-key-utils';
+import {ViewKeyPrivateBlock} from '#/components/ssh-keys/view-key-private-block';
+import {AuthorizeCommandBlock} from '#/components/ssh-keys/authorize-command-block';
 
 interface ViewKeyModalProps {
 	isOpen: boolean;
@@ -32,10 +26,7 @@ export function ViewKeyModal({
 	sshKey,
 	onClose,
 }: ViewKeyModalProps) {
-	const [showPrivate, setShowPrivate] = useState(false);
 	const [copiedPublic, setCopiedPublic] = useState(false);
-	const [copiedPrivate, setCopiedPrivate] = useState(false);
-	const [copiedCmd, setCopiedCmd] = useState(false);
 
 	// Live SSH keys query; the table-watch stream (ssh_keys table) keeps it
 	// fresh, so no zustand slice involved.
@@ -46,34 +37,11 @@ export function ViewKeyModal({
 	const activeKey = fullKeyDetails || sshKey;
 
 	const handleCopyPub = () => {
-		if (activeKey?.public_key) {
-			navigator.clipboard.writeText(activeKey.public_key);
-			setCopiedPublic(true);
-			toast.success('Public SSH Key copied to clipboard');
-			setTimeout(() => setCopiedPublic(false), 2000);
-		}
-	};
-
-	const handleCopyPriv = () => {
-		if (activeKey?.private_key) {
-			navigator.clipboard.writeText(activeKey.private_key);
-			setCopiedPrivate(true);
-			toast.success('Private SSH Key copied to clipboard');
-			setTimeout(() => setCopiedPrivate(false), 2000);
-		}
-	};
-
-	const setupCommand = activeKey?.public_key
-		? `mkdir -p ~/.ssh && echo "${activeKey.public_key.trim()}" >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`
-		: '';
-
-	const handleCopyCommand = () => {
-		if (setupCommand) {
-			navigator.clipboard.writeText(setupCommand);
-			setCopiedCmd(true);
-			toast.success('Server authorization command copied');
-			setTimeout(() => setCopiedCmd(false), 2000);
-		}
+		if (!activeKey?.public_key) return;
+		navigator.clipboard.writeText(activeKey.public_key);
+		setCopiedPublic(true);
+		toast.success('Public SSH Key copied to clipboard');
+		setTimeout(() => setCopiedPublic(false), 2000);
 	};
 
 	// Format public key parts with syntax highlighting colors
@@ -102,7 +70,7 @@ export function ViewKeyModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="max-h-[90vh] w-full min-w-0 overflow-y-auto rounded-xl border- bg-card p-6 shadow-xl sm:max-w-lg">
+			<DialogContent className="border- max-h-[90vh] w-full min-w-0 overflow-y-auto rounded-xl bg-card p-6 shadow-md sm:max-w-lg">
 				<DialogHeader className="border-b  pb-3">
 					<DialogTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
 						<Key className="h-4 w-4 shrink-0 text-primary" />
@@ -139,100 +107,10 @@ export function ViewKeyModal({
 					</div>
 
 					{/* Private Key Block */}
-					<div className="flex flex-col gap-1.5">
-						<div className="flex items-center justify-between">
-							<label className="text-xs font-semibold text-foreground">
-								Private Key
-							</label>
-							<div className="flex items-center gap-1.5">
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => setShowPrivate(!showPrivate)}
-									className="h-7 gap-1.5 px-2 text-xs">
-									{showPrivate ? (
-										<EyeOff className="h-3.5 w-3.5" />
-									) : (
-										<Eye className="h-3.5 w-3.5" />
-									)}
-									{showPrivate ? 'Hide' : 'Reveal'}
-								</Button>
-								{showPrivate && (
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={handleCopyPriv}
-										className="h-7 gap-1.5 px-2 text-xs">
-										{copiedPrivate ? (
-											<Check className="h-3.5 w-3.5 text-emerald-500" />
-										) : (
-											<Copy className="h-3.5 w-3.5" />
-										)}
-										{copiedPrivate ? 'Copied' : 'Copy'}
-									</Button>
-								)}
-							</div>
-						</div>
+					<ViewKeyPrivateBlock privateKey={activeKey.private_key} />
 
-						{showPrivate ? (
-							<div className="max-h-36 overflow-y-auto rounded-md bg-zinc-950/90 p-3 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap text-emerald-400">
-								{activeKey.private_key ||
-									'No private key stored for this SSH key.'}
-							</div>
-						) : (
-							<div className="flex h-10 items-center rounded-md bg-zinc-950/60 px-3 font-mono text-xs text-zinc-500 italic">
-								•••••••••••••••••••••••• (Hidden for security)
-							</div>
-						)}
-					</div>
-
-					{/* Server Authorization Command Block (Highlighted Shell Code) */}
-					{setupCommand && (
-						<div className="flex flex-col gap-1.5 border-t  pt-2">
-							<div className="flex items-center justify-between">
-								<label className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-									<Terminal className="h-3.5 w-3.5 shrink-0 text-primary" />
-									<span>Authorize Key on Remote Server</span>
-								</label>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={handleCopyCommand}
-									className="h-7 gap-1.5 px-2.5 text-xs font-medium">
-									{copiedCmd ? (
-										<Check className="h-3.5 w-3.5 text-emerald-500" />
-									) : (
-										<Copy className="h-3.5 w-3.5" />
-									)}
-									{copiedCmd ? 'Copied' : 'Copy Command'}
-								</Button>
-							</div>
-							<div className="max-h-24 overflow-y-auto rounded-md bg-zinc-950/90 p-3 font-mono text-[11px] leading-relaxed break-all text-zinc-200 select-all">
-								<span className="font-bold text-emerald-400">mkdir</span>{' '}
-								<span className="text-amber-400">-p</span>{' '}
-								<span className="text-cyan-300">~/.ssh</span>{' '}
-								<span className="text-zinc-500">&amp;&amp;</span>{' '}
-								<span className="font-bold text-emerald-400">echo</span>{' '}
-								<span className="text-sky-300">
-									"{activeKey.public_key?.trim()}"
-								</span>{' '}
-								<span className="text-amber-400">&gt;&gt;</span>{' '}
-								<span className="text-cyan-300">
-									~/.ssh/authorized_keys
-								</span>{' '}
-								<span className="text-zinc-500">&amp;&amp;</span>{' '}
-								<span className="font-bold text-emerald-400">chmod</span>{' '}
-								<span className="text-amber-400">700</span>{' '}
-								<span className="text-cyan-300">~/.ssh</span>{' '}
-								<span className="text-zinc-500">&amp;&amp;</span>{' '}
-								<span className="font-bold text-emerald-400">chmod</span>{' '}
-								<span className="text-amber-400">600</span>{' '}
-								<span className="text-cyan-300">
-									~/.ssh/authorized_keys
-								</span>
-							</div>
-						</div>
-					)}
+					{/* Server Authorization Command (reuses shared block) */}
+					<AuthorizeCommandBlock publicKey={activeKey.public_key || ''} />
 
 					{/* Bottom Footer Download Row */}
 					<div className="flex items-center gap-2 border-t  pt-3">

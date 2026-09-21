@@ -12,7 +12,7 @@ import {SettingsSection} from '#/components/settings/settings-section';
 export const Route = createFileRoute('/_app/settings/git-providers')({
 	component: () => (
 		<Navigate to="/settings" search={{tab: 'git'}} replace />
-	)
+	),
 });
 
 export function GitProvidersPage() {
@@ -75,7 +75,7 @@ export function GitProvidersPage() {
 					)}
 				</div>
 				{filteredProviders.length === 0 ? (
-					<div className="flex flex-col items-center justify-center rounded-2xl bg-muted/20 py-16 text-center">
+					<div className="flex flex-col items-center justify-center rounded-xl bg-muted/20 py-16 text-center">
 						<GitBranch className="mb-2.5 size-10 text-muted-foreground/30" />
 						<p className="text-sm font-semibold text-foreground">
 							No Git Providers found

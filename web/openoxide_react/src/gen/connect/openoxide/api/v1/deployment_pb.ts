@@ -2,192 +2,208 @@
 // @generated from file openoxide/api/v1/deployment.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/deployment.proto.
  */
-export const file_openoxide_api_v1_deployment: GenFile = /*@__PURE__*/
-  fileDesc("CiFvcGVub3hpZGUvYXBpL3YxL2RlcGxveW1lbnQucHJvdG8SEG9wZW5veGlkZS5hcGkudjEi7wEKCkRlcGxveW1lbnQSCgoCaWQYASABKAMSFQoNcmVzb3VyY2VfdHlwZRgCIAEoCRITCgtyZXNvdXJjZV9pZBgDIAEoAxIOCgZzdGF0dXMYBCABKAkSEgoFZXJyb3IYBSABKAlIAIgBARIRCgRsb2dzGAYgASgJSAGIAQESEgoKY3JlYXRlZF9hdBgHIAEoAxISCgp1cGRhdGVkX2F0GAggASgDEg8KB3VzZXJfaWQYCSABKAMSFwoKdXNlcl9lbWFpbBgKIAEoCUgCiAEBQggKBl9lcnJvckIHCgVfbG9nc0INCgtfdXNlcl9lbWFpbCLMAQoWTGlzdERlcGxveW1lbnRzUmVxdWVzdBIaCg1yZXNvdXJjZV90eXBlGAEgASgJSACIAQESIQoLcmVzb3VyY2VfaWQYAiABKANCB7pIBCICIABIAYgBARIeCgVsaW1pdBgDIAEoA0IKukgHIgUY6AcoAUgCiAEBEhwKBm9mZnNldBgEIAEoA0IHukgEIgIoAEgDiAEBQhAKDl9yZXNvdXJjZV90eXBlQg4KDF9yZXNvdXJjZV9pZEIICgZfbGltaXRCCQoHX29mZnNldCJMChdMaXN0RGVwbG95bWVudHNSZXNwb25zZRIxCgtkZXBsb3ltZW50cxgBIAMoCzIcLm9wZW5veGlkZS5hcGkudjEuRGVwbG95bWVudCIrChRHZXREZXBsb3ltZW50UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACKGAQoRU2VhcmNoTG9nc1JlcXVlc3QSGQoFcXVlcnkYASABKAlCCrpIB3IFEAEY6AcSGgoNcmVzb3VyY2VfdHlwZRgCIAEoCUgAiAEBEhgKC3Jlc291cmNlX2lkGAMgASgDSAGIAQFCEAoOX3Jlc291cmNlX3R5cGVCDgoMX3Jlc291cmNlX2lkIioKE1N0cmVhbVRhcmdldFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiOgoSRG9ja2VyU3RhdHNSZXF1ZXN0EhYKCXNlcnZlcl9pZBgBIAEoA0gAiAEBQgwKCl9zZXJ2ZXJfaWQi4gEKEExvZ1RhcmdldFJlcXVlc3QSFwoGdGFyZ2V0GAEgASgJQge6SARyAhABEhYKCXNlcnZlcl9pZBgCIAEoA0gAiAEBEh4KBHRhaWwYAyABKANCC7pICCIGGKCNBigBSAGIAQESEwoGZmlsdGVyGAQgASgJSAKIAQESFwoKdGltZXN0YW1wcxgFIAEoCEgDiAEBEhMKBmZvbGxvdxgGIAEoCEgEiAEBQgwKCl9zZXJ2ZXJfaWRCBwoFX3RhaWxCCQoHX2ZpbHRlckINCgtfdGltZXN0YW1wc0IJCgdfZm9sbG93IpECChJDb21wb3NlTG9nc1JlcXVlc3QSIAoKY29tcG9zZV9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEh4KB3NlcnZpY2UYAiABKAlCCLpIBXIDGP8BSAGIAQESHwoJc2VydmVyX2lkGAMgASgDQge6SAQiAiAASAKIAQESFwoKdGltZXN0YW1wcxgEIAEoCEgDiAEBEhMKBmZvbGxvdxgFIAEoCEgEiAEBEh4KBHRhaWwYBiABKANCC7pICCIGGKCNBigBSAWIAQFCDQoLX2NvbXBvc2VfaWRCCgoIX3NlcnZpY2VCDAoKX3NlcnZlcl9pZEINCgtfdGltZXN0YW1wc0IJCgdfZm9sbG93QgcKBV90YWlsIiwKFVJlc291cmNlVGFyZ2V0UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACIuChdDYW5jZWxEZXBsb3ltZW50UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJhCg9EZXBsb3ltZW50RXZlbnQSDAoEdHlwZRgBIAEoCRIRCgl0aW1lc3RhbXAYAiABKAMSDwoHcGF5bG9hZBgDIAEoCRISCgVlcnJvchgEIAEoCUgAiAEBQggKBl9lcnJvciIvCglMb2dFeHBvcnQSDwoHY29udGVudBgBIAEoCRIRCglmaWxlX25hbWUYAiABKAkiQAoNQ29udGFpbmVyTGlzdBIvCgpjb250YWluZXJzGAEgAygLMhsub3Blbm94aWRlLmFwaS52MS5Db250YWluZXIiYwoJQ29udGFpbmVyEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDQoFaW1hZ2UYAyABKAkSDQoFc3RhdGUYBCABKAkSEwoGc3RhdHVzGAUgASgJSACIAQFCCQoHX3N0YXR1czL9DwoRRGVwbG95bWVudFNlcnZpY2USZgoPTGlzdERlcGxveW1lbnRzEigub3Blbm94aWRlLmFwaS52MS5MaXN0RGVwbG95bWVudHNSZXF1ZXN0Gikub3Blbm94aWRlLmFwaS52MS5MaXN0RGVwbG95bWVudHNSZXNwb25zZRJcCgpTZWFyY2hMb2dzEiMub3Blbm94aWRlLmFwaS52MS5TZWFyY2hMb2dzUmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuTGlzdERlcGxveW1lbnRzUmVzcG9uc2USWwoVTGlzdEFjdGl2ZURlcGxveW1lbnRzEhcub3Blbm94aWRlLmFwaS52MS5FbXB0eRopLm9wZW5veGlkZS5hcGkudjEuTGlzdERlcGxveW1lbnRzUmVzcG9uc2USXAoWTGlzdFJ1bm5pbmdEZXBsb3ltZW50cxIXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkaKS5vcGVub3hpZGUuYXBpLnYxLkxpc3REZXBsb3ltZW50c1Jlc3BvbnNlElUKDUdldERlcGxveW1lbnQSJi5vcGVub3hpZGUuYXBpLnYxLkdldERlcGxveW1lbnRSZXF1ZXN0Ghwub3Blbm94aWRlLmFwaS52MS5EZXBsb3ltZW50EmQKFlN0cmVhbUFwcGxpY2F0aW9uU3RhdHMSJS5vcGVub3hpZGUuYXBpLnYxLlN0cmVhbVRhcmdldFJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLkRlcGxveW1lbnRFdmVudDABEmAKElN0cmVhbUNvbXBvc2VTdGF0cxIlLm9wZW5veGlkZS5hcGkudjEuU3RyZWFtVGFyZ2V0UmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuRGVwbG95bWVudEV2ZW50MAESYQoTU3RyZWFtRGF0YWJhc2VTdGF0cxIlLm9wZW5veGlkZS5hcGkudjEuU3RyZWFtVGFyZ2V0UmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuRGVwbG95bWVudEV2ZW50MAESXgoTU3RyZWFtQ29udGFpbmVyTG9ncxIiLm9wZW5veGlkZS5hcGkudjEuTG9nVGFyZ2V0UmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuRGVwbG95bWVudEV2ZW50MAESVgoTRXhwb3J0Q29udGFpbmVyTG9ncxIiLm9wZW5veGlkZS5hcGkudjEuTG9nVGFyZ2V0UmVxdWVzdBobLm9wZW5veGlkZS5hcGkudjEuTG9nRXhwb3J0EkoKDkxpc3RDb250YWluZXJzEhcub3Blbm94aWRlLmFwaS52MS5FbXB0eRofLm9wZW5veGlkZS5hcGkudjEuQ29udGFpbmVyTGlzdBJcChFTdHJlYW1TZXJ2aWNlTG9ncxIiLm9wZW5veGlkZS5hcGkudjEuTG9nVGFyZ2V0UmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuRGVwbG95bWVudEV2ZW50MAESVAoRRXhwb3J0U2VydmljZUxvZ3MSIi5vcGVub3hpZGUuYXBpLnYxLkxvZ1RhcmdldFJlcXVlc3QaGy5vcGVub3hpZGUuYXBpLnYxLkxvZ0V4cG9ydBJeChFTdHJlYW1Db21wb3NlTG9ncxIkLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZUxvZ3NSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5EZXBsb3ltZW50RXZlbnQwARJWChFFeHBvcnRDb21wb3NlTG9ncxIkLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZUxvZ3NSZXF1ZXN0Ghsub3Blbm94aWRlLmFwaS52MS5Mb2dFeHBvcnQSYwoUU3RyZWFtRGVwbG95bWVudExvZ3MSJi5vcGVub3hpZGUuYXBpLnYxLkdldERlcGxveW1lbnRSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5EZXBsb3ltZW50RXZlbnQwARJWChBDYW5jZWxEZXBsb3ltZW50Eikub3Blbm94aWRlLmFwaS52MS5DYW5jZWxEZXBsb3ltZW50UmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSUwoQRGVsZXRlRGVwbG95bWVudBImLm9wZW5veGlkZS5hcGkudjEuR2V0RGVwbG95bWVudFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EmAKHERlbGV0ZUFwcGxpY2F0aW9uRGVwbG95bWVudHMSJy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlVGFyZ2V0UmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSXAoYRGVsZXRlQ29tcG9zZURlcGxveW1lbnRzEicub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVRhcmdldFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5El0KGURlbGV0ZURhdGFiYXNlRGVwbG95bWVudHMSJy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlVGFyZ2V0UmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSRAoQQ2xlYXJEZXBsb3ltZW50cxIXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5YgZwcm90bzM", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_deployment: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'CiFvcGVub3hpZGUvYXBpL3YxL2RlcGxveW1lbnQucHJvdG8SEG9wZW5veGlkZS5hcGkudjEi7wEKCkRlcGxveW1lbnQSCgoCaWQYASABKAMSFQoNcmVzb3VyY2VfdHlwZRgCIAEoCRITCgtyZXNvdXJjZV9pZBgDIAEoAxIOCgZzdGF0dXMYBCABKAkSEgoFZXJyb3IYBSABKAlIAIgBARIRCgRsb2dzGAYgASgJSAGIAQESEgoKY3JlYXRlZF9hdBgHIAEoAxISCgp1cGRhdGVkX2F0GAggASgDEg8KB3VzZXJfaWQYCSABKAMSFwoKdXNlcl9lbWFpbBgKIAEoCUgCiAEBQggKBl9lcnJvckIHCgVfbG9nc0INCgtfdXNlcl9lbWFpbCLMAQoWTGlzdERlcGxveW1lbnRzUmVxdWVzdBIaCg1yZXNvdXJjZV90eXBlGAEgASgJSACIAQESIQoLcmVzb3VyY2VfaWQYAiABKANCB7pIBCICIABIAYgBARIeCgVsaW1pdBgDIAEoA0IKukgHIgUY6AcoAUgCiAEBEhwKBm9mZnNldBgEIAEoA0IHukgEIgIoAEgDiAEBQhAKDl9yZXNvdXJjZV90eXBlQg4KDF9yZXNvdXJjZV9pZEIICgZfbGltaXRCCQoHX29mZnNldCJMChdMaXN0RGVwbG95bWVudHNSZXNwb25zZRIxCgtkZXBsb3ltZW50cxgBIAMoCzIcLm9wZW5veGlkZS5hcGkudjEuRGVwbG95bWVudCIrChRHZXREZXBsb3ltZW50UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACKGAQoRU2VhcmNoTG9nc1JlcXVlc3QSGQoFcXVlcnkYASABKAlCCrpIB3IFEAEY6AcSGgoNcmVzb3VyY2VfdHlwZRgCIAEoCUgAiAEBEhgKC3Jlc291cmNlX2lkGAMgASgDSAGIAQFCEAoOX3Jlc291cmNlX3R5cGVCDgoMX3Jlc291cmNlX2lkIioKE1N0cmVhbVRhcmdldFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiOgoSRG9ja2VyU3RhdHNSZXF1ZXN0EhYKCXNlcnZlcl9pZBgBIAEoA0gAiAEBQgwKCl9zZXJ2ZXJfaWQi4gEKEExvZ1RhcmdldFJlcXVlc3QSFwoGdGFyZ2V0GAEgASgJQge6SARyAhABEhYKCXNlcnZlcl9pZBgCIAEoA0gAiAEBEh4KBHRhaWwYAyABKANCC7pICCIGGKCNBigBSAGIAQESEwoGZmlsdGVyGAQgASgJSAKIAQESFwoKdGltZXN0YW1wcxgFIAEoCEgDiAEBEhMKBmZvbGxvdxgGIAEoCEgEiAEBQgwKCl9zZXJ2ZXJfaWRCBwoFX3RhaWxCCQoHX2ZpbHRlckINCgtfdGltZXN0YW1wc0IJCgdfZm9sbG93IpECChJDb21wb3NlTG9nc1JlcXVlc3QSIAoKY29tcG9zZV9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEh4KB3NlcnZpY2UYAiABKAlCCLpIBXIDGP8BSAGIAQESHwoJc2VydmVyX2lkGAMgASgDQge6SAQiAiAASAKIAQESFwoKdGltZXN0YW1wcxgEIAEoCEgDiAEBEhMKBmZvbGxvdxgFIAEoCEgEiAEBEh4KBHRhaWwYBiABKANCC7pICCIGGKCNBigBSAWIAQFCDQoLX2NvbXBvc2VfaWRCCgoIX3NlcnZpY2VCDAoKX3NlcnZlcl9pZEINCgtfdGltZXN0YW1wc0IJCgdfZm9sbG93QgcKBV90YWlsIiwKFVJlc291cmNlVGFyZ2V0UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACIuChdDYW5jZWxEZXBsb3ltZW50UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJhCg9EZXBsb3ltZW50RXZlbnQSDAoEdHlwZRgBIAEoCRIRCgl0aW1lc3RhbXAYAiABKAMSDwoHcGF5bG9hZBgDIAEoCRISCgVlcnJvchgEIAEoCUgAiAEBQggKBl9lcnJvciIvCglMb2dFeHBvcnQSDwoHY29udGVudBgBIAEoCRIRCglmaWxlX25hbWUYAiABKAkiQAoNQ29udGFpbmVyTGlzdBIvCgpjb250YWluZXJzGAEgAygLMhsub3Blbm94aWRlLmFwaS52MS5Db250YWluZXIiYwoJQ29udGFpbmVyEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDQoFaW1hZ2UYAyABKAkSDQoFc3RhdGUYBCABKAkSEwoGc3RhdHVzGAUgASgJSACIAQFCCQoHX3N0YXR1czL9DwoRRGVwbG95bWVudFNlcnZpY2USZgoPTGlzdERlcGxveW1lbnRzEigub3Blbm94aWRlLmFwaS52MS5MaXN0RGVwbG95bWVudHNSZXF1ZXN0Gikub3Blbm94aWRlLmFwaS52MS5MaXN0RGVwbG95bWVudHNSZXNwb25zZRJcCgpTZWFyY2hMb2dzEiMub3Blbm94aWRlLmFwaS52MS5TZWFyY2hMb2dzUmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuTGlzdERlcGxveW1lbnRzUmVzcG9uc2USWwoVTGlzdEFjdGl2ZURlcGxveW1lbnRzEhcub3Blbm94aWRlLmFwaS52MS5FbXB0eRopLm9wZW5veGlkZS5hcGkudjEuTGlzdERlcGxveW1lbnRzUmVzcG9uc2USXAoWTGlzdFJ1bm5pbmdEZXBsb3ltZW50cxIXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkaKS5vcGVub3hpZGUuYXBpLnYxLkxpc3REZXBsb3ltZW50c1Jlc3BvbnNlElUKDUdldERlcGxveW1lbnQSJi5vcGVub3hpZGUuYXBpLnYxLkdldERlcGxveW1lbnRSZXF1ZXN0Ghwub3Blbm94aWRlLmFwaS52MS5EZXBsb3ltZW50EmQKFlN0cmVhbUFwcGxpY2F0aW9uU3RhdHMSJS5vcGVub3hpZGUuYXBpLnYxLlN0cmVhbVRhcmdldFJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLkRlcGxveW1lbnRFdmVudDABEmAKElN0cmVhbUNvbXBvc2VTdGF0cxIlLm9wZW5veGlkZS5hcGkudjEuU3RyZWFtVGFyZ2V0UmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuRGVwbG95bWVudEV2ZW50MAESYQoTU3RyZWFtRGF0YWJhc2VTdGF0cxIlLm9wZW5veGlkZS5hcGkudjEuU3RyZWFtVGFyZ2V0UmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuRGVwbG95bWVudEV2ZW50MAESXgoTU3RyZWFtQ29udGFpbmVyTG9ncxIiLm9wZW5veGlkZS5hcGkudjEuTG9nVGFyZ2V0UmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuRGVwbG95bWVudEV2ZW50MAESVgoTRXhwb3J0Q29udGFpbmVyTG9ncxIiLm9wZW5veGlkZS5hcGkudjEuTG9nVGFyZ2V0UmVxdWVzdBobLm9wZW5veGlkZS5hcGkudjEuTG9nRXhwb3J0EkoKDkxpc3RDb250YWluZXJzEhcub3Blbm94aWRlLmFwaS52MS5FbXB0eRofLm9wZW5veGlkZS5hcGkudjEuQ29udGFpbmVyTGlzdBJcChFTdHJlYW1TZXJ2aWNlTG9ncxIiLm9wZW5veGlkZS5hcGkudjEuTG9nVGFyZ2V0UmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuRGVwbG95bWVudEV2ZW50MAESVAoRRXhwb3J0U2VydmljZUxvZ3MSIi5vcGVub3hpZGUuYXBpLnYxLkxvZ1RhcmdldFJlcXVlc3QaGy5vcGVub3hpZGUuYXBpLnYxLkxvZ0V4cG9ydBJeChFTdHJlYW1Db21wb3NlTG9ncxIkLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZUxvZ3NSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5EZXBsb3ltZW50RXZlbnQwARJWChFFeHBvcnRDb21wb3NlTG9ncxIkLm9wZW5veGlkZS5hcGkudjEuQ29tcG9zZUxvZ3NSZXF1ZXN0Ghsub3Blbm94aWRlLmFwaS52MS5Mb2dFeHBvcnQSYwoUU3RyZWFtRGVwbG95bWVudExvZ3MSJi5vcGVub3hpZGUuYXBpLnYxLkdldERlcGxveW1lbnRSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5EZXBsb3ltZW50RXZlbnQwARJWChBDYW5jZWxEZXBsb3ltZW50Eikub3Blbm94aWRlLmFwaS52MS5DYW5jZWxEZXBsb3ltZW50UmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSUwoQRGVsZXRlRGVwbG95bWVudBImLm9wZW5veGlkZS5hcGkudjEuR2V0RGVwbG95bWVudFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EmAKHERlbGV0ZUFwcGxpY2F0aW9uRGVwbG95bWVudHMSJy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlVGFyZ2V0UmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSXAoYRGVsZXRlQ29tcG9zZURlcGxveW1lbnRzEicub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVRhcmdldFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5El0KGURlbGV0ZURhdGFiYXNlRGVwbG95bWVudHMSJy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlVGFyZ2V0UmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSRAoQQ2xlYXJEZXBsb3ltZW50cxIXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5YgZwcm90bzM',
+		[file_openoxide_api_v1_common, file_buf_validate_validate],
+	);
 
 /**
  * @generated from message openoxide.api.v1.Deployment
  */
-export type Deployment = Message<"openoxide.api.v1.Deployment"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type Deployment = Message<'openoxide.api.v1.Deployment'> & {
+	/**
+	 * @generated from field: int64 id = 1;
+	 */
+	id: bigint;
 
-  /**
-   * @generated from field: string resource_type = 2;
-   */
-  resourceType: string;
+	/**
+	 * @generated from field: string resource_type = 2;
+	 */
+	resourceType: string;
 
-  /**
-   * @generated from field: int64 resource_id = 3;
-   */
-  resourceId: bigint;
+	/**
+	 * @generated from field: int64 resource_id = 3;
+	 */
+	resourceId: bigint;
 
-  /**
-   * @generated from field: string status = 4;
-   */
-  status: string;
+	/**
+	 * @generated from field: string status = 4;
+	 */
+	status: string;
 
-  /**
-   * @generated from field: optional string error = 5;
-   */
-  error?: string | undefined;
+	/**
+	 * @generated from field: optional string error = 5;
+	 */
+	error?: string | undefined;
 
-  /**
-   * @generated from field: optional string logs = 6;
-   */
-  logs?: string | undefined;
+	/**
+	 * @generated from field: optional string logs = 6;
+	 */
+	logs?: string | undefined;
 
-  /**
-   * @generated from field: int64 created_at = 7;
-   */
-  createdAt: bigint;
+	/**
+	 * @generated from field: int64 created_at = 7;
+	 */
+	createdAt: bigint;
 
-  /**
-   * @generated from field: int64 updated_at = 8;
-   */
-  updatedAt: bigint;
+	/**
+	 * @generated from field: int64 updated_at = 8;
+	 */
+	updatedAt: bigint;
 
-  /**
-   * Acting user (0 = system-triggered: webhook/schedule/preview).
-   *
-   * @generated from field: int64 user_id = 9;
-   */
-  userId: bigint;
+	/**
+	 * Acting user (0 = system-triggered: webhook/schedule/preview).
+	 *
+	 * @generated from field: int64 user_id = 9;
+	 */
+	userId: bigint;
 
-  /**
-   * @generated from field: optional string user_email = 10;
-   */
-  userEmail?: string | undefined;
+	/**
+	 * @generated from field: optional string user_email = 10;
+	 */
+	userEmail?: string | undefined;
 };
 
 /**
  * Describes the message openoxide.api.v1.Deployment.
  * Use `create(DeploymentSchema)` to create a new message.
  */
-export const DeploymentSchema: GenMessage<Deployment> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 0);
+export const DeploymentSchema: GenMessage<Deployment> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 0);
 
 /**
  * @generated from message openoxide.api.v1.ListDeploymentsRequest
  */
-export type ListDeploymentsRequest = Message<"openoxide.api.v1.ListDeploymentsRequest"> & {
-  /**
-   * @generated from field: optional string resource_type = 1;
-   */
-  resourceType?: string | undefined;
+export type ListDeploymentsRequest =
+	Message<'openoxide.api.v1.ListDeploymentsRequest'> & {
+		/**
+		 * @generated from field: optional string resource_type = 1;
+		 */
+		resourceType?: string | undefined;
 
-  /**
-   * @generated from field: optional int64 resource_id = 2;
-   */
-  resourceId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 resource_id = 2;
+		 */
+		resourceId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 limit = 3;
-   */
-  limit?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 limit = 3;
+		 */
+		limit?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 offset = 4;
-   */
-  offset?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 offset = 4;
+		 */
+		offset?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListDeploymentsRequest.
  * Use `create(ListDeploymentsRequestSchema)` to create a new message.
  */
-export const ListDeploymentsRequestSchema: GenMessage<ListDeploymentsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 1);
+export const ListDeploymentsRequestSchema: GenMessage<ListDeploymentsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 1);
 
 /**
  * @generated from message openoxide.api.v1.ListDeploymentsResponse
  */
-export type ListDeploymentsResponse = Message<"openoxide.api.v1.ListDeploymentsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Deployment deployments = 1;
-   */
-  deployments: Deployment[];
-};
+export type ListDeploymentsResponse =
+	Message<'openoxide.api.v1.ListDeploymentsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Deployment deployments = 1;
+		 */
+		deployments: Deployment[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListDeploymentsResponse.
  * Use `create(ListDeploymentsResponseSchema)` to create a new message.
  */
-export const ListDeploymentsResponseSchema: GenMessage<ListDeploymentsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 2);
+export const ListDeploymentsResponseSchema: GenMessage<ListDeploymentsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 2);
 
 /**
  * @generated from message openoxide.api.v1.GetDeploymentRequest
  */
-export type GetDeploymentRequest = Message<"openoxide.api.v1.GetDeploymentRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type GetDeploymentRequest =
+	Message<'openoxide.api.v1.GetDeploymentRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GetDeploymentRequest.
  * Use `create(GetDeploymentRequestSchema)` to create a new message.
  */
-export const GetDeploymentRequestSchema: GenMessage<GetDeploymentRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 3);
+export const GetDeploymentRequestSchema: GenMessage<GetDeploymentRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 3);
 
 /**
  * @generated from message openoxide.api.v1.SearchLogsRequest
  */
-export type SearchLogsRequest = Message<"openoxide.api.v1.SearchLogsRequest"> & {
-  /**
-   * @generated from field: string query = 1;
-   */
-  query: string;
+export type SearchLogsRequest =
+	Message<'openoxide.api.v1.SearchLogsRequest'> & {
+		/**
+		 * @generated from field: string query = 1;
+		 */
+		query: string;
 
-  /**
-   * @generated from field: optional string resource_type = 2;
-   */
-  resourceType?: string | undefined;
+		/**
+		 * @generated from field: optional string resource_type = 2;
+		 */
+		resourceType?: string | undefined;
 
-  /**
-   * @generated from field: optional int64 resource_id = 3;
-   */
-  resourceId?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 resource_id = 3;
+		 */
+		resourceId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SearchLogsRequest.
  * Use `create(SearchLogsRequestSchema)` to create a new message.
  */
-export const SearchLogsRequestSchema: GenMessage<SearchLogsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 4);
+export const SearchLogsRequestSchema: GenMessage<SearchLogsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 4);
 
 /**
  * @generated from message openoxide.api.v1.StreamTargetRequest
  */
-export type StreamTargetRequest = Message<"openoxide.api.v1.StreamTargetRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type StreamTargetRequest =
+	Message<'openoxide.api.v1.StreamTargetRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.StreamTargetRequest.
  * Use `create(StreamTargetRequestSchema)` to create a new message.
  */
-export const StreamTargetRequestSchema: GenMessage<StreamTargetRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 5);
+export const StreamTargetRequestSchema: GenMessage<StreamTargetRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 5);
 
 /**
  * Global live container stats for the monitoring page. No server_id means
@@ -195,426 +211,430 @@ export const StreamTargetRequestSchema: GenMessage<StreamTargetRequest> = /*@__P
  *
  * @generated from message openoxide.api.v1.DockerStatsRequest
  */
-export type DockerStatsRequest = Message<"openoxide.api.v1.DockerStatsRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type DockerStatsRequest =
+	Message<'openoxide.api.v1.DockerStatsRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.DockerStatsRequest.
  * Use `create(DockerStatsRequestSchema)` to create a new message.
  */
-export const DockerStatsRequestSchema: GenMessage<DockerStatsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 6);
+export const DockerStatsRequestSchema: GenMessage<DockerStatsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 6);
 
 /**
  * @generated from message openoxide.api.v1.LogTargetRequest
  */
-export type LogTargetRequest = Message<"openoxide.api.v1.LogTargetRequest"> & {
-  /**
-   * @generated from field: string target = 1;
-   */
-  target: string;
+export type LogTargetRequest =
+	Message<'openoxide.api.v1.LogTargetRequest'> & {
+		/**
+		 * @generated from field: string target = 1;
+		 */
+		target: string;
 
-  /**
-   * @generated from field: optional int64 server_id = 2;
-   */
-  serverId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 server_id = 2;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 tail = 3;
-   */
-  tail?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 tail = 3;
+		 */
+		tail?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string filter = 4;
-   */
-  filter?: string | undefined;
+		/**
+		 * @generated from field: optional string filter = 4;
+		 */
+		filter?: string | undefined;
 
-  /**
-   * @generated from field: optional bool timestamps = 5;
-   */
-  timestamps?: boolean | undefined;
+		/**
+		 * @generated from field: optional bool timestamps = 5;
+		 */
+		timestamps?: boolean | undefined;
 
-  /**
-   * @generated from field: optional bool follow = 6;
-   */
-  follow?: boolean | undefined;
-};
+		/**
+		 * @generated from field: optional bool follow = 6;
+		 */
+		follow?: boolean | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.LogTargetRequest.
  * Use `create(LogTargetRequestSchema)` to create a new message.
  */
-export const LogTargetRequestSchema: GenMessage<LogTargetRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 7);
+export const LogTargetRequestSchema: GenMessage<LogTargetRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 7);
 
 /**
  * @generated from message openoxide.api.v1.ComposeLogsRequest
  */
-export type ComposeLogsRequest = Message<"openoxide.api.v1.ComposeLogsRequest"> & {
-  /**
-   * @generated from field: optional int64 compose_id = 1;
-   */
-  composeId?: bigint | undefined;
+export type ComposeLogsRequest =
+	Message<'openoxide.api.v1.ComposeLogsRequest'> & {
+		/**
+		 * @generated from field: optional int64 compose_id = 1;
+		 */
+		composeId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string service = 2;
-   */
-  service?: string | undefined;
+		/**
+		 * @generated from field: optional string service = 2;
+		 */
+		service?: string | undefined;
 
-  /**
-   * @generated from field: optional int64 server_id = 3;
-   */
-  serverId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 server_id = 3;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional bool timestamps = 4;
-   */
-  timestamps?: boolean | undefined;
+		/**
+		 * @generated from field: optional bool timestamps = 4;
+		 */
+		timestamps?: boolean | undefined;
 
-  /**
-   * @generated from field: optional bool follow = 5;
-   */
-  follow?: boolean | undefined;
+		/**
+		 * @generated from field: optional bool follow = 5;
+		 */
+		follow?: boolean | undefined;
 
-  /**
-   * @generated from field: optional int64 tail = 6;
-   */
-  tail?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 tail = 6;
+		 */
+		tail?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ComposeLogsRequest.
  * Use `create(ComposeLogsRequestSchema)` to create a new message.
  */
-export const ComposeLogsRequestSchema: GenMessage<ComposeLogsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 8);
+export const ComposeLogsRequestSchema: GenMessage<ComposeLogsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 8);
 
 /**
  * @generated from message openoxide.api.v1.ResourceTargetRequest
  */
-export type ResourceTargetRequest = Message<"openoxide.api.v1.ResourceTargetRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ResourceTargetRequest =
+	Message<'openoxide.api.v1.ResourceTargetRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ResourceTargetRequest.
  * Use `create(ResourceTargetRequestSchema)` to create a new message.
  */
-export const ResourceTargetRequestSchema: GenMessage<ResourceTargetRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 9);
+export const ResourceTargetRequestSchema: GenMessage<ResourceTargetRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 9);
 
 /**
  * @generated from message openoxide.api.v1.CancelDeploymentRequest
  */
-export type CancelDeploymentRequest = Message<"openoxide.api.v1.CancelDeploymentRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type CancelDeploymentRequest =
+	Message<'openoxide.api.v1.CancelDeploymentRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.CancelDeploymentRequest.
  * Use `create(CancelDeploymentRequestSchema)` to create a new message.
  */
-export const CancelDeploymentRequestSchema: GenMessage<CancelDeploymentRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 10);
+export const CancelDeploymentRequestSchema: GenMessage<CancelDeploymentRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 10);
 
 /**
  * @generated from message openoxide.api.v1.DeploymentEvent
  */
-export type DeploymentEvent = Message<"openoxide.api.v1.DeploymentEvent"> & {
-  /**
-   * @generated from field: string type = 1;
-   */
-  type: string;
+export type DeploymentEvent =
+	Message<'openoxide.api.v1.DeploymentEvent'> & {
+		/**
+		 * @generated from field: string type = 1;
+		 */
+		type: string;
 
-  /**
-   * @generated from field: int64 timestamp = 2;
-   */
-  timestamp: bigint;
+		/**
+		 * @generated from field: int64 timestamp = 2;
+		 */
+		timestamp: bigint;
 
-  /**
-   * @generated from field: string payload = 3;
-   */
-  payload: string;
+		/**
+		 * @generated from field: string payload = 3;
+		 */
+		payload: string;
 
-  /**
-   * @generated from field: optional string error = 4;
-   */
-  error?: string | undefined;
-};
+		/**
+		 * @generated from field: optional string error = 4;
+		 */
+		error?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.DeploymentEvent.
  * Use `create(DeploymentEventSchema)` to create a new message.
  */
-export const DeploymentEventSchema: GenMessage<DeploymentEvent> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 11);
+export const DeploymentEventSchema: GenMessage<DeploymentEvent> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 11);
 
 /**
  * @generated from message openoxide.api.v1.LogExport
  */
-export type LogExport = Message<"openoxide.api.v1.LogExport"> & {
-  /**
-   * @generated from field: string content = 1;
-   */
-  content: string;
+export type LogExport = Message<'openoxide.api.v1.LogExport'> & {
+	/**
+	 * @generated from field: string content = 1;
+	 */
+	content: string;
 
-  /**
-   * @generated from field: string file_name = 2;
-   */
-  fileName: string;
+	/**
+	 * @generated from field: string file_name = 2;
+	 */
+	fileName: string;
 };
 
 /**
  * Describes the message openoxide.api.v1.LogExport.
  * Use `create(LogExportSchema)` to create a new message.
  */
-export const LogExportSchema: GenMessage<LogExport> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 12);
+export const LogExportSchema: GenMessage<LogExport> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 12);
 
 /**
  * @generated from message openoxide.api.v1.ContainerList
  */
-export type ContainerList = Message<"openoxide.api.v1.ContainerList"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Container containers = 1;
-   */
-  containers: Container[];
+export type ContainerList = Message<'openoxide.api.v1.ContainerList'> & {
+	/**
+	 * @generated from field: repeated openoxide.api.v1.Container containers = 1;
+	 */
+	containers: Container[];
 };
 
 /**
  * Describes the message openoxide.api.v1.ContainerList.
  * Use `create(ContainerListSchema)` to create a new message.
  */
-export const ContainerListSchema: GenMessage<ContainerList> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 13);
+export const ContainerListSchema: GenMessage<ContainerList> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 13);
 
 /**
  * @generated from message openoxide.api.v1.Container
  */
-export type Container = Message<"openoxide.api.v1.Container"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
+export type Container = Message<'openoxide.api.v1.Container'> & {
+	/**
+	 * @generated from field: string id = 1;
+	 */
+	id: string;
 
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
+	/**
+	 * @generated from field: string name = 2;
+	 */
+	name: string;
 
-  /**
-   * @generated from field: string image = 3;
-   */
-  image: string;
+	/**
+	 * @generated from field: string image = 3;
+	 */
+	image: string;
 
-  /**
-   * @generated from field: string state = 4;
-   */
-  state: string;
+	/**
+	 * @generated from field: string state = 4;
+	 */
+	state: string;
 
-  /**
-   * @generated from field: optional string status = 5;
-   */
-  status?: string | undefined;
+	/**
+	 * @generated from field: optional string status = 5;
+	 */
+	status?: string | undefined;
 };
 
 /**
  * Describes the message openoxide.api.v1.Container.
  * Use `create(ContainerSchema)` to create a new message.
  */
-export const ContainerSchema: GenMessage<Container> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_deployment, 14);
+export const ContainerSchema: GenMessage<Container> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_deployment, 14);
 
 /**
  * @generated from service openoxide.api.v1.DeploymentService
  */
 export const DeploymentService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.ListDeployments
-   */
-  listDeployments: {
-    methodKind: "unary";
-    input: typeof ListDeploymentsRequestSchema;
-    output: typeof ListDeploymentsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.SearchLogs
-   */
-  searchLogs: {
-    methodKind: "unary";
-    input: typeof SearchLogsRequestSchema;
-    output: typeof ListDeploymentsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.ListActiveDeployments
-   */
-  listActiveDeployments: {
-    methodKind: "unary";
-    input: typeof EmptySchema;
-    output: typeof ListDeploymentsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.ListRunningDeployments
-   */
-  listRunningDeployments: {
-    methodKind: "unary";
-    input: typeof EmptySchema;
-    output: typeof ListDeploymentsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.GetDeployment
-   */
-  getDeployment: {
-    methodKind: "unary";
-    input: typeof GetDeploymentRequestSchema;
-    output: typeof DeploymentSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.StreamApplicationStats
-   */
-  streamApplicationStats: {
-    methodKind: "server_streaming";
-    input: typeof StreamTargetRequestSchema;
-    output: typeof DeploymentEventSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.StreamComposeStats
-   */
-  streamComposeStats: {
-    methodKind: "server_streaming";
-    input: typeof StreamTargetRequestSchema;
-    output: typeof DeploymentEventSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.StreamDatabaseStats
-   */
-  streamDatabaseStats: {
-    methodKind: "server_streaming";
-    input: typeof StreamTargetRequestSchema;
-    output: typeof DeploymentEventSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.StreamContainerLogs
-   */
-  streamContainerLogs: {
-    methodKind: "server_streaming";
-    input: typeof LogTargetRequestSchema;
-    output: typeof DeploymentEventSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.ExportContainerLogs
-   */
-  exportContainerLogs: {
-    methodKind: "unary";
-    input: typeof LogTargetRequestSchema;
-    output: typeof LogExportSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.ListContainers
-   */
-  listContainers: {
-    methodKind: "unary";
-    input: typeof EmptySchema;
-    output: typeof ContainerListSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.StreamServiceLogs
-   */
-  streamServiceLogs: {
-    methodKind: "server_streaming";
-    input: typeof LogTargetRequestSchema;
-    output: typeof DeploymentEventSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.ExportServiceLogs
-   */
-  exportServiceLogs: {
-    methodKind: "unary";
-    input: typeof LogTargetRequestSchema;
-    output: typeof LogExportSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.StreamComposeLogs
-   */
-  streamComposeLogs: {
-    methodKind: "server_streaming";
-    input: typeof ComposeLogsRequestSchema;
-    output: typeof DeploymentEventSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.ExportComposeLogs
-   */
-  exportComposeLogs: {
-    methodKind: "unary";
-    input: typeof ComposeLogsRequestSchema;
-    output: typeof LogExportSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.StreamDeploymentLogs
-   */
-  streamDeploymentLogs: {
-    methodKind: "server_streaming";
-    input: typeof GetDeploymentRequestSchema;
-    output: typeof DeploymentEventSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.CancelDeployment
-   */
-  cancelDeployment: {
-    methodKind: "unary";
-    input: typeof CancelDeploymentRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.DeleteDeployment
-   */
-  deleteDeployment: {
-    methodKind: "unary";
-    input: typeof GetDeploymentRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.DeleteApplicationDeployments
-   */
-  deleteApplicationDeployments: {
-    methodKind: "unary";
-    input: typeof ResourceTargetRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.DeleteComposeDeployments
-   */
-  deleteComposeDeployments: {
-    methodKind: "unary";
-    input: typeof ResourceTargetRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.DeleteDatabaseDeployments
-   */
-  deleteDatabaseDeployments: {
-    methodKind: "unary";
-    input: typeof ResourceTargetRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DeploymentService.ClearDeployments
-   */
-  clearDeployments: {
-    methodKind: "unary";
-    input: typeof EmptySchema;
-    output: typeof EmptySchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_deployment, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.ListDeployments
+	 */
+	listDeployments: {
+		methodKind: 'unary';
+		input: typeof ListDeploymentsRequestSchema;
+		output: typeof ListDeploymentsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.SearchLogs
+	 */
+	searchLogs: {
+		methodKind: 'unary';
+		input: typeof SearchLogsRequestSchema;
+		output: typeof ListDeploymentsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.ListActiveDeployments
+	 */
+	listActiveDeployments: {
+		methodKind: 'unary';
+		input: typeof EmptySchema;
+		output: typeof ListDeploymentsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.ListRunningDeployments
+	 */
+	listRunningDeployments: {
+		methodKind: 'unary';
+		input: typeof EmptySchema;
+		output: typeof ListDeploymentsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.GetDeployment
+	 */
+	getDeployment: {
+		methodKind: 'unary';
+		input: typeof GetDeploymentRequestSchema;
+		output: typeof DeploymentSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamApplicationStats
+	 */
+	streamApplicationStats: {
+		methodKind: 'server_streaming';
+		input: typeof StreamTargetRequestSchema;
+		output: typeof DeploymentEventSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamComposeStats
+	 */
+	streamComposeStats: {
+		methodKind: 'server_streaming';
+		input: typeof StreamTargetRequestSchema;
+		output: typeof DeploymentEventSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamDatabaseStats
+	 */
+	streamDatabaseStats: {
+		methodKind: 'server_streaming';
+		input: typeof StreamTargetRequestSchema;
+		output: typeof DeploymentEventSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamContainerLogs
+	 */
+	streamContainerLogs: {
+		methodKind: 'server_streaming';
+		input: typeof LogTargetRequestSchema;
+		output: typeof DeploymentEventSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.ExportContainerLogs
+	 */
+	exportContainerLogs: {
+		methodKind: 'unary';
+		input: typeof LogTargetRequestSchema;
+		output: typeof LogExportSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.ListContainers
+	 */
+	listContainers: {
+		methodKind: 'unary';
+		input: typeof EmptySchema;
+		output: typeof ContainerListSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamServiceLogs
+	 */
+	streamServiceLogs: {
+		methodKind: 'server_streaming';
+		input: typeof LogTargetRequestSchema;
+		output: typeof DeploymentEventSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.ExportServiceLogs
+	 */
+	exportServiceLogs: {
+		methodKind: 'unary';
+		input: typeof LogTargetRequestSchema;
+		output: typeof LogExportSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamComposeLogs
+	 */
+	streamComposeLogs: {
+		methodKind: 'server_streaming';
+		input: typeof ComposeLogsRequestSchema;
+		output: typeof DeploymentEventSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.ExportComposeLogs
+	 */
+	exportComposeLogs: {
+		methodKind: 'unary';
+		input: typeof ComposeLogsRequestSchema;
+		output: typeof LogExportSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamDeploymentLogs
+	 */
+	streamDeploymentLogs: {
+		methodKind: 'server_streaming';
+		input: typeof GetDeploymentRequestSchema;
+		output: typeof DeploymentEventSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.CancelDeployment
+	 */
+	cancelDeployment: {
+		methodKind: 'unary';
+		input: typeof CancelDeploymentRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.DeleteDeployment
+	 */
+	deleteDeployment: {
+		methodKind: 'unary';
+		input: typeof GetDeploymentRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.DeleteApplicationDeployments
+	 */
+	deleteApplicationDeployments: {
+		methodKind: 'unary';
+		input: typeof ResourceTargetRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.DeleteComposeDeployments
+	 */
+	deleteComposeDeployments: {
+		methodKind: 'unary';
+		input: typeof ResourceTargetRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.DeleteDatabaseDeployments
+	 */
+	deleteDatabaseDeployments: {
+		methodKind: 'unary';
+		input: typeof ResourceTargetRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DeploymentService.ClearDeployments
+	 */
+	clearDeployments: {
+		methodKind: 'unary';
+		input: typeof EmptySchema;
+		output: typeof EmptySchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_deployment, 0);

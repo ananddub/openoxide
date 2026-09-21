@@ -1,14 +1,4 @@
-import {useState, useEffect} from 'react';
-import {
-	Zap,
-	RefreshCw,
-	Terminal,
-	X,
-	XCircle,
-	Activity,
-} from 'lucide-react';
-import {Button} from '#/components/ui/button';
-import {DeploymentViewer} from '#/components/shared/deployment-viewer';
+import {useState} from 'react';
 import {toast} from 'sonner';
 import {
 	useComposeCancel,
@@ -19,67 +9,25 @@ import {
 	useDeploymentItems,
 } from '#/api/live';
 import {formatApiError} from '#/api/utils';
-import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
-import {createServiceClient} from '#/api/live/query';
-import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
-import {ComposeDeploymentsList} from './deployments/compose-deployments-list';
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from '#/components/ui/alert-dialog';
-
-const deploymentClient = createServiceClient(DeploymentService);
+import {isBuildActive} from '#/components/projects/detail/deployments/build-status';
+import {useDeploymentLogStream} from '#/components/projects/detail/deployments/use-deployment-log-stream';
+import {DeploymentsHeader} from '#/components/projects/detail/deployments/deployments-header';
+import {DeploymentsList} from '#/components/projects/detail/deployments/deployments-list';
+import {StreamLogsModal} from '#/components/projects/detail/deployments/stream-logs-modal';
+import {CancelDeploymentDialog} from '#/components/projects/detail/deployments/cancel-deployment-dialog';
 
 interface ComposeDeploymentsTabProps {
 	composeId: number;
 	deployments?: any[];
 }
 
-const FINAL_STATES = [
-	'DONE',
-	'DEPLOYED',
-	'SUCCESS',
-	'FAILED',
-	'ERROR',
-	'CANCELLED',
-	'STOPPEDBYUSER',
-	'CRASHED',
-];
-
-const isBuildActive = (e: any) => {
-	if (!e) return false;
-	if (e.finished_at && Number(e.finished_at) > 0) return false;
-	const s = (e.status || '').toUpperCase();
-	const st = (e.state || '').toUpperCase();
-	if (FINAL_STATES.includes(s) || FINAL_STATES.includes(st)) return false;
-	const activeKeywords = [
-		'RUNNING',
-		'BUILDING',
-		'PREPARING',
-		'QUEUE',
-		'QUEUED',
-		'STARTING',
-		'DEPLOYING',
-		'PENDING',
-		'GIT',
-		'DOCKER',
-	];
-	return activeKeywords.some(kw => s.includes(kw) || st.includes(kw));
-};
-
 export function ComposeDeploymentsTab({
 	composeId,
 	deployments: passedDeployments,
 }: ComposeDeploymentsTabProps) {
 	const [activeLogId, setActiveLogId] = useState<number | null>(null);
-	const [liveLogs, setLiveLogs] = useState<string[]>([]);
 	const [isTriggering, setIsTriggering] = useState(false);
+	const [isConfirmCancelOpen, setIsConfirmCancelOpen] = useState(false);
 
 	// Live deployments query filtered to this compose; the table-watch
 	// stream (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
@@ -89,24 +37,27 @@ export function ComposeDeploymentsTab({
 	);
 	const deployments =
 		rawDeployments.length > 0 ? rawDeployments : (passedDeployments ?? []);
-	const isLoading = false;
 	const activeDeployment = deployments.find(isBuildActive);
 	const selectedEvent = deployments.find(d => d.id === activeLogId);
 
-	// Initial state for activeLogId is null so modal never opens automatically on tab load
+	// Historical rows fall back to their stored log text while streaming.
+	const fallback =
+		(selectedEvent as any)?.log_content ||
+		(selectedEvent as any)?.message ||
+		selectedEvent?.description;
+	const liveLogs = useDeploymentLogStream(activeLogId, fallback);
 
-	// Mutations
 	const deployMutation = useComposeDeploy();
 	const redeployMutation = useComposeRedeploy();
 	const cancelMutation = useComposeCancel();
 	const deleteMutation = useDeploymentDelete();
 	const clearComposeMutation = useDeploymentDeleteByCompose();
 
-	const handleDeploy = async () => {
+	const run = async (action: () => Promise<unknown>, success: string) => {
 		setIsTriggering(true);
 		try {
-			await deployMutation.mutateAsync(composeId);
-			toast.success('Compose deployment triggered successfully');
+			await action();
+			toast.success(success);
 		} catch (err: any) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -114,78 +65,23 @@ export function ComposeDeploymentsTab({
 		}
 	};
 
-	const handleRedeploy = async () => {
-		setIsTriggering(true);
-		try {
-			await redeployMutation.mutateAsync(composeId);
-			toast.success('Compose redeploy triggered successfully');
-		} catch (err: any) {
-			toast.error(formatApiError(err));
-		} finally {
-			setIsTriggering(false);
-		}
-	};
-
-	const [isConfirmCancelOpen, setIsConfirmCancelOpen] = useState(false);
-
+	const handleDeploy = () =>
+		run(
+			() => deployMutation.mutateAsync(composeId),
+			'Compose deployment triggered successfully',
+		);
+	const handleRedeploy = () =>
+		run(
+			() => redeployMutation.mutateAsync(composeId),
+			'Compose redeploy triggered successfully',
+		);
 	const handleCancel = async () => {
-		setIsTriggering(true);
-		try {
-			await cancelMutation.mutateAsync(composeId);
-			toast.success('Deployment cancellation requested');
-		} catch (err: any) {
-			toast.error(formatApiError(err));
-		} finally {
-			setIsTriggering(false);
-			setIsConfirmCancelOpen(false);
-		}
+		await run(
+			() => cancelMutation.mutateAsync(composeId),
+			'Deployment cancellation requested',
+		);
+		setIsConfirmCancelOpen(false);
 	};
-
-	// ConnectRPC log stream reader for active modal
-	useEffect(() => {
-		if (!activeLogId) return;
-
-		let isMounted = true;
-		let controller = new AbortController();
-
-		const initialFallback =
-			(selectedEvent as any)?.log_content ||
-			(selectedEvent as any)?.message ||
-			selectedEvent?.description;
-		if (initialFallback) {
-			setLiveLogs(initialFallback.split('\n'));
-		} else {
-			setLiveLogs([]);
-		}
-
-		const startStream = async () => {
-			try {
-				const call = deploymentClient.streamDeploymentLogs(
-					{id: BigInt(activeLogId)},
-					{signal: controller.signal},
-				);
-
-				for await (const event of call) {
-					if (!isMounted) return;
-					const extracted = extractLogLines(event.payload);
-					if (extracted.length > 0 && isMounted) {
-						setLiveLogs(prev => [...prev, ...extracted]);
-					}
-				}
-			} catch (err: any) {
-				if (err.name !== 'AbortError' && isMounted && initialFallback) {
-					setLiveLogs(initialFallback.split('\n'));
-				}
-			}
-		};
-
-		startStream();
-
-		return () => {
-			isMounted = false;
-			controller.abort();
-		};
-	}, [activeLogId, selectedEvent]);
 
 	const handleClearComposeDeployments = async () => {
 		try {
@@ -199,7 +95,7 @@ export function ComposeDeploymentsTab({
 		}
 	};
 
-	const handleDeleteSingleComposeDeployment = async (id: number) => {
+	const handleDeleteSingleDeployment = async (id: number) => {
 		try {
 			await deleteMutation.mutateAsync(id);
 			toast.success(`Deployment #${id} deleted`);
@@ -216,147 +112,49 @@ export function ComposeDeploymentsTab({
 
 	return (
 		<div className="flex flex-col gap-6">
-			{/* Action Header Card */}
-			<section className="flex items-center justify-between rounded-xl bg-card p-5">
-				<div>
-					<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
-						Deployments History
-						{(activeDeployment || isActionPending) && (
-							<span className="flex animate-pulse items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
-								<Activity className="h-3 w-3 animate-spin" />{' '}
-								{isActionPending ? 'Triggering...' : 'Active Build'}
-							</span>
-						)}
-					</h3>
-					<p className="mt-0.5 text-xs text-muted-foreground">
-						Audit log of building, deployment operations and lifecycle
-						events
-					</p>
-				</div>
-
-				<div className="flex items-center gap-2">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={handleClearComposeDeployments}
-						disabled={isActionPending}
-						className="flex h-8 items-center gap-1.5 border-destructive/30 bg-destructive/10 text-xs font-semibold text-destructive hover:bg-destructive/20">
-						Clear History
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						disabled={isActionPending}
-						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted">
-						<RefreshCw
-							className={`h-3.5 w-3.5 ${isActionPending ? 'animate-spin' : ''}`}
-						/>{' '}
-						Refresh
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={handleRedeploy}
-						disabled={!!activeDeployment || isActionPending}
-						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50">
-						<RefreshCw
-							className={`h-3.5 w-3.5 ${isActionPending ? 'animate-spin' : ''}`}
-						/>{' '}
-						Redeploy
-					</Button>
-					{isActionPending ? (
-						<Button
-							disabled
-							size="sm"
-							className="flex h-8 items-center gap-1.5 bg-primary/80 text-xs font-semibold text-primary-foreground">
-							<RefreshCw className="h-3.5 w-3.5 animate-spin" />{' '}
-							Processing...
-						</Button>
-					) : activeDeployment ? (
-						<Button
-							onClick={() => setIsConfirmCancelOpen(true)}
-							size="sm"
-							variant="destructive"
-							className="flex h-8 items-center gap-1.5 text-xs font-semibold">
-							<XCircle className="h-3.5 w-3.5" /> Cancel Build
-						</Button>
-					) : (
-						<Button
-							onClick={handleDeploy}
-							size="sm"
-							className="flex h-8 items-center gap-1.5 bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90">
-							<Zap className="h-3.5 w-3.5" /> Deploy
-						</Button>
-					)}
-				</div>
-			</section>
-
-			{/* Deployments List Component */}
-			<ComposeDeploymentsList
-				deployments={deployments}
-				isLoading={isLoading}
-				onOpenStream={setActiveLogId}
-				onCancelBuild={() => setIsConfirmCancelOpen(true)}
-				onDeleteDeployment={handleDeleteSingleComposeDeployment}
+			<DeploymentsHeader
+				title="Deployments History"
+				description="Audit log of building, deployment operations and lifecycle events"
+				pillLabel={
+					activeDeployment || isActionPending
+						? isActionPending
+							? 'Triggering...'
+							: 'Active Build'
+						: null
+				}
+				onClear={handleClearComposeDeployments}
+				clearDisabled={isActionPending}
+				onRedeploy={handleRedeploy}
+				redeployDisabled={!!activeDeployment || isActionPending}
+				redeploySpinning={isActionPending}
+				isProcessing={isActionPending}
+				showCancel={!!activeDeployment}
+				onCancel={() => setIsConfirmCancelOpen(true)}
+				onDeploy={handleDeploy}
 			/>
 
-			{/* Cancel Confirmation Dialog */}
-			<AlertDialog
-				open={isConfirmCancelOpen}
-				onOpenChange={setIsConfirmCancelOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>Cancel Compose Deployment</AlertDialogTitle>
-						<AlertDialogDescription>
-							Are you sure you want to cancel this compose deployment? This
-							action will stop the running build process.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel
-							onClick={() => setIsConfirmCancelOpen(false)}>
-							No, Keep Running
-						</AlertDialogCancel>
-						<AlertDialogAction
-							className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
-							onClick={handleCancel}>
-							Yes, Cancel Deployment
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<DeploymentsList
+				deployments={deployments}
+				isLoading={false}
+				onOpenStream={setActiveLogId}
+				onCancel={() => setIsConfirmCancelOpen(true)}
+				onDelete={handleDeleteSingleDeployment}
+			/>
 
-			{/* Realtime Stream Logs Modal */}
-			{activeLogId && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-					<div className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-card shadow-2xl">
-						<div className="flex items-center justify-between border-b border- bg-muted/30 p-4">
-							<div className="flex items-center gap-2">
-								<Terminal className="h-4 w-4 text-foreground" />
-								<h3 className="text-xs font-bold text-foreground">
-									Live Deployment Build Stream #{activeLogId}
-								</h3>
-							</div>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => setActiveLogId(null)}
-								className="h-7 w-7 rounded-lg p-0 text-muted-foreground hover:bg-muted">
-								<X className="h-4 w-4" />
-							</Button>
-						</div>
-						<div className="overflow-y-auto p-4">
-							<DeploymentViewer
-								logs={liveLogs}
-								isLoading={liveLogs.length === 0}
-								isLive={true}
-							loadingText="Connecting to realtime deployment stream..."
-								emptyText="No deployment build log entries available."
-							/>
-						</div>
-					</div>
-				</div>
-			)}
+			<CancelDeploymentDialog
+				open={isConfirmCancelOpen}
+				onOpenChange={setIsConfirmCancelOpen}
+				onConfirm={handleCancel}
+				title="Cancel Compose Deployment"
+				description="Are you sure you want to cancel this compose deployment? This action will stop the running build process."
+				cancelLabel="No, Keep Running"
+			/>
+
+			<StreamLogsModal
+				deploymentId={activeLogId}
+				logs={liveLogs}
+				onClose={() => setActiveLogId(null)}
+			/>
 		</div>
 	);
 }

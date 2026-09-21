@@ -27,7 +27,7 @@ export function SafariPreviewModal({
 
 	return (
 		<Dialog open={open} onOpenChange={next => !next && onClose()}>
-			<DialogContent className="max-w-6xl border-none bg-transparent p-0 shadow-none !bg-transparent sm:max-w-[92vw] [&>button]:text-white">
+			<DialogContent className="max-w-6xl border-none !bg-transparent bg-transparent p-0 shadow-none sm:max-w-[92vw] [&>button]:text-white">
 				<DialogTitle className="sr-only">
 					{title || 'Site preview'}
 				</DialogTitle>

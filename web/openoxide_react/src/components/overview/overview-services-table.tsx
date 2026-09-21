@@ -1,23 +1,12 @@
 import React from 'react';
 import {Link} from '@tanstack/react-router';
 import {
-	Box,
-	Layers2,
-	Database as DbIcon,
 	ServerIcon,
 	MoreHorizontal,
 	RefreshCw,
 	Play,
 	Square,
 } from 'lucide-react';
-import {
-	PostgresqlIcon,
-	MysqlIcon,
-	MariadbIcon,
-	MongodbIcon,
-	RedisIcon,
-	LibsqlIcon,
-} from '#/components/icons/db-icons';
 import {
 	Table,
 	TableHeader,
@@ -33,6 +22,8 @@ import {
 	DropdownMenuItem,
 	DropdownMenuLabel,
 } from '#/components/ui/dropdown';
+import {ServiceStatusBadge} from './service-status-badge';
+import {ServiceTypeIcon, TYPE_DISPLAY_NAMES} from './service-type-icon';
 
 export type OverviewServiceItem = {
 	key: string;
@@ -57,137 +48,18 @@ type Props = {
 	onStop?: (service: OverviewServiceItem) => void;
 };
 
-const TYPE_DISPLAY_NAMES: Record<string, string> = {
-	APP: 'Application',
-	COMPOSE: 'Compose Stacks',
-	DATABASE: 'Database',
-	postgres: 'PostgreSQL',
-	mysql: 'MySQL',
-	mariadb: 'MariaDB',
-	mongo: 'MongoDB',
-	redis: 'Redis',
-	libsql: 'Libsql',
-};
+const COLUMNS = [
+	'Service',
+	'Type',
+	'Status',
+	'Server',
+	'Created',
+	'Last Deploy',
+	'Actions',
+];
 
-const renderIcon = (type: string, dbKind?: string) => {
-	if (type === 'APP')
-		return <Box className="size-5 shrink-0 text-foreground" />;
-	if (type === 'COMPOSE')
-		return <Layers2 className="size-5 shrink-0 text-foreground" />;
-	const kind = (dbKind || '').toLowerCase();
-	if (kind.includes('postgres'))
-		return <PostgresqlIcon className="size-5.5 shrink-0" />;
-	if (kind.includes('mysql'))
-		return <MysqlIcon className="size-5.5 shrink-0" />;
-	if (kind.includes('mariadb'))
-		return <MariadbIcon className="size-5.5 shrink-0" />;
-	if (kind.includes('mongo'))
-		return <MongodbIcon className="size-5.5 shrink-0" />;
-	if (kind.includes('redis'))
-		return <RedisIcon className="size-5.5 shrink-0" />;
-	if (kind.includes('libsql'))
-		return <LibsqlIcon className="size-5.5 shrink-0" />;
-
-	return <DbIcon className="size-5 shrink-0 text-foreground" />;
-};
-
-const renderStatusBadge = (statusStr: string) => {
-	const s = (statusStr || 'done').toLowerCase();
-
-	if (s.includes('queued')) {
-		return (
-			<div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-500">
-				<span className="size-2 shrink-0 animate-pulse rounded-full bg-amber-500" />
-				<span>Queued</span>
-			</div>
-		);
-	}
-
-	if (s.includes('cancelling')) {
-		return (
-			<div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-500">
-				<span className="size-2 shrink-0 animate-pulse rounded-full bg-amber-500" />
-				<span>Cancelling</span>
-			</div>
-		);
-	}
-
-	if (s.includes('stopping')) {
-		return (
-			<div className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/10 px-2.5 py-1 text-xs font-semibold text-orange-500">
-				<span className="size-2 shrink-0 animate-pulse rounded-full bg-orange-500" />
-				<span>Stopping</span>
-			</div>
-		);
-	}
-
-	if (s.includes('starting')) {
-		return (
-			<div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-500">
-				<span className="size-2 shrink-0 animate-pulse rounded-full bg-amber-500" />
-				<span>Starting</span>
-			</div>
-		);
-	}
-
-	if (
-		s.includes('deploying') ||
-		s.includes('building') ||
-		s.includes('loading')
-	) {
-		return (
-			<div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-500">
-				<span className="size-2 shrink-0 animate-pulse rounded-full bg-amber-500" />
-				<span>Deploying</span>
-			</div>
-		);
-	}
-
-	if (s.includes('cancelled')) {
-		return (
-			<div className="inline-flex items-center gap-1.5 rounded-full bg-zinc-500/10 px-2.5 py-1 text-xs font-semibold text-zinc-400">
-				<span className="size-2 shrink-0 rounded-full bg-zinc-400" />
-				<span>Cancelled</span>
-			</div>
-		);
-	}
-
-	if (
-		s.includes('running') ||
-		s.includes('active') ||
-		s.includes('healthy') ||
-		s.includes('up') ||
-		s === 'done'
-	) {
-		return (
-			<div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-500">
-				<span className="size-2 shrink-0 rounded-full bg-emerald-500" />
-				<span>Running</span>
-			</div>
-		);
-	}
-
-	if (
-		s.includes('err') ||
-		s.includes('fail') ||
-		s.includes('unhealthy') ||
-		s.includes('crash')
-	) {
-		return (
-			<div className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-2.5 py-1 text-xs font-semibold text-rose-500">
-				<span className="size-2 shrink-0 rounded-full bg-rose-500" />
-				<span>Error</span>
-			</div>
-		);
-	}
-
-	return (
-		<div className="inline-flex items-center gap-1.5 rounded-full bg-zinc-500/10 px-2.5 py-1 text-xs font-semibold text-zinc-400">
-			<span className="size-2 shrink-0 rounded-full bg-zinc-400" />
-			<span>Stopped</span>
-		</div>
-	);
-};
+const HEAD_CLS =
+	'sticky top-0 z-20 bg-card/95 px-4 py-3.5 text-xs font-bold tracking-wider text-foreground uppercase backdrop-blur-md';
 
 const formatDate = (timestamp?: number | bigint) => {
 	// Proto int64 timestamps arrive as bigint — coerce before multiplying.
@@ -212,31 +84,20 @@ export const OverviewServicesTable: React.FC<Props> = ({
 	onStop,
 }) => {
 	return (
-		<div className="max-h-[calc(100vh-340px)] min-h-[280px] overflow-y-auto rounded-xl bg-card shadow-xs">
+		<div className="max-h-[calc(100vh-340px)] min-h-[280px] overflow-y-auto rounded-xl border bg-card">
 			<Table>
 				<TableHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md">
 					<TableRow className="border-b  hover:bg-transparent">
-						<TableHead className="sticky top-0 z-20 bg-card/95 px-4 py-3.5 text-xs font-bold tracking-wider text-foreground uppercase backdrop-blur-md">
-							Service
-						</TableHead>
-						<TableHead className="sticky top-0 z-20 bg-card/95 px-4 py-3.5 text-xs font-bold tracking-wider text-foreground uppercase backdrop-blur-md">
-							Type
-						</TableHead>
-						<TableHead className="sticky top-0 z-20 bg-card/95 px-4 py-3.5 text-xs font-bold tracking-wider text-foreground uppercase backdrop-blur-md">
-							Status
-						</TableHead>
-						<TableHead className="sticky top-0 z-20 bg-card/95 px-4 py-3.5 text-xs font-bold tracking-wider text-foreground uppercase backdrop-blur-md">
-							Server
-						</TableHead>
-						<TableHead className="sticky top-0 z-20 bg-card/95 px-4 py-3.5 text-xs font-bold tracking-wider text-foreground uppercase backdrop-blur-md">
-							Created
-						</TableHead>
-						<TableHead className="sticky top-0 z-20 bg-card/95 px-4 py-3.5 text-xs font-bold tracking-wider text-foreground uppercase backdrop-blur-md">
-							Last Deploy
-						</TableHead>
-						<TableHead className="sticky top-0 z-20 bg-card/95 px-4 py-3.5 text-right text-xs font-bold tracking-wider text-foreground uppercase backdrop-blur-md">
-							Actions
-						</TableHead>
+						{COLUMNS.map((c, i) => (
+							<TableHead
+								key={c}
+								className={
+									HEAD_CLS +
+									(i === COLUMNS.length - 1 ? ' text-right' : '')
+								}>
+								{c}
+							</TableHead>
+						))}
 					</TableRow>
 				</TableHeader>
 				<TableBody>
@@ -250,7 +111,7 @@ export const OverviewServicesTable: React.FC<Props> = ({
 									params={{id: String(svc.projectId)}}
 									preload="intent"
 									className="group flex items-center gap-3">
-									{renderIcon(svc.type, svc.dbKind)}
+									<ServiceTypeIcon type={svc.type} dbKind={svc.dbKind} />
 									<div className="flex min-w-0 flex-col">
 										<span className="truncate text-sm font-bold text-foreground transition-colors group-hover:text-primary">
 											{svc.name}
@@ -267,7 +128,7 @@ export const OverviewServicesTable: React.FC<Props> = ({
 									: TYPE_DISPLAY_NAMES[svc.type] || svc.type}
 							</TableCell>
 							<TableCell className="px-4 py-3.5">
-								{renderStatusBadge(svc.status)}
+								<ServiceStatusBadge status={svc.status} />
 							</TableCell>
 							<TableCell className="px-4 py-3.5">
 								<div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">

@@ -8,8 +8,7 @@ import {
 } from '#/components/ui/dialog';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
-import {toast} from 'sonner';
-import {formatApiError, serverHostLabel} from '#/api/utils';
+import {serverHostLabel} from '#/api/utils';
 import {
 	Terminal,
 	ShieldCheck,
@@ -19,18 +18,8 @@ import {
 	Plug,
 } from 'lucide-react';
 import {LogViewer} from '#/components/shared/log-viewer';
-import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
-import {
-	useRemoteServerTestConnection,
-	useRemoteServerAudit,
-} from '#/api/live';
-import {createServiceClient} from '#/api/live/query';
-import {ServerControllerService} from '#/gen/connect/openoxide/api/v1/server_controller_pb';
-
-const serverControllerClient = createServiceClient(
-	ServerControllerService,
-);
-
+import {SetupActionRow} from './setup-action-row';
+import {useServerSetup} from './use-server-setup';
 import type {RemoteServerResponse} from '#/types/api-helpers';
 
 interface SetupServerModalProps {
@@ -44,91 +33,23 @@ export function SetupServerModal({
 	server,
 	onClose,
 }: SetupServerModalProps) {
-	const [testingConn, setTestingConn] = useState(false);
-	const [auditing, setAuditing] = useState(false);
-	const [settingUp, setSettingUp] = useState(false);
-	const [setupLogs, setSetupLogs] = useState<string[]>([]);
-	const [auditResult, setAuditResult] = useState<Record<
-		string,
-		unknown
-	> | null>(null);
 	const [advertiseAddr, setAdvertiseAddr] = useState('');
-
-	const testConnMutation = useRemoteServerTestConnection();
-	const auditMutation = useRemoteServerAudit();
-
-	const handleTestConnection = async () => {
-		if (!server?.id) return;
-		setTestingConn(true);
-		try {
-			await testConnMutation.mutateAsync(server.id);
-			toast.success(
-				`SSH Connection to ${server.name} verified successfully!`,
-			);
-		} catch (err: unknown) {
-			toast.error(formatApiError(err));
-		} finally {
-			setTestingConn(false);
-		}
-	};
-
-	const handleAudit = async () => {
-		if (!server?.id) return;
-		setAuditing(true);
-		try {
-			const res = await auditMutation.mutateAsync(server.id);
-			setAuditResult(res as Record<string, unknown>);
-			toast.success('Server audit completed!');
-		} catch (err: unknown) {
-			toast.error(formatApiError(err));
-		} finally {
-			setAuditing(false);
-		}
-	};
-
-	const handleSetup = async () => {
-		if (!server?.id) return;
-		setSettingUp(true);
-		setSetupLogs([]);
-		try {
-			const call = serverControllerClient.streamSetupLogs({
-				id: BigInt(server.id),
-				filter: JSON.stringify({
-					host_key_fingerprint: '',
-					install_dependencies: true,
-					...(advertiseAddr.trim()
-						? {advertise_addr: advertiseAddr.trim()}
-						: {}),
-				}),
-			});
-
-			let failedMessage = '';
-			for await (const event of call) {
-				const lines = extractLogLines(event.payload);
-				if (lines.length > 0) {
-					failedMessage ||=
-						lines.find(line => line.includes('Setup Server failed')) || '';
-					setSetupLogs(prev => [...prev, ...lines]);
-				}
-			}
-
-			if (failedMessage) {
-				throw new Error(failedMessage);
-			}
-
-			toast.success(`Server ${server.name} setup completed successfully!`);
-		} catch (err: unknown) {
-			toast.error(formatApiError(err));
-		} finally {
-			setSettingUp(false);
-		}
-	};
+	const {
+		testingConn,
+		testConnection,
+		auditing,
+		audit,
+		settingUp,
+		setupLogs,
+		setup,
+		auditResult,
+	} = useServerSetup(server);
 
 	if (!server) return null;
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="border- w-full rounded-xl bg-card p-6 shadow-xl sm:max-w-xl md:max-w-2xl">
+			<DialogContent className="border- w-full rounded-xl bg-card p-6 shadow-md sm:max-w-xl md:max-w-2xl">
 				<DialogHeader className="border-b  pb-3">
 					<DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
 						<Terminal className="h-5 w-5 text-primary" />
@@ -142,59 +63,27 @@ export function SetupServerModal({
 				</DialogHeader>
 
 				<div className="flex flex-col gap-4 py-3">
-					<div className="flex items-center justify-between rounded-xl bg-muted/20 p-3.5">
-						<div className="flex items-center gap-2.5">
-							<ShieldCheck className="h-5 w-5 text-primary" />
-							<div>
-								<h4 className="text-xs font-bold text-foreground">
-									SSH Connection Test
-								</h4>
-								<p className="text-[11px] text-muted-foreground">
-									Verify port {server.port || 22} reachability
-								</p>
-							</div>
-						</div>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleTestConnection}
-							disabled={testingConn}
-							className="h-8 gap-1.5 text-xs font-semibold">
-							{testingConn ? (
-								<RefreshCw className="h-3.5 w-3.5 animate-spin" />
-							) : (
-								<Plug className="h-3.5 w-3.5 text-primary" />
-							)}
-							{testingConn ? 'Testing...' : 'Test Connection'}
-						</Button>
-					</div>
+					<SetupActionRow
+						icon={ShieldCheck}
+						title="SSH Connection Test"
+						description={`Verify port ${server.port || 22} reachability`}
+						busy={testingConn}
+						busyLabel="Testing..."
+						idleLabel="Test Connection"
+						idleIcon={Plug}
+						onClick={() => void testConnection()}
+					/>
 
-					<div className="flex items-center justify-between rounded-xl bg-muted/20 p-3.5">
-						<div className="flex items-center gap-2.5">
-							<Cpu className="h-5 w-5 text-primary" />
-							<div>
-								<h4 className="text-xs font-bold text-foreground">
-									System Specs Audit
-								</h4>
-								<p className="text-[11px] text-muted-foreground">
-									Check Docker engine, OS, CPU, and RAM
-								</p>
-							</div>
-						</div>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleAudit}
-							disabled={auditing}
-							className="h-8 gap-1.5 text-xs font-semibold">
-							{auditing ? (
-								<RefreshCw className="h-3.5 w-3.5 animate-spin" />
-							) : (
-								<Cpu className="h-3.5 w-3.5" />
-							)}
-							{auditing ? 'Auditing...' : 'Run Audit'}
-						</Button>
-					</div>
+					<SetupActionRow
+						icon={Cpu}
+						title="System Specs Audit"
+						description="Check Docker engine, OS, CPU, and RAM"
+						busy={auditing}
+						busyLabel="Auditing..."
+						idleLabel="Run Audit"
+						idleIcon={Cpu}
+						onClick={() => void audit()}
+					/>
 
 					<div className="flex flex-col gap-2.5 rounded-xl bg-primary/10 p-3.5">
 						<div className="flex items-center justify-between">
@@ -212,7 +101,7 @@ export function SetupServerModal({
 							</div>
 							<Button
 								size="sm"
-								onClick={handleSetup}
+								onClick={() => void setup(advertiseAddr)}
 								disabled={settingUp}
 								className="h-8 gap-1.5 text-xs font-semibold">
 								{settingUp ? (

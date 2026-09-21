@@ -1,4 +1,8 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+} from './query';
 import {DnsService} from '#/gen/connect/openoxide/api/v1/dns_pb';
 
 export type DnsProviderPayload = {
@@ -56,7 +60,10 @@ export function useDnsRecordList(providerId: bigint, zoneId: string) {
  */
 export function useDnsProviderCreate() {
 	return useConnectMutation(
-		(input: {organization_id: number | bigint; [field: string]: unknown}) => {
+		(input: {
+			organization_id: number | bigint;
+			[field: string]: unknown;
+		}) => {
 			const {organization_id, ...body} = input;
 			return dnsClient.createProvider({
 				organizationId: BigInt(organization_id),
@@ -70,11 +77,18 @@ export function useDnsProviderCreate() {
 /** Update a DNS provider by id (fields to change in the payload). */
 export function useDnsProviderUpdate() {
 	return useConnectMutation(
-		(input: {id: number | bigint; organization_id?: number | bigint; [field: string]: unknown}) => {
+		(input: {
+			id: number | bigint;
+			organization_id?: number | bigint;
+			[field: string]: unknown;
+		}) => {
 			const {id, organization_id, ...body} = input;
 			return dnsClient.updateProvider({
 				id: BigInt(id),
-				organizationId: organization_id !== undefined ? BigInt(organization_id) : undefined,
+				organizationId:
+					organization_id !== undefined
+						? BigInt(organization_id)
+						: undefined,
 				payload: JSON.stringify(body),
 			});
 		},
@@ -88,7 +102,10 @@ export function useDnsProviderDelete() {
 		(input: {id: number | bigint; organization_id?: number | bigint}) =>
 			dnsClient.deleteProvider({
 				id: BigInt(input.id),
-				organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
+				organizationId:
+					input.organization_id !== undefined
+						? BigInt(input.organization_id)
+						: undefined,
 			}),
 		{invalidate: [['dns_providers']]},
 	);
@@ -100,7 +117,10 @@ export function useDnsProviderTest() {
 		(input: {id: number | bigint; organization_id?: number | bigint}) =>
 			dnsClient.testProvider({
 				id: BigInt(input.id),
-				organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
+				organizationId:
+					input.organization_id !== undefined
+						? BigInt(input.organization_id)
+						: undefined,
 			}),
 		{invalidate: [['dns_providers']]},
 	);
@@ -122,11 +142,18 @@ export function useDnsTestConnection() {
  */
 export function useDnsRecordCreate() {
 	return useConnectMutation(
-		(input: {provider_id: number | bigint; organization_id?: number | bigint; [field: string]: unknown}) => {
+		(input: {
+			provider_id: number | bigint;
+			organization_id?: number | bigint;
+			[field: string]: unknown;
+		}) => {
 			const {provider_id, organization_id, ...body} = input;
 			return dnsClient.createRecord({
 				id: BigInt(provider_id),
-				organizationId: organization_id !== undefined ? BigInt(organization_id) : undefined,
+				organizationId:
+					organization_id !== undefined
+						? BigInt(organization_id)
+						: undefined,
 				payload: JSON.stringify(body),
 			});
 		},
@@ -142,11 +169,22 @@ export function useDnsRecordCreate() {
  */
 export function useDnsRecordDelete() {
 	return useConnectMutation(
-		(input: {provider_id: number | bigint; organization_id?: number | bigint; zone_id: string; name: string}) =>
+		(input: {
+			provider_id: number | bigint;
+			organization_id?: number | bigint;
+			zone_id: string;
+			name: string;
+		}) =>
 			dnsClient.deleteRecord({
 				id: BigInt(input.provider_id),
-				organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
-				payload: JSON.stringify({zone_id: input.zone_id, name: input.name}),
+				organizationId:
+					input.organization_id !== undefined
+						? BigInt(input.organization_id)
+						: undefined,
+				payload: JSON.stringify({
+					zone_id: input.zone_id,
+					name: input.name,
+				}),
 			}),
 		{invalidate: [['dns']]},
 	);

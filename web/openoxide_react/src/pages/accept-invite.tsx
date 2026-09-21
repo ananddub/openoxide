@@ -61,8 +61,7 @@ function AcceptInvitePage() {
 					<PartyPopper className="size-8 text-primary" />
 					<h1 className="text-xl font-bold">You're in!</h1>
 					<p className="text-xs text-muted-foreground">
-						The organization is now available in the workspace
-						switcher.
+						The organization is now available in the workspace switcher.
 					</p>
 					<Button
 						size="sm"

@@ -106,7 +106,6 @@ function SshKeysPage() {
 				</div>
 			</div>
 
-
 			{selectedKeyForView && (
 				<ViewKeyModal
 					isOpen={!!selectedKeyForView}

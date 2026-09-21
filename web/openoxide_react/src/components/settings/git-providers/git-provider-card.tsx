@@ -65,7 +65,7 @@ export function GitProviderCard({
 	};
 
 	return (
-		<div className="flex flex-col justify-between gap-4 rounded-2xl bg-muted/30 p-4 transition-colors hover:bg-muted/50 sm:flex-row sm:items-center">
+		<div className="flex flex-col justify-between gap-4 rounded-xl bg-muted/30 p-4 transition-colors hover:bg-muted/50 sm:flex-row sm:items-center">
 			<div className="flex min-w-0 items-center gap-3.5">
 				<div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted/60">
 					{renderIcon(kind)}

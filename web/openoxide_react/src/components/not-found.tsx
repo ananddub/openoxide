@@ -15,15 +15,15 @@ export const NotFound = () => {
 			<SidebarProvider className="h-dvh">
 				<AppSidebar />
 				<main className="flex min-w-0 flex-1 animate-in flex-col items-center justify-center p-6 text-center duration-200 fade-in">
-					<div className="mb-3 flex size-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive shadow-sm">
+					<div className="mb-3 flex size-14 items-center justify-center rounded-xl bg-destructive/10 text-destructive shadow-sm">
 						<AlertCircle className="size-7" />
 					</div>
 					<h2 className="mb-1 text-lg font-bold tracking-tight text-foreground">
 						Page Not Found
 					</h2>
 					<p className="mb-4 max-w-sm text-xs text-muted-foreground">
-						The page or resource you are looking for does not exist or
-						has been moved.
+						The page or resource you are looking for does not exist or has
+						been moved.
 					</p>
 					<Link
 						to="/"
@@ -52,19 +52,16 @@ export const NotFound = () => {
 				{/* Main Content */}
 				<main id="content">
 					<div className="mx-auto flex max-w-md flex-col items-center text-center">
-						<div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+						<div className="mb-4 flex size-16 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
 							<AlertCircle className="size-8" />
 						</div>
 						<h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">
 							404
 						</h1>
 						<p className="mb-6 text-sm text-muted-foreground">
-							The page you are looking for was not found on this
-							server.
+							The page you are looking for was not found on this server.
 						</p>
-						<Link
-							to="/"
-							className={buttonVariants({className: 'mb-2'})}>
+						<Link to="/" className={buttonVariants({className: 'mb-2'})}>
 							Back to Dashboard
 						</Link>
 					</div>

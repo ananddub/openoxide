@@ -20,7 +20,8 @@ errors.txt
 errors2.txt
 errors3.txt
 /src/utils/tmp
-
+/.scratch
+/.idea
 # SQLite databases — runtime state, never committed
 *.db
 *.db-shm

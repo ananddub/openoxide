@@ -1,19 +1,17 @@
 import {useState, useEffect} from 'react';
-import {createPortal} from 'react-dom';
-import {Database, RefreshCw, X} from 'lucide-react';
+import {Database, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {Input} from '#/components/ui/input';
-import {Label} from '#/components/ui/label';
-import {Switch} from '#/components/ui/switch';
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {toast} from 'sonner';
 import {useDestinationList} from '#/api/live';
+import {BackupFormFields} from './backup-form-fields';
 
 interface CreateBackupModalProps {
 	isOpen: boolean;
@@ -23,7 +21,7 @@ interface CreateBackupModalProps {
 	defaultVolumeName?: string;
 	hideServiceAndVolumeSelect?: boolean;
 	editingBackup?: any;
-		onCreate: (data: {
+	onCreate: (data: {
 		name: string;
 		serviceName: string;
 		volumeName: string;
@@ -87,7 +85,7 @@ export function CreateBackupModal({
 		}
 	}, [destinationId, destinations]);
 
-	if (!isOpen || typeof document === 'undefined') return null;
+	if (typeof document === 'undefined') return null;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -113,144 +111,62 @@ export function CreateBackupModal({
 		}
 	};
 
-	const modalJSX = (
-		<div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-			<div className="w-full max-w-2xl animate-in overflow-hidden rounded-xl bg-card shadow-2xl duration-150 fade-in">
-				<div className="flex items-center justify-between border-b border- bg-muted/30 p-4">
-					<div className="flex items-center gap-2">
-						<Database className="h-4 w-4 text-primary" />
-						<h3 className="text-sm font-bold text-foreground">
-							{editingBackup
-								? 'Edit Volume Backup Rule'
-								: 'Create Compose Volume Backup'}
-						</h3>
-					</div>
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={onClose}
-						className="h-7 w-7 text-muted-foreground">
-						<X className="h-4 w-4" />
-					</Button>
-				</div>
+	return (
+		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2">
+						<Database className="size-4 text-primary" />
+						{editingBackup
+							? 'Edit Volume Backup Rule'
+							: 'Create Compose Volume Backup'}
+					</SheetTitle>
+					<SheetDescription>
+						Schedule recurring volume backups to an S3 destination.
+					</SheetDescription>
+				</SheetHeader>
 
-				<form onSubmit={handleSubmit} className="flex flex-col gap-4 p-5">
-					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">S3 Destination *</Label>
-						<Select value={destinationId} onValueChange={value => value && setDestinationId(value)}>
-							<SelectTrigger className="h-9 w-full text-xs">
-								<SelectValue placeholder="Select S3 destination" />
-							</SelectTrigger>
-							<SelectContent>
-								{destinations.map((destination: any) => (
-									<SelectItem key={destination.id} value={String(destination.id)}>
-										{destination.name} ({destination.bucket})
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">
-							Backup Rule Name *
-						</Label>
-						<Input
-							value={name}
-							onChange={e => setName(e.target.value)}
-							placeholder="Daily Postgres Data Backup"
-							className="h-9 text-xs"
-						/>
-					</div>
-
-					{!hideServiceAndVolumeSelect && (
-						<div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
-							<div className="flex w-full flex-col gap-1.5">
-								<Label className="text-xs font-semibold">Service *</Label>
-								<Select
-									value={serviceName}
-									onValueChange={v => v && setServiceName(v)}>
-									<SelectTrigger className="h-9 w-full border- bg-muted/20 text-xs font-semibold">
-										<SelectValue placeholder="Select service" />
-									</SelectTrigger>
-									<SelectContent className="border- bg-card">
-										{servicesList.map(srv => (
-											<SelectItem
-												key={srv}
-												value={srv}
-												className="text-xs font-semibold">
-												{srv}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</div>
-
-							<div className="flex w-full flex-col gap-1.5">
-								<Label className="text-xs font-semibold">
-									Volume Name *
-								</Label>
-								<Input
-									value={volumeName}
-									onChange={e => setVolumeName(e.target.value)}
-									placeholder="postgres_data"
-									className="h-9 w-full font-mono text-xs"
-								/>
-							</div>
-						</div>
-					)}
-
-					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">
-							Cron Schedule (UTC) *
-						</Label>
-						<Input
-							value={cronExpr}
-							onChange={e => setCronExpr(e.target.value)}
-							placeholder="0 2 * * * (Daily at 2 AM)"
-							className="h-9 font-mono text-xs"
-						/>
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">
-							Backup File Prefix
-						</Label>
-						<Input
-							value={prefix}
-							onChange={e => setPrefix(e.target.value)}
-							placeholder="db_backup"
-							className="h-9 font-mono text-xs"
-						/>
-					</div>
-
-					<div className="flex items-center justify-between rounded-lg bg-muted/20 p-3">
-						<div>
-							<Label className="text-xs font-semibold">
-								Stop Container During Backup
-							</Label>
-							<p className="text-[11px] text-muted-foreground">
-								Ensures zero database corruption during snapshot
-							</p>
-						</div>
-						<Switch checked={turnOff} onCheckedChange={setTurnOff} />
-					</div>
-
-					<div className="flex items-center justify-end border-t  pt-2">
-						<Button
-							type="submit"
-							disabled={saving}
-							className="h-9 w-full bg-primary px-6 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:w-auto">
-							{saving ? (
-								<RefreshCw className="mr-1 h-3.5 w-3.5 animate-spin" />
-							) : null}
-							{editingBackup ? 'Update Backup Rule' : 'Schedule Backup'}
-						</Button>
-					</div>
+				<form
+					id="create-backup-form"
+					onSubmit={handleSubmit}
+					className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
+					<BackupFormFields
+						destinations={destinations}
+						servicesList={servicesList}
+						destinationId={destinationId}
+						onDestinationId={setDestinationId}
+						name={name}
+						onName={setName}
+						serviceName={serviceName}
+						onServiceName={setServiceName}
+						volumeName={volumeName}
+						onVolumeName={setVolumeName}
+						cronExpr={cronExpr}
+						onCronExpr={setCronExpr}
+						prefix={prefix}
+						onPrefix={setPrefix}
+						turnOff={turnOff}
+						onTurnOff={setTurnOff}
+						hideServiceAndVolumeSelect={hideServiceAndVolumeSelect}
+					/>
 				</form>
-			</div>
-		</div>
-	);
 
-	return createPortal(modalJSX, document.body);
+				<SheetFooter>
+					<Button type="button" variant="outline" onClick={onClose}>
+						Cancel
+					</Button>
+					<Button
+						type="submit"
+						form="create-backup-form"
+						disabled={saving}
+						className="gap-1.5">
+						{saving ? (
+							<RefreshCw className="size-3.5 animate-spin" />
+						) : null}
+						{editingBackup ? 'Update Backup Rule' : 'Schedule Backup'}
+					</Button>
+				</SheetFooter>
+			</SheetContent>
+		</Sheet>
+	);
 }

@@ -101,11 +101,11 @@ export function DatabaseHeader({
 			{/* Title row */}
 			<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 				<div className="flex items-center gap-3">
-					<div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-card shadow-xs">
+					<div className="flex size-11 shrink-0 items-center justify-center rounded-lg border bg-card">
 						{getIcon()}
 					</div>
 					<div>
-						<h1 className="bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-2xl font-extrabold tracking-tight text-foreground capitalize">
+						<h1 className="text-2xl font-semibold tracking-[-0.02em] text-foreground capitalize">
 							{database?.name || database?.app_name}
 						</h1>
 						<p className="mt-0.5 font-mono text-xs text-muted-foreground">
@@ -157,7 +157,7 @@ export function DatabaseHeader({
 							onClick={() => setActiveTab(tab)}
 							className={`-mb-[1px] cursor-pointer border-b-2 px-4 pt-2 pb-2.5 text-xs font-bold whitespace-nowrap transition-all duration-150 ${
 								isActive
-									? 'border-foreground font-extrabold text-foreground'
+									? 'border-foreground font-semibold text-foreground'
 									: ' text-muted-foreground hover:text-foreground'
 							}`}>
 							{tab}

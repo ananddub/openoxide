@@ -1,12 +1,12 @@
 import {useSshKeyCreate, useSshKeyGeneratePair} from '#/api/live/ssh_keys';
 import {useState} from 'react';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
@@ -18,14 +18,8 @@ import {
 } from '#/components/ui/select';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {
-	Sparkles,
-	RefreshCw,
-	Terminal,
-	Copy,
-	Check,
-	CheckCircle2,
-} from 'lucide-react';
+import {Sparkles, RefreshCw} from 'lucide-react';
+import {GenerateKeyResult} from '#/components/ssh-keys/generate-key-result';
 
 interface GenerateKeyModalProps {
 	isOpen: boolean;
@@ -47,7 +41,6 @@ export function GenerateKeyModal({
 		private_key: string;
 		public_key: string;
 	} | null>(null);
-	const [copiedCmd, setCopiedCmd] = useState(false);
 
 	const generatePairMutation = useSshKeyGeneratePair();
 	const createMutation = useSshKeyCreate();
@@ -98,19 +91,6 @@ export function GenerateKeyModal({
 		}
 	};
 
-	const setupCommand = generatedKey?.public_key
-		? `mkdir -p ~/.ssh && echo "${generatedKey.public_key.trim()}" >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`
-		: '';
-
-	const handleCopyCommand = () => {
-		if (setupCommand) {
-			navigator.clipboard.writeText(setupCommand);
-			setCopiedCmd(true);
-			toast.success('Server authorization command copied!');
-			setTimeout(() => setCopiedCmd(false), 2000);
-		}
-	};
-
 	const handleCloseModal = () => {
 		setName('');
 		setDescription('');
@@ -120,62 +100,27 @@ export function GenerateKeyModal({
 	};
 
 	return (
-		<Dialog
+		<Sheet
 			open={isOpen}
 			onOpenChange={open => !open && handleCloseModal()}>
-			<DialogContent className="w-full min-w-0 rounded-xl border- bg-card p-6 shadow-xl sm:max-w-lg">
-				<DialogHeader className="border-b  pb-3">
-					<DialogTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
-						<Sparkles className="h-4 w-4 shrink-0 text-primary" />
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2">
+						<Sparkles className="size-4 shrink-0 text-primary" />
 						<span>Generate SSH Key Pair</span>
-					</DialogTitle>
-					<DialogDescription className="text-xs text-muted-foreground">
+					</SheetTitle>
+					<SheetDescription>
 						Generate secure ED25519 or RSA SSH key pair in memory
-					</DialogDescription>
-				</DialogHeader>
+					</SheetDescription>
+				</SheetHeader>
 
 				{generatedKey ? (
-					<div className="flex flex-col gap-4 py-2">
-						<div className="flex items-center gap-2.5 rounded-xl bg-emerald-500/10 p-3 text-xs font-bold text-emerald-500">
-							<CheckCircle2 className="h-4 w-4 shrink-0" />
-							<span>Key Pair "{name}" Generated in Memory</span>
-						</div>
-
-						{setupCommand && (
-							<div className="flex flex-col gap-1.5 pt-1">
-								<div className="flex items-center justify-between">
-									<label className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-										<Terminal className="h-3.5 w-3.5 shrink-0 text-primary" />
-										<span>Authorize Key on Remote Server</span>
-									</label>
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={handleCopyCommand}
-										className="h-7 gap-1.5 px-2.5 text-xs font-medium">
-										{copiedCmd ? (
-											<Check className="h-3.5 w-3.5 text-emerald-500" />
-										) : (
-											<Copy className="h-3.5 w-3.5" />
-										)}
-										{copiedCmd ? 'Copied' : 'Copy Command'}
-									</Button>
-								</div>
-								<div className="max-h-24 overflow-y-auto rounded-md bg-muted/40 p-2.5 font-mono text-[11px] leading-relaxed break-all text-muted-foreground select-all">
-									{setupCommand}
-								</div>
-							</div>
-						)}
-
-						<div className="flex items-center justify-end border-t  pt-3">
-							<Button
-								onClick={handleSaveKey}
-								disabled={saving}
-								className="h-9 w-full bg-primary px-6 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:w-auto">
-								{saving ? 'Saving...' : 'Save Key Pair'}
-							</Button>
-						</div>
-					</div>
+					<GenerateKeyResult
+						name={name}
+						publicKey={generatedKey.public_key}
+						saving={saving}
+						onSave={handleSaveKey}
+					/>
 				) : (
 					<form
 						onSubmit={handleGenerate}
@@ -188,7 +133,7 @@ export function GenerateKeyModal({
 								value={name}
 								onChange={e => setName(e.target.value)}
 								placeholder="e.g. Production Key"
-								className="h-9 rounded-md border- bg-background px-3 text-xs"
+								className="border- h-9 rounded-md bg-background px-3 text-xs"
 							/>
 						</div>
 
@@ -200,7 +145,7 @@ export function GenerateKeyModal({
 								value={description}
 								onChange={e => setDescription(e.target.value)}
 								placeholder="Deploy key for web cluster"
-								className="h-9 rounded-md border- bg-background px-3 text-xs"
+								className="border- h-9 rounded-md bg-background px-3 text-xs"
 							/>
 						</div>
 
@@ -213,7 +158,7 @@ export function GenerateKeyModal({
 								onValueChange={val =>
 									val && setKeyType(val as 'ed25519' | 'rsa')
 								}>
-								<SelectTrigger className="h-9 rounded-md border- bg-background px-3 text-xs">
+								<SelectTrigger className="border- h-9 rounded-md bg-background px-3 text-xs">
 									<SelectValue placeholder="Select Algorithm" />
 								</SelectTrigger>
 								<SelectContent>
@@ -242,7 +187,7 @@ export function GenerateKeyModal({
 						</div>
 					</form>
 				)}
-			</DialogContent>
-		</Dialog>
+			</SheetContent>
+		</Sheet>
 	);
 }

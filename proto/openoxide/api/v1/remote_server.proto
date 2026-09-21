@@ -18,4 +18,13 @@ service RemoteServerService {
   // Flags a RUNNING application_migrations row for cooperative cancellation;
   // the runner honours it at the next phase/object boundary.
   rpc CancelMigration(ResourceRequest) returns (OperationResult);
+  // Triggers (or resumes) a stateful single-service migration. id carries the
+  // service id, payload a JSON object {"target_server_id": "..."}. Returns
+  // the application_migrations row JSON.
+  rpc MigrateService(ResourceRequest) returns (OperationResult);
+  // Lists stateful migrations for a service (id = service id), newest first.
+  rpc ListMigrations(ResourceRequest) returns (ResourceListResponse);
+  // Lists per-object checkpoints of one stateful migration (payload = the
+  // migration id string).
+  rpc ListMigrationObjects(ResourceRequest) returns (ResourceListResponse);
 }

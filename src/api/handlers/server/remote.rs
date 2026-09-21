@@ -298,4 +298,82 @@ impl RemoteServerService for RemoteServerController {
             ..Default::default()
         })
     }
+
+    #[permission(Server, CanCreate)]
+    async fn migrate_service<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        // request.id is the service id; payload carries {"target_server_id"}.
+        let dto: MigrateServerDependenciesDto = serde_json::from_str(request.payload)
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        dto.validate()
+            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let row = self
+            .service
+            .migrate_service(request.id, dto.target_server_id, auth.organization_id)
+            .await
+            .map_err(map_db_error)?;
+        let payload = serde_json::to_string(&row).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "migrate_service".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
+    }
+
+    #[permission(Server, CanRead)]
+    async fn list_migrations<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        // request.id is the service id.
+        let rows = self
+            .service
+            .list_service_migrations(request.id, auth.organization_id)
+            .await
+            .map_err(map_db_error)?;
+        let items = rows
+            .iter()
+            .map(|row| ResourceResponse {
+                id: 0,
+                kind: "application_migration".into(),
+                payload: serde_json::to_string(row).unwrap_or_default(),
+                ..Default::default()
+            })
+            .collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
+
+    #[permission(Server, CanRead)]
+    async fn list_migration_objects<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        // The stateful application_migrations id is passed in payload.
+        let migration_id = if request.payload.is_empty() {
+            return Err(ConnectError::invalid_argument("migration_id is required"));
+        } else {
+            request.payload
+        };
+        let rows = self
+            .service
+            .list_migration_objects(&migration_id, auth.organization_id)
+            .await
+            .map_err(map_db_error)?;
+        let items = rows
+            .iter()
+            .map(|row| ResourceResponse {
+                id: 0,
+                kind: "migration_object".into(),
+                payload: serde_json::to_string(row).unwrap_or_default(),
+                ..Default::default()
+            })
+            .collect();
+        Response::ok(ResourceListResponse { items, ..Default::default() })
+    }
 }

@@ -4,66 +4,15 @@ import {ComposeLogsHeader} from './logs/compose-logs-header';
 import {createServiceClient} from '#/api/live/query';
 import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
 import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
+import {downloadLogs} from '#/components/projects/detail/logs/use-log-stream';
 import {useDeploymentItems} from '#/api/live';
+import {extractServicesFromYaml} from '#/components/shared/terminal-card';
 
 const deploymentClient = createServiceClient(DeploymentService);
 
 interface ComposeLogsTabProps {
 	compose: any;
 }
-
-// Robust service name extractor from docker-compose.yml YAML string
-const extractServicesFromYaml = (yamlStr?: string): string[] => {
-	if (!yamlStr) return [];
-	const services: string[] = [];
-	const lines = yamlStr.split('\n');
-	let inServices = false;
-
-	for (const line of lines) {
-		const trimmed = line.trimEnd();
-		if (!trimmed || trimmed.trimStart().startsWith('#')) continue;
-
-		const text = trimmed.trim();
-
-		if (/^services\s*:/i.test(text)) {
-			inServices = true;
-			continue;
-		}
-
-		if (inServices) {
-			if (/^(version|volumes|networks|configs|secrets)\s*:/i.test(text)) {
-				inServices = false;
-				continue;
-			}
-
-			const match = line.match(/^(\s{2,4}|\t)?([a-zA-Z0-9_\-]+)\s*:\s*$/);
-			if (match) {
-				const srv = match[2];
-				if (
-					srv &&
-					![
-						'version',
-						'services',
-						'volumes',
-						'networks',
-						'configs',
-						'secrets',
-						'environment',
-						'ports',
-						'build',
-						'image',
-					].includes(srv.toLowerCase())
-				) {
-					if (!services.includes(srv)) {
-						services.push(srv);
-					}
-				}
-			}
-		}
-	}
-
-	return services;
-};
 
 export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 	const [logMode, setLogMode] = useState<'container' | 'build'>(
@@ -190,15 +139,11 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 		latestBuildDeploymentId,
 	]);
 
-	const handleDownload = () => {
-		const blob = new Blob([streamedLogs.join('\n')], {type: 'text/plain'});
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `${compose?.app_name || 'compose'}-${logMode}-logs.txt`;
-		a.click();
-		URL.revokeObjectURL(url);
-	};
+	const handleDownload = () =>
+		downloadLogs(
+			streamedLogs,
+			`${compose?.app_name || 'compose'}-${logMode}-logs.txt`,
+		);
 
 	return (
 		<div className="flex flex-col gap-6">

@@ -11,7 +11,7 @@ RETURNING *;
 
 -- name: ApplicationMigrationsUpdatePhase :exec
 UPDATE application_migrations
-SET phase = ?, progress = ?, updated_at = unixepoch()
+SET phase = ?, status = ?, progress = ?, updated_at = unixepoch()
 WHERE id = ?;
 
 -- name: ApplicationMigrationsRequestCancel :exec

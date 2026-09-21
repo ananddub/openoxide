@@ -92,13 +92,6 @@ const Toaster = ({...props}: ToasterProps) => {
 				classNames: {
 					toast:
 						'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg cursor-pointer select-none',
-					success:
-						'!bg-[#06291a] !text-[#ecfdf5] !border-[#10b981]/60 !shadow-[0_4px_20px_rgba(16,185,129,0.25)]',
-					error:
-						'!bg-[#2b090e] !text-[#fff1f2] !border-[#ef4444]/60 !shadow-[0_4px_20px_rgba(239,68,68,0.25)]',
-					warning:
-						'!bg-[#261a07] !text-[#fffbeb] !border-[#f59e0b]/60 !shadow-[0_4px_20px_rgba(245,158,11,0.25)]',
-					info: '!bg-[#081a2e] !text-[#f0f9ff] !border-[#0ea5e9]/60 !shadow-[0_4px_20px_rgba(14,165,233,0.25)]',
 					description: 'group-[.toast]:text-muted-foreground',
 					actionButton:
 						'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',

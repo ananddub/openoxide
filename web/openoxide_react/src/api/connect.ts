@@ -31,10 +31,12 @@ function readAccessToken(): string {
  * onto it), which is the signal to refresh once and replay.
  */
 function isUnauthenticatedError(error: unknown): boolean {
-	return error instanceof ConnectError && error.code === Code.Unauthenticated;
+	return (
+		error instanceof ConnectError && error.code === Code.Unauthenticated
+	);
 }
 
-export const authInterceptor: Interceptor = (next) => async (req) => {
+export const authInterceptor: Interceptor = next => async req => {
 	// The refresh RPC itself must never enter the refresh-and-replay path:
 	// a rejected refresh would call refreshAccessToken again, which is
 	// already in flight (promise dedupe), deadlocking the await chain.

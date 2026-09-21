@@ -64,7 +64,7 @@ export function DestinationFormFields({
 					value={name}
 					onChange={e => setName(e.target.value)}
 					placeholder="My S3 Storage"
-					className="h-10 w-full rounded-md border- bg-background px-3 font-sans text-xs"
+					className="border- h-10 w-full rounded-md bg-background px-3 font-sans text-xs"
 				/>
 			</div>
 
@@ -77,7 +77,7 @@ export function DestinationFormFields({
 					value={accessKey}
 					onChange={e => setAccessKey(e.target.value)}
 					placeholder="AKIAIOSFODNN7EXAMPLE"
-					className="h-10 w-full rounded-md border- bg-background px-3 font-mono text-xs"
+					className="border- h-10 w-full rounded-md bg-background px-3 font-mono text-xs"
 				/>
 			</div>
 
@@ -92,7 +92,7 @@ export function DestinationFormFields({
 						value={secretKey}
 						onChange={e => setSecretKey(e.target.value)}
 						placeholder="Secret Access Key"
-						className="h-10 w-full rounded-md border- bg-background pr-10 pl-3 font-mono text-xs"
+						className="border- h-10 w-full rounded-md bg-background pr-10 pl-3 font-mono text-xs"
 					/>
 					<Button
 						type="button"
@@ -118,7 +118,7 @@ export function DestinationFormFields({
 					value={bucket}
 					onChange={e => setBucket(e.target.value)}
 					placeholder="my-bucket-name"
-					className="h-10 w-full rounded-md border- bg-background px-3 font-mono text-xs"
+					className="border- h-10 w-full rounded-md bg-background px-3 font-mono text-xs"
 				/>
 			</div>
 
@@ -131,7 +131,7 @@ export function DestinationFormFields({
 					value={region}
 					onChange={e => setRegion(e.target.value)}
 					placeholder="us-east-1"
-					className="h-10 w-full rounded-md border- bg-background px-3 font-mono text-xs"
+					className="border- h-10 w-full rounded-md bg-background px-3 font-mono text-xs"
 				/>
 			</div>
 
@@ -144,7 +144,7 @@ export function DestinationFormFields({
 					value={endpoint}
 					onChange={e => setEndpoint(e.target.value)}
 					placeholder="https://s3.amazonaws.com"
-					className="h-10 w-full rounded-md border- bg-background px-3 font-mono text-xs"
+					className="border- h-10 w-full rounded-md bg-background px-3 font-mono text-xs"
 				/>
 			</div>
 
@@ -156,12 +156,12 @@ export function DestinationFormFields({
 				<Select
 					value={selectedProviderObj?.id || provider || 'aws'}
 					onValueChange={v => v && onProviderChange(v)}>
-					<SelectTrigger className="flex !h-10 w-full items-center justify-between rounded-md border- bg-background px-3 font-sans text-xs">
+					<SelectTrigger className="border- flex !h-10 w-full items-center justify-between rounded-md bg-background px-3 font-sans text-xs">
 						<SelectValue placeholder="Select Provider">
 							{selectedProviderObj?.name || provider || 'Select Provider'}
 						</SelectValue>
 					</SelectTrigger>
-					<SelectContent className="z-50 border- bg-card text-xs">
+					<SelectContent className="border- z-50 bg-card text-xs">
 						{providers.map(p => (
 							<SelectItem
 								key={p.id}

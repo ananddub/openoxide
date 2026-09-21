@@ -2,101 +2,108 @@
 // @generated from file openoxide/api/v1/tag.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema, OperationResultSchema, ResourceListResponseSchema, ResourceQuerySchema, ResourceRequestSchema, ResourceResponseSchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
+import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
+import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
+import type {
+	EmptySchema,
+	OperationResultSchema,
+	ResourceListResponseSchema,
+	ResourceQuerySchema,
+	ResourceRequestSchema,
+	ResourceResponseSchema,
+} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
 
 /**
  * Describes the file openoxide/api/v1/tag.proto.
  */
-export const file_openoxide_api_v1_tag: GenFile = /*@__PURE__*/
-  fileDesc("ChpvcGVub3hpZGUvYXBpL3YxL3RhZy5wcm90bxIQb3Blbm94aWRlLmFwaS52MTLCBgoKVGFnU2VydmljZRJTCghMaXN0VGFncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USTwoGR2V0VGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUgoJQ3JlYXRlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUgoJVXBkYXRlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USRwoJRGVsZXRlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5Ek4KBkFkZFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSRwoJUmVtb3ZlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EloKD0xpc3RQcm9qZWN0VGFncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoQQXR0YWNoUHJvamVjdFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSTgoQRGV0YWNoUHJvamVjdFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common]);
+export const file_openoxide_api_v1_tag: GenFile /*@__PURE__*/ = fileDesc(
+	'ChpvcGVub3hpZGUvYXBpL3YxL3RhZy5wcm90bxIQb3Blbm94aWRlLmFwaS52MTLCBgoKVGFnU2VydmljZRJTCghMaXN0VGFncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USTwoGR2V0VGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUgoJQ3JlYXRlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUgoJVXBkYXRlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USRwoJRGVsZXRlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5Ek4KBkFkZFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSRwoJUmVtb3ZlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EloKD0xpc3RQcm9qZWN0VGFncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoQQXR0YWNoUHJvamVjdFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSTgoQRGV0YWNoUHJvamVjdFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z',
+	[file_openoxide_api_v1_common],
+);
 
 /**
  * @generated from service openoxide.api.v1.TagService
  */
 export const TagService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.TagService.ListTags
-   */
-  listTags: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TagService.GetTag
-   */
-  getTag: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TagService.CreateTag
-   */
-  createTag: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TagService.UpdateTag
-   */
-  updateTag: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TagService.DeleteTag
-   */
-  deleteTag: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TagService.AddTag
-   */
-  addTag: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TagService.RemoveTag
-   */
-  removeTag: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TagService.ListProjectTags
-   */
-  listProjectTags: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TagService.AttachProjectTag
-   */
-  attachProjectTag: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TagService.DetachProjectTag
-   */
-  detachProjectTag: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof EmptySchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_tag, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.TagService.ListTags
+	 */
+	listTags: {
+		methodKind: 'unary';
+		input: typeof ResourceQuerySchema;
+		output: typeof ResourceListResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TagService.GetTag
+	 */
+	getTag: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TagService.CreateTag
+	 */
+	createTag: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TagService.UpdateTag
+	 */
+	updateTag: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TagService.DeleteTag
+	 */
+	deleteTag: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TagService.AddTag
+	 */
+	addTag: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TagService.RemoveTag
+	 */
+	removeTag: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TagService.ListProjectTags
+	 */
+	listProjectTags: {
+		methodKind: 'unary';
+		input: typeof ResourceQuerySchema;
+		output: typeof ResourceListResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TagService.AttachProjectTag
+	 */
+	attachProjectTag: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TagService.DetachProjectTag
+	 */
+	detachProjectTag: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof EmptySchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_tag, 0);

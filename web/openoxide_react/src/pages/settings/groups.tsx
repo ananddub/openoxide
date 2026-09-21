@@ -3,10 +3,8 @@ import {Loader2, Plus, ShieldCheck, Trash2, Users} from 'lucide-react';
 import {useState} from 'react';
 import {toast} from 'sonner';
 import {
-	usePermissionGroupCreate,
 	usePermissionGroupDelete,
 	usePermissionGroupList,
-	usePermissionGroupUpdate,
 	usePolicyList,
 } from '#/api/live';
 import {usePermissions} from '#/hooks/use-permissions';
@@ -15,90 +13,28 @@ import {Badge} from '#/components/ui/badge';
 import {Button} from '#/components/ui/button';
 import {SettingsSection} from '#/components/settings/settings-section';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
-import {Input} from '#/components/ui/input';
+	GroupEditorDialog,
+	type Draft,
+} from '#/components/settings/groups/group-editor-dialog';
 
 export const Route = createFileRoute('/_app/settings/groups')({
 	component: () => (
 		<Navigate to="/settings" search={{tab: 'groups'}} replace />
-	)
+	),
 });
-
-type Draft = {
-	id?: number;
-	name: string;
-	actions: string[];
-};
-
-/** resource prefix for grouping the policy catalog ("app:create" → "app"). */
-const resourceOf = (action: string) => action.split(':')[0] ?? action;
-const operationOf = (action: string) => action.split(':')[1] ?? action;
 
 export function GroupsPage() {
 	const {can, isLoading: grantsLoading} = usePermissions();
 	const groupsQuery = usePermissionGroupList();
 	const policiesQuery = usePolicyList();
-	const createMutation = usePermissionGroupCreate();
-	const updateMutation = usePermissionGroupUpdate();
 	const deleteMutation = usePermissionGroupDelete();
 
 	const [draft, setDraft] = useState<Draft | null>(null);
 
 	const groups = groupsQuery.data ?? [];
 	const policies = policiesQuery.data ?? [];
-	const canManage = can('group:create') || can('group:update') || can('group:delete');
-
-	const grouped = new Map<string, string[]>();
-	for (const policy of policies) {
-		const list = grouped.get(resourceOf(policy.action)) ?? [];
-		list.push(policy.action);
-		grouped.set(resourceOf(policy.action), list);
-	}
-
-	const toggleAction = (action: string) =>
-		setDraft(current =>
-			current
-				? {
-						...current,
-						actions: current.actions.includes(action)
-							? current.actions.filter(item => item !== action)
-							: [...current.actions, action],
-					}
-				: current,
-		);
-
-	const save = async () => {
-		if (!draft) return;
-		if (!draft.name.trim()) {
-			toast.error('Group name is required');
-			return;
-		}
-		try {
-			if (draft.id) {
-				await updateMutation.mutateAsync({
-					id: draft.id,
-					name: draft.name.trim(),
-					actions: draft.actions,
-				});
-				toast.success('Group updated');
-			} else {
-				await createMutation.mutateAsync({
-					name: draft.name.trim(),
-					actions: draft.actions,
-				});
-				toast.success('Group created');
-			}
-			setDraft(null);
-		} catch (err) {
-			toast.error(formatApiError(err));
-		}
-	};
+	const canManage =
+		can('group:create') || can('group:update') || can('group:delete');
 
 	const remove = async (id: number) => {
 		try {
@@ -207,84 +143,11 @@ export function GroupsPage() {
 				)}
 			</SettingsSection>
 
-
-			<Dialog
-				open={!!draft}
-				onOpenChange={open => !open && setDraft(null)}>
-				<DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-					<DialogHeader>
-						<DialogTitle className="text-base font-bold">
-							{draft?.id ? 'Edit Group' : 'New Group'}
-						</DialogTitle>
-						<DialogDescription className="text-xs">
-							Name the role and tick the actions its members may
-							perform in this organization.
-						</DialogDescription>
-					</DialogHeader>
-					{draft && (
-						<div className="space-y-4 py-2">
-							<div className="space-y-1">
-								<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-									Name
-								</label>
-								<Input
-									value={draft.name}
-									autoFocus
-									onChange={event =>
-										setDraft({...draft, name: event.target.value})
-									}
-									placeholder="Deploy Operators"
-									className="h-10 bg-muted/20 text-xs"
-								/>
-							</div>
-							<div className="space-y-3">
-								{[...grouped.entries()].map(([resource, actions]) => (
-									<div key={resource}>
-										<p className="mb-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-											{resource}
-										</p>
-										<div className="flex flex-wrap gap-2">
-											{actions.map(action => {
-												const active = draft.actions.includes(action);
-												return (
-													<button
-														key={action}
-														type="button"
-														onClick={() => toggleAction(action)}
-														className={
-															active
-																? 'rounded-md bg-primary/10 px-2 py-1 font-mono text-[10px] font-semibold text-primary'
-																: 'rounded-md bg-muted/20 px-2 py-1 font-mono text-[10px] text-muted-foreground hover:text-foreground'
-														}>
-														{operationOf(action)}
-													</button>
-												);
-											})}
-										</div>
-									</div>
-								))}
-							</div>
-						</div>
-					)}
-					<DialogFooter>
-						<Button
-							type="button"
-							variant="secondary"
-							size="sm"
-							className="h-9 text-xs"
-							onClick={() => setDraft(null)}>
-							Cancel
-						</Button>
-						<Button
-							type="button"
-							size="sm"
-							className="h-9 text-xs"
-							onClick={() => void save()}>
-							{draft?.id ? 'Save' : 'Create'}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+			<GroupEditorDialog
+				draft={draft}
+				setDraft={setDraft}
+				policies={policies}
+			/>
 		</div>
 	);
 }

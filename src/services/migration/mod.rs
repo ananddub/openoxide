@@ -10,6 +10,7 @@
 mod cutover;
 mod engine;
 mod mounts;
+mod orchestrator;
 mod planner;
 mod quiesce;
 mod runner;
@@ -30,6 +31,10 @@ pub use engine::{
 pub use mounts::{
     MountIssue, default_volume_path, fetch_mount_rows, plan_service_objects, resolve_volume_paths,
     volume_inspect_args,
+};
+
+pub use orchestrator::{
+    MigratedServiceKind, MigrationOrchestrator, StatefulMigrationRequest,
 };
 
 pub use planner::{

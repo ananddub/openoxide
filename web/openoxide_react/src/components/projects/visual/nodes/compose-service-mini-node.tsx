@@ -1,40 +1,51 @@
 import {type NodeProps, type Node} from '@xyflow/react';
-import {Server} from 'lucide-react';
 
-export type ComposeMiniServiceNodeProps = Node<
-	ComposeMiniServiceData,
+export type ComposeServiceMiniNodeProps = Node<
+	ComposeMiniData,
 	'composeMiniServiceNode'
 >;
-export interface ComposeMiniServiceData extends Record<string, unknown> {
+export interface ComposeMiniData extends Record<string, unknown> {
 	serviceName: string;
-	image?: string;
+	image: string;
 }
 
 export function ComposeServiceMiniNode({
 	data,
-}: NodeProps<ComposeMiniServiceNodeProps>) {
+}: NodeProps<ComposeServiceMiniNodeProps>) {
 	return (
 		<div
-			className="flex w-36 items-center gap-2 rounded-xl p-2 select-none"
 			style={{
-				background: 'rgba(255,255,255,0.06)',
-				border: '1px solid rgba(139,92,246,0.2)',
+				width: 148,
+				padding: '7px 10px',
+				background: '#0d1117',
+				border: '1px solid rgba(255,255,255,0.08)',
+				borderRadius: 8,
+				userSelect: 'none',
 			}}>
-			<Server
-				className="h-3 w-3 shrink-0"
-				style={{color: '#a78bfa'}}
-				strokeWidth={1.5}
-			/>
-			<div className="min-w-0">
-				<p className="truncate text-[11px] leading-tight font-semibold text-white">
-					{data.serviceName}
-				</p>
-				<p
-					className="truncate font-mono text-[9px]"
-					style={{color: 'rgba(255,255,255,0.35)'}}>
-					{data.image}
-				</p>
-			</div>
+			<p
+				style={{
+					margin: 0,
+					fontSize: 11.5,
+					fontWeight: 600,
+					color: '#e6edf3',
+					whiteSpace: 'nowrap',
+					overflow: 'hidden',
+					textOverflow: 'ellipsis',
+				}}>
+				{data.serviceName}
+			</p>
+			<p
+				style={{
+					margin: 0,
+					fontSize: 10,
+					color: '#6e7681',
+					marginTop: 1,
+					whiteSpace: 'nowrap',
+					overflow: 'hidden',
+					textOverflow: 'ellipsis',
+				}}>
+				{data.image}
+			</p>
 		</div>
 	);
 }

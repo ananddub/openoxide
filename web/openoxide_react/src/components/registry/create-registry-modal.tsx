@@ -1,35 +1,23 @@
 import {useState, useEffect} from 'react';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {Button} from '#/components/ui/button';
-import {Input} from '#/components/ui/input';
-import {Label} from '#/components/ui/label';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {Database, Plug, RefreshCw} from 'lucide-react';
 import {
-	useRemoteServerList,
 	useRegistryCreate,
 	useRegistryUpdate,
 	useRegistryTest,
 } from '#/api/live';
+import {RegistryFormFields} from './registry-form-fields';
 
-import type {
-	RegistryResponse,
-	RemoteServerResponse,
-} from '#/types/api-helpers';
+import type {RegistryResponse} from '#/types/api-helpers';
 
 interface CreateRegistryModalProps {
 	isOpen: boolean;
@@ -50,11 +38,6 @@ export function CreateRegistryModal({
 	const [password, setPassword] = useState('');
 	const [serverId, setServerId] = useState<string>('local');
 	const [isTesting, setIsTesting] = useState(false);
-
-	const {data: serversData} = useRemoteServerList();
-	const servers = (Array.isArray(serversData)
-		? serversData
-		: []) as unknown as RemoteServerResponse[];
 
 	const createMutation = useRegistryCreate();
 	const patchMutation = useRegistryUpdate();
@@ -148,126 +131,37 @@ export function CreateRegistryModal({
 	};
 
 	return (
-		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="max-h-[90vh] w-full overflow-y-auto rounded-2xl border- bg-card p-6 shadow-2xl sm:max-w-xl">
-				<DialogHeader className="border-b  pb-3">
-					<DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-						<Database className="h-5 w-5 text-primary" />
+		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2">
+						<Database className="size-4 text-primary" />
 						{initialData ? 'Edit Registry' : 'Add an external registry'}
-					</DialogTitle>
-					<DialogDescription className="text-xs text-muted-foreground">
+					</SheetTitle>
+					<SheetDescription>
 						Fill in the following fields to add an external registry.
-					</DialogDescription>
-				</DialogHeader>
+					</SheetDescription>
+				</SheetHeader>
 
 				<form
 					onSubmit={handleSubmit}
 					className="mt-3 flex flex-col gap-4 text-xs">
-					{/* Registry Name */}
-					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">
-							Registry Name *
-						</Label>
-						<Input
-							placeholder="e.g. AWS ECR / Docker Hub / GHCR"
-							value={name}
-							onChange={e => setName(e.target.value)}
-							required
-							className="h-9 text-xs"
-						/>
-					</div>
-
-					{/* Image Prefix / Hostname */}
-					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">Image Prefix *</Label>
-						<Input
-							placeholder="aws_account_id.dkr.ecr.us-west-2.amazonaws.com or docker.io"
-							value={registryUrl}
-							onChange={e => setRegistryUrl(e.target.value)}
-							required
-							className="h-9 font-mono text-xs"
-						/>
-						<p className="text-[11px] text-muted-foreground">
-							Enter only the hostname (e.g.,{' '}
-							<code className="font-mono text-foreground">
-								aws_account_id.dkr.ecr.us-west-2.amazonaws.com
-							</code>{' '}
-							or{' '}
-							<code className="font-mono text-foreground">docker.io</code>
-							).
-						</p>
-					</div>
-
-					{/* Username */}
-					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">Username *</Label>
-						<Input
-							placeholder="AWS / Docker Hub Username"
-							value={username}
-							onChange={e => setUsername(e.target.value)}
-							required
-							className="h-9 text-xs"
-						/>
-					</div>
-
-					{/* Password */}
-					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">
-							Password * {initialData && '(Leave blank to keep unchanged)'}
-						</Label>
-						<Input
-							type="password"
-							placeholder={
-								initialData ? '••••••••' : 'Access Token / Password'
-							}
-							value={password}
-							onChange={e => setPassword(e.target.value)}
-							required={!initialData}
-							className="h-9 font-mono text-xs"
-						/>
-					</div>
-
-					{/* Server Authentication Host Dropdown */}
-					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">
-							Authenticate From Server
-						</Label>
-						<Select
-							value={serverId}
-							onValueChange={val => val && setServerId(val)}>
-							<SelectTrigger className="flex !h-9 w-full items-center justify-between  bg-card px-3 font-sans text-xs">
-								<SelectValue placeholder="Select server">
-									{serverId === 'local'
-										? 'Local Server (Default)'
-										: (() => {
-												const srv = servers.find(
-													(s: RemoteServerResponse) =>
-														String(s.id) === String(serverId),
-												);
-												return srv ? srv.name : 'Select server';
-											})()}
-								</SelectValue>
-							</SelectTrigger>
-							<SelectContent className="z-50 border- bg-card text-xs">
-								<SelectItem value="local">
-									Local Server (Default)
-								</SelectItem>
-								{servers.map((srv: RemoteServerResponse) => (
-									<SelectItem key={srv.id} value={String(srv.id)}>
-										{srv.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-						<p className="text-[11px] text-muted-foreground">
-							Choose where to authenticate with the registry. By default,
-							authentication occurs on the local server. Select a specific
-							server to authenticate from that server instead.
-						</p>
-					</div>
+					<RegistryFormFields
+						name={name}
+						setName={setName}
+						registryUrl={registryUrl}
+						setRegistryUrl={setRegistryUrl}
+						username={username}
+						setUsername={setUsername}
+						password={password}
+						setPassword={setPassword}
+						serverId={serverId}
+						setServerId={setServerId}
+						editing={!!initialData}
+					/>
 
 					{/* Minimal Footer Buttons */}
-					<div className="mt-2 flex items-center justify-between border-t  pt-4">
+					<div className="mt-2 flex items-center justify-between border-t pt-4">
 						<Button
 							type="button"
 							variant="outline"
@@ -290,7 +184,7 @@ export function CreateRegistryModal({
 						</Button>
 					</div>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</SheetContent>
+		</Sheet>
 	);
 }

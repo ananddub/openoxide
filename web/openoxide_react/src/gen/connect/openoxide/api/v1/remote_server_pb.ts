@@ -2,120 +2,161 @@
 // @generated from file openoxide/api/v1/remote_server.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema, OperationResultSchema, ResourceListResponseSchema, ResourceQuerySchema, ResourceRequestSchema, ResourceResponseSchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
+import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
+import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
+import type {
+	EmptySchema,
+	OperationResultSchema,
+	ResourceListResponseSchema,
+	ResourceQuerySchema,
+	ResourceRequestSchema,
+	ResourceResponseSchema,
+} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
 
 /**
  * Describes the file openoxide/api/v1/remote_server.proto.
  */
-export const file_openoxide_api_v1_remote_server: GenFile = /*@__PURE__*/
-  fileDesc("CiRvcGVub3hpZGUvYXBpL3YxL3JlbW90ZV9zZXJ2ZXIucHJvdG8SEG9wZW5veGlkZS5hcGkudjEyvwgKE1JlbW90ZVNlcnZlclNlcnZpY2USXAoRTGlzdFJlbW90ZVNlcnZlcnMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElgKD0dldFJlbW90ZVNlcnZlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElsKEkNyZWF0ZVJlbW90ZVNlcnZlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElsKElVwZGF0ZVJlbW90ZVNlcnZlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElAKCEFjdGl2YXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJSCgpEZWFjdGl2YXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJWCg5UZXN0Q29ubmVjdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSUAoSRGVsZXRlUmVtb3RlU2VydmVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElsKE01pZ3JhdGVEZXBlbmRlbmNpZXMSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElUKDEdldE1pZ3JhdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElkKEVJvbGxiYWNrTWlncmF0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJXCg9DYW5jZWxNaWdyYXRpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0YgZwcm90bzM", [file_openoxide_api_v1_common]);
+export const file_openoxide_api_v1_remote_server: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'CiRvcGVub3hpZGUvYXBpL3YxL3JlbW90ZV9zZXJ2ZXIucHJvdG8SEG9wZW5veGlkZS5hcGkudjEy1woKE1JlbW90ZVNlcnZlclNlcnZpY2USXAoRTGlzdFJlbW90ZVNlcnZlcnMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElgKD0dldFJlbW90ZVNlcnZlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElsKEkNyZWF0ZVJlbW90ZVNlcnZlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElsKElVwZGF0ZVJlbW90ZVNlcnZlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElAKCEFjdGl2YXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJSCgpEZWFjdGl2YXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJWCg5UZXN0Q29ubmVjdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSUAoSRGVsZXRlUmVtb3RlU2VydmVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElsKE01pZ3JhdGVEZXBlbmRlbmNpZXMSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElUKDEdldE1pZ3JhdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElkKEVJvbGxiYWNrTWlncmF0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJXCg9DYW5jZWxNaWdyYXRpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElYKDk1pZ3JhdGVTZXJ2aWNlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJbCg5MaXN0TWlncmF0aW9ucxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJhChRMaXN0TWlncmF0aW9uT2JqZWN0cxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZWIGcHJvdG8z',
+		[file_openoxide_api_v1_common],
+	);
 
 /**
  * @generated from service openoxide.api.v1.RemoteServerService
  */
 export const RemoteServerService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.ListRemoteServers
-   */
-  listRemoteServers: {
-    methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.GetRemoteServer
-   */
-  getRemoteServer: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.CreateRemoteServer
-   */
-  createRemoteServer: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.UpdateRemoteServer
-   */
-  updateRemoteServer: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.Activate
-   */
-  activate: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.Deactivate
-   */
-  deactivate: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.TestConnection
-   */
-  testConnection: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.DeleteRemoteServer
-   */
-  deleteRemoteServer: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.MigrateDependencies
-   */
-  migrateDependencies: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.GetMigration
-   */
-  getMigration: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.RemoteServerService.RollbackMigration
-   */
-  rollbackMigration: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * Flags a RUNNING application_migrations row for cooperative cancellation;
-   * the runner honours it at the next phase/object boundary.
-   *
-   * @generated from rpc openoxide.api.v1.RemoteServerService.CancelMigration
-   */
-  cancelMigration: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_remote_server, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.ListRemoteServers
+	 */
+	listRemoteServers: {
+		methodKind: 'unary';
+		input: typeof ResourceQuerySchema;
+		output: typeof ResourceListResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.GetRemoteServer
+	 */
+	getRemoteServer: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.CreateRemoteServer
+	 */
+	createRemoteServer: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.UpdateRemoteServer
+	 */
+	updateRemoteServer: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.Activate
+	 */
+	activate: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.Deactivate
+	 */
+	deactivate: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.TestConnection
+	 */
+	testConnection: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.DeleteRemoteServer
+	 */
+	deleteRemoteServer: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.MigrateDependencies
+	 */
+	migrateDependencies: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.GetMigration
+	 */
+	getMigration: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.RollbackMigration
+	 */
+	rollbackMigration: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * Flags a RUNNING application_migrations row for cooperative cancellation;
+	 * the runner honours it at the next phase/object boundary.
+	 *
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.CancelMigration
+	 */
+	cancelMigration: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * Triggers (or resumes) a stateful single-service migration. id carries the
+	 * service id, payload a JSON object {"target_server_id": "..."}. Returns
+	 * the application_migrations row JSON.
+	 *
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.MigrateService
+	 */
+	migrateService: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * Lists stateful migrations for a service (id = service id), newest first.
+	 *
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.ListMigrations
+	 */
+	listMigrations: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceListResponseSchema;
+	};
+	/**
+	 * Lists per-object checkpoints of one stateful migration (payload = the
+	 * migration id string).
+	 *
+	 * @generated from rpc openoxide.api.v1.RemoteServerService.ListMigrationObjects
+	 */
+	listMigrationObjects: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceListResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_remote_server, 0);

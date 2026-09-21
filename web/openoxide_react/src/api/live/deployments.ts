@@ -1,5 +1,12 @@
-import {createServiceClient, useConnectMutation, useConnectQuery} from './query';
-import {DeploymentService, type Deployment} from '#/gen/connect/openoxide/api/v1/deployment_pb';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useConnectQuery,
+} from './query';
+import {
+	DeploymentService,
+	type Deployment,
+} from '#/gen/connect/openoxide/api/v1/deployment_pb';
 
 export type DeploymentPayload = {
 	id: bigint;
@@ -89,7 +96,7 @@ export function useDeploymentItems() {
 		async () => {
 			const response = await deploymentClient.listDeployments({});
 			return response.deployments.map(
-				(deployment) =>
+				deployment =>
 					JSON.parse(
 						JSON.stringify(toDeploymentPayload(deployment)),
 					) as DeploymentItemPayload,
@@ -169,12 +176,14 @@ export type DockerContainerPayload = {
  * server filter on the wire; the serverId only keys the query cache so
  * callers can switch contexts (local server for any null/undefined id).
  */
-export function useDeploymentListContainers(serverId?: number | bigint | null) {
+export function useDeploymentListContainers(
+	serverId?: number | bigint | null,
+) {
 	return useConnectQuery<DockerContainerPayload[]>(
 		['deployments', 'docker-containers', String(serverId ?? 'local')],
 		async () => {
 			const response = await deploymentClient.listContainers({});
-			return response.containers.map((container) => ({
+			return response.containers.map(container => ({
 				id: container.id,
 				name: container.name,
 				image: container.image,

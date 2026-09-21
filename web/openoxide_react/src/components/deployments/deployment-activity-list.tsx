@@ -1,4 +1,11 @@
-import {Rocket, Boxes, Database, Clock, AlertCircle, GitBranch} from 'lucide-react';
+import {
+	Rocket,
+	Boxes,
+	Database,
+	Clock,
+	AlertCircle,
+	GitBranch,
+} from 'lucide-react';
 import type {Deployment} from '#/hooks/deployments/use-deployments';
 import {timeAgo} from '#/components/activity/activity-feed';
 
@@ -12,7 +19,12 @@ function statusPill(status?: string) {
 	const s = (status || '').toUpperCase();
 	let cls = 'bg-muted/60 text-muted-foreground';
 	let label = s || 'UNKNOWN';
-	if (s === 'DONE' || s === 'SUCCESS' || s === 'DEPLOYED' || s === 'HEALTHY') {
+	if (
+		s === 'DONE' ||
+		s === 'SUCCESS' ||
+		s === 'DEPLOYED' ||
+		s === 'HEALTHY'
+	) {
 		cls = 'bg-emerald-500/10 text-emerald-500';
 		label = 'Deployed';
 	} else if (s === 'ERROR' || s === 'FAILED' || s === 'CRASHED') {
@@ -40,10 +52,8 @@ function statusPill(status?: string) {
 }
 
 function kindOf(d: Deployment) {
-	if (d.compose_id != null)
-		return {icon: Boxes, label: 'Compose'};
-	if (d.database_id != null)
-		return {icon: Database, label: 'Database'};
+	if (d.compose_id != null) return {icon: Boxes, label: 'Compose'};
+	if (d.database_id != null) return {icon: Database, label: 'Database'};
 	return {icon: Rocket, label: 'Application'};
 }
 
@@ -58,7 +68,7 @@ export function DeploymentActivityList({
 	onViewLogs,
 }: DeploymentActivityListProps) {
 	return (
-		<div className="divide-y divide-border/50 overflow-hidden rounded-2xl border border-border/50 bg-card">
+		<div className="divide-y divide-border/50 overflow-hidden rounded-xl border border-border/50 bg-card">
 			{deployments.map(d => {
 				const Kind = kindOf(d);
 				const Icon = Kind.icon;
@@ -99,10 +109,10 @@ export function DeploymentActivityList({
 								<span className="text-muted-foreground/40">·</span>
 								<span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
 									<Clock className="size-3" />
-									{new Date(createdAtSec * 1000).toLocaleTimeString(
-										[],
-										{hour: '2-digit', minute: '2-digit'},
-									)}
+									{new Date(createdAtSec * 1000).toLocaleTimeString([], {
+										hour: '2-digit',
+										minute: '2-digit',
+									})}
 								</span>
 							</div>
 							{d.error_message && (

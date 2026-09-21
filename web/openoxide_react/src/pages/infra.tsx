@@ -11,6 +11,7 @@ import {
 	PieChart,
 } from 'lucide-react';
 import {UnderlineTabs} from '#/components/shared/underline-tabs';
+import {Titlebar} from '#/components/shared/titlebar';
 import {WebServerSettingsPage} from './settings/server';
 import {TraefikPanel} from './traefik';
 import {SwarmPanel} from './swarm';
@@ -111,25 +112,27 @@ function InfraPage() {
 		});
 	return (
 		<div className="flex h-full min-h-0 w-full flex-col">
-			{/* Title (swaps with tab) + tab strip — fixed; content scrolls below */}
+			{/* Titlebar (title swaps with tab) + tab strip — fixed; content scrolls below */}
 			<div className="mx-auto flex w-full max-w-[1600px] shrink-0 flex-col gap-4 px-4 pt-6 sm:px-6 lg:px-8">
-				<div className="flex flex-col gap-1">
-					<h1 className="text-2xl font-medium tracking-tight text-foreground/80">
-						{active.title}
-					</h1>
-					<p className="text-sm text-muted-foreground/70">
-						{active.description}
-					</p>
-				</div>
-				<UnderlineTabs
-					tabs={INFRA_TABS.map(({id, label, icon}) => ({
-						key: id,
-						label,
-						icon,
-					}))}
-					value={active.id}
-					onChange={select}
-				/>
+				<Titlebar
+					breadcrumbs={[{label: active.title}]}
+					title={active.title}
+					description={active.description}
+					separator={false}>
+					{/* UnderlineTabs carries its own full-bleed border-b as the
+					    separator; the active underline merges with it. */}
+					<div className="-mx-4 sm:-mx-6 lg:-mx-8">
+						<UnderlineTabs
+							tabs={INFRA_TABS.map(({id, label, icon}) => ({
+								key: id,
+								label,
+								icon,
+							}))}
+							value={active.id}
+							onChange={select}
+						/>
+					</div>
+				</Titlebar>
 			</div>
 
 			{active.fixedHeight ? (

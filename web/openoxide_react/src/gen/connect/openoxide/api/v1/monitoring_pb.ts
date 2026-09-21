@@ -2,45 +2,49 @@
 // @generated from file openoxide/api/v1/monitoring.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { ResourceRequestSchema, ResourceResponseSchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
+import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
+import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
+import type {
+	ResourceRequestSchema,
+	ResourceResponseSchema,
+} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
 
 /**
  * Describes the file openoxide/api/v1/monitoring.proto.
  */
-export const file_openoxide_api_v1_monitoring: GenFile = /*@__PURE__*/
-  fileDesc("CiFvcGVub3hpZGUvYXBpL3YxL21vbml0b3JpbmcucHJvdG8SEG9wZW5veGlkZS5hcGkudjEymgIKEU1vbml0b3JpbmdTZXJ2aWNlElQKC0dldE92ZXJ2aWV3EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUwoKR2V0TWV0cmljcxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlEloKEUdldENvbnRhaW5lclN0YXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2ViBnByb3RvMw", [file_openoxide_api_v1_common]);
+export const file_openoxide_api_v1_monitoring: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'CiFvcGVub3hpZGUvYXBpL3YxL21vbml0b3JpbmcucHJvdG8SEG9wZW5veGlkZS5hcGkudjEymgIKEU1vbml0b3JpbmdTZXJ2aWNlElQKC0dldE92ZXJ2aWV3EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUwoKR2V0TWV0cmljcxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlEloKEUdldENvbnRhaW5lclN0YXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2ViBnByb3RvMw',
+		[file_openoxide_api_v1_common],
+	);
 
 /**
  * @generated from service openoxide.api.v1.MonitoringService
  */
 export const MonitoringService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.GetOverview
-   */
-  getOverview: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.GetMetrics
-   */
-  getMetrics: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerState
-   */
-  getContainerState: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_monitoring, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.GetOverview
+	 */
+	getOverview: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.GetMetrics
+	 */
+	getMetrics: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerState
+	 */
+	getContainerState: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_monitoring, 0);

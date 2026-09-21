@@ -24,7 +24,7 @@ import {PanelLeftIcon} from 'lucide-react';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state';
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SIDEBAR_WIDTH = '17.25rem';
+const SIDEBAR_WIDTH = '15rem';
 const SIDEBAR_WIDTH_MOBILE = '18rem';
 const SIDEBAR_WIDTH_ICON = '4.375rem';
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
@@ -188,27 +188,26 @@ function Sidebar({
 
 	if (isMobile) {
 		return (
-			<Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-				<SheetContent
-					dir={dir}
-					data-sidebar="sidebar"
-					data-slot="sidebar"
-					data-mobile="true"
-					className="w-(--sidebar-width) bg-[var(--th-card-on-page)]! p-0 text-sidebar-foreground [&>button]:hidden"
-					style={
-						{
-							'--sidebar-width': SIDEBAR_WIDTH_MOBILE,
-						} as React.CSSProperties
-					}
-					side={side}>
-					<SheetHeader className="sr-only">
-						<SheetTitle>Sidebar</SheetTitle>
-						<SheetDescription>
-							Displays the mobile sidebar.
-						</SheetDescription>
-					</SheetHeader>
-					<div className="flex h-full w-full flex-col">{children}</div>
-				</SheetContent>
+			<Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>					<SheetContent
+						dir={dir}
+						data-sidebar="sidebar"
+						data-slot="sidebar"
+						data-mobile="true"
+						className="w-(--sidebar-width) bg-background! p-0 text-sidebar-foreground [&>button]:hidden"
+						style={
+							{
+								'--sidebar-width': SIDEBAR_WIDTH_MOBILE,
+							} as React.CSSProperties
+						}
+						side={side}>
+						<SheetHeader className="sr-only">
+							<SheetTitle>Sidebar</SheetTitle>
+							<SheetDescription>
+								Displays the mobile sidebar.
+							</SheetDescription>
+						</SheetHeader>
+						<div className="flex h-full w-full flex-col pt-12">{children}</div>
+					</SheetContent>
 			</Sheet>
 		);
 	}
@@ -237,7 +236,7 @@ function Sidebar({
 				data-slot="sidebar-container"
 				data-side={side}
 				className={cn(
-					'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:-left-(--sidebar-width) data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:-right-(--sidebar-width) md:flex',
+					'fixed inset-y-0 top-12 z-10 hidden h-[calc(100svh-3rem)] w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:-left-(--sidebar-width) data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:-right-(--sidebar-width) md:flex',
 					// Adjust the padding for floating and inset variants.
 					variant === 'floating' || variant === 'inset'
 						? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
@@ -375,7 +374,7 @@ function SidebarSeparator({
 		<Separator
 			data-slot="sidebar-separator"
 			data-sidebar="separator"
-			className={cn('mx-2 w-auto bg-sidebar-border', className)}
+			className={cn('mx-2! w-auto! bg-sidebar-border', className)}
 			{...props}
 		/>
 	);

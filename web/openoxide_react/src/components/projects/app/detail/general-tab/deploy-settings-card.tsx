@@ -1,35 +1,32 @@
 import {useState, useMemo} from 'react';
-import {
-	Rocket,
-	RefreshCw,
-	Hammer,
-	Play,
-	Ban,
-	Terminal,
-	X,
-} from 'lucide-react';
+import {Terminal} from 'lucide-react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
 import {TerminalCard} from '#/components/shared/terminal-card';
+import {ToggleSwitch} from '#/components/shared/toggle-switch';
 import {
 	useApplicationUpdateBuildConfig,
 	useDeploymentItems,
 } from '#/api/live';
 import {formatApiError} from '#/api/utils';
+import {isBuildActive} from '#/components/projects/detail/deployments/build-status';
+import {
+	ACTION_DESCRIPTIONS,
+	ACTION_TITLES,
+	ACTIVE_DEPLOYMENT_STATUSES,
+	isAppProcessing,
+	rawAppStatus,
+	type ActionType,
+} from './deploy-settings-card/actions';
+import {ConfirmActionDialog} from './deploy-settings-card/confirm-action-dialog';
+import {PrimaryActionButtons} from './deploy-settings-card/primary-action-buttons';
+import {StatusActionButton} from './deploy-settings-card/status-action-button';
 
 interface DeploySettingsCardProps {
 	app: any;
 	handleAction: (action: any) => Promise<void>;
 	onUpdated?: () => void;
 }
-
-type ActionType =
-	| 'deploy'
-	| 'reload'
-	| 'rebuild'
-	| 'start'
-	| 'cancel'
-	| 'stop';
 
 export function DeploySettingsCard({
 	app,
@@ -39,7 +36,6 @@ export function DeploySettingsCard({
 	const [autoDeploy, setAutoDeploy] = useState(app.auto_deploy !== false);
 	const [cleanCache, setCleanCache] = useState(!!app.clean_cache);
 	const [showTerminal, setShowTerminal] = useState(false);
-
 	const [confirmAction, setConfirmAction] = useState<ActionType | null>(
 		null,
 	);
@@ -66,37 +62,17 @@ export function DeploySettingsCard({
 	// Live deployments query filtered to this app; the table-watch stream
 	// (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
 	const {data: storeDeployments = []} = useDeploymentItems();
-	const rawDeployments = useMemo(() => {
-		return storeDeployments.filter(
-			(d: any) => String(d.application_id) === String(app?.id),
-		);
-	}, [storeDeployments, app?.id]);
-
-	const events = useMemo(
-		() => (Array.isArray(rawDeployments) ? rawDeployments : []),
-		[rawDeployments],
+	const hasActiveDeployment = useMemo(
+		() =>
+			(Array.isArray(storeDeployments) ? storeDeployments : []).some(
+				(e: any) =>
+					String(e?.application_id) === String(app?.id) &&
+					isBuildActive(e),
+			),
+		[storeDeployments, app?.id],
 	);
 
-	const hasActiveDeployment = (events || []).some((e: any) => {
-		if (!e || (e.finished_at && Number(e.finished_at) > 0)) return false;
-		const s = (e.status || e.state || '').toUpperCase();
-		return [
-			'QUEUED',
-			'BUILDING',
-			'STARTING',
-			'DEPLOYING',
-			'PREPARING',
-			'PENDING',
-		].includes(s);
-	});
-
-	const rawStatus = (
-		app?.app_status ||
-		app?.applicationStatus ||
-		app?.application_status ||
-		app?.status ||
-		''
-	).toLowerCase();
+	const status = rawAppStatus(app);
 	const isRunning = [
 		'running',
 		'done',
@@ -106,15 +82,16 @@ export function DeploySettingsCard({
 		'up',
 		'active',
 		'ok',
-	].includes(rawStatus);
+	].includes(status);
 	// Autodeploy is a webhook-driven service_git flag; it is meaningless
 	// for Docker/Drop sources (they have no repository to push to).
 	const isGitSource = !['DOCKER', 'DROP', 'NONE', ''].includes(
 		(app?.source_type || '').toUpperCase(),
 	);
 	const isBuilding =
+		ACTIVE_DEPLOYMENT_STATUSES.some(s => status === s.toLowerCase()) ||
+		['starting', 'building', 'queued', 'preparing'].includes(status) ||
 		hasActiveDeployment ||
-		['starting', 'building', 'queued', 'preparing'].includes(rawStatus) ||
 		activeLoading === 'deploy' ||
 		activeLoading === 'rebuild' ||
 		activeLoading === 'reload';
@@ -130,36 +107,8 @@ export function DeploySettingsCard({
 		}
 	};
 
-	const getActionTitle = (action: ActionType) => {
-		if (action === 'deploy') return 'Deploy Application';
-		if (action === 'reload') return 'Reload Application';
-		if (action === 'rebuild') return 'Rebuild Application';
-		if (action === 'start') return 'Start Application';
-		if (action === 'stop') return 'Stop Application';
-		return 'Cancel Application Build';
-	};
-
-	const getActionDesc = (action: ActionType) => {
-		if (action === 'deploy')
-			return 'Are you sure you want to deploy this application? This will pull latest code and trigger a build.';
-		if (action === 'reload')
-			return 'Are you sure you want to reload this application without rebuilding?';
-		if (action === 'rebuild')
-			return 'Are you sure you want to rebuild this application?';
-		if (action === 'start')
-			return 'Are you sure you want to start this application container?';
-		if (action === 'stop')
-			return 'Are you sure you want to stop this running application container?';
-		return 'Are you sure you want to cancel the active deployment build?';
-	};
-
-	const rawAppStatus = (app?.app_status || '').toUpperCase();
-	const isStoppingOrCancelling =
-		rawAppStatus === 'STOPPING' ||
-		rawAppStatus === 'CANCELLING' ||
-		activeLoading === 'stop' ||
-		activeLoading === 'cancel';
-	const isProcessing = activeLoading !== null || isStoppingOrCancelling;
+	const isProcessing =
+		activeLoading !== null || isAppProcessing(app) || hasActiveDeployment;
 
 	return (
 		<section className="flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm">
@@ -168,110 +117,22 @@ export function DeploySettingsCard({
 			</h3>
 			<div className="flex flex-wrap items-center justify-between gap-4">
 				<div className="flex flex-wrap items-center gap-2">
-					{/* Deploy */}
-					<Button
-						onClick={() => executeAction('deploy')}
-						disabled={isProcessing || isBuilding}
-						size="sm"
-						className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg bg-primary font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
-						{activeLoading === 'deploy' ? (
-							<RefreshCw className="h-4 w-4 animate-spin" />
-						) : (
-							<Rocket className="h-4 w-4" />
-						)}
-						{activeLoading === 'deploy' ? 'Deploying...' : 'Deploy'}
-					</Button>
+					<PrimaryActionButtons
+						isBuilding={isBuilding}
+						isProcessing={isProcessing}
+						activeLoading={activeLoading}
+						onExecute={executeAction}
+					/>
 
-					{/* Reload */}
-					<Button
-						onClick={() => executeAction('reload')}
-						disabled={isProcessing || isBuilding}
-						variant="outline"
-						size="sm"
-						className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg  font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
-						{activeLoading === 'reload' ? (
-							<RefreshCw className="h-4 w-4 animate-spin" />
-						) : (
-							<RefreshCw className="h-4 w-4" />
-						)}
-						{activeLoading === 'reload' ? 'Reloading...' : 'Reload'}
-					</Button>
+					<StatusActionButton
+						app={app}
+						isBuilding={isBuilding}
+						isRunning={isRunning}
+						activeLoading={activeLoading}
+						disabled={isProcessing}
+						onExecute={executeAction}
+					/>
 
-					{/* Rebuild */}
-					<Button
-						onClick={() => executeAction('rebuild')}
-						disabled={isProcessing || isBuilding}
-						variant="outline"
-						size="sm"
-						className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg  font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
-						{activeLoading === 'rebuild' ? (
-							<RefreshCw className="h-4 w-4 animate-spin" />
-						) : (
-							<Hammer className="h-4 w-4" />
-						)}
-						{activeLoading === 'rebuild' ? 'Rebuilding...' : 'Rebuild'}
-					</Button>
-
-					{/* 4-State Action Button: Stopping, Cancelling, Cancel (Building), Stop (Running), Start (Idle/Error/Stopped) */}
-					{activeLoading === 'stop' ||
-					(app?.app_status || '').toUpperCase() === 'STOPPING' ? (
-						<Button
-							disabled
-							variant="outline"
-							size="sm"
-							className="flex h-9 cursor-not-allowed items-center gap-1.5 rounded-lg  font-semibold text-destructive opacity-80">
-							<RefreshCw className="h-4 w-4 animate-spin text-destructive" />
-							Stopping...
-						</Button>
-					) : activeLoading === 'cancel' ||
-					  (app?.app_status || '').toUpperCase() === 'CANCELLING' ? (
-						<Button
-							disabled
-							variant="outline"
-							size="sm"
-							className="flex h-9 cursor-not-allowed items-center gap-1.5 rounded-lg border-destructive/50 px-4 font-bold text-destructive opacity-80">
-							<RefreshCw className="h-4 w-4 animate-spin text-destructive" />
-							Cancelling...
-						</Button>
-					) : isBuilding ? (
-						<Button
-							onClick={() => executeAction('cancel')}
-							disabled={activeLoading === 'cancel'}
-							variant="outline"
-							size="sm"
-							className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border-destructive/50 px-4 font-bold text-destructive shadow-xs hover:bg-destructive/10">
-							<RefreshCw className="h-4 w-4 animate-spin text-destructive" />
-							{activeLoading === 'cancel' ? 'Cancelling...' : 'Cancel'}
-						</Button>
-					) : isRunning ? (
-						<Button
-							onClick={() => executeAction('stop')}
-							disabled={isProcessing}
-							variant="destructive"
-							size="sm"
-							className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg px-4 text-xs font-semibold">
-							{activeLoading === 'stop' ? (
-								<RefreshCw className="size-4 animate-spin" />
-							) : (
-								<Ban className="size-4" />
-							)}
-							{activeLoading === 'stop' ? 'Stopping...' : 'Stop'}
-						</Button>
-					) : (
-						<Button
-							onClick={() => executeAction('start')}
-							disabled={isProcessing}
-							variant="outline"
-							size="sm"
-							className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg  font-semibold text-foreground hover:bg-muted">
-							{activeLoading === 'start' ? (
-								<RefreshCw className="h-4 w-4 animate-spin" />
-							) : (
-								<Play className="h-4 w-4" />
-							)}
-							{activeLoading === 'start' ? 'Starting...' : 'Start'}
-						</Button>
-					)}
 					{/* Terminal Access Button */}
 					<Button
 						onClick={() => setShowTerminal(true)}
@@ -286,34 +147,26 @@ export function DeploySettingsCard({
 				{/* Switches */}
 				<div className="flex items-center gap-4 border-l  pl-4">
 					<label className="flex cursor-pointer items-center gap-2 select-none">
-						<button
-							type="button"
+						<ToggleSwitch
+							checked={autoDeploy && isGitSource}
+							disabled={!isGitSource}
 							title={
 								isGitSource
 									? undefined
 									: 'Autodeploy applies to Git repository sources only'
 							}
-							disabled={!isGitSource}
-							onClick={() => void persistFlag('auto_deploy', !autoDeploy)}
-							className={`relative inline-flex h-4.5 w-8 shrink-0 items-center rounded-full transition-colors ${autoDeploy && isGitSource ? 'bg-primary' : 'bg-muted'} ${isGitSource ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}>
-							<span
-								className={`pointer-events-none block h-3 w-3 rounded-full bg-background shadow-lg transition-transform ${autoDeploy ? 'translate-x-4.5' : 'translate-x-0.5'}`}
-							/>
-						</button>
+							onCheckedChange={v => void persistFlag('auto_deploy', v)}
+						/>
 						<span className="text-[11px] font-bold text-muted-foreground">
 							Autodeploy
 						</span>
 					</label>
 
 					<label className="flex cursor-pointer items-center gap-2 select-none">
-						<button
-							type="button"
-							onClick={() => void persistFlag('clean_cache', !cleanCache)}
-							className={`relative inline-flex h-4.5 w-8 shrink-0 cursor-pointer items-center rounded-full transition-colors ${cleanCache ? 'bg-primary' : 'bg-muted'}`}>
-							<span
-								className={`pointer-events-none block h-3 w-3 rounded-full bg-background shadow-lg transition-transform ${cleanCache ? 'translate-x-4.5' : 'translate-x-0.5'}`}
-							/>
-						</button>
+						<ToggleSwitch
+							checked={cleanCache}
+							onCheckedChange={v => void persistFlag('clean_cache', v)}
+						/>
 						<span className="text-[11px] font-bold text-muted-foreground">
 							Clean Cache
 						</span>
@@ -323,50 +176,24 @@ export function DeploySettingsCard({
 
 			{/* Confirmation Modal */}
 			{confirmAction && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-					<div className="flex w-full max-w-sm flex-col gap-4 rounded-xl bg-card p-5 shadow-2xl">
-						<div className="flex items-center justify-between border-b  pb-3">
-							<h3 className="text-sm font-bold text-foreground">
-								{getActionTitle(confirmAction)}
-							</h3>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => setConfirmAction(null)}
-								className="h-7 w-7 p-0 text-muted-foreground">
-								<X className="h-4 w-4" />
-							</Button>
-						</div>
-						<p className="text-xs leading-relaxed text-muted-foreground">
-							{getActionDesc(confirmAction)}
-						</p>
-						<div className="flex justify-end gap-2 border-t  pt-3">
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => setConfirmAction(null)}
-								className="h-8 text-xs font-semibold">
-								Cancel
-							</Button>
-							<Button
-								size="sm"
-								variant={
-									confirmAction === 'cancel' || confirmAction === 'stop'
-										? 'destructive'
-										: 'default'
-								}
-								onClick={() => executeAction(confirmAction)}
-								className="h-8 text-xs font-semibold">
-								Confirm
-							</Button>
-						</div>
-					</div>
-				</div>
+				<ConfirmActionDialog
+					title={ACTION_TITLES[confirmAction]}
+					description={ACTION_DESCRIPTIONS[confirmAction]}
+					destructive={
+						confirmAction === 'cancel' || confirmAction === 'stop'
+					}
+					onCancel={() => setConfirmAction(null)}
+					onConfirm={() => void executeAction(confirmAction)}
+				/>
 			)}
 
 			{/* Container Terminal — inline card */}
 			{showTerminal && (
-				<TerminalCard app={app} enabled={true} onClose={() => setShowTerminal(false)} />
+				<TerminalCard
+					app={app}
+					enabled={true}
+					onClose={() => setShowTerminal(false)}
+				/>
 			)}
 		</section>
 	);

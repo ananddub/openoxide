@@ -1,6 +1,12 @@
 import {useState} from 'react';
 import {toast} from 'sonner';
-import {useGitProviderCreate, useGitProviderDelete, useGitProviderList, useGitProviderTest, useGitProviderUpdate} from '#/api/live';
+import {
+	useGitProviderCreate,
+	useGitProviderDelete,
+	useGitProviderList,
+	useGitProviderTest,
+	useGitProviderUpdate,
+} from '#/api/live';
 import {createServiceClient} from '#/api/live/query';
 import {GitProviderService} from '#/gen/connect/openoxide/api/v1/git_provider_pb';
 import {formatApiError} from '#/api/utils';
@@ -11,6 +17,7 @@ import {
 	type GitProviderFormState,
 	INITIAL_GIT_PROVIDER_FORM,
 } from './git-provider-types';
+import {buildGitProviderPayload} from './git-provider-payload';
 
 export function useGitProviders() {
 	const list = useGitProviderList();
@@ -28,7 +35,7 @@ export function useGitProviders() {
 		INITIAL_GIT_PROVIDER_FORM,
 	);
 
-	const providers = (list.data?.data || list.data || []) as any[];
+	const providers = (list.data || []) as any[];
 
 	const setField = (key: string, value: string) => {
 		setForm(prev => ({...prev, [key]: value}));
@@ -64,55 +71,6 @@ export function useGitProviders() {
 		setOpen(true);
 	};
 
-	const buildPayload = () => {
-		const base = {name: form.name.trim(), shared: form.shared === 'true'};
-		if (kind === 'github') {
-			return {
-				provider: base,
-				app_name: form.app_name || undefined,
-				app_id: form.app_id ? Number(form.app_id) : undefined,
-				client_id: form.client_id || undefined,
-				client_secret: form.client_secret || undefined,
-				installation_id: form.installation_id || undefined,
-				private_key: form.private_key || undefined,
-			};
-		}
-		if (kind === 'gitlab') {
-			return {
-				provider: base,
-				url: form.url,
-				internal_url: form.internal_url || undefined,
-				application_id: form.application_id || undefined,
-				redirect_uri: form.redirect_uri || undefined,
-				secret: form.secret || undefined,
-				access_token: form.access_token || undefined,
-				refresh_token: form.refresh_token || undefined,
-				group_name: form.group_name || undefined,
-			};
-		}
-		if (kind === 'gitea') {
-			return {
-				provider: base,
-				url: form.url,
-				internal_url: form.internal_url || undefined,
-				redirect_uri: form.redirect_uri || undefined,
-				client_id: form.client_id || undefined,
-				client_secret: form.client_secret || undefined,
-				access_token: form.access_token || undefined,
-				refresh_token: form.refresh_token || undefined,
-				scopes: form.scopes || undefined,
-			};
-		}
-		return {
-			provider: base,
-			username: form.username || undefined,
-			email: form.email || undefined,
-			app_password: form.app_password || undefined,
-			api_token: form.api_token || undefined,
-			workspace: form.workspace || undefined,
-		};
-	};
-
 	const handleAuthorize = async (id: number) => {
 		try {
 			const response = await gitProviderClient.authorize({id: BigInt(id)});
@@ -130,7 +88,7 @@ export function useGitProviders() {
 			await test.mutateAsync({params: {path: {id}}} as any);
 			toast.success('Connection successful');
 		} catch (e) {
-			toast.error(formatApiError(e, 'Connection failed'));
+			toast.error(formatApiError(e));
 		}
 	};
 
@@ -141,24 +99,27 @@ export function useGitProviders() {
 			toast.success('Git provider deleted');
 			await list.refetch();
 		} catch (e) {
-			toast.error(formatApiError(e, 'Failed to delete Git provider'));
+			toast.error(formatApiError(e));
 		}
 	};
 
 	const save = async () => {
-		if (!form.name.trim()) return toast.error('Provider name is required');
+		if (!form.name.trim()) {
+			toast.error('Provider name is required');
+			return;
+		}
 		setBusy(true);
 		try {
 			let result: any;
 			if (editing) {
 				result = await update.mutateAsync({
 					params: {path: {id: editing.id, kind}},
-					body: buildPayload(),
+					body: buildGitProviderPayload(kind, form),
 				} as any);
 			} else {
 				result = await create.mutateAsync({
 					params: {path: {kind}},
-					body: buildPayload(),
+					body: buildGitProviderPayload(kind, form),
 				} as any);
 			}
 			toast.success(
@@ -176,7 +137,7 @@ export function useGitProviders() {
 				await handleAuthorize(providerId);
 			}
 		} catch (e) {
-			toast.error(formatApiError(e, 'Failed to save Git provider'));
+			toast.error(formatApiError(e));
 		} finally {
 			setBusy(false);
 		}

@@ -1,4 +1,8 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+} from './query';
 import {useOverviewDomains} from './overview';
 // Only DomainOperationsService is served by the backend (DomainService has
 // no controller), so the live layer targets the operations variant.
@@ -54,7 +58,9 @@ export function useDomainListByCompose(composeId: bigint) {
 	);
 	return {
 		...query,
-		data: query.data?.filter((domain) => payloadIdEquals(domain.compose_id, composeId)),
+		data: query.data?.filter(domain =>
+			payloadIdEquals(domain.compose_id, composeId),
+		),
 	};
 }
 
@@ -70,7 +76,9 @@ export function useDomainListByApplication(applicationId: bigint) {
 	);
 	return {
 		...query,
-		data: query.data?.filter((domain) => payloadIdEquals(domain.application_id, applicationId)),
+		data: query.data?.filter(domain =>
+			payloadIdEquals(domain.application_id, applicationId),
+		),
 	};
 }
 
@@ -88,7 +96,10 @@ export function useDomainUpdate() {
 	return useConnectMutation(
 		(input: {id: number | bigint; [field: string]: unknown}) => {
 			const {id, ...body} = input;
-			return domainClient.updateDomain({id: BigInt(id), payload: JSON.stringify(body)});
+			return domainClient.updateDomain({
+				id: BigInt(id),
+				payload: JSON.stringify(body),
+			});
 		},
 		{invalidate: [['domains']]},
 	);
@@ -97,8 +108,7 @@ export function useDomainUpdate() {
 /** Delete a domain by id. */
 export function useDomainDelete() {
 	return useConnectMutation(
-		(id: number | bigint) =>
-			domainClient.deleteDomain({id: BigInt(id)}),
+		(id: number | bigint) => domainClient.deleteDomain({id: BigInt(id)}),
 		{invalidate: [['domains']]},
 	);
 }
@@ -144,7 +154,9 @@ function toDomainItem(d: LiveRow): DomainItemPayload {
 		custom_entrypoint: d.custom_entrypoint || undefined,
 		middlewares: d.middlewares || '[]',
 		domain_type: d.domain_type,
-		application_id: d.application_id ? Number(d.application_id) : undefined,
+		application_id: d.application_id
+			? Number(d.application_id)
+			: undefined,
 		compose_id: d.compose_id ? Number(d.compose_id) : undefined,
 		// The domain's own compose service name (not the joined app display
 		// name) — the edit dialog's service selector matches against this.
@@ -166,6 +178,6 @@ export function useDomainItems(organizationId?: bigint) {
 	const query = useOverviewDomains();
 	return {
 		...query,
-		data: query.data?.map((d) => toDomainItem(d as unknown as LiveRow)),
+		data: query.data?.map(d => toDomainItem(d as unknown as LiveRow)),
 	};
 }

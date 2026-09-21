@@ -3,7 +3,11 @@ import {Globe, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
-import {useDomainCreate, useDomainDelete, useDomainUpdate} from '#/api/live';
+import {
+	useDomainCreate,
+	useDomainDelete,
+	useDomainUpdate,
+} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {ComposeDomainsTable} from './domains/compose-domains-table';
 import {ComposeDomainModal} from './domains/compose-domain-modal';

@@ -1,4 +1,9 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery, useResourceQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+	useResourceQuery,
+} from './query';
 import {RegistryService} from '#/gen/connect/openoxide/api/v1/registry_pb';
 
 export type RegistryPayload = {
@@ -45,7 +50,10 @@ export function useRegistryUpdate() {
 	return useConnectMutation(
 		(input: {id: number | bigint; [field: string]: unknown}) => {
 			const {id, ...body} = input;
-			return registryClient.updateRegistry({id: BigInt(id), payload: JSON.stringify(body)});
+			return registryClient.updateRegistry({
+				id: BigInt(id),
+				payload: JSON.stringify(body),
+			});
 		},
 		{invalidate: [['registries']]},
 	);
@@ -85,7 +93,10 @@ export function useRegistryRotateCredentials() {
 		(input: {id: number | bigint; username: string; password: string}) =>
 			registryClient.rotateCredentials({
 				id: BigInt(input.id),
-				payload: JSON.stringify({username: input.username, password: input.password}),
+				payload: JSON.stringify({
+					username: input.username,
+					password: input.password,
+				}),
 			}),
 		{invalidate: [['registries']]},
 	);

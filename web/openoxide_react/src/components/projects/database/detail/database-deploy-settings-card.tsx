@@ -1,7 +1,8 @@
 import {useState} from 'react';
-import {Rocket, RefreshCw, Play, Ban, Terminal, X} from 'lucide-react';
+import {Rocket, RefreshCw, Play, Ban, Terminal} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {TerminalCard} from '#/components/shared/terminal-card';
+import {DatabaseActionConfirmDialog} from './database-action-confirm-dialog';
 import type {DatabaseResponse} from '#/types/api-helpers';
 
 export type DatabaseActionType =
@@ -62,25 +63,8 @@ export function DatabaseDeploySettingsCard({
 		} catch {}
 	};
 
-	const getActionTitle = (action: DatabaseActionType) => {
-		if (action === 'deploy') return 'Deploy Database';
-		if (action === 'reload') return 'Reload Database';
-		if (action === 'start') return 'Start Database';
-		return 'Stop Database';
-	};
-
-	const getActionDesc = (action: DatabaseActionType) => {
-		if (action === 'deploy')
-			return 'Are you sure you want to deploy this database? This will provision/update the stack.';
-		if (action === 'reload')
-			return 'Are you sure you want to reload this database service?';
-		if (action === 'start')
-			return 'Are you sure you want to start this database container?';
-		return 'Are you sure you want to stop this database container?';
-	};
-
 	return (
-		<div className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-xs">
+		<div className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-xs">
 			<div>
 				<h3 className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground">
 					<Rocket className="size-4 text-primary" /> Deploy Settings
@@ -185,48 +169,20 @@ export function DatabaseDeploySettingsCard({
 				</Button>
 			</div>
 
-			{isTerminalOpen && (
-				<TerminalCard app={database} enabled={true} onClose={() => setIsTerminalOpen(false)} />
+			{isTerminalOpen && database && (
+				<TerminalCard
+					app={database}
+					enabled={true}
+					onClose={() => setIsTerminalOpen(false)}
+				/>
 			)}
 
 			{confirmAction && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-					<div className="flex w-full max-w-sm animate-in flex-col gap-4 rounded-xl bg-card p-5 shadow-2xl duration-150 zoom-in-95 fade-in">
-						<div className="flex items-center justify-between border-b  pb-3">
-							<h3 className="text-sm font-bold text-foreground">
-								{getActionTitle(confirmAction)}
-							</h3>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => setConfirmAction(null)}
-								className="h-7 w-7 p-0 text-muted-foreground">
-								<X className="h-4 w-4" />
-							</Button>
-						</div>
-						<p className="text-xs leading-relaxed text-muted-foreground">
-							{getActionDesc(confirmAction)}
-						</p>
-						<div className="flex justify-end gap-2 border-t  pt-3">
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={() => setConfirmAction(null)}
-								className="h-8 text-xs font-semibold">
-								Cancel
-							</Button>
-							<Button
-								size="sm"
-								variant={
-									confirmAction === 'stop' ? 'destructive' : 'default'
-								}
-								onClick={() => executeActionClick(confirmAction)}
-								className="h-8 text-xs font-semibold">
-								Confirm
-							</Button>
-						</div>
-					</div>
-				</div>
+				<DatabaseActionConfirmDialog
+					action={confirmAction}
+					onClose={() => setConfirmAction(null)}
+					onConfirm={() => executeActionClick(confirmAction)}
+				/>
 			)}
 		</div>
 	);

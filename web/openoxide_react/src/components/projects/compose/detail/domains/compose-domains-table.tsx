@@ -56,7 +56,7 @@ export function ComposeDomainsTable({
 					Loading domains...
 				</div>
 			) : safeDomains.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-2 rounded-xl  bg-card/10 py-16 text-xs text-muted-foreground">
+				<div className="flex flex-col items-center justify-center gap-2 rounded-xl border bg-card py-16 text-xs text-muted-foreground">
 					<Globe className="size-8 opacity-40" />
 					<p className="font-semibold text-foreground">
 						No compose domain routes configured
@@ -66,7 +66,7 @@ export function ComposeDomainsTable({
 					</p>
 				</div>
 			) : (
-				<div className="overflow-hidden rounded-xl bg-card shadow-xs">
+				<div className="overflow-hidden rounded-xl border bg-card">
 					<Table>
 						<TableHeader>
 							<TableRow className="border-b  bg-muted/30 hover:bg-muted/30">

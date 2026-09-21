@@ -3,14 +3,14 @@ import {PlusIcon} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from '#/components/ui/dialog';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from '#/components/ui/sheet';
 import {
 	Select,
 	SelectContent,
@@ -19,6 +19,7 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import {AlertBlock} from '#/components/shared/alert-block';
+import {FormRow} from '#/components/shared/form-row';
 import {toast} from 'sonner';
 
 interface AddInvitationModalProps {
@@ -44,7 +45,6 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 			setErrorMessage('Email is required');
 			return;
 		}
-
 		if (mode === 'credentials') {
 			if (!password) {
 				setErrorMessage('Password is required');
@@ -82,8 +82,8 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 	};
 
 	return (
-		<Dialog open={isOpen} onOpenChange={setIsOpen}>
-			<DialogTrigger
+		<Sheet open={isOpen} onOpenChange={setIsOpen}>
+			<SheetTrigger
 				render={
 					<Button size="sm" className="h-9 gap-1.5 text-xs font-semibold">
 						<PlusIcon className="h-4 w-4" />
@@ -91,14 +91,14 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 					</Button>
 				}
 			/>
-			<DialogContent className="sm:max-w-lg">
-				<DialogHeader>
-					<DialogTitle>Create Invitation</DialogTitle>
-					<DialogDescription>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle>Create Invitation</SheetTitle>
+					<SheetDescription>
 						Invite users to your organization or create credentials
 						directly.
-					</DialogDescription>
-				</DialogHeader>
+					</SheetDescription>
+				</SheetHeader>
 
 				{errorMessage && (
 					<AlertBlock type="error">{errorMessage}</AlertBlock>
@@ -108,13 +108,12 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 					id="add-invitation-form"
 					onSubmit={handleSubmit}
 					className="grid w-full gap-4 py-2">
-					<div className="flex flex-col gap-2">
-						<label className="text-sm leading-none font-medium">
-							Mode
-						</label>
+					<FormRow label="Mode">
 						<Select
 							value={mode}
-							onValueChange={v => v && setMode(v as any)}>
+							onValueChange={v =>
+								v && setMode(v as 'invitation' | 'credentials')
+							}>
 							<SelectTrigger>
 								<SelectValue />
 							</SelectTrigger>
@@ -127,12 +126,9 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 								</SelectItem>
 							</SelectContent>
 						</Select>
-					</div>
+					</FormRow>
 
-					<div className="flex flex-col gap-2">
-						<label className="text-sm leading-none font-medium">
-							Email
-						</label>
+					<FormRow label="Email">
 						<Input
 							type="email"
 							placeholder="user@example.com"
@@ -140,12 +136,9 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 							onChange={e => setEmail(e.target.value)}
 							required
 						/>
-					</div>
+					</FormRow>
 
-					<div className="flex flex-col gap-2">
-						<label className="text-sm leading-none font-medium">
-							Role
-						</label>
+					<FormRow label="Role">
 						<Select value={role} onValueChange={v => v && setRole(v)}>
 							<SelectTrigger>
 								<SelectValue />
@@ -155,14 +148,11 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 								<SelectItem value="member">Member</SelectItem>
 							</SelectContent>
 						</Select>
-					</div>
+					</FormRow>
 
 					{mode === 'credentials' && (
 						<>
-							<div className="flex flex-col gap-2">
-								<label className="text-sm leading-none font-medium">
-									Password
-								</label>
+							<FormRow label="Password">
 								<Input
 									type="password"
 									placeholder="••••••••"
@@ -170,12 +160,8 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 									onChange={e => setPassword(e.target.value)}
 									required
 								/>
-							</div>
-
-							<div className="flex flex-col gap-2">
-								<label className="text-sm leading-none font-medium">
-									Confirm Password
-								</label>
+							</FormRow>
+							<FormRow label="Confirm Password">
 								<Input
 									type="password"
 									placeholder="••••••••"
@@ -183,20 +169,20 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 									onChange={e => setConfirmPassword(e.target.value)}
 									required
 								/>
-							</div>
+							</FormRow>
 						</>
 					)}
 				</form>
 
-				<DialogFooter>
+				<SheetFooter>
 					<Button
 						disabled={isSubmitting}
 						form="add-invitation-form"
 						type="submit">
 						{mode === 'credentials' ? 'Create User' : 'Send Invitation'}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</SheetFooter>
+			</SheetContent>
+		</Sheet>
 	);
 }

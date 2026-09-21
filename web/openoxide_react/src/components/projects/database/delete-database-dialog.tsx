@@ -65,7 +65,7 @@ export function DeleteDatabaseDialog({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-2xl sm:max-w-md">
+			<DialogContent className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-lg sm:max-w-md">
 				<DialogHeader className="space-y-2">
 					<div className="flex size-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">
 						<AlertTriangle className="size-5" />

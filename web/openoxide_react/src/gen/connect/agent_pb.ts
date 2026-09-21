@@ -2,243 +2,257 @@
 // @generated from file agent.proto (package agent, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file agent.proto.
  */
-export const file_agent: GenFile = /*@__PURE__*/
-  fileDesc("CgthZ2VudC5wcm90bxIFYWdlbnQiJQoQQWdlbnRJbmZvUmVxdWVzdBIRCglzZXJ2ZXJfaWQYASABKAMiigEKEUFnZW50SW5mb1Jlc3BvbnNlEhgKEHByb3RvY29sX3ZlcnNpb24YASABKAkSFQoNYWdlbnRfdmVyc2lvbhgCIAEoCRIUCgxjYXBhYmlsaXRpZXMYAyADKAkSGAoQbWF4X3VwbG9hZF9ieXRlcxgEIAEoBBIUCgx1cGxvYWRfcm9vdHMYBSADKAkiWQoRRmlsZVVwbG9hZE1lc3NhZ2USKQoGaGVhZGVyGAEgASgLMhcuYWdlbnQuRmlsZVVwbG9hZEhlYWRlckgAEg4KBGRhdGEYAiABKAxIAEIJCgdtZXNzYWdlImcKEEZpbGVVcGxvYWRIZWFkZXISEQoJc2VydmVyX2lkGAEgASgDEhMKC2Rlc3RpbmF0aW9uGAIgASgJEhIKCnRvdGFsX3NpemUYAyABKAQSFwoPY2hlY2tzdW1fc2hhMjU2GAQgASgJIj4KEEZpbGVVcGxvYWRSZXN1bHQSFQoNYnl0ZXNfd3JpdHRlbhgBIAEoBBITCgtkZXN0aW5hdGlvbhgCIAEoCSKLAQoPRXhlY1Rhc2tSZXF1ZXN0EhEKCXNlcnZlcl9pZBgBIAEoAxIRCgljb250YWluZXIYAiABKAkSDwoHY29tbWFuZBgDIAEoCRIZChF3b3JraW5nX2RpcmVjdG9yeRgEIAEoCRIXCg90aW1lb3V0X3NlY29uZHMYBSABKA0SDQoFc3RkaW4YBiABKAwiaQoORXhlY1Rhc2tPdXRwdXQSJwoEa2luZBgBIAEoDjIZLmFnZW50LkV4ZWNUYXNrT3V0cHV0S2luZBIMCgRkYXRhGAIgASgMEhEKCWV4aXRfY29kZRgDIAEoBRINCgVlcnJvchgEIAEoCSIhCgxXYXRjaFJlcXVlc3QSEQoJc2VydmVyX2lkGAEgASgDIsQBChFTZXJ2ZXJNZXRyaWNQb2ludBIRCgl0aW1lc3RhbXAYASABKAMSCwoDY3B1GAIgASgBEhMKC21lbV91c2VkX2diGAMgASgBEhQKDG1lbV90b3RhbF9nYhgEIAEoARIUCgxkaXNrX3VzZWRfZ2IYBSABKAESFQoNZGlza190b3RhbF9nYhgGIAEoARISCgpuZXR3b3JrX2luGAcgASgBEhMKC25ldHdvcmtfb3V0GAggASgBEg4KBnVwdGltZRgJIAEoBCKZAQoISG9zdEluZm8SEQoJY3B1X21vZGVsGAEgASgJEhEKCWNwdV9jb3JlcxgCIAEoBRIaChJjcHVfcGh5c2ljYWxfY29yZXMYAyABKAUSEQoJY3B1X3NwZWVkGAQgASgBEgoKAm9zGAUgASgJEg4KBmRpc3RybxgGIAEoCRIOCgZrZXJuZWwYByABKAkSDAoEYXJjaBgIIAEoCSJhChVTZXJ2ZXJNZXRyaWNzUmVzcG9uc2USHQoEaG9zdBgBIAEoCzIPLmFnZW50Lkhvc3RJbmZvEikKB21ldHJpY3MYAiADKAsyGC5hZ2VudC5TZXJ2ZXJNZXRyaWNQb2ludCKqAgoUQ29udGFpbmVyTWV0cmljUG9pbnQSCgoCaWQYASABKAMSEQoJdGltZXN0YW1wGAIgASgDEhQKDGNvbnRhaW5lcl9pZBgDIAEoCRIMCgRuYW1lGAQgASgJEhAKCGNwdV9wZXJjGAUgASgBEhAKCG1lbV9wZXJjGAYgASgBEhMKC21lbV91c2VkX21iGAcgASgBEhQKDG1lbV90b3RhbF9tYhgIIAEoARIRCgluZXRfaW5fbWIYCSABKAESEgoKbmV0X291dF9tYhgKIAEoARIVCg1ibG9ja19yZWFkX21iGAsgASgBEhYKDmJsb2NrX3dyaXRlX21iGAwgASgBEhYKDmFwcGxpY2F0aW9uX2lkGA0gASgDEhIKCmNvbXBvc2VfaWQYDiABKAMiNQoRR2V0TWV0cmljc1JlcXVlc3QSEQoJc2VydmVyX2lkGAEgASgDEg0KBWxpbWl0GAIgASgFIlAKGkdldENvbnRhaW5lck1ldHJpY3NSZXF1ZXN0EhEKCXNlcnZlcl9pZBgBIAEoAxIQCghhcHBfbmFtZRgCIAEoCRINCgVsaW1pdBgDIAEoBSJIChhDb250YWluZXJNZXRyaWNzUmVzcG9uc2USLAoHbWV0cmljcxgBIAMoCzIbLmFnZW50LkNvbnRhaW5lck1ldHJpY1BvaW50IrYBChNDb250YWluZXJTdGF0ZVBvaW50EhQKDGNvbnRhaW5lcl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBXN0YXRlGAMgASgJEg4KBnN0YXR1cxgEIAEoCRIWCg5hcHBsaWNhdGlvbl9pZBgFIAEoAxISCgpjb21wb3NlX2lkGAYgASgDEhcKD2NvbXBvc2VfcHJvamVjdBgHIAEoCRIXCg9jb21wb3NlX3NlcnZpY2UYCCABKAkiSQoXQ29udGFpbmVyU3RhdGVzUmVzcG9uc2USLgoKY29udGFpbmVycxgBIAMoCzIaLmFnZW50LkNvbnRhaW5lclN0YXRlUG9pbnQiuwIKDFNoZWxsTWVzc2FnZRIgCgRvcGVuGAEgASgLMhAuYWdlbnQuU2hlbGxPcGVuSAASIgoFaW5wdXQYAiABKAsyES5hZ2VudC5TaGVsbElucHV0SAASJAoGcmVzaXplGAMgASgLMhIuYWdlbnQuU2hlbGxSZXNpemVIABIiCgVjbG9zZRgEIAEoCzIRLmFnZW50LlNoZWxsQ2xvc2VIABIkCgZzdGRvdXQYBSABKAsyEi5hZ2VudC5TaGVsbE91dHB1dEgAEiQKBnN0ZGVychgGIAEoCzISLmFnZW50LlNoZWxsT3V0cHV0SAASIAoEZXhpdBgHIAEoCzIQLmFnZW50LlNoZWxsRXhpdEgAEiIKBWVycm9yGAggASgLMhEuYWdlbnQuU2hlbGxFcnJvckgAQgkKB3BheWxvYWQiXAoJU2hlbGxPcGVuEhEKCXNlcnZlcl9pZBgBIAEoAxIRCgljb250YWluZXIYAiABKAkSDQoFc2hlbGwYAyABKAkSDAoEY29scxgEIAEoDRIMCgRyb3dzGAUgASgNIhoKClNoZWxsSW5wdXQSDAoEZGF0YRgBIAEoDCIpCgtTaGVsbFJlc2l6ZRIMCgRjb2xzGAEgASgNEgwKBHJvd3MYAiABKA0iDAoKU2hlbGxDbG9zZSIbCgtTaGVsbE91dHB1dBIMCgRkYXRhGAEgASgMIh4KCVNoZWxsRXhpdBIRCglleGl0X2NvZGUYASABKAUiHQoKU2hlbGxFcnJvchIPCgdtZXNzYWdlGAEgASgJKqcBChJFeGVjVGFza091dHB1dEtpbmQSIAocRVhFQ19UQVNLX09VVFBVVF9VTlNQRUNJRklFRBAAEhsKF0VYRUNfVEFTS19PVVRQVVRfU1RET1VUEAESGwoXRVhFQ19UQVNLX09VVFBVVF9TVERFUlIQAhIZChVFWEVDX1RBU0tfT1VUUFVUX0VYSVQQAxIaChZFWEVDX1RBU0tfT1VUUFVUX0VSUk9SEAQyzgQKDEFnZW50U2VydmljZRJBCgxHZXRBZ2VudEluZm8SFy5hZ2VudC5BZ2VudEluZm9SZXF1ZXN0GhguYWdlbnQuQWdlbnRJbmZvUmVzcG9uc2USSgoQR2V0U2VydmVyTWV0cmljcxIYLmFnZW50LkdldE1ldHJpY3NSZXF1ZXN0GhwuYWdlbnQuU2VydmVyTWV0cmljc1Jlc3BvbnNlElkKE0dldENvbnRhaW5lck1ldHJpY3MSIS5hZ2VudC5HZXRDb250YWluZXJNZXRyaWNzUmVxdWVzdBofLmFnZW50LkNvbnRhaW5lck1ldHJpY3NSZXNwb25zZRJOChJHZXRDb250YWluZXJTdGF0ZXMSGC5hZ2VudC5HZXRNZXRyaWNzUmVxdWVzdBoeLmFnZW50LkNvbnRhaW5lclN0YXRlc1Jlc3BvbnNlEk0KFFdhdGNoQ29udGFpbmVyU3RhdGVzEhMuYWdlbnQuV2F0Y2hSZXF1ZXN0Gh4uYWdlbnQuQ29udGFpbmVyU3RhdGVzUmVzcG9uc2UwARI1CgVTaGVsbBITLmFnZW50LlNoZWxsTWVzc2FnZRoTLmFnZW50LlNoZWxsTWVzc2FnZSgBMAESOwoIRXhlY1Rhc2sSFi5hZ2VudC5FeGVjVGFza1JlcXVlc3QaFS5hZ2VudC5FeGVjVGFza091dHB1dDABEkEKClVwbG9hZEZpbGUSGC5hZ2VudC5GaWxlVXBsb2FkTWVzc2FnZRoXLmFnZW50LkZpbGVVcGxvYWRSZXN1bHQoAWIGcHJvdG8z");
+export const file_agent: GenFile /*@__PURE__*/ = fileDesc(
+	'CgthZ2VudC5wcm90bxIFYWdlbnQiJQoQQWdlbnRJbmZvUmVxdWVzdBIRCglzZXJ2ZXJfaWQYASABKAMiigEKEUFnZW50SW5mb1Jlc3BvbnNlEhgKEHByb3RvY29sX3ZlcnNpb24YASABKAkSFQoNYWdlbnRfdmVyc2lvbhgCIAEoCRIUCgxjYXBhYmlsaXRpZXMYAyADKAkSGAoQbWF4X3VwbG9hZF9ieXRlcxgEIAEoBBIUCgx1cGxvYWRfcm9vdHMYBSADKAkiWQoRRmlsZVVwbG9hZE1lc3NhZ2USKQoGaGVhZGVyGAEgASgLMhcuYWdlbnQuRmlsZVVwbG9hZEhlYWRlckgAEg4KBGRhdGEYAiABKAxIAEIJCgdtZXNzYWdlImcKEEZpbGVVcGxvYWRIZWFkZXISEQoJc2VydmVyX2lkGAEgASgDEhMKC2Rlc3RpbmF0aW9uGAIgASgJEhIKCnRvdGFsX3NpemUYAyABKAQSFwoPY2hlY2tzdW1fc2hhMjU2GAQgASgJIj4KEEZpbGVVcGxvYWRSZXN1bHQSFQoNYnl0ZXNfd3JpdHRlbhgBIAEoBBITCgtkZXN0aW5hdGlvbhgCIAEoCSKLAQoPRXhlY1Rhc2tSZXF1ZXN0EhEKCXNlcnZlcl9pZBgBIAEoAxIRCgljb250YWluZXIYAiABKAkSDwoHY29tbWFuZBgDIAEoCRIZChF3b3JraW5nX2RpcmVjdG9yeRgEIAEoCRIXCg90aW1lb3V0X3NlY29uZHMYBSABKA0SDQoFc3RkaW4YBiABKAwiaQoORXhlY1Rhc2tPdXRwdXQSJwoEa2luZBgBIAEoDjIZLmFnZW50LkV4ZWNUYXNrT3V0cHV0S2luZBIMCgRkYXRhGAIgASgMEhEKCWV4aXRfY29kZRgDIAEoBRINCgVlcnJvchgEIAEoCSIhCgxXYXRjaFJlcXVlc3QSEQoJc2VydmVyX2lkGAEgASgDIsQBChFTZXJ2ZXJNZXRyaWNQb2ludBIRCgl0aW1lc3RhbXAYASABKAMSCwoDY3B1GAIgASgBEhMKC21lbV91c2VkX2diGAMgASgBEhQKDG1lbV90b3RhbF9nYhgEIAEoARIUCgxkaXNrX3VzZWRfZ2IYBSABKAESFQoNZGlza190b3RhbF9nYhgGIAEoARISCgpuZXR3b3JrX2luGAcgASgBEhMKC25ldHdvcmtfb3V0GAggASgBEg4KBnVwdGltZRgJIAEoBCKZAQoISG9zdEluZm8SEQoJY3B1X21vZGVsGAEgASgJEhEKCWNwdV9jb3JlcxgCIAEoBRIaChJjcHVfcGh5c2ljYWxfY29yZXMYAyABKAUSEQoJY3B1X3NwZWVkGAQgASgBEgoKAm9zGAUgASgJEg4KBmRpc3RybxgGIAEoCRIOCgZrZXJuZWwYByABKAkSDAoEYXJjaBgIIAEoCSJhChVTZXJ2ZXJNZXRyaWNzUmVzcG9uc2USHQoEaG9zdBgBIAEoCzIPLmFnZW50Lkhvc3RJbmZvEikKB21ldHJpY3MYAiADKAsyGC5hZ2VudC5TZXJ2ZXJNZXRyaWNQb2ludCKqAgoUQ29udGFpbmVyTWV0cmljUG9pbnQSCgoCaWQYASABKAMSEQoJdGltZXN0YW1wGAIgASgDEhQKDGNvbnRhaW5lcl9pZBgDIAEoCRIMCgRuYW1lGAQgASgJEhAKCGNwdV9wZXJjGAUgASgBEhAKCG1lbV9wZXJjGAYgASgBEhMKC21lbV91c2VkX21iGAcgASgBEhQKDG1lbV90b3RhbF9tYhgIIAEoARIRCgluZXRfaW5fbWIYCSABKAESEgoKbmV0X291dF9tYhgKIAEoARIVCg1ibG9ja19yZWFkX21iGAsgASgBEhYKDmJsb2NrX3dyaXRlX21iGAwgASgBEhYKDmFwcGxpY2F0aW9uX2lkGA0gASgDEhIKCmNvbXBvc2VfaWQYDiABKAMiNQoRR2V0TWV0cmljc1JlcXVlc3QSEQoJc2VydmVyX2lkGAEgASgDEg0KBWxpbWl0GAIgASgFIlAKGkdldENvbnRhaW5lck1ldHJpY3NSZXF1ZXN0EhEKCXNlcnZlcl9pZBgBIAEoAxIQCghhcHBfbmFtZRgCIAEoCRINCgVsaW1pdBgDIAEoBSJIChhDb250YWluZXJNZXRyaWNzUmVzcG9uc2USLAoHbWV0cmljcxgBIAMoCzIbLmFnZW50LkNvbnRhaW5lck1ldHJpY1BvaW50IrYBChNDb250YWluZXJTdGF0ZVBvaW50EhQKDGNvbnRhaW5lcl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg0KBXN0YXRlGAMgASgJEg4KBnN0YXR1cxgEIAEoCRIWCg5hcHBsaWNhdGlvbl9pZBgFIAEoAxISCgpjb21wb3NlX2lkGAYgASgDEhcKD2NvbXBvc2VfcHJvamVjdBgHIAEoCRIXCg9jb21wb3NlX3NlcnZpY2UYCCABKAkiSQoXQ29udGFpbmVyU3RhdGVzUmVzcG9uc2USLgoKY29udGFpbmVycxgBIAMoCzIaLmFnZW50LkNvbnRhaW5lclN0YXRlUG9pbnQiuwIKDFNoZWxsTWVzc2FnZRIgCgRvcGVuGAEgASgLMhAuYWdlbnQuU2hlbGxPcGVuSAASIgoFaW5wdXQYAiABKAsyES5hZ2VudC5TaGVsbElucHV0SAASJAoGcmVzaXplGAMgASgLMhIuYWdlbnQuU2hlbGxSZXNpemVIABIiCgVjbG9zZRgEIAEoCzIRLmFnZW50LlNoZWxsQ2xvc2VIABIkCgZzdGRvdXQYBSABKAsyEi5hZ2VudC5TaGVsbE91dHB1dEgAEiQKBnN0ZGVychgGIAEoCzISLmFnZW50LlNoZWxsT3V0cHV0SAASIAoEZXhpdBgHIAEoCzIQLmFnZW50LlNoZWxsRXhpdEgAEiIKBWVycm9yGAggASgLMhEuYWdlbnQuU2hlbGxFcnJvckgAQgkKB3BheWxvYWQiXAoJU2hlbGxPcGVuEhEKCXNlcnZlcl9pZBgBIAEoAxIRCgljb250YWluZXIYAiABKAkSDQoFc2hlbGwYAyABKAkSDAoEY29scxgEIAEoDRIMCgRyb3dzGAUgASgNIhoKClNoZWxsSW5wdXQSDAoEZGF0YRgBIAEoDCIpCgtTaGVsbFJlc2l6ZRIMCgRjb2xzGAEgASgNEgwKBHJvd3MYAiABKA0iDAoKU2hlbGxDbG9zZSIbCgtTaGVsbE91dHB1dBIMCgRkYXRhGAEgASgMIh4KCVNoZWxsRXhpdBIRCglleGl0X2NvZGUYASABKAUiHQoKU2hlbGxFcnJvchIPCgdtZXNzYWdlGAEgASgJKqcBChJFeGVjVGFza091dHB1dEtpbmQSIAocRVhFQ19UQVNLX09VVFBVVF9VTlNQRUNJRklFRBAAEhsKF0VYRUNfVEFTS19PVVRQVVRfU1RET1VUEAESGwoXRVhFQ19UQVNLX09VVFBVVF9TVERFUlIQAhIZChVFWEVDX1RBU0tfT1VUUFVUX0VYSVQQAxIaChZFWEVDX1RBU0tfT1VUUFVUX0VSUk9SEAQyzgQKDEFnZW50U2VydmljZRJBCgxHZXRBZ2VudEluZm8SFy5hZ2VudC5BZ2VudEluZm9SZXF1ZXN0GhguYWdlbnQuQWdlbnRJbmZvUmVzcG9uc2USSgoQR2V0U2VydmVyTWV0cmljcxIYLmFnZW50LkdldE1ldHJpY3NSZXF1ZXN0GhwuYWdlbnQuU2VydmVyTWV0cmljc1Jlc3BvbnNlElkKE0dldENvbnRhaW5lck1ldHJpY3MSIS5hZ2VudC5HZXRDb250YWluZXJNZXRyaWNzUmVxdWVzdBofLmFnZW50LkNvbnRhaW5lck1ldHJpY3NSZXNwb25zZRJOChJHZXRDb250YWluZXJTdGF0ZXMSGC5hZ2VudC5HZXRNZXRyaWNzUmVxdWVzdBoeLmFnZW50LkNvbnRhaW5lclN0YXRlc1Jlc3BvbnNlEk0KFFdhdGNoQ29udGFpbmVyU3RhdGVzEhMuYWdlbnQuV2F0Y2hSZXF1ZXN0Gh4uYWdlbnQuQ29udGFpbmVyU3RhdGVzUmVzcG9uc2UwARI1CgVTaGVsbBITLmFnZW50LlNoZWxsTWVzc2FnZRoTLmFnZW50LlNoZWxsTWVzc2FnZSgBMAESOwoIRXhlY1Rhc2sSFi5hZ2VudC5FeGVjVGFza1JlcXVlc3QaFS5hZ2VudC5FeGVjVGFza091dHB1dDABEkEKClVwbG9hZEZpbGUSGC5hZ2VudC5GaWxlVXBsb2FkTWVzc2FnZRoXLmFnZW50LkZpbGVVcGxvYWRSZXN1bHQoAWIGcHJvdG8z',
+);
 
 /**
  * @generated from message agent.AgentInfoRequest
  */
-export type AgentInfoRequest = Message<"agent.AgentInfoRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
+export type AgentInfoRequest = Message<'agent.AgentInfoRequest'> & {
+	/**
+	 * @generated from field: int64 server_id = 1;
+	 */
+	serverId: bigint;
 };
 
 /**
  * Describes the message agent.AgentInfoRequest.
  * Use `create(AgentInfoRequestSchema)` to create a new message.
  */
-export const AgentInfoRequestSchema: GenMessage<AgentInfoRequest> = /*@__PURE__*/
-  messageDesc(file_agent, 0);
+export const AgentInfoRequestSchema: GenMessage<AgentInfoRequest> /*@__PURE__*/ =
+	messageDesc(file_agent, 0);
 
 /**
  * @generated from message agent.AgentInfoResponse
  */
-export type AgentInfoResponse = Message<"agent.AgentInfoResponse"> & {
-  /**
-   * @generated from field: string protocol_version = 1;
-   */
-  protocolVersion: string;
+export type AgentInfoResponse = Message<'agent.AgentInfoResponse'> & {
+	/**
+	 * @generated from field: string protocol_version = 1;
+	 */
+	protocolVersion: string;
 
-  /**
-   * @generated from field: string agent_version = 2;
-   */
-  agentVersion: string;
+	/**
+	 * @generated from field: string agent_version = 2;
+	 */
+	agentVersion: string;
 
-  /**
-   * @generated from field: repeated string capabilities = 3;
-   */
-  capabilities: string[];
+	/**
+	 * @generated from field: repeated string capabilities = 3;
+	 */
+	capabilities: string[];
 
-  /**
-   * @generated from field: uint64 max_upload_bytes = 4;
-   */
-  maxUploadBytes: bigint;
+	/**
+	 * @generated from field: uint64 max_upload_bytes = 4;
+	 */
+	maxUploadBytes: bigint;
 
-  /**
-   * @generated from field: repeated string upload_roots = 5;
-   */
-  uploadRoots: string[];
+	/**
+	 * @generated from field: repeated string upload_roots = 5;
+	 */
+	uploadRoots: string[];
 };
 
 /**
  * Describes the message agent.AgentInfoResponse.
  * Use `create(AgentInfoResponseSchema)` to create a new message.
  */
-export const AgentInfoResponseSchema: GenMessage<AgentInfoResponse> = /*@__PURE__*/
-  messageDesc(file_agent, 1);
+export const AgentInfoResponseSchema: GenMessage<AgentInfoResponse> /*@__PURE__*/ =
+	messageDesc(file_agent, 1);
 
 /**
  * @generated from message agent.FileUploadMessage
  */
-export type FileUploadMessage = Message<"agent.FileUploadMessage"> & {
-  /**
-   * @generated from oneof agent.FileUploadMessage.message
-   */
-  message: {
-    /**
-     * @generated from field: agent.FileUploadHeader header = 1;
-     */
-    value: FileUploadHeader;
-    case: "header";
-  } | {
-    /**
-     * @generated from field: bytes data = 2;
-     */
-    value: Uint8Array;
-    case: "data";
-  } | { case: undefined; value?: undefined };
+export type FileUploadMessage = Message<'agent.FileUploadMessage'> & {
+	/**
+	 * @generated from oneof agent.FileUploadMessage.message
+	 */
+	message:
+		| {
+				/**
+				 * @generated from field: agent.FileUploadHeader header = 1;
+				 */
+				value: FileUploadHeader;
+				case: 'header';
+		  }
+		| {
+				/**
+				 * @generated from field: bytes data = 2;
+				 */
+				value: Uint8Array;
+				case: 'data';
+		  }
+		| {case: undefined; value?: undefined};
 };
 
 /**
  * Describes the message agent.FileUploadMessage.
  * Use `create(FileUploadMessageSchema)` to create a new message.
  */
-export const FileUploadMessageSchema: GenMessage<FileUploadMessage> = /*@__PURE__*/
-  messageDesc(file_agent, 2);
+export const FileUploadMessageSchema: GenMessage<FileUploadMessage> /*@__PURE__*/ =
+	messageDesc(file_agent, 2);
 
 /**
  * @generated from message agent.FileUploadHeader
  */
-export type FileUploadHeader = Message<"agent.FileUploadHeader"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
+export type FileUploadHeader = Message<'agent.FileUploadHeader'> & {
+	/**
+	 * @generated from field: int64 server_id = 1;
+	 */
+	serverId: bigint;
 
-  /**
-   * @generated from field: string destination = 2;
-   */
-  destination: string;
+	/**
+	 * @generated from field: string destination = 2;
+	 */
+	destination: string;
 
-  /**
-   * @generated from field: uint64 total_size = 3;
-   */
-  totalSize: bigint;
+	/**
+	 * @generated from field: uint64 total_size = 3;
+	 */
+	totalSize: bigint;
 
-  /**
-   * @generated from field: string checksum_sha256 = 4;
-   */
-  checksumSha256: string;
+	/**
+	 * @generated from field: string checksum_sha256 = 4;
+	 */
+	checksumSha256: string;
 };
 
 /**
  * Describes the message agent.FileUploadHeader.
  * Use `create(FileUploadHeaderSchema)` to create a new message.
  */
-export const FileUploadHeaderSchema: GenMessage<FileUploadHeader> = /*@__PURE__*/
-  messageDesc(file_agent, 3);
+export const FileUploadHeaderSchema: GenMessage<FileUploadHeader> /*@__PURE__*/ =
+	messageDesc(file_agent, 3);
 
 /**
  * @generated from message agent.FileUploadResult
  */
-export type FileUploadResult = Message<"agent.FileUploadResult"> & {
-  /**
-   * @generated from field: uint64 bytes_written = 1;
-   */
-  bytesWritten: bigint;
+export type FileUploadResult = Message<'agent.FileUploadResult'> & {
+	/**
+	 * @generated from field: uint64 bytes_written = 1;
+	 */
+	bytesWritten: bigint;
 
-  /**
-   * @generated from field: string destination = 2;
-   */
-  destination: string;
+	/**
+	 * @generated from field: string destination = 2;
+	 */
+	destination: string;
 };
 
 /**
  * Describes the message agent.FileUploadResult.
  * Use `create(FileUploadResultSchema)` to create a new message.
  */
-export const FileUploadResultSchema: GenMessage<FileUploadResult> = /*@__PURE__*/
-  messageDesc(file_agent, 4);
+export const FileUploadResultSchema: GenMessage<FileUploadResult> /*@__PURE__*/ =
+	messageDesc(file_agent, 4);
 
 /**
  * @generated from message agent.ExecTaskRequest
  */
-export type ExecTaskRequest = Message<"agent.ExecTaskRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
+export type ExecTaskRequest = Message<'agent.ExecTaskRequest'> & {
+	/**
+	 * @generated from field: int64 server_id = 1;
+	 */
+	serverId: bigint;
 
-  /**
-   * @generated from field: string container = 2;
-   */
-  container: string;
+	/**
+	 * @generated from field: string container = 2;
+	 */
+	container: string;
 
-  /**
-   * @generated from field: string command = 3;
-   */
-  command: string;
+	/**
+	 * @generated from field: string command = 3;
+	 */
+	command: string;
 
-  /**
-   * @generated from field: string working_directory = 4;
-   */
-  workingDirectory: string;
+	/**
+	 * @generated from field: string working_directory = 4;
+	 */
+	workingDirectory: string;
 
-  /**
-   * @generated from field: uint32 timeout_seconds = 5;
-   */
-  timeoutSeconds: number;
+	/**
+	 * @generated from field: uint32 timeout_seconds = 5;
+	 */
+	timeoutSeconds: number;
 
-  /**
-   * @generated from field: bytes stdin = 6;
-   */
-  stdin: Uint8Array;
+	/**
+	 * @generated from field: bytes stdin = 6;
+	 */
+	stdin: Uint8Array;
 };
 
 /**
  * Describes the message agent.ExecTaskRequest.
  * Use `create(ExecTaskRequestSchema)` to create a new message.
  */
-export const ExecTaskRequestSchema: GenMessage<ExecTaskRequest> = /*@__PURE__*/
-  messageDesc(file_agent, 5);
+export const ExecTaskRequestSchema: GenMessage<ExecTaskRequest> /*@__PURE__*/ =
+	messageDesc(file_agent, 5);
 
 /**
  * @generated from message agent.ExecTaskOutput
  */
-export type ExecTaskOutput = Message<"agent.ExecTaskOutput"> & {
-  /**
-   * @generated from field: agent.ExecTaskOutputKind kind = 1;
-   */
-  kind: ExecTaskOutputKind;
+export type ExecTaskOutput = Message<'agent.ExecTaskOutput'> & {
+	/**
+	 * @generated from field: agent.ExecTaskOutputKind kind = 1;
+	 */
+	kind: ExecTaskOutputKind;
 
-  /**
-   * @generated from field: bytes data = 2;
-   */
-  data: Uint8Array;
+	/**
+	 * @generated from field: bytes data = 2;
+	 */
+	data: Uint8Array;
 
-  /**
-   * @generated from field: int32 exit_code = 3;
-   */
-  exitCode: number;
+	/**
+	 * @generated from field: int32 exit_code = 3;
+	 */
+	exitCode: number;
 
-  /**
-   * @generated from field: string error = 4;
-   */
-  error: string;
+	/**
+	 * @generated from field: string error = 4;
+	 */
+	error: string;
 };
 
 /**
  * Describes the message agent.ExecTaskOutput.
  * Use `create(ExecTaskOutputSchema)` to create a new message.
  */
-export const ExecTaskOutputSchema: GenMessage<ExecTaskOutput> = /*@__PURE__*/
-  messageDesc(file_agent, 6);
+export const ExecTaskOutputSchema: GenMessage<ExecTaskOutput> /*@__PURE__*/ =
+	messageDesc(file_agent, 6);
 
 /**
  * @generated from message agent.WatchRequest
  */
-export type WatchRequest = Message<"agent.WatchRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
+export type WatchRequest = Message<'agent.WatchRequest'> & {
+	/**
+	 * @generated from field: int64 server_id = 1;
+	 */
+	serverId: bigint;
 };
 
 /**
  * Describes the message agent.WatchRequest.
  * Use `create(WatchRequestSchema)` to create a new message.
  */
-export const WatchRequestSchema: GenMessage<WatchRequest> = /*@__PURE__*/
-  messageDesc(file_agent, 7);
+export const WatchRequestSchema: GenMessage<WatchRequest> /*@__PURE__*/ =
+	messageDesc(file_agent, 7);
 
 /**
  * Per-sample server metrics. Timestamps are unix seconds; host-static facts
@@ -246,607 +260,620 @@ export const WatchRequestSchema: GenMessage<WatchRequest> = /*@__PURE__*/
  *
  * @generated from message agent.ServerMetricPoint
  */
-export type ServerMetricPoint = Message<"agent.ServerMetricPoint"> & {
-  /**
-   * @generated from field: int64 timestamp = 1;
-   */
-  timestamp: bigint;
+export type ServerMetricPoint = Message<'agent.ServerMetricPoint'> & {
+	/**
+	 * @generated from field: int64 timestamp = 1;
+	 */
+	timestamp: bigint;
 
-  /**
-   * @generated from field: double cpu = 2;
-   */
-  cpu: number;
+	/**
+	 * @generated from field: double cpu = 2;
+	 */
+	cpu: number;
 
-  /**
-   * @generated from field: double mem_used_gb = 3;
-   */
-  memUsedGb: number;
+	/**
+	 * @generated from field: double mem_used_gb = 3;
+	 */
+	memUsedGb: number;
 
-  /**
-   * @generated from field: double mem_total_gb = 4;
-   */
-  memTotalGb: number;
+	/**
+	 * @generated from field: double mem_total_gb = 4;
+	 */
+	memTotalGb: number;
 
-  /**
-   * @generated from field: double disk_used_gb = 5;
-   */
-  diskUsedGb: number;
+	/**
+	 * @generated from field: double disk_used_gb = 5;
+	 */
+	diskUsedGb: number;
 
-  /**
-   * @generated from field: double disk_total_gb = 6;
-   */
-  diskTotalGb: number;
+	/**
+	 * @generated from field: double disk_total_gb = 6;
+	 */
+	diskTotalGb: number;
 
-  /**
-   * @generated from field: double network_in = 7;
-   */
-  networkIn: number;
+	/**
+	 * @generated from field: double network_in = 7;
+	 */
+	networkIn: number;
 
-  /**
-   * @generated from field: double network_out = 8;
-   */
-  networkOut: number;
+	/**
+	 * @generated from field: double network_out = 8;
+	 */
+	networkOut: number;
 
-  /**
-   * @generated from field: uint64 uptime = 9;
-   */
-  uptime: bigint;
+	/**
+	 * @generated from field: uint64 uptime = 9;
+	 */
+	uptime: bigint;
 };
 
 /**
  * Describes the message agent.ServerMetricPoint.
  * Use `create(ServerMetricPointSchema)` to create a new message.
  */
-export const ServerMetricPointSchema: GenMessage<ServerMetricPoint> = /*@__PURE__*/
-  messageDesc(file_agent, 8);
+export const ServerMetricPointSchema: GenMessage<ServerMetricPoint> /*@__PURE__*/ =
+	messageDesc(file_agent, 8);
 
 /**
  * Host facts that change only on reboot/upgrade. Sent once per response.
  *
  * @generated from message agent.HostInfo
  */
-export type HostInfo = Message<"agent.HostInfo"> & {
-  /**
-   * @generated from field: string cpu_model = 1;
-   */
-  cpuModel: string;
+export type HostInfo = Message<'agent.HostInfo'> & {
+	/**
+	 * @generated from field: string cpu_model = 1;
+	 */
+	cpuModel: string;
 
-  /**
-   * @generated from field: int32 cpu_cores = 2;
-   */
-  cpuCores: number;
+	/**
+	 * @generated from field: int32 cpu_cores = 2;
+	 */
+	cpuCores: number;
 
-  /**
-   * @generated from field: int32 cpu_physical_cores = 3;
-   */
-  cpuPhysicalCores: number;
+	/**
+	 * @generated from field: int32 cpu_physical_cores = 3;
+	 */
+	cpuPhysicalCores: number;
 
-  /**
-   * @generated from field: double cpu_speed = 4;
-   */
-  cpuSpeed: number;
+	/**
+	 * @generated from field: double cpu_speed = 4;
+	 */
+	cpuSpeed: number;
 
-  /**
-   * @generated from field: string os = 5;
-   */
-  os: string;
+	/**
+	 * @generated from field: string os = 5;
+	 */
+	os: string;
 
-  /**
-   * @generated from field: string distro = 6;
-   */
-  distro: string;
+	/**
+	 * @generated from field: string distro = 6;
+	 */
+	distro: string;
 
-  /**
-   * @generated from field: string kernel = 7;
-   */
-  kernel: string;
+	/**
+	 * @generated from field: string kernel = 7;
+	 */
+	kernel: string;
 
-  /**
-   * @generated from field: string arch = 8;
-   */
-  arch: string;
+	/**
+	 * @generated from field: string arch = 8;
+	 */
+	arch: string;
 };
 
 /**
  * Describes the message agent.HostInfo.
  * Use `create(HostInfoSchema)` to create a new message.
  */
-export const HostInfoSchema: GenMessage<HostInfo> = /*@__PURE__*/
-  messageDesc(file_agent, 9);
+export const HostInfoSchema: GenMessage<HostInfo> /*@__PURE__*/ =
+	messageDesc(file_agent, 9);
 
 /**
  * @generated from message agent.ServerMetricsResponse
  */
-export type ServerMetricsResponse = Message<"agent.ServerMetricsResponse"> & {
-  /**
-   * @generated from field: agent.HostInfo host = 1;
-   */
-  host?: HostInfo | undefined;
+export type ServerMetricsResponse =
+	Message<'agent.ServerMetricsResponse'> & {
+		/**
+		 * @generated from field: agent.HostInfo host = 1;
+		 */
+		host?: HostInfo | undefined;
 
-  /**
-   * @generated from field: repeated agent.ServerMetricPoint metrics = 2;
-   */
-  metrics: ServerMetricPoint[];
-};
+		/**
+		 * @generated from field: repeated agent.ServerMetricPoint metrics = 2;
+		 */
+		metrics: ServerMetricPoint[];
+	};
 
 /**
  * Describes the message agent.ServerMetricsResponse.
  * Use `create(ServerMetricsResponseSchema)` to create a new message.
  */
-export const ServerMetricsResponseSchema: GenMessage<ServerMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_agent, 10);
+export const ServerMetricsResponseSchema: GenMessage<ServerMetricsResponse> /*@__PURE__*/ =
+	messageDesc(file_agent, 10);
 
 /**
  * @generated from message agent.ContainerMetricPoint
  */
-export type ContainerMetricPoint = Message<"agent.ContainerMetricPoint"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type ContainerMetricPoint =
+	Message<'agent.ContainerMetricPoint'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: int64 timestamp = 2;
-   */
-  timestamp: bigint;
+		/**
+		 * @generated from field: int64 timestamp = 2;
+		 */
+		timestamp: bigint;
 
-  /**
-   * @generated from field: string container_id = 3;
-   */
-  containerId: string;
+		/**
+		 * @generated from field: string container_id = 3;
+		 */
+		containerId: string;
 
-  /**
-   * @generated from field: string name = 4;
-   */
-  name: string;
+		/**
+		 * @generated from field: string name = 4;
+		 */
+		name: string;
 
-  /**
-   * @generated from field: double cpu_perc = 5;
-   */
-  cpuPerc: number;
+		/**
+		 * @generated from field: double cpu_perc = 5;
+		 */
+		cpuPerc: number;
 
-  /**
-   * @generated from field: double mem_perc = 6;
-   */
-  memPerc: number;
+		/**
+		 * @generated from field: double mem_perc = 6;
+		 */
+		memPerc: number;
 
-  /**
-   * @generated from field: double mem_used_mb = 7;
-   */
-  memUsedMb: number;
+		/**
+		 * @generated from field: double mem_used_mb = 7;
+		 */
+		memUsedMb: number;
 
-  /**
-   * @generated from field: double mem_total_mb = 8;
-   */
-  memTotalMb: number;
+		/**
+		 * @generated from field: double mem_total_mb = 8;
+		 */
+		memTotalMb: number;
 
-  /**
-   * @generated from field: double net_in_mb = 9;
-   */
-  netInMb: number;
+		/**
+		 * @generated from field: double net_in_mb = 9;
+		 */
+		netInMb: number;
 
-  /**
-   * @generated from field: double net_out_mb = 10;
-   */
-  netOutMb: number;
+		/**
+		 * @generated from field: double net_out_mb = 10;
+		 */
+		netOutMb: number;
 
-  /**
-   * @generated from field: double block_read_mb = 11;
-   */
-  blockReadMb: number;
+		/**
+		 * @generated from field: double block_read_mb = 11;
+		 */
+		blockReadMb: number;
 
-  /**
-   * @generated from field: double block_write_mb = 12;
-   */
-  blockWriteMb: number;
+		/**
+		 * @generated from field: double block_write_mb = 12;
+		 */
+		blockWriteMb: number;
 
-  /**
-   * @generated from field: int64 application_id = 13;
-   */
-  applicationId: bigint;
+		/**
+		 * @generated from field: int64 application_id = 13;
+		 */
+		applicationId: bigint;
 
-  /**
-   * @generated from field: int64 compose_id = 14;
-   */
-  composeId: bigint;
-};
+		/**
+		 * @generated from field: int64 compose_id = 14;
+		 */
+		composeId: bigint;
+	};
 
 /**
  * Describes the message agent.ContainerMetricPoint.
  * Use `create(ContainerMetricPointSchema)` to create a new message.
  */
-export const ContainerMetricPointSchema: GenMessage<ContainerMetricPoint> = /*@__PURE__*/
-  messageDesc(file_agent, 11);
+export const ContainerMetricPointSchema: GenMessage<ContainerMetricPoint> /*@__PURE__*/ =
+	messageDesc(file_agent, 11);
 
 /**
  * @generated from message agent.GetMetricsRequest
  */
-export type GetMetricsRequest = Message<"agent.GetMetricsRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
+export type GetMetricsRequest = Message<'agent.GetMetricsRequest'> & {
+	/**
+	 * @generated from field: int64 server_id = 1;
+	 */
+	serverId: bigint;
 
-  /**
-   * @generated from field: int32 limit = 2;
-   */
-  limit: number;
+	/**
+	 * @generated from field: int32 limit = 2;
+	 */
+	limit: number;
 };
 
 /**
  * Describes the message agent.GetMetricsRequest.
  * Use `create(GetMetricsRequestSchema)` to create a new message.
  */
-export const GetMetricsRequestSchema: GenMessage<GetMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_agent, 12);
+export const GetMetricsRequestSchema: GenMessage<GetMetricsRequest> /*@__PURE__*/ =
+	messageDesc(file_agent, 12);
 
 /**
  * @generated from message agent.GetContainerMetricsRequest
  */
-export type GetContainerMetricsRequest = Message<"agent.GetContainerMetricsRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
+export type GetContainerMetricsRequest =
+	Message<'agent.GetContainerMetricsRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
 
-  /**
-   * @generated from field: string app_name = 2;
-   */
-  appName: string;
+		/**
+		 * @generated from field: string app_name = 2;
+		 */
+		appName: string;
 
-  /**
-   * @generated from field: int32 limit = 3;
-   */
-  limit: number;
-};
+		/**
+		 * @generated from field: int32 limit = 3;
+		 */
+		limit: number;
+	};
 
 /**
  * Describes the message agent.GetContainerMetricsRequest.
  * Use `create(GetContainerMetricsRequestSchema)` to create a new message.
  */
-export const GetContainerMetricsRequestSchema: GenMessage<GetContainerMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_agent, 13);
+export const GetContainerMetricsRequestSchema: GenMessage<GetContainerMetricsRequest> /*@__PURE__*/ =
+	messageDesc(file_agent, 13);
 
 /**
  * @generated from message agent.ContainerMetricsResponse
  */
-export type ContainerMetricsResponse = Message<"agent.ContainerMetricsResponse"> & {
-  /**
-   * @generated from field: repeated agent.ContainerMetricPoint metrics = 1;
-   */
-  metrics: ContainerMetricPoint[];
-};
+export type ContainerMetricsResponse =
+	Message<'agent.ContainerMetricsResponse'> & {
+		/**
+		 * @generated from field: repeated agent.ContainerMetricPoint metrics = 1;
+		 */
+		metrics: ContainerMetricPoint[];
+	};
 
 /**
  * Describes the message agent.ContainerMetricsResponse.
  * Use `create(ContainerMetricsResponseSchema)` to create a new message.
  */
-export const ContainerMetricsResponseSchema: GenMessage<ContainerMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_agent, 14);
+export const ContainerMetricsResponseSchema: GenMessage<ContainerMetricsResponse> /*@__PURE__*/ =
+	messageDesc(file_agent, 14);
 
 /**
  * @generated from message agent.ContainerStatePoint
  */
-export type ContainerStatePoint = Message<"agent.ContainerStatePoint"> & {
-  /**
-   * @generated from field: string container_id = 1;
-   */
-  containerId: string;
+export type ContainerStatePoint = Message<'agent.ContainerStatePoint'> & {
+	/**
+	 * @generated from field: string container_id = 1;
+	 */
+	containerId: string;
 
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
+	/**
+	 * @generated from field: string name = 2;
+	 */
+	name: string;
 
-  /**
-   * @generated from field: string state = 3;
-   */
-  state: string;
+	/**
+	 * @generated from field: string state = 3;
+	 */
+	state: string;
 
-  /**
-   * @generated from field: string status = 4;
-   */
-  status: string;
+	/**
+	 * @generated from field: string status = 4;
+	 */
+	status: string;
 
-  /**
-   * @generated from field: int64 application_id = 5;
-   */
-  applicationId: bigint;
+	/**
+	 * @generated from field: int64 application_id = 5;
+	 */
+	applicationId: bigint;
 
-  /**
-   * @generated from field: int64 compose_id = 6;
-   */
-  composeId: bigint;
+	/**
+	 * @generated from field: int64 compose_id = 6;
+	 */
+	composeId: bigint;
 
-  /**
-   * @generated from field: string compose_project = 7;
-   */
-  composeProject: string;
+	/**
+	 * @generated from field: string compose_project = 7;
+	 */
+	composeProject: string;
 
-  /**
-   * @generated from field: string compose_service = 8;
-   */
-  composeService: string;
+	/**
+	 * @generated from field: string compose_service = 8;
+	 */
+	composeService: string;
 };
 
 /**
  * Describes the message agent.ContainerStatePoint.
  * Use `create(ContainerStatePointSchema)` to create a new message.
  */
-export const ContainerStatePointSchema: GenMessage<ContainerStatePoint> = /*@__PURE__*/
-  messageDesc(file_agent, 15);
+export const ContainerStatePointSchema: GenMessage<ContainerStatePoint> /*@__PURE__*/ =
+	messageDesc(file_agent, 15);
 
 /**
  * @generated from message agent.ContainerStatesResponse
  */
-export type ContainerStatesResponse = Message<"agent.ContainerStatesResponse"> & {
-  /**
-   * @generated from field: repeated agent.ContainerStatePoint containers = 1;
-   */
-  containers: ContainerStatePoint[];
-};
+export type ContainerStatesResponse =
+	Message<'agent.ContainerStatesResponse'> & {
+		/**
+		 * @generated from field: repeated agent.ContainerStatePoint containers = 1;
+		 */
+		containers: ContainerStatePoint[];
+	};
 
 /**
  * Describes the message agent.ContainerStatesResponse.
  * Use `create(ContainerStatesResponseSchema)` to create a new message.
  */
-export const ContainerStatesResponseSchema: GenMessage<ContainerStatesResponse> = /*@__PURE__*/
-  messageDesc(file_agent, 16);
+export const ContainerStatesResponseSchema: GenMessage<ContainerStatesResponse> /*@__PURE__*/ =
+	messageDesc(file_agent, 16);
 
 /**
  * @generated from message agent.ShellMessage
  */
-export type ShellMessage = Message<"agent.ShellMessage"> & {
-  /**
-   * @generated from oneof agent.ShellMessage.payload
-   */
-  payload: {
-    /**
-     * @generated from field: agent.ShellOpen open = 1;
-     */
-    value: ShellOpen;
-    case: "open";
-  } | {
-    /**
-     * @generated from field: agent.ShellInput input = 2;
-     */
-    value: ShellInput;
-    case: "input";
-  } | {
-    /**
-     * @generated from field: agent.ShellResize resize = 3;
-     */
-    value: ShellResize;
-    case: "resize";
-  } | {
-    /**
-     * @generated from field: agent.ShellClose close = 4;
-     */
-    value: ShellClose;
-    case: "close";
-  } | {
-    /**
-     * @generated from field: agent.ShellOutput stdout = 5;
-     */
-    value: ShellOutput;
-    case: "stdout";
-  } | {
-    /**
-     * @generated from field: agent.ShellOutput stderr = 6;
-     */
-    value: ShellOutput;
-    case: "stderr";
-  } | {
-    /**
-     * @generated from field: agent.ShellExit exit = 7;
-     */
-    value: ShellExit;
-    case: "exit";
-  } | {
-    /**
-     * @generated from field: agent.ShellError error = 8;
-     */
-    value: ShellError;
-    case: "error";
-  } | { case: undefined; value?: undefined };
+export type ShellMessage = Message<'agent.ShellMessage'> & {
+	/**
+	 * @generated from oneof agent.ShellMessage.payload
+	 */
+	payload:
+		| {
+				/**
+				 * @generated from field: agent.ShellOpen open = 1;
+				 */
+				value: ShellOpen;
+				case: 'open';
+		  }
+		| {
+				/**
+				 * @generated from field: agent.ShellInput input = 2;
+				 */
+				value: ShellInput;
+				case: 'input';
+		  }
+		| {
+				/**
+				 * @generated from field: agent.ShellResize resize = 3;
+				 */
+				value: ShellResize;
+				case: 'resize';
+		  }
+		| {
+				/**
+				 * @generated from field: agent.ShellClose close = 4;
+				 */
+				value: ShellClose;
+				case: 'close';
+		  }
+		| {
+				/**
+				 * @generated from field: agent.ShellOutput stdout = 5;
+				 */
+				value: ShellOutput;
+				case: 'stdout';
+		  }
+		| {
+				/**
+				 * @generated from field: agent.ShellOutput stderr = 6;
+				 */
+				value: ShellOutput;
+				case: 'stderr';
+		  }
+		| {
+				/**
+				 * @generated from field: agent.ShellExit exit = 7;
+				 */
+				value: ShellExit;
+				case: 'exit';
+		  }
+		| {
+				/**
+				 * @generated from field: agent.ShellError error = 8;
+				 */
+				value: ShellError;
+				case: 'error';
+		  }
+		| {case: undefined; value?: undefined};
 };
 
 /**
  * Describes the message agent.ShellMessage.
  * Use `create(ShellMessageSchema)` to create a new message.
  */
-export const ShellMessageSchema: GenMessage<ShellMessage> = /*@__PURE__*/
-  messageDesc(file_agent, 17);
+export const ShellMessageSchema: GenMessage<ShellMessage> /*@__PURE__*/ =
+	messageDesc(file_agent, 17);
 
 /**
  * Client → agent: start a session (first message on the stream).
  *
  * @generated from message agent.ShellOpen
  */
-export type ShellOpen = Message<"agent.ShellOpen"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
+export type ShellOpen = Message<'agent.ShellOpen'> & {
+	/**
+	 * @generated from field: int64 server_id = 1;
+	 */
+	serverId: bigint;
 
-  /**
-   * @generated from field: string container = 2;
-   */
-  container: string;
+	/**
+	 * @generated from field: string container = 2;
+	 */
+	container: string;
 
-  /**
-   * @generated from field: string shell = 3;
-   */
-  shell: string;
+	/**
+	 * @generated from field: string shell = 3;
+	 */
+	shell: string;
 
-  /**
-   * @generated from field: uint32 cols = 4;
-   */
-  cols: number;
+	/**
+	 * @generated from field: uint32 cols = 4;
+	 */
+	cols: number;
 
-  /**
-   * @generated from field: uint32 rows = 5;
-   */
-  rows: number;
+	/**
+	 * @generated from field: uint32 rows = 5;
+	 */
+	rows: number;
 };
 
 /**
  * Describes the message agent.ShellOpen.
  * Use `create(ShellOpenSchema)` to create a new message.
  */
-export const ShellOpenSchema: GenMessage<ShellOpen> = /*@__PURE__*/
-  messageDesc(file_agent, 18);
+export const ShellOpenSchema: GenMessage<ShellOpen> /*@__PURE__*/ =
+	messageDesc(file_agent, 18);
 
 /**
  * Client → agent: PTY stdin bytes.
  *
  * @generated from message agent.ShellInput
  */
-export type ShellInput = Message<"agent.ShellInput"> & {
-  /**
-   * @generated from field: bytes data = 1;
-   */
-  data: Uint8Array;
+export type ShellInput = Message<'agent.ShellInput'> & {
+	/**
+	 * @generated from field: bytes data = 1;
+	 */
+	data: Uint8Array;
 };
 
 /**
  * Describes the message agent.ShellInput.
  * Use `create(ShellInputSchema)` to create a new message.
  */
-export const ShellInputSchema: GenMessage<ShellInput> = /*@__PURE__*/
-  messageDesc(file_agent, 19);
+export const ShellInputSchema: GenMessage<ShellInput> /*@__PURE__*/ =
+	messageDesc(file_agent, 19);
 
 /**
  * Client → agent: PTY resize.
  *
  * @generated from message agent.ShellResize
  */
-export type ShellResize = Message<"agent.ShellResize"> & {
-  /**
-   * @generated from field: uint32 cols = 1;
-   */
-  cols: number;
+export type ShellResize = Message<'agent.ShellResize'> & {
+	/**
+	 * @generated from field: uint32 cols = 1;
+	 */
+	cols: number;
 
-  /**
-   * @generated from field: uint32 rows = 2;
-   */
-  rows: number;
+	/**
+	 * @generated from field: uint32 rows = 2;
+	 */
+	rows: number;
 };
 
 /**
  * Describes the message agent.ShellResize.
  * Use `create(ShellResizeSchema)` to create a new message.
  */
-export const ShellResizeSchema: GenMessage<ShellResize> = /*@__PURE__*/
-  messageDesc(file_agent, 20);
+export const ShellResizeSchema: GenMessage<ShellResize> /*@__PURE__*/ =
+	messageDesc(file_agent, 20);
 
 /**
  * Client → agent: end the session.
  *
  * @generated from message agent.ShellClose
  */
-export type ShellClose = Message<"agent.ShellClose"> & {
-};
+export type ShellClose = Message<'agent.ShellClose'> & {};
 
 /**
  * Describes the message agent.ShellClose.
  * Use `create(ShellCloseSchema)` to create a new message.
  */
-export const ShellCloseSchema: GenMessage<ShellClose> = /*@__PURE__*/
-  messageDesc(file_agent, 21);
+export const ShellCloseSchema: GenMessage<ShellClose> /*@__PURE__*/ =
+	messageDesc(file_agent, 21);
 
 /**
  * Agent → client: PTY output bytes.
  *
  * @generated from message agent.ShellOutput
  */
-export type ShellOutput = Message<"agent.ShellOutput"> & {
-  /**
-   * @generated from field: bytes data = 1;
-   */
-  data: Uint8Array;
+export type ShellOutput = Message<'agent.ShellOutput'> & {
+	/**
+	 * @generated from field: bytes data = 1;
+	 */
+	data: Uint8Array;
 };
 
 /**
  * Describes the message agent.ShellOutput.
  * Use `create(ShellOutputSchema)` to create a new message.
  */
-export const ShellOutputSchema: GenMessage<ShellOutput> = /*@__PURE__*/
-  messageDesc(file_agent, 22);
+export const ShellOutputSchema: GenMessage<ShellOutput> /*@__PURE__*/ =
+	messageDesc(file_agent, 22);
 
 /**
  * Agent → client: session ended.
  *
  * @generated from message agent.ShellExit
  */
-export type ShellExit = Message<"agent.ShellExit"> & {
-  /**
-   * @generated from field: int32 exit_code = 1;
-   */
-  exitCode: number;
+export type ShellExit = Message<'agent.ShellExit'> & {
+	/**
+	 * @generated from field: int32 exit_code = 1;
+	 */
+	exitCode: number;
 };
 
 /**
  * Describes the message agent.ShellExit.
  * Use `create(ShellExitSchema)` to create a new message.
  */
-export const ShellExitSchema: GenMessage<ShellExit> = /*@__PURE__*/
-  messageDesc(file_agent, 23);
+export const ShellExitSchema: GenMessage<ShellExit> /*@__PURE__*/ =
+	messageDesc(file_agent, 23);
 
 /**
  * Agent → client: failure before/while running the session.
  *
  * @generated from message agent.ShellError
  */
-export type ShellError = Message<"agent.ShellError"> & {
-  /**
-   * @generated from field: string message = 1;
-   */
-  message: string;
+export type ShellError = Message<'agent.ShellError'> & {
+	/**
+	 * @generated from field: string message = 1;
+	 */
+	message: string;
 };
 
 /**
  * Describes the message agent.ShellError.
  * Use `create(ShellErrorSchema)` to create a new message.
  */
-export const ShellErrorSchema: GenMessage<ShellError> = /*@__PURE__*/
-  messageDesc(file_agent, 24);
+export const ShellErrorSchema: GenMessage<ShellError> /*@__PURE__*/ =
+	messageDesc(file_agent, 24);
 
 /**
  * @generated from enum agent.ExecTaskOutputKind
  */
 export enum ExecTaskOutputKind {
-  /**
-   * @generated from enum value: EXEC_TASK_OUTPUT_UNSPECIFIED = 0;
-   */
-  EXEC_TASK_OUTPUT_UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: EXEC_TASK_OUTPUT_UNSPECIFIED = 0;
+	 */
+	EXEC_TASK_OUTPUT_UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: EXEC_TASK_OUTPUT_STDOUT = 1;
-   */
-  EXEC_TASK_OUTPUT_STDOUT = 1,
+	/**
+	 * @generated from enum value: EXEC_TASK_OUTPUT_STDOUT = 1;
+	 */
+	EXEC_TASK_OUTPUT_STDOUT = 1,
 
-  /**
-   * @generated from enum value: EXEC_TASK_OUTPUT_STDERR = 2;
-   */
-  EXEC_TASK_OUTPUT_STDERR = 2,
+	/**
+	 * @generated from enum value: EXEC_TASK_OUTPUT_STDERR = 2;
+	 */
+	EXEC_TASK_OUTPUT_STDERR = 2,
 
-  /**
-   * @generated from enum value: EXEC_TASK_OUTPUT_EXIT = 3;
-   */
-  EXEC_TASK_OUTPUT_EXIT = 3,
+	/**
+	 * @generated from enum value: EXEC_TASK_OUTPUT_EXIT = 3;
+	 */
+	EXEC_TASK_OUTPUT_EXIT = 3,
 
-  /**
-   * @generated from enum value: EXEC_TASK_OUTPUT_ERROR = 4;
-   */
-  EXEC_TASK_OUTPUT_ERROR = 4,
+	/**
+	 * @generated from enum value: EXEC_TASK_OUTPUT_ERROR = 4;
+	 */
+	EXEC_TASK_OUTPUT_ERROR = 4,
 }
 
 /**
  * Describes the enum agent.ExecTaskOutputKind.
  */
-export const ExecTaskOutputKindSchema: GenEnum<ExecTaskOutputKind> = /*@__PURE__*/
-  enumDesc(file_agent, 0);
+export const ExecTaskOutputKindSchema: GenEnum<ExecTaskOutputKind> /*@__PURE__*/ =
+	enumDesc(file_agent, 0);
 
 /**
  * Query API the panel uses to read metrics collected by an agent.
@@ -860,87 +887,85 @@ export const ExecTaskOutputKindSchema: GenEnum<ExecTaskOutputKind> = /*@__PURE__
  * @generated from service agent.AgentService
  */
 export const AgentService: GenService<{
-  /**
-   * @generated from rpc agent.AgentService.GetAgentInfo
-   */
-  getAgentInfo: {
-    methodKind: "unary";
-    input: typeof AgentInfoRequestSchema;
-    output: typeof AgentInfoResponseSchema;
-  },
-  /**
-   * Query historical server metrics. Host-static facts (cpu model, os, ...)
-   * ride once in `host`; points carry only the per-sample values.
-   *
-   * @generated from rpc agent.AgentService.GetServerMetrics
-   */
-  getServerMetrics: {
-    methodKind: "unary";
-    input: typeof GetMetricsRequestSchema;
-    output: typeof ServerMetricsResponseSchema;
-  },
-  /**
-   * Query historical container metrics
-   *
-   * @generated from rpc agent.AgentService.GetContainerMetrics
-   */
-  getContainerMetrics: {
-    methodKind: "unary";
-    input: typeof GetContainerMetricsRequestSchema;
-    output: typeof ContainerMetricsResponseSchema;
-  },
-  /**
-   * Current Docker lifecycle state, including stopped/restarting containers.
-   *
-   * @generated from rpc agent.AgentService.GetContainerStates
-   */
-  getContainerStates: {
-    methodKind: "unary";
-    input: typeof GetMetricsRequestSchema;
-    output: typeof ContainerStatesResponseSchema;
-  },
-  /**
-   * Docker lifecycle snapshots, pushed whenever container state changes.
-   *
-   * @generated from rpc agent.AgentService.WatchContainerStates
-   */
-  watchContainerStates: {
-    methodKind: "server_streaming";
-    input: typeof WatchRequestSchema;
-    output: typeof ContainerStatesResponseSchema;
-  },
-  /**
-   * Persistent host or Docker shell session.
-   *
-   * @generated from rpc agent.AgentService.Shell
-   */
-  shell: {
-    methodKind: "bidi_streaming";
-    input: typeof ShellMessageSchema;
-    output: typeof ShellMessageSchema;
-  },
-  /**
-   * One-shot non-PTY command execution for deployment and maintenance tasks.
-   *
-   * @generated from rpc agent.AgentService.ExecTask
-   */
-  execTask: {
-    methodKind: "server_streaming";
-    input: typeof ExecTaskRequestSchema;
-    output: typeof ExecTaskOutputSchema;
-  },
-  /**
-   * Stream a host file to the agent and atomically install it at destination.
-   * The first message must carry the header; the rest are raw data chunks
-   * whose running byte count is checked against header.total_size.
-   *
-   * @generated from rpc agent.AgentService.UploadFile
-   */
-  uploadFile: {
-    methodKind: "client_streaming";
-    input: typeof FileUploadMessageSchema;
-    output: typeof FileUploadResultSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_agent, 0);
-
+	/**
+	 * @generated from rpc agent.AgentService.GetAgentInfo
+	 */
+	getAgentInfo: {
+		methodKind: 'unary';
+		input: typeof AgentInfoRequestSchema;
+		output: typeof AgentInfoResponseSchema;
+	};
+	/**
+	 * Query historical server metrics. Host-static facts (cpu model, os, ...)
+	 * ride once in `host`; points carry only the per-sample values.
+	 *
+	 * @generated from rpc agent.AgentService.GetServerMetrics
+	 */
+	getServerMetrics: {
+		methodKind: 'unary';
+		input: typeof GetMetricsRequestSchema;
+		output: typeof ServerMetricsResponseSchema;
+	};
+	/**
+	 * Query historical container metrics
+	 *
+	 * @generated from rpc agent.AgentService.GetContainerMetrics
+	 */
+	getContainerMetrics: {
+		methodKind: 'unary';
+		input: typeof GetContainerMetricsRequestSchema;
+		output: typeof ContainerMetricsResponseSchema;
+	};
+	/**
+	 * Current Docker lifecycle state, including stopped/restarting containers.
+	 *
+	 * @generated from rpc agent.AgentService.GetContainerStates
+	 */
+	getContainerStates: {
+		methodKind: 'unary';
+		input: typeof GetMetricsRequestSchema;
+		output: typeof ContainerStatesResponseSchema;
+	};
+	/**
+	 * Docker lifecycle snapshots, pushed whenever container state changes.
+	 *
+	 * @generated from rpc agent.AgentService.WatchContainerStates
+	 */
+	watchContainerStates: {
+		methodKind: 'server_streaming';
+		input: typeof WatchRequestSchema;
+		output: typeof ContainerStatesResponseSchema;
+	};
+	/**
+	 * Persistent host or Docker shell session.
+	 *
+	 * @generated from rpc agent.AgentService.Shell
+	 */
+	shell: {
+		methodKind: 'bidi_streaming';
+		input: typeof ShellMessageSchema;
+		output: typeof ShellMessageSchema;
+	};
+	/**
+	 * One-shot non-PTY command execution for deployment and maintenance tasks.
+	 *
+	 * @generated from rpc agent.AgentService.ExecTask
+	 */
+	execTask: {
+		methodKind: 'server_streaming';
+		input: typeof ExecTaskRequestSchema;
+		output: typeof ExecTaskOutputSchema;
+	};
+	/**
+	 * Stream a host file to the agent and atomically install it at destination.
+	 * The first message must carry the header; the rest are raw data chunks
+	 * whose running byte count is checked against header.total_size.
+	 *
+	 * @generated from rpc agent.AgentService.UploadFile
+	 */
+	uploadFile: {
+		methodKind: 'client_streaming';
+		input: typeof FileUploadMessageSchema;
+		output: typeof FileUploadResultSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_agent, 0);

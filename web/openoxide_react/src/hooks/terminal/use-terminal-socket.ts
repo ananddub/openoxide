@@ -8,18 +8,11 @@ import {
 	type OpenTerminalRequest,
 	OpenTerminalRequestSchema,
 } from '#/gen/connect/openoxide/api/v1/terminal_pb';
-
-const CONTROL_KEY_MAP: Record<string, string> = {
-	l: '\x0c',
-	c: '\x03',
-	d: '\x04',
-	z: '\x1a',
-	u: '\x15',
-	a: '\x01',
-	e: '\x05',
-	k: '\x0b',
-	w: '\x17',
-};
+import {handleTerminalKey} from './terminal-keyhandler';
+import {
+	consumeTerminalStream,
+	type TerminalStatus,
+} from './terminal-stream';
 
 interface UseTerminalSocketOptions {
 	isOpen: boolean;
@@ -49,9 +42,7 @@ export function useTerminalSocket({
 	serverId,
 	termInstance,
 }: UseTerminalSocketOptions) {
-	const [status, setStatus] = useState<
-		'connecting' | 'connected' | 'error' | 'disconnected'
-	>('disconnected');
+	const [status, setStatus] = useState<TerminalStatus>('disconnected');
 	const [activeHostIp, setActiveHostIp] = useState<string | null>(null);
 	const sessionIdRef = useRef<string | null>(null);
 	const abortRef = useRef<AbortController | null>(null);
@@ -95,90 +86,46 @@ export function useTerminalSocket({
 		): void => {
 			const sessionId = sessionIdRef.current;
 			if (!sessionId) return;
-			client
-				.executionCommand({sessionId, command})
-				.catch(() => {});
+			client.executionCommand({sessionId, command}).catch(() => {});
 		};
 
-		const request: OpenTerminalRequest = create(OpenTerminalRequestSchema, {
-			kind: isRemoteServer
-				? TerminalKind.REMOTE_SERVER
-				: TerminalKind.DOCKER,
-			serverId: serverId ? BigInt(serverId) : undefined,
-			container: isRemoteServer || hostMode ? undefined : targetContainer,
-			host: hostMode,
-			shell,
-			cols: termInstance.cols || 80,
-			rows: termInstance.rows || 24,
+		const sendInput = (text: string): void =>
+			sendCommand({
+				case: 'input',
+				value: {data: new TextEncoder().encode(text)},
+			});
+
+		const request: OpenTerminalRequest = create(
+			OpenTerminalRequestSchema,
+			{
+				kind: isRemoteServer
+					? TerminalKind.REMOTE_SERVER
+					: TerminalKind.DOCKER,
+				serverId: serverId ? BigInt(serverId) : undefined,
+				container:
+					isRemoteServer || hostMode ? undefined : targetContainer,
+				host: hostMode,
+				shell,
+				cols: termInstance.cols || 80,
+				rows: termInstance.rows || 24,
+			},
+		);
+
+		void consumeTerminalStream({
+			client,
+			request,
+			signal,
+			term: termInstance,
+			targetContainer,
+			isRemoteServer,
+			hostMode,
+			setStatus,
+			setActiveHostIp,
+			sessionIdRef,
 		});
 
-		(async () => {
-			try {
-				for await (const event of client.openTerminal(request, {signal})) {
-					if (signal.aborted) return;
-					if (event.sessionId) sessionIdRef.current = event.sessionId;
-					switch (event.payload.case) {
-						case 'started': {
-							setStatus('connected');
-							if (event.payload.value.host) {
-								setActiveHostIp(event.payload.value.host);
-							}
-							termInstance.reset();
-						const connectedTarget =
-							event.payload.value.host || targetContainer;
-						const label = isRemoteServer
-							? 'SSH Remote Server'
-							: hostMode
-								? 'Host Shell'
-								: 'Docker Container';
-							termInstance.writeln(
-								`\x1b[32mTerminal session started on ${connectedTarget} (${label}). Type commands below:\x1b[0m\r\n`,
-							);
-							termInstance.focus();
-							break;
-						}
-						case 'output': {
-							const text = new TextDecoder().decode(
-								event.payload.value.data,
-							);
-							if (text) termInstance.write(text);
-							break;
-						}
-						case 'error': {
-							termInstance.writeln(
-								`\r\n\x1b[31mError: ${event.payload.value.message}\x1b[0m\r\n`,
-							);
-							setStatus('error');
-							return;
-						}
-						case 'exit': {
-							termInstance.writeln(
-								`\r\n\x1b[33mProcess exited with code ${event.payload.value.code ?? 0}\x1b[0m\r\n`,
-							);
-							setStatus('disconnected');
-							return;
-						}
-					}
-				}
-				if (!signal.aborted) {
-					setStatus('disconnected');
-				}
-			} catch (error) {
-				if (signal.aborted) return;
-				const message =
-					error instanceof Error ? error.message : 'terminal stream failed';
-				termInstance.writeln(`\r\n\x1b[31mError: ${message}\x1b[0m\r\n`);
-				setStatus('error');
-			}
-		})();
-
 		const dataDisposable = termInstance.onData(data => {
-			if (sessionIdRef.current) {
-				sendCommand({
-					case: 'input',
-					value: {data: new TextEncoder().encode(data)},
-				});
-			}
+			if (sessionIdRef.current) sendInput(data);
 		});
 		const resizeDisposable = termInstance.onResize(({cols, rows}) => {
 			if (sessionIdRef.current) {
@@ -186,55 +133,9 @@ export function useTerminalSocket({
 			}
 		});
 
-		termInstance.attachCustomKeyEventHandler((event: KeyboardEvent) => {
-			if (event.ctrlKey || event.metaKey) {
-				const k = event.key.toLowerCase();
-				if (k === 'c' && termInstance.hasSelection()) {
-					if (event.type === 'keydown')
-						navigator.clipboard.writeText(termInstance.getSelection());
-					event.preventDefault();
-					return false;
-				}
-				if (k === 'v') {
-					if (event.type === 'keydown') {
-						navigator.clipboard
-							.readText()
-							.then(text => {
-								if (text && sessionIdRef.current) {
-									sendCommand({
-										case: 'input',
-										value: {data: new TextEncoder().encode(text)},
-									});
-								}
-							})
-							.catch(() => {});
-					}
-					event.preventDefault();
-					return false;
-				}
-				if (CONTROL_KEY_MAP[k]) {
-					if (event.type === 'keydown' && sessionIdRef.current) {
-						if (k === 'l') {
-							termInstance.clear();
-							sendCommand({
-								case: 'input',
-								value: {data: new TextEncoder().encode('clear\r')},
-							});
-						} else {
-							sendCommand({
-								case: 'input',
-								value: {
-									data: new TextEncoder().encode(CONTROL_KEY_MAP[k]),
-								},
-							});
-						}
-					}
-					event.preventDefault();
-					return false;
-				}
-			}
-			return true;
-		});
+		termInstance.attachCustomKeyEventHandler((event: KeyboardEvent) =>
+			handleTerminalKey(event, termInstance, sendInput),
+		);
 
 		return () => {
 			dataDisposable?.dispose();

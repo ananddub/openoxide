@@ -1,6 +1,6 @@
-import {Package, RefreshCw, Server} from 'lucide-react';
-import {Button} from '#/components/ui/button';
+import {Server} from 'lucide-react';
 import {Badge} from '#/components/ui/badge';
+import {Button} from '#/components/ui/button';
 import {
 	Select,
 	SelectContent,
@@ -8,6 +8,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
+import {Titlebar} from '#/components/shared/titlebar';
+import {RefreshCw} from 'lucide-react';
 import type {RemoteServerResponse} from '#/types/api-helpers';
 
 interface DockerHeaderProps {
@@ -43,59 +45,57 @@ export function DockerHeader({
 	);
 
 	return (
-		<div className="shrink-0 border-b  pb-4">
-			<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-				{/* Title Section */}
-				<div className="flex items-center gap-3">
-					<Package className="size-6 shrink-0 self-center text-muted-foreground" />
-					<div>
-						<h1 className="text-base font-bold tracking-tight text-foreground">
-							Docker Containers
-						</h1>
-						<p className="mt-0.5 text-xs text-muted-foreground">
-							Manage and inspect system-wide Docker containers running on
-							the selected host
-						</p>
-					</div>
-				</div>
-
-				{/* Action Toolbar */}
-				<div className="flex flex-wrap items-center gap-2.5">
-					{/* Running Count Badge */}
-					<Badge
-						variant="secondary"
-						className="h-9 px-3.5 font-mono text-xs font-semibold">
-						Running:{' '}
-						<span className="ml-1 font-bold text-emerald-500">
-							{runningContainers}
-						</span>{' '}
-						/ {totalContainers}
-					</Badge>
-
-					{/* Refresh Button */}
+		<Titlebar
+			breadcrumbs={[{label: 'Docker Containers'}]}
+			icon={
+				<span className="relative flex items-center justify-center">
+					<span
+						className={`absolute -top-0.5 -right-0.5 size-2 rounded-full ${
+							runningContainers > 0
+								? 'animate-pulse bg-emerald-500'
+								: 'bg-muted-foreground/40'
+						}`}
+					/>
+					<span className="text-foreground/70">
+						<Server className="size-5" strokeWidth={1.7} />
+					</span>
+				</span>
+			}
+			title="Docker Containers"
+			description="Manage and inspect system-wide Docker containers running on the selected host"
+			titleSuffix={
+				<Badge
+					variant="secondary"
+					className="h-6 gap-1 px-2 font-mono text-[11px] font-medium">
+					Running:
+					<span className="font-semibold text-emerald-500">
+						{runningContainers}
+					</span>
+					/ {totalContainers}
+				</Badge>
+			}
+			actions={
+				<>
 					<Button
 						variant="outline"
 						size="sm"
 						onClick={onRefresh}
-						disabled={isRefreshing}
-						className="h-9 cursor-pointer gap-2  text-xs font-medium shadow-2xs">
+						disabled={isRefreshing}>
 						<RefreshCw
 							className={`size-3.5 text-muted-foreground ${isRefreshing ? 'animate-spin' : ''}`}
-						/>{' '}
+						/>
 						Refresh
 					</Button>
-
-					{/* Server Selector Dropdown */}
 					<Select
 						value={selectedServerId}
 						onValueChange={v => v && onSelectServer(v)}>
-						<SelectTrigger className="h-9 w-[170px] shrink-0 gap-2  bg-card text-xs font-medium shadow-2xs">
+						<SelectTrigger className="h-8 w-[170px] gap-2 bg-card text-xs font-medium">
 							<Server className="size-3.5 shrink-0 text-muted-foreground" />
 							<SelectValue>
 								{selectedServer?.name || 'Local Server'}
 							</SelectValue>
 						</SelectTrigger>
-						<SelectContent className="w-[190px] border- bg-card p-1 text-xs shadow-md">
+						<SelectContent className="w-[190px] bg-card p-1 text-xs">
 							{availableServers.map(s => (
 								<SelectItem
 									key={String(s.id)}
@@ -112,8 +112,8 @@ export function DockerHeader({
 							))}
 						</SelectContent>
 					</Select>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+		/>
 	);
 }

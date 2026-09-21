@@ -88,7 +88,7 @@ export function ComposeDirectContainerLogsModal({
 
 	const modalJSX = (
 		<div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-			<div className="flex h-[84vh] w-full max-w-6xl animate-in flex-col overflow-hidden rounded-2xl bg-[#09090b] shadow-2xl duration-150 zoom-in-95 fade-in">
+			<div className="flex h-[84vh] w-full max-w-6xl animate-in flex-col overflow-hidden rounded-xl bg-[#09090b] shadow-lg duration-150 zoom-in-95 fade-in">
 				{/* Modal Header */}
 				<div className="flex shrink-0 items-center justify-between border-b  bg-card/30 px-5 py-3.5">
 					<div className="flex items-center gap-2.5">

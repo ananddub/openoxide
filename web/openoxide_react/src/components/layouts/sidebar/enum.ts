@@ -1,6 +1,5 @@
 import {
 	House,
-	// LayoutDashboard, // used by disabled Overview sidebar entry
 	Folder,
 	// BarChartHorizontal — retired with the global Monitoring page (per-server overview carries it now)
 	Clock,
@@ -11,11 +10,16 @@ import {
 	Forward,
 	Activity,
 	Server,
-	// User, Users, ClipboardList — moved into /settings tabs
+	User,
+	Users,
+	ShieldCheck,
+	ClipboardList,
+	GitBranch,
+	Bell,
+	Bot,
+	FileKey,
 	KeyRound,
-	Settings,
 	Tags,
-	// GitBranch, Bot, ShieldCheck, Bell — moved into /settings tabs
 	Database,
 	Package,
 	// BookIcon, CircleHelp — removed with the sidebar Extra/help section
@@ -45,26 +49,24 @@ export type NavItem =
 			to: string;
 	  };
 
-// (External help links section removed — the rail carries navigation only.)
-
 /**
- * Nav structure mirrors the OpenShip dashboard rail: a short "main" work
- * section, an "infrastructure" section for host/proxy surfaces, and a long
- * "settings" section for everything else. Empty sections filter out at
- * render time, so permission-gated rows collapse cleanly.
+ * Nav structure: a short "main" work section, host/proxy surfaces, the full
+ * Settings surface (every /settings?tab= entry lives here so the section is
+ * reachable without opening the page first), and resource workspaces.
+ * Empty sections filter out at render time, so permission-gated rows
+ * collapse cleanly.
  */
 export type Menu = {
 	main: NavItem[];
 	infrastructure: NavItem[];
 	settings: NavItem[];
+	resources: NavItem[];
 };
 
 export const MENU: Menu = {
 	main: [
-		{title: 'Home', icon: House, to: '/'},
+		{title: 'Overview', icon: House, to: '/'},
 		{title: 'Projects', icon: Folder, to: '/projects'},
-		// Disabled: Overview duplicates the home dashboard; kept on disk for re-enable.
-		// {title: 'Overview', icon: LayoutDashboard, to: '/overview'},
 		{title: 'Deployments', icon: Rocket, to: '/Deployments'},
 		{title: 'Schedules', icon: Clock, to: '/schedules'},
 	],
@@ -78,12 +80,42 @@ export const MENU: Menu = {
 		// {title: 'Docker', icon: Blocks, to: '/docker'},
 	],
 	settings: [
-		// Settings is one surface now: /settings carries Account/Team/Groups/
-		// Audit/Git/Notifications/AI/Certificates as URL tabs with a right rail
-		// (OpenShip pattern). The old Organization placeholder page is gone —
-		// the active workspace lives in the sidebar switcher. Resource tools
-		// below stay top-level: they are workspaces, not settings.
-		{title: 'Settings', icon: Settings, to: '/settings'},
+		// The full /settings surface, one row per URL tab. Permissions mirror
+		// the page's SETTINGS_TABS gates so the rail and the page agree.
+		{title: 'Account', icon: User, to: '/settings?tab=account'},
+		{
+			title: 'Team',
+			icon: Users,
+			to: '/settings?tab=team',
+			permission: 'member:read',
+		},
+		{
+			title: 'Permission Groups',
+			icon: ShieldCheck,
+			to: '/settings?tab=groups',
+			permission: 'group:read',
+		},
+		{
+			title: 'Audit Log',
+			icon: ClipboardList,
+			to: '/settings?tab=audit',
+			permission: 'audit_log:read',
+		},
+		{title: 'Git Providers', icon: GitBranch, to: '/settings?tab=git'},
+		{
+			title: 'Notifications',
+			icon: Bell,
+			to: '/settings?tab=notifications',
+		},
+		{title: 'AI', icon: Bot, to: '/settings?tab=ai'},
+		{
+			title: 'Certificates',
+			icon: FileKey,
+			to: '/settings?tab=certificates',
+		},
+	],
+	resources: [
+		// Resource workspaces — not settings, so they stay their own section.
 		{title: 'SSH Keys', icon: KeyRound, to: '/ssh-keys'},
 		{title: 'Tags', icon: Tags, to: '/tags'},
 		{title: 'Registry', icon: Package, to: '/registry'},
@@ -143,5 +175,11 @@ export const ROUTES: RouteItem[] = [
 		path: item.to,
 		icon: item.icon,
 		group: 'Settings',
+	})),
+	...MENU.resources.map(item => ({
+		label: item.title,
+		path: item.to,
+		icon: item.icon,
+		group: 'Resources',
 	})),
 ];

@@ -2,19 +2,22 @@
 // @generated from file openoxide/api/v1/overview_operations.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { OverviewOperationsService } from "./overview_operations_pb";
+import {OverviewOperationsService} from './overview_operations_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.OverviewOperationsService.ListOrganizationServices
  */
-export const listOrganizationServices = OverviewOperationsService.method.listOrganizationServices;
+export const listOrganizationServices =
+	OverviewOperationsService.method.listOrganizationServices;
 
 /**
  * @generated from rpc openoxide.api.v1.OverviewOperationsService.ListOrganizationDomains
  */
-export const listOrganizationDomains = OverviewOperationsService.method.listOrganizationDomains;
+export const listOrganizationDomains =
+	OverviewOperationsService.method.listOrganizationDomains;
 
 /**
  * @generated from rpc openoxide.api.v1.OverviewOperationsService.ListOrganizationBackups
  */
-export const listOrganizationBackups = OverviewOperationsService.method.listOrganizationBackups;
+export const listOrganizationBackups =
+	OverviewOperationsService.method.listOrganizationBackups;

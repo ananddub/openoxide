@@ -1,10 +1,4 @@
-import {ExternalLink, RefreshCw, Save} from 'lucide-react';
-import {
-	BitbucketIcon,
-	GiteaIcon,
-	GithubIcon,
-	GitlabIcon,
-} from '#/components/icons/data-tools-icons';
+import {RefreshCw, Save} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
@@ -19,6 +13,8 @@ import {
 	type GitProviderFormState,
 	GIT_PROVIDER_LABELS,
 } from './git-provider-types';
+import {GitProviderIcon} from './git-provider-icon';
+import {GitProviderKindHint} from './git-provider-kind-hint';
 
 interface GitProviderEditDialogProps {
 	isOpen: boolean;
@@ -31,6 +27,13 @@ interface GitProviderEditDialogProps {
 	onSave: () => Promise<void>;
 }
 
+const KIND_DESCRIPTIONS: Record<GitProviderKind, string> = {
+	github: 'Configure and save your GitHub App credentials.',
+	gitlab: 'Configure an OAuth application in GitLab, then authorize it.',
+	gitea: 'Configure an OAuth2 application in Gitea, then authorize it.',
+	bitbucket: 'Use a Bitbucket API token for repository access.',
+};
+
 export function GitProviderEditDialog({
 	isOpen,
 	kind,
@@ -41,21 +44,6 @@ export function GitProviderEditDialog({
 	onChangeField,
 	onSave,
 }: GitProviderEditDialogProps) {
-	const renderIcon = (type: GitProviderKind) => {
-		switch (type) {
-			case 'github':
-				return <GithubIcon className="size-4.5 text-foreground" />;
-			case 'gitlab':
-				return <GitlabIcon className="size-4.5 text-orange-500" />;
-			case 'bitbucket':
-				return <BitbucketIcon className="size-4.5 text-blue-500" />;
-			case 'gitea':
-				return <GiteaIcon className="size-4.5 text-emerald-500" />;
-			default:
-				return <GithubIcon className="size-4.5" />;
-		}
-	};
-
 	const renderField = (
 		key: string,
 		label: string,
@@ -82,77 +70,16 @@ export function GitProviderEditDialog({
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2.5 text-base font-bold">
 						<div className="flex size-8 items-center justify-center rounded-lg bg-muted/60">
-							{renderIcon(kind)}
+							<GitProviderIcon kind={kind} />
 						</div>
 						{editing ? 'Edit' : 'Add'} {GIT_PROVIDER_LABELS[kind]}
 					</DialogTitle>
 					<DialogDescription className="text-xs">
-						{kind === 'github'
-							? 'Configure and save your GitHub App credentials.'
-							: kind === 'gitlab'
-								? 'Configure an OAuth application in GitLab, then authorize it.'
-								: kind === 'gitea'
-									? 'Configure an OAuth2 application in Gitea, then authorize it.'
-									: 'Use a Bitbucket API token for repository access.'}
+						{KIND_DESCRIPTIONS[kind]}
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="rounded-xl bg-primary/5 p-3.5 text-xs text-muted-foreground">
-					{kind === 'github' ? (
-						<>
-							Manual configuration. For automatic setup, use the{' '}
-							<strong>Create GitHub App</strong> button.
-						</>
-					) : kind === 'gitlab' ? (
-						<>
-							Create an application at{' '}
-							<a
-								className="inline-flex items-center gap-0.5 font-semibold text-primary underline"
-								href={`${form.url || 'https://gitlab.com'}/-/profile/applications`}
-								target="_blank"
-								rel="noreferrer">
-								GitLab Applications <ExternalLink className="size-3" />
-							</a>
-							. Set Redirect URI to{' '}
-							<code className="rounded bg-muted/60 px-1 py-0.5 font-mono text-[11px]">
-								{form.redirect_uri}
-							</code>{' '}
-							with{' '}
-							<code className="rounded bg-muted/60 px-1 py-0.5 font-mono text-[11px]">
-								api read_user read_repository
-							</code>{' '}
-							scopes.
-						</>
-					) : kind === 'gitea' ? (
-						<>
-							Create an OAuth2 application at{' '}
-							<a
-								className="inline-flex items-center gap-0.5 font-semibold text-primary underline"
-								href={`${form.url || 'https://gitea.com'}/user/settings/applications`}
-								target="_blank"
-								rel="noreferrer">
-								Gitea Applications <ExternalLink className="size-3" />
-							</a>
-							. Set Redirect URI to{' '}
-							<code className="rounded bg-muted/60 px-1 py-0.5 font-mono text-[11px]">
-								{form.redirect_uri}
-							</code>
-							.
-						</>
-					) : (
-						<>
-							Create an API token at{' '}
-							<a
-								className="inline-flex items-center gap-0.5 font-semibold text-primary underline"
-								href="https://id.atlassian.com/manage-profile/security/api-tokens"
-								target="_blank"
-								rel="noreferrer">
-								Bitbucket API Tokens <ExternalLink className="size-3" />
-							</a>
-							.
-						</>
-					)}
-				</div>
+				<GitProviderKindHint kind={kind} form={form} />
 
 				<div className="flex flex-col gap-3.5 pt-1">
 					{renderField(

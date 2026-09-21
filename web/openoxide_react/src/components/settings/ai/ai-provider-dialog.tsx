@@ -1,348 +1,190 @@
-import { CheckCircle2, Loader2, RefreshCw, Bot, Save } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Button } from "#/components/ui/button";
+import {RefreshCw, Bot} from 'lucide-react';
+import {Button} from '#/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "#/components/ui/dialog";
-import { Input } from "#/components/ui/input";
-import {
-  createAiSetting,
-  discoverAiModels,
-  discoverSettingModels,
-  testAiConnection,
-  testAiSetting,
-  updateAiSetting,
-} from "./ai-api";
-import {
-  AI_PRESETS,
-  EMPTY_AI_FORM,
-  type AiForm,
-  type AiSetting,
-} from "./ai-types";
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
+import {Input} from '#/components/ui/input';
+import {AI_PRESETS, type AiSetting} from './ai-types';
+import {useAiProviderForm} from './use-ai-provider-form';
+import {AiProviderFooter} from './ai-provider-footer';
 
 type Props = {
-  editing: AiSetting | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSaved: () => Promise<void>;
+	editing: AiSetting | null;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	onSaved: () => Promise<void>;
 };
 
 export function AiProviderDialog({
-  editing,
-  open,
-  onOpenChange,
-  onSaved,
+	editing,
+	open,
+	onOpenChange,
+	onSaved,
 }: Props) {
-  const [form, setForm] = useState<AiForm>(EMPTY_AI_FORM);
-  const [models, setModels] = useState<string[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [discovering, setDiscovering] = useState(false);
+	const {
+		form,
+		set,
+		models,
+		selectPreset,
+		discover,
+		test,
+		save,
+		saving,
+		testing,
+		discovering,
+	} = useAiProviderForm({open, editing, onOpenChange, onSaved});
 
-  const reset = () => {
-    setModels([]);
-    setForm(
-      editing
-        ? {
-            name: editing.name,
-            api_url: editing.api_url,
-            api_key: "",
-            model: editing.model,
-            is_enabled: editing.is_enabled,
-          }
-        : EMPTY_AI_FORM,
-    );
-  };
+	return (
+		<Sheet open={open} onOpenChange={onOpenChange}>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2">
+						<Bot className="size-4 text-primary" />
+						{editing ? 'Edit AI Configuration' : 'Add AI Configuration'}
+					</SheetTitle>
+					<SheetDescription>
+						Connect an LLM provider for intelligent container log analysis
+						and automatic deployment diagnostics.
+					</SheetDescription>
+				</SheetHeader>
 
-  useEffect(() => {
-    if (open) reset();
-    // Reset when the parent switches between create and edit while mounted.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, editing]);
+				{/* Quick Presets */}
+				<div className="flex flex-col gap-1.5 px-6 pt-5">
+					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+						Quick Presets
+					</label>
+					<div className="flex flex-wrap gap-1.5">
+						{AI_PRESETS.map(p => (
+							<button
+								key={p.name}
+								type="button"
+								onClick={() => selectPreset(p.name, p.url, p.defaultModel)}
+								className={`rounded-lg  px-2.5 py-1 text-xs font-medium transition-colors ${
+									form.api_url === p.url
+										? ' bg-primary text-primary-foreground'
+										: ' bg-muted/40 text-muted-foreground hover:bg-muted'
+								}`}>
+								{p.name}
+							</button>
+						))}
+					</div>
+				</div>
 
-  const set = (key: keyof AiForm, value: string | boolean) =>
-    setForm((current) => ({ ...current, [key]: value }));
+				<div className="grid flex-1 gap-3.5 overflow-y-auto px-6 pb-5">
+					<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+						<div className="space-y-1">
+							<label className="text-xs font-semibold text-muted-foreground">
+								Provider Name
+							</label>
+							<Input
+								value={form.name}
+								onChange={e => set('name', e.target.value)}
+								placeholder="e.g. OpenAI Production"
+								className="h-9 text-xs"
+							/>
+						</div>
 
-  const handleSelectPreset = (
-    name: string,
-    url: string,
-    defaultModel: string,
-  ) => {
-    setForm((current) => ({
-      ...current,
-      name,
-      api_url: url,
-      model: defaultModel || current.model,
-    }));
-  };
+						<div className="space-y-1">
+							<label className="text-xs font-semibold text-muted-foreground">
+								API Base URL
+							</label>
+							<Input
+								value={form.api_url}
+								onChange={e => set('api_url', e.target.value)}
+								placeholder="https://api.openai.com/v1"
+								className="h-9 font-mono text-xs"
+							/>
+						</div>
+					</div>
 
-  const discover = async () => {
-    if (!form.api_url)
-      return toast.error("API URL is required to discover models");
-    try {
-      setDiscovering(true);
-      const canUseSavedKey =
-        editing?.has_api_key &&
-        !form.api_key &&
-        form.api_url === editing.api_url;
-      const data = canUseSavedKey
-        ? await discoverSettingModels(editing.id)
-        : await discoverAiModels({
-            api_url: form.api_url,
-            api_key: form.api_key,
-          });
-      const discovered = data.map(model =>
-        String(model.model ?? model.name ?? ''),
-      );
-      setModels(discovered);
-      if (discovered[0] && !form.model) set("model", discovered[0]);
-      toast.success(`${discovered.length} models discovered`);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not discover models",
-      );
-    } finally {
-      setDiscovering(false);
-    }
-  };
+					<div className="space-y-1">
+						<label className="text-xs font-semibold text-muted-foreground">
+							API Key / Token
+						</label>
+						<Input
+							type="password"
+							value={form.api_key}
+							onChange={e => set('api_key', e.target.value)}
+							placeholder={
+								editing?.has_api_key
+									? 'Leave blank to keep existing key'
+									: 'sk-...'
+							}
+							className="h-9 font-mono text-xs"
+						/>
+					</div>
 
-  const test = async () => {
-    try {
-      setTesting(true);
-      const canUseSavedKey =
-        editing?.has_api_key &&
-        !form.api_key &&
-        form.api_url === editing.api_url &&
-        form.model === editing.model;
-      if (canUseSavedKey) {
-        await testAiSetting(editing.id);
-      } else {
-        await testAiConnection({
-          api_url: form.api_url,
-          api_key: form.api_key,
-          model: form.model,
-        });
-      }
-      toast.success("AI connection test successful");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "AI connection failed",
-      );
-    } finally {
-      setTesting(false);
-    }
-  };
+					<div className="space-y-1">
+						<div className="flex items-center justify-between">
+							<label className="text-xs font-semibold text-muted-foreground">
+								Model Name
+							</label>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={() => void discover()}
+								disabled={discovering}
+								className="h-6 gap-1 px-2 text-[11px] text-primary">
+								<RefreshCw
+									className={`size-3 ${discovering ? 'animate-spin' : ''}`}
+								/>{' '}
+								Discover Models
+							</Button>
+						</div>
+						<Input
+							value={form.model}
+							onChange={e => set('model', e.target.value)}
+							placeholder="e.g. gpt-4o, claude-3-5-sonnet, llama3.2"
+							className="h-9 font-mono text-xs"
+						/>
+					</div>
 
-  const save = async () => {
-    try {
-      setSaving(true);
-      const body = {
-        ...form,
-        api_key: editing ? form.api_key || undefined : form.api_key,
-      };
-      if (editing) await updateAiSetting(editing.id, body);
-      else await createAiSetting({ ...body, api_key: form.api_key });
-      toast.success(editing ? "AI settings updated" : "AI settings created");
-      onOpenChange(false);
-      await onSaved();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to save AI settings",
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+					{models.length > 0 && (
+						<div className="space-y-1">
+							<label className="text-[11px] font-semibold text-muted-foreground">
+								Discovered Models
+							</label>
+							<select
+								className="h-9 w-full rounded-lg bg-background px-3 font-mono text-xs text-foreground"
+								value={form.model}
+								onChange={e => set('model', e.target.value)}>
+								<option value="">
+									-- Choose from {models.length} discovered models --
+								</option>
+								{models.map(m => (
+									<option key={m} value={m}>
+										{m}
+									</option>
+								))}
+							</select>
+						</div>
+					)}
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2.5 text-base font-bold">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Bot className="size-4" />
-            </div>
-            {editing ? "Edit AI Configuration" : "Add AI Configuration"}
-          </DialogTitle>
-          <DialogDescription className="text-xs">
-            Connect an LLM provider for intelligent container log analysis and
-            automatic deployment diagnostics.
-          </DialogDescription>
-        </DialogHeader>
+					<label className="flex cursor-pointer items-center gap-2 pt-1 text-xs font-semibold text-foreground">
+						<input
+							type="checkbox"
+							checked={form.is_enabled}
+							onChange={e => set('is_enabled', e.target.checked)}
+							className="size-4 rounded  accent-primary"
+						/>
+						Enable this AI configuration for log diagnosis & assistant
+					</label>
 
-        {/* Quick Presets */}
-        <div className="flex flex-col gap-1.5 pt-1">
-          <label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-            Quick Presets
-          </label>
-          <div className="flex flex-wrap gap-1.5">
-            {AI_PRESETS.map((p) => (
-              <button
-                key={p.name}
-                type="button"
-                onClick={() =>
-                  handleSelectPreset(p.name, p.url, p.defaultModel)
-                }
-                className={`rounded-lg  px-2.5 py-1 text-xs font-medium transition-colors ${
-                  form.api_url === p.url
-                    ? " bg-primary text-primary-foreground"
-                    : " bg-muted/40 text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid gap-3.5 pt-2">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted-foreground">
-                Provider Name
-              </label>
-              <Input
-                value={form.name}
-                onChange={(e) => set("name", e.target.value)}
-                placeholder="e.g. OpenAI Production"
-                className="h-9 text-xs"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-muted-foreground">
-                API Base URL
-              </label>
-              <Input
-                value={form.api_url}
-                onChange={(e) => set("api_url", e.target.value)}
-                placeholder="https://api.openai.com/v1"
-                className="h-9 font-mono text-xs"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">
-              API Key / Token
-            </label>
-            <Input
-              type="password"
-              value={form.api_key}
-              onChange={(e) => set("api_key", e.target.value)}
-              placeholder={
-                editing?.has_api_key
-                  ? "Leave blank to keep existing key"
-                  : "sk-..."
-              }
-              className="h-9 font-mono text-xs"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-muted-foreground">
-                Model Name
-              </label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={discover}
-                disabled={discovering}
-                className="h-6 gap-1 px-2 text-[11px] text-primary"
-              >
-                <RefreshCw
-                  className={`size-3 ${discovering ? "animate-spin" : ""}`}
-                />{" "}
-                Discover Models
-              </Button>
-            </div>
-            <Input
-              value={form.model}
-              onChange={(e) => set("model", e.target.value)}
-              placeholder="e.g. gpt-4o, claude-3-5-sonnet, llama3.2"
-              className="h-9 font-mono text-xs"
-            />
-          </div>
-
-          {models.length > 0 && (
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-muted-foreground">
-                Discovered Models
-              </label>
-              <select
-                className="h-9 w-full rounded-lg bg-background px-3 font-mono text-xs text-foreground"
-                value={form.model}
-                onChange={(e) => set("model", e.target.value)}
-              >
-                <option value="">
-                  -- Choose from {models.length} discovered models --
-                </option>
-                {models.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <label className="flex cursor-pointer items-center gap-2 pt-1 text-xs font-semibold text-foreground">
-            <input
-              type="checkbox"
-              checked={form.is_enabled}
-              onChange={(e) => set("is_enabled", e.target.checked)}
-              className="size-4 rounded  accent-primary"
-            />
-            Enable this AI configuration for log diagnosis & assistant
-          </label>
-
-          <div className="flex items-center justify-between border-t  pt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              className="h-9 px-4 text-xs font-semibold"
-            >
-              Cancel
-            </Button>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={test}
-                disabled={testing || !form.model}
-                className="h-9 gap-1.5 px-3 text-xs font-semibold"
-              >
-                {testing ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="size-3.5 text-emerald-500" />
-                )}{" "}
-                Test
-              </Button>
-              <Button
-                onClick={save}
-                disabled={saving || !form.name || !form.api_url || !form.model}
-                className="h-9 gap-1.5 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground"
-              >
-                {saving ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <Save className="size-3.5" />
-                )}{" "}
-                Save
-              </Button>
-            </div>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+					<AiProviderFooter
+						form={form}
+						testing={testing}
+						saving={saving}
+						onCancel={() => onOpenChange(false)}
+						onTest={() => void test()}
+						onSave={() => void save()}
+					/>
+				</div>
+			</SheetContent>
+		</Sheet>
+	);
 }

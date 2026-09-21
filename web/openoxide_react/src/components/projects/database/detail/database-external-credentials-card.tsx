@@ -1,10 +1,15 @@
 import {useState, useEffect} from 'react';
-import {Eye, EyeOff, Check, RefreshCw} from 'lucide-react';
+import {Check, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
-import {useDatabaseUpdate, useRemoteServerList, parseDatabaseKind} from '#/api/live';
+import {useDatabaseUpdate, useRemoteServerList} from '#/api/live';
 import {formatApiError} from '#/api/utils';
+import {
+	deriveDatabaseCredentials,
+	buildConnectionString,
+} from './database-credentials';
+import {ReadonlyField, SecretField} from './credentials-fields';
 
 interface DatabaseExternalCredentialsCardProps {
 	database: any;
@@ -15,55 +20,14 @@ export function DatabaseExternalCredentialsCard({
 	database,
 	onUpdated,
 }: DatabaseExternalCredentialsCardProps) {
-	const [showExternalUrl, setShowExternalUrl] = useState(false);
 	const [extPortInput, setExtPortInput] = useState('');
 	const [isSavingPort, setIsSavingPort] = useState(false);
 
 	// Live servers query; the table-watch stream keeps it fresh.
 	const {data: servers = []} = useRemoteServerList();
-	const kind = (database?.kind || 'postgres').toLowerCase();
-	const dbKind = parseDatabaseKind(kind);
-	const isRedis = kind.includes('redis');
-	const isLibsql = kind.includes('libsql');
+	const db = deriveDatabaseCredentials(database);
 
-	const rawDb = database as unknown as Record<string, unknown>;
-	const defaultUser = kind.includes('postgres')
-		? 'postgres'
-		: kind.includes('mysql') ||
-			  kind.includes('maria') ||
-			  kind.includes('mongo')
-			? 'root'
-			: isRedis
-				? 'default'
-				: 'admin';
-
-	const dbUser = String(
-		database?.database_user ||
-			rawDb?.database_user ||
-			rawDb?.databaseUser ||
-			rawDb?.db_user ||
-			defaultUser,
-	);
-	const dbName = String(
-		database?.database_name ||
-			rawDb?.database_name ||
-			rawDb?.databaseName ||
-			database?.name ||
-			'',
-	);
-	const currentPassword = String(
-		rawDb?.database_password ||
-			rawDb?.databasePassword ||
-			rawDb?.password ||
-			rawDb?.database_root_password ||
-			rawDb?.db_password ||
-			rawDb?.postgres_password ||
-			rawDb?.mysql_password ||
-			rawDb?.mongo_password ||
-			'',
-	);
-
-	const targetServer = servers.find(
+	const targetServer = (servers as any[]).find(
 		(s: any) => String(s.id) === String(database?.server_id),
 	);
 	const serverIp =
@@ -73,24 +37,14 @@ export function DatabaseExternalCredentialsCard({
 			? window.location.hostname
 			: '127.0.0.1');
 
-	const internalPort =
-		kind.includes('mysql') || kind.includes('maria')
-			? 3306
-			: kind.includes('mongo')
-				? 27017
-				: isRedis
-					? 6379
-					: isLibsql
-						? 8080
-						: 5432;
 	const externalPort = database?.external_port || undefined;
-	const dbNamePath = isRedis || isLibsql ? '' : `/${dbName || 'db'}`;
-	const userAuthPart = isRedis
-		? currentPassword
-			? `:${currentPassword}`
-			: ''
-		: `${dbUser}:${currentPassword}`;
-	const externalConnStr = `${kind}://${userAuthPart}@${serverIp}:${externalPort || internalPort}${dbNamePath}`;
+	const externalConnStr = buildConnectionString(
+		db.kind,
+		db.userAuthPart,
+		serverIp,
+		externalPort || db.internalPort,
+		db.dbNamePath,
+	);
 	const patchDatabase = useDatabaseUpdate();
 
 	useEffect(() => {
@@ -114,7 +68,7 @@ export function DatabaseExternalCredentialsCard({
 		setIsSavingPort(true);
 		try {
 			await patchDatabase.mutateAsync({
-				kind: dbKind,
+				kind: db.dbKind,
 				id: Number(database.id),
 				external_port: parsedPort,
 			});
@@ -128,7 +82,7 @@ export function DatabaseExternalCredentialsCard({
 	};
 
 	return (
-		<div className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-xs">
+		<div className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-xs">
 			<div>
 				<h3 className="text-xl font-bold tracking-tight text-foreground">
 					External Credentials
@@ -149,48 +103,23 @@ export function DatabaseExternalCredentialsCard({
 						type="number"
 						value={extPortInput}
 						onChange={e => setExtPortInput(e.target.value)}
-						placeholder={internalPort.toString()}
-						className="h-9 w-full border- bg-background font-mono text-xs"
+						placeholder={db.internalPort.toString()}
+						className="border- h-9 w-full bg-background font-mono text-xs"
 					/>
 				</div>
 
 				{externalPort ? (
 					<div className="flex flex-col gap-4 border-t  pt-4">
-						<div className="flex w-full flex-col gap-1.5">
-							<label className="text-xs font-semibold text-muted-foreground">
-								External Host
-							</label>
-							<Input
-								readOnly
-								value={serverIp}
-								className="h-9 w-full bg-muted/30 font-mono text-xs"
-							/>
-						</div>
-						<div className="flex w-full flex-col gap-1.5">
-							<label className="text-xs font-semibold text-muted-foreground">
-								External Connection URL
-							</label>
-							<div className="flex w-full items-center gap-2">
-								<Input
-									readOnly
-									type={showExternalUrl ? 'text' : 'password'}
-									value={externalConnStr}
-									className="h-9 w-full bg-muted/30 font-mono text-xs"
-								/>
-								<Button
-									variant="outline"
-									size="sm"
-									type="button"
-									onClick={() => setShowExternalUrl(!showExternalUrl)}
-									className="h-9 shrink-0 px-2.5">
-									{showExternalUrl ? (
-										<EyeOff className="size-3.5" />
-									) : (
-										<Eye className="size-3.5" />
-									)}
-								</Button>
-							</div>
-						</div>
+						<ReadonlyField
+							label="External Host"
+							value={serverIp}
+							className="w-full"
+						/>
+						<SecretField
+							label="External Connection URL"
+							value={externalConnStr}
+							className="w-full"
+						/>
 					</div>
 				) : null}
 

@@ -2,53 +2,61 @@
 // @generated from file openoxide/api/v1/networking_operations.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { OperationResultSchema, ResourceRequestSchema, ResourceResponseSchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
+import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
+import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
+import type {
+	OperationResultSchema,
+	ResourceRequestSchema,
+	ResourceResponseSchema,
+} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
 
 /**
  * Describes the file openoxide/api/v1/networking_operations.proto.
  */
-export const file_openoxide_api_v1_networking_operations: GenFile = /*@__PURE__*/
-  fileDesc("CixvcGVub3hpZGUvYXBpL3YxL25ldHdvcmtpbmdfb3BlcmF0aW9ucy5wcm90bxIQb3Blbm94aWRlLmFwaS52MTKCAwobTmV0d29ya2luZ09wZXJhdGlvbnNTZXJ2aWNlElAKCFB1cmdlQ2RuEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJYCg9EaWFnbm9zZURvbWFpbnMSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJcChNEaWFnbm9zZVJvb3ROZXR3b3JrEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWQoRUmVwYWlyUm9vdE5ldHdvcmsSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0YgZwcm90bzM", [file_openoxide_api_v1_common]);
+export const file_openoxide_api_v1_networking_operations: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'CixvcGVub3hpZGUvYXBpL3YxL25ldHdvcmtpbmdfb3BlcmF0aW9ucy5wcm90bxIQb3Blbm94aWRlLmFwaS52MTKCAwobTmV0d29ya2luZ09wZXJhdGlvbnNTZXJ2aWNlElAKCFB1cmdlQ2RuEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJYCg9EaWFnbm9zZURvbWFpbnMSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJcChNEaWFnbm9zZVJvb3ROZXR3b3JrEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWQoRUmVwYWlyUm9vdE5ldHdvcmsSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0YgZwcm90bzM',
+		[file_openoxide_api_v1_common],
+	);
 
 /**
  * @generated from service openoxide.api.v1.NetworkingOperationsService
  */
 export const NetworkingOperationsService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.NetworkingOperationsService.PurgeCdn
-   */
-  purgeCdn: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseDomains
-   */
-  diagnoseDomains: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseRootNetwork
-   */
-  diagnoseRootNetwork: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.NetworkingOperationsService.RepairRootNetwork
-   */
-  repairRootNetwork: {
-    methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_networking_operations, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.NetworkingOperationsService.PurgeCdn
+	 */
+	purgeCdn: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseDomains
+	 */
+	diagnoseDomains: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseRootNetwork
+	 */
+	diagnoseRootNetwork: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof ResourceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.NetworkingOperationsService.RepairRootNetwork
+	 */
+	repairRootNetwork: {
+		methodKind: 'unary';
+		input: typeof ResourceRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(
+	file_openoxide_api_v1_networking_operations,
+	0,
+);

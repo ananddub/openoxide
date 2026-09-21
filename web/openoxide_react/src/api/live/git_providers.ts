@@ -1,4 +1,8 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+} from './query';
 import {readResource} from './resource';
 // GitProviderService is the served surface: per-kind Create/Update RPCs plus
 // list/get/test. The kind discriminator ('github' | 'gitlab' | 'gitea' |
@@ -55,17 +59,33 @@ export function useGitProviderCreate() {
 /** Update a git provider of the given kind by id (legacy REST: PUT /git-providers/{id}/{kind}). */
 export function useGitProviderUpdate() {
 	return useConnectMutation(
-		(input: {kind: GitProviderKind; id: number | bigint; [field: string]: unknown}) => {
+		(input: {
+			kind: GitProviderKind;
+			id: number | bigint;
+			[field: string]: unknown;
+		}) => {
 			const {kind, id, ...body} = input;
 			const payload = JSON.stringify(body);
 			const request =
 				kind === 'github'
-					? gitProviderClient.updateGithubProvider({id: BigInt(id), payload})
+					? gitProviderClient.updateGithubProvider({
+							id: BigInt(id),
+							payload,
+						})
 					: kind === 'gitlab'
-						? gitProviderClient.updateGitlabProvider({id: BigInt(id), payload})
+						? gitProviderClient.updateGitlabProvider({
+								id: BigInt(id),
+								payload,
+							})
 						: kind === 'gitea'
-							? gitProviderClient.updateGiteaProvider({id: BigInt(id), payload})
-							: gitProviderClient.updateBitbucketProvider({id: BigInt(id), payload});
+							? gitProviderClient.updateGiteaProvider({
+									id: BigInt(id),
+									payload,
+								})
+							: gitProviderClient.updateBitbucketProvider({
+									id: BigInt(id),
+									payload,
+								});
 			return request.then(response =>
 				readResource<GitProviderPayload>(response),
 			);

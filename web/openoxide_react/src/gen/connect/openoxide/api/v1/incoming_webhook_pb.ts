@@ -2,63 +2,73 @@
 // @generated from file openoxide/api/v1/incoming_webhook.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { OperationResultSchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {OperationResultSchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/incoming_webhook.proto.
  */
-export const file_openoxide_api_v1_incoming_webhook: GenFile = /*@__PURE__*/
-  fileDesc("CidvcGVub3hpZGUvYXBpL3YxL2luY29taW5nX3dlYmhvb2sucHJvdG8SEG9wZW5veGlkZS5hcGkudjEirQEKFkluY29taW5nV2ViaG9va1JlcXVlc3QSOQoIcHJvdmlkZXIYASABKAlCJ7pIJHIiUgZnaXRodWJSBmdpdGxhYlIFZ2l0ZWFSCWJpdGJ1Y2tldBIcCgtwcm92aWRlcl9pZBgCIAEoA0IHukgEIgIgABIdCgdwYXlsb2FkGAMgASgJQgy6SAlyBxABGICAgAUSGwoJc2lnbmF0dXJlGAQgASgJQgi6SAVyAxiACDJ2ChZJbmNvbWluZ1dlYmhvb2tTZXJ2aWNlElwKDUhhbmRsZVdlYmhvb2sSKC5vcGVub3hpZGUuYXBpLnYxLkluY29taW5nV2ViaG9va1JlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdGIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_incoming_webhook: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'CidvcGVub3hpZGUvYXBpL3YxL2luY29taW5nX3dlYmhvb2sucHJvdG8SEG9wZW5veGlkZS5hcGkudjEirQEKFkluY29taW5nV2ViaG9va1JlcXVlc3QSOQoIcHJvdmlkZXIYASABKAlCJ7pIJHIiUgZnaXRodWJSBmdpdGxhYlIFZ2l0ZWFSCWJpdGJ1Y2tldBIcCgtwcm92aWRlcl9pZBgCIAEoA0IHukgEIgIgABIdCgdwYXlsb2FkGAMgASgJQgy6SAlyBxABGICAgAUSGwoJc2lnbmF0dXJlGAQgASgJQgi6SAVyAxiACDJ2ChZJbmNvbWluZ1dlYmhvb2tTZXJ2aWNlElwKDUhhbmRsZVdlYmhvb2sSKC5vcGVub3hpZGUuYXBpLnYxLkluY29taW5nV2ViaG9va1JlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdGIGcHJvdG8z',
+		[file_openoxide_api_v1_common, file_buf_validate_validate],
+	);
 
 /**
  * @generated from message openoxide.api.v1.IncomingWebhookRequest
  */
-export type IncomingWebhookRequest = Message<"openoxide.api.v1.IncomingWebhookRequest"> & {
-  /**
-   * @generated from field: string provider = 1;
-   */
-  provider: string;
+export type IncomingWebhookRequest =
+	Message<'openoxide.api.v1.IncomingWebhookRequest'> & {
+		/**
+		 * @generated from field: string provider = 1;
+		 */
+		provider: string;
 
-  /**
-   * @generated from field: int64 provider_id = 2;
-   */
-  providerId: bigint;
+		/**
+		 * @generated from field: int64 provider_id = 2;
+		 */
+		providerId: bigint;
 
-  /**
-   * @generated from field: string payload = 3;
-   */
-  payload: string;
+		/**
+		 * @generated from field: string payload = 3;
+		 */
+		payload: string;
 
-  /**
-   * @generated from field: string signature = 4;
-   */
-  signature: string;
-};
+		/**
+		 * @generated from field: string signature = 4;
+		 */
+		signature: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.IncomingWebhookRequest.
  * Use `create(IncomingWebhookRequestSchema)` to create a new message.
  */
-export const IncomingWebhookRequestSchema: GenMessage<IncomingWebhookRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_incoming_webhook, 0);
+export const IncomingWebhookRequestSchema: GenMessage<IncomingWebhookRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_incoming_webhook, 0);
 
 /**
  * @generated from service openoxide.api.v1.IncomingWebhookService
  */
 export const IncomingWebhookService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.IncomingWebhookService.HandleWebhook
-   */
-  handleWebhook: {
-    methodKind: "unary";
-    input: typeof IncomingWebhookRequestSchema;
-    output: typeof OperationResultSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_incoming_webhook, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.IncomingWebhookService.HandleWebhook
+	 */
+	handleWebhook: {
+		methodKind: 'unary';
+		input: typeof IncomingWebhookRequestSchema;
+		output: typeof OperationResultSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_incoming_webhook, 0);

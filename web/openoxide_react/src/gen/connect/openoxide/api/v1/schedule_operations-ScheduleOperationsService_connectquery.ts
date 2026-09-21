@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/schedule_operations.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { ScheduleOperationsService } from "./schedule_operations_pb";
+import {ScheduleOperationsService} from './schedule_operations_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.GetSchedule
@@ -12,62 +12,74 @@ export const getSchedule = ScheduleOperationsService.method.getSchedule;
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.ListApplicationSchedules
  */
-export const listApplicationSchedules = ScheduleOperationsService.method.listApplicationSchedules;
+export const listApplicationSchedules =
+	ScheduleOperationsService.method.listApplicationSchedules;
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.ListComposeSchedules
  */
-export const listComposeSchedules = ScheduleOperationsService.method.listComposeSchedules;
+export const listComposeSchedules =
+	ScheduleOperationsService.method.listComposeSchedules;
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.ListDatabaseSchedules
  */
-export const listDatabaseSchedules = ScheduleOperationsService.method.listDatabaseSchedules;
+export const listDatabaseSchedules =
+	ScheduleOperationsService.method.listDatabaseSchedules;
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.ListServerSchedules
  */
-export const listServerSchedules = ScheduleOperationsService.method.listServerSchedules;
+export const listServerSchedules =
+	ScheduleOperationsService.method.listServerSchedules;
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.ListOrganizationSchedules
  */
-export const listOrganizationSchedules = ScheduleOperationsService.method.listOrganizationSchedules;
+export const listOrganizationSchedules =
+	ScheduleOperationsService.method.listOrganizationSchedules;
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.CreateSchedule
  */
-export const createSchedule = ScheduleOperationsService.method.createSchedule;
+export const createSchedule =
+	ScheduleOperationsService.method.createSchedule;
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.UpdateSchedule
  */
-export const updateSchedule = ScheduleOperationsService.method.updateSchedule;
+export const updateSchedule =
+	ScheduleOperationsService.method.updateSchedule;
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.DeleteSchedule
  */
-export const deleteSchedule = ScheduleOperationsService.method.deleteSchedule;
+export const deleteSchedule =
+	ScheduleOperationsService.method.deleteSchedule;
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.TriggerSchedule
  */
-export const triggerSchedule = ScheduleOperationsService.method.triggerSchedule;
+export const triggerSchedule =
+	ScheduleOperationsService.method.triggerSchedule;
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.GetRuntimePolicy
  */
-export const getRuntimePolicy = ScheduleOperationsService.method.getRuntimePolicy;
+export const getRuntimePolicy =
+	ScheduleOperationsService.method.getRuntimePolicy;
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.UpdateRuntimePolicy
  */
-export const updateRuntimePolicy = ScheduleOperationsService.method.updateRuntimePolicy;
+export const updateRuntimePolicy =
+	ScheduleOperationsService.method.updateRuntimePolicy;
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.ListExecutions
  */
-export const listExecutions = ScheduleOperationsService.method.listExecutions;
+export const listExecutions =
+	ScheduleOperationsService.method.listExecutions;
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.GetLogs
@@ -77,4 +89,5 @@ export const getLogs = ScheduleOperationsService.method.getLogs;
 /**
  * @generated from rpc openoxide.api.v1.ScheduleOperationsService.GetExecutionLogs
  */
-export const getExecutionLogs = ScheduleOperationsService.method.getExecutionLogs;
+export const getExecutionLogs =
+	ScheduleOperationsService.method.getExecutionLogs;

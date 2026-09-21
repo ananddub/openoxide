@@ -1,4 +1,8 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+} from './query';
 import {VaultService} from '#/gen/connect/openoxide/api/v1/vault_pb';
 
 export type VaultProviderAssignment = {
@@ -37,7 +41,10 @@ export function useVaultList() {
  */
 export function useVaultProviderCreate() {
 	return useConnectMutation(
-		(input: {organization_id: number | bigint; [field: string]: unknown}) => {
+		(input: {
+			organization_id: number | bigint;
+			[field: string]: unknown;
+		}) => {
 			const {organization_id, ...body} = input;
 			return vaultClient.createProvider({
 				organizationId: BigInt(organization_id),
@@ -51,11 +58,18 @@ export function useVaultProviderCreate() {
 /** Update a vault provider by id (fields to change in the payload). */
 export function useVaultProviderUpdate() {
 	return useConnectMutation(
-		(input: {id: number | bigint; organization_id?: number | bigint; [field: string]: unknown}) => {
+		(input: {
+			id: number | bigint;
+			organization_id?: number | bigint;
+			[field: string]: unknown;
+		}) => {
 			const {id, organization_id, ...body} = input;
 			return vaultClient.updateProvider({
 				id: BigInt(id),
-				organizationId: organization_id !== undefined ? BigInt(organization_id) : undefined,
+				organizationId:
+					organization_id !== undefined
+						? BigInt(organization_id)
+						: undefined,
 				payload: JSON.stringify(body),
 			});
 		},
@@ -69,7 +83,10 @@ export function useVaultProviderDelete() {
 		(input: {id: number | bigint; organization_id?: number | bigint}) =>
 			vaultClient.deleteProvider({
 				id: BigInt(input.id),
-				organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
+				organizationId:
+					input.organization_id !== undefined
+						? BigInt(input.organization_id)
+						: undefined,
 			}),
 		{invalidate: [['vault_providers']]},
 	);
@@ -77,11 +94,15 @@ export function useVaultProviderDelete() {
 
 /** Test the connection of a stored vault provider by id. */
 export function useVaultProviderTest() {
-	return useConnectMutation((input: {id: number | bigint; organization_id?: number | bigint}) =>
-		vaultClient.testProvider({
-			id: BigInt(input.id),
-			organizationId: input.organization_id !== undefined ? BigInt(input.organization_id) : undefined,
-		}),
+	return useConnectMutation(
+		(input: {id: number | bigint; organization_id?: number | bigint}) =>
+			vaultClient.testProvider({
+				id: BigInt(input.id),
+				organizationId:
+					input.organization_id !== undefined
+						? BigInt(input.organization_id)
+						: undefined,
+			}),
 	);
 }
 

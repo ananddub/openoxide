@@ -1,4 +1,8 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+} from './query';
 import {TagService} from '#/gen/connect/openoxide/api/v1/tag_pb';
 
 export type TagPayload = {
@@ -13,9 +17,8 @@ const tagClient = createServiceClient(TagService);
 
 /** All tags (legacy live: useTagListAll). */
 export function useTagListAll() {
-	return useResourceListQuery<TagPayload>(
-		['tags', 'list'],
-		() => tagClient.listTags({}),
+	return useResourceListQuery<TagPayload>(['tags', 'list'], () =>
+		tagClient.listTags({}),
 	);
 }
 
@@ -33,7 +36,10 @@ export function useTagUpdate() {
 	return useConnectMutation(
 		(input: {id: number; name: string; color: string}) => {
 			const {id, ...body} = input;
-			return tagClient.updateTag({id: BigInt(id), payload: JSON.stringify(body)});
+			return tagClient.updateTag({
+				id: BigInt(id),
+				payload: JSON.stringify(body),
+			});
 		},
 		{invalidate: [['tags'], ['projects']]},
 	);

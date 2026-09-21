@@ -31,7 +31,7 @@ export function LogDetailModal({entry, onClose}: LogDetailModalProps) {
 
 	return (
 		<Dialog open={Boolean(entry)} onOpenChange={onClose}>
-			<DialogContent className="max-w-2xl border- bg-card font-mono">
+			<DialogContent className="border- max-w-2xl bg-card font-mono">
 				<DialogHeader className="flex flex-row items-center justify-between border-b  pb-3">
 					<DialogTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
 						{entry.isJson ? (

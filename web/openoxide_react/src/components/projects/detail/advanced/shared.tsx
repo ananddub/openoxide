@@ -17,7 +17,7 @@ export function AdvancedSection({
 	children: ReactNode;
 }) {
 	return (
-		<section className="flex flex-col gap-4 rounded-2xl bg-card p-6 shadow-sm">
+		<section className="flex flex-col gap-4 rounded-xl bg-card p-6 shadow-sm">
 			<div className="flex items-start justify-between gap-3">
 				<div>
 					<h3 className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground">

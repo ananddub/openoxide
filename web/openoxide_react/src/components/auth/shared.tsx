@@ -7,7 +7,7 @@ type Props = {
 
 export const Header: React.FC<Props> = ({title, subtitle}) => (
 	<div className="mb-8 flex flex-col items-center gap-2">
-		<h1 className="text-2xl font-bold tracking-tight text-foreground">
+		<h1 className="text-2xl font-semibold tracking-[-0.02em] text-foreground">
 			{title}
 		</h1>
 		<p className="text-center text-sm text-muted-foreground">{subtitle}</p>
@@ -16,7 +16,7 @@ export const Header: React.FC<Props> = ({title, subtitle}) => (
 
 export const Wrapper: React.FC<React.PropsWithChildren> = ({children}) => {
 	return (
-		<div className="relative z-10 w-full max-w-md rounded-2xl bg-card/70 p-8 shadow-2xl backdrop-blur-md">
+		<div className="relative z-10 w-full max-w-md rounded-xl border bg-card p-8 shadow-[0_1px_1px_rgba(0,0,0,0.02),0_8px_16px_-4px_rgba(0,0,0,0.06),0_24px_32px_-8px_rgba(0,0,0,0.08)]">
 			{children}
 		</div>
 	);
@@ -27,7 +27,7 @@ export const AuthError: React.FC<{message: string | null}> = ({
 }) => {
 	if (!message) return null;
 	return (
-		<div className="animate-in rounded-lg bg-destructive/10 p-3 text-sm text-destructive duration-200 fade-in slide-in-from-top-1">
+		<div className="animate-in rounded-md border border-danger-border bg-danger-bg p-3 text-sm text-danger duration-200 fade-in slide-in-from-top-1">
 			{message}
 		</div>
 	);

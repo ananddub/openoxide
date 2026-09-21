@@ -48,14 +48,23 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 				const total = selectedZip.size;
 				let sent = 0;
 				const chunks = (async function* () {
-					for (let offset = 0; offset < total; offset += UPLOAD_CHUNK_BYTES) {
+					for (
+						let offset = 0;
+						offset < total;
+						offset += UPLOAD_CHUNK_BYTES
+					) {
 						const slice = new Uint8Array(
 							await selectedZip
-								.slice(offset, Math.min(offset + UPLOAD_CHUNK_BYTES, total))
+								.slice(
+									offset,
+									Math.min(offset + UPLOAD_CHUNK_BYTES, total),
+								)
 								.arrayBuffer(),
 						);
 						sent += slice.length;
-						setUploadProgress(Math.min(99, Math.round((sent / total) * 100)));
+						setUploadProgress(
+							Math.min(99, Math.round((sent / total) * 100)),
+						);
 						yield {payload: {case: 'chunk' as const, value: slice}};
 					}
 				})();
@@ -100,7 +109,7 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 					placeholder="e.g. /"
 					value={dropBuildPath}
 					onChange={e => setDropBuildPath(e.target.value)}
-					className="h-9 border- bg-card text-xs"
+					className="border- h-9 bg-card text-xs"
 				/>
 			</div>
 
@@ -123,9 +132,7 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 						handleFileSelect(e.dataTransfer.files);
 					}}
 					className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition-colors ${
-						isDragging
-							? ' bg-primary/5'
-							: ' hover:bg-muted/20'
+						isDragging ? ' bg-primary/5' : ' hover:bg-muted/20'
 					}`}
 					onClick={() => {
 						const input = document.createElement('input');
@@ -170,7 +177,8 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 				{saving && selectedZip && (
 					<div className="mt-2 flex flex-col gap-1.5">
 						<div className="flex justify-between text-[10px] text-muted-foreground">
-							<span>Uploading source archive</span><span>{uploadProgress}%</span>
+							<span>Uploading source archive</span>
+							<span>{uploadProgress}%</span>
 						</div>
 						<Progress value={uploadProgress} />
 					</div>

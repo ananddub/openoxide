@@ -1,25 +1,21 @@
 import * as React from 'react';
-import {useDeploymentCancel, useDeploymentDelete, useDeploymentDeleteByApplication, useDeploymentItems} from '#/api/live';
+import {
+	useDeploymentCancel,
+	useDeploymentDelete,
+	useDeploymentDeleteByApplication,
+	useDeploymentItems,
+} from '#/api/live';
 import {useQueryClient} from '@tanstack/react-query';
 
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import type {DeploymentResponse} from '#/types/api-helpers';
 import {useDeploymentLogs} from './use-deployment-logs';
+import {filterAndSortDeployments} from './deployments-filter-sort';
+import {FINAL_STATES} from '#/components/projects/detail/deployments/build-status';
 
 export type Deployment = DeploymentResponse;
 export type SortKey = 'created_at' | 'title' | 'status';
-
-const FINAL_STATES = [
-	'DONE',
-	'DEPLOYED',
-	'SUCCESS',
-	'FAILED',
-	'ERROR',
-	'CANCELLED',
-	'STOPPEDBYUSER',
-	'CRASHED',
-];
 
 export function useDeployments() {
 	const queryClient = useQueryClient();
@@ -124,71 +120,17 @@ export function useDeployments() {
 	};
 
 	// Filter & Sort list
-	const filteredAndSorted = React.useMemo(() => {
-		if (!deployments) return [];
-
-		// 1. Filtering
-		let result = deployments.filter(d => {
-			const q = searchQuery.toLowerCase();
-			const matchesSearch =
-				d.title.toLowerCase().includes(q) ||
-				(d.description || '').toLowerCase().includes(q) ||
-				(d.error_message || '').toLowerCase().includes(q);
-
-			const status = d.status.toUpperCase();
-			const matchesStatus =
-				statusFilter === 'all' ||
-				(statusFilter === 'running' &&
-					(status === 'RUNNING' || status === 'CANCELLING')) ||
-				(statusFilter === 'queued' && status === 'QUEUED') ||
-				(statusFilter === 'done' && status === 'DONE') ||
-				(statusFilter === 'error' && status === 'ERROR') ||
-				(statusFilter === 'cancelled' &&
-					(status === 'CANCELLED' || status === 'CANCELLING'));
-
-			const hasApp =
-				d.application_id !== null && d.application_id !== undefined;
-			const hasCompose =
-				d.compose_id !== null && d.compose_id !== undefined;
-			const hasDatabase =
-				d.database_id !== null && d.database_id !== undefined;
-
-			const matchesType =
-				typeFilter === 'all' ||
-				(typeFilter === 'application' && hasApp) ||
-				(typeFilter === 'compose' && hasCompose) ||
-				(typeFilter === 'database' && hasDatabase);
-
-			return matchesSearch && matchesStatus && matchesType;
-		});
-
-		// 2. Sorting
-		return [...result].sort((a, b) => {
-			if (sortBy === 'created_at') {
-				return sortDir === 'desc'
-					? Number(b.created_at || 0) - Number(a.created_at || 0)
-					: Number(a.created_at || 0) - Number(b.created_at || 0);
-			}
-			if (sortBy === 'title') {
-				return sortDir === 'desc'
-					? b.title.localeCompare(a.title)
-					: a.title.localeCompare(b.title);
-			}
-			if (sortBy === 'status') {
-				return sortDir === 'desc'
-					? b.status.localeCompare(a.status)
-					: a.status.localeCompare(b.status);
-			}
-			return 0;
-		});
-	}, [
-		deployments,
-		searchQuery,
-		statusFilter,
-		typeFilter,
-		sortBy,
-		sortDir,
-	]);
+	const filteredAndSorted = React.useMemo(
+		() =>
+			filterAndSortDeployments(deployments, {
+				searchQuery,
+				statusFilter,
+				typeFilter,
+				sortBy,
+				sortDir,
+			}),
+		[deployments, searchQuery, statusFilter, typeFilter, sortBy, sortDir],
+	);
 
 	const clearFilters = () => {
 		setSearchQuery('');

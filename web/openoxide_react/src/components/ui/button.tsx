@@ -3,15 +3,15 @@ import {cva, type VariantProps} from 'class-variance-authority';
 import {cn} from '#/api/utils.ts';
 
 const buttonVariants = cva(
-	"group/button inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl   bg-clip-padding text-sm font-medium whitespace-nowrap transition-all duration-150 outline-none select-none focus-visible:ring-2 focus-visible:ring-ring/40 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+	"group/button inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md bg-clip-padding text-sm font-medium whitespace-nowrap transition-colors duration-150 outline-none select-none focus-visible:ring-2 focus-visible:ring-ring/40 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 	{
 		variants: {
 			variant: {
-				default: 'bg-primary text-primary-foreground hover:bg-primary/80',
+				default: 'bg-primary text-primary-foreground hover:bg-primary/90',
 				outline:
-					'bg-input hover:bg-input hover:text-foreground aria-expanded:bg-input aria-expanded:text-foreground',
+					'border border-border bg-card text-foreground hover:bg-accent aria-expanded:bg-accent aria-expanded:text-foreground',
 				secondary:
-					'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
+					'bg-secondary text-secondary-foreground hover:bg-secondary/70 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
 				ghost:
 					'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
 				destructive:
@@ -21,15 +21,15 @@ const buttonVariants = cva(
 			size: {
 				default:
 					'h-10 gap-2 px-4 py-2 has-data-[icon=inline-end]:pr-4 has-data-[icon=inline-start]:pl-4',
-				xs: "h-6 gap-1 rounded-lg px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-				sm: "h-8 gap-1.5 rounded-lg px-3 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3.5",
-				lg: 'h-12 gap-2 rounded-xl px-8 text-[15px] has-data-[icon=inline-end]:pr-6 has-data-[icon=inline-start]:pl-6',
-				icon: 'size-9 rounded-xl',
+				xs: "h-6 gap-1 rounded-md px-2 text-xs in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+				sm: "h-8 gap-1.5 rounded-md px-3 text-xs in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3.5",
+				lg: 'h-11 gap-2 rounded-md px-6 text-[15px] has-data-[icon=inline-end]:pr-5 has-data-[icon=inline-start]:pl-5',
+				icon: 'size-9 rounded-md',
 				'icon-xs':
-					"size-6 rounded-lg in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
+					"size-6 rounded-md in-data-[slot=button-group]:rounded-md [&_svg:not([class*='size-'])]:size-3",
 				'icon-sm':
-					'size-7 rounded-lg in-data-[slot=button-group]:rounded-lg',
-				'icon-lg': 'size-10 rounded-xl',
+					'size-7 rounded-md in-data-[slot=button-group]:rounded-md',
+				'icon-lg': 'size-10 rounded-md',
 			},
 		},
 		defaultVariants: {

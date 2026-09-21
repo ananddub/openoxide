@@ -12,6 +12,7 @@ import {Button} from '#/components/ui/button';
 import {Checkbox} from '#/components/ui/checkbox';
 import {Box, Database, ArrowRight, ShieldCheck, Zap} from 'lucide-react';
 import {toast} from 'sonner';
+import {buildLinkEnvTemplates} from './link-env-templates';
 
 interface ServiceLinkerModalProps {
 	isOpen: boolean;
@@ -35,58 +36,9 @@ export function ServiceLinkerModal({
 	onConfirmLink,
 }: ServiceLinkerModalProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
-
-	const dbName = targetNode?.name || 'database';
-	const dbType = (targetNode?.dbType || 'postgres').toLowerCase();
-	const port =
-		targetNode?.port ||
-		(dbType === 'redis' ? 6379 : dbType === 'mongodb' ? 27017 : 5432);
-
-	// Propose template environment variables based on connected database type
-	const defaultTemplates = (() => {
-		const prefix = dbName.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-		if (dbType.includes('postgres')) {
-			return [
-				{
-					key: 'DATABASE_URL',
-					value: `postgres://postgres:password@${dbName.toLowerCase()}:${port}/${dbName.toLowerCase()}`,
-					checked: true,
-				},
-				{
-					key: `${prefix}_HOST`,
-					value: dbName.toLowerCase(),
-					checked: true,
-				},
-				{key: `${prefix}_PORT`, value: String(port), checked: true},
-			];
-		}
-		if (dbType.includes('redis')) {
-			return [
-				{
-					key: 'REDIS_URL',
-					value: `redis://${dbName.toLowerCase()}:${port}`,
-					checked: true,
-				},
-				{
-					key: `${prefix}_HOST`,
-					value: dbName.toLowerCase(),
-					checked: true,
-				},
-				{key: `${prefix}_PORT`, value: String(port), checked: true},
-			];
-		}
-		return [
-			{
-				key: `${prefix}_URL`,
-				value: `${dbType}://${dbName.toLowerCase()}:${port}`,
-				checked: true,
-			},
-			{key: `${prefix}_HOST`, value: dbName.toLowerCase(), checked: true},
-			{key: `${prefix}_PORT`, value: String(port), checked: true},
-		];
-	})();
-
-	const [envs, setEnvs] = useState(defaultTemplates);
+	const [envs, setEnvs] = useState(() =>
+		buildLinkEnvTemplates(targetNode),
+	);
 
 	const toggleCheck = (idx: number) => {
 		setEnvs(prev =>
@@ -120,7 +72,7 @@ export function ServiceLinkerModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="border- bg-card shadow-xl sm:max-w-md">
+			<DialogContent className="border- bg-card shadow-md sm:max-w-md">
 				<DialogHeader>
 					<div className="mb-1 flex items-center gap-2 text-xs font-bold tracking-wider text-primary uppercase">
 						<Zap className="h-4 w-4 text-amber-500" />

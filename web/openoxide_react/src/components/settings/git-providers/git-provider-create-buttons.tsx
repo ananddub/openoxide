@@ -55,7 +55,7 @@ export function GitProviderCreateButtons({
 					key={item.kind}
 					type="button"
 					onClick={() => onSelectKind(item.kind)}
-					className={`group relative flex cursor-pointer flex-col justify-between rounded-2xl bg-muted/30 p-4 text-left transition-all duration-200 hover:shadow-md ${item.hoverClass}`}>
+					className={`group relative flex cursor-pointer flex-col justify-between rounded-xl bg-muted/30 p-4 text-left transition-all duration-200 hover:shadow-md ${item.hoverClass}`}>
 					<div className="mb-2 flex w-full items-start justify-between">
 						<div className="flex size-9 items-center justify-center rounded-xl bg-muted/60 transition-transform group-hover:scale-105">
 							{item.icon}

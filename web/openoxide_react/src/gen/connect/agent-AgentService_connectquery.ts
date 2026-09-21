@@ -2,7 +2,7 @@
 // @generated from file agent.proto (package agent, syntax proto3)
 /* eslint-disable */
 
-import { AgentService } from "./agent_pb";
+import {AgentService} from './agent_pb';
 
 /**
  * @generated from rpc agent.AgentService.GetAgentInfo

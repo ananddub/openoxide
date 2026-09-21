@@ -1,5 +1,4 @@
 import {useState, useMemo} from 'react';
-import {Badge} from '#/components/ui/badge';
 import {Input} from '#/components/ui/input';
 import {Skeleton} from '#/components/ui/skeleton';
 import {
@@ -9,35 +8,17 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from '#/components/ui/dropdown';
-import {
-	Server,
-	MoreVertical,
-	Check,
-	Copy,
-	Crown,
-	Search,
-	Globe,
-	ShieldCheck,
-	ShieldAlert,
-	Trash2,
-	ArrowUpRight,
-	ArrowDownRight,
-} from 'lucide-react';
+import {Server, Search} from 'lucide-react';
 import {toast} from 'sonner';
+import {
+	ROLE_FILTERS,
+	nodeRole,
+	type RoleFilter,
+	type TaggedSwarmNode,
+} from './swarm-node-shared';
+import {SwarmNodeRow} from './swarm-node-row';
 
-import type {SwarmNode} from '#/types/api-helpers';
-
-export type TaggedSwarmNode = SwarmNode & {
-	_serverId?: number;
-	_serverName?: string;
-};
+export type {TaggedSwarmNode} from './swarm-node-shared';
 
 interface SwarmNodesListProps {
 	nodes: TaggedSwarmNode[];
@@ -50,23 +31,6 @@ interface SwarmNodesListProps {
 		node?: TaggedSwarmNode,
 	) => void;
 	onRemoveNode: (nodeId: string, node?: TaggedSwarmNode) => void;
-}
-
-const ROLE_FILTERS = ['All', 'Managers', 'Workers'] as const;
-type RoleFilter = (typeof ROLE_FILTERS)[number];
-
-/**
- * `role`/`is_leader`/`reachability` come from `docker node inspect`'s
- * `Spec.Role` and `ManagerStatus` — the authoritative config values, not a
- * string derived from reachability. A manager stays "manager" even when
- * Docker can't currently reach it (reachability: "unreachable").
- */
-function nodeRole(node: SwarmNode) {
-	const isManager = node.role === 'manager';
-	const isLeader = node.is_leader;
-	const isUnreachable =
-		isManager && (node.reachability || '').toLowerCase() === 'unreachable';
-	return {isManager, isLeader, isUnreachable};
 }
 
 export function SwarmNodesList({
@@ -92,17 +56,14 @@ export function SwarmNodesList({
 		return nodes.filter(node => {
 			const hostname = node.hostname || '';
 			const nodeId = node.id || '';
-
 			const matchSearch =
 				hostname.toLowerCase().includes(search.toLowerCase()) ||
 				nodeId.toLowerCase().includes(search.toLowerCase());
-
 			const {isManager} = nodeRole(node);
 			const matchRole =
 				roleFilter === 'All' ||
 				(roleFilter === 'Managers' && isManager) ||
 				(roleFilter === 'Workers' && !isManager);
-
 			return matchSearch && matchRole;
 		});
 	}, [nodes, search, roleFilter]);
@@ -145,7 +106,6 @@ export function SwarmNodesList({
 
 	return (
 		<div className="flex flex-col gap-3">
-			{/* ── Search + Filter bar ── */}
 			<div className="flex items-center gap-2">
 				<div className="relative flex-1">
 					<Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -173,9 +133,8 @@ export function SwarmNodesList({
 				</Select>
 			</div>
 
-			{/* ── Empty state ── */}
 			{!nodes || nodes.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-card py-20 text-center ring-1 ring-border/50">
+				<div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-card py-20 text-center ring-1 ring-border/50">
 					<div className="flex size-12 items-center justify-center rounded-full bg-muted">
 						<Server className="size-5 text-muted-foreground" />
 					</div>
@@ -189,7 +148,7 @@ export function SwarmNodesList({
 					</div>
 				</div>
 			) : filtered.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card py-14 text-center ring-1 ring-border/50">
+				<div className="flex flex-col items-center justify-center gap-2 rounded-xl bg-card py-14 text-center ring-1 ring-border/50">
 					<Search className="size-5 text-muted-foreground" />
 					<p className="text-sm text-muted-foreground">
 						No nodes match your filter
@@ -206,190 +165,24 @@ export function SwarmNodesList({
 				</div>
 			) : (
 				/* ── List ── */
-				<div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card ring-1 ring-border/50">
+				<div className="divide-y divide-border/50 overflow-hidden rounded-xl bg-card ring-1 ring-border/50">
 					{filtered.map(node => {
-						const {isManager, isLeader, isUnreachable} = nodeRole(node);
-
-						const isReady = (node.status || '').toLowerCase() === 'ready';
-						const availability = (
-							node.availability || 'active'
-						).toLowerCase();
-
-						const hostname = node.hostname || 'Swarm Node';
-						const nodeId = node.id || '';
-						const serverLabel = node._serverName || null;
 						const clusterKey = String(node._serverId ?? 'local');
-						const isLastManager =
-							isManager && (managersPerCluster.get(clusterKey) ?? 0) <= 1;
-
-						const dotCls = isReady ? 'bg-emerald-500' : 'bg-rose-500';
-
 						return (
-							<div
-								key={nodeId}
-								className="group flex items-center gap-3.5 px-5 py-3 transition-colors hover:bg-muted/40">
-								{/* Icon + status dot */}
-								<div className="relative shrink-0">
-									<div className="flex size-9 items-center justify-center rounded-xl bg-muted/60 transition-colors group-hover:bg-muted">
-										{isManager ? (
-											<Crown className="size-[18px] text-amber-500" />
-										) : (
-											<Server className="size-[18px] text-foreground/70" />
-										)}
-									</div>
-									<span
-										title={isReady ? 'Ready' : 'Not ready'}
-										className={`absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-card ${dotCls}`}
-									/>
-								</div>
-
-								<div className="min-w-0 flex-1">
-									<div className="mb-0.5 flex items-center gap-2">
-										<span className="truncate text-sm font-medium text-foreground">
-											{hostname}
-										</span>
-										{isManager ? (
-											<Badge
-												variant="outline"
-												className={`shrink-0 gap-1 px-1.5 py-0 text-[10px] font-bold uppercase ${
-													isUnreachable
-														? 'border-rose-500/30 bg-rose-500/10 text-rose-500'
-														: 'border-amber-500/30 bg-amber-500/10 text-amber-500'
-												}`}>
-												{isUnreachable ? (
-													<ShieldAlert className="h-2.5 w-2.5" />
-												) : (
-													<Crown className="h-2.5 w-2.5 fill-amber-500/20" />
-												)}
-												{isLeader
-													? 'Leader'
-													: isUnreachable
-														? 'Manager (Unreachable)'
-														: 'Manager'}
-											</Badge>
-										) : (
-											<Badge
-												variant="secondary"
-												className="shrink-0 py-0 font-mono text-[10px] uppercase">
-												Worker
-											</Badge>
-										)}
-										<Badge
-											variant="outline"
-											className="shrink-0 py-0 font-mono text-[10px]">
-											{availability}
-										</Badge>
-										{serverLabel && (
-											<span className="shrink-0 rounded bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground">
-												{serverLabel}
-											</span>
-										)}
-									</div>
-									<div className="flex items-center gap-2 truncate font-mono text-[11px] text-muted-foreground">
-										<span className="truncate">
-											{nodeId ? nodeId.slice(0, 14) : 'No ID'}
-										</span>
-										{node.ip_address && (
-											<span className="flex shrink-0 items-center gap-1">
-												· <Globe className="h-3 w-3" /> {node.ip_address}
-											</span>
-										)}
-									</div>
-								</div>
-
-								{/* Status word */}
-								<span
-									className={`inline-flex shrink-0 items-center gap-1.5 text-xs font-medium ${isReady ? 'text-emerald-500' : 'text-rose-500'}`}>
-									<span
-										className={`size-2.5 rounded-full border-2 ${isReady ? 'border-emerald-500' : 'border-rose-500'}`}
-									/>
-									<span className="hidden sm:inline">
-										{isReady ? 'Ready' : 'Down'}
-									</span>
-								</span>
-
-								{/* Hover actions */}
-								<div className="flex shrink-0 items-center gap-2.5 opacity-0 transition-opacity group-hover:opacity-100">
-									{nodeId && (
-										<button
-											onClick={() => handleCopyId(nodeId)}
-											title="Copy Node ID"
-											className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground">
-											{copiedId === nodeId ? (
-												<Check className="size-4 text-emerald-500" />
-											) : (
-												<Copy className="size-4" />
-											)}
-										</button>
-									)}
-								</div>
-
-								{/* 3-dot menu */}
-								<DropdownMenu>
-									<DropdownMenuTrigger
-										render={
-											<button className="flex size-6 shrink-0 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground" />
-										}>
-										<MoreVertical className="size-4" />
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end" className="w-44">
-										{isManager ? (
-											<DropdownMenuItem
-												disabled={isLastManager}
-												title={
-													isLastManager
-														? "Can't demote the last manager of a swarm"
-														: undefined
-												}
-												className="cursor-pointer gap-2"
-												onClick={() => onDemote(nodeId, node)}>
-												<ArrowDownRight className="h-3.5 w-3.5" />
-												{isLastManager
-													? 'Demote to Worker (last manager)'
-													: 'Demote to Worker'}
-											</DropdownMenuItem>
-										) : (
-											<DropdownMenuItem
-												className="cursor-pointer gap-2"
-												onClick={() => onPromote(nodeId, node)}>
-												<ArrowUpRight className="h-3.5 w-3.5" /> Promote to
-												Manager
-											</DropdownMenuItem>
-										)}
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											disabled={availability === 'active'}
-											className="cursor-pointer gap-2"
-											onClick={() =>
-												onSetAvailability(nodeId, 'active', node)
-											}>
-											<ShieldCheck className="h-3.5 w-3.5" /> Set Active
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											disabled={availability === 'pause'}
-											className="cursor-pointer gap-2"
-											onClick={() =>
-												onSetAvailability(nodeId, 'pause', node)
-											}>
-											Set Pause
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											disabled={availability === 'drain'}
-											className="cursor-pointer gap-2"
-											onClick={() =>
-												onSetAvailability(nodeId, 'drain', node)
-											}>
-											Set Drain
-										</DropdownMenuItem>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-											onClick={() => onRemoveNode(nodeId, node)}>
-											<Trash2 className="h-3.5 w-3.5" /> Remove Node
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							</div>
+							<SwarmNodeRow
+								key={node.id}
+								node={node}
+								isLastManager={
+									nodeRole(node).isManager &&
+									(managersPerCluster.get(clusterKey) ?? 0) <= 1
+								}
+								copiedId={copiedId}
+								onCopyId={handleCopyId}
+								onPromote={onPromote}
+								onDemote={onDemote}
+								onSetAvailability={onSetAvailability}
+								onRemoveNode={onRemoveNode}
+							/>
 						);
 					})}
 				</div>

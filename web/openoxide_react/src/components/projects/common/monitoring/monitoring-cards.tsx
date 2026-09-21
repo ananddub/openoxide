@@ -4,7 +4,14 @@ import {
 	CardHeader,
 	CardTitle,
 } from '#/components/ui/card';
-import {HardDrive, MemoryStick, Network, Server, Timer, Zap} from 'lucide-react';
+import {
+	HardDrive,
+	MemoryStick,
+	Network,
+	Server,
+	Timer,
+	Zap,
+} from 'lucide-react';
 
 // Live snapshot cards — current docker-stats values only. No history buffer,
 // no time-series charts: the panel deliberately avoids keeping sample

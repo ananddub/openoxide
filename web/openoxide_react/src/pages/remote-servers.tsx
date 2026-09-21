@@ -73,7 +73,6 @@ function RemoteServersPage() {
 				onOpenCreate={() => void navigate({to: '/remote-servers/new'})}
 				onRefresh={() => {}}
 				isRefetching={false}
-				servers={servers}
 			/>
 
 			<RemoteServersList
@@ -135,7 +134,6 @@ function RemoteServersPage() {
 					onClose={() => setTerminalServer(null)}
 				/>
 			)}
-
 		</div>
 	);
 }

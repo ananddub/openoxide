@@ -2,12 +2,12 @@ import * as React from 'react';
 import {Loader2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {Input} from '#/components/ui/input';
 import {Label} from '#/components/ui/label';
 import {TagSelector} from '#/components/shared/tag-selector';
@@ -55,16 +55,14 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 	};
 
 	return (
-		<Dialog open={isOpen} onOpenChange={onOpenChange}>
-			<DialogContent className="border- bg-card shadow-xl sm:max-w-lg">
-				<DialogHeader>
-					<DialogTitle className="text-xl font-bold text-foreground">
-						Add a project
-					</DialogTitle>
-					<DialogDescription className="text-xs text-muted-foreground">
+		<Sheet open={isOpen} onOpenChange={onOpenChange}>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle>Add a project</SheetTitle>
+					<SheetDescription>
 						The home of something big!
-					</DialogDescription>
-				</DialogHeader>
+					</SheetDescription>
+				</SheetHeader>
 
 				<form onSubmit={handleSubmit} className="space-y-4 pt-2">
 					{/* Name */}
@@ -81,7 +79,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 							onChange={e => setName(e.target.value)}
 							disabled={isSubmitting}
 							required
-							className="h-9 border- bg-card text-xs"
+							className="border- h-9 bg-card text-xs"
 						/>
 					</div>
 
@@ -133,7 +131,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 						</Button>
 					</div>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</SheetContent>
+		</Sheet>
 	);
 };

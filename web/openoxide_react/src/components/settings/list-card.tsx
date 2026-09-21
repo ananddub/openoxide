@@ -3,7 +3,7 @@ import {cn} from '#/api/utils';
 
 /**
  * OpenShip's list-card pattern (their Settings → Team page): a quiet
- * `rounded-2xl bg-card` panel with a slim header bar — title, count/
+ * `rounded-xl bg-card` panel with a slim header bar — title, count/
  * description, the section's action on the right — and a `divide-y`
  * body of full-bleed rows. No frames, no nested cards.
  */
@@ -19,7 +19,7 @@ export function ListCard({
 	children: ReactNode;
 }) {
 	return (
-		<div className="overflow-hidden rounded-2xl bg-card">
+		<div className="overflow-hidden rounded-xl bg-card">
 			<div className="flex items-center justify-between gap-4 border-b border-border/40 px-5 py-3.5">
 				<div className="min-w-0">
 					<p className="text-sm font-semibold text-foreground">{title}</p>
@@ -71,7 +71,9 @@ export function ListRow({
 				)}
 			</div>
 			{children && (
-				<div className="flex shrink-0 items-center gap-1.5">{children}</div>
+				<div className="flex shrink-0 items-center gap-1.5">
+					{children}
+				</div>
 			)}
 		</>
 	);

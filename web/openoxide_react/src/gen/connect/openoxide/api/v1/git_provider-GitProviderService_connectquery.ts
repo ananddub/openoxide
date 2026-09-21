@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/git_provider.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { GitProviderService } from "./git_provider_pb";
+import {GitProviderService} from './git_provider_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.ListGitProviders
@@ -17,47 +17,56 @@ export const getGitProvider = GitProviderService.method.getGitProvider;
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.CreateGithubProvider
  */
-export const createGithubProvider = GitProviderService.method.createGithubProvider;
+export const createGithubProvider =
+	GitProviderService.method.createGithubProvider;
 
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.CreateGitlabProvider
  */
-export const createGitlabProvider = GitProviderService.method.createGitlabProvider;
+export const createGitlabProvider =
+	GitProviderService.method.createGitlabProvider;
 
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.CreateGiteaProvider
  */
-export const createGiteaProvider = GitProviderService.method.createGiteaProvider;
+export const createGiteaProvider =
+	GitProviderService.method.createGiteaProvider;
 
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.CreateBitbucketProvider
  */
-export const createBitbucketProvider = GitProviderService.method.createBitbucketProvider;
+export const createBitbucketProvider =
+	GitProviderService.method.createBitbucketProvider;
 
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGithubProvider
  */
-export const updateGithubProvider = GitProviderService.method.updateGithubProvider;
+export const updateGithubProvider =
+	GitProviderService.method.updateGithubProvider;
 
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGitlabProvider
  */
-export const updateGitlabProvider = GitProviderService.method.updateGitlabProvider;
+export const updateGitlabProvider =
+	GitProviderService.method.updateGitlabProvider;
 
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGiteaProvider
  */
-export const updateGiteaProvider = GitProviderService.method.updateGiteaProvider;
+export const updateGiteaProvider =
+	GitProviderService.method.updateGiteaProvider;
 
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.UpdateBitbucketProvider
  */
-export const updateBitbucketProvider = GitProviderService.method.updateBitbucketProvider;
+export const updateBitbucketProvider =
+	GitProviderService.method.updateBitbucketProvider;
 
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.DeleteGitProvider
  */
-export const deleteGitProvider = GitProviderService.method.deleteGitProvider;
+export const deleteGitProvider =
+	GitProviderService.method.deleteGitProvider;
 
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.TestGitProvider
@@ -67,7 +76,8 @@ export const testGitProvider = GitProviderService.method.testGitProvider;
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.RotateWebhookSecret
  */
-export const rotateWebhookSecret = GitProviderService.method.rotateWebhookSecret;
+export const rotateWebhookSecret =
+	GitProviderService.method.rotateWebhookSecret;
 
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.ListRepositories
@@ -102,7 +112,8 @@ export const disconnect = GitProviderService.method.disconnect;
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.GetCollaboratorPermission
  */
-export const getCollaboratorPermission = GitProviderService.method.getCollaboratorPermission;
+export const getCollaboratorPermission =
+	GitProviderService.method.getCollaboratorPermission;
 
 /**
  * @generated from rpc openoxide.api.v1.GitProviderService.GetWebhookStatus

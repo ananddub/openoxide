@@ -1,17 +1,16 @@
 import {useState, useEffect} from 'react';
-import {createPortal} from 'react-dom';
-import {RefreshCw, X, Clock} from 'lucide-react';
+import {Clock, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {Input} from '#/components/ui/input';
-import {Label} from '#/components/ui/label';
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {toast} from 'sonner';
+import {ScheduleFormFields} from './schedule-form-fields';
 
 interface CreateScheduleModalProps {
 	isOpen: boolean;
@@ -25,13 +24,6 @@ interface CreateScheduleModalProps {
 		cronExpr: string;
 	}) => Promise<void>;
 }
-
-const CRON_PRESETS = [
-	{label: 'Every 5m', value: '*/5 * * * *'},
-	{label: 'Every 15m', value: '*/15 * * * *'},
-	{label: 'Hourly', value: '0 * * * *'},
-	{label: 'Daily', value: '0 0 * * *'},
-];
 
 export function CreateScheduleModal({
 	isOpen,
@@ -70,7 +62,7 @@ export function CreateScheduleModal({
 		}
 	}, [editingSchedule, servicesList]);
 
-	if (!isOpen || typeof document === 'undefined') return null;
+	if (typeof document === 'undefined') return null;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -88,124 +80,54 @@ export function CreateScheduleModal({
 		}
 	};
 
-	const modalJSX = (
-		<div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-			<div className="w-full max-w-3xl animate-in overflow-hidden rounded-xl bg-card shadow-2xl duration-150 fade-in">
-				<div className="flex items-center justify-between border-b  bg-muted/20 p-4">
-					<div className="flex items-center gap-2.5">
-						<div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-							<Clock className="h-4 w-4" />
-						</div>
-						<div>
-							<h3 className="text-sm font-bold text-foreground">
-								{editingSchedule
-									? 'Edit Schedule / Cron Task'
-									: 'Create Compose Schedule Task'}
-							</h3>
-							<p className="text-[11px] text-muted-foreground">
-								Automate commands on container services
-							</p>
-						</div>
-					</div>
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={onClose}
-						className="h-7 w-7 text-muted-foreground hover:text-foreground">
-						<X className="h-4 w-4" />
-					</Button>
-				</div>
+	return (
+		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2">
+						<Clock className="size-4 text-primary" />
+						{editingSchedule
+							? 'Edit Schedule / Cron Task'
+							: 'Create Compose Schedule Task'}
+					</SheetTitle>
+					<SheetDescription>
+						Automate commands on container services.
+					</SheetDescription>
+				</SheetHeader>
 
-				<form onSubmit={handleSubmit} className="flex flex-col gap-4 p-5">
-					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">
-							Schedule Name *
-						</Label>
-						<Input
-							value={name}
-							onChange={e => setName(e.target.value)}
-							placeholder="e.g., Hourly Cache Cleanup"
-							className="h-9 text-xs"
-						/>
-					</div>
-
-					<div className="flex w-full flex-col gap-1.5">
-						<Label className="text-xs font-semibold">
-							Target Service *
-						</Label>
-						<Select
-							value={serviceName}
-							onValueChange={val => val && setServiceName(val)}>
-							<SelectTrigger className="!h-9 w-full text-xs">
-								<SelectValue placeholder="Select service" />
-							</SelectTrigger>
-							<SelectContent className="border- bg-card">
-								{servicesList.map(srv => (
-									<SelectItem key={srv} value={srv} className="text-xs">
-										{srv}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<Label className="text-xs font-semibold">
-							Command to Run *
-						</Label>
-						<Input
-							value={command}
-							onChange={e => setCommand(e.target.value)}
-							placeholder="e.g., php artisan schedule:run"
-							className="h-9 font-mono text-xs"
-						/>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<Label className="text-xs font-semibold">
-							Cron Expression *
-						</Label>
-						<Input
-							value={cronExpr}
-							onChange={e => setCronExpr(e.target.value)}
-							placeholder="0 * * * *"
-							className="h-9 font-mono text-xs"
-						/>
-						<div className="flex items-center gap-1.5 pt-1">
-							<span className="mr-1 text-[11px] text-muted-foreground">
-								Presets:
-							</span>
-							{CRON_PRESETS.map(p => (
-								<button
-									key={p.value}
-									type="button"
-									onClick={() => setCronExpr(p.value)}
-									className={`rounded  px-2 py-0.5 text-[10px] transition-colors ${
-										cronExpr === p.value
-											? ' bg-primary/10 font-bold text-primary'
-											: ' bg-muted/40 text-muted-foreground hover:bg-muted'
-									}`}>
-									{p.label}
-								</button>
-							))}
-						</div>
-					</div>
-
-					<div className="flex items-center justify-end border-t  pt-2">
-						<Button
-							type="submit"
-							disabled={creating}
-							className="h-9 bg-primary px-5 text-xs font-bold text-primary-foreground shadow-md hover:bg-primary/90">
-							{creating ? (
-								<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-							) : null}
-							{editingSchedule ? 'Update Schedule' : 'Create Schedule'}
-						</Button>
-					</div>
+				<form
+					id="create-schedule-form"
+					onSubmit={handleSubmit}
+					className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
+					<ScheduleFormFields
+						servicesList={servicesList}
+						name={name}
+						onName={setName}
+						serviceName={serviceName}
+						onServiceName={setServiceName}
+						command={command}
+						onCommand={setCommand}
+						cronExpr={cronExpr}
+						onCronExpr={setCronExpr}
+					/>
 				</form>
-			</div>
-		</div>
-	);
 
-	return createPortal(modalJSX, document.body);
+				<SheetFooter>
+					<Button type="button" variant="outline" onClick={onClose}>
+						Cancel
+					</Button>
+					<Button
+						type="submit"
+						form="create-schedule-form"
+						disabled={creating}
+						className="gap-1.5">
+						{creating ? (
+							<RefreshCw className="size-3.5 animate-spin" />
+						) : null}
+						{editingSchedule ? 'Update Schedule' : 'Create Schedule'}
+					</Button>
+				</SheetFooter>
+			</SheetContent>
+		</Sheet>
+	);
 }

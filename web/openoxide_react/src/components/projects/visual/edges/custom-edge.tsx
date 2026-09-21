@@ -51,7 +51,7 @@ export function CustomEdge({
 							? {
 									...edge,
 									data: {
-										...(edge.data ?? {}),
+										...edge.data,
 										cp: {x: fp.x - midX, y: fp.y - midY},
 									},
 								}

@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/overview.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { OverviewService } from "./overview_pb";
+import {OverviewService} from './overview_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.OverviewService.ListServices

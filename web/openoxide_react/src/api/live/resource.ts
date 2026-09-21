@@ -14,5 +14,5 @@ export function readResource<Payload>(response: {
 export function readResourceList<Payload>(response: {
 	items: Array<{payload: string}>;
 }): Payload[] {
-	return response.items.map((item) => JSON.parse(item.payload) as Payload);
+	return response.items.map(item => JSON.parse(item.payload) as Payload);
 }

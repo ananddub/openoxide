@@ -1,4 +1,7 @@
-import {DomainDialog, type DomainFormData} from '#/components/projects/common/domain-dialog';
+import {
+	DomainDialog,
+	type DomainFormData,
+} from '#/components/projects/common/domain-dialog';
 
 interface ComposeDomainModalProps {
 	isOpen: boolean;
@@ -9,5 +12,13 @@ interface ComposeDomainModalProps {
 }
 
 export function ComposeDomainModal(props: ComposeDomainModalProps) {
-	return <DomainDialog isOpen={props.isOpen} onClose={props.onClose} editingDomain={props.editingDomain} services={props.servicesList} onSave={props.onSave} />;
+	return (
+		<DomainDialog
+			isOpen={props.isOpen}
+			onClose={props.onClose}
+			editingDomain={props.editingDomain}
+			services={props.servicesList}
+			onSave={props.onSave}
+		/>
+	);
 }

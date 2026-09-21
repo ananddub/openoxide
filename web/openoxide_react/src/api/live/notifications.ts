@@ -1,4 +1,8 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+} from './query';
 // Only NotificationOperationsService is served by the backend
 // (NotificationService has no controller), so the live layer targets the
 // operations variant.
@@ -23,13 +27,20 @@ export type NotificationPayload = {
 	updated_at: number;
 };
 
-const notificationClient = createServiceClient(NotificationOperationsService);
+const notificationClient = createServiceClient(
+	NotificationOperationsService,
+);
 
 /** Notifications for an organization (legacy live: useNotificationListByOrganization). */
-export function useNotificationListByOrganization(organization_id: bigint) {
+export function useNotificationListByOrganization(
+	organization_id: bigint,
+) {
 	return useResourceListQuery<NotificationPayload>(
 		['notifications', 'list', organization_id.toString()],
-		() => notificationClient.listNotifications({organizationId: organization_id}),
+		() =>
+			notificationClient.listNotifications({
+				organizationId: organization_id,
+			}),
 	);
 }
 
@@ -41,7 +52,9 @@ export function useNotificationListByOrganization(organization_id: bigint) {
 export function useNotificationCreate() {
 	return useConnectMutation(
 		(input: Record<string, unknown>) =>
-			notificationClient.createNotification({payload: JSON.stringify(input)}),
+			notificationClient.createNotification({
+				payload: JSON.stringify(input),
+			}),
 		{invalidate: [['notifications']]},
 	);
 }
@@ -51,7 +64,10 @@ export function useNotificationUpdate() {
 	return useConnectMutation(
 		(input: {id: number | bigint; [field: string]: unknown}) => {
 			const {id, ...body} = input;
-			return notificationClient.updateNotification({id: BigInt(id), payload: JSON.stringify(body)});
+			return notificationClient.updateNotification({
+				id: BigInt(id),
+				payload: JSON.stringify(body),
+			});
 		},
 		{invalidate: [['notifications']]},
 	);

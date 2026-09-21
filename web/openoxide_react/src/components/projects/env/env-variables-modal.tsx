@@ -93,7 +93,7 @@ export function EnvVariablesModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-2xl sm:max-w-xl">
+			<DialogContent className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-lg sm:max-w-xl">
 				<DialogHeader className="space-y-1.5">
 					<DialogTitle className="text-lg font-bold tracking-tight text-foreground">
 						{title}

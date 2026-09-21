@@ -81,7 +81,7 @@ export function RequestsFilterBar({
 						<Filter className="size-3.5 shrink-0 text-muted-foreground" />
 						<SelectValue placeholder="Status Filter" />
 					</SelectTrigger>
-					<SelectContent className="w-[210px] border- bg-card p-1.5 text-xs shadow-md">
+					<SelectContent className="border- w-[210px] bg-card p-1.5 text-xs shadow-md">
 						{STATUS_PRIORITIES.map(opt => (
 							<SelectItem
 								key={opt.value}
@@ -102,7 +102,7 @@ export function RequestsFilterBar({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="end"
-						className="w-[190px] border- bg-card p-1.5 text-xs shadow-md">
+						className="border- w-[190px] bg-card p-1.5 text-xs shadow-md">
 						{ALL_COLUMNS.map(col => (
 							<DropdownMenuCheckboxItem
 								key={col.id}

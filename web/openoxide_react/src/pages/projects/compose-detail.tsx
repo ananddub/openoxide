@@ -91,11 +91,17 @@ function ComposeDetailPage() {
 	}
 
 	// Legacy fields ride the wire payload but sit outside the union type.
-	const composeExtras = compose as {app_name?: string; last_error?: string; compose_type?: string};
+	const composeExtras = compose as {
+		app_name?: string;
+		last_error?: string;
+		compose_type?: string;
+	};
 	return (
 		<ServiceLayout
 			id={String(id)}
-			name={compose.name || composeExtras.app_name || `Compose #${composeId}`}
+			name={
+				compose.name || composeExtras.app_name || `Compose #${composeId}`
+			}
 			subtitle={composeExtras.app_name || compose.name}
 			icon={<Layers2 className="size-4 text-primary" strokeWidth={1.7} />}
 			actions={

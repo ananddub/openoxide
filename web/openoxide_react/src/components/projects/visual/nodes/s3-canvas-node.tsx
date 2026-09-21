@@ -3,6 +3,15 @@ import {Handle, Position, type NodeProps, type Node} from '@xyflow/react';
 import {HardDrive} from 'lucide-react';
 import {useCanvasActions} from '../canvas-context';
 
+const HANDLE_STYLE: React.CSSProperties = {
+	width: 10,
+	height: 10,
+	borderRadius: '50%',
+	border: '2px solid #30363d',
+	background: '#0d1117',
+	transition: 'border-color .15s',
+};
+
 export type S3CanvasNodeProps = Node<S3NodeData, 's3Node'>;
 export interface S3NodeData extends Record<string, unknown> {
 	id: number;
@@ -11,7 +20,10 @@ export interface S3NodeData extends Record<string, unknown> {
 	bucket: string;
 }
 
-export function S3CanvasNode({data}: NodeProps<S3CanvasNodeProps>) {
+export function S3CanvasNode({
+	data,
+	selected,
+}: NodeProps<S3CanvasNodeProps>) {
 	const {inspect} = useCanvasActions();
 	const [hov, setHov] = useState(false);
 
@@ -28,81 +40,76 @@ export function S3CanvasNode({data}: NodeProps<S3CanvasNodeProps>) {
 			onMouseEnter={() => setHov(true)}
 			onMouseLeave={() => setHov(false)}
 			style={{
-				width: 220,
-				background: '#1a1a2e',
-				border: hov
-					? '1px solid rgba(251,191,36,0.45)'
-					: '1px solid rgba(255,255,255,0.08)',
-				borderRadius: 12,
-				padding: '10px 14px',
+				display: 'flex',
+				alignItems: 'center',
+				gap: 10,
+				width: 185,
+				padding: '10px 12px',
+				background: '#161b22',
+				border: selected
+					? '1px solid rgba(251,191,36,0.55)'
+					: hov
+						? '1px solid rgba(255,255,255,0.16)'
+						: '1px solid rgba(255,255,255,0.08)',
+				borderRadius: 10,
 				cursor: 'pointer',
 				userSelect: 'none',
-				transition: 'border-color .15s, box-shadow .15s',
-				boxShadow: hov ? '0 0 0 3px rgba(251,191,36,0.08)' : 'none',
+				transition: 'border-color .12s',
+				position: 'relative',
 			}}>
-			<div style={{display: 'flex', alignItems: 'center', gap: 10}}>
-				<div
-					style={{
-						width: 32,
-						height: 32,
-						borderRadius: 8,
-						background: 'rgba(251,191,36,0.1)',
-						border: '1px solid rgba(251,191,36,0.25)',
-						display: 'flex',
-						alignItems: 'center',
-						justifyContent: 'center',
-						flexShrink: 0,
-					}}>
-					<HardDrive size={15} color="#fbbf24" strokeWidth={1.6} />
-				</div>
-
-				<div style={{flex: 1, minWidth: 0}}>
-					<p
-						style={{
-							margin: 0,
-							fontSize: 13,
-							fontWeight: 600,
-							color: '#f1f5f9',
-							whiteSpace: 'nowrap',
-							overflow: 'hidden',
-							textOverflow: 'ellipsis',
-						}}>
-						{data.name}
-					</p>
-					<p
-						style={{
-							margin: 0,
-							fontSize: 10,
-							color: 'rgba(255,255,255,0.35)',
-							marginTop: 2,
-						}}>
-						{data.provider} · {data.bucket}
-					</p>
-				</div>
-
-				<span
-					style={{
-						width: 7,
-						height: 7,
-						borderRadius: '50%',
-						background: '#fbbf24',
-						boxShadow: '0 0 8px #fbbf24',
-						flexShrink: 0,
-					}}
-				/>
+			<span
+				style={{
+					position: 'absolute',
+					top: 7,
+					right: 8,
+					width: 6,
+					height: 6,
+					borderRadius: '50%',
+					background: '#fbbf24',
+					boxShadow: '0 0 5px #fbbf24',
+				}}
+			/>
+			<div
+				style={{
+					width: 28,
+					height: 28,
+					borderRadius: 7,
+					background: 'rgba(251,191,36,0.1)',
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center',
+					flexShrink: 0,
+				}}>
+				<HardDrive size={14} color="#fbbf24" strokeWidth={1.8} />
 			</div>
-
+			<div style={{flex: 1, minWidth: 0}}>
+				<p
+					style={{
+						margin: 0,
+						fontSize: 12.5,
+						fontWeight: 600,
+						color: '#e6edf3',
+						whiteSpace: 'nowrap',
+						overflow: 'hidden',
+						textOverflow: 'ellipsis',
+						paddingRight: 14,
+					}}>
+					{data.name}
+				</p>
+				<p
+					style={{
+						margin: 0,
+						fontSize: 10,
+						color: '#6e7681',
+						marginTop: 2,
+					}}>
+					{data.provider}
+				</p>
+			</div>
 			<Handle
 				type="target"
 				position={Position.Left}
-				style={{
-					left: -7,
-					width: 12,
-					height: 12,
-					background: '#1a1a2e',
-					border: '2px solid #fbbf24',
-					borderRadius: '50%',
-				}}
+				style={{...HANDLE_STYLE, left: -6}}
 			/>
 		</div>
 	);

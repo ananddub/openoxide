@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/backup.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { BackupService } from "./backup_pb";
+import {BackupService} from './backup_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.BackupService.ListBackups
@@ -42,4 +42,5 @@ export const restoreBackup = BackupService.method.restoreBackup;
 /**
  * @generated from rpc openoxide.api.v1.BackupService.ValidateDestination
  */
-export const validateDestination = BackupService.method.validateDestination;
+export const validateDestination =
+	BackupService.method.validateDestination;

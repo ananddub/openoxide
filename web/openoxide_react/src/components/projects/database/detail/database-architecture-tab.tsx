@@ -1,16 +1,9 @@
 import {useState, useMemo} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
-import {toast} from 'sonner';
-import {formatApiError} from '#/api/utils';
-import {
-	useVolumeBackupCreate,
-	useVolumeBackupUpdate,
-	useVolumeBackupDelete,
-} from '#/api/live';
 import {ComposeVisualizer} from '#/components/projects/compose/visualizer/compose-visualizer';
 import {CreateBackupModal} from '#/components/projects/compose/detail/backups/create-backup-modal';
 import {TerminalCard} from '#/components/shared/terminal-card';
 import {ComposeDirectContainerLogsModal} from '#/components/projects/compose/detail/logs/compose-direct-container-logs-modal';
+import {useDatabaseBackupActions} from './use-database-backup-actions';
 
 interface DatabaseArchitectureTabProps {
 	database: any;
@@ -28,9 +21,13 @@ export function DatabaseArchitectureTab({
 	backups: passedBackups,
 	onRefresh,
 }: DatabaseArchitectureTabProps) {
-	const queryClient = useQueryClient();
-	const dbId = databaseId ?? (database?.id ? Number(database.id) : undefined);
-	const kind = (databaseKind || database?.kind || 'postgres').toLowerCase();
+	const dbId =
+		databaseId ?? (database?.id ? Number(database.id) : undefined);
+	const kind = (
+		databaseKind ||
+		database?.kind ||
+		'postgres'
+	).toLowerCase();
 	const supportsVolumeBackup = !kind.includes('redis');
 	const internalPort =
 		kind.includes('mysql') || kind.includes('maria')
@@ -43,10 +40,6 @@ export function DatabaseArchitectureTab({
 						? 8080
 						: 5432;
 	const externalPort = database?.external_port || undefined;
-
-	const createBackupMutation = useVolumeBackupCreate();
-	const patchBackupMutation = useVolumeBackupUpdate();
-	const deleteBackupMutation = useVolumeBackupDelete();
 
 	const [activeModal, setActiveModal] = useState<
 		'domain' | 'backup' | 'terminal' | 'logs' | null
@@ -96,6 +89,18 @@ export function DatabaseArchitectureTab({
 	);
 
 	// Handlers
+	const {handleSaveBackup, handleDeleteBackup} = useDatabaseBackupActions({
+		database,
+		dbId,
+		kind,
+		editingBackupData,
+		onSaved: () => {
+			onRefresh?.();
+			setActiveModal(null);
+			setEditingBackupData(null);
+		},
+	});
+
 	const handleAddBackup = () => {
 		setEditingBackupData(null);
 		setActiveModal('backup');
@@ -112,72 +117,6 @@ export function DatabaseArchitectureTab({
 
 	const handleViewLogs = () => {
 		setActiveModal('logs');
-	};
-
-	const handleDeleteBackup = async (backupData: any) => {
-		const backupId = backupData?.id;
-		if (!backupId) return;
-		try {
-			await deleteBackupMutation.mutateAsync(backupId);
-			toast.success('Backup rule removed');
-			queryClient.invalidateQueries();
-			onRefresh?.();
-		} catch (e: any) {
-			toast.error(e?.message || 'Failed to delete backup rule');
-		}
-	};
-
-	const handleSaveBackup = async (data: {
-		name: string;
-		serviceName: string;
-		volumeName: string;
-		cronExpr: string;
-		prefix: string;
-		turnOff: boolean;
-		destinationId: number;
-	}) => {
-		try {
-			if (editingBackupData?.id) {
-				await patchBackupMutation.mutateAsync({
-					id: editingBackupData.id,
-					name: data.name,
-					volume_name: data.volumeName,
-					prefix: data.prefix || '',
-					service_name: data.serviceName,
-					turn_off: data.turnOff ? 1 : 0,
-					cron_expression: data.cronExpr,
-				});
-				toast.success('Volume backup updated successfully');
-			} else {
-				await createBackupMutation.mutateAsync({
-					name: data.name,
-					volume_name: data.volumeName,
-					prefix: data.prefix || '',
-					service_type: 'database',
-					app_name:
-						database?.app_name ||
-						database?.name ||
-						data.serviceName ||
-						'database',
-					service_name: data.serviceName,
-					turn_off: data.turnOff ? 1 : 0,
-					cron_expression: data.cronExpr,
-					postgres_id: kind.includes('postgres') ? dbId : undefined,
-					mysql_id: kind.includes('mysql') ? dbId : undefined,
-					mariadb_id: kind.includes('mariadb') ? dbId : undefined,
-					mongo_id: kind.includes('mongo') ? dbId : undefined,
-					libsql_id: kind.includes('libsql') ? dbId : undefined,
-					destination_id: data.destinationId,
-				});
-				toast.success('Volume backup created successfully');
-			}
-			queryClient.invalidateQueries();
-			onRefresh?.();
-			setActiveModal(null);
-			setEditingBackupData(null);
-		} catch (error: unknown) {
-			toast.error(formatApiError(error));
-		}
 	};
 
 	return (
@@ -200,7 +139,9 @@ export function DatabaseArchitectureTab({
 				onOpenTerminal={handleOpenTerminal}
 				onViewLogs={handleViewLogs}
 				onEditBackup={supportsVolumeBackup ? handleEditBackup : undefined}
-				onDeleteBackup={supportsVolumeBackup ? handleDeleteBackup : undefined}
+				onDeleteBackup={
+					supportsVolumeBackup ? handleDeleteBackup : undefined
+				}
 			/>
 
 			{/* Backup Modal */}
@@ -220,7 +161,11 @@ export function DatabaseArchitectureTab({
 
 			{/* Terminal Shell — inline card */}
 			{activeModal === 'terminal' && (
-				<TerminalCard app={database} enabled={true} onClose={() => setActiveModal(null)} />
+				<TerminalCard
+					app={database}
+					enabled={true}
+					onClose={() => setActiveModal(null)}
+				/>
 			)}
 
 			{/* Live Container Logs Modal */}

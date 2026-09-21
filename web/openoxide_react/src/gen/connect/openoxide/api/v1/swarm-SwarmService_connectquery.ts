@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/swarm.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { SwarmService } from "./swarm_pb";
+import {SwarmService} from './swarm_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.SwarmService.GetSettings

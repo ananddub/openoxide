@@ -5,27 +5,24 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from '#/components/ui/sheet';
-import {
-	Tabs,
-	TabsContent,
-	TabsList,
-	TabsTrigger,
-} from '#/components/ui/tabs';
+import {Tabs, TabsList, TabsTrigger} from '#/components/ui/tabs';
 import {Badge} from '#/components/ui/badge';
 import {Button} from '#/components/ui/button';
 import {
 	Box,
-	Cpu,
 	Database,
-	HardDrive,
-	Terminal,
-	ExternalLink,
-	RotateCw,
-	Activity,
 	Sliders,
+	Activity,
 	Play,
 	Square,
+	RotateCw,
+	Terminal,
 } from 'lucide-react';
+import {
+	InspectorOverviewTab,
+	InspectorConfigTab,
+	InspectorLogsTab,
+} from './inspector-tabs';
 
 interface ServiceInspectorDrawerProps {
 	isOpen: boolean;
@@ -59,7 +56,7 @@ export function ServiceInspectorDrawer({
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
 			<SheetContent
 				side="right"
-				className="flex w-[450px] flex-col border-l border- bg-card p-0 font-sans sm:w-[540px]">
+				className="border- flex w-[450px] flex-col border-l bg-card p-0 font-sans sm:w-[540px]">
 				{/* Drawer Header */}
 				<SheetHeader className="flex flex-col gap-2 border-b  bg-muted/20 p-5">
 					<div className="flex items-center justify-between gap-3">
@@ -148,113 +145,10 @@ export function ServiceInspectorDrawer({
 						</TabsList>
 					</div>
 
-					{/* Overview Tab */}
-					<TabsContent
-						value="overview"
-						className="m-0 flex flex-1 flex-col gap-4 overflow-y-auto p-5">
-						<div className="grid grid-cols-2 gap-3">
-							<div className="rounded-xl bg-muted/20 p-3">
-								<span className="flex items-center gap-1 text-xs text-muted-foreground">
-									<Cpu className="h-3.5 w-3.5 text-sky-400" /> CPU Usage
-								</span>
-								<p className="mt-1 font-mono text-base font-bold text-foreground">
-									0.15%
-								</p>
-							</div>
-							<div className="rounded-xl bg-muted/20 p-3">
-								<span className="flex items-center gap-1 text-xs text-muted-foreground">
-									<HardDrive className="h-3.5 w-3.5 text-violet-400" />{' '}
-									Memory Usage
-								</span>
-								<p className="mt-1 font-mono text-base font-bold text-foreground">
-									142 MB / 512 MB
-								</p>
-							</div>
-						</div>
-
-						<div className="flex flex-col gap-2.5 rounded-xl bg-muted/20 p-4 font-mono text-xs">
-							<div className="flex items-center justify-between">
-								<span className="font-sans text-muted-foreground">
-									Service ID:
-								</span>
-								<span className="font-bold text-foreground">
-									#{node.id}
-								</span>
-							</div>
-							<div className="flex items-center justify-between">
-								<span className="font-sans text-muted-foreground">
-									Internal Hostname:
-								</span>
-								<span className="font-bold text-foreground">
-									{node.name}
-								</span>
-							</div>
-							{node.url && (
-								<div className="flex items-center justify-between">
-									<span className="font-sans text-muted-foreground">
-										Public Endpoint:
-									</span>
-									<a
-										href={node.url}
-										target="_blank"
-										rel="noreferrer"
-										className="flex items-center gap-1 text-primary hover:underline">
-										{node.url} <ExternalLink className="h-3 w-3" />
-									</a>
-								</div>
-							)}
-						</div>
-					</TabsContent>
-
-					{/* Config Tab */}
-					<TabsContent
-						value="config"
-						className="m-0 flex flex-1 flex-col gap-4 overflow-y-auto p-5">
-						<div className="flex flex-col gap-3 rounded-xl bg-muted/20 p-4">
-							<h4 className="text-xs font-bold tracking-wider text-foreground uppercase">
-								Service Configurations
-							</h4>
-							<p className="text-xs text-muted-foreground">
-								Configure environment variables, resource limits, and
-								replica scaling directly from this panel.
-							</p>
-
-							<div className="mt-2 flex flex-col gap-2">
-								<div className="flex items-center justify-between rounded-lg bg-background p-2.5 font-mono text-xs">
-									<span className="text-muted-foreground">Replicas:</span>
-									<span className="font-bold text-foreground">
-										1 Instance
-									</span>
-								</div>
-								<div className="flex items-center justify-between rounded-lg bg-background p-2.5 font-mono text-xs">
-									<span className="text-muted-foreground">
-										Network Mode:
-									</span>
-									<span className="font-bold text-emerald-400">
-										OpenOxide Overlay
-									</span>
-								</div>
-							</div>
-						</div>
-					</TabsContent>
-
-					{/* Logs Tab */}
-					<TabsContent
-						value="logs"
-						className="m-0 flex flex-1 flex-col gap-2 overflow-y-auto bg-black/90 p-4 font-mono text-xs text-emerald-400">
-						<p className="text-[11px] text-muted-foreground">
-							[LOGS] Streaming live stdout/stderr logs from Docker
-							engine...
-						</p>
-						<div className="space-y-1">
-							<p className="text-emerald-400">
-								[INFO] Container {node.name} online and active.
-							</p>
-							<p className="text-emerald-400">
-								[INFO] Health check HTTP 200 OK (0ms latency).
-							</p>
-						</div>
-					</TabsContent>
+					{/* Tab panels */}
+					<InspectorOverviewTab node={node} />
+					<InspectorConfigTab />
+					<InspectorLogsTab node={node} />
 				</Tabs>
 			</SheetContent>
 		</Sheet>

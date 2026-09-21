@@ -1,4 +1,4 @@
-import {useState, useMemo} from 'react';
+import {useState} from 'react';
 import {
 	Handle,
 	Position,
@@ -6,107 +6,9 @@ import {
 	type Node,
 	useReactFlow,
 } from '@xyflow/react';
-import {siDocker} from 'simple-icons';
-import {SlidersHorizontal, HardDrive, Minus, Plus} from 'lucide-react';
-import {
-	resolveLocalIcon,
-	isValidDockerImage,
-} from '#/lib/service-icon-resolver';
-
-// ─── 3-Tier Hybrid Icon Resolver ──────────────────────────────────────────────
-
-function ServiceIcon({image}: {image: string; name?: string}) {
-	const [failed, setFailed] = useState(false);
-
-	const cleanImageName = useMemo(() => {
-		if (!isValidDockerImage(image)) return '';
-		let n = image.split(':')[0].split('@')[0];
-		if (n.includes('/')) {
-			const parts = n.split('/');
-			n = parts[parts.length - 1];
-		}
-		return n.toLowerCase().trim();
-	}, [image]);
-
-	// Tier 1: Auto-match valid Docker image against 3,450+ local simple-icons + Redpanda
-	const known = useMemo(() => resolveLocalIcon(image), [image]);
-
-	if (known) {
-		const vb = known.viewBox || '0 0 24 24';
-		return (
-			<div
-				style={{
-					width: 38,
-					height: 38,
-					borderRadius: 9,
-					flexShrink: 0,
-					background: `${known.color}18`,
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'center',
-				}}>
-				<svg
-					viewBox={vb}
-					style={{width: 20, height: 20, fill: known.color}}>
-					{Array.isArray(known.paths) ? (
-						known.paths.map((p, idx) => <path key={idx} d={p} />)
-					) : (
-						<path d={known.path} />
-					)}
-				</svg>
-			</div>
-		);
-	}
-
-	// Tier 2: Dynamic fetch for custom Docker Hub images (ONLY if valid image tag)
-	if (cleanImageName && !failed) {
-		const iconUrl = `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/svg/${cleanImageName}.svg`;
-		return (
-			<div
-				style={{
-					width: 38,
-					height: 38,
-					borderRadius: 9,
-					flexShrink: 0,
-					background: 'rgba(255,255,255,0.05)',
-					border: '1px solid rgba(255,255,255,0.08)',
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'center',
-					padding: 4,
-					overflow: 'hidden',
-				}}>
-				<img
-					src={iconUrl}
-					alt={cleanImageName}
-					onError={() => setFailed(true)}
-					style={{width: '100%', height: '100%', objectFit: 'contain'}}
-				/>
-			</div>
-		);
-	}
-
-	// Tier 3: Fallback to Docker 🐳 Logo for local builds, '.', or unknown images
-	return (
-		<div
-			style={{
-				width: 38,
-				height: 38,
-				borderRadius: 9,
-				flexShrink: 0,
-				background: '#1e90ff18',
-				display: 'flex',
-				alignItems: 'center',
-				justifyContent: 'center',
-			}}>
-			<svg
-				viewBox="0 0 24 24"
-				style={{width: 20, height: 20, fill: '#1e90ff'}}>
-				<path d={siDocker.path} />
-			</svg>
-		</div>
-	);
-}
+import {SlidersHorizontal, HardDrive} from 'lucide-react';
+import {DockerServiceIcon} from '../common/docker-service-icon';
+import {StackReplicaBar} from './stack-replica-bar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -183,7 +85,7 @@ export function StackServiceCard({
 						gap: 12,
 						marginBottom: 14,
 					}}>
-					<ServiceIcon image={data.image} name={data.name} />
+					<DockerServiceIcon image={data.image} size={38} />
 					<div style={{flex: 1, minWidth: 0}}>
 						<p
 							style={{
@@ -254,95 +156,7 @@ export function StackServiceCard({
 				))}
 			</div>
 
-			{/* ── Replica bar ───────────────────────────────────── */}
-			<div
-				style={{
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'space-between',
-					padding: '8px 16px',
-					background: 'rgba(0,0,0,0.2)',
-					borderTop: '1px solid rgba(255,255,255,0.05)',
-				}}>
-				<span style={{fontSize: 11, color: '#6e7681', fontWeight: 500}}>
-					Replicas
-				</span>
-				<div style={{display: 'flex', alignItems: 'center', gap: 0}}>
-					<button
-						type="button"
-						onClick={e => {
-							e.stopPropagation();
-							setReplicas(-1);
-						}}
-						style={{
-							width: 22,
-							height: 22,
-							borderRadius: '6px 0 0 6px',
-							background: 'rgba(255,255,255,0.05)',
-							border: '1px solid rgba(255,255,255,0.08)',
-							color: '#8b949e',
-							cursor: 'pointer',
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'center',
-							transition: 'background .1s',
-						}}
-						onMouseEnter={e =>
-							(e.currentTarget.style.background = 'rgba(255,255,255,0.1)')
-						}
-						onMouseLeave={e =>
-							(e.currentTarget.style.background = 'rgba(255,255,255,0.05)')
-						}>
-						<Minus size={11} />
-					</button>
-					<div
-						style={{
-							minWidth: 28,
-							height: 22,
-							textAlign: 'center',
-							background: 'rgba(255,255,255,0.04)',
-							border: '1px solid rgba(255,255,255,0.08)',
-							borderLeft: 'none',
-							borderRight: 'none',
-							fontSize: 12,
-							fontWeight: 600,
-							color: '#e6edf3',
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'center',
-							padding: '0 6px',
-						}}>
-						{data.replicas ?? 1}
-					</div>
-					<button
-						type="button"
-						onClick={e => {
-							e.stopPropagation();
-							setReplicas(+1);
-						}}
-						style={{
-							width: 22,
-							height: 22,
-							borderRadius: '0 6px 6px 0',
-							background: 'rgba(255,255,255,0.05)',
-							border: '1px solid rgba(255,255,255,0.08)',
-							color: '#8b949e',
-							cursor: 'pointer',
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'center',
-							transition: 'background .1s',
-						}}
-						onMouseEnter={e =>
-							(e.currentTarget.style.background = 'rgba(255,255,255,0.1)')
-						}
-						onMouseLeave={e =>
-							(e.currentTarget.style.background = 'rgba(255,255,255,0.05)')
-						}>
-						<Plus size={11} />
-					</button>
-				</div>
-			</div>
+			<StackReplicaBar value={data.replicas ?? 1} onStep={setReplicas} />
 
 			{/* Handles — all 4 sides */}
 			<Handle

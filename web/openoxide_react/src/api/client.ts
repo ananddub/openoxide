@@ -69,7 +69,9 @@ export async function refreshAccessToken(): Promise<string | null> {
 			)
 				return null;
 
-			const response = await createServiceClient(AuthService).refresh({refreshToken});
+			const response = await createServiceClient(AuthService).refresh({
+				refreshToken,
+			});
 			if (!response.user || !response.tokens) {
 				logout();
 				return null;

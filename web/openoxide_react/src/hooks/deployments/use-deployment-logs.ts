@@ -110,9 +110,7 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 					if (lines.length > 0) {
 						setIsLogsLoading(false);
 						setLogs(prev =>
-							prev
-								? `${prev}\n${lines.join('\n')}`
-								: lines.join('\n'),
+							prev ? `${prev}\n${lines.join('\n')}` : lines.join('\n'),
 						);
 					}
 				}

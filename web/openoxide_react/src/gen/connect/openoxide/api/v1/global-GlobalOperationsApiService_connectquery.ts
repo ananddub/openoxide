@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/global.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { GlobalOperationsApiService } from "./global_pb";
+import {GlobalOperationsApiService} from './global_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.GlobalOperationsApiService.DownloadFile
@@ -12,7 +12,8 @@ export const downloadFile = GlobalOperationsApiService.method.downloadFile;
 /**
  * @generated from rpc openoxide.api.v1.GlobalOperationsApiService.ListContainers
  */
-export const listContainers = GlobalOperationsApiService.method.listContainers;
+export const listContainers =
+	GlobalOperationsApiService.method.listContainers;
 
 /**
  * @generated from rpc openoxide.api.v1.GlobalOperationsApiService.ListImages
@@ -32,7 +33,8 @@ export const listVolumes = GlobalOperationsApiService.method.listVolumes;
 /**
  * @generated from rpc openoxide.api.v1.GlobalOperationsApiService.InspectContainer
  */
-export const inspectContainer = GlobalOperationsApiService.method.inspectContainer;
+export const inspectContainer =
+	GlobalOperationsApiService.method.inspectContainer;
 
 /**
  * @generated from rpc openoxide.api.v1.GlobalOperationsApiService.InspectImage
@@ -42,22 +44,26 @@ export const inspectImage = GlobalOperationsApiService.method.inspectImage;
 /**
  * @generated from rpc openoxide.api.v1.GlobalOperationsApiService.InspectNetwork
  */
-export const inspectNetwork = GlobalOperationsApiService.method.inspectNetwork;
+export const inspectNetwork =
+	GlobalOperationsApiService.method.inspectNetwork;
 
 /**
  * @generated from rpc openoxide.api.v1.GlobalOperationsApiService.InspectVolume
  */
-export const inspectVolume = GlobalOperationsApiService.method.inspectVolume;
+export const inspectVolume =
+	GlobalOperationsApiService.method.inspectVolume;
 
 /**
  * @generated from rpc openoxide.api.v1.GlobalOperationsApiService.ContainerAction
  */
-export const containerAction = GlobalOperationsApiService.method.containerAction;
+export const containerAction =
+	GlobalOperationsApiService.method.containerAction;
 
 /**
  * @generated from rpc openoxide.api.v1.GlobalOperationsApiService.RemoveContainer
  */
-export const removeContainer = GlobalOperationsApiService.method.removeContainer;
+export const removeContainer =
+	GlobalOperationsApiService.method.removeContainer;
 
 /**
  * @generated from rpc openoxide.api.v1.GlobalOperationsApiService.DiskUsage

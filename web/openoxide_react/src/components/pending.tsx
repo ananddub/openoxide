@@ -8,11 +8,11 @@ export const RootPending = () => (
 		<div className="relative z-10 flex flex-col items-center gap-6">
 			<div className="relative flex items-center justify-center">
 				<div
-					className="absolute size-20 animate-ping rounded-2xl bg-primary/5 opacity-40"
+					className="absolute size-20 animate-ping rounded-xl bg-primary/5 opacity-40"
 					style={{animationDuration: '2s'}}
 				/>
 				<div
-					className="relative flex size-16 animate-pulse items-center justify-center rounded-2xl bg-card p-3 shadow-xl"
+					className="relative flex size-16 animate-pulse items-center justify-center rounded-xl bg-card p-3 shadow-md"
 					style={{animationDuration: '3s'}}>
 					<Logo className="size-10 rounded-lg" />
 				</div>

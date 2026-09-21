@@ -53,7 +53,9 @@ export function useSignup(onErrorCallback?: (msg: string) => void) {
 		},
 		onError: (error: unknown) => {
 			const detail = error as {message?: string};
-			onErrorCallback?.(detail?.message || 'Signup failed. Please try again.');
+			onErrorCallback?.(
+				detail?.message || 'Signup failed. Please try again.',
+			);
 		},
 	});
 }

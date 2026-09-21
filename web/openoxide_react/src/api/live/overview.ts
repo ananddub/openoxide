@@ -1,4 +1,8 @@
-import {createServiceClient, useActiveOrgId, useResourceListQuery} from './query';
+import {
+	createServiceClient,
+	useActiveOrgId,
+	useResourceListQuery,
+} from './query';
 import {OverviewOperationsService} from '#/gen/connect/openoxide/api/v1/overview_operations_pb';
 
 /**

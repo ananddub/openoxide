@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/server_management.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { ServerManagementService } from "./server_management_pb";
+import {ServerManagementService} from './server_management_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.ServerManagementService.GetManagement
@@ -12,7 +12,8 @@ export const getManagement = ServerManagementService.method.getManagement;
 /**
  * @generated from rpc openoxide.api.v1.ServerManagementService.UpdateManagement
  */
-export const updateManagement = ServerManagementService.method.updateManagement;
+export const updateManagement =
+	ServerManagementService.method.updateManagement;
 
 /**
  * @generated from rpc openoxide.api.v1.ServerManagementService.RepairAudit
@@ -32,7 +33,8 @@ export const runCleanup = ServerManagementService.method.runCleanup;
 /**
  * @generated from rpc openoxide.api.v1.ServerManagementService.ListCleanupHistory
  */
-export const listCleanupHistory = ServerManagementService.method.listCleanupHistory;
+export const listCleanupHistory =
+	ServerManagementService.method.listCleanupHistory;
 
 /**
  * @generated from rpc openoxide.api.v1.ServerManagementService.Upgrade

@@ -1,44 +1,30 @@
 import {useState} from 'react';
+import {Globe, Loader2} from 'lucide-react';
 import {
-	ChevronDown,
-	ChevronRight,
-	Globe,
-	Loader2,
-	Pencil,
-	Plus,
-	Trash2,
-} from 'lucide-react';
-import {useDnsRecordCreate, useDnsRecordDelete, useDnsRecordList, useDnsZoneList} from '#/api/live';
+	useDnsRecordCreate,
+	useDnsRecordDelete,
+	useDnsRecordList,
+	useDnsZoneList,
+} from '#/api/live';
 import {formatApiError} from '#/api/utils';
-import {Badge} from '#/components/ui/badge';
 import {Button} from '#/components/ui/button';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
-import {Input} from '#/components/ui/input';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {toast} from 'sonner';
+import {DnsZoneRow, type DnsRecord} from './dns-zone-row';
+import {
+	DnsRecordDraftDialog,
+	type RecordDraft,
+} from './dns-record-draft-dialog';
 
 type Props = {provider: {id: number; name: string}};
-type RecordDraft = {
-	zoneId: string;
-	recordId?: string;
-	recordType: 'A' | 'CNAME';
-	name: string;
-	content: string;
-	ttl: string;
-};
 
+/** "View Domains" trigger + zone/records management dialog. */
 export function DnsZonesDialog({provider}: Props) {
 	const [open, setOpen] = useState(false);
 	const [expanded, setExpanded] = useState<string | null>(null);
@@ -54,13 +40,7 @@ export function DnsZonesDialog({provider}: Props) {
 		id: string;
 		name: string;
 	}>;
-	const records = (recordsQuery.data || []) as Array<{
-		id: string;
-		record_type: string;
-		name: string;
-		content: string;
-		ttl?: number;
-	}>;
+	const records = (recordsQuery.data || []) as DnsRecord[];
 
 	const startCreate = (zoneId: string, zoneName: string) =>
 		setDraft({
@@ -70,7 +50,7 @@ export function DnsZonesDialog({provider}: Props) {
 			content: '',
 			ttl: '',
 		});
-	const startEdit = (record: (typeof records)[number], zoneId: string) =>
+	const startEdit = (record: DnsRecord, zoneId: string) =>
 		setDraft({
 			zoneId,
 			recordId: record.id,
@@ -120,7 +100,7 @@ export function DnsZonesDialog({provider}: Props) {
 			<Button variant="outline" size="sm" onClick={() => setOpen(true)}>
 				<Globe className="mr-1.5 size-3.5" /> View Domains
 			</Button>
-			<Dialog
+			<Sheet
 				open={open}
 				onOpenChange={value => {
 					setOpen(value);
@@ -129,14 +109,15 @@ export function DnsZonesDialog({provider}: Props) {
 						setDraft(null);
 					}
 				}}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-					<DialogHeader>
-						<DialogTitle>Domains for {provider.name}</DialogTitle>
-						<DialogDescription>
+				<SheetContent>
+					<SheetHeader>
+						<SheetTitle>Domains for {provider.name}</SheetTitle>
+						<SheetDescription>
 							Zones available to this provider. Expand a zone to inspect
 							and manage A/CNAME records.
-						</DialogDescription>
-					</DialogHeader>
+						</SheetDescription>
+					</SheetHeader>
+					<div className="flex-1 space-y-2 overflow-y-auto px-6 py-4">
 					{zonesQuery.isLoading && (
 						<div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
 							<Loader2 className="size-4 animate-spin" /> Loading zones...
@@ -154,142 +135,31 @@ export function DnsZonesDialog({provider}: Props) {
 					)}
 					<div className="space-y-2">
 						{zones.map(zone => (
-							<div key={zone.id} className="rounded-md ">
-								<button
-									type="button"
-									className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm"
-									onClick={() =>
-										setExpanded(expanded === zone.id ? null : zone.id)
-									}>
-									{expanded === zone.id ? (
-										<ChevronDown className="size-4" />
-									) : (
-										<ChevronRight className="size-4" />
-									)}
-									<Globe className="size-4 text-muted-foreground" />
-									{zone.name}
-								</button>
-								{expanded === zone.id && (
-									<div className="space-y-2 border-t px-3 py-3">
-										{recordsQuery.isLoading && (
-											<div className="flex gap-2 text-sm text-muted-foreground">
-												<Loader2 className="size-4 animate-spin" /> Loading
-												records...
-											</div>
-										)}
-										{records.map(record => (
-											<div
-												key={record.id}
-												className="flex items-center gap-2 rounded  px-2 py-1.5 text-xs">
-												<Badge variant="outline">
-													{record.record_type}
-												</Badge>
-												<span className="truncate font-medium">
-													{record.name}
-												</span>
-												<span className="flex-1 truncate text-muted-foreground">
-													{record.content}
-												</span>
-												<Button
-													variant="ghost"
-													size="icon"
-													className="size-7"
-													onClick={() => startEdit(record, zone.id)}
-													title="Edit record">
-													<Pencil className="size-3.5" />
-												</Button>
-												<Button
-													variant="ghost"
-													size="icon"
-													className="size-7 text-destructive"
-													onClick={() => deleteRecord(record.id)}
-													title="Delete record">
-													<Trash2 className="size-3.5" />
-												</Button>
-											</div>
-										))}
-										{!recordsQuery.isLoading && !records.length && (
-											<p className="text-xs text-muted-foreground">
-												No records found.
-											</p>
-										)}
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => startCreate(zone.id, zone.name)}>
-											<Plus className="mr-1.5 size-3.5" /> Add Record
-										</Button>
-									</div>
-								)}
-							</div>
+							<DnsZoneRow
+								key={zone.id}
+								zone={zone}
+								expanded={expanded === zone.id}
+								isLoading={recordsQuery.isLoading}
+								records={expanded === zone.id ? records : []}
+								onToggle={() =>
+									setExpanded(expanded === zone.id ? null : zone.id)
+								}
+								onEdit={record => startEdit(record, zone.id)}
+								onDelete={record => deleteRecord(record.id)}
+								onCreate={() => startCreate(zone.id, zone.name)}
+							/>
 						))}
 					</div>
-					<Dialog
-						open={!!draft}
-						onOpenChange={value => !value && setDraft(null)}>
-						<DialogContent className="sm:max-w-md">
-							<DialogHeader>
-								<DialogTitle>
-									{draft?.recordId ? 'Edit Record' : 'Add Record'}
-								</DialogTitle>
-								<DialogDescription>
-									Only A and CNAME records are supported.
-								</DialogDescription>
-							</DialogHeader>
-							{draft && (
-								<div className="grid gap-3">
-									<Select
-										value={draft.recordType}
-										onValueChange={(value) =>
-											setDraft({...draft, recordType: value as 'A' | 'CNAME'})
-										}>
-										<SelectTrigger>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="A">A</SelectItem>
-											<SelectItem value="CNAME">CNAME</SelectItem>
-										</SelectContent>
-									</Select>
-									<Input
-										placeholder="app.example.com"
-										value={draft.name}
-										onChange={event =>
-											setDraft({...draft, name: event.target.value})
-										}
-									/>
-									<Input
-										placeholder={
-											draft.recordType === 'A'
-												? '203.0.113.10'
-												: 'target.example.com'
-										}
-										value={draft.content}
-										onChange={event =>
-											setDraft({...draft, content: event.target.value})
-										}
-									/>
-									<Input
-										type="number"
-										placeholder="TTL (optional)"
-										value={draft.ttl}
-										onChange={event =>
-											setDraft({...draft, ttl: event.target.value})
-										}
-									/>
-									<Button onClick={save} disabled={upsert.isPending}>
-										{upsert.isPending
-											? 'Saving...'
-											: draft.recordId
-												? 'Update Record'
-												: 'Create Record'}
-									</Button>
-								</div>
-							)}
-						</DialogContent>
-					</Dialog>
-				</DialogContent>
-			</Dialog>
+					</div>
+					<DnsRecordDraftDialog
+						draft={draft}
+						saving={upsert.isPending}
+						onChange={setDraft}
+						onClose={() => setDraft(null)}
+						onSave={save}
+					/>
+				</SheetContent>
+			</Sheet>
 		</>
 	);
 }

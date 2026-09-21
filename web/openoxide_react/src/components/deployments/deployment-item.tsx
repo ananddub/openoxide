@@ -12,6 +12,12 @@ import {Button} from '#/components/ui/button';
 import {Badge} from '#/components/ui/badge';
 import {TableRow, TableCell} from '#/components/ui/table';
 import type {Deployment} from '#/hooks/deployments/use-deployments';
+import {
+	deploymentType,
+	isBusyStatus,
+	formatDeploymentDate,
+} from './deployment-utils';
+import {DeploymentStatusBadge} from './deployment-status-badge';
 
 interface DeploymentItemProps {
 	deployment: Deployment;
@@ -29,102 +35,10 @@ export function DeploymentItem({
 	onDelete,
 }: DeploymentItemProps) {
 	const d = deployment;
-	const hasApp =
-		d.application_id !== null && d.application_id !== undefined;
-	const hasCompose = d.compose_id !== null && d.compose_id !== undefined;
-	const hasDatabase =
-		d.database_id !== null && d.database_id !== undefined;
-	const type = hasApp
-		? 'Application'
-		: hasCompose
-			? 'Compose'
-			: hasDatabase
-				? 'Database'
-				: 'Generic';
+	const hasApp = d.application_id != null;
+	const hasCompose = d.compose_id != null;
 	const status = (d.status || '').toUpperCase();
-	const isRunningOrQueued =
-		status === 'RUNNING' ||
-		status === 'QUEUED' ||
-		status.includes('BUILD') ||
-		status.includes('PEND');
-
-	const getStatusBadge = () => {
-		if (
-			status === 'DONE' ||
-			status === 'HEALTHY' ||
-			status === 'SUCCESS' ||
-			status === 'DEPLOYED'
-		) {
-			return (
-				<Badge
-					variant="outline"
-					className="gap-1.5 border-emerald-500/30 bg-emerald-500/10 py-0.5 text-[10px] font-bold tracking-wider text-emerald-500 uppercase">
-					<span className="size-1.5 rounded-full bg-emerald-500" />
-					SUCCESS
-				</Badge>
-			);
-		}
-		if (status === 'CANCELLING') {
-			return (
-				<Badge
-					variant="outline"
-					className="gap-1.5 border-amber-500/30 bg-amber-500/10 py-0.5 text-[10px] font-bold tracking-wider text-amber-500 uppercase">
-					<span className="size-1.5 animate-pulse rounded-full bg-amber-500" />
-					CANCELLING...
-				</Badge>
-			);
-		}
-		if (status === 'CANCELLED') {
-			return (
-				<Badge
-					variant="outline"
-					className="gap-1.5 border-zinc-500/30 bg-zinc-500/10 py-0.5 text-[10px] font-bold tracking-wider text-zinc-400 uppercase">
-					<span className="size-1.5 rounded-full bg-zinc-400" />
-					CANCELLED
-				</Badge>
-			);
-		}
-		if (
-			status === 'ERROR' ||
-			status === 'FAILED' ||
-			status === 'CRASHED'
-		) {
-			return (
-				<Badge
-					variant="outline"
-					className="gap-1.5 border-rose-500/30 bg-rose-500/10 py-0.5 text-[10px] font-bold tracking-wider text-rose-500 uppercase">
-					<span className="size-1.5 rounded-full bg-rose-500" />
-					FAILED
-				</Badge>
-			);
-		}
-		if (isRunningOrQueued) {
-			return (
-				<Badge
-					variant="outline"
-					className="animate-pulse gap-1.5 border-amber-500/30 bg-amber-500/10 py-0.5 text-[10px] font-bold tracking-wider text-amber-500 uppercase">
-					<span className="size-1.5 animate-ping rounded-full bg-amber-500" />
-					{status}
-				</Badge>
-			);
-		}
-		return (
-			<Badge
-				variant="secondary"
-				className="gap-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase">
-				<span className="size-1.5 rounded-full bg-muted-foreground/50" />
-				{status}
-			</Badge>
-		);
-	};
-
-	const formatTimestamp = (raw: any) => {
-		if (!raw) return 'N/A';
-		const num = Number(raw);
-		if (isNaN(num)) return String(raw);
-		const ms = num < 1e11 ? num * 1000 : num;
-		return new Date(ms).toLocaleDateString();
-	};
+	const busy = isBusyStatus(status);
 
 	return (
 		<TableRow className=" transition-colors hover:bg-muted/30">
@@ -178,18 +92,20 @@ export function DeploymentItem({
 				<Badge
 					variant="outline"
 					className=" font-mono text-[10px] font-medium text-muted-foreground">
-					{type}
+					{deploymentType(d)}
 				</Badge>
 			</TableCell>
 
 			{/* Status */}
-			<TableCell>{getStatusBadge()}</TableCell>
+			<TableCell>
+				<DeploymentStatusBadge status={status} />
+			</TableCell>
 
 			{/* Date */}
 			<TableCell className="font-mono text-xs text-muted-foreground">
 				<span className="flex items-center gap-1">
 					<Clock className="h-3 w-3 text-muted-foreground/70" />
-					{formatTimestamp(d.created_at)}
+					{formatDeploymentDate(d.created_at)}
 				</span>
 			</TableCell>
 
@@ -203,7 +119,7 @@ export function DeploymentItem({
 						className="flex h-7 items-center gap-1 rounded-lg  bg-muted/20 px-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted/40 dark:bg-muted/15">
 						<Terminal className="h-3 w-3 text-primary" /> Logs
 					</Button>
-					{isRunningOrQueued && d.id !== undefined && (
+					{busy && d.id !== undefined && (
 						<Button
 							size="sm"
 							variant="ghost"
@@ -212,7 +128,7 @@ export function DeploymentItem({
 							<XCircle className="h-3 w-3" /> Cancel
 						</Button>
 					)}
-					{!isRunningOrQueued && d.id !== undefined && (
+					{!busy && d.id !== undefined && (
 						<Button
 							size="sm"
 							variant="ghost"

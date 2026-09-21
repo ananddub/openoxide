@@ -1,6 +1,20 @@
-import {Bot, Pencil, Plus, Trash2, Cpu, CheckCircle2, XCircle, Link2} from 'lucide-react';
+import {
+	Bot,
+	Pencil,
+	Plus,
+	Trash2,
+	Cpu,
+	CheckCircle2,
+	XCircle,
+	Link2,
+} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {ListCard, ListRow, ListEmpty, RowTile} from '#/components/settings/list-card';
+import {
+	ListCard,
+	ListRow,
+	ListEmpty,
+	RowTile,
+} from '#/components/settings/list-card';
 import type {AiSetting} from './ai-types';
 
 type Props = {
@@ -26,7 +40,10 @@ export function AiSettingsList({
 			{loading ? (
 				<div className="space-y-2 p-5">
 					{[...Array(2)].map((_, i) => (
-						<div key={i} className="h-14 animate-pulse rounded-xl bg-muted/30" />
+						<div
+							key={i}
+							className="h-14 animate-pulse rounded-xl bg-muted/30"
+						/>
 					))}
 				</div>
 			) : items.length === 0 ? (
@@ -53,7 +70,7 @@ export function AiSettingsList({
 							title={item.name}
 							badges={
 								<>
-									<span className="rounded-md bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+									<span className="rounded-md bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
 										{item.provider || 'Custom'}
 									</span>
 									{item.is_enabled ? (

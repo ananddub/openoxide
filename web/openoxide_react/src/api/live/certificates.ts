@@ -1,4 +1,8 @@
-import {createServiceClient, useResourceListQuery, useConnectQuery} from './query';
+import {
+	createServiceClient,
+	useResourceListQuery,
+	useConnectQuery,
+} from './query';
 import {CertificateOperationsService} from '#/gen/connect/openoxide/api/v1/certificate_operations_pb';
 
 export type CertificatePayload = {
@@ -14,7 +18,9 @@ export type CertificatePayload = {
 	updated_at: number;
 };
 
-const certificateClient = createServiceClient(CertificateOperationsService);
+const certificateClient = createServiceClient(
+	CertificateOperationsService,
+);
 
 /** Certificates (legacy live: useCertificateList). */
 export function useCertificateList() {
@@ -34,10 +40,12 @@ export function useCertificateItems() {
 	return useConnectQuery<CertificatePayload[]>(
 		['certificates'],
 		async () =>
-			certificateClient.listCertificates({}).then((response) =>
-				response.items.map(
-					(item) => JSON.parse(item.payload) as CertificatePayload,
+			certificateClient
+				.listCertificates({})
+				.then(response =>
+					response.items.map(
+						item => JSON.parse(item.payload) as CertificatePayload,
+					),
 				),
-			),
 	);
 }

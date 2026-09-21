@@ -30,7 +30,9 @@ export function useAiSettingsList() {
 }
 
 export async function listAiSettings() {
-	return readResourceList<AiSettingPayload>(await aiClient.listSettings({}));
+	return readResourceList<AiSettingPayload>(
+		await aiClient.listSettings({}),
+	);
 }
 
 export async function createAiSetting(body: Partial<AiSettingPayload>) {

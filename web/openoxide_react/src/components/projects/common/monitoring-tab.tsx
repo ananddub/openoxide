@@ -19,7 +19,10 @@ export function MonitoringTab({
 }: MonitoringTabProps) {
 	const resolvedAppId =
 		appId || app?.id || app?.application_id || app?.compose_id || 0;
-	const activeMonitoring = useContainerMonitoring(resolvedAppId, entityType);
+	const activeMonitoring = useContainerMonitoring(
+		resolvedAppId,
+		entityType,
+	);
 
 	const {isLive, setIsLive, isLoading, metrics, hasError, triggerRefresh} =
 		activeMonitoring;

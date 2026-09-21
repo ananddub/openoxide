@@ -28,7 +28,7 @@ export const AuthInput: React.FC<AuthInputProps> = ({
 		<Field data-invalid={!!error}>
 			<FieldLabel
 				htmlFor={id}
-				className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+				className="font-mono text-[11px] font-normal tracking-[0.08em] text-muted-foreground uppercase">
 				{label}
 			</FieldLabel>
 			<div className="relative">
@@ -74,7 +74,7 @@ export const AuthPasswordInput: React.FC<AuthPasswordInputProps> = ({
 			<div className="flex items-center justify-between">
 				<FieldLabel
 					htmlFor={id}
-					className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+					className="font-mono text-[11px] font-normal tracking-[0.08em] text-muted-foreground uppercase">
 					{label}
 				</FieldLabel>
 				{forgotPasswordLink}

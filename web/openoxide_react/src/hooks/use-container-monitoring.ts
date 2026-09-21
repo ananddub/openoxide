@@ -1,127 +1,14 @@
 import {useState, useEffect, useCallback} from 'react';
 import {createServiceClient} from '#/api/live/query';
 import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
+import {parseStats, type MonitoringEntityType} from './container-metrics';
 
-export type MonitoringEntityType = 'application' | 'database' | 'compose';
-
-export interface ContainerMetrics {
-	cpuPercent: number;
-	memPercent: number;
-	memUsage: string;
-	memLimit: string;
-	dockerDiskUsage: string;
-	dockerDiskPercent: number;
-	diskSpaceUsed: string;
-	diskSpaceTotal: string;
-	diskSpacePercent: number;
-	netRx: string;
-	netTx: string;
-	blockRead: string;
-	blockWrite: string;
-	pids: string;
-}
+export type {
+	ContainerMetrics,
+	MonitoringEntityType,
+} from './container-metrics';
 
 const deploymentClient = createServiceClient(DeploymentService);
-
-function stripAnsi(str: string): string {
-	// Remove all ANSI/VT100 escape sequences: ESC [ ... letter
-	return str
-		.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
-		.replace(/\x1b[^[]/g, '');
-}
-
-function parseStats(raw: unknown): ContainerMetrics | null {
-	if (!raw) return null;
-
-	let target: unknown = raw;
-	if (Array.isArray(raw)) {
-		target = raw[0];
-	}
-
-	if (typeof target === 'string') {
-		const stripped = stripAnsi(target).trim();
-		const start = stripped.indexOf('{');
-		const end = stripped.lastIndexOf('}');
-		if (start !== -1 && end !== -1) {
-			try {
-				target = JSON.parse(stripped.slice(start, end + 1));
-			} catch {}
-		}
-	}
-
-	let s = (target || {}) as Record<string, unknown>;
-
-	if (typeof s.raw === 'string') {
-		const stripped = stripAnsi(s.raw).trim();
-		const start = stripped.indexOf('{');
-		const end = stripped.lastIndexOf('}');
-		if (start !== -1 && end !== -1) {
-			try {
-				s = JSON.parse(stripped.slice(start, end + 1));
-			} catch {
-				return null;
-			}
-		} else {
-			return null;
-		}
-	}
-
-	const cpuPercent = parseFloat(
-		String(s.CPUPerc || s.cpu_percent || '0').replace('%', ''),
-	);
-	const memPercent = parseFloat(
-		String(s.MemPerc || s.memory_percent || '0').replace('%', ''),
-	);
-
-	const memUsageStr = String(s.MemUsage || s.mem_usage || '');
-	const [memUsage, memLimit] = memUsageStr.includes('/')
-		? memUsageStr.split('/').map(v => v.trim())
-		: [memUsageStr || '0 B', '0 B'];
-
-	const netIOStr = String(s.NetIO || s.net_io || '');
-	const [netRx, netTx] = netIOStr.includes('/')
-		? netIOStr.split('/').map(v => v.trim())
-		: [netIOStr || '0 B', '0 B'];
-
-	const blockIOStr = String(s.BlockIO || s.block_io || '');
-	const [blockRead, blockWrite] = blockIOStr.includes('/')
-		? blockIOStr.split('/').map(v => v.trim())
-		: [blockIOStr || '0 B', '0 B'];
-
-	const dockerDiskUsage = String(
-		s.SizeRw || s.docker_disk_usage || s.size_rw || '0 MB',
-	);
-	const dockerDiskPercent = parseFloat(
-		String(s.DockerDiskPerc || s.docker_disk_percent || '0').replace(
-			'%',
-			'',
-		),
-	);
-	const diskSpaceUsed = String(s.DiskUsed || s.disk_space_used || '0 GB');
-	const diskSpaceTotal = String(
-		s.DiskTotal || s.disk_space_total || '0 GB',
-	);
-	const diskSpacePercent = parseFloat(
-		String(s.DiskPerc || s.disk_space_percent || '0').replace('%', ''),
-	);
-
-	return {
-		cpuPercent: isNaN(cpuPercent) ? 0 : cpuPercent,
-		memPercent: isNaN(memPercent) ? 0 : memPercent,
-		memUsage: memUsage || '0 B',
-		memLimit: memLimit || '0 B',
-		dockerDiskUsage,
-		dockerDiskPercent: isNaN(dockerDiskPercent) ? 0 : dockerDiskPercent,
-		diskSpaceUsed,
-		diskSpaceTotal,
-		diskSpacePercent: isNaN(diskSpacePercent) ? 0 : diskSpacePercent,
-		netRx: netRx || '0 B',
-		netTx: netTx || '0 B',
-		blockRead: blockRead || '0 B',
-		blockWrite: blockWrite || '0 B',
-		pids: String(s.PIDs || s.pids || '0'),
-	};
-}
 
 /**
  * Live docker stats for an application / database / compose project over
@@ -205,7 +92,6 @@ export function useContainerMonitoring(
 			controller.abort();
 		};
 	}, [id, entityType, isLive, refetchTrigger, enabled]);
-
 
 	return {
 		isLive,

@@ -7,7 +7,9 @@ export type DatabaseEndpoint =
 	| '/libsql/{id}';
 
 export function databaseKind(database: any): string {
-	return String(database?.kind || database?.database_kind || 'postgres').toLowerCase();
+	return String(
+		database?.kind || database?.database_kind || 'postgres',
+	).toLowerCase();
 }
 
 export function databaseEndpoint(database: any): DatabaseEndpoint {

@@ -4,9 +4,9 @@ import {
 	Outlet,
 	useLocation,
 } from '@tanstack/react-router';
-import {SidebarProvider, SidebarTrigger} from '#/components/ui/sidebar';
+import {SidebarProvider} from '#/components/ui/sidebar';
 import {AppSidebar} from '#/components/layouts/sidebar';
-import {Logo} from '#/components/shared/logo';
+import {TopBar} from '#/components/layouts/topbar';
 import {useTableWatch} from '#/hooks/use-table-watch';
 import {useAuthSession} from '#/stores/session-context';
 
@@ -39,10 +39,10 @@ function AppNotFoundPlaceholder() {
 	return <Navigate to="/projects" replace />;
 }
 /**
- * Dashboard shell, laid out like the OpenShip dashboard: a full-height flex
- * column with the floating rounded rail beside a single scrolling main area.
- * There is no sticky breadcrumb header — each page owns its own title, and
- * the rail carries navigation, theme, and the workspace switcher.
+ * Dashboard shell, laid out like the Vercel dashboard: a fixed slim top bar
+ * (workspace switcher · page title · search) spanning the full width, with
+ * the nav rail starting *below* it beside a single scrolling main area.
+ * Main content pads itself down by the bar's height.
  */
 function AppLayout() {
 	useTableWatch();
@@ -53,18 +53,11 @@ function AppLayout() {
 	return (
 		<SidebarProvider className="h-dvh">
 			<div className="flex min-h-0 w-full flex-1 flex-col">
-				{/* Mobile-only top bar: the floating rail is hidden below md,
-				    and this trigger is the only way to open the drawer. */}
-				<div className="flex h-12 shrink-0 items-center justify-between gap-2 border-b bg-background px-3 md:hidden">
-					<div className="flex min-w-0 items-center gap-2.5">
-						<Logo className="size-6 shrink-0" />
-						<span className="truncate text-sm font-semibold tracking-tight">
-							OpenOxide
-						</span>
-					</div>
-					<SidebarTrigger className="size-9" />
-				</div>
-				<div className="flex min-h-0 flex-1">
+				{/* Fixed global top bar: scope switcher · title · search. The
+				    rail starts below it; on mobile the SidebarTrigger in the
+				    bar is the only way to open the drawer. */}
+				<TopBar />
+				<div className="flex min-h-0 flex-1 pt-12">
 					<AppSidebar />
 					{/* Main content */}
 					<main className="min-w-0 flex-1 overflow-y-auto">

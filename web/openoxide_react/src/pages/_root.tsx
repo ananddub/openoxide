@@ -64,7 +64,10 @@ async function bootstrapSession(): Promise<void> {
 		const user = await authClient.whoAmI({});
 		applyUser(user);
 	} catch (error) {
-		if (error instanceof ConnectError && error.code === Code.Unauthenticated) {
+		if (
+			error instanceof ConnectError &&
+			error.code === Code.Unauthenticated
+		) {
 			// The interceptor already tried refresh-and-replay and the
 			// backend still rejected us: the refresh token is missing or
 			// dead. Drop the session now — keeping it would re-run this
@@ -88,7 +91,6 @@ export const Route = createRootRoute({
 	pendingComponent: RootPending,
 	errorComponent: RootError,
 });
-
 
 function RootError({error}: {error: unknown}) {
 	// The boundary swallows the actual failure unless it is logged; without

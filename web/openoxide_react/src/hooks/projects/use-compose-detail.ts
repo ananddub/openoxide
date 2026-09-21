@@ -1,10 +1,16 @@
 import {useState, useMemo, useEffect} from 'react';
-import {toast} from 'sonner';
-import {formatApiError} from '#/api/utils';
-import type {ComposeResponse} from '#/types/api-helpers';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
-import {useComposeCancel, useComposeDeploy, useComposeGet, useComposeList, useComposeReload, useComposeStart, useComposeStop, useComposeUpdate, useDeploymentItems, useDomainItems, useOverviewServices, useScheduleListByOrganization, useBackupItems} from '#/api/live';
+import {
+	useComposeGet,
+	useComposeList,
+	useDeploymentItems,
+	useDomainItems,
+	useOverviewServices,
+	useScheduleListByOrganization,
+	useBackupItems,
+} from '#/api/live';
 import {useOrganizations} from '#/stores/session-context';
+import {useComposeActions} from './use-compose-detail.actions';
 
 export function useComposeDetail(composeId: number) {
 	const [activeTab, setActiveTab] = useState<string>('General');
@@ -128,89 +134,12 @@ export function useComposeDetail(composeId: number) {
 		monitoring.triggerRefresh();
 	};
 
-	const deployMutation = useComposeDeploy();
-	const reloadMutation = useComposeReload();
-	const startMutation = useComposeStart();
-	const stopMutation = useComposeStop();
-	const cancelMutation = useComposeCancel();
-	const patchMutation = useComposeUpdate();
-
-	const handleAction = async (
-		action:
-			| 'deploy'
-			| 'redeploy'
-			| 'rebuild'
-			| 'reload'
-			| 'start'
-			| 'stop'
-			| 'cancel',
-	) => {
-		const currentSt = (
-			compose?.compose_status ||
-			compose?.status ||
-			''
-		).toUpperCase();
-		const isCurrentlyBuilding = [
-			'QUEUED',
-			'BUILDING',
-			'STARTING',
-			'PREPARING',
-			'PENDING',
-			'DEPLOYING',
-		].includes(currentSt);
-		const intermediateStatus =
-			action === 'stop' || action === 'cancel'
-				? isCurrentlyBuilding
-					? 'CANCELLING'
-					: 'STOPPING'
-				: action === 'start'
-					? 'STARTING'
-					: 'DEPLOYING';
-		setLocalStatusOverride(intermediateStatus);
-		// Legacy updateServiceStatus store write removed — table-watch
-		// invalidates ['composes'] when the action lands, refetching
-		// fresh status through the live query.
-
-		try {
-			if (action === 'deploy') {
-				await deployMutation.mutateAsync(composeId);
-				toast.success('Compose stack deployment triggered');
-			} else if (action === 'reload') {
-				await reloadMutation.mutateAsync(composeId);
-				toast.success('Compose stack reloaded');
-			} else if (action === 'start') {
-				await startMutation.mutateAsync(composeId);
-				toast.success('Compose stack started');
-			} else if (action === 'stop') {
-				await stopMutation.mutateAsync(composeId);
-				toast.success('Compose stack stopped');
-			} else if (action === 'cancel') {
-				await cancelMutation.mutateAsync(composeId);
-				toast.success('Compose stack cancellation requested');
-			} else if (action === 'rebuild' || action === 'redeploy') {
-				// Compose has no dedicated rebuild/redeploy RPC — a fresh
-				// deploy covers the same semantics.
-				await deployMutation.mutateAsync(composeId);
-				toast.success(`Compose stack ${action} triggered`);
-			}
-			refetchAll();
-		} catch (err: any) {
-			toast.error(formatApiError(err));
-		}
-	};
-
-	const handleUpdate = async (patchData: Partial<ComposeResponse>) => {
-		try {
-			await patchMutation.mutateAsync({
-				id: composeId,
-				...(patchData as any),
-			});
-			toast.success('Compose settings updated');
-			refetchAll();
-		} catch (err: any) {
-			toast.error(formatApiError(err));
-		}
-	};
+	const {handleAction, handleUpdate} = useComposeActions({
+		composeId,
+		compose,
+		setLocalStatusOverride,
+		refetchAll,
+	});
 
 	return {
 		compose,

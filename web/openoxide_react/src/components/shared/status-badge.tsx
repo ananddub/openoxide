@@ -1,5 +1,9 @@
 import {AlertCircle} from 'lucide-react';
-import {Tooltip, TooltipContent, TooltipTrigger} from '#/components/ui/tooltip';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from '#/components/ui/tooltip';
 import {AnimatedShinyText} from '#/components/ui/animated-shiny-text';
 
 interface StatusBadgeProps {
@@ -8,6 +12,11 @@ interface StatusBadgeProps {
 	isBuilding?: boolean;
 	actionLoading?: string | null;
 }
+
+/* Shared status pill chrome: semantic status tokens only (no raw palette),
+ * 6px radius (shape lock), 2px dot = real semantic state. */
+const pill =
+	'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium select-none';
 
 export function StatusBadge({
 	status,
@@ -45,9 +54,9 @@ export function StatusBadge({
 								: 'STARTING...';
 
 		return (
-			<span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-500 select-none">
-				<span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
-				<AnimatedShinyText className="text-amber-500/70">
+			<span className={`${pill} bg-warning-bg text-warning`}>
+				<span className="h-2 w-2 animate-pulse rounded-full bg-warning-solid" />
+				<AnimatedShinyText className="text-warning/70">
 					{label}
 				</AnimatedShinyText>
 			</span>
@@ -56,8 +65,8 @@ export function StatusBadge({
 
 	if (st === 'STOPPING' || actionLoading === 'stop') {
 		return (
-			<span className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500/10 px-2.5 py-1 text-xs font-bold text-orange-500 select-none">
-				<span className="h-2 w-2 animate-pulse rounded-full bg-orange-500" />
+			<span className={`${pill} bg-warning-bg text-warning`}>
+				<span className="h-2 w-2 animate-pulse rounded-full bg-warning-solid" />
 				STOPPING...
 			</span>
 		);
@@ -65,8 +74,8 @@ export function StatusBadge({
 
 	if (st === 'CANCELLING' || String(actionLoading) === 'cancel') {
 		return (
-			<span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-500 select-none">
-				<span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+			<span className={`${pill} bg-warning-bg text-warning`}>
+				<span className="h-2 w-2 animate-pulse rounded-full bg-warning-solid" />
 				CANCELLING...
 			</span>
 		);
@@ -74,8 +83,8 @@ export function StatusBadge({
 
 	if (st === 'CANCELLED') {
 		return (
-			<span className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-500/10 px-2.5 py-1 text-xs font-bold text-zinc-400 select-none">
-				<span className="h-2 w-2 rounded-full bg-zinc-400" />
+			<span className={`${pill} bg-neutral-bg text-neutral`}>
+				<span className="h-2 w-2 rounded-full bg-neutral-solid" />
 				CANCELLED
 			</span>
 		);
@@ -83,8 +92,8 @@ export function StatusBadge({
 
 	if (['RUNNING', 'DONE', 'SUCCESS', 'ACTIVE', 'OK'].includes(st)) {
 		return (
-			<span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-500 select-none">
-				<span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+			<span className={`${pill} bg-success-bg text-success`}>
+				<span className="h-2 w-2 animate-pulse rounded-full bg-success-solid" />
 				RUNNING
 			</span>
 		);
@@ -92,8 +101,8 @@ export function StatusBadge({
 
 	if (st === 'ERROR') {
 		const badge = (
-			<span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-500 select-none">
-				<span className="h-2 w-2 rounded-full bg-rose-500" />
+			<span className={`${pill} bg-danger-bg text-danger`}>
+				<span className="h-2 w-2 rounded-full bg-danger-solid" />
 				ERROR
 				{error && <AlertCircle className="size-3.5" />}
 			</span>
@@ -102,7 +111,7 @@ export function StatusBadge({
 		return (
 			<Tooltip>
 				<TooltipTrigger render={badge} />
-				<TooltipContent className="max-w-sm whitespace-pre-wrap text-xs">
+				<TooltipContent className="max-w-sm text-xs whitespace-pre-wrap">
 					{error}
 				</TooltipContent>
 			</Tooltip>
@@ -110,8 +119,8 @@ export function StatusBadge({
 	}
 
 	return (
-		<span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-500 select-none">
-			<span className="h-2 w-2 rounded-full bg-rose-500" />
+		<span className={`${pill} bg-danger-bg text-danger`}>
+			<span className="h-2 w-2 rounded-full bg-danger-solid" />
 			STOPPED
 		</span>
 	);

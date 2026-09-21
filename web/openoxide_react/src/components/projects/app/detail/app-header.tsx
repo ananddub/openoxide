@@ -75,7 +75,10 @@ export function AppHeader({
 						className="size-8 rounded-lg  bg-card shadow-2xs hover:bg-muted">
 						<RefreshCw className="size-3.5" />
 					</Button>
-					<StatusBadge status={app?.app_status || ''} error={(app as any)?.last_error} />
+					<StatusBadge
+						status={app?.app_status || ''}
+						error={(app as any)?.last_error}
+					/>
 				</div>
 			</div>
 

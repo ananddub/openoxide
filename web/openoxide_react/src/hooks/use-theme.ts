@@ -1,13 +1,11 @@
 import * as React from 'react';
 
 /**
- * Panel theme: light → dim → dark → light (OpenShip's three-surface ladder).
- * The active theme lives on <html data-theme="…"> and in localStorage under
- * 'theme'. index.html applies the stored value before first paint.
+ * Theme: light / dark, master-branch mechanism. The active theme lives in
+ * the `.dark` class on <html> and in localStorage under 'theme'. index.html
+ * applies the stored value before first paint.
  */
-export type Theme = 'light' | 'dim' | 'dark';
-
-const THEME_ORDER: Theme[] = ['light', 'dim', 'dark'];
+export type Theme = 'light' | 'dark';
 
 export type UseThemeReturn = {
 	theme: Theme;
@@ -16,11 +14,10 @@ export type UseThemeReturn = {
 };
 
 function readTheme(): Theme {
-	if (typeof document === 'undefined') return 'dim';
-	const attr = document.documentElement.getAttribute('data-theme');
-	return attr === 'light' || attr === 'dark' || attr === 'dim'
-		? attr
-		: 'dim';
+	if (typeof document === 'undefined') return 'light';
+	return document.documentElement.classList.contains('dark')
+		? 'dark'
+		: 'light';
 }
 
 function updateFavicon(theme: Theme) {
@@ -41,30 +38,32 @@ export function useTheme(): UseThemeReturn {
 	const [theme, setThemeState] = React.useState<Theme>(readTheme);
 
 	React.useEffect(() => {
-		// Keep local state in sync if the attribute changes elsewhere (the
+		// Keep local state in sync if the class changes elsewhere (the
 		// pre-paint script, devtools, another tab).
 		const observer = new MutationObserver(() => {
 			setThemeState(readTheme());
 		});
 		observer.observe(document.documentElement, {
 			attributes: true,
-			attributeFilter: ['data-theme'],
+			attributeFilter: ['class'],
 		});
 		updateFavicon(readTheme());
 		return () => observer.disconnect();
 	}, []);
 
 	const setTheme = React.useCallback((next: Theme) => {
-		document.documentElement.setAttribute('data-theme', next);
+		if (next === 'dark') {
+			document.documentElement.classList.add('dark');
+		} else {
+			document.documentElement.classList.remove('dark');
+		}
 		localStorage.setItem('theme', next);
 		setThemeState(next);
 		updateFavicon(next);
 	}, []);
 
 	const toggleTheme = React.useCallback(() => {
-		const current = readTheme();
-		const next = THEME_ORDER[(THEME_ORDER.indexOf(current) + 1) % THEME_ORDER.length];
-		setTheme(next);
+		setTheme(readTheme() === 'dark' ? 'light' : 'dark');
 	}, [setTheme]);
 
 	return {theme, toggleTheme, setTheme};

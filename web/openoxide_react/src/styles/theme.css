@@ -1,521 +1,369 @@
 /*
  * ─────────────────────────────────────────────────────────────────
- *  THEME TOKENS — ported from OpenShip dashboard (light / dim / dark)
- *  Single source of truth for all colors across the panel.
+ *  THEME TOKENS — Geist color system (vercel.com/geist/colors)
+ *  Official scale values from the Geist design system:
+ *    Background 1/2 · Gray + Gray Alpha (1000-100) · Blue · Red ·
+ *    Amber · Green · Teal · Purple · Pink
  *
  *  System:
- *    data-theme="light"|"dim"|"dark" on <html>  (set by use-theme.ts)
+ *    .dark class on <html>  (set by use-theme.ts)
  *
- *  Scale primitives:
- *    --th-on-{N}    Foreground at N% opacity (text, icons, borders)
- *    --th-sf-{N}    Surface fill at N% opacity (backgrounds)
- *
- *  Semantic aliases:
- *    --th-text-*    Text colors
- *    --th-bg-*      Background fills
- *    --th-bd-*      Border colors
- *    Component-level: input, button, card, dropdown…
- *
- *  Usage:
- *    className="th-text-body"
- *    className="th-card"
- *    style={{ color: "var(--th-text-muted)" }}
- *
- *  The shadcn bridge at the bottom maps --th-* → the standard shadcn
- *  variable names, so existing bg-primary / text-foreground / border-input
- *  utilities pick the ladder up automatically.
+ *  Geist rules baked in:
+ *    - Background 1 (#fff / #0a0a0a) is the default page background.
+ *    - Background 2 (#fafafa / #000) for subtle differentiation only.
+ *    - Borders are the Gray ALPHA ladder (rgba steps), not solid grays.
+ *    - Gray 1000 (#171717 / #ededed) carries primary text + primary CTA.
+ *    - Status hues come from the official Blue / Red / Amber / Green
+ *      scales (light + dark variants), never from raw Tailwind colors.
  * ─────────────────────────────────────────────────────────────────
  */
 
 /* ── Light ────────────────────────────────────────────────────── */
-:root,
-[data-theme="light"] {
+:root {
+	/* ─ Backgrounds (Geist background scale) ─ */
+	--background: #ffffff; /* Background 1 */
+	--foreground: #171717; /* Gray 1000 */
 
-  /* Foreground scale - black on white */
-  --th-on-04: rgba(0,0,0,.04);
-  --th-on-05: rgba(0,0,0,.05);
-  --th-on-06: rgba(0,0,0,.06);
-  --th-on-08: rgba(0,0,0,.08);
-  --th-on-10: rgba(0,0,0,.10);
-  --th-on-12: rgba(0,0,0,.12);
-  --th-on-14: rgba(0,0,0,.14);
-  --th-on-15: rgba(0,0,0,.15);
-  --th-on-16: rgba(0,0,0,.16);
-  --th-on-20: rgba(0,0,0,.20);
-  --th-on-25: rgba(0,0,0,.25);
-  --th-on-30: rgba(0,0,0,.30);
-  --th-on-40: rgba(0,0,0,.40);
-  --th-on-50: rgba(0,0,0,.50);
-  --th-on-60: rgba(0,0,0,.60);
-  --th-on-70: rgba(0,0,0,.70);
-  --th-on-80: rgba(0,0,0,.80);
-  --th-on-90: rgba(0,0,0,.90);
-  --th-on-95: rgba(0,0,0,.95);
+	--card: #ffffff; /* Background 1 */
+	--card-foreground: #171717;
 
-  /* Surface fill scale - tinted backgrounds */
-  --th-sf-01: rgba(0,0,0,.01);
-  --th-sf-02: rgba(0,0,0,.02);
-  --th-sf-03: rgba(0,0,0,.03);
-  --th-sf-04: rgba(0,0,0,.04);
-  --th-sf-05: rgba(0,0,0,.05);
-  --th-sf-06: rgba(0,0,0,.06);
-  --th-sf-08: rgba(0,0,0,.08);
+	--popover: #ffffff;
+	--popover-foreground: #171717;
 
-  /* ─ Text ─ (gentle legibility bump; keeps the light/airy feel) */
-  --th-text-heading:   rgba(0,0,0,1);
-  --th-text-title:     rgba(0,0,0,.92);
-  --th-text-strong:    rgba(0,0,0,.82);
-  --th-text-body:      rgba(0,0,0,.66);
-  --th-text-secondary: rgba(0,0,0,.58);
-  --th-text-muted:     rgba(0,0,0,.52);
-  --th-text-label:     rgba(0,0,0,.52);
-  --th-text-hint:      rgba(0,0,0,.46);
-  --th-text-ghost:     rgba(0,0,0,.22);
+	--primary: #171717; /* Gray 1000 = primary CTA */
+	--primary-foreground: #ffffff;
 
-  /* ─ Page / layout ─ The page is deliberately NOT #ffffff. Cards are white, so
-   * a white page left them with nothing to lift off and they needed a drawn
-   * border to exist at all. A few steps of grey here is what lets light use the
-   * same borderless lifted-surface language as dark and dim. */
-  --th-bg-page:        #f9f9f9;
-  --th-bg-card:        #fafafa;
-  --th-bg-subtle:      rgba(0,0,0,.02);
-  --th-bg-hover:       rgba(0,0,0,.025);
-  --th-bg-inset:       rgba(0,0,0,.015);
+	--secondary: rgba(0, 0, 0, 0.05); /* Gray alpha 100 (acc-1 bg) */
+	--secondary-foreground: #171717;
 
-  /* ─ Borders ─ */
-  --th-bd-default:     #e8e8e8;
-  --th-bd-subtle:      #f0f0f0;
-  --th-bd-strong:      #d0d0d0;
-  --th-bd-card:        #f0f0f0;
+	--muted: rgba(0, 0, 0, 0.05);
+	--muted-foreground: #666666; /* Gray 900 */
 
-  /* ─ Input ─ */
-  --th-input-bg:           #ffffff;
-  --th-input-bd:           #e0e0e0;
-  --th-input-text:         rgba(0,0,0,.80);
-  --th-input-placeholder:  rgba(0,0,0,.28);
-  --th-input-bg-focus:     #ffffff;
-  --th-input-bd-focus:     #b0b0b0;
+	--accent: rgba(0, 0, 0, 0.05);
+	--accent-foreground: #171717;
 
-  /* ─ Button - primary (filled) ─ */
-  --th-btn-bg:       rgba(0,0,0,.92);
-  --th-btn-text:     #ffffff;
-  --th-btn-bg-hover: rgba(0,0,0,.80);
+	--destructive: hsl(358 70% 52%); /* Red 800 */
+	--destructive-foreground: #ffffff;
 
-  /* ─ Button - ghost / outline ─ */
-  --th-btn-ghost-bd:         #e0e0e0;
-  --th-btn-ghost-text:       rgba(0,0,0,.52);
-  --th-btn-ghost-bd-hover:   #c8c8c8;
-  --th-btn-ghost-text-hover: rgba(0,0,0,.72);
-  --th-btn-ghost-bg-hover:   rgba(0,0,0,.025);
+	/* ─ Borders (Gray alpha ladder: default 200 / hover 300) ─ */
+	--border: rgba(0, 0, 0, 0.08); /* Gray alpha 200 (acc-4) */
+	--input: rgba(0, 0, 0, 0.08);
+	--ring: rgba(0, 0, 0, 0.21); /* Gray alpha 500 */
+	--radius: 0.625rem;
 
-  /* ─ Card ─ White on the grey page above, so no resting border — same language
-   * as dark and dim. The lift comes from bg vs --th-bg-page. */
-  --th-card-bg:       #ffffff;
-  --th-card-on-page:  #ffffff;
-  --th-card-bg-solid: #ffffff;
-  --th-card-bd:       transparent;
-  --th-card-bd-hover: #e0e0e0;
-  --th-card-shadow:   none;
+	/* ─ Card chrome (Level 1 + 2 from the design system):
+     inset hairline ring keeps the white-on-white edge crisp, the two
+     tiny drop offsets seat the card without floating it. */
+	--card-shadow:
+		inset 0 0 0 1px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.02),
+		0 2px 2px rgba(0, 0, 0, 0.04);
 
-  /* ─ Divider ─ */
-  --th-divider:       #f0f0f0;
+	/* ─ Sidebar (Background 1 — Vercel dash: white rail, hairline edge;
+     row hover = gray-alpha 100, selected = gray-alpha 200) ─ */
+	--sidebar: #ffffff;
+	--sidebar-foreground: #171717;
+	--sidebar-primary: #171717;
+	--sidebar-primary-foreground: #ffffff;
+	--sidebar-accent: rgba(0, 0, 0, 0.05);
+	--sidebar-active: rgba(0, 0, 0, 0.08);
+	--sidebar-accent-foreground: #171717;
+	--sidebar-border: rgba(0, 0, 0, 0.08);
+	--sidebar-ring: rgba(0, 0, 0, 0.21);
 
-  /* ─ Overlay ─ */
-  --th-overlay:       rgba(0,0,0,.45);
+	/* ─ Charts (Gray solid ladder) ─ */
+	--chart-1: hsl(0 0% 92%); /* Gray 200 */
+	--chart-2: hsl(0 0% 66%); /* Gray 600 */
+	--chart-3: hsl(0 0% 56%); /* Gray 700 */
+	--chart-4: hsl(0 0% 49%); /* Gray 800 */
+	--chart-5: hsl(0 0% 9%); /* Gray 1000 */
 
-  /* ─ Dropdown ─ */
-  --th-dropdown-bg:     #ffffff;
-  --th-dropdown-bd:     #e8e8e8;
-  --th-dropdown-shadow: 0 16px 40px rgba(0,0,0,.10), 0 4px 8px rgba(0,0,0,.06);
+	/* ─ Geist Gray alpha ladder (utilities / shadows) ─ */
+	--ga-100: rgba(0, 0, 0, 0.05);
+	--ga-200: rgba(0, 0, 0, 0.08);
+	--ga-300: rgba(0, 0, 0, 0.1);
+	--ga-500: rgba(0, 0, 0, 0.21);
+	--ga-800: rgba(0, 0, 0, 0.51);
+	--ga-1000: rgba(0, 0, 0, 0.91);
 
-  /* ─ Spinner ─ */
-  --th-spinner-track:   rgba(0,0,0,.08);
-  --th-spinner-fill:    rgba(0,0,0,.92);
+	/* ─ Semantic status: official Geist scale steps ─
+     fg = text step (dark end), solid = accent step, bg/bd = pale steps. */
+	--st-success-fg: hsl(133 50% 32%);
+	--st-success-bg: hsl(120 60% 96%);
+	--st-success-bd: hsl(120 60% 86%);
+	--st-danger-fg: hsl(358 66% 48%);
+	--st-danger-bg: hsl(0 100% 97%);
+	--st-danger-bd: hsl(0 90% 92%);
+	--st-warning-fg: hsl(35 100% 52%);
+	--st-warning-bg: hsl(39 100% 95%);
+	--st-warning-bd: hsl(42 100% 78%);
+	--st-info-fg: hsl(211 100% 42%);
+	--st-info-bg: hsl(212 100% 97%);
+	--st-info-bd: hsl(209 100% 90%);
+	--st-neutral-fg: hsl(0 0% 40%);
+	--st-neutral-bg: rgba(0, 0, 0, 0.05);
+	--st-neutral-bd: rgba(0, 0, 0, 0.1);
 
-  /* ─ Semantic status (light: solid pastel -100 bg + -700 text + -200 border) ─ */
-  --st-success-fg: #059669;  --st-success-bg: rgba(16,185,129,.10);  --st-success-bd: rgba(16,185,129,.20);
-  --st-danger-fg:  #dc2626;  --st-danger-bg:  rgba(239,68,68,.10);   --st-danger-bd:  rgba(239,68,68,.20);
-  --st-warning-fg: #d97706;  --st-warning-bg: rgba(245,158,11,.10);  --st-warning-bd: rgba(245,158,11,.20);
-  --st-info-fg:    #2563eb;  --st-info-bg:    rgba(59,130,246,.10);  --st-info-bd:    rgba(59,130,246,.20);
-  --st-neutral-fg: #52525b;  --st-neutral-bg: #f4f4f5;  --st-neutral-bd: #e4e4e7;
-
-  /* Solid fills (bars/dots/solid buttons) — vivid mid-tones that read on white. */
-  --st-success-solid: #10b981;  --st-danger-solid: #ef4444;  --st-warning-solid: #f59e0b;  --st-info-solid: #3b82f6;  --st-neutral-solid: #9ca3af;
+	--st-success-solid: hsl(131 41% 46%); /* Green 700 */
+	--st-danger-solid: hsl(358 70% 52%); /* Red 800 */
+	--st-warning-solid: hsl(39 100% 57%); /* Amber 700 */
+	--st-info-solid: hsl(212 100% 48%); /* Blue 700 (#0070f3 family) */
+	--st-neutral-solid: hsl(0 0% 56%); /* Gray 700 */
 }
-
 
 /* ── Dark ────────────────────────────────────────────────────── */
-[data-theme="dark"] {
+.dark {
+	--background: #000000; /* Page: pure black — cards lift off it */
+	--foreground: #ededed; /* Gray 1000 (dark) */
 
-  /* Foreground scale - white on black */
-  --th-on-04: rgba(255,255,255,.04);
-  --th-on-05: rgba(255,255,255,.05);
-  --th-on-06: rgba(255,255,255,.06);
-  --th-on-08: rgba(255,255,255,.08);
-  --th-on-10: rgba(255,255,255,.10);
-  --th-on-12: rgba(255,255,255,.12);
-  --th-on-14: rgba(255,255,255,.14);
-  --th-on-15: rgba(255,255,255,.15);
-  --th-on-16: rgba(255,255,255,.16);
-  --th-on-20: rgba(255,255,255,.20);
-  --th-on-25: rgba(255,255,255,.25);
-  --th-on-30: rgba(255,255,255,.30);
-  --th-on-40: rgba(255,255,255,.40);
-  --th-on-50: rgba(255,255,255,.50);
-  --th-on-60: rgba(255,255,255,.60);
-  --th-on-70: rgba(255,255,255,.70);
-  --th-on-80: rgba(255,255,255,.80);
-  --th-on-90: rgba(255,255,255,.90);
-  --th-on-95: rgba(255,255,255,.95);
+	--card: #0a0a0a; /* Cards: Background 1 (dark), lifted */
+	--card-foreground: #ededed;
 
-  /* Surface fill scale */
-  --th-sf-01: rgba(255,255,255,.01);
-  --th-sf-02: rgba(255,255,255,.02);
-  --th-sf-03: rgba(255,255,255,.03);
-  --th-sf-04: rgba(255,255,255,.04);
-  --th-sf-05: rgba(255,255,255,.05);
-  --th-sf-06: rgba(255,255,255,.06);
-  --th-sf-08: rgba(255,255,255,.08);
+	--popover: #0a0a0a;
+	--popover-foreground: #ededed;
 
-  /* ─ Text ─ (gentle legibility bump; keeps the light/airy feel) */
-  --th-text-heading:   #ffffff;
-  --th-text-title:     rgba(255,255,255,.95);
-  --th-text-strong:    rgba(255,255,255,.85);
-  --th-text-body:      rgba(255,255,255,.66);
-  --th-text-secondary: rgba(255,255,255,.58);
-  --th-text-muted:     rgba(255,255,255,.50);
-  --th-text-label:     rgba(255,255,255,.50);
-  --th-text-hint:      rgba(255,255,255,.36);
-  --th-text-ghost:     rgba(255,255,255,.22);
+	--primary: #ededed; /* Polarity flip: light pill */
+	--primary-foreground: #0a0a0a;
 
-  /* ─ Page / layout ─ */
-  --th-bg-page:        #000000;
-  --th-bg-card:        #0a0a0a;
-  --th-bg-subtle:      rgba(255,255,255,.025);
-  --th-bg-hover:       rgba(255,255,255,.04);
-  --th-bg-inset:       rgba(255,255,255,.015);
+	--secondary: rgba(255, 255, 255, 0.06); /* Gray alpha 100 (dark) */
+	--secondary-foreground: #ededed;
 
-  /* ─ Borders ─ */
-  --th-bd-default:     rgba(255,255,255,.08);
-  --th-bd-subtle:      rgba(255,255,255,.05);
-  --th-bd-strong:      rgba(255,255,255,.14);
-  --th-bd-card:        rgba(255,255,255,.07);
+	--muted: rgba(255, 255, 255, 0.06);
+	--muted-foreground: #a1a1a1; /* Gray 900 (dark) */
 
-  /* ─ Input ─ */
-  --th-input-bg:           rgba(255,255,255,.03);
-  --th-input-bd:           rgba(255,255,255,.08);
-  --th-input-text:         rgba(255,255,255,.80);
-  --th-input-placeholder:  rgba(255,255,255,.22);
-  --th-input-bg-focus:     rgba(255,255,255,.05);
-  --th-input-bd-focus:     rgba(255,255,255,.18);
+	--accent: rgba(255, 255, 255, 0.06);
+	--accent-foreground: #ededed;
 
-  /* ─ Button - primary ─ */
-  --th-btn-bg:       #ffffff;
-  --th-btn-text:     #000000;
-  --th-btn-bg-hover: rgba(255,255,255,.90);
+	--destructive: hsl(358 75% 59%); /* Red 600 (dark) */
+	--destructive-foreground: #ffffff;
 
-  /* ─ Button - ghost / outline ─ */
-  --th-btn-ghost-bd:         rgba(255,255,255,.10);
-  --th-btn-ghost-text:       rgba(255,255,255,.48);
-  --th-btn-ghost-bd-hover:   rgba(255,255,255,.18);
-  --th-btn-ghost-text-hover: rgba(255,255,255,.72);
-  --th-btn-ghost-bg-hover:   rgba(255,255,255,.04);
+	--border: rgba(255, 255, 255, 0.09); /* Gray alpha 200 (dark) */
+	--input: rgba(255, 255, 255, 0.14);
+	--ring: rgba(255, 255, 255, 0.24); /* Gray alpha 500 (dark) */
 
-  /* ─ Card ─ The page here is pure #000, so the fill is lifted clear of the
-   * page and the surface carries its own edge — no resting border. */
-  --th-card-bg:       rgba(255,255,255,.05);
-  --th-card-on-page:  #0d0d0d;
-  --th-card-bg-solid: #060606;
-  --th-card-bd:       transparent;
-  --th-card-bd-hover: rgba(255,255,255,.12);
-  --th-card-shadow:   none;
+	--sidebar: #000000; /* Rail matches the page; hairline edge */
+	--sidebar-foreground: #ededed;
+	--sidebar-primary: #ededed;
+	--sidebar-primary-foreground: #0a0a0a;
+	--sidebar-accent: rgba(255, 255, 255, 0.06);
+	--sidebar-active: rgba(255, 255, 255, 0.09);
+	--sidebar-accent-foreground: #ededed;
+	--sidebar-border: rgba(255, 255, 255, 0.09);
+	--sidebar-ring: rgba(255, 255, 255, 0.24);
 
-  /* ─ Divider ─ */
-  --th-divider:       rgba(255,255,255,.06);
+	--chart-1: hsl(0 0% 16%); /* Gray 300 dark */
+	--chart-2: hsl(0 0% 53%); /* Gray 600 dark */
+	--chart-3: hsl(0 0% 56%); /* Gray 700 dark */
+	--chart-4: hsl(0 0% 63%); /* Gray 900 dark */
+	--chart-5: hsl(0 0% 93%); /* Gray 1000 dark */
 
-  /* ─ Overlay ─ Lifted off pure black on purpose: a black scrim on a #000 page
-   * composites back to #000 and the backdrop is invisible. */
-  --th-overlay:       rgb(20 20 20 / 60%);
+	--ga-100: rgba(255, 255, 255, 0.06);
+	--ga-200: rgba(255, 255, 255, 0.09);
+	--ga-300: rgba(255, 255, 255, 0.13);
+	--ga-500: rgba(255, 255, 255, 0.24);
+	--ga-800: rgba(255, 255, 255, 0.47);
+	--ga-1000: rgba(255, 255, 255, 0.92);
 
-  /* ─ Dropdown ─ */
-  --th-dropdown-bg:     #161616;
-  --th-dropdown-bd:     rgba(255,255,255,.08);
-  --th-dropdown-shadow: 0 20px 48px rgba(0,0,0,.5), 0 4px 12px rgba(0,0,0,.32);
+	/* ─ Semantic status: Geist DARK scale steps ─ */
+	--st-success-fg: hsl(131 43% 57%);
+	--st-success-bg: hsl(136 50% 9%);
+	--st-success-bd: hsl(135 70% 23%);
+	--st-danger-fg: hsl(358 100% 69%);
+	--st-danger-bg: hsl(357 37% 12%);
+	--st-danger-bd: hsl(357 60% 32%);
+	--st-warning-fg: hsl(39 100% 57%);
+	--st-warning-bg: hsl(35 100% 8%);
+	--st-warning-bd: hsl(35 91% 22%);
+	--st-info-fg: hsl(210 100% 66%);
+	--st-info-bg: hsl(216 50% 12%);
+	--st-info-bd: hsl(211 86% 27%);
+	--st-neutral-fg: hsl(0 0% 63%);
+	--st-neutral-bg: rgba(255, 255, 255, 0.06);
+	--st-neutral-bd: rgba(255, 255, 255, 0.13);
 
-  /* ─ Spinner ─ */
-  --th-spinner-track:   rgba(255,255,255,.06);
-  --th-spinner-fill:    #ffffff;
-
-  /* ─ Semantic status (dark: brighter fg on near-black, lifted bg) ─ */
-  --st-success-fg: #34d399;  --st-success-bg: rgba(16,185,129,.10);  --st-success-bd: rgba(16,185,129,.20);
-  --st-danger-fg:  #f04848;  --st-danger-bg:  rgba(239,68,68,.10);   --st-danger-bd:  rgba(239,68,68,.20);
-  --st-warning-fg: #fbbf24;  --st-warning-bg: rgba(245,158,11,.10);  --st-warning-bd: rgba(245,158,11,.20);
-  --st-info-fg:    #60a5fa;  --st-info-bg:    rgba(59,130,246,.10);  --st-info-bd:    rgba(59,130,246,.20);
-  --st-neutral-fg: rgba(255,255,255,.50);  --st-neutral-bg: rgba(255,255,255,.05);  --st-neutral-bd: rgba(255,255,255,.10);
-
-  /* Solid fills — desaturated so they read as color, not neon glow. */
-  --st-success-solid: hsl(154 44% 47%);  --st-danger-solid: hsl(0 74% 60%);  --st-warning-solid: hsl(38 66% 52%);  --st-info-solid: hsl(214 58% 56%);  --st-neutral-solid: #8b8f98;
+	--st-success-solid: hsl(135 70% 34%); /* Green 600 dark */
+	--st-danger-solid: hsl(358 75% 59%); /* Red 600 dark */
+	--st-warning-solid: hsl(39 85% 49%); /* Amber 600 dark */
+	--st-info-solid: hsl(206 100% 50%); /* Blue 600 dark */
+	--st-neutral-solid: hsl(0 0% 56%); /* Gray 800 dark */
 }
-
-
-/* ── Dim ──────────────────────────────────────────────────────────
-   A neutral dark that sits between light and the extreme pure-black
-   dark: a true-gray page lifted just off #000 (no color tint) with
-   better text contrast and a clear page → card → dropdown ladder. */
-[data-theme="dim"] {
-
-  /* Foreground scale - white on slate */
-  --th-on-04: rgba(255,255,255,.04);
-  --th-on-05: rgba(255,255,255,.05);
-  --th-on-06: rgba(255,255,255,.06);
-  --th-on-08: rgba(255,255,255,.08);
-  --th-on-10: rgba(255,255,255,.10);
-  --th-on-12: rgba(255,255,255,.12);
-  --th-on-14: rgba(255,255,255,.14);
-  --th-on-15: rgba(255,255,255,.15);
-  --th-on-16: rgba(255,255,255,.16);
-  --th-on-20: rgba(255,255,255,.20);
-  --th-on-25: rgba(255,255,255,.25);
-  --th-on-30: rgba(255,255,255,.30);
-  --th-on-40: rgba(255,255,255,.40);
-  --th-on-50: rgba(255,255,255,.50);
-  --th-on-60: rgba(255,255,255,.60);
-  --th-on-70: rgba(255,255,255,.70);
-  --th-on-80: rgba(255,255,255,.80);
-  --th-on-90: rgba(255,255,255,.90);
-  --th-on-95: rgba(255,255,255,.95);
-
-  /* Surface fill scale */
-  --th-sf-01: rgba(255,255,255,.01);
-  --th-sf-02: rgba(255,255,255,.02);
-  --th-sf-03: rgba(255,255,255,.03);
-  --th-sf-04: rgba(255,255,255,.04);
-  --th-sf-05: rgba(255,255,255,.05);
-  --th-sf-06: rgba(255,255,255,.06);
-  --th-sf-08: rgba(255,255,255,.08);
-
-  /* ─ Text ─ Comfortable contrast on a lifted background. */
-  --th-text-heading:   #ffffff;
-  --th-text-title:     rgba(255,255,255,.95);
-  --th-text-strong:    rgba(255,255,255,.86);
-  --th-text-body:      rgba(255,255,255,.72);
-  --th-text-secondary: rgba(255,255,255,.66);
-  --th-text-muted:     rgba(255,255,255,.58);
-  --th-text-label:     rgba(255,255,255,.58);
-  --th-text-hint:      rgba(255,255,255,.46);
-  --th-text-ghost:     rgba(255,255,255,.30);
-
-  /* ─ Page / layout ─ Neutral gray lifted off black (no tint). */
-  --th-bg-page:        #141414;
-  --th-bg-card:        #1e1e1e;
-  --th-bg-subtle:      rgba(255,255,255,.03);
-  --th-bg-hover:       rgba(255,255,255,.05);
-  --th-bg-inset:       rgba(255,255,255,.02);
-
-  /* ─ Borders ─ Eased down after the bg darkened (higher bg→border
-     contrast made these read too heavy). */
-  --th-bd-default:     rgba(255,255,255,.08);
-  --th-bd-subtle:      rgba(255,255,255,.06);
-  --th-bd-strong:      rgba(255,255,255,.14);
-  --th-bd-card:        rgba(255,255,255,.08);
-
-  /* ─ Input ─ */
-  --th-input-bg:           rgba(255,255,255,.04);
-  --th-input-bd:           rgba(255,255,255,.10);
-  --th-input-text:         rgba(255,255,255,.85);
-  --th-input-placeholder:  rgba(255,255,255,.38);
-  --th-input-bg-focus:     rgba(255,255,255,.06);
-  --th-input-bd-focus:     rgba(255,255,255,.22);
-
-  /* ─ Button - primary ─ */
-  --th-btn-bg:       #ffffff;
-  --th-btn-text:     #000000;
-  --th-btn-bg-hover: rgba(255,255,255,.90);
-
-  /* ─ Button - ghost / outline ─ */
-  --th-btn-ghost-bd:         rgba(255,255,255,.14);
-  --th-btn-ghost-text:       rgba(255,255,255,.62);
-  --th-btn-ghost-bd-hover:   rgba(255,255,255,.24);
-  --th-btn-ghost-text-hover: rgba(255,255,255,.88);
-  --th-btn-ghost-bg-hover:   rgba(255,255,255,.05);
-
-  /* ─ Card ─ Elevated above the page. The #141414 page against a .03 fill
-   * already separates on its own, so there is no resting border. */
-  --th-card-bg:       rgba(255,255,255,.03);
-  --th-card-on-page:  #1b1b1b;
-  --th-card-bg-solid: #1e1e1e;
-  --th-card-bd:       transparent;
-  --th-card-bd-hover: rgba(255,255,255,.14);
-  --th-card-shadow:   none;
-
-  /* ─ Divider ─ */
-  --th-divider:       rgba(255,255,255,.07);
-
-  /* ─ Overlay ─ */
-  --th-overlay:       rgba(0,0,0,.55);
-
-  /* ─ Dropdown ─ Highest surface in the ladder. */
-  --th-dropdown-bg:     #282828;
-  --th-dropdown-bd:     rgba(255,255,255,.10);
-  --th-dropdown-shadow: 0 20px 48px rgba(0,0,0,.45), 0 4px 12px rgba(0,0,0,.28);
-
-  /* ─ Spinner ─ */
-  --th-spinner-track:   rgba(255,255,255,.08);
-  --th-spinner-fill:    #ffffff;
-
-  /* ─ Semantic status (dim: warm, softer, lower-contrast for the lifted gray) ─ */
-  --st-success-fg: hsl(86 82% 74%);  --st-success-bg: hsl(86 60% 54% / .15);  --st-success-bd: hsl(86 56% 62% / .28);
-  --st-danger-fg:  hsl(4 82% 67%);  --st-danger-bg:  hsl(4 72% 54% / .20);   --st-danger-bd:  hsl(4 68% 58% / .34);
-  --st-warning-fg: hsl(40 78% 63%);  --st-warning-bg: hsl(40 72% 50% / .16);  --st-warning-bd: hsl(40 68% 54% / .30);
-  --st-info-fg:    hsl(214 72% 72%);  --st-info-bg:    hsl(214 64% 54% / .16);  --st-info-bd:    hsl(214 60% 58% / .30);
-  --st-neutral-fg: rgba(255,255,255,.70);  --st-neutral-bg: rgba(255,255,255,.09);  --st-neutral-bd: rgba(255,255,255,.18);
-
-  /* Solid fills — softened to sit on the lifted gray without glare. */
-  --st-success-solid: hsl(85 68% 62%);  --st-danger-solid: hsl(4 72% 57%);  --st-warning-solid: hsl(38 68% 53%);  --st-info-solid: hsl(214 60% 57%);  --st-neutral-solid: rgba(255,255,255,.42);
-}
-
 
 /* ══════════════════════════════════════════════════════════════
    UTILITY CLASSES  -  .th-*
-   Each class is a single-purpose semantic token.
+   Kept for remaining call-sites; values ride the Geist tokens.
    ══════════════════════════════════════════════════════════════ */
 
-/* Text */
-.th-text-heading   { color: var(--th-text-heading); }
-.th-text-title     { color: var(--th-text-title); }
-.th-text-strong    { color: var(--th-text-strong); }
-.th-text-body      { color: var(--th-text-body); }
-.th-text-secondary { color: var(--th-text-secondary); }
-.th-text-muted     { color: var(--th-text-muted); }
-.th-text-label     { color: var(--th-text-label); }
-.th-text-hint      { color: var(--th-text-hint); }
-.th-text-ghost     { color: var(--th-text-ghost); }
+/* Text (Geist text ladder) */
+.th-text-heading {
+	color: var(--foreground);
+}
+.th-text-title {
+	color: var(--foreground);
+}
+.th-text-strong {
+	color: var(--foreground);
+}
+.th-text-body {
+	color: #666666;
+}
+.dark .th-text-body {
+	color: #a1a1a1;
+}
+.th-text-secondary {
+	color: #666666;
+}
+.dark .th-text-secondary {
+	color: #a1a1a1;
+}
+.th-text-muted {
+	color: #8f8f8f;
+}
+.dark .th-text-muted {
+	color: #8f8f8f;
+}
+.th-text-label {
+	color: #8f8f8f;
+}
+.th-text-hint {
+	color: #a8a8a8;
+}
+.dark .th-text-hint {
+	color: #8f8f8f;
+}
+.th-text-ghost {
+	color: var(--ga-500);
+}
 
 /* Page / layout */
-.th-page     { background-color: var(--th-bg-page); min-height: 100dvh; }
-.th-bg-card  { background-color: var(--th-bg-card); }
-.th-bg-subtle { background-color: var(--th-bg-subtle); }
-
-/* Card */
-.th-card {
-  background-color: var(--th-card-bg);
-  border: 1px solid var(--th-card-bd);
-  border-radius: 1rem;
-  box-shadow: var(--th-card-shadow);
-  transition: border-color .2s;
+.th-page {
+	background-color: var(--background);
+	min-height: 100dvh;
 }
-.th-card:has(a:hover) { border-color: var(--th-card-bd-hover); }
+.th-bg-card {
+	background-color: var(--card);
+}
+.th-bg-subtle {
+	background-color: var(--secondary);
+}
+
+/* Card: hairline alpha edge, 12px radius. */
+.th-card {
+	background-color: var(--card);
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	transition: border-color 0.15s;
+}
 
 /* Borders */
-.th-bd-default { border-color: var(--th-bd-default); }
-.th-bd-subtle  { border-color: var(--th-bd-subtle); }
-.th-divider    { border-color: var(--th-divider); }
+.th-bd-default {
+	border-color: var(--border);
+}
+.th-bd-subtle {
+	border-color: var(--border);
+}
+.th-divider {
+	border-color: var(--border);
+}
 
 /* Input */
 .th-input {
-  background-color: var(--th-input-bg);
-  border: 1px solid var(--th-input-bd);
-  color: var(--th-input-text);
-  outline: none;
-  transition: border-color .15s, background-color .15s;
+	background-color: var(--card);
+	border: 1px solid var(--input);
+	border-radius: 8px;
+	color: var(--foreground);
+	outline: none;
+	transition:
+		border-color 0.15s,
+		background-color 0.15s;
 }
-.th-input::placeholder  { color: var(--th-input-placeholder); }
+.th-input::placeholder {
+	color: #a8a8a8;
+}
+.dark .th-input::placeholder {
+	color: #8f8f8f;
+}
 .th-input:focus {
-  border-color: var(--th-input-bd-focus);
-  background-color: var(--th-input-bg-focus);
+	border-color: var(--ring);
+	background-color: var(--card);
 }
 
-/* Button - primary */
+/* Button - primary (Geist: gray-1000 fill, white label) */
 .th-btn {
-  background-color: var(--th-btn-bg);
-  color: var(--th-btn-text);
-  transition: background-color .15s;
+	background-color: var(--primary);
+	color: var(--primary-foreground);
+	border-radius: 8px;
+	transition: background-color 0.15s;
 }
-.th-btn:hover            { background-color: var(--th-btn-bg-hover); }
-.th-btn:disabled         { opacity: .42; cursor: not-allowed; }
+.th-btn:hover {
+	background-color: var(--ga-800);
+}
+.th-btn:disabled {
+	opacity: 0.42;
+	cursor: not-allowed;
+}
 
 /* Button - ghost/outline */
 .th-btn-ghost {
-  border: 1px solid var(--th-btn-ghost-bd);
-  color: var(--th-btn-ghost-text);
-  background-color: transparent;
-  transition: border-color .15s, color .15s, background-color .15s;
+	border: 1px solid var(--input);
+	border-radius: 8px;
+	color: #666666;
+	background-color: transparent;
+	transition:
+		border-color 0.15s,
+		color 0.15s,
+		background-color 0.15s;
+}
+.dark .th-btn-ghost {
+	color: #a1a1a1;
 }
 .th-btn-ghost:hover {
-  border-color: var(--th-btn-ghost-bd-hover);
-  color: var(--th-btn-ghost-text-hover);
-  background-color: var(--th-btn-ghost-bg-hover);
+	border-color: var(--ring);
+	color: var(--foreground);
+	background-color: var(--accent);
 }
-.th-btn-ghost:disabled { opacity: .42; cursor: not-allowed; }
+.th-btn-ghost:disabled {
+	opacity: 0.42;
+	cursor: not-allowed;
+}
 
 /* Dropdown */
 .th-dropdown {
-  background-color: var(--th-dropdown-bg);
-  border: 1px solid var(--th-dropdown-bd);
-  box-shadow: var(--th-dropdown-shadow);
+	background-color: var(--popover);
+	border: 1px solid var(--border);
+	border-radius: 12px;
 }
 
 /* Spinner */
-.th-spinner-track { stroke: var(--th-spinner-track); }
-.th-spinner-fill  { stroke: var(--th-spinner-fill); }
-
+.th-spinner-track {
+	stroke: var(--ga-100);
+}
+.th-spinner-fill {
+	stroke: var(--foreground);
+}
 
 /* ══════════════════════════════════════════════════════════════
-   SHADCN/UI BRIDGE
-   Maps --th-* tokens → standard shadcn variable names so utilities
-   like bg-primary, text-foreground, border-input keep working.
-   Values auto-switch between light/dim/dark because --th-* does.
+   SEMANTIC STATUS → SHADCN BRIDGE
    ══════════════════════════════════════════════════════════════ */
 
 :root {
-  --background: var(--th-bg-page);
-  --foreground: var(--th-text-title);
-  /* Cards are a translucent lift over the page (OpenShip's ladder), not an
-     opaque slab — the hairline border reads against the page through it. */
-  --card: var(--th-card-bg);
-  --card-foreground: var(--th-text-title);
-  --popover: var(--th-dropdown-bg);
-  --popover-foreground: var(--th-text-title);
-  --primary: var(--th-btn-bg);
-  --primary-foreground: var(--th-btn-text);
-  --secondary: var(--th-sf-05);
-  --secondary-foreground: var(--th-text-strong);
-  --muted: var(--th-sf-04);
-  --muted-foreground: var(--th-text-muted);
-  --accent: var(--th-sf-04);
-  --accent-foreground: var(--th-text-title);
-  --destructive: #ef4444;
-  --destructive-foreground: #fafafa;
-  --border: var(--th-bd-default);
-  --input: var(--th-input-bd);
-  --ring: var(--th-on-20);
-  --radius: 0.75rem;
+	--success: var(--st-success-fg);
+	--success-bg: var(--st-success-bg);
+	--success-border: var(--st-success-bd);
+	--danger: var(--st-danger-fg);
+	--danger-bg: var(--st-danger-bg);
+	--danger-border: var(--st-danger-bd);
+	--warning: var(--st-warning-fg);
+	--warning-bg: var(--st-warning-bg);
+	--warning-border: var(--st-warning-bd);
+	--info: var(--st-info-fg);
+	--info-bg: var(--st-info-bg);
+	--info-border: var(--st-info-bd);
+	--neutral: var(--st-neutral-fg);
+	--neutral-bg: var(--st-neutral-bg);
+	--neutral-border: var(--st-neutral-bd);
 
-  /* Sidebar rides the elevated card surface (OpenShip: bg-card on the page),
-     so it reads as a lifted panel, not a hole in the background. */
-  --sidebar: var(--th-card-bg);
-  --sidebar-foreground: var(--th-text-title);
-  --sidebar-primary: var(--th-btn-bg);
-  --sidebar-primary-foreground: var(--th-btn-text);
-  --sidebar-accent: var(--th-sf-05);
-  --sidebar-accent-foreground: var(--th-text-strong);
-  --sidebar-border: var(--th-bd-subtle);
-  --sidebar-ring: var(--th-on-20);
-
-  /* Charts: neutral on-surface ladder (grayscale, theme-aware). */
-  --chart-1: var(--th-on-20);
-  --chart-2: var(--th-on-40);
-  --chart-3: var(--th-on-60);
-  --chart-4: var(--th-on-80);
-  --chart-5: var(--th-text-heading);
-
-  /* Semantic status → stable names (auto-switch via the --st-* per theme). */
-  --success: var(--st-success-fg);  --success-bg: var(--st-success-bg);  --success-border: var(--st-success-bd);
-  --danger:  var(--st-danger-fg);   --danger-bg:  var(--st-danger-bg);   --danger-border:  var(--st-danger-bd);
-  --warning: var(--st-warning-fg);  --warning-bg: var(--st-warning-bg);  --warning-border: var(--st-warning-bd);
-  --info:    var(--st-info-fg);     --info-bg:    var(--st-info-bg);     --info-border:    var(--st-info-bd);
-  --neutral: var(--st-neutral-fg);  --neutral-bg: var(--st-neutral-bg);  --neutral-border: var(--st-neutral-bd);
-
-  /* SOLID fills for bars / dots / solid buttons. Per-theme via --st-*-solid. */
-  --success-solid: var(--st-success-solid);  --danger-solid: var(--st-danger-solid);  --warning-solid: var(--st-warning-solid);  --info-solid: var(--st-info-solid);  --neutral-solid: var(--st-neutral-solid);
+	--success-solid: var(--st-success-solid);
+	--danger-solid: var(--st-danger-solid);
+	--warning-solid: var(--st-warning-solid);
+	--info-solid: var(--st-info-solid);
+	--neutral-solid: var(--st-neutral-solid);
 }

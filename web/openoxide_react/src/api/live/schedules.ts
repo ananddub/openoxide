@@ -1,4 +1,8 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+} from './query';
 // Only ScheduleOperationsService is served by the backend (ScheduleService
 // has no controller), so the live layer targets the operations variant.
 import {ScheduleOperationsService} from '#/gen/connect/openoxide/api/v1/schedule_operations_pb';
@@ -63,7 +67,8 @@ export function useScheduleListByCompose(composeId: bigint) {
 export function useScheduleListByDatabase(databaseId: bigint) {
 	return useResourceListQuery<SchedulePayload>(
 		['schedules', 'list', 'database', databaseId.toString()],
-		() => scheduleClient.listDatabaseSchedules({organizationId: databaseId}),
+		() =>
+			scheduleClient.listDatabaseSchedules({organizationId: databaseId}),
 	);
 }
 
@@ -81,7 +86,10 @@ export function useScheduleUpdate() {
 	return useConnectMutation(
 		(input: {id: number | bigint; [field: string]: unknown}) => {
 			const {id, ...body} = input;
-			return scheduleClient.updateSchedule({id: BigInt(id), payload: JSON.stringify(body)});
+			return scheduleClient.updateSchedule({
+				id: BigInt(id),
+				payload: JSON.stringify(body),
+			});
 		},
 		{invalidate: [['schedules']]},
 	);
@@ -112,7 +120,10 @@ export function useScheduleRun() {
 export function useSchedulePause() {
 	return useConnectMutation(
 		(id: number | bigint) =>
-			scheduleClient.updateSchedule({id: BigInt(id), payload: JSON.stringify({enabled: 0})}),
+			scheduleClient.updateSchedule({
+				id: BigInt(id),
+				payload: JSON.stringify({enabled: 0}),
+			}),
 		{invalidate: [['schedules']]},
 	);
 }
@@ -124,7 +135,10 @@ export function useSchedulePause() {
 export function useScheduleResume() {
 	return useConnectMutation(
 		(id: number | bigint) =>
-			scheduleClient.updateSchedule({id: BigInt(id), payload: JSON.stringify({enabled: 1})}),
+			scheduleClient.updateSchedule({
+				id: BigInt(id),
+				payload: JSON.stringify({enabled: 1}),
+			}),
 		{invalidate: [['schedules']]},
 	);
 }

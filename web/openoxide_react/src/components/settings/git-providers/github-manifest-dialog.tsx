@@ -3,12 +3,13 @@ import {GithubIcon} from '#/components/icons/data-tools-icons';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {getGithubCallbackBaseUrl} from './git-provider-types';
 
 interface GithubManifestDialogProps {
@@ -64,22 +65,20 @@ export function GithubManifestDialog({
 		);
 
 	return (
-		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="sm:max-w-md">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2.5 text-base font-bold">
-						<div className="flex size-8 items-center justify-center rounded-lg bg-zinc-800 text-white">
-							<GithubIcon className="size-4" />
-						</div>
+		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2">
+						<GithubIcon className="size-4" />
 						Create GitHub App
-					</DialogTitle>
-					<DialogDescription className="text-xs">
+					</SheetTitle>
+					<SheetDescription>
 						GitHub will automatically configure the App manifest,
 						permissions, and webhook callback in OpenOxide.
-					</DialogDescription>
-				</DialogHeader>
+					</SheetDescription>
+				</SheetHeader>
 
-				<div className="flex flex-col gap-4 pt-2">
+				<div className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
 					<div className="space-y-1.5">
 						<label className="text-xs font-semibold text-muted-foreground">
 							GitHub Base URL
@@ -123,17 +122,20 @@ export function GithubManifestDialog({
 						/>
 					</div>
 
-					<form action={targetAction} method="post" className="pt-2">
+				</div>
+
+				<SheetFooter>
+					<form action={targetAction} method="post" className="w-full">
 						<input type="hidden" name="manifest" value={manifest} />
 						<Button
 							type="submit"
 							disabled={!hookIsValid}
-							className="h-9 w-full cursor-pointer gap-2 rounded-lg bg-primary text-xs font-semibold text-primary-foreground">
+							className="w-full cursor-pointer gap-2">
 							<GithubIcon className="size-4" /> Continue on GitHub
 						</Button>
 					</form>
-				</div>
-			</DialogContent>
-		</Dialog>
+				</SheetFooter>
+			</SheetContent>
+		</Sheet>
 	);
 }

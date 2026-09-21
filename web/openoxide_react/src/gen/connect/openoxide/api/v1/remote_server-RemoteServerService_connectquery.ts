@@ -2,12 +2,13 @@
 // @generated from file openoxide/api/v1/remote_server.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { RemoteServerService } from "./remote_server_pb";
+import {RemoteServerService} from './remote_server_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.RemoteServerService.ListRemoteServers
  */
-export const listRemoteServers = RemoteServerService.method.listRemoteServers;
+export const listRemoteServers =
+	RemoteServerService.method.listRemoteServers;
 
 /**
  * @generated from rpc openoxide.api.v1.RemoteServerService.GetRemoteServer
@@ -17,12 +18,14 @@ export const getRemoteServer = RemoteServerService.method.getRemoteServer;
 /**
  * @generated from rpc openoxide.api.v1.RemoteServerService.CreateRemoteServer
  */
-export const createRemoteServer = RemoteServerService.method.createRemoteServer;
+export const createRemoteServer =
+	RemoteServerService.method.createRemoteServer;
 
 /**
  * @generated from rpc openoxide.api.v1.RemoteServerService.UpdateRemoteServer
  */
-export const updateRemoteServer = RemoteServerService.method.updateRemoteServer;
+export const updateRemoteServer =
+	RemoteServerService.method.updateRemoteServer;
 
 /**
  * @generated from rpc openoxide.api.v1.RemoteServerService.Activate
@@ -42,12 +45,14 @@ export const testConnection = RemoteServerService.method.testConnection;
 /**
  * @generated from rpc openoxide.api.v1.RemoteServerService.DeleteRemoteServer
  */
-export const deleteRemoteServer = RemoteServerService.method.deleteRemoteServer;
+export const deleteRemoteServer =
+	RemoteServerService.method.deleteRemoteServer;
 
 /**
  * @generated from rpc openoxide.api.v1.RemoteServerService.MigrateDependencies
  */
-export const migrateDependencies = RemoteServerService.method.migrateDependencies;
+export const migrateDependencies =
+	RemoteServerService.method.migrateDependencies;
 
 /**
  * @generated from rpc openoxide.api.v1.RemoteServerService.GetMigration
@@ -57,7 +62,8 @@ export const getMigration = RemoteServerService.method.getMigration;
 /**
  * @generated from rpc openoxide.api.v1.RemoteServerService.RollbackMigration
  */
-export const rollbackMigration = RemoteServerService.method.rollbackMigration;
+export const rollbackMigration =
+	RemoteServerService.method.rollbackMigration;
 
 /**
  * Flags a RUNNING application_migrations row for cooperative cancellation;
@@ -66,3 +72,28 @@ export const rollbackMigration = RemoteServerService.method.rollbackMigration;
  * @generated from rpc openoxide.api.v1.RemoteServerService.CancelMigration
  */
 export const cancelMigration = RemoteServerService.method.cancelMigration;
+
+/**
+ * Triggers (or resumes) a stateful single-service migration. id carries the
+ * service id, payload a JSON object {"target_server_id": "..."}. Returns
+ * the application_migrations row JSON.
+ *
+ * @generated from rpc openoxide.api.v1.RemoteServerService.MigrateService
+ */
+export const migrateService = RemoteServerService.method.migrateService;
+
+/**
+ * Lists stateful migrations for a service (id = service id), newest first.
+ *
+ * @generated from rpc openoxide.api.v1.RemoteServerService.ListMigrations
+ */
+export const listMigrations = RemoteServerService.method.listMigrations;
+
+/**
+ * Lists per-object checkpoints of one stateful migration (payload = the
+ * migration id string).
+ *
+ * @generated from rpc openoxide.api.v1.RemoteServerService.ListMigrationObjects
+ */
+export const listMigrationObjects =
+	RemoteServerService.method.listMigrationObjects;

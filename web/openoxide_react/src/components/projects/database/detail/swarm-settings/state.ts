@@ -7,6 +7,7 @@ import {
 } from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import type {SwarmKey} from './forms';
+import {serialize, networkFormValue} from './swarm-serialization';
 
 export const swarmSections: ReadonlyArray<[SwarmKey, string]> = [
 	['health_check_swarm', 'Health Check'],
@@ -33,10 +34,7 @@ export function useDatabaseSwarmSettingsState(
 	onUpdated: () => void,
 ) {
 	const kind = parseDatabaseKind(database?.kind || 'postgres');
-	const query = useDatabaseSwarmSettings(
-		kind,
-		BigInt(database?.id || 0),
-	);
+	const query = useDatabaseSwarmSettings(kind, BigInt(database?.id || 0));
 	const save = useDatabaseUpdateSwarmSettings();
 	const [active, setActive] = useState<SwarmKey>('mode_swarm');
 	const [values, setValues] = useState<any>({...defaults});
@@ -48,13 +46,17 @@ export function useDatabaseSwarmSettingsState(
 			if (data[key])
 				try {
 					const parsed = JSON.parse(data[key]);
-					next[key] = key === 'labels_swarm' && !Array.isArray(parsed)
-						? Object.entries(parsed).map(([labelKey, labelValue]) => ({key: labelKey, value: labelValue}))
-						: Array.isArray(parsed)
-						? key === 'network_swarm'
-							? parsed.map(networkFormValue)
-							: parsed
-						: {...next[key], ...parsed};
+					next[key] =
+						key === 'labels_swarm' && !Array.isArray(parsed)
+							? Object.entries(parsed).map(([labelKey, labelValue]) => ({
+									key: labelKey,
+									value: labelValue,
+								}))
+							: Array.isArray(parsed)
+								? key === 'network_swarm'
+									? parsed.map(networkFormValue)
+									: parsed
+								: {...next[key], ...parsed};
 				} catch {}
 		});
 		setValues(next);
@@ -75,16 +77,15 @@ export function useDatabaseSwarmSettingsState(
 		try {
 			const body: any = {};
 			swarmSections.forEach(([key]) => {
-				if (key !== 'stop_grace_period_swarm') serialize(body, key, values[key]);
+				if (key !== 'stop_grace_period_swarm')
+					serialize(body, key, values[key]);
 			});
 			await save.mutateAsync({
 				kind,
 				id: database?.id,
 				values: {
 					...body,
-					stop_grace_period_swarm: grace
-						? Number(grace)
-						: null,
+					stop_grace_period_swarm: grace ? Number(grace) : null,
 				},
 			} as Parameters<typeof save.mutateAsync>[0]);
 			toast.success('Swarm settings updated');
@@ -100,7 +101,10 @@ export function useDatabaseSwarmSettingsState(
 			setGrace('');
 			return;
 		}
-		setValues((old: any) => ({...old, [active]: Array.isArray(old[active]) ? [] : {...(defaults[active] || {})}}));
+		setValues((old: any) => ({
+			...old,
+			[active]: Array.isArray(old[active]) ? [] : {...defaults[active]},
+		}));
 	};
 	return {
 		active,
@@ -113,85 +117,4 @@ export function useDatabaseSwarmSettingsState(
 		clearActive,
 		saving: save.isPending,
 	};
-}
-
-function serialize(body: any, key: string, value: any) {
-	if (key === 'stop_grace_period_swarm') return;
-	if (key === 'network_swarm') {
-		const networks = (Array.isArray(value) ? value : [])
-			.filter(network => network.Target?.trim())
-			.map(network => ({
-				Target: network.Target.trim(),
-				Aliases: typeof network.Aliases === 'string' ? csv(network.Aliases) : network.Aliases,
-				DriverOpts: Object.fromEntries(
-					(network.DriverOptsEntries || [])
-						.filter((option: any) => option.key?.trim())
-						.map((option: any) => [option.key.trim(), option.value || '']),
-				),
-			}));
-		body[key] = networks.length ? JSON.stringify(networks) : null;
-		return;
-	}
-	if (key === 'labels_swarm') {
-		const labels = Array.isArray(value) ? value.filter(item => item.key?.trim()) : [];
-		body[key] = labels.length
-			? JSON.stringify(Object.fromEntries(labels.map(item => [item.key.trim(), item.value || ''])))
-			: null;
-		return;
-	}
-	if (key === 'endpoint_spec_swarm') {
-		const endpoint = {...value};
-		endpoint.Ports = (endpoint.Ports || []).filter((port: any) => Number(port.TargetPort) > 0 && Number(port.PublishedPort) > 0);
-		body[key] = Object.keys(endpoint).length ? JSON.stringify(endpoint) : null;
-		return;
-	}
-	value = {...value};
-	if (key === 'mode_swarm') {
-		body[key] = JSON.stringify(
-			value.type === 'Global'
-				? {Global: {}}
-				: {Replicated: {Replicas: Number(value.Replicas || 1)}},
-		);
-		return;
-	}
-	if (key === 'health_check_swarm' && value.Test) {
-		value.Test = Array.isArray(value.Test)
-			? value.Test
-			: value.Test.startsWith('CMD')
-				? [value.Test]
-				: ['CMD-SHELL', value.Test];
-	}
-	if (key === 'placement_swarm') {
-		if (typeof value.Constraints === 'string')
-			value.Constraints = csv(value.Constraints);
-		if (typeof value.Preferences === 'string')
-			value.Preferences = csv(value.Preferences).map(
-				(SpreadDescriptor: string) => ({SpreadDescriptor}),
-			);
-		if (typeof value.Platforms === 'string')
-			value.Platforms = csv(value.Platforms).map((item: string) => {
-				const [Architecture, OS] = item.split(':');
-				return {Architecture, OS};
-			});
-	}
-	if (key !== 'labels_swarm' && key !== 'endpoint_spec_swarm') {
-		delete value.key;
-		delete value.value;
-		body[key] = Object.keys(value).length ? JSON.stringify(value) : null;
-	}
-}
-function networkFormValue(network: any) {
-	return {
-		Target: network.Target || '',
-		Aliases: (network.Aliases || []).join(', '),
-		DriverOptsEntries: Object.entries(network.DriverOpts || {}).map(
-			([key, value]) => ({key, value}),
-		),
-	};
-}
-function csv(value: string) {
-	return value
-		.split(',')
-		.map(item => item.trim())
-		.filter(Boolean);
 }

@@ -78,7 +78,7 @@ export function DatabaseAdvancedCustomCommand({
 	};
 
 	return (
-		<section className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-sm">
+		<section className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-sm">
 			<div>
 				<h3 className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground">
 					<Terminal className="size-4 text-primary" /> Docker Image,

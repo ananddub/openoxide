@@ -1,5 +1,7 @@
-import {Plus, RefreshCw} from 'lucide-react';
+import {Titlebar} from '#/components/shared/titlebar';
+import {Clock} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {Plus, RefreshCw} from 'lucide-react';
 
 interface SchedulesHeaderProps {
 	onOpenCreate: () => void;
@@ -15,38 +17,29 @@ export function SchedulesHeader({
 	disabled = false,
 }: SchedulesHeaderProps) {
 	return (
-		<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-			<div className="flex flex-col gap-1">
-				<h1 className="text-2xl font-medium tracking-tight text-foreground/80">
-					Schedules
-				</h1>
-				<p className="text-sm text-muted-foreground/70">
-					Manage automated tasks, cron jobs, database backups, and
-					maintenance scripts
-				</p>
-			</div>
-
-			<div className="flex items-center gap-2 sm:ml-auto">
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={onRefresh}
-					disabled={isRefreshing}
-					className="h-8 cursor-pointer gap-1.5 text-xs">
-					<RefreshCw
-						className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
-					/>
-					Refresh
-				</Button>
-				<Button
-					size="sm"
-					onClick={onOpenCreate}
-					disabled={disabled}
-					className="h-8 cursor-pointer gap-1.5 text-xs">
-					<Plus className="h-3.5 w-3.5" />
-					Create Schedule
-				</Button>
-			</div>
-		</div>
+		<Titlebar
+			breadcrumbs={[{label: 'Schedules'}]}
+			icon={<Clock className="text-foreground/70" />}
+			title="Schedules"
+			description="Manage automated tasks, cron jobs, database backups, and maintenance scripts"
+			actions={
+				<>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={onRefresh}
+						disabled={isRefreshing}>
+						<RefreshCw
+							className={`size-3.5 text-muted-foreground ${isRefreshing ? 'animate-spin' : ''}`}
+						/>
+						Refresh
+					</Button>
+					<Button size="sm" onClick={onOpenCreate} disabled={disabled}>
+						<Plus className="size-3.5" />
+						Create Schedule
+					</Button>
+				</>
+			}
+		/>
 	);
 }

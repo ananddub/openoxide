@@ -25,7 +25,9 @@ function parseConfig(payload: string): PrivateNetworkConfig | null {
  */
 export const privateNetworkApi = {
 	get: async (serverId: number): Promise<PrivateNetworkConfig | null> => {
-		const response = await networkClient.getNetwork({id: BigInt(serverId)});
+		const response = await networkClient.getNetwork({
+			id: BigInt(serverId),
+		});
 		return parseConfig(response.payload);
 	},
 	update: async (

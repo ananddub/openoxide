@@ -1,4 +1,9 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery, useResourceQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+	useResourceQuery,
+} from './query';
 // Only TraefikOperationsService is served by the backend (TraefikService has
 // no controller), so the live layer targets the operations variant.
 import {TraefikOperationsService} from '#/gen/connect/openoxide/api/v1/traefik_operations_pb';
@@ -45,7 +50,11 @@ export function useTraefikFileTree(serverId: bigint = 0n) {
 export function useTraefikFileContent(serverId: bigint, path: string) {
 	return useResourceQuery<TraefikFileContentPayload>(
 		['traefik', 'file-content', serverId.toString(), path],
-		() => traefikClient.getContent({organizationId: serverId, payload: JSON.stringify({path})}),
+		() =>
+			traefikClient.getContent({
+				organizationId: serverId,
+				payload: JSON.stringify({path}),
+			}),
 	);
 }
 
@@ -56,10 +65,17 @@ export function useTraefikFileContent(serverId: bigint, path: string) {
  */
 export function useTraefikFileContentUpdate() {
 	return useConnectMutation(
-		(input: {server_id?: number | bigint | null; path: string; content: string}) =>
+		(input: {
+			server_id?: number | bigint | null;
+			path: string;
+			content: string;
+		}) =>
 			traefikClient.updateContent({
 				payload: JSON.stringify({
-					server_id: input.server_id === null || input.server_id === undefined ? null : Number(input.server_id),
+					server_id:
+						input.server_id === null || input.server_id === undefined
+							? null
+							: Number(input.server_id),
 					path: input.path,
 					content: input.content,
 				}),
@@ -81,10 +97,14 @@ export function useTraefikHealth(options?: {enabled?: boolean}) {
 		rawdata_status: string;
 		configuration_errors: string[];
 		[key: string]: unknown;
-	}>(['traefik', 'health'], async () => {
-		const response = await traefikClient.health({});
-		return JSON.parse(response.payload || '{}');
-	}, options);
+	}>(
+		['traefik', 'health'],
+		async () => {
+			const response = await traefikClient.health({});
+			return JSON.parse(response.payload || '{}');
+		},
+		options,
+	);
 }
 
 /**

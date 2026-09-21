@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/swarm_operations.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { SwarmOperationsService } from "./swarm_operations_pb";
+import {SwarmOperationsService} from './swarm_operations_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.SwarmOperationsService.Info
@@ -32,7 +32,8 @@ export const demoteNode = SwarmOperationsService.method.demoteNode;
 /**
  * @generated from rpc openoxide.api.v1.SwarmOperationsService.UpdateNodeAvailability
  */
-export const updateNodeAvailability = SwarmOperationsService.method.updateNodeAvailability;
+export const updateNodeAvailability =
+	SwarmOperationsService.method.updateNodeAvailability;
 
 /**
  * @generated from rpc openoxide.api.v1.SwarmOperationsService.RemoveNode

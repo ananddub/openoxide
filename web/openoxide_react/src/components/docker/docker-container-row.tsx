@@ -86,7 +86,7 @@ export function DockerContainerRow({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="end"
-						className="w-44 border- bg-card p-1 text-xs shadow-md">
+						className="border- w-44 bg-card p-1 text-xs shadow-md">
 						<DropdownMenuGroup>
 							<DropdownMenuLabel className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase">
 								Inspect Options

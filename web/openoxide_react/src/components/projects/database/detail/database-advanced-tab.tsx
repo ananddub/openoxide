@@ -59,13 +59,19 @@ export function DatabaseAdvancedTab({
 
 	return (
 		<div className="flex w-full animate-in flex-col gap-6 duration-200 fade-in">
-			<DatabaseAdvancedMetadata database={database} onUpdated={onUpdated} />
+			<DatabaseAdvancedMetadata
+				database={database}
+				onUpdated={onUpdated}
+			/>
 			<DatabaseAdvancedCustomCommand
 				database={database}
 				onUpdated={onUpdated}
 			/>
 			{databaseKind(database) === 'postgres' && (
-				<DatabasePostgresConfig database={database} onUpdated={onUpdated} />
+				<DatabasePostgresConfig
+					database={database}
+					onUpdated={onUpdated}
+				/>
 			)}
 
 			{/* 2. Replicas & Resource Limits (Memory / CPU Limits & Reservations) */}
@@ -74,11 +80,14 @@ export function DatabaseAdvancedTab({
 				onUpdated={onUpdated}
 			/>
 			<DatabaseAdvancedVolumes database={database} onUpdated={onUpdated} />
-			<DatabaseAdvancedNetworks database={database} onUpdated={onUpdated} />
+			<DatabaseAdvancedNetworks
+				database={database}
+				onUpdated={onUpdated}
+			/>
 			<DatabaseSwarmSettings database={database} onUpdated={onUpdated} />
 
 			{/* 3. Danger Zone Card */}
-			<section className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-sm">
+			<section className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-sm">
 				<div className="flex items-center gap-2 text-destructive">
 					<AlertTriangle className="size-5" />
 					<div>

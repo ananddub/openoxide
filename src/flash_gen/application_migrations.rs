@@ -17,6 +17,7 @@ pub struct ApplicationMigrationsBeginParams {
 
 pub struct ApplicationMigrationsUpdatePhaseParams {
     pub phase: String,
+    pub status: String,
     pub progress: i64,
     pub id: String,
 }
@@ -48,9 +49,10 @@ impl Queries {
         params: &ApplicationMigrationsUpdatePhaseParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE application_migrations SET phase = ?, progress = ?, updated_at = unixepoch() WHERE id = ?;"
+            "UPDATE application_migrations SET phase = ?, status = ?, progress = ?, updated_at = unixepoch() WHERE id = ?;"
         )
         .bind(&params.phase)
+        .bind(&params.status)
         .bind(&params.progress)
         .bind(&params.id)
         .execute(&self.pool)

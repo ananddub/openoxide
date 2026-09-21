@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/domain.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { DomainService } from "./domain_pb";
+import {DomainService} from './domain_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.DomainService.ListDomains

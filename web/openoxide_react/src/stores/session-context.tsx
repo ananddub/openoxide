@@ -54,12 +54,13 @@ export function SessionProvider({children}: {children: ReactNode}) {
 	const [organizations, setOrganizationsState] = useState<
 		Record<string, any>[]
 	>([]);
-	const [activeOrg, setActiveOrgState] = useState<Record<string, any> | null>(
-		() => {
-			const preferredId = getActiveOrganizationId();
-			return preferredId ? ({id: preferredId} as Record<string, any>) : null;
-		},
-	);
+	const [activeOrg, setActiveOrgState] = useState<Record<
+		string,
+		any
+	> | null>(() => {
+		const preferredId = getActiveOrganizationId();
+		return preferredId ? ({id: preferredId} as Record<string, any>) : null;
+	});
 
 	const session = useMemo<SessionState>(() => {
 		const setAuth = (next: User) => setUser(next);
@@ -71,7 +72,7 @@ export function SessionProvider({children}: {children: ReactNode}) {
 		const setOrganizations = (orgs: Record<string, any>[]) => {
 			// Same de-dupe as the legacy store: identical id+name lists keep
 			// the current state (and its identity) untouched.
-			setOrganizationsState((current) => {
+			setOrganizationsState(current => {
 				if (
 					current.length === orgs.length &&
 					current.every(
@@ -85,7 +86,7 @@ export function SessionProvider({children}: {children: ReactNode}) {
 				const preferredId = activeOrg?.id ?? getActiveOrganizationId();
 				const nextActive =
 					orgs.length > 0
-						? orgs.find((o) => o.id === preferredId) || orgs[0]
+						? orgs.find(o => o.id === preferredId) || orgs[0]
 						: null;
 				if (nextActive?.id !== activeOrg?.id) {
 					persistActiveOrganizationId(nextActive?.id ?? null);
@@ -115,7 +116,9 @@ export function SessionProvider({children}: {children: ReactNode}) {
 	setSessionRef({setAuth: session.setAuth, logout: session.logout});
 
 	return (
-		<SessionContext.Provider value={session}>{children}</SessionContext.Provider>
+		<SessionContext.Provider value={session}>
+			{children}
+		</SessionContext.Provider>
 	);
 }
 
@@ -132,11 +135,16 @@ function useSession(): SessionState {
 // context. A module-level ref (kept in sync by the provider) covers that
 // window without any global store.
 
-let sessionRef: {setAuth: (user: User) => void; logout: () => void} | null =
-	null;
+let sessionRef: {
+	setAuth: (user: User) => void;
+	logout: () => void;
+} | null = null;
 
 /** Called by SessionProvider on every render to keep the ref fresh. */
-function setSessionRef(ref: {setAuth: (user: User) => void; logout: () => void}) {
+function setSessionRef(ref: {
+	setAuth: (user: User) => void;
+	logout: () => void;
+}) {
 	sessionRef = ref;
 }
 

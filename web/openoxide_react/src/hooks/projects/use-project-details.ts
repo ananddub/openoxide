@@ -8,17 +8,11 @@ import {
 	useComposeList,
 	useOverviewServices,
 } from '#/api/live';
-
-function normalizeDatabaseKind(value: unknown): string {
-	const kind = String(value || '').toLowerCase();
-	if (kind.includes('postgres')) return 'postgres';
-	if (kind.includes('maria')) return 'mariadb';
-	if (kind.includes('mysql')) return 'mysql';
-	if (kind.includes('mongo')) return 'mongo';
-	if (kind.includes('redis')) return 'redis';
-	if (kind.includes('libsql') || kind.includes('sqlite')) return 'libsql';
-	return kind || 'postgres';
-}
+import {
+	buildProjectServices,
+	makeGetServerName,
+} from './use-project-details.mappers';
+import {buildFilteredServices} from './use-project-details.filters';
 
 export function useProjectDetails(projectId: number) {
 	// Modals State
@@ -37,16 +31,10 @@ export function useProjectDetails(projectId: number) {
 	const databases = useDatabaseList().data ?? [];
 	const composes = useComposeList().data ?? [];
 	const overviewServices = useOverviewServices().data ?? [];
-	const getServerName = (service: any) => {
-		if (service?.server_name || service?.serverName)
-			return String(service.server_name || service.serverName);
-		const serverId = service?.server_id ?? service?.serverId;
-		if (serverId == null) return 'Localhost (Main server)';
-		const server = (servers || []).find(
-			(item: any) => String(item.id) === String(serverId),
-		);
-		return String(server?.name || `Server ${serverId}`);
-	};
+	const getServerName = useMemo(
+		() => makeGetServerName(servers),
+		[servers],
+	);
 
 	// Queries — live project query keyed ['projects','get',id]; the
 	// table-watch stream invalidates it on project changes while mounted.
@@ -110,233 +98,30 @@ export function useProjectDetails(projectId: number) {
 		[envs, activeEnvId],
 	);
 
-	// Instant Filtered Services directly from Realtime Zustand Store (Applications + Compose + Databases + Overview)
-	const projectServices = useMemo(() => {
-		const result: any[] = [];
-		const seenKeys = new Set<string>();
-
-		// 1. Applications from Zustand store
-		// 1. Applications from project query or Zustand store
-		const allApps = [
-			...(applications || []),
-			...((project as any)?.applications || []),
-		];
-		allApps.forEach((app: any) => {
-			if (
-				String(app.project_id || app.projectId || projectId) ===
-				String(projectId)
-			) {
-				const envId = app.environment_id ?? app.environmentId;
-				if (
-					activeEnvId === null ||
-					envId === undefined ||
-					envId === null ||
-					Number(envId) === Number(activeEnvId)
-				) {
-					const key = `APP-${app.id}`;
-					if (!seenKeys.has(key)) {
-						seenKeys.add(key);
-						const status = app.app_status || app.status || 'STOPPED';
-						result.push({
-							id: app.id,
-							type: 'APP',
-							name: app.name || app.app_name,
-							subtitle: app.app_name || app.name,
-							status,
-							createdAt: app.created_at || Date.now(),
-							projectId: Number(app.project_id || projectId),
-							environmentId: envId,
-							serverName: getServerName(app),
-						});
-					}
-				}
-			}
-		});
-
-		// 2. Compose stacks from project query or Zustand store
-		const allComposes = [
-			...(composes || []),
-			...((project as any)?.composes || []),
-		];
-		allComposes.forEach((c: any) => {
-			if (
-				String(c.project_id || c.projectId || projectId) ===
-				String(projectId)
-			) {
-				const envId = c.environment_id ?? c.environmentId;
-				if (
-					activeEnvId === null ||
-					envId === undefined ||
-					envId === null ||
-					Number(envId) === Number(activeEnvId)
-				) {
-					const key = `COMPOSE-${c.id}`;
-					if (!seenKeys.has(key)) {
-						seenKeys.add(key);
-						const status = c.compose_status || c.status || 'STOPPED';
-						result.push({
-							id: c.id,
-							type: 'COMPOSE',
-							name: c.name || c.app_name,
-							subtitle: c.app_name || c.name,
-							status,
-							createdAt: c.created_at || Date.now(),
-							projectId: Number(c.project_id || projectId),
-							environmentId: envId,
-							serverName: getServerName(c),
-						});
-					}
-				}
-			}
-		});
-
-		// 3. Databases from project query or Zustand store
-		const projectDbs: any[] = [];
-		if (project) {
-			if (Array.isArray((project as any).postgresDbs))
-				projectDbs.push(
-					...(project as any).postgresDbs.map((d: any) => ({
-						...d,
-						kind: 'postgres',
-					})),
-				);
-			if (Array.isArray((project as any).mysqlDbs))
-				projectDbs.push(
-					...(project as any).mysqlDbs.map((d: any) => ({
-						...d,
-						kind: 'mysql',
-					})),
-				);
-			if (Array.isArray((project as any).mariadbDbs))
-				projectDbs.push(
-					...(project as any).mariadbDbs.map((d: any) => ({
-						...d,
-						kind: 'mariadb',
-					})),
-				);
-			if (Array.isArray((project as any).mongoDbs))
-				projectDbs.push(
-					...(project as any).mongoDbs.map((d: any) => ({
-						...d,
-						kind: 'mongo',
-					})),
-				);
-			if (Array.isArray((project as any).redisDbs))
-				projectDbs.push(
-					...(project as any).redisDbs.map((d: any) => ({
-						...d,
-						kind: 'redis',
-					})),
-				);
-			if (Array.isArray((project as any).libsqlDbs))
-				projectDbs.push(
-					...(project as any).libsqlDbs.map((d: any) => ({
-						...d,
-						kind: 'libsql',
-					})),
-				);
-		}
-		const allDbs = [...(databases || []), ...projectDbs];
-		allDbs.forEach((db: any) => {
-			if (
-				String(db.project_id || db.projectId || projectId) ===
-				String(projectId)
-			) {
-				const envId = db.environment_id ?? db.environmentId;
-				if (
-					activeEnvId === null ||
-					envId === undefined ||
-					envId === null ||
-					Number(envId) === Number(activeEnvId)
-				) {
-					const dbKind = normalizeDatabaseKind(
-						db.kind || db.type || db.db_kind || db.dbKind,
-					);
-					const key = `DATABASE-${dbKind}-${String(db.id)}`;
-					if (!seenKeys.has(key)) {
-						seenKeys.add(key);
-						const status = db.app_status || db.status || 'STOPPED';
-						result.push({
-							id: db.id,
-							type: 'DATABASE',
-							name: db.name || db.app_name,
-							subtitle: dbKind.toUpperCase(),
-							status,
-							createdAt: db.created_at || Date.now(),
-							dbKind,
-							projectId: Number(db.project_id || projectId),
-							environmentId: envId,
-							serverName: getServerName(db),
-						});
-					}
-				}
-			}
-		});
-
-		// 4. Fallback to Overview Services for any items not in direct stores
-		overviewServices.forEach((s: any) => {
-			if (!s || String(s.project_id || s.projectId) !== String(projectId))
-				return;
-			const envId = s.environment_id ?? s.environmentId;
-			if (
-				activeEnvId !== null &&
-				envId !== undefined &&
-				envId !== null &&
-				Number(envId) !== Number(activeEnvId)
-			)
-				return;
-
-			const sType = String(s.service_type || s.type || '').toUpperCase();
-			const isDb =
-				sType === 'DATABASE' ||
-				sType.includes('DB') ||
-				!!s.db_kind ||
-				!!s.dbKind;
-			const isCompose = sType === 'COMPOSE' || sType.includes('COMPOSE');
-			const normalizedType = isDb
-				? 'DATABASE'
-				: isCompose
-					? 'COMPOSE'
-					: 'APP';
-			const dbKind = isDb
-				? normalizeDatabaseKind(s.db_kind || s.dbKind || s.kind)
-				: undefined;
-			const key = isDb
-				? `DATABASE-${dbKind}-${s.id}`
-				: `${normalizedType}-${s.id}`;
-
-			if (!seenKeys.has(key)) {
-				seenKeys.add(key);
-				result.push({
-					id: s.id,
-					type: normalizedType,
-					name: s.name,
-					subtitle: isDb
-						? dbKind
-							? dbKind.toUpperCase()
-							: 'DATABASE'
-						: s.name || s.app_name,
-					status: s.status || s.app_status || 'STOPPED',
-					createdAt: s.created_at || Date.now(),
-					...(dbKind ? {dbKind} : {}),
-					projectId: Number(s.project_id || projectId),
-					environmentId: envId,
-					serverName: getServerName(s),
-				});
-			}
-		});
-
-		return result;
-	}, [
-		applications,
-		databases,
-		composes,
-		overviewServices,
-		project,
-		projectId,
-		activeEnvId,
-		servers,
-	]);
+	// Instant filtered services folded from the realtime live lists.
+	const projectServices = useMemo(
+		() =>
+			buildProjectServices({
+				applications,
+				composes,
+				databases,
+				overviewServices,
+				project,
+				projectId,
+				activeEnvId,
+				getServerName,
+			}),
+		[
+			applications,
+			composes,
+			databases,
+			overviewServices,
+			project,
+			projectId,
+			activeEnvId,
+			getServerName,
+		],
+	);
 
 	// Live hooks auto-push updates — no manual refetch needed
 	const handleRefresh = () => {};
@@ -357,90 +142,17 @@ export function useProjectDetails(projectId: number) {
 		setStatusFilter('all');
 	}, [activeEnvId]);
 
-	// Filter Services Logic
-	const filteredServices = useMemo(() => {
-		const sQuery = String(searchQuery || '')
-			.toLowerCase()
-			.trim();
-
-		let list = projectServices.map((s: any) => {
-			const rawKind = String(
-				s?.kind || s?.db_kind || s?.dbKind || '',
-			).toLowerCase();
-			const isDb =
-				s?.type === 'database' ||
-				s?.type === 'DATABASE' ||
-				[
-					'postgres',
-					'mysql',
-					'mariadb',
-					'mongo',
-					'redis',
-					'libsql',
-				].includes(rawKind);
-			const rawType = isDb
-				? 'DATABASE'
-				: String(
-						s?.service_type || s?.serviceType || s?.type || 'APP',
-					).toUpperCase();
-			const dbKind = rawKind || (isDb ? 'postgres' : undefined);
-			return {
-				key: `${rawType.toLowerCase()}-${dbKind || 'svc'}-${s.id}`,
+	const filteredServices = useMemo(
+		() =>
+			buildFilteredServices({
+				projectServices,
+				searchQuery,
+				typeFilter,
+				statusFilter,
 				projectId,
-				type: rawType as 'APP' | 'COMPOSE' | 'DATABASE',
-				id: s.id,
-				name: String(s?.name || s?.app_name || s?.appName || ''),
-				subtitle:
-					rawType === 'APP'
-						? 'Application'
-						: rawType === 'COMPOSE'
-							? 'Docker Compose'
-							: dbKind
-								? dbKind.toUpperCase()
-								: 'Database',
-				status: String(s?.status || s?.app_status || 'idle'),
-				createdAt: s?.createdAt || s?.created_at,
-				dbKind: dbKind,
-				serverName: s?.serverName || 'Localhost (Main server)',
-			};
-		});
-
-		// Apply Search
-		if (sQuery) {
-			list = list.filter((item: any) =>
-				String(item?.name || '')
-					.toLowerCase()
-					.includes(sQuery),
-			);
-		}
-
-		// Apply Type Filter
-		if (typeFilter !== 'all') {
-			list = list.filter((item: any) => {
-				const itemType = String(item?.type || '').toLowerCase();
-				if (typeFilter === 'app') return itemType === 'app';
-				if (typeFilter === 'compose') return itemType === 'compose';
-				if (typeFilter === 'database') return itemType === 'database';
-				return true;
-			});
-		}
-
-		// Apply Status Filter
-		if (statusFilter !== 'all') {
-			list = list.filter((item: any) => {
-				const st = String(item?.status || '').toLowerCase();
-				const isRunning =
-					st.includes('running') ||
-					st.includes('active') ||
-					st.includes('healthy') ||
-					st.includes('up');
-
-				return statusFilter === 'running' ? isRunning : !isRunning;
-			});
-		}
-
-		return list;
-	}, [projectServices, searchQuery, typeFilter, statusFilter, projectId]);
+			}),
+		[projectServices, searchQuery, typeFilter, statusFilter, projectId],
+	);
 
 	return {
 		showCreateEnv,

@@ -43,7 +43,7 @@ export const TagManager = () => {
 
 	return (
 		<div className="mx-auto w-full max-w-5xl">
-			<Card className="overflow-hidden rounded-2xl bg-card shadow-sm">
+			<Card className="overflow-hidden rounded-xl border bg-card">
 				<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4 pb-4">
 					<div className="flex flex-col gap-1">
 						<div className="flex items-center gap-2.5">
@@ -88,7 +88,7 @@ export const TagManager = () => {
 							<span>Loading tags...</span>
 						</div>
 					) : !tags || tags.length === 0 ? (
-						<div className="flex min-h-[28vh] flex-col items-center justify-center gap-3 rounded-xl border- bg-muted/10 p-6 text-center">
+						<div className="border- flex min-h-[28vh] flex-col items-center justify-center gap-3 rounded-xl bg-muted/10 p-6 text-center">
 							<TagIcon className="size-8 text-muted-foreground/40" />
 							<span className="text-sm font-semibold text-foreground">
 								No tags created yet

@@ -2,17 +2,19 @@
 // @generated from file openoxide/api/v1/backup_operations.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { BackupOperationsService } from "./backup_operations_pb";
+import {BackupOperationsService} from './backup_operations_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.RunComposeBackup
  */
-export const runComposeBackup = BackupOperationsService.method.runComposeBackup;
+export const runComposeBackup =
+	BackupOperationsService.method.runComposeBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.RunPanelBackup
  */
-export const runPanelBackup = BackupOperationsService.method.runPanelBackup;
+export const runPanelBackup =
+	BackupOperationsService.method.runPanelBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.StageRestore
@@ -22,12 +24,14 @@ export const stageRestore = BackupOperationsService.method.stageRestore;
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.GetRestoreStatus
  */
-export const getRestoreStatus = BackupOperationsService.method.getRestoreStatus;
+export const getRestoreStatus =
+	BackupOperationsService.method.getRestoreStatus;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.RollbackRestore
  */
-export const rollbackRestore = BackupOperationsService.method.rollbackRestore;
+export const rollbackRestore =
+	BackupOperationsService.method.rollbackRestore;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.ListFiles
@@ -42,7 +46,8 @@ export const downloadFile = BackupOperationsService.method.downloadFile;
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.PreviewRetention
  */
-export const previewRetention = BackupOperationsService.method.previewRetention;
+export const previewRetention =
+	BackupOperationsService.method.previewRetention;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.VerifyFiles
@@ -52,77 +57,92 @@ export const verifyFiles = BackupOperationsService.method.verifyFiles;
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.ListExecutions
  */
-export const listExecutions = BackupOperationsService.method.listExecutions;
+export const listExecutions =
+	BackupOperationsService.method.listExecutions;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.RetryExecution
  */
-export const retryExecution = BackupOperationsService.method.retryExecution;
+export const retryExecution =
+	BackupOperationsService.method.retryExecution;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.ListDatabaseBackups
  */
-export const listDatabaseBackups = BackupOperationsService.method.listDatabaseBackups;
+export const listDatabaseBackups =
+	BackupOperationsService.method.listDatabaseBackups;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.GetDatabaseBackup
  */
-export const getDatabaseBackup = BackupOperationsService.method.getDatabaseBackup;
+export const getDatabaseBackup =
+	BackupOperationsService.method.getDatabaseBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.CreateDatabaseBackup
  */
-export const createDatabaseBackup = BackupOperationsService.method.createDatabaseBackup;
+export const createDatabaseBackup =
+	BackupOperationsService.method.createDatabaseBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.UpdateDatabaseBackup
  */
-export const updateDatabaseBackup = BackupOperationsService.method.updateDatabaseBackup;
+export const updateDatabaseBackup =
+	BackupOperationsService.method.updateDatabaseBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.DeleteDatabaseBackup
  */
-export const deleteDatabaseBackup = BackupOperationsService.method.deleteDatabaseBackup;
+export const deleteDatabaseBackup =
+	BackupOperationsService.method.deleteDatabaseBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.RunDatabaseBackup
  */
-export const runDatabaseBackup = BackupOperationsService.method.runDatabaseBackup;
+export const runDatabaseBackup =
+	BackupOperationsService.method.runDatabaseBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.ListVolumeBackups
  */
-export const listVolumeBackups = BackupOperationsService.method.listVolumeBackups;
+export const listVolumeBackups =
+	BackupOperationsService.method.listVolumeBackups;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.GetVolumeBackup
  */
-export const getVolumeBackup = BackupOperationsService.method.getVolumeBackup;
+export const getVolumeBackup =
+	BackupOperationsService.method.getVolumeBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.CreateVolumeBackup
  */
-export const createVolumeBackup = BackupOperationsService.method.createVolumeBackup;
+export const createVolumeBackup =
+	BackupOperationsService.method.createVolumeBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.UpdateVolumeBackup
  */
-export const updateVolumeBackup = BackupOperationsService.method.updateVolumeBackup;
+export const updateVolumeBackup =
+	BackupOperationsService.method.updateVolumeBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.DeleteVolumeBackup
  */
-export const deleteVolumeBackup = BackupOperationsService.method.deleteVolumeBackup;
+export const deleteVolumeBackup =
+	BackupOperationsService.method.deleteVolumeBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.RunVolumeBackup
  */
-export const runVolumeBackup = BackupOperationsService.method.runVolumeBackup;
+export const runVolumeBackup =
+	BackupOperationsService.method.runVolumeBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.RestoreDatabase
  */
-export const restoreDatabase = BackupOperationsService.method.restoreDatabase;
+export const restoreDatabase =
+	BackupOperationsService.method.restoreDatabase;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupOperationsService.RestoreVolume

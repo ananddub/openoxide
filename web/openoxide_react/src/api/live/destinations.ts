@@ -1,4 +1,8 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+} from './query';
 import {DestinationService} from '#/gen/connect/openoxide/api/v1/destination_pb';
 
 export type DestinationPayload = {
@@ -29,7 +33,9 @@ export function useDestinationList() {
 export function useDestinationCreate() {
 	return useConnectMutation(
 		(input: Record<string, unknown>) =>
-			destinationClient.createDestination({payload: JSON.stringify(input)}),
+			destinationClient.createDestination({
+				payload: JSON.stringify(input),
+			}),
 		{invalidate: [['destinations']]},
 	);
 }
@@ -42,7 +48,9 @@ export function useDestinationUpdate() {
 	return useConnectMutation(
 		(input: {id: string; [field: string]: unknown}) => {
 			const {id, ...body} = input;
-			return destinationClient.updateDestination({payload: JSON.stringify({...body, id})});
+			return destinationClient.updateDestination({
+				payload: JSON.stringify({...body, id}),
+			});
 		},
 		{invalidate: [['destinations']]},
 	);

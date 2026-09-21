@@ -1,4 +1,9 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery, useConnectQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+	useConnectQuery,
+} from './query';
 import {AiService} from '#/gen/connect/openoxide/api/v1/ai_pb';
 
 export type AiSettingPayload = {
@@ -32,13 +37,15 @@ export function useAiListSettings() {
 export function useAiSettingItems() {
 	return useConnectQuery<AiSettingPayload[]>(['ai_settings'], async () => {
 		const response = await aiClient.listSettings({});
-		return (response as any).items.map((item: Record<string, unknown>) => ({
-			...item,
-			id: Number(item.id),
-			organization_id: Number(item.organization_id),
-			created_at: Number(item.created_at),
-			updated_at: Number(item.updated_at),
-		})) as AiSettingPayload[];
+		return (response as any).items.map(
+			(item: Record<string, unknown>) => ({
+				...item,
+				id: Number(item.id),
+				organization_id: Number(item.organization_id),
+				created_at: Number(item.created_at),
+				updated_at: Number(item.updated_at),
+			}),
+		) as AiSettingPayload[];
 	});
 }
 

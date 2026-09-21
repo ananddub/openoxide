@@ -1,47 +1,19 @@
 import {useState, useMemo} from 'react';
-import {Search, Loader2} from 'lucide-react';
-import {Input} from '#/components/ui/input';
-import {Button} from '#/components/ui/button';
+import {Loader2} from 'lucide-react';
 import {
-	Select,
-	SelectTrigger,
-	SelectValue,
-	SelectContent,
-	SelectItem,
-} from '#/components/ui/select';
-import {
-	useApplicationDeploy,
-	useApplicationStart,
-	useApplicationStop,
-	useComposeDeploy,
-	useComposeStart,
-	useComposeStop,
-	useDatabaseDeploy,
-	useDatabaseStart,
-	useDatabaseStop,
-	parseDatabaseKind,
 	useRemoteServerList,
 	useProjectListByOrganization,
 	useOverviewServices,
 } from '#/api/live';
 import {useOrganizations} from '#/stores/session-context';
-import {toast} from 'sonner';
-import {formatApiError} from '#/api/utils';
 import {
 	OverviewServicesTable,
 	type OverviewServiceItem,
 } from './overview-services-table';
-
-const TYPE_DISPLAY_MAP: Record<string, string> = {
-	application: 'Application',
-	compose: 'Compose',
-	database: 'Database',
-	postgres: 'PostgreSQL',
-	mysql: 'MySQL',
-	mariadb: 'MariaDB',
-	mongo: 'MongoDB',
-	redis: 'Redis',
-};
+import {OverviewServicesToolbar} from './overview-services-toolbar';
+import {TablePagination} from './table-pagination';
+import {useServiceActions} from './use-service-actions';
+import {toServiceItems} from './map-services';
 
 export function OverviewServicesTab() {
 	const [searchQuery, setSearchQuery] = useState('');
@@ -65,67 +37,17 @@ export function OverviewServicesTab() {
 	const {data: remoteServers = []} = useRemoteServerList();
 	// Live servers query; the table-watch stream keeps it fresh, so no
 	// zustand fallback is needed anymore.
-	const serverDirectory = remoteServers as any[];
 	const rawServices = servicesQuery.data ?? [];
 
 	const isLoading = servicesQuery.isLoading && rawServices.length === 0;
 
-	// App Mutations
-	const appStart = useApplicationStart();
-	const appStop = useApplicationStop();
-	const appDeploy = useApplicationDeploy();
-
-	// Compose Mutations
-	const composeStart = useComposeStart();
-	const composeStop = useComposeStop();
-	const composeDeploy = useComposeDeploy();
-
-	// Database Mutations (kind resolved per action)
-	const dbDeploy = useDatabaseDeploy();
-	const dbStart = useDatabaseStart();
-	const dbStop = useDatabaseStop();
+	const {handleDeploy, handleStart, handleStop} = useServiceActions();
 
 	// Transform raw API data into OverviewServiceItem list
-	const allServices = useMemo<OverviewServiceItem[]>(() => {
-		if (!rawServices || !Array.isArray(rawServices)) return [];
-
-		const uniqueServices = new Map<string, any>();
-		for (const svc of rawServices) {
-			const type = String(svc.service_type || 'APP').toUpperCase();
-			let dbKind = String(svc.db_kind || '').toUpperCase();
-			if (dbKind.includes('POSTGRES')) dbKind = 'POSTGRES';
-			else if (dbKind.includes('MARIADB')) dbKind = 'MARIADB';
-			else if (dbKind.includes('MYSQL')) dbKind = 'MYSQL';
-			else if (dbKind.includes('MONGO')) dbKind = 'MONGO';
-			else if (dbKind.includes('REDIS')) dbKind = 'REDIS';
-			else if (dbKind.includes('LIBSQL') || dbKind.includes('SQLITE')) dbKind = 'LIBSQL';
-			uniqueServices.set(`${type}:${dbKind}:${String(svc.id)}`, svc);
-		}
-
-		return Array.from(uniqueServices.values()).map((svc: any) => {
-			const server = serverDirectory.find(
-				(item: any) => Number(item.id) === Number(svc.server_id),
-			);
-			return {
-			key: `${svc.service_type}-${svc.db_kind || ''}-${svc.id}`,
-			id: Number(svc.id),
-			name: svc.name,
-			type: (svc.service_type || 'APP') as 'APP' | 'COMPOSE' | 'DATABASE',
-			status: svc.status || 'done',
-			createdAt: Number(svc.created_at),
-			projectId: Number(svc.project_id),
-			projectName: svc.project_name || 'Project',
-			environmentId: Number(svc.environment_id),
-			environmentName: svc.environment_name || 'production',
-			dbKind: svc.db_kind || undefined,
-			serverName: svc.server_name || (server
-				? server.name || server.hostname || `Server ${server.id}`
-				: svc.server_id == null
-					? 'Localhost (Main server)'
-					: `Server ${svc.server_id}`),
-		};
-		});
-	}, [rawServices, serverDirectory]);
+	const allServices = useMemo<OverviewServiceItem[]>(
+		() => toServiceItems(rawServices, remoteServers as any[]),
+		[rawServices, remoteServers],
+	);
 
 	// Filter and sort services
 	const filteredServices = useMemo(() => {
@@ -185,193 +107,22 @@ export function OverviewServicesTab() {
 		return filteredServices.slice(start, start + pageSize);
 	}, [filteredServices, currentPageIndex, pageSize]);
 
-	// Action Handlers
-	const handleDeploy = async (svc: OverviewServiceItem) => {
-		try {
-			if (svc.type === 'APP') {
-				await appDeploy.mutateAsync(svc.id);
-			} else if (svc.type === 'COMPOSE') {
-				await composeDeploy.mutateAsync(svc.id);
-			} else if (svc.dbKind) {
-				await dbDeploy.mutateAsync({
-					kind: parseDatabaseKind(svc.dbKind),
-					id: svc.id,
-				});
-			}
-			toast.success(`Queued deployment for ${svc.name}`);
-		} catch (err) {
-			toast.error(formatApiError(err));
-		}
-	};
-
-	const handleStart = async (svc: OverviewServiceItem) => {
-		try {
-			if (svc.type === 'APP') {
-				await appStart.mutateAsync(svc.id);
-			} else if (svc.type === 'COMPOSE') {
-				await composeStart.mutateAsync(svc.id);
-			} else if (svc.dbKind) {
-				await dbStart.mutateAsync({
-					kind: parseDatabaseKind(svc.dbKind),
-					id: svc.id,
-				});
-			}
-			toast.success(`Starting ${svc.name}...`);
-		} catch (err) {
-			toast.error(formatApiError(err));
-		}
-	};
-
-	const handleStop = async (svc: OverviewServiceItem) => {
-		try {
-			if (svc.type === 'APP') {
-				await appStop.mutateAsync(svc.id);
-			} else if (svc.type === 'COMPOSE') {
-				await composeStop.mutateAsync(svc.id);
-			} else if (svc.dbKind) {
-				await dbStop.mutateAsync({
-					kind: parseDatabaseKind(svc.dbKind),
-					id: svc.id,
-				});
-			}
-			toast.info(`Stopping ${svc.name}...`);
-		} catch (err) {
-			toast.error(formatApiError(err));
-		}
-	};
-
-	// Helper for selected project name label
-	const selectedProjectLabel = useMemo(() => {
-		if (selectedProjectId === 'all') return 'Project: All Projects';
-		const found = projectsToUse.find(
-			(p: any) => String(p.id) === String(selectedProjectId),
-		);
-		return `Project: ${found?.name || 'Selected'}`;
-	}, [selectedProjectId, projectsToUse]);
-
-	// Helper for selected type label
-	const selectedTypeLabel = useMemo(() => {
-		if (selectedType === 'all') return 'Type: All Types';
-		return `Type: ${TYPE_DISPLAY_MAP[selectedType] || selectedType}`;
-	}, [selectedType]);
-
-	// Helper for selected status label
-	const selectedStatusLabel = useMemo(() => {
-		if (selectedStatus === 'all') return 'Status: All Statuses';
-		if (selectedStatus === 'done') return 'Status: Running';
-		if (selectedStatus === 'deploying') return 'Status: Deploying';
-		if (selectedStatus === 'idle') return 'Status: Idle';
-		return 'Status: Error';
-	}, [selectedStatus]);
-
-	// Helper for selected sort label
-	const selectedSortLabel = useMemo(() => {
-		if (sortBy === 'newest') return 'Sort: Newest First';
-		if (sortBy === 'oldest') return 'Sort: Oldest First';
-		if (sortBy === 'name-asc') return 'Sort: Name (A-Z)';
-		return 'Sort: Name (Z-A)';
-	}, [sortBy]);
-
 	return (
 		<div className="flex w-full flex-col gap-5">
-			{/* Top Header & Filter Toolbar */}
-			<div className="flex flex-wrap items-center justify-between gap-4">
-				<h3 className="text-lg font-bold tracking-tight text-foreground">
-					Services{' '}
-					<span className="text-sm font-normal text-muted-foreground">
-						({filteredServices.length})
-					</span>
-				</h3>
-
-				<div className="flex flex-wrap items-center gap-2.5">
-					{/* Search Input */}
-					<div className="relative">
-						<Input
-							placeholder="Filter services..."
-							value={searchQuery}
-							onChange={e => setSearchQuery(e.target.value)}
-							className="h-9 w-[190px] pr-9 text-xs"
-						/>
-						<Search className="absolute top-1/2 right-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
-					</div>
-
-					{/* Project Filter Select */}
-					<Select
-						value={selectedProjectId}
-						onValueChange={val => val && setSelectedProjectId(val)}>
-						<SelectTrigger
-							size="sm"
-							className="h-9 w-[160px] text-xs font-semibold">
-							<SelectValue>{selectedProjectLabel}</SelectValue>
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">All Projects</SelectItem>
-							{projectsToUse.map((p: any) => (
-								<SelectItem key={p.id} value={String(p.id)}>
-									{p.name}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-
-					{/* Type Filter Select */}
-					<Select
-						value={selectedType}
-						onValueChange={val => val && setSelectedType(val)}>
-						<SelectTrigger
-							size="sm"
-							className="h-9 w-[150px] text-xs font-semibold">
-							<SelectValue>{selectedTypeLabel}</SelectValue>
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">All Types</SelectItem>
-							<SelectItem value="application">Application</SelectItem>
-							<SelectItem value="compose">Compose</SelectItem>
-							<SelectItem value="database">Database</SelectItem>
-							<SelectItem value="postgres">PostgreSQL</SelectItem>
-							<SelectItem value="mysql">MySQL</SelectItem>
-							<SelectItem value="mariadb">MariaDB</SelectItem>
-							<SelectItem value="mongo">MongoDB</SelectItem>
-							<SelectItem value="redis">Redis</SelectItem>
-						</SelectContent>
-					</Select>
-
-					{/* Status Filter Select */}
-					<Select
-						value={selectedStatus}
-						onValueChange={val => val && setSelectedStatus(val)}>
-						<SelectTrigger
-							size="sm"
-							className="h-9 w-[150px] text-xs font-semibold">
-							<SelectValue>{selectedStatusLabel}</SelectValue>
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">All Statuses</SelectItem>
-							<SelectItem value="done">Running</SelectItem>
-							<SelectItem value="deploying">Deploying</SelectItem>
-							<SelectItem value="idle">Idle</SelectItem>
-							<SelectItem value="error">Error</SelectItem>
-						</SelectContent>
-					</Select>
-
-					{/* Sort By Select */}
-					<Select
-						value={sortBy}
-						onValueChange={val => val && setSortBy(val)}>
-						<SelectTrigger
-							size="sm"
-							className="h-9 w-[160px] text-xs font-semibold">
-							<SelectValue>{selectedSortLabel}</SelectValue>
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="newest">Sort: Newest First</SelectItem>
-							<SelectItem value="oldest">Sort: Oldest First</SelectItem>
-							<SelectItem value="name-asc">Sort: Name (A-Z)</SelectItem>
-							<SelectItem value="name-desc">Sort: Name (Z-A)</SelectItem>
-						</SelectContent>
-					</Select>
-				</div>
-			</div>
+			<OverviewServicesToolbar
+				count={filteredServices.length}
+				search={searchQuery}
+				onSearch={setSearchQuery}
+				projectId={selectedProjectId}
+				onProjectId={setSelectedProjectId}
+				projects={projectsToUse}
+				type={selectedType}
+				onType={setSelectedType}
+				status={selectedStatus}
+				onStatus={setSelectedStatus}
+				sort={sortBy}
+				onSort={setSortBy}
+			/>
 
 			{/* Loading State */}
 			{isLoading && (
@@ -398,69 +149,15 @@ export function OverviewServicesTab() {
 						onStop={handleStop}
 					/>
 
-					{/* Pagination Controls */}
-					<div className="flex flex-col items-center justify-between gap-4 border-t  pt-3 text-xs text-muted-foreground sm:flex-row">
-						<span>
-							{filteredServices.length}{' '}
-							{filteredServices.length === 1 ? 'service' : 'services'}{' '}
-							total
-						</span>
-
-						<div className="flex items-center gap-4">
-							<div className="flex items-center gap-2">
-								<span className="whitespace-nowrap">Rows per page</span>
-								<Select
-									value={String(pageSize)}
-									onValueChange={val => {
-										if (val) {
-											setPageSize(Number(val));
-											setPageIndex(0);
-										}
-									}}>
-									<SelectTrigger
-										size="sm"
-										className="h-8 w-[75px] text-xs font-semibold">
-										<SelectValue placeholder="50" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="25">25</SelectItem>
-										<SelectItem value="50">50</SelectItem>
-										<SelectItem value="100">100</SelectItem>
-										<SelectItem value="200">200</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-
-							<span className="font-mono whitespace-nowrap">
-								Page {currentPageIndex + 1} of {pageCount}
-							</span>
-
-							<div className="flex gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() =>
-										setPageIndex(Math.max(0, currentPageIndex - 1))
-									}
-									disabled={currentPageIndex === 0}
-									className="h-8 px-3 text-xs font-semibold">
-									Previous
-								</Button>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() =>
-										setPageIndex(
-											Math.min(pageCount - 1, currentPageIndex + 1),
-										)
-									}
-									disabled={currentPageIndex + 1 >= pageCount}
-									className="h-8 px-3 text-xs font-semibold">
-									Next
-								</Button>
-							</div>
-						</div>
-					</div>
+					<TablePagination
+						total={filteredServices.length}
+						unit="service"
+						pageSize={pageSize}
+						onPageSize={setPageSize}
+						pageIndex={currentPageIndex}
+						pageCount={pageCount}
+						onGoto={setPageIndex}
+					/>
 				</>
 			)}
 		</div>

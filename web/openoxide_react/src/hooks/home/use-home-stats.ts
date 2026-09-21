@@ -1,8 +1,11 @@
 import {useMemo} from 'react';
 
-
 import {useAuthSession, useOrganizations} from '#/stores/session-context';
-import {useDeploymentItems, useDeploymentRunning, useProjectListByOrganization} from '#/api/live';
+import {
+	useDeploymentItems,
+	useDeploymentRunning,
+	useProjectListByOrganization,
+} from '#/api/live';
 
 export function useHomeStats() {
 	const {user} = useAuthSession();
@@ -151,7 +154,6 @@ export function useHomeStats() {
 
 		return {value: String(lastCount || deploymentsList.length), delta};
 	}, [rawDeployments, rawRunning]);
-
 
 	return {
 		firstName,

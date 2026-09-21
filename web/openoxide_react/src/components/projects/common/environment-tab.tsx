@@ -1,8 +1,6 @@
-import {useState, useEffect, useRef} from 'react';
-import {loader} from '@monaco-editor/react';
 import {Button} from '#/components/ui/button';
 import {Save, Info, ShieldAlert, Check, Eye, EyeOff} from 'lucide-react';
-import {toast} from 'sonner';
+import {useEnvEditor} from './use-env-editor';
 
 interface EnvironmentTabProps {
 	app: any;
@@ -10,155 +8,15 @@ interface EnvironmentTabProps {
 }
 
 export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
-	const originalEnv = app.env_var || '';
-	const [envVars, setEnvVars] = useState(originalEnv);
-	const [showSecrets, setShowSecrets] = useState(false);
-	const [saving, setSaving] = useState(false);
-	const [saved, setSaved] = useState(false);
-	const containerRef = useRef<HTMLDivElement>(null);
-	const editorRef = useRef<any>(null);
-
-	// Ref trackers to eliminate React closure stale state bugs inside Monaco callbacks
-	const showSecretsRef = useRef(showSecrets);
-	showSecretsRef.current = showSecrets;
-
-	const envVarsRef = useRef(envVars);
-	envVarsRef.current = envVars;
-
-	// Mask environment variable values when secrets are hidden
-	const maskEnvText = (raw: string): string => {
-		return raw
-			.split('\n')
-			.map(line => {
-				const trimmed = line.trim();
-				if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith(';'))
-					return line;
-				const eqIdx = line.indexOf('=');
-				if (eqIdx === -1) return line;
-				const key = line.slice(0, eqIdx + 1);
-				const val = line.slice(eqIdx + 1);
-				if (!val) return line;
-				return `${key}${'•'.repeat(val.length)}`;
-			})
-			.join('\n');
-	};
-
-	// Sync environment variables when app updates
-	useEffect(() => {
-		const raw = app.env_var || '';
-		setEnvVars(raw);
-		if (editorRef.current) {
-			const targetVal = showSecretsRef.current ? raw : maskEnvText(raw);
-			if (editorRef.current.getValue() !== targetVal) {
-				editorRef.current.setValue(targetVal);
-			}
-		}
-	}, [app.env_var]);
-
-	const isModified = envVars !== originalEnv;
-
-	const handleSave = async () => {
-		setSaving(true);
-		try {
-			await handleUpdate({env_var: envVars});
-			toast.success('Environment variables saved successfully');
-			setSaved(true);
-			setTimeout(() => setSaved(false), 2000);
-		} catch {
-			toast.error('Failed to save environment variables');
-		} finally {
-			setSaving(false);
-		}
-	};
-
-	// Update Monaco Editor content & readOnly state dynamically when showSecrets toggles
-	useEffect(() => {
-		if (!editorRef.current) return;
-		const targetVal = showSecrets
-			? envVarsRef.current
-			: maskEnvText(envVarsRef.current);
-		if (editorRef.current.getValue() !== targetVal) {
-			editorRef.current.setValue(targetVal);
-		}
-		editorRef.current.updateOptions({readOnly: !showSecrets});
-	}, [showSecrets]);
-
-	// Initialize Monaco Editor dynamically on mount
-	useEffect(() => {
-		let isMounted = true;
-		let editorInstance: any;
-
-		loader
-			.init()
-			.then(monaco => {
-				if (!isMounted || !containerRef.current) return;
-
-				if (
-					!monaco.languages.getLanguages().some((l: any) => l.id === 'ini')
-				) {
-					monaco.languages.register({id: 'ini'});
-					monaco.languages.setMonarchTokensProvider('ini', {
-						tokenizer: {
-							root: [
-								[/#.*$/, 'comment'],
-								[/;.*$/, 'comment'],
-								[/^\s*\[.*\]/, 'tag'],
-								[/[a-zA-Z_][\w]*(?==)/, 'key'],
-								[/=/, 'delimiter'],
-								[/"([^"\\]|\\.)*"/, 'string'],
-								[/'([^'\\]|\\.)*'/, 'string'],
-							],
-						},
-					} as any);
-				}
-
-				const initialContent = showSecretsRef.current
-					? envVarsRef.current
-					: maskEnvText(envVarsRef.current);
-
-				editorInstance = monaco.editor.create(containerRef.current, {
-					value: initialContent,
-					readOnly: !showSecretsRef.current,
-					language: 'ini',
-					theme: 'vs-dark',
-					fontSize: 13,
-					fontFamily: 'monospace',
-					minimap: {enabled: false},
-					scrollBeyondLastLine: false,
-					lineNumbers: 'on',
-					wordWrap: 'on',
-					automaticLayout: true,
-					padding: {top: 8, bottom: 8},
-					renderLineHighlight: 'none',
-					lineDecorationsWidth: 16,
-					lineNumbersMinChars: 4,
-					scrollbar: {
-						vertical: 'visible',
-						horizontal: 'hidden',
-						verticalScrollbarSize: 8,
-					},
-				});
-
-				editorRef.current = editorInstance;
-
-				editorInstance.onDidChangeModelContent(() => {
-					if (isMounted && showSecretsRef.current) {
-						const val = editorInstance.getValue();
-						setEnvVars(val);
-					}
-				});
-			})
-			.catch(err => {
-				console.error('Failed to load Monaco editor:', err);
-			});
-
-		return () => {
-			isMounted = false;
-			if (editorInstance) {
-				editorInstance.dispose();
-			}
-		};
-	}, []);
+	const {
+		showSecrets,
+		setShowSecrets,
+		saved,
+		saving,
+		isModified,
+		containerRef,
+		handleSave,
+	} = useEnvEditor(app, handleUpdate);
 
 	return (
 		<div className="flex animate-in flex-col gap-6 duration-200 fade-in">
@@ -196,7 +54,7 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 						</div>
 
 						{isModified && (
-							<span className="animate-pulse rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-extrabold text-amber-500 select-none">
+							<span className="animate-pulse rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-semibold text-amber-500 select-none">
 								Unsaved Changes
 							</span>
 						)}

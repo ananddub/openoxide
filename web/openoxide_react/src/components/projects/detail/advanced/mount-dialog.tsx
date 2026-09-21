@@ -76,9 +76,8 @@ export function MountDialog({
 				</DialogHeader>
 				{type === 'BIND' && (
 					<div className="rounded-lg bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300">
-						The host path must exist on every node where this service
-						can run. Named volumes are safer for clustered
-						deployments.
+						The host path must exist on every node where this service can
+						run. Named volumes are safer for clustered deployments.
 					</div>
 				)}
 				<div className="grid grid-cols-3 gap-2">

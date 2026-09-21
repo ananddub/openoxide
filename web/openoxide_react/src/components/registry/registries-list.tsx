@@ -75,7 +75,7 @@ export function RegistriesList({
 
 	if (!registries || registries.length === 0) {
 		return (
-			<Card className="my-4 flex flex-col items-center justify-center rounded-xl border- bg-card p-8 text-center shadow-sm">
+			<Card className="border- my-4 flex flex-col items-center justify-center rounded-xl bg-card p-8 text-center shadow-sm">
 				<Database className="mb-2 h-6 w-6 text-muted-foreground" />
 				<h3 className="text-xs font-bold text-foreground">
 					No Registries Found
@@ -107,7 +107,7 @@ export function RegistriesList({
 				return (
 					<Card
 						key={item.id}
-						className="rounded-xl border- bg-card shadow-sm transition-all ">
+						className="border- rounded-xl bg-card shadow-sm transition-all ">
 						<CardContent className="flex items-center justify-between gap-2 p-3">
 							{/* Left: Status Dot, Registry Name & URL */}
 							<div className="flex min-w-0 flex-1 items-center gap-2">
@@ -165,13 +165,12 @@ export function RegistriesList({
 									</DropdownMenuTrigger>
 									<DropdownMenuContent
 										align="end"
-										className="z-50 w-40 rounded-xl border- bg-card p-1 text-xs shadow-xl">
+										className="border- z-50 w-40 rounded-xl bg-card p-1 text-xs shadow-md">
 										<DropdownMenuItem
 											className="flex cursor-pointer items-center rounded-lg px-2.5 py-1.5 text-xs font-medium hover:bg-muted"
 											onClick={() => onEdit(rawItem)}>
 											Edit Registry
 										</DropdownMenuItem>
-
 
 										<DropdownMenuSeparator className="my-1 " />
 

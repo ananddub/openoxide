@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/schedule.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { ScheduleService } from "./schedule_pb";
+import {ScheduleService} from './schedule_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleService.ListSchedules

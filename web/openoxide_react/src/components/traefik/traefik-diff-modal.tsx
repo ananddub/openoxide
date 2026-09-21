@@ -24,7 +24,7 @@ export function TraefikDiffModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-			<div className="flex max-h-[85vh] w-full max-w-4xl animate-in flex-col overflow-hidden rounded-2xl bg-card shadow-2xl duration-150 zoom-in-95 fade-in">
+			<div className="flex max-h-[85vh] w-full max-w-4xl animate-in flex-col overflow-hidden rounded-xl bg-card shadow-lg duration-150 zoom-in-95 fade-in">
 				{/* Modal Header */}
 				<div className="flex items-center justify-between border-b  px-6 py-4">
 					<div className="flex items-center gap-2">

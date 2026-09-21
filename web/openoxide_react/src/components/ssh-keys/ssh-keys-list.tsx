@@ -1,28 +1,8 @@
 import {useState, useMemo} from 'react';
+import {FileKey2, Search, X} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {Badge} from '#/components/ui/badge';
 import {Input} from '#/components/ui/input';
-import {Separator} from '#/components/ui/separator';
 import {Skeleton} from '#/components/ui/skeleton';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from '#/components/ui/dropdown';
-import {
-	Key,
-	Copy,
-	Check,
-	FileKey2,
-	Eye,
-	Trash2,
-	MoreVertical,
-	ShieldCheck,
-	Search,
-	X,
-} from 'lucide-react';
 import {
 	Select,
 	SelectContent,
@@ -32,6 +12,12 @@ import {
 } from '#/components/ui/select';
 import {toast} from 'sonner';
 import type {SshKeyResponse} from '#/types/api-helpers';
+import {
+	getKeyType,
+	KEY_TYPES,
+	type KeyTypeFilter,
+} from '#/components/ssh-keys/ssh-keys-shared';
+import {SshKeyRow} from '#/components/ssh-keys/ssh-key-row';
 
 interface SshKeysListProps {
 	keys: SshKeyResponse[];
@@ -39,36 +25,6 @@ interface SshKeysListProps {
 	onViewKey: (key: SshKeyResponse) => void;
 	onDeleteKey: (key: SshKeyResponse) => void;
 }
-
-const KEY_COLORS = [
-	'bg-blue-500/10 text-blue-500 border-blue-500/20',
-	'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-	'bg-violet-500/10 text-violet-500 border-violet-500/20',
-	'bg-amber-500/10 text-amber-500 border-amber-500/20',
-	'bg-rose-500/10 text-rose-500 border-rose-500/20',
-	'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
-];
-
-function getKeyType(pubKey: string): string {
-	if (!pubKey) return 'Unknown';
-	if (pubKey.startsWith('ssh-rsa')) return 'RSA';
-	if (pubKey.startsWith('ssh-ed25519')) return 'Ed25519';
-	if (pubKey.startsWith('ecdsa-sha2')) return 'ECDSA';
-	if (pubKey.startsWith('ssh-dss')) return 'DSA';
-	return 'SSH';
-}
-
-function getFingerprint(pubKey: string): string {
-	if (!pubKey) return '—';
-	const parts = pubKey.trim().split(' ');
-	const keyData = parts[1] || parts[0] || '';
-	return keyData.length > 20
-		? keyData.slice(0, 10) + '…' + keyData.slice(-10)
-		: keyData;
-}
-
-const KEY_TYPES = ['All', 'RSA', 'Ed25519'] as const;
-type KeyTypeFilter = (typeof KEY_TYPES)[number];
 
 export function SshKeysList({
 	keys,
@@ -198,100 +154,17 @@ export function SshKeysList({
 			) : (
 				/* ── List ── */
 				<div className="divide-y divide-border overflow-hidden rounded-lg ">
-					{filtered.map((item: SshKeyResponse, idx: number) => {
-						const isCopied = copiedId === item.id;
-						const iconCls = KEY_COLORS[idx % KEY_COLORS.length];
-						const keyType = getKeyType(item.public_key);
-						const fingerprint = getFingerprint(item.public_key);
-
-						return (
-							<div
-								key={item.id}
-								className="group flex items-center gap-4 bg-card px-4 py-3.5 transition-colors hover:bg-accent/30">
-								<div
-									className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg  ${iconCls}`}>
-									<Key className="h-4 w-4" />
-								</div>
-
-								<div className="min-w-0 flex-1">
-									<div className="flex items-center gap-2">
-										<span className="truncate text-sm font-medium text-foreground">
-											{item.name}
-										</span>
-										<Badge
-											variant="secondary"
-											className="shrink-0 gap-1 py-0 font-mono text-[10px]">
-											<ShieldCheck className="h-2.5 w-2.5" />
-											{keyType}
-										</Badge>
-									</div>
-									<p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">
-										{item.public_key ? fingerprint : 'Private key only'}
-									</p>
-								</div>
-
-								<div className="flex items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
-									<button
-										onClick={() =>
-											handleCopy(item.id, item.public_key, item.name)
-										}
-										title="Copy public key"
-										className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground">
-										{isCopied ? (
-											<Check className="h-4 w-4 text-emerald-500" />
-										) : (
-											<Copy className="h-4 w-4" />
-										)}
-									</button>
-									<button
-										onClick={() => onViewKey(item)}
-										title="View details"
-										className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground">
-										<Eye className="h-4 w-4" />
-									</button>
-								</div>
-
-								<Separator
-									orientation="vertical"
-									className="h-5 opacity-0 transition-opacity group-hover:opacity-100"
-								/>
-
-								<DropdownMenu>
-									<DropdownMenuTrigger
-										render={
-											<button className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground" />
-										}>
-										<MoreVertical className="h-4 w-4" />
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end" className="w-44">
-										<DropdownMenuItem
-											className="cursor-pointer gap-2"
-											onClick={() => onViewKey(item)}>
-											<Eye className="h-3.5 w-3.5" /> View Details
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											className="cursor-pointer gap-2"
-											onClick={() =>
-												handleCopy(item.id, item.public_key, item.name)
-											}>
-											{isCopied ? (
-												<Check className="h-3.5 w-3.5 text-emerald-500" />
-											) : (
-												<Copy className="h-3.5 w-3.5" />
-											)}
-											{isCopied ? 'Copied!' : 'Copy Public Key'}
-										</DropdownMenuItem>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-											onClick={() => onDeleteKey(item)}>
-											<Trash2 className="h-3.5 w-3.5" /> Delete Key
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							</div>
-						);
-					})}
+					{filtered.map((item: SshKeyResponse, idx: number) => (
+						<SshKeyRow
+							key={item.id}
+							item={item}
+							index={idx}
+							isCopied={copiedId === item.id}
+							onCopy={handleCopy}
+							onView={onViewKey}
+							onDelete={onDeleteKey}
+						/>
+					))}
 				</div>
 			)}
 

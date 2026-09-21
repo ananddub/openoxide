@@ -1,14 +1,18 @@
+use std::collections::HashSet;
 use std::sync::Arc;
+use std::sync::Mutex;
 
 use auto_di::singleton;
 use serde::{Deserialize, Serialize};
+use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 use validator::Validate;
 
 use crate::{
     db::queries::FlashQueries,
     flash_gen::{
-        models::{ServerMigrations, Servers},
+        application_migrations::ApplicationMigrationsBeginParams,
+        models::{ApplicationMigrations, MigrationObjects, ServerMigrations, Servers},
         server_migrations::{
             ServerMigrationsBeginParams, ServerMigrationsFinishFailureParams,
             ServerMigrationsFinishSuccessParams,
@@ -25,14 +29,29 @@ use crate::{
     services::{
         compute::application::{ApplicationOperation, ApplicationService},
         compute::compose::{ComposeOperation, ComposeService},
-        migration::MigrationScope,
+        migration::{
+            CancelSignal, MigratedServiceKind, MigrationOrchestrator, MigrationScope,
+            StatefulMigrationRequest,
+        },
     },
+    utils::paths::OpenOxidePaths,
 };
+
+fn now_unix() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or_default()
+}
 
 pub struct RemoteServerService {
     queries: Arc<FlashQueries>,
     applications: Arc<ApplicationService>,
     compose: Arc<ComposeService>,
+    /// Migration ids with an orchestrator task alive in *this* process —
+    /// the guard that makes a re-trigger during a live run a no-op resume
+    /// instead of a second concurrent driver.
+    active_migrations: Arc<Mutex<HashSet<String>>>,
 }
 
 /// Resolves the SSH endpoint for a server, preferring an active managed
@@ -90,6 +109,7 @@ impl RemoteServerService {
             queries,
             applications,
             compose,
+            active_migrations: Arc::new(Mutex::new(HashSet::new())),
         }
     }
 
@@ -687,6 +707,175 @@ impl RemoteServerService {
         }
         self.queries.application_migrations_request_cancel(id).await?;
         self.queries.application_migrations_get(id).await
+    }
+
+    /// Trigger (or resume) a stateful migration of ONE application/compose
+    /// service: the source workload stays authoritative until the runner
+    /// reaches REPOINT, byte checkpoints make a re-run resumable, and a
+    /// live in-process run turns a re-trigger into a plain status return.
+    pub async fn migrate_service(
+        &self,
+        service_id: i64,
+        target: i64,
+        organization_id: i64,
+    ) -> sqlx::Result<ApplicationMigrations> {
+        let service = self.queries.get_service_by_i_d(service_id).await?;
+        if self
+            .queries
+            .services_belongs_to_organization(service_id, organization_id)
+            .await?
+            == 0
+        {
+            // Do not disclose existence across tenants.
+            return Err(sqlx::Error::RowNotFound);
+        }
+        let kind = match service.service_type.as_str() {
+            "APPLICATION" => MigratedServiceKind::Application,
+            "COMPOSE" => MigratedServiceKind::Compose,
+            other => {
+                return Err(sqlx::Error::Protocol(format!(
+                    "{other} services cannot be statefully migrated yet — supported: \
+                     APPLICATION, COMPOSE"
+                )));
+            }
+        };
+        let source = service.server_id.ok_or_else(|| {
+            sqlx::Error::Protocol("service is not assigned to a server".into())
+        })?;
+        if source == target {
+            return Err(sqlx::Error::Protocol(
+                "source and target server must differ".into(),
+            ));
+        }
+        self.get_in_org(source, organization_id).await?;
+        self.get_in_org(target, organization_id).await?;
+
+        // Resume rule: a RUNNING row keeps its id (checkpoints are keyed by
+        // (migration_id, obj_key)); a FAILED/SUCCEEDED history never blocks
+        // a fresh attempt.
+        let history = self
+            .queries
+            .application_migrations_list_by_service(service_id)
+            .await?;
+        if let Some(other) = history
+            .iter()
+            .find(|row| row.status == "RUNNING" && row.target_server_id != target)
+        {
+            return Err(sqlx::Error::Protocol(format!(
+                "migration {} is already running for this service toward server {}",
+                other.id, other.target_server_id
+            )));
+        }
+        let running = history.iter().find(|row| row.status == "RUNNING");
+        let (row, fresh) = match running {
+            Some(row) => (row.clone(), false),
+            None => {
+                let now = now_unix();
+                let migration_id = Uuid::new_v4().simple().to_string();
+                let log_path = OpenOxidePaths::from_env().migration_log_file(&migration_id);
+                let row = self
+                    .queries
+                    .application_migrations_begin(&ApplicationMigrationsBeginParams {
+                        id: migration_id,
+                        organization_id,
+                        service_id,
+                        source_server_id: source,
+                        target_server_id: target,
+                        log_path,
+                        created_at: now,
+                        updated_at: now,
+                    })
+                    .await?;
+                (row, true)
+            }
+        };
+        // `insert` reports whether the id was previously absent; absent +
+        // non-fresh means the driver died with an old panel process, so the
+        // re-trigger legitimately re-drives (resumes) the same row.
+        let already_driving = self
+            .active_migrations
+            .lock()
+            .map(|mut active| {
+                let inserted = active.insert(row.id.clone());
+                fresh || inserted
+            })
+            .unwrap_or(true);
+        if already_driving {
+            self.spawn_orchestrator(
+                row.clone(),
+                kind,
+                service.app_name.clone(),
+                source,
+                target,
+                organization_id,
+            );
+        }
+        Ok(row)
+    }
+
+    fn spawn_orchestrator(
+        &self,
+        row: ApplicationMigrations,
+        kind: MigratedServiceKind,
+        app_name: String,
+        source: i64,
+        target: i64,
+        organization_id: i64,
+    ) {
+        let orchestrator = MigrationOrchestrator::new(
+            Arc::clone(&self.queries),
+            Arc::clone(&self.applications),
+            Arc::clone(&self.compose),
+        );
+        let active = Arc::clone(&self.active_migrations);
+        let req = StatefulMigrationRequest {
+            migration_id: row.id.clone(),
+            service_id: row.service_id,
+            kind,
+            app_name,
+            source_server_id: source,
+            target_server_id: target,
+            organization_id,
+        };
+        let migration_id = row.id.clone();
+        tokio::spawn(async move {
+            // Cancellation arrives through the DB flag flipped by the
+            // CancelMigration RPC; the token stays a shutdown hook.
+            let cancel = CancelSignal::new(CancellationToken::new());
+            orchestrator.run(req, cancel).await;
+            if let Ok(mut active) = active.lock() {
+                active.remove(&migration_id);
+            }
+        });
+    }
+
+    /// Migrations recorded for one service, newest first, tenant-scoped.
+    pub async fn list_service_migrations(
+        &self,
+        service_id: i64,
+        organization_id: i64,
+    ) -> sqlx::Result<Vec<ApplicationMigrations>> {
+        let rows = self
+            .queries
+            .application_migrations_list_by_service(service_id)
+            .await?;
+        Ok(rows
+            .into_iter()
+            .filter(|row| row.organization_id == organization_id)
+            .collect())
+    }
+
+    /// Per-object checkpoints of one migration (tenant-scoped via the row).
+    pub async fn list_migration_objects(
+        &self,
+        id: &str,
+        organization_id: i64,
+    ) -> sqlx::Result<Vec<MigrationObjects>> {
+        let row = self.queries.application_migrations_get(id).await?;
+        if row.organization_id != organization_id {
+            return Err(sqlx::Error::RowNotFound);
+        }
+        self.queries.migration_objects_list_by_migration(id).await
     }
 
     async fn rollback_server_assignments(

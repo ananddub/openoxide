@@ -2,12 +2,13 @@
 // @generated from file openoxide/api/v1/notification.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { NotificationService } from "./notification_pb";
+import {NotificationService} from './notification_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationService.ListNotifications
  */
-export const listNotifications = NotificationService.method.listNotifications;
+export const listNotifications =
+	NotificationService.method.listNotifications;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationService.GetNotification
@@ -17,19 +18,23 @@ export const getNotification = NotificationService.method.getNotification;
 /**
  * @generated from rpc openoxide.api.v1.NotificationService.CreateNotification
  */
-export const createNotification = NotificationService.method.createNotification;
+export const createNotification =
+	NotificationService.method.createNotification;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationService.UpdateNotification
  */
-export const updateNotification = NotificationService.method.updateNotification;
+export const updateNotification =
+	NotificationService.method.updateNotification;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationService.DeleteNotification
  */
-export const deleteNotification = NotificationService.method.deleteNotification;
+export const deleteNotification =
+	NotificationService.method.deleteNotification;
 
 /**
  * @generated from rpc openoxide.api.v1.NotificationService.TestNotification
  */
-export const testNotification = NotificationService.method.testNotification;
+export const testNotification =
+	NotificationService.method.testNotification;

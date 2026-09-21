@@ -1,22 +1,21 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
-@import './fonts.css';
 @import './theme.css';
 
-/* Selector-based theming via data-theme (light / dim / dark).
-   `dark:` utilities fire on the pure-black dark theme; `dim:` targets the
-   neutral medium-dark. Light is the default with no variant. */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
-@custom-variant dim (&:where([data-theme="dim"], [data-theme="dim"] *));
+/* Master's theme mechanism: the .dark class on <html> toggles dark mode. */
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
-	--font-sans: 'Gellix', 'Inter', system-ui, sans-serif;
+	--font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 	--font-heading: var(--font-sans);
+	--font-mono:
+		'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Monaco, monospace;
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
 	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-active: var(--sidebar-active);
 	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
 	--color-sidebar-primary: var(--sidebar-primary);
 	--color-sidebar-foreground: var(--sidebar-foreground);
@@ -45,8 +44,7 @@
 	--color-foreground: var(--foreground);
 	--color-background: var(--background);
 
-	/* Semantic status utilities (text-success, bg-success-bg, …) — theme-aware
-	   via the --st-* ladder in theme.css. */
+	/* Semantic status utilities (text-success, bg-success-bg, …). */
 	--color-success: var(--success);
 	--color-success-bg: var(--success-bg);
 	--color-success-border: var(--success-border);
@@ -68,6 +66,168 @@
 	--color-neutral-border: var(--neutral-border);
 	--color-neutral-solid: var(--neutral-solid);
 
+	/* ── COLOR CONSISTENCY LOCK ──────────────────────────────────────
+	   One color language: ink + grays + the four semantic status colors.
+	   Legacy raw-palette utilities (emerald-500, rose-500, amber-500,
+	   sky-*, violet-*, …) resolve onto the semantic token ladder so
+	   scattered call-sites all speak the same theme-aware system.
+	   ─────────────────────────────────────────────────────────────── */
+	--color-emerald-300: color-mix(
+		in srgb,
+		var(--success-solid) 72%,
+		transparent
+	);
+	--color-emerald-400: color-mix(
+		in srgb,
+		var(--success-solid) 86%,
+		transparent
+	);
+	--color-emerald-500: var(--success-solid);
+	--color-emerald-600: color-mix(in srgb, var(--success-solid) 78%, black);
+	--color-green-50: var(--success-bg);
+	--color-green-400: color-mix(
+		in srgb,
+		var(--success-solid) 86%,
+		transparent
+	);
+	--color-green-600: color-mix(in srgb, var(--success-solid) 78%, black);
+	--color-green-950: color-mix(in srgb, var(--success-solid) 16%, black);
+	--color-rose-200: color-mix(
+		in srgb,
+		var(--danger-solid) 40%,
+		transparent
+	);
+	--color-rose-300: color-mix(
+		in srgb,
+		var(--danger-solid) 60%,
+		transparent
+	);
+	--color-rose-400: color-mix(
+		in srgb,
+		var(--danger-solid) 78%,
+		transparent
+	);
+	--color-rose-500: var(--danger-solid);
+	--color-rose-600: color-mix(in srgb, var(--danger-solid) 80%, black);
+	--color-rose-950: color-mix(in srgb, var(--danger-solid) 16%, black);
+	--color-red-50: var(--danger-bg);
+	--color-red-400: color-mix(
+		in srgb,
+		var(--danger-solid) 78%,
+		transparent
+	);
+	--color-red-600: color-mix(in srgb, var(--danger-solid) 80%, black);
+	--color-red-950: color-mix(in srgb, var(--danger-solid) 16%, black);
+	--color-amber-100: color-mix(
+		in srgb,
+		var(--warning-solid) 30%,
+		transparent
+	);
+	--color-amber-200: color-mix(
+		in srgb,
+		var(--warning-solid) 45%,
+		transparent
+	);
+	--color-amber-300: color-mix(
+		in srgb,
+		var(--warning-solid) 66%,
+		transparent
+	);
+	--color-amber-400: color-mix(
+		in srgb,
+		var(--warning-solid) 86%,
+		transparent
+	);
+	--color-amber-500: var(--warning-solid);
+	--color-amber-600: color-mix(in srgb, var(--warning-solid) 80%, black);
+	--color-amber-700: color-mix(in srgb, var(--warning-solid) 66%, black);
+	--color-yellow-50: var(--warning-bg);
+	--color-yellow-400: color-mix(
+		in srgb,
+		var(--warning-solid) 86%,
+		transparent
+	);
+	--color-yellow-600: color-mix(in srgb, var(--warning-solid) 80%, black);
+	--color-orange-50: var(--warning-bg);
+	--color-orange-300: color-mix(
+		in srgb,
+		var(--warning-solid) 66%,
+		transparent
+	);
+	--color-orange-400: color-mix(
+		in srgb,
+		var(--warning-solid) 86%,
+		transparent
+	);
+	--color-orange-500: color-mix(in srgb, var(--warning-solid) 92%, black);
+	--color-orange-600: color-mix(in srgb, var(--warning-solid) 78%, black);
+	--color-orange-950: color-mix(in srgb, var(--warning-solid) 16%, black);
+	--color-sky-300: color-mix(in srgb, var(--info-solid) 66%, transparent);
+	--color-sky-400: color-mix(in srgb, var(--info-solid) 86%, transparent);
+	--color-sky-500: var(--info-solid);
+	--color-sky-600: color-mix(in srgb, var(--info-solid) 80%, black);
+	--color-sky-950: color-mix(in srgb, var(--info-solid) 16%, black);
+	--color-blue-50: var(--info-bg);
+	--color-blue-300: color-mix(in srgb, var(--info-solid) 66%, transparent);
+	--color-blue-400: color-mix(in srgb, var(--info-solid) 86%, transparent);
+	--color-blue-500: var(--info-solid);
+	--color-blue-600: color-mix(in srgb, var(--info-solid) 80%, black);
+	--color-blue-950: color-mix(in srgb, var(--info-solid) 16%, black);
+	--color-cyan-300: color-mix(in srgb, var(--info-solid) 66%, transparent);
+	--color-cyan-400: color-mix(in srgb, var(--info-solid) 86%, transparent);
+	--color-cyan-500: var(--info-solid);
+	--color-cyan-950: color-mix(in srgb, var(--info-solid) 16%, black);
+	--color-teal-300: color-mix(
+		in srgb,
+		var(--success-solid) 66%,
+		transparent
+	);
+	--color-teal-500: var(--success-solid);
+	--color-fuchsia-500: var(--info-solid);
+	--color-pink-500: var(--danger-solid);
+	--color-lime-400: var(--success-solid);
+	--color-lime-500: var(--success-solid);
+	/* Accent-ish families collapse into the ink ladder (no second accent). */
+	--color-violet-300: color-mix(
+		in srgb,
+		var(--foreground) 55%,
+		transparent
+	);
+	--color-violet-400: color-mix(
+		in srgb,
+		var(--foreground) 75%,
+		transparent
+	);
+	--color-violet-500: color-mix(
+		in srgb,
+		var(--foreground) 90%,
+		transparent
+	);
+	--color-violet-600: var(--foreground);
+	--color-purple-300: color-mix(
+		in srgb,
+		var(--foreground) 55%,
+		transparent
+	);
+	--color-purple-400: color-mix(
+		in srgb,
+		var(--foreground) 75%,
+		transparent
+	);
+	--color-purple-500: var(--foreground);
+	--color-purple-600: var(--foreground);
+	--color-indigo-300: color-mix(
+		in srgb,
+		var(--foreground) 55%,
+		transparent
+	);
+	--color-indigo-400: color-mix(
+		in srgb,
+		var(--foreground) 75%,
+		transparent
+	);
+	--color-indigo-500: var(--foreground);
+
 	--radius-sm: calc(var(--radius) * 0.6);
 	--radius-md: calc(var(--radius) * 0.8);
 	--radius-lg: var(--radius);
@@ -77,17 +237,20 @@
 	--radius-4xl: calc(var(--radius) * 2.6);
 	--animate-shiny-text: shiny-text 8s infinite;
 	--animate-gradient: gradient 8s linear infinite;
-  @keyframes shiny-text {
-  0%, 90%, 100% {
-    background-position: calc(-100% - var(--shiny-width)) 0;
+	@keyframes shiny-text {
+		0%,
+		90%,
+		100% {
+			background-position: calc(-100% - var(--shiny-width)) 0;
 		}
-  30%, 60% {
-    background-position: calc(100% + var(--shiny-width)) 0;
+		30%,
+		60% {
+			background-position: calc(100% + var(--shiny-width)) 0;
 		}
 	}
-  @keyframes gradient {
-  to {
-    background-position: var(--bg-size, 300%) 0;
+	@keyframes gradient {
+		to {
+			background-position: var(--bg-size, 300%) 0;
 		}
 	}
 }
@@ -98,9 +261,22 @@
 	}
 	body {
 		@apply bg-background text-foreground;
+		/* Inter's geometric alternates; weights 400-600 are the working set. */
+		font-feature-settings: 'cv11', 'ss01';
+		text-rendering: optimizeLegibility;
+		-webkit-font-smoothing: antialiased;
 	}
 	html {
 		@apply font-sans;
+	}
+	/* Ink-on-canvas selection, straight from the reference. */
+	::selection {
+		background-color: #171717;
+		color: #f2f2f2;
+	}
+	.dark ::selection {
+		background-color: #f2f2f2;
+		color: #171717;
 	}
 
 	/* Scrollbar styling */
@@ -120,18 +296,39 @@
 	}
 }
 
+/* ── Card edge lock (light theme) ────────────────────────────────────────
+ * The design system's card chrome: every `bg-card` surface gets the Level
+ * 1+2 treatment as ONE mechanism: inset hairline ring + tiny stacked drop.
+ * Scoped: elements with their own .border, and table cells (td/th, jo
+ * variant=card tables mein bg-card use karte hain), ring nahi lete —
+ * warna har cell alag box jaisa dikhta hai. */
+html:not(.dark)
+	.bg-card:not(.border):not(td):not(th):not(
+		[data-slot='dialog-content']
+	):not([data-slot='alert-dialog-content']):not(
+		[data-slot='sheet-content']
+	) {
+	box-shadow: var(--card-shadow);
+}
+.dark
+	.bg-card:not(.border):not(td):not(th):not(
+		[data-slot='dialog-content']
+	):not([data-slot='alert-dialog-content']):not(
+		[data-slot='sheet-content']
+	) {
+	box-shadow: inset 0 0 0 1px var(--border);
+}
 
 /* ── Opaque dialog/sheet surfaces ───────────────────────────────────────
- * ~285 call-sites pass `bg-card` on DialogContent, which is a 3% translucent
- * lift fill (fine for page cards, wrong for modals floating over a blurred
- * backdrop). Force the popover surface on every dialog-family panel and
- * restore the hairline edge. `!important` beats the per-call-site utility. */
+ * Call-sites pass `bg-card` on DialogContent; force the popover surface on
+ * every dialog-family panel and give it the Level 5 stacked shadow. */
 [data-slot='dialog-content'],
 [data-slot='alert-dialog-content'],
 [data-slot='sheet-content'] {
 	background-color: var(--popover) !important;
+	border: 1px solid var(--border);
 	box-shadow:
-		inset 0 0 0 1px var(--border),
-		0 20px 25px -5px rgb(0 0 0 / 0.1),
-		0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+		0 1px 1px rgb(0 0 0 / 0.02),
+		0 8px 16px -4px rgb(0 0 0 / 0.06),
+		0 24px 32px -8px rgb(0 0 0 / 0.08) !important;
 }

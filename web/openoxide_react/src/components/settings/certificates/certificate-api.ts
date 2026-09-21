@@ -47,7 +47,9 @@ export type CertificateInput = {
 	server_id?: string;
 };
 
-const certificateClient = createServiceClient(CertificateOperationsService);
+const certificateClient = createServiceClient(
+	CertificateOperationsService,
+);
 
 const remoteServerClient = createServiceClient(RemoteServerService);
 
@@ -63,9 +65,7 @@ export async function listRemoteServers() {
 	);
 }
 
-export async function createCertificate(
-	body: CertificateInput,
-) {
+export async function createCertificate(body: CertificateInput) {
 	return readResource<CertificatePayload>(
 		await certificateClient.createCertificate({
 			payload: JSON.stringify(body),

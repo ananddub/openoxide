@@ -1,4 +1,9 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery, useActiveOrgId} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+	useActiveOrgId,
+} from './query';
 import {AuditService} from '#/gen/connect/openoxide/api/v1/audit_pb';
 
 /**
@@ -27,7 +32,10 @@ const auditClient = createServiceClient(AuditService);
  * `audit_logs` query prefix so the table-watch stream (AUDIT_LOGS)
  * invalidates it while mounted. `query` filters by exact action.
  */
-export function useAuditLogItems(options?: {action?: string; limit?: number}) {
+export function useAuditLogItems(options?: {
+	action?: string;
+	limit?: number;
+}) {
 	const orgId = useActiveOrgId();
 	const action = options?.action;
 	const limit = options?.limit ?? 200;
@@ -45,13 +53,11 @@ export function useAuditLogItems(options?: {action?: string; limit?: number}) {
 /** CSV export of the org's audit log (payload is raw CSV text). */
 export function useAuditExport() {
 	const orgId = useActiveOrgId();
-	return useConnectMutation(
-		async (action?: string) => {
-			const response = await auditClient.exportAuditLogs({
-				organizationId: orgId,
-				query: action,
-			});
-			return response.payload;
-		},
-	);
+	return useConnectMutation(async (action?: string) => {
+		const response = await auditClient.exportAuditLogs({
+			organizationId: orgId,
+			query: action,
+		});
+		return response.payload;
+	});
 }

@@ -4,8 +4,8 @@ import {cn} from '#/api/utils';
 
 /**
  * OpenShip's settings section card. In dark mode the panel IS the
- * separation — `bg-card` lifts off the page, no resting  (their
- * `--th-card-bd: transparent`). Only the header row carries a hairline
+ * separation: `bg-card` lifts off the page, no resting border (the
+ * `--th-card-bd` ladder). Only the header row carries a hairline
  * divider, and that's `` against the card fill, not an
  * outer frame.
  */
@@ -15,8 +15,8 @@ export function SettingsSection({
 	description,
 	children,
 	action,
-	iconBg = 'bg-primary/10',
-	iconColor = 'text-primary',
+	iconBg = 'bg-foreground/[0.05]',
+	iconColor = 'text-foreground',
 	collapsible = false,
 	defaultOpen = false,
 }: {
@@ -60,12 +60,8 @@ export function SettingsSection({
 	);
 
 	return (
-		<div className="rounded-2xl bg-card">
-			<div
-				className={cn(
-					'flex items-center',
-					expanded && 'border-b ',
-				)}>
+		<div className="rounded-xl border bg-card shadow-[0_1px_1px_rgba(0,0,0,0.02),0_2px_2px_rgba(0,0,0,0.04)]">
+			<div className={cn('flex items-center', expanded && 'border-b ')}>
 				{collapsible ? (
 					<button
 						type="button"
@@ -79,7 +75,7 @@ export function SettingsSection({
 						{header}
 					</div>
 				)}
-				{action && <div className="shrink-0 pe-5 ps-3">{action}</div>}
+				{action && <div className="shrink-0 ps-3 pe-5">{action}</div>}
 			</div>
 			{expanded && <div className="p-5">{children}</div>}
 		</div>
@@ -101,12 +97,10 @@ export function SectionRow({
 	children?: ReactNode;
 }) {
 	return (
-		<div className="flex items-center justify-between gap-4 rounded-xl bg-muted/30 p-4">
+		<div className="flex items-center justify-between gap-4 rounded-lg border bg-card p-4">
 			<div className="min-w-0">
 				<p className="text-sm font-medium text-foreground">{title}</p>
-				{hint && (
-					<p className="text-xs text-muted-foreground">{hint}</p>
-				)}
+				{hint && <p className="text-xs text-muted-foreground">{hint}</p>}
 			</div>
 			{children && <div className="shrink-0">{children}</div>}
 		</div>

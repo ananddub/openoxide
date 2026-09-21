@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from 'react';
+import React, {useState} from 'react';
 import {Link} from '@tanstack/react-router';
 
 import {
@@ -18,8 +18,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 } from '#/components/ui/dropdown';
-import {useTagListAll, useOverviewServices} from '#/api/live';
-import {getTagsFromDescription} from '#/hooks/projects/use-projects-list';
+import {useProjectCardData} from './use-project-card-data';
 import {HandleProjectDialog} from './handle-project-dialog';
 
 type Project = Record<string, any>;
@@ -35,83 +34,24 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
 	const [isUpdateOpen, setIsUpdateOpen] = useState(false);
 
-	// Read real-time overview services from the live query keyed
-	// ['overview-services'] (table-watch refetches it while the dashboard
-	// is mounted); tags come from the live query keyed ['tags','list'].
-	const servicesQuery = useOverviewServices();
-	const overviewServices = servicesQuery.data ?? [];
-	const availableTags = useTagListAll().data ?? [];
-
-	// created_at is a Connect proto int64, so it arrives as a bigint at
-	// runtime; multiplying it directly throws a TypeError and crashes the
-	// card render — coerce to a number first.
-	const formatDate = (timestamp?: number | bigint) => {
-		const seconds = Number(timestamp ?? 0);
-		if (!seconds) return 'recently';
-		return new Date(seconds * 1000).toLocaleDateString();
-	};
-
-	// Calculate accurate total services & environments for this project from Zustand RAM store
-	const projectServices = overviewServices.filter(
-		s => Number(s.project_id) === Number(project.id),
-	);
-	const totalServices = projectServices.length;
-
-	const envIds = new Set(
-		projectServices.map(s => s.environment_id).filter(Boolean),
-	);
-	const totalEnvironments = envIds.size > 0 ? envIds.size : 1;
-	const projectServerNames = useMemo(() => {
-		const names = new Map<string, string>();
-		projectServices.forEach((service: any) => {
-			const name = String(
-				service.server_name ||
-				(service.server_id == null
-					? 'Localhost (Main server)'
-					: `Server ${service.server_id}`),
-			).trim();
-			if (name) names.set(name.toLowerCase(), name);
-		});
-		return [...names.values()];
-	}, [projectServices]);
-
-	// Extract project tags from description (hashtag tags)
-	const projectTagNames = getTagsFromDescription(
-		project.description || '',
-	);
-
-	// Match tag with exact custom color from Settings Tags
-	const getTagColor = (tagName: string) => {
-		const clean = tagName.replace(/^#/, '').trim().toLowerCase();
-		const found = availableTags.find(
-			(at: any) => (at.name || '').trim().toLowerCase() === clean,
-		);
-		if (found && found.color) return found.color;
-
-		// Fallback deterministic badge color palette
-		const palette = [
-			'#3b82f6',
-			'#10b981',
-			'#f59e0b',
-			'#8b5cf6',
-			'#ec4899',
-			'#06b6d4',
-		];
-		let hash = 0;
-		for (let i = 0; i < clean.length; i++)
-			hash = clean.charCodeAt(i) + ((hash << 5) - hash);
-		return palette[Math.abs(hash) % palette.length];
-	};
+	const {
+		formatDate,
+		totalServices,
+		totalEnvironments,
+		projectServerNames,
+		projectTagNames,
+		getTagColor,
+	} = useProjectCardData(project);
 
 	return (
 		<>
-			<div className="group relative flex min-h-[180px] w-full flex-col justify-between gap-3.5 rounded-2xl bg-card p-4 text-left transition-colors hover:bg-muted/40">
+			<div className="group relative flex min-h-[180px] w-full flex-col justify-between gap-3.5 rounded-xl border bg-card p-4 text-left shadow-[0_1px_1px_rgba(0,0,0,0.02),0_2px_2px_rgba(0,0,0,0.04)] transition-colors hover:bg-accent">
 				{/* Clickable Card Overlay */}
 				<Link
 					to="/projects/$id"
 					params={{id: String(project.id)}}
 					preload="intent"
-					className="absolute inset-0 z-0 rounded-2xl"
+					className="absolute inset-0 z-0 rounded-xl"
 					aria-label={`Open project ${project.name}`}
 				/>
 
@@ -120,7 +60,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 					{/* Card Header */}
 					<div className="flex items-start justify-between gap-2.5">
 						<div className="flex min-w-0 items-center gap-3">
-							<div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted/60 text-foreground transition-colors group-hover:bg-muted">
+							<div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-foreground/[0.05] text-foreground transition-colors group-hover:bg-foreground/[0.08]">
 								<Folder className="size-5" />
 							</div>
 							<div className="flex min-w-0 flex-col">
@@ -146,9 +86,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 										</Button>
 									}
 								/>
-								<DropdownMenuContent
-									align="end"
-									className="w-48 bg-popover/95 shadow-lg backdrop-blur-md">
+								<DropdownMenuContent align="end" className="w-48">
 									<DropdownMenuItem
 										onClick={() => setIsUpdateOpen(true)}
 										className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-foreground">
@@ -167,7 +105,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 									<DropdownMenuSeparator />
 									<DropdownMenuItem
 										onClick={() => onDelete(project.id)}
-										className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-rose-500 focus:text-rose-500">
+										className="flex cursor-pointer items-center gap-2 text-xs font-medium text-danger focus:text-danger">
 										<Trash2 className="size-4" />
 										<span>Delete</span>
 									</DropdownMenuItem>
@@ -180,19 +118,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 					{projectTagNames.length > 0 && (
 						<div className="pointer-events-auto flex flex-wrap gap-1.5 pt-0.5">
 							{projectTagNames.map(tag => (
-								<TagBadge
-									key={tag}
-									name={tag}
-									color={getTagColor(tag)}
-								/>
+								<TagBadge key={tag} name={tag} color={getTagColor(tag)} />
 							))}
 						</div>
 					)}
 				</div>
 
 				{/* Bottom Stats Footer */}
-				<div className="pointer-events-none relative z-10 mt-1 flex flex-col gap-2 border-t  pt-3 text-xs text-muted-foreground">
-					<div className="flex min-w-0 items-center gap-1.5" title="Deployment servers">
+				<div className="pointer-events-none relative z-10 mt-1 flex flex-col gap-2 border-t pt-3 text-xs text-muted-foreground">
+					<div
+						className="flex min-w-0 items-center gap-1.5"
+						title="Deployment servers">
 						<Server className="size-3.5 shrink-0 text-muted-foreground/80" />
 						<span className="shrink-0">Server</span>
 						<span className="truncate font-medium text-foreground">

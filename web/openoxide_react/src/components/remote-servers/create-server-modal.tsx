@@ -1,11 +1,11 @@
 import {useState, useEffect} from 'react';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {Button} from '#/components/ui/button';
 import {ServerFormFields} from '#/components/remote-servers/server-form-fields';
 import {toast} from 'sonner';
@@ -15,18 +15,16 @@ import {
 	useRemoteServerUpdate,
 	useRemoteServerTestConnection,
 } from '#/api/live';
-import {
-	Server,
-	RefreshCw,
-	CheckCircle2,
-	XCircle,
-	Plug,
-} from 'lucide-react';
-
+import {Server} from 'lucide-react';
 import type {
 	RemoteServerResponse,
 	SshKeyResponse,
 } from '#/types/api-helpers';
+import {useServerForm} from './use-server-form';
+import {
+	TestConnectionButton,
+	type TestResult,
+} from './test-connection-button';
 
 interface CreateServerModalProps {
 	isOpen: boolean;
@@ -43,17 +41,11 @@ export function CreateServerModal({
 	onClose,
 	onSuccess,
 }: CreateServerModalProps) {
-	const [name, setName] = useState('');
-	const [ipAddress, setIpAddress] = useState('');
-	const [port, setPort] = useState('22');
-	const [username, setUsername] = useState('root');
-	const [sshKeyId, setSshKeyId] = useState<string>('');
-	const [description, setDescription] = useState('');
+	const form = useServerForm({isOpen, editingServer, sshKeys});
+	const {name, ipAddress, username, sshKeyId, port, description} = form;
 	const [submitting, setSubmitting] = useState(false);
 	const [testingConn, setTestingConn] = useState(false);
-	const [testResult, setTestResult] = useState<
-		'idle' | 'success' | 'failed'
-	>('idle');
+	const [testResult, setTestResult] = useState<TestResult>('idle');
 
 	const createMutation = useRemoteServerCreate();
 	const patchMutation = useRemoteServerUpdate();
@@ -61,26 +53,7 @@ export function CreateServerModal({
 
 	useEffect(() => {
 		setTestResult('idle');
-		if (editingServer) {
-			setName(editingServer.name || '');
-			setIpAddress(editingServer.ip_address || '');
-			setPort(String(editingServer.port || 22));
-			setUsername(editingServer.username || 'root');
-			setSshKeyId(
-				editingServer.ssh_key_id ? String(editingServer.ssh_key_id) : '',
-			);
-			setDescription(editingServer.description || '');
-		} else {
-			setName('');
-			setIpAddress('');
-			setPort('22');
-			setUsername('root');
-			setSshKeyId(
-				sshKeys && sshKeys.length > 0 ? String(sshKeys[0].id) : '',
-			);
-			setDescription('');
-		}
-	}, [editingServer, isOpen, sshKeys]);
+	}, [editingServer, isOpen]);
 
 	const handleTestConnection = async () => {
 		if (!ipAddress || !username) {
@@ -129,7 +102,10 @@ export function CreateServerModal({
 			};
 
 			if (editingServer?.id) {
-				await patchMutation.mutateAsync({id: editingServer.id, ...payload});
+				await patchMutation.mutateAsync({
+					id: editingServer.id,
+					...payload,
+				});
 				toast.success('Remote Server updated successfully');
 			} else {
 				await createMutation.mutateAsync(payload);
@@ -145,72 +121,29 @@ export function CreateServerModal({
 	};
 
 	return (
-		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="w-full rounded-2xl border- bg-card p-6 shadow-2xl sm:max-w-2xl md:max-w-3xl">
-				<DialogHeader className="border-b  pb-4">
-					<DialogTitle className="flex items-center gap-2.5 text-base font-bold text-foreground">
-						<div className="rounded-xl bg-primary/10 p-2 text-primary">
-							<Server className="h-5 w-5" />
-						</div>
+		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2">
+						<Server className="size-4 text-primary" />
 						{editingServer ? 'Edit Remote Server' : 'Add Remote Server'}
-					</DialogTitle>
-					<DialogDescription className="text-xs text-muted-foreground">
+					</SheetTitle>
+					<SheetDescription>
 						Configure host IP address, SSH port, and credentials for remote
 						deployment node
-					</DialogDescription>
-				</DialogHeader>
+					</SheetDescription>
+				</SheetHeader>
 
 				<form onSubmit={handleSubmit} className="mt-2 flex flex-col gap-4">
-					<ServerFormFields
-						name={name}
-						setName={setName}
-						ipAddress={ipAddress}
-						setIpAddress={setIpAddress}
-						port={port}
-						setPort={setPort}
-						username={username}
-						setUsername={setUsername}
-						sshKeyId={sshKeyId}
-						setSshKeyId={setSshKeyId}
-						description={description}
-						setDescription={setDescription}
-						sshKeys={sshKeys}
-					/>
+					<ServerFormFields {...form} sshKeys={sshKeys} />
 
 					<div className="mt-1 flex items-center justify-between border-t  pt-4">
-						{/* Clean Icon-Only Test Connection Button */}
-						<Button
-							type="button"
-							variant="outline"
-							size="icon"
-							onClick={handleTestConnection}
+						<TestConnectionButton
+							testing={testingConn}
+							result={testResult}
 							disabled={testingConn || submitting}
-							title={
-								testingConn
-									? 'Testing SSH Connection...'
-									: testResult === 'success'
-										? 'SSH Connection Verified'
-										: testResult === 'failed'
-											? 'SSH Connection Failed'
-											: 'Test SSH Connection'
-							}
-							className={`h-9 w-9 rounded-lg transition-all ${
-								testResult === 'success'
-									? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20'
-									: testResult === 'failed'
-										? 'border-rose-500/50 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20'
-										: ' hover:bg-muted/80'
-							}`}>
-							{testingConn ? (
-								<RefreshCw className="h-4 w-4 animate-spin text-primary" />
-							) : testResult === 'success' ? (
-								<CheckCircle2 className="h-4 w-4 text-emerald-500" />
-							) : testResult === 'failed' ? (
-								<XCircle className="h-4 w-4 text-rose-500" />
-							) : (
-								<Plug className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-							)}
-						</Button>
+							onClick={() => void handleTestConnection()}
+						/>
 
 						<Button
 							type="submit"
@@ -224,7 +157,7 @@ export function CreateServerModal({
 						</Button>
 					</div>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</SheetContent>
+		</Sheet>
 	);
 }

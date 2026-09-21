@@ -63,7 +63,7 @@ export function DockerStatusFilter({
 							{getDisplayLabel(statusFilter)}
 						</span>
 					</SelectTrigger>
-					<SelectContent className="w-[200px] border- bg-card p-1 text-xs shadow-md">
+					<SelectContent className="border- w-[200px] bg-card p-1 text-xs shadow-md">
 						<SelectItem
 							value="all"
 							className="cursor-pointer text-xs font-medium">

@@ -2,37 +2,51 @@
 // @generated from file openoxide/api/v1/realtime.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/realtime.proto.
  */
-export const file_openoxide_api_v1_realtime: GenFile = /*@__PURE__*/
-  fileDesc("Ch9vcGVub3hpZGUvYXBpL3YxL3JlYWx0aW1lLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIkIKEFdhdGNoVGFibGVzRXZlbnQSLgoGdGFibGVzGAEgAygOMh4ub3Blbm94aWRlLmFwaS52MS5XYXRjaGVkVGFibGUqqBEKDFdhdGNoZWRUYWJsZRIdChlXQVRDSEVEX1RBQkxFX1VOU1BFQ0lGSUVEEAASIAocV0FUQ0hFRF9UQUJMRV9BSV9HRU5FUkFUSU9OUxABEh0KGVdBVENIRURfVEFCTEVfQUlfU0VUVElOR1MQAhIeChpXQVRDSEVEX1RBQkxFX0FMRVJUX0VWRU5UUxADEh0KGVdBVENIRURfVEFCTEVfQUxFUlRfUlVMRVMQBBIpCiVXQVRDSEVEX1RBQkxFX0FQUExJQ0FUSU9OX01JRERMRVdBUkVTEAUSHAoYV0FUQ0hFRF9UQUJMRV9BVURJVF9MT0dTEAYSJQohV0FUQ0hFRF9UQUJMRV9CQUNLR1JPVU5EX1BPTElDSUVTEAcSIwofV0FUQ0hFRF9UQUJMRV9CQUNLVVBfRVhFQ1VUSU9OUxAIEhkKFVdBVENIRURfVEFCTEVfQkFDS1VQUxAJEiYKIldBVENIRURfVEFCTEVfQ0VSVElGSUNBVEVfUkVORVdBTFMQChIeChpXQVRDSEVEX1RBQkxFX0NFUlRJRklDQVRFUxALEiMKH1dBVENIRURfVEFCTEVfREFUQUJBU0VfTkVUV09SS1MQDBIdChlXQVRDSEVEX1RBQkxFX0RFUExPWU1FTlRTEA0SHgoaV0FUQ0hFRF9UQUJMRV9ERVNUSU5BVElPTlMQDhIfChtXQVRDSEVEX1RBQkxFX0ROU19QUk9WSURFUlMQDxIZChVXQVRDSEVEX1RBQkxFX0RPTUFJTlMQEBIeChpXQVRDSEVEX1RBQkxFX0VOVklST05NRU5UUxAREh8KG1dBVENIRURfVEFCTEVfR0lUX1BST1ZJREVSUxASEh4KGldBVENIRURfVEFCTEVfR1JPVVBfUE9MSUNZEBMSGAoUV0FUQ0hFRF9UQUJMRV9HUk9VUFMQFBIgChxXQVRDSEVEX1RBQkxFX0hFQUxUSF9SRVBPUlRTEBUSIwofV0FUQ0hFRF9UQUJMRV9NT05JVE9SSU5HX0FHRU5UUxAWEjAKLFdBVENIRURfVEFCTEVfTU9OSVRPUklOR19NQUlOVEVOQU5DRV9XSU5ET1dTEBcSIwofV0FUQ0hFRF9UQUJMRV9NT05JVE9SSU5HX1BPTElDWRAYEhgKFFdBVENIRURfVEFCTEVfTU9VTlRTEBkSMAosV0FUQ0hFRF9UQUJMRV9OT1RJRklDQVRJT05fREVMSVZFUllfQVRURU1QVFMQGhIwCixXQVRDSEVEX1RBQkxFX05PVElGSUNBVElPTl9SRVNPVVJDRV9CSU5ESU5HUxAbEh8KG1dBVENIRURfVEFCTEVfTk9USUZJQ0FUSU9OUxAcEh4KGldBVENIRURfVEFCTEVfT1JHQU5JWkFUSU9OEB0SJgoiV0FUQ0hFRF9UQUJMRV9PUkdBTklaQVRJT05fSU5WSVRFUxAeEiYKIldBVENIRURfVEFCTEVfT1JHQU5JWkFUSU9OX01FTUJFUlMQHxIZChVXQVRDSEVEX1RBQkxFX1BBVENIRVMQIBIYChRXQVRDSEVEX1RBQkxFX1BPTElDWRAhEhcKE1dBVENIRURfVEFCTEVfUE9SVFMQIhIlCiFXQVRDSEVEX1RBQkxFX1BSRVZJRVdfREVQTE9ZTUVOVFMQIxIaChZXQVRDSEVEX1RBQkxFX1BST0pFQ1RTECQSHgoaV0FUQ0hFRF9UQUJMRV9QUk9KRUNUX1RBR1MQJRIbChdXQVRDSEVEX1RBQkxFX1JFRElSRUNUUxAmEhwKGFdBVENIRURfVEFCTEVfUkVHSVNUUklFUxAnEiEKHVdBVENIRURfVEFCTEVfUkVTT1VSQ0VfQUNDRVNTECgSGwoXV0FUQ0hFRF9UQUJMRV9ST0xMQkFDS1MQKRIlCiFXQVRDSEVEX1RBQkxFX1NDSEVEVUxFX0VYRUNVVElPTlMQKhIrCidXQVRDSEVEX1RBQkxFX1NDSEVEVUxFX1JVTlRJTUVfUE9MSUNJRVMQKxIbChdXQVRDSEVEX1RBQkxFX1NDSEVEVUxFUxAsEhoKFldBVENIRURfVEFCTEVfU0VDVVJJVFkQLRIrCidXQVRDSEVEX1RBQkxFX1NFUlZFUl9DTEVBTlVQX0VYRUNVVElPTlMQLhIjCh9XQVRDSEVEX1RBQkxFX1NFUlZFUl9NQU5BR0VNRU5UEC8SIwofV0FUQ0hFRF9UQUJMRV9TRVJWRVJfTUlHUkFUSU9OUxAwEikKJVdBVENIRURfVEFCTEVfU0VSVkVSX1BSSVZBVEVfTkVUV09SS1MQMRIZChVXQVRDSEVEX1RBQkxFX1NFUlZFUlMQMhIlCiFXQVRDSEVEX1RBQkxFX1NFUlZJQ0VfQVBQTElDQVRJT04QMxIhCh1XQVRDSEVEX1RBQkxFX1NFUlZJQ0VfQ09NUE9TRRA0EiIKHldBVENIRURfVEFCTEVfU0VSVklDRV9EQVRBQkFTRRA1Eh0KGVdBVENIRURfVEFCTEVfU0VSVklDRV9HSVQQNhIaChZXQVRDSEVEX1RBQkxFX1NFUlZJQ0VTEDcSGgoWV0FUQ0hFRF9UQUJMRV9TRVRUSU5HUxA4EhoKFldBVENIRURfVEFCTEVfU1NIX0tFWVMQORIWChJXQVRDSEVEX1RBQkxFX1RBR1MQOhIdChlXQVRDSEVEX1RBQkxFX1VTRVJfUE9MSUNZEDsSFwoTV0FUQ0hFRF9UQUJMRV9VU0VSUxA8EiEKHVdBVENIRURfVEFCTEVfVkFVTFRfUFJPVklERVJTED0SIAocV0FUQ0hFRF9UQUJMRV9WT0xVTUVfQkFDS1VQUxA+EigKJFdBVENIRURfVEFCTEVfQVBQTElDQVRJT05fTUlHUkFUSU9OUxA/EiMKH1dBVENIRURfVEFCTEVfTUlHUkFUSU9OX09CSkVDVFMQQDJfCg9SZWFsdGltZVNlcnZpY2USTAoLV2F0Y2hUYWJsZXMSFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5GiIub3Blbm94aWRlLmFwaS52MS5XYXRjaFRhYmxlc0V2ZW50MAFiBnByb3RvMw", [file_openoxide_api_v1_common]);
+export const file_openoxide_api_v1_realtime: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'Ch9vcGVub3hpZGUvYXBpL3YxL3JlYWx0aW1lLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIkIKEFdhdGNoVGFibGVzRXZlbnQSLgoGdGFibGVzGAEgAygOMh4ub3Blbm94aWRlLmFwaS52MS5XYXRjaGVkVGFibGUqqBEKDFdhdGNoZWRUYWJsZRIdChlXQVRDSEVEX1RBQkxFX1VOU1BFQ0lGSUVEEAASIAocV0FUQ0hFRF9UQUJMRV9BSV9HRU5FUkFUSU9OUxABEh0KGVdBVENIRURfVEFCTEVfQUlfU0VUVElOR1MQAhIeChpXQVRDSEVEX1RBQkxFX0FMRVJUX0VWRU5UUxADEh0KGVdBVENIRURfVEFCTEVfQUxFUlRfUlVMRVMQBBIpCiVXQVRDSEVEX1RBQkxFX0FQUExJQ0FUSU9OX01JRERMRVdBUkVTEAUSHAoYV0FUQ0hFRF9UQUJMRV9BVURJVF9MT0dTEAYSJQohV0FUQ0hFRF9UQUJMRV9CQUNLR1JPVU5EX1BPTElDSUVTEAcSIwofV0FUQ0hFRF9UQUJMRV9CQUNLVVBfRVhFQ1VUSU9OUxAIEhkKFVdBVENIRURfVEFCTEVfQkFDS1VQUxAJEiYKIldBVENIRURfVEFCTEVfQ0VSVElGSUNBVEVfUkVORVdBTFMQChIeChpXQVRDSEVEX1RBQkxFX0NFUlRJRklDQVRFUxALEiMKH1dBVENIRURfVEFCTEVfREFUQUJBU0VfTkVUV09SS1MQDBIdChlXQVRDSEVEX1RBQkxFX0RFUExPWU1FTlRTEA0SHgoaV0FUQ0hFRF9UQUJMRV9ERVNUSU5BVElPTlMQDhIfChtXQVRDSEVEX1RBQkxFX0ROU19QUk9WSURFUlMQDxIZChVXQVRDSEVEX1RBQkxFX0RPTUFJTlMQEBIeChpXQVRDSEVEX1RBQkxFX0VOVklST05NRU5UUxAREh8KG1dBVENIRURfVEFCTEVfR0lUX1BST1ZJREVSUxASEh4KGldBVENIRURfVEFCTEVfR1JPVVBfUE9MSUNZEBMSGAoUV0FUQ0hFRF9UQUJMRV9HUk9VUFMQFBIgChxXQVRDSEVEX1RBQkxFX0hFQUxUSF9SRVBPUlRTEBUSIwofV0FUQ0hFRF9UQUJMRV9NT05JVE9SSU5HX0FHRU5UUxAWEjAKLFdBVENIRURfVEFCTEVfTU9OSVRPUklOR19NQUlOVEVOQU5DRV9XSU5ET1dTEBcSIwofV0FUQ0hFRF9UQUJMRV9NT05JVE9SSU5HX1BPTElDWRAYEhgKFFdBVENIRURfVEFCTEVfTU9VTlRTEBkSMAosV0FUQ0hFRF9UQUJMRV9OT1RJRklDQVRJT05fREVMSVZFUllfQVRURU1QVFMQGhIwCixXQVRDSEVEX1RBQkxFX05PVElGSUNBVElPTl9SRVNPVVJDRV9CSU5ESU5HUxAbEh8KG1dBVENIRURfVEFCTEVfTk9USUZJQ0FUSU9OUxAcEh4KGldBVENIRURfVEFCTEVfT1JHQU5JWkFUSU9OEB0SJgoiV0FUQ0hFRF9UQUJMRV9PUkdBTklaQVRJT05fSU5WSVRFUxAeEiYKIldBVENIRURfVEFCTEVfT1JHQU5JWkFUSU9OX01FTUJFUlMQHxIZChVXQVRDSEVEX1RBQkxFX1BBVENIRVMQIBIYChRXQVRDSEVEX1RBQkxFX1BPTElDWRAhEhcKE1dBVENIRURfVEFCTEVfUE9SVFMQIhIlCiFXQVRDSEVEX1RBQkxFX1BSRVZJRVdfREVQTE9ZTUVOVFMQIxIaChZXQVRDSEVEX1RBQkxFX1BST0pFQ1RTECQSHgoaV0FUQ0hFRF9UQUJMRV9QUk9KRUNUX1RBR1MQJRIbChdXQVRDSEVEX1RBQkxFX1JFRElSRUNUUxAmEhwKGFdBVENIRURfVEFCTEVfUkVHSVNUUklFUxAnEiEKHVdBVENIRURfVEFCTEVfUkVTT1VSQ0VfQUNDRVNTECgSGwoXV0FUQ0hFRF9UQUJMRV9ST0xMQkFDS1MQKRIlCiFXQVRDSEVEX1RBQkxFX1NDSEVEVUxFX0VYRUNVVElPTlMQKhIrCidXQVRDSEVEX1RBQkxFX1NDSEVEVUxFX1JVTlRJTUVfUE9MSUNJRVMQKxIbChdXQVRDSEVEX1RBQkxFX1NDSEVEVUxFUxAsEhoKFldBVENIRURfVEFCTEVfU0VDVVJJVFkQLRIrCidXQVRDSEVEX1RBQkxFX1NFUlZFUl9DTEVBTlVQX0VYRUNVVElPTlMQLhIjCh9XQVRDSEVEX1RBQkxFX1NFUlZFUl9NQU5BR0VNRU5UEC8SIwofV0FUQ0hFRF9UQUJMRV9TRVJWRVJfTUlHUkFUSU9OUxAwEikKJVdBVENIRURfVEFCTEVfU0VSVkVSX1BSSVZBVEVfTkVUV09SS1MQMRIZChVXQVRDSEVEX1RBQkxFX1NFUlZFUlMQMhIlCiFXQVRDSEVEX1RBQkxFX1NFUlZJQ0VfQVBQTElDQVRJT04QMxIhCh1XQVRDSEVEX1RBQkxFX1NFUlZJQ0VfQ09NUE9TRRA0EiIKHldBVENIRURfVEFCTEVfU0VSVklDRV9EQVRBQkFTRRA1Eh0KGVdBVENIRURfVEFCTEVfU0VSVklDRV9HSVQQNhIaChZXQVRDSEVEX1RBQkxFX1NFUlZJQ0VTEDcSGgoWV0FUQ0hFRF9UQUJMRV9TRVRUSU5HUxA4EhoKFldBVENIRURfVEFCTEVfU1NIX0tFWVMQORIWChJXQVRDSEVEX1RBQkxFX1RBR1MQOhIdChlXQVRDSEVEX1RBQkxFX1VTRVJfUE9MSUNZEDsSFwoTV0FUQ0hFRF9UQUJMRV9VU0VSUxA8EiEKHVdBVENIRURfVEFCTEVfVkFVTFRfUFJPVklERVJTED0SIAocV0FUQ0hFRF9UQUJMRV9WT0xVTUVfQkFDS1VQUxA+EigKJFdBVENIRURfVEFCTEVfQVBQTElDQVRJT05fTUlHUkFUSU9OUxA/EiMKH1dBVENIRURfVEFCTEVfTUlHUkFUSU9OX09CSkVDVFMQQDJfCg9SZWFsdGltZVNlcnZpY2USTAoLV2F0Y2hUYWJsZXMSFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5GiIub3Blbm94aWRlLmFwaS52MS5XYXRjaFRhYmxlc0V2ZW50MAFiBnByb3RvMw',
+		[file_openoxide_api_v1_common],
+	);
 
 /**
  * @generated from message openoxide.api.v1.WatchTablesEvent
  */
-export type WatchTablesEvent = Message<"openoxide.api.v1.WatchTablesEvent"> & {
-  /**
-   * Tables whose rows changed since the previous event. An event listing all
-   * tables is a resync: clients should treat every watched query as stale.
-   *
-   * @generated from field: repeated openoxide.api.v1.WatchedTable tables = 1;
-   */
-  tables: WatchedTable[];
-};
+export type WatchTablesEvent =
+	Message<'openoxide.api.v1.WatchTablesEvent'> & {
+		/**
+		 * Tables whose rows changed since the previous event. An event listing all
+		 * tables is a resync: clients should treat every watched query as stale.
+		 *
+		 * @generated from field: repeated openoxide.api.v1.WatchedTable tables = 1;
+		 */
+		tables: WatchedTable[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.WatchTablesEvent.
  * Use `create(WatchTablesEventSchema)` to create a new message.
  */
-export const WatchTablesEventSchema: GenMessage<WatchTablesEvent> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_realtime, 0);
+export const WatchTablesEventSchema: GenMessage<WatchTablesEvent> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_realtime, 0);
 
 /**
  * Every user-facing SQLite table that can invalidate frontend queries.
@@ -42,337 +56,337 @@ export const WatchTablesEventSchema: GenMessage<WatchTablesEvent> = /*@__PURE__*
  * @generated from enum openoxide.api.v1.WatchedTable
  */
 export enum WatchedTable {
-  /**
-   * @generated from enum value: WATCHED_TABLE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_AI_GENERATIONS = 1;
-   */
-  AI_GENERATIONS = 1,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_AI_SETTINGS = 2;
-   */
-  AI_SETTINGS = 2,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_ALERT_EVENTS = 3;
-   */
-  ALERT_EVENTS = 3,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_ALERT_RULES = 4;
-   */
-  ALERT_RULES = 4,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_APPLICATION_MIDDLEWARES = 5;
-   */
-  APPLICATION_MIDDLEWARES = 5,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_AUDIT_LOGS = 6;
-   */
-  AUDIT_LOGS = 6,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_BACKGROUND_POLICIES = 7;
-   */
-  BACKGROUND_POLICIES = 7,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_BACKUP_EXECUTIONS = 8;
-   */
-  BACKUP_EXECUTIONS = 8,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_BACKUPS = 9;
-   */
-  BACKUPS = 9,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_CERTIFICATE_RENEWALS = 10;
-   */
-  CERTIFICATE_RENEWALS = 10,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_CERTIFICATES = 11;
-   */
-  CERTIFICATES = 11,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_DATABASE_NETWORKS = 12;
-   */
-  DATABASE_NETWORKS = 12,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_DEPLOYMENTS = 13;
-   */
-  DEPLOYMENTS = 13,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_DESTINATIONS = 14;
-   */
-  DESTINATIONS = 14,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_DNS_PROVIDERS = 15;
-   */
-  DNS_PROVIDERS = 15,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_DOMAINS = 16;
-   */
-  DOMAINS = 16,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_ENVIRONMENTS = 17;
-   */
-  ENVIRONMENTS = 17,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_GIT_PROVIDERS = 18;
-   */
-  GIT_PROVIDERS = 18,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_GROUP_POLICY = 19;
-   */
-  GROUP_POLICY = 19,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_GROUPS = 20;
-   */
-  GROUPS = 20,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_HEALTH_REPORTS = 21;
-   */
-  HEALTH_REPORTS = 21,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_MONITORING_AGENTS = 22;
-   */
-  MONITORING_AGENTS = 22,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_MONITORING_MAINTENANCE_WINDOWS = 23;
-   */
-  MONITORING_MAINTENANCE_WINDOWS = 23,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_MONITORING_POLICY = 24;
-   */
-  MONITORING_POLICY = 24,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_MOUNTS = 25;
-   */
-  MOUNTS = 25,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_NOTIFICATION_DELIVERY_ATTEMPTS = 26;
-   */
-  NOTIFICATION_DELIVERY_ATTEMPTS = 26,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_NOTIFICATION_RESOURCE_BINDINGS = 27;
-   */
-  NOTIFICATION_RESOURCE_BINDINGS = 27,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_NOTIFICATIONS = 28;
-   */
-  NOTIFICATIONS = 28,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_ORGANIZATION = 29;
-   */
-  ORGANIZATION = 29,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_ORGANIZATION_INVITES = 30;
-   */
-  ORGANIZATION_INVITES = 30,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_ORGANIZATION_MEMBERS = 31;
-   */
-  ORGANIZATION_MEMBERS = 31,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_PATCHES = 32;
-   */
-  PATCHES = 32,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_POLICY = 33;
-   */
-  POLICY = 33,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_PORTS = 34;
-   */
-  PORTS = 34,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_PREVIEW_DEPLOYMENTS = 35;
-   */
-  PREVIEW_DEPLOYMENTS = 35,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_PROJECTS = 36;
-   */
-  PROJECTS = 36,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_PROJECT_TAGS = 37;
-   */
-  PROJECT_TAGS = 37,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_REDIRECTS = 38;
-   */
-  REDIRECTS = 38,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_REGISTRIES = 39;
-   */
-  REGISTRIES = 39,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_RESOURCE_ACCESS = 40;
-   */
-  RESOURCE_ACCESS = 40,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_ROLLBACKS = 41;
-   */
-  ROLLBACKS = 41,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SCHEDULE_EXECUTIONS = 42;
-   */
-  SCHEDULE_EXECUTIONS = 42,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SCHEDULE_RUNTIME_POLICIES = 43;
-   */
-  SCHEDULE_RUNTIME_POLICIES = 43,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SCHEDULES = 44;
-   */
-  SCHEDULES = 44,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SECURITY = 45;
-   */
-  SECURITY = 45,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SERVER_CLEANUP_EXECUTIONS = 46;
-   */
-  SERVER_CLEANUP_EXECUTIONS = 46,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SERVER_MANAGEMENT = 47;
-   */
-  SERVER_MANAGEMENT = 47,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SERVER_MIGRATIONS = 48;
-   */
-  SERVER_MIGRATIONS = 48,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SERVER_PRIVATE_NETWORKS = 49;
-   */
-  SERVER_PRIVATE_NETWORKS = 49,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SERVERS = 50;
-   */
-  SERVERS = 50,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SERVICE_APPLICATION = 51;
-   */
-  SERVICE_APPLICATION = 51,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SERVICE_COMPOSE = 52;
-   */
-  SERVICE_COMPOSE = 52,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SERVICE_DATABASE = 53;
-   */
-  SERVICE_DATABASE = 53,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SERVICE_GIT = 54;
-   */
-  SERVICE_GIT = 54,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SERVICES = 55;
-   */
-  SERVICES = 55,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SETTINGS = 56;
-   */
-  SETTINGS = 56,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_SSH_KEYS = 57;
-   */
-  SSH_KEYS = 57,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_TAGS = 58;
-   */
-  TAGS = 58,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_USER_POLICY = 59;
-   */
-  USER_POLICY = 59,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_USERS = 60;
-   */
-  USERS = 60,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_VAULT_PROVIDERS = 61;
-   */
-  VAULT_PROVIDERS = 61,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_VOLUME_BACKUPS = 62;
-   */
-  VOLUME_BACKUPS = 62,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_APPLICATION_MIGRATIONS = 63;
-   */
-  APPLICATION_MIGRATIONS = 63,
-
-  /**
-   * @generated from enum value: WATCHED_TABLE_MIGRATION_OBJECTS = 64;
-   */
-  MIGRATION_OBJECTS = 64,
+	/**
+	 * @generated from enum value: WATCHED_TABLE_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_AI_GENERATIONS = 1;
+	 */
+	AI_GENERATIONS = 1,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_AI_SETTINGS = 2;
+	 */
+	AI_SETTINGS = 2,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_ALERT_EVENTS = 3;
+	 */
+	ALERT_EVENTS = 3,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_ALERT_RULES = 4;
+	 */
+	ALERT_RULES = 4,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_APPLICATION_MIDDLEWARES = 5;
+	 */
+	APPLICATION_MIDDLEWARES = 5,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_AUDIT_LOGS = 6;
+	 */
+	AUDIT_LOGS = 6,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_BACKGROUND_POLICIES = 7;
+	 */
+	BACKGROUND_POLICIES = 7,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_BACKUP_EXECUTIONS = 8;
+	 */
+	BACKUP_EXECUTIONS = 8,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_BACKUPS = 9;
+	 */
+	BACKUPS = 9,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_CERTIFICATE_RENEWALS = 10;
+	 */
+	CERTIFICATE_RENEWALS = 10,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_CERTIFICATES = 11;
+	 */
+	CERTIFICATES = 11,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_DATABASE_NETWORKS = 12;
+	 */
+	DATABASE_NETWORKS = 12,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_DEPLOYMENTS = 13;
+	 */
+	DEPLOYMENTS = 13,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_DESTINATIONS = 14;
+	 */
+	DESTINATIONS = 14,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_DNS_PROVIDERS = 15;
+	 */
+	DNS_PROVIDERS = 15,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_DOMAINS = 16;
+	 */
+	DOMAINS = 16,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_ENVIRONMENTS = 17;
+	 */
+	ENVIRONMENTS = 17,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_GIT_PROVIDERS = 18;
+	 */
+	GIT_PROVIDERS = 18,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_GROUP_POLICY = 19;
+	 */
+	GROUP_POLICY = 19,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_GROUPS = 20;
+	 */
+	GROUPS = 20,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_HEALTH_REPORTS = 21;
+	 */
+	HEALTH_REPORTS = 21,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_MONITORING_AGENTS = 22;
+	 */
+	MONITORING_AGENTS = 22,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_MONITORING_MAINTENANCE_WINDOWS = 23;
+	 */
+	MONITORING_MAINTENANCE_WINDOWS = 23,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_MONITORING_POLICY = 24;
+	 */
+	MONITORING_POLICY = 24,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_MOUNTS = 25;
+	 */
+	MOUNTS = 25,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_NOTIFICATION_DELIVERY_ATTEMPTS = 26;
+	 */
+	NOTIFICATION_DELIVERY_ATTEMPTS = 26,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_NOTIFICATION_RESOURCE_BINDINGS = 27;
+	 */
+	NOTIFICATION_RESOURCE_BINDINGS = 27,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_NOTIFICATIONS = 28;
+	 */
+	NOTIFICATIONS = 28,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_ORGANIZATION = 29;
+	 */
+	ORGANIZATION = 29,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_ORGANIZATION_INVITES = 30;
+	 */
+	ORGANIZATION_INVITES = 30,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_ORGANIZATION_MEMBERS = 31;
+	 */
+	ORGANIZATION_MEMBERS = 31,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_PATCHES = 32;
+	 */
+	PATCHES = 32,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_POLICY = 33;
+	 */
+	POLICY = 33,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_PORTS = 34;
+	 */
+	PORTS = 34,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_PREVIEW_DEPLOYMENTS = 35;
+	 */
+	PREVIEW_DEPLOYMENTS = 35,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_PROJECTS = 36;
+	 */
+	PROJECTS = 36,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_PROJECT_TAGS = 37;
+	 */
+	PROJECT_TAGS = 37,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_REDIRECTS = 38;
+	 */
+	REDIRECTS = 38,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_REGISTRIES = 39;
+	 */
+	REGISTRIES = 39,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_RESOURCE_ACCESS = 40;
+	 */
+	RESOURCE_ACCESS = 40,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_ROLLBACKS = 41;
+	 */
+	ROLLBACKS = 41,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SCHEDULE_EXECUTIONS = 42;
+	 */
+	SCHEDULE_EXECUTIONS = 42,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SCHEDULE_RUNTIME_POLICIES = 43;
+	 */
+	SCHEDULE_RUNTIME_POLICIES = 43,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SCHEDULES = 44;
+	 */
+	SCHEDULES = 44,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SECURITY = 45;
+	 */
+	SECURITY = 45,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SERVER_CLEANUP_EXECUTIONS = 46;
+	 */
+	SERVER_CLEANUP_EXECUTIONS = 46,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SERVER_MANAGEMENT = 47;
+	 */
+	SERVER_MANAGEMENT = 47,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SERVER_MIGRATIONS = 48;
+	 */
+	SERVER_MIGRATIONS = 48,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SERVER_PRIVATE_NETWORKS = 49;
+	 */
+	SERVER_PRIVATE_NETWORKS = 49,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SERVERS = 50;
+	 */
+	SERVERS = 50,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SERVICE_APPLICATION = 51;
+	 */
+	SERVICE_APPLICATION = 51,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SERVICE_COMPOSE = 52;
+	 */
+	SERVICE_COMPOSE = 52,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SERVICE_DATABASE = 53;
+	 */
+	SERVICE_DATABASE = 53,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SERVICE_GIT = 54;
+	 */
+	SERVICE_GIT = 54,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SERVICES = 55;
+	 */
+	SERVICES = 55,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SETTINGS = 56;
+	 */
+	SETTINGS = 56,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_SSH_KEYS = 57;
+	 */
+	SSH_KEYS = 57,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_TAGS = 58;
+	 */
+	TAGS = 58,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_USER_POLICY = 59;
+	 */
+	USER_POLICY = 59,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_USERS = 60;
+	 */
+	USERS = 60,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_VAULT_PROVIDERS = 61;
+	 */
+	VAULT_PROVIDERS = 61,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_VOLUME_BACKUPS = 62;
+	 */
+	VOLUME_BACKUPS = 62,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_APPLICATION_MIGRATIONS = 63;
+	 */
+	APPLICATION_MIGRATIONS = 63,
+
+	/**
+	 * @generated from enum value: WATCHED_TABLE_MIGRATION_OBJECTS = 64;
+	 */
+	MIGRATION_OBJECTS = 64,
 }
 
 /**
  * Describes the enum openoxide.api.v1.WatchedTable.
  */
-export const WatchedTableSchema: GenEnum<WatchedTable> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_realtime, 0);
+export const WatchedTableSchema: GenEnum<WatchedTable> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_realtime, 0);
 
 /**
  * Table-level change notifications. The server never streams row data over
@@ -383,20 +397,18 @@ export const WatchedTableSchema: GenEnum<WatchedTable> = /*@__PURE__*/
  * @generated from service openoxide.api.v1.RealtimeService
  */
 export const RealtimeService: GenService<{
-  /**
-   * Opens a per-organization watch stream. The first event always carries
-   * every table (a resync snapshot) so subscribers can cover the gap between
-   * their initial fetch and the stream opening; subsequent events carry only
-   * the tables that changed. Events are coalesced, so a burst of commits on
-   * the same table collapses into one notification.
-   *
-   * @generated from rpc openoxide.api.v1.RealtimeService.WatchTables
-   */
-  watchTables: {
-    methodKind: "server_streaming";
-    input: typeof EmptySchema;
-    output: typeof WatchTablesEventSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_realtime, 0);
-
+	/**
+	 * Opens a per-organization watch stream. The first event always carries
+	 * every table (a resync snapshot) so subscribers can cover the gap between
+	 * their initial fetch and the stream opening; subsequent events carry only
+	 * the tables that changed. Events are coalesced, so a burst of commits on
+	 * the same table collapses into one notification.
+	 *
+	 * @generated from rpc openoxide.api.v1.RealtimeService.WatchTables
+	 */
+	watchTables: {
+		methodKind: 'server_streaming';
+		input: typeof EmptySchema;
+		output: typeof WatchTablesEventSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_realtime, 0);

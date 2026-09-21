@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/monitoring.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { MonitoringService } from "./monitoring_pb";
+import {MonitoringService} from './monitoring_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringService.GetOverview
@@ -17,4 +17,5 @@ export const getMetrics = MonitoringService.method.getMetrics;
 /**
  * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerState
  */
-export const getContainerState = MonitoringService.method.getContainerState;
+export const getContainerState =
+	MonitoringService.method.getContainerState;

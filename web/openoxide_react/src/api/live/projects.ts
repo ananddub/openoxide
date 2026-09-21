@@ -1,4 +1,9 @@
-import {createServiceClient, useConnectMutation, useConnectQuery, useResourceListQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useConnectQuery,
+	useResourceListQuery,
+} from './query';
 import {ProjectService} from '#/gen/connect/openoxide/api/v1/project_pb';
 import type {Project} from '#/gen/connect/openoxide/api/v1/project_pb';
 
@@ -99,12 +104,10 @@ export function useProjectUpdate() {
 /** Delete a project by id (legacy REST: DELETE /projects/{id}). */
 export function useProjectDelete() {
 	return useConnectMutation(
-		(id: number | bigint) =>
-			projectClient.deleteProject({id: BigInt(id)}),
+		(id: number | bigint) => projectClient.deleteProject({id: BigInt(id)}),
 		{invalidate: [['projects']]},
 	);
 }
-
 
 // Re-export so agents building sibling modules share the same helpers.
 export {useResourceListQuery, useConnectQuery};

@@ -20,17 +20,17 @@ export function EmptyState({
 }) {
 	if (hasFilters) {
 		return (
-			<div className="rounded-2xl bg-card p-16 text-center">
+			<div className="rounded-xl bg-card p-16 text-center">
 				<div className="mx-auto max-w-md">
-					<div className="mb-4 flex size-16 items-center justify-center rounded-full bg-muted/60 mx-auto">
+					<div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-muted/60">
 						<SearchX className="size-7 text-muted-foreground/50" />
 					</div>
 					<h3 className="mb-2 text-lg font-medium text-foreground/80">
 						No matches
 					</h3>
 					<p className="text-sm leading-relaxed text-muted-foreground">
-						Nothing matches the current filters. Try a different search
-						or clear the filters to see everything.
+						Nothing matches the current filters. Try a different search or
+						clear the filters to see everything.
 					</p>
 					{onClearFilters && (
 						<button
@@ -46,7 +46,7 @@ export function EmptyState({
 	}
 
 	return (
-		<div className="rounded-2xl bg-card px-6 pb-10 text-center">
+		<div className="rounded-xl bg-card px-6 pb-10 text-center">
 			{/* Card-stack illustration — same vector language as the home
 			    welcome: layered panel, window dots, content lines, dashed
 			    add slot. Uses theme surface/ink tokens so it adapts. */}
@@ -70,7 +70,7 @@ export function EmptyState({
 						height="95"
 						rx="14"
 						fill="var(--th-sf-03)"
-						stroke="var(--th-bd-subtle)"
+						stroke="var(--border)"
 						strokeWidth="1"
 					/>
 					<rect
@@ -80,7 +80,7 @@ export function EmptyState({
 						height="95"
 						rx="14"
 						fill="var(--th-card-bg)"
-						stroke="var(--th-bd-default)"
+						stroke="var(--border)"
 						strokeWidth="1"
 					/>
 					<rect
@@ -148,10 +148,7 @@ export function EmptyState({
 					<circle cx="40" cy="140" r="6" fill="var(--th-on-08)" />
 					<circle cx="230" cy="40" r="3" fill="var(--th-on-12)" />
 					<circle cx="245" cy="130" r="5" fill="var(--th-on-06)" />
-					<path
-						d="M25 100l2-4 2 4-4-2 4 0-4 2z"
-						fill="var(--th-on-16)"
-					/>
+					<path d="M25 100l2-4 2 4-4-2 4 0-4 2z" fill="var(--th-on-16)" />
 					<path
 						d="M220 150l1.5-3 1.5 3-3-1.5 3 0-3 1.5z"
 						fill="var(--th-on-12)"

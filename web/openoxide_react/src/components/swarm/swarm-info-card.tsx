@@ -42,7 +42,7 @@ export function SwarmInfoCard({
 				{[1, 2, 3, 4].map(i => (
 					<div
 						key={i}
-						className="h-[86px] animate-pulse rounded-2xl bg-muted/40"
+						className="h-[86px] animate-pulse rounded-xl bg-muted/40"
 					/>
 				))}
 			</div>
@@ -54,7 +54,7 @@ export function SwarmInfoCard({
 
 	if (!isActive) {
 		return (
-			<div className="flex flex-col items-center justify-center gap-4 rounded-2xl bg-muted/10 px-6 py-16 text-center ring-1 ring-border/50">
+			<div className="flex flex-col items-center justify-center gap-4 rounded-xl bg-muted/10 px-6 py-16 text-center ring-1 ring-border/50">
 				<div className="flex size-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
 					<ShieldAlert className="size-5" />
 				</div>
@@ -74,7 +74,7 @@ export function SwarmInfoCard({
 	const nodeId = info?.node_id || '';
 
 	return (
-		<div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border/50">
+		<div className="overflow-hidden rounded-xl bg-card ring-1 ring-border/50">
 			{/* Header — identity + state */}
 			<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
 				<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">

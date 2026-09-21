@@ -1,4 +1,8 @@
-import {createServiceClient, useConnectMutation, useResourceListQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useResourceListQuery,
+} from './query';
 import {readResourceList} from './resource';
 // Only SwarmOperationsService is served by the backend (SwarmService has no
 // controller), so the live layer targets the operations variant: cluster
@@ -26,7 +30,9 @@ const swarmClient = createServiceClient(SwarmOperationsService);
  * Swarm payloads carry an optional server id; null/undefined targets the
  * panel's local Docker engine.
  */
-function toServerId(value: number | bigint | null | undefined): number | null {
+function toServerId(
+	value: number | bigint | null | undefined,
+): number | null {
 	return value === null || value === undefined ? null : Number(value);
 }
 
@@ -37,14 +43,21 @@ function toServerId(value: number | bigint | null | undefined): number | null {
 export function useSwarmNodeList(serverId: number | bigint | null = null) {
 	return useResourceListQuery<SwarmNodePayload>(
 		['swarm', 'nodes', String(serverId)],
-		() => swarmClient.listNodes({payload: JSON.stringify({server_id: toServerId(serverId)})}),
+		() =>
+			swarmClient.listNodes({
+				payload: JSON.stringify({server_id: toServerId(serverId)}),
+			}),
 	);
 }
 
 /** Update a swarm node's availability (`active` | `pause` | `drain`). */
 export function useSwarmNodeAvailabilityUpdate() {
 	return useConnectMutation(
-		(input: {server_id?: number | bigint | null; node_id: string; availability: string}) =>
+		(input: {
+			server_id?: number | bigint | null;
+			node_id: string;
+			availability: string;
+		}) =>
 			swarmClient.updateNodeAvailability({
 				payload: JSON.stringify({
 					server_id: toServerId(input.server_id),
@@ -154,7 +167,11 @@ export function useSwarmLeave() {
  */
 export function useSwarmJoin() {
 	return useConnectMutation(
-		(input: {target_server_id: number | bigint; manager_server_id?: number | bigint | null; role: string}) =>
+		(input: {
+			target_server_id: number | bigint;
+			manager_server_id?: number | bigint | null;
+			role: string;
+		}) =>
 			swarmClient.join({
 				payload: JSON.stringify({
 					target_server_id: Number(input.target_server_id),

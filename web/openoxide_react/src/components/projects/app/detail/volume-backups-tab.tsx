@@ -1,27 +1,16 @@
 import {useState} from 'react';
-import {
-	HardDrive,
-	Plus,
-	Play,
-	RotateCcw,
-	Trash2,
-	Clock,
-	ShieldCheck,
-	RefreshCw,
-} from 'lucide-react';
+import {HardDrive, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogDescription,
-	DialogFooter,
-} from '#/components/ui/dialog';
+import {DeleteConfirmDialog} from '#/components/shared/delete-confirm-dialog';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {CreateVolumeBackupModal} from './create-volume-backup-modal';
-import {useVolumeBackupDelete, useVolumeBackupRestore, useVolumeBackupRun} from '#/api/live';
+import {
+	useVolumeBackupDelete,
+	useVolumeBackupRestore,
+	useVolumeBackupRun,
+} from '#/api/live';
+import {VolumeBackupRow} from './volume-backups-tab/volume-backup-row';
 
 interface VolumeBackupsTabProps {
 	app: any;
@@ -44,35 +33,24 @@ export function VolumeBackupsTab({
 	} | null>(null);
 
 	const backups = Array.isArray(passedBackups) ? passedBackups : [];
-
-	// Filter backups for current application
 	const appBackups = backups.filter(
 		b => b.application_id === app?.id || b.app_name === app?.app_name,
 	);
 
-	// Mutations
 	const runMutation = useVolumeBackupRun();
 	const restoreMutation = useVolumeBackupRestore();
 	const deleteMutation = useVolumeBackupDelete();
 
-	const handleRunBackup = async (id: number) => {
-		setActiveActionId({id, action: 'run'});
+	const runAction = async (
+		id: number,
+		action: 'run' | 'restore',
+		fn: () => Promise<unknown>,
+		success: string,
+	) => {
+		setActiveActionId({id, action});
 		try {
-			await runMutation.mutateAsync(id);
-			toast.success('Volume backup execution started successfully');
-			onRefresh?.();
-		} catch (err: any) {
-			toast.error(formatApiError(err));
-		} finally {
-			setActiveActionId(null);
-		}
-	};
-
-	const handleRestoreBackup = async (id: number) => {
-		setActiveActionId({id, action: 'restore'});
-		try {
-			await restoreMutation.mutateAsync({id, backup_file: ''});
-			toast.success('Volume restore process initiated successfully');
+			await fn();
+			toast.success(success);
 			onRefresh?.();
 		} catch (err: any) {
 			toast.error(formatApiError(err));
@@ -116,7 +94,7 @@ export function VolumeBackupsTab({
 			</section>
 
 			{/* Backups List */}
-			<section className="overflow-hidden rounded-xl bg-card shadow-sm">
+			<section className="overflow-hidden rounded-xl border bg-card">
 				{appBackups.length === 0 ? (
 					<div className="p-12 text-center text-muted-foreground">
 						<HardDrive className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
@@ -131,78 +109,36 @@ export function VolumeBackupsTab({
 				) : (
 					<div className="divide-y divide-border/60">
 						{appBackups.map(b => (
-							<div
+							<VolumeBackupRow
 								key={b.id}
-								className="flex flex-col justify-between gap-4 p-4 transition-colors hover:bg-muted/10 sm:flex-row sm:items-center">
-								<div className="flex min-w-0 items-start gap-3">
-									<div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-										<HardDrive className="h-4 w-4" />
-									</div>
-									<div className="min-w-0">
-										<div className="flex items-center gap-2">
-											<span className="truncate text-xs font-bold text-foreground">
-												{b.name}
-											</span>
-											{b.turn_off === 1 && (
-												<span className="rounded bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] text-amber-600 dark:text-amber-400">
-													Pause container on backup
-												</span>
-											)}
-										</div>
-										<div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-muted-foreground">
-											<span className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground/80">
-												Volume: {b.volume_name}
-											</span>
-											<span className="flex items-center gap-1">
-												<Clock className="h-3 w-3 text-muted-foreground" />{' '}
-												Schedule: {b.cron_expression}
-											</span>
-											<span className="flex items-center gap-1">
-												<ShieldCheck className="h-3 w-3 text-emerald-500" />{' '}
-												S3 Prefix: {b.prefix}
-											</span>
-										</div>
-									</div>
-								</div>
-
-								<div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
-									<Button
-										onClick={() => handleRunBackup(b.id)}
-										disabled={activeActionId?.id === b.id}
-										variant="outline"
-										size="sm"
-										className="flex h-8 items-center gap-1.5 rounded-lg  text-xs font-semibold text-foreground hover:bg-muted">
-										{activeActionId?.id === b.id &&
-										activeActionId?.action === 'run' ? (
-											<RefreshCw className="h-3.5 w-3.5 animate-spin" />
-										) : (
-											<Play className="h-3.5 w-3.5" />
-										)}
-										Run Now
-									</Button>
-									<Button
-										onClick={() => handleRestoreBackup(b.id)}
-										disabled={activeActionId?.id === b.id}
-										variant="outline"
-										size="sm"
-										className="flex h-8 items-center gap-1.5 rounded-lg  text-xs font-semibold text-foreground hover:bg-muted">
-										{activeActionId?.id === b.id &&
-										activeActionId?.action === 'restore' ? (
-											<RefreshCw className="h-3.5 w-3.5 animate-spin" />
-										) : (
-											<RotateCcw className="h-3.5 w-3.5" />
-										)}
-										Restore
-									</Button>
-									<Button
-										onClick={() => setDeleteTargetId(b.id)}
-										variant="ghost"
-										size="icon"
-										className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-										<Trash2 className="h-4 w-4" />
-									</Button>
-								</div>
-							</div>
+								backup={b}
+								activeAction={
+									activeActionId && activeActionId.id === b.id
+										? activeActionId.action
+										: null
+								}
+								onRun={() =>
+									void runAction(
+										b.id,
+										'run',
+										() => runMutation.mutateAsync(b.id),
+										'Volume backup execution started successfully',
+									)
+								}
+								onRestore={() =>
+									void runAction(
+										b.id,
+										'restore',
+										() =>
+											restoreMutation.mutateAsync({
+												id: b.id,
+												backup_file: '',
+											}),
+										'Volume restore process initiated successfully',
+									)
+								}
+								onDelete={() => setDeleteTargetId(b.id)}
+							/>
 						))}
 					</div>
 				)}
@@ -216,29 +152,13 @@ export function VolumeBackupsTab({
 				onSuccess={() => onRefresh?.()}
 			/>
 
-			{/* Custom Shadcn Delete Confirmation Modal */}
-			<Dialog
+			<DeleteConfirmDialog
 				open={deleteTargetId !== null}
-				onOpenChange={open => !open && setDeleteTargetId(null)}>
-				<DialogContent className="sm:max-w-[420px]">
-					<DialogHeader>
-						<DialogTitle>Delete Volume Backup</DialogTitle>
-						<DialogDescription>
-							Are you sure you want to delete this volume backup
-							configuration? Scheduled S3 snapshot backups will stop
-							running.
-						</DialogDescription>
-					</DialogHeader>
-					<DialogFooter className="pt-2">
-						<Button
-							variant="destructive"
-							onClick={handleDelete}
-							className="h-9 w-full px-6 text-xs font-bold sm:w-auto">
-							Delete Backup Rule
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+				onOpenChange={open => !open && setDeleteTargetId(null)}
+				title="Delete Volume Backup"
+				description="Are you sure you want to delete this volume backup configuration? Scheduled S3 snapshot backups will stop running."
+				onConfirm={handleDelete}
+			/>
 		</div>
 	);
 }

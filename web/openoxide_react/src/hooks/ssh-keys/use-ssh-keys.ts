@@ -1,7 +1,11 @@
 import {useState} from 'react';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {useSshKeyCreate, useSshKeyGeneratePair, useSshKeyDelete} from '#/api/live';
+import {
+	useSshKeyCreate,
+	useSshKeyGeneratePair,
+	useSshKeyDelete,
+} from '#/api/live';
 
 export function useCreateSshKey(
 	onClose: () => void,

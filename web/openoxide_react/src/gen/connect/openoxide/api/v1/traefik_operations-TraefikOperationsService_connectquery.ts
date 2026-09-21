@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/traefik_operations.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { TraefikOperationsService } from "./traefik_operations_pb";
+import {TraefikOperationsService} from './traefik_operations_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.TraefikOperationsService.ListFiles
@@ -37,7 +37,8 @@ export const requestStatus = TraefikOperationsService.method.requestStatus;
 /**
  * @generated from rpc openoxide.api.v1.TraefikOperationsService.ToggleRequests
  */
-export const toggleRequests = TraefikOperationsService.method.toggleRequests;
+export const toggleRequests =
+	TraefikOperationsService.method.toggleRequests;
 
 /**
  * @generated from rpc openoxide.api.v1.TraefikOperationsService.Logs
@@ -57,4 +58,5 @@ export const updateVersion = TraefikOperationsService.method.updateVersion;
 /**
  * @generated from rpc openoxide.api.v1.TraefikOperationsService.RenderMiddleware
  */
-export const renderMiddleware = TraefikOperationsService.method.renderMiddleware;
+export const renderMiddleware =
+	TraefikOperationsService.method.renderMiddleware;

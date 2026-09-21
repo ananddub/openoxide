@@ -1,10 +1,6 @@
 import {useMemo, useState} from 'react';
 import {createFileRoute, useNavigate} from '@tanstack/react-router';
-import {
-	HardDrive as BucketIcon,
-	Cloud,
-	KeyRound,
-} from 'lucide-react';
+import {HardDrive as BucketIcon, Cloud, KeyRound} from 'lucide-react';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {DestinationsHeader} from '#/components/destinations/destinations-header';
@@ -62,7 +58,9 @@ function DestinationsPage() {
 	};
 
 	const handleTest = async (id: string | number) => {
-		const destination = destinations.find(item => String(item.id) === String(id));
+		const destination = destinations.find(
+			item => String(item.id) === String(id),
+		);
 		if (!destination) {
 			toast.error('S3 destination not found');
 			return;
@@ -78,7 +76,10 @@ function DestinationsPage() {
 					secret_access_key: destination.secret_access_key,
 				}),
 				new Promise<never>((_, reject) =>
-					setTimeout(() => reject(new Error('S3 connection test timed out')), 15_000),
+					setTimeout(
+						() => reject(new Error('S3 connection test timed out')),
+						15_000,
+					),
 				),
 			]);
 			toast.success('S3 Storage Destination connection test passed!');
@@ -122,7 +123,11 @@ function DestinationsPage() {
 						title="Overview"
 						icon={BucketIcon}
 						rows={[
-							{icon: BucketIcon, label: 'Destinations', value: destinations.length},
+							{
+								icon: BucketIcon,
+								label: 'Destinations',
+								value: destinations.length,
+							},
 							{icon: Cloud, label: 'Top provider', value: providerCount},
 						]}
 					/>

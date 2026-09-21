@@ -1,13 +1,14 @@
 import {useState} from 'react';
 import {createFileRoute, useNavigate} from '@tanstack/react-router';
-import {ArrowLeft, Download, Key, RefreshCw, Sparkles} from 'lucide-react';
+import {KeyRound, RefreshCw, Sparkles} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Textarea} from '#/components/ui/textarea';
+import {Titlebar} from '#/components/shared/titlebar';
 import {toast} from 'sonner';
 import {useSshKeyCreate, useSshKeyGeneratePair} from '#/api/live/ssh_keys';
-import {downloadKeyFile} from '#/utils/ssh-key-utils';
 import {AuthorizeCommandBlock} from '#/components/ssh-keys/authorize-command-block';
+import {SshKeyDownloadButtons} from '#/components/ssh-keys/ssh-key-download-buttons';
 
 export const Route = createFileRoute('/_app/ssh-keys/new')({
 	component: SshKeyCreatePage,
@@ -83,30 +84,19 @@ function SshKeyCreatePage() {
 
 	return (
 		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
-			{/* ── Page header ── */}
-			<div className="flex items-center gap-3">
-				<button
-					type="button"
-					onClick={() => void navigate({to: '/ssh-keys'})}
-					title="Back to SSH Keys"
-					className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-foreground/[0.06] hover:text-foreground">
-					<ArrowLeft className="size-4" />
-				</button>
-				<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-					<Key className="size-4 text-foreground/70" />
-				</div>
-				<div className="min-w-0">
-					<h1 className="truncate text-2xl font-medium tracking-tight text-foreground/80">
-						Add SSH Key
-					</h1>
-					<p className="text-sm text-muted-foreground/70">
-						Add an existing SSH key pair or generate a new one.
-					</p>
-				</div>
-			</div>
+			{/* ── Vercel-style titlebar ── */}
+			<Titlebar
+				breadcrumbs={[
+					{label: 'SSH Keys', to: '/ssh-keys', icon: KeyRound},
+					{label: 'Add SSH Key'},
+				]}
+				icon={<KeyRound className="text-foreground/70" />}
+				title="Add SSH Key"
+				description="Add an existing SSH key pair or generate a new one."
+			/>
 
 			{/* ── Form card ── */}
-			<div className="mx-auto w-full min-w-0 max-w-3xl rounded-xl bg-card p-6 ring-1 ring-border/50">
+			<div className="mx-auto w-full max-w-3xl min-w-0 rounded-xl bg-card p-6 ring-1 ring-border/50">
 				<form onSubmit={handleSubmit} className="min-w-0 space-y-4">
 					<div className="min-w-0 space-y-1.5">
 						<label className="text-xs font-semibold">Key Name *</label>
@@ -133,34 +123,25 @@ function SshKeyCreatePage() {
 					</div>
 
 					<div className="grid w-full min-w-0 grid-cols-2 gap-2.5">
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							onClick={() => handleGeneratePair('ed25519')}
-							disabled={generating}
-							className="h-9 w-full text-xs font-medium transition-colors hover:bg-accent/60">
-							{generating ? (
-								<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-							) : (
-								<Sparkles className="mr-1.5 h-3.5 w-3.5" />
-							)}
-							Generate ED25519
-						</Button>
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							onClick={() => handleGeneratePair('rsa')}
-							disabled={generating}
-							className="h-9 w-full text-xs font-medium transition-colors hover:bg-accent/60">
-							{generating ? (
-								<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-							) : (
-								<Sparkles className="mr-1.5 h-3.5 w-3.5" />
-							)}
-							Generate RSA 4096
-						</Button>
+						{(['ed25519', 'rsa'] as const).map(type => (
+							<Button
+								key={type}
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => handleGeneratePair(type)}
+								disabled={generating}
+								className="h-9 w-full text-xs font-medium transition-colors hover:bg-accent/60">
+								{generating ? (
+									<RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+								) : (
+									<Sparkles className="mr-1.5 h-3.5 w-3.5" />
+								)}
+								{type === 'ed25519'
+									? 'Generate ED25519'
+									: 'Generate RSA 4096'}
+							</Button>
+						))}
 					</div>
 
 					<div className="min-w-0 space-y-1.5">
@@ -193,34 +174,11 @@ function SshKeyCreatePage() {
 					<AuthorizeCommandBlock publicKey={publicKey} />
 
 					<div className="flex flex-col items-center justify-between gap-2 border-t border-border/50 pt-4 sm:flex-row">
-						<div className="flex w-full items-center gap-2 sm:w-auto">
-							{publicKey && (
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									onClick={() =>
-										downloadKeyFile(`${formattedFileName}.pub`, publicKey)
-									}
-									className="h-9 gap-1.5 text-xs font-medium">
-									<Download className="h-3.5 w-3.5" />
-									Download Pub
-								</Button>
-							)}
-							{privateKey && (
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									onClick={() =>
-										downloadKeyFile(`${formattedFileName}.pem`, privateKey)
-									}
-									className="h-9 gap-1.5 text-xs font-medium">
-									<Download className="h-3.5 w-3.5 text-amber-500" />
-									Download Private
-								</Button>
-							)}
-						</div>
+						<SshKeyDownloadButtons
+							fileName={formattedFileName}
+							publicKey={publicKey}
+							privateKey={privateKey}
+						/>
 
 						<Button
 							type="submit"

@@ -1,27 +1,20 @@
-import {useState, useMemo} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
-import {toast} from 'sonner';
-import {
-	useDomainCreate,
-	useDomainDelete,
-	useDomainUpdate,
-	useScheduleCreate,
-	useScheduleDelete,
-	useScheduleUpdate,
-	useVolumeBackupCreate,
-	useVolumeBackupDelete,
-	useVolumeBackupUpdate,
-} from '#/api/live';
-import {formatApiError} from '#/api/utils';
+import {useMemo, useState} from 'react';
 import {ComposeVisualizer} from '#/components/projects/compose/visualizer/compose-visualizer';
-import {ComposeDomainModal} from '#/components/projects/compose/detail/domains/compose-domain-modal';
-import {CreateScheduleModal} from '#/components/projects/compose/detail/schedules/create-schedule-modal';
-import {CreateBackupModal} from '#/components/projects/compose/detail/backups/create-backup-modal';
-import {TerminalCard} from '#/components/shared/terminal-card';
-import {ComposeDirectContainerLogsModal} from '#/components/projects/compose/detail/logs/compose-direct-container-logs-modal';
-import {ComposeDirectDeployLogsModal} from '#/components/projects/compose/detail/deployments/compose-direct-deploy-logs-modal';
 import type {DomainFormData} from '#/components/projects/common/domain-dialog';
-import {useOrganizations} from '#/stores/session-context';
+import type {
+	ActiveModal,
+	ArchitectureOwner,
+} from '#/components/projects/detail/architecture/types';
+import {useDomainActions} from '#/components/projects/detail/architecture/use-domain-actions';
+import {
+	useScheduleActions,
+	type ScheduleFormData,
+} from '#/components/projects/detail/architecture/use-schedule-actions';
+import {
+	useBackupActions,
+	type BackupFormData,
+} from '#/components/projects/detail/architecture/use-backup-actions';
+import {TabModals} from '#/components/projects/detail/architecture/tab-modals';
 
 interface AppArchitectureTabProps {
 	app: any;
@@ -38,40 +31,21 @@ export function AppArchitectureTab({
 	backups: passedBackups,
 	onRefresh,
 }: AppArchitectureTabProps) {
-	const queryClient = useQueryClient();
-	const appId = app?.id;
-	const {activeOrg} = useOrganizations();
+	const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 
-	const createDomainMutation = useDomainCreate();
-	const patchDomainMutation = useDomainUpdate();
-	const deleteDomainMutation = useDomainDelete();
-
-	const createScheduleMutation = useScheduleCreate();
-	const patchScheduleMutation = useScheduleUpdate();
-	const deleteScheduleMutation = useScheduleDelete();
-
-	const createBackupMutation = useVolumeBackupCreate();
-	const patchBackupMutation = useVolumeBackupUpdate();
-	const deleteBackupMutation = useVolumeBackupDelete();
-
-	const [activeModal, setActiveModal] = useState<
-		| 'domain'
-		| 'schedule'
-		| 'backup'
-		| 'terminal'
-		| 'logs'
-		| 'deployLogs'
-		| null
-	>(null);
-	const [editingDomainData, setEditingDomainData] = useState<any | null>(
-		null,
+	const owner = useMemo<ArchitectureOwner>(
+		() => ({
+			kind: 'app',
+			id: app?.id,
+			appName: app?.app_name,
+			name: app?.name,
+		}),
+		[app],
 	);
-	const [editingScheduleData, setEditingScheduleData] = useState<
-		any | null
-	>(null);
-	const [editingBackupData, setEditingBackupData] = useState<any | null>(
-		null,
-	);
+
+	const domainActions = useDomainActions(owner, onRefresh);
+	const scheduleActions = useScheduleActions(owner, onRefresh);
+	const backupActions = useBackupActions(owner, onRefresh);
 
 	const appService = useMemo(
 		() => [
@@ -89,208 +63,48 @@ export function AppArchitectureTab({
 	);
 
 	const domains = Array.isArray(passedDomains) ? passedDomains : [];
+	const schedules = Array.isArray(passedSchedules) ? passedSchedules : [];
 
 	const appBackups = useMemo(() => {
 		const list = Array.isArray(passedBackups) ? passedBackups : [];
 		return list.filter(
 			(b: any) =>
-				b.application_id === appId || b.app_name === app?.app_name,
+				b.application_id === app?.id || b.app_name === app?.app_name,
 		);
-	}, [passedBackups, appId, app]);
-
-	const appSchedules = useMemo(() => {
-		return Array.isArray(passedSchedules) ? passedSchedules : [];
-	}, [passedSchedules]);
+	}, [passedBackups, app]);
 
 	const servicesList = useMemo(
 		() => [app?.name || app?.app_name || 'app'],
 		[app],
 	);
 
-	// Context Menu Handlers
-	const handleAddDomain = () => {
-		setEditingDomainData(null);
-		setActiveModal('domain');
-	};
+	const openModal =
+		(modal: ActiveModal, clearEditing?: () => void) => () => {
+			clearEditing?.();
+			setActiveModal(modal);
+		};
+	const openEdit =
+		(modal: 'domain' | 'schedule' | 'backup') => (item: any) => {
+			if (modal === 'domain') domainActions.setEditing(item);
+			if (modal === 'schedule') scheduleActions.setEditing(item);
+			if (modal === 'backup') backupActions.setEditing(item);
+			setActiveModal(modal);
+		};
 
-	const handleEditDomain = (domainData: any) => {
-		setEditingDomainData(domainData);
-		setActiveModal('domain');
-	};
-
-	const handleAddSchedule = () => {
-		setEditingScheduleData(null);
-		setActiveModal('schedule');
-	};
-
-	const handleEditSchedule = (scheduleData: any) => {
-		setEditingScheduleData(scheduleData);
-		setActiveModal('schedule');
-	};
-
-	const handleAddBackup = () => {
-		setEditingBackupData(null);
-		setActiveModal('backup');
-	};
-
-	const handleEditBackup = (backupData: any) => {
-		setEditingBackupData(backupData);
-		setActiveModal('backup');
-	};
-
-	const handleOpenTerminal = () => {
-		setActiveModal('terminal');
-	};
-
-	const handleViewLogs = () => {
-		setActiveModal('logs');
-	};
-
-	const handleViewDeployLogs = () => {
-		setActiveModal('deployLogs');
-	};
-
-	const handleDeleteDomain = async (domainData: any) => {
-		const domainId = domainData?.id;
-		if (!domainId) return;
-		try {
-			await deleteDomainMutation.mutateAsync(domainId);
-			toast.success('Domain removed');
-			queryClient.invalidateQueries();
-			onRefresh?.();
-		} catch (e: any) {
-			toast.error(e?.message || 'Failed to delete domain');
-		}
-	};
-
-	const handleDeleteSchedule = async (scheduleData: any) => {
-		const scheduleId = scheduleData?.id;
-		if (!scheduleId) return;
-		try {
-			await deleteScheduleMutation.mutateAsync(scheduleId);
-			toast.success('Schedule removed');
-			queryClient.invalidateQueries();
-			onRefresh?.();
-		} catch (e: any) {
-			toast.error(e?.message || 'Failed to delete schedule');
-		}
-	};
-
-	const handleDeleteBackup = async (backupData: any) => {
-		const backupId = backupData?.id;
-		if (!backupId) return;
-		try {
-			await deleteBackupMutation.mutateAsync(backupId);
-			toast.success('Backup rule removed');
-			queryClient.invalidateQueries();
-			onRefresh?.();
-		} catch (e: any) {
-			toast.error(e?.message || 'Failed to delete backup rule');
-		}
+	const closeModals = () => setActiveModal(null);
+	const closeModal = (clearEditing: () => void) => () => {
+		clearEditing();
+		closeModals();
 	};
 
 	const handleSaveDomain = async (data: DomainFormData) => {
-		try {
-			if (editingDomainData?.id) {
-				await patchDomainMutation.mutateAsync({id: editingDomainData.id, ...data});
-				toast.success('Domain updated successfully');
-			} else {
-				await createDomainMutation.mutateAsync({...data, application_id: appId});
-				toast.success('Domain attached successfully');
-			}
-			queryClient.invalidateQueries();
-			setActiveModal(null);
-			setEditingDomainData(null);
-		} catch (e: any) {
-			toast.error(e?.message || 'Failed to save domain');
-		}
+		if (await domainActions.save(data)) setActiveModal(null);
 	};
-
-	const handleSaveSchedule = async (data: {
-		name: string;
-		serviceName: string;
-		command: string;
-		cronExpr: string;
-	}) => {
-		try {
-			if (editingScheduleData?.id) {
-				await patchScheduleMutation.mutateAsync({
-						id: editingScheduleData.id,
-						name: data.name,
-						cron_expression: data.cronExpr,
-						command: data.command,
-						service_name: data.serviceName,
-					});
-				toast.success('Schedule updated successfully');
-			} else {
-				await createScheduleMutation.mutateAsync({
-						name: data.name,
-						cron_expression: data.cronExpr,
-						command: data.command,
-						application_id: appId,
-						organization_id: activeOrg?.id || 1,
-						app_name: app?.app_name || app?.name || data.serviceName,
-						service_name: data.serviceName,
-						schedule_type: 'APPLICATION',
-						schedule_action: 'EXEC',
-						shell_type: 'BASH',
-						enabled: 1,
-					});
-				toast.success('Schedule created successfully');
-			}
-			queryClient.invalidateQueries();
-			setActiveModal(null);
-			setEditingScheduleData(null);
-		} catch (e: any) {
-			toast.error(e?.message || 'Failed to save schedule');
-		}
+	const handleSaveSchedule = async (data: ScheduleFormData) => {
+		if (await scheduleActions.save(data)) setActiveModal(null);
 	};
-
-	const handleSaveBackup = async (data: {
-		name: string;
-		serviceName: string;
-		volumeName: string;
-		cronExpr: string;
-		prefix: string;
-		turnOff: boolean;
-		destinationId: number;
-	}) => {
-		try {
-			if (editingBackupData?.id) {
-				await patchBackupMutation.mutateAsync({
-						id: editingBackupData.id,
-						name: data.name,
-						volume_name: data.volumeName,
-						prefix: data.prefix || '',
-						service_name: data.serviceName,
-						turn_off: data.turnOff ? 1 : 0,
-						cron_expression: data.cronExpr,
-					});
-				toast.success('Volume backup updated successfully');
-			} else {
-				await createBackupMutation.mutateAsync({
-						name: data.name,
-						volume_name: data.volumeName,
-						prefix: data.prefix || '',
-						service_type: 'standalone',
-						app_name:
-							app?.app_name || app?.name || data.serviceName || 'app',
-						service_name: data.serviceName,
-						turn_off: data.turnOff ? 1 : 0,
-						cron_expression: data.cronExpr,
-						application_id: appId,
-						destination_id: data.destinationId,
-					});
-				toast.success('Volume backup created successfully');
-			}
-			queryClient.invalidateQueries({
-				queryKey: ['get', '/backups/volume'],
-			});
-			setActiveModal(null);
-			setEditingBackupData(null);
-		} catch (error: unknown) {
-			toast.error(formatApiError(error));
-		}
+	const handleSaveBackup = async (data: BackupFormData) => {
+		if (await backupActions.save(data)) setActiveModal(null);
 	};
 
 	return (
@@ -309,88 +123,44 @@ export function AppArchitectureTab({
 				customServices={appService}
 				domains={domains as any}
 				backups={appBackups as any}
-				schedules={appSchedules as any}
-				onAddDomain={handleAddDomain}
-				onAddSchedule={handleAddSchedule}
-				onAddBackup={handleAddBackup}
-				onOpenTerminal={handleOpenTerminal}
-				onViewLogs={handleViewLogs}
-				onViewDeployLogs={handleViewDeployLogs}
-				onEditDomain={handleEditDomain}
-				onDeleteDomain={handleDeleteDomain}
-				onEditSchedule={handleEditSchedule}
-				onDeleteSchedule={handleDeleteSchedule}
-				onEditBackup={handleEditBackup}
-				onDeleteBackup={handleDeleteBackup}
+				schedules={schedules as any}
+				onAddDomain={openModal('domain', () =>
+					domainActions.setEditing(null),
+				)}
+				onAddSchedule={openModal('schedule', () =>
+					scheduleActions.setEditing(null),
+				)}
+				onAddBackup={openModal('backup', () =>
+					backupActions.setEditing(null),
+				)}
+				onOpenTerminal={openModal('terminal')}
+				onViewLogs={openModal('logs')}
+				onViewDeployLogs={openModal('deployLogs')}
+				onEditDomain={openEdit('domain')}
+				onDeleteDomain={domainActions.remove}
+				onEditSchedule={openEdit('schedule')}
+				onDeleteSchedule={scheduleActions.remove}
+				onEditBackup={openEdit('backup')}
+				onDeleteBackup={backupActions.remove}
 			/>
 
-			{/* Domain Modal */}
-			{activeModal === 'domain' && (
-				<ComposeDomainModal
-					isOpen={true}
-					onClose={() => {
-						setActiveModal(null);
-						setEditingDomainData(null);
-					}}
-					editingDomain={editingDomainData}
-					servicesList={[]}
-					onSave={handleSaveDomain}
-				/>
-			)}
-
-			{/* Schedule Modal */}
-			{activeModal === 'schedule' && (
-				<CreateScheduleModal
-					isOpen={true}
-					onClose={() => {
-						setActiveModal(null);
-						setEditingScheduleData(null);
-					}}
-					editingSchedule={editingScheduleData}
-					servicesList={servicesList}
-					onCreate={handleSaveSchedule}
-				/>
-			)}
-
-			{/* Backup Modal */}
-			{activeModal === 'backup' && (
-				<CreateBackupModal
-					isOpen={true}
-					onClose={() => {
-						setActiveModal(null);
-						setEditingBackupData(null);
-					}}
-					editingBackup={editingBackupData}
-					servicesList={servicesList}
-					defaultServiceName={app?.name || app?.app_name}
-					onCreate={handleSaveBackup}
-				/>
-			)}
-
-			{/* Terminal Shell — inline card */}
-			{activeModal === 'terminal' && (
-				<TerminalCard app={app} enabled={true} onClose={() => setActiveModal(null)} />
-			)}
-
-			{/* Live Container Logs Modal */}
-			{activeModal === 'logs' && (
-				<ComposeDirectContainerLogsModal
-					isOpen={true}
-					onClose={() => setActiveModal(null)}
-					compose={app}
-					serviceName={app?.name || app?.app_name}
-				/>
-			)}
-
-			{/* Direct Deployment Logs Stream Modal */}
-			{activeModal === 'deployLogs' && (
-				<ComposeDirectDeployLogsModal
-					isOpen={true}
-					onClose={() => setActiveModal(null)}
-					composeId={appId}
-					serviceName={app?.name || app?.app_name}
-				/>
-			)}
+			<TabModals
+				resource={app}
+				activeModal={activeModal}
+				terminalResource={app}
+				serviceName={app?.name || app?.app_name}
+				domainServicesList={[]}
+				servicesList={servicesList}
+				defaultServiceName={app?.name || app?.app_name}
+				domainActions={domainActions}
+				scheduleActions={scheduleActions}
+				backupActions={backupActions}
+				closeModals={closeModals}
+				closeModal={closeModal}
+				onSaveDomain={handleSaveDomain}
+				onSaveSchedule={handleSaveSchedule}
+				onSaveBackup={handleSaveBackup}
+			/>
 		</div>
 	);
 }

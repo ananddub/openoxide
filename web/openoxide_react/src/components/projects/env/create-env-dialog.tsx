@@ -4,12 +4,12 @@ import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {formatApiError} from '#/api/utils';
 
 interface CreateEnvDialogProps {
@@ -57,17 +57,15 @@ export function CreateEnvDialog({
 	};
 
 	return (
-		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="border- bg-card sm:max-w-md">
-				<DialogHeader>
-					<DialogTitle className="text-base font-bold">
-						Create Environment
-					</DialogTitle>
-					<DialogDescription className="text-xs text-muted-foreground">
+		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle>Create Environment</SheetTitle>
+					<SheetDescription>
 						Add a new deployment target environment (e.g. Staging,
 						Production).
-					</DialogDescription>
-				</DialogHeader>
+					</SheetDescription>
+				</SheetHeader>
 
 				<form onSubmit={handleSubmit} className="mt-2 space-y-4">
 					<div className="space-y-1">
@@ -104,7 +102,7 @@ export function CreateEnvDialog({
 						</Button>
 					</div>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</SheetContent>
+		</Sheet>
 	);
 }

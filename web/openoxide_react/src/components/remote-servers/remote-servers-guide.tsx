@@ -3,7 +3,7 @@ import {HelpCircle, Server, ShieldCheck, Cpu} from 'lucide-react';
 
 export function RemoteServersGuide() {
 	return (
-		<Card className="mt-4 rounded-2xl bg-card/60 p-5 shadow-sm">
+		<Card className="mt-4 rounded-xl border bg-card p-5 shadow-sm">
 			<CardContent className="flex flex-col gap-4 p-0">
 				<div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
 					<HelpCircle className="h-5 w-5 shrink-0 text-primary" />

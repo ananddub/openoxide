@@ -22,14 +22,18 @@ export type SystemHealthPayload = {
 };
 
 export function useSystemHealth(options?: {enabled?: boolean}) {
-	return useConnectQuery<SystemHealthPayload>(['system', 'health'], async () => {
-		const response = await systemClient.health({});
-		return {
-			success: response.success,
-			operation: response.operation,
-			message: response.message || null,
-		};
-	}, options);
+	return useConnectQuery<SystemHealthPayload>(
+		['system', 'health'],
+		async () => {
+			const response = await systemClient.health({});
+			return {
+				success: response.success,
+				operation: response.operation,
+				message: response.message || null,
+			};
+		},
+		options,
+	);
 }
 
 /** One `docker system df` row; values are docker CLI display strings. */

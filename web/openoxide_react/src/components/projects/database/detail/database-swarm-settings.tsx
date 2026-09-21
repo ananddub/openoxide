@@ -39,7 +39,7 @@ export function DatabaseSwarmSettings({
 		description: swarmDescription(id),
 	}));
 	return (
-		<section className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-sm">
+		<section className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-sm">
 			<div className="flex flex-wrap items-start justify-between gap-4">
 				<div>
 					<h3 className="flex items-center gap-2 text-base font-bold">
@@ -67,14 +67,54 @@ export function DatabaseSwarmSettings({
 							Configure swarm settings for your service.
 						</DialogDescription>
 					</DialogHeader>
-					<div className="mb-2"><AlertBlock type="info">Changing settings such as placements may cause the logs/monitoring, backups and other features to be unavailable.</AlertBlock></div>
+					<div className="mb-2">
+						<AlertBlock type="info">
+							Changing settings such as placements may cause the
+							logs/monitoring, backups and other features to be
+							unavailable.
+						</AlertBlock>
+					</div>
 					<div className="flex min-h-0 flex-1 gap-4 py-2">
-						<nav className="flex w-64 min-w-64 shrink-0 flex-col overflow-y-auto border-r pr-4"><div className="flex w-full flex-col gap-1"><TooltipProvider>{menuItems.map(item => <Tooltip key={item.id}><TooltipTrigger asChild><button type="button" onClick={() => state.setActive(item.id)} className={cn('!flex !w-full min-h-14 self-stretch min-w-0 flex-col rounded-md px-3 py-2 text-left text-sm transition-colors', state.active === item.id ? 'bg-white text-foreground shadow-sm dark:bg-white/10' : 'text-foreground hover:bg-muted')}><div className="w-full truncate font-medium">{item.label}</div><div className="w-full truncate text-xs text-muted-foreground">{item.description}</div></button></TooltipTrigger><TooltipContent side="right" className="max-w-xs"><p className="text-xs">{item.description}</p></TooltipContent></Tooltip>)}</TooltipProvider></div></nav>
+						<nav className="flex w-64 min-w-64 shrink-0 flex-col overflow-y-auto border-r pr-4">
+							<div className="flex w-full flex-col gap-1">
+								<TooltipProvider>
+									{menuItems.map(item => (
+										<Tooltip key={item.id}>
+											<TooltipTrigger
+												render={
+													<button
+														type="button"
+														onClick={() => state.setActive(item.id)}
+														className={cn(
+															'!flex min-h-14 !w-full min-w-0 flex-col self-stretch rounded-md px-3 py-2 text-left text-sm transition-colors',
+															state.active === item.id
+																? 'bg-white text-foreground shadow-sm dark:bg-white/10'
+																: 'text-foreground hover:bg-muted',
+														)}>
+														<div className="w-full truncate font-medium">
+															{item.label}
+														</div>
+														<div className="w-full truncate text-xs text-muted-foreground">
+															{item.description}
+														</div>
+													</button>
+												}
+											/>
+											<TooltipContent side="right" className="max-w-xs">
+												<p className="text-xs">{item.description}</p>
+											</TooltipContent>
+										</Tooltip>
+									))}
+								</TooltipProvider>
+							</div>
+						</nav>
 						<div className="min-h-0 flex-1 overflow-y-auto p-1">
 							{state.active === 'stop_grace_period_swarm' ? (
 								<label className="flex max-w-2xl flex-col gap-1.5 text-sm font-medium">
 									Stop Grace Period (nanoseconds)
-									<span className="text-xs font-normal text-muted-foreground">Time to wait before forcefully stopping a task.</span>
+									<span className="text-xs font-normal text-muted-foreground">
+										Time to wait before forcefully stopping a task.
+									</span>
 									<Input
 										type="number"
 										value={state.grace}
@@ -89,17 +129,26 @@ export function DatabaseSwarmSettings({
 									set={state.set}
 								/>
 							)}
-					</div>
+						</div>
 					</div>
 					<DialogFooter className="flex-row justify-end gap-2 border-t pt-4">
-						<Button type="button" variant="outline" onClick={state.clearActive} disabled={state.saving} className="h-9 px-4 text-sm">Clear</Button>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={state.clearActive}
+							disabled={state.saving}
+							className="h-9 px-4 text-sm">
+							Clear
+						</Button>
 						<Button
 							onClick={async () => {
 								if (await state.saveAll()) setOpen(false);
 							}}
 							disabled={state.saving}
 							className="h-9 px-4 text-sm">
-							{state.saving ? 'Saving...' : `Save ${menuItems.find(item => item.id === state.active)?.label || 'Settings'}`}
+							{state.saving
+								? 'Saving...'
+								: `Save ${menuItems.find(item => item.id === state.active)?.label || 'Settings'}`}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

@@ -104,7 +104,7 @@ export function DockerContainersTable({
 			/>
 
 			{/* Limited Height Scrollable Table Container */}
-			<div className="overflow-hidden rounded-xl bg-card shadow-xs">
+			<div className="overflow-hidden rounded-xl border bg-card">
 				<div className="relative max-h-[calc(100vh-260px)] min-h-[300px] scrollbar-thin scrollbar-thumb-border/40 overflow-y-auto">
 					<Table>
 						<TableHeader className="sticky top-0 z-10 border-b  bg-card shadow-2xs backdrop-blur-md">

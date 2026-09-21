@@ -1,12 +1,17 @@
 import {useState, useMemo} from 'react';
-import {RefreshCw, AlertCircle, Zap} from 'lucide-react';
-import {Button} from '#/components/ui/button';
-import {useTraefikRequestLogs, useTraefikRequestsStatus, useTraefikRequestsToggle} from '#/api/live';
+import {RefreshCw} from 'lucide-react';
+import {
+	useTraefikRequestLogs,
+	useTraefikRequestsStatus,
+	useTraefikRequestsToggle,
+} from '#/api/live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import type {RemoteServerItem} from './traefik-types';
 import {RequestsHeader} from './requests/requests-header';
 import {RequestsFilterBar} from './requests/requests-filter-bar';
+import {RequestsActivatePanel} from './requests/requests-activate-panel';
+import {matchesStatusFilter} from './requests/request-filters';
 import {
 	RequestsTable,
 	type TraefikLogEntry,
@@ -77,9 +82,7 @@ export function TraefikRequestsView({
 		data: rawLogs,
 		isLoading: isLogsLoading,
 		refetch: refetchLogs,
-	} = useTraefikRequestLogs(
-		parsedServerId ? BigInt(parsedServerId) : 0n,
-	);
+	} = useTraefikRequestLogs(parsedServerId ? BigInt(parsedServerId) : 0n);
 
 	const logsData = useMemo(() => {
 		if (!rawLogs)
@@ -94,16 +97,9 @@ export function TraefikRequestsView({
 			? (l.items as TraefikLogEntry[])
 			: [];
 
-		const filteredItems = items.filter(item => {
-			if (statusFilter === 'all') return true;
-			const code = Number(item.status);
-			if (statusFilter === '1xx') return code >= 100 && code < 200;
-			if (statusFilter === '2xx') return code >= 200 && code < 300;
-			if (statusFilter === '3xx') return code >= 300 && code < 400;
-			if (statusFilter === '4xx') return code >= 400 && code < 500;
-			if (statusFilter === '5xx') return code >= 500 && code < 600;
-			return true;
-		});
+		const filteredItems = items.filter(item =>
+			matchesStatusFilter(item, statusFilter),
+		);
 
 		return {
 			items: filteredItems,
@@ -161,32 +157,10 @@ export function TraefikRequestsView({
 
 			<div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-hidden">
 				{!status.is_active ? (
-					<div className="mx-auto mt-10 mb-auto flex w-full max-w-xl flex-col items-center gap-3.5 py-6 text-center">
-						<AlertCircle className="mb-1 size-8 text-muted-foreground/60" />
-						<div className="space-y-1">
-							<h3 className="text-sm font-bold text-foreground">
-								Requests are not activated
-							</h3>
-							<p className="max-w-md text-xs leading-relaxed text-muted-foreground">
-								Activate requests to see incoming traffic statistics and
-								monitor your application's usage. After activation, reload
-								Traefik for changes to take effect.
-							</p>
-						</div>
-						<Button
-							variant="default"
-							size="sm"
-							onClick={() => handleToggle(true)}
-							disabled={isToggling}
-							className="mt-2 h-9 cursor-pointer gap-2 px-5 text-xs font-semibold">
-							{isToggling ? (
-								<RefreshCw className="size-3.5 animate-spin" />
-							) : (
-								<Zap className="size-3.5 fill-primary-foreground" />
-							)}
-							Activate Requests
-						</Button>
-					</div>
+					<RequestsActivatePanel
+						isToggling={isToggling}
+						onActivate={() => handleToggle(true)}
+					/>
 				) : (
 					<div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-hidden">
 						<RequestsFilterBar

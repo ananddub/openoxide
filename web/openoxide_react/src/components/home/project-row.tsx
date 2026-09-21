@@ -9,7 +9,10 @@ import {
 	Database,
 	AppWindow,
 } from 'lucide-react';
-import type {OverviewServiceItemPayload, OverviewDomainItemPayload} from '#/api/live/overview';
+import type {
+	OverviewServiceItemPayload,
+	OverviewDomainItemPayload,
+} from '#/api/live/overview';
 
 export type ProjectRowProject = {
 	id: number;
@@ -39,11 +42,27 @@ function timeAgo(dateStr?: string | number | bigint): string {
 /** Aggregate a project's services into one status pill (OpenShip style). */
 function statusPill(services: OverviewServiceItemPayload[]) {
 	if (services.length === 0)
-		return {label: 'No services', cls: 'text-muted-foreground bg-muted/60'};
+		return {
+			label: 'No services',
+			cls: 'text-muted-foreground bg-muted/60',
+		};
 	const statuses = services.map(s => (s.status || 'done').toLowerCase());
-	if (statuses.some(s => s.includes('build') || s.includes('deploy') || s.includes('run') || s.includes('up')))
+	if (
+		statuses.some(
+			s =>
+				s.includes('build') ||
+				s.includes('deploy') ||
+				s.includes('run') ||
+				s.includes('up'),
+		)
+	)
 		return {label: 'Running', cls: 'text-emerald-500 bg-emerald-500/10'};
-	if (statuses.some(s => s.includes('fail') || s.includes('error') || s.includes('crash')))
+	if (
+		statuses.some(
+			s =>
+				s.includes('fail') || s.includes('error') || s.includes('crash'),
+		)
+	)
 		return {label: 'Attention', cls: 'text-rose-500 bg-rose-500/10'};
 	return {label: 'Idle', cls: 'text-muted-foreground bg-muted/60'};
 }

@@ -1,8 +1,13 @@
-import {createFileRoute, useNavigate, useSearch} from '@tanstack/react-router';
-import {Plus, Search} from 'lucide-react';
+import {
+	createFileRoute,
+	useNavigate,
+	useSearch,
+} from '@tanstack/react-router';
+import {Plus, Search, Folder} from 'lucide-react';
 import {useEffect, useState} from 'react';
 
 import {Button} from '#/components/ui/button';
+import {Titlebar} from '#/components/shared/titlebar';
 import {ProjectCard} from '#/components/projects/dashboard/project-card';
 import {EmptyState} from '#/components/projects/dashboard/empty-state';
 import {HandleProjectDialog} from '#/components/projects/dashboard/handle-project-dialog';
@@ -21,7 +26,9 @@ import {
 
 export const Route = createFileRoute('/_app/projects')({
 	component: ProjectsPage,
-	validateSearch: (search: Record<string, unknown>): {create?: number} => ({
+	validateSearch: (
+		search: Record<string, unknown>,
+	): {create?: number} => ({
 		create: search.create === '1' || search.create === 1 ? 1 : undefined,
 	}),
 });
@@ -66,27 +73,21 @@ function ProjectsPage() {
 
 	return (
 		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
-			{/* Page Header Row */}
-			<div className="flex w-full flex-wrap items-start justify-between gap-4 sm:flex-row sm:items-center">
-				<div className="flex flex-1 flex-col">
-					<h1
-						className="text-2xl font-medium text-foreground/80"
-						style={{letterSpacing: '-0.2px'}}>
-						Projects
-					</h1>
-					<p className="mt-1 text-sm text-muted-foreground/70">
-						Create and manage your projects
-					</p>
-				</div>
-
-				<Button
-					onClick={() => setIsCreateOpen(true)}
-					disabled={!activeOrg}
-					className="h-auto gap-2 bg-primary px-5 py-2.5 font-medium transition-all hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25">
-					<Plus className="size-4" />
-					<span>Create Project</span>
-				</Button>
-			</div>
+			{/* Vercel-style titlebar */}
+			<Titlebar
+				breadcrumbs={[{label: 'Projects', icon: Folder}]}
+				title="Projects"
+				description="Create and manage your projects"
+				actions={
+					<Button
+						onClick={() => setIsCreateOpen(true)}
+						disabled={!activeOrg}
+						className="gap-1.5">
+						<Plus className="size-3.5" />
+						Create Project
+					</Button>
+				}
+			/>
 
 			{/* Filter Toolbar */}
 			<ProjectDashboardFilters
@@ -107,7 +108,7 @@ function ProjectsPage() {
 					{[1, 2, 3].map(i => (
 						<div
 							key={i}
-							className="h-44 animate-pulse rounded-2xl bg-card/60"
+							className="h-44 animate-pulse rounded-xl border bg-card"
 						/>
 					))}
 				</div>
@@ -123,11 +124,9 @@ function ProjectsPage() {
 				</div>
 			) : projects && projects.length > 0 ? (
 				/* Filter Empty State */
-				<div className="my-auto flex flex-col items-center justify-center rounded-2xl  bg-card p-12 text-center">
+				<div className="my-auto flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center">
 					<Search className="mb-4 size-10 text-muted-foreground/40" />
-					<h3
-						className="mb-2 text-xl font-medium text-foreground/80"
-						style={{letterSpacing: '-0.2px'}}>
+					<h3 className="mb-2 text-xl font-semibold tracking-[-0.01em] text-foreground">
 						No matching projects found
 					</h3>
 					<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
@@ -175,7 +174,7 @@ function ProjectsPage() {
 							Cancel
 						</AlertDialogCancel>
 						<AlertDialogAction
-							className="text-destructive-foreground bg-destructive font-bold hover:bg-destructive/90"
+							className="bg-danger text-white hover:bg-danger/90"
 							onClick={confirmDelete}>
 							Delete Project
 						</AlertDialogAction>
