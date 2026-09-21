@@ -1,14 +1,10 @@
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     AlertOperationsService, AlertOperationsServiceExt, Empty, OperationResult,
     ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
 };
-use crate::db::reactive::realtime;
-use crate::flash_gen::models::{AlertEvents, AlertRules};
 use crate::services::integrations::notification::{NotificationLevel, NotificationMessage};
-use crate::services::observability::alert::service::rule_from_flash as rule_from_flash_pub;
 
 use super::helper::*;
 use super::init::AlertRuleController;
@@ -95,125 +91,6 @@ impl AlertOperationsService for AlertRuleController {
             payload,
             ..Default::default()
         })
-    }
-
-    #[permission(Alert, CanMonitor)]
-    async fn stream_list_rules(
-        &self,
-        ctx: RequestContext,
-        query: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = query.organization_id.unwrap_or(0);
-        verify_organization(auth.organization_id, organization_id)?;
-        let stream = {
-            let sql = format!("SELECT * FROM alert_rules WHERE organization_id = {organization_id}");
-            realtime()
-                .watch_query::<AlertRules>(sql)
-                .await
-                .map_err(|e| internal(e.to_string()))?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            let items = rows
-                .into_iter()
-                .filter_map(|row| {
-                    let dto = AlertRuleResponseDto::from_model(rule_from_flash_pub(row)).ok()?;
-                    let payload = serde_json::to_string(&dto).unwrap_or_default();
-                    Some(ResourceResponse {
-                        id: dto.id,
-                        kind: "alert_rule".into(),
-                        payload,
-                        ..Default::default()
-                    })
-                })
-                .collect();
-            Ok(ResourceListResponse { items, ..Default::default() })
-        }))
-    }
-
-    #[permission(Alert, CanMonitor)]
-    async fn stream_list_events(
-        &self,
-        ctx: RequestContext,
-        query: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = query.organization_id.unwrap_or(0);
-        verify_organization(auth.organization_id, organization_id)?;
-        let stream = {
-            let sql = format!(
-                "SELECT * FROM alert_events WHERE organization_id = {organization_id} ORDER BY created_at DESC LIMIT 200"
-            );
-            realtime()
-                .watch_query::<AlertEvents>(sql)
-                .await
-                .map_err(|e| internal(e.to_string()))?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            let items = rows
-                .into_iter()
-                .filter_map(|event| match AlertEventResponseDto::try_from(event) {
-                    Ok(dto) => {
-                        let payload = serde_json::to_string(&dto).unwrap_or_default();
-                        Some(ResourceResponse {
-                            id: dto.id,
-                            kind: "alert_event".into(),
-                            payload,
-                            ..Default::default()
-                        })
-                    }
-                    Err(error) => {
-                        tracing::warn!(error = %error, "skipping unreadable alert event");
-                        None
-                    }
-                })
-                .collect();
-            Ok(ResourceListResponse { items, ..Default::default() })
-        }))
-    }
-
-    #[permission(Alert, CanMonitor)]
-    async fn stream_rule(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = request.organization_id.unwrap_or(0);
-        verify_organization(auth.organization_id, organization_id)?;
-        let id = request.id;
-        let stream = {
-            let sql = format!(
-                "SELECT * FROM alert_rules WHERE id = {id} AND organization_id = {organization_id}"
-            );
-            realtime()
-                .watch_query::<AlertRules>(sql)
-                .await
-                .map_err(|e| internal(e.to_string()))?
-        };
-        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
-            Some(row) => {
-                let dto = AlertRuleResponseDto::from_model(rule_from_flash_pub(row))
-                    .map_err(|e| ConnectError::new(ErrorCode::Internal, e))?;
-                let payload = serde_json::to_string(&dto).unwrap_or_default();
-                Ok(ResourceResponse {
-                    id: dto.id,
-                    kind: "alert_rule".into(),
-                    payload,
-                    ..Default::default()
-                })
-            }
-            None => Err(ConnectError::not_found("alert rule not found")),
-        }))
     }
 
     #[permission(Alert, CanWrite)]

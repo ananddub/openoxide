@@ -1,12 +1,9 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
     TagService, TagServiceExt,
 };
-use crate::db::reactive::realtime;
-use crate::flash_gen::models::Tags;
 use crate::services::workspace::tag::{CreateTagDto, UpdateTagDto};
 
 use super::helper::*;
@@ -14,57 +11,6 @@ use super::init::TagController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl TagService for TagController {
-    async fn stream_list_tags(
-        &self,
-        ctx: RequestContext,
-        _query: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = auth.organization_id;
-        let stream = {
-            let sql = format!("SELECT * FROM tags WHERE organization_id = {organization_id}");
-            realtime()
-                .watch_query::<Tags>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows.into_iter().map(TagDto::from).map(tag_to_resource).collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
-    async fn stream_tag(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = auth.organization_id;
-        let id = request.id;
-        let stream = {
-            let sql = format!(
-                "SELECT * FROM tags WHERE id = {id} AND organization_id = {organization_id}"
-            );
-            realtime()
-                .watch_query::<Tags>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
-            Some(item) => Ok(tag_to_resource(TagDto::from(item))),
-            None => Err(ConnectError::not_found("tag not found")),
-        }))
-    }
-
     async fn list_tags<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -135,33 +81,6 @@ impl TagService for TagController {
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         self.service.delete(request.id).await.map_err(map_db_error)?;
         Response::ok(Empty::default())
-    }
-
-    async fn stream_list_project_tags(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let project_id = request.environment_id.unwrap_or(0);
-        let stream = {
-            let sql = format!(
-                "SELECT t.* FROM tags t JOIN project_tags pt ON pt.tag_id = t.id WHERE pt.project_id = {project_id}"
-            );
-            realtime()
-                .watch_query::<Tags>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows.into_iter().map(TagDto::from).map(tag_to_resource).collect(),
-                ..Default::default()
-            })
-        }))
     }
 
     async fn list_project_tags<'a>(

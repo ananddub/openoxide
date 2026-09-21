@@ -6,9 +6,7 @@ import "buf/validate/validate.proto";
 
 service ComposeService {
   rpc GetCompose(GetComposeRequest) returns (Compose);
-  rpc StreamCompose(GetComposeRequest) returns (stream Compose);
   rpc ListComposes(ListComposesRequest) returns (ListComposesResponse);
-  rpc StreamListComposes(ListComposesRequest) returns (stream ListComposesResponse);
   rpc CreateCompose(CreateComposeRequest) returns (Compose);
   rpc UpdateCompose(UpdateComposeRequest) returns (Compose);
   rpc DeleteCompose(DeleteComposeRequest) returns (Empty);
@@ -38,12 +36,10 @@ service ComposeService {
   rpc CleanupDeploymentQueue(ComposeOperationRequest) returns (Empty);
   rpc ForceKillDeployment(ComposeOperationRequest) returns (Empty);
   rpc ListMounts(ComposeMountRequest) returns (ResourceListResponse);
-  rpc StreamListMounts(ComposeMountRequest) returns (stream ResourceListResponse);
   rpc CreateMount(ComposeMountRequest) returns (ResourceResponse);
   rpc UpdateMount(ComposeMountRequest) returns (ResourceResponse);
   rpc DeleteMount(ComposeMountRequest) returns (Empty);
   rpc ListPatches(ComposePatchRequest) returns (ResourceListResponse);
-  rpc StreamListPatches(ComposePatchRequest) returns (stream ResourceListResponse);
   rpc CreatePatch(ComposePatchRequest) returns (ResourceResponse);
   rpc UpdatePatch(ComposePatchRequest) returns (ResourceResponse);
   rpc DeletePatch(ComposePatchRequest) returns (Empty);
@@ -108,6 +104,7 @@ message UpdateComposeRequest {
   optional string compose_file = 4;
   optional int64 server_id = 5;
   repeated string network_ids = 6;
+  optional string command = 7;
 }
 message DeleteComposeRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];

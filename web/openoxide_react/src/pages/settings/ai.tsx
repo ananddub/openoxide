@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Bot, Plus, Sparkles } from "lucide-react";
+import {createFileRoute, Navigate} from '@tanstack/react-router';
+import { Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
@@ -10,10 +10,12 @@ import type { AiSetting } from "#/components/settings/ai/ai-types";
 import { useAiSettingItems, useConnectMutation } from "#/api/live";
 
 export const Route = createFileRoute("/_app/settings/ai")({
-  component: AiSettingsPage,
+  component: () => (
+		<Navigate to="/settings" search={{tab: 'ai'}} replace />
+	)
 });
 
-function AiSettingsPage() {
+export function AiSettingsPage() {
   const itemsQuery = useAiSettingItems();
   const items = (itemsQuery.data ?? []) as AiSetting[];
   const [open, setOpen] = useState(false);
@@ -56,51 +58,33 @@ function AiSettingsPage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl animate-in flex-col gap-6 p-6 duration-200 fade-in">
-      {/* Header Banner */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-foreground">
-            <div className="flex size-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-              <Bot className="size-5" />
-            </div>
-            AI Settings
-          </h1>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Configure LLM providers (OpenAI, Anthropic, Gemini, Ollama) for AI
-            container logs analysis & template generation.
+    <div className="flex w-full animate-in flex-col gap-6 duration-200 fade-in">
+      <div className="flex flex-wrap items-start justify-between gap-4 sm:items-center">
+        <div className="flex flex-col gap-0.5">
+          <h2 className="text-sm font-medium text-foreground">AI</h2>
+          <p className="text-xs text-muted-foreground">
+            LLM providers (OpenAI, Anthropic, Gemini, Ollama) for container log
+            analysis &amp; template generation.
           </p>
         </div>
-
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+          <div className="flex items-center gap-1.5 rounded-xl bg-muted/40 px-3 py-1.5 text-xs font-medium text-muted-foreground">
             <Sparkles className="size-3.5 text-amber-500" />
-            <span>{items.filter((i) => i.is_enabled).length} Active</span>
+            <span>{items.filter((i) => i.is_enabled).length} active</span>
           </div>
-
-          <Button
-            onClick={create}
-            className="h-9 gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground"
-          >
-            <Plus className="size-4" /> Add AI Provider
+          <Button onClick={create} className="gap-1.5 px-4 text-sm">
+            <Plus className="size-4" /> Add provider
           </Button>
         </div>
       </div>
 
-      {/* AI Providers List */}
-      <section className="flex flex-col gap-3">
-        <h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-          Configured AI Models & Gateways
-        </h3>
-
-        <AiSettingsList
-          items={items}
-          loading={itemsQuery.isLoading}
-          onCreate={create}
-          onEdit={edit}
-          onDelete={remove}
-        />
-      </section>
+      <AiSettingsList
+        items={items}
+        loading={itemsQuery.isLoading}
+        onCreate={create}
+        onEdit={edit}
+        onDelete={remove}
+      />
 
       {/* Add/Edit Modal */}
       <AiProviderDialog

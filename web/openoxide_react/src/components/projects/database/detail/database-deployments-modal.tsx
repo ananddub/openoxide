@@ -60,8 +60,8 @@ export function DatabaseDeploymentsModal({
 			{/* Realtime Stream Logs Modal */}
 			{activeLogId && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-					<div className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
-						<div className="flex items-center justify-between border-b border-border bg-muted/30 p-4">
+					<div className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-card shadow-2xl">
+						<div className="flex items-center justify-between border-b border- bg-muted/30 p-4">
 							<div className="flex items-center gap-2">
 								<Terminal className="h-4 w-4 text-foreground" />
 								<h3 className="text-xs font-bold text-foreground">

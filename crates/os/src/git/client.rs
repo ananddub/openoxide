@@ -264,8 +264,6 @@ impl GitCli {
         self.prefixed(&["init"], args).await
     }
 
-    // pub async fn list_branches(&self, repo &)
-
     pub async fn clone_repository_raw(
         &self,
         url: &str,
@@ -487,64 +485,3 @@ impl GitCli {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    //     use super::*;
-    //
-    //     #[tokio::test]
-    //     async fn local_repository_status_commit_and_revision_are_typed() {
-    //         let dir = tempfile::tempdir().unwrap();
-    //         let path = dir.path().to_string_lossy().into_owned();
-    //         let git = GitCli::new_local().with_repository(path);
-    //         git.init(&[]).await.unwrap();
-    //         git.config(&["user.name", "OpenOxide Test"]).await.unwrap();
-    //         git.config(&["user.email", "test@openoxide.local"])
-    //             .await
-    //             .unwrap();
-    //         std::fs::write(dir.path().join("hello.txt"), "hello").unwrap();
-    //         let status = git.status().await.unwrap();
-    //         assert_eq!(status.len(), 1);
-    //         assert_eq!(status[0].path, "hello.txt");
-    //         assert_eq!(status[0].index_status, '?');
-    //         git.add(&["hello.txt"]).await.unwrap();
-    //         git.commit(&["-m", "initial"]).await.unwrap();
-    //         let revision = git.rev_parse("HEAD").await.unwrap();
-    //         assert_eq!(revision.len(), 40);
-    //         assert!(git.status().await.unwrap().is_empty());
-    //     }
-    //
-    //     #[test]
-    //     fn parses_remote_branch_names_from_ls_remote_heads() {
-    //         let output = "\
-    // 1111111111111111111111111111111111111111\trefs/heads/main
-    // 2222222222222222222222222222222222222222\trefs/heads/feature/login
-    // 3333333333333333333333333333333333333333\trefs/tags/v1.0.0
-    // ";
-    //         let branches = parse_remote_branches(output).unwrap();
-    //         assert_eq!(
-    //             branches,
-    //             vec![
-    //                 GitBranch {
-    //                     name: "feature/login".into(),
-    //                     current: false,
-    //                 },
-    //                 GitBranch {
-    //                     name: "main".into(),
-    //                     current: false,
-    //                 },
-    //             ]
-    //         );
-    //     }
-    //
-    //     #[test]
-    //     fn parses_remote_default_branch_from_symref_head() {
-    //         let output = "\
-    // ref: refs/heads/master\tHEAD
-    // 1111111111111111111111111111111111111111\tHEAD
-    // ";
-    //         assert_eq!(
-    //             parse_remote_default_branch(output),
-    //             Some("master".into())
-    //         );
-    //     }
-}

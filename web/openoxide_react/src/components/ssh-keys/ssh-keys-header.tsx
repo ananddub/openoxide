@@ -1,5 +1,5 @@
 import {Button} from '#/components/ui/button';
-import {KeyRound, Plus, RefreshCw} from 'lucide-react';
+import {Plus, RefreshCw} from 'lucide-react';
 
 interface SshKeysHeaderProps {
 	onOpenAdd: () => void;
@@ -15,18 +15,13 @@ export function SshKeysHeader({
 }: SshKeysHeaderProps) {
 	return (
 		<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-			<div className="flex items-center gap-3">
-				<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
-					<KeyRound className="h-4 w-4 text-primary" />
-				</div>
-				<div>
-					<h1 className="text-base leading-none font-semibold text-foreground">
-						SSH Keys
-					</h1>
-					<p className="mt-1 text-xs text-muted-foreground">
-						Manage key pairs for remote servers &amp; Git repos
-					</p>
-				</div>
+			<div className="flex flex-col gap-1">
+				<h1 className="text-2xl font-medium tracking-tight text-foreground/80">
+					SSH Keys
+				</h1>
+				<p className="text-sm text-muted-foreground/70">
+					Manage key pairs for remote servers & Git repos
+				</p>
 			</div>
 
 			<div className="flex items-center gap-2 sm:ml-auto">

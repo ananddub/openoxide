@@ -123,7 +123,7 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onOpenChange}>
-			<DialogContent className="border-border bg-card shadow-xl sm:max-w-lg">
+			<DialogContent className="border- bg-card shadow-xl sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle className="text-xl font-bold text-foreground">
 						{isEditing ? 'Update project' : 'Add a project'}
@@ -148,7 +148,7 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 							onChange={e => setName(e.target.value)}
 							disabled={isSubmitting}
 							required
-							className="h-9 border-border bg-card text-xs"
+							className="h-9 border- bg-card text-xs"
 						/>
 					</div>
 
@@ -165,7 +165,7 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 							value={description}
 							onChange={e => setDescription(e.target.value)}
 							disabled={isSubmitting}
-							className="min-h-[96px] border-border bg-card text-xs placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+							className="min-h-[96px] border- bg-card text-xs placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
 						/>
 					</div>
 
@@ -183,7 +183,7 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 					</div>
 
 					{/* Dialog Footer */}
-					<div className="mt-4 flex items-center justify-end border-t border-border/40 pt-3">
+					<div className="mt-4 flex items-center justify-end border-t  pt-3">
 						<Button
 							type="submit"
 							disabled={isSubmitting || !name.trim()}

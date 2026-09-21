@@ -325,6 +325,11 @@ impl BuilderQueue {
     }
 
     async fn dispatch_available(self: &Arc<Self>) {
+        // NOTE: the migration QUIESCE gate lives inside
+        // `DeploymentsGetQueuedDeploymentsGrouped` itself — deployments whose
+        // service has a RUNNING `application_migrations` row are never even
+        // offered here; the 2s re-tick retries them once the migration leaves
+        // RUNNING (their own REDEPLOY enqueues post-gate).
         let q = match auto_di::resolve::<crate::db::queries::FlashQueries>().await {
             Ok(q) => q,
             Err(e) => {

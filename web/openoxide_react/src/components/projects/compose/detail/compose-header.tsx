@@ -24,7 +24,7 @@ export function ComposeHeader({
 	tabs,
 }: ComposeHeaderProps) {
 	return (
-		<header className="border-b border-border/40">
+		<header className="border-b ">
 			{/* Breadcrumb */}
 			<div className="mb-3.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
 				<Link
@@ -68,14 +68,14 @@ export function ComposeHeader({
 							refetch();
 							toast.success('Compose stack refreshed');
 						}}
-						className="h-8 w-8 rounded-lg border-border">
+						className="h-8 w-8 rounded-lg ">
 						<RefreshCw className="h-3.5 w-3.5" />
 					</Button>
 					<StatusBadge
 						status={compose?.compose_status || ''}
 						error={(compose as any)?.last_error}
 					/>
-					<span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/20 px-2.5 py-1 text-xs font-semibold text-muted-foreground select-none">
+					<span className="inline-flex items-center gap-1.5 rounded-lg bg-muted/20 px-2.5 py-1 text-xs font-semibold text-muted-foreground select-none">
 						<Layers2 className="h-3.5 w-3.5" />
 						{(compose as any)?.compose_type === 'STACK'
 							? 'Swarm Stack'
@@ -85,7 +85,7 @@ export function ComposeHeader({
 			</div>
 
 			{/* Tabs Navigation Bar */}
-			<div className="mt-6 -mb-[1px] flex w-full scrollbar-none gap-2 overflow-x-auto border-b border-border/40">
+			<div className="mt-6 -mb-[1px] flex w-full scrollbar-none gap-2 overflow-x-auto border-b ">
 				{tabs.map(tab => {
 					const isActive = activeTab === tab;
 					return (
@@ -95,7 +95,7 @@ export function ComposeHeader({
 							className={`-mb-[1px] cursor-pointer border-b-2 px-4 pt-2 pb-2.5 text-xs font-bold whitespace-nowrap transition-all duration-150 ${
 								isActive
 									? 'border-foreground font-extrabold text-foreground'
-									: 'border-transparent text-muted-foreground hover:border-border/40 hover:text-foreground'
+									: ' text-muted-foreground hover:text-foreground'
 							}`}>
 							{tab}
 						</button>

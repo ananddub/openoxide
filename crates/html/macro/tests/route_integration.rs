@@ -139,13 +139,9 @@ async fn test_app_detail_page_initial_render() {
     assert!(html.contains("__slot_"), "slot div missing");
     // Skeleton shown initially (async not resolved yet in initial render)
     assert!(html.contains("Loading app..."), "skeleton missing");
-    // signals attribute
     assert!(html.contains("data-signals="), "signals missing");
-    // toggle button
     assert!(html.contains("data-on:click="), "toggle missing");
-    // show modal
     assert!(html.contains("data-show="), "show missing");
-    // DOCTYPE
     assert!(html.contains("<!DOCTYPE html>"), "doctype missing");
 }
 

@@ -1,7 +1,12 @@
 import {useState, useEffect, useMemo} from 'react';
-import {createFileRoute} from '@tanstack/react-router';
 import {toast} from 'sonner';
-import {useTraefikFileContent, useTraefikFileContentUpdate, useTraefikFileTree, useTraefikHealth, useRemoteServerList} from '#/api/live';
+import {
+	useTraefikFileContent,
+	useTraefikFileContentUpdate,
+	useTraefikFileTree,
+	useTraefikHealth,
+	useRemoteServerList,
+} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 
 import {TraefikHeader} from '#/components/traefik/traefik-header';
@@ -16,11 +21,9 @@ import type {
 	RemoteServerItem,
 } from '#/components/traefik/traefik-types';
 
-export const Route = createFileRoute('/_app/traefik')({
-	component: TraefikPage,
-});
+// Rendered as the "Traefik" tab of pages/infra.tsx — no standalone route.
 
-function TraefikPage() {
+export function TraefikPanel() {
 	const [selectedServerId, setSelectedServerId] =
 		useState<string>('local');
 	const [selectedFilePath, setSelectedFilePath] = useState<string | null>(
@@ -174,9 +177,8 @@ function TraefikPage() {
 		setOriginalContent('');
 		setEditedContent(initialText);
 	};
-
 	return (
-		<div className="flex h-[calc(100vh-7rem)] w-full animate-in flex-col gap-3 p-4 duration-200 fade-in">
+		<div className="flex h-full min-h-0 w-full flex-1 flex-col gap-3 overflow-hidden">
 			{/* Minimal Header */}
 			<TraefikHeader
 				selectedServerId={selectedServerId}

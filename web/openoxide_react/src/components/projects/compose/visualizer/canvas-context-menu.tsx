@@ -134,9 +134,9 @@ export function CanvasContextMenu({
 					e.stopPropagation();
 					if (e.nativeEvent) e.nativeEvent.stopImmediatePropagation();
 				}}
-				className="pointer-events-auto w-56 animate-in rounded-xl border border-border/80 bg-popover/95 p-1.5 shadow-2xl backdrop-blur-xl duration-150 select-none zoom-in-95 fade-in">
+				className="pointer-events-auto w-56 animate-in rounded-xl bg-popover/95 p-1.5 shadow-2xl backdrop-blur-xl duration-150 select-none zoom-in-95 fade-in">
 				{/* Menu Header */}
-				<div className="mb-1 flex items-center justify-between border-b border-border/40 px-2.5 py-2">
+				<div className="mb-1 flex items-center justify-between border-b  px-2.5 py-2">
 					<div className="flex min-w-0 items-center gap-2">
 						<span
 							className={`size-2 shrink-0 rounded-full ${

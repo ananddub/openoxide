@@ -123,8 +123,8 @@ export function GenerateKeyModal({
 		<Dialog
 			open={isOpen}
 			onOpenChange={open => !open && handleCloseModal()}>
-			<DialogContent className="w-full min-w-0 rounded-xl border-border bg-card p-6 shadow-xl sm:max-w-lg">
-				<DialogHeader className="border-b border-border/40 pb-3">
+			<DialogContent className="w-full min-w-0 rounded-xl border- bg-card p-6 shadow-xl sm:max-w-lg">
+				<DialogHeader className="border-b  pb-3">
 					<DialogTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
 						<Sparkles className="h-4 w-4 shrink-0 text-primary" />
 						<span>Generate SSH Key Pair</span>
@@ -136,7 +136,7 @@ export function GenerateKeyModal({
 
 				{generatedKey ? (
 					<div className="flex flex-col gap-4 py-2">
-						<div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-bold text-emerald-500">
+						<div className="flex items-center gap-2.5 rounded-xl bg-emerald-500/10 p-3 text-xs font-bold text-emerald-500">
 							<CheckCircle2 className="h-4 w-4 shrink-0" />
 							<span>Key Pair "{name}" Generated in Memory</span>
 						</div>
@@ -161,13 +161,13 @@ export function GenerateKeyModal({
 										{copiedCmd ? 'Copied' : 'Copy Command'}
 									</Button>
 								</div>
-								<div className="max-h-24 overflow-y-auto rounded-md border border-border/50 bg-muted/40 p-2.5 font-mono text-[11px] leading-relaxed break-all text-muted-foreground select-all">
+								<div className="max-h-24 overflow-y-auto rounded-md bg-muted/40 p-2.5 font-mono text-[11px] leading-relaxed break-all text-muted-foreground select-all">
 									{setupCommand}
 								</div>
 							</div>
 						)}
 
-						<div className="flex items-center justify-end border-t border-border/40 pt-3">
+						<div className="flex items-center justify-end border-t  pt-3">
 							<Button
 								onClick={handleSaveKey}
 								disabled={saving}
@@ -188,7 +188,7 @@ export function GenerateKeyModal({
 								value={name}
 								onChange={e => setName(e.target.value)}
 								placeholder="e.g. Production Key"
-								className="h-9 rounded-md border-border bg-background px-3 text-xs"
+								className="h-9 rounded-md border- bg-background px-3 text-xs"
 							/>
 						</div>
 
@@ -200,7 +200,7 @@ export function GenerateKeyModal({
 								value={description}
 								onChange={e => setDescription(e.target.value)}
 								placeholder="Deploy key for web cluster"
-								className="h-9 rounded-md border-border bg-background px-3 text-xs"
+								className="h-9 rounded-md border- bg-background px-3 text-xs"
 							/>
 						</div>
 
@@ -213,7 +213,7 @@ export function GenerateKeyModal({
 								onValueChange={val =>
 									val && setKeyType(val as 'ed25519' | 'rsa')
 								}>
-								<SelectTrigger className="h-9 rounded-md border-border bg-background px-3 text-xs">
+								<SelectTrigger className="h-9 rounded-md border- bg-background px-3 text-xs">
 									<SelectValue placeholder="Select Algorithm" />
 								</SelectTrigger>
 								<SelectContent>
@@ -227,7 +227,7 @@ export function GenerateKeyModal({
 							</Select>
 						</div>
 
-						<div className="flex items-center justify-end border-t border-border/50 pt-3">
+						<div className="flex items-center justify-end border-t  pt-3">
 							<Button
 								type="submit"
 								disabled={generating}

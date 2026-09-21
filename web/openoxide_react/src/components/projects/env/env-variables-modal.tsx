@@ -1,5 +1,5 @@
 import {useProjectUpdate} from '#/api/live/projects';
-import {useEnvironmentCreate, useEnvironmentUpdate} from '#/api/live/environments';
+import {useEnvironmentUpdate} from '#/api/live/environments';
 import {useState, useEffect} from 'react';
 import {toast} from 'sonner';
 import {Info, Save} from 'lucide-react';
@@ -93,7 +93,7 @@ export function EnvVariablesModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-6 shadow-2xl sm:max-w-xl">
+			<DialogContent className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-2xl sm:max-w-xl">
 				<DialogHeader className="space-y-1.5">
 					<DialogTitle className="text-lg font-bold tracking-tight text-foreground">
 						{title}
@@ -104,7 +104,7 @@ export function EnvVariablesModal({
 				</DialogHeader>
 
 				{/* Info syntax tip */}
-				<div className="flex items-start gap-2.5 rounded-lg border border-border/55 bg-muted/40 p-3">
+				<div className="flex items-start gap-2.5 rounded-lg bg-muted/40 p-3">
 					<Info className="mt-0.5 size-4 shrink-0 text-primary" />
 					<div className="text-xs leading-relaxed text-muted-foreground">
 						{mode === 'PROJECT' ? (
@@ -115,7 +115,7 @@ export function EnvVariablesModal({
 						) : (
 							<span>
 								Reference project-level variables using:
-								<code className="ml-1.5 rounded border border-border bg-muted/80 px-1 py-0.5 font-mono font-semibold text-foreground">
+								<code className="ml-1.5 rounded bg-muted/80 px-1 py-0.5 font-mono font-semibold text-foreground">
 									{'DB_URL={{ project.DB_URL }}'}
 								</code>
 							</span>
@@ -130,14 +130,14 @@ export function EnvVariablesModal({
 								{filename}
 							</span>
 							{isModified && (
-								<span className="rounded border border-amber-500/20 bg-amber-500/5 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
+								<span className="rounded bg-amber-500/5 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
 									Unsaved Changes
 								</span>
 							)}
 						</div>
 
 						{/* Monaco Code Editor */}
-						<div className="overflow-hidden rounded-xl border border-border bg-[#1e1e1e] p-1 shadow-inner">
+						<div className="overflow-hidden rounded-xl bg-[#1e1e1e] p-1 shadow-inner">
 							<Editor
 								height="320px"
 								language="ini"
@@ -165,7 +165,7 @@ export function EnvVariablesModal({
 					</div>
 
 					{/* Modal Actions */}
-					<div className="flex justify-end border-t border-border/30 pt-3">
+					<div className="flex justify-end border-t  pt-3">
 						<Button
 							type="submit"
 							disabled={isSubmitting}

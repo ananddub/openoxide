@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {Rocket, RefreshCw, Play, Ban, Terminal, X} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {TerminalModal} from '#/components/projects/common/terminal-modal';
+import {TerminalCard} from '#/components/shared/terminal-card';
 import type {DatabaseResponse} from '#/types/api-helpers';
 
 export type DatabaseActionType =
@@ -80,7 +80,7 @@ export function DatabaseDeploySettingsCard({
 	};
 
 	return (
-		<div className="flex flex-col gap-5 rounded-2xl border border-border/80 bg-card p-6 shadow-xs">
+		<div className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-xs">
 			<div>
 				<h3 className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground">
 					<Rocket className="size-4 text-primary" /> Deploy Settings
@@ -91,7 +91,7 @@ export function DatabaseDeploySettingsCard({
 				</p>
 			</div>
 
-			<div className="flex flex-wrap items-center gap-3 border-t border-border/40 pt-4">
+			<div className="flex flex-wrap items-center gap-3 border-t  pt-4">
 				<Button
 					variant="default"
 					onClick={() => executeActionClick('deploy')}
@@ -109,7 +109,7 @@ export function DatabaseDeploySettingsCard({
 					variant="secondary"
 					onClick={() => executeActionClick('reload')}
 					disabled={isProcessing || isBuilding}
-					className="h-9 cursor-pointer gap-2 rounded-lg border border-border/80 bg-muted px-4 text-xs font-semibold text-foreground hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50">
+					className="h-9 cursor-pointer gap-2 rounded-lg bg-muted px-4 text-xs font-semibold text-foreground hover:bg-muted/80 disabled:cursor-not-allowed disabled:opacity-50">
 					{activeLoading === 'reload' ? (
 						<RefreshCw className="size-4 animate-spin" />
 					) : (
@@ -123,7 +123,7 @@ export function DatabaseDeploySettingsCard({
 						disabled
 						variant="outline"
 						size="sm"
-						className="flex h-9 items-center gap-1.5 rounded-lg border-border font-semibold text-destructive opacity-80">
+						className="flex h-9 items-center gap-1.5 rounded-lg  font-semibold text-destructive opacity-80">
 						<RefreshCw className="h-4 w-4 animate-spin text-destructive" />{' '}
 						Stopping...
 					</Button>
@@ -166,7 +166,7 @@ export function DatabaseDeploySettingsCard({
 						disabled={isProcessing}
 						variant="outline"
 						size="sm"
-						className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border-border font-semibold text-foreground hover:bg-muted">
+						className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg  font-semibold text-foreground hover:bg-muted">
 						{activeLoading === 'start' ? (
 							<RefreshCw className="size-4 animate-spin" />
 						) : (
@@ -180,23 +180,19 @@ export function DatabaseDeploySettingsCard({
 					variant="outline"
 					onClick={() => setIsTerminalOpen(true)}
 					disabled={isProcessing || !isRunning}
-					className="h-9 gap-2 rounded-lg border-border px-4 text-xs font-semibold text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50">
+					className="h-9 gap-2 rounded-lg  px-4 text-xs font-semibold text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50">
 					<Terminal className="size-4 text-primary" /> Open Terminal
 				</Button>
 			</div>
 
 			{isTerminalOpen && (
-				<TerminalModal
-					app={database}
-					open={isTerminalOpen}
-					onClose={() => setIsTerminalOpen(false)}
-				/>
+				<TerminalCard app={database} enabled={true} onClose={() => setIsTerminalOpen(false)} />
 			)}
 
 			{confirmAction && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-					<div className="flex w-full max-w-sm animate-in flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-2xl duration-150 zoom-in-95 fade-in">
-						<div className="flex items-center justify-between border-b border-border/60 pb-3">
+					<div className="flex w-full max-w-sm animate-in flex-col gap-4 rounded-xl bg-card p-5 shadow-2xl duration-150 zoom-in-95 fade-in">
+						<div className="flex items-center justify-between border-b  pb-3">
 							<h3 className="text-sm font-bold text-foreground">
 								{getActionTitle(confirmAction)}
 							</h3>
@@ -211,7 +207,7 @@ export function DatabaseDeploySettingsCard({
 						<p className="text-xs leading-relaxed text-muted-foreground">
 							{getActionDesc(confirmAction)}
 						</p>
-						<div className="flex justify-end gap-2 border-t border-border/60 pt-3">
+						<div className="flex justify-end gap-2 border-t  pt-3">
 							<Button
 								variant="outline"
 								size="sm"

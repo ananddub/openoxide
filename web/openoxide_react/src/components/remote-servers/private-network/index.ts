@@ -1,1 +1,1 @@
-export {PrivateNetworkModal} from './private-network-modal';
+export {PrivateNetworkPanel} from './private-network-panel';

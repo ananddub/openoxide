@@ -1,9 +1,11 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
+import {Layers2, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {StatusBadge} from '#/components/shared/status-badge';
+import {toast} from 'sonner';
 import {useComposeDetail} from '#/hooks/projects/use-compose-detail';
 import {useComposeUpdate} from '#/api/live';
-
-import {ComposeHeader} from '#/components/projects/compose/detail/compose-header';
+import {ServiceLayout} from '#/components/projects/detail/service-layout';
 
 // Tabs
 import {ComposeGeneralTab} from '#/components/projects/compose/detail/general-tab';
@@ -88,73 +90,98 @@ function ComposeDetailPage() {
 		);
 	}
 
+	// Legacy fields ride the wire payload but sit outside the union type.
+	const composeExtras = compose as {app_name?: string; last_error?: string; compose_type?: string};
 	return (
-		<div className="flex w-full animate-in flex-col gap-6 pb-10 duration-200 fade-in">
-			<ComposeHeader
-				id={id}
-				compose={compose}
-				activeTab={activeTab}
-				setActiveTab={setActiveTab}
-				refetch={refetchAll}
-				tabs={TABS}
-			/>
-
-			{/* Tab Views */}
-			<div className="w-full">
-				{activeTab === 'General' && (
-					<ComposeGeneralTab
-						compose={compose}
-						onAction={handleAction}
-						onUpdated={refetchAll}
+		<ServiceLayout
+			id={String(id)}
+			name={compose.name || composeExtras.app_name || `Compose #${composeId}`}
+			subtitle={composeExtras.app_name || compose.name}
+			icon={<Layers2 className="size-4 text-primary" strokeWidth={1.7} />}
+			actions={
+				<>
+					<StatusBadge
+						status={compose.compose_status || ''}
+						error={composeExtras.last_error}
 					/>
-				)}
-				{activeTab === 'Architecture' && (
-					<ComposeArchitectureTab
-						compose={compose}
-						domains={domains}
-						schedules={schedules}
-						backups={backups}
-						onNavigateTab={setActiveTab}
-						onRefresh={refetchAll}
-					/>
-				)}
-				{activeTab === 'Environment' && (
-					<EnvironmentTab app={compose} handleUpdate={handleUpdateEnv} />
-				)}
-				{activeTab === 'Containers' && (
-					<ComposeContainersTab compose={compose} onUpdated={refetchAll} />
-				)}
-				{activeTab === 'Domains' && (
-					<ComposeDomainsTab
-						composeId={parsedComposeId}
-						compose={compose}
-						domains={domains}
-					/>
-				)}
-				{activeTab === 'Deployments' && (
-					<ComposeDeploymentsTab
-						composeId={parsedComposeId}
-						deployments={deployments}
-					/>
-				)}
-				{activeTab === 'Schedules' && (
-					<ComposeSchedulesTab compose={compose} schedules={schedules} />
-				)}
-				{activeTab === 'Backups' && (
-					<ComposeBackupsTab compose={compose} backups={backups} />
-				)}
-				{activeTab === 'Logs' && <ComposeLogsTab compose={compose} />}
-				{activeTab === 'Monitoring' && (
-					<MonitoringTab
-						app={compose}
-						appId={parsedComposeId}
-						entityType="compose"
-					/>
-				)}
-				{activeTab === 'Advanced' && (
-					<ComposeAdvancedTab compose={compose} />
-				)}
-			</div>
-		</div>
+					<span className="inline-flex items-center gap-1.5 rounded-lg bg-muted/40 px-2 py-1 text-[11px] font-medium text-muted-foreground select-none">
+						{composeExtras.compose_type === 'STACK'
+							? 'Swarm Stack'
+							: 'Docker Compose'}
+					</span>
+					<Button
+						variant="ghost"
+						size="icon"
+						title="Refresh status"
+						onClick={() => {
+							refetchAll();
+							toast.success('Compose stack refreshed');
+						}}
+						className="size-7 rounded-lg text-muted-foreground hover:text-foreground">
+						<RefreshCw className="size-3.5" />
+					</Button>
+				</>
+			}
+			tabs={TABS}
+			activeTab={activeTab}
+			onTabChange={setActiveTab}>
+			{activeTab === 'General' && (
+				<ComposeGeneralTab
+					compose={compose}
+					onAction={handleAction}
+					onUpdated={refetchAll}
+				/>
+			)}
+			{activeTab === 'Architecture' && (
+				<ComposeArchitectureTab
+					compose={compose}
+					domains={domains}
+					schedules={schedules}
+					backups={backups}
+					onNavigateTab={setActiveTab}
+					onRefresh={refetchAll}
+				/>
+			)}
+			{activeTab === 'Environment' && (
+				<EnvironmentTab app={compose} handleUpdate={handleUpdateEnv} />
+			)}
+			{activeTab === 'Containers' && (
+				<ComposeContainersTab compose={compose} onUpdated={refetchAll} />
+			)}
+			{activeTab === 'Domains' && (
+				<ComposeDomainsTab
+					composeId={parsedComposeId}
+					compose={compose}
+					domains={domains}
+				/>
+			)}
+			{activeTab === 'Deployments' && (
+				<ComposeDeploymentsTab
+					composeId={parsedComposeId}
+					deployments={deployments}
+				/>
+			)}
+			{activeTab === 'Schedules' && (
+				<ComposeSchedulesTab compose={compose} schedules={schedules} />
+			)}
+			{activeTab === 'Backups' && (
+				<ComposeBackupsTab compose={compose} backups={backups} />
+			)}
+			{activeTab === 'Logs' && <ComposeLogsTab compose={compose} />}
+			{activeTab === 'Monitoring' && (
+				<MonitoringTab
+					app={compose}
+					appId={parsedComposeId}
+					entityType="compose"
+				/>
+			)}
+			{activeTab === 'Advanced' && (
+				<ComposeAdvancedTab
+					compose={compose}
+					projectId={Number(id)}
+					onUpdated={refetchAll}
+				/>
+			)}
+		</ServiceLayout>
 	);
 }

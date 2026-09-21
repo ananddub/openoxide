@@ -1,5 +1,6 @@
+use bytes::Bytes;
 use std::sync::Arc;
-
+use tokio::time::interval;
 use tokio_util::sync::CancellationToken;
 
 use crate::api::connect::generated::openoxide::api::v1::TerminalOutputStream;
@@ -63,9 +64,24 @@ impl AgentPump {
 
     async fn run(mut self) {
         let mut exit_code = Some(0);
+        // Idle keepalive probe: an empty output frame costs nothing on the
+        // wire but fails once the client stream is gone (abrupt browser kill
+        // with an idle shell would otherwise leak the Agent stream and the
+        // host-shell helper container forever).
+        let mut probe = interval(std::time::Duration::from_secs(30));
+        probe.tick().await; // consume the immediate first tick
         loop {
             tokio::select! {
                 _ = self.cancel.cancelled() => break,
+                _ = probe.tick() => {
+                    if !self
+                        .events
+                        .emit_output(TerminalOutputStream::Stdout, Bytes::new())
+                        .await
+                    {
+                        break;
+                    }
+                }
                 result = self.stream.message() => match result {
                     Ok(Some(message)) => match message.payload {
                         Some(Payload::Stdout(output)) => {
@@ -119,9 +135,20 @@ impl RusshPump {
     }
 
     async fn run(self) {
+        let mut probe = interval(std::time::Duration::from_secs(30));
+        probe.tick().await;
         loop {
             tokio::select! {
                 _ = self.cancel.cancelled() => break,
+                _ = probe.tick() => {
+                    if !self
+                        .events
+                        .emit_output(TerminalOutputStream::Stdout, Bytes::new())
+                        .await
+                    {
+                        break;
+                    }
+                }
                 output = self.terminal.read_next() => match output {
                     Some(bytes) => {
                         if !self

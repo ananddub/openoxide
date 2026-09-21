@@ -12,6 +12,8 @@ pub struct ServersGetSshCredentialsRow {
     pub connection_mode: Option<String>,
     pub port: i64,
     pub username: String,
+    pub host_key_fingerprint: String,
+    pub host_key_openssh: String,
     pub private_key: Option<String>,
     pub public_key: Option<String>,
 }
@@ -21,8 +23,16 @@ pub struct ServersGetDirectSshCredentialsRow {
     pub ip_address: String,
     pub port: i64,
     pub username: String,
+    pub host_key_fingerprint: String,
+    pub host_key_openssh: String,
     pub private_key: Option<String>,
     pub public_key: Option<String>,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
+pub struct ServersGetHostKeyRow {
+    pub host_key_fingerprint: String,
+    pub host_key_openssh: String,
 }
 
 pub struct CreateServerParams {
@@ -56,6 +66,24 @@ pub struct UpdateServerParams {
     pub ssh_key_id: i64,
     pub id: i64,
 }
+
+pub struct ServersMigrateApplicationServersByIdsParams {
+    pub server_id: i64,
+    pub server_id2: i64,
+    pub id_list: String,
+}
+
+pub struct ServersMigrateBuildAssignmentsByIdsParams {
+    pub build_server_id: i64,
+    pub build_server_id2: i64,
+    pub service_id_list: String,
+}
+
+pub type ServersMigrateComposeServersByIdsParams = ServersMigrateApplicationServersByIdsParams;
+
+pub type ServersMigrateCertificatesByIdsParams = ServersMigrateApplicationServersByIdsParams;
+
+pub type ServersMigrateSchedulesByIdsParams = ServersMigrateApplicationServersByIdsParams;
 
 pub struct ServersRollbackApplicationServersParams {
     pub server_id: i64,
@@ -147,6 +175,12 @@ pub struct ServersUpdateAndReturnParams {
     pub build_cpu_limit: String,
     pub id: i64,
     pub organization_id: i64,
+}
+
+pub struct ServersSetHostKeyParams {
+    pub host_key_fingerprint: String,
+    pub host_key_openssh: String,
+    pub id: i64,
 }
 
 impl Queries {
@@ -384,6 +418,86 @@ impl Queries {
         )
         .bind(server_id)
         .bind(server_id2)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// ServersMigrateApplicationServersByIds
+    pub async fn servers_migrate_application_servers_by_ids(
+        &self,
+        params: &ServersMigrateApplicationServersByIdsParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE services SET server_id = ? WHERE server_id = ? AND service_type = 'APPLICATION' AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?));"
+        )
+        .bind(&params.server_id)
+        .bind(&params.server_id2)
+        .bind(&params.id_list)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// ServersMigrateBuildAssignmentsByIds
+    pub async fn servers_migrate_build_assignments_by_ids(
+        &self,
+        params: &ServersMigrateBuildAssignmentsByIdsParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE service_application SET build_server_id = ? WHERE build_server_id = ? AND service_id IN (SELECT CAST(value AS INTEGER) FROM json_each(?));"
+        )
+        .bind(&params.build_server_id)
+        .bind(&params.build_server_id2)
+        .bind(&params.service_id_list)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// ServersMigrateComposeServersByIds
+    pub async fn servers_migrate_compose_servers_by_ids(
+        &self,
+        params: &ServersMigrateComposeServersByIdsParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE services SET server_id = ? WHERE server_id = ? AND service_type = 'COMPOSE' AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?));"
+        )
+        .bind(&params.server_id)
+        .bind(&params.server_id2)
+        .bind(&params.id_list)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// ServersMigrateCertificatesByIds
+    pub async fn servers_migrate_certificates_by_ids(
+        &self,
+        params: &ServersMigrateCertificatesByIdsParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE certificates SET server_id = ? WHERE server_id = ? AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?));"
+        )
+        .bind(&params.server_id)
+        .bind(&params.server_id2)
+        .bind(&params.id_list)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// ServersMigrateSchedulesByIds
+    pub async fn servers_migrate_schedules_by_ids(
+        &self,
+        params: &ServersMigrateSchedulesByIdsParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE schedules SET server_id = ? WHERE server_id = ? AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?));"
+        )
+        .bind(&params.server_id)
+        .bind(&params.server_id2)
+        .bind(&params.id_list)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -643,7 +757,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<Servers>, sqlx::Error> {
         sqlx::query_as::<_, Servers>(
-            "SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit FROM servers;"
+            "SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit, host_key_fingerprint AS host_key_fingerprint, host_key_openssh AS host_key_openssh FROM servers;"
         )
         .fetch_all(&self.pool)
         .await
@@ -655,7 +769,7 @@ impl Queries {
         id: i64,
     ) -> Result<Servers, sqlx::Error> {
         sqlx::query_as::<_, Servers>(
-            "SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit FROM servers WHERE id = ?;"
+            "SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit, host_key_fingerprint AS host_key_fingerprint, host_key_openssh AS host_key_openssh FROM servers WHERE id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -745,7 +859,7 @@ impl Queries {
         id: i64,
     ) -> Result<ServersGetSshCredentialsRow, sqlx::Error> {
         sqlx::query_as::<_, ServersGetSshCredentialsRow>(
-            "SELECT s.ip_address AS public_ip, n.private_host AS private_ip, COALESCE(n.status, '') AS private_status, n.connection_mode AS connection_mode, s.port, s.username, k.private_key, k.public_key FROM servers s JOIN ssh_keys k ON k.id = s.ssh_key_id LEFT JOIN server_private_networks n ON n.server_id = s.id WHERE s.id = ?;"
+            "SELECT s.ip_address AS public_ip, n.private_host AS private_ip, COALESCE(n.status, '') AS private_status, n.connection_mode AS connection_mode, s.port, s.username, s.host_key_fingerprint AS host_key_fingerprint, s.host_key_openssh AS host_key_openssh, k.private_key, k.public_key FROM servers s JOIN ssh_keys k ON k.id = s.ssh_key_id LEFT JOIN server_private_networks n ON n.server_id = s.id WHERE s.id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -758,7 +872,7 @@ impl Queries {
         id: i64,
     ) -> Result<ServersGetDirectSshCredentialsRow, sqlx::Error> {
         sqlx::query_as::<_, ServersGetDirectSshCredentialsRow>(
-            "SELECT s.ip_address, s.port, s.username, k.private_key, k.public_key FROM servers s JOIN ssh_keys k ON k.id = s.ssh_key_id WHERE s.id = ?;"
+            "SELECT s.ip_address, s.port, s.username, s.host_key_fingerprint AS host_key_fingerprint, s.host_key_openssh AS host_key_openssh, k.private_key, k.public_key FROM servers s JOIN ssh_keys k ON k.id = s.ssh_key_id WHERE s.id = ?;"
         )
         .bind(id)
         .fetch_one(&self.pool)
@@ -771,7 +885,7 @@ impl Queries {
         organization_id: i64,
     ) -> Result<Vec<Servers>, sqlx::Error> {
         sqlx::query_as::<_, Servers>(
-            "SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit FROM servers WHERE organization_id = ? ORDER BY created_at DESC, id DESC;"
+            "SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit, host_key_fingerprint AS host_key_fingerprint, host_key_openssh AS host_key_openssh FROM servers WHERE organization_id = ? ORDER BY created_at DESC, id DESC;"
         )
         .bind(organization_id)
         .fetch_all(&self.pool)
@@ -784,7 +898,7 @@ impl Queries {
         params: &ServersCreateAndReturnParams,
     ) -> Result<Servers, sqlx::Error> {
         sqlx::query_as::<_, Servers>(
-            "INSERT INTO servers (name, description, ip_address, port, username, app_name, server_type, ssh_key_id, build_memory_limit, build_cpu_limit, organization_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit;"
+            "INSERT INTO servers (name, description, ip_address, port, username, app_name, server_status, server_type, enable_docker_cleanup, command, metrics_config, ssh_key_id, build_memory_limit, build_cpu_limit, organization_id) VALUES (?, ?, ?, ?, ?, ?, 'INACTIVE', ?, 0, '', '{}', ?, ?, ?, ?) RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit, host_key_fingerprint AS host_key_fingerprint, host_key_openssh AS host_key_openssh;"
         )
         .bind(&params.name)
         .bind(&params.description)
@@ -807,7 +921,7 @@ impl Queries {
         params: &ServersUpdateAndReturnParams,
     ) -> Result<Servers, sqlx::Error> {
         sqlx::query_as::<_, Servers>(
-            "UPDATE servers SET name = ?, description = ?, ip_address = ?, port = ?, username = ?, server_status = ?, server_type = ?, enable_docker_cleanup = ?, log_cleanup_cron = ?, command = ?, metrics_config = ?, ssh_key_id = ?, build_memory_limit = ?, build_cpu_limit = ? WHERE id = ? AND organization_id = ? RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit;"
+            "UPDATE servers SET name = ?, description = ?, ip_address = ?, port = ?, username = ?, server_status = ?, server_type = ?, enable_docker_cleanup = ?, log_cleanup_cron = ?, command = ?, metrics_config = ?, ssh_key_id = ?, build_memory_limit = ?, build_cpu_limit = ? WHERE id = ? AND organization_id = ? RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit, host_key_fingerprint AS host_key_fingerprint, host_key_openssh AS host_key_openssh;"
         )
         .bind(&params.name)
         .bind(&params.description)
@@ -836,9 +950,67 @@ impl Queries {
         id: i64,
     ) -> Result<Servers, sqlx::Error> {
         sqlx::query_as::<_, Servers>(
-            "UPDATE servers SET server_status = ? WHERE id = ? RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit;"
+            "UPDATE servers SET server_status = ? WHERE id = ? RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit, host_key_fingerprint AS host_key_fingerprint, host_key_openssh AS host_key_openssh;"
         )
         .bind(server_status)
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// ServersSetHostKeyFingerprint
+    pub async fn servers_set_host_key_fingerprint(
+        &self,
+        host_key_fingerprint: &str,
+        id: i64,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE servers SET host_key_fingerprint = ? WHERE id = ?;"
+        )
+        .bind(host_key_fingerprint)
+        .bind(id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// ServersGetHostKeyFingerprint
+    pub async fn servers_get_host_key_fingerprint(
+        &self,
+        id: i64,
+    ) -> Result<String, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, String>(
+            "SELECT host_key_fingerprint FROM servers WHERE id = ?;"
+        )
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// ServersSetHostKey
+    pub async fn servers_set_host_key(
+        &self,
+        params: &ServersSetHostKeyParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE servers SET host_key_fingerprint = ?, host_key_openssh = ? WHERE id = ?;"
+        )
+        .bind(&params.host_key_fingerprint)
+        .bind(&params.host_key_openssh)
+        .bind(&params.id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// ServersGetHostKey
+    pub async fn servers_get_host_key(
+        &self,
+        id: i64,
+    ) -> Result<ServersGetHostKeyRow, sqlx::Error> {
+        sqlx::query_as::<_, ServersGetHostKeyRow>(
+            "SELECT host_key_fingerprint, host_key_openssh FROM servers WHERE id = ?;"
+        )
         .bind(id)
         .fetch_one(&self.pool)
         .await

@@ -6,15 +6,12 @@ import "openoxide/api/v1/common.proto";
 service TagService {
   rpc ListTags(ResourceQuery) returns (ResourceListResponse);
   rpc GetTag(ResourceRequest) returns (ResourceResponse);
-  rpc StreamListTags(ResourceQuery) returns (stream ResourceListResponse);
-  rpc StreamTag(ResourceRequest) returns (stream ResourceResponse);
   rpc CreateTag(ResourceRequest) returns (ResourceResponse);
   rpc UpdateTag(ResourceRequest) returns (ResourceResponse);
   rpc DeleteTag(ResourceRequest) returns (Empty);
   rpc AddTag(ResourceRequest) returns (OperationResult);
   rpc RemoveTag(ResourceRequest) returns (Empty);
   rpc ListProjectTags(ResourceQuery) returns (ResourceListResponse);
-  rpc StreamListProjectTags(ResourceQuery) returns (stream ResourceListResponse);
   rpc AttachProjectTag(ResourceRequest) returns (OperationResult);
   rpc DetachProjectTag(ResourceRequest) returns (Empty);
 }

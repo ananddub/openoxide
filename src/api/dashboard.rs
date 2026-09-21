@@ -2,7 +2,7 @@ use rust_embed::RustEmbed;
 
 use bytes::Bytes;
 use http_body_util::{BodyExt, Full, combinators::UnsyncBoxBody};
-use hyper::{Method, Response, body::Incoming};
+use hyper::{Method, Response};
 use std::convert::Infallible;
 
 type ResponseBody = UnsyncBoxBody<Bytes, Infallible>;

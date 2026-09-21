@@ -217,7 +217,7 @@ export const LogLine = React.memo(({line, index, stage}: LogLineProps) => {
 			{/* Stage Badge Pill on Left side of Log Line (e.g. [DEPLOYING], [ROUTING], [PREPARING]) */}
 			{badgeTag && (
 				<span
-					className={`py-0.1 inline-flex shrink-0 items-center rounded border px-1.5 font-mono text-[9px] tracking-wider uppercase ${badgeStyle}`}>
+					className={`py-0.1 inline-flex shrink-0 items-center rounded  px-1.5 font-mono text-[9px] tracking-wider uppercase ${badgeStyle}`}>
 					{badgeTag}
 				</span>
 			)}

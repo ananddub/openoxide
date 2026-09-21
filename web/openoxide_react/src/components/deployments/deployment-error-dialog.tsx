@@ -22,8 +22,8 @@ export function DeploymentErrorDialog({
 		<Dialog
 			open={!!errorDetailDeployment}
 			onOpenChange={open => !open && onClose()}>
-			<DialogContent className="border-border bg-card sm:max-w-xl">
-				<DialogHeader className="border-b border-border/30 pb-3">
+			<DialogContent className="border- bg-card sm:max-w-xl">
+				<DialogHeader className="border-b  pb-3">
 					<DialogTitle className="text-md flex items-center gap-2 font-bold text-rose-500">
 						<AlertCircle className="size-5" />
 						Deployment Failure Details
@@ -35,7 +35,7 @@ export function DeploymentErrorDialog({
 				</DialogHeader>
 
 				<div className="my-4">
-					<div className="max-h-96 overflow-y-auto rounded-lg border border-rose-500/20 bg-rose-500/5 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-rose-200 select-text">
+					<div className="max-h-96 overflow-y-auto rounded-lg bg-rose-500/5 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-rose-200 select-text">
 						{errorDetailDeployment?.error_message ||
 							'No failure trace registered.'}
 					</div>
@@ -45,7 +45,7 @@ export function DeploymentErrorDialog({
 					<Button
 						variant="outline"
 						onClick={onClose}
-						className="border-border text-xs font-semibold hover:bg-muted">
+						className=" text-xs font-semibold hover:bg-muted">
 						Dismiss
 					</Button>
 				</div>

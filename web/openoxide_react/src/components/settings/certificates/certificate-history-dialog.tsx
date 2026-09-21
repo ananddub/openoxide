@@ -119,7 +119,7 @@ export function CertificateHistoryDialog({
               {history.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-md border px-3 py-2 text-xs"
+                  className="rounded-md  px-3 py-2 text-xs"
                 >
                   <div className="flex justify-between">
                     <span

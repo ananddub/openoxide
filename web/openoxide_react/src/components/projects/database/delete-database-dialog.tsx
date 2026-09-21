@@ -65,9 +65,9 @@ export function DeleteDatabaseDialog({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="flex flex-col gap-5 rounded-2xl border border-destructive/30 bg-card p-6 shadow-2xl sm:max-w-md">
+			<DialogContent className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-2xl sm:max-w-md">
 				<DialogHeader className="space-y-2">
-					<div className="flex size-10 items-center justify-center rounded-full border border-destructive/20 bg-destructive/10 text-destructive">
+					<div className="flex size-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">
 						<AlertTriangle className="size-5" />
 					</div>
 					<DialogTitle className="flex items-center gap-2 text-lg font-bold tracking-tight text-destructive">
@@ -98,7 +98,7 @@ export function DeleteDatabaseDialog({
 						/>
 					</div>
 
-					<div className="flex items-center justify-end border-t border-border/30 pt-3">
+					<div className="flex items-center justify-end border-t  pt-3">
 						<Button
 							type="submit"
 							disabled={

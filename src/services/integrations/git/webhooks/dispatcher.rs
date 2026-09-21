@@ -88,7 +88,7 @@ impl WebhookDispatcher {
                 continue;
             }
             match app_service
-                .run_operation(resource.id, ApplicationOperation::Redeploy)
+                .run_operation(resource.id, ApplicationOperation::Redeploy, 0)
                 .await
             {
                 Ok(_) => outcome.applications_queued += 1,
@@ -107,7 +107,7 @@ impl WebhookDispatcher {
                 continue;
             }
             match compose_service
-                .run_operation(resource.id, ComposeOperation::Redeploy)
+                .run_operation(resource.id, ComposeOperation::Redeploy, 0)
                 .await
             {
                 Ok(_) => outcome.compose_projects_queued += 1,

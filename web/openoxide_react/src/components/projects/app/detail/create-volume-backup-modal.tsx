@@ -145,7 +145,7 @@ export function CreateVolumeBackupModal({
 						/>
 					</div>
 
-					<div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 p-3">
+					<div className="flex items-center justify-between rounded-lg bg-muted/20 p-3">
 						<div className="space-y-0.5">
 							<Label
 								htmlFor="turn-off-switch"

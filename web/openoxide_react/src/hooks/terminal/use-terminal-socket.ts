@@ -1,10 +1,12 @@
 import {useEffect, useRef, useState} from 'react';
 import type {Terminal} from '@xterm/xterm';
+import {create} from '@bufbuild/protobuf';
 import {createServiceClient} from '#/api/connect';
 import {
 	TerminalService,
 	TerminalKind,
 	type OpenTerminalRequest,
+	OpenTerminalRequestSchema,
 } from '#/gen/connect/openoxide/api/v1/terminal_pb';
 
 const CONTROL_KEY_MAP: Record<string, string> = {
@@ -24,10 +26,11 @@ interface UseTerminalSocketOptions {
 	targetContainer: string;
 	shell: string;
 	isRemoteServer: boolean;
+	/** Escape through the Agent to the host itself instead of a container. */
+	hostMode?: boolean;
 	serverId?: number;
 	termInstance: Terminal | null;
 }
-
 /**
  * Interactive terminal over the TerminalService ConnectRPC API.
  *
@@ -42,6 +45,7 @@ export function useTerminalSocket({
 	targetContainer,
 	shell,
 	isRemoteServer,
+	hostMode = false,
 	serverId,
 	termInstance,
 }: UseTerminalSocketOptions) {
@@ -69,6 +73,10 @@ export function useTerminalSocket({
 			termInstance.writeln(
 				`\x1b[33mConnecting to Remote Server [${targetContainer}] via SSH...\x1b[0m\r\n`,
 			);
+		} else if (hostMode) {
+			termInstance.writeln(
+				`\x1b[33mOpening host root shell on [${targetContainer}]...\x1b[0m\r\n`,
+			);
 		} else {
 			termInstance.writeln(
 				`\x1b[33mConnecting to Docker Container [${targetContainer}]...\x1b[0m\r\n`,
@@ -92,16 +100,17 @@ export function useTerminalSocket({
 				.catch(() => {});
 		};
 
-		const request: OpenTerminalRequest = {
+		const request: OpenTerminalRequest = create(OpenTerminalRequestSchema, {
 			kind: isRemoteServer
 				? TerminalKind.REMOTE_SERVER
 				: TerminalKind.DOCKER,
 			serverId: serverId ? BigInt(serverId) : undefined,
-			container: isRemoteServer ? undefined : targetContainer,
+			container: isRemoteServer || hostMode ? undefined : targetContainer,
+			host: hostMode,
 			shell,
 			cols: termInstance.cols || 80,
 			rows: termInstance.rows || 24,
-		};
+		});
 
 		(async () => {
 			try {
@@ -115,10 +124,12 @@ export function useTerminalSocket({
 								setActiveHostIp(event.payload.value.host);
 							}
 							termInstance.reset();
-							const connectedTarget =
-								event.payload.value.host || targetContainer;
-							const label = isRemoteServer
-								? 'SSH Remote Server'
+						const connectedTarget =
+							event.payload.value.host || targetContainer;
+						const label = isRemoteServer
+							? 'SSH Remote Server'
+							: hostMode
+								? 'Host Shell'
 								: 'Docker Container';
 							termInstance.writeln(
 								`\x1b[32mTerminal session started on ${connectedTarget} (${label}). Type commands below:\x1b[0m\r\n`,
@@ -238,6 +249,7 @@ export function useTerminalSocket({
 		targetContainer,
 		shell,
 		isRemoteServer,
+		hostMode,
 		serverId,
 		termInstance,
 	]);

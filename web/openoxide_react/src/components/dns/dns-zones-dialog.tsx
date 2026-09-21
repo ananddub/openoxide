@@ -154,7 +154,7 @@ export function DnsZonesDialog({provider}: Props) {
 					)}
 					<div className="space-y-2">
 						{zones.map(zone => (
-							<div key={zone.id} className="rounded-md border">
+							<div key={zone.id} className="rounded-md ">
 								<button
 									type="button"
 									className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm"
@@ -180,7 +180,7 @@ export function DnsZonesDialog({provider}: Props) {
 										{records.map(record => (
 											<div
 												key={record.id}
-												className="flex items-center gap-2 rounded border px-2 py-1.5 text-xs">
+												className="flex items-center gap-2 rounded  px-2 py-1.5 text-xs">
 												<Badge variant="outline">
 													{record.record_type}
 												</Badge>

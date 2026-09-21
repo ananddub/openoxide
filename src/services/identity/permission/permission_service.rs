@@ -10,7 +10,7 @@ use crate::{
         user_policy::{UserPolicyDeleteParams, UserPolicyUpsertParams},
     },
 };
-use crate::services::identity::permission::types::{PolicyAction, ResourceType, UserRole};
+use crate::services::identity::permission::types::{PolicyAction, ResourceType};
 
 pub struct PermissionService {
     queries: Arc<FlashQueries>,

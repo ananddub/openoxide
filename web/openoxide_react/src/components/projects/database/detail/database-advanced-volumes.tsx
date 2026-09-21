@@ -74,7 +74,7 @@ export function DatabaseAdvancedVolumes({database, onUpdated}: any) {
 		}
 	};
 	return (
-		<section className="flex flex-col gap-5 rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+		<section className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-sm">
 			<div className="flex flex-wrap items-start justify-between gap-4">
 				<div>
 					<h3 className="flex items-center gap-2 text-base font-bold">
@@ -93,7 +93,7 @@ export function DatabaseAdvancedVolumes({database, onUpdated}: any) {
 				)}
 			</div>
 			{mounts.length === 0 ? (
-				<div className="flex flex-col items-center gap-3 border-t border-border/40 py-10 text-muted-foreground">
+				<div className="flex flex-col items-center gap-3 border-t  py-10 text-muted-foreground">
 					<Package className="size-8" />
 					<p className="text-sm">No volumes/mounts configured</p>
 					<Button
@@ -103,15 +103,15 @@ export function DatabaseAdvancedVolumes({database, onUpdated}: any) {
 					</Button>
 				</div>
 			) : (
-				<div className="flex flex-col gap-4 border-t border-border/40 pt-4">
-					<div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300">
+				<div className="flex flex-col gap-4 border-t  pt-4">
+					<div className="rounded-lg bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300">
 						Redeploy the database after adding, editing, or deleting a
 						mount.
 					</div>
 					{mounts.map(mount => (
 						<div
 							key={mount.id}
-							className="flex flex-col justify-between gap-4 rounded-lg border p-4 sm:flex-row sm:items-center">
+							className="flex flex-col justify-between gap-4 rounded-lg  p-4 sm:flex-row sm:items-center">
 							<div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3">
 								<MountValue label="Mount Type" value={mount.mount_type} />
 								<MountValue

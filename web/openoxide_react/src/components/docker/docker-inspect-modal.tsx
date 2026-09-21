@@ -53,9 +53,9 @@ export function DockerInspectModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-			<div className="flex max-h-[85vh] w-full max-w-3xl animate-in flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl duration-150 fade-in">
+			<div className="flex max-h-[85vh] w-full max-w-3xl animate-in flex-col overflow-hidden rounded-xl bg-card shadow-2xl duration-150 fade-in">
 				{/* Modal Header */}
-				<div className="flex items-center justify-between border-b border-border bg-muted/30 p-4">
+				<div className="flex items-center justify-between border-b border- bg-muted/30 p-4">
 					<div className="flex items-center gap-2">
 						{activeModal.type === 'logs' && (
 							<Terminal className="h-4 w-4 text-sky-400" />
@@ -80,7 +80,7 @@ export function DockerInspectModal({
 							onClick={() =>
 								handleCopy(JSON.stringify(activeModal.container, null, 2))
 							}
-							className="flex h-7 items-center gap-1 border-border px-2 text-xs font-semibold">
+							className="flex h-7 items-center gap-1  px-2 text-xs font-semibold">
 							{copied ? (
 								<Check className="h-3 w-3 text-emerald-500" />
 							) : (
@@ -116,7 +116,7 @@ export function DockerInspectModal({
 					{/* 2. Config View */}
 					{activeModal.type === 'config' && (
 						<div className="flex flex-col gap-4">
-							<div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3 font-mono text-xs">
+							<div className="flex flex-col gap-2 rounded-lg bg-muted/30 p-3 font-mono text-xs">
 								<span className="text-[10px] font-bold text-muted-foreground uppercase">
 									Environment Variables
 								</span>
@@ -129,7 +129,7 @@ export function DockerInspectModal({
 								</pre>
 							</div>
 
-							<div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3 font-mono text-xs">
+							<div className="flex flex-col gap-2 rounded-lg bg-muted/30 p-3 font-mono text-xs">
 								<span className="text-[10px] font-bold text-muted-foreground uppercase">
 									Container Specifications
 								</span>
@@ -160,7 +160,7 @@ export function DockerInspectModal({
 							{(activeModal.container.mounts || []).map((m, idx) => (
 								<div
 									key={idx}
-									className="flex flex-col gap-1.5 rounded-lg border border-border bg-muted/30 p-3 font-mono text-xs">
+									className="flex flex-col gap-1.5 rounded-lg bg-muted/30 p-3 font-mono text-xs">
 									<div className="flex items-center justify-between">
 										<span className="font-bold text-primary">
 											Host Source:
@@ -171,13 +171,13 @@ export function DockerInspectModal({
 											{m.mode}
 										</Badge>
 									</div>
-									<span className="truncate rounded border border-border/40 bg-background p-1.5 text-foreground">
+									<span className="truncate rounded bg-background p-1.5 text-foreground">
 										{m.source}
 									</span>
 									<span className="mt-1 font-bold text-primary">
 										Container Destination:
 									</span>
-									<span className="truncate rounded border border-border/40 bg-background p-1.5 text-foreground">
+									<span className="truncate rounded bg-background p-1.5 text-foreground">
 										{m.destination}
 									</span>
 								</div>
@@ -188,7 +188,7 @@ export function DockerInspectModal({
 					{/* 4. Network View */}
 					{activeModal.type === 'network' && (
 						<div className="flex flex-col gap-4">
-							<div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3">
+							<div className="flex flex-col gap-2 rounded-lg bg-muted/30 p-3">
 								<span className="text-xs font-bold text-foreground">
 									Connected Docker Networks
 								</span>
@@ -205,11 +205,11 @@ export function DockerInspectModal({
 								</div>
 							</div>
 
-							<div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3 font-mono text-xs">
+							<div className="flex flex-col gap-2 rounded-lg bg-muted/30 p-3 font-mono text-xs">
 								<span className="text-xs font-bold text-foreground">
 									Exposed Container Ports
 								</span>
-								<span className="rounded border border-border/40 bg-background p-2 text-foreground">
+								<span className="rounded bg-background p-2 text-foreground">
 									{activeModal.container.ports}
 								</span>
 							</div>

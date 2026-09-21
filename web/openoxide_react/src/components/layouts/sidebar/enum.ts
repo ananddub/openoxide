@@ -1,29 +1,24 @@
 import {
 	House,
-	LayoutDashboard,
+	// LayoutDashboard, // used by disabled Overview sidebar entry
 	Folder,
-	BarChartHorizontal,
+	// BarChartHorizontal — retired with the global Monitoring page (per-server overview carries it now)
 	Clock,
 	GalleryVerticalEnd,
 	// Blocks, // used by disabled Docker sidebar entry
+	Rocket,
 	PieChart,
 	Forward,
 	Activity,
-	User,
 	Server,
-	Users,
-	ClipboardList,
+	// User, Users, ClipboardList — moved into /settings tabs
 	KeyRound,
 	Settings,
 	Tags,
-	GitBranch,
-	Bot,
-	Package,
+	// GitBranch, Bot, ShieldCheck, Bell — moved into /settings tabs
 	Database,
-	ShieldCheck,
-	Bell,
-	BookIcon,
-	CircleHelp,
+	Package,
+	// BookIcon, CircleHelp — removed with the sidebar Extra/help section
 	// Globe, // used by disabled DNS Providers sidebar entry
 } from 'lucide-react';
 import type {LucideIcon} from 'lucide-react';
@@ -50,84 +45,52 @@ export type NavItem =
 			to: string;
 	  };
 
-// External link item used in the Help/Extra group.
-export type ExternalLink = {
-	title: string;
-	href: string;
-	icon: LucideIcon;
-};
+// (External help links section removed — the rail carries navigation only.)
 
-// Top-level menu structure split into platform, settings, and help sections.
+/**
+ * Nav structure mirrors the OpenShip dashboard rail: a short "main" work
+ * section, an "infrastructure" section for host/proxy surfaces, and a long
+ * "settings" section for everything else. Empty sections filter out at
+ * render time, so permission-gated rows collapse cleanly.
+ */
 export type Menu = {
-	platform: NavItem[];
+	main: NavItem[];
+	infrastructure: NavItem[];
 	settings: NavItem[];
-	help: ExternalLink[];
 };
 
-// Exact icon mapping extracted directly from Dokploy source (apps/dokploy/components/layouts/side.tsx)
 export const MENU: Menu = {
-	platform: [
+	main: [
 		{title: 'Home', icon: House, to: '/'},
 		{title: 'Projects', icon: Folder, to: '/projects'},
-		{title: 'Overview', icon: LayoutDashboard, to: '/overview'},
-		{title: 'Monitoring', icon: BarChartHorizontal, to: '/monitoring'},
+		// Disabled: Overview duplicates the home dashboard; kept on disk for re-enable.
+		// {title: 'Overview', icon: LayoutDashboard, to: '/overview'},
+		{title: 'Deployments', icon: Rocket, to: '/Deployments'},
 		{title: 'Schedules', icon: Clock, to: '/schedules'},
-		{title: 'Traefik', icon: GalleryVerticalEnd, to: '/traefik'},
+	],
+	infrastructure: [
+		{title: 'Remote Servers', icon: Server, to: '/remote-servers'},
+		// Web Server / Traefik / Swarm / Requests are underline tabs of one
+		// page now (pages/infra.tsx); ?tab= deep-links from the search palette.
+		{title: 'Web Server', icon: Activity, to: '/infra'},
 		// Disabled: host-wide Docker view leaks org-unmanaged containers into org context.
 		// Re-enable (or move under Remote Servers) when decided.
 		// {title: 'Docker', icon: Blocks, to: '/docker'},
-		{title: 'Swarm', icon: PieChart, to: '/swarm'},
-		{title: 'Requests', icon: Forward, to: '/requests'},
 	],
 	settings: [
-		{title: 'Web Server', icon: Activity, to: '/settings/server'},
-		{title: 'Profile', icon: User, to: '/settings/profile'},
-		{title: 'Remote Servers', icon: Server, to: '/remote-servers'},
-		{title: 'Users', icon: Users, to: '/settings/users', permission: 'member:read'},
-		{
-			title: 'Permission Groups',
-			icon: ShieldCheck,
-			to: '/settings/groups',
-			permission: 'group:read',
-		},
-		{
-			title: 'Audit Logs',
-			icon: ClipboardList,
-			to: '/settings/audit-logs',
-			permission: 'audit_log:read',
-		},
+		// Settings is one surface now: /settings carries Account/Team/Groups/
+		// Audit/Git/Notifications/AI/Certificates as URL tabs with a right rail
+		// (OpenShip pattern). The old Organization placeholder page is gone —
+		// the active workspace lives in the sidebar switcher. Resource tools
+		// below stay top-level: they are workspaces, not settings.
+		{title: 'Settings', icon: Settings, to: '/settings'},
 		{title: 'SSH Keys', icon: KeyRound, to: '/ssh-keys'},
-		{title: 'Organization', icon: Settings, to: '/settings'},
 		{title: 'Tags', icon: Tags, to: '/tags'},
-		{
-			title: 'Git Providers',
-			icon: GitBranch,
-			to: '/settings/git-providers',
-		},
-		{title: 'AI Settings', icon: Bot, to: '/settings/ai'},
 		{title: 'Registry', icon: Package, to: '/registry'},
 		{title: 'Vault Providers', icon: KeyRound, to: '/vault'},
 		// Disabled: DNS Providers (page kept on disk for future re-enable).
 		// {title: 'DNS Providers', icon: Globe, to: '/dns'},
 		{title: 'S3 Destinations', icon: Database, to: '/destinations'},
-		{
-			title: 'Certificates',
-			icon: ShieldCheck,
-			to: '/settings/certificates',
-		},
-		{title: 'Notifications', icon: Bell, to: '/settings/notifications'},
-	],
-	help: [
-		{
-			title: 'Documentation',
-			href: 'https://github.com/vajra-labs/goploy',
-			icon: BookIcon,
-		},
-		{
-			title: 'Support',
-			href: 'https://github.com/vajra-labs/goploy/issues',
-			icon: CircleHelp,
-		},
 	],
 };
 
@@ -143,12 +106,38 @@ export type RouteItem = {
  * Used by SearchDialog for command palette navigation.
  */
 export const ROUTES: RouteItem[] = [
-	...MENU.platform.map(item => ({
+	...MENU.main.map(item => ({
 		label: item.title,
 		path: item.to,
 		icon: item.icon,
-		group: 'Navigation',
+		group: 'Main',
 	})),
+	...MENU.infrastructure.map(item => ({
+		label: item.title,
+		path: item.to,
+		icon: item.icon,
+		group: 'Infrastructure',
+	})),
+	// The consolidated infra page's other tabs — reachable from the palette
+	// even though the sidebar shows only the "Web Server" entry.
+	{
+		label: 'Traefik',
+		path: '/infra?tab=traefik',
+		icon: GalleryVerticalEnd,
+		group: 'Infrastructure',
+	},
+	{
+		label: 'Swarm',
+		path: '/infra?tab=swarm',
+		icon: PieChart,
+		group: 'Infrastructure',
+	},
+	{
+		label: 'Requests',
+		path: '/infra?tab=requests',
+		icon: Forward,
+		group: 'Infrastructure',
+	},
 	...MENU.settings.map(item => ({
 		label: item.title,
 		path: item.to,

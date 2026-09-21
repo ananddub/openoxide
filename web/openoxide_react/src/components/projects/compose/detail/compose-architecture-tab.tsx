@@ -22,7 +22,7 @@ import {CreateScheduleModal} from './schedules/create-schedule-modal';
 import {CreateBackupModal} from './backups/create-backup-modal';
 import {ComposeDirectContainerLogsModal} from './logs/compose-direct-container-logs-modal';
 import {ComposeDirectDeployLogsModal} from './deployments/compose-direct-deploy-logs-modal';
-import {TerminalModal} from '#/components/projects/common/terminal-modal';
+import {TerminalCard} from '#/components/shared/terminal-card';
 import type {DomainFormData} from '#/components/projects/common/domain-dialog';
 import {useOrganizations} from '#/stores/session-context';
 
@@ -508,11 +508,11 @@ export function ComposeArchitectureTab({
 				/>
 			)}
 
-			{/* Terminal Shell Modal */}
+			{/* Terminal Shell — inline card */}
 			{activeModal === 'terminal' && (
-				<TerminalModal
+				<TerminalCard
 					app={terminalAppData}
-					open={true}
+					enabled={true}
 					onClose={() => setActiveModal(null)}
 				/>
 			)}

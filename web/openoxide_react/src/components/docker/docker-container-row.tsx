@@ -48,7 +48,7 @@ export function DockerContainerRow({
 
 			{/* ID */}
 			<TableCell className="px-4 py-3 font-mono text-xs">
-				<span className="rounded border border-border/40 bg-muted/40 px-2 py-0.5 font-semibold text-foreground">
+				<span className="rounded bg-muted/40 px-2 py-0.5 font-semibold text-foreground">
 					{c.id}
 				</span>
 			</TableCell>
@@ -86,7 +86,7 @@ export function DockerContainerRow({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="end"
-						className="w-44 border-border bg-card p-1 text-xs shadow-md">
+						className="w-44 border- bg-card p-1 text-xs shadow-md">
 						<DropdownMenuGroup>
 							<DropdownMenuLabel className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase">
 								Inspect Options

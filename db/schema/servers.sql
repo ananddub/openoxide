@@ -17,5 +17,7 @@ CREATE TABLE servers (
     created_at BIGINT NOT NULL,
     updated_at BIGINT NOT NULL,
     build_memory_limit TEXT,
-    build_cpu_limit TEXT
+    build_cpu_limit TEXT,
+    host_key_fingerprint TEXT NOT NULL DEFAULT '',
+    host_key_openssh TEXT NOT NULL DEFAULT ''
 );

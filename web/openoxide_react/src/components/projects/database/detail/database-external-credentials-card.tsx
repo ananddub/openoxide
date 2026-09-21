@@ -128,7 +128,7 @@ export function DatabaseExternalCredentialsCard({
 	};
 
 	return (
-		<div className="flex flex-col gap-5 rounded-2xl border border-border/80 bg-card p-6 shadow-xs">
+		<div className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-xs">
 			<div>
 				<h3 className="text-xl font-bold tracking-tight text-foreground">
 					External Credentials
@@ -140,7 +140,7 @@ export function DatabaseExternalCredentialsCard({
 				</p>
 			</div>
 
-			<div className="flex flex-col gap-5 border-t border-border/40 pt-4">
+			<div className="flex flex-col gap-5 border-t  pt-4">
 				<div className="flex w-full flex-col gap-1.5">
 					<label className="text-xs font-semibold text-muted-foreground">
 						External Port (Internet)
@@ -150,12 +150,12 @@ export function DatabaseExternalCredentialsCard({
 						value={extPortInput}
 						onChange={e => setExtPortInput(e.target.value)}
 						placeholder={internalPort.toString()}
-						className="h-9 w-full border-border bg-background font-mono text-xs"
+						className="h-9 w-full border- bg-background font-mono text-xs"
 					/>
 				</div>
 
 				{externalPort ? (
-					<div className="flex flex-col gap-4 border-t border-border/30 pt-4">
+					<div className="flex flex-col gap-4 border-t  pt-4">
 						<div className="flex w-full flex-col gap-1.5">
 							<label className="text-xs font-semibold text-muted-foreground">
 								External Host
@@ -194,7 +194,7 @@ export function DatabaseExternalCredentialsCard({
 					</div>
 				) : null}
 
-				<div className="flex justify-end border-t border-border/30 pt-2">
+				<div className="flex justify-end border-t  pt-2">
 					<Button
 						variant="default"
 						size="sm"

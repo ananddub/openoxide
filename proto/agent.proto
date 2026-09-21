@@ -200,6 +200,9 @@ message ShellOpen {
   string shell = 3;
   uint32 cols = 4;
   uint32 rows = 5;
+  // Escape to the host: the agent starts a privileged helper container
+  // (host root bind + host PID namespace) and chroots into it.
+  bool host = 6;
 }
 
 // Client → agent: PTY stdin bytes.

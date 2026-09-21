@@ -47,7 +47,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let shutdown = CancellationToken::new();
 
     let mut tasks = tokio::task::JoinSet::new();
-    tasks.spawn(GrpcServerTask::run((*context).clone(), shutdown.clone()));
+    tasks.spawn(GrpcServerTask::run(
+        (*context).clone(),
+        container.clone(),
+        shutdown.clone(),
+    ));
     tasks.spawn(HostCollectorTask::run((*context).clone(), shutdown.clone()));
     tasks.spawn(ContainerCollectorTask::run(
         (*context).clone(),

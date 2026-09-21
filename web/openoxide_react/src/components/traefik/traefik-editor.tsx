@@ -48,7 +48,7 @@ export function TraefikEditor({
 	return (
 		<div className="flex h-full min-h-[450px] flex-1 flex-col overflow-hidden bg-[#1e1e1e]">
 			{/* Clean Toolbar Header */}
-			<div className="flex shrink-0 items-center justify-between border-b border-border/50 bg-muted/20 px-3.5 py-2">
+			<div className="flex shrink-0 items-center justify-between border-b  bg-muted/20 px-3.5 py-2">
 				<div className="flex items-center gap-2.5 truncate">
 					<FileCode className="size-4 shrink-0 text-primary" />
 					<span
@@ -57,7 +57,7 @@ export function TraefikEditor({
 						{fullPathDisplay}
 					</span>
 					{isReadOnly && (
-						<span className="rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
+						<span className="rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
 							Read-Only
 						</span>
 					)}
@@ -72,7 +72,7 @@ export function TraefikEditor({
 							variant="outline"
 							size="sm"
 							onClick={() => setIsLocked(!isLocked)}
-							className="h-7 cursor-pointer gap-1.5 border-border/60 px-2.5 text-xs font-medium shadow-2xs">
+							className="h-7 cursor-pointer gap-1.5  px-2.5 text-xs font-medium shadow-2xs">
 							{isLocked ? (
 								<>
 									<Lock className="size-3 text-amber-500" /> Unlock

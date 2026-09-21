@@ -1,14 +1,11 @@
 import {useState, useMemo} from 'react';
-import {createFileRoute} from '@tanstack/react-router';
 import {useRemoteServerList} from '#/api/live';
 import {TraefikRequestsView} from '#/components/traefik/traefik-requests';
 import type {RemoteServerItem} from '#/components/traefik/traefik-types';
 
-export const Route = createFileRoute('/_app/requests')({
-	component: RequestsPage,
-});
+// Rendered as the "Requests" tab of pages/infra.tsx — no standalone route.
 
-function RequestsPage() {
+export function RequestsPanel() {
 	const [selectedServerId, setSelectedServerId] =
 		useState<string>('local');
 
@@ -27,7 +24,7 @@ function RequestsPage() {
 	}, [rawServers]);
 
 	return (
-		<div className="flex h-[calc(100vh-7rem)] w-full animate-in flex-col gap-2 p-3 duration-200 fade-in">
+		<div className="flex h-full min-h-0 w-full flex-1 flex-col gap-2 overflow-hidden">
 			{/* Requests Analytics View with Single Integrated Titlebar */}
 			<TraefikRequestsView
 				selectedServerId={selectedServerId}

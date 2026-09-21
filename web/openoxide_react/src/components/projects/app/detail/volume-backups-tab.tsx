@@ -97,7 +97,7 @@ export function VolumeBackupsTab({
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Header */}
-			<section className="flex items-center justify-between rounded-xl border border-border bg-card p-5 shadow-sm">
+			<section className="flex items-center justify-between rounded-xl bg-card p-5 shadow-sm">
 				<div>
 					<h3 className="text-sm font-bold text-foreground">
 						Volume Storage Snapshots
@@ -116,7 +116,7 @@ export function VolumeBackupsTab({
 			</section>
 
 			{/* Backups List */}
-			<section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+			<section className="overflow-hidden rounded-xl bg-card shadow-sm">
 				{appBackups.length === 0 ? (
 					<div className="p-12 text-center text-muted-foreground">
 						<HardDrive className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
@@ -135,7 +135,7 @@ export function VolumeBackupsTab({
 								key={b.id}
 								className="flex flex-col justify-between gap-4 p-4 transition-colors hover:bg-muted/10 sm:flex-row sm:items-center">
 								<div className="flex min-w-0 items-start gap-3">
-									<div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+									<div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
 										<HardDrive className="h-4 w-4" />
 									</div>
 									<div className="min-w-0">
@@ -144,7 +144,7 @@ export function VolumeBackupsTab({
 												{b.name}
 											</span>
 											{b.turn_off === 1 && (
-												<span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] text-amber-600 dark:text-amber-400">
+												<span className="rounded bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] text-amber-600 dark:text-amber-400">
 													Pause container on backup
 												</span>
 											)}
@@ -171,7 +171,7 @@ export function VolumeBackupsTab({
 										disabled={activeActionId?.id === b.id}
 										variant="outline"
 										size="sm"
-										className="flex h-8 items-center gap-1.5 rounded-lg border-border text-xs font-semibold text-foreground hover:bg-muted">
+										className="flex h-8 items-center gap-1.5 rounded-lg  text-xs font-semibold text-foreground hover:bg-muted">
 										{activeActionId?.id === b.id &&
 										activeActionId?.action === 'run' ? (
 											<RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -185,7 +185,7 @@ export function VolumeBackupsTab({
 										disabled={activeActionId?.id === b.id}
 										variant="outline"
 										size="sm"
-										className="flex h-8 items-center gap-1.5 rounded-lg border-border text-xs font-semibold text-foreground hover:bg-muted">
+										className="flex h-8 items-center gap-1.5 rounded-lg  text-xs font-semibold text-foreground hover:bg-muted">
 										{activeActionId?.id === b.id &&
 										activeActionId?.action === 'restore' ? (
 											<RefreshCw className="h-3.5 w-3.5 animate-spin" />

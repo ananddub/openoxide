@@ -72,7 +72,7 @@ export function ComposeDeploymentsList({
 			return 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20';
 		if (isBuildActive(e))
 			return 'text-amber-500 bg-amber-500/10 border-amber-500/30 animate-pulse';
-		return 'text-muted-foreground bg-muted border-border';
+		return 'text-muted-foreground bg-muted ';
 	};
 
 	const formatTimestamp = (raw: any) => {
@@ -84,7 +84,7 @@ export function ComposeDeploymentsList({
 	};
 
 	return (
-		<section className="overflow-hidden rounded-xl border border-border bg-card">
+		<section className="overflow-hidden rounded-xl bg-card">
 			{isLoading && deployments.length === 0 ? (
 				<div className="flex justify-center py-12">
 					<RefreshCw className="h-6 w-6 animate-spin text-muted-foreground/45" />
@@ -117,7 +117,7 @@ export function ComposeDeploymentsList({
 
 								<div className="flex shrink-0 items-center gap-3">
 									<span
-										className={`rounded border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusBadge(e)}`}>
+										className={`rounded  px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusBadge(e)}`}>
 										{e.status || e.state || 'PENDING'}
 									</span>
 									<span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
@@ -129,7 +129,7 @@ export function ComposeDeploymentsList({
 										size="sm"
 										variant="outline"
 										onClick={() => onOpenStream(e.id)}
-										className="flex h-7 items-center gap-1 rounded-lg border-border px-2 text-xs font-semibold text-foreground hover:bg-muted">
+										className="flex h-7 items-center gap-1 rounded-lg  px-2 text-xs font-semibold text-foreground hover:bg-muted">
 										<Terminal className="h-3 w-3" /> Stream Logs
 									</Button>
 

@@ -111,12 +111,12 @@ export function DatabaseInternalCredentialsCard({
 	};
 
 	return (
-		<div className="flex flex-col gap-5 rounded-2xl border border-border/80 bg-card p-6 shadow-xs">
+		<div className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-xs">
 			<h3 className="text-xl font-bold tracking-tight text-foreground">
 				Internal Credentials
 			</h3>
 
-			<div className="grid grid-cols-1 gap-4 border-t border-border/40 pt-4 md:grid-cols-2 md:gap-6">
+			<div className="grid grid-cols-1 gap-4 border-t  pt-4 md:grid-cols-2 md:gap-6">
 				<div className="flex flex-col gap-1.5">
 					<label className="text-xs font-semibold text-muted-foreground">
 						User
@@ -153,7 +153,7 @@ export function DatabaseInternalCredentialsCard({
 									value={newPassword}
 									onChange={e => setNewPassword(e.target.value)}
 									placeholder="Enter new password"
-									className="h-9 border-primary/50 bg-background font-mono text-xs"
+									className="h-9  bg-background font-mono text-xs"
 								/>
 								<Button
 									variant="outline"

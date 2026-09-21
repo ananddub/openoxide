@@ -96,6 +96,10 @@ pub struct ApplicationRecord {
     pub cpu_reservation: Option<String>,
     pub cpu_limit: Option<String>,
     pub replicas: Option<i64>,
+    pub command: Option<String>,
+    pub args: Option<String>,
+    pub watch_paths: Option<String>,
+    pub enable_submodules: bool,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -236,6 +240,10 @@ impl From<(crate::flash_gen::models::Services, crate::flash_gen::models::Service
             cpu_reservation: service.cpu_reservation,
             cpu_limit: service.cpu_limit,
             replicas: Some(service.replicas),
+            command: normalize(service.command),
+            args: normalize(service.args),
+            watch_paths: git.and_then(|g| normalize(g.watch_paths.clone())),
+            enable_submodules: git.map(|g| g.enable_submodules != 0).unwrap_or(false),
             created_at: service.created_at,
             updated_at: service.updated_at,
         }

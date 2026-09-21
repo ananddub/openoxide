@@ -1,26 +1,22 @@
 import {useState, useEffect, useRef} from 'react';
-import {User, Loader2, Palette, Upload} from 'lucide-react';
+import {
+	BadgeCheck,
+	Camera,
+	ChevronDown,
+	Loader2,
+	Mail,
+	Palette,
+	ShieldCheck,
+	Upload,
+} from 'lucide-react';
 import {useUserUpdate, useProfile} from '#/api/live';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from '#/components/ui/card';
 import {isSolidColorAvatar, getAvatarInitials} from '#/lib/avatar-utils';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {useAuthSession} from '#/stores/session-context';
-
-export interface ApiKeyItem {
-	id: string;
-	name: string;
-	keyPrefix: string;
-	createdAt: string;
-}
+import {usePermissions} from '#/hooks/use-permissions';
 
 const PRESET_AVATARS = [
 	'https://api.dicebear.com/7.x/bottts/svg?seed=OpenOxide1',
@@ -29,68 +25,228 @@ const PRESET_AVATARS = [
 	'https://api.dicebear.com/7.x/bottts/svg?seed=OpenOxide4',
 	'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
 	'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-	'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
 	'https://api.dicebear.com/7.x/avataaars/svg?seed=Elena',
+	'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
 	'https://api.dicebear.com/7.x/shapes/svg?seed=Shape1',
 	'https://api.dicebear.com/7.x/shapes/svg?seed=Shape2',
 ];
 
+/**
+ * Settings → Account. The identity card carries an expand chevron instead
+ * of an Edit button: clicking it unfolds the editor (name fields + avatar
+ * picker) under the identity row with a smooth height + fade animation.
+ * Collapsing discards unsaved edits.
+ */
 export function ProfilePage() {
 	const {data: storeProfile} = useProfile();
 	const {user: authUser} = useAuthSession();
-	const isLoading = false;
+	const {role} = usePermissions();
+	const roleLabel = role && role !== 'NONE' ? role : null;
 
-	useEffect(() => {
-		const initialEmail = storeProfile?.email || authUser?.email || '';
-		const initialFirstName =
-			storeProfile?.name?.split(' ')[0] || authUser?.firstName || '';
-		const initialLastName =
-			storeProfile?.name?.split(' ').slice(1).join(' ') ||
-			authUser?.lastName ||
-			'';
-		const initialAvatar = storeProfile?.avatar || '';
+	const fullName = storeProfile?.name || authUser?.firstName || '';
+	const email = storeProfile?.email || authUser?.email || '';
+	const avatarValue = storeProfile?.avatar || '';
+	const initials = getAvatarInitials(fullName || email);
 
-		setEmail(initialEmail);
-		setFirstName(initialFirstName);
-		setLastName(initialLastName);
-		setAvatarValue(initialAvatar);
-	}, [storeProfile, authUser]);
+	const [expanded, setExpanded] = useState(false);
 
-	// Profile updates flow through AuthService.UpdateUser; the table-watch
-	// stream (USERS table → ['auth']) refetches useProfile() on change.
-	const updateUserMutation = useUserUpdate();
+	return (
+		<div className="flex w-full animate-in flex-col gap-6 duration-150 fade-in">
+			{/* Identity card — chevron expands the editor beneath the row */}
+			<div className="rounded-2xl bg-card">
+				<div className="flex flex-wrap items-center gap-5 p-6 pb-4">
+					{avatarValue ? (
+						<img
+							src={avatarValue}
+							alt=""
+							className="size-16 shrink-0 rounded-full bg-muted object-cover"
+							style={
+								isSolidColorAvatar(avatarValue)
+									? {backgroundColor: avatarValue}
+									: undefined
+							}
+						/>
+					) : (
+						<div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-foreground/[0.08] text-xl font-semibold uppercase text-foreground">
+							{initials}
+						</div>
+					)}
+					<div className="min-w-0 flex-1">
+						<div className="flex flex-wrap items-center gap-2">
+							<h2 className="truncate text-lg font-semibold text-foreground">
+								{fullName || 'Unnamed'}
+							</h2>
+							{roleLabel && (
+								<span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+									<ShieldCheck className="size-3" />
+									{roleLabel}
+								</span>
+							)}
+						</div>
+						<p className="mt-0.5 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
+							<Mail className="size-3.5 shrink-0" />
+							{email}
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={() => setExpanded(v => !v)}
+						aria-expanded={expanded}
+						title={expanded ? 'Collapse' : 'Expand to edit profile'}
+						className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-input hover:text-foreground">
+						<span className="sr-only">
+							{expanded ? 'Collapse' : 'Expand to edit profile'}
+						</span>
+						<ChevronDown
+							className={`size-4 transition-transform duration-300 ease-out ${
+								expanded ? 'rotate-180' : ''
+							}`}
+						/>
+					</button>
+				</div>
 
-	const [firstName, setFirstName] = useState('');
-	const [lastName, setLastName] = useState('');
-	const [email, setEmail] = useState('');
-	const [avatarValue, setAvatarValue] = useState<string>(
-		PRESET_AVATARS[0],
+				{/* Animated expand region: grid-rows 0fr → 1fr + fade */}
+				<div
+					className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+						expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+					}`}>
+					<div className="overflow-hidden">
+						<InlineProfileEditor
+							open={expanded}
+							initialFirstName={fullName.split(' ')[0] ?? ''}
+							initialLastName={fullName.split(' ').slice(1).join(' ')}
+							initialAvatar={avatarValue}
+							email={email}
+							onDone={() => setExpanded(false)}
+						/>
+					</div>
+				</div>
+			</div>
+
+			{/* Quiet account facts */}
+			<div className="overflow-hidden rounded-2xl bg-card">
+				<div className="flex items-center gap-4 border-b border-border/40 px-5 py-4">
+					<BadgeCheck className="size-4 shrink-0 text-muted-foreground" />
+					<div className="min-w-0 flex-1">
+						<p className="text-sm font-medium text-foreground">
+							Sign-in identity
+						</p>
+						<p className="text-xs text-muted-foreground">
+							Name and avatar are visible to every member of your
+							workspaces.
+						</p>
+					</div>
+				</div>
+				<div className="divide-y divide-border/40">
+					<FactRow
+						label="Email"
+						value={email || '—'}
+						icon={<Mail className="size-3.5" />}
+					/>
+					<FactRow
+						label="Avatar"
+						value={
+							!avatarValue
+								? 'Initials'
+								: isSolidColorAvatar(avatarValue)
+									? 'Solid color'
+									: avatarValue.startsWith('data:')
+										? 'Uploaded image'
+										: 'Preset'
+						}
+						icon={<Palette className="size-3.5" />}
+					/>
+				</div>
+			</div>
+		</div>
 	);
+}
+
+function FactRow({
+	label,
+	value,
+	icon,
+	mono,
+}: {
+	label: string;
+	value: string;
+	icon: React.ReactNode;
+	mono?: boolean;
+}) {
+	return (
+		<div className="flex items-center gap-4 px-5 py-3.5">
+			<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
+				{icon}
+			</span>
+			<span className="min-w-0 flex-1 text-sm text-muted-foreground">
+				{label}
+			</span>
+			<span
+				className={`shrink-0 truncate text-sm text-foreground ${
+					mono ? 'font-mono text-xs' : 'font-medium'
+				}`}>
+				{value}
+			</span>
+		</div>
+	);
+}
+
+/** The editor body that unfolds under the identity row. */
+function InlineProfileEditor({
+	open,
+	initialFirstName,
+	initialLastName,
+	initialAvatar,
+	email,
+	onDone,
+}: {
+	open: boolean;
+	initialFirstName: string;
+	initialLastName: string;
+	initialAvatar: string;
+	email: string;
+	onDone: () => void;
+}) {
+	const updateUserMutation = useUserUpdate();
+	const [firstName, setFirstName] = useState(initialFirstName);
+	const [lastName, setLastName] = useState(initialLastName);
+	const [avatarValue, setAvatarValue] = useState(initialAvatar);
+
+	// Re-seed from the live profile every time the card opens, so a collapse
+	// (Cancel) discards unsaved edits.
+	useEffect(() => {
+		if (open) {
+			setFirstName(initialFirstName);
+			setLastName(initialLastName);
+			setAvatarValue(initialAvatar);
+		}
+	}, [open, initialFirstName, initialLastName, initialAvatar]);
 
 	const colorInputRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+
+	const userInitials = getAvatarInitials(
+		`${firstName} ${lastName}`.trim() || email,
+	);
 
 	const handleImageFileUpload = (
 		e: React.ChangeEvent<HTMLInputElement>,
 	) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
-
 		if (file.size > 2 * 1024 * 1024) {
 			toast.error('Image size must be less than 2MB');
 			return;
 		}
-
 		const reader = new FileReader();
 		reader.onload = event => {
-			const result = event.target?.result as string;
-			setAvatarValue(result);
+			setAvatarValue(event.target?.result as string);
 			toast.success('Avatar image loaded');
 		};
 		reader.readAsDataURL(file);
 	};
 
-	const handleSubmitProfile = async (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		try {
 			await updateUserMutation.mutateAsync({
@@ -98,183 +254,166 @@ export function ProfilePage() {
 				last_name: lastName.trim() || undefined,
 				avatar: avatarValue,
 			});
-			toast.success('Profile Updated Successfully');
+			toast.success('Profile updated');
+			onDone();
 		} catch (err) {
 			toast.error(formatApiError(err) || 'Error updating profile');
 		}
 	};
 
-	const userInitials = getAvatarInitials(
-		`${firstName} ${lastName}`.trim() || email,
-	);
-
 	return (
-		<div className="mx-auto flex w-full max-w-5xl animate-in flex-col gap-6 pb-12 duration-150 fade-in">
-			{/* Account Card */}
-			<Card className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xs">
-				<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4 pb-4">
-					<div>
-						<CardTitle className="flex flex-row items-center gap-2 text-xl font-bold">
-							<User className="size-5 text-muted-foreground" />
-							<span>Account</span>
-						</CardTitle>
-						<CardDescription className="mt-0.5 text-xs text-muted-foreground">
-							Manage your avatar and view profile details.
-						</CardDescription>
+		<form
+			onSubmit={handleSubmit}
+			className="border-t border-border/40 px-6 pb-6 pt-5">
+			<div className="flex flex-col gap-5">
+				{/* Name fields */}
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+					<label className="flex flex-col gap-1.5">
+						<span className="text-xs font-medium text-foreground/80">
+							First name
+						</span>
+						<Input
+							placeholder="First name"
+							value={firstName}
+							onChange={e => setFirstName(e.target.value)}
+							className="h-10 text-sm"
+						/>
+					</label>
+					<label className="flex flex-col gap-1.5">
+						<span className="text-xs font-medium text-foreground/80">
+							Last name
+						</span>
+						<Input
+							placeholder="Last name"
+							value={lastName}
+							onChange={e => setLastName(e.target.value)}
+							className="h-10 text-sm"
+						/>
+					</label>
+				</div>
+
+				{/* Avatar picker */}
+				<div className="rounded-xl bg-muted/20 p-4">
+					<div className="mb-3 flex items-center justify-between gap-3">
+						<p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+							Choose avatar
+						</p>
+						<p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+							<Camera className="size-3" />
+							Upload up to 2 MB, or pick a color.
+						</p>
 					</div>
-				</CardHeader>
+					<div className="flex flex-wrap items-center gap-2.5">
+						<button
+							type="button"
+							onClick={() => setAvatarValue('')}
+							aria-label="Use initials"
+							className={`flex size-10 cursor-pointer items-center justify-center rounded-full text-[11px] font-bold uppercase transition-all ${
+								!avatarValue
+									? 'bg-foreground/[0.08] text-foreground ring-2 ring-primary'
+									: 'bg-foreground/[0.05] text-muted-foreground hover:scale-105'
+							}`}>
+							{userInitials}
+						</button>
 
-				<CardContent className="space-y-6 border-t border-border/60 pt-4">
-					{isLoading ? (
-						<div className="flex min-h-[25vh] flex-row items-center justify-center gap-2 text-sm text-muted-foreground">
-							<Loader2 className="size-4 animate-spin text-primary" />
-							<span>Loading account profile...</span>
-						</div>
-					) : (
-						<form
-							onSubmit={handleSubmitProfile}
-							className="flex flex-col gap-6">
-							{/* Editable Account Information Grid */}
-							<div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-muted/20 p-4">
-								<div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-									<User className="size-3.5 text-primary" />
-									<span>Account Information</span>
-								</div>
+						<button
+							type="button"
+							onClick={() => fileInputRef.current?.click()}
+							aria-label="Upload image"
+							className={`relative flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-muted/60 transition-all hover:scale-105 ${
+								(avatarValue || '').startsWith('data:')
+									? 'ring-2 ring-primary'
+									: ''
+							}`}>
+							{(avatarValue || '').startsWith('data:') ? (
+								<img
+									src={avatarValue}
+									alt="Custom avatar"
+									className="size-full rounded-full object-cover"
+								/>
+							) : (
+								<Upload className="size-4 text-muted-foreground" />
+							)}
+						</button>
+						<input
+							ref={fileInputRef}
+							type="file"
+							accept="image/*"
+							className="hidden"
+							onChange={handleImageFileUpload}
+						/>
 
-								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-									<div className="flex flex-col gap-1.5">
-										<label className="text-[11px] font-semibold text-muted-foreground">
-											First Name
-										</label>
-										<Input
-											placeholder="First Name"
-											value={firstName}
-											onChange={e => setFirstName(e.target.value)}
-											className="h-9 border-border/70 bg-muted/30 text-xs"
-										/>
-									</div>
+						<button
+							type="button"
+							onClick={() => colorInputRef.current?.click()}
+							aria-label="Pick color"
+							className={`relative flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-muted/60 transition-all hover:scale-105 ${
+								isSolidColorAvatar(avatarValue) ? 'ring-2 ring-primary' : ''
+							}`}
+							style={{
+								backgroundColor: isSolidColorAvatar(avatarValue)
+									? avatarValue
+									: undefined,
+							}}>
+							{!isSolidColorAvatar(avatarValue) && (
+								<Palette className="size-4 text-muted-foreground" />
+							)}
+						</button>
+						<input
+							ref={colorInputRef}
+							type="color"
+							className="pointer-events-none absolute size-10 opacity-0"
+							value={
+								isSolidColorAvatar(avatarValue) ? avatarValue : '#3b82f6'
+							}
+							onChange={e => setAvatarValue(e.target.value)}
+						/>
 
-									<div className="flex flex-col gap-1.5">
-										<label className="text-[11px] font-semibold text-muted-foreground">
-											Last Name
-										</label>
-										<Input
-											placeholder="Last Name"
-											value={lastName}
-											onChange={e => setLastName(e.target.value)}
-											className="h-9 border-border/70 bg-muted/30 text-xs"
-										/>
-									</div>
-								</div>
-							</div>
+						<span className="mx-1 h-5 w-px bg-border/60" aria-hidden />
 
-							{/* Dokploy 1:1 Avatar Selection */}
-							<div className="flex flex-col gap-2 pt-2">
-								<label className="text-xs font-semibold text-foreground">
-									Avatar Selection
-								</label>
+						{PRESET_AVATARS.map((imgUrl, idx) => (
+							<button
+								type="button"
+								key={idx}
+								onClick={() => setAvatarValue(imgUrl)}
+								aria-label={`Preset avatar ${idx + 1}`}
+								className={`size-10 cursor-pointer overflow-hidden rounded-full transition-all hover:scale-105 ${
+									avatarValue === imgUrl ? 'ring-2 ring-primary' : ''
+								}`}>
+								<img
+									src={imgUrl}
+									alt=""
+									className="size-full rounded-full object-cover"
+								/>
+							</button>
+						))}
+					</div>
+				</div>
 
-								<div className="flex flex-row flex-wrap items-center gap-3">
-									{/* Default Initials Avatar */}
-									<div
-										onClick={() => setAvatarValue('')}
-										className={`flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border text-xs font-bold transition-all ${
-											!avatarValue
-												? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background'
-												: 'border-border hover:border-primary'
-										}`}>
-										{userInitials}
-									</div>
-
-									{/* Custom Uploaded Avatar */}
-									<div
-										onClick={() => fileInputRef.current?.click()}
-										className={`relative flex h-12 w-12 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed bg-muted/40 transition-all hover:border-primary ${
-											(avatarValue || '').startsWith('data:')
-												? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background'
-												: 'border-border'
-										}`}>
-										{(avatarValue || '').startsWith('data:') ? (
-											<img
-												src={avatarValue}
-												alt="Custom avatar"
-												className="h-full w-full rounded-full object-cover"
-											/>
-										) : (
-											<Upload className="h-4 w-4 text-muted-foreground" />
-										)}
-									</div>
-									<input
-										ref={fileInputRef}
-										type="file"
-										accept="image/*"
-										className="hidden"
-										onChange={handleImageFileUpload}
-									/>
-
-									{/* Color Picker Avatar */}
-									<div
-										onClick={() => colorInputRef.current?.click()}
-										className={`relative flex h-12 w-12 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-all hover:border-primary ${
-											isSolidColorAvatar(avatarValue)
-												? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background'
-												: 'border-border'
-										}`}
-										style={{
-											backgroundColor: isSolidColorAvatar(avatarValue)
-												? avatarValue
-												: undefined,
-										}}>
-										{!isSolidColorAvatar(avatarValue) && (
-											<Palette className="h-4 w-4 text-muted-foreground" />
-										)}
-									</div>
-									<input
-										ref={colorInputRef}
-										type="color"
-										className="pointer-events-none absolute h-12 w-12 opacity-0"
-										value={
-											isSolidColorAvatar(avatarValue)
-												? avatarValue
-												: '#3b82f6'
-										}
-										onChange={e => setAvatarValue(e.target.value)}
-									/>
-
-									{/* Dokploy Preset Avatar Images */}
-									{PRESET_AVATARS.map((imgUrl, idx) => (
-										<div
-											key={idx}
-											onClick={() => setAvatarValue(imgUrl)}
-											className={`h-12 w-12 cursor-pointer overflow-hidden rounded-full border transition-all hover:scale-105 ${
-												avatarValue === imgUrl
-													? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-background'
-													: 'border-border hover:border-primary'
-											}`}>
-											<img
-												src={imgUrl}
-												alt={`Preset avatar ${idx}`}
-												className="h-full w-full rounded-full object-cover"
-											/>
-										</div>
-									))}
-								</div>
-							</div>
-
-							<div className="flex justify-end border-t border-border/40 pt-2">
-								<Button
-									type="submit"
-									disabled={updateUserMutation.isPending}
-									className="h-9 cursor-pointer bg-primary px-5 text-xs font-bold text-primary-foreground hover:bg-primary/90">
-									{updateUserMutation.isPending
-										? 'Saving...'
-										: 'Save Profile Changes'}
-								</Button>
-							</div>
-						</form>
-					)}
-				</CardContent>
-			</Card>
-		</div>
+				{/* Actions */}
+				<div className="flex items-center justify-end gap-2">
+					<Button
+						type="button"
+						variant="ghost"
+						onClick={onDone}
+						className="h-9 text-sm">
+						Cancel
+					</Button>
+					<Button
+						type="submit"
+						disabled={updateUserMutation.isPending}
+						className="h-9 gap-1.5 px-4 text-sm">
+						{updateUserMutation.isPending ? (
+							<>
+								<Loader2 className="size-4 animate-spin" />
+								Saving...
+							</>
+						) : (
+							'Save changes'
+						)}
+					</Button>
+				</div>
+			</div>
+		</form>
 	);
 }

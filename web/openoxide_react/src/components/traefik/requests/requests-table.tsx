@@ -86,25 +86,25 @@ export function RequestsTable({
 		switch (m) {
 			case 'GET':
 				return (
-					<span className="rounded border border-emerald-500/20 bg-emerald-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-400">
+					<span className="rounded bg-emerald-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-400">
 						GET
 					</span>
 				);
 			case 'POST':
 				return (
-					<span className="rounded border border-blue-500/20 bg-blue-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-blue-400">
+					<span className="rounded bg-blue-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-blue-400">
 						POST
 					</span>
 				);
 			case 'PUT':
 				return (
-					<span className="rounded border border-amber-500/20 bg-amber-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-400">
+					<span className="rounded bg-amber-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-400">
 						PUT
 					</span>
 				);
 			case 'DELETE':
 				return (
-					<span className="rounded border border-rose-500/20 bg-rose-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-rose-400">
+					<span className="rounded bg-rose-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-rose-400">
 						DEL
 					</span>
 				);
@@ -118,11 +118,11 @@ export function RequestsTable({
 	};
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-card shadow-xs">
+		<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-card shadow-xs">
 			<div className="flex-1 overflow-auto">
 				<Table>
 					<TableHeader className="sticky top-0 z-10 bg-muted/40 backdrop-blur-md">
-						<TableRow className="border-b border-border/50 hover:bg-transparent">
+						<TableRow className="border-b  hover:bg-transparent">
 							{visibleColumns.method && (
 								<TableHead className="px-3.5 py-3 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
 									Method
@@ -233,7 +233,7 @@ export function RequestsTable({
 				</Table>
 			</div>
 
-			<div className="flex shrink-0 items-center justify-between border-t border-border/40 bg-muted/20 px-4 py-2.5 font-sans text-xs text-muted-foreground">
+			<div className="flex shrink-0 items-center justify-between border-t  bg-muted/20 px-4 py-2.5 font-sans text-xs text-muted-foreground">
 				<span>
 					Showing Page <strong className="text-foreground">{page}</strong>{' '}
 					of <strong className="text-foreground">{totalPages}</strong> (

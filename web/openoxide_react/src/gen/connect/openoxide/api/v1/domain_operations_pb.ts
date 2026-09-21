@@ -11,7 +11,7 @@ import { file_openoxide_api_v1_common } from "./common_pb";
  * Describes the file openoxide/api/v1/domain_operations.proto.
  */
 export const file_openoxide_api_v1_domain_operations: GenFile = /*@__PURE__*/
-  fileDesc("CihvcGVub3hpZGUvYXBpL3YxL2RvbWFpbl9vcGVyYXRpb25zLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMowIChdEb21haW5PcGVyYXRpb25zU2VydmljZRJWCgtMaXN0RG9tYWlucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USUgoJR2V0RG9tYWluEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USYQoWTGlzdEFwcGxpY2F0aW9uRG9tYWlucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USXQoSTGlzdENvbXBvc2VEb21haW5zEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJeChFTdHJlYW1MaXN0RG9tYWlucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2UwARJXCgxTdHJlYW1Eb21haW4SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZTABEmkKHFN0cmVhbUxpc3RBcHBsaWNhdGlvbkRvbWFpbnMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlMAESZQoYU3RyZWFtTGlzdENvbXBvc2VEb21haW5zEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZTABElUKDENyZWF0ZURvbWFpbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElUKDFVwZGF0ZURvbWFpbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlEkoKDERlbGV0ZURvbWFpbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common]);
+  fileDesc("CihvcGVub3hpZGUvYXBpL3YxL2RvbWFpbl9vcGVyYXRpb25zLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMoEFChdEb21haW5PcGVyYXRpb25zU2VydmljZRJWCgtMaXN0RG9tYWlucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USUgoJR2V0RG9tYWluEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USYQoWTGlzdEFwcGxpY2F0aW9uRG9tYWlucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USXQoSTGlzdENvbXBvc2VEb21haW5zEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJVCgxDcmVhdGVEb21haW4SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJVCgxVcGRhdGVEb21haW4SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJKCgxEZWxldGVEb21haW4SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHliBnByb3RvMw", [file_openoxide_api_v1_common]);
 
 /**
  * @generated from service openoxide.api.v1.DomainOperationsService
@@ -46,38 +46,6 @@ export const DomainOperationsService: GenService<{
    */
   listComposeDomains: {
     methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DomainOperationsService.StreamListDomains
-   */
-  streamListDomains: {
-    methodKind: "server_streaming";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DomainOperationsService.StreamDomain
-   */
-  streamDomain: {
-    methodKind: "server_streaming";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DomainOperationsService.StreamListApplicationDomains
-   */
-  streamListApplicationDomains: {
-    methodKind: "server_streaming";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DomainOperationsService.StreamListComposeDomains
-   */
-  streamListComposeDomains: {
-    methodKind: "server_streaming";
     input: typeof ResourceQuerySchema;
     output: typeof ResourceListResponseSchema;
   },

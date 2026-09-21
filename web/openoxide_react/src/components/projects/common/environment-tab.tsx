@@ -163,7 +163,7 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 	return (
 		<div className="flex animate-in flex-col gap-6 duration-200 fade-in">
 			{/* Info Warning Banner */}
-			<div className="flex gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+			<div className="flex gap-3 rounded-xl bg-primary/5 p-4">
 				<Info className="mt-0.5 h-4.5 w-4.5 shrink-0 text-primary" />
 				<div className="flex flex-col gap-1">
 					<span className="text-xs font-bold text-foreground">
@@ -179,7 +179,7 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 			</div>
 
 			{/* Main Editor Card */}
-			<div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+			<div className="flex flex-col gap-4 rounded-xl bg-card p-5">
 				<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 					<div className="flex flex-wrap items-center gap-3">
 						<div>
@@ -196,7 +196,7 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 						</div>
 
 						{isModified && (
-							<span className="animate-pulse rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[9px] font-extrabold text-amber-500 select-none">
+							<span className="animate-pulse rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-extrabold text-amber-500 select-none">
 								Unsaved Changes
 							</span>
 						)}
@@ -207,7 +207,7 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 							variant="outline"
 							size="sm"
 							onClick={() => setShowSecrets(!showSecrets)}
-							className="flex h-8 items-center gap-1.5 rounded-lg border-border text-xs font-semibold text-foreground hover:bg-muted">
+							className="flex h-8 items-center gap-1.5 rounded-lg  text-xs font-semibold text-foreground hover:bg-muted">
 							{showSecrets ? (
 								<EyeOff className="h-3.5 w-3.5" />
 							) : (
@@ -216,7 +216,7 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 							{showSecrets ? 'Hide Values' : 'Show Values'}
 						</Button>
 
-						<div className="hidden items-center gap-1.5 rounded-lg border border-border/40 bg-muted/20 px-2 py-1 text-xs font-semibold text-muted-foreground md:flex">
+						<div className="hidden items-center gap-1.5 rounded-lg bg-muted/20 px-2 py-1 text-xs font-semibold text-muted-foreground md:flex">
 							<ShieldAlert className="h-3.5 w-3.5 text-amber-500" />{' '}
 							Secrets encrypted
 						</div>
@@ -225,7 +225,7 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 
 				{/* Notice when values are hidden */}
 				{!showSecrets && (
-					<div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+					<div className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
 						<span>
 							Secret values are masked for security. Click{' '}
 							<strong>Show Values</strong> (eye icon) to edit or view exact
@@ -237,7 +237,7 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 				{/* Monaco Editor Container */}
 				<div
 					ref={containerRef}
-					className={`relative overflow-hidden rounded-xl border border-border bg-zinc-950 shadow-inner transition-all duration-300 ${!showSecrets ? 'opacity-60 grayscale-[30%]' : 'opacity-100'}`}
+					className={`relative overflow-hidden rounded-xl bg-zinc-950 shadow-inner transition-all duration-300 ${!showSecrets ? 'opacity-60 grayscale-[30%]' : 'opacity-100'}`}
 					style={{height: '420px', width: '100%'}}
 				/>
 

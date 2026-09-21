@@ -11,6 +11,7 @@ pub struct ComposeQueueDeploymentWithServerParams {
     pub operation: String,
     pub service_id: i64,
     pub server_id: i64,
+    pub user_id: i64,
 }
 
 pub struct ComposeQueueDeploymentNoServerParams {
@@ -19,6 +20,7 @@ pub struct ComposeQueueDeploymentNoServerParams {
     pub log_path: String,
     pub operation: String,
     pub service_id: i64,
+    pub user_id: i64,
 }
 
 pub struct ComposeCreateServiceWithServerParams {
@@ -87,7 +89,7 @@ impl Queries {
         params: &ComposeQueueDeploymentWithServerParams,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, unixepoch()) RETURNING id;"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, user_id, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, ?, unixepoch()) RETURNING id;"
         )
         .bind(&params.title)
         .bind(&params.description)
@@ -95,6 +97,7 @@ impl Queries {
         .bind(&params.operation)
         .bind(&params.service_id)
         .bind(&params.server_id)
+        .bind(&params.user_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -105,13 +108,14 @@ impl Queries {
         params: &ComposeQueueDeploymentNoServerParams,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, is_preview_deployment, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, 0, unixepoch()) RETURNING id;"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, is_preview_deployment, user_id, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, 0, ?, unixepoch()) RETURNING id;"
         )
         .bind(&params.title)
         .bind(&params.description)
         .bind(&params.log_path)
         .bind(&params.operation)
         .bind(&params.service_id)
+        .bind(&params.user_id)
         .fetch_one(&self.pool)
         .await
     }

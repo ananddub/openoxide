@@ -1,7 +1,5 @@
-use std::sync::Arc;
 
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Compose, ComposeDependencies, ComposeExport, ComposeMountRequest, ComposeOperation,
@@ -13,8 +11,6 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ServiceMutationRequest, SetComposeSourceRequest, SetRawSourceRequest,
     UpdateComposeRequest, UpdateComposeResourcesRequest, UploadComposeRequest,
 };
-use crate::db::reactive::realtime;
-use crate::flash_gen::models::{Mounts, Patches, Services};
 use crate::services::compute::compose::crud::{
     ComposeOperationResponseDto, ComposeResponseDto, CreateComposeDto, PatchComposeDto,
 };
@@ -46,41 +42,6 @@ impl ComposeService for ComposeController {
     }
 
     #[permission(Application, CanRead)]
-    async fn stream_compose(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, GetComposeRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<Compose> + Send + use<>,
-        >,
-    > {
-        let id = request.id;
-        let service = Arc::clone(&self.service);
-        let stream = {
-            let sql = format!(
-                "SELECT s.* FROM services s JOIN service_compose c ON c.service_id = s.id WHERE s.id = {id} AND s.service_type = 'COMPOSE'"
-            );
-            realtime()
-                .watch_query::<Services>(sql)
-                .await
-                .map_err(map_error)?
-        };
-        Response::stream_ok(stream.then(move |mut rows| {
-            let service = Arc::clone(&service);
-            async move {
-                match rows.pop() {
-                    Some(row) => match service.get_by_id(row.id).await {
-                        Ok(item) => Ok(compose_to_proto(&ComposeResponseDto::from(item))),
-                        _ => Err(ConnectError::not_found("compose project not found")),
-                    },
-                    None => Err(ConnectError::not_found("compose project not found")),
-                }
-            }
-        }))
-    }
-
-    #[permission(Application, CanRead)]
     async fn list_composes<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -89,41 +50,6 @@ impl ComposeService for ComposeController {
         let items = self.service.list_by_environment(request.environment_id).await.map_err(map_error)?;
         let composes = items.into_iter().map(ComposeResponseDto::from).map(|c| compose_to_proto(&c)).collect();
         Response::ok(ListComposesResponse { composes, ..Default::default() })
-    }
-
-    #[permission(Application, CanRead)]
-    async fn stream_list_composes(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ListComposesRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ListComposesResponse> + Send + use<>,
-        >,
-    > {
-        let environment_id = request.environment_id;
-        let service = Arc::clone(&self.service);
-        let stream = {
-            let sql = format!(
-                "SELECT s.* FROM services s JOIN service_compose c ON c.service_id = s.id WHERE s.environment_id = {environment_id} AND s.service_type = 'COMPOSE'"
-            );
-            realtime()
-                .watch_query::<Services>(sql)
-                .await
-                .map_err(map_error)?
-        };
-        Response::stream_ok(stream.then(move |rows| {
-            let service = Arc::clone(&service);
-            async move {
-                let mut items = Vec::with_capacity(rows.len());
-                for row in rows {
-                    if let Ok(item) = service.get_by_id(row.id).await {
-                        items.push(compose_to_proto(&ComposeResponseDto::from(item)));
-                    }
-                }
-                Ok(ListComposesResponse { composes: items, ..Default::default() })
-            }
-        }))
     }
 
     #[permission(Application, CanCreate)]
@@ -165,6 +91,7 @@ impl ComposeService for ComposeController {
                 "description": request.description,
                 "compose_file": request.compose_file,
                 "server_id": request.server_id,
+                "command": request.command,
             }).to_string(),
         ).map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let item = self.service.patch(request.id, dto).await.map_err(map_error)?;
@@ -299,10 +226,10 @@ impl ComposeService for ComposeController {
     #[permission(Application, CanDeploy)]
     async fn deploy<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
-        let result = self.service.run_operation(request.id, AppComposeOperation::Deploy).await.map_err(map_error)?;
+        let result = self.service.run_operation(request.id, AppComposeOperation::Deploy, auth.user_id()).await.map_err(map_error)?;
         let dto = ComposeOperationResponseDto::from(result);
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&dto.compose)),
@@ -314,10 +241,10 @@ impl ComposeService for ComposeController {
     #[permission(Application, CanDeploy)]
     async fn redeploy<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
-        let result = self.service.run_operation(request.id, AppComposeOperation::Redeploy).await.map_err(map_error)?;
+        let result = self.service.run_operation(request.id, AppComposeOperation::Redeploy, auth.user_id()).await.map_err(map_error)?;
         let dto = ComposeOperationResponseDto::from(result);
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&dto.compose)),
@@ -329,10 +256,10 @@ impl ComposeService for ComposeController {
     #[permission(Application, CanDeploy)]
     async fn reload<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
-        let result = self.service.run_operation(request.id, AppComposeOperation::Reload).await.map_err(map_error)?;
+        let result = self.service.run_operation(request.id, AppComposeOperation::Reload, auth.user_id()).await.map_err(map_error)?;
         let dto = ComposeOperationResponseDto::from(result);
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&dto.compose)),
@@ -344,10 +271,10 @@ impl ComposeService for ComposeController {
     #[permission(Application, CanDeploy)]
     async fn start<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
-        let result = self.service.run_operation(request.id, AppComposeOperation::Start).await.map_err(map_error)?;
+        let result = self.service.run_operation(request.id, AppComposeOperation::Start, auth.user_id()).await.map_err(map_error)?;
         let dto = ComposeOperationResponseDto::from(result);
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&dto.compose)),
@@ -576,36 +503,6 @@ impl ComposeService for ComposeController {
         Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[permission(Application, CanRead)]
-    async fn stream_list_mounts(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, ComposeMountRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let compose_id = request.compose_id;
-        let stream = {
-            let sql = format!("SELECT * FROM mounts WHERE service_id = {compose_id}");
-            realtime()
-                .watch_query::<Mounts>(sql)
-                .await
-                .map_err(map_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows
-                    .into_iter()
-                    .map(ComposeMountResponseDto::from)
-                    .map(mount_to_resource)
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
     #[permission(Application, CanCreate)]
     async fn create_mount<'a>(
         &'a self,
@@ -664,48 +561,15 @@ impl ComposeService for ComposeController {
         Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[permission(Application, CanRead)]
-    async fn stream_list_patches(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, ComposePatchRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let compose_id = request.compose_id;
-        let stream = {
-            let sql = format!("SELECT * FROM patches WHERE service_id = {compose_id}");
-            realtime()
-                .watch_query::<Patches>(sql)
-                .await
-                .map_err(map_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows
-                    .into_iter()
-                    .map(ComposePatchResponseDto::from)
-                    .map(patch_to_resource)
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
     #[permission(Application, CanCreate)]
     async fn create_patch<'a>(
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposePatchRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let dto: UpsertComposePatchDto = serde_json::from_str(
-            &serde_json::json!({
-                "patch_type": request.patch_type,
-                "payload": request.payload,
-            }).to_string(),
-        ).map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let dto: UpsertComposePatchDto =
+            parse_patch_request(&request.patch_type, &request.payload)
+                .map_err(ConnectError::invalid_argument)?;
         let item = self.patches.create(request.compose_id, dto).await.map_err(map_error)?;
         Response::ok(patch_to_resource(ComposePatchResponseDto::from(item)))
     }
@@ -717,12 +581,9 @@ impl ComposeService for ComposeController {
         request: ServiceRequest<'_, ComposePatchRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let id = request.id.ok_or_else(|| ConnectError::invalid_argument("patch id is required"))?;
-        let dto: UpsertComposePatchDto = serde_json::from_str(
-            &serde_json::json!({
-                "patch_type": request.patch_type,
-                "payload": request.payload,
-            }).to_string(),
-        ).map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let dto: UpsertComposePatchDto =
+            parse_patch_request(&request.patch_type, &request.payload)
+                .map_err(ConnectError::invalid_argument)?;
         let item = self.patches.update(request.compose_id, id, dto).await.map_err(map_error)?;
         Response::ok(patch_to_resource(ComposePatchResponseDto::from(item)))
     }
@@ -741,4 +602,31 @@ impl ComposeService for ComposeController {
             Err(ConnectError::not_found("compose patch not found"))
         }
     }
+}
+
+/// `ComposePatchRequest.payload` carries the patch body as JSON
+/// (`{file_path, enabled, content}`); `patch_type` is a separate
+/// SCREAMING_SNAKE_CASE enum string.
+fn parse_patch_request(
+    patch_type: &str,
+    payload: &str,
+) -> Result<UpsertComposePatchDto, String> {
+    #[derive(serde::Deserialize)]
+    struct PatchBody {
+        file_path: String,
+        #[serde(default = "enabled_default")]
+        enabled: bool,
+        content: String,
+    }
+    fn enabled_default() -> bool {
+        true
+    }
+    let body: PatchBody = serde_json::from_str(payload).map_err(|e| e.to_string())?;
+    let parsed = patch_type.parse().map_err(|e: String| e)?;
+    Ok(UpsertComposePatchDto {
+        patch_type: parsed,
+        file_path: body.file_path,
+        enabled: body.enabled,
+        content: body.content,
+    })
 }

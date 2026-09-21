@@ -222,6 +222,7 @@ export function useDeployments() {
 		handleDeleteDeployment,
 		handleClearAllDeployments,
 		filteredAndSorted,
+		deployments,
 		activeQueue,
 		clearFilters,
 	};

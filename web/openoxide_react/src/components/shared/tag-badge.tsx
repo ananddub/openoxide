@@ -23,7 +23,7 @@ export function TagBadge({
 				borderColor: `${activeColor}40`,
 			}}
 			className={cn(
-				'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold shadow-2xs transition-all',
+				'inline-flex items-center gap-1.5 rounded-md  px-2.5 py-1 text-xs font-semibold shadow-2xs transition-all',
 				className,
 			)}>
 			<span

@@ -34,6 +34,7 @@ pub fn deployment_to_proto(dto: &Deployments) -> crate::api::connect::generated:
         logs: if dto.log_path.is_empty() { None } else { Some(dto.log_path.clone()) },
         created_at: dto.created_at,
         updated_at: dto.last_state_at.unwrap_or(dto.created_at),
+        user_id: dto.user_id,
         ..Default::default()
     }
 }

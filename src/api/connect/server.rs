@@ -4,7 +4,7 @@ use bytes::Bytes;
 use connectrpc::{ConnectRpcBody, ConnectRpcService};
 use http_body_util::{BodyExt, Full, combinators::UnsyncBoxBody};
 use hyper::{
-    HeaderMap, Method, Request, Response, body::Incoming, server::conn::http2,
+    HeaderMap, Request, Response, body::Incoming, server::conn::http2,
 };
 use hyper_util::{
     rt::{TokioExecutor, TokioIo},

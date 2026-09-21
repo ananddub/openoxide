@@ -1,24 +1,28 @@
 {
-	"$schema": "https://ui.shadcn.com/schema.json",
-	"style": "base-nova",
-	"rsc": false,
-	"tsx": true,
-	"tailwind": {
-		"config": "",
-		"css": "src/index.css",
-		"baseColor": "neutral",
-		"cssVariables": true
-	},
-	"iconLibrary": "lucide",
-	"rtl": false,
-	"aliases": {
-		"components": "#/components",
-		"utils": "#/api/utils",
-		"ui": "#/components/ui",
-		"lib": "#/api",
-		"hooks": "#/hooks"
-	},
-	"menuColor": "default",
-	"menuAccent": "subtle",
-	"registries": {}
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "base-nova",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/index.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "iconLibrary": "lucide",
+  "rtl": false,
+  "aliases": {
+    "components": "#/components",
+    "utils": "#/api/utils",
+    "ui": "#/components/ui",
+    "lib": "#/api",
+    "hooks": "#/hooks"
+  },
+  "menuColor": "default",
+  "menuAccent": "subtle",
+  "registries": {
+    "@coss": "https://coss.com/ui/r/{name}.json",
+    "@magicui": "https://magicui.design/r/{name}",
+    "@aceternity": "https://ui.aceternity.com/registry/{name}.json"
+  }
 }

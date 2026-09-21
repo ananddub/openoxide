@@ -1,7 +1,5 @@
-use std::sync::Arc;
 
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Application as ApplicationProto, ApplicationDependencies,
@@ -18,10 +16,8 @@ use crate::api::connect::generated::openoxide::api::v1::{
     UpdateApplicationRequest, UpdateBuildConfigRequest, UpdatePreviewConfigRequest,
     UpdateResourceConfigRequest, UploadSourceRequest,
 };
-use crate::db::reactive::realtime;
 use crate::flash_gen::models::{
-    ApplicationMiddlewares as ApplicationMiddlewaresModel, Mounts, Patches, Ports, Rollbacks,
-    Security, Services,
+    ApplicationMiddlewares as ApplicationMiddlewaresModel, Mounts,
 };
 use crate::services::compute::application::import_export::ImportApplicationDto;
 use crate::services::compute::application::ApplicationOperation as AppApplicationOperation;
@@ -107,79 +103,6 @@ impl ApplicationService for ApplicationController {
             applications,
             ..Default::default()
         })
-    }
-
-    #[permission(Application, CanRead)]
-    async fn stream_application(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, GetApplicationRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ApplicationProto> + Send + use<>,
-        >,
-    > {
-        let id = request.id;
-        let service = Arc::clone(&self.service);
-        let stream = {
-            let sql = format!(
-                "SELECT s.* FROM services s JOIN service_application a ON a.service_id = s.id WHERE s.id = {id} AND s.service_type = 'APPLICATION'"
-            );
-            realtime()
-                .watch_query::<Services>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.then(move |mut rows| {
-            let service = Arc::clone(&service);
-            async move {
-                match rows.pop() {
-                    Some(row) => match service.load_record(row.id).await {
-                        Ok(Some(record)) => Ok(app_to_proto(record)),
-                        _ => Err(ConnectError::not_found("application not found")),
-                    },
-                    None => Err(ConnectError::not_found("application not found")),
-                }
-            }
-        }))
-    }
-
-    #[permission(Application, CanRead)]
-    async fn stream_list_applications(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ListApplicationsRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ListApplicationsResponse> + Send + use<>,
-        >,
-    > {
-        let environment_id = request.environment_id;
-        let service = Arc::clone(&self.service);
-        let stream = {
-            let sql = format!(
-                "SELECT s.* FROM services s JOIN service_application a ON a.service_id = s.id WHERE s.environment_id = {environment_id} AND s.service_type = 'APPLICATION'"
-            );
-            realtime()
-                .watch_query::<Services>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.then(move |rows| {
-            let service = Arc::clone(&service);
-            async move {
-                let mut items = Vec::with_capacity(rows.len());
-                for row in rows {
-                    if let Ok(Some(record)) = service.load_record(row.id).await {
-                        items.push(app_to_proto(record));
-                    }
-                }
-                Ok(ListApplicationsResponse {
-                    applications: items,
-                    ..Default::default()
-                })
-            }
-        }))
     }
 
     #[permission(Application, CanCreate)]
@@ -401,7 +324,7 @@ impl ApplicationService for ApplicationController {
 
         const MAX_UPLOAD_BYTES: u64 = 512 * 1024 * 1024;
         let application_id = header.application_id;
-        let app = self
+        let _app = self
             .service
             .get_by_id(application_id)
             .await
@@ -539,7 +462,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationOperation> + Send + use<'a>> {
         let result = self
             .service
-            .run_operation(request.id, AppApplicationOperation::Deploy)
+            .run_operation(request.id, AppApplicationOperation::Deploy, auth.user_id())
             .await
             .map_err(map_db_error)?;
         Response::ok(operation_result(result))
@@ -553,7 +476,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationOperation> + Send + use<'a>> {
         let result = self
             .service
-            .run_operation(request.id, AppApplicationOperation::Redeploy)
+            .run_operation(request.id, AppApplicationOperation::Redeploy, auth.user_id())
             .await
             .map_err(map_db_error)?;
         Response::ok(operation_result(result))
@@ -567,7 +490,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationOperation> + Send + use<'a>> {
         let result = self
             .service
-            .run_operation(request.id, AppApplicationOperation::Rebuild)
+            .run_operation(request.id, AppApplicationOperation::Rebuild, auth.user_id())
             .await
             .map_err(map_db_error)?;
         Response::ok(operation_result(result))
@@ -581,7 +504,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationOperation> + Send + use<'a>> {
         let result = self
             .service
-            .run_operation(request.id, AppApplicationOperation::Reload)
+            .run_operation(request.id, AppApplicationOperation::Reload, auth.user_id())
             .await
             .map_err(map_db_error)?;
         Response::ok(operation_result(result))
@@ -595,7 +518,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationOperation> + Send + use<'a>> {
         let result = self
             .service
-            .run_operation(request.id, AppApplicationOperation::Start)
+            .run_operation(request.id, AppApplicationOperation::Start, auth.user_id())
             .await
             .map_err(map_db_error)?;
         Response::ok(operation_result(result))
@@ -738,44 +661,6 @@ impl ApplicationService for ApplicationController {
         })
     }
 
-    #[permission(Application, CanRead)]
-    async fn stream_list_rollbacks(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ListRollbacksRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ListRollbacksResponse> + Send + use<>,
-        >,
-    > {
-        let application_id = request.application_id;
-        let stream = {
-            let sql = format!(
-                "SELECT r.* FROM rollbacks r INNER JOIN deployments d ON d.id = r.deployment_id WHERE d.service_id = {application_id}"
-            );
-            realtime()
-                .watch_query::<Rollbacks>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ListRollbacksResponse {
-                rollbacks: rows
-                    .into_iter()
-                    .map(|r| Rollback {
-                        id: r.id,
-                        application_id,
-                        status: "AVAILABLE".into(),
-                        commit: r.image,
-                        created_at: r.created_at,
-                        ..Default::default()
-                    })
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
     #[permission(Application, CanDeploy)]
     async fn trigger_rollback<'a>(
         &'a self,
@@ -890,35 +775,6 @@ impl ApplicationService for ApplicationController {
     }
 
     #[permission(Application, CanRead)]
-    async fn stream_list_application_ports(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceListRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ApplicationPorts> + Send + use<>,
-        >,
-    > {
-        let application_id = request.application_id;
-        let stream = {
-            let sql = format!("SELECT * FROM ports WHERE service_id = {application_id}");
-            realtime()
-                .watch_query::<Ports>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ApplicationPorts {
-                items: rows
-                    .into_iter()
-                    .map(|p| serde_json::to_string(&crate::services::compute::application::port::ApplicationPortResponseDto::from(p)).unwrap_or_default())
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
-    #[permission(Application, CanRead)]
     async fn list_application_mounts<'a>(
         &'a self,
         ctx: RequestContext,
@@ -937,35 +793,6 @@ impl ApplicationService for ApplicationController {
             items,
             ..Default::default()
         })
-    }
-
-    #[permission(Application, CanRead)]
-    async fn stream_list_application_mounts(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceListRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ApplicationMounts> + Send + use<>,
-        >,
-    > {
-        let application_id = request.application_id;
-        let stream = {
-            let sql = format!("SELECT * FROM mounts WHERE service_id = {application_id}");
-            realtime()
-                .watch_query::<Mounts>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ApplicationMounts {
-                items: rows
-                    .into_iter()
-                    .map(|m| serde_json::to_string(&crate::services::compute::application::mount::ApplicationMountResponseDto::from(normalize_mount_row(m))).unwrap_or_default())
-                    .collect(),
-                ..Default::default()
-            })
-        }))
     }
 
     #[permission(Application, CanRead)]
@@ -1026,35 +853,6 @@ impl ApplicationService for ApplicationController {
     }
 
     #[permission(Application, CanRead)]
-    async fn stream_list_application_patches(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceListRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ApplicationPatches> + Send + use<>,
-        >,
-    > {
-        let application_id = request.application_id;
-        let stream = {
-            let sql = format!("SELECT * FROM patches WHERE service_id = {application_id}");
-            realtime()
-                .watch_query::<Patches>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ApplicationPatches {
-                items: rows
-                    .into_iter()
-                    .map(|p| serde_json::to_string(&crate::services::compute::application::patch::ApplicationPatchResponseDto::from(p)).unwrap_or_default())
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
-    #[permission(Application, CanRead)]
     async fn list_application_middlewares<'a>(
         &'a self,
         ctx: RequestContext,
@@ -1073,42 +871,6 @@ impl ApplicationService for ApplicationController {
             items,
             ..Default::default()
         })
-    }
-
-    #[permission(Application, CanRead)]
-    async fn stream_list_application_middlewares(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceListRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ApplicationMiddlewares> + Send + use<>,
-        >,
-    > {
-        let application_id = request.application_id;
-        let stream = {
-            let sql = format!(
-                "SELECT * FROM application_middlewares WHERE service_id = {application_id}"
-            );
-            realtime()
-                .watch_query::<ApplicationMiddlewaresModel>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            let items = rows
-                .into_iter()
-                .map(middleware_response_dto)
-                .collect::<sqlx::Result<Vec<_>>>()
-                .map_err(map_db_error)?
-                .into_iter()
-                .map(|dto| serde_json::to_string(&dto).unwrap_or_default())
-                .collect();
-            Ok(ApplicationMiddlewares {
-                items,
-                ..Default::default()
-            })
-        }))
     }
 
     #[permission(Application, CanRead)]
@@ -1133,35 +895,6 @@ impl ApplicationService for ApplicationController {
     }
 
     #[permission(Application, CanRead)]
-    async fn stream_list_application_redirects(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceListRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ApplicationRedirects> + Send + use<>,
-        >,
-    > {
-        let application_id = request.application_id;
-        let stream = {
-            let sql = format!("SELECT * FROM redirects WHERE service_id = {application_id}");
-            realtime()
-                .watch_query::<crate::services::compute::application::redirect::Redirect>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ApplicationRedirects {
-                items: rows
-                    .into_iter()
-                    .map(|r| serde_json::to_string(&crate::services::compute::application::redirect::ApplicationRedirectResponseDto::from(r)).unwrap_or_default())
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
-    #[permission(Application, CanRead)]
     async fn list_application_security<'a>(
         &'a self,
         ctx: RequestContext,
@@ -1180,35 +913,6 @@ impl ApplicationService for ApplicationController {
             items,
             ..Default::default()
         })
-    }
-
-    #[permission(Application, CanRead)]
-    async fn stream_list_application_security(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceListRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ApplicationSecurity> + Send + use<>,
-        >,
-    > {
-        let application_id = request.application_id;
-        let stream = {
-            let sql = format!("SELECT * FROM security WHERE service_id = {application_id}");
-            realtime()
-                .watch_query::<Security>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ApplicationSecurity {
-                items: rows
-                    .into_iter()
-                    .map(|s| serde_json::to_string(&crate::services::compute::application::security::ApplicationSecurityResponseDto::from(s)).unwrap_or_default())
-                    .collect(),
-                ..Default::default()
-            })
-        }))
     }
 
     // ── Ports (ResourceRequest envelope) ───────────────────────────────
@@ -1231,32 +935,6 @@ impl ApplicationService for ApplicationController {
             items,
             ..Default::default()
         })
-    }
-
-    #[permission(Application, CanRead)]
-    async fn stream_list_ports(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let application_id = request.id;
-        let stream = {
-            let sql = format!("SELECT * FROM ports WHERE service_id = {application_id}");
-            realtime()
-                .watch_query::<Ports>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows.into_iter().map(port_to_resource).collect(),
-                ..Default::default()
-            })
-        }))
     }
 
     #[permission(Application, CanCreate)]
@@ -1331,32 +1009,6 @@ impl ApplicationService for ApplicationController {
         })
     }
 
-    #[permission(Application, CanRead)]
-    async fn stream_list_mounts(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let application_id = request.id;
-        let stream = {
-            let sql = format!("SELECT * FROM mounts WHERE service_id = {application_id}");
-            realtime()
-                .watch_query::<Mounts>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows.into_iter().map(mount_to_resource).collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
     #[permission(Application, CanCreate)]
     async fn create_mount<'a>(
         &'a self,
@@ -1429,32 +1081,6 @@ impl ApplicationService for ApplicationController {
         })
     }
 
-    #[permission(Application, CanRead)]
-    async fn stream_list_patches(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let application_id = request.id;
-        let stream = {
-            let sql = format!("SELECT * FROM patches WHERE service_id = {application_id}");
-            realtime()
-                .watch_query::<Patches>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows.into_iter().map(patch_to_resource).collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
     #[permission(Application, CanCreate)]
     async fn create_patch<'a>(
         &'a self,
@@ -1525,41 +1151,6 @@ impl ApplicationService for ApplicationController {
             items,
             ..Default::default()
         })
-    }
-
-    #[permission(Application, CanRead)]
-    async fn stream_list_middlewares(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let application_id = request.id;
-        let stream = {
-            let sql = format!(
-                "SELECT * FROM application_middlewares WHERE service_id = {application_id}"
-            );
-            realtime()
-                .watch_query::<ApplicationMiddlewaresModel>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows
-                    .into_iter()
-                    .map(middleware_response_dto)
-                    .collect::<sqlx::Result<Vec<_>>>()
-                    .map_err(map_db_error)?
-                    .into_iter()
-                    .map(middleware_to_resource)
-                    .collect(),
-                ..Default::default()
-            })
-        }))
     }
 
     #[permission(Application, CanCreate)]
@@ -1636,32 +1227,6 @@ impl ApplicationService for ApplicationController {
             items,
             ..Default::default()
         })
-    }
-
-    #[permission(Application, CanRead)]
-    async fn stream_list_redirects(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let application_id = request.id;
-        let stream = {
-            let sql = format!("SELECT * FROM redirects WHERE service_id = {application_id}");
-            realtime()
-                .watch_query::<crate::services::compute::application::redirect::Redirect>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows.into_iter().map(redirect_to_resource).collect(),
-                ..Default::default()
-            })
-        }))
     }
 
     #[permission(Application, CanCreate)]
@@ -1743,41 +1308,6 @@ impl ApplicationService for ApplicationController {
             payload,
             ..Default::default()
         })
-    }
-
-    #[permission(Application, CanRead)]
-    async fn stream_get_security(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
-        >,
-    > {
-        let application_id = request.id;
-        let stream = {
-            let sql = format!("SELECT * FROM security WHERE service_id = {application_id}");
-            realtime()
-                .watch_query::<Security>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            let payload = serde_json::to_string(
-                &rows
-                    .into_iter()
-                    .map(crate::services::compute::application::security::ApplicationSecurityResponseDto::from)
-                    .collect::<Vec<_>>(),
-            )
-            .unwrap_or_default();
-            Ok(ResourceResponse {
-                id: application_id,
-                kind: "application_security".into(),
-                payload,
-                ..Default::default()
-            })
-        }))
     }
 
     #[permission(Application, CanCreate)]

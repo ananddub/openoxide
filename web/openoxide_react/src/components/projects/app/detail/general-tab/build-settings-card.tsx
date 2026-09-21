@@ -143,7 +143,7 @@ export function BuildSettingsCard({
 	};
 
 	return (
-		<section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+		<section className="flex flex-col gap-4 rounded-xl bg-card p-5">
 			<div>
 				<h3 className="text-sm font-bold text-foreground">Build Type</h3>
 				<p className="mt-1 text-xs text-muted-foreground">
@@ -152,7 +152,7 @@ export function BuildSettingsCard({
 			</div>
 
 			{/* Resource alert block */}
-			<div className="flex gap-3 rounded-xl border border-amber-500/10 bg-amber-500/5 p-4 text-xs leading-relaxed text-muted-foreground">
+			<div className="flex gap-3 rounded-xl bg-amber-500/5 p-4 text-xs leading-relaxed text-muted-foreground">
 				<Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
 				<div>
 					Builders can consume significant memory and CPU resources
@@ -188,7 +188,7 @@ export function BuildSettingsCard({
 			</RadioGroup>
 
 			{/* Dynamic Form Sections */}
-			<div className="flex flex-col gap-4 border-t border-border/40 pt-4">
+			<div className="flex flex-col gap-4 border-t  pt-4">
 				{buildType === 'DOCKERFILE' && (
 					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<div className="flex flex-col gap-1.5">
@@ -199,7 +199,7 @@ export function BuildSettingsCard({
 								placeholder="Dockerfile"
 								value={dockerfile}
 								onChange={e => setDockerfile(e.target.value)}
-								className="border-border bg-card font-mono text-xs"
+								className="border- bg-card font-mono text-xs"
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
@@ -210,7 +210,7 @@ export function BuildSettingsCard({
 								placeholder="."
 								value={dockerContextPath}
 								onChange={e => setDockerContextPath(e.target.value)}
-								className="border-border bg-card font-mono text-xs"
+								className="border- bg-card font-mono text-xs"
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5 sm:col-span-2">
@@ -221,7 +221,7 @@ export function BuildSettingsCard({
 								placeholder="E.g. production"
 								value={dockerBuildStage}
 								onChange={e => setDockerBuildStage(e.target.value)}
-								className="border-border bg-card text-xs"
+								className="border- bg-card text-xs"
 							/>
 						</div>
 					</div>
@@ -236,7 +236,7 @@ export function BuildSettingsCard({
 							placeholder="Default: 24"
 							value={herokuVersion}
 							onChange={e => setHerokuVersion(e.target.value)}
-							className="border-border bg-card text-xs"
+							className="border- bg-card text-xs"
 						/>
 					</div>
 				)}
@@ -250,13 +250,13 @@ export function BuildSettingsCard({
 							placeholder="e.g. dist"
 							value={publishDirectory}
 							onChange={e => setPublishDirectory(e.target.value)}
-							className="border-border bg-card text-xs"
+							className="border- bg-card text-xs"
 						/>
 					</div>
 				)}
 
 				{buildType === 'STATIC' && (
-					<div className="flex items-center gap-3 rounded-lg border border-border/40 bg-muted/20 p-3">
+					<div className="flex items-center gap-3 rounded-lg bg-muted/20 p-3">
 						<button
 							type="button"
 							onClick={() => setIsStaticSpa(!isStaticSpa)}
@@ -287,7 +287,7 @@ export function BuildSettingsCard({
 									placeholder="Enter custom version (e.g. 0.15.4)"
 									value={railpackVersion}
 									onChange={e => setRailpackVersion(e.target.value)}
-									className="border-border bg-card font-mono text-xs"
+									className="border- bg-card font-mono text-xs"
 								/>
 								<Button
 									type="button"
@@ -297,7 +297,7 @@ export function BuildSettingsCard({
 										setIsManualRailpack(false);
 										setRailpackVersion('0.15.4');
 									}}
-									className="h-7 w-fit border-border text-[10px] font-semibold">
+									className="h-7 w-fit  text-[10px] font-semibold">
 									Use predefined versions
 								</Button>
 							</div>
@@ -313,10 +313,10 @@ export function BuildSettingsCard({
 											setRailpackVersion(val);
 										}
 									}}>
-									<SelectTrigger className="h-9 w-full border-border bg-card text-xs">
+									<SelectTrigger className="h-9 w-full border- bg-card text-xs">
 										<SelectValue placeholder="Select Railpack version" />
 									</SelectTrigger>
-									<SelectContent className="border border-border bg-popover">
+									<SelectContent className="bg-popover">
 										<SelectItem
 											value="manual"
 											className="cursor-pointer text-xs font-bold text-primary hover:bg-muted">
@@ -338,7 +338,7 @@ export function BuildSettingsCard({
 				)}
 			</div>
 
-			<div className="mt-2 flex justify-end border-t border-border/20 pt-4">
+			<div className="mt-2 flex justify-end border-t  pt-4">
 				<Button
 					onClick={handleSaveBuildType}
 					disabled={savingBuild}

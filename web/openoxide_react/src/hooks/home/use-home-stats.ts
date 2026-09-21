@@ -1,5 +1,6 @@
 import {useMemo} from 'react';
-import type {RecentDeploymentItem} from '#/components/home/recent-deployments-card';
+
+
 import {useAuthSession, useOrganizations} from '#/stores/session-context';
 import {useDeploymentItems, useDeploymentRunning, useProjectListByOrganization} from '#/api/live';
 
@@ -16,16 +17,13 @@ export function useHomeStats() {
 	const projectsQuery = useProjectListByOrganization(BigInt(orgId));
 	const rawProjects = projectsQuery.data;
 	const isProjectsLoading = projectsQuery.isLoading;
-	// Live deployments query; the table-watch stream (DEPLOYMENTS table)
-	// invalidates ['deployments'] while mounted.
+	// Live deployments query; the table-watch stream invalidates it while mounted.
 	const {data: rawDeployments = [], isLoading: isDeploymentsLoading} =
 		useDeploymentItems();
 
-	// Fetch active running deployments (/deployments/running)
 	const {data: rawRunning, isLoading: isRunningLoading} =
 		useDeploymentRunning();
 
-	// Totals & Status Calculations
 	const stats = useMemo(() => {
 		const projectsList = Array.isArray(rawProjects) ? rawProjects : [];
 		const runningList = Array.isArray(rawRunning) ? rawRunning : [];
@@ -128,7 +126,13 @@ export function useHomeStats() {
 			const rawDate = item.created_at || item.createdAt;
 			const t = rawDate
 				? new Date(
-						typeof rawDate === 'number' ? rawDate : String(rawDate),
+						typeof rawDate === 'bigint'
+							? Number(rawDate) * 1000
+							: typeof rawDate === 'number'
+								? rawDate < 1e12
+									? rawDate * 1000
+									: rawDate
+								: String(rawDate),
 					).getTime()
 				: now;
 			if (t >= lastStart) lastCount++;
@@ -148,73 +152,21 @@ export function useHomeStats() {
 		return {value: String(lastCount || deploymentsList.length), delta};
 	}, [rawDeployments, rawRunning]);
 
-	// Transform recent deployments from real /deployments API data
-	const recentDeployments: RecentDeploymentItem[] = useMemo(() => {
-		const deploymentsList =
-			Array.isArray(rawDeployments) && rawDeployments.length > 0
-				? rawDeployments
-				: Array.isArray(rawRunning)
-					? rawRunning
-					: [];
-
-		return deploymentsList.map((rawItem: unknown, idx: number) => {
-			const item = rawItem as Record<string, unknown>;
-			const statusStr = String(
-				item.status || item.state || 'done',
-			).toUpperCase();
-			let status: 'idle' | 'running' | 'done' | 'error' = 'done';
-			if (
-				statusStr.includes('RUN') ||
-				statusStr.includes('BUILD') ||
-				statusStr.includes('QUEUED')
-			)
-				status = 'running';
-			else if (
-				statusStr.includes('ERR') ||
-				statusStr.includes('FAIL') ||
-				statusStr.includes('CRASH')
-			)
-				status = 'error';
-			else if (
-				statusStr.includes('DONE') ||
-				statusStr.includes('SUCCESS') ||
-				statusStr.includes('DEPLOY')
-			)
-				status = 'done';
-
-			const title = String(
-				item.title ||
-					item.app_name ||
-					item.name ||
-					`deployment-${idx + 1}`,
-			);
-			const rawDate = item.created_at || item.createdAt;
-
-			return {
-				deploymentId: String(
-					item.id || item.deployment_id || `dep-${idx + 1}`,
-				),
-				name: title,
-				projectName: String(
-					item.project_name || item.description || 'Production',
-				),
-				environment: String(item.environment || item.type || 'production'),
-				serverName: String(item.server_name || 'Dokploy'),
-				status,
-				createdAt: rawDate
-					? typeof rawDate === 'number'
-						? new Date(rawDate).toISOString()
-						: String(rawDate)
-					: new Date().toISOString(),
-			};
-		});
-	}, [rawDeployments, rawRunning]);
 
 	return {
 		firstName,
 		stats,
 		deployStats,
-		recentDeployments,
+		projects: (Array.isArray(rawProjects) ? rawProjects : []).map(
+			(raw: unknown) => {
+				const p = raw as Record<string, unknown>;
+				return {
+					id: Number(p.id),
+					name: String(p.name ?? `Project #${p.id}`),
+					created_at: p.created_at as string | number | bigint | undefined,
+				};
+			},
+		),
 		isLoading:
 			isProjectsLoading || isDeploymentsLoading || isRunningLoading,
 	};

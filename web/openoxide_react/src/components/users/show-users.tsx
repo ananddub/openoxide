@@ -73,10 +73,10 @@ export const ShowUsers = () => {
 
 	return (
 		<div className="mx-auto w-full max-w-5xl">
-			<Card className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-xs">
+			<Card className="overflow-hidden rounded-2xl bg-card shadow-xs">
 				<CardHeader className="pb-4">
 					<CardTitle className="flex items-center gap-2.5 text-lg font-bold">
-						<div className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+						<div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
 							<Users className="size-4" />
 						</div>
 						<span>Users</span>
@@ -85,24 +85,24 @@ export const ShowUsers = () => {
 						Add and manage team members for your OpenOxide account.
 					</CardDescription>
 				</CardHeader>
-				<CardContent className="space-y-4 border-t border-border/60 pt-4">
+				<CardContent className="space-y-4 border-t  pt-4">
 					{isLoading ? (
 						<div className="flex min-h-[20vh] flex-row items-center justify-center gap-2 text-sm text-muted-foreground">
 							<Loader2 className="size-4 animate-spin text-primary" />
 							<span>Loading users...</span>
 						</div>
 					) : !users || users.length === 0 ? (
-						<div className="flex min-h-[20vh] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/10 p-6 text-center">
+						<div className="flex min-h-[20vh] flex-col items-center justify-center gap-2 rounded-xl border- bg-muted/10 p-6 text-center">
 							<Users className="size-8 text-muted-foreground/40" />
 							<span className="text-sm font-semibold text-foreground">
 								No users found
 							</span>
 						</div>
 					) : (
-						<div className="overflow-x-auto rounded-xl border border-border/60">
+						<div className="overflow-x-auto rounded-xl ">
 							<Table>
 								<TableHeader className="bg-muted/30">
-									<TableRow className="border-border/60">
+									<TableRow className="">
 										<TableHead className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
 											User
 										</TableHead>
@@ -131,10 +131,10 @@ export const ShowUsers = () => {
 										return (
 											<TableRow
 												key={member.id}
-												className="border-border/60 transition-colors hover:bg-muted/20">
+												className=" transition-colors hover:bg-muted/20">
 												<TableCell className="font-medium">
 													<div className="flex items-center gap-3">
-														<div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-xs font-bold text-primary">
+														<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
 															{member.email.substring(0, 2).toUpperCase()}
 														</div>
 														<span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">

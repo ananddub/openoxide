@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en" data-theme="dim">
 	<head>
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -10,15 +10,26 @@
 		<link
 			href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
 			rel="stylesheet" />
-		<meta name="theme-color" content="#000000" />
+		<meta name="theme-color" content="#141414" />
 		<style>
 			html,
 			body,
 			#app {
 				min-height: 100%;
-				background: #09090b;
 			}
+			/* Pre-paint page colors so the theme swap never flashes. */
+			html[data-theme='dim'] body { background: #141414; color: rgba(255,255,255,.95); }
+			html[data-theme='dark'] body { background: #000000; color: rgba(255,255,255,.95); }
+			html[data-theme='light'] body { background: #f9f9f9; color: rgba(0,0,0,.92); }
 		</style>
+		<script>
+			// Apply the stored theme before first paint (default: dim).
+			(function () {
+				var t = localStorage.getItem('theme');
+				if (t !== 'light' && t !== 'dark') t = 'dim';
+				document.documentElement.setAttribute('data-theme', t);
+			})();
+		</script>
 		<meta
 			name="description"
 			content="OpenOxide is the self-hosted developer platform that puts you in full control. Build, deploy, and manage applications on your own servers." />

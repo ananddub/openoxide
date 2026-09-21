@@ -48,7 +48,7 @@ export function ComposeLogsHeader({
 	onDownload,
 }: ComposeLogsHeaderProps) {
 	return (
-		<section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+		<section className="flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm">
 			<div className="flex flex-wrap items-center justify-between gap-4">
 				<div className="flex flex-wrap items-center gap-3">
 					<div>
@@ -69,12 +69,12 @@ export function ComposeLogsHeader({
 							onValueChange={val => {
 								if (val) setSelectedContainer(val);
 							}}>
-							<SelectTrigger className="h-9 min-w-[170px] border-border/80 bg-muted/30 font-mono text-xs font-bold shadow-2xs hover:bg-muted/60">
+							<SelectTrigger className="h-9 min-w-[170px]  bg-muted/30 font-mono text-xs font-bold shadow-2xs hover:bg-muted/60">
 								<Box className="mr-1 size-3.5 shrink-0 text-primary" />
 								<SelectValue placeholder="Select Service" />
 							</SelectTrigger>
-							<SelectContent className="border-border bg-card">
-								<div className="mb-1 border-b border-border/40 px-3 py-1.5 text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
+							<SelectContent className="border- bg-card">
+								<div className="mb-1 border-b  px-3 py-1.5 text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
 									Compose Services
 								</div>
 								{availableServices.map(srv => (
@@ -91,7 +91,7 @@ export function ComposeLogsHeader({
 				</div>
 
 				{/* Dual Log Mode Segmented Switch */}
-				<div className="flex items-center gap-1 rounded-lg border border-border/40 bg-muted p-1">
+				<div className="flex items-center gap-1 rounded-lg bg-muted p-1">
 					<button
 						type="button"
 						onClick={() => setLogMode('container')}
@@ -116,7 +116,7 @@ export function ComposeLogsHeader({
 			</div>
 
 			{/* Filter Controls Action Bar */}
-			<div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-2">
+			<div className="flex flex-wrap items-center justify-between gap-3 border-t  pt-2">
 				<div className="flex flex-wrap items-center gap-3">
 					<Button
 						variant={isLive ? 'default' : 'outline'}
@@ -145,10 +145,10 @@ export function ComposeLogsHeader({
 						<Select
 							value={lines}
 							onValueChange={val => val && setLines(val)}>
-							<SelectTrigger className="h-8 w-[120px] border border-border/60 bg-muted/30 text-xs font-semibold">
+							<SelectTrigger className="h-8 w-[120px] bg-muted/30 text-xs font-semibold">
 								<SelectValue placeholder="Lines" />
 							</SelectTrigger>
-							<SelectContent className="border-border bg-card">
+							<SelectContent className="border- bg-card">
 								<SelectItem value="100" className="text-xs">
 									100 Lines
 								</SelectItem>
@@ -174,7 +174,7 @@ export function ComposeLogsHeader({
 						variant="outline"
 						size="sm"
 						onClick={onRefresh}
-						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted">
+						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted">
 						<RefreshCw className="h-3.5 w-3.5" /> Refresh
 					</Button>
 
@@ -182,7 +182,7 @@ export function ComposeLogsHeader({
 						variant="outline"
 						size="sm"
 						onClick={onDownload}
-						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted">
+						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted">
 						<Download className="h-3.5 w-3.5" /> Download
 					</Button>
 				</div>

@@ -365,11 +365,7 @@ fn redact_compose_secrets(value: &str) -> String {
         .join("\n")
 }
 
-// ── Archive payload contract ───────────────────────────────────────────
-//
-// The bundle keeps the JSON field names of the retired compose_projects /
-// domains / mounts / patches models so archives exported by older builds
-// stay importable (SCHEMA_VERSION is unchanged).
+// Archive payload keeps the retired compose_projects/domains/mounts/patches JSON field names so older exports stay importable (SCHEMA_VERSION unchanged).
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ComposeExportBundleDto {

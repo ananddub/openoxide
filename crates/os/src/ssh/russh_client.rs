@@ -8,8 +8,40 @@ use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::{Mutex, mpsc};
 
+/// Handler that enforces the configured host-key policy during the SSH
+/// handshake. russh invokes `check_server_key` exactly once per connection
+/// (before `NewKeys`); returning `Ok(false)` aborts with `Error::UnknownKey`.
 #[derive(Clone)]
-pub struct RusshHandler;
+pub struct RusshHandler {
+    /// `Some(fingerprint)` pins the server key; `None` accepts any (explicit
+    /// `InsecureAcceptAny` policy only).
+    pinned: Option<String>,
+    /// Optional shared slot that records the server's observed key during the
+    /// handshake. Used by trust-on-first-capture: the setup/audit flow connects
+    /// with `InsecureAcceptAny` and reads the key back to persist it as the pin
+    /// (fingerprint, for russh) and as an OpenSSH `known_hosts` line (for the
+    /// rsync subprocess, which shells out to system `ssh`).
+    observed: Option<Arc<Mutex<Option<ServerHostKey>>>>,
+}
+
+/// A captured SSH host key. `fingerprint` is the raw base64 SHA-256 digest used
+/// to pin russh connections; `openssh_key` is the host-agnostic
+/// `"<algorithm> <base64-blob>"` form, prefixed with the connect host at use
+/// time to build a `known_hosts` file for rsync.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ServerHostKey {
+    pub fingerprint: String,
+    pub openssh_key: String,
+}
+
+/// Render a public key in OpenSSH `known_hosts` key form (without the host
+/// token): `"<algorithm> <base64(wire-blob)>"`.
+fn openssh_key_form(key: &key::PublicKey) -> String {
+    use base64::Engine as _;
+    let blob = key.public_key_bytes();
+    let encoded = base64::engine::general_purpose::STANDARD.encode(&blob);
+    format!("{} {}", key.name(), encoded)
+}
 
 #[async_trait]
 impl client::Handler for RusshHandler {
@@ -17,10 +49,48 @@ impl client::Handler for RusshHandler {
 
     async fn check_server_key(
         &mut self,
-        _server_public_key: &key::PublicKey,
+        server_public_key: &key::PublicKey,
     ) -> Result<bool, Self::Error> {
-        Ok(true)
+        let actual = server_public_key.fingerprint();
+        if let Some(slot) = &self.observed {
+            *slot.lock().await = Some(ServerHostKey {
+                fingerprint: actual.clone(),
+                openssh_key: openssh_key_form(server_public_key),
+            });
+        }
+        match &self.pinned {
+            None => Ok(true),
+            Some(expected) => {
+                let ok = fingerprint_matches(expected, &actual);
+                if !ok {
+                    tracing::error!(
+                        expected = %expected,
+                        actual = %actual,
+                        "russh: server host key fingerprint does not match the pinned value; rejecting connection"
+                    );
+                }
+                Ok(ok)
+            }
+        }
     }
+}
+
+/// Normalise a base64 SHA-256 host-key fingerprint for comparison: trim
+/// whitespace, drop an optional `SHA256:` prefix, and drop base64 padding.
+/// `PublicKey::fingerprint()` yields the raw `BASE64_NOPAD` digest, while the
+/// stored pin may arrive with or without the prefix/padding depending on which
+/// tool captured it (mirrors the normalisation in `ssh::builder`).
+fn normalize_fingerprint(s: &str) -> String {
+    let s = s.trim();
+    let s = s.strip_prefix("SHA256:").unwrap_or(s).trim();
+    s.trim_end_matches('=').to_string()
+}
+
+/// Compare a pinned fingerprint against a computed one. Fails closed: an empty
+/// (or whitespace/prefix-only) expected value never matches.
+fn fingerprint_matches(expected: &str, actual: &str) -> bool {
+    let expected = normalize_fingerprint(expected);
+    !expected.is_empty() && expected == normalize_fingerprint(actual)
 }
 
 pub type RusshSession = client::Handle<RusshHandler>;
@@ -30,11 +100,18 @@ pub async fn connect_russh(
     port: u16,
     username: &str,
     auth: &SshAuth,
-    _host_key: &SshHostKey,
+    host_key: &SshHostKey,
     connect_timeout: Duration,
 ) -> ExecResult<RusshSession> {
     let config = Arc::new(client::Config::default());
-    let handler = RusshHandler;
+    let pinned = match host_key {
+        SshHostKey::InsecureAcceptAny => None,
+        SshHostKey::PinnedSha256(fingerprint) => Some(fingerprint.clone()),
+    };
+    let handler = RusshHandler {
+        pinned,
+        observed: None,
+    };
     let addr = format!("{host}:{port}");
 
     let mut session =
@@ -84,6 +161,54 @@ pub async fn connect_russh(
     }
 
     Ok(session)
+}
+
+/// Open a throwaway handshake (no authentication) purely to observe the
+/// server's host key. Used for trust-on-first-capture during initial server
+/// setup/audit when no pin is stored yet. `check_server_key` fires before
+/// authentication, so the key is available as soon as `client::connect`
+/// returns; the session is then dropped.
+pub async fn capture_host_key(
+    host: &str,
+    port: u16,
+    connect_timeout: Duration,
+) -> ExecResult<ServerHostKey> {
+    let config = Arc::new(client::Config::default());
+    let observed: Arc<Mutex<Option<ServerHostKey>>> = Arc::new(Mutex::new(None));
+    let handler = RusshHandler {
+        pinned: None,
+        observed: Some(observed.clone()),
+    };
+    let addr = format!("{host}:{port}");
+
+    let session =
+        tokio::time::timeout(connect_timeout, client::connect(config, &addr, handler))
+            .await
+            .map_err(|_| ExecError::Timeout {
+                seconds: connect_timeout.as_secs(),
+            })?
+            .map_err(|e| ExecError::Ssh(format!("Failed to connect to {addr}: {e}")))?;
+
+    let captured = observed
+        .lock()
+        .await
+        .take()
+        .ok_or_else(|| ExecError::Ssh(format!("No host key observed from {addr}")))?;
+
+    drop(session);
+    Ok(captured)
+}
+
+/// Convenience wrapper over [`capture_host_key`] returning only the SHA-256
+/// fingerprint used to pin russh connections.
+pub async fn capture_host_key_fingerprint(
+    host: &str,
+    port: u16,
+    connect_timeout: Duration,
+) -> ExecResult<String> {
+    Ok(capture_host_key(host, port, connect_timeout)
+        .await?
+        .fingerprint)
 }
 
 pub async fn execute_russh_cmd(
@@ -282,5 +407,36 @@ impl RusshTerminal {
 
     pub async fn close(self) {
         // Drop input_tx to close channel
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pinned_fingerprint_matches_regardless_of_prefix_and_padding() {
+        // PublicKey::fingerprint() yields raw BASE64_NOPAD, e.g. "abc...XY".
+        let actual = "n9Sl8Zj5FR7A0PBdBrJkoEsD5Kd2kPi07b0Eeu9wN5s";
+        assert!(fingerprint_matches(actual, actual));
+        assert!(fingerprint_matches(&format!("SHA256:{actual}"), actual));
+        assert!(fingerprint_matches(&format!("  {actual}  "), actual));
+        assert!(fingerprint_matches(actual, &format!("{actual}==")));
+    }
+
+    #[test]
+    fn mismatched_fingerprint_is_rejected() {
+        assert!(!fingerprint_matches(
+            "n9Sl8Zj5FR7A0PBdBrJkoEsD5Kd2kPi07b0Eeu9wN5s",
+            "differentdifferentdifferentdifferentdiffere"
+        ));
+    }
+
+    #[test]
+    fn empty_pin_fails_closed() {
+        // An empty / prefix-only stored pin must never accept an arbitrary key.
+        assert!(!fingerprint_matches("", "n9Sl8Zj5FR7A0PBdBrJkoEsD5Kd2kPi07b0E"));
+        assert!(!fingerprint_matches("SHA256:", "n9Sl8Zj5FR7A0PBdBrJkoEsD5Kd2kPi07b0E"));
+        assert!(!fingerprint_matches("   ", "n9Sl8Zj5FR7A0PBdBrJkoEsD5Kd2kPi07b0E"));
     }
 }

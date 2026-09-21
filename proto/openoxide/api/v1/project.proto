@@ -8,8 +8,6 @@ import "buf/validate/validate.proto";
 service ProjectService {
   rpc GetProject(GetProjectRequest) returns (Project);
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
-  rpc StreamGetProject(GetProjectRequest) returns (stream Project);
-  rpc StreamListProjects(ListProjectsRequest) returns (stream ListProjectsResponse);
   rpc CreateProject(CreateProjectRequest) returns (Project);
   rpc UpdateProject(UpdateProjectRequest) returns (Project);
   rpc DeleteProject(DeleteProjectRequest) returns (Empty);

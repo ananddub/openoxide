@@ -9,7 +9,6 @@ service OrganizationService {
   rpc GetOrganization(GetOrganizationRequest) returns (Organization);
   rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
   rpc LeaveOrganization(LeaveOrganizationRequest) returns (Empty);
-  rpc StreamGetOrganization(GetOrganizationRequest) returns (stream Organization);
   rpc CreateOrganization(CreateOrganizationRequest) returns (Organization);
   rpc UpdateOrganization(UpdateOrganizationRequest) returns (Organization);
   rpc DeleteOrganization(DeleteOrganizationRequest) returns (Empty);

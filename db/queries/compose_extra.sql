@@ -11,13 +11,13 @@
 -- for nullable columns are non-Option.
 
 -- name: ComposeQueueDeploymentWithServer :one
-INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, last_state_at)
-VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, unixepoch())
+INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, user_id, last_state_at)
+VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, ?, unixepoch())
 RETURNING id;
 
 -- name: ComposeQueueDeploymentNoServer :one
-INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, is_preview_deployment, last_state_at)
-VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, 0, unixepoch())
+INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, is_preview_deployment, user_id, last_state_at)
+VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, 0, ?, unixepoch())
 RETURNING id;
 
 -- Old ComposeProjectRepository::create_simple mapped onto the unified

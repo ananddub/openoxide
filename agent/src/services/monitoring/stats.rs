@@ -79,6 +79,16 @@ impl StatsService {
 
 async fn pump(docker: DockerApi, id: String, stream: bool, tx: mpsc::Sender<String>) {
     let suffix = if stream { "true" } else { "false" };
+    // Docker's stats API never carries the writable-layer size (`size_rw` is
+    // absent on this daemon, and `?size=1` is ignored on the stats endpoint —
+    // the CLI gets it from inspect). One inspect at stream open is cheap and
+    // the value drifts slowly; a failed lookup just reports 0.
+    let size_rw: u64 = docker
+        .get_json::<serde_json::Value>(&format!("/containers/{id}/json?size=1"))
+        .await
+        .ok()
+        .and_then(|doc| doc.get("SizeRw").and_then(|v| v.as_u64()))
+        .unwrap_or(0);
     let mut chunks = match docker
         .get_stream(&format!("/containers/{id}/stats?stream={suffix}"))
         .await
@@ -93,7 +103,7 @@ async fn pump(docker: DockerApi, id: String, stream: bool, tx: mpsc::Sender<Stri
     let mut accumulator = JsonAccumulator::new();
     while let Some(Ok(chunk)) = chunks.next().await {
         for doc in accumulator.push::<RawStats>(&chunk) {
-            if tx.send(to_cli_line(&doc)).await.is_err() {
+            if tx.send(to_cli_line(&doc, size_rw)).await.is_err() {
                 return; // panel consumer went away
             }
             if !stream {
@@ -105,7 +115,7 @@ async fn pump(docker: DockerApi, id: String, stream: bool, tx: mpsc::Sender<Stri
 
 /// Renders one API stats document as the JSON object produced by
 /// `docker stats --format {{json .}}`.
-fn to_cli_line(doc: &RawStats) -> String {
+fn to_cli_line(doc: &RawStats, size_rw: u64) -> String {
     let name = doc.name.trim_start_matches('/');
     let short_id = doc.id.get(..12).unwrap_or(&doc.id);
     let (rx, tx_bytes) = doc.stats.network_bytes();
@@ -124,6 +134,10 @@ fn to_cli_line(doc: &RawStats) -> String {
         "Name": name,
         "NetIO": format!("{} / {}", human(rx, false), human(tx_bytes, false)),
         "PIDs": doc.pids.current.to_string(),
+        // Writable-layer disk usage. Docker's own `docker stats` shows this as
+        // `SIZE`; there is no percentage (containers have no disk quota), so
+        // consumers render it as a byte value only.
+        "SizeRw": human(size_rw, true),
     })
     .to_string()
 }
@@ -178,7 +192,7 @@ mod tests {
         )
         .expect("valid stats json");
 
-        let line = to_cli_line(&doc);
+        let line = to_cli_line(&doc, 40_960);
         let value: serde_json::Value = serde_json::from_str(&line).expect("valid JSON line");
         assert_eq!(value["Name"], "test-app");
         assert_eq!(value["Container"], "9c40c7061e00");
@@ -188,6 +202,7 @@ mod tests {
         assert_eq!(value["MemPerc"], "25.00%");
         assert_eq!(value["NetIO"], "2.00kB / 1.00kB");
         assert_eq!(value["BlockIO"], "3.00kB / 4.00kB");
+        assert_eq!(value["SizeRw"], "40.00KiB");
     }
 
     #[test]
@@ -196,8 +211,8 @@ mod tests {
             r#"{ "cpu_stats": {}, "precpu_stats": {}, "memory_stats": {}, "networks": {}, "blkio_stats": {} }"#,
         )
         .expect("valid stats json");
-        let value: serde_json::Value =
-            serde_json::from_str(&to_cli_line(&doc)).expect("valid JSON line");
+        let value: serde_json::Value = serde_json::from_str(&to_cli_line(&doc, 0))
+            .expect("valid JSON line");
         assert_eq!(value["PIDs"], "0");
         assert_eq!(value["Name"], "");
         assert_eq!(value["CPUPerc"], "0.00%");

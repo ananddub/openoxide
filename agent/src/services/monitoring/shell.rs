@@ -135,6 +135,9 @@ impl ShellService {
             ));
         }
 
+        if open.host {
+            return Self::open_host_shell(input, open).await;
+        }
         if !open.container.is_empty() {
             return Self::open_container(input, open).await;
         }
@@ -208,7 +211,7 @@ impl ShellService {
     }
 
     async fn open_container(
-        mut input: tonic::Streaming<ShellMessage>,
+        input: tonic::Streaming<ShellMessage>,
         open: ShellOpen,
     ) -> Result<Response<ShellStream>, Status> {
         let docker = os::docker::DockerCli::new_local();
@@ -251,6 +254,112 @@ impl ShellService {
         let cols = u16::try_from(open.cols.max(1)).unwrap_or(u16::MAX);
         let rows = u16::try_from(open.rows.max(1)).unwrap_or(u16::MAX);
         let _ = stream.resize(cols, rows).await;
+        Ok(Self::spawn_pump(input, stream, None))
+    }
+
+    /// Opens an interactive root shell on the agent's own host. The agent
+    /// container has no host namespaces, so a short-lived privileged helper
+    /// container (host PID namespace, agent's own image) is created and the
+    /// shell is exec'd into it via `nsenter -t 1`, which lands in PID 1's
+    /// namespaces - full host root. The helper is force-removed when the
+    /// stream ends.
+    async fn open_host_shell(
+        input: tonic::Streaming<ShellMessage>,
+        open: ShellOpen,
+    ) -> Result<Response<ShellStream>, Status> {
+        let docker = os::docker::DockerCli::new_local();
+        let shell = if open.shell.is_empty() {
+            "sh".to_owned()
+        } else {
+            open.shell.clone()
+        };
+        let image = docker
+            .containers()
+            .inspect(std::env::var("HOSTNAME").unwrap_or_default())
+            .await
+            .map(|info| info.image)
+            .map_err(|error| Status::internal(format!("could not inspect agent container: {error}")))?;
+        let helper = format!("openoxide-host-shell-{}", uuid::Uuid::new_v4());
+        // Reap helpers orphaned by an Agent restart (their pump tasks died
+        // with the process, so nothing else will remove them). Helpers of
+        // sessions that are live in *this* process are tracked and skipped.
+        let active = ACTIVE_HOST_HELPERS.lock().map(|active| active.clone()).unwrap_or_default();
+        if let Ok(containers) = docker.containers().ps().all().api().list().await {
+            for container in containers
+                .iter()
+                .filter(|container| container.names.contains("openoxide-host-shell-"))
+                .filter(|container| {
+                    let name = container.names.trim_start_matches('/');
+                    !active.iter().any(|live| live == name)
+                })
+            {
+                let id = if container.id.is_empty() {
+                    container.names.trim_start_matches('/').to_owned()
+                } else {
+                    container.id.clone()
+                };
+                let _ = docker.containers().rm(id).force().run().await;
+            }
+        }
+        if let Ok(mut active) = ACTIVE_HOST_HELPERS.lock() {
+            active.push(helper.clone());
+        }
+        docker
+            .containers()
+            .create(&image)
+            .name(&helper)
+            .detach()
+            .privileged()
+            .pid("host")
+            .network("host")
+            .mount(os::docker::core::Mount::bind("/", "/host"))
+            .entrypoint(["sleep"])
+            .command(["infinity"])
+            .run()
+            .await
+            .map_err(|error| {
+                Status::internal(format!("could not start host-shell helper: {error}"))
+            })?;
+        let stream = match docker
+            .containers()
+            .exec(&helper)
+            .interactive()
+            .tty(true)
+            .api()
+            .env("TERM", "xterm-256color")
+            .shell([
+                "nsenter".to_owned(),
+                "-t".to_owned(),
+                "1".to_owned(),
+                "-m".to_owned(),
+                "-u".to_owned(),
+                "-i".to_owned(),
+                "-n".to_owned(),
+                "-p".to_owned(),
+                "--".to_owned(),
+                shell,
+            ])
+            .await
+        {
+            Ok(stream) => stream,
+            Err(error) => {
+                let _ = docker.containers().rm(&helper).force().run().await;
+                return Err(Status::internal(format!(
+                    "could not start host shell: {error}"
+                )));
+            }
+        };
+        let cols = u16::try_from(open.cols.max(1)).unwrap_or(u16::MAX);
+        let rows = u16::try_from(open.rows.max(1)).unwrap_or(u16::MAX);
+        let _ = stream.resize(cols, rows).await;
+        Ok(Self::spawn_pump(input, stream, Some((docker, helper))))
+    }
+
+    fn spawn_pump(
+        mut input: tonic::Streaming<ShellMessage>,
+        stream: os::docker::handles::containers::socat::ContainerSocketExecStream,
+        helper: Option<(os::docker::DockerCli, String)>,
+    ) -> Response<ShellStream> {
         let mut reader = stream.reader;
         let mut writer = stream.writer;
         let exec_id = stream.exec_id;
@@ -295,13 +404,24 @@ impl ShellService {
                     }
                 }
             }
+            if let Some((docker, helper)) = helper {
+                ACTIVE_HOST_HELPERS
+                    .lock()
+                    .map(|mut active| active.retain(|name| name != &helper))
+                    .ok();
+                let _ = docker.containers().rm(helper).force().run().await;
+            }
         });
 
-        Ok(Response::new(Box::pin(
-            tokio_stream::wrappers::ReceiverStream::new(rx),
-        )))
+        Response::new(Box::pin(tokio_stream::wrappers::ReceiverStream::new(rx)))
     }
 }
+
+/// Names of host-shell helper containers owned by sessions live in this
+/// Agent process. `open_host_shell` reaps any `openoxide-host-shell-*`
+/// container missing from this set — leftovers of a crashed or restarted
+/// Agent whose cleanup task died with it.
+static ACTIVE_HOST_HELPERS: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
 
 fn stdout_message(data: &[u8]) -> ShellMessage {
     ShellMessage {

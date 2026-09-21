@@ -83,7 +83,7 @@ export function ScheduleCard({
 	return (
 		<div
 			className={cn(
-				'flex flex-col justify-between gap-3.5 rounded-xl border border-border bg-card p-4 shadow-2xs transition-all hover:border-border/80',
+				'flex flex-col justify-between gap-3.5 rounded-xl bg-card p-4 shadow-2xs transition-all ',
 				!isEnabled && 'opacity-70',
 			)}>
 			{/* Header: Status Dot + Title + Actions */}
@@ -142,7 +142,7 @@ export function ScheduleCard({
 			)}
 
 			{/* Command & Target Box */}
-			<div className="flex items-center justify-between gap-2 rounded-lg border border-border/40 bg-muted/30 p-2.5 font-mono text-xs dark:bg-muted/20">
+			<div className="flex items-center justify-between gap-2 rounded-lg bg-muted/30 p-2.5 font-mono text-xs dark:bg-muted/20">
 				<div className="flex min-w-0 items-center gap-2">
 					<Terminal className="h-3.5 w-3.5 shrink-0 text-primary" />
 					<code className="truncate font-semibold text-foreground">
@@ -150,7 +150,7 @@ export function ScheduleCard({
 					</code>
 				</div>
 				{(serverName || appName) && (
-					<span className="flex shrink-0 items-center gap-1 rounded border border-border/40 bg-muted/40 px-2 py-0.5 font-sans text-xs text-muted-foreground">
+					<span className="flex shrink-0 items-center gap-1 rounded bg-muted/40 px-2 py-0.5 font-sans text-xs text-muted-foreground">
 						{serverName ? (
 							<Server className="h-3 w-3 text-muted-foreground" />
 						) : (
@@ -166,7 +166,7 @@ export function ScheduleCard({
 			{/* Footer */}
 			<div className="flex items-center justify-between pt-0.5">
 				<div className="flex items-center gap-2">
-					<span className="rounded border border-border/40 bg-muted/40 px-2 py-0.5 font-mono text-xs font-medium text-muted-foreground">
+					<span className="rounded bg-muted/40 px-2 py-0.5 font-mono text-xs font-medium text-muted-foreground">
 						{s.cron_expression}
 					</span>
 					<span className="font-mono text-[10px] font-bold text-muted-foreground/60 uppercase">
@@ -178,7 +178,7 @@ export function ScheduleCard({
 					variant="outline"
 					size="sm"
 					onClick={() => onToggle(s)}
-					className="h-6 border-border/40 bg-muted/20 px-2.5 text-xs font-semibold dark:bg-muted/15">
+					className="h-6  bg-muted/20 px-2.5 text-xs font-semibold dark:bg-muted/15">
 					{isEnabled ? (
 						<>
 							<Pause className="mr-1 h-3 w-3 text-muted-foreground" />

@@ -6,8 +6,6 @@ import "openoxide/api/v1/common.proto";
 service RemoteServerService {
   rpc ListRemoteServers(ResourceQuery) returns (ResourceListResponse);
   rpc GetRemoteServer(ResourceRequest) returns (ResourceResponse);
-  rpc StreamListRemoteServers(ResourceQuery) returns (stream ResourceListResponse);
-  rpc StreamRemoteServer(ResourceRequest) returns (stream ResourceResponse);
   rpc CreateRemoteServer(ResourceRequest) returns (ResourceResponse);
   rpc UpdateRemoteServer(ResourceRequest) returns (ResourceResponse);
   rpc Activate(ResourceRequest) returns (OperationResult);
@@ -17,4 +15,7 @@ service RemoteServerService {
   rpc MigrateDependencies(ResourceRequest) returns (OperationResult);
   rpc GetMigration(ResourceRequest) returns (ResourceResponse);
   rpc RollbackMigration(ResourceRequest) returns (OperationResult);
+  // Flags a RUNNING application_migrations row for cooperative cancellation;
+  // the runner honours it at the next phase/object boundary.
+  rpc CancelMigration(ResourceRequest) returns (OperationResult);
 }

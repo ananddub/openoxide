@@ -66,7 +66,7 @@ export function RegistriesList({
 				{[1, 2, 3, 4].map(i => (
 					<div
 						key={i}
-						className="h-16 animate-pulse rounded-xl border border-border/60 bg-muted/40"
+						className="h-16 animate-pulse rounded-xl bg-muted/40"
 					/>
 				))}
 			</div>
@@ -75,7 +75,7 @@ export function RegistriesList({
 
 	if (!registries || registries.length === 0) {
 		return (
-			<Card className="my-4 flex flex-col items-center justify-center rounded-xl border-border bg-card p-8 text-center shadow-sm">
+			<Card className="my-4 flex flex-col items-center justify-center rounded-xl border- bg-card p-8 text-center shadow-sm">
 				<Database className="mb-2 h-6 w-6 text-muted-foreground" />
 				<h3 className="text-xs font-bold text-foreground">
 					No Registries Found
@@ -107,7 +107,7 @@ export function RegistriesList({
 				return (
 					<Card
 						key={item.id}
-						className="rounded-xl border-border bg-card shadow-sm transition-all hover:border-border/80">
+						className="rounded-xl border- bg-card shadow-sm transition-all ">
 						<CardContent className="flex items-center justify-between gap-2 p-3">
 							{/* Left: Status Dot, Registry Name & URL */}
 							<div className="flex min-w-0 flex-1 items-center gap-2">
@@ -121,7 +121,7 @@ export function RegistriesList({
 											{item.name || item.registry_name}
 										</h4>
 										{item.image_prefix ? (
-											<span className="shrink-0 rounded border border-border/30 bg-muted/20 px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground">
+											<span className="shrink-0 rounded bg-muted/20 px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground">
 												{item.image_prefix}
 											</span>
 										) : null}
@@ -165,7 +165,7 @@ export function RegistriesList({
 									</DropdownMenuTrigger>
 									<DropdownMenuContent
 										align="end"
-										className="z-50 w-40 rounded-xl border-border bg-card p-1 text-xs shadow-xl">
+										className="z-50 w-40 rounded-xl border- bg-card p-1 text-xs shadow-xl">
 										<DropdownMenuItem
 											className="flex cursor-pointer items-center rounded-lg px-2.5 py-1.5 text-xs font-medium hover:bg-muted"
 											onClick={() => onEdit(rawItem)}>
@@ -173,7 +173,7 @@ export function RegistriesList({
 										</DropdownMenuItem>
 
 
-										<DropdownMenuSeparator className="my-1 border-border/50" />
+										<DropdownMenuSeparator className="my-1 " />
 
 										<DropdownMenuItem
 											className="flex cursor-pointer items-center rounded-lg px-2.5 py-1.5 text-xs font-medium text-rose-500 hover:bg-muted/80"

@@ -11,7 +11,11 @@ use crate::context::MonitorContext;
 pub struct GrpcServerTask;
 
 impl GrpcServerTask {
-    pub async fn run(ctx: MonitorContext, shutdown: CancellationToken) {
+    pub async fn run(
+        ctx: MonitorContext,
+        container: Container,
+        shutdown: CancellationToken,
+    ) {
         let addr: SocketAddr = match format!("0.0.0.0:{}", ctx.config.grpc_port).parse() {
             Ok(addr) => addr,
             Err(error) => {
@@ -21,13 +25,10 @@ impl GrpcServerTask {
         };
         info!(%addr, "gRPC query server listening");
 
-        let container = match Container::new() {
-            Ok(container) => container,
-            Err(error) => {
-                error!(%error, "could not create dependency container");
-                return;
-            }
-        };
+        // Register against the process's existing container so the gRPC
+        // handlers share the same singleton Store the collectors write to.
+        // A fresh Container here built a second, empty store, and every
+        // metrics query returned [] forever.
         let mut routes = RoutesBuilder::default();
         if let Err(error) = auto_grpc::register(&container, &mut routes).await {
             error!(%error, "could not register gRPC services");

@@ -38,7 +38,7 @@ export function DatabaseAdvancedMetadata({database, onUpdated}: any) {
 	};
 
 	return (
-		<section className="flex flex-col gap-5 rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+		<section className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-sm">
 			<div>
 				<h3 className="flex items-center gap-2 text-base font-bold">
 					<FilePenLine className="size-4 text-primary" /> Database Details
@@ -47,7 +47,7 @@ export function DatabaseAdvancedMetadata({database, onUpdated}: any) {
 					Update the display name and description shown across the project.
 				</p>
 			</div>
-			<div className="flex flex-col gap-4 border-t border-border/40 pt-4">
+			<div className="flex flex-col gap-4 border-t  pt-4">
 				<label className="flex flex-col gap-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
 					Name
 					<Input value={name} onChange={event => setName(event.target.value)} className="h-9 text-xs normal-case" />
@@ -57,7 +57,7 @@ export function DatabaseAdvancedMetadata({database, onUpdated}: any) {
 					<Textarea value={description} onChange={event => setDescription(event.target.value)} className="min-h-24 resize-y text-xs normal-case" />
 				</label>
 			</div>
-			<div className="flex justify-end border-t border-border/40 pt-4">
+			<div className="flex justify-end border-t  pt-4">
 				<Button onClick={save} disabled={saving} className="h-9 gap-1.5 text-xs">
 					<Save className="size-3.5" /> {saving ? 'Saving...' : 'Save Details'}
 				</Button>

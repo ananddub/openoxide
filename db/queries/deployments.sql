@@ -370,8 +370,17 @@ UPDATE deployments SET pid = ? WHERE id = ?;
 UPDATE deployments SET pid = NULL WHERE id = ?;
 
 -- name: DeploymentsGetQueuedDeploymentsGrouped :many
+-- QUIESCE gate: deployments whose service has a RUNNING migration are not
+-- even offered to the dispatcher; the queue's 2s re-tick retries once the
+-- migration leaves RUNNING (the migration's own REDEPLOY step enqueues
+-- directly, bypassing this gate by design).
 SELECT id, server_id FROM deployments
              WHERE status = 'QUEUED'
+               AND NOT EXISTS (
+                   SELECT 1 FROM application_migrations am
+                   WHERE am.service_id = deployments.service_id
+                     AND am.status = 'RUNNING'
+               )
              ORDER BY created_at ASC, id ASC;
 
 -- name: DeploymentsClaimQueuedDeployment :one
@@ -392,11 +401,11 @@ SELECT service_type FROM services WHERE id = ?;
 -- returns the id. Split With/NoServer keeps a NULL server_id insertable.
 
 -- name: AppCoreQueueDeploymentWithServer :one
-INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, last_state_at)
-VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, unixepoch())
+INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, user_id, last_state_at)
+VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, ?, unixepoch())
 RETURNING id;
 
 -- name: AppCoreQueueDeploymentNoServer :one
-INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, is_preview_deployment, last_state_at)
-VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, 0, unixepoch())
+INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, is_preview_deployment, user_id, last_state_at)
+VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, 0, ?, unixepoch())
 RETURNING id;

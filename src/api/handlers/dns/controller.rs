@@ -1,12 +1,9 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     DnsService, DnsServiceExt, Empty, OperationResult, ResourceListResponse, ResourceQuery,
     ResourceRequest, ResourceResponse,
 };
-use crate::db::reactive::realtime;
-use crate::flash_gen::models::DnsProviders;
 use crate::services::networking::dns::{CreateDnsProviderDto, UpdateDnsProviderDto, UpsertDnsRecordDto};
 
 use super::helper::*;
@@ -30,36 +27,6 @@ impl DnsService for DnsController {
     }
 
     #[permission(Server, CanRead)]
-    async fn stream_list_providers(
-        &self,
-        ctx: RequestContext,
-        _query: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let org_id = auth.organization_id;
-        let stream = {
-            let sql = format!("SELECT * FROM dns_providers WHERE organization_id = {org_id}");
-            realtime()
-                .watch_query::<DnsProviders>(sql)
-                .await
-                .map_err(|e| map_dns_error(e.into()))?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows
-                    .into_iter()
-                    .map(crate::services::networking::dns::DnsService::into_dto)
-                    .map(provider_to_resource)
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
-    #[permission(Server, CanRead)]
     async fn get_provider<'a>(
         &'a self,
         ctx: RequestContext,
@@ -72,35 +39,6 @@ impl DnsService for DnsController {
             .await
             .map_err(map_dns_error)?;
         Response::ok(provider_to_resource(provider))
-    }
-
-    #[permission(Server, CanRead)]
-    async fn stream_provider(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
-        >,
-    > {
-        let org_id = auth.organization_id;
-        let id = request.id;
-        let stream = {
-            let sql = format!(
-                "SELECT * FROM dns_providers WHERE id = {id} AND organization_id = {org_id}"
-            );
-            realtime()
-                .watch_query::<DnsProviders>(sql)
-                .await
-                .map_err(|e| map_dns_error(e.into()))?
-        };
-        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
-            Some(provider) => Ok(provider_to_resource(
-                crate::services::networking::dns::DnsService::into_dto(provider),
-            )),
-            None => Err(ConnectError::not_found("dns provider not found")),
-        }))
     }
 
     #[permission(Server, CanCreate)]

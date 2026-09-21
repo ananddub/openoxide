@@ -4,6 +4,7 @@ export * from './query';
 export * from './projects';
 export * from './ai';
 export * from './applications';
+export * from './audit';
 export * from './backups';
 export * from './certificates';
 export * from './compose';

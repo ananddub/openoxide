@@ -399,7 +399,7 @@ export function OverviewServicesTab() {
 					/>
 
 					{/* Pagination Controls */}
-					<div className="flex flex-col items-center justify-between gap-4 border-t border-border/40 pt-3 text-xs text-muted-foreground sm:flex-row">
+					<div className="flex flex-col items-center justify-between gap-4 border-t  pt-3 text-xs text-muted-foreground sm:flex-row">
 						<span>
 							{filteredServices.length}{' '}
 							{filteredServices.length === 1 ? 'service' : 'services'}{' '}

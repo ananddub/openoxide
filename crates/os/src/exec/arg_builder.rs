@@ -127,34 +127,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn builds_correct_args() {
-        // let mut a = ArgBuilder::cmd(&["container", "run"]);
-        // a.pair("--name", "web")
-        //     .flag("--detach")
-        //     .pair_if("--memory", "512m", true)
-        //     .pair_opt("--user", Some("root"))
-        //     .pair_opt::<&str>("--workdir", None)
-        //     .flag_if("--rm", false)
-        //     .label("app", "api")
-        //     .env_var("PORT", "3000")
-        //     .filter("status=running")
-        //     .push("nginx:latest");
-        //
-        // let args = a.clone().build();
-        // assert_eq!(&args[0..2], &["container", "run"]);
-        // assert!(args.contains(&"--name".to_string()));
-        // assert!(args.contains(&"web".to_string()));
-        // assert!(args.contains(&"--detach".to_string()));
-        // assert!(args.contains(&"--memory".to_string()));
-        // assert!(!args.contains(&"--rm".to_string()));
-        // assert!(!args.contains(&"--workdir".to_string()));
-        // assert!(args.contains(&"app=api".to_string()));
-        // assert!(args.contains(&"PORT=3000".to_string()));
-        // assert!(args.contains(&"status=running".to_string()));
-        // assert_eq!(args.last(), Some(&"nginx:latest".to_string()));
-    }
-
-    #[test]
     fn preview_starts_with_docker() {
         let mut a = ArgBuilder::cmd(&["ps"]);
         a.flag("--all");

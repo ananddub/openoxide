@@ -79,7 +79,7 @@ impl GlobalOperationsService {
         match (kind, action) {
             (BulkResourceKind::Application, BulkResourceAction::Start) => self
                 .applications
-                .run_operation(item.id, ApplicationOperation::Start)
+                .run_operation(item.id, ApplicationOperation::Start, 0)
                 .await
                 .map(|_| "start queued".into()),
             (BulkResourceKind::Application, BulkResourceAction::Stop) => self
@@ -89,7 +89,7 @@ impl GlobalOperationsService {
                 .map(|_| "stopped".into()),
             (BulkResourceKind::Application, BulkResourceAction::Redeploy) => self
                 .applications
-                .run_operation(item.id, ApplicationOperation::Redeploy)
+                .run_operation(item.id, ApplicationOperation::Redeploy, 0)
                 .await
                 .map(|_| "redeploy queued".into()),
             (BulkResourceKind::Application, BulkResourceAction::Delete) => self
@@ -99,17 +99,17 @@ impl GlobalOperationsService {
                 .map(|()| "deleted".into()),
             (BulkResourceKind::Compose, BulkResourceAction::Start) => self
                 .compose
-                .run_operation(item.id, ComposeOperation::Start)
+                .run_operation(item.id, ComposeOperation::Start, 0)
                 .await
                 .map(|_| "start queued".into()),
             (BulkResourceKind::Compose, BulkResourceAction::Stop) => self
                 .compose
-                .run_operation(item.id, ComposeOperation::Stop)
+                .run_operation(item.id, ComposeOperation::Stop, 0)
                 .await
                 .map(|_| "stop queued".into()),
             (BulkResourceKind::Compose, BulkResourceAction::Redeploy) => self
                 .compose
-                .run_operation(item.id, ComposeOperation::Redeploy)
+                .run_operation(item.id, ComposeOperation::Redeploy, 0)
                 .await
                 .map(|_| "redeploy queued".into()),
             (BulkResourceKind::Compose, BulkResourceAction::Delete) => self
@@ -119,17 +119,17 @@ impl GlobalOperationsService {
                 .map(|()| "deleted".into()),
             (BulkResourceKind::Database, BulkResourceAction::Start) => self
                 .databases
-                .run_operation(database_kind(item)?, item.id, DatabaseOperation::Start)
+                .run_operation(database_kind(item)?, item.id, DatabaseOperation::Start, 0)
                 .await
                 .map(|_| "start queued".into()),
             (BulkResourceKind::Database, BulkResourceAction::Stop) => self
                 .databases
-                .run_operation(database_kind(item)?, item.id, DatabaseOperation::Stop)
+                .run_operation(database_kind(item)?, item.id, DatabaseOperation::Stop, 0)
                 .await
                 .map(|_| "stop queued".into()),
             (BulkResourceKind::Database, BulkResourceAction::Redeploy) => self
                 .databases
-                .run_operation(database_kind(item)?, item.id, DatabaseOperation::Redeploy)
+                .run_operation(database_kind(item)?, item.id, DatabaseOperation::Redeploy, 0)
                 .await
                 .map(|_| "redeploy queued".into()),
             (BulkResourceKind::Database, BulkResourceAction::Delete) => self
@@ -257,7 +257,7 @@ impl GlobalOperationsService {
     }
 
     pub async fn cleanup_deployment_queue(&self) -> sqlx::Result<u64> {
-        let result = sqlx::query!("UPDATE deployments SET status = 'CANCELLED', state = 'CANCELLED', finished_at = strftime('%s', 'now'), last_state_at = strftime('%s', 'now') WHERE status = 'QUEUED'").execute(&self.queries.pool).await?;
+        let result = sqlx::query("UPDATE deployments SET status = 'CANCELLED', state = 'CANCELLED', finished_at = strftime('%s', 'now'), last_state_at = strftime('%s', 'now') WHERE status = 'QUEUED'").execute(&self.queries.pool).await?;
         Ok(result.rows_affected())
     }
 }

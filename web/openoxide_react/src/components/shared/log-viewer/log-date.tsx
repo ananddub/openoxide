@@ -24,7 +24,7 @@ export const LogDate = React.memo(({timestamp}: {timestamp: string}) => {
 	}
 
 	return (
-		<div className="inline-flex shrink-0 items-baseline gap-0 rounded-xs border border-border/80 bg-muted/80 px-2 py-[0.12rem] font-mono text-[11px] select-none">
+		<div className="inline-flex shrink-0 items-baseline gap-0 rounded-xs bg-muted/80 px-2 py-[0.12rem] font-mono text-[11px] select-none">
 			<span className="font-medium tracking-tight text-sky-400">
 				{timePart}
 			</span>

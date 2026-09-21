@@ -41,6 +41,9 @@ message OpenTerminalRequest {
   optional string shell = 4 [(buf.validate.field).string.max_len = 255];
   optional uint32 cols = 5 [(buf.validate.field).uint32 = {gte: 1, lte: 1000}];
   optional uint32 rows = 6 [(buf.validate.field).uint32 = {gte: 1, lte: 1000}];
+  // TERMINAL_KIND_DOCKER only: escape through the Agent to the host itself
+  // (privileged helper container + chroot) instead of a workload container.
+  bool host = 7;
 }
 
 message TerminalEvent {

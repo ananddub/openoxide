@@ -1,4 +1,10 @@
-import {useMutation, useQuery, useQueryClient, type UseMutationResult, type UseQueryResult} from '@tanstack/react-query';
+import {
+	useMutation,
+	useQuery,
+	useQueryClient,
+	type UseMutationResult,
+	type UseQueryResult,
+} from '@tanstack/react-query';
 import {createServiceClient} from '#/api/connect';
 import {useOrganizations} from '#/stores/session-context';
 import {readResourceList, readResource} from '#/api/live/resource';
@@ -30,7 +36,7 @@ export function useActiveOrgId(): bigint {
 export function useConnectQuery<Output>(
 	key: unknown[],
 	fetcher: () => Promise<Output>,
-	options?: {enabled?: boolean},
+	options?: {enabled?: boolean; refetchInterval?: number},
 ): UseQueryResult<Output> {
 	return useQuery({
 		queryKey: key,
@@ -38,6 +44,7 @@ export function useConnectQuery<Output>(
 		staleTime: LIVE_STALE_TIME_MS,
 		refetchOnWindowFocus: true,
 		enabled: options?.enabled,
+		refetchInterval: options?.refetchInterval,
 	});
 }
 
@@ -58,10 +65,14 @@ export function useResourceQuery<Payload>(
 	fetcher: () => Promise<{payload: string}>,
 	options?: {enabled?: boolean},
 ): UseQueryResult<Payload> {
-	return useConnectQuery(key, async () => {
-		const response = await fetcher();
-		return readResource<Payload>(response);
-	}, options);
+	return useConnectQuery(
+		key,
+		async () => {
+			const response = await fetcher();
+			return readResource<Payload>(response);
+		},
+		options,
+	);
 }
 
 /**

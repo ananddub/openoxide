@@ -26,15 +26,15 @@ export function RailwayCanvasToolbar({
 	onFitView,
 }: RailwayCanvasToolbarProps) {
 	return (
-		<div className="flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-card/90 p-1.5 font-sans shadow-xs backdrop-blur-md">
+		<div className="flex items-center justify-between gap-3 rounded-xl bg-card/90 p-1.5 font-sans shadow-xs backdrop-blur-md">
 			{/* View Mode Switcher */}
-			<div className="flex items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-1">
+			<div className="flex items-center gap-1 rounded-lg bg-muted/40 p-1">
 				<button
 					type="button"
 					onClick={() => onViewModeChange('list')}
 					className={`flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition-all ${
 						viewMode === 'list'
-							? 'border border-border bg-background text-foreground shadow-xs'
+							? 'bg-background text-foreground shadow-xs'
 							: 'text-muted-foreground hover:text-foreground'
 					}`}>
 					<List className="h-3.5 w-3.5" />
@@ -45,7 +45,7 @@ export function RailwayCanvasToolbar({
 					onClick={() => onViewModeChange('canvas')}
 					className={`flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition-all ${
 						viewMode === 'canvas'
-							? 'border border-border bg-background text-foreground shadow-xs'
+							? 'bg-background text-foreground shadow-xs'
 							: 'text-muted-foreground hover:text-foreground'
 					}`}>
 					<LayoutGrid className="h-3.5 w-3.5 text-primary" />
@@ -61,12 +61,12 @@ export function RailwayCanvasToolbar({
 						size="sm"
 						onClick={onAutoLayout}
 						title="Auto-align diagram nodes"
-						className="h-7 cursor-pointer gap-1.5 border-border/60 bg-muted/20 text-xs font-semibold hover:bg-muted/50">
+						className="h-7 cursor-pointer gap-1.5  bg-muted/20 text-xs font-semibold hover:bg-muted/50">
 						<Sparkles className="h-3.5 w-3.5 text-amber-500" />
 						<span>Auto Layout</span>
 					</Button>
 
-					<div className="flex items-center gap-0.5 rounded-lg border border-border/40 bg-muted/20 p-0.5">
+					<div className="flex items-center gap-0.5 rounded-lg bg-muted/20 p-0.5">
 						<button
 							type="button"
 							onClick={onZoomIn}

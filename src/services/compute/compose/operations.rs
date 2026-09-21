@@ -20,6 +20,7 @@ impl ComposeService {
         &self,
         id: i64,
         operation: ComposeOperation,
+        actor_id: i64,
     ) -> sqlx::Result<ComposeOperationResult> {
         let running_deployment = self
             .queries
@@ -66,6 +67,7 @@ impl ComposeService {
                             operation: operation.as_str().to_string(),
                             service_id: id,
                             server_id,
+                            user_id: actor_id,
                         },
                     )
                     .await?
@@ -79,6 +81,7 @@ impl ComposeService {
                             log_path,
                             operation: operation.as_str().to_string(),
                             service_id: id,
+                            user_id: actor_id,
                         },
                     )
                     .await?

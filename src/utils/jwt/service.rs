@@ -86,7 +86,6 @@ impl JwtService {
     ) -> Result<Claims, TokenError> {
         let mut validation = Validation::new(Algorithm::HS256);
         if self.config.debug_skip_time_check {
-            // dbg!(self.config.debug_skip_time_check,token);
             validation.validate_exp = false;
         }
 

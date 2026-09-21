@@ -6,9 +6,6 @@ service AlertOperationsService {
   rpc ListRules(ResourceQuery) returns (ResourceListResponse);
   rpc ListEvents(ResourceQuery) returns (ResourceListResponse);
   rpc GetRule(ResourceRequest) returns (ResourceResponse);
-  rpc StreamListRules(ResourceQuery) returns (stream ResourceListResponse);
-  rpc StreamListEvents(ResourceQuery) returns (stream ResourceListResponse);
-  rpc StreamRule(ResourceRequest) returns (stream ResourceResponse);
   rpc CreateRule(ResourceRequest) returns (ResourceResponse);
   rpc UpdateRule(ResourceRequest) returns (ResourceResponse);
   rpc DeleteRule(ResourceRequest) returns (Empty);

@@ -219,7 +219,7 @@ export function SourceSettingsCard({
 	};
 
 	return (
-		<section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+		<section className="flex flex-col gap-4 rounded-xl bg-card p-5">
 			<div>
 				<h3 className="text-sm font-bold text-foreground">
 					Provider Source
@@ -230,7 +230,7 @@ export function SourceSettingsCard({
 				</p>
 			</div>
 
-			<div className="relative -mb-[1px] flex w-full flex-wrap gap-1 border-b border-border/60 pb-1">
+			<div className="relative -mb-[1px] flex w-full flex-wrap gap-1 border-b  pb-1">
 				{PROVIDERS.map(p => {
 					const isActive = provider === p.id;
 					return (
@@ -241,7 +241,7 @@ export function SourceSettingsCard({
 							className={`-mb-[1px] flex cursor-pointer items-center gap-1.5 border-b-2 px-3.5 pt-2 pb-2 text-xs font-bold transition-all ${
 								isActive
 									? 'border-foreground font-bold text-foreground'
-									: 'border-transparent text-muted-foreground hover:border-border/40 hover:text-foreground'
+									: ' text-muted-foreground hover:text-foreground'
 							}`}>
 							{p.icon}
 							{p.label}
@@ -264,7 +264,7 @@ export function SourceSettingsCard({
 									placeholder="node:16"
 									value={dockerImage}
 									onChange={e => setDockerImage(e.target.value)}
-									className="h-9 border-border bg-card font-mono text-xs"
+									className="h-9 border- bg-card font-mono text-xs"
 								/>
 							</div>
 							<div className="col-span-1 flex flex-col gap-1.5 md:col-span-2">
@@ -275,7 +275,7 @@ export function SourceSettingsCard({
 									placeholder="Registry URL (Optional)"
 									value={registryUrl}
 									onChange={e => setRegistryUrl(e.target.value)}
-									className="h-9 border-border bg-card font-mono text-xs"
+									className="h-9 border- bg-card font-mono text-xs"
 								/>
 							</div>
 							<div className="flex flex-col gap-1.5">
@@ -286,7 +286,7 @@ export function SourceSettingsCard({
 									placeholder="Username (Optional)"
 									value={dockerUsername}
 									onChange={e => setDockerUsername(e.target.value)}
-									className="h-9 border-border bg-card text-xs"
+									className="h-9 border- bg-card text-xs"
 								/>
 							</div>
 							<div className="flex flex-col gap-1.5">
@@ -298,7 +298,7 @@ export function SourceSettingsCard({
 									placeholder="Password (Optional)"
 									value={dockerPassword}
 									onChange={e => setDockerPassword(e.target.value)}
-									className="h-9 border-border bg-card text-xs"
+									className="h-9 border- bg-card text-xs"
 								/>
 							</div>
 						</div>
@@ -312,7 +312,7 @@ export function SourceSettingsCard({
 									placeholder="https://github.com/username/repo.git"
 									value={gitUrl}
 									onChange={e => setGitUrl(e.target.value)}
-									className="h-9 border-border bg-card font-mono text-xs"
+									className="h-9 border- bg-card font-mono text-xs"
 								/>
 							</div>
 							<div className="flex flex-col gap-1.5 md:col-span-1">
@@ -334,12 +334,12 @@ export function SourceSettingsCard({
 													val === 'none' ? undefined : Number(val),
 												)
 											}>
-											<SelectTrigger className="h-9 w-full border-border bg-card text-xs">
+											<SelectTrigger className="h-9 w-full border- bg-card text-xs">
 												<SelectValue placeholder="No SSH Key Selected">
 													{selectedName}
 												</SelectValue>
 											</SelectTrigger>
-											<SelectContent className="border border-border bg-popover">
+											<SelectContent className="bg-popover">
 												<SelectItem
 													value="none"
 													className="cursor-pointer text-xs font-bold text-primary hover:bg-muted">
@@ -366,7 +366,7 @@ export function SourceSettingsCard({
 									placeholder="main"
 									value={gitBranch}
 									onChange={e => setGitBranch(e.target.value)}
-									className="h-9 border-border bg-card text-xs"
+									className="h-9 border- bg-card text-xs"
 								/>
 							</div>
 							<div className="flex flex-col gap-1.5 md:col-span-2">
@@ -377,7 +377,7 @@ export function SourceSettingsCard({
 									placeholder="/"
 									value={gitBuildPath}
 									onChange={e => setGitBuildPath(e.target.value)}
-									className="h-9 border-border bg-card text-xs"
+									className="h-9 border- bg-card text-xs"
 								/>
 							</div>
 						</div>
@@ -391,7 +391,7 @@ export function SourceSettingsCard({
 									placeholder="e.g. facebook"
 									value={repoOwner}
 									onChange={e => setRepoOwner(e.target.value)}
-									className="h-9 border-border bg-card text-xs"
+									className="h-9 border- bg-card text-xs"
 								/>
 							</div>
 							<div className="flex flex-col gap-1.5 md:col-span-2">
@@ -402,7 +402,7 @@ export function SourceSettingsCard({
 									placeholder="e.g. react"
 									value={repoName}
 									onChange={e => setRepoName(e.target.value)}
-									className="h-9 border-border bg-card text-xs"
+									className="h-9 border- bg-card text-xs"
 								/>
 							</div>
 							<div className="flex flex-col gap-1.5 md:col-span-2">
@@ -413,7 +413,7 @@ export function SourceSettingsCard({
 									placeholder="main"
 									value={gitBranch}
 									onChange={e => setGitBranch(e.target.value)}
-									className="h-9 border-border bg-card text-xs"
+									className="h-9 border- bg-card text-xs"
 								/>
 							</div>
 							<div className="flex flex-col gap-1.5 md:col-span-2">
@@ -424,7 +424,7 @@ export function SourceSettingsCard({
 									placeholder="/"
 									value={gitBuildPath}
 									onChange={e => setGitBuildPath(e.target.value)}
-									className="h-9 border-border bg-card text-xs"
+									className="h-9 border- bg-card text-xs"
 								/>
 							</div>
 						</div>

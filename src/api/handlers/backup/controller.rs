@@ -1,12 +1,10 @@
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     BackupOperationsService, BackupOperationsServiceExt, Empty, OperationResult,
-    ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse, StreamQuery,
+    ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
 };
 use crate::core::cache::{CacheEnum, CacheKey};
-use crate::db::reactive::realtime;
 use crate::flash_gen::backups::{
     BackupsUpdateParams, CreateBackupParams, CreateVolumeBackupParams,
 };
@@ -91,25 +89,6 @@ impl BackupOperationsService for BackupController {
             payload,
             ..Default::default()
         })
-    }
-
-    #[permission(Application, CanDeploy)]
-    async fn stream_restore_events(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, StreamQuery>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<ResourceResponse> + Send + use<>>> {
-        // Emit a single status snapshot, then close the stream.
-        let restore_id = request.id.to_string();
-        let status = self.panel_backup.restore_status(&restore_id).await.map_err(map_error)?;
-        let payload = serde_json::to_string(&status).unwrap_or_default();
-        let item = ResourceResponse {
-            id: 0,
-            kind: "panel_restore_status".into(),
-            payload,
-            ..Default::default()
-        };
-        Response::stream_ok(futures::stream::once(async move { Ok(item) }))
     }
 
     #[permission(Application, CanDeploy)]
@@ -230,38 +209,6 @@ impl BackupOperationsService for BackupController {
         Response::ok(ResourceListResponse { items, ..Default::default() })
     }
 
-    #[permission(Database, CanRead)]
-    async fn stream_list_executions(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let limit = request.limit.unwrap_or(100).clamp(1, 500);
-        let stream = {
-            let sql = format!(
-                "SELECT * FROM backup_executions ORDER BY started_at DESC, id DESC LIMIT {limit}"
-            );
-            realtime()
-                .watch_query::<BackupExecutions>(sql)
-                .await
-                .map_err(map_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows
-                    .into_iter()
-                    .map(BackupExecutionResponseDto::from)
-                    .map(execution_to_resource)
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
     #[permission(Application, CanDeploy)]
     async fn retry_execution<'a>(
         &'a self,
@@ -322,35 +269,6 @@ impl BackupOperationsService for BackupController {
     }
 
     #[permission(Database, CanRead)]
-    async fn stream_list_database_backups(
-        &self,
-        _ctx: RequestContext,
-        _request: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let stream = {
-            let sql = "SELECT * FROM backups".to_string();
-            realtime()
-                .watch_query::<Backups>(sql)
-                .await
-                .map_err(map_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows
-                    .into_iter()
-                    .map(BackupResponseDto::from)
-                    .map(db_backup_to_resource)
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
-    #[permission(Database, CanRead)]
     async fn get_database_backup<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -358,30 +276,6 @@ impl BackupOperationsService for BackupController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let item = self.queries.backups_get_by_id(request.id).await.map_err(map_error)?;
         Response::ok(db_backup_to_resource(BackupResponseDto::from(item)))
-    }
-
-    #[permission(Database, CanRead)]
-    async fn stream_database_backup(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
-        >,
-    > {
-        let id = request.id;
-        let stream = {
-            let sql = format!("SELECT * FROM backups WHERE id = {id}");
-            realtime()
-                .watch_query::<Backups>(sql)
-                .await
-                .map_err(map_error)?
-        };
-        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
-            Some(item) => Ok(db_backup_to_resource(BackupResponseDto::from(item))),
-            None => Err(ConnectError::not_found("database backup not found")),
-        }))
     }
 
     #[permission(Database, CanCreate)]
@@ -501,35 +395,6 @@ impl BackupOperationsService for BackupController {
     }
 
     #[permission(Database, CanRead)]
-    async fn stream_list_volume_backups(
-        &self,
-        _ctx: RequestContext,
-        _request: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let stream = {
-            let sql = "SELECT * FROM volume_backups".to_string();
-            realtime()
-                .watch_query::<VolumeBackups>(sql)
-                .await
-                .map_err(map_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows
-                    .into_iter()
-                    .map(VolumeBackupResponseDto::from)
-                    .map(volume_backup_to_resource)
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
-    #[permission(Database, CanRead)]
     async fn get_volume_backup<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -537,30 +402,6 @@ impl BackupOperationsService for BackupController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let item = self.queries.volume_backups_get_by_id(request.id).await.map_err(map_error)?;
         Response::ok(volume_backup_to_resource(VolumeBackupResponseDto::from(VolumeBackups::from(item))))
-    }
-
-    #[permission(Database, CanRead)]
-    async fn stream_volume_backup(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
-        >,
-    > {
-        let id = request.id;
-        let stream = {
-            let sql = format!("SELECT * FROM volume_backups WHERE id = {id}");
-            realtime()
-                .watch_query::<VolumeBackups>(sql)
-                .await
-                .map_err(map_error)?
-        };
-        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
-            Some(item) => Ok(volume_backup_to_resource(VolumeBackupResponseDto::from(item))),
-            None => Err(ConnectError::not_found("volume backup not found")),
-        }))
     }
 
     #[permission(Database, CanCreate)]

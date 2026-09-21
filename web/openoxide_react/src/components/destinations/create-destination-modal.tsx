@@ -206,8 +206,8 @@ export function CreateDestinationModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="w-full rounded-xl border-border bg-card p-6 shadow-xl sm:max-w-2xl md:max-w-3xl">
-				<DialogHeader className="border-b border-border/40 pb-3">
+			<DialogContent className="w-full rounded-xl border- bg-card p-6 shadow-xl sm:max-w-2xl md:max-w-3xl">
+				<DialogHeader className="border-b  pb-3">
 					<DialogTitle className="text-base font-bold text-foreground">
 						{editingDestination
 							? 'Edit Destination'
@@ -238,7 +238,7 @@ export function CreateDestinationModal({
 						providers={PROVIDERS}
 					/>
 
-					<div className="mt-1 flex items-center justify-between gap-3 border-t border-border/40 pt-4">
+					<div className="mt-1 flex items-center justify-between gap-3 border-t  pt-4">
 						<Button
 							type="button"
 							variant="outline"

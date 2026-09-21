@@ -217,12 +217,12 @@ export function ComposeDeploymentsTab({
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Action Header Card */}
-			<section className="flex items-center justify-between rounded-xl border border-border bg-card p-5">
+			<section className="flex items-center justify-between rounded-xl bg-card p-5">
 				<div>
 					<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
 						Deployments History
 						{(activeDeployment || isActionPending) && (
-							<span className="flex animate-pulse items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
+							<span className="flex animate-pulse items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
 								<Activity className="h-3 w-3 animate-spin" />{' '}
 								{isActionPending ? 'Triggering...' : 'Active Build'}
 							</span>
@@ -247,7 +247,7 @@ export function ComposeDeploymentsTab({
 						variant="outline"
 						size="sm"
 						disabled={isActionPending}
-						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted">
+						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted">
 						<RefreshCw
 							className={`h-3.5 w-3.5 ${isActionPending ? 'animate-spin' : ''}`}
 						/>{' '}
@@ -258,7 +258,7 @@ export function ComposeDeploymentsTab({
 						size="sm"
 						onClick={handleRedeploy}
 						disabled={!!activeDeployment || isActionPending}
-						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50">
+						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50">
 						<RefreshCw
 							className={`h-3.5 w-3.5 ${isActionPending ? 'animate-spin' : ''}`}
 						/>{' '}
@@ -329,8 +329,8 @@ export function ComposeDeploymentsTab({
 			{/* Realtime Stream Logs Modal */}
 			{activeLogId && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-					<div className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
-						<div className="flex items-center justify-between border-b border-border bg-muted/30 p-4">
+					<div className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-card shadow-2xl">
+						<div className="flex items-center justify-between border-b border- bg-muted/30 p-4">
 							<div className="flex items-center gap-2">
 								<Terminal className="h-4 w-4 text-foreground" />
 								<h3 className="text-xs font-bold text-foreground">

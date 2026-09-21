@@ -18,6 +18,7 @@ impl TableRegistry {
             ("alert_events", WatchedTable::AlertEvents),
             ("alert_rules", WatchedTable::AlertRules),
             ("application_middlewares", WatchedTable::ApplicationMiddlewares),
+            ("application_migrations", WatchedTable::ApplicationMigrations),
             ("audit_logs", WatchedTable::AuditLogs),
             ("background_policies", WatchedTable::BackgroundPolicies),
             ("backup_executions", WatchedTable::BackupExecutions),
@@ -41,6 +42,7 @@ impl TableRegistry {
             ),
             ("monitoring_policy", WatchedTable::MonitoringPolicy),
             ("mounts", WatchedTable::Mounts),
+            ("migration_objects", WatchedTable::MigrationObjects),
             (
                 "notification_delivery_attempts",
                 WatchedTable::NotificationDeliveryAttempts,

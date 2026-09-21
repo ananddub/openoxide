@@ -6,9 +6,7 @@ import "buf/validate/validate.proto";
 
 service DatabaseService {
   rpc GetDatabase(GetDatabaseRequest) returns (Database);
-  rpc StreamDatabase(GetDatabaseRequest) returns (stream Database);
   rpc ListDatabases(ListDatabasesRequest) returns (ListDatabasesResponse);
-  rpc StreamListDatabases(ListDatabasesRequest) returns (stream ListDatabasesResponse);
   rpc CreateDatabase(CreateDatabaseRequest) returns (Database);
   rpc UpdateDatabase(UpdateDatabaseRequest) returns (Database);
   rpc DeleteDatabase(DeleteDatabaseRequest) returns (Empty);
@@ -21,7 +19,6 @@ service DatabaseService {
   rpc GetSwarmSettings(SwarmSettingsRequest) returns (SwarmSettings);
   rpc UpdateSwarmSettings(UpdateSwarmSettingsRequest) returns (SwarmSettings);
   rpc ListMounts(DatabaseTargetRequest) returns (MountList);
-  rpc StreamListMounts(DatabaseTargetRequest) returns (stream MountList);
   rpc CreateMount(CreateMountRequest) returns (Mount);
   rpc UpdateMount(UpdateMountRequest) returns (Mount);
   rpc DeleteMount(DeleteMountRequest) returns (Empty);

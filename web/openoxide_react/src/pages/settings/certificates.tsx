@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Plus, ShieldAlert, ShieldCheck } from "lucide-react";
+import {createFileRoute, Navigate} from '@tanstack/react-router';
+import { Plus, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "#/components/ui/button";
@@ -28,10 +28,12 @@ import { useRemoteServerList } from "#/api/live/servers";
 import { useConnectMutation } from "#/api/live/query";
 
 export const Route = createFileRoute("/_app/settings/certificates")({
-  component: CertificatesPage,
+  component: () => (
+		<Navigate to="/settings" search={{tab: 'certificates'}} replace />
+	)
 });
 
-function CertificatesPage() {
+export function CertificatesPage() {
   const itemsQuery = useCertificateItems();
   const serversQuery = useRemoteServerList();
   const items = (itemsQuery.data ?? []) as unknown as Certificate[];
@@ -79,24 +81,22 @@ function CertificatesPage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl animate-in flex-col gap-6 p-6 duration-200 fade-in">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-            <ShieldCheck className="size-6 text-emerald-500" />
+    <div className="flex w-full animate-in flex-col gap-6 duration-200 fade-in">
+      <div className="flex flex-wrap items-start justify-between gap-4 sm:items-center">
+        <div className="flex flex-col gap-0.5">
+          <h2 className="text-sm font-medium text-foreground">
             SSL / TLS Certificates
-          </h1>
-          <p className="mt-1 text-xs text-muted-foreground">
+          </h2>
+          <p className="text-xs text-muted-foreground">
             Install custom PEM certificates on local or remote Traefik servers.
           </p>
         </div>
-        <Button onClick={create} className="gap-1.5">
+        <Button onClick={create} className="gap-1.5 px-4 text-sm">
           <Plus className="size-4" />
           Install certificate
         </Button>
       </div>
-
-      <div className="flex gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+      <div className="flex gap-3 rounded-xl bg-amber-500/5 px-4 py-3">
         <ShieldAlert className="mt-0.5 size-4 shrink-0 text-amber-500" />
         <p className="text-xs leading-5 text-muted-foreground">
           Openoxide validates that the certificate and private key match before

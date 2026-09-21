@@ -11,7 +11,7 @@ import { file_openoxide_api_v1_common } from "./common_pb";
  * Describes the file openoxide/api/v1/destination.proto.
  */
 export const file_openoxide_api_v1_destination: GenFile = /*@__PURE__*/
-  fileDesc("CiJvcGVub3hpZGUvYXBpL3YxL2Rlc3RpbmF0aW9uLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMu8FChJEZXN0aW5hdGlvblNlcnZpY2USWwoQTGlzdERlc3RpbmF0aW9ucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVwoOR2V0RGVzdGluYXRpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJjChZTdHJlYW1MaXN0RGVzdGluYXRpb25zEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZTABElwKEVN0cmVhbURlc3RpbmF0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2UwARJaChFDcmVhdGVEZXN0aW5hdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlEloKEVVwZGF0ZURlc3RpbmF0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USTwoRRGVsZXRlRGVzdGluYXRpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSVwoPVGVzdERlc3RpbmF0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdGIGcHJvdG8z", [file_openoxide_api_v1_common]);
+  fileDesc("CiJvcGVub3hpZGUvYXBpL3YxL2Rlc3RpbmF0aW9uLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMqwEChJEZXN0aW5hdGlvblNlcnZpY2USWwoQTGlzdERlc3RpbmF0aW9ucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVwoOR2V0RGVzdGluYXRpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJaChFDcmVhdGVEZXN0aW5hdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlEloKEVVwZGF0ZURlc3RpbmF0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USTwoRRGVsZXRlRGVzdGluYXRpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSVwoPVGVzdERlc3RpbmF0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdGIGcHJvdG8z", [file_openoxide_api_v1_common]);
 
 /**
  * @generated from service openoxide.api.v1.DestinationService
@@ -30,22 +30,6 @@ export const DestinationService: GenService<{
    */
   getDestination: {
     methodKind: "unary";
-    input: typeof ResourceRequestSchema;
-    output: typeof ResourceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DestinationService.StreamListDestinations
-   */
-  streamListDestinations: {
-    methodKind: "server_streaming";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DestinationService.StreamDestination
-   */
-  streamDestination: {
-    methodKind: "server_streaming";
     input: typeof ResourceRequestSchema;
     output: typeof ResourceResponseSchema;
   },

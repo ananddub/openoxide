@@ -102,8 +102,8 @@ export function ViewKeyModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="max-h-[90vh] w-full min-w-0 overflow-y-auto rounded-xl border-border bg-card p-6 shadow-xl sm:max-w-lg">
-				<DialogHeader className="border-b border-border/50 pb-3">
+			<DialogContent className="max-h-[90vh] w-full min-w-0 overflow-y-auto rounded-xl border- bg-card p-6 shadow-xl sm:max-w-lg">
+				<DialogHeader className="border-b  pb-3">
 					<DialogTitle className="flex items-center gap-2 text-sm font-bold text-foreground">
 						<Key className="h-4 w-4 shrink-0 text-primary" />
 						<span>{activeKey.name}</span>
@@ -133,7 +133,7 @@ export function ViewKeyModal({
 								{copiedPublic ? 'Copied' : 'Copy'}
 							</Button>
 						</div>
-						<div className="max-h-28 overflow-y-auto rounded-md border border-zinc-800 bg-zinc-950/90 p-3 font-mono text-xs leading-relaxed break-all text-zinc-100">
+						<div className="max-h-28 overflow-y-auto rounded-md bg-zinc-950/90 p-3 font-mono text-xs leading-relaxed break-all text-zinc-100">
 							{renderHighlightedPublicKey(activeKey.public_key || '')}
 						</div>
 					</div>
@@ -175,12 +175,12 @@ export function ViewKeyModal({
 						</div>
 
 						{showPrivate ? (
-							<div className="max-h-36 overflow-y-auto rounded-md border border-zinc-800 bg-zinc-950/90 p-3 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap text-emerald-400">
+							<div className="max-h-36 overflow-y-auto rounded-md bg-zinc-950/90 p-3 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap text-emerald-400">
 								{activeKey.private_key ||
 									'No private key stored for this SSH key.'}
 							</div>
 						) : (
-							<div className="flex h-10 items-center rounded-md border border-zinc-800 bg-zinc-950/60 px-3 font-mono text-xs text-zinc-500 italic">
+							<div className="flex h-10 items-center rounded-md bg-zinc-950/60 px-3 font-mono text-xs text-zinc-500 italic">
 								•••••••••••••••••••••••• (Hidden for security)
 							</div>
 						)}
@@ -188,7 +188,7 @@ export function ViewKeyModal({
 
 					{/* Server Authorization Command Block (Highlighted Shell Code) */}
 					{setupCommand && (
-						<div className="flex flex-col gap-1.5 border-t border-border/40 pt-2">
+						<div className="flex flex-col gap-1.5 border-t  pt-2">
 							<div className="flex items-center justify-between">
 								<label className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
 									<Terminal className="h-3.5 w-3.5 shrink-0 text-primary" />
@@ -207,7 +207,7 @@ export function ViewKeyModal({
 									{copiedCmd ? 'Copied' : 'Copy Command'}
 								</Button>
 							</div>
-							<div className="max-h-24 overflow-y-auto rounded-md border border-zinc-800 bg-zinc-950/90 p-3 font-mono text-[11px] leading-relaxed break-all text-zinc-200 select-all">
+							<div className="max-h-24 overflow-y-auto rounded-md bg-zinc-950/90 p-3 font-mono text-[11px] leading-relaxed break-all text-zinc-200 select-all">
 								<span className="font-bold text-emerald-400">mkdir</span>{' '}
 								<span className="text-amber-400">-p</span>{' '}
 								<span className="text-cyan-300">~/.ssh</span>{' '}
@@ -235,7 +235,7 @@ export function ViewKeyModal({
 					)}
 
 					{/* Bottom Footer Download Row */}
-					<div className="flex items-center gap-2 border-t border-border/50 pt-3">
+					<div className="flex items-center gap-2 border-t  pt-3">
 						{activeKey.public_key && (
 							<Button
 								type="button"
@@ -247,7 +247,7 @@ export function ViewKeyModal({
 										activeKey.public_key || '',
 									)
 								}
-								className="h-8 gap-1.5 border-border text-xs font-medium">
+								className="h-8 gap-1.5  text-xs font-medium">
 								<Download className="h-3.5 w-3.5" />
 								Download Pub
 							</Button>
@@ -263,7 +263,7 @@ export function ViewKeyModal({
 										activeKey.private_key || '',
 									)
 								}
-								className="h-8 gap-1.5 border-border text-xs font-medium">
+								className="h-8 gap-1.5  text-xs font-medium">
 								<Download className="h-3.5 w-3.5 text-amber-500" />
 								Download Private
 							</Button>

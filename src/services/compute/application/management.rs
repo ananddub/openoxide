@@ -208,19 +208,35 @@ pub(crate) async fn remote_executor(
         .ok_or_else(|| "Server not found".to_string())?;
 
     let port = u16::try_from(port).map_err(|_| "SSH port must be between 0 and 65535")?;
-    tracing::warn!(
-        server_id,
-        "deployment SSH host key verification is disabled because no fingerprint is stored for this server"
-    );
+    let host_key = host_key_for_server(&queries, server_id).await;
     let mut executor = RemoteExecutor::new(
         host,
         port,
         username.clone(),
         SshAuth::key_pair(private_key, public_key),
-        SshHostKey::InsecureAcceptAny,
+        host_key,
     );
     if username != "root" {
         executor = executor.with_sudo();
     }
     Ok(executor)
+}
+
+/// Resolve the host-key verification policy for a server from its stored pin.
+/// Falls back to accepting any key (with a warning) only when no fingerprint
+/// was captured during setup, preserving pre-migration behaviour.
+pub(crate) async fn host_key_for_server(
+    queries: &FlashQueries,
+    server_id: i64,
+) -> SshHostKey {
+    match queries.servers_get_host_key_fingerprint(server_id).await {
+        Ok(fp) if !fp.trim().is_empty() => SshHostKey::PinnedSha256(fp.trim().to_owned()),
+        _ => {
+            tracing::warn!(
+                server_id,
+                "deployment SSH host key verification is disabled because no fingerprint is stored for this server"
+            );
+            SshHostKey::InsecureAcceptAny
+        }
+    }
 }

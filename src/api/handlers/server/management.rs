@@ -1,12 +1,9 @@
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
     ServerManagementService, ServerManagementServiceExt,
 };
-use crate::db::reactive::realtime;
-use crate::flash_gen::models::ServerManagement;
 
 use super::init::ServerManagementController;
 
@@ -59,30 +56,6 @@ impl ServerManagementService for ServerManagementController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let management = self.management.get(request.id).await.map_err(map_db_error)?;
         Response::ok(management_to_resource(request.id, &management))
-    }
-
-    #[permission(Server, CanRead)]
-    async fn stream_management(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
-        >,
-    > {
-        let id = request.id;
-        let stream = {
-            let sql = format!("SELECT * FROM server_management WHERE server_id = {id}");
-            realtime()
-                .watch_query::<ServerManagement>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
-            Some(management) => Ok(management_to_resource(id, &management)),
-            None => Err(ConnectError::not_found("server management not found")),
-        }))
     }
 
     #[permission(Server, CanCreate)]

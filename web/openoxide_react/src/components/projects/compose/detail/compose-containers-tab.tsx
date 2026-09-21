@@ -15,7 +15,7 @@ interface ComposeContainersTabProps {
 	onUpdated?: () => void;
 }
 
-import {extractServicesFromYaml} from '#/components/projects/common/terminal-modal';
+import {extractServicesFromYaml} from '#/components/shared/terminal-card';
 
 export function ComposeContainersTab({
 	compose,
@@ -220,7 +220,7 @@ export function ComposeContainersTab({
 
 	return (
 		<div className="flex flex-col gap-6">
-			<section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+			<section className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-card p-5 shadow-sm">
 				<div>
 					<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
 						<Box className="h-4 w-4 text-primary" /> Compose Stack

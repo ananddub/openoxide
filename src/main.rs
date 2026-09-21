@@ -7,9 +7,6 @@ use tokio::net::TcpListener;
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
-    // reqwest is built with rustls-no-provider so the binary can use the
-    // smaller ring backend instead of pulling in AWS-LC. Install it before
-    // constructing any HTTP client.
     rustls::crypto::ring::default_provider()
         .install_default()
         .expect("rustls crypto provider should only be installed once");
@@ -29,8 +26,7 @@ async fn main() {
     openoxide::utils::ssh::agent::sweep_orphaned_agent_sockets();
 
     let connect_router = auto_grpc::connect_routes().await.unwrap();
-    // gRPC server reflection (grpc.reflection.v1 + v1alpha) so grpcurl, buf curl,
-    // Postman and grpcui can discover services without local proto files.
+
     let reflector = connectrpc_reflection::Reflector::from_descriptor_set_bytes(include_bytes!(
         concat!(env!("OUT_DIR"), "/openoxide.fds.bin")
     ))

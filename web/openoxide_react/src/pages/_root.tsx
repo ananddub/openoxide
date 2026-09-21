@@ -100,7 +100,7 @@ function RootError({error}: {error: unknown}) {
 	}
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-background p-6 text-sm text-muted-foreground">
-			<div className="rounded-lg border border-border bg-card px-5 py-4 shadow-sm">
+			<div className="rounded-lg bg-card px-5 py-4 shadow-sm">
 				Unable to load this view. Please refresh the page.
 			</div>
 		</div>

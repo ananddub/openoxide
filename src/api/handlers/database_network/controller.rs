@@ -1,12 +1,9 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     DatabaseNetworkService, DatabaseNetworkServiceExt, Empty, ResourceListResponse,
     ResourceQuery, ResourceRequest, ResourceResponse,
 };
-use crate::db::reactive::realtime;
-use crate::flash_gen::models::DatabaseNetworks;
 use crate::services::networking::database_network::{
     CreateDatabaseNetworkDto, DatabaseNetworkResponseDto, PatchDatabaseNetworkDto,
 };
@@ -25,35 +22,6 @@ impl DatabaseNetworkService for DatabaseNetworkController {
         let items = self.service.list().await.map_err(map_sqlx_error)?;
         let items = items.into_iter().map(DatabaseNetworkResponseDto::from).map(network_to_resource).collect();
         Response::ok(ResourceListResponse { items, ..Default::default() })
-    }
-
-    #[permission(Database, CanRead)]
-    async fn stream_list_networks(
-        &self,
-        ctx: RequestContext,
-        _query: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let stream = {
-            let sql = "SELECT * FROM database_networks".to_string();
-            realtime()
-                .watch_query::<DatabaseNetworks>(sql)
-                .await
-                .map_err(map_sqlx_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows
-                    .into_iter()
-                    .map(DatabaseNetworkResponseDto::from)
-                    .map(network_to_resource)
-                    .collect(),
-                ..Default::default()
-            })
-        }))
     }
 
     #[permission(Database, CanRead)]
@@ -76,30 +44,6 @@ impl DatabaseNetworkService for DatabaseNetworkController {
     ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
         let network = self.service.get_by_id(request.id).await.map_err(map_sqlx_error)?;
         Response::ok(network_to_resource(DatabaseNetworkResponseDto::from(network)))
-    }
-
-    #[permission(Database, CanRead)]
-    async fn stream_network(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
-        >,
-    > {
-        let id = request.id;
-        let stream = {
-            let sql = format!("SELECT * FROM database_networks WHERE id = {id}");
-            realtime()
-                .watch_query::<DatabaseNetworks>(sql)
-                .await
-                .map_err(map_sqlx_error)?
-        };
-        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
-            Some(network) => Ok(network_to_resource(DatabaseNetworkResponseDto::from(network))),
-            None => Err(ConnectError::not_found("database network not found")),
-        }))
     }
 
     #[permission(Database, CanCreate)]

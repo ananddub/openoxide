@@ -27,6 +27,19 @@ impl DeploymentService {
         self.queries.get_deployment_by_i_d(id).await
     }
 
+    /// Email of the user who triggered a deployment (0 / unknown → `None`,
+    /// which the UI renders as "System").
+    pub async fn actor_email(&self, user_id: i64) -> Option<String> {
+        if user_id == 0 {
+            return None;
+        }
+        self.queries
+            .get_user_by_i_d(user_id)
+            .await
+            .ok()
+            .and_then(|user| user.email)
+    }
+
     pub async fn list(&self, filter: DeploymentListFilter) -> sqlx::Result<Vec<Deployments>> {
         let status = normalize_filter_text(filter.status);
         let state = normalize_filter_text(filter.state);

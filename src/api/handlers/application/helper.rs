@@ -52,6 +52,10 @@ pub fn app_to_proto(value: crate::services::compute::application::ApplicationRec
         cpu_reservation: value.cpu_reservation,
         cpu_limit: value.cpu_limit,
         replicas: value.replicas,
+        command: value.command,
+        args: value.args,
+        watch_paths: value.watch_paths,
+        enable_submodules: Some(value.enable_submodules),
         ..Default::default()
     }
 }

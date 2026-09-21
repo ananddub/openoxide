@@ -6,7 +6,5 @@ import "openoxide/api/v1/common.proto";
 service MonitoringService {
   rpc GetOverview(ResourceRequest) returns (ResourceResponse);
   rpc GetMetrics(ResourceRequest) returns (ResourceResponse);
-  rpc StreamMetrics(StreamQuery) returns (stream ResourceResponse);
-  rpc StreamContainerEvents(StreamQuery) returns (stream ResourceResponse);
   rpc GetContainerState(ResourceRequest) returns (ResourceResponse);
 }

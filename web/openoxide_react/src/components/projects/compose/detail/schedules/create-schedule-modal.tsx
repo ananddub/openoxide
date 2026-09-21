@@ -90,10 +90,10 @@ export function CreateScheduleModal({
 
 	const modalJSX = (
 		<div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-			<div className="w-full max-w-3xl animate-in overflow-hidden rounded-xl border border-border bg-card shadow-2xl duration-150 fade-in">
-				<div className="flex items-center justify-between border-b border-border/40 bg-muted/20 p-4">
+			<div className="w-full max-w-3xl animate-in overflow-hidden rounded-xl bg-card shadow-2xl duration-150 fade-in">
+				<div className="flex items-center justify-between border-b  bg-muted/20 p-4">
 					<div className="flex items-center gap-2.5">
-						<div className="flex size-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+						<div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
 							<Clock className="h-4 w-4" />
 						</div>
 						<div>
@@ -139,7 +139,7 @@ export function CreateScheduleModal({
 							<SelectTrigger className="!h-9 w-full text-xs">
 								<SelectValue placeholder="Select service" />
 							</SelectTrigger>
-							<SelectContent className="border-border bg-card">
+							<SelectContent className="border- bg-card">
 								{servicesList.map(srv => (
 									<SelectItem key={srv} value={srv} className="text-xs">
 										{srv}
@@ -180,10 +180,10 @@ export function CreateScheduleModal({
 									key={p.value}
 									type="button"
 									onClick={() => setCronExpr(p.value)}
-									className={`rounded border px-2 py-0.5 text-[10px] transition-colors ${
+									className={`rounded  px-2 py-0.5 text-[10px] transition-colors ${
 										cronExpr === p.value
-											? 'border-primary/30 bg-primary/10 font-bold text-primary'
-											: 'border-border/40 bg-muted/40 text-muted-foreground hover:bg-muted'
+											? ' bg-primary/10 font-bold text-primary'
+											: ' bg-muted/40 text-muted-foreground hover:bg-muted'
 									}`}>
 									{p.label}
 								</button>
@@ -191,7 +191,7 @@ export function CreateScheduleModal({
 						</div>
 					</div>
 
-					<div className="flex items-center justify-end border-t border-border/40 pt-2">
+					<div className="flex items-center justify-end border-t  pt-2">
 						<Button
 							type="submit"
 							disabled={creating}

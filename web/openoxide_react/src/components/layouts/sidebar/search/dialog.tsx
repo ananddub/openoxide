@@ -46,9 +46,17 @@ export function SearchDialog() {
 	}, [query]);
 
 	// Close dialog first, then navigate to avoid dialog blocking route transition.
+	// ROUTES entries may carry a query (`/infra?tab=…`) — TanStack's `to` is
+	// path-only, so split the search out and pass it as `search`.
 	const handleNavigate = (path: string) => {
 		setOpen(false);
-		navigate({to: path as any});
+		const [to, query] = path.split('?');
+		if (query) {
+			const search = Object.fromEntries(new URLSearchParams(query));
+			navigate({to: to as never, search: search as never});
+		} else {
+			navigate({to: path as never});
+		}
 	};
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -79,8 +87,8 @@ export function SearchDialog() {
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogContent className="overflow-hidden rounded-xl border border-border/60 bg-popover p-0 shadow-2xl sm:max-w-md">
-				<div className="flex items-center border-b border-border/50 px-3 py-2">
+			<DialogContent className="overflow-hidden rounded-xl bg-popover p-0 shadow-2xl sm:max-w-md">
+				<div className="flex items-center border-b  px-3 py-2">
 					<Search className="mr-2 size-4 shrink-0 text-muted-foreground" />
 					<input
 						ref={inputRef}
@@ -137,22 +145,22 @@ export function SearchDialog() {
 						</div>
 					)}
 				</div>
-				<div className="flex shrink-0 items-center justify-end gap-4 border-t border-border/40 bg-muted/40 px-4 py-2.5 text-[10px] text-muted-foreground/75 select-none">
+				<div className="flex shrink-0 items-center justify-end gap-4 border-t  bg-muted/40 px-4 py-2.5 text-[10px] text-muted-foreground/75 select-none">
 					<div className="flex items-center gap-1.5">
-						<kbd className="flex items-center gap-0.5 rounded border border-border/70 bg-muted px-1.5 py-0.5 shadow-xs">
+						<kbd className="flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 shadow-xs">
 							<ArrowUp className="size-2.5" />
 							<ArrowDown className="size-2.5" />
 						</kbd>
 						to navigate
 					</div>
 					<div className="flex items-center gap-1.5">
-						<kbd className="flex items-center rounded border border-border/70 bg-muted px-1.5 py-0.5 shadow-xs">
+						<kbd className="flex items-center rounded bg-muted px-1.5 py-0.5 shadow-xs">
 							<CornerDownLeft className="size-2.5" />
 						</kbd>
 						to select
 					</div>
 					<div className="flex items-center gap-1.5">
-						<kbd className="rounded border border-border/70 bg-muted px-1.5 py-0.5 font-mono text-[9px] shadow-xs">
+						<kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9px] shadow-xs">
 							esc
 						</kbd>
 						to close

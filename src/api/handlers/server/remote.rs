@@ -1,13 +1,10 @@
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
 use validator::Validate;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
     RemoteServerService, RemoteServerServiceExt,
 };
-use crate::db::reactive::realtime;
-use crate::flash_gen::models::Servers;
 use crate::services::infrastructure::server::{
     CreateRemoteServerDto, MigrateServerDependenciesDto, PatchRemoteServerDto,
     RemoteServerAction, RemoteServerActionResponseDto, RemoteServerResponseDto,
@@ -80,36 +77,6 @@ impl RemoteServerService for RemoteServerController {
     }
 
     #[permission(Server, CanRead)]
-    async fn stream_list_remote_servers(
-        &self,
-        ctx: RequestContext,
-        _query: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = auth.organization_id;
-        let stream = {
-            let sql = format!("SELECT * FROM servers WHERE organization_id = {organization_id}");
-            realtime()
-                .watch_query::<Servers>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows
-                    .into_iter()
-                    .map(RemoteServerResponseDto::from)
-                    .map(server_to_resource)
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
-    #[permission(Server, CanRead)]
     async fn get_remote_server<'a>(
         &'a self,
         ctx: RequestContext,
@@ -121,31 +88,6 @@ impl RemoteServerService for RemoteServerController {
             .await
             .map_err(map_db_error)?;
         Response::ok(server_to_resource(RemoteServerResponseDto::from(server)))
-    }
-
-    #[permission(Server, CanRead)]
-    async fn stream_remote_server(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
-        >,
-    > {
-        let id = request.id;
-        let organization_id = auth.organization_id;
-        let stream = {
-            let sql = format!("SELECT * FROM servers WHERE id = {id} AND organization_id = {organization_id}");
-            realtime()
-                .watch_query::<Servers>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
-            Some(server) => Ok(server_to_resource(RemoteServerResponseDto::from(server))),
-            None => Err(ConnectError::not_found("remote server not found")),
-        }))
     }
 
     #[permission(Server, CanCreate)]
@@ -326,6 +268,32 @@ impl RemoteServerService for RemoteServerController {
         Response::ok(OperationResult {
             success: true,
             operation: "rollback_migration".into(),
+            payload: Some(payload),
+            ..Default::default()
+        })
+    }
+
+    #[permission(Server, CanCreate)]
+    async fn cancel_migration<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ResourceRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        // The stateful application_migrations id is passed in payload.
+        let migration_id = if request.payload.is_empty() {
+            return Err(ConnectError::invalid_argument("migration_id is required"));
+        } else {
+            request.payload
+        };
+        let row = self
+            .service
+            .request_stateful_migration_cancel(&migration_id, auth.organization_id)
+            .await
+            .map_err(map_db_error)?;
+        let payload = serde_json::to_string(&row).unwrap_or_default();
+        Response::ok(OperationResult {
+            success: true,
+            operation: "cancel_migration".into(),
             payload: Some(payload),
             ..Default::default()
         })

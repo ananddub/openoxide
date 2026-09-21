@@ -55,6 +55,7 @@ pub struct DbCreateQueuedDatabaseDeploymentGlobalParams {
     pub operation: String,
     pub service_id: i64,
     pub database_kind: String,
+    pub user_id: i64,
 }
 
 pub struct DbCreateQueuedDatabaseDeploymentForServerParams {
@@ -65,6 +66,7 @@ pub struct DbCreateQueuedDatabaseDeploymentForServerParams {
     pub service_id: i64,
     pub database_kind: String,
     pub server_id: i64,
+    pub user_id: i64,
 }
 
 impl Queries {
@@ -145,7 +147,7 @@ impl Queries {
         params: &DbCreateQueuedDatabaseDeploymentGlobalParams,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, database_kind, server_id, is_preview_deployment, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, NULL, 0, unixepoch()) RETURNING id;"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, database_kind, server_id, is_preview_deployment, user_id, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, NULL, 0, ?, unixepoch()) RETURNING id;"
         )
         .bind(&params.title)
         .bind(&params.description)
@@ -153,6 +155,7 @@ impl Queries {
         .bind(&params.operation)
         .bind(&params.service_id)
         .bind(&params.database_kind)
+        .bind(&params.user_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -163,7 +166,7 @@ impl Queries {
         params: &DbCreateQueuedDatabaseDeploymentForServerParams,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, database_kind, server_id, is_preview_deployment, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, ?, 0, unixepoch()) RETURNING id;"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, database_kind, server_id, is_preview_deployment, user_id, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, ?, 0, ?, unixepoch()) RETURNING id;"
         )
         .bind(&params.title)
         .bind(&params.description)
@@ -172,6 +175,7 @@ impl Queries {
         .bind(&params.service_id)
         .bind(&params.database_kind)
         .bind(&params.server_id)
+        .bind(&params.user_id)
         .fetch_one(&self.pool)
         .await
     }

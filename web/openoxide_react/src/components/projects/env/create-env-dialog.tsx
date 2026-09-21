@@ -1,5 +1,4 @@
-import {useEnvironmentCreate, useEnvironmentUpdate} from '#/api/live/environments';
-import {useProjectUpdate} from '#/api/live/projects';
+import {useEnvironmentCreate} from '#/api/live/environments';
 import {useState} from 'react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
@@ -59,7 +58,7 @@ export function CreateEnvDialog({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="border-border bg-card sm:max-w-md">
+			<DialogContent className="border- bg-card sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle className="text-base font-bold">
 						Create Environment
@@ -96,7 +95,7 @@ export function CreateEnvDialog({
 						/>
 					</div>
 
-					<div className="flex justify-end border-t border-border/20 pt-3">
+					<div className="flex justify-end border-t  pt-3">
 						<Button
 							type="submit"
 							disabled={isSubmitting}

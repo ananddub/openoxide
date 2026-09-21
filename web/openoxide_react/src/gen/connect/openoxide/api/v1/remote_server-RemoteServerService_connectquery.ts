@@ -58,3 +58,11 @@ export const getMigration = RemoteServerService.method.getMigration;
  * @generated from rpc openoxide.api.v1.RemoteServerService.RollbackMigration
  */
 export const rollbackMigration = RemoteServerService.method.rollbackMigration;
+
+/**
+ * Flags a RUNNING application_migrations row for cooperative cancellation;
+ * the runner honours it at the next phase/object boundary.
+ *
+ * @generated from rpc openoxide.api.v1.RemoteServerService.CancelMigration
+ */
+export const cancelMigration = RemoteServerService.method.cancelMigration;

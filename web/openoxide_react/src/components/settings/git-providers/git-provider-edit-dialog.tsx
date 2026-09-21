@@ -81,7 +81,7 @@ export function GitProviderEditDialog({
 			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2.5 text-base font-bold">
-						<div className="flex size-8 items-center justify-center rounded-lg border border-border/60 bg-muted/60">
+						<div className="flex size-8 items-center justify-center rounded-lg bg-muted/60">
 							{renderIcon(kind)}
 						</div>
 						{editing ? 'Edit' : 'Add'} {GIT_PROVIDER_LABELS[kind]}
@@ -97,7 +97,7 @@ export function GitProviderEditDialog({
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-muted-foreground">
+				<div className="rounded-xl bg-primary/5 p-3.5 text-xs text-muted-foreground">
 					{kind === 'github' ? (
 						<>
 							Manual configuration. For automatic setup, use the{' '}
@@ -223,12 +223,12 @@ export function GitProviderEditDialog({
 							onChange={e =>
 								onChangeField('shared', String(e.target.checked))
 							}
-							className="size-4 rounded border-border accent-primary"
+							className="size-4 rounded  accent-primary"
 						/>
 						Share this Git Provider with all organization members
 					</label>
 
-					<div className="flex justify-end gap-2 border-t border-border/40 pt-4">
+					<div className="flex justify-end gap-2 border-t  pt-4">
 						<Button
 							variant="outline"
 							size="sm"

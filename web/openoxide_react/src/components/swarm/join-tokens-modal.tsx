@@ -74,7 +74,7 @@ function CommandBlock({
 	};
 
 	return (
-		<div className="w-full min-w-0 space-y-1.5 rounded-lg border border-border/60 bg-muted/20 p-2.5">
+		<div className="w-full min-w-0 space-y-1.5 rounded-lg bg-muted/20 p-2.5">
 			<div className="flex items-center justify-between">
 				<span className="text-xs font-semibold text-foreground">
 					{label}
@@ -94,7 +94,7 @@ function CommandBlock({
 					{copied ? 'Copied' : 'Copy'}
 				</Button>
 			</div>
-			<div className="max-h-24 w-full min-w-0 overflow-y-auto rounded border border-zinc-800/80 bg-zinc-950 p-2.5 font-mono text-[11px] leading-relaxed break-all text-zinc-200 select-all">
+			<div className="max-h-24 w-full min-w-0 overflow-y-auto rounded bg-zinc-950 p-2.5 font-mono text-[11px] leading-relaxed break-all text-zinc-200 select-all">
 				{isLoading ? (
 					<span className="text-zinc-500">Loading token…</span>
 				) : command ? (
@@ -183,8 +183,8 @@ export function JoinTokensModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="max-h-[85vh] w-full overflow-y-auto rounded-xl border-border bg-card p-6 shadow-xl sm:max-w-lg">
-				<DialogHeader className="border-b border-border/40 pb-3">
+			<DialogContent className="max-h-[85vh] w-full overflow-y-auto rounded-xl border- bg-card p-6 shadow-xl sm:max-w-lg">
+				<DialogHeader className="border-b  pb-3">
 					<DialogTitle className="text-base font-bold text-foreground">
 						Add Node to Swarm Cluster
 					</DialogTitle>
@@ -225,7 +225,7 @@ export function JoinTokensModal({
 										onValueChange={val =>
 											val && setSelectedRemoteServerId(val)
 										}>
-										<SelectTrigger className="h-9 w-full border-border bg-background text-xs">
+										<SelectTrigger className="h-9 w-full border- bg-background text-xs">
 											<SelectValue placeholder="Select a server…">
 												{selectedRemoteServer
 													? `${selectedRemoteServer.name} (${selectedRemoteServer.ip_address})`
@@ -243,7 +243,7 @@ export function JoinTokensModal({
 								</div>
 
 								{selectedRemoteServer && (
-									<div className="flex flex-col gap-3 rounded-lg border border-border/50 bg-muted/20 p-3">
+									<div className="flex flex-col gap-3 rounded-lg bg-muted/20 p-3">
 										<div className="flex items-center gap-2">
 											<span className="text-[11px] font-semibold text-muted-foreground">
 												Status
@@ -300,7 +300,7 @@ export function JoinTokensModal({
 														}>
 														<SelectTrigger
 															size="sm"
-															className="h-8 w-full border-border bg-background text-xs">
+															className="h-8 w-full border- bg-background text-xs">
 															<SelectValue />
 														</SelectTrigger>
 														<SelectContent>

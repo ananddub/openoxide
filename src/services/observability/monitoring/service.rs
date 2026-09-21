@@ -434,23 +434,19 @@ impl MonitoringService {
                 distro: host.as_ref().map_or_default(|host| host.distro.clone()),
                 kernel: host.as_ref().map_or_default(|host| host.kernel.clone()),
                 arch: host.as_ref().map_or_default(|host| host.arch.clone()),
-                mem_used: metric.mem_total_gb
-                    * if metric.mem_total_gb > 0.0 {
-                        metric.mem_used_gb / metric.mem_total_gb
-                    } else {
-                        0.0
-                    }
-                    * 100.0,
+                mem_used: if metric.mem_total_gb > 0.0 {
+                    metric.mem_used_gb / metric.mem_total_gb * 100.0
+                } else {
+                    0.0
+                },
                 mem_used_gb: metric.mem_used_gb,
                 mem_total: metric.mem_total_gb,
                 uptime: metric.uptime as i64,
-                disk_used: metric.disk_total_gb
-                    * if metric.disk_total_gb > 0.0 {
-                        metric.disk_used_gb / metric.disk_total_gb
-                    } else {
-                        0.0
-                    }
-                    * 100.0,
+                disk_used: if metric.disk_total_gb > 0.0 {
+                    metric.disk_used_gb / metric.disk_total_gb * 100.0
+                } else {
+                    0.0
+                },
                 total_disk: metric.disk_total_gb,
                 network_in: metric.network_in,
                 network_out: metric.network_out,

@@ -46,7 +46,7 @@ export function DockerStatusFilter({
 					value={searchQuery}
 					onChange={e => onSearchChange(e.target.value)}
 					placeholder="Search containers by name, id, image..."
-					className="h-9 border-border/60 bg-card pl-9 font-mono text-xs shadow-2xs"
+					className="h-9  bg-card pl-9 font-mono text-xs shadow-2xs"
 				/>
 			</div>
 
@@ -57,13 +57,13 @@ export function DockerStatusFilter({
 					onValueChange={v =>
 						v && onStatusFilterChange(v as 'all' | 'running' | 'stopped')
 					}>
-					<SelectTrigger className="h-9 w-[180px] shrink-0 gap-2 border-border/60 bg-card text-xs font-medium shadow-2xs">
+					<SelectTrigger className="h-9 w-[180px] shrink-0 gap-2  bg-card text-xs font-medium shadow-2xs">
 						<Filter className="size-3.5 shrink-0 text-muted-foreground" />
 						<span className="truncate">
 							{getDisplayLabel(statusFilter)}
 						</span>
 					</SelectTrigger>
-					<SelectContent className="w-[200px] border-border bg-card p-1 text-xs shadow-md">
+					<SelectContent className="w-[200px] border- bg-card p-1 text-xs shadow-md">
 						<SelectItem
 							value="all"
 							className="cursor-pointer text-xs font-medium">

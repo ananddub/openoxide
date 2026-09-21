@@ -65,9 +65,9 @@ export function GitProviderCard({
 	};
 
 	return (
-		<div className="flex flex-col justify-between gap-4 rounded-2xl border border-border/80 bg-card p-4 transition-all hover:border-primary/40 hover:shadow-xs sm:flex-row sm:items-center">
+		<div className="flex flex-col justify-between gap-4 rounded-2xl bg-muted/30 p-4 transition-colors hover:bg-muted/50 sm:flex-row sm:items-center">
 			<div className="flex min-w-0 items-center gap-3.5">
-				<div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/50">
+				<div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted/60">
 					{renderIcon(kind)}
 				</div>
 
@@ -80,11 +80,11 @@ export function GitProviderCard({
 							{GIT_PROVIDER_LABELS[kind] || kind}
 						</Badge>
 						{provider.configured ? (
-							<span className="flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-500">
+							<span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-500">
 								<CheckCircle2 className="size-3" /> Connected
 							</span>
 						) : (
-							<span className="flex animate-pulse items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-500">
+							<span className="flex animate-pulse items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-500">
 								<AlertCircle className="size-3" /> Action Required
 							</span>
 						)}
@@ -116,7 +116,7 @@ export function GitProviderCard({
 						variant="outline"
 						size="sm"
 						onClick={() => onAuthorize(provider.id)}
-						className="h-8 gap-1 rounded-lg border-primary/40 text-xs font-semibold text-primary hover:bg-primary/10">
+						className="h-8 gap-1 rounded-lg  text-xs font-semibold text-primary hover:bg-primary/10">
 						<Import className="size-3.5" /> Authorize
 					</Button>
 				)}
@@ -126,7 +126,7 @@ export function GitProviderCard({
 					size="sm"
 					onClick={handleTestClick}
 					disabled={testing}
-					className="h-8 gap-1.5 rounded-lg border-border/80 text-xs font-medium text-foreground hover:bg-muted">
+					className="h-8 gap-1.5 rounded-lg  text-xs font-medium text-foreground hover:bg-muted">
 					<RefreshCw
 						className={`size-3.5 ${testing ? 'animate-spin' : ''}`}
 					/>

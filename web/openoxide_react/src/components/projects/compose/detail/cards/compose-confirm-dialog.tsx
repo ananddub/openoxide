@@ -46,7 +46,7 @@ export function ComposeConfirmDialog({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-			<div className="flex w-full max-w-md flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-2xl">
+			<div className="flex w-full max-w-md flex-col gap-4 rounded-xl bg-card p-5 shadow-2xl">
 				<div>
 					<h3 className="text-sm font-bold text-foreground">
 						{getActionTitle(confirmAction)}
@@ -56,7 +56,7 @@ export function ComposeConfirmDialog({
 					</p>
 				</div>
 
-				<div className="flex items-center justify-end gap-2 border-t border-border pt-2">
+				<div className="flex items-center justify-end gap-2 border-t  pt-2">
 					<Button
 						variant="outline"
 						size="sm"

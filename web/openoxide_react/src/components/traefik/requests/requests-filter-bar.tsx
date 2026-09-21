@@ -70,18 +70,18 @@ export function RequestsFilterBar({
 						value={searchQuery}
 						onChange={e => onSearchChange(e.target.value)}
 						placeholder="Filter path, method..."
-						className="h-9 border-border/60 bg-card pl-9 font-mono text-xs shadow-2xs"
+						className="h-9  bg-card pl-9 font-mono text-xs shadow-2xs"
 					/>
 				</div>
 
 				<Select
 					value={statusFilter}
 					onValueChange={v => onStatusFilterChange(v || 'all')}>
-					<SelectTrigger className="h-9 w-[185px] shrink-0 gap-2 border-border/60 bg-card text-xs font-medium shadow-2xs">
+					<SelectTrigger className="h-9 w-[185px] shrink-0 gap-2  bg-card text-xs font-medium shadow-2xs">
 						<Filter className="size-3.5 shrink-0 text-muted-foreground" />
 						<SelectValue placeholder="Status Filter" />
 					</SelectTrigger>
-					<SelectContent className="w-[210px] border-border bg-card p-1.5 text-xs shadow-md">
+					<SelectContent className="w-[210px] border- bg-card p-1.5 text-xs shadow-md">
 						{STATUS_PRIORITIES.map(opt => (
 							<SelectItem
 								key={opt.value}
@@ -96,13 +96,13 @@ export function RequestsFilterBar({
 
 			<div className="flex shrink-0 items-center gap-2">
 				<DropdownMenu>
-					<DropdownMenuTrigger className="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md border border-border/60 bg-card px-3 text-xs font-medium shadow-2xs transition-colors hover:bg-accent">
+					<DropdownMenuTrigger className="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md bg-card px-3 text-xs font-medium shadow-2xs transition-colors hover:bg-accent">
 						<Columns3 className="size-3.5 text-muted-foreground" /> Columns
 						({visibleCount})
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="end"
-						className="w-[190px] border-border bg-card p-1.5 text-xs shadow-md">
+						className="w-[190px] border- bg-card p-1.5 text-xs shadow-md">
 						{ALL_COLUMNS.map(col => (
 							<DropdownMenuCheckboxItem
 								key={col.id}
@@ -117,7 +117,7 @@ export function RequestsFilterBar({
 
 				<Badge
 					variant="secondary"
-					className="h-9 border border-border/40 px-3.5 font-mono text-xs font-semibold">
+					className="h-9 px-3.5 font-mono text-xs font-semibold">
 					Total:{' '}
 					<strong className="ml-1 text-foreground">{totalCount}</strong>
 				</Badge>
@@ -127,7 +127,7 @@ export function RequestsFilterBar({
 					size="sm"
 					onClick={onRefresh}
 					disabled={isLoading}
-					className="h-9 cursor-pointer gap-2 border-border/60 px-3 text-xs font-medium shadow-2xs">
+					className="h-9 cursor-pointer gap-2  px-3 text-xs font-medium shadow-2xs">
 					<RefreshCw
 						className={`size-3.5 text-muted-foreground ${isLoading ? 'animate-spin' : ''}`}
 					/>{' '}

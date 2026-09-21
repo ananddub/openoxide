@@ -7,8 +7,12 @@
 /.qwen
 /.codex
 /.claude
+/.qoder
+/.zcode
+/.skills
 /.cargo
 /.agents
+*-*-*.txt
 
 /data
 /.runtime

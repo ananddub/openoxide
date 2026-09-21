@@ -146,8 +146,8 @@ export function CreateServerModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="w-full rounded-2xl border-border bg-card p-6 shadow-2xl sm:max-w-2xl md:max-w-3xl">
-				<DialogHeader className="border-b border-border/50 pb-4">
+			<DialogContent className="w-full rounded-2xl border- bg-card p-6 shadow-2xl sm:max-w-2xl md:max-w-3xl">
+				<DialogHeader className="border-b  pb-4">
 					<DialogTitle className="flex items-center gap-2.5 text-base font-bold text-foreground">
 						<div className="rounded-xl bg-primary/10 p-2 text-primary">
 							<Server className="h-5 w-5" />
@@ -177,7 +177,7 @@ export function CreateServerModal({
 						sshKeys={sshKeys}
 					/>
 
-					<div className="mt-1 flex items-center justify-between border-t border-border/50 pt-4">
+					<div className="mt-1 flex items-center justify-between border-t  pt-4">
 						{/* Clean Icon-Only Test Connection Button */}
 						<Button
 							type="button"
@@ -199,7 +199,7 @@ export function CreateServerModal({
 									? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20'
 									: testResult === 'failed'
 										? 'border-rose-500/50 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20'
-										: 'border-border/80 hover:bg-muted/80'
+										: ' hover:bg-muted/80'
 							}`}>
 							{testingConn ? (
 								<RefreshCw className="h-4 w-4 animate-spin text-primary" />

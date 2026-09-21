@@ -69,6 +69,24 @@ UPDATE certificates SET server_id = ? WHERE server_id = ?;
 -- name: ServersMigrateSchedules :exec
 UPDATE schedules SET server_id = ? WHERE server_id = ?;
 
+-- Selective (per-service) repoint variants: flip only the ids in the JSON
+-- array, and validate each row still belongs to the source server in the same
+-- statement (guards against a row that moved after the id list was captured).
+-- name: ServersMigrateApplicationServersByIds :exec
+UPDATE services SET server_id = ? WHERE server_id = ? AND service_type = 'APPLICATION' AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?));
+
+-- name: ServersMigrateBuildAssignmentsByIds :exec
+UPDATE service_application SET build_server_id = ? WHERE build_server_id = ? AND service_id IN (SELECT CAST(value AS INTEGER) FROM json_each(?));
+
+-- name: ServersMigrateComposeServersByIds :exec
+UPDATE services SET server_id = ? WHERE server_id = ? AND service_type = 'COMPOSE' AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?));
+
+-- name: ServersMigrateCertificatesByIds :exec
+UPDATE certificates SET server_id = ? WHERE server_id = ? AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?));
+
+-- name: ServersMigrateSchedulesByIds :exec
+UPDATE schedules SET server_id = ? WHERE server_id = ? AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?));
+
 -- name: ServersMigratableApplicationIds :many
 SELECT id AS id FROM services WHERE server_id = ? AND service_type = 'APPLICATION' ORDER BY id;
 
@@ -124,10 +142,10 @@ SELECT id AS id FROM services WHERE service_type = 'APPLICATION' AND id IN (SELE
 SELECT id AS id FROM services WHERE service_type = 'COMPOSE' AND id IN (SELECT CAST(value AS INTEGER) FROM json_each(?)) ORDER BY id;
 
 -- name: ServersGetAll :many
-SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit FROM servers;
+SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit, host_key_fingerprint AS host_key_fingerprint, host_key_openssh AS host_key_openssh FROM servers;
 
 -- name: ServersGetById :one
-SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit FROM servers WHERE id = ?;
+SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit, host_key_fingerprint AS host_key_fingerprint, host_key_openssh AS host_key_openssh FROM servers WHERE id = ?;
 
 -- name: ServersCreate :exec
 INSERT INTO servers (name, description, ip_address, port, username, app_name, server_status, server_type, enable_docker_cleanup, log_cleanup_cron, command, metrics_config, ssh_key_id, created_at, updated_at, build_memory_limit, build_cpu_limit) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
@@ -146,6 +164,8 @@ SELECT
                   n.connection_mode AS connection_mode,
                   s.port,
                   s.username,
+                  s.host_key_fingerprint AS host_key_fingerprint,
+                  s.host_key_openssh AS host_key_openssh,
                   k.private_key,
                   k.public_key
                FROM servers s
@@ -154,17 +174,17 @@ SELECT
                WHERE s.id = ?;
 
 -- name: ServersGetDirectSshCredentials :one
-SELECT s.ip_address, s.port, s.username, k.private_key, k.public_key FROM servers s JOIN ssh_keys k ON k.id = s.ssh_key_id WHERE s.id = ?;
+SELECT s.ip_address, s.port, s.username, s.host_key_fingerprint AS host_key_fingerprint, s.host_key_openssh AS host_key_openssh, k.private_key, k.public_key FROM servers s JOIN ssh_keys k ON k.id = s.ssh_key_id WHERE s.id = ?;
 
 -- name: ServersListOrdered :many
-SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit
+SELECT id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit, host_key_fingerprint AS host_key_fingerprint, host_key_openssh AS host_key_openssh
                FROM servers WHERE organization_id = ? ORDER BY created_at DESC, id DESC;
 
 -- name: ServersCreateAndReturn :one
 INSERT INTO servers
-               (name, description, ip_address, port, username, app_name, server_type, ssh_key_id, build_memory_limit, build_cpu_limit, organization_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-               RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit;
+               (name, description, ip_address, port, username, app_name, server_status, server_type, enable_docker_cleanup, command, metrics_config, ssh_key_id, build_memory_limit, build_cpu_limit, organization_id)
+               VALUES (?, ?, ?, ?, ?, ?, 'INACTIVE', ?, 0, '', '{}', ?, ?, ?, ?)
+               RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit, host_key_fingerprint AS host_key_fingerprint, host_key_openssh AS host_key_openssh;
 
 -- name: ServersUpdateAndReturn :one
 UPDATE servers SET
@@ -173,8 +193,20 @@ UPDATE servers SET
                log_cleanup_cron = ?, command = ?, metrics_config = ?, ssh_key_id = ?,
                build_memory_limit = ?, build_cpu_limit = ?
                WHERE id = ? AND organization_id = ?
-               RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit;
+               RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit, host_key_fingerprint AS host_key_fingerprint, host_key_openssh AS host_key_openssh;
 
 -- name: ServersSetStatus :one
 UPDATE servers SET server_status = ? WHERE id = ?
-               RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit;
+               RETURNING id AS id, name AS name, description AS description, ip_address AS ip_address, port AS port, username AS username, app_name AS app_name, server_status AS server_status, server_type AS server_type, enable_docker_cleanup AS enable_docker_cleanup, log_cleanup_cron AS log_cleanup_cron, command AS command, metrics_config AS metrics_config, ssh_key_id AS ssh_key_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, build_memory_limit AS build_memory_limit, build_cpu_limit AS build_cpu_limit, host_key_fingerprint AS host_key_fingerprint, host_key_openssh AS host_key_openssh;
+
+-- name: ServersSetHostKeyFingerprint :exec
+UPDATE servers SET host_key_fingerprint = ? WHERE id = ?;
+
+-- name: ServersGetHostKeyFingerprint :one
+SELECT host_key_fingerprint FROM servers WHERE id = ?;
+
+-- name: ServersSetHostKey :exec
+UPDATE servers SET host_key_fingerprint = ?, host_key_openssh = ? WHERE id = ?;
+
+-- name: ServersGetHostKey :one
+SELECT host_key_fingerprint, host_key_openssh FROM servers WHERE id = ?;

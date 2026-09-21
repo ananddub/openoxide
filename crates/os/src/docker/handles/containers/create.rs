@@ -167,7 +167,12 @@ impl<'a> ContainerCreate<'a> {
         self.args.pair("--network-alias", alias.into());
         self
     }
-    /// Pass any raw flag not covered by the builder.
+    /// Join the host PID namespace (`--pid=host`), used by the Agent's
+    /// host-shell helper to reach PID 1 for `nsenter`.
+    pub fn pid(mut self, v: impl Into<String>) -> Self {
+        self.args.pair("--pid", v.into());
+        self
+    }
 
     fn finalize(mut self, subcmd: &str) -> (ArgBuilder, &'a DockerCli) {
         let mut full = ArgBuilder::cmd(&["container", subcmd]);

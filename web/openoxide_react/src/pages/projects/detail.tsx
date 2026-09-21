@@ -1,8 +1,7 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
-import {FolderOpen, Box, Settings2, RefreshCw, Search} from 'lucide-react';
+import {FolderOpen, Box, Settings2, RefreshCw, Search, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {EnvDropdown} from '#/components/projects/env/env-dropdown';
-import {CreateServiceDropdown} from '#/components/projects/service/create-service-dropdown';
 import {ServiceCard} from '#/components/projects/service/service-card';
 import {ProjectModals} from '#/components/projects/dashboard/project-modals';
 import {ProjectDetailFilters} from '#/components/projects/dashboard/project-detail-filters';
@@ -23,15 +22,8 @@ function ProjectDetailPage() {
 		setShowProjectEnv,
 		showEnvVars,
 		setShowEnvVars,
-		showCreateApp,
-		setShowCreateApp,
-		showCreateCompose,
-		setShowCreateCompose,
-		showCreateDatabase,
-		setShowCreateDatabase,
 		project,
 		envs,
-		servers,
 		selectedEnvId,
 		setSelectedEnvId,
 		selectedEnv,
@@ -49,10 +41,10 @@ function ProjectDetailPage() {
 	} = useProjectDetails(projectId);
 
 	return (
-		<div className="flex w-full animate-in flex-col gap-6 pb-10 duration-200 fade-in">
+		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
 			{/* Header */}
-			<div className="flex flex-col justify-between gap-4 border-b border-border/40 pb-6 sm:flex-row sm:items-center">
-				<div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+			<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+				<div className="flex flex-wrap items-center gap-2 text-sm font-medium">
 					<Link
 						to="/projects"
 						className="flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground">
@@ -81,24 +73,27 @@ function ProjectDetailPage() {
 						variant="outline"
 						size="icon"
 						onClick={handleRefresh}
-						className="size-8 rounded-lg border-border">
+						className="size-8 rounded-lg ">
 						<RefreshCw className="size-3.5" />
 					</Button>
 					<Button
 						variant="outline"
 						onClick={() => setShowProjectEnv(true)}
-						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted">
+						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted">
 						<Settings2 className="size-3.5" />
 						Project Env
 					</Button>
-					<CreateServiceDropdown
-						disabled={!selectedEnvId}
-						onSelect={type => {
-							if (type === 'application') setShowCreateApp(true);
-							else if (type === 'compose') setShowCreateCompose(true);
-							else if (type === 'database') setShowCreateDatabase(true);
-						}}
-					/>
+					<Link
+						to="/projects/$id/create"
+						params={{id: String(projectId)}}
+						search={selectedEnvId ? {env: selectedEnvId} : {}}
+						className={
+							'flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-xs font-semibold text-primary-foreground shadow-lg shadow-primary/10 transition-colors hover:bg-primary/95' +
+							(!selectedEnvId ? ' pointer-events-none opacity-50' : '')
+						}>
+						<Plus className="size-3.5" />
+						Create Service
+					</Link>
 				</div>
 			</div>
 
@@ -116,10 +111,10 @@ function ProjectDetailPage() {
 			{/* Services */}
 			{isLoading ? (
 				<div className="flex justify-center py-24">
-					<div className="size-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+					<div className="size-6 animate-spin rounded-full border-2  border-t-primary" />
 				</div>
 			) : totalServices === 0 ? (
-				<div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-card/10 py-20 backdrop-blur-[2px]">
+				<div className="flex flex-col items-center justify-center rounded-2xl  bg-card/10 py-20 backdrop-blur-[2px]">
 					<Box className="mb-3 size-12 text-muted-foreground/45" />
 					<h3 className="text-sm font-bold text-foreground">
 						No services configured
@@ -128,14 +123,17 @@ function ProjectDetailPage() {
 						Deploy an application, compose stack, or database in{' '}
 						{selectedEnv?.name || 'this environment'}.
 					</p>
-					<Button
-						onClick={() => setShowCreateApp(true)}
-						className="mt-4 h-9 px-4 text-xs font-semibold">
+					<Link
+						to="/projects/$id/create"
+						params={{id: String(projectId)}}
+						search={selectedEnvId ? {env: selectedEnvId} : {}}
+						className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-lg shadow-primary/10 transition-colors hover:bg-primary/95">
+						<Plus className="size-3.5" />
 						Create Your First Service
-					</Button>
+					</Link>
 				</div>
 			) : filteredServices.length === 0 ? (
-				<div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 bg-card/5 py-16">
+				<div className="flex flex-col items-center justify-center rounded-2xl  bg-card/5 py-16">
 					<Search className="mb-2.5 size-8 text-muted-foreground/40" />
 					<p className="text-xs font-semibold text-muted-foreground">
 						No services match your filters
@@ -163,21 +161,13 @@ function ProjectDetailPage() {
 			<ProjectModals
 				projectId={projectId}
 				project={project}
-				selectedEnvId={selectedEnvId}
 				selectedEnv={selectedEnv}
-				servers={servers}
 				showCreateEnv={showCreateEnv}
 				setShowCreateEnv={setShowCreateEnv}
 				showProjectEnv={showProjectEnv}
 				setShowProjectEnv={setShowProjectEnv}
 				showEnvVars={showEnvVars}
 				setShowEnvVars={setShowEnvVars}
-				showCreateApp={showCreateApp}
-				setShowCreateApp={setShowCreateApp}
-				showCreateCompose={showCreateCompose}
-				setShowCreateCompose={setShowCreateCompose}
-				showCreateDatabase={showCreateDatabase}
-				setShowCreateDatabase={setShowCreateDatabase}
 				handleRefresh={handleRefresh}
 				envsRefetch={refetchEnvs}
 			/>

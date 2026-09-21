@@ -78,7 +78,7 @@ export function DatabaseAdvancedTab({
 			<DatabaseSwarmSettings database={database} onUpdated={onUpdated} />
 
 			{/* 3. Danger Zone Card */}
-			<section className="flex flex-col gap-5 rounded-2xl border border-destructive/30 bg-card p-6 shadow-sm">
+			<section className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-sm">
 				<div className="flex items-center gap-2 text-destructive">
 					<AlertTriangle className="size-5" />
 					<div>
@@ -92,9 +92,9 @@ export function DatabaseAdvancedTab({
 					</div>
 				</div>
 
-				<div className="flex flex-col gap-4 border-t border-border/40 pt-4">
+				<div className="flex flex-col gap-4 border-t  pt-4">
 					{/* Rebuild Database */}
-					<div className="flex flex-col justify-between gap-3 rounded-xl border border-border/60 bg-muted/10 p-4 sm:flex-row sm:items-center">
+					<div className="flex flex-col justify-between gap-3 rounded-xl bg-muted/10 p-4 sm:flex-row sm:items-center">
 						<div>
 							<p className="flex items-center gap-1.5 text-xs font-bold text-foreground">
 								<RefreshCw className="size-3.5 text-amber-500" /> Rebuild
@@ -115,7 +115,7 @@ export function DatabaseAdvancedTab({
 					</div>
 
 					{/* Delete Database (Opens Popup Dialog) */}
-					<div className="flex flex-col justify-between gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 sm:flex-row sm:items-center">
+					<div className="flex flex-col justify-between gap-3 rounded-xl bg-destructive/5 p-4 sm:flex-row sm:items-center">
 						<div>
 							<p className="flex items-center gap-1.5 text-xs font-bold text-destructive">
 								<Trash2 className="size-3.5 text-destructive" /> Delete

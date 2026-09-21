@@ -88,14 +88,14 @@ export function ComposeDirectContainerLogsModal({
 
 	const modalJSX = (
 		<div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
-			<div className="flex h-[84vh] w-full max-w-6xl animate-in flex-col overflow-hidden rounded-2xl border border-border/80 bg-[#09090b] shadow-2xl duration-150 zoom-in-95 fade-in">
+			<div className="flex h-[84vh] w-full max-w-6xl animate-in flex-col overflow-hidden rounded-2xl bg-[#09090b] shadow-2xl duration-150 zoom-in-95 fade-in">
 				{/* Modal Header */}
-				<div className="flex shrink-0 items-center justify-between border-b border-border/60 bg-card/30 px-5 py-3.5">
+				<div className="flex shrink-0 items-center justify-between border-b  bg-card/30 px-5 py-3.5">
 					<div className="flex items-center gap-2.5">
 						<TerminalIcon className="h-4 w-4 text-primary" />
 						<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
 							Container Logs
-							<span className="rounded border border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-xs font-normal text-primary">
+							<span className="rounded bg-primary/10 px-2 py-0.5 font-mono text-xs font-normal text-primary">
 								{activeService}
 							</span>
 						</h3>

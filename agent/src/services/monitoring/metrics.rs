@@ -46,7 +46,9 @@ impl MetricsService {
                 cpu: row.cpu,
                 mem_used_gb: row.mem_used_gb,
                 mem_total_gb: row.mem_total,
-                disk_used_gb: row.disk_used,
+                // The store keeps disk usage as a percentage of total; the
+                // wire contract is GB, so derive the used amount.
+                disk_used_gb: row.total_disk * row.disk_used / 100.0,
                 disk_total_gb: row.total_disk,
                 network_in: row.network_in,
                 network_out: row.network_out,

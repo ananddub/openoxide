@@ -662,7 +662,7 @@ impl ScheduleService {
         let operation = parse_application_operation(&schedule.schedule_action)?;
         let result = self
             .applications
-            .run_operation(application_id, operation)
+            .run_operation(application_id, operation, 0)
             .await?;
         Ok(ScheduleRunResult {
             schedule,
@@ -685,7 +685,7 @@ impl ScheduleService {
         }
 
         let operation = parse_compose_operation(&schedule.schedule_action)?;
-        let result = self.compose.run_operation(compose_id, operation).await?;
+        let result = self.compose.run_operation(compose_id, operation, 0).await?;
         Ok(ScheduleRunResult {
             schedule,
             action: operation.as_str().into(),

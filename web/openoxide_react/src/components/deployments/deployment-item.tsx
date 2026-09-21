@@ -127,7 +127,7 @@ export function DeploymentItem({
 	};
 
 	return (
-		<TableRow className="border-border/30 transition-colors hover:bg-muted/30">
+		<TableRow className=" transition-colors hover:bg-muted/30">
 			{/* ID */}
 			<TableCell className="w-[80px] font-mono text-xs font-semibold text-muted-foreground">
 				#{d.id}
@@ -136,7 +136,7 @@ export function DeploymentItem({
 			{/* Title & Info */}
 			<TableCell>
 				<div className="flex min-w-0 items-start gap-2.5">
-					<div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border/40 bg-muted/40">
+					<div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted/40">
 						{hasApp ? (
 							<Rocket className="h-3.5 w-3.5 text-primary" />
 						) : hasCompose ? (
@@ -177,7 +177,7 @@ export function DeploymentItem({
 			<TableCell>
 				<Badge
 					variant="outline"
-					className="border-border/40 font-mono text-[10px] font-medium text-muted-foreground">
+					className=" font-mono text-[10px] font-medium text-muted-foreground">
 					{type}
 				</Badge>
 			</TableCell>
@@ -200,7 +200,7 @@ export function DeploymentItem({
 						size="sm"
 						variant="outline"
 						onClick={() => onViewLogs(d)}
-						className="flex h-7 items-center gap-1 rounded-lg border-border/40 bg-muted/20 px-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted/40 dark:bg-muted/15">
+						className="flex h-7 items-center gap-1 rounded-lg  bg-muted/20 px-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted/40 dark:bg-muted/15">
 						<Terminal className="h-3 w-3 text-primary" /> Logs
 					</Button>
 					{isRunningOrQueued && d.id !== undefined && (

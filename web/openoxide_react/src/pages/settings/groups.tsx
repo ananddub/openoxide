@@ -1,4 +1,4 @@
-import {createFileRoute} from '@tanstack/react-router';
+import {createFileRoute, Navigate} from '@tanstack/react-router';
 import {Loader2, Plus, ShieldCheck, Trash2, Users} from 'lucide-react';
 import {useState} from 'react';
 import {toast} from 'sonner';
@@ -13,6 +13,7 @@ import {usePermissions} from '#/hooks/use-permissions';
 import {formatApiError} from '#/api/utils';
 import {Badge} from '#/components/ui/badge';
 import {Button} from '#/components/ui/button';
+import {SettingsSection} from '#/components/settings/settings-section';
 import {
 	Dialog,
 	DialogContent,
@@ -24,7 +25,9 @@ import {
 import {Input} from '#/components/ui/input';
 
 export const Route = createFileRoute('/_app/settings/groups')({
-	component: GroupsPage,
+	component: () => (
+		<Navigate to="/settings" search={{tab: 'groups'}} replace />
+	)
 });
 
 type Draft = {
@@ -37,7 +40,7 @@ type Draft = {
 const resourceOf = (action: string) => action.split(':')[0] ?? action;
 const operationOf = (action: string) => action.split(':')[1] ?? action;
 
-function GroupsPage() {
+export function GroupsPage() {
 	const {can, isLoading: grantsLoading} = usePermissions();
 	const groupsQuery = usePermissionGroupList();
 	const policiesQuery = usePolicyList();
@@ -115,100 +118,95 @@ function GroupsPage() {
 	}
 
 	return (
-		<div className="mx-auto flex w-full max-w-5xl animate-in flex-col gap-5 p-6 duration-200 fade-in">
-			<div className="flex items-end justify-between gap-4">
-				<div className="flex flex-col gap-1">
-					<h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground">
-						<ShieldCheck className="size-5 shrink-0 text-primary" />
-						Permission Groups
-					</h1>
-					<p className="text-xs text-muted-foreground">
-						Roles for this organization: each group grants a set of
-						resource actions to every member it is assigned to.
+		<div className="flex w-full animate-in flex-col gap-5 duration-200 fade-in">
+			<SettingsSection
+				icon={ShieldCheck}
+				title="Permission Groups"
+				description="Roles for this organization: each group grants a set of resource actions to every member it is assigned to."
+				action={
+					canManage && (
+						<Button
+							size="sm"
+							className="h-8 gap-1.5 text-xs"
+							onClick={() => setDraft({name: '', actions: []})}>
+							<Plus className="size-3.5" /> New Group
+						</Button>
+					)
+				}>
+				{groups.length === 0 ? (
+					<p className="text-sm text-muted-foreground">
+						No groups yet in this organization.
 					</p>
-				</div>
-				{canManage && (
-					<Button
-						size="sm"
-						className="h-9 gap-1.5 text-xs"
-						onClick={() => setDraft({name: '', actions: []})}>
-						<Plus className="size-3.5" /> New Group
-					</Button>
-				)}
-			</div>
-
-			{groups.length === 0 && (
-				<p className="text-sm text-muted-foreground">
-					No groups yet in this organization.
-				</p>
-			)}
-
-			<div className="grid gap-3">
-				{groups.map(group => (
-					<div
-						key={String(group.id)}
-						className="rounded-xl border bg-card p-4">
-						<div className="flex items-center justify-between gap-3">
-							<div className="flex min-w-0 items-center gap-2">
-								<Users className="size-4 shrink-0 text-muted-foreground" />
-								<h3 className="truncate text-sm font-bold text-foreground">
-									{group.name}
-								</h3>
-								{group.is_system && (
-									<Badge variant="secondary" className="text-[9px]">
-										SYSTEM
-									</Badge>
-								)}
-								<span className="text-[10px] text-muted-foreground">
-									{group.actions.length} actions
-								</span>
-							</div>
-							{canManage && (
-								<div className="flex shrink-0 gap-1">
-									<Button
-										variant="ghost"
-										size="sm"
-										className="h-7 text-xs"
-										onClick={() =>
-											setDraft({
-												id: Number(group.id),
-												name: group.name,
-												actions: [...group.actions],
-											})
-										}>
-										Edit
-									</Button>
-									{!group.is_system && (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-7 w-7 text-rose-500"
-											title="Delete group"
-											onClick={() => void remove(Number(group.id))}>
-											<Trash2 className="size-3.5" />
-										</Button>
+				) : (
+					<div className="grid gap-3">
+						{groups.map(group => (
+							<div
+								key={String(group.id)}
+								className="rounded-xl bg-muted/30 p-4">
+								<div className="flex items-center justify-between gap-3">
+									<div className="flex min-w-0 items-center gap-2">
+										<Users className="size-4 shrink-0 text-muted-foreground" />
+										<h3 className="truncate text-sm font-medium text-foreground">
+											{group.name}
+										</h3>
+										{group.is_system && (
+											<Badge variant="secondary" className="text-[9px]">
+												SYSTEM
+											</Badge>
+										)}
+										<span className="text-[10px] text-muted-foreground">
+											{group.actions.length} actions
+										</span>
+									</div>
+									{canManage && (
+										<div className="flex shrink-0 gap-1">
+											<Button
+												variant="ghost"
+												size="sm"
+												className="h-7 text-xs"
+												onClick={() =>
+													setDraft({
+														id: Number(group.id),
+														name: group.name,
+														actions: [...group.actions],
+													})
+												}>
+												Edit
+											</Button>
+											{!group.is_system && (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-7 w-7 text-rose-500"
+													title="Delete group"
+													onClick={() => void remove(Number(group.id))}>
+													<Trash2 className="size-3.5" />
+												</Button>
+											)}
+										</div>
 									)}
 								</div>
-							)}
-						</div>
-						<div className="mt-2 flex flex-wrap gap-1">
-							{group.actions.slice(0, 12).map(action => (
-								<Badge
-									key={action}
-									variant="outline"
-									className="font-mono text-[9px]">
-									{action}
-								</Badge>
-							))}
-							{group.actions.length > 12 && (
-								<span className="text-[10px] text-muted-foreground">
-									+{group.actions.length - 12} more
-								</span>
-							)}
-						</div>
+								<div className="mt-2 flex flex-wrap gap-1">
+									{group.actions.slice(0, 12).map(action => (
+										<Badge
+											key={action}
+											variant="outline"
+											className="font-mono text-[9px]">
+											{action}
+										</Badge>
+									))}
+									{group.actions.length > 12 && (
+										<span className="text-[10px] text-muted-foreground">
+											+{group.actions.length - 12} more
+										</span>
+									)}
+								</div>
+							</div>
+						))}
 					</div>
-				))}
-			</div>
+				)}
+			</SettingsSection>
+
 
 			<Dialog
 				open={!!draft}
@@ -255,8 +253,8 @@ function GroupsPage() {
 														onClick={() => toggleAction(action)}
 														className={
 															active
-																? 'rounded-md border border-primary/40 bg-primary/10 px-2 py-1 font-mono text-[10px] font-semibold text-primary'
-																: 'rounded-md border border-border/50 bg-muted/20 px-2 py-1 font-mono text-[10px] text-muted-foreground hover:text-foreground'
+																? 'rounded-md bg-primary/10 px-2 py-1 font-mono text-[10px] font-semibold text-primary'
+																: 'rounded-md bg-muted/20 px-2 py-1 font-mono text-[10px] text-muted-foreground hover:text-foreground'
 														}>
 														{operationOf(action)}
 													</button>

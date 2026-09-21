@@ -60,6 +60,7 @@ pub struct RcloneBuilder {
     ignore_existing: bool,
     update: bool,
     inplace: bool,
+    checksum: bool,
 
     // Logging
     log_file: Option<String>,
@@ -95,6 +96,7 @@ impl RcloneBuilder {
             ignore_existing: false,
             update: false,
             inplace: false,
+            checksum: false,
             log_file: None,
             log_level: None,
             stats: None,
@@ -200,6 +202,13 @@ impl RcloneBuilder {
         self
     }
 
+    /// Compare by checksum (`--checksum`) instead of size + mtime. Required for
+    /// the migration VERIFY gate (`rclone check --checksum`).
+    pub fn checksum(mut self) -> Self {
+        self.checksum = true;
+        self
+    }
+
     pub fn log_file(mut self, log_file: impl Into<String>) -> Self {
         self.log_file = Some(log_file.into());
         self
@@ -294,6 +303,9 @@ impl RcloneBuilder {
         if self.inplace {
             args.push("--inplace".to_string());
         }
+        if self.checksum {
+            args.push("--checksum".to_string());
+        }
 
         if let Some(ref lf) = self.log_file {
             args.push(format!("--log-file={}", lf));
@@ -341,10 +353,21 @@ impl RcloneBuilder {
             .collect::<Vec<String>>()
             .join(" ");
 
+        // The whole string is handed to `sh -c`, so every argument token must be
+        // single-quoted: a source/dest path or filter pattern containing a space
+        // or shell metacharacter must not be able to split into extra tokens or
+        // inject commands (Gate G2). Flags/values here are always single tokens
+        // (e.g. `--transfers=4`, `remote:path`), so quoting each is faithful.
+        let arg_string = args
+            .iter()
+            .map(|a| shell_single_quote(a))
+            .collect::<Vec<String>>()
+            .join(" ");
+
         if env_string.is_empty() {
-            format!("rclone {}", args.join(" "))
+            format!("rclone {}", arg_string)
         } else {
-            format!("{} rclone {}", env_string, args.join(" "))
+            format!("{} rclone {}", env_string, arg_string)
         }
     }
 
@@ -402,11 +425,51 @@ mod tests {
         assert!(cmd_str.contains("RCLONE_CONFIG_DEST_SFTP_PORT='22'"));
         assert!(cmd_str.contains("RCLONE_CONFIG_DEST_SFTP_KEY_FILE='/home/das/.ssh/id_ed25519'"));
 
-        // Check that rclone flags and targets are correct
-        assert!(cmd_str.contains("rclone copyto"));
-        assert!(cmd_str.contains("--transfers=4"));
-        assert!(cmd_str.contains("--contimeout=10s"));
-        assert!(cmd_str.contains("--ignore-errors"));
-        assert!(cmd_str.contains("/tmp/source.txt dest_sftp:/home/das/dest.txt"));
+        // Check that rclone flags and targets are correct (every token quoted)
+        assert!(cmd_str.contains("rclone 'copyto'"));
+        assert!(cmd_str.contains("'--transfers=4'"));
+        assert!(cmd_str.contains("'--contimeout=10s'"));
+        assert!(cmd_str.contains("'--ignore-errors'"));
+        assert!(cmd_str.contains("'/tmp/source.txt' 'dest_sftp:/home/das/dest.txt'"));
+    }
+
+    #[test]
+    fn path_metacharacters_are_contained_by_single_quotes() {
+        // Gate G2: a malicious source path must not be able to break out of its
+        // token once the string reaches `sh -c`.
+        let src = RcloneTarget::Local {
+            path: "/tmp/$(touch /tmp/pwned); x".to_string(),
+        };
+        let dest = RcloneTarget::Local {
+            path: "/tmp/dest with space.txt".to_string(),
+        };
+        let cmd_str = RcloneBuilder::new(RcloneCommand::Copyto)
+            .source(src)
+            .destination(dest)
+            .to_command_string();
+
+        // The `$()`, `;` and space are all inside single quotes, so the shell
+        // sees them as literal characters within one argument, not as syntax.
+        assert!(
+            cmd_str.contains("'/tmp/$(touch /tmp/pwned); x'"),
+            "metacharacters must be wrapped in single quotes, got: {cmd_str}"
+        );
+        assert!(cmd_str.contains("'/tmp/dest with space.txt'"));
+    }
+
+    #[test]
+    fn checksum_flag_emitted_for_verify_gate() {
+        // Gate G4: `rclone check --checksum` needs the flag in argv.
+        let cmd_str = RcloneBuilder::new(RcloneCommand::Check)
+            .checksum()
+            .source(RcloneTarget::Local {
+                path: "/tmp/a".to_string(),
+            })
+            .destination(RcloneTarget::Local {
+                path: "b_remote:/tmp/a".to_string(),
+            })
+            .to_command_string();
+        assert!(cmd_str.contains("rclone 'check'"));
+        assert!(cmd_str.contains("'--checksum'"));
     }
 }

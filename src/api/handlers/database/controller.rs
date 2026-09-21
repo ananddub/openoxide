@@ -1,8 +1,6 @@
-use std::sync::Arc;
 
 use buffa::MessageView;
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     AdvancedConfig, CreateDatabaseRequest, CreateMountRequest, Database as DatabaseProto,
@@ -15,8 +13,6 @@ use crate::api::connect::generated::openoxide::api::v1::{
     UpdateDatabaseRequest, UpdateSwarmSettingsRequest, UpdateMountRequest,
     ValidationResult,
 };
-use crate::db::reactive::realtime;
-use crate::flash_gen::models::{Mounts, Services};
 use crate::services::compute::database::crud::{CreateDatabaseDto, PatchDatabaseDto};
 use crate::services::compute::database::management::{ImportDatabaseDto, PostgresAdvancedConfigDto};
 use crate::services::compute::database::DatabaseOperation;
@@ -38,42 +34,6 @@ impl DatabaseService for DatabaseController {
     }
 
     #[permission(Database, CanRead)]
-    async fn stream_database(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, GetDatabaseRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<DatabaseProto> + Send + use<>,
-        >,
-    > {
-        let kind = proto_to_kind(request.kind)?;
-        let id = request.id;
-        let service = Arc::clone(&self.service);
-        let stream = {
-            let sql = format!(
-                "SELECT s.* FROM services s JOIN service_database d ON d.service_id = s.id WHERE s.id = {id} AND s.service_type = 'DATABASE'"
-            );
-            realtime()
-                .watch_query::<Services>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.then(move |mut rows| {
-            let service = Arc::clone(&service);
-            async move {
-                match rows.pop() {
-                    Some(row) => match service.get_by_id(kind, row.id).await {
-                        Ok(record) => Ok(record_to_proto(record)),
-                        _ => Err(ConnectError::not_found("database not found")),
-                    },
-                    None => Err(ConnectError::not_found("database not found")),
-                }
-            }
-        }))
-    }
-
-    #[permission(Database, CanRead)]
     async fn list_databases<'a>(
         &'a self,
         ctx: RequestContext,
@@ -91,43 +51,6 @@ impl DatabaseService for DatabaseController {
             .map(record_to_proto)
             .collect();
         Response::ok(ListDatabasesResponse { databases, ..Default::default() })
-    }
-
-    #[permission(Database, CanRead)]
-    async fn stream_list_databases(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ListDatabasesRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ListDatabasesResponse> + Send + use<>,
-        >,
-    > {
-        let kind = proto_to_kind(request.kind)?;
-        let db_type = kind.as_str().to_uppercase();
-        let environment_id = request.environment_id;
-        let service = Arc::clone(&self.service);
-        let stream = {
-            let sql = format!(
-                "SELECT s.* FROM services s JOIN service_database d ON d.service_id = s.id WHERE s.environment_id = {environment_id} AND s.service_type = 'DATABASE' AND d.db_type = '{db_type}'"
-            );
-            realtime()
-                .watch_query::<Services>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.then(move |rows| {
-            let service = Arc::clone(&service);
-            async move {
-                let mut items = Vec::with_capacity(rows.len());
-                for row in rows {
-                    if let Ok(record) = service.get_by_id(kind, row.id).await {
-                        items.push(record_to_proto(record));
-                    }
-                }
-                Ok(ListDatabasesResponse { databases: items, ..Default::default() })
-            }
-        }))
     }
 
     #[permission(Database, CanCreate)]
@@ -220,7 +143,7 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Deploy).await?;
+        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Deploy, auth.user_id()).await?;
         Response::ok(result)
     }
 
@@ -231,7 +154,7 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Redeploy).await?;
+        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Redeploy, auth.user_id()).await?;
         Response::ok(result)
     }
 
@@ -242,7 +165,7 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Reload).await?;
+        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Reload, auth.user_id()).await?;
         Response::ok(result)
     }
 
@@ -253,7 +176,7 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Start).await?;
+        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Start, auth.user_id()).await?;
         Response::ok(result)
     }
 
@@ -264,7 +187,7 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Stop).await?;
+        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Stop, auth.user_id()).await?;
         Response::ok(result)
     }
 
@@ -327,34 +250,6 @@ impl DatabaseService for DatabaseController {
         let items = self.mounts.list(kind, request.id).await.map_err(map_db_error)?;
         let mounts = items.into_iter().map(mount_to_proto).collect();
         Response::ok(MountList { mounts, ..Default::default() })
-    }
-
-    #[permission(Database, CanRead)]
-    async fn stream_list_mounts(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, DatabaseTargetRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<MountList> + Send + use<>,
-        >,
-    > {
-        // Kind validation only; the mount rows are keyed by service_id.
-        proto_to_kind(request.kind)?;
-        let id = request.id;
-        let stream = {
-            let sql = format!("SELECT * FROM mounts WHERE service_id = {id}");
-            realtime()
-                .watch_query::<Mounts>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(MountList {
-                mounts: rows.into_iter().map(mount_to_proto).collect(),
-                ..Default::default()
-            })
-        }))
     }
 
     #[permission(Database, CanCreate)]

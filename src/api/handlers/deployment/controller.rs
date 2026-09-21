@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     CancelDeploymentRequest, ContainerList, ComposeLogsRequest, DeploymentEvent,
-    DeploymentService, DeploymentServiceExt, DockerStatsRequest, Empty, GetDeploymentRequest,
+    DeploymentService, DeploymentServiceExt, Empty, GetDeploymentRequest,
     ListDeploymentsRequest, ListDeploymentsResponse, LogExport, LogTargetRequest,
     ResourceTargetRequest, SearchLogsRequest, StreamTargetRequest,
 };
@@ -33,7 +35,25 @@ impl DeploymentService for DeploymentController {
             offset: request.offset.unwrap_or(0),
         };
         let items = self.service.list(filter).await.map_err(map_error)?;
-        let deployments = items.into_iter().map(|d| deployment_to_proto(&d)).collect();
+        // Resolve actor emails once per distinct user; unknown/0 → None,
+        // which the UI renders as "System".
+        let mut emails: HashMap<i64, Option<String>> = HashMap::new();
+        for item in &items {
+            if item.user_id != 0 && !emails.contains_key(&item.user_id) {
+                let email = self.service.actor_email(item.user_id).await;
+                emails.insert(item.user_id, email);
+            }
+        }
+        let deployments = items
+            .iter()
+            .map(|d| {
+                let mut proto = deployment_to_proto(d);
+                if d.user_id != 0 {
+                    proto.user_email = emails.get(&d.user_id).cloned().flatten();
+                }
+                proto
+            })
+            .collect();
         Response::ok(ListDeploymentsResponse { deployments, ..Default::default() })
     }
 
@@ -99,36 +119,6 @@ impl DeploymentService for DeploymentController {
     ) -> ServiceResult<impl connectrpc::Encodable<crate::api::connect::generated::openoxide::api::v1::Deployment> + Send + use<'a>> {
         let item = self.service.get_by_id(request.id).await.map_err(map_error)?;
         Response::ok(deployment_to_proto(&item))
-    }
-
-    #[permission(Deployment, CanRead)]
-    async fn stream_application_events(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, StreamTargetRequest>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        let _ = request.id;
-        Response::stream_ok(empty_event_stream())
-    }
-
-    #[permission(Deployment, CanRead)]
-    async fn stream_compose_events(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, StreamTargetRequest>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        let _ = request.id;
-        Response::stream_ok(empty_event_stream())
-    }
-
-    #[permission(Deployment, CanRead)]
-    async fn stream_database_events(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, StreamTargetRequest>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        let _ = request.id;
-        Response::stream_ok(empty_event_stream())
     }
 
     #[permission(Deployment, CanRead)]
@@ -213,20 +203,6 @@ impl DeploymentService for DeploymentController {
     }
 
     #[permission(Deployment, CanRead)]
-    async fn stream_docker_stats(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, DockerStatsRequest>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        let receiver = self
-            .service
-            .stream_global_stats(request.server_id, true)
-            .await
-            .map_err(map_error)?;
-        Response::stream_ok(docker_event_stream(receiver, "stats"))
-    }
-
-    #[permission(Deployment, CanRead)]
     async fn list_containers<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -242,20 +218,6 @@ impl DeploymentService for DeploymentController {
             ..Default::default()
         }).collect();
         Response::ok(ContainerList { containers, ..Default::default() })
-    }
-
-    #[permission(Deployment, CanRead)]
-    async fn stream_container_stats(
-        &self,
-        _ctx: RequestContext,
-        request: ServiceRequest<'_, LogTargetRequest>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
-        let receiver = self
-            .service
-            .stream_docker_container_stats(request.server_id, request.target.to_owned(), true)
-            .await
-            .map_err(map_error)?;
-        Response::stream_ok(docker_event_stream(receiver, "stats"))
     }
 
     #[permission(Deployment, CanRead)]

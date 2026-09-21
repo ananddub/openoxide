@@ -95,8 +95,8 @@ export function TagSelector({
 						variant="outline"
 						disabled={disabled}
 						className={cn(
-							'h-auto min-h-10 w-full cursor-pointer justify-between rounded-lg border-border/80 bg-card px-3 py-2 text-xs font-semibold shadow-2xs',
-							selectedTags.length > 0 && 'border-primary text-primary',
+						'h-auto min-h-11 w-full cursor-pointer justify-between rounded-xl  bg-card px-3.5 py-2 text-sm',
+							selectedTags.length > 0 && ' text-primary',
 							disabled && 'cursor-not-allowed opacity-50',
 						)}>
 						{variant === 'filter' ? (
@@ -140,17 +140,17 @@ export function TagSelector({
 			/>
 
 			<DropdownMenuContent
-				className="w-[280px] rounded-xl border-border bg-popover p-2 shadow-xl"
+				className="w-[280px] rounded-xl border- bg-popover p-2 shadow-xl"
 				align="start">
 				<div
 					className="flex flex-col gap-2"
 					onClick={e => e.stopPropagation()}>
-					<div className="flex items-center justify-between gap-2 border-b border-border/40 px-1 pb-2">
+					<div className="flex items-center justify-between gap-2 border-b  px-1 pb-2">
 						<Input
 							placeholder="Search tags..."
 							value={searchQuery}
 							onChange={e => setSearchQuery(e.target.value)}
-							className="h-8 border-border/60 bg-muted/40 text-xs"
+							className="h-8  bg-muted/40 text-xs"
 						/>
 						{selectedTags.length > 0 && (
 							<Button
@@ -209,7 +209,7 @@ export function TagSelector({
 									handleToggleTag(searchQuery.trim());
 									setSearchQuery('');
 								}}
-								className="mt-1 h-8 justify-start gap-1.5 rounded-none border-t border-border/40 pt-2 text-xs font-semibold text-primary">
+								className="mt-1 h-8 justify-start gap-1.5 rounded-none border-t  pt-2 text-xs font-semibold text-primary">
 								<Plus className="size-3.5" />
 								<span>Add "#{searchQuery.trim()}"</span>
 							</Button>

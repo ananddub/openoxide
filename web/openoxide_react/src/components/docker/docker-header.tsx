@@ -43,7 +43,7 @@ export function DockerHeader({
 	);
 
 	return (
-		<div className="shrink-0 border-b border-border/40 pb-4">
+		<div className="shrink-0 border-b  pb-4">
 			<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 				{/* Title Section */}
 				<div className="flex items-center gap-3">
@@ -64,7 +64,7 @@ export function DockerHeader({
 					{/* Running Count Badge */}
 					<Badge
 						variant="secondary"
-						className="h-9 border border-border/40 px-3.5 font-mono text-xs font-semibold">
+						className="h-9 px-3.5 font-mono text-xs font-semibold">
 						Running:{' '}
 						<span className="ml-1 font-bold text-emerald-500">
 							{runningContainers}
@@ -78,7 +78,7 @@ export function DockerHeader({
 						size="sm"
 						onClick={onRefresh}
 						disabled={isRefreshing}
-						className="h-9 cursor-pointer gap-2 border-border/60 text-xs font-medium shadow-2xs">
+						className="h-9 cursor-pointer gap-2  text-xs font-medium shadow-2xs">
 						<RefreshCw
 							className={`size-3.5 text-muted-foreground ${isRefreshing ? 'animate-spin' : ''}`}
 						/>{' '}
@@ -89,13 +89,13 @@ export function DockerHeader({
 					<Select
 						value={selectedServerId}
 						onValueChange={v => v && onSelectServer(v)}>
-						<SelectTrigger className="h-9 w-[170px] shrink-0 gap-2 border-border/60 bg-card text-xs font-medium shadow-2xs">
+						<SelectTrigger className="h-9 w-[170px] shrink-0 gap-2  bg-card text-xs font-medium shadow-2xs">
 							<Server className="size-3.5 shrink-0 text-muted-foreground" />
 							<SelectValue>
 								{selectedServer?.name || 'Local Server'}
 							</SelectValue>
 						</SelectTrigger>
-						<SelectContent className="w-[190px] border-border bg-card p-1 text-xs shadow-md">
+						<SelectContent className="w-[190px] border- bg-card p-1 text-xs shadow-md">
 							{availableServers.map(s => (
 								<SelectItem
 									key={String(s.id)}

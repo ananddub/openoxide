@@ -1,12 +1,9 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
     VaultService, VaultServiceExt,
 };
-use crate::db::reactive::realtime;
-use crate::flash_gen::models::VaultProviders;
 use crate::services::integrations::vault::{
     CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderAssignmentDto,
 };
@@ -16,65 +13,6 @@ use super::init::VaultController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl VaultService for VaultController {
-    #[permission(Server, CanRead)]
-    async fn stream_list_providers(
-        &self,
-        ctx: RequestContext,
-        _query: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = auth.organization_id;
-        let stream = {
-            let sql = format!(
-                "SELECT * FROM vault_providers WHERE organization_id = {organization_id}"
-            );
-            realtime()
-                .watch_query::<VaultProviders>(sql)
-                .await
-                .map_err(|e| map_vault_error(e.into()))?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows
-                    .into_iter()
-                    .map(vault_provider_dto_from_model)
-                    .map(provider_to_resource)
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
-    #[permission(Server, CanRead)]
-    async fn stream_provider(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = auth.organization_id;
-        let id = request.id;
-        let stream = {
-            let sql = format!(
-                "SELECT * FROM vault_providers WHERE id = {id} AND organization_id = {organization_id}"
-            );
-            realtime()
-                .watch_query::<VaultProviders>(sql)
-                .await
-                .map_err(|e| map_vault_error(e.into()))?
-        };
-        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
-            Some(item) => Ok(provider_to_resource(vault_provider_dto_from_model(item))),
-            None => Err(ConnectError::not_found("Vault provider not found")),
-        }))
-    }
-
     #[permission(Server, CanRead)]
     async fn list_providers<'a>(
         &'a self,

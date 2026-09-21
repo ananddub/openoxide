@@ -6,9 +6,7 @@ import "buf/validate/validate.proto";
 
 service PreviewDeploymentService {
   rpc ListPreviews(ListPreviewsRequest) returns (ListPreviewsResponse);
-  rpc StreamListPreviews(ListPreviewsRequest) returns (stream ListPreviewsResponse);
   rpc GetPreview(GetPreviewRequest) returns (PreviewDeployment);
-  rpc StreamGetPreview(GetPreviewRequest) returns (stream PreviewDeployment);
   rpc CreatePreview(CreatePreviewRequest) returns (PreviewDeployment);
   rpc RedeployPreview(PreviewOperationRequest) returns (PreviewDeployment);
   rpc DeletePreview(PreviewOperationRequest) returns (Empty);

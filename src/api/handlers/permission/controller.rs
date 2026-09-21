@@ -1,13 +1,8 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
-use std::sync::Arc;
 
 use crate::api::connect::generated::openoxide::api::v1 as proto;
-use crate::db::reactive::realtime;
-use crate::flash_gen::models::{Groups, OrganizationInvites, OrganizationMembers, Policy};
-use crate::flash_gen::organization_members::OrganizationMembersListWithUserForOrganizationRow;
 use crate::services::identity::permission::group_service::{
-    AddOrganizationMemberDto, CreateOrganizationInviteDto, PermissionPolicyDto,
+    AddOrganizationMemberDto, CreateOrganizationInviteDto,
     ReplaceUserPoliciesDto, SavePermissionGroupDto,
 };
 use crate::services::identity::permission::PermissionGroupError;
@@ -29,41 +24,6 @@ impl proto::PermissionService for PermissionGroupController {
     }
 
     #[permission(Groups, CanRead)]
-    async fn stream_list_permissions(
-        &self,
-        ctx: RequestContext,
-        _query: ServiceRequest<'_, proto::ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<proto::ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = auth.organization_id;
-        let service = Arc::clone(&self.service);
-        let stream = {
-            let sql = format!(
-                "SELECT g.* FROM groups g LEFT JOIN group_policy gp ON gp.group_id = g.id LEFT JOIN policy p ON p.id = gp.policy_id WHERE g.organization_id IS NULL OR g.organization_id = {organization_id}"
-            );
-            realtime()
-                .watch_query::<Groups>(sql)
-                .await
-                .map_err(|e| map_error(e.into()))?
-        };
-        Response::stream_ok(stream.then(move |_rows| {
-            let service = Arc::clone(&service);
-            async move {
-                match service.list_groups(organization_id).await {
-                    Ok(groups) => {
-                        let items = groups.into_iter().map(group_to_resource).collect();
-                        Ok(proto::ResourceListResponse { items, ..Default::default() })
-                    }
-                    Err(e) => Err(map_error(e)),
-                }
-            }
-        }))
-    }
-
-    #[permission(Groups, CanRead)]
     async fn get_permission<'a>(
         &'a self,
         ctx: RequestContext,
@@ -73,46 +33,6 @@ impl proto::PermissionService for PermissionGroupController {
         let group = groups.into_iter().find(|g| g.id == request.id)
             .ok_or_else(|| ConnectError::not_found("group not found"))?;
         Response::ok(group_to_resource(group))
-    }
-
-    #[permission(Groups, CanRead)]
-    async fn stream_permission(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, proto::ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<proto::ResourceResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = auth.organization_id;
-        let id = request.id;
-        let service = Arc::clone(&self.service);
-        let stream = {
-            let sql = format!(
-                "SELECT g.* FROM groups g LEFT JOIN group_policy gp ON gp.group_id = g.id LEFT JOIN policy p ON p.id = gp.policy_id WHERE g.id = {id} AND (g.organization_id IS NULL OR g.organization_id = {organization_id})"
-            );
-            realtime()
-                .watch_query::<Groups>(sql)
-                .await
-                .map_err(|e| map_error(e.into()))?
-        };
-        Response::stream_ok(stream.then(move |mut rows| {
-            let service = Arc::clone(&service);
-            async move {
-                match rows.pop() {
-                    Some(_) => match service.list_groups(organization_id).await {
-                        Ok(groups) => {
-                            let group = groups.into_iter().find(|g| g.id == id)
-                                .ok_or_else(|| ConnectError::not_found("group not found"))?;
-                            Ok(group_to_resource(group))
-                        }
-                        Err(e) => Err(map_error(e)),
-                    },
-                    None => Err(ConnectError::not_found("group not found")),
-                }
-            }
-        }))
     }
 
     #[permission(Groups, CanCreate)]
@@ -175,41 +95,6 @@ impl proto::PermissionService for PermissionGroupController {
     }
 
     #[permission(Groups, CanRead)]
-    async fn stream_list_groups(
-        &self,
-        ctx: RequestContext,
-        _query: ServiceRequest<'_, proto::ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<proto::ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = auth.organization_id;
-        let service = Arc::clone(&self.service);
-        let stream = {
-            let sql = format!(
-                "SELECT g.* FROM groups g LEFT JOIN group_policy gp ON gp.group_id = g.id LEFT JOIN policy p ON p.id = gp.policy_id WHERE g.organization_id IS NULL OR g.organization_id = {organization_id}"
-            );
-            realtime()
-                .watch_query::<Groups>(sql)
-                .await
-                .map_err(|e| map_error(e.into()))?
-        };
-        Response::stream_ok(stream.then(move |_rows| {
-            let service = Arc::clone(&service);
-            async move {
-                match service.list_groups(organization_id).await {
-                    Ok(groups) => {
-                        let items = groups.into_iter().map(group_to_resource).collect();
-                        Ok(proto::ResourceListResponse { items, ..Default::default() })
-                    }
-                    Err(e) => Err(map_error(e)),
-                }
-            }
-        }))
-    }
-
-    #[permission(Groups, CanRead)]
     async fn get_group<'a>(
         &'a self,
         ctx: RequestContext,
@@ -219,46 +104,6 @@ impl proto::PermissionService for PermissionGroupController {
         let group = groups.into_iter().find(|g| g.id == request.id)
             .ok_or_else(|| ConnectError::not_found("group not found"))?;
         Response::ok(group_to_resource(group))
-    }
-
-    #[permission(Groups, CanRead)]
-    async fn stream_group(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, proto::ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<proto::ResourceResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = auth.organization_id;
-        let id = request.id;
-        let service = Arc::clone(&self.service);
-        let stream = {
-            let sql = format!(
-                "SELECT g.* FROM groups g LEFT JOIN group_policy gp ON gp.group_id = g.id LEFT JOIN policy p ON p.id = gp.policy_id WHERE g.id = {id} AND (g.organization_id IS NULL OR g.organization_id = {organization_id})"
-            );
-            realtime()
-                .watch_query::<Groups>(sql)
-                .await
-                .map_err(|e| map_error(e.into()))?
-        };
-        Response::stream_ok(stream.then(move |mut rows| {
-            let service = Arc::clone(&service);
-            async move {
-                match rows.pop() {
-                    Some(_) => match service.list_groups(organization_id).await {
-                        Ok(groups) => {
-                            let group = groups.into_iter().find(|g| g.id == id)
-                                .ok_or_else(|| ConnectError::not_found("group not found"))?;
-                            Ok(group_to_resource(group))
-                        }
-                        Err(e) => Err(map_error(e)),
-                    },
-                    None => Err(ConnectError::not_found("group not found")),
-                }
-            }
-        }))
     }
 
     #[permission(Groups, CanCreate)]
@@ -317,34 +162,6 @@ impl proto::PermissionService for PermissionGroupController {
         let policies = self.service.list_policies().await.map_err(map_error)?;
         let items = policies.into_iter().map(policy_to_resource).collect();
         Response::ok(proto::ResourceListResponse { items, ..Default::default() })
-    }
-
-    async fn stream_list_policies(
-        &self,
-        _ctx: RequestContext,
-        _query: ServiceRequest<'_, proto::ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<proto::ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let stream = {
-            let sql = "SELECT * FROM policy".to_string();
-            realtime()
-                .watch_query::<Policy>(sql)
-                .await
-                .map_err(|e| map_error(e.into()))?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(proto::ResourceListResponse {
-                items: rows
-                    .into_iter()
-                    .map(|p| PermissionPolicyDto { id: p.id, action: p.action })
-                    .map(policy_to_resource)
-                    .collect(),
-                ..Default::default()
-            })
-        }))
     }
 
     // Auth-only: members must be able to read their own grants to gate the
@@ -414,54 +231,6 @@ impl proto::PermissionService for PermissionGroupController {
         Response::ok(proto::ResourceListResponse { items, ..Default::default() })
     }
 
-    #[permission(Members, CanRead)]
-    async fn stream_list_members(
-        &self,
-        ctx: RequestContext,
-        _query: ServiceRequest<'_, proto::ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<proto::ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = auth.organization_id;
-        let service = Arc::clone(&self.service);
-        let stream = {
-            let sql = format!(
-                "SELECT om.* FROM organization_members om JOIN users u ON u.id = om.user_id WHERE om.organization_id = {organization_id}"
-            );
-            realtime()
-                .watch_query::<OrganizationMembers>(sql)
-                .await
-                .map_err(|e| map_error(e.into()))?
-        };
-        Response::stream_ok(stream.then(move |_rows| {
-            let service = Arc::clone(&service);
-            async move {
-                match service.list_members(organization_id).await {
-                    Ok(members) => {
-                        let items = members
-                            .into_iter()
-                            .map(|m: OrganizationMembersListWithUserForOrganizationRow| OrganizationMemberDto {
-                                id: m.id,
-                                user_id: m.user_id.unwrap_or_default(),
-                                email: m.email.unwrap_or_default(),
-                                avatar: Some(m.avatar),
-                                organization_id: m.organization_id.unwrap_or_default(),
-                                role: m.role,
-                                created_at: m.created_at.unwrap_or_default(),
-                                updated_at: m.updated_at.unwrap_or_default(),
-                            })
-                            .map(member_to_resource)
-                            .collect();
-                        Ok(proto::ResourceListResponse { items, ..Default::default() })
-                    }
-                    Err(e) => Err(map_error(e)),
-                }
-            }
-        }))
-    }
-
     #[permission(Members, CanCreate)]
     async fn add_member<'a>(
         &'a self,
@@ -516,45 +285,6 @@ impl proto::PermissionService for PermissionGroupController {
         let invites = self.service.list_invites(auth.organization_id).await.map_err(map_error)?;
         let items = invites.into_iter().map(OrganizationInviteDto::from).map(invite_to_resource).collect();
         Response::ok(proto::ResourceListResponse { items, ..Default::default() })
-    }
-
-    #[permission(Invitation, CanRead)]
-    async fn stream_list_invites(
-        &self,
-        ctx: RequestContext,
-        _query: ServiceRequest<'_, proto::ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<proto::ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = auth.organization_id;
-        let service = Arc::clone(&self.service);
-        let stream = {
-            let sql = format!(
-                "SELECT * FROM organization_invites WHERE organization_id = {organization_id} AND status = 'PENDING' AND expired_at > CURRENT_TIMESTAMP"
-            );
-            realtime()
-                .watch_query::<OrganizationInvites>(sql)
-                .await
-                .map_err(|e| map_error(e.into()))?
-        };
-        Response::stream_ok(stream.then(move |_rows| {
-            let service = Arc::clone(&service);
-            async move {
-                match service.list_invites(organization_id).await {
-                    Ok(invites) => {
-                        let items = invites
-                            .into_iter()
-                            .map(OrganizationInviteDto::from)
-                            .map(invite_to_resource)
-                            .collect();
-                        Ok(proto::ResourceListResponse { items, ..Default::default() })
-                    }
-                    Err(e) => Err(map_error(e)),
-                }
-            }
-        }))
     }
 
     #[permission(Invitation, CanCreate)]

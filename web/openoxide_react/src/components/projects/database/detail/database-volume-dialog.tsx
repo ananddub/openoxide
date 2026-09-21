@@ -74,7 +74,7 @@ export function DatabaseVolumeDialog({
 					</DialogDescription>
 				</DialogHeader>
 				{type === 'BIND' && (
-					<div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300">
+					<div className="rounded-lg bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300">
 						The host path must exist on every Swarm node where this
 						database can run. Named volumes are safer for clustered
 						deployments.
@@ -90,7 +90,7 @@ export function DatabaseVolumeDialog({
 								key={option.value}
 								type="button"
 								onClick={() => setType(option.value)}
-								className={`flex h-20 flex-col items-center justify-center gap-2 rounded-md border-2 text-sm font-medium ${type === option.value ? 'border-primary bg-primary/5 text-primary' : 'border-border hover:bg-muted/40'}`}>
+								className={`flex h-20 flex-col items-center justify-center gap-2 rounded-md border-2 text-sm font-medium ${type === option.value ? ' bg-primary/5 text-primary' : ' hover:bg-muted/40'}`}>
 								<option.icon className="size-5" />
 								{option.label}
 							</button>

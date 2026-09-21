@@ -74,12 +74,12 @@ export function ComposeBackupsTable({
 	return (
 		<div className="w-full">
 			{isLoading && safeBackups.length === 0 ? (
-				<div className="flex h-40 items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 bg-card/20 text-xs text-muted-foreground">
+				<div className="flex h-40 items-center justify-center gap-2 rounded-xl  bg-card/20 text-xs text-muted-foreground">
 					<RefreshCw className="size-4 animate-spin text-primary" />{' '}
 					Loading volume backup rules...
 				</div>
 			) : safeBackups.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 bg-card/10 py-16 text-xs text-muted-foreground">
+				<div className="flex flex-col items-center justify-center gap-2 rounded-xl  bg-card/10 py-16 text-xs text-muted-foreground">
 					<Database className="size-8 opacity-40" />
 					<p className="font-semibold text-foreground">
 						No compose volume backup rules configured
@@ -89,10 +89,10 @@ export function ComposeBackupsTable({
 					</p>
 				</div>
 			) : (
-				<div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-xs">
+				<div className="overflow-hidden rounded-xl bg-card shadow-xs">
 					<Table>
 						<TableHeader>
-							<TableRow className="border-b border-border/60 bg-muted/30 hover:bg-muted/30">
+							<TableRow className="border-b  bg-muted/30 hover:bg-muted/30">
 								<TableHead className="px-4 py-3.5 text-xs font-bold tracking-wider text-foreground uppercase">
 									Backup Name
 								</TableHead>
@@ -114,7 +114,7 @@ export function ComposeBackupsTable({
 							{safeBackups.map((b: any) => (
 								<TableRow
 									key={b.id}
-									className="border-b border-border/40 transition-colors hover:bg-muted/40">
+									className="border-b  transition-colors hover:bg-muted/40">
 									<TableCell className="px-4 py-3.5 font-mono text-xs font-bold text-foreground">
 										<div className="flex items-center gap-2.5">
 											<HardDrive className="size-4 shrink-0 text-primary" />
@@ -146,7 +146,7 @@ export function ComposeBackupsTable({
 												size="sm"
 												onClick={() => handleRun(b.id)}
 												disabled={activeRunningId === b.id}
-												className="flex h-7 items-center gap-1 border-border text-xs font-semibold hover:bg-muted">
+												className="flex h-7 items-center gap-1  text-xs font-semibold hover:bg-muted">
 												<Play
 													className={`size-3 ${activeRunningId === b.id ? 'animate-spin' : ''}`}
 												/>{' '}
@@ -157,7 +157,7 @@ export function ComposeBackupsTable({
 												size="sm"
 												onClick={() => handleRestore(b.id)}
 												disabled={activeRestoringId === b.id}
-												className="flex h-7 items-center gap-1 border-border text-xs font-semibold hover:bg-muted">
+												className="flex h-7 items-center gap-1  text-xs font-semibold hover:bg-muted">
 												<RotateCcw
 													className={`size-3 ${activeRestoringId === b.id ? 'animate-spin' : ''}`}
 												/>{' '}

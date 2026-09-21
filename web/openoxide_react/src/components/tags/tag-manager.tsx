@@ -43,7 +43,7 @@ export const TagManager = () => {
 
 	return (
 		<div className="mx-auto w-full max-w-5xl">
-			<Card className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+			<Card className="overflow-hidden rounded-2xl bg-card shadow-sm">
 				<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4 pb-4">
 					<div className="flex flex-col gap-1">
 						<div className="flex items-center gap-2.5">
@@ -68,7 +68,7 @@ export const TagManager = () => {
 					</div>
 				</CardHeader>
 
-				<CardContent className="space-y-4 border-t border-border/60 pt-4">
+				<CardContent className="space-y-4 border-t  pt-4">
 					{/* Search & Filter Bar */}
 					{tags.length > 0 && (
 						<div className="relative w-full max-w-sm">
@@ -88,7 +88,7 @@ export const TagManager = () => {
 							<span>Loading tags...</span>
 						</div>
 					) : !tags || tags.length === 0 ? (
-						<div className="flex min-h-[28vh] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/10 p-6 text-center">
+						<div className="flex min-h-[28vh] flex-col items-center justify-center gap-3 rounded-xl border- bg-muted/10 p-6 text-center">
 							<TagIcon className="size-8 text-muted-foreground/40" />
 							<span className="text-sm font-semibold text-foreground">
 								No tags created yet
@@ -113,11 +113,11 @@ export const TagManager = () => {
 							{filteredTags.map(tag => (
 								<div
 									key={tag.id}
-									className="group flex items-center justify-between rounded-xl border border-border/70 bg-card p-3 shadow-2xs transition-all hover:border-border">
+									className="group flex items-center justify-between rounded-xl bg-card p-3 shadow-2xs transition-all ">
 									<div className="flex items-center gap-3">
 										<TagBadge name={tag.name} color={tag.color} />
 										{tag.color && (
-											<span className="rounded border border-border/40 bg-muted/30 px-2 py-0.5 font-mono text-xs text-muted-foreground">
+											<span className="rounded bg-muted/30 px-2 py-0.5 font-mono text-xs text-muted-foreground">
 												{tag.color}
 											</span>
 										)}

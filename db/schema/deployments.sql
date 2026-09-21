@@ -15,5 +15,6 @@ CREATE TABLE deployments (
     service_id BIGINT REFERENCES services(id) ON DELETE CASCADE,
     server_id BIGINT,
     created_at BIGINT NOT NULL,
-    database_kind TEXT
+    database_kind TEXT,
+    user_id BIGINT NOT NULL DEFAULT 0
 );

@@ -1,4 +1,4 @@
-import {createServiceClient, useActiveOrgId, useConnectMutation, useConnectQuery} from './query';
+import {createServiceClient, useActiveOrgId, useConnectMutation, useConnectQuery, useResourceListQuery} from './query';
 import {ComposeService, type Compose} from '#/gen/connect/openoxide/api/v1/compose_pb';
 import {OverviewOperationsService} from '#/gen/connect/openoxide/api/v1/overview_operations_pb';
 import type {OverviewServiceItemPayload} from './overview';
@@ -189,6 +189,7 @@ export function useComposeUpdate() {
 			compose_file?: string;
 			server_id?: number | bigint;
 			network_ids?: string[];
+			command?: string;
 		}) =>
 			composeClient.updateCompose({
 				id: BigInt(input.id),
@@ -197,6 +198,7 @@ export function useComposeUpdate() {
 				composeFile: input.compose_file,
 				serverId: input.server_id !== undefined ? BigInt(input.server_id) : undefined,
 				networkIds: input.network_ids ?? [],
+				command: input.command,
 			}),
 		{invalidate: [['composes']]},
 	);
@@ -361,5 +363,147 @@ export function useComposeSetCustomGitSource() {
 						: undefined,
 			}),
 		{invalidate: [['composes']]},
+	);
+}
+
+// ── Advanced: mounts / patches / webhook / ops ──
+
+export type ComposeMountPayload = {
+	id: number;
+	mount_type: string;
+	host_path?: string;
+	volume_name?: string;
+	file_path?: string;
+	content?: string;
+	mount_path: string;
+	compose_id: number;
+};
+
+/** Volumes/mounts of a compose project (Advanced → Volumes). */
+export function useComposeMountList(compose_id: number | bigint) {
+	return useResourceListQuery<ComposeMountPayload>(
+		['composes', 'mounts', compose_id.toString()],
+		() => composeClient.listMounts({composeId: BigInt(compose_id)}),
+	);
+}
+
+export function useComposeMountUpsert() {
+	return useConnectMutation(
+		(input: {
+			compose_id: number | bigint;
+			id?: number | bigint;
+			mount_type: string;
+			host_path?: string | null;
+			volume_name?: string | null;
+			file_path?: string | null;
+			content?: string | null;
+			mount_path: string;
+		}) =>
+			composeClient[input.id ? 'updateMount' : 'createMount']({
+				composeId: BigInt(input.compose_id),
+				id: input.id !== undefined ? BigInt(input.id) : undefined,
+				mountType: input.mount_type,
+				hostPath: input.host_path ?? undefined,
+				volumeName: input.volume_name ?? undefined,
+				filePath: input.file_path ?? undefined,
+				content: input.content ?? undefined,
+				mountPath: input.mount_path,
+			}),
+		{invalidate: [['composes', 'mounts']]},
+	);
+}
+
+export function useComposeMountDelete() {
+	return useConnectMutation(
+		(input: {compose_id: number | bigint; id: number | bigint}) =>
+			composeClient.deleteMount({
+				composeId: BigInt(input.compose_id),
+				id: BigInt(input.id),
+			}),
+		{invalidate: [['composes', 'mounts']]},
+	);
+}
+
+export type ComposePatchPayload = {
+	id: number;
+	patch_type: string;
+	file_path: string;
+	enabled: boolean;
+	content: string;
+	compose_id: number;
+};
+
+/** Compose patches (env/secret/config overlays) — Advanced → Patches. */
+export function useComposePatchList(compose_id: number | bigint) {
+	return useResourceListQuery<ComposePatchPayload>(
+		['composes', 'patches', compose_id.toString()],
+		() => composeClient.listPatches({composeId: BigInt(compose_id)}),
+	);
+}
+
+export function useComposePatchUpsert() {
+	return useConnectMutation(
+		(input: {
+			compose_id: number | bigint;
+			id?: number | bigint;
+			patch_type: string;
+			payload: string;
+		}) =>
+			composeClient[input.id ? 'updatePatch' : 'createPatch']({
+				composeId: BigInt(input.compose_id),
+				id: input.id !== undefined ? BigInt(input.id) : undefined,
+				patchType: input.patch_type,
+				payload: input.payload,
+			}),
+		{invalidate: [['composes', 'patches']]},
+	);
+}
+
+export function useComposePatchDelete() {
+	return useConnectMutation(
+		(input: {compose_id: number | bigint; id: number | bigint}) =>
+			composeClient.deletePatch({
+				composeId: BigInt(input.compose_id),
+				id: BigInt(input.id),
+			}),
+		{invalidate: [['composes', 'patches']]},
+	);
+}
+
+/** Rotate the compose project's webhook token; returns the new token. */
+export function useComposeRotateWebhook() {
+	return useConnectMutation(
+		async (id: number | bigint) => {
+			const response = await composeClient.rotateWebhookToken({id: BigInt(id)});
+			return response.token;
+		},
+		{invalidate: [['composes']]},
+	);
+}
+
+/** Clear this compose project's deployment history. */
+export function useComposeClearHistory() {
+	return useConnectMutation(
+		(id: number | bigint) =>
+			composeClient.clearDeploymentHistory({id: BigInt(id)}),
+		{invalidate: [['deployments']]},
+	);
+}
+
+/** Drop this compose project's pending queue entries. */
+export function useComposeCleanupQueue() {
+	return useConnectMutation(
+		(id: number | bigint) =>
+			composeClient.cleanupDeploymentQueue({id: BigInt(id)}),
+		{invalidate: [['deployments']]},
+	);
+}
+
+/** Force-kill the in-flight deployment of this compose project. */
+export function useComposeForceKill() {
+	return useConnectMutation(
+		(id: number | bigint) =>
+			composeClient.forceKillDeployment({id: BigInt(id)}),
+		{invalidate: [['deployments']]},
 	);
 }

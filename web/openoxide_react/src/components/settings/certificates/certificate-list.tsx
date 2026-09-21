@@ -2,7 +2,6 @@ import {
   Clock3,
   HardDrive,
   KeyRound,
-  Loader2,
   MoreHorizontal,
   Pencil,
   RefreshCw,
@@ -17,6 +16,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown";
+import {
+  ListCard,
+  ListRow,
+  ListEmpty,
+  RowTile,
+} from "#/components/settings/list-card";
 import type { Certificate, RemoteServer } from "./certificate-types";
 
 type Props = {
@@ -43,6 +48,7 @@ function certificateInfo(pem: string) {
   }
 }
 
+/** OpenShip's list-card rows: shield tile, name + chain/server/key facts, kebab. */
 export function CertificateList({
   items,
   servers,
@@ -52,108 +58,111 @@ export function CertificateList({
   onHistory,
   onDelete,
 }: Props) {
-  if (loading)
-    return (
-      <div className="flex items-center justify-center gap-2 py-20 text-xs text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" />
-        Loading certificates...
-      </div>
-    );
-  if (!items.length)
-    return (
-      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-16 text-center">
-        <ShieldCheck className="size-9 text-muted-foreground" />
-        <div>
-          <p className="text-sm font-semibold">No custom certificates</p>
-          <p className="text-xs text-muted-foreground">
-            Install a PEM certificate chain for Traefik.
-          </p>
-        </div>
-        <Button size="sm" onClick={onCreate}>
-          Install certificate
-        </Button>
-      </div>
-    );
   return (
-    <div className="space-y-2">
-      {items.map((item) => {
-        const server = servers.find(
-          (value) => String(value.id) === item.server_id,
-        );
-        const info = certificateInfo(item.certificate_data);
-        return (
-          <div
-            key={item.id}
-            className="flex flex-col gap-3 rounded-lg border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-500">
-                <ShieldCheck className="size-4.5" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-sm font-semibold">{item.name}</p>
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                    {info.count > 1 ? `${info.count} cert chain` : "PEM"}
-                  </span>
-                  {item.auto_renew === 1 && (
-                    <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-500">
-                      <RefreshCw className="size-3" />
-                      Renewal tracking
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <HardDrive className="size-3" />
-                    {server
-                      ? `${server.name} (${server.ip_address})`
-                      : "Openoxide local"}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <KeyRound className="size-3" />
-                    {item.has_private_key
-                      ? "Private key stored"
-                      : "Missing key"}
-                  </span>
-                  <span className="font-mono">{item.certificate_path}</span>
-                </div>
-              </div>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="ghost" size="icon" className="size-8" />
+    <ListCard
+      title={`${items.length} ${items.length === 1 ? "certificate" : "certificates"}`}
+      description="Installed on local or remote Traefik servers.">
+      {loading ? (
+        <div className="space-y-2 p-5">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="h-14 animate-pulse rounded-xl bg-muted/30" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <ListEmpty
+          icon={ShieldCheck}
+          title="No custom certificates"
+          description="Install a PEM certificate chain for Traefik to serve HTTPS with your own cert."
+          action={
+            <Button size="sm" onClick={onCreate} className="gap-1.5">
+              <Pencil className="size-3.5" /> Install certificate
+            </Button>
+          }
+        />
+      ) : (
+        <div className="divide-y divide-border/40">
+          {items.map((item) => {
+            const server = servers.find(
+              (value) => String(value.id) === item.server_id,
+            );
+            const info = certificateInfo(item.certificate_data);
+            return (
+              <ListRow
+                key={item.id}
+                icon={
+                  <RowTile className="bg-emerald-500/10 text-emerald-500">
+                    <ShieldCheck className="size-4" />
+                  </RowTile>
                 }
-              >
-                <MoreHorizontal className="size-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={() => onHistory(item)}
-                  className="gap-2 text-xs"
-                >
-                  <Clock3 className="size-3.5" /> Renewal history
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => onEdit(item)}
-                  className="gap-2 text-xs"
-                >
-                  <Pencil className="size-3.5" /> Edit certificate
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onDelete(item)}
-                  variant="destructive"
-                  className="gap-2 text-xs"
-                >
-                  <Trash2 className="size-3.5" /> Delete certificate
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        );
-      })}
-    </div>
+                title={item.name}
+                badges={
+                  <>
+                    <span className="rounded-md bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      {info.count > 1 ? `${info.count} cert chain` : "PEM"}
+                    </span>
+                    {item.auto_renew === 1 && (
+                      <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-500">
+                        <RefreshCw className="size-3" />
+                        Renewal tracking
+                      </span>
+                    )}
+                  </>
+                }
+                subtitle={
+                  <span className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                    <span className="flex items-center gap-1">
+                      <HardDrive className="size-3" />
+                      {server
+                        ? `${server.name} (${server.ip_address})`
+                        : "Openoxide local"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <KeyRound className="size-3" />
+                      {item.has_private_key ? "Private key stored" : "Missing key"}
+                    </span>
+                    <span className="font-mono">{item.certificate_path}</span>
+                  </span>
+                }>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-7 rounded-lg text-muted-foreground hover:text-foreground"
+                      />
+                    }
+                  >
+                    <MoreHorizontal className="size-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem
+                      onClick={() => onHistory(item)}
+                      className="gap-2 text-xs"
+                    >
+                      <Clock3 className="size-3.5" /> Renewal history
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onEdit(item)}
+                      className="gap-2 text-xs"
+                    >
+                      <Pencil className="size-3.5" /> Edit certificate
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onDelete(item)}
+                      variant="destructive"
+                      className="gap-2 text-xs"
+                    >
+                      <Trash2 className="size-3.5" /> Delete certificate
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </ListRow>
+            );
+          })}
+        </div>
+      )}
+    </ListCard>
   );
 }

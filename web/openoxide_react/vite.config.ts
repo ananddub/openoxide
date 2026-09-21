@@ -38,7 +38,6 @@ const config = defineConfig({
 		babel({presets: [reactCompilerPreset()]}),
 	],
 	server: {
-		// host: '0.0.0.0',
 		host: 'localhost',
 		port: 3001,
 		strictPort: false,

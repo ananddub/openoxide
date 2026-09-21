@@ -286,11 +286,4 @@ mod tests {
         assert!(args.contains(&"--force".to_string()));
         assert_eq!(args.last(), Some(&"myapp".to_string()));
     }
-
-    #[test]
-    fn service_test() {
-        // let docker = DockerCli::new_local();
-        // let data  = docker.services().list().filter(ServiceFilter::name("myservice")).print();
-        // println!("Service data: {}", data);
-    }
 }

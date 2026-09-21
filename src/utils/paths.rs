@@ -72,6 +72,25 @@ impl OpenOxidePaths {
     pub fn schedule_log_file(&self, key: &str) -> String {
         format!("{}/{}.log", self.schedule_logs(), key)
     }
+
+    /// Root for stateful migration scratch space on the target.
+    pub fn migrations(&self) -> String {
+        format!("{}/migrations", self.base)
+    }
+
+    /// Per-object staging prefix a migration's rsync `--delete` may ever
+    /// target. Contained strictly under `<base>/migrations/<id>/staging/`.
+    pub fn migration_staging(&self, migration_id: &str, obj_key: &str) -> String {
+        format!("{}/{}/staging/{}", self.migrations(), migration_id, obj_key)
+    }
+
+    pub fn migration_logs(&self) -> String {
+        format!("{}/logs/migrations", self.base)
+    }
+
+    pub fn migration_log_file(&self, migration_id: &str) -> String {
+        format!("{}/{}.log", self.migration_logs(), migration_id)
+    }
 }
 
 pub fn openoxide_paths() -> OpenOxidePaths {

@@ -4,9 +4,6 @@ package openoxide.api.v1;
 import "openoxide/api/v1/common.proto";
 service OverviewOperationsService {
   rpc ListOrganizationServices(ResourceQuery) returns (ResourceListResponse);
-  rpc StreamListOrganizationServices(ResourceQuery) returns (stream ResourceListResponse);
   rpc ListOrganizationDomains(ResourceQuery) returns (ResourceListResponse);
-  rpc StreamListOrganizationDomains(ResourceQuery) returns (stream ResourceListResponse);
   rpc ListOrganizationBackups(ResourceQuery) returns (ResourceListResponse);
-  rpc StreamListOrganizationBackups(ResourceQuery) returns (stream ResourceListResponse);
 }

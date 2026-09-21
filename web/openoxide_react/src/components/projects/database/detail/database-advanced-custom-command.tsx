@@ -78,7 +78,7 @@ export function DatabaseAdvancedCustomCommand({
 	};
 
 	return (
-		<section className="flex flex-col gap-5 rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+		<section className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-sm">
 			<div>
 				<h3 className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground">
 					<Terminal className="size-4 text-primary" /> Docker Image,
@@ -94,7 +94,7 @@ export function DatabaseAdvancedCustomCommand({
 				</p>
 			</div>
 
-			<div className="grid grid-cols-1 gap-4 border-t border-border/40 pt-4 md:grid-cols-2">
+			<div className="grid grid-cols-1 gap-4 border-t  pt-4 md:grid-cols-2">
 				<div className="flex flex-col gap-1.5">
 					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
 						Docker Image Tag
@@ -137,7 +137,7 @@ export function DatabaseAdvancedCustomCommand({
 				</div>
 
 				{argsList.length === 0 ? (
-					<p className="rounded-lg border border-border/40 bg-muted/20 p-3 text-xs text-muted-foreground italic">
+					<p className="rounded-lg bg-muted/20 p-3 text-xs text-muted-foreground italic">
 						No custom arguments configured. Default container parameters
 						will be used.
 					</p>
@@ -165,7 +165,7 @@ export function DatabaseAdvancedCustomCommand({
 				)}
 			</div>
 
-			<div className="flex justify-end border-t border-border/40 pt-4">
+			<div className="flex justify-end border-t  pt-4">
 				<Button
 					onClick={handleSave}
 					disabled={saving}

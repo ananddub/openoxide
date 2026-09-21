@@ -1,18 +1,21 @@
-import {createFileRoute} from '@tanstack/react-router';
+import {createFileRoute, Navigate} from '@tanstack/react-router';
 import {useState, useMemo} from 'react';
-import {GitBranch, Search, ShieldCheck} from 'lucide-react';
+import {GitBranch, Search, Plug} from 'lucide-react';
 import {Input} from '#/components/ui/input';
 import {useGitProviders} from '#/components/settings/git-providers/use-git-providers';
 import {GitProviderCreateButtons} from '#/components/settings/git-providers/git-provider-create-buttons';
 import {GitProviderCard} from '#/components/settings/git-providers/git-provider-card';
 import {GithubManifestDialog} from '#/components/settings/git-providers/github-manifest-dialog';
 import {GitProviderEditDialog} from '#/components/settings/git-providers/git-provider-edit-dialog';
+import {SettingsSection} from '#/components/settings/settings-section';
 
 export const Route = createFileRoute('/_app/settings/git-providers')({
-	component: GitProvidersPage,
+	component: () => (
+		<Navigate to="/settings" search={{tab: 'git'}} replace />
+	)
 });
 
-function GitProvidersPage() {
+export function GitProvidersPage() {
 	const {
 		providers,
 		open,
@@ -46,46 +49,19 @@ function GitProvidersPage() {
 	}, [providers, search]);
 
 	return (
-		<div className="mx-auto flex max-w-5xl animate-in flex-col gap-6 p-6 duration-200 fade-in">
-			{/* Header Banner */}
-			<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-				<div>
-					<h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-foreground">
-						<div className="flex size-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-							<GitBranch className="size-5" />
-						</div>
-						Git Providers
-					</h1>
-					<p className="mt-1 text-xs text-muted-foreground">
-						Connect your Git accounts (GitHub, GitLab, Bitbucket, Gitea)
-						for automated repository deployments & webhooks.
-					</p>
-				</div>
-
-				<div className="flex items-center gap-2 self-start rounded-xl border border-border/60 bg-muted/40 px-3 py-1.5 text-xs font-semibold text-muted-foreground sm:self-center">
-					<ShieldCheck className="size-4 text-emerald-500" />
-					<span>
-						{providers.length}{' '}
-						{providers.length === 1 ? 'Provider' : 'Providers'} Configured
-					</span>
-				</div>
-			</div>
-
-			{/* Interactive Provider Connect Cards */}
-			<section>
-				<h3 className="mb-3 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-					Connect New Provider
-				</h3>
+		<div className="flex w-full animate-in flex-col gap-6 duration-200 fade-in">
+			<SettingsSection
+				icon={Plug}
+				title="Connect New Provider"
+				description="GitHub, GitLab, Bitbucket, or Gitea — for automated repository deployments and webhooks.">
 				<GitProviderCreateButtons onSelectKind={openCreate} />
-			</section>
+			</SettingsSection>
 
-			{/* Existing Providers List */}
-			<section className="flex flex-col gap-3">
-				<div className="flex flex-wrap items-center justify-between gap-3">
-					<h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-						Configured Git Providers
-					</h3>
-
+			<SettingsSection
+				icon={GitBranch}
+				title="Configured Git Providers"
+				description={`${providers.length} ${providers.length === 1 ? 'provider' : 'providers'} connected to this organization.`}>
+				<div className="mb-3 flex flex-wrap items-center justify-between gap-3">
 					{providers.length > 0 && (
 						<div className="relative w-full sm:w-64">
 							<Search className="absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -93,14 +69,13 @@ function GitProvidersPage() {
 								placeholder="Search providers..."
 								value={search}
 								onChange={e => setSearch(e.target.value)}
-								className="h-8 border-border/80 bg-muted/20 pl-8 text-xs"
+								className="h-8  bg-muted/20 pl-8 text-xs"
 							/>
 						</div>
 					)}
 				</div>
-
 				{filteredProviders.length === 0 ? (
-					<div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-muted/5 p-12 text-center">
+					<div className="flex flex-col items-center justify-center rounded-2xl bg-muted/20 py-16 text-center">
 						<GitBranch className="mb-2.5 size-10 text-muted-foreground/30" />
 						<p className="text-sm font-semibold text-foreground">
 							No Git Providers found
@@ -125,7 +100,7 @@ function GitProvidersPage() {
 						))}
 					</div>
 				)}
-			</section>
+			</SettingsSection>
 
 			{/* Dialogs */}
 			<GithubManifestDialog

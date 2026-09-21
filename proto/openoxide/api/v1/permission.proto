@@ -5,32 +5,25 @@ import "openoxide/api/v1/common.proto";
 
 service PermissionService {
   rpc ListPermissions(ResourceQuery) returns (ResourceListResponse);
-  rpc StreamListPermissions(ResourceQuery) returns (stream ResourceListResponse);
   rpc GetPermission(ResourceRequest) returns (ResourceResponse);
-  rpc StreamPermission(ResourceRequest) returns (stream ResourceResponse);
   rpc CreatePermission(ResourceRequest) returns (ResourceResponse);
   rpc UpdatePermission(ResourceRequest) returns (ResourceResponse);
   rpc DeletePermission(ResourceRequest) returns (Empty);
   rpc ListGroups(ResourceQuery) returns (ResourceListResponse);
-  rpc StreamListGroups(ResourceQuery) returns (stream ResourceListResponse);
   rpc GetGroup(ResourceRequest) returns (ResourceResponse);
-  rpc StreamGroup(ResourceRequest) returns (stream ResourceResponse);
   rpc CreateGroup(ResourceRequest) returns (ResourceResponse);
   rpc UpdateGroup(ResourceRequest) returns (ResourceResponse);
   rpc DeleteGroup(ResourceRequest) returns (Empty);
   rpc ListPolicies(ResourceQuery) returns (ResourceListResponse);
-  rpc StreamListPolicies(ResourceQuery) returns (stream ResourceListResponse);
   // Effective actions for the calling user inside the active organization
   // (auth-only: every member may inspect their own grants to gate the UI).
   rpc GetMyPermissions(ResourceQuery) returns (ResourceResponse);
   rpc AssignMemberGroup(ResourceRequest) returns (OperationResult);
   rpc ListMembers(ResourceQuery) returns (ResourceListResponse);
-  rpc StreamListMembers(ResourceQuery) returns (stream ResourceListResponse);
   rpc AddMember(ResourceRequest) returns (OperationResult);
   rpc UpdateMemberRole(ResourceRequest) returns (OperationResult);
   rpc RemoveMember(ResourceRequest) returns (Empty);
   rpc ListInvites(ResourceQuery) returns (ResourceListResponse);
-  rpc StreamListInvites(ResourceQuery) returns (stream ResourceListResponse);
   rpc CreateInvite(ResourceRequest) returns (ResourceResponse);
   rpc AcceptInvite(ResourceRequest) returns (OperationResult);
   rpc CancelInvite(ResourceRequest) returns (Empty);

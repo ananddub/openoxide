@@ -35,7 +35,7 @@ const TABLE_QUERY_KEYS: Record<WatchedTable, string[]> = {
 	// Middleware CRUD rides the domain dialogs (the domains table itself is
 	// untouched), so the domain lists need the explicit prefix here.
 	[WatchedTable.APPLICATION_MIDDLEWARES]: ['domains', 'overview-domains'],
-	[WatchedTable.AUDIT_LOGS]: [],
+	[WatchedTable.AUDIT_LOGS]: ['audit_logs'],
 	[WatchedTable.BACKGROUND_POLICIES]: ['settings'],
 	[WatchedTable.BACKUP_EXECUTIONS]: ['backups', 'overview-backups'],
 	[WatchedTable.BACKUPS]: ['backups', 'overview-backups'],
@@ -87,6 +87,10 @@ const TABLE_QUERY_KEYS: Record<WatchedTable, string[]> = {
 	[WatchedTable.SERVER_MANAGEMENT]: ['servers'],
 	[WatchedTable.SERVER_MIGRATIONS]: ['servers'],
 	[WatchedTable.SERVER_PRIVATE_NETWORKS]: ['servers'],
+	// Stateful per-service migrations surface on the server lists (source +
+	// target rows) and drive the migration wizard's live progress view.
+	[WatchedTable.APPLICATION_MIGRATIONS]: ['servers', 'migrations'],
+	[WatchedTable.MIGRATION_OBJECTS]: ['migrations'],
 	[WatchedTable.SERVERS]: ['servers'],
 	[WatchedTable.SERVICE_APPLICATION]: ['applications', 'overview-services'],
 	[WatchedTable.SERVICE_COMPOSE]: ['composes', 'overview-services'],

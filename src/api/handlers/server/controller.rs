@@ -144,6 +144,7 @@ impl ServerControllerService for ServerController {
                 false,
             )
             .await?;
+        self.capture_and_store_host_key(id, &executor).await;
         let audit = ServerSetup::new_remote(executor, SetupConfig::default())
             .audit()
             .await
@@ -183,6 +184,7 @@ impl ServerControllerService for ServerController {
                 true,
             )
             .await?;
+        self.capture_and_store_host_key(id, &executor).await;
         let mut config = SetupConfig::default();
         config.build_server = self
             .service

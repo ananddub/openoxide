@@ -79,6 +79,23 @@ pub struct ApplicationMiddlewares {
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct ApplicationMigrations {
+    pub id: String,
+    pub organization_id: i64,
+    pub service_id: i64,
+    pub source_server_id: i64,
+    pub target_server_id: i64,
+    pub status: String,
+    pub phase: String,
+    pub progress: i64,
+    pub cancel_requested: i64,
+    pub error: Option<String>,
+    pub log_path: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct AuditLogs {
     pub id: i64,
     pub user_email: String,
@@ -198,6 +215,7 @@ pub struct Deployments {
     pub server_id: Option<i64>,
     pub created_at: i64,
     pub database_kind: Option<String>,
+    pub user_id: i64,
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
@@ -324,6 +342,20 @@ pub struct JwtTokens {
     pub updated_at: i64,
     pub session_id: Option<String>,
     pub token_kind: Option<String>,
+}
+
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct MigrationObjects {
+    pub migration_id: String,
+    pub obj_key: String,
+    pub kind: String,
+    pub source_ref: String,
+    pub dest_ref: String,
+    pub status: String,
+    pub bytes: i64,
+    pub error: Option<String>,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
@@ -754,6 +786,8 @@ pub struct Servers {
     pub updated_at: i64,
     pub build_memory_limit: Option<String>,
     pub build_cpu_limit: Option<String>,
+    pub host_key_fingerprint: String,
+    pub host_key_openssh: String,
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
@@ -933,6 +967,19 @@ pub struct Tags {
     pub name: String,
     pub color: String,
     pub organization_id: i64,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct TrafficStats {
+    pub id: i64,
+    pub organization_id: i64,
+    pub server_id: i64,
+    pub service: String,
+    pub bucket_at: i64,
+    pub requests: i64,
+    pub errors: i64,
+    pub duration_ms: f32,
     pub created_at: i64,
 }
 

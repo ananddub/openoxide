@@ -153,7 +153,7 @@ export function DatabaseDeploymentsTab({
 			s.includes('START')
 		)
 			return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-		return 'text-muted-foreground bg-muted border-border';
+		return 'text-muted-foreground bg-muted ';
 	};
 
 	const handleClearDatabaseDeployments = async () => {
@@ -197,12 +197,12 @@ export function DatabaseDeploymentsTab({
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Action Header Card */}
-			<section className="flex items-center justify-between rounded-xl border border-border bg-card p-5">
+			<section className="flex items-center justify-between rounded-xl bg-card p-5">
 				<div>
 					<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
 						Database Container Deployments History
 						{activeDeployment && (
-							<span className="flex animate-pulse items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
+							<span className="flex animate-pulse items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
 								<Activity className="h-3 w-3 animate-spin" /> Provisioning
 								Container...
 							</span>
@@ -227,7 +227,7 @@ export function DatabaseDeploymentsTab({
 						variant="outline"
 						size="sm"
 						onClick={() => onRefresh?.()}
-						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted">
+						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted">
 						<RefreshCw className="h-3.5 w-3.5" /> Refresh
 					</Button>
 					<Button
@@ -238,7 +238,7 @@ export function DatabaseDeploymentsTab({
 							void onAction?.('redeploy');
 						}}
 						disabled={!!activeDeployment || isTriggerPending}
-						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50">
+						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50">
 						<RefreshCw
 							className={`h-3.5 w-3.5 ${pendingTrigger === 'redeploy' ? 'animate-spin' : ''}`} />
 						{pendingTrigger === 'redeploy'

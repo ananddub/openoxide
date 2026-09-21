@@ -39,7 +39,7 @@ export function DatabaseSwarmSettings({
 		description: swarmDescription(id),
 	}));
 	return (
-		<section className="flex flex-col gap-5 rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+		<section className="flex flex-col gap-5 rounded-2xl bg-card p-6 shadow-sm">
 			<div className="flex flex-wrap items-start justify-between gap-4">
 				<div>
 					<h3 className="flex items-center gap-2 text-base font-bold">
@@ -56,7 +56,7 @@ export function DatabaseSwarmSettings({
 					<Settings className="size-4" /> Swarm Settings
 				</Button>
 			</div>
-			<div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-xs text-muted-foreground">
+			<div className="rounded-lg bg-blue-500/5 p-3 text-xs text-muted-foreground">
 				Redeploy after changing cluster settings to apply them.
 			</div>
 			<Dialog open={open} onOpenChange={setOpen}>

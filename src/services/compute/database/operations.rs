@@ -13,6 +13,7 @@ impl DatabaseService {
         kind: DatabaseKind,
         id: i64,
         operation: DatabaseOperation,
+        actor_id: i64,
     ) -> sqlx::Result<DatabaseOperationResult> {
         if matches!(operation, DatabaseOperation::Stop) {
             self.cancel_operation(kind, id).await?;
@@ -95,6 +96,7 @@ impl DatabaseService {
                             operation: operation.as_str().to_string(),
                             service_id: id,
                             database_kind: kind_str.to_string(),
+                            user_id: actor_id,
                         },
                     )
                     .await?
@@ -114,6 +116,7 @@ impl DatabaseService {
                             service_id: id,
                             database_kind: kind_str.to_string(),
                             server_id,
+                            user_id: actor_id,
                         },
                     )
                     .await?

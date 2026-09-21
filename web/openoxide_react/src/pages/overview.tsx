@@ -173,13 +173,15 @@ function OverviewPage() {
 	}, [rawDeploymentsList, deploySearch, deployStatusFilter]);
 
 	return (
-		<div className="flex w-full max-w-full animate-in flex-col gap-6 p-6 duration-200 fade-in md:px-8">
+		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
 			{/* Page Header */}
-			<div className="flex flex-col gap-1">
-				<h1 className="text-2xl font-bold tracking-tight text-foreground">
+			<div className="flex flex-col">
+				<h1
+					className="text-2xl font-medium text-foreground/80"
+					style={{letterSpacing: '-0.2px'}}>
 					Overview
 				</h1>
-				<p className="text-xs text-muted-foreground">
+				<p className="mt-1 text-sm text-muted-foreground/70">
 					Centralized platform overview of all applications, compose
 					stacks, databases, volume backups, domains, and deployments
 				</p>
@@ -192,7 +194,7 @@ function OverviewPage() {
 				className="w-full space-y-6">
 				<TabsList
 					variant="line"
-					className="w-full justify-start gap-6 rounded-none border-b border-border pb-0">
+					className="w-full justify-start gap-6 rounded-none border-b  pb-0">
 					<TabsTrigger
 						value="services"
 						className="flex items-center gap-2 pb-2.5 text-xs font-semibold">
@@ -310,7 +312,7 @@ function OverviewPage() {
 					</div>
 
 					{filteredBackups.length === 0 ? (
-						<div className="flex flex-col items-center justify-center rounded-xl border border-dashed p-12 text-center">
+						<div className="flex flex-col items-center justify-center rounded-xl p-12 text-center">
 							<Clock className="mb-2 size-8 text-muted-foreground/40" />
 							<p className="text-sm font-semibold text-foreground">
 								No volume backups found
@@ -320,10 +322,10 @@ function OverviewPage() {
 							</p>
 						</div>
 					) : (
-						<div className="max-h-[calc(100vh-340px)] min-h-[280px] overflow-y-auto rounded-xl border border-border/60 bg-card shadow-xs">
+						<div className="max-h-[calc(100vh-340px)] min-h-[280px] overflow-y-auto rounded-xl bg-card shadow-xs">
 							<Table>
 								<TableHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md">
-									<TableRow className="border-b border-border/60 hover:bg-transparent">
+									<TableRow className="border-b  hover:bg-transparent">
 										<TableHead className="sticky top-0 z-20 bg-card/95 px-4 py-3.5 text-xs font-bold tracking-wider text-foreground uppercase backdrop-blur-md">
 											Backup Name
 										</TableHead>
@@ -348,7 +350,7 @@ function OverviewPage() {
 									{filteredBackups.map((b: any) => (
 										<TableRow
 											key={b.id}
-											className="border-b border-border/40 transition-colors hover:bg-muted/40">
+											className="border-b  transition-colors hover:bg-muted/40">
 											<TableCell className="px-4 py-3.5 font-mono text-xs font-bold text-foreground">
 												<div className="flex items-center gap-2">
 													<Clock className="size-4 shrink-0 text-primary" />
@@ -465,7 +467,7 @@ function OverviewPage() {
 					</div>
 
 					{filteredDomains.length === 0 ? (
-						<div className="flex flex-col items-center justify-center rounded-xl border border-dashed p-12 text-center">
+						<div className="flex flex-col items-center justify-center rounded-xl p-12 text-center">
 							<Globe className="mb-2 size-8 text-muted-foreground/40" />
 							<p className="text-sm font-semibold text-foreground">
 								No active domains configured
@@ -475,10 +477,10 @@ function OverviewPage() {
 							</p>
 						</div>
 					) : (
-						<div className="max-h-[calc(100vh-340px)] min-h-[280px] overflow-y-auto rounded-xl border border-border/60 bg-card shadow-xs">
+						<div className="max-h-[calc(100vh-340px)] min-h-[280px] overflow-y-auto rounded-xl bg-card shadow-xs">
 							<Table>
 								<TableHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md">
-									<TableRow className="border-b border-border/60 hover:bg-transparent">
+									<TableRow className="border-b  hover:bg-transparent">
 										<TableHead className="sticky top-0 z-20 bg-card/95 px-4 py-3.5 text-xs font-bold tracking-wider text-foreground uppercase backdrop-blur-md">
 											Domain / Host
 										</TableHead>
@@ -505,7 +507,7 @@ function OverviewPage() {
 										return (
 											<TableRow
 												key={dom.id}
-												className="border-b border-border/40 transition-colors hover:bg-muted/40">
+												className="border-b  transition-colors hover:bg-muted/40">
 												<TableCell className="px-4 py-3.5 font-mono text-xs font-bold text-foreground">
 													<div className="flex items-center gap-2">
 														<Globe className="size-4 shrink-0 text-primary" />
@@ -563,7 +565,7 @@ function OverviewPage() {
 
 				{/* 4. Deployments Tab (Deployments History vs Queue Sub-tabs with Dokploy Toolbar) */}
 				<TabsContent value="deployments" className="space-y-4">
-					<div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-3">
+					<div className="flex flex-wrap items-center justify-between gap-4 border-b  pb-3">
 						<div className="flex items-center gap-2">
 							<Button
 								variant={
@@ -639,7 +641,7 @@ function OverviewPage() {
 
 					{deploymentSubTab === 'history' ? (
 						filteredDeploymentsHistory.length === 0 ? (
-							<div className="flex flex-col items-center justify-center rounded-xl border border-dashed p-12 text-center">
+							<div className="flex flex-col items-center justify-center rounded-xl p-12 text-center">
 								<Rocket className="mb-2 size-8 text-muted-foreground/40" />
 								<p className="text-sm font-semibold text-foreground">
 									No deployment history found
@@ -649,10 +651,10 @@ function OverviewPage() {
 								</p>
 							</div>
 						) : (
-							<div className="max-h-[calc(100vh-340px)] min-h-[280px] overflow-y-auto rounded-xl border border-border/60 bg-card shadow-xs">
+							<div className="max-h-[calc(100vh-340px)] min-h-[280px] overflow-y-auto rounded-xl bg-card shadow-xs">
 								<Table>
 									<TableHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md">
-										<TableRow className="border-b border-border/60 hover:bg-transparent">
+										<TableRow className="border-b  hover:bg-transparent">
 											<TableHead className="sticky top-0 z-20 w-[80px] bg-card/95 px-4 py-3.5 text-xs font-bold tracking-wider text-foreground uppercase backdrop-blur-md">
 												ID
 											</TableHead>
@@ -689,7 +691,7 @@ function OverviewPage() {
 							</div>
 						)
 					) : runningDeployments.length === 0 ? (
-						<div className="flex flex-col items-center justify-center rounded-xl border border-dashed p-12 text-center">
+						<div className="flex flex-col items-center justify-center rounded-xl p-12 text-center">
 							<Rocket className="mb-2 size-8 text-muted-foreground/40" />
 							<p className="text-sm font-semibold text-foreground">
 								Queue is empty
@@ -700,10 +702,10 @@ function OverviewPage() {
 							</p>
 						</div>
 					) : (
-						<div className="max-h-[calc(100vh-340px)] min-h-[280px] overflow-y-auto rounded-xl border border-border/60 bg-card shadow-xs">
+						<div className="max-h-[calc(100vh-340px)] min-h-[280px] overflow-y-auto rounded-xl bg-card shadow-xs">
 							<Table>
 								<TableHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md">
-									<TableRow className="border-b border-border/60 hover:bg-transparent">
+									<TableRow className="border-b  hover:bg-transparent">
 										<TableHead className="sticky top-0 z-20 w-[80px] bg-card/95 px-4 py-3.5 text-xs font-bold tracking-wider text-foreground uppercase backdrop-blur-md">
 											ID
 										</TableHead>

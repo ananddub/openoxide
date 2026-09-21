@@ -20,7 +20,7 @@ export function DatabaseDeploymentsList({
 }: DatabaseDeploymentsListProps) {
 	if (events.length === 0) {
 		return (
-			<section className="overflow-hidden rounded-xl border border-border bg-card">
+			<section className="overflow-hidden rounded-xl bg-card">
 				<div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
 					<Zap className="mb-3 h-10 w-10 opacity-30" />
 					<p className="text-xs font-semibold">
@@ -32,7 +32,7 @@ export function DatabaseDeploymentsList({
 	}
 
 	return (
-		<section className="overflow-hidden rounded-xl border border-border bg-card">
+		<section className="overflow-hidden rounded-xl bg-card">
 			<div className="divide-y divide-border/60">
 				{events.map((e: any) => {
 					const isActive = isBuildActive(e);
@@ -53,7 +53,7 @@ export function DatabaseDeploymentsList({
 
 							<div className="flex shrink-0 items-center gap-3">
 								<span
-									className={`rounded border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusBadge(e)}`}>
+									className={`rounded  px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusBadge(e)}`}>
 									{e.status || 'DEPLOYED'}
 								</span>
 								<span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
@@ -67,7 +67,7 @@ export function DatabaseDeploymentsList({
 									size="sm"
 									variant="outline"
 									onClick={() => onOpenLogs(e.id)}
-									className="flex h-7 items-center gap-1 rounded-lg border-border px-2 text-xs font-semibold text-foreground hover:bg-muted">
+									className="flex h-7 items-center gap-1 rounded-lg  px-2 text-xs font-semibold text-foreground hover:bg-muted">
 									<Terminal className="h-3 w-3" /> Stream Logs
 								</Button>
 

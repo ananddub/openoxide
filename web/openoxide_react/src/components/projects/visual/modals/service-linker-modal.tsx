@@ -120,7 +120,7 @@ export function ServiceLinkerModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="border-border bg-card shadow-xl sm:max-w-md">
+			<DialogContent className="border- bg-card shadow-xl sm:max-w-md">
 				<DialogHeader>
 					<div className="mb-1 flex items-center gap-2 text-xs font-bold tracking-wider text-primary uppercase">
 						<Zap className="h-4 w-4 text-amber-500" />
@@ -136,9 +136,9 @@ export function ServiceLinkerModal({
 				</DialogHeader>
 
 				{/* Visual Connection Badge Row */}
-				<div className="my-2 flex items-center justify-between gap-3 rounded-xl border border-border/40 bg-muted/30 p-3">
+				<div className="my-2 flex items-center justify-between gap-3 rounded-xl bg-muted/30 p-3">
 					<div className="flex min-w-0 items-center gap-2">
-						<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
+						<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10">
 							<Box className="h-3.5 w-3.5 text-primary" />
 						</div>
 						<span className="truncate text-xs font-bold text-foreground">
@@ -149,7 +149,7 @@ export function ServiceLinkerModal({
 					<ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
 
 					<div className="flex min-w-0 items-center gap-2">
-						<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-500/10">
+						<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
 							<Database className="h-3.5 w-3.5 text-emerald-500" />
 						</div>
 						<span className="truncate text-xs font-bold text-foreground">
@@ -165,7 +165,7 @@ export function ServiceLinkerModal({
 						Auto-Generated Environment Variables:
 					</span>
 
-					<div className="divide-y divide-border/60 rounded-lg border border-border bg-muted/20">
+					<div className="divide-y divide-border/60 rounded-lg bg-muted/20">
 						{envs.map((env, idx) => (
 							<div
 								key={env.key}

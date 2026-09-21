@@ -27,6 +27,11 @@ entryPoints:
         certResolver: letsencrypt
 api:
   insecure: true
+# Per-service request counters for the Traffic view. Scraped by the panel on
+# the same insecure API port (:8080/metrics); no request payloads are stored.
+metrics:
+  prometheus:
+    addRoutersLabels: true
 certificatesResolvers:
   letsencrypt:
     acme:
@@ -65,6 +70,8 @@ mod tests {
         assert!(yaml.contains("network: \"openoxide-network\""));
         assert!(yaml.contains("address: \":8080\""));
         assert!(yaml.contains("email: \"ops@example.com\""));
+        assert!(yaml.contains("metrics:"));
+        assert!(yaml.contains("prometheus:"));
         assert!(default_middlewares().contains("redirect-to-https"));
     }
 }

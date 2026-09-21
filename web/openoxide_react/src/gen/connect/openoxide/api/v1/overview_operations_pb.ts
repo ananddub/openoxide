@@ -11,7 +11,7 @@ import { file_openoxide_api_v1_common } from "./common_pb";
  * Describes the file openoxide/api/v1/overview_operations.proto.
  */
 export const file_openoxide_api_v1_overview_operations: GenFile = /*@__PURE__*/
-  fileDesc("CipvcGVub3hpZGUvYXBpL3YxL292ZXJ2aWV3X29wZXJhdGlvbnMucHJvdG8SEG9wZW5veGlkZS5hcGkudjEyjQUKGU92ZXJ2aWV3T3BlcmF0aW9uc1NlcnZpY2USYwoYTGlzdE9yZ2FuaXphdGlvblNlcnZpY2VzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJrCh5TdHJlYW1MaXN0T3JnYW5pemF0aW9uU2VydmljZXMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlMAESYgoXTGlzdE9yZ2FuaXphdGlvbkRvbWFpbnMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlEmoKHVN0cmVhbUxpc3RPcmdhbml6YXRpb25Eb21haW5zEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZTABEmIKF0xpc3RPcmdhbml6YXRpb25CYWNrdXBzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJqCh1TdHJlYW1MaXN0T3JnYW5pemF0aW9uQmFja3VwcxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2UwAWIGcHJvdG8z", [file_openoxide_api_v1_common]);
+  fileDesc("CipvcGVub3hpZGUvYXBpL3YxL292ZXJ2aWV3X29wZXJhdGlvbnMucHJvdG8SEG9wZW5veGlkZS5hcGkudjEyyAIKGU92ZXJ2aWV3T3BlcmF0aW9uc1NlcnZpY2USYwoYTGlzdE9yZ2FuaXphdGlvblNlcnZpY2VzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJiChdMaXN0T3JnYW5pemF0aW9uRG9tYWlucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USYgoXTGlzdE9yZ2FuaXphdGlvbkJhY2t1cHMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlYgZwcm90bzM", [file_openoxide_api_v1_common]);
 
 /**
  * @generated from service openoxide.api.v1.OverviewOperationsService
@@ -26,14 +26,6 @@ export const OverviewOperationsService: GenService<{
     output: typeof ResourceListResponseSchema;
   },
   /**
-   * @generated from rpc openoxide.api.v1.OverviewOperationsService.StreamListOrganizationServices
-   */
-  streamListOrganizationServices: {
-    methodKind: "server_streaming";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
    * @generated from rpc openoxide.api.v1.OverviewOperationsService.ListOrganizationDomains
    */
   listOrganizationDomains: {
@@ -42,26 +34,10 @@ export const OverviewOperationsService: GenService<{
     output: typeof ResourceListResponseSchema;
   },
   /**
-   * @generated from rpc openoxide.api.v1.OverviewOperationsService.StreamListOrganizationDomains
-   */
-  streamListOrganizationDomains: {
-    methodKind: "server_streaming";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
    * @generated from rpc openoxide.api.v1.OverviewOperationsService.ListOrganizationBackups
    */
   listOrganizationBackups: {
     methodKind: "unary";
-    input: typeof ResourceQuerySchema;
-    output: typeof ResourceListResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.OverviewOperationsService.StreamListOrganizationBackups
-   */
-  streamListOrganizationBackups: {
-    methodKind: "server_streaming";
     input: typeof ResourceQuerySchema;
     output: typeof ResourceListResponseSchema;
   },

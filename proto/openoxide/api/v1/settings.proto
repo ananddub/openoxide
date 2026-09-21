@@ -5,6 +5,5 @@ import "openoxide/api/v1/common.proto";
 
 service SettingsService {
   rpc GetSettings(Empty) returns (ResourceResponse);
-  rpc StreamGetSettings(Empty) returns (stream ResourceResponse);
   rpc UpdateSettings(ResourceRequest) returns (ResourceResponse);
 }

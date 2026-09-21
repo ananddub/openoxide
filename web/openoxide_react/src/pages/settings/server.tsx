@@ -1,8 +1,18 @@
-import {useEffect, useState, type ReactNode} from 'react';
-import {createFileRoute} from '@tanstack/react-router';
-import {Activity, Container, HardDrive, RotateCw, Save, Server} from 'lucide-react';
+import {useEffect, useState, type ComponentType, type ReactNode} from 'react';
+import {
+	Activity,
+	BadgeCheck,
+	Container,
+	HardDrive,
+	RotateCw,
+	Save,
+	Server,
+	Shield,
+	Sparkles,
+	Trash2,
+	Wrench,
+} from 'lucide-react';
 import {toast} from 'sonner';
-import {Badge} from '#/components/ui/badge';
 import {Button} from '#/components/ui/button';
 import {Checkbox} from '#/components/ui/checkbox';
 import {Input} from '#/components/ui/input';
@@ -25,10 +35,9 @@ import {
 } from '#/api/live';
 import {useTraefikHealth} from '#/api/live/traefik';
 import {usePermissions} from '#/hooks/use-permissions';
+import {ResourceGuideCard} from '#/components/shared/resource-sidebar';
 
-export const Route = createFileRoute('/_app/settings/server')({
-	component: WebServerSettingsPage,
-});
+// Rendered as the "Web Server" tab of pages/infra.tsx — no standalone route.
 
 type CertType = 'None' | 'Letsencrypt' | 'Custom';
 
@@ -54,7 +63,7 @@ const EMPTY_FORM: SettingsForm = {
 	log_cleanup_cron: '',
 };
 
-function WebServerSettingsPage() {
+export function WebServerSettingsPage() {
 	const {can} = usePermissions();
 	const canManage = can('org:write');
 	const canSeeHost = can('server:read');
@@ -97,7 +106,10 @@ function WebServerSettingsPage() {
 		});
 	}, [settingsQuery.data, dirty]);
 
-	const set = <K extends keyof SettingsForm>(key: K, value: SettingsForm[K]) => {
+	const set = <K extends keyof SettingsForm>(
+		key: K,
+		value: SettingsForm[K],
+	) => {
 		setDirty(true);
 		setForm(prev => ({...prev, [key]: value}));
 	};
@@ -112,11 +124,17 @@ function WebServerSettingsPage() {
 			toast.error('Host must not contain whitespace');
 			return;
 		}
-		if (form.certificate_type === 'Letsencrypt' && !form.lets_encrypt_email.includes('@')) {
+		if (
+			form.certificate_type === 'Letsencrypt' &&
+			!form.lets_encrypt_email.includes('@')
+		) {
 			toast.error('Letsencrypt requires a valid email');
 			return;
 		}
-		if (form.certificate_type === 'Custom' && !form.custom_cert_resolver.trim()) {
+		if (
+			form.certificate_type === 'Custom' &&
+			!form.custom_cert_resolver.trim()
+		) {
 			toast.error('Custom certificate requires a resolver name');
 			return;
 		}
@@ -162,293 +180,385 @@ function WebServerSettingsPage() {
 		);
 	};
 
+	const reclaimable = (diskQuery.data ?? []).reduce((sum, row) => {
+		const match = /^([\d.]+)([kMG]?)B?$/.exec(row.Reclaimable?.trim() ?? '');
+		if (!match) return sum;
+		const mult = {k: 1e3, M: 1e6, G: 1e9}[match[2]] ?? 1;
+		return sum + Number(match[1]) * mult;
+	}, 0);
+
 	return (
-		<div className="mx-auto flex w-full max-w-7xl animate-in flex-col gap-6 p-6 duration-200 fade-in">
-			<div className="flex flex-col gap-1">
-				<h1 className="text-2xl font-bold tracking-tight text-foreground">
-					Web Server
-				</h1>
-				<p className="text-xs text-muted-foreground">
-					Panel instance health, host web server configuration, and local
-					Docker maintenance.
-				</p>
-			</div>
-
-			{/* Live status cards */}
-			<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-				<StatusCard
-					icon={<Activity className="size-5" />}
-					title="Panel Engine"
-					subtitle="Axum · Tokio · SQLite"
-					gated={can('org:read')}
-					loading={healthQuery.isPending}
-					ok={healthQuery.data?.success === true}
-					okLabel="ONLINE"
-					badLabel="DEGRADED"
-					detail={
-						healthQuery.data && !healthQuery.data.success
-							? (healthQuery.data.message ?? 'unhealthy')
-							: undefined
-					}
-					onRetry={() => void healthQuery.refetch()}
-				/>
-				<StatusCard
-					icon={<Server className="size-5" />}
-					title="Reverse Proxy"
-					subtitle="Traefik v3"
-					gated={can('traefik:read')}
-					loading={traefikQuery.isPending}
-					ok={traefikQuery.data?.is_healthy === true}
-					okLabel="ACTIVE"
-					badLabel="UNREACHABLE"
-					detail={
-						traefikQuery.data && !traefikQuery.data.is_healthy
-							? (traefikQuery.data.configuration_errors?.join(', ') ??
-								traefikQuery.data.rawdata_status)
-							: undefined
-					}
-					onRetry={() => void traefikQuery.refetch()}
-				/>
-				<StatusCard
-					icon={<HardDrive className="size-5" />}
-					title="Database Storage"
-					subtitle="SQLite WAL mode"
-					gated={can('org:read')}
-					loading={healthQuery.isPending}
-					ok={
-						healthQuery.data !== undefined &&
-						!/database/.test(healthQuery.data.message ?? '')
-					}
-					okLabel="HEALTHY"
-					badLabel="UNHEALTHY"
-					onRetry={() => void healthQuery.refetch()}
-				/>
-			</div>
-
-			{/* Instance settings form */}
-			{canManage ? (
-				<div className="rounded-xl border bg-card">
-					<div className="border-b px-5 py-4">
-						<h3 className="text-sm font-bold">Host Configuration</h3>
-						<p className="text-xs text-muted-foreground">
-							Panel address, HTTPS, and certificate issuance used when
-							exposing deployments.
-						</p>
-					</div>
-					<div className="grid gap-4 p-5 md:grid-cols-2">
-						<Field label="Server IP" hint="IPv4/IPv6 of this host">
-							<Input
-								value={form.server_ip}
-								onChange={e => set('server_ip', e.target.value)}
-								placeholder="203.0.113.10"
-							/>
-						</Field>
-						<Field label="Panel Host" hint="Domain the panel is served on">
-							<Input
-								value={form.host}
-								onChange={e => set('host', e.target.value)}
-								placeholder="panel.example.com"
-							/>
-						</Field>
-						<div className="flex items-center justify-between rounded-lg border px-4 py-3">
-							<div>
-								<p className="text-sm font-semibold">HTTPS</p>
-								<p className="text-xs text-muted-foreground">
-									Serve the panel over TLS
-								</p>
-							</div>
-							<Switch
-								checked={form.https}
-								onCheckedChange={checked => set('https', checked)}
-							/>
-						</div>
-						<Field label="Certificate Type">
-							<Select
-								value={form.certificate_type}
-								onValueChange={value =>
-									value &&
-									set('certificate_type', value as CertType)
-								}>
-								<SelectTrigger>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="None">None</SelectItem>
-									<SelectItem value="Letsencrypt">
-										Letsencrypt
-									</SelectItem>
-									<SelectItem value="Custom">Custom</SelectItem>
-								</SelectContent>
-							</Select>
-						</Field>
-						{form.certificate_type === 'Letsencrypt' && (
-							<Field label="Letsencrypt Email" hint="Used for expiry notices">
-								<Input
-									type="email"
-									value={form.lets_encrypt_email}
-									onChange={e =>
-										set('lets_encrypt_email', e.target.value)
+		<div className="flex w-full flex-col gap-6">
+			{/* ── Content grid + right rail ── */}
+			<div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+				<div className="flex min-w-0 flex-col gap-6">
+					{/* Instance settings */}
+					{canManage ? (
+						<div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border/50">
+							<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
+								<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
+									<Shield className="size-[18px] text-muted-foreground" />
+								</div>
+								<div className="min-w-0 flex-1">
+									<h3 className="text-[15px] font-semibold text-foreground">
+										Host Configuration
+									</h3>
+									<p className="text-xs text-muted-foreground">
+										How this panel is addressed, secured, and kept tidy.
+									</p>
+								</div>
+								<Button
+									size="sm"
+									onClick={handleSave}
+									disabled={
+										updateMutation.isPending || settingsQuery.isLoading
 									}
-									placeholder="admin@example.com"
-								/>
-							</Field>
-						)}
-						{form.certificate_type === 'Custom' && (
-							<Field label="Custom Resolver" hint="Traefik cert resolver name">
-								<Input
-									value={form.custom_cert_resolver}
-									onChange={e =>
-										set('custom_cert_resolver', e.target.value)
-									}
-									placeholder="my-resolver"
-								/>
-							</Field>
-						)}
-						<Field label="Log Cleanup Cron" hint="Blank disables the schedule">
-							<Input
-								value={form.log_cleanup_cron}
-								onChange={e => set('log_cleanup_cron', e.target.value)}
-								placeholder="0 4 * * *"
-							/>
-						</Field>
-						<div className="flex items-center justify-between rounded-lg border px-4 py-3">
-							<div>
-								<p className="text-sm font-semibold">
-									Docker Cleanup Schedule
-								</p>
-								<p className="text-xs text-muted-foreground">
-									Periodically prune unused images/containers
-								</p>
+									className="h-9 shrink-0 cursor-pointer gap-2 px-4 text-xs font-semibold">
+									<Save className="size-3.5" />
+									{updateMutation.isPending ? 'Saving…' : 'Save Settings'}
+								</Button>
 							</div>
-							<Switch
-								checked={form.enable_docker_cleanup}
-								onCheckedChange={checked =>
-									set('enable_docker_cleanup', checked)
-								}
-							/>
-						</div>
-					</div>
-					<div className="flex justify-end border-t px-5 py-4">
-						<Button
-							onClick={handleSave}
-							disabled={updateMutation.isPending || settingsQuery.isLoading}
-							className="gap-2">
-							<Save className="size-4" />
-							{updateMutation.isPending ? 'Saving…' : 'Save Settings'}
-						</Button>
-					</div>
-				</div>
-			) : (
-				<p className="rounded-lg border border-dashed px-4 py-3 text-xs text-muted-foreground">
-					Host configuration is managed by the organization owner
-					(requires org:write).
-				</p>
-			)}
+							<div className="space-y-6 p-5">
+								{/* Panel address */}
+								<section className="flex flex-col gap-3">
+									<SectionLabel icon={Server}>
+										Panel Address
+									</SectionLabel>
+									<div className="grid gap-4 sm:grid-cols-2">
+										<Field
+											label="Server IP"
+											hint="IPv4/IPv6 of this host">
+											<Input
+												value={form.server_ip}
+												onChange={e => set('server_ip', e.target.value)}
+												placeholder="203.0.113.10"
+												className="h-9 font-mono text-xs"
+											/>
+										</Field>
+										<Field
+											label="Panel Host"
+											hint="Domain the panel is served on">
+											<Input
+												value={form.host}
+												onChange={e => set('host', e.target.value)}
+												placeholder="panel.example.com"
+												className="h-9 font-mono text-xs"
+											/>
+										</Field>
+									</div>
+								</section>
 
-			{/* Docker disk usage + prune */}
-			{canSeeHost && (
-				<div className="rounded-xl border bg-card">
-					<div className="flex items-center justify-between border-b px-5 py-4">
-						<div>
-							<h3 className="flex items-center gap-2 text-sm font-bold">
-								<Container className="size-4" />
-								Docker Disk Usage
-							</h3>
-							<p className="text-xs text-muted-foreground">
-								`docker system df` on this host
-							</p>
-						</div>
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => void diskQuery.refetch()}
-							className="gap-1.5">
-							<RotateCw
-								className={`size-3.5 ${diskQuery.isFetching ? 'animate-spin' : ''}`}
-							/>
-							Refresh
-						</Button>
-					</div>
-					{diskQuery.isLoading ? (
-						<div className="space-y-2 p-5">
-							<Skeleton className="h-8 w-full" />
-							<Skeleton className="h-8 w-full" />
-							<Skeleton className="h-8 w-full" />
+								{/* TLS */}
+								<section className="flex flex-col gap-3">
+									<SectionLabel icon={BadgeCheck}>
+										TLS &amp; Certificates
+									</SectionLabel>
+									<div className="flex items-center justify-between gap-3 rounded-xl bg-muted/20 px-4 py-3 ring-1 ring-border/40">
+										<div className="min-w-0">
+											<p className="text-[13px] font-medium text-foreground">
+												HTTPS
+											</p>
+											<p className="mt-0.5 text-xs text-muted-foreground">
+												Serve the panel over TLS
+											</p>
+										</div>
+										<Switch
+											checked={form.https}
+											onCheckedChange={checked => set('https', checked)}
+										/>
+									</div>
+									<div className="grid gap-4 sm:grid-cols-2">
+										<Field label="Certificate Type">
+											<Select
+												value={form.certificate_type}
+												onValueChange={value =>
+													value && set('certificate_type', value as CertType)
+												}>
+												<SelectTrigger className="h-9 text-xs">
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="None">None</SelectItem>
+													<SelectItem value="Letsencrypt">
+														Letsencrypt
+													</SelectItem>
+													<SelectItem value="Custom">Custom</SelectItem>
+												</SelectContent>
+											</Select>
+										</Field>
+										{form.certificate_type === 'Letsencrypt' && (
+											<Field
+												label="Letsencrypt Email"
+												hint="Used for expiry notices">
+												<Input
+													type="email"
+													value={form.lets_encrypt_email}
+													onChange={e =>
+														set('lets_encrypt_email', e.target.value)
+													}
+													placeholder="admin@example.com"
+													className="h-9 text-xs"
+												/>
+											</Field>
+										)}
+										{form.certificate_type === 'Custom' && (
+											<Field
+												label="Custom Resolver"
+												hint="Traefik cert resolver name">
+												<Input
+													value={form.custom_cert_resolver}
+													onChange={e =>
+														set('custom_cert_resolver', e.target.value)
+													}
+													placeholder="my-resolver"
+													className="h-9 font-mono text-xs"
+												/>
+											</Field>
+										)}
+									</div>
+								</section>
+
+								{/* Maintenance */}
+								<section className="flex flex-col gap-3">
+									<SectionLabel icon={Wrench}>Maintenance</SectionLabel>
+									<div className="grid gap-4 sm:grid-cols-2">
+										<Field
+											label="Log Cleanup Cron"
+											hint="Blank disables the schedule">
+											<Input
+												value={form.log_cleanup_cron}
+												onChange={e =>
+													set('log_cleanup_cron', e.target.value)
+												}
+												placeholder="0 4 * * *"
+												className="h-9 font-mono text-xs"
+											/>
+										</Field>
+										<div className="flex items-center justify-between gap-3 rounded-xl bg-muted/20 px-4 py-3 ring-1 ring-border/40">
+											<div className="min-w-0">
+												<p className="text-[13px] font-medium text-foreground">
+													Docker Cleanup
+												</p>
+												<p className="mt-0.5 text-xs text-muted-foreground">
+													Periodically prune unused images/containers
+												</p>
+											</div>
+											<Switch
+												checked={form.enable_docker_cleanup}
+												onCheckedChange={checked =>
+													set('enable_docker_cleanup', checked)
+												}
+											/>
+										</div>
+									</div>
+								</section>
+							</div>
 						</div>
 					) : (
-						<table className="w-full text-xs">
-							<thead>
-								<tr className="border-b text-left text-muted-foreground">
-									<th className="px-5 py-2 font-medium">Type</th>
-									<th className="px-2 py-2 font-medium">Count</th>
-									<th className="px-2 py-2 font-medium">Active</th>
-									<th className="px-2 py-2 font-medium">Size</th>
-									<th className="px-2 py-2 font-medium">
-										Reclaimable
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								{(diskQuery.data ?? []).map(row => (
-									<tr
-										key={row.Type}
-										className="border-b border-border/40 last:border-0">
-										<td className="px-5 py-2 font-semibold">
-											{row.Type}
-										</td>
-										<td className="px-2 py-2">{row.TotalCount}</td>
-										<td className="px-2 py-2">{row.Active}</td>
-										<td className="px-2 py-2">{row.Size}</td>
-										<td className="px-2 py-2 text-amber-600 dark:text-amber-500">
-											{row.Reclaimable}
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
+						<p className="rounded-xl bg-card px-4 py-3 text-xs text-muted-foreground ring-1 ring-border/50">
+							Host configuration is managed by the organization owner
+							(requires org:write).
+						</p>
 					)}
-					{can('server:create') && (
-						<div className="flex flex-wrap items-center gap-4 border-t px-5 py-4">
-							<span className="text-xs font-semibold text-muted-foreground">
-								Prune:
-							</span>
-							{(
-								[
-									['containers', 'Containers'],
-									['images', 'Images'],
-									['networks', 'Networks'],
-									['volumes', 'Volumes'],
-								] as const
-							).map(([key, label]) => (
-								<label
-									key={key}
-									className="flex items-center gap-2 text-xs">
-									<Checkbox
-										checked={prune[key]}
-										onCheckedChange={checked =>
-											setPrune(prev => ({
-												...prev,
-												[key]: checked === true,
-											}))
-										}
+
+					{/* Docker disk usage + prune */}
+					{canSeeHost && (
+						<div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border/50">
+							<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
+								<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
+									<Container className="size-[18px] text-muted-foreground" />
+								</div>
+								<div className="min-w-0 flex-1">
+									<h3 className="text-[15px] font-semibold text-foreground">
+										Docker Disk Usage
+									</h3>
+									<p className="text-xs text-muted-foreground">
+										{'`docker system df`'} on this host
+										{reclaimable > 0 && (
+											<span className="text-amber-500">
+												{' · '}
+												{formatBytes(reclaimable)} reclaimable
+											</span>
+										)}
+									</p>
+								</div>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => void diskQuery.refetch()}
+									className="h-8 shrink-0 cursor-pointer gap-1.5 text-xs">
+									<RotateCw
+										className={`size-3.5 ${diskQuery.isFetching ? 'animate-spin' : ''}`}
 									/>
-									{label}
-								</label>
-							))}
-							<Button
-								size="sm"
-								variant="destructive"
-								onClick={handlePrune}
-								disabled={
-									pruneMutation.isPending ||
-									!Object.values(prune).some(Boolean)
-								}>
-								{pruneMutation.isPending ? 'Pruning…' : 'Run Prune'}
-							</Button>
+									Refresh
+								</Button>
+							</div>
+							{diskQuery.isLoading ? (
+								<div className="space-y-2 p-5">
+									<Skeleton className="h-8 w-full" />
+									<Skeleton className="h-8 w-full" />
+									<Skeleton className="h-8 w-full" />
+								</div>
+							) : (
+								<table className="w-full text-xs">
+									<thead>
+										<tr className="border-b border-border/50 text-left text-muted-foreground">
+											<th className="px-5 py-2.5 font-medium">Type</th>
+											<th className="px-2 py-2.5 font-medium">Count</th>
+											<th className="px-2 py-2.5 font-medium">Active</th>
+											<th className="px-2 py-2.5 font-medium">Size</th>
+											<th className="px-5 py-2.5 text-right font-medium">
+												Reclaimable
+											</th>
+										</tr>
+									</thead>
+									<tbody>
+										{(diskQuery.data ?? []).map(row => (
+											<tr
+												key={row.Type}
+												className="border-b border-border/40 last:border-0">
+												<td className="px-5 py-2.5 font-semibold">
+													{row.Type}
+												</td>
+												<td className="px-2 py-2.5 tabular-nums">
+													{row.TotalCount}
+												</td>
+												<td className="px-2 py-2.5 tabular-nums">
+													{row.Active}
+												</td>
+												<td className="px-2 py-2.5 tabular-nums">
+													{row.Size}
+												</td>
+												<td className="px-5 py-2.5 text-right tabular-nums text-amber-600 dark:text-amber-500">
+													{row.Reclaimable}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							)}
+							{can('server:create') && (
+								<div className="flex flex-wrap items-center gap-4 border-t border-border/50 bg-muted/10 px-5 py-3.5">
+									<span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+										<Trash2 className="size-3.5" />
+										Prune:
+									</span>
+									{(
+										[
+											['containers', 'Containers'],
+											['images', 'Images'],
+											['networks', 'Networks'],
+											['volumes', 'Volumes'],
+										] as const
+									).map(([key, label]) => (
+										<label
+											key={key}
+											className="flex cursor-pointer items-center gap-2 text-xs text-foreground/80">
+											<Checkbox
+												checked={prune[key]}
+												onCheckedChange={checked =>
+													setPrune(prev => ({
+														...prev,
+														[key]: checked === true,
+													}))
+												}
+											/>
+											{label}
+										</label>
+									))}
+									<Button
+										size="sm"
+										variant="destructive"
+										onClick={handlePrune}
+										disabled={
+											pruneMutation.isPending ||
+											!Object.values(prune).some(Boolean)
+										}
+										className="ml-auto h-8 cursor-pointer text-xs">
+										{pruneMutation.isPending ? 'Pruning…' : 'Run Prune'}
+									</Button>
+								</div>
+							)}
 						</div>
 					)}
 				</div>
-			)}
+
+				{/* ── Right rail ── */}
+				<div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
+					<div className="overflow-hidden rounded-2xl bg-card ring-1 ring-border/50">
+						<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
+							<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
+								<Activity className="size-[18px] text-muted-foreground" />
+							</div>
+							<div className="min-w-0">
+								<h2 className="truncate text-[15px] font-semibold text-foreground">
+									Live Health
+								</h2>
+								<p className="text-xs text-muted-foreground">
+									Services backing this page
+								</p>
+							</div>
+						</div>
+						<div className="divide-y divide-border/40 px-5">
+							<HealthRow
+								icon={Activity}
+								title="Panel Engine"
+								subtitle="Axum · Tokio · SQLite"
+								gated={can('org:read')}
+								loading={healthQuery.isPending}
+								ok={healthQuery.data?.success === true}
+								okLabel="Online"
+								badLabel="Degraded"
+								onRetry={() => void healthQuery.refetch()}
+							/>
+							<HealthRow
+								icon={Server}
+								title="Reverse Proxy"
+								subtitle="Traefik v3"
+								gated={can('traefik:read')}
+								loading={traefikQuery.isPending}
+								ok={traefikQuery.data?.is_healthy === true}
+								okLabel="Active"
+								badLabel="Unreachable"
+								onRetry={() => void traefikQuery.refetch()}
+							/>
+							<HealthRow
+								icon={HardDrive}
+								title="Database Storage"
+								subtitle="SQLite WAL mode"
+								gated={can('org:read')}
+								loading={healthQuery.isPending}
+								ok={
+									healthQuery.data !== undefined &&
+									!/database/.test(healthQuery.data.message ?? '')
+								}
+								okLabel="Healthy"
+								badLabel="Unhealthy"
+								onRetry={() => void healthQuery.refetch()}
+							/>
+						</div>
+					</div>
+
+					<ResourceGuideCard
+						title="How serving works"
+						icon={Sparkles}
+						steps={[
+							{
+								title: 'Traefik routes everything',
+								text: 'Domains you attach to apps, compose stacks and databases are routed automatically — no nginx config.',
+							},
+							{
+								title: 'Certificates are per-domain',
+								text: 'Letsencrypt issues and renews TLS for each domain; Custom defers to a resolver you manage in Traefik.',
+							},
+							{
+								title: 'Cleanup keeps the host healthy',
+								text: 'Scheduled pruning stops unused images and logs from eating the disk. Run it manually any time.',
+							},
+						]}
+					/>
+				</div>
+			</div>
 		</div>
 	);
 }
@@ -460,63 +570,72 @@ function isIpAddress(value: string): boolean {
 	return ipv4 || value.includes(':');
 }
 
-function StatusCard(props: {
-	icon: ReactNode;
+function formatBytes(bytes: number): string {
+	if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
+	if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
+	return `${Math.round(bytes / 1e3)} kB`;
+}
+
+function SectionLabel({
+	icon: Icon,
+	children,
+}: {
+	icon: ComponentType<{className?: string}>;
+	children: ReactNode;
+}) {
+	return (
+		<p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+			<Icon className="size-3.5" />
+			{children}
+		</p>
+	);
+}
+
+function HealthRow(props: {
+	icon: ComponentType<{className?: string}>;
 	title: string;
 	subtitle: string;
 	loading: boolean;
 	ok: boolean;
 	okLabel: string;
 	badLabel: string;
-	detail?: string;
-	/** False when the underlying query is permission-disabled. */
 	gated?: boolean;
 	onRetry: () => void;
 }) {
+	const Icon = props.icon;
 	return (
-		<div className="flex flex-col gap-3 rounded-xl border bg-card p-5">
-			<div className="flex items-center gap-3">
-				<div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-					{props.icon}
-				</div>
-				<div>
-					<h3 className="text-sm font-bold text-foreground">
-						{props.title}
-					</h3>
-					<p className="text-[10px] text-muted-foreground">
-						{props.subtitle}
-					</p>
-				</div>
+		<div className="flex items-center gap-3 py-3">
+			<div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/60">
+				<Icon className="size-4 text-muted-foreground" />
 			</div>
-			<div className="flex items-center justify-between border-t border-border/40 pt-3">
-				<span className="max-w-[70%] truncate text-xs text-muted-foreground">
-					{props.detail ?? 'Status'}
+			<div className="min-w-0 flex-1">
+				<p className="truncate text-[13px] font-medium text-foreground">
+					{props.title}
+				</p>
+				<p className="truncate text-[11px] text-muted-foreground">
+					{props.subtitle}
+				</p>
+			</div>
+			{props.loading ? (
+				<Skeleton className="h-5 w-14 shrink-0 rounded-full" />
+			) : props.gated === false ? (
+				<span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+					No access
 				</span>
-				{props.loading ? (
-					<Skeleton className="h-5 w-16" />
-				) : props.gated === false ? (
-					<Badge variant="secondary" className="text-[10px] font-bold">
-						NO ACCESS
-					</Badge>
-				) : (
-					<Badge
-						variant={props.ok ? 'default' : 'destructive'}
-						className={
-							props.ok
-								? 'bg-emerald-500 text-[10px] font-bold'
-								: 'text-[10px] font-bold'
-						}>
-						{props.ok ? props.okLabel : props.badLabel}
-					</Badge>
-				)}
-			</div>
-			{props.gated !== false && (
-				<button
-					type="button"
+			) : (
+				<span
+					title={`${props.ok ? props.okLabel : props.badLabel} — click to re-check`}
 					onClick={props.onRetry}
-					className="text-left text-[10px] text-muted-foreground underline-offset-2 hover:underline">
-					Re-check
-				</button>
+					className={`inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-opacity hover:opacity-80 ${
+						props.ok
+							? 'bg-emerald-500/10 text-emerald-500'
+							: 'bg-rose-500/10 text-rose-500'
+					}`}>
+					<span
+						className={`size-1.5 rounded-full ${props.ok ? 'bg-emerald-500' : 'bg-rose-500'}`}
+					/>
+					{props.ok ? props.okLabel : props.badLabel}
+				</span>
 			)}
 		</div>
 	);

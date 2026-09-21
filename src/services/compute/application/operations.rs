@@ -18,6 +18,7 @@ impl ApplicationService {
         &self,
         id: i64,
         operation: ApplicationOperation,
+        actor_id: i64,
     ) -> sqlx::Result<ApplicationOperationResult> {
         // Param is generated as a string bind (json_each inference quirk).
         if self
@@ -68,6 +69,7 @@ impl ApplicationService {
                             operation: operation.as_str().to_string(),
                             service_id: id,
                             server_id,
+                            user_id: actor_id,
                         },
                     )
                     .await?
@@ -80,6 +82,7 @@ impl ApplicationService {
                         log_path,
                         operation: operation.as_str().to_string(),
                         service_id: id,
+                        user_id: actor_id,
                     })
                     .await?
             }

@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {createFileRoute} from '@tanstack/react-router';
+import {createFileRoute, useNavigate} from '@tanstack/react-router';
 import {
 	useRemoteServerList,
 	useRemoteServerActivate,
@@ -10,9 +10,9 @@ import {RemoteServersHeader} from '#/components/remote-servers/remote-servers-he
 import {RemoteServersList} from '#/components/remote-servers/remote-servers-list';
 import {CreateServerModal} from '#/components/remote-servers/create-server-modal';
 import {SetupServerModal} from '#/components/remote-servers/setup-server-modal';
+import {MigrateServerModal} from '#/components/remote-servers/migrate-server-modal';
 import {DeleteServerModal} from '#/components/remote-servers/delete-server-modal';
-import {TerminalModal} from '#/components/projects/common/terminal-modal';
-import {PrivateNetworkModal} from '#/components/remote-servers/private-network';
+import {TerminalCard} from '#/components/shared/terminal-card';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 
@@ -26,6 +26,7 @@ export const Route = createFileRoute('/_app/remote-servers')({
 });
 
 function RemoteServersPage() {
+	const navigate = useNavigate();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [editingServer, setEditingServer] =
 		useState<RemoteServerResponse | null>(null);
@@ -35,7 +36,7 @@ function RemoteServersPage() {
 		useState<RemoteServerResponse | null>(null);
 	const [terminalServer, setTerminalServer] =
 		useState<RemoteServerResponse | null>(null);
-	const [privateNetworkServer, setPrivateNetworkServer] =
+	const [migratingServer, setMigratingServer] =
 		useState<RemoteServerResponse | null>(null);
 
 	// Live servers query; the table-watch stream keeps it fresh.
@@ -67,12 +68,9 @@ function RemoteServersPage() {
 	};
 
 	return (
-		<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 pb-12">
+		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
 			<RemoteServersHeader
-				onOpenCreate={() => {
-					setEditingServer(null);
-					setIsCreateOpen(true);
-				}}
+				onOpenCreate={() => void navigate({to: '/remote-servers/new'})}
 				onRefresh={() => {}}
 				isRefetching={false}
 				servers={servers}
@@ -80,8 +78,8 @@ function RemoteServersPage() {
 
 			<RemoteServersList
 				servers={servers}
-				sshKeys={sshKeys}
 				isLoading={isServersLoading}
+				onAddServer={() => void navigate({to: '/remote-servers/new'})}
 				onEditServer={server => {
 					setEditingServer(server);
 					setIsCreateOpen(true);
@@ -90,7 +88,7 @@ function RemoteServersPage() {
 				onSetupServer={server => setSetupServer(server)}
 				onToggleStatus={handleToggleStatus}
 				onOpenTerminal={server => setTerminalServer(server)}
-				onPrivateNetwork={server => setPrivateNetworkServer(server)}
+				onMigrateServer={server => setMigratingServer(server)}
 			/>
 
 			<CreateServerModal
@@ -110,6 +108,13 @@ function RemoteServersPage() {
 				onClose={() => setSetupServer(null)}
 			/>
 
+			<MigrateServerModal
+				isOpen={!!migratingServer}
+				server={migratingServer}
+				servers={servers}
+				onClose={() => setMigratingServer(null)}
+			/>
+
 			<DeleteServerModal
 				isOpen={!!deletingServer}
 				server={deletingServer}
@@ -117,23 +122,20 @@ function RemoteServersPage() {
 				onSuccess={() => {}}
 			/>
 
-			<TerminalModal
-				app={{
-					app_name:
-						terminalServer?.ip_address || terminalServer?.name || 'server',
-					name: terminalServer?.name || 'Remote Server',
-					server_id: terminalServer?.id,
-					isRemoteServer: true,
-				}}
-				open={!!terminalServer}
-				onClose={() => setTerminalServer(null)}
-			/>
+			{terminalServer && (
+				<TerminalCard
+					app={{
+						app_name:
+							terminalServer.ip_address || terminalServer.name || 'server',
+						name: terminalServer.name || 'Remote Server',
+						server_id: terminalServer.id,
+						isRemoteServer: true,
+					}}
+					enabled={true}
+					onClose={() => setTerminalServer(null)}
+				/>
+			)}
 
-			<PrivateNetworkModal
-				open={!!privateNetworkServer}
-				server={privateNetworkServer}
-				onClose={() => setPrivateNetworkServer(null)}
-			/>
 		</div>
 	);
 }

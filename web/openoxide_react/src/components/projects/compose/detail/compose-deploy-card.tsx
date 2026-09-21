@@ -191,7 +191,7 @@ export function ComposeDeployCard({
 	const isProcessing = activeLoading !== null || !!pendingMutationAction;
 
 	return (
-		<section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+		<section className="flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm">
 			<h3 className="text-sm font-bold text-foreground">
 				Deploy Settings
 			</h3>

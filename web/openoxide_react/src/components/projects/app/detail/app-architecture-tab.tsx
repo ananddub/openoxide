@@ -17,7 +17,7 @@ import {ComposeVisualizer} from '#/components/projects/compose/visualizer/compos
 import {ComposeDomainModal} from '#/components/projects/compose/detail/domains/compose-domain-modal';
 import {CreateScheduleModal} from '#/components/projects/compose/detail/schedules/create-schedule-modal';
 import {CreateBackupModal} from '#/components/projects/compose/detail/backups/create-backup-modal';
-import {TerminalModal} from '#/components/projects/common/terminal-modal';
+import {TerminalCard} from '#/components/shared/terminal-card';
 import {ComposeDirectContainerLogsModal} from '#/components/projects/compose/detail/logs/compose-direct-container-logs-modal';
 import {ComposeDirectDeployLogsModal} from '#/components/projects/compose/detail/deployments/compose-direct-deploy-logs-modal';
 import type {DomainFormData} from '#/components/projects/common/domain-dialog';
@@ -367,13 +367,9 @@ export function AppArchitectureTab({
 				/>
 			)}
 
-			{/* Terminal Shell Modal */}
+			{/* Terminal Shell — inline card */}
 			{activeModal === 'terminal' && (
-				<TerminalModal
-					app={app}
-					open={true}
-					onClose={() => setActiveModal(null)}
-				/>
+				<TerminalCard app={app} enabled={true} onClose={() => setActiveModal(null)} />
 			)}
 
 			{/* Live Container Logs Modal */}

@@ -12,7 +12,7 @@ import {
 import {formatApiError} from '#/api/utils';
 import {ComposeDeployCard} from './compose-deploy-card';
 import {ComposeSourceCard} from './cards/compose-source-card';
-import {TerminalModal} from '#/components/projects/common/terminal-modal';
+import {TerminalCard} from '#/components/shared/terminal-card';
 
 interface GeneralTabProps {
 	compose: any;
@@ -241,12 +241,10 @@ export function ComposeGeneralTab({compose, onUpdated}: GeneralTabProps) {
 				onSave={handleSaveSource}
 			/>
 
-			{/* Interactive WebSockets Terminal Modal for Compose Containers */}
-			<TerminalModal
-				app={compose}
-				open={showTerminal}
-				onClose={() => setShowTerminal(false)}
-			/>
+			{/* Interactive terminal for compose containers — inline card */}
+			{showTerminal && (
+				<TerminalCard app={compose} enabled={true} onClose={() => setShowTerminal(false)} />
+			)}
 		</div>
 	);
 }

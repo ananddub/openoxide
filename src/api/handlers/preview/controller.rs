@@ -1,14 +1,10 @@
-use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
+use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     CreatePreviewRequest, Empty, GetPreviewRequest, ListPreviewsRequest, ListPreviewsResponse,
     PreviewDeployment, PreviewDeploymentService, PreviewDeploymentServiceExt,
     PreviewOperationRequest,
 };
-use crate::db::reactive::realtime;
-use crate::flash_gen::models::PreviewDeployments;
-use crate::services::compute::preview::PreviewDeploymentView;
 
 use super::helper::*;
 use super::init::PreviewDeploymentController;
@@ -27,40 +23,6 @@ impl PreviewDeploymentService for PreviewDeploymentController {
     }
 
     #[permission(Application, CanRead)]
-    async fn stream_list_previews(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ListPreviewsRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ListPreviewsResponse> + Send + use<>,
-        >,
-    > {
-        let stream = {
-            let sql = match request.application_id {
-                Some(application_id) => format!(
-                    "SELECT * FROM preview_deployments WHERE base_service_id = {application_id} AND status != 'CLOSED'"
-                ),
-                None => "SELECT * FROM preview_deployments WHERE status != 'CLOSED'".to_owned(),
-            };
-            realtime()
-                .watch_query::<PreviewDeployments>(sql)
-                .await
-                .map_err(map_sqlx)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ListPreviewsResponse {
-                previews: rows
-                    .into_iter()
-                    .map(PreviewDeploymentView::from)
-                    .map(view_to_proto)
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
-    #[permission(Application, CanRead)]
     async fn get_preview<'a>(
         &'a self,
         ctx: RequestContext,
@@ -68,30 +30,6 @@ impl PreviewDeploymentService for PreviewDeploymentController {
     ) -> ServiceResult<impl connectrpc::Encodable<PreviewDeployment> + Send + use<'a>> {
         let view = self.service.get(request.id).await.map_err(map_sqlx)?;
         Response::ok(view_to_proto(view))
-    }
-
-    #[permission(Application, CanRead)]
-    async fn stream_get_preview(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, GetPreviewRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<PreviewDeployment> + Send + use<>,
-        >,
-    > {
-        let id = request.id;
-        let stream = {
-            let sql = format!("SELECT * FROM preview_deployments WHERE id = {id}");
-            realtime()
-                .watch_query::<PreviewDeployments>(sql)
-                .await
-                .map_err(map_sqlx)?
-        };
-        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
-            Some(row) => Ok(view_to_proto(PreviewDeploymentView::from(row))),
-            None => Err(ConnectError::not_found("preview deployment not found")),
-        }))
     }
 
     #[permission(Application, CanDeploy)]

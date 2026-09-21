@@ -7,6 +7,7 @@ import {
 } from '#/components/ui/dialog';
 import {Button} from '#/components/ui/button';
 import {AlertTriangle, Trash2, RefreshCw} from 'lucide-react';
+import {serverHostLabel} from '#/api/utils';
 import {useDeleteServer} from '#/hooks/remote-servers/use-remote-servers';
 import type {RemoteServerResponse} from '#/types/api-helpers';
 
@@ -44,12 +45,12 @@ export function DeleteServerModal({
 					<DialogDescription>
 						Are you sure you want to delete the remote server{' '}
 						<strong className="text-foreground">{server.name}</strong> (
-						{server.ip_address})?
+						{serverHostLabel(server.ip_address)})?
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="space-y-3 py-2">
-					<div className="space-y-1 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs text-muted-foreground">
+					<div className="space-y-1 rounded-lg bg-destructive/5 p-3 text-xs text-muted-foreground">
 						<p className="font-semibold text-destructive">Warning</p>
 						<p>
 							Any applications, compose stacks, or databases deployed on

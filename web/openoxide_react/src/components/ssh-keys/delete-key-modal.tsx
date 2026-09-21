@@ -48,7 +48,7 @@ export function DeleteKeyModal({
 				</DialogHeader>
 
 				<div className="space-y-3 py-2">
-					<div className="space-y-1 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs text-muted-foreground">
+					<div className="space-y-1 rounded-lg bg-destructive/5 p-3 text-xs text-muted-foreground">
 						<p className="font-semibold text-destructive">Warning</p>
 						<p>
 							Any remote servers or deployments relying on this SSH key

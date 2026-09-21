@@ -1,4 +1,3 @@
-import React from 'react';
 import {Search, ArrowUpDown} from 'lucide-react';
 import {Input} from '#/components/ui/input';
 import {
@@ -60,7 +59,7 @@ export function ProjectDashboardFilters({
 					placeholder="Filter projects..."
 					value={searchQuery}
 					onChange={e => setSearchQuery(e.target.value)}
-					className="h-10 w-full rounded-lg border-border/80 bg-card pr-4 pl-9 text-xs shadow-2xs"
+					className="h-11 w-full rounded-xl  bg-card pr-4 pl-10 text-sm"
 				/>
 			</div>
 
@@ -79,13 +78,13 @@ export function ProjectDashboardFilters({
 				<Select
 					value={sortBy}
 					onValueChange={val => val && setSortBy(val)}>
-					<SelectTrigger className="h-10 w-full rounded-lg border-border/80 bg-card text-xs font-semibold shadow-2xs sm:w-[185px]">
+					<SelectTrigger className="h-11 w-full rounded-xl  bg-card text-sm sm:w-[185px]">
 						<div className="flex min-w-0 items-center gap-2">
 							<ArrowUpDown className="size-3.5 shrink-0 text-muted-foreground" />
 							<SelectValue>{getSortLabel(sortBy)}</SelectValue>
 						</div>
 					</SelectTrigger>
-					<SelectContent className="border-border bg-card">
+					<SelectContent className="border- bg-card">
 						<SelectItem value="newest">Sort: Newest First</SelectItem>
 						<SelectItem value="oldest">Sort: Oldest First</SelectItem>
 						<SelectItem value="alphabetical-asc">

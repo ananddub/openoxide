@@ -1,11 +1,16 @@
-import {useState} from 'react';
-import {createFileRoute} from '@tanstack/react-router';
+import {useMemo, useState} from 'react';
+import {createFileRoute, useNavigate} from '@tanstack/react-router';
+import {Database, Globe, Lock} from 'lucide-react';
 import {useRegistryDelete, useRegistryList} from '#/api/live';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {RegistryHeader} from '#/components/registry/registry-header';
 import {RegistriesList} from '#/components/registry/registries-list';
 import {CreateRegistryModal} from '#/components/registry/create-registry-modal';
+import {
+	ResourceGuideCard,
+	ResourceInfoCard,
+} from '#/components/shared/resource-sidebar';
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -24,7 +29,8 @@ export const Route = createFileRoute('/_app/registry')({
 });
 
 function RegistryPage() {
-	const [isModalOpen, setIsModalOpen] = useState(false);
+	const navigate = useNavigate();
+	const [isEditOpen, setIsEditOpen] = useState(false);
 	const [editingRegistry, setEditingRegistry] =
 		useState<RegistryResponse | null>(null);
 	const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -36,21 +42,27 @@ function RegistryPage() {
 		: [];
 	const deleteMutation = useRegistryDelete();
 
-	const handleOpenAdd = () => {
-		setEditingRegistry(null);
-		setIsModalOpen(true);
-	};
+	const stats = useMemo(() => {
+		const hosts = new Set(
+			registries
+				.map(r => String(r.registry_url || '').split('/')[0])
+				.filter(Boolean),
+		);
+		return {total: registries.length, hosts: hosts.size};
+	}, [registries]);
+
+	const handleOpenAdd = () => void navigate({to: '/registry/new'});
 
 	const handleOpenEdit = (item: RegistryResponse) => {
 		setEditingRegistry(item);
-		setIsModalOpen(true);
+		setIsEditOpen(true);
 	};
 
 	const confirmDelete = async () => {
-		if (!deletingId) return;
+		if (deletingId === null) return;
 		try {
 			await deleteMutation.mutateAsync(deletingId);
-			toast.success('Registry deleted successfully');
+			toast.success('Registry deleted');
 		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -59,24 +71,57 @@ function RegistryPage() {
 	};
 
 	return (
-		<div className="mx-auto flex w-full max-w-7xl flex-col gap-3 p-4">
+		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
 			<RegistryHeader
 				onAddRegistry={handleOpenAdd}
 				onRefresh={() => void refetch()}
 				isRefreshing={isLoading}
 			/>
 
-			<RegistriesList
-				registries={Array.isArray(registries) ? registries : []}
-				isLoading={isLoading}
-				onEdit={handleOpenEdit}
-				onDelete={id => setDeletingId(id)}
-			/>
+			<div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+				<RegistriesList
+					registries={registries}
+					isLoading={isLoading}
+					onEdit={handleOpenEdit}
+					onDelete={id => setDeletingId(id)}
+				/>
 
+				{/* ── Right rail ── */}
+				<div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
+					<ResourceInfoCard
+						title="Overview"
+						icon={Database}
+						rows={[
+							{icon: Database, label: 'Registries', value: stats.total},
+							{icon: Globe, label: 'Distinct hosts', value: stats.hosts},
+						]}
+					/>
+					<ResourceGuideCard
+						title="Registry basics"
+						icon={Lock}
+						steps={[
+							{
+								title: 'Hostname only',
+								text: 'Store just the registry host (docker.io, ghcr.io, ECR URL) — no path, no scheme.',
+							},
+							{
+								title: 'Least-privilege token',
+								text: 'Use a read/write token scoped to the namespaces you push to, not an account password.',
+							},
+							{
+								title: 'Auth host',
+								text: 'Choose which server authenticates — pick a remote one when only it can reach a private registry.',
+							},
+						]}
+					/>
+				</div>
+			</div>
+
+			{/* Edit Modal (create lives on /registry/new) */}
 			<CreateRegistryModal
-				isOpen={isModalOpen}
+				isOpen={isEditOpen}
 				onClose={() => {
-					setIsModalOpen(false);
+					setIsEditOpen(false);
 					setEditingRegistry(null);
 				}}
 				onSuccess={() => {}}
@@ -99,7 +144,7 @@ function RegistryPage() {
 							Cancel
 						</AlertDialogCancel>
 						<AlertDialogAction
-							className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 							onClick={confirmDelete}>
 							Delete
 						</AlertDialogAction>

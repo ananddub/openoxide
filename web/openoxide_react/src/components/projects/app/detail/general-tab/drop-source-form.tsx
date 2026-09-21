@@ -100,7 +100,7 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 					placeholder="e.g. /"
 					value={dropBuildPath}
 					onChange={e => setDropBuildPath(e.target.value)}
-					className="h-9 border-border bg-card text-xs"
+					className="h-9 border- bg-card text-xs"
 				/>
 			</div>
 
@@ -124,8 +124,8 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 					}}
 					className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition-colors ${
 						isDragging
-							? 'border-primary bg-primary/5'
-							: 'border-border/80 hover:bg-muted/20'
+							? ' bg-primary/5'
+							: ' hover:bg-muted/20'
 					}`}
 					onClick={() => {
 						const input = document.createElement('input');
@@ -147,7 +147,7 @@ export function DropSourceForm({app, onUpdated}: DropSourceFormProps) {
 				</div>
 
 				{selectedZip && (
-					<div className="mt-1 flex items-center justify-between rounded-lg border border-border bg-muted/20 p-3">
+					<div className="mt-1 flex items-center justify-between rounded-lg bg-muted/20 p-3">
 						<div className="flex min-w-0 items-center gap-2">
 							<span className="truncate font-mono text-xs font-medium text-foreground">
 								{selectedZip.name}

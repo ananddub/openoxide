@@ -83,7 +83,7 @@ export function SchedulesList({
 				{[1, 2, 3].map(i => (
 					<div
 						key={i}
-						className="flex items-center gap-4 rounded-lg border border-border px-4 py-4">
+						className="flex items-center gap-4 rounded-lg px-4 py-4">
 						<Skeleton className="h-8 w-8 shrink-0 rounded-full" />
 						<div className="flex-1 space-y-2">
 							<Skeleton className="h-3.5 w-40" />
@@ -128,7 +128,7 @@ export function SchedulesList({
 
 			{/* ── Empty state ── */}
 			{schedules.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border py-20 text-center">
+				<div className="flex flex-col items-center justify-center gap-3 rounded-lg  py-20 text-center">
 					<div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
 						<CalendarDays className="h-5 w-5 text-muted-foreground" />
 					</div>
@@ -142,7 +142,7 @@ export function SchedulesList({
 					</div>
 				</div>
 			) : filtered.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border py-14 text-center">
+				<div className="flex flex-col items-center justify-center gap-2 rounded-lg  py-14 text-center">
 					<Search className="h-5 w-5 text-muted-foreground" />
 					<p className="text-sm text-muted-foreground">
 						No schedules match your filter
@@ -150,7 +150,7 @@ export function SchedulesList({
 				</div>
 			) : (
 				/* ── List ── */
-				<div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+				<div className="divide-y divide-border overflow-hidden rounded-lg ">
 					{filtered.map(s => {
 						const isEnabled = s.enabled === 1;
 						const dotCls = isEnabled ? 'bg-emerald-500' : 'bg-zinc-500/60';

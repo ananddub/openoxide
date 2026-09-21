@@ -1,26 +1,34 @@
 import {Logo} from '#/components/shared/logo';
+import {AnimatedGradientText} from '#/components/ui/animated-gradient-text';
+import {AnimatedShinyText} from '#/components/ui/animated-shiny-text';
 
 export const AuthLeftPanel = () => (
-	<div className="relative hidden flex-col justify-between overflow-hidden border-r border-border bg-muted p-12 select-none lg:flex lg:w-1/2">
+	<div className="relative hidden flex-col justify-between overflow-hidden border-r border- bg-muted p-12 select-none lg:flex lg:w-1/2">
 		{/* Subtle grid pattern overlay */}
 		<div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-size-[24px_24px]" />
 		{/* 1. LOGO */}
 		<div className="relative z-10 flex items-center gap-2">
 			<Logo className="size-8" />
-			<span className="text-lg font-bold tracking-tight text-foreground">
+			<AnimatedShinyText className="text-lg font-bold tracking-tight text-foreground/80">
 				OpenOxide
-			</span>
+			</AnimatedShinyText>
 		</div>
 		{/* Center Content Section */}
 		<div className="relative z-10 my-auto flex max-w-lg flex-col gap-6">
 			{/* 2. Headline: Deploy anything. Own everything. */}
 			<div className="flex flex-col gap-1">
-				<h1 className="text-4xl leading-tight font-extrabold tracking-tight text-foreground">
+				<AnimatedGradientText
+					className="block text-4xl leading-tight font-extrabold tracking-tight"
+					colorFrom="#22d3ee"
+					colorTo="#a855f7">
 					Deploy anything.
-				</h1>
-				<h1 className="text-4xl leading-tight font-extrabold tracking-tight text-primary">
+				</AnimatedGradientText>
+				<AnimatedGradientText
+					className="block text-4xl leading-tight font-extrabold tracking-tight"
+					colorFrom="#a855f7"
+					colorTo="#22d3ee">
 					Own everything.
-				</h1>
+				</AnimatedGradientText>
 			</div>
 			{/* 3. Small description */}
 			<p className="text-sm leading-relaxed text-muted-foreground">
@@ -33,13 +41,13 @@ export const AuthLeftPanel = () => (
 			</p>
 			{/* 5. Features Badges: Fast, Docker, Self Hosted */}
 			<div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-semibold text-muted-foreground">
-				<span className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 shadow-sm">
+				<span className="flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 shadow-sm">
 					<span>🚀</span> Fast
 				</span>
-				<span className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 shadow-sm">
+				<span className="flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 shadow-sm">
 					<span>🐳</span> Docker
 				</span>
-				<span className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 shadow-sm">
+				<span className="flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 shadow-sm">
 					<span>🔒</span> Self Hosted
 				</span>
 			</div>

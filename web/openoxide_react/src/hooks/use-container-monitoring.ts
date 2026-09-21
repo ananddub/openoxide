@@ -23,20 +23,6 @@ export interface ContainerMetrics {
 
 const deploymentClient = createServiceClient(DeploymentService);
 
-function parseBytes(str?: string): number {
-	if (!str || typeof str !== 'string') return 0;
-	const val = parseFloat(str) || 0;
-	const unit = str
-		.replace(/[0-9.]/g, '')
-		.trim()
-		.toUpperCase();
-	if (unit.startsWith('K')) return val * 1024;
-	if (unit.startsWith('M')) return val * 1024 * 1024;
-	if (unit.startsWith('G')) return val * 1024 * 1024 * 1024;
-	if (unit.startsWith('T')) return val * 1024 * 1024 * 1024 * 1024;
-	return val;
-}
-
 function stripAnsi(str: string): string {
 	// Remove all ANSI/VT100 escape sequences: ESC [ ... letter
 	return str
@@ -220,58 +206,6 @@ export function useContainerMonitoring(
 		};
 	}, [id, entityType, isLive, refetchTrigger, enabled]);
 
-	const [history, setHistory] = useState<
-		Array<{
-			time: string;
-			cpu: number;
-			memUsedGB: number;
-			memLimitGB: number;
-			diskUsedGB: number;
-			diskTotalGB: number;
-			dockerDiskGB: number;
-			blockReadMB: number;
-			blockWriteMB: number;
-			netRxMB: number;
-			netTxMB: number;
-		}>
-	>([]);
-
-	useEffect(() => {
-		const parsed = parseStats(rawStats);
-		if (parsed) {
-			const timeStr = new Date().toLocaleTimeString([], {
-				hour: '2-digit',
-				minute: '2-digit',
-				second: '2-digit',
-			});
-			const memUsedGB = parseBytes(parsed.memUsage) / 1024 ** 3;
-			const memLimitGB = parseBytes(parsed.memLimit) / 1024 ** 3;
-			const diskUsedGB = parseBytes(parsed.diskSpaceUsed) / 1024 ** 3;
-			const diskTotalGB = parseBytes(parsed.diskSpaceTotal) / 1024 ** 3;
-			const dockerDiskGB = parseBytes(parsed.dockerDiskUsage) / 1024 ** 3;
-			const blockReadMB = parseBytes(parsed.blockRead) / (1024 * 1024);
-			const blockWriteMB = parseBytes(parsed.blockWrite) / (1024 * 1024);
-			const netRxMB = parseBytes(parsed.netRx) / (1024 * 1024);
-			const netTxMB = parseBytes(parsed.netTx) / (1024 * 1024);
-
-			setHistory(prev => [
-				...prev.slice(-49),
-				{
-					time: timeStr,
-					cpu: parsed.cpuPercent,
-					memUsedGB,
-					memLimitGB,
-					diskUsedGB,
-					diskTotalGB,
-					dockerDiskGB,
-					blockReadMB,
-					blockWriteMB,
-					netRxMB,
-					netTxMB,
-				},
-			]);
-		}
-	}, [rawStats]);
 
 	return {
 		isLive,
@@ -279,7 +213,6 @@ export function useContainerMonitoring(
 		isLoading,
 		hasError,
 		metrics: parseStats(rawStats),
-		history,
 		triggerRefresh,
 	};
 }

@@ -12,8 +12,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 	disabled,
 }) => {
 	return (
-		<div className="flex animate-in flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-card/10 p-16 text-center backdrop-blur-[2px] duration-200 fade-in">
-			<div className="mb-4 rounded-full border border-border/30 bg-muted/40 p-4 text-muted-foreground">
+		<div className="flex animate-in flex-col items-center justify-center rounded-2xl  bg-card/10 p-16 text-center backdrop-blur-[2px] duration-200 fade-in">
+			<div className="mb-4 rounded-full bg-muted/40 p-4 text-muted-foreground">
 				<FolderClosed className="size-8" />
 			</div>
 			<h3 className="text-xl font-bold text-foreground">

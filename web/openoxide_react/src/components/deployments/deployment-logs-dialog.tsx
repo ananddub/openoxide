@@ -48,7 +48,7 @@ export function DeploymentLogsDialog({
 								<Terminal className="size-4.5 text-primary" />
 								<span>Deployment Console #{selectedDeployment?.id}</span>
 								{isRunning && (
-									<span className="ml-2 flex animate-pulse items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold tracking-wider text-emerald-400 uppercase">
+									<span className="ml-2 flex animate-pulse items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold tracking-wider text-emerald-400 uppercase">
 										<span className="size-1.5 rounded-full bg-emerald-400" />
 										Streaming
 									</span>

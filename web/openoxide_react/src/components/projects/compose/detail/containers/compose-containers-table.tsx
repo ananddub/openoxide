@@ -41,7 +41,7 @@ export function ComposeContainersTable({
 }: ComposeContainersTableProps) {
 	if (containers.length === 0) {
 		return (
-			<section className="flex flex-col items-center justify-center rounded-xl border border-border/80 bg-card p-12 text-center shadow-sm">
+			<section className="flex flex-col items-center justify-center rounded-xl bg-card p-12 text-center shadow-sm">
 				<div className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
 					<Box className="h-6 w-6" />
 				</div>
@@ -57,10 +57,10 @@ export function ComposeContainersTable({
 	}
 
 	return (
-		<section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+		<section className="overflow-hidden rounded-xl bg-card shadow-sm">
 			<div className="overflow-x-auto">
 				<table className="w-full text-left text-xs">
-					<thead className="border-b border-border bg-muted/50 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+					<thead className="border-b border- bg-muted/50 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
 						<tr>
 							<th className="px-4 py-3">Container & Service</th>
 							<th className="px-4 py-3">Container ID</th>
@@ -77,7 +77,7 @@ export function ComposeContainersTable({
 								{/* Container & Service Name */}
 								<td className="px-4 py-3.5">
 									<div className="flex items-center gap-2.5">
-										<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-secondary text-primary">
+										<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary">
 											<Box className="h-4 w-4" />
 										</div>
 										<div className="flex flex-col gap-0.5">
@@ -95,7 +95,7 @@ export function ComposeContainersTable({
 
 								{/* Container ID */}
 								<td className="px-4 py-3.5 font-mono text-muted-foreground">
-									<span className="rounded border border-border/40 bg-muted/40 px-2 py-0.5 text-foreground">
+									<span className="rounded bg-muted/40 px-2 py-0.5 text-foreground">
 										{c.id}
 									</span>
 								</td>
@@ -133,7 +133,7 @@ export function ComposeContainersTable({
 										/>
 										<DropdownMenuContent
 											align="end"
-											className="w-44 border-border bg-card shadow-xl">
+											className="w-44 border- bg-card shadow-xl">
 											<DropdownMenuGroup>
 												<DropdownMenuLabel className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase">
 													View Options

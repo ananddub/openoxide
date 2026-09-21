@@ -212,10 +212,10 @@ export const OverviewServicesTable: React.FC<Props> = ({
 	onStop,
 }) => {
 	return (
-		<div className="max-h-[calc(100vh-340px)] min-h-[280px] overflow-y-auto rounded-xl border border-border/60 bg-card shadow-xs">
+		<div className="max-h-[calc(100vh-340px)] min-h-[280px] overflow-y-auto rounded-xl bg-card shadow-xs">
 			<Table>
 				<TableHeader className="sticky top-0 z-20 bg-card/95 backdrop-blur-md">
-					<TableRow className="border-b border-border/60 hover:bg-transparent">
+					<TableRow className="border-b  hover:bg-transparent">
 						<TableHead className="sticky top-0 z-20 bg-card/95 px-4 py-3.5 text-xs font-bold tracking-wider text-foreground uppercase backdrop-blur-md">
 							Service
 						</TableHead>
@@ -243,7 +243,7 @@ export const OverviewServicesTable: React.FC<Props> = ({
 					{services.map(svc => (
 						<TableRow
 							key={svc.key}
-							className="border-b border-border/40 transition-colors hover:bg-muted/40">
+							className="border-b  transition-colors hover:bg-muted/40">
 							<TableCell className="px-4 py-3.5">
 								<Link
 									to="/projects/$id"
@@ -289,7 +289,7 @@ export const OverviewServicesTable: React.FC<Props> = ({
 										<MoreHorizontal className="size-4" />
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end" className="w-44">
-										<DropdownMenuLabel className="mb-1 truncate border-b border-border/40 px-2 py-1.5 text-xs font-bold">
+										<DropdownMenuLabel className="mb-1 truncate border-b  px-2 py-1.5 text-xs font-bold">
 											{svc.name}
 										</DropdownMenuLabel>
 										<DropdownMenuItem

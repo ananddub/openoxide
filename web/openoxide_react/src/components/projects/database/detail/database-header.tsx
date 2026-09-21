@@ -73,7 +73,7 @@ export function DatabaseHeader({
 	};
 
 	return (
-		<header className="border-b border-border/40 pb-0">
+		<header className="border-b  pb-0">
 			{/* Breadcrumb */}
 			<div className="mb-3.5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
 				<Link
@@ -101,7 +101,7 @@ export function DatabaseHeader({
 			{/* Title row */}
 			<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 				<div className="flex items-center gap-3">
-					<div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/80 bg-card shadow-xs">
+					<div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-card shadow-xs">
 						{getIcon()}
 					</div>
 					<div>
@@ -122,7 +122,7 @@ export function DatabaseHeader({
 							refetch();
 							toast.success('Database status refreshed');
 						}}
-						className="h-8 w-8 rounded-lg border-border"
+						className="h-8 w-8 rounded-lg "
 						title="Refresh">
 						<RefreshCw className="h-3.5 w-3.5" />
 					</Button>
@@ -141,14 +141,14 @@ export function DatabaseHeader({
 						isBuilding={isBuilding}
 						actionLoading={actionLoading}
 					/>
-					<span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/20 px-2.5 py-1 text-xs font-semibold text-muted-foreground capitalize select-none">
+					<span className="inline-flex items-center gap-1.5 rounded-lg bg-muted/20 px-2.5 py-1 text-xs font-semibold text-muted-foreground capitalize select-none">
 						{kind} Database
 					</span>
 				</div>
 			</div>
 
 			{/* Tabs Navigation Bar */}
-			<div className="mt-6 -mb-[1px] flex w-full scrollbar-none gap-2 overflow-x-auto border-b border-border/40">
+			<div className="mt-6 -mb-[1px] flex w-full scrollbar-none gap-2 overflow-x-auto border-b ">
 				{tabs.map(tab => {
 					const isActive = activeTab === tab;
 					return (
@@ -158,7 +158,7 @@ export function DatabaseHeader({
 							className={`-mb-[1px] cursor-pointer border-b-2 px-4 pt-2 pb-2.5 text-xs font-bold whitespace-nowrap transition-all duration-150 ${
 								isActive
 									? 'border-foreground font-extrabold text-foreground'
-									: 'border-transparent text-muted-foreground hover:border-border/40 hover:text-foreground'
+									: ' text-muted-foreground hover:text-foreground'
 							}`}>
 							{tab}
 						</button>

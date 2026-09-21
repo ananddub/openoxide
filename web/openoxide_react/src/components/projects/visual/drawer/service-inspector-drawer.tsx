@@ -59,12 +59,12 @@ export function ServiceInspectorDrawer({
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
 			<SheetContent
 				side="right"
-				className="flex w-[450px] flex-col border-l border-border bg-card p-0 font-sans sm:w-[540px]">
+				className="flex w-[450px] flex-col border-l border- bg-card p-0 font-sans sm:w-[540px]">
 				{/* Drawer Header */}
-				<SheetHeader className="flex flex-col gap-2 border-b border-border/60 bg-muted/20 p-5">
+				<SheetHeader className="flex flex-col gap-2 border-b  bg-muted/20 p-5">
 					<div className="flex items-center justify-between gap-3">
 						<div className="flex min-w-0 items-center gap-3">
-							<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+							<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
 								{isDb ? (
 									<Database className="h-4.5 w-4.5 text-emerald-400" />
 								) : isCompose ? (
@@ -128,21 +128,21 @@ export function ServiceInspectorDrawer({
 					value={activeTab}
 					onValueChange={setActiveTab}
 					className="flex min-h-0 flex-1 flex-col">
-					<div className="border-b border-border/60 bg-muted/10 px-5">
+					<div className="border-b  bg-muted/10 px-5">
 						<TabsList className="h-10 gap-4 bg-transparent p-0">
 							<TabsTrigger
 								value="overview"
-								className="rounded-none border-b-2 border-transparent px-0 py-2 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent">
+								className="rounded-none border-b-2  px-0 py-2 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent">
 								<Activity className="mr-1.5 h-3.5 w-3.5" /> Overview
 							</TabsTrigger>
 							<TabsTrigger
 								value="config"
-								className="rounded-none border-b-2 border-transparent px-0 py-2 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent">
+								className="rounded-none border-b-2  px-0 py-2 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent">
 								<Sliders className="mr-1.5 h-3.5 w-3.5" /> Config
 							</TabsTrigger>
 							<TabsTrigger
 								value="logs"
-								className="rounded-none border-b-2 border-transparent px-0 py-2 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent">
+								className="rounded-none border-b-2  px-0 py-2 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent">
 								<Terminal className="mr-1.5 h-3.5 w-3.5" /> Live Logs
 							</TabsTrigger>
 						</TabsList>
@@ -153,7 +153,7 @@ export function ServiceInspectorDrawer({
 						value="overview"
 						className="m-0 flex flex-1 flex-col gap-4 overflow-y-auto p-5">
 						<div className="grid grid-cols-2 gap-3">
-							<div className="rounded-xl border border-border/40 bg-muted/20 p-3">
+							<div className="rounded-xl bg-muted/20 p-3">
 								<span className="flex items-center gap-1 text-xs text-muted-foreground">
 									<Cpu className="h-3.5 w-3.5 text-sky-400" /> CPU Usage
 								</span>
@@ -161,7 +161,7 @@ export function ServiceInspectorDrawer({
 									0.15%
 								</p>
 							</div>
-							<div className="rounded-xl border border-border/40 bg-muted/20 p-3">
+							<div className="rounded-xl bg-muted/20 p-3">
 								<span className="flex items-center gap-1 text-xs text-muted-foreground">
 									<HardDrive className="h-3.5 w-3.5 text-violet-400" />{' '}
 									Memory Usage
@@ -172,7 +172,7 @@ export function ServiceInspectorDrawer({
 							</div>
 						</div>
 
-						<div className="flex flex-col gap-2.5 rounded-xl border border-border/40 bg-muted/20 p-4 font-mono text-xs">
+						<div className="flex flex-col gap-2.5 rounded-xl bg-muted/20 p-4 font-mono text-xs">
 							<div className="flex items-center justify-between">
 								<span className="font-sans text-muted-foreground">
 									Service ID:
@@ -210,7 +210,7 @@ export function ServiceInspectorDrawer({
 					<TabsContent
 						value="config"
 						className="m-0 flex flex-1 flex-col gap-4 overflow-y-auto p-5">
-						<div className="flex flex-col gap-3 rounded-xl border border-border/40 bg-muted/20 p-4">
+						<div className="flex flex-col gap-3 rounded-xl bg-muted/20 p-4">
 							<h4 className="text-xs font-bold tracking-wider text-foreground uppercase">
 								Service Configurations
 							</h4>
@@ -220,13 +220,13 @@ export function ServiceInspectorDrawer({
 							</p>
 
 							<div className="mt-2 flex flex-col gap-2">
-								<div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-2.5 font-mono text-xs">
+								<div className="flex items-center justify-between rounded-lg bg-background p-2.5 font-mono text-xs">
 									<span className="text-muted-foreground">Replicas:</span>
 									<span className="font-bold text-foreground">
 										1 Instance
 									</span>
 								</div>
-								<div className="flex items-center justify-between rounded-lg border border-border/60 bg-background p-2.5 font-mono text-xs">
+								<div className="flex items-center justify-between rounded-lg bg-background p-2.5 font-mono text-xs">
 									<span className="text-muted-foreground">
 										Network Mode:
 									</span>

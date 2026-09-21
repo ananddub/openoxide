@@ -14,6 +14,8 @@ export type DeploymentPayload = {
 	logs?: string;
 	created_at: bigint;
 	updated_at: bigint;
+	user_id: bigint;
+	user_email?: string;
 };
 
 const deploymentClient = createServiceClient(DeploymentService);
@@ -40,6 +42,8 @@ function toDeploymentPayload(deployment: Deployment): DeploymentPayload {
 		logs: deployment.logs,
 		created_at: deployment.createdAt,
 		updated_at: deployment.updatedAt,
+		user_id: deployment.userId ?? 0n,
+		user_email: deployment.userEmail,
 	};
 }
 

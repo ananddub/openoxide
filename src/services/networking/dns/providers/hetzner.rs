@@ -20,7 +20,7 @@ fn hetzner_error(status: u16, body: &serde_json::Value) -> DnsServiceError {
 }
 
 async fn hetzner_send(
-    client: &reqwest::Client,
+    _client: &reqwest::Client,
     request: reqwest::RequestBuilder,
     context: &str,
 ) -> Result<serde_json::Value, DnsServiceError> {

@@ -132,15 +132,23 @@ export function useRemoteServerMigrateDependencies() {
 
 /**
  * Watch a dependency migration. The backend takes the migration id as a
- * plain (non-JSON) payload string.
+ * plain (non-JSON) payload string. Pass `pollMs` to keep the wizard live
+ * between realtime table-watch invalidations (the migration runner updates
+ * rows in bursts, so a short interval smooths the progress bar).
  */
-export function useRemoteServerMigration(migrationId: string) {
+export function useRemoteServerMigration(
+	migrationId: string,
+	options?: {pollMs?: number},
+) {
 	return useConnectQuery<ServerMigrationPayload>(
 		['servers', 'migration', migrationId],
 		async () => readResource<ServerMigrationPayload>(
 			await remoteServerClient.getMigration({payload: migrationId}),
 		),
-		{enabled: migrationId !== ''},
+		{
+			enabled: migrationId !== '',
+			refetchInterval: options?.pollMs,
+		},
 	);
 }
 
@@ -149,6 +157,19 @@ export function useRemoteServerRollbackMigration() {
 	return useConnectMutation(
 		(migrationId: string) =>
 			remoteServerClient.rollbackMigration({payload: migrationId}),
+		{invalidate: [['servers']]},
+	);
+}
+
+/**
+ * Request cooperative cancellation of a RUNNING stateful
+ * (`application_migrations`) migration. The runner honours the flag at the
+ * next phase/object boundary; the id is passed as a plain payload string.
+ */
+export function useRemoteServerCancelMigration() {
+	return useConnectMutation(
+		(migrationId: string) =>
+			remoteServerClient.cancelMigration({payload: migrationId}),
 		{invalidate: [['servers']]},
 	);
 }

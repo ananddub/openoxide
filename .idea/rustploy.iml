@@ -58,6 +58,8 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/os/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/auto/grpc/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/auto/grpc_macros/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/realtime/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/realtime/tests" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/auto_route/target" />
       <excludeFolder url="file://$MODULE_DIR$/auto_route_inventory/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />

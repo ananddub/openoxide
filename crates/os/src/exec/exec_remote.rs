@@ -138,6 +138,20 @@ impl RemoteExecutor {
         Ok(session)
     }
 
+    /// Observe this endpoint's SSH host-key fingerprint via a throwaway
+    /// handshake (no authentication). Used for trust-on-first-capture when the
+    /// panel has not yet stored a pin for the server.
+    pub async fn capture_host_key_fingerprint(&self) -> ExecResult<String> {
+        crate::ssh::capture_host_key_fingerprint(&self.host, self.port, self.connect_timeout).await
+    }
+
+    /// Capture the full observed host key (fingerprint + OpenSSH `known_hosts`
+    /// form). The OpenSSH form feeds the rsync subprocess's `known_hosts` file
+    /// so bulk transfers verify the target too, not just russh sessions.
+    pub async fn capture_host_key(&self) -> ExecResult<crate::ssh::ServerHostKey> {
+        crate::ssh::capture_host_key(&self.host, self.port, self.connect_timeout).await
+    }
+
     pub async fn open_terminal(
         &self,
         output: mpsc::Sender<ExecStreamEvent>,

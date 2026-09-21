@@ -31,7 +31,6 @@ export function useSchedules() {
 	// Live servers query; the table-watch stream keeps it fresh.
 	const {data: servers = []} = useRemoteServerList();
 
-	// Mutations
 	const createMutation = useScheduleCreate();
 	const deleteMutation = useScheduleDelete();
 	const patchMutation = useScheduleUpdate();

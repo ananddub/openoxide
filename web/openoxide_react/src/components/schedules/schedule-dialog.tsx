@@ -195,9 +195,9 @@ export function ScheduleDialog({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="max-h-[90vh] overflow-y-auto rounded-xl border-border bg-card p-6.5 shadow-2xl sm:max-w-2xl">
-				<DialogHeader className="flex flex-row items-center gap-3 space-y-0 border-b border-border/40 pb-4">
-					<div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+			<DialogContent className="max-h-[90vh] overflow-y-auto rounded-xl border- bg-card p-6.5 shadow-2xl sm:max-w-2xl">
+				<DialogHeader className="flex flex-row items-center gap-3 space-y-0 border-b  pb-4">
+					<div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
 						<Clock className="size-5" />
 					</div>
 					<div>
@@ -257,7 +257,7 @@ export function ScheduleDialog({
 							<SelectTrigger className="!h-9 w-full text-xs">
 								<SelectValue />
 							</SelectTrigger>
-							<SelectContent className="border-border bg-card">
+							<SelectContent className="border- bg-card">
 								<SelectItem value="SERVER" className="text-xs">
 									Server
 								</SelectItem>
@@ -280,7 +280,7 @@ export function ScheduleDialog({
 										{selectedServerName || 'Select server'}
 									</SelectValue>
 								</SelectTrigger>
-								<SelectContent className="border-border bg-card">
+								<SelectContent className="border- bg-card">
 									{servers.map(srv => (
 										<SelectItem
 											key={srv.id}
@@ -300,7 +300,7 @@ export function ScheduleDialog({
 										{selectedAppName || 'Select application'}
 									</SelectValue>
 								</SelectTrigger>
-								<SelectContent className="border-border bg-card">
+								<SelectContent className="border- bg-card">
 									{allApplications.length > 0 ? (
 										allApplications.map(app => (
 											<SelectItem
@@ -364,7 +364,7 @@ export function ScheduleDialog({
 							<SelectTrigger className="!h-9 w-full text-xs">
 								<SelectValue />
 							</SelectTrigger>
-							<SelectContent className="border-border bg-card">
+							<SelectContent className="border- bg-card">
 								<SelectItem value="bash" className="text-xs">
 									BASH
 								</SelectItem>
@@ -387,11 +387,11 @@ export function ScheduleDialog({
 							onChange={e => setCommand(e.target.value)}
 							required
 							rows={3}
-							className="flex w-full resize-none rounded-lg border border-input bg-transparent px-3 py-2 font-mono text-xs leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 dark:bg-input/30"
+							className="flex w-full resize-none rounded-lg bg-transparent px-3 py-2 font-mono text-xs leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 dark:bg-input/30"
 						/>
 					</div>
 
-					<div className="flex justify-end border-t border-border/30 pt-3">
+					<div className="flex justify-end border-t  pt-3">
 						<Button
 							type="submit"
 							disabled={isSubmitting}

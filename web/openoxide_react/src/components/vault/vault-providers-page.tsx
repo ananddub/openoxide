@@ -1,5 +1,13 @@
 import React, {useState} from 'react';
-import {useEnvironmentListByProject, useVaultList, useVaultProviderCreate, useVaultProviderUpdate, useVaultProviderDelete, useVaultProviderTest, useVaultTestConnection} from '#/api/live';
+import {
+	useEnvironmentListByProject,
+	useVaultList,
+	useVaultProviderCreate,
+	useVaultProviderUpdate,
+	useVaultProviderDelete,
+	useVaultProviderTest,
+	useVaultTestConnection,
+} from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {
 	Vault,
@@ -76,7 +84,6 @@ export function VaultProvidersPage() {
 	const [isTestingModal, setIsTestingModal] = useState(false);
 	const [copiedId, setCopiedId] = useState<number | null>(null);
 
-	// Form State
 	const [formName, setFormName] = useState('');
 	const [formType, setFormType] = useState<
 		| 'HASHICORP'
@@ -387,9 +394,7 @@ export function VaultProvidersPage() {
 				}
 			}
 		} catch (err: any) {
-			toast.error(
-				err?.message || formatApiError(err),
-			);
+			toast.error(err?.message || formatApiError(err));
 		} finally {
 			setIsTestingModal(false);
 		}
@@ -453,15 +458,13 @@ export function VaultProvidersPage() {
 	};
 
 	return (
-		<div className="mx-auto max-w-6xl space-y-6 p-6">
-			{/* Page Header */}
-			<div className="flex flex-col justify-between gap-4 border-b border-border/40 pb-5 sm:flex-row sm:items-center">
-				<div className="space-y-1">
-					<h1 className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground">
-						<Vault className="size-5 shrink-0 text-primary" />
+		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
+			<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+				<div className="flex flex-col gap-1">
+					<h1 className="text-2xl font-medium tracking-tight text-foreground/80">
 						Vault Providers
 					</h1>
-					<p className="text-xs text-muted-foreground">
+					<p className="text-sm text-muted-foreground/70">
 						Connect HashiCorp Vault or Doppler and resolve secret
 						references during build and deployment.
 					</p>
@@ -474,13 +477,12 @@ export function VaultProvidersPage() {
 				</Button>
 			</div>
 
-			{/* Providers List (Horizontal Card Rows) */}
 			{isLoading ? (
 				<div className="p-12 text-center text-xs text-muted-foreground">
 					Loading vault providers...
 				</div>
 			) : providers.length === 0 ? (
-				<Card className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/80 bg-muted/10 p-12 text-center">
+				<Card className="flex flex-col items-center justify-center gap-3 rounded-2xl  bg-muted/10 p-12 text-center">
 					<div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
 						<Vault className="size-6" />
 					</div>
@@ -510,7 +512,7 @@ export function VaultProvidersPage() {
 						return (
 							<Card
 								key={provider.id}
-								className="flex flex-col justify-between gap-4 rounded-xl border border-border/70 bg-card p-4 shadow-2xs transition-all hover:border-border sm:flex-row sm:items-center">
+								className="flex flex-col justify-between gap-4 rounded-xl bg-card p-4 shadow-2xs transition-all sm:flex-row sm:items-center">
 								<div className="flex min-w-0 items-center gap-3.5">
 									{renderVaultProviderIcon(
 										provider.provider_type,
@@ -544,7 +546,7 @@ export function VaultProvidersPage() {
 											</span>
 										</div>
 										<div className="flex flex-wrap items-center gap-2 text-xs">
-											<span className="rounded border border-border/40 bg-muted/30 px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
+											<span className="rounded bg-muted/30 px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
 												${`{vault.${provider.name}.SECRET_KEY}`}
 											</span>
 											<span className="text-[11px] text-muted-foreground">
@@ -593,9 +595,8 @@ export function VaultProvidersPage() {
 				</div>
 			)}
 
-			{/* Create / Edit Provider Modal (Matching Dokploy Popup Layout) */}
 			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl sm:max-w-lg">
+				<DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-2xl sm:max-w-lg">
 					<DialogHeader className="space-y-1">
 						<DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
 							<KeyRound className="size-5 text-primary" />
@@ -732,7 +733,7 @@ export function VaultProvidersPage() {
 										/>
 									</div>
 								</div>
-								<div className="rounded-lg border border-border/40 bg-muted/30 p-2.5 text-[11px] text-muted-foreground">
+								<div className="rounded-lg bg-muted/30 p-2.5 text-[11px] text-muted-foreground">
 									Reference format:{' '}
 									<code className="font-mono font-semibold text-primary">
 										{'${{vault.<name>.path/to/secret:FIELD}}'}
@@ -744,7 +745,7 @@ export function VaultProvidersPage() {
 							<div className="grid gap-3">{renderProviderFields()}</div>
 						)}
 
-						<div className="space-y-2 rounded-lg border border-border/50 bg-muted/10 p-3">
+						<div className="space-y-2 rounded-lg bg-muted/10 p-3">
 							<div className="flex items-center justify-between">
 								<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
 									Project Assignments
@@ -784,35 +785,35 @@ export function VaultProvidersPage() {
 											Loading environments...
 										</p>
 									) : (
-											((environmentsQuery.data ||
-												[]) as any[]
-										).map(environment => {
-											const row = assignmentRows.find(
-												(item: any) =>
-													Number(item.project_id) ===
-													Number(assignmentProject),
-											);
-											const checked = !!row?.environment_ids
-												?.map(Number)
-												.includes(Number(environment.id));
-											return (
-												<label
-													key={environment.id}
-													className="flex items-center gap-2 text-xs">
-													<input
-														type="checkbox"
-														checked={checked}
-														onChange={() =>
-															toggleAssignment(
-																Number(assignmentProject),
-																Number(environment.id),
-															)
-														}
-													/>
-													{environment.name}
-												</label>
-											);
-										})
+										((environmentsQuery.data || []) as any[]).map(
+											environment => {
+												const row = assignmentRows.find(
+													(item: any) =>
+														Number(item.project_id) ===
+														Number(assignmentProject),
+												);
+												const checked = !!row?.environment_ids
+													?.map(Number)
+													.includes(Number(environment.id));
+												return (
+													<label
+														key={environment.id}
+														className="flex items-center gap-2 text-xs">
+														<input
+															type="checkbox"
+															checked={checked}
+															onChange={() =>
+																toggleAssignment(
+																	Number(assignmentProject),
+																	Number(environment.id),
+																)
+															}
+														/>
+														{environment.name}
+													</label>
+												);
+											},
+										)
 									)}
 								</div>
 							)}
@@ -834,8 +835,7 @@ export function VaultProvidersPage() {
 							</p>
 						</div>
 
-						{/* Dokploy Exact Footer Layout: Left Test Connection & Right Save/Update */}
-						<div className="mt-4 flex w-full items-center justify-between gap-2 border-t border-border/40 pt-4">
+						<div className="mt-4 flex w-full items-center justify-between gap-2 border-t  pt-4">
 							<Button
 								type="button"
 								variant="secondary"
@@ -861,11 +861,10 @@ export function VaultProvidersPage() {
 				</DialogContent>
 			</Dialog>
 
-			{/* Delete Confirmation Modal */}
 			<Dialog
 				open={!!deleteTarget}
 				onOpenChange={open => !open && setDeleteTarget(null)}>
-				<DialogContent className="rounded-2xl border border-border bg-card p-6 shadow-2xl sm:max-w-sm">
+				<DialogContent className="rounded-2xl bg-card p-6 shadow-2xl sm:max-w-sm">
 					<DialogHeader className="space-y-2">
 						<DialogTitle className="flex items-center gap-2 text-base font-bold text-destructive">
 							<AlertCircle className="size-5" />

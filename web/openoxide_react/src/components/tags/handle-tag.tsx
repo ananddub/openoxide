@@ -124,7 +124,7 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 					)
 				}
 			/>
-			<DialogContent className="rounded-2xl border border-border/80 bg-card p-6 shadow-2xl sm:max-w-md">
+			<DialogContent className="rounded-2xl bg-card p-6 shadow-2xl sm:max-w-md">
 				<DialogHeader className="space-y-1">
 					<DialogTitle className="text-base font-bold text-foreground">
 						{tagId ? 'Update' : 'Create'} Tag
@@ -165,7 +165,7 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 						</label>
 						<div className="flex items-center gap-3">
 							<label
-								className="relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border shadow-2xs transition-opacity hover:opacity-80"
+								className="relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg shadow-2xs transition-opacity hover:opacity-80"
 								style={{
 									backgroundColor: color || '#3b82f6',
 								}}
@@ -203,9 +203,9 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 									key={c}
 									type="button"
 									onClick={() => setColor(c)}
-									className={`flex size-6 items-center justify-center rounded-full border border-black/10 transition-transform ${
+									className={`flex size-6 items-center justify-center rounded-full transition-transform ${
 										color === c
-											? 'scale-110 ring-2 ring-primary ring-offset-1'
+											? 'scale-110 ring-2 ring-primary'
 											: 'opacity-80 hover:scale-105 hover:opacity-100'
 									}`}
 									style={{backgroundColor: c}}>
@@ -218,7 +218,7 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 					</div>
 
 					{/* Live Preview */}
-					<div className="mt-1 flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 p-3">
+					<div className="mt-1 flex items-center justify-between rounded-lg bg-muted/20 p-3">
 						<span className="text-xs font-medium text-muted-foreground">
 							Preview Badge:
 						</span>
@@ -226,7 +226,7 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 					</div>
 				</form>
 
-				<DialogFooter className="gap-2 border-t border-border/60 pt-2 sm:gap-0">
+				<DialogFooter className="gap-2 border-t  pt-2 sm:gap-0">
 					<Button
 						type="button"
 						variant="outline"

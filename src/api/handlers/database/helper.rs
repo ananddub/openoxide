@@ -102,9 +102,10 @@ pub async fn run_operation(
     kind: DatabaseKind,
     id: i64,
     operation: DatabaseOperation,
+    actor_id: i64,
 ) -> Result<DatabaseOperationProto, ConnectError> {
     let result = service
-        .run_operation(kind, id, operation)
+        .run_operation(kind, id, operation, actor_id)
         .await
         .map_err(map_db_error)?;
     Ok(DatabaseOperationProto {

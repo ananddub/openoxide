@@ -376,7 +376,7 @@ impl AiService {
         let deployment_id = if input.deploy_now {
             match self
                 .compose
-                .run_operation(compose.id, ComposeOperation::Deploy)
+                .run_operation(compose.id, ComposeOperation::Deploy, 0)
                 .await
             {
                 Ok(result) => match result.deployment_id {

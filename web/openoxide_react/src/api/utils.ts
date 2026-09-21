@@ -51,3 +51,28 @@ export function formatApiError(error: unknown): string {
 	}
 	return 'An unexpected error occurred';
 }
+
+/**
+ * The panel host's server row stores the agent's container DNS name as its
+ * `ip_address` (that is how the backend resolves the local gRPC endpoint —
+ * see MonitoringService::client). Users should see it as `localhost`, not a
+ * Docker service name. Remote rows already hold a real address.
+ */
+export function serverHostLabel(ipAddress?: string | null): string {
+	const ip = String(ipAddress || '').trim();
+	if (ip === 'openoxide-agent' || ip === 'openoxide-monitor')
+		return 'localhost';
+	return ip || '-';
+}
+
+/** True for the panel host's own server row (addressed through the local
+ *  Agent, not SSH). */
+export function isLocalServerRow(ipAddress?: string | null): boolean {
+	const ip = String(ipAddress || '').trim();
+	return (
+		ip === 'openoxide-agent' ||
+		ip === 'openoxide-monitor' ||
+		ip === 'localhost' ||
+		ip === '127.0.0.1'
+	);
+}

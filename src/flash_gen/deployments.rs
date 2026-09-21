@@ -5,7 +5,6 @@ use super::models::*;
 use super::db::Queries;
 use super::compose_extra::ComposeQueueDeploymentNoServerParams;
 use super::compose_extra::ComposeQueueDeploymentWithServerParams;
-use super::database_extra::DbCreateQueuedDatabaseDeploymentForServerParams;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct DeploymentsRunningForApplicationRow {
@@ -17,10 +16,35 @@ pub struct DeploymentsRunningForApplicationRow {
 pub type DeploymentsRunningForComposeRow = DeploymentsRunningForApplicationRow;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
+pub struct DeploymentsGetAllRow {
+    pub id: i64,
+    pub title: String,
+    pub description: Option<String>,
+    pub status: String,
+    pub state: String,
+    pub log_path: String,
+    pub pid: Option<String>,
+    pub error_message: Option<String>,
+    pub operation: Option<String>,
+    pub is_preview_deployment: i64,
+    pub started_at: Option<i64>,
+    pub last_state_at: Option<i64>,
+    pub finished_at: Option<i64>,
+    pub service_id: Option<i64>,
+    pub server_id: Option<i64>,
+    pub created_at: i64,
+    pub database_kind: Option<String>,
+}
+
+pub type DeploymentsGetByIdRow = DeploymentsGetAllRow;
+
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct DeploymentsGetCancelInfoRow {
     pub service_id: Option<i64>,
     pub status: String,
 }
+
+pub type DeploymentsListFilteredRow = DeploymentsGetAllRow;
 
 pub type DeploymentsGetRunningRemoteJobsRow = DeploymentsRunningForApplicationRow;
 
@@ -112,7 +136,14 @@ pub struct DeploymentsUpdateParams {
     pub id: i64,
 }
 
-pub type DeploymentsCreateQueuedDeploymentParams = ComposeQueueDeploymentWithServerParams;
+pub struct DeploymentsCreateQueuedDeploymentParams {
+    pub title: String,
+    pub description: String,
+    pub log_path: String,
+    pub operation: String,
+    pub service_id: i64,
+    pub server_id: i64,
+}
 
 pub struct DeploymentsUpdateStateIfRunningWithErrorParams {
     pub state: String,
@@ -137,9 +168,17 @@ pub struct DeploymentsFinalizeWithResource3Params {
 
 pub type DeploymentsFinalizeWithResource4Params = DeploymentsFinalizeWithResource3Params;
 
-pub type DeploymentsCreateQueuedComposeDeploymentParams = ComposeQueueDeploymentWithServerParams;
+pub type DeploymentsCreateQueuedComposeDeploymentParams = DeploymentsCreateQueuedDeploymentParams;
 
-pub type DeploymentsCreateQueuedDatabaseDeploymentParams = DbCreateQueuedDatabaseDeploymentForServerParams;
+pub struct DeploymentsCreateQueuedDatabaseDeploymentParams {
+    pub title: String,
+    pub description: String,
+    pub log_path: String,
+    pub operation: String,
+    pub service_id: i64,
+    pub database_kind: String,
+    pub server_id: i64,
+}
 
 pub struct DeploymentsListFilteredParams {
     pub status: String,
@@ -420,8 +459,8 @@ impl Queries {
     /// DeploymentsGetAll
     pub async fn deployments_get_all(
         &self,
-    ) -> Result<Vec<Deployments>, sqlx::Error> {
-        sqlx::query_as::<_, Deployments>(
+    ) -> Result<Vec<DeploymentsGetAllRow>, sqlx::Error> {
+        sqlx::query_as::<_, DeploymentsGetAllRow>(
             "SELECT id AS id, title AS title, description AS description, status AS status, state AS state, log_path AS log_path, pid AS pid, error_message AS error_message, operation AS operation, is_preview_deployment AS is_preview_deployment, started_at AS started_at, last_state_at AS last_state_at, finished_at AS finished_at, service_id AS service_id, server_id AS server_id, created_at AS created_at, database_kind AS database_kind FROM deployments;"
         )
         .fetch_all(&self.pool)
@@ -432,8 +471,8 @@ impl Queries {
     pub async fn deployments_get_by_id(
         &self,
         id: i64,
-    ) -> Result<Deployments, sqlx::Error> {
-        sqlx::query_as::<_, Deployments>(
+    ) -> Result<DeploymentsGetByIdRow, sqlx::Error> {
+        sqlx::query_as::<_, DeploymentsGetByIdRow>(
             "SELECT id AS id, title AS title, description AS description, status AS status, state AS state, log_path AS log_path, pid AS pid, error_message AS error_message, operation AS operation, is_preview_deployment AS is_preview_deployment, started_at AS started_at, last_state_at AS last_state_at, finished_at AS finished_at, service_id AS service_id, server_id AS server_id, created_at AS created_at, database_kind AS database_kind FROM deployments WHERE id = ?;"
         )
         .bind(id)
@@ -1015,8 +1054,8 @@ impl Queries {
     pub async fn deployments_list_filtered(
         &self,
         params: &DeploymentsListFilteredParams,
-    ) -> Result<Vec<Deployments>, sqlx::Error> {
-        sqlx::query_as::<_, Deployments>(
+    ) -> Result<Vec<DeploymentsListFilteredRow>, sqlx::Error> {
+        sqlx::query_as::<_, DeploymentsListFilteredRow>(
             "SELECT id AS id, title AS title, description AS description, status AS status, state AS state, log_path AS log_path, pid AS pid, error_message AS error_message, operation AS operation, is_preview_deployment AS is_preview_deployment, started_at AS started_at, last_state_at AS last_state_at, finished_at AS finished_at, service_id AS service_id, server_id AS server_id, created_at AS created_at, database_kind AS database_kind FROM deployments WHERE status = COALESCE(?, status) AND state = COALESCE(?, state) AND service_id = COALESCE(?, service_id) AND server_id = COALESCE(?, server_id) ORDER BY COALESCE(started_at, created_at) DESC, id DESC LIMIT ? OFFSET ?;"
         )
         .bind(&params.status)
@@ -1280,7 +1319,7 @@ impl Queries {
         &self,
     ) -> Result<Vec<DeploymentsGetQueuedDeploymentsGroupedRow>, sqlx::Error> {
         sqlx::query_as::<_, DeploymentsGetQueuedDeploymentsGroupedRow>(
-            "SELECT id, server_id FROM deployments WHERE status = 'QUEUED' ORDER BY created_at ASC, id ASC;"
+            "SELECT id, server_id FROM deployments WHERE status = 'QUEUED' AND NOT EXISTS ( SELECT 1 FROM application_migrations am WHERE am.service_id = deployments.service_id AND am.status = 'RUNNING' ) ORDER BY created_at ASC, id ASC;"
         )
         .fetch_all(&self.pool)
         .await
@@ -1318,7 +1357,7 @@ impl Queries {
         params: &AppCoreQueueDeploymentWithServerParams,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, unixepoch()) RETURNING id;"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, server_id, is_preview_deployment, user_id, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, ?, 0, ?, unixepoch()) RETURNING id;"
         )
         .bind(&params.title)
         .bind(&params.description)
@@ -1326,6 +1365,7 @@ impl Queries {
         .bind(&params.operation)
         .bind(&params.service_id)
         .bind(&params.server_id)
+        .bind(&params.user_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -1336,13 +1376,14 @@ impl Queries {
         params: &AppCoreQueueDeploymentNoServerParams,
     ) -> Result<i64, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, i64>(
-            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, is_preview_deployment, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, 0, unixepoch()) RETURNING id;"
+            "INSERT INTO deployments (title, description, status, state, log_path, operation, service_id, is_preview_deployment, user_id, last_state_at) VALUES (?, ?, 'QUEUED', 'QUEUE', ?, ?, ?, 0, ?, unixepoch()) RETURNING id;"
         )
         .bind(&params.title)
         .bind(&params.description)
         .bind(&params.log_path)
         .bind(&params.operation)
         .bind(&params.service_id)
+        .bind(&params.user_id)
         .fetch_one(&self.pool)
         .await
     }

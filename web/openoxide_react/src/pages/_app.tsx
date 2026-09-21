@@ -1,52 +1,24 @@
-import * as React from 'react';
-import {createFileRoute, Navigate, Outlet, useLocation, Link} from '@tanstack/react-router';
 import {
-	SidebarInset,
-	SidebarProvider,
-	SidebarTrigger,
-} from '#/components/ui/sidebar';
+	createFileRoute,
+	Navigate,
+	Outlet,
+	useLocation,
+} from '@tanstack/react-router';
+import {SidebarProvider, SidebarTrigger} from '#/components/ui/sidebar';
 import {AppSidebar} from '#/components/layouts/sidebar';
-import {Separator} from '#/components/ui/separator';
-import {useProjectGet, useApplicationList, useComposeList, useOverviewServices} from '#/api/live';
+import {Logo} from '#/components/shared/logo';
 import {useTableWatch} from '#/hooks/use-table-watch';
 import {useAuthSession} from '#/stores/session-context';
 
-function ProjectNameBreadcrumb({id}: {id: number}) {
-	// Live query keyed ['projects','get',id] — table-watch refetches
-	// while the layout is mounted.
-	const {data: project} = useProjectGet(BigInt(id));
-	return <>{project?.name || `Project #${id}`}</>;
-}
+export const Route = createFileRoute('/_app')({
+	component: AppLayout,
+	notFoundComponent: AppNotFoundPlaceholder,
+});
 
-/** Shared ['overview-services'] query instance for the name breadcrumbs. */
-function useOverviewServicesData() {
-	return useOverviewServices().data ?? [];
-}
-
-function AppNameBreadcrumb({id}: {id: number}) {
-	const apps = useApplicationList().data ?? [];
-	const overviewServices = useOverviewServicesData();
-	const app =
-		apps.find((a: any) => Number(a.id) === Number(id)) ||
-		overviewServices.find((s: any) => Number(s.id) === Number(id));
-	return <>{app?.name || `App #${id}`}</>;
-}
-
-function ComposeNameBreadcrumb({id}: {id: number}) {
-	const composes = useComposeList().data ?? [];
-	const overviewServices = useOverviewServicesData();
-	const compose =
-		composes.find((c: any) => Number(c.id) === Number(id)) ||
-		overviewServices.find((s: any) => Number(s.id) === Number(id));
-	return <>{compose?.name || `Compose #${id}`}</>;
-}
-
-function DatabaseNameBreadcrumb({id}: {id: number}) {
-	const overviewServices = useOverviewServicesData();
-	const db = overviewServices.find((s: any) => Number(s.id) === Number(id));
-	return <>{db?.name || `DB #${id}`}</>;
-}
-
+/**
+ * Unknown project/app/database sub-paths bounce back to the owning project
+ * (or the projects list) instead of rendering the shell's 404.
+ */
 function AppNotFoundPlaceholder() {
 	const location = useLocation();
 	const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -66,130 +38,40 @@ function AppNotFoundPlaceholder() {
 
 	return <Navigate to="/projects" replace />;
 }
-
-export const Route = createFileRoute('/_app')({
-	component: AppLayout,
-	notFoundComponent: AppNotFoundPlaceholder,
-});
-
+/**
+ * Dashboard shell, laid out like the OpenShip dashboard: a full-height flex
+ * column with the floating rounded rail beside a single scrolling main area.
+ * There is no sticky breadcrumb header — each page owns its own title, and
+ * the rail carries navigation, theme, and the workspace switcher.
+ */
 function AppLayout() {
 	useTableWatch();
 	const {isAuth} = useAuthSession();
-	const location = useLocation();
 
 	if (!isAuth) return <Navigate to="/singin" replace />;
 
-	const pathSegments = location.pathname.split('/').filter(Boolean);
-
 	return (
-		<SidebarProvider
-			style={
-				{
-					'--sidebar-width': '16rem',
-					'--sidebar-width-mobile': '16rem',
-				} as React.CSSProperties
-			}>
-			<AppSidebar />
-			<SidebarInset>
-				{/* Sticky Header with breadcrumbs */}
-				<header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-4 border-b border-border/40 bg-background/80 px-6 backdrop-blur-md transition-all duration-200">
-					<div className="flex w-full items-center justify-between">
-						<div className="flex items-center gap-2">
-							<SidebarTrigger className="-ml-1" />
-							<Separator orientation="vertical" className="mx-2 h-4" />
-							<div className="flex items-center gap-2 text-xs font-semibold">
-								<Link
-									to="/projects"
-									className="text-muted-foreground transition-colors hover:text-foreground">
-									Dashboard
-								</Link>
-								{pathSegments.map((segment, index) => {
-									let path = `/${pathSegments.slice(0, index + 1).join('/')}`;
-									const isLast = index === pathSegments.length - 1;
-									const isProjectParam =
-										index > 0 &&
-										pathSegments[index - 1] === 'projects' &&
-										!isNaN(Number(segment));
-									const isAppParam =
-										index > 0 &&
-										pathSegments[index - 1] === 'app' &&
-										!isNaN(Number(segment));
-									const isComposeParam =
-										index > 0 &&
-										pathSegments[index - 1] === 'compose' &&
-										!isNaN(Number(segment));
-									const isDatabaseParam =
-										index > 0 &&
-										pathSegments[index - 1] === 'database' &&
-										!isNaN(Number(segment));
-
-									if (
-										(segment === 'app' ||
-											segment === 'database' ||
-											segment === 'compose') &&
-										index > 0 &&
-										!isNaN(Number(pathSegments[index - 1]))
-									) {
-										path = `/projects/${pathSegments[index - 1]}`;
-									}
-
-									const label = isProjectParam ? (
-										<ProjectNameBreadcrumb id={Number(segment)} />
-									) : isAppParam ? (
-										<AppNameBreadcrumb id={Number(segment)} />
-									) : isComposeParam ? (
-										<ComposeNameBreadcrumb id={Number(segment)} />
-									) : isDatabaseParam ? (
-										<DatabaseNameBreadcrumb id={Number(segment)} />
-									) : segment === 'app' ? (
-										'Application'
-									) : (
-										segment.charAt(0).toUpperCase() + segment.slice(1)
-									);
-
-									const activeEnvParam =
-										typeof window !== 'undefined'
-											? new URLSearchParams(window.location.search).get(
-													'env',
-												)
-											: null;
-									const envSearchObj =
-										activeEnvParam && !isNaN(Number(activeEnvParam))
-											? {env: Number(activeEnvParam)}
-											: undefined;
-
-									return (
-										<React.Fragment key={`${path}-${index}`}>
-											<span className="font-normal text-muted-foreground/30">
-												/
-											</span>
-											{isLast ? (
-												<span className="font-bold text-foreground">
-													{label}
-												</span>
-											) : (
-												<Link
-													to={path as unknown as '.'}
-													search={
-														isProjectParam || path.startsWith('/projects/')
-															? (envSearchObj as any)
-															: undefined
-													}
-													className="text-muted-foreground transition-colors hover:text-foreground">
-													{label}
-												</Link>
-											)}
-										</React.Fragment>
-									);
-								})}
-							</div>
-						</div>
+		<SidebarProvider className="h-dvh">
+			<div className="flex min-h-0 w-full flex-1 flex-col">
+				{/* Mobile-only top bar: the floating rail is hidden below md,
+				    and this trigger is the only way to open the drawer. */}
+				<div className="flex h-12 shrink-0 items-center justify-between gap-2 border-b bg-background px-3 md:hidden">
+					<div className="flex min-w-0 items-center gap-2.5">
+						<Logo className="size-6 shrink-0" />
+						<span className="truncate text-sm font-semibold tracking-tight">
+							OpenOxide
+						</span>
 					</div>
-				</header>
-				<main className="flex-1 p-6">
-					<Outlet />
-				</main>
-			</SidebarInset>
+					<SidebarTrigger className="size-9" />
+				</div>
+				<div className="flex min-h-0 flex-1">
+					<AppSidebar />
+					{/* Main content */}
+					<main className="min-w-0 flex-1 overflow-y-auto">
+						<Outlet />
+					</main>
+				</div>
+			</div>
 		</SidebarProvider>
 	);
 }

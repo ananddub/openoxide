@@ -1,85 +1,17 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
-@plugin "@tailwindcss/typography";
+@import './fonts.css';
+@import './theme.css';
 
-@custom-variant dark (&:is(.dark *));
-
-:root {
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.145 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.145 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.145 0 0);
-	--primary: oklch(0.205 0 0);
-	--primary-foreground: oklch(0.985 0 0);
-	--secondary: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.205 0 0);
-	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
-	--accent: oklch(0.97 0 0);
-	--accent-foreground: oklch(0.205 0 0);
-	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.922 0 0);
-	--input: oklch(0.922 0 0);
-	--ring: oklch(0.708 0 0);
-	/* Charts */
-	--chart-1: oklch(0.87 0 0);
-	--chart-2: oklch(0.556 0 0);
-	--chart-3: oklch(0.439 0 0);
-	--chart-4: oklch(0.371 0 0);
-	--chart-5: oklch(0.269 0 0);
-	/* Sidebar */
-	--radius: 0.625rem;
-	--sidebar: oklch(0.985 0 0);
-	--sidebar-foreground: oklch(0.145 0 0);
-	--sidebar-primary: oklch(0.205 0 0);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.97 0 0);
-	--sidebar-accent-foreground: oklch(0.205 0 0);
-	--sidebar-border: oklch(0.922 0 0);
-	--sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-	--background: oklch(0.145 0 0);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.205 0 0);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(0.205 0 0);
-	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.922 0 0);
-	--primary-foreground: oklch(0.205 0 0);
-	--secondary: oklch(0.269 0 0);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.269 0 0);
-	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(0.269 0 0);
-	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.704 0.191 22.216);
-	--border: oklch(1 0 0 / 10%);
-	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.556 0 0);
-	/* Charts */
-	--chart-1: oklch(0.87 0 0);
-	--chart-2: oklch(0.556 0 0);
-	--chart-3: oklch(0.439 0 0);
-	--chart-4: oklch(0.371 0 0);
-	--chart-5: oklch(0.269 0 0);
-	/* Sidebar */
-	--sidebar: oklch(0.205 0 0);
-	--sidebar-foreground: oklch(0.985 0 0);
-	--sidebar-primary: oklch(0.488 0.243 264.376);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.269 0 0);
-	--sidebar-accent-foreground: oklch(0.985 0 0);
-	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.556 0 0);
-}
+/* Selector-based theming via data-theme (light / dim / dark).
+   `dark:` utilities fire on the pure-black dark theme; `dim:` targets the
+   neutral medium-dark. Light is the default with no variant. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant dim (&:where([data-theme="dim"], [data-theme="dim"] *));
 
 @theme inline {
-	--font-sans: 'Inter', sans-serif;
+	--font-sans: 'Gellix', 'Inter', system-ui, sans-serif;
 	--font-heading: var(--font-sans);
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
@@ -112,6 +44,30 @@
 	--color-card: var(--card);
 	--color-foreground: var(--foreground);
 	--color-background: var(--background);
+
+	/* Semantic status utilities (text-success, bg-success-bg, …) — theme-aware
+	   via the --st-* ladder in theme.css. */
+	--color-success: var(--success);
+	--color-success-bg: var(--success-bg);
+	--color-success-border: var(--success-border);
+	--color-success-solid: var(--success-solid);
+	--color-danger: var(--danger);
+	--color-danger-bg: var(--danger-bg);
+	--color-danger-border: var(--danger-border);
+	--color-danger-solid: var(--danger-solid);
+	--color-warning: var(--warning);
+	--color-warning-bg: var(--warning-bg);
+	--color-warning-border: var(--warning-border);
+	--color-warning-solid: var(--warning-solid);
+	--color-info: var(--info);
+	--color-info-bg: var(--info-bg);
+	--color-info-border: var(--info-border);
+	--color-info-solid: var(--info-solid);
+	--color-neutral: var(--neutral);
+	--color-neutral-bg: var(--neutral-bg);
+	--color-neutral-border: var(--neutral-border);
+	--color-neutral-solid: var(--neutral-solid);
+
 	--radius-sm: calc(var(--radius) * 0.6);
 	--radius-md: calc(var(--radius) * 0.8);
 	--radius-lg: var(--radius);
@@ -119,6 +75,21 @@
 	--radius-2xl: calc(var(--radius) * 1.8);
 	--radius-3xl: calc(var(--radius) * 2.2);
 	--radius-4xl: calc(var(--radius) * 2.6);
+	--animate-shiny-text: shiny-text 8s infinite;
+	--animate-gradient: gradient 8s linear infinite;
+  @keyframes shiny-text {
+  0%, 90%, 100% {
+    background-position: calc(-100% - var(--shiny-width)) 0;
+		}
+  30%, 60% {
+    background-position: calc(100% + var(--shiny-width)) 0;
+		}
+	}
+  @keyframes gradient {
+  to {
+    background-position: var(--bg-size, 300%) 0;
+		}
+	}
 }
 
 @layer base {
@@ -147,4 +118,20 @@
 	::-webkit-scrollbar-thumb:hover {
 		background: var(--muted-foreground);
 	}
+}
+
+
+/* ── Opaque dialog/sheet surfaces ───────────────────────────────────────
+ * ~285 call-sites pass `bg-card` on DialogContent, which is a 3% translucent
+ * lift fill (fine for page cards, wrong for modals floating over a blurred
+ * backdrop). Force the popover surface on every dialog-family panel and
+ * restore the hairline edge. `!important` beats the per-call-site utility. */
+[data-slot='dialog-content'],
+[data-slot='alert-dialog-content'],
+[data-slot='sheet-content'] {
+	background-color: var(--popover) !important;
+	box-shadow:
+		inset 0 0 0 1px var(--border),
+		0 20px 25px -5px rgb(0 0 0 / 0.1),
+		0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
 }

@@ -32,7 +32,7 @@ function BlueprintPage() {
 			style={{
 				display: 'flex',
 				flexDirection: 'column',
-				height: 'calc(100vh - 56px)',
+				height: '100dvh',
 				background: '#0d1117',
 			}}>
 			{/* Header */}

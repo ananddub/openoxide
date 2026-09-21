@@ -34,15 +34,6 @@ impl ComposeStatus {
     }
 }
 
-// impl From<String> for ComposeType {
-//     fn from(value: String) -> Self {
-//         Self::from_str(&value).unwrap_or_else(|| {
-//             tracing::warn!(compose_type = %value, "unknown compose_type, defaulting to DockerCompose");
-//             Self::DockerCompose
-//         })
-//     }
-// }
-
 #[derive(Debug, Clone)]
 pub struct ComposeRecord {
     pub id: i64,

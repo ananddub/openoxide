@@ -45,5 +45,5 @@ export function DomainFormFields({state, services, onChange}: Props) {
 }
 
 function ToggleField({label, description, checked, onChange}: {label: string; description: string; checked: boolean; onChange: (value: boolean) => void}) {
-	return <div className="flex items-center justify-between rounded-lg border p-3"><div><Label>{label}</Label><p className="text-[11px] text-muted-foreground">{description}</p></div><Switch checked={checked} onCheckedChange={onChange} /></div>;
+	return <div className="flex items-center justify-between rounded-lg  p-3"><div><Label>{label}</Label><p className="text-[11px] text-muted-foreground">{description}</p></div><Switch checked={checked} onCheckedChange={onChange} /></div>;
 }

@@ -60,7 +60,7 @@ export function LogViewerToolbar({
 	onDownload,
 }: LogViewerToolbarProps) {
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-border bg-card px-3 py-2 font-sans">
+		<div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl bg-card px-3 py-2 font-sans">
 			{/* Left: Live Status & Line Count */}
 			<div className="flex flex-wrap items-center gap-2">
 				<div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
@@ -74,7 +74,7 @@ export function LogViewerToolbar({
 					)}
 					<span>{isLive ? 'Live Logs' : 'Log Output'}</span>
 				</div>
-				<span className="rounded border border-border/40 bg-muted/50 px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
+				<span className="rounded bg-muted/50 px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
 					{searchQuery ||
 					selectedLevel !== 'ALL' ||
 					selectedStream !== 'ALL'
@@ -83,7 +83,7 @@ export function LogViewerToolbar({
 				</span>
 
 				{/* Stream Badges: STDOUT (Blue dot) / STDERR (Red dot) */}
-				<div className="flex items-center gap-1 border-l border-border/60 pl-1">
+				<div className="flex items-center gap-1 border-l  pl-1">
 					<button
 						type="button"
 						onClick={() =>
@@ -91,10 +91,10 @@ export function LogViewerToolbar({
 								selectedStream === 'STDOUT' ? 'ALL' : 'STDOUT',
 							)
 						}
-						className={`flex cursor-pointer items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[10px] transition-colors ${
+						className={`flex cursor-pointer items-center gap-1 rounded  px-1.5 py-0.5 font-mono text-[10px] transition-colors ${
 							selectedStream === 'STDOUT'
 								? 'border-blue-500/40 bg-blue-500/20 font-bold text-blue-300'
-								: 'border-border/40 bg-muted/30 text-muted-foreground hover:text-foreground'
+								: ' bg-muted/30 text-muted-foreground hover:text-foreground'
 						}`}
 						title="Filter STDOUT">
 						<span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
@@ -107,10 +107,10 @@ export function LogViewerToolbar({
 								selectedStream === 'STDERR' ? 'ALL' : 'STDERR',
 							)
 						}
-						className={`flex cursor-pointer items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[10px] transition-colors ${
+						className={`flex cursor-pointer items-center gap-1 rounded  px-1.5 py-0.5 font-mono text-[10px] transition-colors ${
 							selectedStream === 'STDERR'
 								? 'border-rose-500/40 bg-rose-500/20 font-bold text-rose-300'
-								: 'border-border/40 bg-muted/30 text-muted-foreground hover:text-foreground'
+								: ' bg-muted/30 text-muted-foreground hover:text-foreground'
 						}`}
 						title="Filter STDERR">
 						<span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
@@ -129,7 +129,7 @@ export function LogViewerToolbar({
 						placeholder="Filter logs..."
 						value={searchQuery}
 						onChange={e => onSearchChange(e.target.value)}
-						className="h-7 border-border bg-muted/30 pr-7 pl-8 font-mono text-xs focus:bg-card"
+						className="h-7 border- bg-muted/30 pr-7 pl-8 font-mono text-xs focus:bg-card"
 					/>
 					{searchQuery && (
 						<button
@@ -144,17 +144,17 @@ export function LogViewerToolbar({
 				{/* Level Filter Dropdown */}
 				<DropdownMenu>
 					<DropdownMenuTrigger
-						className={`inline-flex h-7 cursor-pointer items-center justify-center gap-1 rounded-md border px-2.5 font-mono text-xs font-medium transition-colors ${
+						className={`inline-flex h-7 cursor-pointer items-center justify-center gap-1 rounded-md  px-2.5 font-mono text-xs font-medium transition-colors ${
 							selectedLevel !== 'ALL'
-								? 'border-primary/40 bg-primary/10 text-primary'
-								: 'border-border bg-card text-foreground hover:bg-muted'
+								? ' bg-primary/10 text-primary'
+								: 'border- bg-card text-foreground hover:bg-muted'
 						}`}>
 						<Filter className="h-3 w-3" />
 						{selectedLevel === 'ALL' ? 'Levels' : selectedLevel}
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="end"
-						className="w-36 border-border bg-card font-mono text-xs">
+						className="w-36 border- bg-card font-mono text-xs">
 						<DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase">
 							Filter Level
 						</DropdownMenuLabel>
@@ -174,13 +174,13 @@ export function LogViewerToolbar({
 				{/* Settings & Controls Dropdown */}
 				<DropdownMenu>
 					<DropdownMenuTrigger
-						className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-border bg-card p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+						className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-card p-0 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 						title="View Options">
 						<Settings2 className="h-3.5 w-3.5" />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						align="end"
-						className="w-48 border-border bg-card font-mono text-xs">
+						className="w-48 border- bg-card font-mono text-xs">
 						<DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase">
 							Display Settings
 						</DropdownMenuLabel>
@@ -210,7 +210,7 @@ export function LogViewerToolbar({
 						size="sm"
 						onClick={onReload}
 						title="Reload Logs"
-						className="h-7 w-7 border-border p-0 hover:bg-muted">
+						className="h-7 w-7  p-0 hover:bg-muted">
 						<RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
 					</Button>
 				)}
@@ -220,7 +220,7 @@ export function LogViewerToolbar({
 						size="sm"
 						onClick={onDownload}
 						title="Download Log File"
-						className="h-7 w-7 border-border p-0 hover:bg-muted">
+						className="h-7 w-7  p-0 hover:bg-muted">
 						<Download className="h-3.5 w-3.5 text-muted-foreground" />
 					</Button>
 				)}

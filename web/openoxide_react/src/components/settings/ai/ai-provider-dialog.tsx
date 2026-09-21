@@ -164,7 +164,7 @@ export function AiProviderDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2.5 text-base font-bold">
-            <div className="flex size-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Bot className="size-4" />
             </div>
             {editing ? "Edit AI Configuration" : "Add AI Configuration"}
@@ -188,10 +188,10 @@ export function AiProviderDialog({
                 onClick={() =>
                   handleSelectPreset(p.name, p.url, p.defaultModel)
                 }
-                className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${
+                className={`rounded-lg  px-2.5 py-1 text-xs font-medium transition-colors ${
                   form.api_url === p.url
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted"
+                    ? " bg-primary text-primary-foreground"
+                    : " bg-muted/40 text-muted-foreground hover:bg-muted"
                 }`}
               >
                 {p.name}
@@ -277,7 +277,7 @@ export function AiProviderDialog({
                 Discovered Models
               </label>
               <select
-                className="h-9 w-full rounded-lg border border-border bg-background px-3 font-mono text-xs text-foreground"
+                className="h-9 w-full rounded-lg bg-background px-3 font-mono text-xs text-foreground"
                 value={form.model}
                 onChange={(e) => set("model", e.target.value)}
               >
@@ -298,12 +298,12 @@ export function AiProviderDialog({
               type="checkbox"
               checked={form.is_enabled}
               onChange={(e) => set("is_enabled", e.target.checked)}
-              className="size-4 rounded border-border accent-primary"
+              className="size-4 rounded  accent-primary"
             />
             Enable this AI configuration for log diagnosis & assistant
           </label>
 
-          <div className="flex items-center justify-between border-t border-border/40 pt-4">
+          <div className="flex items-center justify-between border-t  pt-4">
             <Button
               variant="outline"
               size="sm"

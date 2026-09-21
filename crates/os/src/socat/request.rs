@@ -144,9 +144,33 @@ impl SocatRequestBuilder {
         let req_bytes = self.build_http_bytes();
         stream.write_all(&req_bytes).await?;
 
-        let mut header_buf = [0u8; 1024];
-        let n = stream.read(&mut header_buf).await?;
-        let header_str = String::from_utf8_lossy(&header_buf[..n]).to_string();
+        // The 101 response header can span several socket reads. Consume
+        // exactly up to the terminating CRLF CRLF so no raw-stream body
+        // bytes (and no header tail) leak into the upgraded stream.
+        let mut header_buf: Vec<u8> = Vec::with_capacity(256);
+        let mut byte = [0u8; 1];
+        let header_str = loop {
+            let n = stream.read(&mut byte).await?;
+            if n == 0 {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::UnexpectedEof,
+                    "socket closed before HTTP upgrade completed",
+                ));
+            }
+            header_buf.push(byte[0]);
+            if header_buf.ends_with(b"\r\n\r\n") {
+                break String::from_utf8_lossy(&header_buf).to_string();
+            }
+            if header_buf.len() > 8192 {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!(
+                        "HTTP upgrade header exceeded 8 KiB: {}",
+                        String::from_utf8_lossy(&header_buf)
+                    ),
+                ));
+            }
+        };
         if !header_str.contains("101") {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::Other,

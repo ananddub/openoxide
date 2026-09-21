@@ -1,7 +1,7 @@
 import {useState, useEffect, useMemo} from 'react';
+import {Link, useNavigate} from '@tanstack/react-router';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
-import {Separator} from '#/components/ui/separator';
 import {Skeleton} from '#/components/ui/skeleton';
 import {
 	DropdownMenu,
@@ -11,7 +11,7 @@ import {
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
 import {toast} from 'sonner';
-import {formatApiError} from '#/api/utils';
+import {formatApiError, serverHostLabel} from '#/api/utils';
 import {globalServerConnStore} from '#/hooks/use-server-connection-store';
 import {
 	Server,
@@ -27,6 +27,11 @@ import {
 	Shield,
 	Search,
 	Power,
+	KeyRound,
+	Lock,
+	ArrowRight,
+	ArrowLeftRight,
+	Plus,
 } from 'lucide-react';
 import {
 	Select,
@@ -43,29 +48,39 @@ import type {
 
 interface RemoteServersListProps {
 	servers: RemoteServerResponse[];
-	sshKeys: SshKeyResponse[];
+	sshKeys?: SshKeyResponse[];
 	isLoading: boolean;
+	onAddServer: () => void;
 	onEditServer: (server: RemoteServerResponse) => void;
 	onDeleteServer: (server: RemoteServerResponse) => void;
 	onSetupServer: (server: RemoteServerResponse) => void;
 	onToggleStatus: (server: RemoteServerResponse) => void;
 	onOpenTerminal?: (server: RemoteServerResponse) => void;
-	onPrivateNetwork: (server: RemoteServerResponse) => void;
+	onMigrateServer?: (server: RemoteServerResponse) => void;
 }
 
 const STATUS_FILTERS = ['All', 'Connected', 'Not Connected'] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
 
+/** Reachability word + ring-dot colors (openship list pattern). */
+const STATE_STYLE = {
+	online: {dot: 'border-emerald-500', text: 'text-emerald-500', label: 'Online'},
+	offline: {dot: 'border-rose-500', text: 'text-rose-500', label: 'Offline'},
+	testing: {dot: 'border-amber-400', text: 'text-amber-500', label: 'Checking'},
+} as const;
+
 export function RemoteServersList({
 	servers,
 	isLoading,
+	onAddServer,
 	onEditServer,
 	onDeleteServer,
 	onSetupServer,
 	onToggleStatus,
 	onOpenTerminal,
-	onPrivateNetwork,
+	onMigrateServer,
 }: RemoteServersListProps) {
+	const navigate = useNavigate();
 	const [storeVersion, setStoreVersion] = useState(0);
 	const [search, setSearch] = useState('');
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
@@ -82,8 +97,11 @@ export function RemoteServersList({
 		return servers.filter(s => {
 			const matchName =
 				s.name.toLowerCase().includes(search.toLowerCase()) ||
-				s.ip_address?.toLowerCase().includes(search.toLowerCase());
-			const isConnected = (s.server_status || 'INACTIVE').toUpperCase() === 'ACTIVE';
+				serverHostLabel(s.ip_address)
+					.toLowerCase()
+					.includes(search.toLowerCase());
+			const isConnected =
+				(s.server_status || 'INACTIVE').toUpperCase() === 'ACTIVE';
 			const matchStatus =
 				statusFilter === 'All' ||
 				(statusFilter === 'Connected' && isConnected) ||
@@ -111,14 +129,14 @@ export function RemoteServersList({
 		}
 	};
 
-	/* ── Loading ── */
+	/* ── Loading ─ */
 	if (isLoading) {
 		return (
 			<div className="flex flex-col gap-2">
 				{[1, 2, 3].map(i => (
 					<div
 						key={i}
-						className="flex items-center gap-4 rounded-lg border border-border px-4 py-4">
+						className="flex items-center gap-4 rounded-lg px-4 py-4">
 						<Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
 						<div className="flex-1 space-y-2">
 							<Skeleton className="h-3.5 w-40" />
@@ -131,11 +149,37 @@ export function RemoteServersList({
 		);
 	}
 
+	/* ── Empty — no servers at all ── */
+	if (servers.length === 0) {
+		return (
+			<div className="flex flex-col items-center justify-center gap-4 rounded-2xl bg-muted/10 px-6 py-20 text-center">
+				<div className="flex size-12 items-center justify-center rounded-full bg-muted">
+					<Server className="size-5 text-muted-foreground" />
+				</div>
+				<div>
+					<p className="text-sm font-medium text-foreground">
+						No remote servers yet
+					</p>
+					<p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
+						Connect a Linux node over SSH to deploy applications,
+						containers and databases onto it from this panel.
+					</p>
+				</div>
+				<Button
+					size="sm"
+					onClick={onAddServer}
+					className="h-9 cursor-pointer gap-1.5 px-4 text-xs font-semibold">
+					<Plus className="size-3.5" />
+					Add Server
+				</Button>
+			</div>
+		);
+	}
+
 	return (
-		<div className="flex flex-col gap-3">
+		<div className="flex min-w-0 flex-col gap-3">
 			{/* ── Search + Filter bar ── */}
 			<div className="flex items-center gap-2">
-				{/* Search */}
 				<div className="relative flex-1">
 					<Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
 					<Input
@@ -147,13 +191,12 @@ export function RemoteServersList({
 					{search && (
 						<button
 							onClick={() => setSearch('')}
-							className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+							className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground">
 							<X className="h-3 w-3" />
 						</button>
 					)}
 				</div>
 
-				{/* Status filter dropdown */}
 				<Select
 					value={statusFilter}
 					onValueChange={v => setStatusFilter(v as StatusFilter)}>
@@ -170,24 +213,9 @@ export function RemoteServersList({
 				</Select>
 			</div>
 
-			{/* ── Empty — no servers at all ── */}
-			{servers.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border py-20 text-center">
-					<div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-						<Server className="h-5 w-5 text-muted-foreground" />
-					</div>
-					<div>
-						<p className="text-sm font-medium text-foreground">
-							No remote servers yet
-						</p>
-						<p className="mt-0.5 text-xs text-muted-foreground">
-							Add a Linux node via SSH to deploy applications remotely.
-						</p>
-					</div>
-				</div>
-			) : filtered.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border py-14 text-center">
-					<Search className="h-5 w-5 text-muted-foreground" />
+			{filtered.length === 0 ? (
+				<div className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card py-14 text-center ring-1 ring-border/50">
+					<Search className="size-5 text-muted-foreground" />
 					<p className="text-sm text-muted-foreground">
 						No servers match your filter
 					</p>
@@ -195,96 +223,118 @@ export function RemoteServersList({
 						variant="ghost"
 						size="sm"
 						onClick={clearFilters}
-						className="h-7 text-xs">
+						className="h-7 cursor-pointer text-xs">
 						Clear filters
 					</Button>
 				</div>
 			) : (
-				/* ── List ── */
-				<div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+				/* ── Rows — one bordered card, divided rows (openship) ── */
+				<div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card ring-1 ring-border/50">
 					{filtered.map(item => {
 						const connStatus = globalServerConnStore.getStatus(item.id);
 						const isTesting = connStatus === 'testing';
-						const serverStatus = (item.server_status || 'INACTIVE').toUpperCase();
+						const serverStatus = (
+							item.server_status || 'INACTIVE'
+						).toUpperCase();
 						const isServerActive = serverStatus === 'ACTIVE';
 
-						const dotCls = isTesting
-							? 'bg-amber-400 animate-pulse'
-							: isServerActive
-								? 'bg-emerald-500'
-								: serverStatus === 'INACTIVE'
-									? 'bg-rose-500'
-									: 'bg-zinc-500/60';
+						const state = isTesting
+							? 'testing'
+							: connStatus === 'failed'
+								? 'offline'
+								: isServerActive
+									? 'online'
+									: 'offline';
+						const sm = STATE_STYLE[state];
 
-						const connIcon = isTesting ? (
-							<RefreshCw className="h-3.5 w-3.5 animate-spin text-primary" />
-						) : connStatus === 'success' ? (
-							<Check className="h-3.5 w-3.5 text-emerald-500" />
-						) : connStatus === 'failed' ? (
-							<X className="h-3.5 w-3.5 text-rose-500" />
-						) : (
-							<Plug className="h-3.5 w-3.5" />
-						);
+						const hasKey = Boolean(item.ssh_key_id);
+						const AuthIcon = hasKey ? KeyRound : Lock;
 
 						return (
 							<div
 								key={item.id}
-								className="group flex items-center gap-4 bg-card px-4 py-3.5 transition-colors hover:bg-accent/30">
-								{/* Icon + status dot */}
-								<div className="relative shrink-0">
-									<div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-										<Server className="h-4 w-4 text-foreground/70" />
+								className="group flex items-center gap-3.5 px-5 py-3 transition-colors hover:bg-muted/40">
+								{/* Row body links to the server overview */}
+								<Link
+									to="/remote-servers/$id"
+									params={{id: String(item.id)}}
+									className="flex min-w-0 flex-1 items-center gap-3.5 text-start">
+									{/* Avatar */}
+									<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted/60 transition-colors group-hover:bg-muted">
+										<Server className="size-[18px] text-foreground/70" />
 									</div>
-									<span
-									title={`Server ${serverStatus.toLowerCase()}`}
-										className={`absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-background ${dotCls}`}
-									/>
-								</div>
 
-								{/* Info */}
-								<div className="min-w-0 flex-1">
-									<div className="mb-0.5 flex items-center gap-2">
-										<span className="truncate text-sm font-medium text-foreground">
+									{/* Name + host (fixed column keeps chips aligned) */}
+									<div className="w-44 min-w-0 shrink-0 text-start lg:w-56">
+										<p className="truncate text-sm font-medium text-foreground">
 											{item.name}
+										</p>
+										<p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
+											{serverHostLabel(item.ip_address)}
+										</p>
+									</div>
+
+									{/* Meta chips */}
+									<div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+										<span className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-muted/60 px-2 py-0.5 text-xs text-muted-foreground">
+											<AuthIcon className="size-3.5" />
+											{hasKey ? 'SSH Key' : 'Password'}
+										</span>
+										<span className="hidden shrink-0 items-center rounded-md bg-muted/60 px-2 py-0.5 text-xs text-foreground/80 md:inline-flex">
+											{item.username || 'root'} · port{' '}
+											{item.port || 22}
 										</span>
 									</div>
-									<p className="truncate font-mono text-[11px] text-muted-foreground">
-										{item.username || 'root'}@{item.ip_address}:
-										{item.port || 22}
-									</p>
-								</div>
+								</Link>
 
-								{/* Hover actions */}
-								<div className="flex items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
+								{/* Status word + ring dot */}
+								<span
+									title={
+										isTesting
+											? 'Testing SSH connection…'
+											: `${sm.label} · server ${serverStatus.toLowerCase()}`
+									}
+									className={`inline-flex shrink-0 items-center gap-1.5 text-xs font-medium ${sm.text}`}>
+									<span
+										className={`size-2.5 rounded-full border-2 ${sm.dot} ${isTesting ? 'animate-pulse' : ''}`}
+									/>
+									<span className="hidden sm:inline">{sm.label}</span>
+								</span>
+
+								{/* Hover: quick actions */}
+								<div className="flex shrink-0 items-center gap-2.5 opacity-0 transition-opacity group-hover:opacity-100">
 									<button
 										onClick={() => handleTestConnection(item)}
 										disabled={isTesting}
 										title={isTesting ? 'Testing…' : 'Test SSH connection'}
 										className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50">
-										{connIcon}
+										{isTesting ? (
+											<RefreshCw className="size-4 animate-spin text-primary" />
+										) : connStatus === 'success' ? (
+											<Check className="size-4 text-emerald-500" />
+										) : connStatus === 'failed' ? (
+											<X className="size-4 text-rose-500" />
+										) : (
+											<Plug className="size-4" />
+										)}
 									</button>
 									{onOpenTerminal && (
 										<button
 											onClick={() => onOpenTerminal(item)}
 											title="Open terminal"
 											className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground">
-											<Terminal className="h-4 w-4" />
+											<Terminal className="size-4" />
 										</button>
 									)}
 								</div>
-
-								<Separator
-									orientation="vertical"
-									className="h-5 opacity-0 transition-opacity group-hover:opacity-100"
-								/>
 
 								{/* 3-dot menu */}
 								<DropdownMenu>
 									<DropdownMenuTrigger
 										render={
-											<button className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground" />
+											<button className="flex size-6 shrink-0 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground" />
 										}>
-										<MoreVertical className="h-4 w-4" />
+										<MoreVertical className="size-4" />
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end" className="w-44">
 										<DropdownMenuItem
@@ -304,9 +354,22 @@ export function RemoteServersList({
 											onClick={() => handleTestConnection(item)}>
 											<Plug className="h-3.5 w-3.5" /> Test Connection
 										</DropdownMenuItem>
+										{onMigrateServer && (
+											<DropdownMenuItem
+												className="cursor-pointer gap-2"
+												onClick={() => onMigrateServer(item)}>
+												<ArrowLeftRight className="h-3.5 w-3.5" /> Migrate Services
+											</DropdownMenuItem>
+										)}
 										<DropdownMenuItem
 											className="cursor-pointer gap-2"
-											onClick={() => onPrivateNetwork(item)}>
+											onClick={() =>
+												void navigate({
+													to: '/remote-servers/$id',
+													params: {id: String(item.id)},
+													search: {tab: 'network'},
+												})
+											}>
 											<Shield className="h-3.5 w-3.5" /> Private Network
 										</DropdownMenuItem>
 										<DropdownMenuSeparator />
@@ -338,6 +401,9 @@ export function RemoteServersList({
 										</DropdownMenuItem>
 									</DropdownMenuContent>
 								</DropdownMenu>
+
+								{/* Arrow */}
+								<ArrowRight className="size-4 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-muted-foreground" />
 							</div>
 						);
 					})}

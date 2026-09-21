@@ -260,7 +260,7 @@ export function DnsProvidersPage() {
 	return (
 		<div className="mx-auto max-w-6xl space-y-6 p-6">
 			{/* Page Header */}
-			<div className="flex flex-col justify-between gap-4 border-b border-border/40 pb-5 sm:flex-row sm:items-center">
+			<div className="flex flex-col justify-between gap-4 border-b  pb-5 sm:flex-row sm:items-center">
 				<div className="space-y-1">
 					<h1 className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground">
 						<Globe className="size-5 shrink-0 text-primary" />
@@ -285,7 +285,7 @@ export function DnsProvidersPage() {
 					Loading DNS providers...
 				</div>
 			) : providers.length === 0 ? (
-				<Card className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/80 bg-muted/10 p-12 text-center">
+				<Card className="flex flex-col items-center justify-center gap-3 rounded-2xl  bg-muted/10 p-12 text-center">
 					<div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
 						<Globe className="size-6" />
 					</div>
@@ -311,7 +311,7 @@ export function DnsProvidersPage() {
 						return (
 							<Card
 								key={provider.id}
-								className="flex flex-col justify-between gap-4 rounded-xl border border-border/70 bg-card p-4 shadow-2xs transition-all hover:border-border sm:flex-row sm:items-center">
+								className="flex flex-col justify-between gap-4 rounded-xl bg-card p-4 shadow-2xs transition-all sm:flex-row sm:items-center">
 								<div className="flex min-w-0 items-center gap-3.5">
 									{renderDnsProviderIcon(
 										provider.provider_type,
@@ -329,7 +329,7 @@ export function DnsProvidersPage() {
 											</Badge>
 										</div>
 										<div className="flex flex-wrap items-center gap-2 text-xs">
-											<span className="rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-emerald-500">
+											<span className="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-emerald-500">
 												Wildcard Ready
 											</span>
 											<Badge
@@ -376,7 +376,7 @@ export function DnsProvidersPage() {
 
 			{/* Create / Edit DNS Provider Modal (Matching Dokploy Layout) */}
 			<Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl sm:max-w-lg">
+				<DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-2xl sm:max-w-lg">
 					<DialogHeader className="space-y-1">
 						<DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
 							<Globe className="size-5 text-primary" />
@@ -488,7 +488,7 @@ export function DnsProvidersPage() {
 						</div>
 
 						{/* Dokploy Exact Footer Layout: Left Test Connection & Right Save/Update */}
-						<div className="mt-4 flex w-full items-center justify-between gap-2 border-t border-border/40 pt-4">
+						<div className="mt-4 flex w-full items-center justify-between gap-2 border-t  pt-4">
 							<Button
 								type="button"
 								variant="secondary"
@@ -518,7 +518,7 @@ export function DnsProvidersPage() {
 			<Dialog
 				open={!!deleteTarget}
 				onOpenChange={open => !open && setDeleteTarget(null)}>
-				<DialogContent className="rounded-2xl border border-border bg-card p-6 shadow-2xl sm:max-w-sm">
+				<DialogContent className="rounded-2xl bg-card p-6 shadow-2xl sm:max-w-sm">
 					<DialogHeader className="space-y-2">
 						<DialogTitle className="flex items-center gap-2 text-base font-bold text-destructive">
 							<AlertCircle className="size-5" />
@@ -533,7 +533,7 @@ export function DnsProvidersPage() {
 						</DialogDescription>
 					</DialogHeader>
 
-					<div className="flex w-full items-center justify-end gap-2 border-t border-border/40 pt-3">
+					<div className="flex w-full items-center justify-end gap-2 border-t  pt-3">
 						<Button
 							variant="destructive"
 							onClick={handleDeleteProvider}

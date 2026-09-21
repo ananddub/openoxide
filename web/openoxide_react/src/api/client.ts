@@ -1,5 +1,4 @@
 import {getSessionActions} from '#/stores/session-context';
-import {getActiveOrganizationId} from '#/stores/organization-context';
 import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
 import {createServiceClient} from '#/api/live/query';
 

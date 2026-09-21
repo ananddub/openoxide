@@ -107,7 +107,7 @@ export function ComposeDomainsTab({
 	return (
 		<div className="flex w-full animate-in flex-col gap-6 duration-200 fade-in">
 			{/* Top Header Toolbar */}
-			<div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/40 pb-4">
+			<div className="flex flex-wrap items-center justify-between gap-4 border-b  pb-4">
 				<div className="flex flex-col gap-1">
 					<h3 className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground">
 						<Globe className="size-4 text-primary" /> Compose Domains

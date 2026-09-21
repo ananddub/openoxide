@@ -9,7 +9,7 @@ import {
 } from '#/api/live';
 import {ComposeVisualizer} from '#/components/projects/compose/visualizer/compose-visualizer';
 import {CreateBackupModal} from '#/components/projects/compose/detail/backups/create-backup-modal';
-import {TerminalModal} from '#/components/projects/common/terminal-modal';
+import {TerminalCard} from '#/components/shared/terminal-card';
 import {ComposeDirectContainerLogsModal} from '#/components/projects/compose/detail/logs/compose-direct-container-logs-modal';
 
 interface DatabaseArchitectureTabProps {
@@ -218,13 +218,9 @@ export function DatabaseArchitectureTab({
 				/>
 			)}
 
-			{/* Terminal Shell Modal */}
+			{/* Terminal Shell — inline card */}
 			{activeModal === 'terminal' && (
-				<TerminalModal
-					app={database}
-					open={true}
-					onClose={() => setActiveModal(null)}
-				/>
+				<TerminalCard app={database} enabled={true} onClose={() => setActiveModal(null)} />
 			)}
 
 			{/* Live Container Logs Modal */}

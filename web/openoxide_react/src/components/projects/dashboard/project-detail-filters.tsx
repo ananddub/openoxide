@@ -37,7 +37,7 @@ export function ProjectDetailFilters({
 					placeholder="Search services by name..."
 					value={searchQuery}
 					onChange={e => setSearchQuery(e.target.value)}
-					className="h-10 w-full border-border/80 bg-card/45 pl-9 text-xs shadow-sm"
+					className="h-10 w-full  bg-card/45 pl-9 text-xs shadow-sm"
 				/>
 			</div>
 
@@ -50,7 +50,7 @@ export function ProjectDetailFilters({
 					<Select
 						value={typeFilter}
 						onValueChange={val => setTypeFilter(val ?? 'all')}>
-						<SelectTrigger className="!h-10 w-full border-border/80 bg-card/45 text-xs font-medium shadow-sm sm:w-[150px]">
+						<SelectTrigger className="!h-10 w-full  bg-card/45 text-xs font-medium shadow-sm sm:w-[150px]">
 							<span className="text-left text-foreground">
 								{typeFilter === 'all'
 									? 'All Types'
@@ -61,7 +61,7 @@ export function ProjectDetailFilters({
 											: 'Databases'}
 							</span>
 						</SelectTrigger>
-						<SelectContent className="border border-border bg-card">
+						<SelectContent className="bg-card">
 							<SelectItem value="all" className="text-xs">
 								All Types
 							</SelectItem>
@@ -86,7 +86,7 @@ export function ProjectDetailFilters({
 					<Select
 						value={statusFilter}
 						onValueChange={val => setStatusFilter(val ?? 'all')}>
-						<SelectTrigger className="!h-10 w-full border-border/80 bg-card/45 text-xs font-medium shadow-sm sm:w-[150px]">
+						<SelectTrigger className="!h-10 w-full  bg-card/45 text-xs font-medium shadow-sm sm:w-[150px]">
 							<span className="text-left text-foreground">
 								{statusFilter === 'all'
 									? 'All Status'
@@ -95,7 +95,7 @@ export function ProjectDetailFilters({
 										: 'Stopped'}
 							</span>
 						</SelectTrigger>
-						<SelectContent className="border border-border bg-card">
+						<SelectContent className="bg-card">
 							<SelectItem value="all" className="text-xs">
 								All Status
 							</SelectItem>

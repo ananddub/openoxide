@@ -66,7 +66,7 @@ export function ComposeDeployActions({
 					disabled={isDisabled}
 					variant="outline"
 					size="sm"
-					className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border-border font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
+					className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg  font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
 					{activeLoading === 'reload' ? (
 						<RefreshCw className="h-4 w-4 animate-spin" />
 					) : (
@@ -81,7 +81,7 @@ export function ComposeDeployActions({
 					disabled={isDisabled}
 					variant="outline"
 					size="sm"
-					className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border-border font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
+					className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg  font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
 					{activeLoading === 'rebuild' ? (
 						<RefreshCw className="h-4 w-4 animate-spin" />
 					) : (
@@ -96,7 +96,7 @@ export function ComposeDeployActions({
 						disabled
 						variant="outline"
 						size="sm"
-						className="flex h-9 cursor-not-allowed items-center gap-1.5 rounded-lg border-border font-semibold text-destructive opacity-80">
+						className="flex h-9 cursor-not-allowed items-center gap-1.5 rounded-lg  font-semibold text-destructive opacity-80">
 						<RefreshCw className="h-4 w-4 animate-spin text-destructive" />
 						Stopping...
 					</Button>
@@ -139,7 +139,7 @@ export function ComposeDeployActions({
 						disabled={isDisabled}
 						variant="outline"
 						size="sm"
-						className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border-border font-semibold text-foreground hover:bg-muted">
+						className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg  font-semibold text-foreground hover:bg-muted">
 						{activeLoading === 'start' ? (
 							<RefreshCw className="h-4 w-4 animate-spin" />
 						) : (
@@ -156,7 +156,7 @@ export function ComposeDeployActions({
 						disabled={isDisabled || !isRunning}
 						variant="outline"
 						size="sm"
-						className="ml-auto flex h-9 items-center gap-1.5 rounded-lg border-border font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:ml-0">
+						className="ml-auto flex h-9 items-center gap-1.5 rounded-lg  font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:ml-0">
 						<Terminal className="h-4 w-4" />
 						Terminal
 					</Button>

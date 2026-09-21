@@ -115,8 +115,8 @@ export function CreateBackupModal({
 
 	const modalJSX = (
 		<div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-			<div className="w-full max-w-2xl animate-in overflow-hidden rounded-xl border border-border bg-card shadow-2xl duration-150 fade-in">
-				<div className="flex items-center justify-between border-b border-border bg-muted/30 p-4">
+			<div className="w-full max-w-2xl animate-in overflow-hidden rounded-xl bg-card shadow-2xl duration-150 fade-in">
+				<div className="flex items-center justify-between border-b border- bg-muted/30 p-4">
 					<div className="flex items-center gap-2">
 						<Database className="h-4 w-4 text-primary" />
 						<h3 className="text-sm font-bold text-foreground">
@@ -170,10 +170,10 @@ export function CreateBackupModal({
 								<Select
 									value={serviceName}
 									onValueChange={v => v && setServiceName(v)}>
-									<SelectTrigger className="h-9 w-full border-border bg-muted/20 text-xs font-semibold">
+									<SelectTrigger className="h-9 w-full border- bg-muted/20 text-xs font-semibold">
 										<SelectValue placeholder="Select service" />
 									</SelectTrigger>
-									<SelectContent className="border-border bg-card">
+									<SelectContent className="border- bg-card">
 										{servicesList.map(srv => (
 											<SelectItem
 												key={srv}
@@ -224,7 +224,7 @@ export function CreateBackupModal({
 						/>
 					</div>
 
-					<div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 p-3">
+					<div className="flex items-center justify-between rounded-lg bg-muted/20 p-3">
 						<div>
 							<Label className="text-xs font-semibold">
 								Stop Container During Backup
@@ -236,7 +236,7 @@ export function CreateBackupModal({
 						<Switch checked={turnOff} onCheckedChange={setTurnOff} />
 					</div>
 
-					<div className="flex items-center justify-end border-t border-border pt-2">
+					<div className="flex items-center justify-end border-t  pt-2">
 						<Button
 							type="submit"
 							disabled={saving}

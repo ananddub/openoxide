@@ -1,10 +1,21 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
+import {Database, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {StatusBadge} from '#/components/shared/status-badge';
+import {toast} from 'sonner';
 import {useDatabaseDetail} from '#/hooks/projects/use-database-detail';
 import {useDatabaseUpdate, parseDatabaseKind} from '#/api/live';
-import {useState} from 'react';
+import type {DeploymentItemPayload} from '#/api/live';
 
-import {DatabaseHeader} from '#/components/projects/database/detail/database-header';
+import {ServiceLayout} from '#/components/projects/detail/service-layout';
+import {
+	PostgresqlIcon,
+	MysqlIcon,
+	MariadbIcon,
+	MongodbIcon,
+	RedisIcon,
+	LibsqlIcon,
+} from '#/components/icons/db-icons';
 
 // Tabs
 import {DatabaseGeneralTab} from '#/components/projects/database/detail/database-general-tab';
@@ -15,7 +26,6 @@ import {MonitoringTab} from '#/components/projects/common/monitoring-tab';
 import {ComposeBackupsTab} from '#/components/projects/compose/detail/compose-backups-tab';
 import {DatabaseAdvancedTab} from '#/components/projects/database/detail/database-advanced-tab';
 import {DatabaseDeploymentsTab} from '#/components/projects/database/detail/database-deployments-tab';
-import {DeleteDatabaseDialog} from '#/components/projects/database/delete-database-dialog';
 
 export const Route = createFileRoute('/_app/projects/$id/database/$dbId')({
 	validateSearch: (search: Record<string, unknown>) => ({
@@ -23,6 +33,18 @@ export const Route = createFileRoute('/_app/projects/$id/database/$dbId')({
 	}),
 	component: DatabaseDetailPage,
 });
+
+/** Provider mark for the rail's identity tile, by detected db kind. */
+function kindIcon(kind: string) {
+	const k = kind.toLowerCase();
+	if (k.includes('postgres')) return <PostgresqlIcon className="size-5" />;
+	if (k.includes('mysql')) return <MysqlIcon className="size-5" />;
+	if (k.includes('mariadb')) return <MariadbIcon className="size-5" />;
+	if (k.includes('mongo')) return <MongodbIcon className="size-5" />;
+	if (k.includes('redis')) return <RedisIcon className="size-5" />;
+	if (k.includes('libsql')) return <LibsqlIcon className="size-5" />;
+	return <Database className="size-4 text-muted-foreground" />;
+}
 
 function DatabaseDetailPage() {
 	const {id, dbId} = Route.useParams();
@@ -33,7 +55,6 @@ function DatabaseDetailPage() {
 			: null;
 	const targetKind = search?.kind || windowKind || undefined;
 	const parsedDbId = Number(dbId);
-	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
 	const {
 		database,
@@ -108,91 +129,100 @@ function DatabaseDetailPage() {
 		);
 	}
 
+	// Newest errored/cancelled deployment carries the visible failure reason.
+	const failedDeployment: DeploymentItemPayload | undefined = (
+		deployments ?? []
+	).find(d => ['ERROR', 'CANCELLED'].includes((d.status || '').toUpperCase()));
+	const latestError = failedDeployment?.error_message ?? null;
+	const kind = detectedKind || targetKind || 'postgres';
+
+	// Legacy fields ride the wire payload but sit outside the union type.
+	const dbExtras = database as {app_name?: string; last_error?: string; app_status?: string};
 	return (
-		<div className="flex w-full animate-in flex-col gap-6 pb-10 duration-200 fade-in">
-			<DatabaseHeader
-				id={id}
-				database={database as any}
-				latestError={
-					(deployments?.find((deployment: any) =>
-						['ERROR', 'CANCELLED'].includes(String(deployment.status).toUpperCase()),
-					)?.error_message as string | undefined) || null
-				}
-				detectedKind={detectedKind || 'postgres'}
-				actionLoading={actionLoading}
-				isBuilding={isBuilding}
-				activeTab={activeTab}
-				setActiveTab={setActiveTab}
-				refetch={refetchAll}
-				onOpenDeleteDialog={() => setIsDeleteDialogOpen(true)}
-				onAction={handleAction}
-				tabs={tabs}
-			/>
-
-			{/* Tab Views */}
-			<div className="w-full">
-				{activeTab === 'General' && (
-					<DatabaseGeneralTab
-						database={database as any}
-						actionLoading={actionLoading}
+		<ServiceLayout
+			id={String(id)}
+			name={database.name || dbExtras.app_name}
+			subtitle={dbExtras.app_name || database.name}
+			icon={kindIcon(kind)}
+			actions={
+				<>
+					<StatusBadge
+						status={database.status || dbExtras.app_status || 'STOPPED'}
+						error={dbExtras.last_error || latestError}
 						isBuilding={isBuilding}
-						onAction={handleAction}
-						onUpdated={refetchAll}
-					/>
-				)}
-				{activeTab === 'Architecture' && (
-					<DatabaseArchitectureTab
-						database={database}
-						databaseId={parsedDbId}
-						databaseKind={detectedKind || targetKind || 'postgres'}
-						schedules={schedules}
-						backups={backups}
-						onRefresh={refetchAll}
-					/>
-				)}
-				{activeTab === 'Environment' && (
-					<EnvironmentTab app={database} handleUpdate={handleUpdateEnv} />
-				)}
-				{activeTab === 'Deployments' && (
-					<DatabaseDeploymentsTab
-						dbId={parsedDbId}
-						kind={detectedKind || 'postgres'}
-						database={database}
-						deployments={deployments}
 						actionLoading={actionLoading}
-						onRefresh={refetchAll}
-						onAction={handleAction}
 					/>
-				)}
-				{activeTab === 'Backups' && !isRedis && (
-					<ComposeBackupsTab
-						compose={database}
-						backups={backups}
-						databaseId={parsedDbId}
-						databaseKind={detectedKind || targetKind || 'postgres'}
-					/>
-				)}
-				{activeTab === 'Logs' && <DatabaseLogsTab database={database} />}
-				{activeTab === 'Monitoring' && (
-					<MonitoringTab
-						app={database}
-						appId={parsedDbId}
-						entityType="database"
-					/>
-				)}
-				{activeTab === 'Advanced' && (
-					<DatabaseAdvancedTab
-						database={database}
-						onUpdated={refetchAll}
-					/>
-				)}
-			</div>
-
-			<DeleteDatabaseDialog
-				isOpen={isDeleteDialogOpen}
-				onClose={() => setIsDeleteDialogOpen(false)}
-				database={database}
-			/>
-		</div>
+					<span className="inline-flex items-center gap-1.5 rounded-lg bg-muted/40 px-2 py-1 text-[11px] font-medium text-muted-foreground capitalize select-none">
+						{kind} Database
+					</span>
+					<Button
+						variant="ghost"
+						size="icon"
+						title="Refresh status"
+						onClick={() => {
+							refetchAll();
+							toast.success('Database status refreshed');
+						}}
+						className="size-7 rounded-lg text-muted-foreground hover:text-foreground">
+						<RefreshCw className="size-3.5" />
+					</Button>
+				</>
+			}
+			tabs={tabs}
+			activeTab={activeTab}
+			onTabChange={setActiveTab}>
+			{activeTab === 'General' && (
+				<DatabaseGeneralTab
+					database={database}
+					actionLoading={actionLoading}
+					isBuilding={isBuilding}
+					onAction={handleAction}
+					onUpdated={refetchAll}
+				/>
+			)}
+			{activeTab === 'Architecture' && (
+				<DatabaseArchitectureTab
+					database={database}
+					databaseId={parsedDbId}
+					databaseKind={kind}
+					schedules={schedules}
+					backups={backups}
+					onRefresh={refetchAll}
+				/>
+			)}
+			{activeTab === 'Environment' && (
+				<EnvironmentTab app={database} handleUpdate={handleUpdateEnv} />
+			)}
+			{activeTab === 'Deployments' && (
+				<DatabaseDeploymentsTab
+					dbId={parsedDbId}
+					kind={kind}
+					database={database}
+					deployments={deployments}
+					actionLoading={actionLoading}
+					onRefresh={refetchAll}
+					onAction={handleAction}
+				/>
+			)}
+			{activeTab === 'Backups' && !isRedis && (
+				<ComposeBackupsTab
+					compose={database}
+					backups={backups}
+					databaseId={parsedDbId}
+					databaseKind={kind}
+				/>
+			)}
+			{activeTab === 'Logs' && <DatabaseLogsTab database={database} />}
+			{activeTab === 'Monitoring' && (
+				<MonitoringTab
+					app={database}
+					appId={parsedDbId}
+					entityType="database"
+				/>
+			)}
+			{activeTab === 'Advanced' && (
+				<DatabaseAdvancedTab database={database} onUpdated={refetchAll} />
+			)}
+		</ServiceLayout>
 	);
 }

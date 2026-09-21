@@ -19,6 +19,7 @@ pub struct ServerAudit {
     pub docker: ToolState,
     pub git: ToolState,
     pub rclone: ToolState,
+    pub rsync: ToolState,
     pub nixpacks: ToolState,
     pub railpack: ToolState,
     pub buildpacks: ToolState,
@@ -108,6 +109,7 @@ pub(crate) async fn audit(
     let docker_state = tool(executor, "docker").await;
     let git = tool(executor, "git").await;
     let rclone = tool(executor, "rclone").await;
+    let rsync = tool(executor, "rsync").await;
     let nixpacks = tool(executor, "nixpacks").await;
     let railpack = tool(executor, "railpack").await;
     let buildpacks = tool(executor, "pack").await;
@@ -154,6 +156,7 @@ pub(crate) async fn audit(
         docker: docker_state,
         git,
         rclone,
+        rsync,
         nixpacks,
         railpack,
         buildpacks,

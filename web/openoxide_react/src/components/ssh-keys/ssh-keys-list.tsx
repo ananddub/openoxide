@@ -114,7 +114,7 @@ export function SshKeysList({
 				{[1, 2, 3].map(i => (
 					<div
 						key={i}
-						className="flex items-center gap-4 rounded-lg border border-border px-4 py-4">
+						className="flex items-center gap-4 rounded-lg px-4 py-4">
 						<Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
 						<div className="flex-1 space-y-2">
 							<Skeleton className="h-3.5 w-40" />
@@ -168,7 +168,7 @@ export function SshKeysList({
 
 			{/* ── Empty state ── */}
 			{keysList.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border py-20 text-center">
+				<div className="flex flex-col items-center justify-center gap-3 rounded-lg  py-20 text-center">
 					<div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
 						<FileKey2 className="h-5 w-5 text-muted-foreground" />
 					</div>
@@ -182,7 +182,7 @@ export function SshKeysList({
 					</div>
 				</div>
 			) : filtered.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border py-14 text-center">
+				<div className="flex flex-col items-center justify-center gap-2 rounded-lg  py-14 text-center">
 					<Search className="h-5 w-5 text-muted-foreground" />
 					<p className="text-sm text-muted-foreground">
 						No keys match your filter
@@ -197,7 +197,7 @@ export function SshKeysList({
 				</div>
 			) : (
 				/* ── List ── */
-				<div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+				<div className="divide-y divide-border overflow-hidden rounded-lg ">
 					{filtered.map((item: SshKeyResponse, idx: number) => {
 						const isCopied = copiedId === item.id;
 						const iconCls = KEY_COLORS[idx % KEY_COLORS.length];
@@ -209,7 +209,7 @@ export function SshKeysList({
 								key={item.id}
 								className="group flex items-center gap-4 bg-card px-4 py-3.5 transition-colors hover:bg-accent/30">
 								<div
-									className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border ${iconCls}`}>
+									className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg  ${iconCls}`}>
 									<Key className="h-4 w-4" />
 								</div>
 

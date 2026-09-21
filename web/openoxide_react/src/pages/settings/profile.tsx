@@ -1,10 +1,8 @@
-import {createFileRoute} from '@tanstack/react-router';
-import {ProfilePage} from '#/components/profile/profile-page';
+import {createFileRoute, Navigate} from '@tanstack/react-router';
+
 
 export const Route = createFileRoute('/_app/settings/profile')({
-	component: SettingsProfilePage,
+	component: () => (
+		<Navigate to="/settings" search={{tab: 'account'}} replace />
+	)
 });
-
-function SettingsProfilePage() {
-	return <ProfilePage />;
-}

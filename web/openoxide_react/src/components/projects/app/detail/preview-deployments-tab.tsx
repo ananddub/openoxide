@@ -24,7 +24,7 @@ export function PreviewDeploymentsTab({app}: PreviewDeploymentsTabProps) {
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Enable toggle */}
-			<section className="flex items-start justify-between rounded-xl border border-border bg-card p-5">
+			<section className="flex items-start justify-between rounded-xl bg-card p-5">
 				<div>
 					<h3 className="text-sm font-bold text-foreground">
 						Preview Deployments
@@ -45,7 +45,7 @@ export function PreviewDeploymentsTab({app}: PreviewDeploymentsTabProps) {
 			</section>
 
 			{!isGitProvider && (
-				<section className="flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+				<section className="flex items-start gap-2.5 rounded-xl bg-amber-500/5 p-4">
 					<Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
 					<p className="text-xs leading-relaxed text-amber-500/80">
 						Preview deployments require a GitHub, GitLab, Gitea, or custom
@@ -58,7 +58,7 @@ export function PreviewDeploymentsTab({app}: PreviewDeploymentsTabProps) {
 			{enabled && isGitProvider && (
 				<>
 					{/* Preview Config */}
-					<section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+					<section className="flex flex-col gap-4 rounded-xl bg-card p-5">
 						<h3 className="text-sm font-bold text-foreground">
 							Configuration
 						</h3>
@@ -71,7 +71,7 @@ export function PreviewDeploymentsTab({app}: PreviewDeploymentsTabProps) {
 									placeholder="*.preview.example.com"
 									value={wildcard}
 									onChange={e => setWildcard(e.target.value)}
-									className="border-border bg-card text-xs"
+									className="border- bg-card text-xs"
 								/>
 							</div>
 							<div className="flex flex-col gap-1.5">
@@ -83,7 +83,7 @@ export function PreviewDeploymentsTab({app}: PreviewDeploymentsTabProps) {
 									placeholder="3000"
 									value={port}
 									onChange={e => setPort(e.target.value)}
-									className="border-border bg-card text-xs"
+									className="border- bg-card text-xs"
 								/>
 							</div>
 						</div>
@@ -97,7 +97,7 @@ export function PreviewDeploymentsTab({app}: PreviewDeploymentsTabProps) {
 								max="10"
 								value={limit}
 								onChange={e => setLimit(e.target.value)}
-								className="border-border bg-card text-xs"
+								className="border- bg-card text-xs"
 							/>
 						</div>
 
@@ -109,7 +109,7 @@ export function PreviewDeploymentsTab({app}: PreviewDeploymentsTabProps) {
 					</section>
 
 					{/* Active previews */}
-					<section className="rounded-xl border border-border bg-card p-5">
+					<section className="rounded-xl bg-card p-5">
 						<h3 className="text-sm font-bold text-foreground">
 							Active Previews
 						</h3>

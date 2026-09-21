@@ -67,8 +67,8 @@ function AcceptInvitePage() {
 					<Button
 						size="sm"
 						className="h-9 text-xs"
-						onClick={() => navigate({to: '/overview'})}>
-						Go to Overview
+						onClick={() => navigate({to: '/'})}>
+						Go to Home
 					</Button>
 				</>
 			) : (

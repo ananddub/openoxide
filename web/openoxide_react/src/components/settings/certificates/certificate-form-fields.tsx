@@ -112,7 +112,7 @@ export function CertificateFormFields({
         />
       </div>
 
-      <div className="flex items-center justify-between rounded-md border px-3 py-2.5">
+      <div className="flex items-center justify-between rounded-md  px-3 py-2.5">
         <div>
           <p className="text-xs font-medium">Track manual renewals</p>
           <p className="text-[11px] text-muted-foreground">

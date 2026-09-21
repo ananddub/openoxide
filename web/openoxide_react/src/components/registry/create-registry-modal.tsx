@@ -149,8 +149,8 @@ export function CreateRegistryModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="max-h-[90vh] w-full overflow-y-auto rounded-2xl border-border bg-card p-6 shadow-2xl sm:max-w-xl">
-				<DialogHeader className="border-b border-border/50 pb-3">
+			<DialogContent className="max-h-[90vh] w-full overflow-y-auto rounded-2xl border- bg-card p-6 shadow-2xl sm:max-w-xl">
+				<DialogHeader className="border-b  pb-3">
 					<DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
 						<Database className="h-5 w-5 text-primary" />
 						{initialData ? 'Edit Registry' : 'Add an external registry'}
@@ -235,7 +235,7 @@ export function CreateRegistryModal({
 						<Select
 							value={serverId}
 							onValueChange={val => val && setServerId(val)}>
-							<SelectTrigger className="flex !h-9 w-full items-center justify-between border-border/80 bg-card px-3 font-sans text-xs">
+							<SelectTrigger className="flex !h-9 w-full items-center justify-between  bg-card px-3 font-sans text-xs">
 								<SelectValue placeholder="Select server">
 									{serverId === 'local'
 										? 'Local Server (Default)'
@@ -248,7 +248,7 @@ export function CreateRegistryModal({
 											})()}
 								</SelectValue>
 							</SelectTrigger>
-							<SelectContent className="z-50 border-border bg-card text-xs">
+							<SelectContent className="z-50 border- bg-card text-xs">
 								<SelectItem value="local">
 									Local Server (Default)
 								</SelectItem>
@@ -267,7 +267,7 @@ export function CreateRegistryModal({
 					</div>
 
 					{/* Minimal Footer Buttons */}
-					<div className="mt-2 flex items-center justify-between border-t border-border/50 pt-4">
+					<div className="mt-2 flex items-center justify-between border-t  pt-4">
 						<Button
 							type="button"
 							variant="outline"

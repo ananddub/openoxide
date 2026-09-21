@@ -152,11 +152,7 @@ impl RealtimeTypedExt for SqlitePool {
         let (out_tx, out_rx) = mpsc::channel::<Vec<T>>(32);
         let _ = out_tx.send(initial_rows).await;
 
-        // ── 3. Reactor loop with leading + trailing edge debounce + 8-byte HASH Diff ─
-        //
-        // 🎯 Memory Optimization: We only store an 8-byte `u64` hash instead of
-        // keeping the entire `Vec<T>` in memory! Whether the query returns 10 rows
-        // or 1,000,000 rows, RAM stays fixed at 8 BYTES.
+        // Reactor loop: debounced re-evaluation, diffed via an 8-byte u64 hash instead of buffering Vec<T>.
         let pool_clone = pool.clone();
         let sql_clone = sql.clone();
         let registry_clone = Arc::clone(&registry);
@@ -289,15 +285,4 @@ where
     }
 }
 
-// TODO(P2): Singleflight / Query Deduplication
-//
-// Currently, if 500 users subscribe to the EXACT SAME query, 500 separate
-// Tokio tasks run 500 identical SQL queries on every table change.
-//
-// Future optimization: group subscriptions by SQL hash, run query ONCE per
-// unique SQL, and fan-out the result via `Arc<Vec<T>>` + broadcast channel.
-//
-// Architecture sketch:
-//   sql_hash -> SharedEvaluator { broadcast::Sender<Arc<Vec<T>>>, ref_count }
-//   On table change: for each unique SQL → run once → broadcast to all subs
-//   On last subscriber drop: remove SharedEvaluator entry
+// TODO(P2): singleflight — group identical queries by SQL hash, evaluate once, fan out via broadcast.

@@ -1,7 +1,6 @@
 import {useState, useMemo} from 'react';
 import {Badge} from '#/components/ui/badge';
 import {Input} from '#/components/ui/input';
-import {Separator} from '#/components/ui/separator';
 import {Skeleton} from '#/components/ui/skeleton';
 import {
 	Select,
@@ -131,7 +130,7 @@ export function SwarmNodesList({
 				{[1, 2, 3].map(i => (
 					<div
 						key={i}
-						className="flex items-center gap-4 rounded-lg border border-border px-4 py-4">
+						className="flex items-center gap-4 rounded-lg px-4 py-4">
 						<Skeleton className="h-8 w-8 shrink-0 rounded-full" />
 						<div className="flex-1 space-y-2">
 							<Skeleton className="h-3.5 w-40" />
@@ -176,9 +175,9 @@ export function SwarmNodesList({
 
 			{/* ── Empty state ── */}
 			{!nodes || nodes.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border py-20 text-center">
-					<div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-						<Server className="h-5 w-5 text-muted-foreground" />
+				<div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-card py-20 text-center ring-1 ring-border/50">
+					<div className="flex size-12 items-center justify-center rounded-full bg-muted">
+						<Server className="size-5 text-muted-foreground" />
 					</div>
 					<div>
 						<p className="text-sm font-medium text-foreground">
@@ -190,15 +189,24 @@ export function SwarmNodesList({
 					</div>
 				</div>
 			) : filtered.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border py-14 text-center">
-					<Search className="h-5 w-5 text-muted-foreground" />
+				<div className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card py-14 text-center ring-1 ring-border/50">
+					<Search className="size-5 text-muted-foreground" />
 					<p className="text-sm text-muted-foreground">
 						No nodes match your filter
 					</p>
+					<button
+						type="button"
+						onClick={() => {
+							setSearch('');
+							setRoleFilter('All');
+						}}
+						className="cursor-pointer text-xs font-medium text-primary hover:underline">
+						Clear filters
+					</button>
 				</div>
 			) : (
 				/* ── List ── */
-				<div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+				<div className="divide-y divide-border/50 overflow-hidden rounded-2xl bg-card ring-1 ring-border/50">
 					{filtered.map(node => {
 						const {isManager, isLeader, isUnreachable} = nodeRole(node);
 
@@ -219,22 +227,22 @@ export function SwarmNodesList({
 						return (
 							<div
 								key={nodeId}
-								className="group flex items-center gap-4 bg-card px-4 py-3.5 transition-colors hover:bg-accent/30">
+								className="group flex items-center gap-3.5 px-5 py-3 transition-colors hover:bg-muted/40">
 								{/* Icon + status dot */}
 								<div className="relative shrink-0">
-									<div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+									<div className="flex size-9 items-center justify-center rounded-xl bg-muted/60 transition-colors group-hover:bg-muted">
 										{isManager ? (
-											<Crown className="h-4 w-4 text-amber-500" />
+											<Crown className="size-[18px] text-amber-500" />
 										) : (
-											<Server className="h-4 w-4 text-foreground/70" />
+											<Server className="size-[18px] text-foreground/70" />
 										)}
 									</div>
 									<span
-										className={`absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-background ${dotCls}`}
+										title={isReady ? 'Ready' : 'Not ready'}
+										className={`absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-card ${dotCls}`}
 									/>
 								</div>
 
-								{/* Info */}
 								<div className="min-w-0 flex-1">
 									<div className="mb-0.5 flex items-center gap-2">
 										<span className="truncate text-sm font-medium text-foreground">
@@ -289,34 +297,40 @@ export function SwarmNodesList({
 									</div>
 								</div>
 
+								{/* Status word */}
+								<span
+									className={`inline-flex shrink-0 items-center gap-1.5 text-xs font-medium ${isReady ? 'text-emerald-500' : 'text-rose-500'}`}>
+									<span
+										className={`size-2.5 rounded-full border-2 ${isReady ? 'border-emerald-500' : 'border-rose-500'}`}
+									/>
+									<span className="hidden sm:inline">
+										{isReady ? 'Ready' : 'Down'}
+									</span>
+								</span>
+
 								{/* Hover actions */}
-								<div className="flex items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
+								<div className="flex shrink-0 items-center gap-2.5 opacity-0 transition-opacity group-hover:opacity-100">
 									{nodeId && (
 										<button
 											onClick={() => handleCopyId(nodeId)}
 											title="Copy Node ID"
 											className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground">
 											{copiedId === nodeId ? (
-												<Check className="h-4 w-4 text-emerald-500" />
+												<Check className="size-4 text-emerald-500" />
 											) : (
-												<Copy className="h-4 w-4" />
+												<Copy className="size-4" />
 											)}
 										</button>
 									)}
 								</div>
 
-								<Separator
-									orientation="vertical"
-									className="h-5 opacity-0 transition-opacity group-hover:opacity-100"
-								/>
-
 								{/* 3-dot menu */}
 								<DropdownMenu>
 									<DropdownMenuTrigger
 										render={
-											<button className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground" />
+											<button className="flex size-6 shrink-0 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground" />
 										}>
-										<MoreVertical className="h-4 w-4" />
+										<MoreVertical className="size-4" />
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end" className="w-44">
 										{isManager ? (

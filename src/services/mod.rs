@@ -3,6 +3,7 @@ pub mod compute;
 pub mod identity;
 pub mod infrastructure;
 pub mod integrations;
+pub mod migration;
 pub mod networking;
 pub mod observability;
 pub mod platform;

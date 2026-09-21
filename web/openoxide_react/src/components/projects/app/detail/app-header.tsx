@@ -23,7 +23,7 @@ export function AppHeader({
 	tabs,
 }: AppHeaderProps) {
 	return (
-		<header className="flex flex-col gap-4 border-b border-border/40 pb-0">
+		<header className="flex flex-col gap-4 border-b  pb-0">
 			{/* Breadcrumb Navigation */}
 			<div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
 				<Link
@@ -51,7 +51,7 @@ export function AppHeader({
 			{/* App Title & Quick Actions Row */}
 			<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 				<div className="flex items-center gap-3">
-					<div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+					<div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
 						<Box className="size-5" />
 					</div>
 					<div>
@@ -72,7 +72,7 @@ export function AppHeader({
 							refetch();
 							toast.success('Application status refreshed');
 						}}
-						className="size-8 rounded-lg border-border/60 bg-card shadow-2xs hover:bg-muted">
+						className="size-8 rounded-lg  bg-card shadow-2xs hover:bg-muted">
 						<RefreshCw className="size-3.5" />
 					</Button>
 					<StatusBadge status={app?.app_status || ''} error={(app as any)?.last_error} />
@@ -80,7 +80,7 @@ export function AppHeader({
 			</div>
 
 			{/* Dokploy Style Tab Bar */}
-			<div className="-mb-[1px] flex w-full scrollbar-none gap-6 overflow-x-auto border-b border-border/50 pt-3">
+			<div className="-mb-[1px] flex w-full scrollbar-none gap-6 overflow-x-auto border-b  pt-3">
 				{tabs.map(tab => {
 					const isActive = activeTab === tab;
 					return (
@@ -90,8 +90,8 @@ export function AppHeader({
 							onClick={() => setActiveTab(tab)}
 							className={`-mb-[1px] cursor-pointer border-b-2 pb-3 text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
 								isActive
-									? 'border-primary font-bold text-primary'
-									: 'border-transparent text-muted-foreground hover:border-border/60 hover:text-foreground'
+									? ' font-bold text-primary'
+									: ' text-muted-foreground hover:text-foreground'
 							}`}>
 							{tab}
 						</button>

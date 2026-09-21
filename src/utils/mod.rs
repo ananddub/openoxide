@@ -3,7 +3,7 @@ pub mod background;
 pub mod backup;
 pub mod builder;
 pub use os::exec;
-pub use os::{docker, git, rclone, ssh};
+pub use os::{docker, git, rclone, rsync, ssh};
 pub mod jwt;
 pub use os::macros;
 pub mod paths;
@@ -11,7 +11,6 @@ pub mod provider;
 pub mod setup;
 pub mod traefik;
 pub mod watch_paths;
-// pub mod k8s;
 pub use os;
 
 #[tokio::test]

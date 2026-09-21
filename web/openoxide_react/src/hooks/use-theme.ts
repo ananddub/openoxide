@@ -1,6 +1,13 @@
 import * as React from 'react';
 
-export type Theme = 'light' | 'dark';
+/**
+ * Panel theme: light → dim → dark → light (OpenShip's three-surface ladder).
+ * The active theme lives on <html data-theme="…"> and in localStorage under
+ * 'theme'. index.html applies the stored value before first paint.
+ */
+export type Theme = 'light' | 'dim' | 'dark';
+
+const THEME_ORDER: Theme[] = ['light', 'dim', 'dark'];
 
 export type UseThemeReturn = {
 	theme: Theme;
@@ -8,12 +15,20 @@ export type UseThemeReturn = {
 	setTheme: (theme: Theme) => void;
 };
 
-function updateFavicon(isDark: boolean) {
+function readTheme(): Theme {
+	if (typeof document === 'undefined') return 'dim';
+	const attr = document.documentElement.getAttribute('data-theme');
+	return attr === 'light' || attr === 'dark' || attr === 'dim'
+		? attr
+		: 'dim';
+}
+
+function updateFavicon(theme: Theme) {
 	if (typeof document === 'undefined') return;
 	const existingIcons = document.querySelectorAll("link[rel*='icon']");
 	existingIcons.forEach(el => el.remove());
 
-	const color = isDark ? '%23ffffff' : '%2309090b';
+	const color = theme === 'light' ? '%2309090b' : '%23ffffff';
 	const newLink = document.createElement('link');
 	newLink.rel = 'icon';
 	newLink.type = 'image/svg+xml';
@@ -23,61 +38,34 @@ function updateFavicon(isDark: boolean) {
 }
 
 export function useTheme(): UseThemeReturn {
-	const [theme, setThemeState] = React.useState<Theme>(() => {
-		if (typeof window !== 'undefined') {
-			return document.documentElement.classList.contains('dark')
-				? 'dark'
-				: 'light';
-		}
-		return 'light';
-	});
+	const [theme, setThemeState] = React.useState<Theme>(readTheme);
 
 	React.useEffect(() => {
-		const checkTheme = () => {
-			const isDark =
-				document.documentElement.classList.contains('dark') ||
-				document.body.classList.contains('dark');
-			setThemeState(isDark ? 'dark' : 'light');
-			updateFavicon(isDark);
-		};
-		checkTheme();
-
-		// Observe changes to the class attribute of the html tag
-		const observer = new MutationObserver(checkTheme);
+		// Keep local state in sync if the attribute changes elsewhere (the
+		// pre-paint script, devtools, another tab).
+		const observer = new MutationObserver(() => {
+			setThemeState(readTheme());
+		});
 		observer.observe(document.documentElement, {
 			attributes: true,
-			attributeFilter: ['class'],
+			attributeFilter: ['data-theme'],
 		});
-
-		const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-		const handleSystemThemeChange = (e: MediaQueryListEvent) => {
-			const hasExplicitTheme = localStorage.getItem('theme');
-			if (!hasExplicitTheme) {
-				updateFavicon(e.matches);
-			}
-		};
-		mediaQuery.addEventListener('change', handleSystemThemeChange);
-
-		return () => {
-			observer.disconnect();
-			mediaQuery.removeEventListener('change', handleSystemThemeChange);
-		};
+		updateFavicon(readTheme());
+		return () => observer.disconnect();
 	}, []);
 
 	const setTheme = React.useCallback((next: Theme) => {
-		if (next === 'dark') {
-			document.documentElement.classList.add('dark');
-		} else {
-			document.documentElement.classList.remove('dark');
-		}
+		document.documentElement.setAttribute('data-theme', next);
 		localStorage.setItem('theme', next);
 		setThemeState(next);
-		updateFavicon(next === 'dark');
+		updateFavicon(next);
 	}, []);
 
 	const toggleTheme = React.useCallback(() => {
-		setTheme(theme === 'dark' ? 'light' : 'dark');
-	}, [theme, setTheme]);
+		const current = readTheme();
+		const next = THEME_ORDER[(THEME_ORDER.indexOf(current) + 1) % THEME_ORDER.length];
+		setTheme(next);
+	}, [setTheme]);
 
 	return {theme, toggleTheme, setTheme};
 }

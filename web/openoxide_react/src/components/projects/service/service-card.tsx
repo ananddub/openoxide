@@ -330,7 +330,7 @@ export function ServiceCard({
 		<>
 			<div
 				onContextMenu={handleContextMenu}
-				className="group relative block flex w-full cursor-pointer flex-col justify-between gap-3.5 overflow-hidden rounded-xl border border-border bg-card p-4 text-left shadow-2xs transition-all duration-200 hover:border-primary/40">
+				className="group relative block flex w-full cursor-pointer flex-col justify-between gap-3.5 overflow-hidden rounded-xl bg-card p-4 text-left shadow-2xs transition-all duration-200 ">
 				{/* Clickable Card Overlay */}
 				<Link
 					to={routeConfig.to as any}
@@ -343,7 +343,7 @@ export function ServiceCard({
 
 				<div className="pointer-events-none relative z-10 flex items-center justify-between gap-3">
 					<div className="flex min-w-0 items-center gap-3">
-						<div className="relative flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-muted/40 text-foreground">
+						<div className="relative flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted/40 text-foreground">
 							{getIcon()}
 							<span
 								className={cn(
@@ -373,7 +373,7 @@ export function ServiceCard({
 							/>
 							<DropdownMenuContent
 								align="end"
-								className="w-40 border border-border bg-popover/95 shadow-lg backdrop-blur-md">
+								className="w-40 bg-popover/95 shadow-lg backdrop-blur-md">
 								<DropdownMenuItem
 									onClick={handleNavigate}
 									className="flex cursor-pointer items-center gap-2 py-1.5 text-xs font-medium text-foreground">
@@ -443,7 +443,7 @@ export function ServiceCard({
 					</div>
 				</div>
 
-				<div className="pointer-events-none relative z-10 flex flex-col gap-2 border-t border-border/40 pt-2.5">
+				<div className="pointer-events-none relative z-10 flex flex-col gap-2 border-t  pt-2.5">
 					<div className="flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground" title="Deployment server">
 						<Server className="size-3 shrink-0" />
 						<span className="shrink-0">Server</span>
@@ -475,7 +475,7 @@ export function ServiceCard({
 			{contextMenu && (
 				<div
 					style={{top: `${contextMenu.y}px`, left: `${contextMenu.x}px`}}
-					className="fixed z-50 w-44 animate-in rounded-lg border border-border bg-popover/95 p-1 text-foreground shadow-xl backdrop-blur-md duration-100 fade-in"
+					className="fixed z-50 w-44 animate-in rounded-lg bg-popover/95 p-1 text-foreground shadow-xl backdrop-blur-md duration-100 fade-in"
 					onClick={e => e.stopPropagation()}>
 					<button
 						onClick={handleNavigate}

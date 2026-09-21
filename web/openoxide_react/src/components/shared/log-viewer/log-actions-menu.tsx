@@ -42,7 +42,7 @@ export function LogActionsMenu({
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
 				align="start"
-				className="w-44 border-border bg-card font-mono text-xs">
+				className="w-44 border- bg-card font-mono text-xs">
 				<DropdownMenuItem
 					onClick={handleCopy}
 					className="cursor-pointer gap-2">

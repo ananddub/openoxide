@@ -1,12 +1,9 @@
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
     SshKeyService, SshKeyServiceExt,
 };
-use crate::db::reactive::realtime;
-use crate::flash_gen::models::SshKeys;
 use crate::services::infrastructure::ssh_key::{CreateSshKeyDto, PatchSshKeyDto};
 
 use super::helper::*;
@@ -14,61 +11,6 @@ use super::init::SshKeyController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl SshKeyService for SshKeyController {
-    #[permission(Server, CanRead)]
-    async fn stream_list_keys(
-        &self,
-        ctx: RequestContext,
-        _query: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceListResponse> + Send + use<>,
-        >,
-    > {
-        let organization_id = auth.organization_id;
-        let stream = {
-            let sql = format!("SELECT * FROM ssh_keys WHERE organization_id = {organization_id}");
-            realtime()
-                .watch_query::<SshKeys>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |rows| {
-            Ok(ResourceListResponse {
-                items: rows
-                    .into_iter()
-                    .map(SshKeyResponseDto::from)
-                    .map(key_to_resource)
-                    .collect(),
-                ..Default::default()
-            })
-        }))
-    }
-
-    #[permission(Server, CanRead)]
-    async fn stream_key(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<ResourceResponse> + Send + use<>,
-        >,
-    > {
-        let id = request.id;
-        let organization_id = auth.organization_id;
-        let stream = {
-            let sql = format!("SELECT * FROM ssh_keys WHERE id = {id} AND organization_id = {organization_id}");
-            realtime()
-                .watch_query::<SshKeys>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
-            Some(item) => Ok(key_to_resource(SshKeyResponseDto::from(item))),
-            None => Err(ConnectError::not_found("ssh key not found")),
-        }))
-    }
-
     #[permission(Server, CanRead)]
     async fn list_keys<'a>(
         &'a self,

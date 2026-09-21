@@ -27,7 +27,7 @@ export function MonitoringTab({
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Header */}
-			<section className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-5 shadow-xs">
+			<section className="flex items-center justify-between gap-4 rounded-xl bg-card p-5 shadow-xs">
 				<div>
 					<h3 className="text-sm font-bold text-foreground">
 						Container Metrics &amp; Live Telemetry
@@ -45,7 +45,7 @@ export function MonitoringTab({
 						size="sm"
 						onClick={triggerRefresh}
 						disabled={isLoading}
-						className="h-8 cursor-pointer gap-1.5 border-border text-xs font-semibold">
+						className="h-8 cursor-pointer gap-1.5  text-xs font-semibold">
 						<RefreshCw
 							className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`}
 						/>
@@ -57,8 +57,8 @@ export function MonitoringTab({
 						onClick={() => setIsLive(!isLive)}
 						className={`h-8 cursor-pointer gap-1.5 text-xs font-semibold ${
 							isLive
-								? 'border-transparent bg-emerald-500 text-white hover:bg-emerald-600'
-								: 'border-border'
+								? ' bg-emerald-500 text-white hover:bg-emerald-600'
+								: ''
 						}`}>
 						<Radio
 							className={`h-3.5 w-3.5 ${isLive ? 'animate-pulse' : ''}`}
@@ -98,13 +98,8 @@ export function MonitoringTab({
 				</div>
 			)}
 
-			{/* Render Resource Metric Cards and Live SVG Graphs when we have real data */}
-			{metrics && (
-				<MonitoringCards
-					metrics={metrics}
-					history={activeMonitoring.history}
-				/>
-			)}
+			{/* Render live resource cards (current values, no history) */}
+			{metrics && <MonitoringCards metrics={metrics} />}
 		</div>
 	);
 }

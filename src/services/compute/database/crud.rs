@@ -472,7 +472,7 @@ impl DatabaseService {
         if needs_redeploy {
             tokio::spawn(async move {
                 if let Ok(svc) = auto_di::resolve::<DatabaseService>().await {
-                    let _ = svc.run_operation(kind, id, DatabaseOperation::Deploy).await;
+                    let _ = svc.run_operation(kind, id, DatabaseOperation::Deploy, 0).await;
                 }
             });
         }

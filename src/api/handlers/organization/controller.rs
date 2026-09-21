@@ -1,5 +1,4 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
-use futures::StreamExt;
 
 use crate::api::connect::generated::openoxide::api::v1::{
     CreateOrganizationRequest, DeleteOrganizationRequest, Empty, GetOrganizationRequest,
@@ -7,45 +6,12 @@ use crate::api::connect::generated::openoxide::api::v1::{
     Organization as OrganizationProto, OrganizationService, OrganizationServiceExt,
     UpdateOrganizationRequest,
 };
-use crate::db::reactive::realtime;
-use crate::flash_gen::models::Organization;
 
 use super::helper::*;
 use super::init::OrganizationController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl OrganizationService for OrganizationController {
-    async fn stream_get_organization(
-        &self,
-        ctx: RequestContext,
-        request: ServiceRequest<'_, GetOrganizationRequest>,
-    ) -> ServiceResult<
-        connectrpc::ServiceStream<
-            impl connectrpc::Encodable<OrganizationProto> + Send + use<>,
-        >,
-    > {
-        let id = request.id;
-        if !self
-            .service
-            .is_member(id, auth.user_id())
-            .await
-            .map_err(map_db_error)?
-        {
-            return Err(ConnectError::permission_denied("not a member of this organization"));
-        }
-        let stream = {
-            let sql = format!("SELECT * FROM organization WHERE id = {id}");
-            realtime()
-                .watch_query::<Organization>(sql)
-                .await
-                .map_err(map_db_error)?
-        };
-        Response::stream_ok(stream.map(move |mut rows| match rows.pop() {
-            Some(item) => Ok(org_to_proto(item)),
-            None => Err(ConnectError::not_found("organization not found")),
-        }))
-    }
-
     async fn get_organization<'a>(
         &'a self,
         ctx: RequestContext,

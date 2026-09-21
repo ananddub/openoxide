@@ -69,7 +69,7 @@ function renderStageBadge(
 	return (
 		<span
 			key={key}
-			className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[10px] leading-none font-bold tracking-wide ${cls}`}>
+			className={`inline-flex items-center gap-1 rounded  px-1.5 py-0.5 font-mono text-[10px] leading-none font-bold tracking-wide ${cls}`}>
 			{stageLabel(tag)}
 		</span>
 	);
@@ -242,7 +242,7 @@ function runTokenRegex(text: string): React.ReactNode {
 			parts.push(
 				<span
 					key={key}
-					className={`inline-block rounded border px-1 py-0 font-mono text-[10px] leading-5 font-bold ${METHOD_COLORS[upper] ?? 'border-zinc-600/30 bg-zinc-500/15 text-zinc-300'}`}>
+					className={`inline-block rounded  px-1 py-0 font-mono text-[10px] leading-5 font-bold ${METHOD_COLORS[upper] ?? 'border-zinc-600/30 bg-zinc-500/15 text-zinc-300'}`}>
 					{upper}
 				</span>,
 			);
@@ -254,7 +254,7 @@ function runTokenRegex(text: string): React.ReactNode {
 			parts.push(
 				<span
 					key={key + 'sc'}
-					className={`inline-block rounded border px-1 py-0 font-mono text-[10px] leading-5 font-bold ${httpStatusBadge(g3)}`}>
+					className={`inline-block rounded  px-1 py-0 font-mono text-[10px] leading-5 font-bold ${httpStatusBadge(g3)}`}>
 					{g3}
 				</span>,
 			);
@@ -281,7 +281,7 @@ function runTokenRegex(text: string): React.ReactNode {
 			parts.push(
 				<span
 					key={key}
-					className="rounded border border-zinc-700/40 bg-zinc-800/50 px-0.5 font-mono text-[10px] text-zinc-500">
+					className="rounded bg-zinc-800/50 px-0.5 font-mono text-[10px] text-zinc-500">
 					{g6}
 				</span>,
 			);
@@ -321,7 +321,7 @@ function runTokenRegex(text: string): React.ReactNode {
 function renderPrettyJson(obj: unknown): React.ReactNode {
 	const lines = JSON.stringify(obj, null, 2).split('\n');
 	return (
-		<span className="my-0.5 inline-flex w-full flex-col overflow-x-auto rounded border border-zinc-800/70 bg-zinc-950/70 px-3 py-2 font-mono text-xs">
+		<span className="my-0.5 inline-flex w-full flex-col overflow-x-auto rounded bg-zinc-950/70 px-3 py-2 font-mono text-xs">
 			{lines.map((line, i) => {
 				const km = line.match(/^(\s*)("([^"]+)")\s*:\s*(.*)/);
 				if (km) {

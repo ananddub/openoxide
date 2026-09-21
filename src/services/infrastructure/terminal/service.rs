@@ -130,13 +130,18 @@ impl TerminalService {
                 crate::services::observability::monitoring::proto::shell_message::Payload::Open(
                     ShellOpen {
                         server_id,
-                        container: request
-                            .container
-                            .clone()
-                            .unwrap_or_else(|| "app".to_owned()),
+                        container: if request.host {
+                            String::new()
+                        } else {
+                            request
+                                .container
+                                .clone()
+                                .unwrap_or_else(|| "app".to_owned())
+                        },
                         shell: shell.as_str().to_owned(),
                         cols: u32::from(size.cols),
                         rows: u32::from(size.rows),
+                        host: request.host,
                     },
                 ),
             ),
@@ -150,7 +155,7 @@ impl TerminalService {
                 sender: Arc::new(tokio::sync::Mutex::new(sender)),
             },
             TerminalPump::Agent { stream },
-            Some("agent".to_owned()),
+            Some(if request.host { "localhost" } else { "agent" }.to_owned()),
         ))
     }
 

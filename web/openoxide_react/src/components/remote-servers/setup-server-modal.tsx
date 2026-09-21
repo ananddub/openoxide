@@ -9,7 +9,7 @@ import {
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
-import {formatApiError} from '#/api/utils';
+import {formatApiError, serverHostLabel} from '#/api/utils';
 import {
 	Terminal,
 	ShieldCheck,
@@ -27,7 +27,9 @@ import {
 import {createServiceClient} from '#/api/live/query';
 import {ServerControllerService} from '#/gen/connect/openoxide/api/v1/server_controller_pb';
 
-const serverControllerClient = createServiceClient(ServerControllerService);
+const serverControllerClient = createServiceClient(
+	ServerControllerService,
+);
 
 import type {RemoteServerResponse} from '#/types/api-helpers';
 
@@ -105,8 +107,7 @@ export function SetupServerModal({
 				const lines = extractLogLines(event.payload);
 				if (lines.length > 0) {
 					failedMessage ||=
-						lines.find(line => line.includes('Setup Server failed')) ||
-						'';
+						lines.find(line => line.includes('Setup Server failed')) || '';
 					setSetupLogs(prev => [...prev, ...lines]);
 				}
 			}
@@ -127,20 +128,21 @@ export function SetupServerModal({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="w-full rounded-xl border-border bg-card p-6 shadow-xl sm:max-w-xl md:max-w-2xl">
-				<DialogHeader className="border-b border-border/40 pb-3">
+			<DialogContent className="border- w-full rounded-xl bg-card p-6 shadow-xl sm:max-w-xl md:max-w-2xl">
+				<DialogHeader className="border-b  pb-3">
 					<DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
 						<Terminal className="h-5 w-5 text-primary" />
 						Setup & Audit: {server.name}
 					</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
 						Test SSH connectivity and audit host specs (
-						{server.username || 'root'}@{server.ip_address})
+						{server.username || 'root'}@
+						{serverHostLabel(server.ip_address)})
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="flex flex-col gap-4 py-3">
-					<div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/20 p-3.5">
+					<div className="flex items-center justify-between rounded-xl bg-muted/20 p-3.5">
 						<div className="flex items-center gap-2.5">
 							<ShieldCheck className="h-5 w-5 text-primary" />
 							<div>
@@ -167,7 +169,7 @@ export function SetupServerModal({
 						</Button>
 					</div>
 
-					<div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/20 p-3.5">
+					<div className="flex items-center justify-between rounded-xl bg-muted/20 p-3.5">
 						<div className="flex items-center gap-2.5">
 							<Cpu className="h-5 w-5 text-primary" />
 							<div>
@@ -194,7 +196,7 @@ export function SetupServerModal({
 						</Button>
 					</div>
 
-					<div className="flex flex-col gap-2.5 rounded-xl border border-primary/30 bg-primary/10 p-3.5">
+					<div className="flex flex-col gap-2.5 rounded-xl bg-primary/10 p-3.5">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-2.5">
 								<Terminal className="h-5 w-5 text-primary" />
@@ -230,7 +232,7 @@ export function SetupServerModal({
 								onChange={e => setAdvertiseAddr(e.target.value)}
 								disabled={settingUp}
 								placeholder="e.g. 100.x.x.x — Tailscale/Netbird/VPN IP"
-								className="h-8 rounded-md border-border bg-background px-3 text-xs"
+								className="border- h-8 rounded-md bg-background px-3 text-xs"
 							/>
 							<p className="text-[10px] text-muted-foreground">
 								Used by Docker Swarm to advertise this node. Leave blank to
@@ -253,7 +255,7 @@ export function SetupServerModal({
 					)}
 
 					{auditResult && (
-						<div className="flex flex-col gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 font-mono text-xs text-foreground">
+						<div className="flex flex-col gap-2 rounded-xl bg-emerald-500/10 p-3.5 font-mono text-xs text-foreground">
 							<div className="flex items-center gap-1.5 font-sans font-bold text-emerald-500">
 								<CheckCircle2 className="h-4 w-4" /> Audit Outcome
 							</div>

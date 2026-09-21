@@ -14,15 +14,18 @@ use crate::{
             ServerMigrationsFinishSuccessParams,
         },
         servers::{
-            ServersCreateAndReturnParams, ServersRollbackApplicationServersParams,
-            ServersRollbackBuildAssignmentsParams, ServersRollbackCertificatesParams,
-            ServersRollbackComposeServersParams, ServersRollbackSchedulesParams,
-            ServersUpdateAndReturnParams,
+            ServersCreateAndReturnParams, ServersMigrateApplicationServersByIdsParams,
+            ServersMigrateBuildAssignmentsByIdsParams, ServersMigrateCertificatesByIdsParams,
+            ServersMigrateComposeServersByIdsParams, ServersMigrateSchedulesByIdsParams,
+            ServersRollbackApplicationServersParams, ServersRollbackBuildAssignmentsParams,
+            ServersRollbackCertificatesParams, ServersRollbackComposeServersParams,
+            ServersRollbackSchedulesParams, ServersUpdateAndReturnParams,
         },
     },
     services::{
         compute::application::{ApplicationOperation, ApplicationService},
         compute::compose::{ComposeOperation, ComposeService},
+        migration::MigrationScope,
     },
 };
 
@@ -318,47 +321,108 @@ impl RemoteServerService {
                 dependencies.databases
             )));
         }
-        let application_ids = self
-            .queries
-            .servers_migratable_application_ids(source)
-            .await?;
-        let build_ids = self
-            .queries
-            .servers_migratable_build_service_ids(source)
-            .await?;
-        let compose_ids = self.queries.servers_migratable_compose_ids(source).await?;
-        let certificate_ids = self
-            .queries
-            .servers_migratable_certificate_ids(source)
-            .await?;
-        let schedule_ids = self
-            .queries
-            .servers_migratable_schedule_ids(source)
-            .await?;
+        let scope = MigrationScope {
+            application_ids: self
+                .queries
+                .servers_migratable_application_ids(source)
+                .await?,
+            compose_ids: self.queries.servers_migratable_compose_ids(source).await?,
+            build_ids: self
+                .queries
+                .servers_migratable_build_service_ids(source)
+                .await?,
+            certificate_ids: self
+                .queries
+                .servers_migratable_certificate_ids(source)
+                .await?,
+            schedule_ids: self
+                .queries
+                .servers_migratable_schedule_ids(source)
+                .await?,
+        };
         let migration_id = Uuid::new_v4().simple().to_string();
+        self.begin_migration(&migration_id, source, target, &scope)
+            .await?;
+        if !self
+            .run_migration_tail(&migration_id, source, target, &scope, true)
+            .await?
+        {
+            return self.migration_status(&migration_id).await;
+        }
+        let migration = self.queries.server_migrations_get(&migration_id).await?;
+        self.migration_dto(migration, dependencies.databases).await
+    }
+
+    /// Per-service (selective) metadata migration over an explicit id scope.
+    /// Repoints only the listed ids (validating each still belongs to `source`)
+    /// and redeploys them on the target. Lays the groundwork for the stateful
+    /// runner (S4+); the whole-server path above feeds every migratable id.
+    pub async fn migrate_scoped(
+        &self,
+        source: i64,
+        target: i64,
+        scope: &MigrationScope,
+    ) -> sqlx::Result<ServerDependencyMigrationDto> {
+        if source == target {
+            return Err(sqlx::Error::Protocol(
+                "source and target server must differ".into(),
+            ));
+        }
+        let migration_id = Uuid::new_v4().simple().to_string();
+        self.begin_migration(&migration_id, source, target, scope)
+            .await?;
+        if !self
+            .run_migration_tail(&migration_id, source, target, scope, false)
+            .await?
+        {
+            return self.migration_status(&migration_id).await;
+        }
+        let migration = self.queries.server_migrations_get(&migration_id).await?;
+        self.migration_dto(migration, 0).await
+    }
+
+    async fn begin_migration(
+        &self,
+        migration_id: &str,
+        source: i64,
+        target: i64,
+        scope: &MigrationScope,
+    ) -> sqlx::Result<()> {
         let encode = |values: &[i64]| {
             serde_json::to_string(values).map_err(|error| sqlx::Error::Protocol(error.to_string()))
         };
-        let mut service_ids = application_ids.clone();
-        service_ids.extend_from_slice(&compose_ids);
         self.queries
             .server_migrations_begin(&ServerMigrationsBeginParams {
-                id: migration_id.clone(),
+                id: migration_id.to_string(),
                 source_server_id: source,
                 target_server_id: target,
-                service_ids: encode(&service_ids)?,
-                build_service_ids: encode(&build_ids)?,
-                certificate_ids: encode(&certificate_ids)?,
-                schedule_ids: encode(&schedule_ids)?,
+                service_ids: encode(&scope.service_ids())?,
+                build_service_ids: encode(&scope.build_ids)?,
+                certificate_ids: encode(&scope.certificate_ids)?,
+                schedule_ids: encode(&scope.schedule_ids)?,
             })
             .await?;
+        Ok(())
+    }
+
+    /// Shared stop → repoint → redeploy → record tail. Returns `Ok(false)` when
+    /// a source workload could not be stopped (row already marked FAILED);
+    /// `Ok(true)` once the redeploy outcome has been recorded.
+    async fn run_migration_tail(
+        &self,
+        migration_id: &str,
+        source: i64,
+        target: i64,
+        scope: &MigrationScope,
+        whole_server: bool,
+    ) -> sqlx::Result<bool> {
         let mut stop_failures = Vec::new();
-        for id in &application_ids {
+        for id in &scope.application_ids {
             if let Err(error) = self.applications.cancel_operation(*id).await {
                 stop_failures.push(format!("application {id}: {error}"));
             }
         }
-        for id in &compose_ids {
+        for id in &scope.compose_ids {
             if let Err(error) = self.compose.cancel_operation(*id).await {
                 stop_failures.push(format!("compose {id}: {error}"));
             }
@@ -373,29 +437,33 @@ impl RemoteServerService {
                     queued_services: 0,
                     queued_total: 0,
                     error,
-                    id: migration_id.clone(),
+                    id: migration_id.to_string(),
                 })
                 .await?;
-            return self.migration_status(&migration_id).await;
+            return Ok(false);
         }
-        self.migrate_server_assignments(source, target).await?;
+        if whole_server {
+            self.migrate_server_assignments(source, target).await?;
+        } else {
+            self.migrate_scoped_assignments(source, target, scope).await?;
+        }
         let mut queued_applications = 0_i64;
         let mut queued_compose = 0_i64;
         let mut failures = Vec::new();
-        for id in &application_ids {
+        for id in &scope.application_ids {
             match self
                 .applications
-                .run_operation(*id, ApplicationOperation::Redeploy)
+                .run_operation(*id, ApplicationOperation::Redeploy, 0)
                 .await
             {
                 Ok(_) => queued_applications += 1,
                 Err(error) => failures.push(format!("application {id}: {error}")),
             }
         }
-        for id in &compose_ids {
+        for id in &scope.compose_ids {
             match self
                 .compose
-                .run_operation(*id, ComposeOperation::Redeploy)
+                .run_operation(*id, ComposeOperation::Redeploy, 0)
                 .await
             {
                 Ok(_) => queued_compose += 1,
@@ -408,7 +476,7 @@ impl RemoteServerService {
                     queued_services: queued_applications,
                     queued_total: queued_compose,
                     error,
-                    id: migration_id.clone(),
+                    id: migration_id.to_string(),
                 })
                 .await?;
         } else {
@@ -416,12 +484,76 @@ impl RemoteServerService {
                 .server_migrations_finish_success(&ServerMigrationsFinishSuccessParams {
                     queued_services: queued_applications,
                     queued_total: queued_compose,
-                    id: migration_id.clone(),
+                    id: migration_id.to_string(),
                 })
                 .await?;
         }
-        let migration = self.queries.server_migrations_get(&migration_id).await?;
-        self.migration_dto(migration, dependencies.databases).await
+        Ok(true)
+    }
+
+    /// Flip only the scoped ids to `target`, each validated against `source`
+    /// in-statement. Empty lists are skipped.
+    async fn migrate_scoped_assignments(
+        &self,
+        source: i64,
+        target: i64,
+        scope: &MigrationScope,
+    ) -> sqlx::Result<()> {
+        let encode = |values: &[i64]| -> sqlx::Result<String> {
+            serde_json::to_string(values).map_err(|error| sqlx::Error::Protocol(error.to_string()))
+        };
+        if !scope.application_ids.is_empty() {
+            self.queries
+                .servers_migrate_application_servers_by_ids(
+                    &ServersMigrateApplicationServersByIdsParams {
+                        server_id: target,
+                        server_id2: source,
+                        id_list: encode(&scope.application_ids)?,
+                    },
+                )
+                .await?;
+        }
+        if !scope.build_ids.is_empty() {
+            self.queries
+                .servers_migrate_build_assignments_by_ids(
+                    &ServersMigrateBuildAssignmentsByIdsParams {
+                        build_server_id: target,
+                        build_server_id2: source,
+                        service_id_list: encode(&scope.build_ids)?,
+                    },
+                )
+                .await?;
+        }
+        if !scope.compose_ids.is_empty() {
+            self.queries
+                .servers_migrate_compose_servers_by_ids(
+                    &ServersMigrateComposeServersByIdsParams {
+                        server_id: target,
+                        server_id2: source,
+                        id_list: encode(&scope.compose_ids)?,
+                    },
+                )
+                .await?;
+        }
+        if !scope.certificate_ids.is_empty() {
+            self.queries
+                .servers_migrate_certificates_by_ids(&ServersMigrateCertificatesByIdsParams {
+                    server_id: target,
+                    server_id2: source,
+                    id_list: encode(&scope.certificate_ids)?,
+                })
+                .await?;
+        }
+        if !scope.schedule_ids.is_empty() {
+            self.queries
+                .servers_migrate_schedules_by_ids(&ServersMigrateSchedulesByIdsParams {
+                    server_id: target,
+                    server_id2: source,
+                    id_list: encode(&scope.schedule_ids)?,
+                })
+                .await?;
+        }
+        Ok(())
     }
 
     async fn migrate_server_assignments(&self, source: i64, target: i64) -> sqlx::Result<()> {
@@ -509,7 +641,7 @@ impl RemoteServerService {
         for resource_id in application_ids {
             if let Err(error) = self
                 .applications
-                .run_operation(resource_id, ApplicationOperation::Redeploy)
+                .run_operation(resource_id, ApplicationOperation::Redeploy, 0)
                 .await
             {
                 failures.push(format!("application {resource_id}: {error}"));
@@ -518,7 +650,7 @@ impl RemoteServerService {
         for resource_id in compose_ids {
             if let Err(error) = self
                 .compose
-                .run_operation(resource_id, ComposeOperation::Redeploy)
+                .run_operation(resource_id, ComposeOperation::Redeploy, 0)
                 .await
             {
                 failures.push(format!("compose {resource_id}: {error}"));
@@ -531,6 +663,30 @@ impl RemoteServerService {
             )));
         }
         self.migration_status(id).await
+    }
+
+    /// S7 cooperative cancellation for a STATEFUL (`application_migrations`)
+    /// migration: verifies org ownership, refuses anything already terminal,
+    /// and flips `cancel_requested` — the future runner polls it at every
+    /// phase/object boundary (see `migration::quiesce::CancelSignal`).
+    pub async fn request_stateful_migration_cancel(
+        &self,
+        id: &str,
+        organization_id: i64,
+    ) -> sqlx::Result<crate::flash_gen::models::ApplicationMigrations> {
+        let row = self.queries.application_migrations_get(id).await?;
+        if row.organization_id != organization_id {
+            // Do not disclose existence across tenants.
+            return Err(sqlx::Error::RowNotFound);
+        }
+        if row.status != "RUNNING" {
+            return Err(sqlx::Error::Protocol(format!(
+                "migration {id} is {} and can no longer be cancelled",
+                row.status
+            )));
+        }
+        self.queries.application_migrations_request_cancel(id).await?;
+        self.queries.application_migrations_get(id).await
     }
 
     async fn rollback_server_assignments(

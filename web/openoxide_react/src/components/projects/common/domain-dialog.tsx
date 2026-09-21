@@ -73,8 +73,8 @@ export function DomainDialog({isOpen, onClose, editingDomain, services = [], onS
 
 	return createPortal(
 		<div className="pointer-events-auto fixed inset-0 z-[1000000] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
-			<div className="pointer-events-auto relative z-[1000001] my-8 w-full max-w-2xl rounded-xl border border-border bg-card shadow-2xl">
-				<div className="flex items-center justify-between border-b border-border bg-muted/30 p-4"><div className="flex items-center gap-2"><Globe className="size-4 text-primary" /><h3 className="text-sm font-bold">{editingDomain ? 'Edit Domain Route' : 'Add Domain Route'}</h3></div><Button variant="ghost" size="icon" onClick={onClose} className="size-7"><X className="size-4" /></Button></div>
+			<div className="pointer-events-auto relative z-[1000001] my-8 w-full max-w-2xl rounded-xl bg-card shadow-2xl">
+				<div className="flex items-center justify-between border-b border- bg-muted/30 p-4"><div className="flex items-center gap-2"><Globe className="size-4 text-primary" /><h3 className="text-sm font-bold">{editingDomain ? 'Edit Domain Route' : 'Add Domain Route'}</h3></div><Button variant="ghost" size="icon" onClick={onClose} className="size-7"><X className="size-4" /></Button></div>
 				<form onSubmit={submit} className="flex flex-col gap-4 p-5">
 					<DomainFormFields state={state} services={services} onChange={(key, value) => setState(current => ({...current, [key]: value}))} />
 					<div className="flex justify-end border-t pt-4"><Button type="submit" disabled={saving}>{saving && <RefreshCw className="mr-2 size-3.5 animate-spin" />}{editingDomain ? 'Update Domain' : 'Add Domain'}</Button></div>

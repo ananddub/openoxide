@@ -7,10 +7,6 @@ service DomainOperationsService {
   rpc GetDomain(ResourceRequest) returns (ResourceResponse);
   rpc ListApplicationDomains(ResourceQuery) returns (ResourceListResponse);
   rpc ListComposeDomains(ResourceQuery) returns (ResourceListResponse);
-  rpc StreamListDomains(ResourceQuery) returns (stream ResourceListResponse);
-  rpc StreamDomain(ResourceRequest) returns (stream ResourceResponse);
-  rpc StreamListApplicationDomains(ResourceQuery) returns (stream ResourceListResponse);
-  rpc StreamListComposeDomains(ResourceQuery) returns (stream ResourceListResponse);
   rpc CreateDomain(ResourceRequest) returns (ResourceResponse);
   rpc UpdateDomain(ResourceRequest) returns (ResourceResponse);
   rpc DeleteDomain(ResourceRequest) returns (Empty);

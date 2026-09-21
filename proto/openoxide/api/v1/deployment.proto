@@ -10,17 +10,12 @@ service DeploymentService {
   rpc ListActiveDeployments(Empty) returns (ListDeploymentsResponse);
   rpc ListRunningDeployments(Empty) returns (ListDeploymentsResponse);
   rpc GetDeployment(GetDeploymentRequest) returns (Deployment);
-  rpc StreamApplicationEvents(StreamTargetRequest) returns (stream DeploymentEvent);
-  rpc StreamComposeEvents(StreamTargetRequest) returns (stream DeploymentEvent);
-  rpc StreamDatabaseEvents(StreamTargetRequest) returns (stream DeploymentEvent);
   rpc StreamApplicationStats(StreamTargetRequest) returns (stream DeploymentEvent);
   rpc StreamComposeStats(StreamTargetRequest) returns (stream DeploymentEvent);
   rpc StreamDatabaseStats(StreamTargetRequest) returns (stream DeploymentEvent);
   rpc StreamContainerLogs(LogTargetRequest) returns (stream DeploymentEvent);
   rpc ExportContainerLogs(LogTargetRequest) returns (LogExport);
-  rpc StreamDockerStats(DockerStatsRequest) returns (stream DeploymentEvent);
   rpc ListContainers(Empty) returns (ContainerList);
-  rpc StreamContainerStats(LogTargetRequest) returns (stream DeploymentEvent);
   rpc StreamServiceLogs(LogTargetRequest) returns (stream DeploymentEvent);
   rpc ExportServiceLogs(LogTargetRequest) returns (LogExport);
   rpc StreamComposeLogs(ComposeLogsRequest) returns (stream DeploymentEvent);
@@ -42,6 +37,9 @@ message Deployment {
   optional string logs = 6;
   int64 created_at = 7;
   int64 updated_at = 8;
+  // Acting user (0 = system-triggered: webhook/schedule/preview).
+  int64 user_id = 9;
+  optional string user_email = 10;
 }
 message ListDeploymentsRequest {
   optional string resource_type = 1;

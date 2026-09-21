@@ -193,7 +193,7 @@ export function DeploymentsTab({
 			return 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20';
 		if (isBuildActive(e))
 			return 'text-amber-500 bg-amber-500/10 border-amber-500/30 animate-pulse';
-		return 'text-muted-foreground bg-muted border-border';
+		return 'text-muted-foreground bg-muted ';
 	};
 
 	const queryClient = useQueryClient();
@@ -232,12 +232,12 @@ export function DeploymentsTab({
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Action Header */}
-			<section className="flex items-center justify-between rounded-xl border border-border bg-card p-5">
+			<section className="flex items-center justify-between rounded-xl bg-card p-5">
 				<div>
 					<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
 						Deployments History
 						{(activeDeployment || isActionPending) && (
-							<span className="flex animate-pulse items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
+							<span className="flex animate-pulse items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
 								<Activity className="h-3 w-3 animate-spin" />{' '}
 								{isActionPending ? 'Triggering...' : 'Active Build'}
 							</span>
@@ -263,7 +263,7 @@ export function DeploymentsTab({
 						size="sm"
 						onClick={() => onRefresh?.()}
 						disabled={isActionPending}
-						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted">
+						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted">
 						<RefreshCw
 							className={`h-3.5 w-3.5 ${isActionPending ? 'animate-spin' : ''}`}
 						/>{' '}
@@ -274,7 +274,7 @@ export function DeploymentsTab({
 						size="sm"
 						onClick={handleRedeploy}
 						disabled={!!activeDeployment || isActionPending}
-						className="flex h-8 items-center gap-1.5 border-border text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50">
+						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50">
 						<RefreshCw
 							className={`h-3.5 w-3.5 ${isActionPending ? 'animate-spin' : ''}`}
 						/>{' '}
@@ -310,7 +310,7 @@ export function DeploymentsTab({
 			</section>
 
 			{/* List Section */}
-			<section className="overflow-hidden rounded-xl border border-border bg-card">
+			<section className="overflow-hidden rounded-xl bg-card">
 				{events.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
 						<Zap className="mb-3 h-10 w-10 opacity-30" />
@@ -339,7 +339,7 @@ export function DeploymentsTab({
 
 									<div className="flex shrink-0 items-center gap-3">
 										<span
-											className={`rounded border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusBadge(e)}`}>
+											className={`rounded  px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusBadge(e)}`}>
 											{e.status}
 										</span>
 										<span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
@@ -351,7 +351,7 @@ export function DeploymentsTab({
 											size="sm"
 											variant="outline"
 											onClick={() => setActiveLogId(e.id)}
-											className="flex h-7 items-center gap-1 rounded-lg border-border px-2 text-xs font-semibold text-foreground hover:bg-muted">
+											className="flex h-7 items-center gap-1 rounded-lg  px-2 text-xs font-semibold text-foreground hover:bg-muted">
 											<Terminal className="h-3 w-3" /> Stream Logs
 										</Button>
 
@@ -412,8 +412,8 @@ export function DeploymentsTab({
 			{/* Realtime Stream Logs Modal — Rich Dokploy-Grade LogViewer! */}
 			{activeLogId && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-					<div className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
-						<div className="flex items-center justify-between border-b border-border bg-muted/30 p-4">
+					<div className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-card shadow-2xl">
+						<div className="flex items-center justify-between border-b border- bg-muted/30 p-4">
 							<div className="flex items-center gap-2">
 								<Terminal className="h-4 w-4 text-foreground" />
 								<h3 className="text-xs font-bold text-foreground">

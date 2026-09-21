@@ -56,7 +56,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onOpenChange}>
-			<DialogContent className="border-border bg-card shadow-xl sm:max-w-lg">
+			<DialogContent className="border- bg-card shadow-xl sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle className="text-xl font-bold text-foreground">
 						Add a project
@@ -81,7 +81,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 							onChange={e => setName(e.target.value)}
 							disabled={isSubmitting}
 							required
-							className="h-9 border-border bg-card text-xs"
+							className="h-9 border- bg-card text-xs"
 						/>
 					</div>
 
@@ -99,7 +99,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 							onChange={e => setDescription(e.target.value)}
 							disabled={isSubmitting}
 							rows={3}
-							className="flex w-full resize-none rounded-md border border-border border-input bg-card px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+							className="flex w-full resize-none rounded-md  bg-card px-3 py-2 text-xs placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 						/>
 					</div>
 
@@ -117,7 +117,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 					</div>
 
 					{/* Dialog Footer */}
-					<div className="mt-4 flex items-center justify-end border-t border-border/40 pt-3">
+					<div className="mt-4 flex items-center justify-end border-t  pt-3">
 						<Button
 							type="submit"
 							disabled={isSubmitting || !name.trim()}

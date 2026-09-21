@@ -41,7 +41,7 @@ function SchedulesPage() {
 	const [deletingId, setDeletingId] = useState<number | null>(null);
 
 	return (
-		<div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-6">
+		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
 			{/* Header */}
 			<SchedulesHeader
 				onOpenCreate={handleOpenCreate}

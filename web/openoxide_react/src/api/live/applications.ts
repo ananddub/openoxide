@@ -1,4 +1,4 @@
-import {createServiceClient, useActiveOrgId, useConnectMutation, useConnectQuery} from './query';
+import {createServiceClient, useActiveOrgId, useConnectMutation, useConnectQuery, useResourceListQuery} from './query';
 import {OverviewOperationsService} from '#/gen/connect/openoxide/api/v1/overview_operations_pb';
 import type {OverviewServiceItemPayload} from './overview';
 import {
@@ -68,6 +68,10 @@ export type ApplicationPayload = {
 	cpu_reservation?: string;
 	cpu_limit?: string;
 	replicas?: bigint;
+	command?: string;
+	args?: string;
+	watch_paths?: string;
+	enable_submodules?: boolean;
 	created_at: bigint;
 	updated_at: bigint;
 };
@@ -137,6 +141,10 @@ function toApplicationPayload(application: Application): ApplicationPayload {
 		cpu_reservation: application.cpuReservation,
 		cpu_limit: application.cpuLimit,
 		replicas: application.replicas,
+		command: application.command,
+		args: application.args,
+		watch_paths: application.watchPaths,
+		enable_submodules: application.enableSubmodules,
 		created_at: application.createdAt,
 		updated_at: application.updatedAt,
 	};
@@ -516,5 +524,298 @@ export function useApplicationSetDropSource() {
 				buildPath: input.build_path,
 			}),
 		{invalidate: [['applications']]},
+	);
+}
+
+// ── Advanced: ports / mounts / redirects / security / webhook / ops ──
+
+export type ApplicationPortPayload = {
+	id: number;
+	published_port: number;
+	target_port: number;
+	protocol: string;
+	publish_mode: string;
+	application_id: number;
+};
+
+/** Ports of an application (Advanced → Ports). */
+export function useApplicationPortList(id: number | bigint) {
+	const orgId = useActiveOrgId();
+	return useResourceListQuery<ApplicationPortPayload>(
+		['applications', 'ports', id.toString()],
+		() => applicationClient.listPorts({id: BigInt(id), organizationId: orgId}),
+	);
+}
+
+export function useApplicationPortCreate() {
+	return useConnectMutation(
+		(input: {
+			application_id: number | bigint;
+			published_port: number;
+			target_port: number;
+			protocol: string;
+			publish_mode: string;
+		}) =>
+			applicationClient.createPort({
+				id: BigInt(input.application_id),
+				payload: JSON.stringify({
+					published_port: input.published_port,
+					target_port: input.target_port,
+					protocol: input.protocol,
+					publish_mode: input.publish_mode,
+				}),
+			}),
+		{invalidate: [['applications', 'ports']]},
+	);
+}
+
+export function useApplicationPortDelete() {
+	return useConnectMutation(
+		(input: {
+			application_id: number | bigint;
+			id: number | bigint;
+		}) =>
+			applicationClient.deletePort({
+				id: BigInt(input.id),
+				organizationId: BigInt(input.application_id),
+			}),
+		{invalidate: [['applications', 'ports']]},
+	);
+}
+
+export type ApplicationMountPayload = {
+	id: number;
+	mount_type: string;
+	host_path?: string;
+	volume_name?: string;
+	file_path?: string;
+	content?: string;
+	mount_path: string;
+	application_id: number;
+};
+
+/** Mounts/volumes of an application (Advanced → Volumes). */
+export function useApplicationMountList(id: number | bigint) {
+	const orgId = useActiveOrgId();
+	return useResourceListQuery<ApplicationMountPayload>(
+		['applications', 'mounts', id.toString()],
+		() => applicationClient.listMounts({id: BigInt(id), organizationId: orgId}),
+	);
+}
+
+export function useApplicationMountUpsert() {
+	return useConnectMutation(
+		(input: {
+			application_id: number | bigint;
+			id?: number | bigint;
+			mount_type: string;
+			host_path?: string | null;
+			volume_name?: string | null;
+			file_path?: string | null;
+			content?: string | null;
+			mount_path: string;
+		}) => {
+			const payload = JSON.stringify({
+				mount_type: input.mount_type,
+				host_path: input.host_path || null,
+				volume_name: input.volume_name || null,
+				file_path: input.file_path || null,
+				content: input.content || null,
+				mount_path: input.mount_path,
+			});
+			return input.id
+				? applicationClient.updateMount({
+						id: BigInt(input.id),
+						organizationId: BigInt(input.application_id),
+						payload,
+					})
+				: applicationClient.createMount({
+						id: BigInt(input.application_id),
+						payload,
+					});
+		},
+		{invalidate: [['applications', 'mounts']]},
+	);
+}
+
+export function useApplicationMountDelete() {
+	return useConnectMutation(
+		(input: {
+			application_id: number | bigint;
+			id: number | bigint;
+		}) =>
+			applicationClient.deleteMount({
+				id: BigInt(input.id),
+				organizationId: BigInt(input.application_id),
+			}),
+		{invalidate: [['applications', 'mounts']]},
+	);
+}
+
+export type ApplicationRedirectPayload = {
+	id: number;
+	regex: string;
+	replacement: string;
+	permanent: number;
+	application_id: number;
+};
+
+/** Traefik redirects of an application (Advanced → Redirects). */
+export function useApplicationRedirectList(id: number | bigint) {
+	const orgId = useActiveOrgId();
+	return useResourceListQuery<ApplicationRedirectPayload>(
+		['applications', 'redirects', id.toString()],
+		() =>
+			applicationClient.listRedirects({id: BigInt(id), organizationId: orgId}),
+	);
+}
+
+export function useApplicationRedirectUpsert() {
+	return useConnectMutation(
+		(input: {
+			application_id: number | bigint;
+			id?: number | bigint;
+			regex: string;
+			replacement: string;
+			permanent: boolean;
+		}) => {
+			const payload = JSON.stringify({
+				regex: input.regex,
+				replacement: input.replacement,
+				permanent: input.permanent ? 1 : 0,
+			});
+			return input.id
+				? applicationClient.updateRedirect({
+						id: BigInt(input.id),
+						organizationId: BigInt(input.application_id),
+						payload,
+					})
+				: applicationClient.createRedirect({
+						id: BigInt(input.application_id),
+						payload,
+					});
+		},
+		{invalidate: [['applications', 'redirects']]},
+	);
+}
+
+export function useApplicationRedirectDelete() {
+	return useConnectMutation(
+		(input: {
+			application_id: number | bigint;
+			id: number | bigint;
+		}) =>
+			applicationClient.deleteRedirect({
+				id: BigInt(input.id),
+				organizationId: BigInt(input.application_id),
+			}),
+		{invalidate: [['applications', 'redirects']]},
+	);
+}
+
+export type ApplicationSecurityPayload = {
+	id: number;
+	username: string;
+	has_password: boolean;
+	application_id: number;
+};
+
+/** Basic-auth security rules of an application (Advanced → Security). */
+export function useApplicationSecurityList(id: number | bigint) {
+	const orgId = useActiveOrgId();
+	return useConnectQuery<ApplicationSecurityPayload[]>(
+		['applications', 'security', id.toString()],
+		async () => {
+			const response = await applicationClient.getSecurity({
+				id: BigInt(id),
+				organizationId: orgId,
+			});
+			try {
+				return JSON.parse(response.payload || '[]');
+			} catch {
+				return [];
+			}
+		},
+	);
+}
+
+export function useApplicationSecurityUpsert() {
+	return useConnectMutation(
+		(input: {
+			application_id: number | bigint;
+			id?: number | bigint;
+			username: string;
+			password: string;
+		}) => {
+			const payload = JSON.stringify({
+				username: input.username,
+				password: input.password,
+			});
+			return input.id
+				? applicationClient.updateSecurity({
+						id: BigInt(input.id),
+						organizationId: BigInt(input.application_id),
+						payload,
+					})
+				: applicationClient.createSecurity({
+						id: BigInt(input.application_id),
+						payload,
+					});
+		},
+		{invalidate: [['applications', 'security']]},
+	);
+}
+
+export function useApplicationSecurityDelete() {
+	return useConnectMutation(
+		(input: {
+			application_id: number | bigint;
+			id: number | bigint;
+		}) =>
+			applicationClient.deleteSecurity({
+				id: BigInt(input.id),
+				organizationId: BigInt(input.application_id),
+			}),
+		{invalidate: [['applications', 'security']]},
+	);
+}
+
+/** Rotate the application's webhook/refresh token; returns the new token. */
+export function useApplicationRotateWebhook() {
+	return useConnectMutation(
+		async (id: number | bigint) => {
+			const response = await applicationClient.rotateWebhookToken({
+				id: BigInt(id),
+			});
+			return response.token;
+		},
+		{invalidate: [['applications']]},
+	);
+}
+
+/** Clear this application's deployment history. */
+export function useApplicationClearHistory() {
+	return useConnectMutation(
+		(id: number | bigint) =>
+			applicationClient.clearDeploymentHistory({id: BigInt(id)}),
+		{invalidate: [['deployments']]},
+	);
+}
+
+/** Drop this application's pending queue entries. */
+export function useApplicationCleanupQueue() {
+	return useConnectMutation(
+		(id: number | bigint) =>
+			applicationClient.cleanupDeploymentQueue({id: BigInt(id)}),
+		{invalidate: [['deployments']]},
+	);
+}
+
+/** Force-kill the in-flight deployment of this application. */
+export function useApplicationForceKill() {
+	return useConnectMutation(
+		(id: number | bigint) =>
+			applicationClient.forceKillDeployment({id: BigInt(id)}),
+		{invalidate: [['deployments']]},
 	);
 }

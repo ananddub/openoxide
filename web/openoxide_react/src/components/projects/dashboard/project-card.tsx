@@ -105,13 +105,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
 	return (
 		<>
-			<div className="group relative flex min-h-[200px] w-full max-w-[340px] flex-col justify-between rounded-xl border border-border/80 bg-card p-5 text-left shadow-xs transition-all hover:border-primary/50 hover:shadow-md">
+			<div className="group relative flex min-h-[180px] w-full flex-col justify-between gap-3.5 rounded-2xl bg-card p-4 text-left transition-colors hover:bg-muted/40">
 				{/* Clickable Card Overlay */}
 				<Link
 					to="/projects/$id"
 					params={{id: String(project.id)}}
 					preload="intent"
-					className="absolute inset-0 z-0 rounded-xl"
+					className="absolute inset-0 z-0 rounded-2xl"
 					aria-label={`Open project ${project.name}`}
 				/>
 
@@ -120,14 +120,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 					{/* Card Header */}
 					<div className="flex items-start justify-between gap-2.5">
 						<div className="flex min-w-0 items-center gap-3">
-							<div className="flex size-9.5 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-muted/80 text-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
-								<Folder className="size-4.5" />
+							<div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted/60 text-foreground transition-colors group-hover:bg-muted">
+								<Folder className="size-5" />
 							</div>
 							<div className="flex min-w-0 flex-col">
-								<h3 className="line-clamp-1 text-sm font-bold text-foreground transition-colors group-hover:text-primary">
+								<h3 className="line-clamp-1 text-sm font-medium text-foreground">
 									{project.name}
 								</h3>
-								<span className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+								<span className="mt-0.5 text-xs text-muted-foreground">
 									Created {formatDate(project.created_at)}
 								</span>
 							</div>
@@ -148,7 +148,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 								/>
 								<DropdownMenuContent
 									align="end"
-									className="w-48 border border-border bg-popover/95 shadow-lg backdrop-blur-md">
+									className="w-48 bg-popover/95 shadow-lg backdrop-blur-md">
 									<DropdownMenuItem
 										onClick={() => setIsUpdateOpen(true)}
 										className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-foreground">
@@ -191,11 +191,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 				</div>
 
 				{/* Bottom Stats Footer */}
-				<div className="pointer-events-none relative z-10 mt-4 flex flex-col gap-2 border-t border-border/40 pt-3 text-[11px] font-medium text-muted-foreground">
+				<div className="pointer-events-none relative z-10 mt-1 flex flex-col gap-2 border-t  pt-3 text-xs text-muted-foreground">
 					<div className="flex min-w-0 items-center gap-1.5" title="Deployment servers">
 						<Server className="size-3.5 shrink-0 text-muted-foreground/80" />
 						<span className="shrink-0">Server</span>
-						<span className="truncate font-semibold text-foreground">
+						<span className="truncate font-medium text-foreground">
 							{projectServerNames.length > 0
 								? projectServerNames.join(', ')
 								: 'No services deployed'}
@@ -203,13 +203,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 					</div>
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-1.5 font-mono">
-							<span className="font-bold text-foreground">
+							<span className="font-semibold text-foreground">
 								{totalServices}
 							</span>
 							<span>{totalServices === 1 ? 'service' : 'services'}</span>
 						</div>
 						<div className="flex items-center gap-1.5 font-mono">
-							<span className="font-bold text-foreground">
+							<span className="font-semibold text-foreground">
 								{totalEnvironments}
 							</span>
 							<span>{totalEnvironments === 1 ? 'env' : 'envs'}</span>

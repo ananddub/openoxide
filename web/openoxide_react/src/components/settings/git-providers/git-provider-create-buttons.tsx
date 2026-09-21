@@ -20,7 +20,7 @@ export function GitProviderCreateButtons({
 			description: 'Automatic App setup with webhooks',
 			icon: <GithubIcon className="size-5 text-foreground" />,
 			badge: 'Recommended',
-			hoverClass: 'hover:border-zinc-500/50 hover:bg-zinc-500/5',
+			hoverClass: 'hover:bg-zinc-500/5',
 		},
 		{
 			kind: 'gitlab' as GitProviderKind,
@@ -28,7 +28,7 @@ export function GitProviderCreateButtons({
 			description: 'OAuth2 app & token integration',
 			icon: <GitlabIcon className="size-5 text-orange-500" />,
 			badge: 'Cloud / Self-hosted',
-			hoverClass: 'hover:border-orange-500/50 hover:bg-orange-500/5',
+			hoverClass: 'hover:bg-orange-500/5',
 		},
 		{
 			kind: 'bitbucket' as GitProviderKind,
@@ -36,7 +36,7 @@ export function GitProviderCreateButtons({
 			description: 'Workspace & API token access',
 			icon: <BitbucketIcon className="size-5 text-blue-500" />,
 			badge: 'Atlassian',
-			hoverClass: 'hover:border-blue-500/50 hover:bg-blue-500/5',
+			hoverClass: 'hover:bg-blue-500/5',
 		},
 		{
 			kind: 'gitea' as GitProviderKind,
@@ -44,7 +44,7 @@ export function GitProviderCreateButtons({
 			description: 'Self-hosted lightweight Git server',
 			icon: <GiteaIcon className="size-5 text-emerald-500" />,
 			badge: 'Self-hosted',
-			hoverClass: 'hover:border-emerald-500/50 hover:bg-emerald-500/5',
+			hoverClass: 'hover:bg-emerald-500/5',
 		},
 	];
 
@@ -55,12 +55,12 @@ export function GitProviderCreateButtons({
 					key={item.kind}
 					type="button"
 					onClick={() => onSelectKind(item.kind)}
-					className={`group relative flex cursor-pointer flex-col justify-between rounded-2xl border border-border/80 bg-card/60 p-4 text-left transition-all duration-200 hover:shadow-md ${item.hoverClass}`}>
+					className={`group relative flex cursor-pointer flex-col justify-between rounded-2xl bg-muted/30 p-4 text-left transition-all duration-200 hover:shadow-md ${item.hoverClass}`}>
 					<div className="mb-2 flex w-full items-start justify-between">
-						<div className="flex size-9 items-center justify-center rounded-xl border border-border/60 bg-muted/60 transition-transform group-hover:scale-105">
+						<div className="flex size-9 items-center justify-center rounded-xl bg-muted/60 transition-transform group-hover:scale-105">
 							{item.icon}
 						</div>
-						<span className="rounded-full border border-border/40 bg-muted/50 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+						<span className="rounded-full bg-muted/50 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
 							{item.badge}
 						</span>
 					</div>

@@ -78,7 +78,7 @@ export function DeploymentViewer({
 				className={`${
 					borderless
 						? 'border-0 bg-transparent p-1 text-foreground shadow-none'
-						: 'rounded-xl border border-border bg-card p-3 text-card-foreground shadow-sm'
+						: 'rounded-xl bg-card p-3 text-card-foreground shadow-sm'
 				} text-xs ${heightClass} flex w-full flex-1 flex-col gap-0.5 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30`}
 				style={{
 					fontFamily: `'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, SFMono-Regular, monospace`,

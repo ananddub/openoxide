@@ -94,8 +94,8 @@ export function ComposeSourceCard({
 	] as const;
 
 	return (
-		<section className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5 shadow-sm">
-			<div className="flex items-center justify-between border-b border-border/40 pb-4">
+		<section className="flex flex-col gap-5 rounded-xl bg-card p-5 shadow-sm">
+			<div className="flex items-center justify-between border-b  pb-4">
 				<h3 className="text-sm font-bold text-foreground">
 					Compose Source & Provider Configuration
 				</h3>
@@ -108,7 +108,7 @@ export function ComposeSourceCard({
 				</Button>
 			</div>
 
-			<div className="relative -mb-[1px] flex w-full flex-wrap gap-1 border-b border-border/60 pb-1">
+			<div className="relative -mb-[1px] flex w-full flex-wrap gap-1 border-b  pb-1">
 				{PROVIDERS.map(p => {
 					const isActive = provider === p.id;
 					return (
@@ -119,7 +119,7 @@ export function ComposeSourceCard({
 							className={`-mb-[1px] flex cursor-pointer items-center gap-1.5 border-b-2 px-3.5 pt-2 pb-2 text-xs font-bold transition-all ${
 								isActive
 									? 'border-foreground font-bold text-foreground'
-									: 'border-transparent text-muted-foreground hover:border-border/40 hover:text-foreground'
+									: ' text-muted-foreground hover:text-foreground'
 							}`}>
 							{p.icon}
 							{p.label}
@@ -130,7 +130,7 @@ export function ComposeSourceCard({
 
 			{provider === 'RAW' ? (
 				<div className="flex flex-col gap-3">
-					<div className="overflow-hidden rounded-xl border border-border/80 bg-zinc-950 shadow-inner">
+					<div className="overflow-hidden rounded-xl bg-zinc-950 shadow-inner">
 						<Editor
 							height="360px"
 							defaultLanguage="yaml"
@@ -188,7 +188,7 @@ export function ComposeSourceCard({
 									onValueChange={v =>
 										setGitSshKeyId(v === 'none' ? undefined : Number(v))
 									}>
-									<SelectTrigger className="h-9 w-full border-border bg-card font-sans text-xs">
+									<SelectTrigger className="h-9 w-full border- bg-card font-sans text-xs">
 										<SelectValue placeholder="No SSH Key Selected">
 											{selectedName}
 										</SelectValue>
@@ -284,7 +284,7 @@ export function ComposeSourceCard({
 					</div>
 
 					{/* Collapsible / Optional YAML Code editor for previewing graph */}
-					<div className="flex flex-col gap-2 border-t border-border/40 pt-2 md:col-span-4">
+					<div className="flex flex-col gap-2 border-t  pt-2 md:col-span-4">
 						<details className="group">
 							<summary className="flex cursor-pointer items-center gap-1.5 py-1 text-xs font-semibold text-muted-foreground select-none hover:text-foreground">
 								<Code2 className="size-3.5 text-primary" />
@@ -294,7 +294,7 @@ export function ComposeSourceCard({
 								</span>
 							</summary>
 							<div className="flex flex-col gap-2 pt-3">
-								<div className="overflow-hidden rounded-xl border border-border/80 bg-zinc-950 shadow-inner">
+								<div className="overflow-hidden rounded-xl bg-zinc-950 shadow-inner">
 									<Editor
 										height="240px"
 										defaultLanguage="yaml"

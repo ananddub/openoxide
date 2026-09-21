@@ -20,7 +20,6 @@ export function SignInForm() {
 	} = useForm<SignInSchema>({
 		resolver: valibotResolver(signInSchema),
 	});
-	// const { data,error,isPending} = $api.useQuery("get","")
 	const onSubmit = (data: SignInSchema) => {
 		setApiError(null);
 		mutate(data);
