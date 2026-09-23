@@ -3,9 +3,16 @@ use rust_embed::RustEmbed;
 use bytes::Bytes;
 use http_body_util::{BodyExt, Full, combinators::UnsyncBoxBody};
 use hyper::{Method, Response};
-use std::convert::Infallible;
+use std::{convert::Infallible, fs};
 
 type ResponseBody = UnsyncBoxBody<Bytes, Infallible>;
+
+/// Directory the dev stack bind-mounts over the panel container. When the
+/// mount exists the SPA is served from it, so web-only changes deploy by
+/// rebuilding the bundle on the host — no binary recompile, no image
+/// build. Production (scratch image, nothing mounted) finds no such
+/// directory and silently falls back to the embedded assets.
+const WEB_DIST_OVERRIDE: &str = "/app/web-dist";
 
 /// The compiled OpenOxide dashboard (vite build output), embedded into the
 /// panel binary so a single process serves the SPA over HTTPS/HTTP-2 — no
@@ -31,9 +38,35 @@ pub fn lookup(path: &str) -> Option<EmbeddedAsset> {
         path.trim_start_matches('/')
     };
 
+    // Dev mount first (fresh host build, picked up per request), then the
+    // compile-time embed.
+    lookup_disk(normalized).or_else(|| lookup_embedded(normalized))
+}
+
+/// Reads an asset from the bind-mounted dev dist dir. Traversal is
+/// rejected outright; the mount only ever exists in the dev stack.
+fn lookup_disk(normalized: &str) -> Option<EmbeddedAsset> {
+    if normalized.contains("..") {
+        return None;
+    }
+    let body = fs::read(format!("{WEB_DIST_OVERRIDE}/{normalized}")).ok()?;
+    Some(EmbeddedAsset {
+        content_type: content_type_for(normalized),
+        body,
+    })
+}
+
+fn lookup_embedded(normalized: &str) -> Option<EmbeddedAsset> {
     let file = DashboardAssets::get(normalized)?;
 
-    let content_type = match normalized.rsplit('.').next().unwrap_or("") {
+    Some(EmbeddedAsset {
+        content_type: content_type_for(normalized),
+        body: file.data.to_vec(),
+    })
+}
+
+fn content_type_for(normalized: &str) -> &'static str {
+    match normalized.rsplit('.').next().unwrap_or("") {
         "html" => "text/html; charset=utf-8",
         "js" | "mjs" => "text/javascript; charset=utf-8",
         "css" => "text/css; charset=utf-8",
@@ -50,12 +83,7 @@ pub fn lookup(path: &str) -> Option<EmbeddedAsset> {
         "txt" => "text/plain; charset=utf-8",
         "map" => "application/json",
         _ => "application/octet-stream",
-    };
-
-    Some(EmbeddedAsset {
-        content_type,
-        body: file.data.to_vec(),
-    })
+    }
 }
 
 /// Serves an embedded dashboard asset for non-RPC requests, with SPA

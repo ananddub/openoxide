@@ -7,6 +7,7 @@ import {
 	Sheet,
 	SheetContent,
 	SheetDescription,
+	SheetFooter,
 	SheetHeader,
 	SheetTitle,
 } from '#/components/ui/sheet';
@@ -38,13 +39,10 @@ export function CreateEnvDialog({
 		setIsSubmitting(true);
 		try {
 			const res = await createMutation.mutateAsync({
-				body: {
-					name: name.trim(),
-					description: description.trim() || undefined,
-					project_id: projectId,
-					is_default: false,
-					env_var: '',
-				},
+				name: name.trim(),
+				description: description.trim() || undefined,
+				project_id: projectId,
+				is_default: false,
 			});
 			toast.success('Environment created successfully');
 			onCreated(res);
@@ -67,41 +65,50 @@ export function CreateEnvDialog({
 					</SheetDescription>
 				</SheetHeader>
 
-				<form onSubmit={handleSubmit} className="mt-2 space-y-4">
-					<div className="space-y-1">
-						<label className="text-xs font-semibold text-foreground">
-							Name *
-						</label>
-						<Input
-							placeholder="e.g. Production"
-							value={name}
-							onChange={e => setName(e.target.value)}
-							required
-							className="h-9"
-						/>
-					</div>
+				<div className="flex-1 overflow-y-auto px-6 py-6">
+					<form
+						id="create-env-sheet-form"
+						onSubmit={handleSubmit}
+						className="flex flex-col gap-4">
+						<div className="flex flex-col gap-1.5">
+							<label className="text-[13px] font-medium text-foreground">
+								Name *
+							</label>
+							<Input
+								placeholder="e.g. Production"
+								value={name}
+								onChange={e => setName(e.target.value)}
+								required
+								className="bg-background"
+							/>
+						</div>
 
-					<div className="space-y-1">
-						<label className="text-xs font-semibold text-foreground">
-							Description
-						</label>
-						<Input
-							placeholder="Brief details"
-							value={description}
-							onChange={e => setDescription(e.target.value)}
-							className="h-9"
-						/>
-					</div>
+						<div className="flex flex-col gap-1.5">
+							<label className="text-[13px] font-medium text-foreground">
+								Description
+							</label>
+							<Input
+								placeholder="Brief details"
+								value={description}
+								onChange={e => setDescription(e.target.value)}
+								className="bg-background"
+							/>
+						</div>
+					</form>
+				</div>
 
-					<div className="flex justify-end border-t  pt-3">
-						<Button
-							type="submit"
-							disabled={isSubmitting}
-							className="h-9 w-full bg-primary px-6 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/95 sm:w-auto">
-							{isSubmitting ? 'Creating...' : 'Create'}
-						</Button>
-					</div>
-				</form>
+				<SheetFooter>
+					<Button variant="outline" onClick={onClose} className="h-10 px-5">
+						Cancel
+					</Button>
+					<Button
+						type="submit"
+						form="create-env-sheet-form"
+						disabled={isSubmitting || !name.trim()}
+						className="h-10 gap-1.5 px-5">
+						{isSubmitting ? 'Creating…' : 'Create'}
+					</Button>
+				</SheetFooter>
 			</SheetContent>
 		</Sheet>
 	);

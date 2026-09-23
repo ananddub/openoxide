@@ -1,5 +1,6 @@
 import {type NodeProps, type Node, Handle, Position} from '@xyflow/react';
 import {Database, HardDrive, Clock} from 'lucide-react';
+import {cn} from '#/api/utils';
 
 export interface VolumeBackupData extends Record<string, unknown> {
 	name: string;
@@ -30,23 +31,12 @@ export function ComposeBackupNode({
 
 	return (
 		<div
-			style={{
-				width: 210,
-				height: 52,
-				borderRadius: 10,
-				background: '#0a1624',
-				border: selected
-					? '1px solid #38bdf8'
-					: '1px solid rgba(56,189,248,0.35)',
-				boxShadow: selected
-					? '0 0 0 3px rgba(56,189,248,0.2)'
-					: '0 2px 10px rgba(56,189,248,0.08)',
-				display: 'flex',
-				alignItems: 'center',
-				padding: '0 10px',
-				gap: 9,
-				cursor: 'pointer',
-			}}>
+			className={cn(
+				'flex h-[52px] w-[210px] cursor-pointer items-center gap-[9px] rounded-xl border border-sky-500/45 bg-card px-2.5 shadow-[0_1px_2px_rgb(0_0_0/0.05),0_4px_12px_rgb(0_0_0/0.08)] transition-[border-color,box-shadow] duration-100 dark:shadow-[0_2px_12px_rgb(0_0_0/0.4)]',
+				selected
+					? 'border-sky-500 shadow-[0_0_0_3px_rgb(56_189_248/0.2)]'
+					: 'border-sky-500/30',
+			)}>
 			{/* Only Target Handle from Service (Left side) */}
 			<Handle
 				type="target"
@@ -55,75 +45,33 @@ export function ComposeBackupNode({
 					width: 7,
 					height: 7,
 					background: '#38bdf8',
-					border: '2px solid #0a1624',
+					border: '2px solid var(--card)',
 					left: -4,
 				}}
 			/>
 
 			{/* Icon */}
-			<div
-				style={{
-					width: 28,
-					height: 28,
-					borderRadius: 7,
-					background: 'rgba(56,189,248,0.15)',
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'center',
-					flexShrink: 0,
-				}}>
-				<Database size={15} color="#38bdf8" />
+			<div className="flex size-7 shrink-0 items-center justify-center rounded-[7px] bg-sky-500/15">
+				<Database size={15} className="text-sky-500 dark:text-sky-400" />
 			</div>
 
 			{/* 3 Distinct Details: 1) Name, 2) Volume, 3) Schedule Time */}
-			<div
-				style={{
-					flex: 1,
-					minWidth: 0,
-					display: 'flex',
-					flexDirection: 'column',
-					gap: 1,
-				}}>
-				<span
-					style={{
-						fontSize: 11,
-						fontWeight: 700,
-						color: '#f0f9ff',
-						whiteSpace: 'nowrap',
-						overflow: 'hidden',
-						textOverflow: 'ellipsis',
-					}}>
+			<div className="flex min-w-0 flex-1 flex-col gap-px">
+				<span className="truncate text-[11px] font-bold text-foreground">
 					{backupName}
 				</span>
-
-				<div style={{display: 'flex', alignItems: 'center', gap: 3.5}}>
-					<HardDrive size={9} color="#94a3b8" />
-					<span
-						style={{
-							fontSize: 9.5,
-							fontWeight: 600,
-							fontFamily: 'monospace',
-							color: '#94a3b8',
-							whiteSpace: 'nowrap',
-							overflow: 'hidden',
-							textOverflow: 'ellipsis',
-						}}>
+				<div className="flex items-center gap-[3.5px]">
+					<HardDrive size={9} className="shrink-0 text-muted-foreground" />
+					<span className="truncate font-mono text-[9.5px] font-semibold text-muted-foreground">
 						{volName}
 					</span>
 				</div>
-
-				<div style={{display: 'flex', alignItems: 'center', gap: 3.5}}>
-					<Clock size={9} color="#38bdf8" />
-					<span
-						style={{
-							fontSize: 9.5,
-							fontWeight: 600,
-							fontFamily: 'monospace',
-							color: '#38bdf8',
-							whiteSpace: 'nowrap',
-							overflow: 'hidden',
-							textOverflow: 'ellipsis',
-						}}>
+				<div className="flex items-center gap-[3.5px]">
+					<Clock
+						size={9}
+						className="shrink-0 text-sky-500 dark:text-sky-400"
+					/>
+					<span className="truncate font-mono text-[9.5px] font-semibold text-sky-600 dark:text-sky-400">
 						{schedText}
 					</span>
 				</div>

@@ -28,7 +28,7 @@ export function TagSelectorContent({
 }: TagSelectorContentProps) {
 	return (
 		<DropdownMenuContent
-			className="border- w-[280px] rounded-xl bg-popover p-2 shadow-md"
+			className="w-[280px] rounded-lg bg-popover p-1.5"
 			align="start">
 			<div
 				className="flex flex-col gap-2"
@@ -62,8 +62,8 @@ export function TagSelectorContent({
 									key={tag.id}
 									onClick={() => onToggleTag(tag.name)}
 									className={cn(
-										'flex cursor-pointer items-center justify-between rounded-lg p-2 text-xs transition-colors hover:bg-muted/60',
-										isSelected && 'bg-muted/40 font-semibold',
+										'flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted/60',
+										isSelected && 'bg-muted/40 font-medium',
 									)}>
 									<TagBadge
 										name={tag.name}

@@ -1,15 +1,15 @@
 import {useEffect, useState} from 'react';
-import {Loader2, Save, ShieldCheck} from 'lucide-react';
+import {Loader2, ShieldCheck} from 'lucide-react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {createCertificate, updateCertificate} from './certificate-api';
 import {CertificateFormFields} from './certificate-form-fields';
 import {
@@ -27,7 +27,7 @@ type Props = {
 	onSaved: () => Promise<void>;
 };
 
-export function CertificateDialog({
+export function CertificateSheet({
 	certificate,
 	servers,
 	open,
@@ -98,37 +98,42 @@ export function CertificateDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
-						<ShieldCheck className="size-4 text-emerald-500" />
+		<Sheet open={open} onOpenChange={onOpenChange}>
+			<SheetContent className="p-0">
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2">
+						<ShieldCheck className="size-4 text-primary" />
 						{certificate ? 'Edit certificate' : 'Install certificate'}
-					</DialogTitle>
-					<DialogDescription>
+					</SheetTitle>
+					<SheetDescription>
 						Certificate chain and private key must be a matching PEM pair.
-					</DialogDescription>
-				</DialogHeader>
+					</SheetDescription>
+				</SheetHeader>
 				<CertificateFormFields
 					editing={Boolean(certificate)}
 					form={form}
 					servers={servers}
 					onChange={set}
 				/>
-				<DialogFooter>
+				<SheetFooter className="justify-between">
+					<Button variant="outline" onClick={() => onOpenChange(false)}>
+						Cancel
+					</Button>
 					<Button
 						onClick={save}
 						disabled={
 							saving ||
 							!form.name.trim() ||
 							!form.certificate_data.trim() ||
-							!form.certificate_path.trim()
-						}>
-						{saving ? <Loader2 className="animate-spin" /> : <Save />}Save
-						certificate
+							!form.certificate_path.trim() ||
+							(!certificate && !form.private_key.trim())
+						}
+						className="h-10 gap-1.5 px-5">
+						{saving && <Loader2 className="size-3.5 animate-spin" />}
+						{certificate ? 'Save changes' : 'Install certificate'}
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</SheetFooter>
+			</SheetContent>
+		</Sheet>
 	);
 }

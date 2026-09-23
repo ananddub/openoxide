@@ -1,5 +1,5 @@
 import React, {useState, useMemo} from 'react';
-import {ChevronsUpDown, X, Tags as TagsIcon} from 'lucide-react';
+import {ChevronDown, X, Tags as TagsIcon} from 'lucide-react';
 import {useTagListAll} from '#/api/live';
 import {TagBadge} from '#/components/shared/tag-badge';
 import {Button} from '#/components/ui/button';
@@ -19,6 +19,8 @@ interface TagSelectorProps {
 	placeholder?: string;
 	disabled?: boolean;
 	variant?: 'form' | 'filter';
+	/** Extra classes for the trigger button (e.g. toolbar sizing). */
+	className?: string;
 }
 
 export function TagSelector({
@@ -27,6 +29,7 @@ export function TagSelector({
 	placeholder = 'Tags',
 	disabled = false,
 	variant = 'form',
+	className,
 }: TagSelectorProps) {
 	const [searchQuery, setSearchQuery] = useState('');
 	// Live tags query keyed ['tags','list'] — table-watch invalidates it
@@ -85,9 +88,10 @@ export function TagSelector({
 						variant="outline"
 						disabled={disabled}
 						className={cn(
-							'h-auto min-h-11 w-full cursor-pointer justify-between rounded-xl bg-card px-3.5 py-2 text-sm',
+							'h-auto min-h-9 w-full cursor-pointer justify-between gap-2 rounded-lg bg-card px-3 py-1.5 text-sm',
 							selectedTags.length > 0 && 'text-primary',
 							disabled && 'cursor-not-allowed opacity-50',
+							className,
 						)}>
 						{variant === 'filter' ? (
 							<div className="flex min-w-0 flex-1 items-center gap-2">
@@ -107,24 +111,24 @@ export function TagSelector({
 											key={t.name}
 											name={t.name}
 											color={t.color}
-											className="px-2 py-0.5 text-[11px] font-semibold">
+											className="px-1.5 py-0 text-[11px] font-medium">
 											<button
 												type="button"
 												onClick={e => handleRemoveTag(t.name, e)}
-												className="ml-1 cursor-pointer rounded-full text-muted-foreground hover:text-foreground">
+												className="ml-0.5 cursor-pointer rounded-full text-muted-foreground hover:text-foreground">
 												<X className="size-3" />
 											</button>
 										</TagBadge>
 									))
 								) : (
-									<span className="flex items-center gap-1.5 text-xs font-normal text-muted-foreground">
+									<span className="flex items-center gap-1.5 text-sm font-normal text-muted-foreground">
 										<TagsIcon className="size-3.5" />
 										{placeholder}
 									</span>
 								)}
 							</div>
 						)}
-						<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+						<ChevronDown className="size-3.5 shrink-0 opacity-50" />
 					</Button>
 				}
 			/>

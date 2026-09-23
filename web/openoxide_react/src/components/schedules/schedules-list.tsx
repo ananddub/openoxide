@@ -1,6 +1,17 @@
-import {useState, useMemo} from 'react';
+import {useMemo, useState} from 'react';
 import {CalendarDays, Search} from 'lucide-react';
-import {Input} from '#/components/ui/input';
+import {Button} from '#/components/ui/button';
+import {
+	GridSkeleton,
+	ListCard,
+	ListEmpty,
+	ListSkeleton,
+	Toolbar,
+	ToolbarSearch,
+	ViewGrid,
+	ViewToggle,
+	useListView,
+} from '#/components/settings/list-card';
 import {
 	Select,
 	SelectContent,
@@ -9,7 +20,7 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import type {Schedule} from '#/hooks/use-schedules';
-import {ScheduleListItem, SchedulesSkeleton} from './schedule-list-item';
+import {ScheduleCard, ScheduleListItem} from './schedule-list-item';
 
 interface SchedulesListProps {
 	schedules: Schedule[];
@@ -24,6 +35,10 @@ interface SchedulesListProps {
 const STATUS_FILTERS = ['All', 'Enabled', 'Disabled'] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
 
+/**
+ * Automated schedules surface — the SSH Keys grammar: toolbar (search +
+ * status filter + grid/list) above grid cards or one bordered list card.
+ */
 export function SchedulesList({
 	schedules,
 	isLoading,
@@ -35,105 +50,124 @@ export function SchedulesList({
 }: SchedulesListProps) {
 	const [search, setSearch] = useState('');
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
+	const [view, setView] = useListView('schedules-view');
 
-	// Filtered schedules
-	const filtered = useMemo(() => {
-		return schedules.filter(s => {
-			const matchSearch =
-				s.name?.toLowerCase().includes(search.toLowerCase()) ||
-				s.command?.toLowerCase().includes(search.toLowerCase()) ||
-				(s.description &&
-					s.description.toLowerCase().includes(search.toLowerCase()));
+	const q = search.trim().toLowerCase();
+	const filtered = useMemo(
+		() =>
+			schedules.filter(s => {
+				const isEnabled = s.enabled === 1;
+				if (statusFilter === 'Enabled' && !isEnabled) return false;
+				if (statusFilter === 'Disabled' && isEnabled) return false;
+				if (!q) return true;
+				return [s.name, s.command, s.description]
+					.filter(Boolean)
+					.join(' ')
+					.toLowerCase()
+					.includes(q);
+			}),
+		[schedules, q, statusFilter],
+	);
 
-			const isEnabled = s.enabled === 1;
-			const matchStatus =
-				statusFilter === 'All' ||
-				(statusFilter === 'Enabled' && isEnabled) ||
-				(statusFilter === 'Disabled' && !isEnabled);
+	const hasFilters = q !== '' || statusFilter !== 'All';
+	const serverName = (s: Schedule) =>
+		servers.find(srv => srv.id === s.server_id)?.name ||
+		(s.server_id ? `Server #${s.server_id}` : null);
 
-			return matchSearch && matchStatus;
-		});
-	}, [schedules, search, statusFilter]);
+	const shared = (s: Schedule) => ({
+		schedule: s,
+		serverName: serverName(s),
+		onEdit,
+		onDelete,
+		onToggle,
+		onRun,
+	});
 
-	const hasFilters = search !== '' || statusFilter !== 'All';
-
-	/* ── Loading ── */
-	if (isLoading) return <SchedulesSkeleton />;
+	const body =
+		schedules.length === 0 ? (
+			<ListEmpty
+				icon={CalendarDays}
+				title="No automated schedules yet"
+				description="Create cron jobs, database backups and maintenance scripts that run against your services."
+			/>
+		) : filtered.length === 0 ? (
+			<ListEmpty
+				icon={Search}
+				title="No schedules match your filters"
+				description="Try a different name, command or description — or clear the filters."
+				action={
+					hasFilters && (
+						<Button
+							variant="ghost"
+							onClick={() => {
+								setSearch('');
+								setStatusFilter('All');
+							}}
+							className="text-xs font-semibold text-primary">
+							Clear All Filters
+						</Button>
+					)
+				}
+			/>
+		) : view === 'grid' ? (
+			<ViewGrid>
+				{filtered.map(s => (
+					<ScheduleCard key={s.id} {...shared(s)} />
+				))}
+			</ViewGrid>
+		) : (
+			<ListCard>
+				{filtered.map(s => (
+					<ScheduleListItem key={s.id} {...shared(s)} />
+				))}
+			</ListCard>
+		);
 
 	return (
-		<div className="flex flex-col gap-3">
-			{/* ── Search + Filter bar ── */}
-			<div className="flex items-center gap-2">
-				<div className="relative flex-1">
-					<Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						placeholder="Search by name, command or description…"
-						value={search}
-						onChange={e => setSearch(e.target.value)}
-						className="h-8 pl-8 text-xs"
-					/>
-				</div>
-
-				<Select
-					value={statusFilter}
-					onValueChange={v => setStatusFilter(v as StatusFilter)}>
-					<SelectTrigger size="sm" className="h-8 w-36 text-xs">
-						<SelectValue placeholder="Status" />
-					</SelectTrigger>
-					<SelectContent>
-						{STATUS_FILTERS.map(f => (
-							<SelectItem key={f} value={f}>
-								{f === 'All' ? 'All Schedules' : f}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-			</div>
-
-			{/* ── Empty state ── */}
-			{schedules.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-3 rounded-lg py-20 text-center">
-					<div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-						<CalendarDays className="h-5 w-5 text-muted-foreground" />
-					</div>
-					<div>
-						<p className="text-sm font-medium text-foreground">
-							No automated schedules yet
-						</p>
-						<p className="mt-0.5 text-xs text-muted-foreground">
-							Create automated cron jobs, backups, or maintenance scripts.
-						</p>
-					</div>
-				</div>
-			) : filtered.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-2 rounded-lg py-14 text-center">
-					<Search className="h-5 w-5 text-muted-foreground" />
-					<p className="text-sm text-muted-foreground">
-						No schedules match your filter
-					</p>
-				</div>
+		<div className="flex w-full flex-col gap-4">
+			<Toolbar
+				action={
+					<>
+						<Select
+							value={statusFilter}
+							onValueChange={val =>
+								val && setStatusFilter(val as StatusFilter)
+							}>
+							<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
+								<SelectValue>
+									{statusFilter === 'All'
+										? 'All Schedules'
+										: statusFilter === 'Enabled'
+											? 'Enabled'
+											: 'Disabled'}
+								</SelectValue>
+							</SelectTrigger>
+							<SelectContent className="bg-card">
+								{STATUS_FILTERS.map(f => (
+									<SelectItem key={f} value={f}>
+										{f === 'All' ? 'All Schedules' : f}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<ViewToggle view={view} onChange={setView} />
+					</>
+				}>
+				<ToolbarSearch
+					value={search}
+					onChange={setSearch}
+					placeholder="Search schedules…"
+					className="min-w-[200px] flex-1 sm:max-w-none"
+				/>
+			</Toolbar>
+			{isLoading ? (
+				view === 'grid' ? (
+					<GridSkeleton />
+				) : (
+					<ListSkeleton />
+				)
 			) : (
-				/* ── List ── */
-				<div className="divide-y divide-border overflow-hidden rounded-lg">
-					{filtered.map(s => (
-						<ScheduleListItem
-							key={s.id}
-							schedule={s}
-							servers={servers}
-							onEdit={onEdit}
-							onDelete={onDelete}
-							onToggle={onToggle}
-							onRun={onRun}
-						/>
-					))}
-				</div>
-			)}
-
-			{/* Result count */}
-			{hasFilters && filtered.length > 0 && (
-				<p className="px-1 text-xs text-muted-foreground">
-					Showing {filtered.length} of {schedules.length} schedules
-				</p>
+				body
 			)}
 		</div>
 	);

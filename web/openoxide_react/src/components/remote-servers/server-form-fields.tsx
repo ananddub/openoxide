@@ -43,8 +43,8 @@ export function ServerFormFields({
 	return (
 		<>
 			<div className="flex flex-col gap-1.5">
-				<label className="text-xs font-semibold text-foreground">
-					Server Name *
+				<label className="text-[13px] font-medium text-foreground">
+					Server Name <span className="text-primary">*</span>
 				</label>
 				<Input
 					value={name}
@@ -55,8 +55,8 @@ export function ServerFormFields({
 			</div>
 
 			<div className="flex flex-col gap-1.5">
-				<label className="text-xs font-semibold text-foreground">
-					IP Address / Hostname *
+				<label className="text-[13px] font-medium text-foreground">
+					IP Address / Hostname <span className="text-primary">*</span>
 				</label>
 				<Input
 					value={ipAddress}
@@ -67,7 +67,7 @@ export function ServerFormFields({
 			</div>
 
 			<div className="flex flex-col gap-1.5">
-				<label className="text-xs font-semibold text-foreground">
+				<label className="text-[13px] font-medium text-foreground">
 					SSH Port
 				</label>
 				<Input
@@ -79,8 +79,8 @@ export function ServerFormFields({
 			</div>
 
 			<div className="flex flex-col gap-1.5">
-				<label className="text-xs font-semibold text-foreground">
-					Username *
+				<label className="text-[13px] font-medium text-foreground">
+					Username <span className="text-primary">*</span>
 				</label>
 				<Input
 					value={username}
@@ -91,7 +91,7 @@ export function ServerFormFields({
 			</div>
 
 			<div className="flex flex-col gap-1.5">
-				<label className="text-xs font-semibold text-foreground">
+				<label className="text-[13px] font-medium text-foreground">
 					SSH Key Credential
 				</label>
 				<Select
@@ -117,7 +117,7 @@ export function ServerFormFields({
 			</div>
 
 			<div className="flex flex-col gap-1.5">
-				<label className="text-xs font-semibold text-foreground">
+				<label className="text-[13px] font-medium text-foreground">
 					Description (Optional)
 				</label>
 				<Input

@@ -4,16 +4,14 @@ import {
 	useComposeCancel,
 	useComposeDeploy,
 	useComposeRedeploy,
-	useDeploymentDelete,
 	useDeploymentDeleteByCompose,
 	useDeploymentItems,
 } from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {isBuildActive} from '#/components/projects/detail/deployments/build-status';
-import {useDeploymentLogStream} from '#/components/projects/detail/deployments/use-deployment-log-stream';
+import {useAutoExpandBuildLogs} from '#/components/projects/detail/deployments/use-auto-expand-build-logs';
 import {DeploymentsHeader} from '#/components/projects/detail/deployments/deployments-header';
 import {DeploymentsList} from '#/components/projects/detail/deployments/deployments-list';
-import {StreamLogsModal} from '#/components/projects/detail/deployments/stream-logs-modal';
 import {CancelDeploymentDialog} from '#/components/projects/detail/deployments/cancel-deployment-dialog';
 
 interface ComposeDeploymentsTabProps {
@@ -25,7 +23,7 @@ export function ComposeDeploymentsTab({
 	composeId,
 	deployments: passedDeployments,
 }: ComposeDeploymentsTabProps) {
-	const [activeLogId, setActiveLogId] = useState<number | null>(null);
+	const [expandedId, setExpandedId] = useState<number | null>(null);
 	const [isTriggering, setIsTriggering] = useState(false);
 	const [isConfirmCancelOpen, setIsConfirmCancelOpen] = useState(false);
 
@@ -38,19 +36,11 @@ export function ComposeDeploymentsTab({
 	const deployments =
 		rawDeployments.length > 0 ? rawDeployments : (passedDeployments ?? []);
 	const activeDeployment = deployments.find(isBuildActive);
-	const selectedEvent = deployments.find(d => d.id === activeLogId);
-
-	// Historical rows fall back to their stored log text while streaming.
-	const fallback =
-		(selectedEvent as any)?.log_content ||
-		(selectedEvent as any)?.message ||
-		selectedEvent?.description;
-	const liveLogs = useDeploymentLogStream(activeLogId, fallback);
+	useAutoExpandBuildLogs(deployments, setExpandedId);
 
 	const deployMutation = useComposeDeploy();
 	const redeployMutation = useComposeRedeploy();
 	const cancelMutation = useComposeCancel();
-	const deleteMutation = useDeploymentDelete();
 	const clearComposeMutation = useDeploymentDeleteByCompose();
 
 	const run = async (action: () => Promise<unknown>, success: string) => {
@@ -95,15 +85,6 @@ export function ComposeDeploymentsTab({
 		}
 	};
 
-	const handleDeleteSingleDeployment = async (id: number) => {
-		try {
-			await deleteMutation.mutateAsync(id);
-			toast.success(`Deployment #${id} deleted`);
-		} catch (err: unknown) {
-			toast.error(formatApiError(err));
-		}
-	};
-
 	const isActionPending =
 		isTriggering ||
 		deployMutation.isPending ||
@@ -111,10 +92,10 @@ export function ComposeDeploymentsTab({
 		cancelMutation.isPending;
 
 	return (
-		<div className="flex flex-col gap-6">
+		<div className="flex flex-col gap-4">
 			<DeploymentsHeader
-				title="Deployments History"
-				description="Audit log of building, deployment operations and lifecycle events"
+				title="Deployment logs"
+				description="Build, deploy and lifecycle events for this compose stack."
 				pillLabel={
 					activeDeployment || isActionPending
 						? isActionPending
@@ -136,9 +117,10 @@ export function ComposeDeploymentsTab({
 			<DeploymentsList
 				deployments={deployments}
 				isLoading={false}
-				onOpenStream={setActiveLogId}
-				onCancel={() => setIsConfirmCancelOpen(true)}
-				onDelete={handleDeleteSingleDeployment}
+				expandedId={expandedId}
+				onToggleExpand={id =>
+					setExpandedId(prev => (prev === id ? null : id))
+				}
 			/>
 
 			<CancelDeploymentDialog
@@ -148,12 +130,6 @@ export function ComposeDeploymentsTab({
 				title="Cancel Compose Deployment"
 				description="Are you sure you want to cancel this compose deployment? This action will stop the running build process."
 				cancelLabel="No, Keep Running"
-			/>
-
-			<StreamLogsModal
-				deploymentId={activeLogId}
-				logs={liveLogs}
-				onClose={() => setActiveLogId(null)}
 			/>
 		</div>
 	);

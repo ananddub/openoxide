@@ -1,5 +1,7 @@
 import {type NodeProps, type Node} from '@xyflow/react';
 import {SlidersHorizontal, HardDrive, Globe, Zap} from 'lucide-react';
+import {cn} from '#/api/utils';
+import {deriveServiceStatus, type ServiceStatus} from './compose-parse';
 import {
 	ServiceIcon,
 	NodeHandles,
@@ -7,6 +9,13 @@ import {
 } from './compose-node-parts';
 
 export type {ComposeServiceNodeData} from './compose-node-parts';
+
+const STATUS_DOT: Record<ServiceStatus, {cls: string; label: string}> = {
+	running: {cls: 'bg-emerald-500', label: 'Running'},
+	busy: {cls: 'animate-pulse bg-amber-500', label: 'Starting / deploying'},
+	stopped: {cls: 'bg-muted-foreground/50', label: 'Stopped'},
+	error: {cls: 'bg-red-500', label: 'Error'},
+};
 
 export function ComposeServiceNode({
 	data,
@@ -17,99 +26,56 @@ export function ComposeServiceNode({
 		(data.image ?? '').length > 22
 			? (data.image ?? '').slice(0, 22) + '…'
 			: (data.image ?? 'no image');
+	const status = deriveServiceStatus(
+		typeof data.status === 'string' ? data.status : undefined,
+	);
 
 	return (
 		<div
-			style={{
-				width: 260,
-				borderRadius: 12,
-				background: '#161b22',
-				border: selected
-					? '1px solid rgba(88,166,255,0.55)'
-					: '1px solid rgba(255,255,255,0.08)',
-				boxShadow: selected
-					? '0 0 0 3px rgba(88,166,255,0.1), 0 4px 20px rgba(0,0,0,0.4)'
-					: '0 2px 12px rgba(0,0,0,0.3)',
-				transition: 'border-color .12s, box-shadow .12s',
-				overflow: 'hidden',
-				position: 'relative',
-			}}>
+			className={cn(
+				'relative w-[260px] overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgb(0_0_0/0.05),0_4px_12px_rgb(0_0_0/0.08)] transition-[border-color,box-shadow] duration-100 dark:shadow-[0_2px_12px_rgb(0_0_0/0.4)]',
+				selected
+					? 'border-primary/50 shadow-[0_0_0_3px_var(--ring)]'
+					: '',
+			)}>
 			{/* Main body */}
-			<div style={{padding: '12px 14px 10px'}}>
+			<div className="px-3.5 pt-3 pb-2.5">
 				{/* Icon + name + action trigger */}
-				<div
-					style={{
-						display: 'flex',
-						alignItems: 'center',
-						gap: 10,
-						marginBottom: 10,
-					}}>
-					<ServiceIcon image={data.image} />
-					<div style={{flex: 1, minWidth: 0}}>
-						<p
-							style={{
-								margin: 0,
-								fontSize: 13.5,
-								fontWeight: 700,
-								color: '#e6edf3',
-								whiteSpace: 'nowrap',
-								overflow: 'hidden',
-								textOverflow: 'ellipsis',
-							}}>
+				<div className="mb-2.5 flex items-center gap-2.5">
+					<span className="relative shrink-0">
+						<ServiceIcon image={data.image} />
+						{status && (
+							<span
+								title={STATUS_DOT[status].label}
+								className={cn(
+									'absolute -right-0.5 -top-0.5 size-2.5 rounded-full ring-2 ring-card',
+									STATUS_DOT[status].cls,
+								)}
+							/>
+						)}
+					</span>
+					<div className="min-w-0 flex-1">
+						<p className="truncate text-[13.5px] font-bold text-foreground">
 							{data.name}
 						</p>
-						<p
-							style={{
-								margin: '2px 0 0',
-								fontSize: 10,
-								fontFamily: 'monospace',
-								color: '#6e7681',
-								whiteSpace: 'nowrap',
-								overflow: 'hidden',
-								textOverflow: 'ellipsis',
-							}}>
+						<p className="mt-0.5 truncate font-mono text-[10px] text-muted-foreground">
 							{shortImg}
 						</p>
 					</div>
-					<div
-						style={{
-							padding: '3px 7px',
-							borderRadius: 6,
-							background: 'rgba(56,189,248,0.12)',
-							border: '1px solid rgba(56,189,248,0.25)',
-							color: '#38bdf8',
-							fontSize: 10,
-							fontWeight: 700,
-							display: 'flex',
-							alignItems: 'center',
-							gap: 3,
-							flexShrink: 0,
-						}}>
-						<Zap size={10} /> Actions
-					</div>
+					{!data.readOnly && (
+						<div className="flex shrink-0 items-center gap-[3px] rounded-md border border-sky-500/25 bg-sky-500/10 px-[7px] py-[3px] text-[10px] font-bold text-sky-600 dark:text-sky-400">
+							<Zap size={10} /> Actions
+						</div>
+					)}
 				</div>
 
 				{/* depends_on badge row */}
 				{data.dependsOn.length > 0 && (
-					<div
-						style={{
-							display: 'flex',
-							flexWrap: 'wrap',
-							gap: 4,
-							marginBottom: 8,
-						}}>
+					<div className="mb-2 flex flex-wrap gap-1">
 						{data.dependsOn.map(d => (
 							<span
 								key={d}
-								style={{
-									fontSize: 9.5,
-									fontWeight: 600,
-									padding: '2px 7px',
-									borderRadius: 20,
-									background: 'rgba(255,255,255,0.05)',
-									color: '#8b949e',
-									border: '1px solid rgba(255,255,255,0.08)',
-								}}>
+								className="rounded-full border border-border bg-muted px-[7px] py-[2px] text-[9.5px] font-semibold text-muted-foreground">
 								↳ {d}
 							</span>
 						))}
@@ -117,15 +83,12 @@ export function ComposeServiceNode({
 				)}
 
 				{/* Config row */}
-				<div
-					style={{
-						display: 'flex',
-						alignItems: 'center',
-						gap: 7,
-						marginBottom: envCount > 0 && data.volumes.length > 0 ? 6 : 0,
-					}}>
-					<SlidersHorizontal size={11} color="#6e7681" />
-					<span style={{fontSize: 11, color: '#6e7681'}}>
+				<div className="flex items-center gap-[7px]">
+					<SlidersHorizontal
+						size={11}
+						className="text-muted-foreground"
+					/>
+					<span className="text-[11px] text-muted-foreground">
 						{envCount > 0
 							? `${envCount} variable${envCount > 1 ? 's' : ''}`
 							: 'No config required'}
@@ -134,24 +97,9 @@ export function ComposeServiceNode({
 
 				{/* Volume row */}
 				{data.volumes.slice(0, 1).map((vol, i) => (
-					<div
-						key={i}
-						style={{
-							display: 'flex',
-							alignItems: 'center',
-							gap: 7,
-							marginBottom: 4,
-						}}>
-						<HardDrive size={11} color="#6e7681" />
-						<span
-							style={{
-								fontSize: 10,
-								fontFamily: 'monospace',
-								color: '#6e7681',
-								whiteSpace: 'nowrap',
-								overflow: 'hidden',
-								textOverflow: 'ellipsis',
-							}}>
+					<div key={i} className="mt-1.5 flex items-center gap-[7px]">
+						<HardDrive size={11} className="text-muted-foreground" />
+						<span className="truncate font-mono text-[10px] text-muted-foreground">
 							{vol}
 						</span>
 					</div>
@@ -159,16 +107,9 @@ export function ComposeServiceNode({
 
 				{/* Ports row */}
 				{data.ports.slice(0, 1).map((port, i) => (
-					<div
-						key={i}
-						style={{display: 'flex', alignItems: 'center', gap: 7}}>
-						<Globe size={11} color="#6e7681" />
-						<span
-							style={{
-								fontSize: 10,
-								fontFamily: 'monospace',
-								color: '#6e7681',
-							}}>
+					<div key={i} className="mt-1 flex items-center gap-[7px]">
+						<Globe size={11} className="text-muted-foreground" />
+						<span className="font-mono text-[10px] text-muted-foreground">
 							{port}
 						</span>
 					</div>

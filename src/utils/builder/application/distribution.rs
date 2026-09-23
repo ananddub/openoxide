@@ -1,5 +1,5 @@
 use super::application::ApplicationBuilder;
-use crate::utils::builder::spec::ApplicationSpec;
+use crate::utils::builder::spec::{ApplicationSpec, BuilderEvent};
 use crate::utils::exec::ExecResult;
 use tokio_util::sync::CancellationToken;
 
@@ -23,6 +23,12 @@ impl ApplicationBuilder {
             .run()
             .await?;
         let target = distribution_image(&spec.image, &auth.registry);
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "Pushing image {target} to registry {}...",
+                auth.registry
+            )))
+            .await;
         let result = async {
             self.ctx.cancelled(cancel)?;
             if target != spec.image {
@@ -33,13 +39,24 @@ impl ApplicationBuilder {
                     .run()
                     .await?;
             }
-            self.ctx
+            let push_output = self
+                .ctx
                 .docker
                 .images()
                 .push(target.clone())
                 .cancel_with(cancel.clone())
                 .run()
                 .await?;
+            if !push_output.stdout.trim().is_empty() {
+                self.ctx
+                    .emit(BuilderEvent::Message(push_output.stdout.clone()))
+                    .await;
+            }
+            if !push_output.stderr.trim().is_empty() {
+                self.ctx
+                    .emit(BuilderEvent::Message(push_output.stderr.clone()))
+                    .await;
+            }
             Ok::<(), crate::utils::exec::ExecError>(())
         }
         .await;

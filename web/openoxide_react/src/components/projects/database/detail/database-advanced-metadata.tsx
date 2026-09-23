@@ -1,8 +1,10 @@
 import {useEffect, useState} from 'react';
-import {FilePenLine, Save} from 'lucide-react';
+import {FilePenLine} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Textarea} from '#/components/ui/textarea';
+import {SettingsSheet} from '#/components/shared/settings-sheet';
+import {Field} from '#/components/shared/field';
 import {toast} from 'sonner';
 import {useDatabaseUpdate, parseDatabaseKind} from '#/api/live';
 import {formatApiError} from '#/api/utils';
@@ -38,42 +40,35 @@ export function DatabaseAdvancedMetadata({database, onUpdated}: any) {
 	};
 
 	return (
-		<section className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-sm">
-			<div>
-				<h3 className="flex items-center gap-2 text-base font-bold">
-					<FilePenLine className="size-4 text-primary" /> Database Details
-				</h3>
-				<p className="mt-0.5 text-xs text-muted-foreground">
-					Update the display name and description shown across the project.
-				</p>
-			</div>
-			<div className="flex flex-col gap-4 border-t  pt-4">
-				<label className="flex flex-col gap-1.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-					Name
-					<Input
-						value={name}
-						onChange={event => setName(event.target.value)}
-						className="h-9 text-xs normal-case"
-					/>
-				</label>
-				<label className="flex flex-col gap-1.5 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-					Description
-					<Textarea
-						value={description}
-						onChange={event => setDescription(event.target.value)}
-						className="min-h-24 resize-y text-xs normal-case"
-					/>
-				</label>
-			</div>
-			<div className="flex justify-end border-t  pt-4">
+		<SettingsSheet
+			title="Database Details"
+			description="Display name and description"
+			icon={<FilePenLine className="size-4" />}
+			footer={
 				<Button
 					onClick={save}
 					disabled={saving}
-					className="h-9 gap-1.5 text-xs">
-					<Save className="size-3.5" />{' '}
-					{saving ? 'Saving...' : 'Save Details'}
+					className="h-9 gap-1.5 px-4 text-sm">
+					{saving ? 'Saving...' : 'Save changes'}
 				</Button>
-			</div>
-		</section>
+			}>
+			<Field
+				label="Display name"
+				hint="How this database is listed across the dashboard.">
+				<Input
+					value={name}
+					onChange={event => setName(event.target.value)}
+					placeholder="my-primary-db"
+				/>
+			</Field>
+			<Field label="Description" hint="Optional notes about what this database holds.">
+				<Textarea
+					value={description}
+					onChange={event => setDescription(event.target.value)}
+					placeholder="Postgres cluster serving the payments service"
+					className="min-h-28 resize-y"
+				/>
+			</Field>
+		</SettingsSheet>
 	);
 }

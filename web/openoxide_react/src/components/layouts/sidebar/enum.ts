@@ -1,5 +1,5 @@
 import {
-	House,
+	// LayoutDashboard, // used by disabled Overview sidebar entry
 	Folder,
 	// BarChartHorizontal — retired with the global Monitoring page (per-server overview carries it now)
 	Clock,
@@ -22,8 +22,9 @@ import {
 	Tags,
 	Database,
 	Package,
+	Settings,
 	// BookIcon, CircleHelp — removed with the sidebar Extra/help section
-	// Globe, // used by disabled DNS Providers sidebar entry
+	Globe,
 } from 'lucide-react';
 import type {LucideIcon} from 'lucide-react';
 
@@ -36,6 +37,9 @@ export type SingleNavItem = {
 	// Optional action gate ("group:read"); hidden when the active
 	// organization's grants lack it. Owners/admins hold the * wildcard.
 	permission?: string;
+	// The route swaps the rail to its own context rows (Settings, service
+	// detail) — the row carries a > chevron so that is visible up front.
+	railContext?: boolean;
 };
 
 // Nav item — either a single leaf or a collapsible group with children.
@@ -50,22 +54,50 @@ export type NavItem =
 	  };
 
 /**
- * Nav structure: a short "main" work section, host/proxy surfaces, the full
- * Settings surface (every /settings?tab= entry lives here so the section is
- * reachable without opening the page first), and resource workspaces.
- * Empty sections filter out at render time, so permission-gated rows
- * collapse cleanly.
+ * Settings surface rows for the command palette (NOT rendered in the rail —
+ * the Settings surface hangs off the account menu at the rail's foot, the
+ * Vercel behavior). Permissions mirror the page's SETTINGS_TABS gates so
+ * the palette and the page agree.
+ */
+export const SETTINGS_NAV: SingleNavItem[] = [
+	{title: 'Account', icon: User, to: '/settings?tab=account'},
+	{
+		title: 'Team',
+		icon: Users,
+		to: '/settings?tab=team',
+		permission: 'member:read',
+	},
+	{
+		title: 'Permission Groups',
+		icon: ShieldCheck,
+		to: '/settings?tab=groups',
+		permission: 'group:read',
+	},
+	{
+		title: 'Audit Log',
+		icon: ClipboardList,
+		to: '/settings?tab=audit',
+		permission: 'audit_log:read',
+	},
+	{title: 'Notifications', icon: Bell, to: '/settings?tab=notifications'},
+];
+
+/**
+ * Nav structure: a short "main" work section, host/proxy surfaces, and
+ * resource workspaces. Empty sections filter out at render time, so
+ * permission-gated rows collapse cleanly.
  */
 export type Menu = {
 	main: NavItem[];
 	infrastructure: NavItem[];
-	settings: NavItem[];
 	resources: NavItem[];
+	system: NavItem[];
 };
 
 export const MENU: Menu = {
 	main: [
-		{title: 'Overview', icon: House, to: '/'},
+		// Disabled: Overview landing card page — kept on disk for future re-enable.
+		// {title: 'Overview', icon: LayoutDashboard, to: '/'},
 		{title: 'Projects', icon: Folder, to: '/projects'},
 		{title: 'Deployments', icon: Rocket, to: '/Deployments'},
 		{title: 'Schedules', icon: Clock, to: '/schedules'},
@@ -79,50 +111,27 @@ export const MENU: Menu = {
 		// Re-enable (or move under Remote Servers) when decided.
 		// {title: 'Docker', icon: Blocks, to: '/docker'},
 	],
-	settings: [
-		// The full /settings surface, one row per URL tab. Permissions mirror
-		// the page's SETTINGS_TABS gates so the rail and the page agree.
-		{title: 'Account', icon: User, to: '/settings?tab=account'},
-		{
-			title: 'Team',
-			icon: Users,
-			to: '/settings?tab=team',
-			permission: 'member:read',
-		},
-		{
-			title: 'Permission Groups',
-			icon: ShieldCheck,
-			to: '/settings?tab=groups',
-			permission: 'group:read',
-		},
-		{
-			title: 'Audit Log',
-			icon: ClipboardList,
-			to: '/settings?tab=audit',
-			permission: 'audit_log:read',
-		},
-		{title: 'Git Providers', icon: GitBranch, to: '/settings?tab=git'},
-		{
-			title: 'Notifications',
-			icon: Bell,
-			to: '/settings?tab=notifications',
-		},
-		{title: 'AI', icon: Bot, to: '/settings?tab=ai'},
-		{
-			title: 'Certificates',
-			icon: FileKey,
-			to: '/settings?tab=certificates',
-		},
-	],
 	resources: [
 		// Resource workspaces — not settings, so they stay their own section.
 		{title: 'SSH Keys', icon: KeyRound, to: '/ssh-keys'},
+		{title: 'Git Providers', icon: GitBranch, to: '/git-providers'},
+		{title: 'Certificates', icon: FileKey, to: '/certificates'},
+		{title: 'AI Providers', icon: Bot, to: '/ai'},
 		{title: 'Tags', icon: Tags, to: '/tags'},
 		{title: 'Registry', icon: Package, to: '/registry'},
 		{title: 'Vault Providers', icon: KeyRound, to: '/vault'},
-		// Disabled: DNS Providers (page kept on disk for future re-enable).
-		// {title: 'DNS Providers', icon: Globe, to: '/dns'},
+		{title: 'DNS Providers', icon: Globe, to: '/dns'},
 		{title: 'S3 Destinations', icon: Database, to: '/destinations'},
+	],
+	system: [
+		// Account / org-wide settings — pinned to the rail's foot so it stays
+		// discoverable (not buried behind the ••• menu).
+		{
+			title: 'Settings',
+			icon: Settings,
+			to: '/settings',
+			railContext: true,
+		},
 	],
 };
 
@@ -134,7 +143,7 @@ export type RouteItem = {
 };
 
 /**
- * ROUTES is derived from MENU — single source of truth.
+ * ROUTES is derived from MENU + SETTINGS_NAV — single source of truth.
  * Used by SearchDialog for command palette navigation.
  */
 export const ROUTES: RouteItem[] = [
@@ -170,7 +179,7 @@ export const ROUTES: RouteItem[] = [
 		icon: Forward,
 		group: 'Infrastructure',
 	},
-	...MENU.settings.map(item => ({
+	...SETTINGS_NAV.map(item => ({
 		label: item.title,
 		path: item.to,
 		icon: item.icon,
@@ -181,5 +190,11 @@ export const ROUTES: RouteItem[] = [
 		path: item.to,
 		icon: item.icon,
 		group: 'Resources',
+	})),
+	...MENU.system.map(item => ({
+		label: item.title,
+		path: item.to,
+		icon: item.icon,
+		group: 'System',
 	})),
 ];

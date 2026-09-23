@@ -1,8 +1,14 @@
 import {useBackupItems} from '#/api/live';
 import {useState, useMemo, useEffect} from 'react';
-import {Database, Plus} from 'lucide-react';
+import {Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {Badge} from '#/components/ui/badge';
+import {
+	SectionHeader,
+	Toolbar,
+	ToolbarSearch,
+	ViewToggle,
+	useListView,
+} from '#/components/settings/list-card';
 import {useOrganizations} from '#/stores/session-context';
 import {CreateBackupModal} from './backups/create-backup-modal';
 import {ComposeBackupsTable} from './backups/compose-backups-table';
@@ -33,6 +39,8 @@ export function ComposeBackupsTab({
 		''
 	).toLowerCase();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
+	const [query, setQuery] = useState('');
+	const [view, setView] = useListView('compose-backups-view');
 	const [fetchedYaml, setFetchedYaml] = useState<string>('');
 
 	useEffect(() => {
@@ -79,6 +87,27 @@ export function ComposeBackupsTab({
 	}, [passedBackups, storeBackups, compose, databaseId, isDatabase]);
 	const isLoading = false;
 
+	const q = query.trim().toLowerCase();
+	const visibleBackups = useMemo(
+		() =>
+			q
+				? composeBackups.filter((b: any) =>
+						[
+							b?.name,
+							b?.service_name,
+							b?.cron_expression,
+							b?.volume_name,
+							b?.prefix,
+						]
+							.filter(Boolean)
+							.join(' ')
+							.toLowerCase()
+							.includes(q),
+					)
+				: composeBackups,
+		[composeBackups, q],
+	);
+
 	const {handleCreate, handleRun, handleRestore, handleDelete} =
 		useVolumeBackupActions({
 			compose,
@@ -87,39 +116,40 @@ export function ComposeBackupsTab({
 			databaseId,
 		});
 
+	const createButton = (
+		<Button onClick={() => setIsCreateOpen(true)} className="h-9 gap-1.5">
+			<Plus className="size-3.5" />
+			Create Backup Rule
+		</Button>
+	);
+
 	return (
-		<div className="flex flex-col gap-6">
-			{/* Top Header Card */}
-			<section className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-card p-5 shadow-sm">
-				<div>
-					<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
-						<Database className="h-4 w-4 text-primary" /> Volume Backups
-					</h3>
-					<p className="mt-1 text-xs text-muted-foreground">
-						Configure volume backup rules to stream S3 snapshots of your
-						{isDatabase ? ' database' : ' compose container'} data
-					</p>
-				</div>
-				<div className="flex items-center gap-3">
-					<Badge variant="outline" className="px-3 py-1 font-mono text-xs">
-						Active Rules: {composeBackups.length}
-					</Badge>
-					<Button
-						onClick={() => setIsCreateOpen(true)}
-						size="sm"
-						className="flex h-8 items-center gap-1.5 text-xs font-semibold">
-						<Plus className="h-4 w-4" /> Create Backup Rule
-					</Button>
-				</div>
-			</section>
+		<div className="flex w-full flex-col gap-5">
+			<SectionHeader
+				title="Backups"
+				description="Rules that snapshot this stack's volumes to an S3 destination."
+				action={createButton}
+			/>
+
+			<Toolbar action={<ViewToggle view={view} onChange={setView} />}>
+				<ToolbarSearch
+					value={query}
+					onChange={setQuery}
+					placeholder="Search backup rules…"
+					className="min-w-[200px] flex-1 sm:max-w-none"
+				/>
+			</Toolbar>
 
 			{/* Backups Table Component (< 200 lines) */}
 			<ComposeBackupsTable
-				backups={composeBackups}
+				backups={visibleBackups}
 				isLoading={isLoading}
+				hasQuery={q !== ''}
+				view={view}
 				onRun={handleRun}
 				onRestore={handleRestore}
 				onDelete={handleDelete}
+				createAction={createButton}
 			/>
 
 			{/* Create Modal Component (< 200 lines) */}

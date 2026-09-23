@@ -59,13 +59,11 @@ export function InlineProfileEditor({
 	};
 
 	return (
-		<form
-			onSubmit={handleSubmit}
-			className="border-t border-border/40 px-6 pt-5 pb-6">
+		<form onSubmit={handleSubmit} className="border-t px-4 py-4">
 			<div className="flex flex-col gap-5">
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 					<label className="flex flex-col gap-1.5">
-						<span className="text-xs font-medium text-foreground/80">
+						<span className="text-[13px] font-medium text-foreground">
 							First name
 						</span>
 						<Input
@@ -76,7 +74,7 @@ export function InlineProfileEditor({
 						/>
 					</label>
 					<label className="flex flex-col gap-1.5">
-						<span className="text-xs font-medium text-foreground/80">
+						<span className="text-[13px] font-medium text-foreground">
 							Last name
 						</span>
 						<Input

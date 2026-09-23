@@ -28,7 +28,7 @@ export function GitProviderKindHint({
 	);
 
 	return (
-		<div className="rounded-xl bg-primary/5 p-3.5 text-xs text-muted-foreground">
+		<div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3.5 text-[13px] leading-relaxed text-muted-foreground">
 			{kind === 'github' ? (
 				<>
 					Manual configuration. For automatic setup, use the{' '}

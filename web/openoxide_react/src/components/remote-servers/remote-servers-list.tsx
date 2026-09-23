@@ -14,8 +14,9 @@ import {
 	ServerListSkeleton,
 	ServersToolbar,
 	type StatusFilter,
+	type ServersView,
 } from './server-list-states';
-import {ServerRow} from './server-row';
+import {ServerRow, ServerCard} from './server-row';
 
 interface RemoteServersListProps {
 	servers: RemoteServerResponse[];
@@ -29,6 +30,8 @@ interface RemoteServersListProps {
 	onOpenTerminal?: (server: RemoteServerResponse) => void;
 	onMigrateServer?: (server: RemoteServerResponse) => void;
 }
+
+const VIEW_STORAGE_KEY = 'remote-servers-view';
 
 export function RemoteServersList({
 	servers,
@@ -45,7 +48,18 @@ export function RemoteServersList({
 	const [storeVersion, setStoreVersion] = useState(0);
 	const [search, setSearch] = useState('');
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
+	const [view, setView] = useState<ServersView>(() => {
+		if (typeof window === 'undefined') return 'grid';
+		return localStorage.getItem(VIEW_STORAGE_KEY) === 'list'
+			? 'list'
+			: 'grid';
+	});
 	const testConnMutation = useRemoteServerTestConnection();
+
+	const handleViewChange = (next: ServersView) => {
+		setView(next);
+		localStorage.setItem(VIEW_STORAGE_KEY, next);
+	};
 
 	useEffect(() => {
 		const unsubscribe = globalServerConnStore.subscribe(() =>
@@ -109,9 +123,6 @@ export function RemoteServersList({
 	/* ── Loading ─ */
 	if (isLoading) return <ServerListSkeleton />;
 
-	/* ── Empty — no servers at all ── */
-	if (servers.length === 0) return <ServerListEmpty onAdd={onAddServer} />;
-
 	return (
 		<div className="flex min-w-0 flex-col gap-3">
 			<ServersToolbar
@@ -119,13 +130,29 @@ export function RemoteServersList({
 				status={statusFilter}
 				onSearch={setSearch}
 				onStatus={setStatusFilter}
+				view={view}
+				onViewChange={handleViewChange}
 			/>
 
-			{filtered.length === 0 ? (
+			{servers.length === 0 ? (
+				<ServerListEmpty onAdd={onAddServer} />
+			) : filtered.length === 0 ? (
 				<ServerFilterEmpty onClear={clearFilters} />
+			) : view === 'grid' ? (
+				/* ── Grid cards ── */
+				<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+					{filtered.map(item => (
+						<ServerCard
+							key={item.id}
+							item={item}
+							connStatus={globalServerConnStore.getStatus(item.id)}
+							actions={actions}
+						/>
+					))}
+				</div>
 			) : (
 				/* ── Rows — one bordered card, divided rows (openship) ── */
-				<div className="divide-y divide-border/50 overflow-hidden rounded-xl bg-card ring-1 ring-border/50">
+				<div className="divide-y divide-border/60 overflow-hidden rounded-xl border bg-card">
 					{filtered.map(item => (
 						<ServerRow
 							key={item.id}

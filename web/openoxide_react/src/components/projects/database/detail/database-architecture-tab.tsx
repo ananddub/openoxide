@@ -1,9 +1,15 @@
 import {useState, useMemo} from 'react';
 import {ComposeVisualizer} from '#/components/projects/compose/visualizer/compose-visualizer';
+import {
+	buildDbArchService,
+	dbSupportsVolumeBackup,
+	filterDbArchBackups,
+} from './arch-visual-data';
 import {CreateBackupModal} from '#/components/projects/compose/detail/backups/create-backup-modal';
 import {TerminalCard} from '#/components/shared/terminal-card';
 import {ComposeDirectContainerLogsModal} from '#/components/projects/compose/detail/logs/compose-direct-container-logs-modal';
 import {useDatabaseBackupActions} from './use-database-backup-actions';
+import {SectionHeader} from '#/components/settings/list-card';
 
 interface DatabaseArchitectureTabProps {
 	database: any;
@@ -28,18 +34,7 @@ export function DatabaseArchitectureTab({
 		database?.kind ||
 		'postgres'
 	).toLowerCase();
-	const supportsVolumeBackup = !kind.includes('redis');
-	const internalPort =
-		kind.includes('mysql') || kind.includes('maria')
-			? 3306
-			: kind.includes('mongo')
-				? 27017
-				: kind.includes('redis')
-					? 6379
-					: kind.includes('libsql')
-						? 8080
-						: 5432;
-	const externalPort = database?.external_port || undefined;
+	const supportsVolumeBackup = dbSupportsVolumeBackup(kind);
 
 	const [activeModal, setActiveModal] = useState<
 		'domain' | 'backup' | 'terminal' | 'logs' | null
@@ -48,39 +43,14 @@ export function DatabaseArchitectureTab({
 		null,
 	);
 
-	const dbBackups = useMemo(() => {
-		const list = Array.isArray(passedBackups) ? passedBackups : [];
-		return list.filter(
-			(b: any) =>
-				b.postgres_id === dbId ||
-				b.mysql_id === dbId ||
-				b.mariadb_id === dbId ||
-				b.mongo_id === dbId ||
-				b.redis_id === dbId ||
-				b.libsql_id === dbId ||
-				b.app_name === database?.app_name ||
-				b.database_id === dbId ||
-				b.database_name === database?.app_name ||
-				b.app_name === database?.name,
-		);
-	}, [passedBackups, dbId, database]);
+	const dbBackups = useMemo(
+		() => filterDbArchBackups(passedBackups, dbId, database),
+		[passedBackups, dbId, database],
+	);
 
 	const dbServices = useMemo(
-		() => [
-			{
-				name: database?.app_name || database?.name || kind || 'database',
-				image: kind || 'postgres',
-				dependsOn: [],
-				envVars: {},
-				volumes: (database as any)?.volume_name
-					? [(database as any).volume_name]
-					: [`${kind}_data`],
-				ports: externalPort
-					? [String(externalPort)]
-					: [String(internalPort)],
-			},
-		],
-		[database, kind, externalPort, internalPort],
+		() => buildDbArchService(database, kind),
+		[database, kind],
 	);
 
 	const servicesList = useMemo(
@@ -120,17 +90,15 @@ export function DatabaseArchitectureTab({
 	};
 
 	return (
-		<div className="flex w-full animate-in flex-col gap-4 duration-200 fade-in">
-			<div>
-				<h3 className="text-sm font-bold text-foreground">
-					Database Topology & Connections
-				</h3>
-				<p className="text-xs text-muted-foreground">
-					{supportsVolumeBackup
-						? 'Interactive real-time map of database service, volume backups, and maintenance schedules.'
-						: 'Interactive real-time map of the Redis service and maintenance schedules.'}
-				</p>
-			</div>
+		<div className="flex w-full animate-in flex-col gap-5 duration-200 fade-in">
+			<SectionHeader
+				title="Architecture"
+				description={
+					supportsVolumeBackup
+						? 'Live map of this database, its volume backups and maintenance schedules. Click any node for context actions.'
+						: 'Live map of the Redis service and its maintenance schedules.'
+				}
+			/>
 
 			<ComposeVisualizer
 				customServices={dbServices}

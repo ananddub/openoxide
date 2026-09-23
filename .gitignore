@@ -27,7 +27,7 @@ errors3.txt
 *.db-shm
 *.db-wal
 *.sqlite3
-
+/tmp
 qwen-code*.md
 # Standalone Todo React test runtime artifacts
 /crates/todo-test/react/node_modules/

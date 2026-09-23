@@ -10,7 +10,7 @@ import {
 	GalleryVerticalEnd,
 	PieChart,
 } from 'lucide-react';
-import {UnderlineTabs} from '#/components/shared/underline-tabs';
+import {GeistSwitch} from '#/components/shared/geist-switch';
 import {Titlebar} from '#/components/shared/titlebar';
 import {WebServerSettingsPage} from './settings/server';
 import {TraefikPanel} from './traefik';
@@ -113,35 +113,29 @@ function InfraPage() {
 	return (
 		<div className="flex h-full min-h-0 w-full flex-col">
 			{/* Titlebar (title swaps with tab) + tab strip — fixed; content scrolls below */}
-			<div className="mx-auto flex w-full max-w-[1600px] shrink-0 flex-col gap-4 px-4 pt-6 sm:px-6 lg:px-8">
-				<Titlebar
-					breadcrumbs={[{label: active.title}]}
-					title={active.title}
-					description={active.description}
-					separator={false}>
-					{/* UnderlineTabs carries its own full-bleed border-b as the
-					    separator; the active underline merges with it. */}
-					<div className="-mx-4 sm:-mx-6 lg:-mx-8">
-						<UnderlineTabs
-							tabs={INFRA_TABS.map(({id, label, icon}) => ({
-								key: id,
-								label,
-								icon,
-							}))}
-							value={active.id}
-							onChange={select}
-						/>
-					</div>
+			<div className="mx-auto flex w-full max-w-[1920px] shrink-0 flex-col gap-4 px-4 pt-4">
+				<Titlebar breadcrumbs={[{label: active.title}]}>
+					{/* Geist Switch segment selector; the titlebar's closing
+					    hairline runs edge-to-edge below it. */}
+					<GeistSwitch
+						options={INFRA_TABS.map(({id, label, icon}) => ({
+							key: id,
+							label,
+							icon,
+						}))}
+						value={active.id}
+						onChange={select}
+					/>
 				</Titlebar>
 			</div>
 
 			{active.fixedHeight ? (
-				<div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 pb-4 sm:px-6 lg:px-8">
+				<div className="mx-auto flex min-h-0 w-full max-w-[1920px] flex-1 flex-col px-4 pb-4">
 					<Active />
 				</div>
 			) : (
 				<div className="min-h-0 flex-1 overflow-y-auto">
-					<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
+					<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 						<Active />
 					</div>
 				</div>

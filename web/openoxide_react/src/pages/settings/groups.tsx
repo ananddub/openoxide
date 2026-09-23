@@ -1,6 +1,6 @@
 import {createFileRoute, Navigate} from '@tanstack/react-router';
-import {Loader2, Plus, ShieldCheck, Trash2, Users} from 'lucide-react';
-import {useState} from 'react';
+import {Plus, Search, ShieldCheck} from 'lucide-react';
+import {useMemo, useState} from 'react';
 import {toast} from 'sonner';
 import {
 	usePermissionGroupDelete,
@@ -9,13 +9,23 @@ import {
 } from '#/api/live';
 import {usePermissions} from '#/hooks/use-permissions';
 import {formatApiError} from '#/api/utils';
-import {Badge} from '#/components/ui/badge';
 import {Button} from '#/components/ui/button';
-import {SettingsSection} from '#/components/settings/settings-section';
 import {
-	GroupEditorDialog,
+	GridSkeleton,
+	ListEmpty,
+	ListSkeleton,
+	SectionHeader,
+	Toolbar,
+	ToolbarSearch,
+	ViewToggle,
+	useListView,
+} from '#/components/settings/list-card';
+import {GroupList} from '#/components/settings/groups/group-list';
+import {
+	GroupEditorSheet,
 	type Draft,
-} from '#/components/settings/groups/group-editor-dialog';
+} from '#/components/settings/groups/group-editor-sheet';
+import {ConfirmDeleteDialog} from '#/components/settings/confirm-delete-dialog';
 
 export const Route = createFileRoute('/_app/settings/groups')({
 	component: () => (
@@ -30,120 +40,148 @@ export function GroupsPage() {
 	const deleteMutation = usePermissionGroupDelete();
 
 	const [draft, setDraft] = useState<Draft | null>(null);
+	const [search, setSearch] = useState('');
+	const [view, setView] = useListView('settings-groups-view');
+	const [deleting, setDeleting] = useState<{
+		id: number;
+		name: string;
+	} | null>(null);
 
 	const groups = groupsQuery.data ?? [];
 	const policies = policiesQuery.data ?? [];
 	const canManage =
 		can('group:create') || can('group:update') || can('group:delete');
 
-	const remove = async (id: number) => {
+	const q = search.trim().toLowerCase();
+	const visibleGroups = useMemo(
+		() =>
+			q
+				? groups.filter(
+						group =>
+							group.name.toLowerCase().includes(q) ||
+							group.actions.some(action =>
+								action.toLowerCase().includes(q),
+							),
+					)
+				: groups,
+		[groups, q],
+	);
+
+	const remove = async () => {
+		if (!deleting) return;
 		try {
-			await deleteMutation.mutateAsync(id);
+			await deleteMutation.mutateAsync(deleting.id);
 			toast.success('Group deleted');
+			setDeleting(null);
 		} catch (err) {
 			toast.error(formatApiError(err));
 		}
 	};
 
-	if (grantsLoading || groupsQuery.isLoading) {
-		return (
-			<div className="flex min-h-[40vh] items-center justify-center">
-				<Loader2 className="size-5 animate-spin text-muted-foreground" />
-			</div>
-		);
-	}
-
 	return (
 		<div className="flex w-full animate-in flex-col gap-5 duration-200 fade-in">
-			<SettingsSection
-				icon={ShieldCheck}
+			<SectionHeader
 				title="Permission Groups"
-				description="Roles for this organization: each group grants a set of resource actions to every member it is assigned to."
+				description="Bundle the actions a set of members may perform, then assign the group from the Team section."
 				action={
 					canManage && (
 						<Button
-							size="sm"
-							className="h-8 gap-1.5 text-xs"
-							onClick={() => setDraft({name: '', actions: []})}>
-							<Plus className="size-3.5" /> New Group
+							onClick={() => setDraft({name: '', actions: []})}
+							className="h-9 gap-1.5">
+							<Plus className="size-3.5" />
+							New group
 						</Button>
 					)
-				}>
-				{groups.length === 0 ? (
-					<p className="text-sm text-muted-foreground">
-						No groups yet in this organization.
-					</p>
-				) : (
-					<div className="grid gap-3">
-						{groups.map(group => (
-							<div
-								key={String(group.id)}
-								className="rounded-xl bg-muted/30 p-4">
-								<div className="flex items-center justify-between gap-3">
-									<div className="flex min-w-0 items-center gap-2">
-										<Users className="size-4 shrink-0 text-muted-foreground" />
-										<h3 className="truncate text-sm font-medium text-foreground">
-											{group.name}
-										</h3>
-										{group.is_system && (
-											<Badge variant="secondary" className="text-[9px]">
-												SYSTEM
-											</Badge>
-										)}
-										<span className="text-[10px] text-muted-foreground">
-											{group.actions.length} actions
-										</span>
-									</div>
-									{canManage && (
-										<div className="flex shrink-0 gap-1">
-											<Button
-												variant="ghost"
-												size="sm"
-												className="h-7 text-xs"
-												onClick={() =>
-													setDraft({
-														id: Number(group.id),
-														name: group.name,
-														actions: [...group.actions],
-													})
-												}>
-												Edit
-											</Button>
-											{!group.is_system && (
-												<Button
-													variant="ghost"
-													size="icon"
-													className="h-7 w-7 text-rose-500"
-													title="Delete group"
-													onClick={() => void remove(Number(group.id))}>
-													<Trash2 className="size-3.5" />
-												</Button>
-											)}
-										</div>
-									)}
-								</div>
-								<div className="mt-2 flex flex-wrap gap-1">
-									{group.actions.slice(0, 12).map(action => (
-										<Badge
-											key={action}
-											variant="outline"
-											className="font-mono text-[9px]">
-											{action}
-										</Badge>
-									))}
-									{group.actions.length > 12 && (
-										<span className="text-[10px] text-muted-foreground">
-											+{group.actions.length - 12} more
-										</span>
-									)}
-								</div>
-							</div>
-						))}
-					</div>
-				)}
-			</SettingsSection>
+				}
+			/>
 
-			<GroupEditorDialog
+			<Toolbar action={<ViewToggle view={view} onChange={setView} />}>
+				<ToolbarSearch
+					value={search}
+					onChange={setSearch}
+					placeholder="Search groups by name or action"
+					className="min-w-[200px] flex-1 sm:max-w-none"
+				/>
+			</Toolbar>
+
+			{groupsQuery.isLoading || grantsLoading ? (
+				view === 'grid' ? (
+					<GridSkeleton />
+				) : (
+					<ListSkeleton />
+				)
+			) : groups.length === 0 ? (
+				<ListEmpty
+					icon={ShieldCheck}
+					title="No permission groups yet"
+					description="A group bundles the actions a set of members is allowed to perform. Assign groups from the Team section."
+					action={
+						canManage && (
+							<Button
+								onClick={() => setDraft({name: '', actions: []})}
+								className="h-9 gap-1.5 text-xs font-semibold">
+								<Plus className="size-3.5" />
+								New group
+							</Button>
+						)
+					}
+				/>
+			) : visibleGroups.length === 0 ? (
+				<ListEmpty
+					icon={Search}
+					title="No groups match your search"
+					description="Try a different name, or an action like app:deploy."
+					action={
+						q !== '' && (
+							<Button
+								variant="ghost"
+								onClick={() => setSearch('')}
+								className="text-xs font-semibold text-primary">
+								Clear Search
+							</Button>
+						)
+					}
+				/>
+			) : (
+				<GroupList
+					groups={visibleGroups}
+					view={view}
+					canManage={canManage}
+					onEdit={group =>
+						setDraft({
+							id: Number(group.id),
+							name: group.name,
+							actions: [...group.actions],
+						})
+					}
+					onDelete={group =>
+						setDeleting({
+							id: Number(group.id),
+							name: group.name,
+						})
+					}
+				/>
+			)}
+
+			<ConfirmDeleteDialog
+				open={deleting !== null}
+				onOpenChange={o => !o && setDeleting(null)}
+				title="Delete permission group"
+				description={
+					<span>
+						Members assigned{' '}
+						<span className="font-medium text-foreground">
+							{deleting?.name}
+						</span>{' '}
+						would lose the actions it grants. This cannot be undone.
+					</span>
+				}
+				confirmLabel="Delete group"
+				busy={deleteMutation.isPending}
+				onConfirm={() => void remove()}
+			/>
+
+			<GroupEditorSheet
 				draft={draft}
 				setDraft={setDraft}
 				policies={policies}

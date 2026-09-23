@@ -1,6 +1,7 @@
 import type {SwarmKey} from './forms';
+import {FieldGrid} from '#/components/shared/field';
 import {SwarmSelectField} from './select-field';
-import {Num} from './field';
+import {Num, Duration} from './field';
 import {HealthCommands} from './health-commands';
 
 export function SwarmRuntimeForm({
@@ -46,7 +47,7 @@ export function SwarmRuntimeForm({
 						{value: 'any', label: 'Any'},
 					]}
 				/>
-				<Num
+				<Duration
 					label="Delay (nanoseconds)"
 					value={value.Delay}
 					set={v => set('Delay', v)}
@@ -56,7 +57,7 @@ export function SwarmRuntimeForm({
 					value={value.MaxAttempts}
 					set={v => set('MaxAttempts', v)}
 				/>
-				<Num
+				<Duration
 					label="Window (nanoseconds)"
 					value={value.Window}
 					set={v => set('Window', v)}
@@ -71,17 +72,17 @@ export function SwarmRuntimeForm({
 					set={next => set('Test', next)}
 				/>
 				<div className="flex flex-col gap-4">
-					<Num
+					<Duration
 						label="Interval (nanoseconds)"
 						value={value.Interval}
 						set={v => set('Interval', v)}
 					/>
-					<Num
+					<Duration
 						label="Timeout (nanoseconds)"
 						value={value.Timeout}
 						set={v => set('Timeout', v)}
 					/>
-					<Num
+					<Duration
 						label="Start Period (nanoseconds)"
 						value={value.StartPeriod}
 						set={v => set('StartPeriod', v)}
@@ -96,12 +97,20 @@ export function SwarmRuntimeForm({
 		);
 	return (
 		<div className="flex max-w-2xl flex-col gap-4">
-			<Num
-				label="Parallelism"
-				value={value.Parallelism}
-				set={v => set('Parallelism', v)}
-			/>
-			<Num
+			<FieldGrid>
+				<Num
+					label="Parallelism"
+					value={value.Parallelism}
+					set={v => set('Parallelism', v)}
+				/>
+				<Num
+					label="Max Failure Ratio"
+					value={value.MaxFailureRatio}
+					set={v => set('MaxFailureRatio', v)}
+					step={0.1}
+				/>
+			</FieldGrid>
+			<Duration
 				label="Delay (nanoseconds)"
 				value={value.Delay}
 				set={v => set('Delay', v)}
@@ -125,15 +134,10 @@ export function SwarmRuntimeForm({
 					{value: 'start-first', label: 'Start First'},
 				]}
 			/>
-			<Num
+			<Duration
 				label="Monitor (nanoseconds)"
 				value={value.Monitor}
 				set={v => set('Monitor', v)}
-			/>
-			<Num
-				label="Max Failure Ratio"
-				value={value.MaxFailureRatio}
-				set={v => set('MaxFailureRatio', v)}
 			/>
 		</div>
 	);

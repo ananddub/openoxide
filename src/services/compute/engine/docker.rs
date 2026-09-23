@@ -2,6 +2,31 @@ use crate::services::compute::engine::{ComposeLogOptions, DeploymentService, Doc
 use crate::utils::docker::{DockerCli, DockerStreamEvent};
 use tokio::sync::mpsc;
 
+/// Stats stream with nothing to watch. An empty target list must never reach
+/// the Agent — it treats "no ids" as "every running container", which made
+/// stopped/unresolved apps, databases and compose stacks display someone
+/// else's CPU/RAM.
+fn empty_stats_stream() -> mpsc::Receiver<DockerStreamEvent> {
+    let (sender, receiver) = mpsc::channel(1);
+    drop(sender);
+    receiver
+}
+
+/// Checks a `docker ps` Labels cell for an exact key/value pair. Handles both
+/// serialisations seen in the wild: the CLI's `k=v,k2=v2` string and a compact
+/// JSON object emitted by other Docker versions.
+fn label_matches(labels: &str, key: &str, value: &str) -> bool {
+    let trimmed = labels.trim();
+    if trimmed.starts_with('{') {
+        return serde_json::from_str::<std::collections::HashMap<String, String>>(trimmed)
+            .map(|map| map.get(key).is_some_and(|found| found == value))
+            .unwrap_or(false);
+    }
+    trimmed
+        .split(',')
+        .any(|pair| pair == format!("{key}={value}"))
+}
+
 fn find_best_matching_container<'a>(
     containers: &'a [crate::utils::docker::ContainerSummary],
     target: &str,
@@ -256,36 +281,40 @@ impl DeploymentService {
 
         let docker = self.docker_for_server(server_id).await?;
 
-        // Try Swarm service label first
-        let service_name = format!("{app_name}_{app_name}");
-        let swarm_filter = crate::utils::docker::query::filter::ContainerFilter::Label(
-            "com.docker.swarm.service.name".to_string(),
-            service_name,
-        );
-        let swarm_containers = docker
-            .containers()
-            .ps()
-            .filter(swarm_filter)
-            .list()
-            .await
-            .unwrap_or_default();
-
-        let targets = if !swarm_containers.is_empty() {
-            // Swarm mode: use container IDs from label filter
-            swarm_containers
-                .into_iter()
-                .map(|c| c.id)
-                .filter(|id| !id.trim().is_empty())
-                .collect::<Vec<_>>()
-        } else {
-            // Standalone mode: find container by name matching
-            let all_containers = docker.containers().ps().list().await.unwrap_or_default();
-            if let Some(matched) = find_best_matching_container(&all_containers, &app_name) {
-                vec![matched.id.clone()]
-            } else {
+        let containers = match docker.containers().ps().list().await {
+            Ok(containers) => containers,
+            Err(error) => {
+                tracing::warn!(server_id, %app_name, %error, "docker ps failed for application stats");
                 Vec::new()
             }
         };
+
+        let service_name = format!("{app_name}_{app_name}");
+        let mut targets: Vec<String> = containers
+            .iter()
+            .filter(|c| label_matches(&c.labels, "com.docker.swarm.service.name", &service_name))
+            .map(|c| c.id.trim().to_string())
+            .filter(|id| !id.is_empty())
+            .collect();
+        if targets.is_empty() {
+            // Standalone mode: find container by name matching.
+            if let Some(matched) = find_best_matching_container(&containers, &app_name) {
+                let id = matched.id.trim().to_string();
+                if !id.is_empty() {
+                    targets.push(id);
+                }
+            }
+        }
+
+        if targets.is_empty() {
+            tracing::info!(
+                server_id,
+                %app_name,
+                running = containers.len(),
+                "no running container resolved for application stats"
+            );
+            return Ok(empty_stats_stream());
+        }
 
         let agent_id = crate::services::compute::compose::remote::agent_server_id(server_id)
             .await
@@ -303,33 +332,54 @@ impl DeploymentService {
         let server_id = compose.server_id;
 
         let docker = self.docker_for_server(server_id).await?;
-        let filter = crate::utils::docker::query::filter::ContainerFilter::Label(
-            "com.docker.compose.project".to_string(),
-            app_name.clone(),
-        );
-        let compose_containers = docker
-            .containers()
-            .ps()
-            .filter(filter)
-            .list()
-            .await
-            .unwrap_or_default();
 
-        let targets = if !compose_containers.is_empty() {
-            compose_containers
-                .into_iter()
-                .map(|c| c.id)
-                .filter(|id| !id.trim().is_empty())
-                .collect::<Vec<_>>()
-        } else {
-            // Fallback: name-based match
-            let all_containers = docker.containers().ps().list().await.unwrap_or_default();
-            if let Some(matched) = find_best_matching_container(&all_containers, &app_name) {
-                vec![matched.id.clone()]
-            } else {
+        let containers = match docker.containers().ps().list().await {
+            Ok(containers) => containers,
+            Err(error) => {
+                tracing::warn!(server_id, %app_name, %error, "docker ps failed for compose stats");
                 Vec::new()
             }
         };
+
+        let mut targets: Vec<String> = containers
+            .iter()
+            .filter(|c| label_matches(&c.labels, "com.docker.compose.project", &app_name))
+            .map(|c| c.id.trim().to_string())
+            .filter(|id| !id.is_empty())
+            .collect();
+        if targets.is_empty() {
+            // Fallback: name-based match against the compose project prefix.
+            let matched: Vec<String> = containers
+                .iter()
+                .filter(|c| {
+                    let name = c.names.trim_start_matches('/').to_lowercase();
+                    name.starts_with(&format!("{}-", app_name.to_lowercase()))
+                        || name.starts_with(&format!("{}_", app_name.to_lowercase()))
+                })
+                .map(|c| c.id.trim().to_string())
+                .filter(|id| !id.is_empty())
+                .collect();
+            targets = matched;
+        }
+
+        if targets.is_empty() {
+            if let Some(matched) = find_best_matching_container(&containers, &app_name) {
+                let id = matched.id.trim().to_string();
+                if !id.is_empty() {
+                    targets.push(id);
+                }
+            }
+        }
+
+        if targets.is_empty() {
+            tracing::info!(
+                server_id,
+                %app_name,
+                running = containers.len(),
+                "no running container resolved for compose stats"
+            );
+            return Ok(empty_stats_stream());
+        }
 
         let agent_id = crate::services::compute::compose::remote::agent_server_id(server_id)
             .await
@@ -348,35 +398,41 @@ impl DeploymentService {
 
         let docker = self.docker_for_server(server_id).await?;
 
-        // Databases run in Swarm as: {app_name}_db service
-        let swarm_service = format!("{app_name}_db");
-        let swarm_filter = crate::utils::docker::query::filter::ContainerFilter::Label(
-            "com.docker.swarm.service.name".to_string(),
-            swarm_service,
-        );
-        let swarm_containers = docker
-            .containers()
-            .ps()
-            .filter(swarm_filter)
-            .list()
-            .await
-            .unwrap_or_default();
-
-        let targets = if !swarm_containers.is_empty() {
-            swarm_containers
-                .into_iter()
-                .map(|c| c.id)
-                .filter(|id| !id.trim().is_empty())
-                .collect::<Vec<_>>()
-        } else {
-            // Fallback: name-based match (standalone / non-Swarm)
-            let all_containers = docker.containers().ps().list().await.unwrap_or_default();
-            if let Some(matched) = find_best_matching_container(&all_containers, &app_name) {
-                vec![matched.id.clone()]
-            } else {
+        let containers = match docker.containers().ps().list().await {
+            Ok(containers) => containers,
+            Err(error) => {
+                tracing::warn!(server_id, %app_name, %error, "docker ps failed for database stats");
                 Vec::new()
             }
         };
+
+        // Databases run in Swarm as: {app_name}_db service
+        let swarm_service = format!("{app_name}_db");
+        let mut targets: Vec<String> = containers
+            .iter()
+            .filter(|c| label_matches(&c.labels, "com.docker.swarm.service.name", &swarm_service))
+            .map(|c| c.id.trim().to_string())
+            .filter(|id| !id.is_empty())
+            .collect();
+        if targets.is_empty() {
+            // Fallback: name-based match (standalone / non-Swarm).
+            if let Some(matched) = find_best_matching_container(&containers, &app_name) {
+                let id = matched.id.trim().to_string();
+                if !id.is_empty() {
+                    targets.push(id);
+                }
+            }
+        }
+
+        if targets.is_empty() {
+            tracing::info!(
+                server_id,
+                %app_name,
+                running = containers.len(),
+                "no running container resolved for database stats"
+            );
+            return Ok(empty_stats_stream());
+        }
 
         let agent_id = crate::services::compute::compose::remote::agent_server_id(server_id)
             .await

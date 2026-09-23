@@ -1,10 +1,14 @@
 import {Activity, RefreshCw, Trash2, XCircle, Zap} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {SectionHeader, Toolbar} from '#/components/settings/list-card';
+import {cn} from '#/api/utils';
 
 export interface DeploymentsHeaderProps {
-	title: string;
-	description: string;
-	/** Amber status pill next to the title; pass null to hide. */
+	/** Section heading with a rule under it; omit for the plain toolbar row. */
+	title?: string;
+	/** One-line note under the heading. */
+	description?: string;
+	/** Muted status pill on the left; pass null/undefined to hide. */
 	pillLabel?: string | null;
 	onClear: () => void;
 	clearDisabled?: boolean;
@@ -27,6 +31,7 @@ export interface DeploymentsHeaderProps {
 	deployLabel?: string;
 }
 
+/** Quiet toolbar above the deployment list: status pill left, actions right. */
 export function DeploymentsHeader({
 	title,
 	description,
@@ -48,83 +53,81 @@ export function DeploymentsHeader({
 	onDeploy,
 	deployLabel = 'Deploy',
 }: DeploymentsHeaderProps) {
-	return (
-		<section className="flex items-center justify-between rounded-xl bg-card p-5">
-			<div>
-				<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
-					{title}
-					{pillLabel && (
-						<span className="flex animate-pulse items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
-							<Activity className="h-3 w-3 animate-spin" /> {pillLabel}
-						</span>
-					)}
-				</h3>
-				<p className="mt-0.5 text-xs text-muted-foreground">
-					{description}
-				</p>
-			</div>
+	const pill = pillLabel && (
+		<span className="flex items-center gap-1.5 rounded-md bg-foreground/[0.05] px-2 py-1 text-xs font-medium text-muted-foreground">
+			<Activity className="size-3.5 animate-spin" />
+			{pillLabel}
+		</span>
+	);
 
-			<div className="flex items-center gap-2">
+	const actions = (
+		<>
+			<Button
+				variant="ghost"
+				size="icon"
+				onClick={onClear}
+				disabled={clearDisabled}
+				title="Clear history"
+				className="size-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+				<Trash2 className="size-4" />
+			</Button>
+			{onRefresh && (
+				<Button
+					variant="ghost"
+					size="icon"
+					onClick={onRefresh}
+					disabled={isProcessing}
+					title="Refresh"
+					className="size-9 text-muted-foreground hover:text-foreground">
+					<RefreshCw
+						className={cn('size-4', refreshSpinning && 'animate-spin')}
+					/>
+				</Button>
+			)}
+			{onRedeploy && (
 				<Button
 					variant="outline"
-					size="sm"
-					onClick={onClear}
-					disabled={clearDisabled}
-					className="flex h-8 items-center gap-1.5 border-destructive/30 bg-destructive/10 text-xs font-semibold text-destructive hover:bg-destructive/20">
-					<Trash2 className="h-3.5 w-3.5" /> Clear History
+					onClick={onRedeploy}
+					disabled={redeployDisabled}
+					className="h-9 gap-1.5">
+					<RefreshCw
+						className={cn('size-3.5', redeploySpinning && 'animate-spin')}
+					/>
+					{redeployLabel}
 				</Button>
-				{onRefresh && (
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={onRefresh}
-						disabled={isProcessing}
-						className="flex h-8 items-center gap-1.5 text-xs font-semibold text-foreground hover:bg-muted">
-						<RefreshCw
-							className={`h-3.5 w-3.5 ${refreshSpinning ? 'animate-spin' : ''}`}
-						/>{' '}
-						Refresh
+			)}
+			{isProcessing ? (
+				<Button disabled className="h-9 gap-1.5">
+					<RefreshCw className="size-3.5 animate-spin" />
+					{processingLabel}
+				</Button>
+			) : showCancel ? (
+				<Button
+					variant="destructive"
+					onClick={onCancel}
+					disabled={cancelDisabled}
+					className="h-9 gap-1.5">
+					<XCircle className="size-3.5" /> {cancelLabel}
+				</Button>
+			) : (
+				onDeploy && (
+					<Button onClick={onDeploy} className="h-9 gap-1.5">
+						<Zap className="size-3.5" /> {deployLabel}
 					</Button>
-				)}
-				{onRedeploy && (
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={onRedeploy}
-						disabled={redeployDisabled}
-						className="flex h-8 items-center gap-1.5 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50">
-						<RefreshCw
-							className={`h-3.5 w-3.5 ${redeploySpinning ? 'animate-spin' : ''}`}
-						/>{' '}
-						{redeployLabel}
-					</Button>
-				)}
-				{isProcessing ? (
-					<Button
-						disabled
-						size="sm"
-						className="flex h-8 items-center gap-1.5 bg-primary/80 text-xs font-semibold text-primary-foreground">
-						<RefreshCw className="h-3.5 w-3.5 animate-spin" />{' '}
-						{processingLabel}
-					</Button>
-				) : showCancel ? (
-					<Button
-						onClick={onCancel}
-						disabled={cancelDisabled}
-						size="sm"
-						variant="destructive"
-						className="flex h-8 items-center gap-1.5 text-xs font-semibold">
-						<XCircle className="h-3.5 w-3.5" /> {cancelLabel}
-					</Button>
-				) : (
-					<Button
-						onClick={onDeploy}
-						size="sm"
-						className="flex h-8 items-center gap-1.5 bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90">
-						<Zap className="h-3.5 w-3.5" /> {deployLabel}
-					</Button>
-				)}
-			</div>
-		</section>
+				)
+			)}
+		</>
 	);
+
+	if (title)
+		return (
+			<SectionHeader
+				title={title}
+				description={description}
+				action={actions}>
+				{pill}
+			</SectionHeader>
+		);
+
+	return <Toolbar action={actions}>{pill}</Toolbar>;
 }

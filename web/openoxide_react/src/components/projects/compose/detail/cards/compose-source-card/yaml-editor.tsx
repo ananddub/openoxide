@@ -1,5 +1,6 @@
 import Editor from '@monaco-editor/react';
 import {Code2} from 'lucide-react';
+import {useTheme} from '#/hooks/use-theme';
 
 const EDITOR_OPTIONS = {
 	minimap: {enabled: false},
@@ -8,7 +9,7 @@ const EDITOR_OPTIONS = {
 	lineNumbers: 'on' as const,
 };
 
-/** Dark Monaco YAML editor in a rounded well. */
+/** Theme-following Monaco YAML editor in a rounded well. */
 export function ComposeYamlEditor({
 	value,
 	onChange,
@@ -18,12 +19,13 @@ export function ComposeYamlEditor({
 	onChange: (v: string) => void;
 	height: string;
 }) {
+	const {theme} = useTheme();
 	return (
-		<div className="overflow-hidden rounded-xl bg-zinc-950 shadow-inner">
+		<div className="overflow-hidden rounded-xl border border-border bg-white shadow-inner dark:bg-zinc-950">
 			<Editor
 				height={height}
 				defaultLanguage="yaml"
-				theme="vs-dark"
+				theme={theme === 'dark' ? 'vs-dark' : 'light'}
 				value={value}
 				onChange={val => onChange(val || '')}
 				options={EDITOR_OPTIONS}

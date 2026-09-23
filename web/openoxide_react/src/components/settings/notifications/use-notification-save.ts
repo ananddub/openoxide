@@ -10,23 +10,25 @@ import type {DraftState} from './notification-triggers';
 
 /** Validate required provider fields and coerce numbers/address lists. */
 function buildConfig(draft: DraftState, provider: ProviderMeta | null) {
+	const config: Record<string, unknown> = {};
 	for (const f of provider?.fields ?? []) {
-		if (!f.optional && !(draft.config[f.key] ?? '').trim()) {
-			toast.error(`${f.label} is required`);
-			return null;
+		const raw = (draft.config[f.key] ?? '').trim();
+		if (!raw) {
+			if (!f.optional) {
+				toast.error(`${f.label} is required`);
+				return null;
+			}
+			// A blank optional field is left out entirely — sending '' (or the
+			// Number('') === 0 it coerces to) would overwrite a real default.
+			continue;
 		}
-	}
-	const config: Record<string, unknown> = {...draft.config};
-	for (const f of provider?.fields ?? []) {
-		if (f.type === 'number' && config[f.key] !== undefined) {
-			config[f.key] = Number(config[f.key]);
-		}
-		if (f.key === 'to_addresses' && typeof config[f.key] === 'string') {
-			config[f.key] = (config[f.key] as string)
+		if (f.type === 'number') config[f.key] = Number(raw);
+		else if (f.key === 'to_addresses')
+			config[f.key] = raw
 				.split(',')
 				.map(s => s.trim())
 				.filter(Boolean);
-		}
+		else config[f.key] = raw;
 	}
 	return config;
 }

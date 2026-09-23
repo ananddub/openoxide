@@ -24,9 +24,9 @@ export function AuthorizeCommandBlock({
 	};
 
 	return (
-		<div className="w-full min-w-0 space-y-1.5 overflow-hidden rounded-lg bg-muted/20 p-2.5">
+		<div className="w-full min-w-0 space-y-1.5 overflow-hidden rounded-lg border border-border/60 bg-muted/20 p-2.5">
 			<div className="flex items-center justify-between">
-				<span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+				<span className="flex items-center gap-1.5 text-[13px] font-medium text-foreground">
 					<Terminal className="h-3.5 w-3.5 text-amber-500" />
 					Authorize on Server
 				</span>
@@ -44,23 +44,23 @@ export function AuthorizeCommandBlock({
 					{copied ? 'Copied' : 'Copy'}
 				</Button>
 			</div>
-			<div className="max-h-24 w-full min-w-0 overflow-y-auto rounded bg-zinc-950 p-2.5 font-mono text-[11px] leading-relaxed break-all text-zinc-200 select-all">
-				<span className="font-bold text-emerald-400">mkdir</span>{' '}
-				<span className="text-amber-400">-p</span>{' '}
-				<span className="text-cyan-300">~/.ssh</span>{' '}
-				<span className="text-zinc-500">&amp;&amp;</span>{' '}
-				<span className="font-bold text-emerald-400">echo</span>{' '}
-				<span className="text-sky-300">"{publicKey.trim()}"</span>{' '}
-				<span className="text-amber-400">&gt;&gt;</span>{' '}
-				<span className="text-cyan-300">~/.ssh/authorized_keys</span>{' '}
-				<span className="text-zinc-500">&amp;&amp;</span>{' '}
-				<span className="font-bold text-emerald-400">chmod</span>{' '}
-				<span className="text-amber-400">700</span>{' '}
-				<span className="text-cyan-300">~/.ssh</span>{' '}
-				<span className="text-zinc-500">&amp;&amp;</span>{' '}
-				<span className="font-bold text-emerald-400">chmod</span>{' '}
-				<span className="text-amber-400">600</span>{' '}
-				<span className="text-cyan-300">~/.ssh/authorized_keys</span>
+			<div className="max-h-24 w-full min-w-0 overflow-y-auto rounded-md border border-border/60 bg-muted/40 p-2.5 font-mono text-[11px] leading-relaxed break-all select-all">
+				<span className="font-semibold text-emerald-500">mkdir</span>{' '}
+				<span className="text-amber-500">-p</span>{' '}
+				<span className="text-sky-500">~/.ssh</span>{' '}
+				<span className="text-muted-foreground">&amp;&amp;</span>{' '}
+				<span className="font-semibold text-emerald-500">echo</span>{' '}
+				<span className="text-foreground">"{publicKey.trim()}"</span>{' '}
+				<span className="text-amber-500">&gt;&gt;</span>{' '}
+				<span className="text-sky-500">~/.ssh/authorized_keys</span>{' '}
+				<span className="text-muted-foreground">&amp;&amp;</span>{' '}
+				<span className="font-semibold text-emerald-500">chmod</span>{' '}
+				<span className="text-amber-500">700</span>{' '}
+				<span className="text-sky-500">~/.ssh</span>{' '}
+				<span className="text-muted-foreground">&amp;&amp;</span>{' '}
+				<span className="font-semibold text-emerald-500">chmod</span>{' '}
+				<span className="text-amber-500">600</span>{' '}
+				<span className="text-sky-500">~/.ssh/authorized_keys</span>
 			</div>
 		</div>
 	);

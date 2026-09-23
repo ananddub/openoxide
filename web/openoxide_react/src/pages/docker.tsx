@@ -87,7 +87,7 @@ function DockerPage() {
 	).length;
 
 	return (
-		<div className="mx-auto flex h-[calc(100vh-4rem)] w-full max-w-7xl animate-in flex-col gap-4 overflow-hidden p-4 duration-200 fade-in">
+		<div className="mx-auto flex h-full w-full max-w-7xl animate-in flex-col gap-4 overflow-hidden p-4 duration-200 fade-in">
 			{/* Header Component (< 200 lines) */}
 			<DockerHeader
 				totalContainers={globalContainers.length}

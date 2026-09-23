@@ -1,5 +1,9 @@
 import {useMemo, useState} from 'react';
 import {ComposeVisualizer} from '#/components/projects/compose/visualizer/compose-visualizer';
+import {
+	buildAppArchService,
+	filterAppArchBackups,
+} from './arch-visual-data';
 import type {DomainFormData} from '#/components/projects/common/domain-dialog';
 import type {
 	ActiveModal,
@@ -15,6 +19,7 @@ import {
 	type BackupFormData,
 } from '#/components/projects/detail/architecture/use-backup-actions';
 import {TabModals} from '#/components/projects/detail/architecture/tab-modals';
+import {SectionHeader} from '#/components/settings/list-card';
 
 interface AppArchitectureTabProps {
 	app: any;
@@ -47,31 +52,15 @@ export function AppArchitectureTab({
 	const scheduleActions = useScheduleActions(owner, onRefresh);
 	const backupActions = useBackupActions(owner, onRefresh);
 
-	const appService = useMemo(
-		() => [
-			{
-				name: app?.name || app?.app_name || 'app',
-				image:
-					app?.repository || app?.dockerfile || app?.build_type || 'app',
-				dependsOn: [],
-				envVars: {},
-				volumes: app?.port ? [`port:${app.port}`] : [],
-				ports: app?.port ? [String(app.port)] : [],
-			},
-		],
-		[app],
-	);
+	const appService = useMemo(() => buildAppArchService(app), [app]);
 
 	const domains = Array.isArray(passedDomains) ? passedDomains : [];
 	const schedules = Array.isArray(passedSchedules) ? passedSchedules : [];
 
-	const appBackups = useMemo(() => {
-		const list = Array.isArray(passedBackups) ? passedBackups : [];
-		return list.filter(
-			(b: any) =>
-				b.application_id === app?.id || b.app_name === app?.app_name,
-		);
-	}, [passedBackups, app]);
+	const appBackups = useMemo(
+		() => filterAppArchBackups(passedBackups, app),
+		[passedBackups, app],
+	);
 
 	const servicesList = useMemo(
 		() => [app?.name || app?.app_name || 'app'],
@@ -108,16 +97,11 @@ export function AppArchitectureTab({
 	};
 
 	return (
-		<div className="flex w-full animate-in flex-col gap-4 duration-200 fade-in">
-			<div>
-				<h3 className="text-sm font-bold text-foreground">
-					Application Topology & Connections
-				</h3>
-				<p className="text-xs text-muted-foreground">
-					Interactive real-time map of application service, domains, volume
-					backups, and cron jobs. Click any node to add or edit resources.
-				</p>
-			</div>
+		<div className="flex w-full animate-in flex-col gap-5 duration-200 fade-in">
+			<SectionHeader
+				title="Architecture"
+				description="Live map of this application's service, domains, volume backups and cron jobs. Click any node to add or edit a resource."
+			/>
 
 			<ComposeVisualizer
 				customServices={appService}

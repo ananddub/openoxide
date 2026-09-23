@@ -50,7 +50,7 @@ export function CanvasContextMenu(props: CanvasContextMenuProps) {
 		targetType === 'domain'
 			? 'bg-emerald-500'
 			: targetType === 'schedule'
-				? 'bg-purple-400'
+				? 'bg-purple-500'
 				: targetType === 'backup'
 					? 'bg-sky-400'
 					: 'animate-pulse bg-primary';
@@ -76,8 +76,8 @@ export function CanvasContextMenu(props: CanvasContextMenuProps) {
 					e.stopPropagation();
 					e.nativeEvent?.stopImmediatePropagation();
 				}}
-				className="pointer-events-auto w-56 animate-in rounded-xl bg-popover/95 p-1.5 shadow-lg backdrop-blur-xl duration-150 select-none zoom-in-95 fade-in">
-				<div className="mb-1 flex items-center justify-between border-b  px-2.5 py-2">
+				className="pointer-events-auto w-56 animate-in rounded-xl border border-border bg-popover p-1 shadow-[0_8px_30px_rgb(0_0_0/0.12)] duration-150 select-none zoom-in-95 fade-in dark:shadow-[0_8px_30px_rgb(0_0_0/0.5)]">
+				<div className="mb-1 flex items-center justify-between border-b border-border px-2.5 py-2">
 					<div className="flex min-w-0 items-center gap-2">
 						<span
 							className={`size-2 shrink-0 rounded-full ${statusDot}`}
@@ -106,13 +106,13 @@ export function CanvasContextMenu(props: CanvasContextMenuProps) {
 						return (
 							<div key={entry.label}>
 								{entry.dividerBefore && (
-									<div className="my-1 h-px bg-border/40" />
+									<div className="my-1 h-px bg-border" />
 								)}
 								<button
 									type="button"
 									onClick={select(entry.action)}
-									className={`group flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs ${weightClass} ${entry.color} transition-colors ${entry.hover}`}>
-									<Icon className="size-3.5 transition-transform group-hover:scale-110" />
+									className={`group flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-1.5 text-left text-xs ${weightClass} ${entry.color} transition-colors ${entry.hover}`}>
+									<Icon className="size-3.5 shrink-0" />
 									<span>{entry.label}</span>
 								</button>
 							</div>

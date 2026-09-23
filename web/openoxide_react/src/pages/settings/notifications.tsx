@@ -1,32 +1,52 @@
 import {createFileRoute, Navigate} from '@tanstack/react-router';
-import {useState} from 'react';
-import {Plus} from 'lucide-react';
+import {useEffect, useMemo, useRef, useState} from 'react';
+import {BellRing, History, Plus, Search} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from '#/components/ui/alert-dialog';
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 import {
 	useActiveOrgId,
 	useNotificationDelete,
+	useNotificationDeliveries,
 	useNotificationListByOrganization,
 	useNotificationTest,
 	type NotificationPayload,
 } from '#/api/live';
-import {formatApiError} from '#/api/utils';
+import {cn, formatApiError} from '#/api/utils';
 import {toast} from 'sonner';
-import {ListCard} from '#/components/settings/list-card';
 import {
+	GridSkeleton,
+	ListCard,
+	ListEmpty,
+	ListSkeleton,
+	SectionHeader,
+	Toolbar,
+	ToolbarSearch,
+	ViewGrid,
+	ViewToggle,
+	useListView,
+} from '#/components/settings/list-card';
+import {ConfirmDeleteDialog} from '#/components/settings/confirm-delete-dialog';
+import {
+	NotificationChannelCard,
 	NotificationChannelRow,
 	NotificationChannelsEmpty,
 } from '#/components/settings/notifications/notification-channel-row';
-import {NotificationChannelDialog} from '#/components/settings/notifications/notification-channel-dialog';
+import {NotificationChannelSheet} from '#/components/settings/notifications/notification-channel-sheet';
+import {
+	DELIVERY_STATUSES,
+	NotificationDeliveriesList,
+	type DeliveryStatusId,
+} from '#/components/settings/notifications/notification-deliveries';
+import {
+	PROVIDERS,
+	providerMeta,
+} from '#/components/settings/notifications/notification-providers';
 import {
 	emptyDraft,
 	draftFromChannel,
@@ -39,23 +59,125 @@ export const Route = createFileRoute('/_app/settings/notifications')({
 	),
 });
 
+type ViewId = 'channels' | 'deliveries';
+
 /**
- * Notification channels: list-card rows with provider tile, name, trigger
- * summary and a Test / Edit / Delete kebab. Create is a dialog: provider +
- * its config fields + which events fire the channel.
+ * Notifications — the SSH Keys / S3 grammar: one toolbar row (search ·
+ * filter · view toggle · New) above a single bordered list card. The two
+ * views are the organization's channels and the alerts the backend actually
+ * delivered for them. Create/edit is a sheet, delete a quiet confirm dialog.
  */
 export function NotificationsPage() {
 	const orgId = useActiveOrgId();
 	const {data: channels = [], isLoading} =
 		useNotificationListByOrganization(orgId);
+	const {data: deliveries = [], isLoading: deliveriesLoading} =
+		useNotificationDeliveries(orgId);
 	const deleteMutation = useNotificationDelete();
 	const testMutation = useNotificationTest();
+
+	const [view, setView] = useState<ViewId>('channels');
+	const [layout, setLayout] = useListView('settings-notifications-view');
+	const [search, setSearch] = useState('');
+	const [providerFilter, setProviderFilter] = useState('All');
+	const [status, setStatus] = useState<DeliveryStatusId>('all');
+	const [testingId, setTestingId] = useState<number | null>(null);
 
 	const [draft, setDraft] = useState<DraftState | null>(null);
 	const [editing, setEditing] = useState<NotificationPayload | null>(null);
 	const [deleting, setDeleting] = useState<NotificationPayload | null>(
 		null,
 	);
+
+	const searchRef = useRef<HTMLInputElement>(null);
+
+	// Same `/` shortcut as the Projects / S3 toolbars.
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+			const el = document.activeElement as HTMLElement | null;
+			if (
+				el &&
+				(el.tagName === 'INPUT' ||
+					el.tagName === 'TEXTAREA' ||
+					el.tagName === 'SELECT' ||
+					el.isContentEditable)
+			) {
+				return;
+			}
+			e.preventDefault();
+			searchRef.current?.focus();
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	}, []);
+
+	const channelName = (id: number) =>
+		channels.find(c => c.id === id)?.name ?? `Channel #${id}`;
+
+	/** Only the providers this organization actually uses get a filter row. */
+	const usedProviders = useMemo(() => {
+		const used = new Set(channels.map(c => c.notification_type));
+		return PROVIDERS.filter(p => used.has(p.id));
+	}, [channels]);
+
+	const query = search.trim().toLowerCase();
+	const filtering =
+		query !== '' ||
+		(view === 'channels' ? providerFilter !== 'All' : status !== 'all');
+
+	const visibleChannels = useMemo(
+		() =>
+			channels.filter(c => {
+				if (
+					providerFilter !== 'All' &&
+					c.notification_type !== providerFilter
+				)
+					return false;
+				if (!query) return true;
+				return `${c.name} ${providerMeta(c.notification_type).label}`
+					.toLowerCase()
+					.includes(query);
+			}),
+		[channels, providerFilter, query],
+	);
+
+	const visibleDeliveries = useMemo(
+		() =>
+			deliveries.filter(d => {
+				if (status !== 'all' && d.status !== status) return false;
+				if (!query) return true;
+				return `${d.title} ${d.body} ${channelName(d.notification_id)} ${d.error ?? ''}`
+					.toLowerCase()
+					.includes(query);
+			}),
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[deliveries, status, query, channels],
+	);
+
+	/** Newest attempt per channel — the row's last-known delivery state. */
+	const lastDelivery = useMemo(() => {
+		const byChannel = new Map<
+			number,
+			{status: string; at: number; error: string | null}
+		>();
+		// The list arrives newest-first, so the first hit is the latest.
+		for (const d of deliveries) {
+			if (!byChannel.has(d.notification_id))
+				byChannel.set(d.notification_id, {
+					status: d.status,
+					at: d.created_at,
+					error: d.error,
+				});
+		}
+		return byChannel;
+	}, [deliveries]);
+
+	const clearFilters = () => {
+		setSearch('');
+		setProviderFilter('All');
+		setStatus('all');
+	};
 
 	const openCreate = () => {
 		setEditing(null);
@@ -68,11 +190,14 @@ export function NotificationsPage() {
 	};
 
 	const test = async (n: NotificationPayload) => {
+		setTestingId(n.id);
 		try {
 			await testMutation.mutateAsync(n.id);
 			toast.success(`Test sent to ${n.name}`);
 		} catch (err) {
 			toast.error(formatApiError(err));
+		} finally {
+			setTestingId(null);
 		}
 	};
 
@@ -89,54 +214,171 @@ export function NotificationsPage() {
 	};
 
 	return (
-		<div className="flex w-full animate-in flex-col gap-6 duration-200 fade-in">
-			<div className="flex flex-wrap items-start justify-between gap-4 sm:items-center">
-				<div className="flex flex-col gap-0.5">
-					<h2 className="text-sm font-medium text-foreground">
-						Notification channels
-					</h2>
-					<p className="text-xs text-muted-foreground">
-						Discord, Slack, Telegram, email, and webhook alerts for
-						deployments, backups, and server events.
-					</p>
-				</div>
-				<Button onClick={openCreate} className="gap-1.5 px-4 text-sm">
-					<Plus className="size-4" />
-					Add channel
-				</Button>
-			</div>
+		<div className="flex w-full animate-in flex-col gap-5 duration-200 fade-in">
+			<SectionHeader
+				title="Notifications"
+				description="Channels that receive this organization's alerts, and the deliveries the backend actually sent."
+				action={
+					<Button onClick={openCreate} className="h-9 gap-1.5">
+						<Plus className="size-3.5" />
+						New channel
+					</Button>
+				}
+			/>
 
-			<ListCard
-				title={`${channels.length} ${channels.length === 1 ? 'channel' : 'channels'}`}
-				description="Each channel fires on the events you select.">
-				{isLoading ? (
-					<div className="space-y-2 p-5">
-						{[...Array(2)].map((_, i) => (
-							<div
-								key={i}
-								className="h-14 animate-pulse rounded-xl bg-muted/30"
-							/>
-						))}
-					</div>
+			{/* Search · filter · channels / alerts · grid-list */}
+			<Toolbar
+				action={
+					<>
+						{view === 'channels' ? (
+							<Select
+								value={providerFilter}
+								onValueChange={v => setProviderFilter(v ?? 'All')}>
+								<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
+									<SelectValue>
+										{providerFilter === 'All'
+											? 'All Providers'
+											: providerMeta(providerFilter).label}
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent className="bg-card">
+									<SelectItem value="All">All Providers</SelectItem>
+									{usedProviders.map(p => (
+										<SelectItem key={p.id} value={p.id}>
+											{p.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						) : (
+							<Select
+								value={status}
+								onValueChange={v =>
+									setStatus((v as DeliveryStatusId) ?? 'all')
+								}>
+								<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
+									<SelectValue>
+										{DELIVERY_STATUSES.find(s => s.id === status)?.label}
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent className="bg-card">
+									{DELIVERY_STATUSES.map(s => (
+										<SelectItem key={s.id} value={s.id}>
+											{s.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						)}
+
+						{/* Channels / delivered-alerts toggle */}
+						<div className="flex items-center rounded-lg border bg-card p-1">
+							<button
+								type="button"
+								aria-label="Channels"
+								title="Channels"
+								onClick={() => setView('channels')}
+								className={cn(
+									'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
+									view === 'channels' && 'bg-accent text-foreground',
+								)}>
+								<BellRing className="size-3.5" />
+							</button>
+							<button
+								type="button"
+								aria-label="Delivered alerts"
+								title="Delivered alerts"
+								onClick={() => setView('deliveries')}
+								className={cn(
+									'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
+									view === 'deliveries' && 'bg-accent text-foreground',
+								)}>
+								<History className="size-3.5" />
+							</button>
+						</div>
+
+						{view === 'channels' && (
+							<ViewToggle view={layout} onChange={setLayout} />
+						)}
+					</>
+				}>
+				<ToolbarSearch
+					inputRef={searchRef}
+					value={search}
+					onChange={setSearch}
+					placeholder={
+						view === 'channels'
+							? 'Search channels by name or provider…'
+							: 'Search alerts by title, body or error…'
+					}
+					className="min-w-[200px] flex-1 sm:max-w-none"
+				/>
+			</Toolbar>
+
+			{view === 'channels' ? (
+				isLoading ? (
+					layout === 'grid' ? (
+						<GridSkeleton />
+					) : (
+						<ListSkeleton />
+					)
 				) : channels.length === 0 ? (
 					<NotificationChannelsEmpty onCreate={openCreate} />
-				) : (
-					<div className="divide-y divide-border/40">
-						{channels.map(n => (
-							<NotificationChannelRow
+				) : visibleChannels.length === 0 && filtering ? (
+					<ListEmpty
+						icon={Search}
+						title="No channels match"
+						description="Clear the search and provider filter to see every channel again."
+						action={
+							<Button
+								variant="outline"
+								onClick={clearFilters}
+								className="h-9 gap-1.5">
+								Clear filters
+							</Button>
+						}
+					/>
+				) : layout === 'grid' ? (
+					<ViewGrid>
+						{visibleChannels.map(n => (
+							<NotificationChannelCard
 								key={n.id}
 								channel={n}
+								last={lastDelivery.get(n.id)}
+								testing={testingId === n.id}
 								onTest={n => void test(n)}
 								onEdit={openEdit}
 								onDelete={setDeleting}
 							/>
 						))}
-					</div>
-				)}
-			</ListCard>
+					</ViewGrid>
+				) : (
+					<ListCard>
+						{visibleChannels.map(n => (
+							<NotificationChannelRow
+								key={n.id}
+								channel={n}
+								last={lastDelivery.get(n.id)}
+								testing={testingId === n.id}
+								onTest={n => void test(n)}
+								onEdit={openEdit}
+								onDelete={setDeleting}
+							/>
+						))}
+					</ListCard>
+				)
+			) : (
+				<NotificationDeliveriesList
+					rows={visibleDeliveries}
+					isLoading={deliveriesLoading}
+					channelName={channelName}
+					filtered={filtering}
+					onClear={clearFilters}
+				/>
+			)}
 
-			{/* Create / edit dialog */}
-			<NotificationChannelDialog
+			{/* Create / edit sheet */}
+			<NotificationChannelSheet
 				draft={draft}
 				setDraft={setDraft}
 				editing={editing}
@@ -145,30 +387,23 @@ export function NotificationsPage() {
 			/>
 
 			{/* Delete confirmation */}
-			<AlertDialog
+			<ConfirmDeleteDialog
 				open={deleting !== null}
-				onOpenChange={open => !open && setDeleting(null)}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>Delete channel</AlertDialogTitle>
-						<AlertDialogDescription>
-							Alerts will stop reaching{' '}
-							<span className="font-medium text-foreground">
-								{deleting?.name}
-							</span>
-							. This cannot be undone.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={() => void remove()}
-							className="bg-destructive text-white hover:bg-destructive/90">
-							Delete
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+				onOpenChange={o => !o && setDeleting(null)}
+				title="Delete channel"
+				description={
+					<span>
+						Alerts will stop reaching{' '}
+						<span className="font-medium text-foreground">
+							{deleting?.name}
+						</span>
+						. This cannot be undone.
+					</span>
+				}
+				confirmLabel="Delete channel"
+				busy={deleteMutation.isPending}
+				onConfirm={() => void remove()}
+			/>
 		</div>
 	);
 }

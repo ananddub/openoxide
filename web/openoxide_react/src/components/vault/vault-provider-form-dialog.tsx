@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
-import {KeyRound} from 'lucide-react';
+import {Loader2, RefreshCw, Save} from 'lucide-react';
+import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
 	Sheet,
@@ -8,12 +9,18 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from '#/components/ui/sheet';
-import {FieldLabel} from '#/components/shared/field-label';
-import {ProviderTypeSelect} from '#/components/shared/provider-type-select';
-import {TestSaveFooter} from '#/components/shared/test-save-footer';
+import {
+	OptionRow,
+	StepBody,
+	StepCheckpoints,
+	WizardField,
+	type WizardStep,
+} from '#/components/shared/sheet-wizard';
 import {
 	buildVaultConfig,
+	getVaultProviderLabel,
 	vaultProviderOptions,
+	VaultProviderIcon,
 	type VaultProviderItem,
 	type VaultProviderType,
 } from './vault-provider-catalog';
@@ -25,9 +32,33 @@ import {
 import {VaultProviderAssignments} from './vault-provider-assignments';
 import {useVaultProviderFormActions} from './use-vault-provider-form-actions';
 
+const STEPS: WizardStep[] = [
+	{id: 'provider', label: 'Provider'},
+	{id: 'connection', label: 'Connection'},
+	{id: 'projects', label: 'Projects'},
+	{id: 'review', label: 'Review'},
+];
+
+const STEP_DESC: Record<string, string> = {
+	provider: 'Name this provider and pick where your secrets live.',
+	connection: 'Point at the server and paste its credentials.',
+	projects: 'Scope it to specific projects, or leave it account-wide.',
+	review: 'Confirm the details and test the connection.',
+};
+
+const PROVIDER_HINTS: Record<string, string> = {
+	HASHICORP: 'Self-hosted Vault or OpenBao',
+	DOPPLER: 'Doppler service token',
+	INFISICAL: 'Universal Auth / self-hosted',
+	AWS: 'Access key + secret',
+	AWS_PARAMETER_STORE: 'Systems Manager parameters',
+	AZURE: 'Azure Key Vault',
+	SCALEWAY: 'Scaleway Secret Manager',
+};
+
 /**
- * Create / edit vault provider modal: credentials per provider type plus
- * project assignments, with a live connection test through the backend.
+ * Create / edit vault provider — a four-checkpoint wizard: pick provider,
+ * enter credentials, scope to projects, then review + test.
  */
 export function VaultProviderFormDialog({
 	open,
@@ -38,6 +69,7 @@ export function VaultProviderFormDialog({
 	onOpenChange: (open: boolean) => void;
 	provider: VaultProviderItem | null;
 }) {
+	const [stepIdx, setStepIdx] = useState(0);
 	const [formName, setFormName] = useState('');
 	const [formType, setFormType] = useState<VaultProviderType>('HASHICORP');
 	const [formUrl, setFormUrl] = useState('');
@@ -49,6 +81,7 @@ export function VaultProviderFormDialog({
 
 	useEffect(() => {
 		if (!open) return;
+		setStepIdx(0);
 		setFormName(provider?.name ?? '');
 		setFormType(
 			(provider
@@ -58,12 +91,14 @@ export function VaultProviderFormDialog({
 		setFormUrl(provider?.api_url || '');
 		setFormToken('');
 		setFormNamespace(provider?.namespace || '');
-		setFormMount('secret');
+		let config: Record<string, string> = {};
 		try {
-			setFormFields(JSON.parse(provider?.config_json || '{}'));
+			config = JSON.parse(provider?.config_json || '{}');
 		} catch {
-			setFormFields({});
+			config = {};
 		}
+		setFormFields(config);
+		setFormMount(config.mount || 'secret');
 		setFormAssignments(
 			JSON.stringify(provider?.assignments || [], null, 2),
 		);
@@ -86,100 +121,251 @@ export function VaultProviderFormDialog({
 			assignmentsJson: formAssignments,
 		}));
 
-	const handleSaveProvider = async (e: React.FormEvent) => {
+	const step = STEPS[stepIdx].id;
+	const last = stepIdx === STEPS.length - 1;
+	const canContinue = step === 'provider' ? !!formName.trim() : true;
+
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (await save()) onOpenChange(false);
 	};
+
+	const goNext = () => setStepIdx(i => Math.min(i + 1, STEPS.length - 1));
+	const goBack = () => setStepIdx(i => Math.max(i - 1, 0));
+
+	const assignmentCount = (() => {
+		try {
+			const v = JSON.parse(formAssignments);
+			return Array.isArray(v) ? v.length : 0;
+		} catch {
+			return 0;
+		}
+	})();
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent>
 				<SheetHeader>
 					<SheetTitle className="flex items-center gap-2">
-						<KeyRound className="size-4 text-primary" />
+						<VaultProviderIcon
+							type={formType}
+							className="size-4 shrink-0"
+						/>
 						{provider ? 'Update Vault Provider' : 'Add Vault Provider'}
 					</SheetTitle>
-					<SheetDescription>
-						Reference secrets in your environment variables with{' '}
-						<code className="font-mono text-primary">
-							{'${{vault.<name>.<secret>}}'}
-						</code>
-						. Secrets are fetched at deploy time.
-					</SheetDescription>
+					<SheetDescription>{STEP_DESC[step]}</SheetDescription>
+					<StepCheckpoints steps={STEPS} idx={stepIdx} />
 				</SheetHeader>
 
 				<form
-					onSubmit={handleSaveProvider}
-					className="flex flex-1 flex-col space-y-4 overflow-y-auto px-6 py-5">
-					<div className="space-y-1">
-						<FieldLabel>Name</FieldLabel>
-						<Input
-							placeholder="prod-vault"
-							value={formName}
-							onChange={e => setFormName(e.target.value)}
-							className="h-10 bg-muted/20 text-xs"
-						/>
+					onSubmit={handleSubmit}
+					className="flex min-h-0 flex-1 flex-col">
+					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-6 pb-6">
+						<StepBody key={step}>
+							{step === 'provider' && (
+								<div className="flex flex-col gap-5">
+									<WizardField label="Name" required>
+										<Input
+											placeholder="prod-vault"
+											value={formName}
+											onChange={e => setFormName(e.target.value)}
+											className="bg-background"
+										/>
+									</WizardField>
+
+									{provider ? (
+										<OptionRow
+											selected
+											onClick={() => {}}
+											icon={
+												<VaultProviderIcon
+													type={formType}
+													className="size-5 shrink-0"
+												/>
+											}
+											title={getVaultProviderLabel(formType)}
+											subtitle="Provider type can’t be changed after creation."
+										/>
+									) : (
+										<div className="flex flex-col gap-2">
+											{vaultProviderOptions.map(o => (
+												<OptionRow
+													key={o.value}
+													selected={formType === o.value}
+													onClick={() =>
+														setFormType(o.value as VaultProviderType)
+													}
+													icon={
+														<VaultProviderIcon
+															type={o.value}
+															className="size-5 shrink-0"
+														/>
+													}
+													title={o.label}
+													subtitle={PROVIDER_HINTS[o.value]}
+												/>
+											))}
+										</div>
+									)}
+								</div>
+							)}
+
+							{step === 'connection' && (
+								<div className="flex flex-col gap-5">
+									{formType === 'HASHICORP' && (
+										<WizardField
+											label="Vault URL"
+											hint="Defaults to http://localhost:8200 if left blank.">
+											<Input
+												placeholder="https://vault.example.com:8200"
+												value={formUrl}
+												onChange={e => setFormUrl(e.target.value)}
+												className="bg-background font-mono"
+											/>
+										</WizardField>
+									)}
+
+									<WizardField
+										label={getVaultTokenLabel(formType)}
+										required
+										hint={
+											provider
+												? 'Leave blank to keep the existing token.'
+												: 'Stored encrypted; never sent back to the browser.'
+										}>
+										<Input
+											type="password"
+											placeholder={
+												provider
+													? 'Leave blank to keep existing token'
+													: 'Token'
+											}
+											value={formToken}
+											onChange={e => setFormToken(e.target.value)}
+											className="bg-background font-mono"
+										/>
+									</WizardField>
+
+									{formType === 'HASHICORP' ? (
+										<HashicorpFields
+											mount={formMount}
+											namespace={formNamespace}
+											onMountChange={setFormMount}
+											onNamespaceChange={setFormNamespace}
+										/>
+									) : (
+										<VaultTypeFields
+											formType={formType}
+											field={field}
+											setField={setField}
+										/>
+									)}
+								</div>
+							)}
+
+							{step === 'projects' && (
+								<VaultProviderAssignments
+									value={formAssignments}
+									onChange={setFormAssignments}
+								/>
+							)}
+
+							{step === 'review' && (
+								<div className="flex flex-col gap-5">
+									<div className="flex items-center gap-3.5 rounded-xl border border-border/60 bg-muted/20 px-4 py-3.5">
+										<span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background">
+											<VaultProviderIcon
+												type={formType}
+												className="size-5 shrink-0"
+											/>
+										</span>
+										<div className="min-w-0 flex-1">
+											<p className="truncate text-sm font-medium text-foreground">
+												{formName || 'Untitled provider'}
+											</p>
+											<p className="mt-0.5 truncate text-[13px] text-muted-foreground">
+												{getVaultProviderLabel(formType)}
+												{formUrl ? ` · ${formUrl}` : ''}
+											</p>
+										</div>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<span className="text-[13px] font-medium text-foreground">
+											Access
+										</span>
+										<p className="text-[13px] text-muted-foreground">
+											{assignmentCount > 0
+												? `Scoped to ${assignmentCount} project${
+														assignmentCount > 1 ? 's' : ''
+													}.`
+												: 'Available to all projects.'}
+										</p>
+									</div>
+
+									<div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3.5">
+										<p className="mb-1.5 text-[13px] font-medium text-foreground">
+											Reference your secrets with
+										</p>
+										<code className="break-all font-mono text-[12px] text-primary">
+											{`\${{vault.${formName || '<name>'}.<secret>}}`}
+										</code>
+									</div>
+								</div>
+							)}
+						</StepBody>
 					</div>
 
-					<ProviderTypeSelect
-						label="Provider"
-						value={formType}
-						onChange={v => setFormType(v as VaultProviderType)}
-						disabled={!!provider}
-						options={vaultProviderOptions}
-					/>
+					<div className="flex items-center justify-between gap-3 border-t border-border px-6 py-5">
+						{stepIdx > 0 ? (
+							<Button type="button" variant="outline" onClick={goBack}>
+								Back
+							</Button>
+						) : (
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => onOpenChange(false)}>
+								Cancel
+							</Button>
+						)}
 
-					{formType === 'HASHICORP' && (
-						<div className="space-y-1">
-							<FieldLabel>Vault URL</FieldLabel>
-							<Input
-								placeholder="https://vault.example.com:8200"
-								value={formUrl}
-								onChange={e => setFormUrl(e.target.value)}
-								className="h-10 bg-muted/20 text-xs"
-							/>
-						</div>
-					)}
-
-					<div className="space-y-1">
-						<FieldLabel>{getVaultTokenLabel(formType)}</FieldLabel>
-						<Input
-							type="password"
-							placeholder={
-								provider ? 'Leave blank to keep existing token' : 'Token'
-							}
-							value={formToken}
-							onChange={e => setFormToken(e.target.value)}
-							className="h-10 bg-muted/20 font-mono text-xs"
-						/>
+						{last ? (
+							<div className="flex items-center gap-3">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => void test()}
+									disabled={isTesting}
+									className="h-10 gap-1.5 px-4">
+									{isTesting ? (
+										<Loader2 className="size-3.5 animate-spin" />
+									) : (
+										<RefreshCw className="size-3.5 text-emerald-500" />
+									)}
+									Test
+								</Button>
+								<Button
+									type="submit"
+									disabled={isSubmitting || !formName.trim()}
+									className="h-10 gap-1.5 px-5">
+									{isSubmitting ? (
+										<Loader2 className="size-3.5 animate-spin" />
+									) : (
+										<Save className="size-3.5" />
+									)}
+									{provider ? 'Save changes' : 'Add provider'}
+								</Button>
+							</div>
+						) : (
+							<Button
+								type="button"
+								disabled={!canContinue}
+								onClick={goNext}>
+								Continue
+							</Button>
+						)}
 					</div>
-
-					{formType === 'HASHICORP' ? (
-						<HashicorpFields
-							mount={formMount}
-							namespace={formNamespace}
-							onMountChange={setFormMount}
-							onNamespaceChange={setFormNamespace}
-						/>
-					) : (
-						<VaultTypeFields
-							formType={formType}
-							field={field}
-							setField={setField}
-						/>
-					)}
-
-					<VaultProviderAssignments
-						value={formAssignments}
-						onChange={setFormAssignments}
-					/>
-
-					<TestSaveFooter
-						isTesting={isTesting}
-						isSubmitting={isSubmitting}
-						editing={!!provider}
-						onTest={test}
-					/>
 				</form>
 			</SheetContent>
 		</Sheet>

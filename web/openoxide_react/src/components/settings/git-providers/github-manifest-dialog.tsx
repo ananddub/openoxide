@@ -121,7 +121,6 @@ export function GithubManifestDialog({
 							className="h-9 text-xs"
 						/>
 					</div>
-
 				</div>
 
 				<SheetFooter>

@@ -1,16 +1,41 @@
-import {RefreshCw, Bot} from 'lucide-react';
+import {useEffect, useState} from 'react';
+import {
+	CheckCircle2,
+	Cpu,
+	Link2,
+	Loader2,
+	RefreshCw,
+	Save,
+	Server,
+} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 import {
 	Sheet,
 	SheetContent,
 	SheetDescription,
+	SheetFooter,
 	SheetHeader,
 	SheetTitle,
 } from '#/components/ui/sheet';
 import {Input} from '#/components/ui/input';
-import {AI_PRESETS, type AiSetting} from './ai-types';
+import {Switch} from '#/components/ui/switch';
+import {
+	OptionRow,
+	StepBody,
+	StepCheckpoints,
+	WizardField,
+	type WizardStep,
+} from '#/components/shared/sheet-wizard';
+import {AI_PRESETS, EMPTY_AI_FORM, type AiSetting} from './ai-types';
+import {AiProviderIcon} from './ai-provider-icon';
 import {useAiProviderForm} from './use-ai-provider-form';
-import {AiProviderFooter} from './ai-provider-footer';
 
 type Props = {
 	editing: AiSetting | null;
@@ -19,7 +44,25 @@ type Props = {
 	onSaved: () => Promise<void>;
 };
 
-export function AiProviderDialog({
+const STEPS: WizardStep[] = [
+	{id: 'provider', label: 'Provider'},
+	{id: 'credentials', label: 'Connection'},
+	{id: 'model', label: 'Model'},
+	{id: 'review', label: 'Review'},
+];
+
+const STEP_DESC: Record<string, string> = {
+	provider: 'Pick a provider, or point at any OpenAI-compatible endpoint.',
+	credentials: 'Where OpenOxide connects and how it authenticates.',
+	model: 'Choose the model to use — Discover lists what the endpoint serves.',
+	review: 'Name it, then decide whether it is enabled.',
+};
+
+const presetForUrl = (url?: string) =>
+	AI_PRESETS.find(p => p.url === url)?.name ?? null;
+
+/** Add / edit an LLM provider as a four-checkpoint wizard. */
+export function AiProviderSheet({
 	editing,
 	open,
 	onOpenChange,
@@ -38,152 +81,309 @@ export function AiProviderDialog({
 		discovering,
 	} = useAiProviderForm({open, editing, onOpenChange, onSaved});
 
+	const [stepIdx, setStepIdx] = useState(0);
+	const [picked, setPicked] = useState<string | null>(null);
+	const step = STEPS[stepIdx].id;
+	const last = stepIdx === STEPS.length - 1;
+
+	// Sync the chosen provider each time the sheet opens — derived from the
+	// editing target / defaults, not the (async) form state, to avoid a stale read.
+	useEffect(() => {
+		if (!open) return;
+		setStepIdx(0);
+		const url = editing?.api_url ?? EMPTY_AI_FORM.api_url;
+		setPicked(presetForUrl(url) ?? (url ? 'custom' : null));
+	}, [open, editing]);
+
+	const pickPreset = (name: string, url: string, defaultModel: string) => {
+		setPicked(name);
+		selectPreset(name, url, defaultModel);
+	};
+
+	const canContinue =
+		step === 'provider'
+			? picked !== null
+			: step === 'credentials'
+				? !!form.api_url.trim()
+				: step === 'model'
+					? !!form.model.trim()
+					: true;
+
+	const currentProviderName =
+		picked && picked !== 'custom' ? picked : form.name;
+
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent>
 				<SheetHeader>
 					<SheetTitle className="flex items-center gap-2">
-						<Bot className="size-4 text-primary" />
-						{editing ? 'Edit AI Configuration' : 'Add AI Configuration'}
+						<AiProviderIcon
+							name={currentProviderName}
+							className="size-4 text-primary"
+						/>
+						{editing ? 'Edit AI Provider' : 'Add AI Provider'}
 					</SheetTitle>
-					<SheetDescription>
-						Connect an LLM provider for intelligent container log analysis
-						and automatic deployment diagnostics.
-					</SheetDescription>
+					<SheetDescription>{STEP_DESC[step]}</SheetDescription>
+					<StepCheckpoints steps={STEPS} idx={stepIdx} />
 				</SheetHeader>
 
-				{/* Quick Presets */}
-				<div className="flex flex-col gap-1.5 px-6 pt-5">
-					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-						Quick Presets
-					</label>
-					<div className="flex flex-wrap gap-1.5">
-						{AI_PRESETS.map(p => (
-							<button
-								key={p.name}
-								type="button"
-								onClick={() => selectPreset(p.name, p.url, p.defaultModel)}
-								className={`rounded-lg  px-2.5 py-1 text-xs font-medium transition-colors ${
-									form.api_url === p.url
-										? ' bg-primary text-primary-foreground'
-										: ' bg-muted/40 text-muted-foreground hover:bg-muted'
-								}`}>
-								{p.name}
-							</button>
-						))}
-					</div>
+				<div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-6">
+					<StepBody key={step}>
+						{step === 'provider' && (
+							<div className="flex flex-col gap-2">
+								{AI_PRESETS.map(p => (
+									<OptionRow
+										key={p.name}
+										selected={picked === p.name}
+										onClick={() =>
+											pickPreset(
+												p.name,
+												p.url,
+												p.defaultModel,
+											)
+										}
+										icon={
+											<AiProviderIcon
+												name={p.name}
+												className="size-5"
+											/>
+										}
+										title={p.name}
+										subtitle={p.description}
+									/>
+								))}
+								<OptionRow
+									selected={picked === 'custom'}
+									onClick={() => setPicked('custom')}
+									icon={<Server className="size-5" />}
+									title="Custom endpoint"
+									subtitle="Any OpenAI-compatible base URL."
+								/>
+							</div>
+						)}
+
+						{step === 'credentials' && (
+							<div className="flex flex-col gap-5">
+								<WizardField
+									label="API Base URL"
+									required
+									hint="Presets fill this in automatically — edit it only for a custom gateway.">
+									<Input
+										value={form.api_url}
+										onChange={e =>
+											set('api_url', e.target.value)
+										}
+										placeholder="https://api.openai.com/v1"
+										className="bg-background font-mono"
+									/>
+								</WizardField>
+
+								<WizardField
+									label="API Key / Token"
+									optional
+									hint={
+										editing?.has_api_key
+											? 'Leave blank to keep the existing key.'
+											: 'Stored encrypted; never sent back to the browser.'
+									}>
+									<Input
+										type="password"
+										value={form.api_key}
+										onChange={e =>
+											set('api_key', e.target.value)
+										}
+										placeholder="sk-..."
+										className="bg-background font-mono"
+									/>
+								</WizardField>
+							</div>
+						)}
+
+						{step === 'model' && (
+							<div className="flex flex-col gap-5">
+								<WizardField
+									label="Model Name"
+									required
+									action={
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											onClick={() => void discover()}
+											disabled={
+												discovering || !form.api_url
+											}
+											className="h-7 gap-1.5 px-2 text-[13px] font-medium text-primary">
+											<RefreshCw
+												className={`size-3.5 ${
+													discovering
+														? 'animate-spin'
+														: ''
+												}`}
+											/>
+											Discover
+										</Button>
+									}>
+									<Input
+										value={form.model}
+										onChange={e =>
+											set('model', e.target.value)
+										}
+										placeholder="e.g. gpt-4o, claude-3-5-sonnet, llama3.2"
+										className="bg-background font-mono"
+									/>
+								</WizardField>
+
+								{models.length > 0 && (
+									<WizardField label="Discovered Models">
+										<Select
+											value={form.model}
+											onValueChange={v =>
+												v && set('model', v)
+											}>
+											<SelectTrigger className="bg-background font-mono">
+												<SelectValue placeholder="Choose a model" />
+											</SelectTrigger>
+											<SelectContent className="bg-card">
+												{models.map(m => (
+													<SelectItem
+														key={m}
+														value={m}>
+														<span className="font-mono text-[13px]">
+															{m}
+														</span>
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</WizardField>
+								)}
+							</div>
+						)}
+
+						{step === 'review' && (
+							<div className="flex flex-col gap-5">
+								<div className="flex items-center gap-3.5 rounded-xl border border-border/60 bg-muted/20 px-4 py-3.5">
+									<span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background text-foreground">
+										<AiProviderIcon
+											name={currentProviderName}
+											className="size-5"
+										/>
+									</span>
+									<div className="min-w-0 flex-1">
+										<p className="truncate text-sm font-medium text-foreground">
+											{picked && picked !== 'custom'
+												? picked
+												: 'Custom endpoint'}
+										</p>
+										<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+											<span className="flex items-center gap-1 truncate font-mono text-[11px] text-muted-foreground">
+												<Link2 className="size-3 shrink-0 opacity-60" />
+												{form.api_url}
+											</span>
+											<span className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
+												<Cpu className="size-3 opacity-70" />
+												{form.model}
+											</span>
+										</div>
+									</div>
+								</div>
+
+								<WizardField label="Provider Name" required>
+									<Input
+										value={form.name}
+										onChange={e =>
+											set('name', e.target.value)
+										}
+										placeholder="e.g. OpenAI Production"
+										className="bg-background"
+									/>
+								</WizardField>
+
+								<div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 px-4 py-3.5">
+									<div className="min-w-0">
+										<p className="text-[13px] font-medium text-foreground">
+											Enable this provider
+										</p>
+										<p className="mt-0.5 text-[13px] text-muted-foreground">
+											Used for log diagnosis and the
+											assistant.
+										</p>
+									</div>
+									<Switch
+										checked={form.is_enabled}
+										onCheckedChange={v =>
+											set('is_enabled', v)
+										}
+									/>
+								</div>
+							</div>
+						)}
+					</StepBody>
 				</div>
 
-				<div className="grid flex-1 gap-3.5 overflow-y-auto px-6 pb-5">
-					<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-						<div className="space-y-1">
-							<label className="text-xs font-semibold text-muted-foreground">
-								Provider Name
-							</label>
-							<Input
-								value={form.name}
-								onChange={e => set('name', e.target.value)}
-								placeholder="e.g. OpenAI Production"
-								className="h-9 text-xs"
-							/>
-						</div>
-
-						<div className="space-y-1">
-							<label className="text-xs font-semibold text-muted-foreground">
-								API Base URL
-							</label>
-							<Input
-								value={form.api_url}
-								onChange={e => set('api_url', e.target.value)}
-								placeholder="https://api.openai.com/v1"
-								className="h-9 font-mono text-xs"
-							/>
-						</div>
-					</div>
-
-					<div className="space-y-1">
-						<label className="text-xs font-semibold text-muted-foreground">
-							API Key / Token
-						</label>
-						<Input
-							type="password"
-							value={form.api_key}
-							onChange={e => set('api_key', e.target.value)}
-							placeholder={
-								editing?.has_api_key
-									? 'Leave blank to keep existing key'
-									: 'sk-...'
-							}
-							className="h-9 font-mono text-xs"
-						/>
-					</div>
-
-					<div className="space-y-1">
-						<div className="flex items-center justify-between">
-							<label className="text-xs font-semibold text-muted-foreground">
-								Model Name
-							</label>
+				{last ? (
+					<SheetFooter className="justify-between">
+						<Button
+							variant="outline"
+							onClick={() => setStepIdx(i => i - 1)}>
+							Back
+						</Button>
+						<div className="flex items-center gap-3">
 							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								onClick={() => void discover()}
-								disabled={discovering}
-								className="h-6 gap-1 px-2 text-[11px] text-primary">
-								<RefreshCw
-									className={`size-3 ${discovering ? 'animate-spin' : ''}`}
-								/>{' '}
-								Discover Models
+								variant="outline"
+								onClick={() => void test()}
+								disabled={testing || !form.model}
+								className="h-10 gap-1.5 px-4">
+								{testing ? (
+									<Loader2 className="size-3.5 animate-spin" />
+								) : (
+									<CheckCircle2 className="size-3.5 text-emerald-500" />
+								)}
+								Test
+							</Button>
+							<Button
+								onClick={() => void save()}
+								disabled={
+									saving ||
+									!form.name.trim() ||
+									!form.api_url.trim() ||
+									!form.model.trim()
+								}
+								className="h-10 gap-1.5 px-5">
+								{saving ? (
+									<Loader2 className="size-3.5 animate-spin" />
+								) : (
+									<Save className="size-3.5" />
+								)}
+								{editing ? 'Save changes' : 'Add provider'}
 							</Button>
 						</div>
-						<Input
-							value={form.model}
-							onChange={e => set('model', e.target.value)}
-							placeholder="e.g. gpt-4o, claude-3-5-sonnet, llama3.2"
-							className="h-9 font-mono text-xs"
-						/>
-					</div>
-
-					{models.length > 0 && (
-						<div className="space-y-1">
-							<label className="text-[11px] font-semibold text-muted-foreground">
-								Discovered Models
-							</label>
-							<select
-								className="h-9 w-full rounded-lg bg-background px-3 font-mono text-xs text-foreground"
-								value={form.model}
-								onChange={e => set('model', e.target.value)}>
-								<option value="">
-									-- Choose from {models.length} discovered models --
-								</option>
-								{models.map(m => (
-									<option key={m} value={m}>
-										{m}
-									</option>
-								))}
-							</select>
-						</div>
-					)}
-
-					<label className="flex cursor-pointer items-center gap-2 pt-1 text-xs font-semibold text-foreground">
-						<input
-							type="checkbox"
-							checked={form.is_enabled}
-							onChange={e => set('is_enabled', e.target.checked)}
-							className="size-4 rounded  accent-primary"
-						/>
-						Enable this AI configuration for log diagnosis & assistant
-					</label>
-
-					<AiProviderFooter
-						form={form}
-						testing={testing}
-						saving={saving}
-						onCancel={() => onOpenChange(false)}
-						onTest={() => void test()}
-						onSave={() => void save()}
-					/>
-				</div>
+					</SheetFooter>
+				) : (
+					<SheetFooter>
+						{stepIdx > 0 ? (
+							<Button
+								variant="outline"
+								onClick={() => setStepIdx(i => i - 1)}>
+								Back
+							</Button>
+						) : (
+							<Button
+								variant="outline"
+								onClick={() => onOpenChange(false)}>
+								Cancel
+							</Button>
+						)}
+						<Button
+							disabled={!canContinue}
+							onClick={() =>
+								setStepIdx(i => Math.min(i + 1, STEPS.length - 1))
+							}>
+							Continue
+						</Button>
+					</SheetFooter>
+				)}
 			</SheetContent>
 		</Sheet>
 	);

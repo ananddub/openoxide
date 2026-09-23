@@ -1,11 +1,16 @@
 import type {LucideIcon} from 'lucide-react';
 import {
 	Bell,
-	GitBranch,
+	Feather,
 	Mail,
+	Mails,
+	Megaphone,
 	MessageSquare,
+	MessagesSquare,
 	Send,
+	Users,
 	Voicemail,
+	Webhook,
 	Wrench,
 	Zap,
 } from 'lucide-react';
@@ -15,10 +20,13 @@ export type ProviderId =
 	| 'SLACK'
 	| 'TELEGRAM'
 	| 'EMAIL'
+	| 'RESEND'
 	| 'NTFY'
 	| 'GOTIFY'
 	| 'MATTERMOST'
+	| 'PUSHOVER'
 	| 'TEAMS'
+	| 'LARK'
 	| 'CUSTOM';
 
 export type NotificationField = {
@@ -44,6 +52,12 @@ const f = (
 	extra: Partial<NotificationField> = {},
 ): NotificationField => ({key, label, ...extra});
 
+/**
+ * One entry per `NotificationProvider` the backend understands
+ * (src/services/integrations/notification/types.rs). `fields` mirror the
+ * provider's config DTO in src/api/handlers/notification/helper.rs — the
+ * required ones are exactly the keys serde refuses to deserialize without.
+ */
 export const PROVIDERS: ProviderMeta[] = [
 	{
 		id: 'DISCORD',
@@ -60,14 +74,14 @@ export const PROVIDERS: ProviderMeta[] = [
 	{
 		id: 'SLACK',
 		label: 'Slack',
-		icon: GitBranch,
+		icon: MessagesSquare,
 		tile: 'bg-emerald-500/10 text-emerald-400',
 		description: 'Incoming webhook to any Slack channel.',
 		fields: [
 			f('webhook_url', 'Webhook URL', {
 				placeholder: 'https://hooks.slack.com/services/…',
 			}),
-			f('channel', 'Channel (optional)', {optional: true}),
+			f('channel', 'Channel', {optional: true}),
 		],
 	},
 	{
@@ -86,12 +100,26 @@ export const PROVIDERS: ProviderMeta[] = [
 		label: 'SMTP Email',
 		icon: Mail,
 		tile: 'bg-rose-500/10 text-rose-400',
-		description: 'Send alerts over SMTP.',
+		description: 'Send alerts over your own SMTP server.',
 		fields: [
 			f('smtp_server', 'SMTP server', {placeholder: 'smtp.example.com'}),
 			f('smtp_port', 'SMTP port', {type: 'number', placeholder: '587'}),
 			f('username', 'Username'),
 			f('password', 'Password', {type: 'password'}),
+			f('from_address', 'From address', {
+				placeholder: 'alerts@example.com',
+			}),
+			f('to_addresses', 'To addresses', {placeholder: 'a@b.com,c@d.com'}),
+		],
+	},
+	{
+		id: 'RESEND',
+		label: 'Resend',
+		icon: Mails,
+		tile: 'bg-orange-500/10 text-orange-400',
+		description: 'Deliver alerts through the Resend API.',
+		fields: [
+			f('api_key', 'API key', {type: 'password', placeholder: 're_…'}),
 			f('from_address', 'From address', {
 				placeholder: 'alerts@example.com',
 			}),
@@ -107,11 +135,11 @@ export const PROVIDERS: ProviderMeta[] = [
 		fields: [
 			f('server_url', 'Server URL', {placeholder: 'https://ntfy.sh'}),
 			f('topic', 'Topic'),
-			f('access_token', 'Access token (optional)', {
+			f('priority', 'Priority (1-5)', {type: 'number', placeholder: '3'}),
+			f('access_token', 'Access token', {
 				type: 'password',
 				optional: true,
 			}),
-			f('priority', 'Priority (1-5)', {type: 'number', placeholder: '3'}),
 		],
 	},
 	{
@@ -129,19 +157,44 @@ export const PROVIDERS: ProviderMeta[] = [
 		],
 	},
 	{
+		id: 'PUSHOVER',
+		label: 'Pushover',
+		icon: Megaphone,
+		tile: 'bg-lime-500/10 text-lime-400',
+		description: 'Push to the Pushover apps.',
+		fields: [
+			f('user_key', 'User key'),
+			f('api_token', 'API token', {type: 'password'}),
+			f('priority', 'Priority (-2 to 2)', {
+				type: 'number',
+				placeholder: '0',
+			}),
+			f('retry', 'Retry (seconds)', {type: 'number', optional: true}),
+			f('expire', 'Expire (seconds)', {type: 'number', optional: true}),
+		],
+	},
+	{
 		id: 'MATTERMOST',
 		label: 'Mattermost',
-		icon: MessageSquare,
+		icon: Webhook,
 		tile: 'bg-blue-500/10 text-blue-400',
-		description: 'Team webhook.',
+		description: 'Team channel webhook.',
 		fields: [f('webhook_url', 'Webhook URL')],
 	},
 	{
 		id: 'TEAMS',
 		label: 'Microsoft Teams',
-		icon: GitBranch,
+		icon: Users,
 		tile: 'bg-cyan-500/10 text-cyan-400',
 		description: 'Workflows / connector webhook.',
+		fields: [f('webhook_url', 'Webhook URL')],
+	},
+	{
+		id: 'LARK',
+		label: 'Lark',
+		icon: Feather,
+		tile: 'bg-teal-500/10 text-teal-400',
+		description: 'Group bot webhook.',
 		fields: [f('webhook_url', 'Webhook URL')],
 	},
 	{
@@ -152,7 +205,7 @@ export const PROVIDERS: ProviderMeta[] = [
 		description: 'POST the alert JSON to any endpoint.',
 		fields: [
 			f('endpoint', 'Endpoint URL'),
-			f('headers', 'Headers JSON (optional)', {
+			f('headers', 'Headers JSON', {
 				optional: true,
 				placeholder: '{"Authorization":"Bearer …"}',
 			}),

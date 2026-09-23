@@ -4,16 +4,7 @@ import {useSchedules} from '#/hooks/use-schedules';
 import {SchedulesHeader} from '#/components/schedules/schedules-header';
 import {SchedulesList} from '#/components/schedules/schedules-list';
 import {ScheduleDialog} from '#/components/schedules/schedule-dialog';
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from '#/components/ui/alert-dialog';
+import {ConfirmDeleteDialog} from '#/components/settings/confirm-delete-dialog';
 
 export const Route = createFileRoute('/_app/schedules')({
 	component: SchedulesPage,
@@ -41,7 +32,7 @@ function SchedulesPage() {
 	const [deletingId, setDeletingId] = useState<number | null>(null);
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
+		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 			{/* Header */}
 			<SchedulesHeader
 				onOpenCreate={handleOpenCreate}
@@ -73,35 +64,20 @@ function SchedulesPage() {
 				patchMutation={patchMutation}
 			/>
 
-			{/* Delete Confirmation Alert Dialog */}
-			<AlertDialog
+			{/* Delete Confirmation */}
+			<ConfirmDeleteDialog
 				open={deletingId !== null}
-				onOpenChange={open => !open && setDeletingId(null)}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>Delete Automated Schedule</AlertDialogTitle>
-						<AlertDialogDescription>
-							Are you sure you want to delete this schedule? This action
-							will stop all future automated cron executions.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel onClick={() => setDeletingId(null)}>
-							Cancel
-						</AlertDialogCancel>
-						<AlertDialogAction
-							className="text-destructive-foreground cursor-pointer bg-destructive hover:bg-destructive/90"
-							onClick={async () => {
-								if (deletingId) {
-									await handleDelete(deletingId);
-									setDeletingId(null);
-								}
-							}}>
-							Delete Schedule
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+				onOpenChange={open => !open && setDeletingId(null)}
+				title="Delete Schedule"
+				description="Are you sure you want to delete this schedule? Future automated cron executions will stop."
+				confirmLabel="Delete Schedule"
+				onConfirm={async () => {
+					if (deletingId) {
+						await handleDelete(deletingId);
+						setDeletingId(null);
+					}
+				}}
+			/>
 		</div>
 	);
 }

@@ -7,7 +7,6 @@ import {
 	useDnsZoneList,
 } from '#/api/live';
 import {formatApiError} from '#/api/utils';
-import {Button} from '#/components/ui/button';
 import {
 	Sheet,
 	SheetContent,
@@ -22,11 +21,13 @@ import {
 	type RecordDraft,
 } from './dns-record-draft-dialog';
 
-type Props = {provider: {id: number; name: string}};
+type Props = {
+	provider: {id: number; name: string};
+	onClose: () => void;
+};
 
-/** "View Domains" trigger + zone/records management dialog. */
-export function DnsZonesDialog({provider}: Props) {
-	const [open, setOpen] = useState(false);
+/** Zones + records management sheet for one DNS provider. */
+export function DnsZonesDialog({provider, onClose}: Props) {
 	const [expanded, setExpanded] = useState<string | null>(null);
 	const [draft, setDraft] = useState<RecordDraft | null>(null);
 	const zonesQuery = useDnsZoneList(BigInt(provider.id));
@@ -96,28 +97,26 @@ export function DnsZonesDialog({provider}: Props) {
 	};
 
 	return (
-		<>
-			<Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-				<Globe className="mr-1.5 size-3.5" /> View Domains
-			</Button>
-			<Sheet
-				open={open}
-				onOpenChange={value => {
-					setOpen(value);
-					if (!value) {
-						setExpanded(null);
-						setDraft(null);
-					}
-				}}>
-				<SheetContent>
-					<SheetHeader>
-						<SheetTitle>Domains for {provider.name}</SheetTitle>
-						<SheetDescription>
-							Zones available to this provider. Expand a zone to inspect
-							and manage A/CNAME records.
-						</SheetDescription>
-					</SheetHeader>
-					<div className="flex-1 space-y-2 overflow-y-auto px-6 py-4">
+		<Sheet
+			open
+			onOpenChange={value => {
+				if (value) return;
+				setExpanded(null);
+				setDraft(null);
+				onClose();
+			}}>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2 pr-8">
+						<Globe className="size-4 text-primary" />
+						Domains for {provider.name}
+					</SheetTitle>
+					<SheetDescription>
+						Zones available to this provider. Expand a zone to inspect and
+						manage A/CNAME records.
+					</SheetDescription>
+				</SheetHeader>
+				<div className="flex flex-1 flex-col gap-2 overflow-y-auto px-6 py-5">
 					{zonesQuery.isLoading && (
 						<div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
 							<Loader2 className="size-4 animate-spin" /> Loading zones...
@@ -133,33 +132,30 @@ export function DnsZonesDialog({provider}: Props) {
 							No zones found for this provider.
 						</p>
 					)}
-					<div className="space-y-2">
-						{zones.map(zone => (
-							<DnsZoneRow
-								key={zone.id}
-								zone={zone}
-								expanded={expanded === zone.id}
-								isLoading={recordsQuery.isLoading}
-								records={expanded === zone.id ? records : []}
-								onToggle={() =>
-									setExpanded(expanded === zone.id ? null : zone.id)
-								}
-								onEdit={record => startEdit(record, zone.id)}
-								onDelete={record => deleteRecord(record.id)}
-								onCreate={() => startCreate(zone.id, zone.name)}
-							/>
-						))}
-					</div>
-					</div>
-					<DnsRecordDraftDialog
-						draft={draft}
-						saving={upsert.isPending}
-						onChange={setDraft}
-						onClose={() => setDraft(null)}
-						onSave={save}
-					/>
-				</SheetContent>
-			</Sheet>
-		</>
+					{zones.map(zone => (
+						<DnsZoneRow
+							key={zone.id}
+							zone={zone}
+							expanded={expanded === zone.id}
+							isLoading={recordsQuery.isLoading}
+							records={expanded === zone.id ? records : []}
+							onToggle={() =>
+								setExpanded(expanded === zone.id ? null : zone.id)
+							}
+							onEdit={record => startEdit(record, zone.id)}
+							onDelete={record => deleteRecord(record.id)}
+							onCreate={() => startCreate(zone.id, zone.name)}
+						/>
+					))}
+				</div>
+				<DnsRecordDraftDialog
+					draft={draft}
+					saving={upsert.isPending}
+					onChange={setDraft}
+					onClose={() => setDraft(null)}
+					onSave={save}
+				/>
+			</SheetContent>
+		</Sheet>
 	);
 }

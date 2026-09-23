@@ -1,54 +1,22 @@
+import {useState} from 'react';
 import {
+	ChevronDown,
 	Rocket,
 	Boxes,
 	Database,
-	Clock,
 	AlertCircle,
-	GitBranch,
 } from 'lucide-react';
 import type {Deployment} from '#/hooks/deployments/use-deployments';
 import {timeAgo} from '#/components/activity/activity-feed';
+import {cn} from '#/api/utils';
+import {
+	getStatusTone,
+} from '#/components/projects/detail/deployments/build-status';
+import {DeploymentInlineLogs} from '#/components/projects/detail/deployments/deployment-inline-logs';
+import {useAutoExpandBuildLogs} from '#/components/projects/detail/deployments/use-auto-expand-build-logs';
 
 interface DeploymentActivityListProps {
 	deployments: Deployment[];
-	onViewLogs: (d: Deployment) => void;
-}
-
-/** OpenShip status pill: soft tinted chip, colored text, short label. */
-function statusPill(status?: string) {
-	const s = (status || '').toUpperCase();
-	let cls = 'bg-muted/60 text-muted-foreground';
-	let label = s || 'UNKNOWN';
-	if (
-		s === 'DONE' ||
-		s === 'SUCCESS' ||
-		s === 'DEPLOYED' ||
-		s === 'HEALTHY'
-	) {
-		cls = 'bg-emerald-500/10 text-emerald-500';
-		label = 'Deployed';
-	} else if (s === 'ERROR' || s === 'FAILED' || s === 'CRASHED') {
-		cls = 'bg-rose-500/10 text-rose-500';
-		label = 'Failed';
-	} else if (s === 'CANCELLED' || s === 'CANCELLING') {
-		cls = 'bg-muted/60 text-muted-foreground';
-		label = 'Canceled';
-	} else if (s.includes('BUILD')) {
-		cls = 'bg-sky-500/10 text-sky-500';
-		label = 'Building';
-	} else if (s === 'DEPLOYING' || s === 'STARTING' || s === 'RUNNING') {
-		cls = 'bg-sky-500/10 text-sky-500';
-		label = 'Deploying';
-	} else if (s === 'QUEUED') {
-		cls = 'bg-amber-500/10 text-amber-500';
-		label = 'Queued';
-	}
-	return (
-		<span
-			className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${cls}`}>
-			{label}
-		</span>
-	);
 }
 
 function kindOf(d: Deployment) {
@@ -58,77 +26,87 @@ function kindOf(d: Deployment) {
 }
 
 /**
- * OpenShip's deployments list: ONE bordered card, divide-y rows — no
- * Today/Yesterday wrapping. Each row: framework-style icon tile, bold
- * project title + status pill, quiet meta line (actor · time · clock),
- * commit-hash-like id chip on the right. Whole row opens the log stream.
+ * Global deployments list: ONE bordered card, divide-y rows. Each row:
+ * kind icon tile, title + quiet meta line, status dot/text, relative
+ * time, chevron. Clicking a row opens the streaming log panel inline
+ * (drag-resizable) — no modal.
  */
 export function DeploymentActivityList({
 	deployments,
-	onViewLogs,
 }: DeploymentActivityListProps) {
+	const [expandedId, setExpandedId] = useState<number | null>(null);
+	useAutoExpandBuildLogs(deployments as any[], setExpandedId);
+
 	return (
 		<div className="divide-y divide-border/50 overflow-hidden rounded-xl border border-border/50 bg-card">
 			{deployments.map(d => {
 				const Kind = kindOf(d);
 				const Icon = Kind.icon;
+				const tone = getStatusTone(d);
 				const actor = String((d as any).user_email || '') || 'System';
 				const createdAtSec = Number(d.created_at ?? 0);
+				const id = Number(d.id);
+				const isOpen = expandedId === id;
 				return (
-					<div
-						key={String(d.id)}
-						className="group relative flex items-center gap-4 px-4 py-4 transition-colors hover:bg-muted/25">
+					<div key={String(d.id)}>
 						<button
 							type="button"
-							aria-label={`View logs for ${d.title || `deployment #${d.id}`}`}
-							onClick={() => onViewLogs(d)}
-							className="absolute inset-0 z-0 cursor-pointer"
-						/>
+							onClick={() =>
+								setExpandedId(prev =>
+									prev === id ? null : id,
+								)
+							}
+							className="flex w-full cursor-pointer items-center gap-4 px-4 py-3.5 text-left transition-colors hover:bg-muted/20">
+							<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted/45">
+								<Icon className="size-[18px] text-muted-foreground" />
+							</div>
 
-						{/* Icon tile */}
-						<div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted/45 transition-colors group-hover:bg-muted/65">
-							<Icon className="size-5 text-muted-foreground" />
-						</div>
-
-						{/* Main info */}
-						<div className="min-w-0 flex-1">
-							<div className="mb-0.5 flex flex-wrap items-center gap-2">
-								<p className="truncate text-sm font-semibold text-foreground">
+							<div className="min-w-0 flex-1">
+								<p className="truncate text-[13px] font-medium text-foreground">
 									{d.title || `Deployment #${d.id}`}
 								</p>
-								{statusPill(d.status)}
-							</div>
-							<div className="mt-0.5 flex items-center gap-2">
-								<p className="max-w-[320px] truncate text-xs text-muted-foreground">
-									{d.description || `${actor} · ${Kind.label}`}
+								<p className="mt-0.5 truncate text-xs text-muted-foreground">
+									{d.description ||
+										`${actor} · ${Kind.label}`}
 								</p>
-								<span className="text-muted-foreground/40">·</span>
-								<span className="shrink-0 text-xs text-muted-foreground">
+								{d.error_message && (
+									<p className="mt-1 flex max-w-md items-center gap-1.5 truncate text-xs font-medium text-rose-500">
+										<AlertCircle className="size-3 shrink-0" />
+										<span className="truncate">
+											{d.error_message}
+										</span>
+									</p>
+								)}
+							</div>
+
+							<div className="flex shrink-0 items-center gap-3">
+								<span
+									aria-hidden
+									className={cn(
+										'size-2 shrink-0 rounded-full',
+										tone.dot,
+										tone.pulse && 'animate-pulse',
+									)}
+								/>
+								<span
+									className={cn(
+										'hidden text-xs font-medium lowercase sm:block',
+										tone.text,
+									)}>
+									{String(d.status || 'unknown').toLowerCase()}
+								</span>
+								<span className="hidden text-xs text-muted-foreground tabular-nums md:block">
 									{timeAgo(createdAtSec)}
 								</span>
-								<span className="text-muted-foreground/40">·</span>
-								<span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-									<Clock className="size-3" />
-									{new Date(createdAtSec * 1000).toLocaleTimeString([], {
-										hour: '2-digit',
-										minute: '2-digit',
-									})}
-								</span>
+								<ChevronDown
+									className={cn(
+										'size-3.5 text-muted-foreground transition-transform duration-200',
+										isOpen && 'rotate-180',
+									)}
+								/>
 							</div>
-							{d.error_message && (
-								<p className="mt-1 flex max-w-md items-center gap-1.5 truncate text-xs font-medium text-rose-500">
-									<AlertCircle className="size-3 shrink-0" />
-									<span className="truncate">{d.error_message}</span>
-								</p>
-							)}
-						</div>
-
-						{/* Right: id chip (commit-hash style) */}
-						<div className="relative z-10 flex shrink-0 items-center gap-2">
-							<span className="hidden items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-xs text-muted-foreground transition-colors group-hover:bg-muted/50 group-hover:text-foreground sm:inline-flex">
-								<GitBranch className="size-3 opacity-60" />#{d.id}
-							</span>
-						</div>
+						</button>
+						{isOpen && <DeploymentInlineLogs deployment={d} />}
 					</div>
 				);
 			})}

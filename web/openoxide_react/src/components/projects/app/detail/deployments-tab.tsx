@@ -9,10 +9,9 @@ import {
 } from '#/api/live';
 import {formatApiError} from '#/api/utils';
 import {isBuildActive} from '#/components/projects/detail/deployments/build-status';
-import {useDeploymentLogStream} from '#/components/projects/detail/deployments/use-deployment-log-stream';
+import {useAutoExpandBuildLogs} from '#/components/projects/detail/deployments/use-auto-expand-build-logs';
 import {DeploymentsHeader} from '#/components/projects/detail/deployments/deployments-header';
 import {DeploymentsList} from '#/components/projects/detail/deployments/deployments-list';
-import {StreamLogsModal} from '#/components/projects/detail/deployments/stream-logs-modal';
 import {CancelDeploymentDialog} from '#/components/projects/detail/deployments/cancel-deployment-dialog';
 
 interface DeploymentsTabProps {
@@ -27,18 +26,17 @@ export function DeploymentsTab({
 	onRefresh,
 }: DeploymentsTabProps) {
 	const queryClient = useQueryClient();
-	const [activeLogId, setActiveLogId] = useState<number | null>(null);
-	const liveLogs = useDeploymentLogStream(activeLogId);
+	const [expandedId, setExpandedId] = useState<number | null>(null);
 	const [isTriggering, setIsTriggering] = useState(false);
 	const [cancelingId, setCancelingId] = useState<number | null>(null);
 
 	const events = Array.isArray(passedDeployments) ? passedDeployments : [];
 	const activeDeployment = events.find(isBuildActive);
+	useAutoExpandBuildLogs(events, setExpandedId);
 
 	const deployMutation = useApplicationDeploy();
 	const redeployMutation = useApplicationRedeploy();
 	const cancelMutation = useDeploymentCancel();
-	const deleteMutation = useDeploymentDelete();
 	const clearAppMutation = useDeploymentDelete();
 
 	/** Run a deployment trigger/cancel with shared busy state + toasts. */
@@ -88,17 +86,6 @@ export function DeploymentsTab({
 		}
 	};
 
-	const handleDeleteSingleDeployment = async (id: number) => {
-		try {
-			await deleteMutation.mutateAsync(id);
-			toast.success(`Deployment #${id} deleted`);
-			queryClient.invalidateQueries({queryKey: ['get', '/deployments']});
-			onRefresh?.();
-		} catch (err: unknown) {
-			toast.error(formatApiError(err));
-		}
-	};
-
 	const isActionPending =
 		isTriggering ||
 		deployMutation.isPending ||
@@ -106,10 +93,10 @@ export function DeploymentsTab({
 		cancelMutation.isPending;
 
 	return (
-		<div className="flex flex-col gap-6">
+		<div className="flex flex-col gap-4">
 			<DeploymentsHeader
-				title="Deployments History"
-				description="Audit log of building, deployment operations and lifecycle events"
+				title="Deployment logs"
+				description="Build, deploy and lifecycle events for this application."
 				pillLabel={
 					activeDeployment || isActionPending
 						? isActionPending
@@ -134,22 +121,16 @@ export function DeploymentsTab({
 
 			<DeploymentsList
 				deployments={events}
-				onOpenStream={setActiveLogId}
-				onCancel={setCancelingId}
-				onDelete={handleDeleteSingleDeployment}
+				expandedId={expandedId}
+				onToggleExpand={id =>
+					setExpandedId(prev => (prev === id ? null : id))
+				}
 			/>
 
 			<CancelDeploymentDialog
 				open={cancelingId !== null}
 				onOpenChange={open => !open && setCancelingId(null)}
 				onConfirm={confirmCancel}
-			/>
-
-			<StreamLogsModal
-				deploymentId={activeLogId}
-				logs={liveLogs}
-				onClose={() => setActiveLogId(null)}
-				loadingText="Connecting to realtime SSE deployment stream..."
 			/>
 		</div>
 	);

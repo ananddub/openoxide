@@ -101,13 +101,15 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 				</SheetHeader>
 
 				{errorMessage && (
-					<AlertBlock type="error">{errorMessage}</AlertBlock>
+					<AlertBlock type="error" className="mx-6 mt-6">
+						{errorMessage}
+					</AlertBlock>
 				)}
 
 				<form
 					id="add-invitation-form"
 					onSubmit={handleSubmit}
-					className="grid w-full gap-4 py-2">
+					className="grid w-full gap-4 px-6 py-6">
 					<FormRow label="Mode">
 						<Select
 							value={mode}

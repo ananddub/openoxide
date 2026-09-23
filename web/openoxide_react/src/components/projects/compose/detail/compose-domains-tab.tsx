@@ -1,7 +1,5 @@
 import {useState, useMemo, useEffect} from 'react';
-import {Globe, Plus} from 'lucide-react';
-import {Button} from '#/components/ui/button';
-import {Badge} from '#/components/ui/badge';
+import {DomainsSection} from '#/components/projects/detail/domains/domains-section';
 import {toast} from 'sonner';
 import {
 	useDomainCreate,
@@ -9,7 +7,6 @@ import {
 	useDomainUpdate,
 } from '#/api/live';
 import {formatApiError} from '#/api/utils';
-import {ComposeDomainsTable} from './domains/compose-domains-table';
 import {ComposeDomainModal} from './domains/compose-domain-modal';
 import {
 	buildRawGitUrl,
@@ -109,40 +106,19 @@ export function ComposeDomainsTab({
 	};
 
 	return (
-		<div className="flex w-full animate-in flex-col gap-6 duration-200 fade-in">
-			{/* Top Header Toolbar */}
-			<div className="flex flex-wrap items-center justify-between gap-4 border-b  pb-4">
-				<div className="flex flex-col gap-1">
-					<h3 className="flex items-center gap-2 text-lg font-bold tracking-tight text-foreground">
-						<Globe className="size-4 text-primary" /> Compose Domains
-					</h3>
-					<p className="text-xs text-muted-foreground">
-						Configure domain routes and SSL ingress rules for compose stack
-						services
-					</p>
-				</div>
-				<div className="flex items-center gap-3">
-					<Badge variant="outline" className="px-3 py-1 font-mono text-xs">
-						Active Domains: {domains.length}
-					</Badge>
-					<Button
-						onClick={handleOpenCreate}
-						size="sm"
-						className="flex h-8 items-center gap-1.5 text-xs font-bold">
-						<Plus className="size-3.5" /> Add Compose Domain
-					</Button>
-				</div>
-			</div>
-
-			{/* Domains Table Component */}
-			<ComposeDomainsTable
+		<div className="flex w-full animate-in flex-col gap-4 duration-200 fade-in">
+			{/* Shared domains surface (header + search + TLS filter + grid/list) */}
+			<DomainsSection
 				domains={domains}
 				isLoading={isLoading}
+				onCreate={handleOpenCreate}
 				onEdit={handleOpenEdit}
 				onDelete={handleDelete}
+				description="Domain routes and TLS ingress rules for this compose stack."
+				previewTitle="Compose domain preview"
 			/>
 
-			{/* Modal Component */}
+			{/* Domain route form — right sheet */}
 			<ComposeDomainModal
 				isOpen={isModalOpen}
 				onClose={() => setIsModalOpen(false)}

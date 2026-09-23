@@ -41,6 +41,12 @@ services:
       # set TLS_CERT_PATH/TLS_KEY_PATH/MKCERT_CAROOT in .env to host paths)
       - ${TLS_CERT_PATH:-./certs/cert.pem}:/app/certs/cert.pem:ro
       - ${TLS_KEY_PATH:-./certs/key.pem}:/app/certs/key.pem:ro
+      # Web-only fast path: the panel serves the SPA from this volume
+      # (see src/api/dashboard.rs WEB_DIST_OVERRIDE). `just web-deploy`
+      # builds on the host and docker-cp's the bundle in — no Rust
+      # recompile, no image build. (A direct bind mount of the repo's
+      # dist dir is denied by Docker Desktop file sharing on this setup.)
+      - openoxide_web_dist:/app/web-dist
 
     environment:
       PORT: "4000"
@@ -124,6 +130,7 @@ volumes:
   openoxide_data:
   openoxide_logs:
   agent_workspace:
+  openoxide_web_dist:
 
 networks:
   openoxide-network:

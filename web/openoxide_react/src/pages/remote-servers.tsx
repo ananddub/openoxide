@@ -1,12 +1,14 @@
 import {useState} from 'react';
-import {createFileRoute, useNavigate} from '@tanstack/react-router';
+import {createFileRoute} from '@tanstack/react-router';
+import {Plus} from 'lucide-react';
+import {Button} from '#/components/ui/button';
+import {SectionHeader} from '#/components/settings/list-card';
 import {
 	useRemoteServerList,
 	useRemoteServerActivate,
 	useRemoteServerDeactivate,
 	useSshKeyItems,
 } from '#/api/live';
-import {RemoteServersHeader} from '#/components/remote-servers/remote-servers-header';
 import {RemoteServersList} from '#/components/remote-servers/remote-servers-list';
 import {CreateServerModal} from '#/components/remote-servers/create-server-modal';
 import {SetupServerModal} from '#/components/remote-servers/setup-server-modal';
@@ -26,7 +28,6 @@ export const Route = createFileRoute('/_app/remote-servers')({
 });
 
 function RemoteServersPage() {
-	const navigate = useNavigate();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [editingServer, setEditingServer] =
 		useState<RemoteServerResponse | null>(null);
@@ -68,17 +69,30 @@ function RemoteServersPage() {
 	};
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
-			<RemoteServersHeader
-				onOpenCreate={() => void navigate({to: '/remote-servers/new'})}
-				onRefresh={() => {}}
-				isRefetching={false}
+		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+			<SectionHeader
+				title="Remote Servers"
+				description="Bare-metal and VPS hosts Openoxide provisions and deploys your services onto."
+				action={
+					<Button
+						onClick={() => {
+							setEditingServer(null);
+							setIsCreateOpen(true);
+						}}
+						className="h-9 gap-1.5">
+						<Plus className="size-3.5" />
+						Add Server
+					</Button>
+				}
 			/>
 
 			<RemoteServersList
 				servers={servers}
 				isLoading={isServersLoading}
-				onAddServer={() => void navigate({to: '/remote-servers/new'})}
+				onAddServer={() => {
+					setEditingServer(null);
+					setIsCreateOpen(true);
+				}}
 				onEditServer={server => {
 					setEditingServer(server);
 					setIsCreateOpen(true);

@@ -5,7 +5,7 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from '#/components/ui/sheet';
-import {Tabs, TabsList, TabsTrigger} from '#/components/ui/tabs';
+import {GeistSwitch} from '#/components/shared/geist-switch';
 import {Badge} from '#/components/ui/badge';
 import {Button} from '#/components/ui/button';
 import {
@@ -42,7 +42,9 @@ export function ServiceInspectorDrawer({
 	onClose,
 	node,
 }: ServiceInspectorDrawerProps) {
-	const [activeTab, setActiveTab] = useState('overview');
+	const [activeTab, setActiveTab] = useState<
+		'overview' | 'config' | 'logs'
+	>('overview');
 
 	if (!node) return null;
 
@@ -120,36 +122,27 @@ export function ServiceInspectorDrawer({
 					</div>
 				</SheetHeader>
 
-				{/* Tabs Navigation: Overview, Config, Live Logs */}
-				<Tabs
-					value={activeTab}
-					onValueChange={setActiveTab}
-					className="flex min-h-0 flex-1 flex-col">
-					<div className="border-b  bg-muted/10 px-5">
-						<TabsList className="h-10 gap-4 bg-transparent p-0">
-							<TabsTrigger
-								value="overview"
-								className="rounded-none border-b-2  px-0 py-2 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent">
-								<Activity className="mr-1.5 h-3.5 w-3.5" /> Overview
-							</TabsTrigger>
-							<TabsTrigger
-								value="config"
-								className="rounded-none border-b-2  px-0 py-2 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent">
-								<Sliders className="mr-1.5 h-3.5 w-3.5" /> Config
-							</TabsTrigger>
-							<TabsTrigger
-								value="logs"
-								className="rounded-none border-b-2  px-0 py-2 text-xs font-semibold data-[state=active]:border-primary data-[state=active]:bg-transparent">
-								<Terminal className="mr-1.5 h-3.5 w-3.5" /> Live Logs
-							</TabsTrigger>
-						</TabsList>
+				{/* Tabs Navigation: Overview, Config, Live Logs (Geist Switch) */}
+				<div className="flex min-h-0 flex-1 flex-col">
+					<div className="bg-muted/10 border-b px-5 py-2.5">
+						<GeistSwitch
+							options={[
+								{key: 'overview', label: 'Overview', icon: Activity},
+								{key: 'config', label: 'Config', icon: Sliders},
+								{key: 'logs', label: 'Live Logs', icon: Terminal},
+							]}
+							value={activeTab}
+							onChange={setActiveTab}
+						/>
 					</div>
 
 					{/* Tab panels */}
-					<InspectorOverviewTab node={node} />
-					<InspectorConfigTab />
-					<InspectorLogsTab node={node} />
-				</Tabs>
+					{activeTab === 'overview' && (
+						<InspectorOverviewTab node={node} />
+					)}
+					{activeTab === 'config' && <InspectorConfigTab />}
+					{activeTab === 'logs' && <InspectorLogsTab node={node} />}
+				</div>
 			</SheetContent>
 		</Sheet>
 	);

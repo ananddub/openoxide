@@ -8,7 +8,6 @@ import {
 	ShieldCheck,
 } from 'lucide-react';
 import {Badge} from '#/components/ui/badge';
-import {Separator} from '#/components/ui/separator';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -46,7 +45,7 @@ export function SshKeyRow({
 	const fingerprint = getFingerprint(item.public_key);
 
 	return (
-		<div className="group flex items-center gap-4 bg-card px-4 py-3.5 transition-colors hover:bg-accent/30">
+		<div className="group flex items-center gap-3.5 px-4 py-3 transition-colors hover:bg-accent/30">
 			<div
 				className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg  ${iconCls}`}>
 				<Key className="h-4 w-4" />
@@ -87,11 +86,6 @@ export function SshKeyRow({
 					<Eye className="h-4 w-4" />
 				</button>
 			</div>
-
-			<Separator
-				orientation="vertical"
-				className="h-5 opacity-0 transition-opacity group-hover:opacity-100"
-			/>
 
 			<DropdownMenu>
 				<DropdownMenuTrigger

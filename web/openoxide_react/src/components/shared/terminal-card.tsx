@@ -1,6 +1,7 @@
 import {useEffect, useMemo, useState} from 'react';
 import {Plus} from 'lucide-react';
 import {cn} from '#/api/utils';
+import {Dialog, DialogContent} from '#/components/ui/dialog';
 import {TerminalHeader} from './terminal/terminal-header';
 import {ShellTabStrip} from './terminal/shell-tab-strip';
 import {ShellSession} from './terminal/shell-session';
@@ -14,9 +15,13 @@ export {extractServicesFromYaml} from './terminal/types';
 
 /**
  * OpenShip's terminal surface (terminal-tab + ServerTerminalTabs pattern):
- * a card with an icon-tile header, a shell tab strip, and xterm bodies. All
- * tabs stay mounted — hidden ones keep their stream alive so scrollback keeps
- * flowing (VSCode "tabs run in background"). Render pieces live in ./terminal.
+ * an icon-tile header, a shell tab strip, and xterm bodies. All tabs stay
+ * mounted — hidden ones keep their stream alive so scrollback keeps flowing
+ * (VSCode "tabs run in background"). Render pieces live in ./terminal.
+ *
+ * By default it presents as a centered overlay modal (`asModal`). Callers
+ * with a persistent in-page tab pass `asModal={false}` to keep the inline
+ * card. The "expand" control maximizes within whichever surface hosts it.
  */
 export function TerminalCard({
 	app,
@@ -24,6 +29,7 @@ export function TerminalCard({
 	onClose,
 	className,
 	hostModeDefault = false,
+	asModal = true,
 }: TerminalCardProps) {
 	const [shell, setShell] = useState<'sh' | 'bash'>('bash');
 	const [selectedService, setSelectedService] = useState('');
@@ -82,6 +88,94 @@ export function TerminalCard({
 		return () => window.removeEventListener('keydown', onKey);
 	}, [expanded]);
 
+	const body = (
+		<>
+			<TerminalHeader
+				displayName={displayName}
+				subtitle={subtitle}
+				isRemoteServer={isRemoteServer}
+				hostMode={hostMode}
+				onToggleHost={() => setHostMode(v => !v)}
+				isCompose={isCompose}
+				servicesList={servicesList}
+				targetContainer={targetContainer}
+				onSelectService={setSelectedService}
+				shell={shell}
+				onShellChange={setShell}
+				expanded={expanded}
+				onToggleExpanded={() => setExpanded(v => !v)}
+				onClose={onClose}
+			/>
+
+			<ShellTabStrip
+				shells={shells}
+				activeId={activeId}
+				onSelect={setActiveId}
+				onClose={closeShell}
+				onAdd={addShell}
+			/>
+
+			<div
+				className={cn(
+					'relative min-h-0 flex-1',
+					!asModal && !expanded && 'h-[60vh] min-h-[480px]',
+				)}>
+				{shells.length === 0 && (
+					<div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
+						<p className="text-sm text-muted-foreground/70">
+							No terminals
+						</p>
+						<button
+							type="button"
+							onClick={addShell}
+							className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border/50 bg-muted/30 px-4 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-muted/60">
+							<Plus className="size-3.5" />
+							New Shell
+						</button>
+					</div>
+				)}
+				{shells.map(entry => (
+					<div
+						key={entry.id}
+						className={
+							entry.id === activeId ? 'absolute inset-0' : 'hidden'
+						}>
+						<ShellSession
+							visible={entry.id === activeId}
+							enabled={enabled}
+							targetContainer={targetContainer}
+							shell={shell}
+							isRemoteServer={isRemoteServer}
+							hostMode={hostMode}
+							serverId={serverId}
+							onStatus={status => setStatus(entry.id, status)}
+						/>
+					</div>
+				))}
+			</div>
+		</>
+	);
+
+	if (asModal) {
+		return (
+			<Dialog open onOpenChange={open => !open && onClose?.()}>
+				<DialogContent
+					showCloseButton={false}
+					className="w-[92vw] max-w-5xl gap-0 overflow-hidden p-0! sm:max-w-5xl">
+					<div
+						className={cn(
+							'flex w-full flex-col overflow-hidden bg-card',
+							expanded
+								? 'h-[calc(100dvh-4rem)]'
+								: 'h-[70vh] max-h-[calc(100dvh-4rem)]',
+						)}>
+						{body}
+					</div>
+				</DialogContent>
+			</Dialog>
+		);
+	}
+
 	return (
 		<div
 			className={cn(
@@ -95,69 +189,7 @@ export function TerminalCard({
 					'flex flex-col overflow-hidden rounded-xl bg-card ring-1 ring-border/50',
 					expanded ? 'h-full w-full' : 'w-full',
 				)}>
-				<TerminalHeader
-					displayName={displayName}
-					subtitle={subtitle}
-					isRemoteServer={isRemoteServer}
-					hostMode={hostMode}
-					onToggleHost={() => setHostMode(v => !v)}
-					isCompose={isCompose}
-					servicesList={servicesList}
-					targetContainer={targetContainer}
-					onSelectService={setSelectedService}
-					shell={shell}
-					onShellChange={setShell}
-					expanded={expanded}
-					onToggleExpanded={() => setExpanded(v => !v)}
-					onClose={onClose}
-				/>
-
-				<ShellTabStrip
-					shells={shells}
-					activeId={activeId}
-					onSelect={setActiveId}
-					onClose={closeShell}
-					onAdd={addShell}
-				/>
-
-				<div
-					className={cn(
-						'relative min-h-0 flex-1',
-						expanded ? '' : 'h-[60vh] min-h-[480px]',
-					)}>
-					{shells.length === 0 && (
-						<div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
-							<p className="text-sm text-muted-foreground/70">
-								No terminals
-							</p>
-							<button
-								type="button"
-								onClick={addShell}
-								className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-border/50 bg-muted/30 px-4 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-muted/60">
-								<Plus className="size-3.5" />
-								New Shell
-							</button>
-						</div>
-					)}
-					{shells.map(entry => (
-						<div
-							key={entry.id}
-							className={
-								entry.id === activeId ? 'absolute inset-0' : 'hidden'
-							}>
-							<ShellSession
-								visible={entry.id === activeId}
-								enabled={enabled}
-								targetContainer={targetContainer}
-								shell={shell}
-								isRemoteServer={isRemoteServer}
-								hostMode={hostMode}
-								serverId={serverId}
-								onStatus={status => setStatus(entry.id, status)}
-							/>
-						</div>
-					))}
-				</div>
+				{body}
 			</div>
 		</div>
 	);

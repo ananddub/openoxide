@@ -38,6 +38,33 @@ export function useProjectCardData(project: Project) {
 	);
 	const totalEnvironments = envIds.size > 0 ? envIds.size : 1;
 
+	// Aggregate the project's health from its services' statuses so the card
+	// can carry the status pill (it was dropped from the service detail
+	// header). Priority: any error > any running > any in-flight > stopped.
+	const status = useMemo(() => {
+		if (totalServices === 0) return null;
+		const codes = projectServices.map(s =>
+			String((s as any).status || (s as any).app_status || '')
+				.toUpperCase()
+				.trim(),
+		);
+		if (codes.some(c => c.includes('ERROR') || c.includes('FAIL')))
+			return 'ERROR';
+		if (
+			codes.some(c =>
+				/RUNNING|ACTIVE|HEALTHY|\bUP\b|DONE|SUCCESS|\bOK\b/.test(c),
+			)
+		)
+			return 'RUNNING';
+		if (
+			codes.some(c =>
+				/BUILD|DEPLOY|START|QUEU|REBUILD|REDEPLOY|PENDING/.test(c),
+			)
+		)
+			return 'DEPLOYING';
+		return 'STOPPED';
+	}, [projectServices, totalServices]);
+
 	const projectServerNames = useMemo(() => {
 		const names = new Map<string, string>();
 		projectServices.forEach((service: any) => {
@@ -71,6 +98,7 @@ export function useProjectCardData(project: Project) {
 
 	return {
 		formatDate,
+		status,
 		totalServices,
 		totalEnvironments,
 		projectServerNames,

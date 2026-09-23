@@ -41,14 +41,40 @@ export const OPTIONS: {
 ];
 
 export const DB_KINDS = [
-	{id: 'postgres', label: 'PostgreSQL', defaultImage: 'postgres:17'},
-	{id: 'mysql', label: 'MySQL', defaultImage: 'mysql:8'},
-	{id: 'mariadb', label: 'MariaDB', defaultImage: 'mariadb:11'},
-	{id: 'mongodb', label: 'MongoDB', defaultImage: 'mongo:7'},
-	{id: 'redis', label: 'Redis', defaultImage: 'redis:7'},
+	{
+		id: 'postgres',
+		label: 'PostgreSQL',
+		description: 'The advanced open-source relational database.',
+		defaultImage: 'postgres:17',
+	},
+	{
+		id: 'mysql',
+		label: 'MySQL',
+		description: 'The world’s most popular open-source database.',
+		defaultImage: 'mysql:8',
+	},
+	{
+		id: 'mariadb',
+		label: 'MariaDB',
+		description: 'Community-driven drop-in MySQL replacement.',
+		defaultImage: 'mariadb:11',
+	},
+	{
+		id: 'mongodb',
+		label: 'MongoDB',
+		description: 'Document database for modern applications.',
+		defaultImage: 'mongo:7',
+	},
+	{
+		id: 'redis',
+		label: 'Redis',
+		description: 'In-memory data store, cache and message broker.',
+		defaultImage: 'redis:7',
+	},
 	{
 		id: 'libsql',
 		label: 'LibSQL',
+		description: 'SQLite-compatible embedded database by Turso.',
 		defaultImage: 'ghcr.io/turso-labs/libsql:latest',
 	},
 ];

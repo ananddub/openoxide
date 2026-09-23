@@ -19,7 +19,9 @@ export function PlacementRows({
 				typeof item === 'string'
 					? item
 					: item.SpreadDescriptor ||
-						`${item.Architecture || ''}:${item.OS || ''}`,
+						(item.Architecture || item.OS
+							? `${item.Architecture || ''}:${item.OS || ''}`
+							: ''),
 			)
 		: values
 			? String(values).split(',')

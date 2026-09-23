@@ -1,4 +1,3 @@
-import {EnvironmentTab} from '#/components/projects/common/environment-tab';
 import {MonitoringTab} from '#/components/projects/common/monitoring-tab';
 import {ComposeBackupsTab} from '#/components/projects/compose/detail/compose-backups-tab';
 import {DatabaseGeneralTab} from './database-general-tab';
@@ -21,6 +20,7 @@ interface DatabaseDetailTabsProps {
 	handleAction: (action: any) => any;
 	refetchAll: () => void;
 	handleUpdateEnv: (body: Record<string, unknown>) => any;
+	onOpenArchitecture: () => void;
 }
 
 /** Renders the active tab panel for the database detail page. */
@@ -38,6 +38,7 @@ export function DatabaseDetailTabs({
 	handleAction,
 	refetchAll,
 	handleUpdateEnv,
+	onOpenArchitecture,
 }: DatabaseDetailTabsProps) {
 	return (
 		<>
@@ -47,7 +48,12 @@ export function DatabaseDetailTabs({
 					actionLoading={actionLoading}
 					isBuilding={isBuilding}
 					onAction={handleAction}
+					handleUpdate={handleUpdateEnv}
 					onUpdated={refetchAll}
+					databaseId={parsedDbId}
+					kind={kind}
+					backups={backups}
+					onOpenArchitecture={onOpenArchitecture}
 				/>
 			)}
 			{activeTab === 'Architecture' && (
@@ -60,16 +66,12 @@ export function DatabaseDetailTabs({
 					onRefresh={refetchAll}
 				/>
 			)}
-			{activeTab === 'Environment' && (
-				<EnvironmentTab app={database} handleUpdate={handleUpdateEnv} />
-			)}
 			{activeTab === 'Deployments' && (
 				<DatabaseDeploymentsTab
 					dbId={parsedDbId}
 					kind={kind}
 					database={database}
 					deployments={deployments}
-					actionLoading={actionLoading}
 					onRefresh={refetchAll}
 					onAction={handleAction}
 				/>

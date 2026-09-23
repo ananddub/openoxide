@@ -1,6 +1,7 @@
 import {Button} from '#/components/ui/button';
 import {Save, Info, ShieldAlert, Check, Eye, EyeOff} from 'lucide-react';
 import {useEnvEditor} from './use-env-editor';
+import {SectionHeader} from '#/components/settings/list-card';
 
 interface EnvironmentTabProps {
 	app: any;
@@ -19,7 +20,12 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 	} = useEnvEditor(app, handleUpdate);
 
 	return (
-		<div className="flex animate-in flex-col gap-6 duration-200 fade-in">
+		<div className="flex w-full animate-in flex-col gap-5 duration-200 fade-in">
+			<SectionHeader
+				title="Environment variables"
+				description="KEY=VALUE pairs injected at build and runtime — redeploy or rebuild this service to apply them."
+			/>
+
 			{/* Info Warning Banner */}
 			<div className="flex gap-3 rounded-xl bg-primary/5 p-4">
 				<Info className="mt-0.5 h-4.5 w-4.5 shrink-0 text-primary" />
@@ -40,19 +46,6 @@ export function EnvironmentTab({app, handleUpdate}: EnvironmentTabProps) {
 			<div className="flex flex-col gap-4 rounded-xl bg-card p-5">
 				<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
 					<div className="flex flex-wrap items-center gap-3">
-						<div>
-							<h3 className="text-sm font-bold text-foreground">
-								Environment Variables
-							</h3>
-							<p className="mt-1 text-[11px] text-muted-foreground">
-								Define variables in{' '}
-								<code className="rounded bg-muted/40 px-1 py-0.5 font-mono text-[10px]">
-									KEY=VALUE
-								</code>{' '}
-								format.
-							</p>
-						</div>
-
 						{isModified && (
 							<span className="animate-pulse rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-semibold text-amber-500 select-none">
 								Unsaved Changes

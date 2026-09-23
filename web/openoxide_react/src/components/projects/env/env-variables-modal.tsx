@@ -5,14 +5,16 @@ import {toast} from 'sonner';
 import {Info, Save} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import Editor from '@monaco-editor/react';
 import {formatApiError} from '#/api/utils';
+import {useTheme} from '#/hooks/use-theme';
 
 interface EnvVariablesModalProps {
 	isOpen: boolean;
@@ -31,6 +33,7 @@ export function EnvVariablesModal({
 	environment,
 	onUpdated,
 }: EnvVariablesModalProps) {
+	const {theme} = useTheme();
 	const [projectEnv, setProjectEnv] = useState(project.env_var || '');
 	const [envVars, setEnvVars] = useState(environment?.env_var || '');
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,14 +57,14 @@ export function EnvVariablesModal({
 		try {
 			if (mode === 'PROJECT') {
 				await patchProjectMutation.mutateAsync({
-					params: {path: {id: project.id}},
-					body: {env_var: projectEnv},
+					id: project.id,
+					environment_variables: projectEnv,
 				});
 				toast.success('Project global environment variables updated');
 			} else if (environment) {
 				await patchEnvironmentMutation.mutateAsync({
-					params: {path: {id: environment.id}},
-					body: {env_var: envVars},
+					id: environment.id,
+					environment_variables: envVars,
 				});
 				toast.success(
 					`Environment variables updated for ${environment.name}`,
@@ -92,39 +95,38 @@ export function EnvVariablesModal({
 			: `${environment?.name?.toLowerCase() || 'env'}.env`;
 
 	return (
-		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-lg sm:max-w-xl">
-				<DialogHeader className="space-y-1.5">
-					<DialogTitle className="text-lg font-bold tracking-tight text-foreground">
-						{title}
-					</DialogTitle>
-					<DialogDescription className="text-xs text-muted-foreground">
-						{description}
-					</DialogDescription>
-				</DialogHeader>
+		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle>{title}</SheetTitle>
+					<SheetDescription>{description}</SheetDescription>
+				</SheetHeader>
 
-				{/* Info syntax tip */}
-				<div className="flex items-start gap-2.5 rounded-lg bg-muted/40 p-3">
-					<Info className="mt-0.5 size-4 shrink-0 text-primary" />
-					<div className="text-xs leading-relaxed text-muted-foreground">
-						{mode === 'PROJECT' ? (
-							<span>
-								Define global key-value environment variables. One variable
-								definition per line.
-							</span>
-						) : (
-							<span>
-								Reference project-level variables using:
-								<code className="ml-1.5 rounded bg-muted/80 px-1 py-0.5 font-mono font-semibold text-foreground">
-									{'DB_URL={{ project.DB_URL }}'}
-								</code>
-							</span>
-						)}
+				<form
+					id="env-variables-sheet-form"
+					onSubmit={handleSubmit}
+					className="flex min-h-0 flex-1 flex-col gap-4 px-6 pt-6 pb-6">
+					{/* Info syntax tip */}
+					<div className="flex items-start gap-2.5 rounded-lg bg-muted/40 p-3">
+						<Info className="mt-0.5 size-4 shrink-0 text-primary" />
+						<div className="text-xs leading-relaxed text-muted-foreground">
+							{mode === 'PROJECT' ? (
+								<span>
+									Define global key-value environment variables. One
+									variable definition per line.
+								</span>
+							) : (
+								<span>
+									Reference project-level variables using{' '}
+									<code className="rounded border border-border/60 bg-muted/80 px-1 py-px font-mono text-[10.5px] font-medium text-foreground">
+										{'{{ project.DB_URL }}'}
+									</code>
+								</span>
+							)}
+						</div>
 					</div>
-				</div>
 
-				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
-					<div className="flex flex-col gap-2">
+					<div className="flex min-h-0 flex-1 flex-col gap-2">
 						<div className="flex items-center justify-between">
 							<span className="font-mono text-xs font-bold tracking-wider text-muted-foreground uppercase">
 								{filename}
@@ -137,11 +139,11 @@ export function EnvVariablesModal({
 						</div>
 
 						{/* Monaco Code Editor */}
-						<div className="overflow-hidden rounded-xl bg-[#1e1e1e] p-1 shadow-inner">
+						<div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-white p-1 shadow-inner dark:bg-[#1e1e1e]">
 							<Editor
-								height="320px"
+								height="100%"
 								language="ini"
-								theme="vs-dark"
+								theme={theme === 'dark' ? 'vs-dark' : 'light'}
 								value={mode === 'PROJECT' ? projectEnv : envVars}
 								onChange={val => {
 									if (mode === 'PROJECT') {
@@ -163,19 +165,25 @@ export function EnvVariablesModal({
 							/>
 						</div>
 					</div>
-
-					{/* Modal Actions */}
-					<div className="flex justify-end border-t  pt-3">
-						<Button
-							type="submit"
-							disabled={isSubmitting}
-							className="flex h-9 items-center gap-1.5 bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-lg shadow-primary/10 hover:bg-primary/95">
-							<Save className="size-3.5" />
-							{isSubmitting ? 'Saving...' : 'Save Configuration'}
-						</Button>
-					</div>
 				</form>
-			</DialogContent>
-		</Dialog>
+
+				<SheetFooter>
+					<Button
+						variant="outline"
+						onClick={onClose}
+						className="h-10 px-5">
+						Cancel
+					</Button>
+					<Button
+						type="submit"
+						form="env-variables-sheet-form"
+						disabled={isSubmitting || !isModified}
+						className="h-10 gap-1.5 px-5">
+						<Save className="size-4" />
+						{isSubmitting ? 'Saving…' : 'Save'}
+					</Button>
+				</SheetFooter>
+			</SheetContent>
+		</Sheet>
 	);
 }

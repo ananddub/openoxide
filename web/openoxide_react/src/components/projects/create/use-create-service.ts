@@ -22,8 +22,9 @@ export function useCreateService(args: {
 	projectId: number;
 	envParam?: number;
 	typeParam?: string;
+	onCreated?: (newId?: number | bigint) => void;
 }) {
-	const {projectId, envParam, typeParam} = args;
+	const {projectId, envParam, typeParam, onCreated} = args;
 	const navigate = useNavigate();
 
 	const [chosen, setChosen] = useState<ServiceKind>(
@@ -71,9 +72,17 @@ export function useCreateService(args: {
 			navigate({
 				to: '/projects/$id/database/$dbId',
 				params: {id: String(projectId), dbId: String(newId)},
-				search: {kind: dbKind},
+				search: {kind: dbKind, tab: undefined},
 			});
 		}
+	};
+
+	const finish = (newId?: number | bigint) => {
+		if (onCreated) {
+			onCreated(newId);
+			return;
+		}
+		goDetail(newId);
 	};
 
 	const pick = (kind: ServiceKind) => {
@@ -106,7 +115,7 @@ export function useCreateService(args: {
 					server_id: serverId === 'local' ? undefined : Number(serverId),
 				});
 				toast.success('Application created');
-				goDetail((((res as any)?.data || res) as any)?.id);
+				finish((((res as any)?.data || res) as any)?.id);
 			} else if (chosen === 'compose') {
 				const res = await createCompose.mutateAsync({
 					name: name.trim(),
@@ -116,7 +125,7 @@ export function useCreateService(args: {
 					server_id: serverId === 'local' ? undefined : Number(serverId),
 				});
 				toast.success('Compose stack created');
-				goDetail((((res as any)?.data || res) as any)?.id);
+				finish((((res as any)?.data || res) as any)?.id);
 			} else {
 				const res = await createDatabase.mutateAsync({
 					kind: parseDatabaseKind(dbKind),
@@ -140,7 +149,7 @@ export function useCreateService(args: {
 							: undefined,
 				});
 				toast.success('Database created');
-				goDetail((((res as any)?.data || res) as any)?.id);
+				finish((((res as any)?.data || res) as any)?.id);
 			}
 		} catch (err) {
 			toast.error(formatApiError(err));

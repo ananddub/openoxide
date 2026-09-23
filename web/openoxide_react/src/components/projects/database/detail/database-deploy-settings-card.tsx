@@ -17,6 +17,8 @@ interface DatabaseDeploySettingsCardProps {
 	actionLoading?: string | null;
 	onAction: (action: DatabaseActionType) => Promise<void>;
 	onUpdated?: () => void;
+	/** Render inside another card (no own panel background/shadow). */
+	embedded?: boolean;
 }
 
 export function DatabaseDeploySettingsCard({
@@ -24,6 +26,7 @@ export function DatabaseDeploySettingsCard({
 	actionLoading: propActionLoading,
 	onAction,
 	onUpdated,
+	embedded = false,
 }: DatabaseDeploySettingsCardProps) {
 	const [isTerminalOpen, setIsTerminalOpen] = useState(false);
 	const [confirmAction, setConfirmAction] =
@@ -64,7 +67,12 @@ export function DatabaseDeploySettingsCard({
 	};
 
 	return (
-		<div className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-xs">
+		<div
+			className={
+				embedded
+					? 'flex flex-col gap-3'
+					: 'flex flex-col gap-5 rounded-xl bg-card p-6 shadow-xs'
+			}>
 			<div>
 				<h3 className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground">
 					<Rocket className="size-4 text-primary" /> Deploy Settings

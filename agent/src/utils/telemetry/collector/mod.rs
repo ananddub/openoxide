@@ -1,7 +1,5 @@
-pub mod cgroups;
 pub mod system;
 
-pub use cgroups::CgroupCollector;
 pub use system::SystemCollector;
 
 pub const BYTES_PER_MB: f64 = 1_048_576.0;

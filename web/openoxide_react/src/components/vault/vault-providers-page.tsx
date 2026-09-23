@@ -1,46 +1,101 @@
-import {useState} from 'react';
-import {useVaultList, useVaultProviderDelete} from '#/api/live';
-import {formatApiError} from '#/api/utils';
-import {Vault, Copy, Check} from 'lucide-react';
-import {Badge} from '#/components/ui/badge';
+import {useMemo, useState} from 'react';
+import {KeyRound, LayoutGrid, List, Plus} from 'lucide-react';
 import {toast} from 'sonner';
-import {PageHeader} from '#/components/shared/page-header';
+import {formatApiError, cn} from '#/api/utils';
+import {Button} from '#/components/ui/button';
 import {
-	EmptyStateCard,
-	LoadingText,
-} from '#/components/shared/empty-state-card';
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 import {
-	ResourceRowCard,
-	AddedDate,
-} from '#/components/shared/resource-row-card';
+	SectionHeader,
+	Toolbar,
+	ToolbarSearch,
+	ListEmpty,
+} from '#/components/settings/list-card';
+import {ConfirmDeleteDialog} from '#/components/settings/confirm-delete-dialog';
 import {
-	IconActionButton,
-	EditIconButton,
-	DeleteIconButton,
-} from '#/components/shared/icon-action-button';
-import {DeleteConfirmDialog} from '#/components/shared/delete-confirm-dialog';
+	useVaultList,
+	useVaultProviderDelete,
+	useVaultProviderTest,
+} from '#/api/live';
 import {
-	VaultProviderIcon,
 	getVaultProviderLabel,
+	vaultProviderOptions,
+	vaultReferenceSyntax,
 	type VaultProviderItem,
 } from './vault-provider-catalog';
 import {VaultProviderFormDialog} from './vault-provider-form-dialog';
+import {
+	VaultProvidersList,
+	type VaultProvidersView,
+} from './vault-providers-list';
+import {VaultSecretsSheet} from './vault-secrets-sheet';
 
 export type {VaultProviderItem};
 
+const VIEW_STORAGE_KEY = 'vault-providers-view';
+
+/**
+ * Vault providers — the SSH Keys / Projects grammar: toolbar (search +
+ * provider filter + view switch + New) above a bordered list card or grid
+ * cards, create/edit in a right sheet, delete a quiet AlertDialog.
+ */
 export function VaultProvidersPage() {
 	// Live vault providers query; the table-watch stream (vault_providers
 	// table) invalidates it while mounted, so no zustand slice involved.
 	const providersQuery = useVaultList();
 	const providers = (providersQuery.data ?? []) as VaultProviderItem[];
 	const deleteMutation = useVaultProviderDelete();
+	const testMutation = useVaultProviderTest();
 
+	const [search, setSearch] = useState('');
+	const [typeFilter, setTypeFilter] = useState('All');
+	const [view, setView] = useState<VaultProvidersView>(() =>
+		typeof window !== 'undefined' &&
+		localStorage.getItem(VIEW_STORAGE_KEY) === 'list'
+			? 'list'
+			: 'grid',
+	);
 	const [isFormOpen, setIsFormOpen] = useState(false);
 	const [editingProvider, setEditingProvider] =
 		useState<VaultProviderItem | null>(null);
 	const [deleteTarget, setDeleteTarget] =
 		useState<VaultProviderItem | null>(null);
+	const [secretsProvider, setSecretsProvider] =
+		useState<VaultProviderItem | null>(null);
 	const [copiedId, setCopiedId] = useState<number | null>(null);
+	const [testingId, setTestingId] = useState<number | null>(null);
+
+	const q = search.trim().toLowerCase();
+	const filtered = useMemo(
+		() =>
+			providers.filter(provider => {
+				if (typeFilter !== 'All' && provider.provider_type !== typeFilter)
+					return false;
+				if (!q) return true;
+				return [provider.name, provider.api_url, provider.namespace]
+					.filter(Boolean)
+					.join(' ')
+					.toLowerCase()
+					.includes(q);
+			}),
+		[providers, q, typeFilter],
+	);
+
+	const hasFilters = q !== '' || typeFilter !== 'All';
+	const clearFilters = () => {
+		setSearch('');
+		setTypeFilter('All');
+	};
+
+	const handleViewChange = (next: VaultProvidersView) => {
+		setView(next);
+		localStorage.setItem(VIEW_STORAGE_KEY, next);
+	};
 
 	const handleOpenCreate = () => {
 		setEditingProvider(null);
@@ -50,6 +105,27 @@ export function VaultProvidersPage() {
 	const handleOpenEdit = (provider: VaultProviderItem) => {
 		setEditingProvider(provider);
 		setIsFormOpen(true);
+	};
+
+	const handleCopySyntax = (provider: VaultProviderItem) => {
+		navigator.clipboard.writeText(vaultReferenceSyntax(provider.name));
+		setCopiedId(provider.id);
+		toast.success('Reference syntax copied to clipboard!');
+		setTimeout(() => setCopiedId(null), 2000);
+	};
+
+	const handleTest = async (provider: VaultProviderItem) => {
+		setTestingId(provider.id);
+		try {
+			const result = await testMutation.mutateAsync({id: provider.id});
+			if (result?.success)
+				toast.success(result.message || `${provider.name} reachable`);
+			else toast.error(result?.message || 'Connection test failed');
+		} catch (err) {
+			toast.error(formatApiError(err));
+		} finally {
+			setTestingId(null);
+		}
 	};
 
 	const handleDeleteProvider = async () => {
@@ -63,98 +139,99 @@ export function VaultProvidersPage() {
 		}
 	};
 
-	const copySyntax = (name: string, id: number) => {
-		navigator.clipboard.writeText(`\${{vault.${name}.secret:FIELD}}`);
-		setCopiedId(id);
-		toast.success('Reference syntax copied to clipboard!');
-		setTimeout(() => setCopiedId(null), 2000);
-	};
+	const createButton = (
+		<Button onClick={handleOpenCreate} className="h-9 gap-1.5">
+			<Plus className="size-3.5" /> Add Vault Provider
+		</Button>
+	);
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
-			<PageHeader
-				variant="plain"
+		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+			<SectionHeader
 				title="Vault Providers"
-				description="Connect HashiCorp Vault or Doppler and resolve secret references during build and deployment."
-				actionLabel="Add Vault Provider"
-				onAction={handleOpenCreate}
+				description="Connect an external secret store and reference its values as environment variables."
+				action={createButton}
 			/>
 
-			{providersQuery.isLoading ? (
-				<LoadingText>Loading vault providers...</LoadingText>
-			) : providers.length === 0 ? (
-				<EmptyStateCard
-					icon={<Vault className="size-6" />}
-					title="No Vault Providers Connected"
-					description={
-						<>
-							Reference secrets in your environment variables with{' '}
-							<code className="font-mono text-primary">
-								${'{vault.<name>.<secret>}'}
-							</code>
-							.
-						</>
-					}
-					onAction={handleOpenCreate}
+			<Toolbar
+				action={
+					<>
+						<Select
+							value={typeFilter}
+							onValueChange={value => value && setTypeFilter(value)}>
+							<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
+								<SelectValue>
+									{typeFilter === 'All'
+										? 'All Providers'
+										: getVaultProviderLabel(typeFilter)}
+								</SelectValue>
+							</SelectTrigger>
+							<SelectContent className="bg-card">
+								<SelectItem value="All">All Providers</SelectItem>
+								{vaultProviderOptions.map(option => (
+									<SelectItem key={option.value} value={option.value}>
+										{getVaultProviderLabel(option.value)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+
+						<div className="flex items-center rounded-lg border bg-card p-1">
+							<button
+								type="button"
+								aria-label="Grid view"
+								title="Grid view"
+								onClick={() => handleViewChange('grid')}
+								className={cn(
+									'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
+									view === 'grid' && 'bg-accent text-foreground',
+								)}>
+								<LayoutGrid className="size-3.5" />
+							</button>
+							<button
+								type="button"
+								aria-label="List view"
+								title="List view"
+								onClick={() => handleViewChange('list')}
+								className={cn(
+									'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
+									view === 'list' && 'bg-accent text-foreground',
+								)}>
+								<List className="size-3.5" />
+							</button>
+						</div>
+					</>
+				}>
+				<ToolbarSearch
+					value={search}
+					onChange={setSearch}
+					placeholder="Search vault providers…"
+					className="min-w-[200px] flex-1 sm:max-w-none"
+				/>
+			</Toolbar>
+
+			{providersQuery.isLoading || providers.length > 0 ? (
+				<VaultProvidersList
+					providers={filtered}
+					isLoading={providersQuery.isLoading}
+					hasFilters={hasFilters}
+					view={view}
+					copiedId={copiedId}
+					testingId={testingId}
+					onClearFilters={clearFilters}
+					onSecrets={setSecretsProvider}
+					onTest={provider => void handleTest(provider)}
+					onCopy={handleCopySyntax}
+					onEdit={handleOpenEdit}
+					onDelete={setDeleteTarget}
 				/>
 			) : (
-				<div className="flex flex-col gap-3">
-					{providers.map(provider => (
-						<ResourceRowCard
-							key={provider.id}
-							icon={
-								<VaultProviderIcon
-									type={provider.provider_type}
-									className="size-7 shrink-0"
-								/>
-							}
-							name={provider.name}
-							badge={getVaultProviderLabel(provider.provider_type)}
-							actions={
-								<>
-									<IconActionButton
-										title="Copy reference syntax"
-										onClick={() => copySyntax(provider.name, provider.id)}
-										icon={
-											copiedId === provider.id ? (
-												<Check className="size-4 text-emerald-500" />
-											) : (
-												<Copy className="size-4" />
-											)
-										}
-									/>
-									<EditIconButton
-										onClick={() => handleOpenEdit(provider)}
-									/>
-									<DeleteIconButton
-										onClick={() => setDeleteTarget(provider)}
-									/>
-								</>
-							}>
-							<div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-								<Badge
-									variant={
-										provider.assignments?.length
-											? 'secondary'
-											: 'destructive'
-									}>
-									{provider.assignments?.length || 0} project assignments
-								</Badge>
-								<span>
-									{provider.assignments?.length
-										? 'Scoped access'
-										: 'Available to all projects'}
-								</span>
-							</div>
-							<div className="flex flex-wrap items-center gap-2 text-xs">
-								<span className="rounded bg-muted/30 px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
-									${`{vault.${provider.name}.SECRET_KEY}`}
-								</span>
-								<AddedDate created_at={provider.created_at} />
-							</div>
-						</ResourceRowCard>
-					))}
-				</div>
+				<ListEmpty
+					icon={KeyRound}
+					title="No Vault Providers Connected"
+					description="Connect HashiCorp Vault, Doppler, Infisical, AWS, Azure or Scaleway and reference secrets as environment variables."
+					action={createButton}
+				/>
 			)}
 
 			<VaultProviderFormDialog
@@ -163,20 +240,30 @@ export function VaultProvidersPage() {
 				provider={editingProvider}
 			/>
 
-			<DeleteConfirmDialog
+			<VaultSecretsSheet
+				provider={secretsProvider}
+				onClose={() => setSecretsProvider(null)}
+			/>
+
+			<ConfirmDeleteDialog
 				open={!!deleteTarget}
 				onOpenChange={open => !open && setDeleteTarget(null)}
-				title="Delete Secrets Provider?"
+				title="Delete vault provider"
 				description={
-					<>
-						Are you sure you want to remove{' '}
-						<span className="font-semibold text-foreground">
+					<span>
+						<span className="font-medium text-foreground">
 							{deleteTarget?.name}
-						</span>
-						? Any deployments referencing its secrets will fail.
-					</>
+						</span>{' '}
+						will stop resolving secrets — any deployment referencing{' '}
+						<code className="font-mono">
+							{'${{vault.<name>.<secret>}}'}
+						</code>{' '}
+						fails until it is repointed. This cannot be undone.
+					</span>
 				}
-				onConfirm={handleDeleteProvider}
+				confirmLabel="Delete provider"
+				busy={deleteMutation.isPending}
+				onConfirm={() => void handleDeleteProvider()}
 			/>
 		</div>
 	);

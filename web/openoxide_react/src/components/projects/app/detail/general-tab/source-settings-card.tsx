@@ -10,7 +10,7 @@ import {
 	useApplicationSetGithubSource,
 	useApplicationSetGitlabSource,
 } from '#/api/live';
-import {formatApiError} from '#/api/utils';
+import {cn, formatApiError} from '#/api/utils';
 import {DropSourceForm} from './drop-source-form';
 import {DockerSourceForm} from './source-settings-card/docker-source-form';
 import {GitSourceForm} from './source-settings-card/git-source-form';
@@ -27,11 +27,13 @@ import {
 interface SourceSettingsCardProps {
 	app: any;
 	onUpdated: () => void;
+	embedded?: boolean;
 }
 
 export function SourceSettingsCard({
 	app,
 	onUpdated,
+	embedded,
 }: SourceSettingsCardProps) {
 	const [provider, setProvider] = useState(app.source_type || 'GIT');
 	const [form, setForm] = useState<SourceForm>(() =>
@@ -131,16 +133,22 @@ export function SourceSettingsCard({
 	};
 
 	return (
-		<section className="flex flex-col gap-4 rounded-xl bg-card p-5">
-			<div>
-				<h3 className="text-sm font-bold text-foreground">
-					Provider Source
-				</h3>
-				<p className="mt-1 text-xs text-muted-foreground">
-					Select and configure the repository source code of your
-					application
-				</p>
-			</div>
+		<section
+			className={cn(
+				'flex flex-col gap-4',
+				!embedded && 'rounded-xl bg-card p-5',
+			)}>
+			{!embedded && (
+				<div>
+					<h3 className="text-sm font-bold text-foreground">
+						Provider Source
+					</h3>
+					<p className="mt-1 text-xs text-muted-foreground">
+						Select and configure the repository source code of your
+						application
+					</p>
+				</div>
+			)}
 
 			<ProviderTabs
 				value={provider}

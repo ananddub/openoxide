@@ -3,7 +3,10 @@ import {Eye, EyeOff} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 
-const READONLY_CLS = 'h-9 bg-muted/30 font-mono text-xs';
+/** Read-only display field — Geist muted surface, mono value.
+ *  Theme-aware so it never renders as a black slab in the light theme. */
+const READONLY_CLS =
+	'h-9 border-input bg-muted/40 font-mono text-xs text-foreground read-only:cursor-default';
 
 function FieldLabel({children}: {children: React.ReactNode}) {
 	return (

@@ -55,9 +55,10 @@ impl ApplicationBuilder {
                     builder = builder.env(k, v);
                 }
                 let pipeline = pipeline! { builder; };
-                pipeline
+                let output = pipeline
                     .execute_cancelled(&self.ctx.executor, cancel)
                     .await?;
+                self.emit_build_output(&output).await;
             }
             BuildStrategy::Paketo => {
                 self.ctx
@@ -76,9 +77,10 @@ impl ApplicationBuilder {
                     builder = builder.env(k, v);
                 }
                 let pipeline = pipeline! { builder; };
-                pipeline
+                let output = pipeline
                     .execute_cancelled(&self.ctx.executor, cancel)
                     .await?;
+                self.emit_build_output(&output).await;
             }
             BuildStrategy::Heroku => {
                 self.ctx
@@ -97,9 +99,10 @@ impl ApplicationBuilder {
                     builder = builder.env(k, v);
                 }
                 let pipeline = pipeline! { builder; };
-                pipeline
+                let output = pipeline
                     .execute_cancelled(&self.ctx.executor, cancel)
                     .await?;
+                self.emit_build_output(&output).await;
             }
             BuildStrategy::Railpack { version } => {
                 self.ctx
@@ -154,9 +157,10 @@ impl ApplicationBuilder {
                     builder;
                     docker_build;
                 };
-                pipeline
+                let output = pipeline
                     .execute_cancelled(&self.ctx.executor, cancel)
                     .await?;
+                self.emit_build_output(&output).await;
             }
             BuildStrategy::Static {
                 publish_directory,
@@ -241,6 +245,9 @@ impl ApplicationBuilder {
             .run()
             .await;
 
+        if let Ok(output) = &result {
+            self.emit_build_output(output).await;
+        }
         result.map(|_| ())
     }
 
@@ -284,10 +291,26 @@ impl ApplicationBuilder {
             .cancel_with(cancel.clone());
 
         let pipeline = pipeline! { build_cmd; };
-        pipeline
+        let output = pipeline
             .execute_cancelled(&self.ctx.executor, cancel)
             .await?;
+        self.emit_build_output(&output).await;
         Ok(())
+    }
+
+    /// Streams a finished command's output into the deployment log so the
+    /// build phase shows real docker/buildkit progress, not just stage tags.
+    async fn emit_build_output(&self, output: &crate::utils::exec::ExecOutput) {
+        if !output.stdout.trim().is_empty() {
+            self.ctx
+                .emit(BuilderEvent::Message(output.stdout.clone()))
+                .await;
+        }
+        if !output.stderr.trim().is_empty() {
+            self.ctx
+                .emit(BuilderEvent::Message(output.stderr.clone()))
+                .await;
+        }
     }
 }
 

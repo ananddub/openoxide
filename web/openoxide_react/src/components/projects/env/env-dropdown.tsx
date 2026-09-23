@@ -10,7 +10,9 @@ interface EnvDropdownProps {
 	envs: any[];
 	selectedId: number | null;
 	onSelect: (id: number) => void;
-	onCreateNew: () => void;
+	/** Omit on pages that can't create environments (e.g. service detail)
+	 *  — hides the "Create Environment" option. */
+	onCreateNew?: () => void;
 }
 
 export function EnvDropdown({
@@ -38,37 +40,34 @@ export function EnvDropdown({
 				value={selectValue}
 				onValueChange={val => {
 					if (val === 'create') {
-						onCreateNew();
+						onCreateNew?.();
 					} else if (val !== 'none') {
 						onSelect(Number(val));
 					}
 				}}>
-				<SelectTrigger className="flex h-7 cursor-pointer items-center gap-1.5 rounded-lg bg-muted/30 px-2.5 py-1 text-xs font-semibold text-foreground shadow-sm transition-all hover:bg-muted/60 focus:ring-0 focus-visible:ring-0 dark:border-border/40 dark:bg-muted/10 dark:hover:bg-muted/20">
-					<Layers className="size-3 shrink-0 text-muted-foreground" />
-					<span className="font-semibold text-foreground transition-colors hover:text-primary">
-						{label}
-					</span>
+				<SelectTrigger className="h-9 w-auto cursor-pointer gap-1.5 rounded-lg bg-card px-3 text-sm transition-colors duration-150 hover:border-foreground/25 focus:ring-0 focus-visible:ring-0">
+					<Layers className="size-3.5 shrink-0 text-muted-foreground" />
+					<span className="text-foreground">{label}</span>
 				</SelectTrigger>
-				<SelectContent className="border- bg-card">
-					<div className="mb-1 border-b  px-3 py-1.5 text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
+				<SelectContent className="bg-card">
+					<div className="mb-1 border-b px-3 py-1.5 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
 						Environments
 					</div>
 					{envs.map(env => (
-						<SelectItem
-							key={env.id}
-							value={String(env.id)}
-							className="text-xs">
+						<SelectItem key={env.id} value={String(env.id)}>
 							{env.is_default ? `${env.name} (Default)` : env.name}
 						</SelectItem>
 					))}
-					<SelectItem
-						value="create"
-						className="text-xs font-medium text-primary focus:text-primary">
-						<div className="flex items-center gap-1.5">
-							<Plus className="size-3.5" />
-							Create Environment
-						</div>
-					</SelectItem>
+					{onCreateNew && (
+						<SelectItem
+							value="create"
+							className="font-medium text-primary focus:text-primary">
+							<div className="flex items-center gap-1.5">
+								<Plus className="size-3.5" />
+								Create Environment
+							</div>
+						</SelectItem>
+					)}
 				</SelectContent>
 			</Select>
 		</div>

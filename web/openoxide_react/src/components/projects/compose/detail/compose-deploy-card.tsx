@@ -1,5 +1,6 @@
 import {useState} from 'react';
 import {toast} from 'sonner';
+import {Rocket} from 'lucide-react';
 import {
 	useComposeDeploy,
 	useComposeRedeploy,
@@ -19,12 +20,15 @@ interface ComposeDeployCardProps {
 	compose: any;
 	onUpdated?: () => void;
 	onOpenTerminal?: () => void;
+	/** Render inside another card (no own panel background/shadow). */
+	embedded?: boolean;
 }
 
 export function ComposeDeployCard({
 	compose,
 	onUpdated,
 	onOpenTerminal,
+	embedded = false,
 }: ComposeDeployCardProps) {
 	const [confirmAction, setConfirmAction] =
 		useState<ComposeActionType | null>(null);
@@ -85,8 +89,14 @@ export function ComposeDeployCard({
 	const isProcessing = activeLoading !== null || !!pendingMutationAction;
 
 	return (
-		<section className="flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm">
-			<h3 className="text-sm font-bold text-foreground">
+		<section
+			className={
+				embedded
+					? 'flex flex-col gap-3'
+					: 'flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm'
+			}>
+			<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
+				<Rocket className="size-3.5 text-primary" />
 				Deploy Settings
 			</h3>
 

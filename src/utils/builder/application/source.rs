@@ -1,7 +1,7 @@
 use super::application::ApplicationBuilder;
 use crate::utils::builder::shared::source::fetch_git_repository;
 use crate::utils::{
-    builder::spec::{ApplicationSpec, SourceSpec},
+    builder::spec::{ApplicationSpec, BuilderEvent, SourceSpec},
     exec::{ExecError, ExecResult},
     git::GitCli,
 };
@@ -47,6 +47,11 @@ impl ApplicationBuilder {
         registry: &Option<crate::utils::builder::spec::RegistryAuth>,
         cancel: &CancellationToken,
     ) -> ExecResult<()> {
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "Pulling image {image}..."
+            )))
+            .await;
         if let Some(auth) = registry {
             self.ctx
                 .docker
@@ -76,17 +81,35 @@ impl ApplicationBuilder {
             match (pull, logout) {
                 (Err(error), _) => return Err(error),
                 (Ok(_), Err(error)) => return Err(error),
-                (Ok(_), Ok(_)) => Ok(()),
+                (Ok(output), Ok(_)) => {
+                    self.emit_pull_output(&output).await;
+                    Ok(())
+                }
             }
         } else {
-            self.ctx
+            let output = self
+                .ctx
                 .docker
                 .images()
                 .pull(image)
                 .cancel_with(cancel.clone())
                 .pull()
                 .await?;
+            self.emit_pull_output(&output).await;
             Ok(())
+        }
+    }
+
+    async fn emit_pull_output(&self, output: &crate::utils::docker::DockerOutput) {
+        if !output.stdout.trim().is_empty() {
+            self.ctx
+                .emit(BuilderEvent::Message(output.stdout.clone()))
+                .await;
+        }
+        if !output.stderr.trim().is_empty() {
+            self.ctx
+                .emit(BuilderEvent::Message(output.stderr.clone()))
+                .await;
         }
     }
 

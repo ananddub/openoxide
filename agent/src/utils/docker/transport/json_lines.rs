@@ -1,5 +1,11 @@
 use serde::de::DeserializeOwned;
 
+/// Hard ceiling on the partial-document buffer. A healthy stats stream hands
+/// over complete documents every second, so anything still buffered at this
+/// size is unparseable input — without a cap a stuck decode leaks a few MB
+/// per day for every long-lived stream.
+const MAX_BUFFER_BYTES: usize = 4 * 1024 * 1024;
+
 #[derive(Default)]
 pub struct JsonAccumulator {
     buffer: String,
@@ -20,6 +26,19 @@ impl JsonAccumulator {
                 break;
             };
             documents.push(document);
+        }
+
+        if !documents.is_empty() {
+            // Progress was made, so any residue is a fresh partial document.
+            return documents;
+        }
+
+        if self.buffer.len() > MAX_BUFFER_BYTES {
+            tracing::warn!(
+                bytes = self.buffer.len(),
+                "discarding unparseable Docker stream buffer"
+            );
+            self.buffer.clear();
         }
 
         documents
@@ -118,5 +137,16 @@ mod tests {
         let mut acc = JsonAccumulator::new();
         let docs: Vec<Value> = acc.push(&[0xFF, 0xFE]);
         assert!(docs.is_empty());
+    }
+
+    #[test]
+    fn an_unparseable_flood_is_capped() {
+        let mut acc = JsonAccumulator::new();
+        let junk = vec![b'a'; 64 * 1024];
+        for _ in 0..80 {
+            let docs: Vec<Value> = acc.push(&junk);
+            assert!(docs.is_empty());
+        }
+        assert!(acc.buffered_len() <= MAX_BUFFER_BYTES);
     }
 }

@@ -8,6 +8,17 @@ web-build:
     cd web/openoxide_react && bun run build
     touch src/api/dashboard.rs
 
+# Fast web-only deploy: build the SPA on the host and stream the bundle
+# (tar over stdin) into the openoxide_web_dist volume the panel serves
+# from (see docker-compose.dev.yml). The panel reads assets from disk per
+# request, so the new bundle is live on refresh — no Rust recompile, no
+# image build, no container restart. (Scratch panel has no shell, hence
+# the alpine helper rather than docker exec.)
+web-deploy:
+    cd web/openoxide_react && bun run build
+    tar -C web/openoxide_react/dist -cf - . | docker run --rm -i -v openoxide_openoxide_web_dist:/data alpine sh -c 'rm -rf /data/* && tar -C /data -xf -'
+    @echo "✓ web deployed — refresh https://localhost:4000"
+
 web-check:
     cd web/openoxide_react && bunx tsc --noEmit
 

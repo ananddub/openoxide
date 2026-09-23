@@ -3,7 +3,19 @@ import {
 	resolveLocalIcon,
 	isValidDockerImage,
 } from '#/lib/service-icon-resolver';
-import {siDocker} from 'simple-icons';
+import {siDocker, siGit} from 'simple-icons';
+import {
+	PostgresqlIcon,
+	MysqlIcon,
+	MariadbIcon,
+} from '#/components/icons/db/postgres-mysql';
+
+const BRAND_ICONS: Record<string, (p: {className?: string}) => React.ReactElement> =
+	{
+		postgresql: PostgresqlIcon,
+		mysql: MysqlIcon,
+		mariadb: MariadbIcon,
+	};
 
 /**
  * 3-tier hybrid Docker service icon:
@@ -41,6 +53,30 @@ export function DockerServiceIcon({
 		alignItems: 'center',
 		justifyContent: 'center',
 	};
+
+	if (known?.kind === 'git') {
+		return (
+			<div style={{...tile, background: `${known.color}18`}}>
+				<svg viewBox="0 0 24 24" style={{width: 20, height: 20, fill: known.color}}>
+					<path d={siGit.path} />
+				</svg>
+			</div>
+		);
+	}
+
+	if (known?.brand && BRAND_ICONS[known.brand]) {
+		const BrandIcon = BRAND_ICONS[known.brand];
+		return (
+			<div
+				style={{
+					...tile,
+					background: `${known.color}18`,
+					padding: size > 30 ? 5 : 3,
+				}}>
+				<BrandIcon className="size-full" />
+			</div>
+		);
+	}
 
 	if (known) {
 		return (

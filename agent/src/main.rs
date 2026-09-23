@@ -1,23 +1,11 @@
-use agent::utils::background::tasks;
 use agent::{app::grpc::GrpcServerTask, core};
 use auto_di::Container;
-use std::time::Duration;
 
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, warn};
 use tracing_subscriber::EnvFilter;
 
-use tasks::{
-    collectors::{container::ContainerCollectorTask, host::HostCollectorTask},
-    maintenance::retention::RetentionTask,
-};
-
-/// The agent's workload is a handful of interval loops plus a low-QPS gRPC
-/// server. The default multi-thread runtime spawns one worker + one blocking
-/// thread per core (64 threads on a 32-core host, all futex-idle at 0.1% CPU);
-/// each idle thread costs stack and TLS pages. Two workers cover the collector
-/// cadence and the gRPC accept loop with room to spare.
-#[tokio::main(worker_threads = 2)]
+#[tokio::main(worker_threads = 1)]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
 
@@ -44,35 +32,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         warn!(%error, socket = %context.config.docker_socket, "docker daemon unreachable");
     }
 
+    // One gRPC server is the agent's only listener: every metrics query it
+    // answers is sampled live (sysinfo + Docker API), nothing is stored.
     let shutdown = CancellationToken::new();
-
-    let mut tasks = tokio::task::JoinSet::new();
-    tasks.spawn(GrpcServerTask::run(
-        (*context).clone(),
-        container.clone(),
-        shutdown.clone(),
-    ));
-    tasks.spawn(HostCollectorTask::run((*context).clone(), shutdown.clone()));
-    tasks.spawn(ContainerCollectorTask::run(
-        (*context).clone(),
-        shutdown.clone(),
-    ));
-    tasks.spawn(RetentionTask::run((*context).clone(), shutdown.clone()));
+    let grpc = {
+        let container = container.clone();
+        let shutdown = shutdown.clone();
+        let ctx = (*context).clone();
+        tokio::spawn(async move {
+            GrpcServerTask::run(ctx, container, shutdown).await;
+        })
+    };
 
     wait_for_shutdown_signal().await;
     info!("shutdown signal received, stopping tasks");
-    shutdown.cancel();
 
-    match tokio::time::timeout(Duration::from_secs(5), async {
-        while tasks.join_next().await.is_some() {}
-    })
-    .await
-    {
-        Ok(()) => info!("all tasks stopped cleanly"),
-        Err(_) => {
-            warn!("tasks did not stop within 5s, aborting");
-            tasks.abort_all();
-        }
+    shutdown.cancel();
+    if let Err(error) = grpc.await {
+        error!(%error, "gRPC server task failed to join");
     }
 
     Ok(())

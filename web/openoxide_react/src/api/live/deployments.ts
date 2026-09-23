@@ -178,6 +178,7 @@ export type DockerContainerPayload = {
  */
 export function useDeploymentListContainers(
 	serverId?: number | bigint | null,
+	options?: {enabled?: boolean; refetchInterval?: number},
 ) {
 	return useConnectQuery<DockerContainerPayload[]>(
 		['deployments', 'docker-containers', String(serverId ?? 'local')],
@@ -190,6 +191,10 @@ export function useDeploymentListContainers(
 				state: container.state,
 				status: container.status,
 			}));
+		},
+		{
+			enabled: options?.enabled,
+			refetchInterval: options?.refetchInterval,
 		},
 	);
 }

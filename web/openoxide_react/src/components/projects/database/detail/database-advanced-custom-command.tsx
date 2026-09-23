@@ -1,7 +1,9 @@
 import {useState, useEffect} from 'react';
-import {Terminal, Save, Plus, Trash2} from 'lucide-react';
+import {Terminal, Plus, Trash2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
+import {SettingsSheet} from '#/components/shared/settings-sheet';
+import {Field, SheetGroup} from '#/components/shared/field';
 import {toast} from 'sonner';
 import {useDatabaseUpdate, parseDatabaseKind} from '#/api/live';
 import {formatApiError} from '#/api/utils';
@@ -40,9 +42,7 @@ export function DatabaseAdvancedCustomCommand({
 		setEnvVar(database?.env_var || '');
 	}, [database]);
 
-	const handleAddArg = () => {
-		setArgsList(prev => [...prev, '']);
-	};
+	const handleAddArg = () => setArgsList(prev => [...prev, '']);
 
 	const handleUpdateArg = (index: number, val: string) => {
 		setArgsList(prev => {
@@ -52,9 +52,8 @@ export function DatabaseAdvancedCustomCommand({
 		});
 	};
 
-	const handleRemoveArg = (index: number) => {
+	const handleRemoveArg = (index: number) =>
 		setArgsList(prev => prev.filter((_, i) => i !== index));
-	};
 
 	const handleSave = async () => {
 		setSaving(true);
@@ -78,102 +77,78 @@ export function DatabaseAdvancedCustomCommand({
 	};
 
 	return (
-		<section className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-sm">
-			<div>
-				<h3 className="flex items-center gap-2 text-base font-bold tracking-tight text-foreground">
-					<Terminal className="size-4 text-primary" /> Docker Image,
-					Command & Arguments
-				</h3>
-				<p className="mt-0.5 text-xs text-muted-foreground">
-					Configure custom Docker image tags, startup command overrides,
-					and extra engine arguments (e.g.{' '}
-					<code className="rounded bg-muted/40 px-1 py-0.5 font-mono text-[11px]">
-						-c max_connections=200
-					</code>
-					).
-				</p>
-			</div>
-
-			<div className="grid grid-cols-1 gap-4 border-t  pt-4 md:grid-cols-2">
-				<div className="flex flex-col gap-1.5">
-					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-						Docker Image Tag
-					</label>
-					<Input
-						placeholder="e.g. postgres:16-alpine"
-						value={dockerImage}
-						onChange={e => setDockerImage(e.target.value)}
-						className="h-9 font-mono text-xs"
-					/>
+		<SettingsSheet
+			title="Docker Image, Command & Arguments"
+			description="Custom image tag and startup overrides"
+			icon={<Terminal className="size-4" />}
+			footer={
+				<Button
+					onClick={handleSave}
+					disabled={saving}
+					className="h-9 gap-1.5 px-4 text-sm">
+					{saving ? 'Saving...' : 'Save changes'}
+				</Button>
+			}>
+			<SheetGroup
+				title="Image & entrypoint"
+				description="Override the container image and startup command.">
+				<div className="flex flex-col gap-5">
+					<Field label="Docker image tag" hint="Leave blank to keep the default.">
+						<Input
+							placeholder="postgres:16-alpine"
+							value={dockerImage}
+							onChange={e => setDockerImage(e.target.value)}
+							className="font-mono"
+						/>
+					</Field>
+					<Field label="Entrypoint command">
+						<Input
+							placeholder="docker-entrypoint.sh"
+							value={command}
+							onChange={e => setCommand(e.target.value)}
+							className="font-mono"
+						/>
+					</Field>
 				</div>
+			</SheetGroup>
 
-				<div className="flex flex-col gap-1.5">
-					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-						Entrypoint Command
-					</label>
-					<Input
-						placeholder="e.g. docker-entrypoint.sh"
-						value={command}
-						onChange={e => setCommand(e.target.value)}
-						className="h-9 font-mono text-xs"
-					/>
-				</div>
-			</div>
-
-			{/* Extra Command Arguments List */}
-			<div className="flex flex-col gap-2.5">
-				<div className="flex items-center justify-between">
-					<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-						Command Arguments (Args)
-					</label>
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						onClick={handleAddArg}
-						className="flex h-7 items-center gap-1 px-2.5 text-[11px]">
-						<Plus className="size-3" /> Add Argument
-					</Button>
-				</div>
-
+			<SheetGroup
+				title="Command arguments"
+				description="Extra flags passed to the entrypoint, one per line.">
 				{argsList.length === 0 ? (
-					<p className="rounded-lg bg-muted/20 p-3 text-xs text-muted-foreground italic">
-						No custom arguments configured. Default container parameters
-						will be used.
-					</p>
+					<div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-6 text-center text-[13px] text-muted-foreground">
+						No custom arguments — default container parameters are used.
+					</div>
 				) : (
-					<div className="flex flex-col gap-2">
+					<div className="flex flex-col gap-2.5">
 						{argsList.map((arg, idx) => (
 							<div key={idx} className="flex items-center gap-2">
 								<Input
-									placeholder="e.g. -c shared_buffers=256MB"
+									placeholder="-c shared_buffers=256MB"
 									value={arg}
 									onChange={e => handleUpdateArg(idx, e.target.value)}
-									className="h-8 font-mono text-xs"
+									className="font-mono"
 								/>
 								<Button
 									type="button"
 									variant="ghost"
 									size="icon"
 									onClick={() => handleRemoveArg(idx)}
-									className="size-8 text-destructive hover:bg-destructive/10">
-									<Trash2 className="size-3.5" />
+									className="size-10 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+									<Trash2 className="size-4" />
 								</Button>
 							</div>
 						))}
 					</div>
 				)}
-			</div>
-
-			<div className="flex justify-end border-t  pt-4">
 				<Button
-					onClick={handleSave}
-					disabled={saving}
-					className="flex h-9 items-center gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/95">
-					<Save className="size-3.5" />{' '}
-					{saving ? 'Saving...' : 'Save Custom Command'}
+					type="button"
+					variant="outline"
+					onClick={handleAddArg}
+					className="h-9 w-fit gap-1.5 text-sm">
+					<Plus className="size-4" /> Add argument
 				</Button>
-			</div>
-		</section>
+			</SheetGroup>
+		</SettingsSheet>
 	);
 }

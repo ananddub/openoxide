@@ -1,5 +1,4 @@
 import {Cpu, HardDrive, ExternalLink, Terminal} from 'lucide-react';
-import {TabsContent} from '#/components/ui/tabs';
 import type {ReactNode} from 'react';
 
 interface NodeInfo {
@@ -17,9 +16,7 @@ const Row = ({label, children}: {label: string; children: ReactNode}) => (
 
 export function InspectorOverviewTab({node}: {node: NodeInfo}) {
 	return (
-		<TabsContent
-			value="overview"
-			className="m-0 flex flex-1 flex-col gap-4 overflow-y-auto p-5">
+		<div className="m-0 flex flex-1 flex-col gap-4 overflow-y-auto p-5">
 			<div className="grid grid-cols-2 gap-3">
 				<div className="rounded-xl bg-muted/20 p-3">
 					<span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -59,15 +56,13 @@ export function InspectorOverviewTab({node}: {node: NodeInfo}) {
 					</Row>
 				)}
 			</div>
-		</TabsContent>
+		</div>
 	);
 }
 
 export function InspectorConfigTab() {
 	return (
-		<TabsContent
-			value="config"
-			className="m-0 flex flex-1 flex-col gap-4 overflow-y-auto p-5">
+		<div className="m-0 flex flex-1 flex-col gap-4 overflow-y-auto p-5">
 			<div className="flex flex-col gap-3 rounded-xl bg-muted/20 p-4">
 				<h4 className="text-xs font-bold tracking-wider text-foreground uppercase">
 					Service Configurations
@@ -90,27 +85,25 @@ export function InspectorConfigTab() {
 					</div>
 				</div>
 			</div>
-		</TabsContent>
+		</div>
 	);
 }
 
 export function InspectorLogsTab({node}: {node: NodeInfo}) {
 	return (
-		<TabsContent
-			value="logs"
-			className="m-0 flex flex-1 flex-col gap-2 overflow-y-auto bg-black/90 p-4 font-mono text-xs text-emerald-400">
+		<div className="m-0 flex flex-1 flex-col gap-2 overflow-y-auto bg-neutral-50 p-4 font-mono text-xs dark:bg-black/90">
 			<p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
 				<Terminal className="h-3.5 w-3.5" /> Streaming live stdout/stderr
 				logs from Docker engine...
 			</p>
 			<div className="space-y-1">
-				<p className="text-emerald-400">
+				<p className="text-emerald-600 dark:text-emerald-400">
 					[INFO] Container {node.name} online and active.
 				</p>
-				<p className="text-emerald-400">
+				<p className="text-emerald-600 dark:text-emerald-400">
 					[INFO] Health check HTTP 200 OK (0ms latency).
 				</p>
 			</div>
-		</TabsContent>
+		</div>
 	);
 }

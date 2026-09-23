@@ -1,5 +1,7 @@
 import {RefreshCw, Shield} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {RowTile} from '#/components/settings/list-card';
+import {IconTooltip} from '#/components/shared/icon-tooltip';
 import type {RemoteServerResponse} from '#/types/api-helpers';
 
 import {ModeTiles} from './panel-parts';
@@ -55,12 +57,12 @@ export function PrivateNetworkPanel({server}: PrivateNetworkPanelProps) {
 	return (
 		<div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
 			{/* ── Left: configuration card ──────────────────────────── */}
-			<div className="rounded-xl bg-card ring-1 ring-border/50">
+			<div className="overflow-hidden rounded-xl border bg-card">
 				{/* Header */}
 				<div className="flex flex-wrap items-center gap-3 border-b px-5 py-4">
-					<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-foreground/[0.06]">
-						<Shield className="size-[18px] text-foreground/80" />
-					</div>
+					<RowTile>
+						<Shield className="size-[18px]" />
+					</RowTile>
 					<div className="min-w-0 flex-1">
 						<h2 className="text-[15px] font-semibold text-foreground">
 							Private Network
@@ -73,17 +75,19 @@ export function PrivateNetworkPanel({server}: PrivateNetworkPanelProps) {
 							— public IP, a managed tunnel, or your own VPN.
 						</p>
 					</div>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						onClick={refresh}
-						disabled={busy}
-						title="Refresh status"
-						className="cursor-pointer">
-						<RefreshCw
-							className={`size-3.5 ${action === 'refresh' ? 'animate-spin' : ''}`}
-						/>
-					</Button>
+					<IconTooltip label="Refresh status">
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							onClick={refresh}
+							disabled={busy}
+							aria-label="Refresh status"
+							className="cursor-pointer">
+							<RefreshCw
+								className={`size-3.5 ${action === 'refresh' ? 'animate-spin' : ''}`}
+							/>
+						</Button>
+					</IconTooltip>
 				</div>
 
 				{config?.health_error && (

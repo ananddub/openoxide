@@ -22,16 +22,6 @@ type Props = {
 	collapsed: boolean;
 };
 
-/** The signed-in user's plan chip (the "Hobby" pill). Swap for a real
- * billing field when one exists. */
-function PlanChip({plan}: {plan: string}) {
-	return (
-		<span className="flex h-[22px] shrink-0 items-center rounded-[6px] bg-foreground/[0.06] px-2 text-[11px] font-medium text-foreground/90">
-			{plan}
-		</span>
-	);
-}
-
 /**
  * Vercel-style top-of-rail team switcher: one pill split in two — the left
  * half (avatar + workspace name) switches workspace, the right half (plan
@@ -50,7 +40,6 @@ export function AccountSwitcher({collapsed}: Props) {
 		activeId,
 		activeEntry,
 		activeRole,
-		planLabel,
 		switchTo,
 		openCreate,
 		openEdit,
@@ -60,11 +49,11 @@ export function AccountSwitcher({collapsed}: Props) {
 
 	return (
 		<>
-			<div className="pb-1">
+			<div className="h-full">
 				<DropdownMenu open={open} onOpenChange={setOpen}>
 					<div
 						className={cn(
-							'flex w-full items-stretch overflow-hidden rounded-md transition-colors hover:bg-sidebar-accent',
+							'flex h-full w-full items-stretch overflow-hidden rounded-md transition-colors hover:bg-sidebar-accent',
 							collapsed && 'justify-center',
 						)}>
 						{/* Left half: avatar + workspace name (the identity) */}
@@ -73,16 +62,16 @@ export function AccountSwitcher({collapsed}: Props) {
 								<button
 									type="button"
 									className={cn(
-										'flex min-w-0 flex-1 items-center text-start transition-colors',
+										'flex h-full min-w-0 flex-1 items-center text-start transition-colors',
 										collapsed
-											? 'justify-center px-0 py-1'
-											: 'gap-2.5 px-1.5 py-1.5',
+											? 'justify-center px-0'
+											: 'gap-2.5 px-1.5',
 									)}
 									aria-haspopup="dialog"
 									title={collapsed ? activeOrg?.name : undefined}>
-									<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[12px] font-semibold text-white uppercase">
+									<div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-semibold text-white uppercase">
 										{activeOrg?.name?.[0] ?? (
-											<Building2 className="size-4" />
+											<Building2 className="size-3.5" />
 										)}
 									</div>
 									{!collapsed && (
@@ -100,11 +89,10 @@ export function AccountSwitcher({collapsed}: Props) {
 								render={
 									<button
 										type="button"
-										className="flex items-center gap-1 px-1.5 transition-colors"
+										className="flex h-full items-center gap-1 px-1.5 transition-colors"
 										aria-haspopup="dialog"
 										aria-expanded={open}
 										title="Workspace options">
-										<PlanChip plan={planLabel} />
 										<ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
 									</button>
 								}
@@ -140,9 +128,6 @@ export function AccountSwitcher({collapsed}: Props) {
 										</div>
 										<span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
 											{org.name}
-										</span>
-										<span className="flex h-[22px] shrink-0 items-center rounded-[6px] bg-foreground/[0.06] px-2 text-[11px] font-medium text-foreground/90">
-											{organizations.length > 1 ? 'Team' : 'Hobby'}
 										</span>
 										{isCurrent && (
 											<Check className="size-4 shrink-0 text-foreground" />

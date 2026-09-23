@@ -8,6 +8,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
+import {CronField} from '#/components/projects/common/cron-field';
 
 interface BackupFormFieldsProps {
 	destinations: any[];
@@ -104,14 +105,11 @@ export function BackupFormFields(p: BackupFormFieldsProps) {
 				</div>
 			)}
 
-			<Field label="Cron Schedule (UTC) *">
-				<Input
-					value={p.cronExpr}
-					onChange={e => p.onCronExpr(e.target.value)}
-					placeholder="0 2 * * * (Daily at 2 AM)"
-					className="h-9 font-mono text-xs"
-				/>
-			</Field>
+			<CronField
+				value={p.cronExpr}
+				onChange={p.onCronExpr}
+				label="Cron Schedule (UTC)"
+			/>
 
 			<Field label="Backup File Prefix">
 				<Input

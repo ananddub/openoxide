@@ -1,5 +1,5 @@
 import {useState, useMemo} from 'react';
-import {Terminal} from 'lucide-react';
+import {Terminal, Rocket} from 'lucide-react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
 import {TerminalCard} from '#/components/shared/terminal-card';
@@ -26,12 +26,15 @@ interface DeploySettingsCardProps {
 	app: any;
 	handleAction: (action: any) => Promise<void>;
 	onUpdated?: () => void;
+	/** Render inside another card (no own panel background/shadow). */
+	embedded?: boolean;
 }
 
 export function DeploySettingsCard({
 	app,
 	handleAction,
 	onUpdated,
+	embedded = false,
 }: DeploySettingsCardProps) {
 	const [autoDeploy, setAutoDeploy] = useState(app.auto_deploy !== false);
 	const [cleanCache, setCleanCache] = useState(!!app.clean_cache);
@@ -111,13 +114,20 @@ export function DeploySettingsCard({
 		activeLoading !== null || isAppProcessing(app) || hasActiveDeployment;
 
 	return (
-		<section className="flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm">
-			<h3 className="text-sm font-bold text-foreground">
+		<section
+			className={
+				embedded
+					? 'flex flex-col gap-3'
+					: 'flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm'
+			}>
+			<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
+				<Rocket className="size-3.5 text-primary" />
 				Deploy Settings
 			</h3>
 			<div className="flex flex-wrap items-center justify-between gap-4">
-				<div className="flex flex-wrap items-center gap-2">
-					<PrimaryActionButtons
+				{!embedded && (
+					<div className="flex flex-wrap items-center gap-2">
+						<PrimaryActionButtons
 						isBuilding={isBuilding}
 						isProcessing={isProcessing}
 						activeLoading={activeLoading}
@@ -141,8 +151,9 @@ export function DeploySettingsCard({
 						size="sm"
 						className="flex h-9 items-center gap-1.5 rounded-lg  font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
 						<Terminal className="h-4 w-4 text-primary" /> Open Terminal
-					</Button>
-				</div>
+						</Button>
+					</div>
+				)}
 
 				{/* Switches */}
 				<div className="flex items-center gap-4 border-l  pl-4">

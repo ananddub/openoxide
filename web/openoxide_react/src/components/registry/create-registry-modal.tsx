@@ -3,19 +3,35 @@ import {
 	Sheet,
 	SheetContent,
 	SheetDescription,
+	SheetFooter,
 	SheetHeader,
 	SheetTitle,
 } from '#/components/ui/sheet';
 import {Button} from '#/components/ui/button';
+import {Input} from '#/components/ui/input';
+import {
+	Database,
+	Plug,
+	RefreshCw,
+	Save,
+	Server as ServerIcon,
+} from 'lucide-react';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
-import {Database, Plug, RefreshCw} from 'lucide-react';
 import {
 	useRegistryCreate,
-	useRegistryUpdate,
 	useRegistryTest,
+	useRegistryUpdate,
+	useRemoteServerList,
 } from '#/api/live';
-import {RegistryFormFields} from './registry-form-fields';
+import type {RemoteServerResponse} from '#/types/api-helpers';
+import {
+	OptionRow,
+	StepBody,
+	StepCheckpoints,
+	WizardField,
+	type WizardStep,
+} from '#/components/shared/sheet-wizard';
 
 import type {RegistryResponse} from '#/types/api-helpers';
 
@@ -25,6 +41,14 @@ interface CreateRegistryModalProps {
 	onClose: () => void;
 	onSuccess: () => void;
 }
+
+const STEPS: WizardStep[] = [
+	{id: 'registry', label: 'Registry'},
+	{id: 'credentials', label: 'Credentials'},
+	{id: 'server', label: 'Server'},
+];
+
+const FORM_ID = 'create-registry-sheet-form';
 
 export function CreateRegistryModal({
 	isOpen,
@@ -38,12 +62,22 @@ export function CreateRegistryModal({
 	const [password, setPassword] = useState('');
 	const [serverId, setServerId] = useState<string>('local');
 	const [isTesting, setIsTesting] = useState(false);
+	const [stepIdx, setStepIdx] = useState(0);
 
 	const createMutation = useRegistryCreate();
 	const patchMutation = useRegistryUpdate();
 	const testRawMutation = useRegistryTest();
+	const {data: serversData} = useRemoteServerList();
+	const servers = (Array.isArray(serversData)
+		? serversData
+		: []) as unknown as RemoteServerResponse[];
+
+	const step = STEPS[stepIdx].id;
+	const last = stepIdx === STEPS.length - 1;
 
 	useEffect(() => {
+		if (!isOpen) return;
+		setStepIdx(0);
 		if (initialData) {
 			const d = initialData as any;
 			setName(d.name || d.registry_name || '');
@@ -130,60 +164,193 @@ export function CreateRegistryModal({
 		}
 	};
 
+	const canContinue =
+		step === 'registry'
+			? !!name.trim() && !!registryUrl.trim()
+			: step === 'credentials'
+				? !!username.trim() && (!!password.trim() || !!initialData)
+				: true;
+
+	const stepDesc: Record<string, string> = {
+		registry: 'Name the registry and give us the host we pull from.',
+		credentials:
+			'These are used for docker login when deploying your services.',
+		server: 'Pick the server that authenticates against this registry.',
+	};
+
 	return (
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<Database className="size-4 text-primary" />
+					<SheetTitle className="flex items-center gap-1.5">
+						<Database className="size-4 text-muted-foreground" />
 						{initialData ? 'Edit Registry' : 'Add an external registry'}
 					</SheetTitle>
-					<SheetDescription>
-						Fill in the following fields to add an external registry.
-					</SheetDescription>
+					<SheetDescription>{stepDesc[step]}</SheetDescription>
+					<StepCheckpoints steps={STEPS} idx={stepIdx} />
 				</SheetHeader>
 
 				<form
+					id={FORM_ID}
 					onSubmit={handleSubmit}
-					className="mt-3 flex flex-col gap-4 text-xs">
-					<RegistryFormFields
-						name={name}
-						setName={setName}
-						registryUrl={registryUrl}
-						setRegistryUrl={setRegistryUrl}
-						username={username}
-						setUsername={setUsername}
-						password={password}
-						setPassword={setPassword}
-						serverId={serverId}
-						setServerId={setServerId}
-						editing={!!initialData}
-					/>
+					className="flex-1 overflow-y-auto px-6 py-6">
+					{step === 'registry' && (
+						<StepBody key="registry">
+							<div className="flex flex-col gap-5">
+								<WizardField label="Registry Name" required>
+									<Input
+										placeholder="e.g. AWS ECR / Docker Hub / GHCR"
+										value={name}
+										onChange={e => setName(e.target.value)}
+										autoFocus
+										className="bg-background"
+									/>
+								</WizardField>
+								<WizardField
+									label="Image Prefix"
+									required
+									hint={
+										<>
+											Enter only the hostname (e.g.,{' '}
+											<code className="font-mono text-foreground">
+												aws_account_id.dkr.ecr.us-west-2.amazonaws.com
+											</code>{' '}
+											or{' '}
+											<code className="font-mono text-foreground">
+												docker.io
+											</code>
+											).
+										</>
+									}>
+									<Input
+										placeholder="aws_account_id.dkr.ecr.us-west-2.amazonaws.com"
+										value={registryUrl}
+										onChange={e => setRegistryUrl(e.target.value)}
+										className="bg-background font-mono"
+									/>
+								</WizardField>
+							</div>
+						</StepBody>
+					)}
 
-					{/* Minimal Footer Buttons */}
-					<div className="mt-2 flex items-center justify-between border-t pt-4">
-						<Button
-							type="button"
-							variant="outline"
-							size="icon"
-							onClick={handleTestRaw}
-							disabled={isTesting}
-							title="Test Registry Connection"
-							className="h-9 w-9 shrink-0">
-							{isTesting ? (
-								<RefreshCw className="h-4 w-4 animate-spin text-primary" />
-							) : (
-								<Plug className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-							)}
-						</Button>
+					{step === 'credentials' && (
+						<StepBody key="credentials">
+							<div className="flex flex-col gap-5">
+								<WizardField label="Username" required>
+									<Input
+										placeholder="AWS / Docker Hub username"
+										value={username}
+										onChange={e => setUsername(e.target.value)}
+										autoFocus
+										className="bg-background"
+									/>
+								</WizardField>
+								<WizardField
+									label="Password / Access Token"
+									required={!initialData}
+									optional={!!initialData}
+									hint={
+										initialData
+											? 'Leave blank to keep the stored token.'
+											: undefined
+									}>
+									<Input
+										type="password"
+										placeholder={
+											initialData ? '••••••••' : 'Access Token / Password'
+										}
+										value={password}
+										onChange={e => setPassword(e.target.value)}
+										className="bg-background font-mono"
+									/>
+								</WizardField>
+								<button
+									type="button"
+									onClick={handleTestRaw}
+									disabled={isTesting}
+									className="flex items-center justify-center gap-2 rounded-lg border border-border/60 px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50">
+									{isTesting ? (
+										<RefreshCw className="size-3.5 animate-spin text-amber-500" />
+									) : (
+										<Plug className="size-3.5" />
+									)}
+									{isTesting ? 'Testing…' : 'Test Connection'}
+								</button>
+							</div>
+						</StepBody>
+					)}
 
-						<Button
-							type="submit"
-							className="h-9 px-5 text-xs font-semibold">
-							{initialData ? 'Update Registry' : 'Save Registry'}
-						</Button>
-					</div>
+					{step === 'server' && (
+						<StepBody key="server">
+							<div className="flex flex-col gap-2">
+								<OptionRow
+									selected={serverId === 'local'}
+									onClick={() => setServerId('local')}
+									icon={<ServerIcon className="size-5" />}
+									title="Local Server"
+									subtitle="Authenticate on this server (default)."
+								/>
+								{servers.map((s: RemoteServerResponse) => (
+									<OptionRow
+										key={String(s.id)}
+										selected={serverId === String(s.id)}
+										onClick={() => setServerId(String(s.id))}
+										icon={<ServerIcon className="size-5" />}
+										title={s.name}
+										subtitle={s.ip_address}
+									/>
+								))}
+							</div>
+						</StepBody>
+					)}
 				</form>
+
+				{last ? (
+					<SheetFooter className="justify-between">
+						<p className="self-center text-xs text-muted-foreground">
+							Images pull from{' '}
+							<span className="font-semibold text-foreground">
+								{registryUrl.trim() || 'your registry'}
+							</span>
+						</p>
+						<div className="flex items-center gap-3">
+							{stepIdx > 0 && (
+								<Button
+									variant="outline"
+									onClick={() => setStepIdx(i => i - 1)}>
+									Back
+								</Button>
+							)}
+							<Button
+								type="submit"
+								form={FORM_ID}
+								disabled={!canContinue}
+								className="h-10 gap-1.5 px-5">
+								<Save className="size-3.5" />
+								{initialData ? 'Save Changes' : 'Add Registry'}
+							</Button>
+						</div>
+					</SheetFooter>
+				) : (
+					<SheetFooter>
+						{stepIdx > 0 ? (
+							<Button
+								variant="outline"
+								onClick={() => setStepIdx(i => i - 1)}>
+								Back
+							</Button>
+						) : (
+							<Button variant="outline" onClick={onClose}>
+								Cancel
+							</Button>
+						)}
+						<Button
+							disabled={!canContinue}
+							onClick={() => setStepIdx(i => i + 1)}>
+							Continue
+						</Button>
+					</SheetFooter>
+				)}
 			</SheetContent>
 		</Sheet>
 	);

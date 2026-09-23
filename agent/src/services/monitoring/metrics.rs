@@ -1,35 +1,34 @@
+use tokio::sync::Mutex;
+use tokio_stream::StreamExt;
+use tonic::{Response, Status};
+
 use crate::api::proto::{
     ContainerMetricPoint, ContainerMetricsResponse, GetContainerMetricsRequest, GetMetricsRequest,
     HostInfo, ServerMetricPoint, ServerMetricsResponse,
 };
-use crate::store::Store;
-use tonic::{Response, Status};
-use tracing::debug;
+use crate::docker::api::DockerApi;
+use crate::docker::json_lines::JsonAccumulator;
+use crate::docker::types::ContainerSummary;
+use crate::telemetry::collector::system::{ServerMetric, SystemCollector};
+use crate::telemetry::collector::bytes_to_mb;
 
-const DEFAULT_LIMIT: i64 = 50;
-const MAX_LIMIT: i64 = 1000;
-
+/// Every metric is sampled live at request time — the agent stores no
+/// history. Server vitals come from one sysinfo sample; container vitals
+/// come straight from Docker's one-shot stats API (the same multiplexed
+/// request `docker stats --no-stream` makes).
 pub struct MetricsService;
 
 impl MetricsService {
     pub async fn server(
-        store: &Store,
-        request: GetMetricsRequest,
+        collector: &Mutex<SystemCollector>,
+        _request: GetMetricsRequest,
     ) -> Result<Response<ServerMetricsResponse>, Status> {
-        let limit = clamp_limit(request.limit as i64);
-        let rows = store
-            .get_last_n_server_metrics(limit)
-            .await
-            .map_err(|error| Status::internal(error.to_string()))?;
-        debug!(
-            requested = limit,
-            returned = rows.len(),
-            "serving server metrics gRPC"
-        );
+        let row = {
+            let mut collector = collector.lock().await;
+            collector.sample().await
+        };
 
-        // Host facts come from the newest sample; every point keeps only the
-        // values that actually change between samples.
-        let host = rows.iter().rev().next().map(|row| HostInfo {
+        let host = Some(HostInfo {
             cpu_model: row.cpu_model.clone(),
             cpu_cores: row.cpu_cores,
             cpu_physical_cores: row.cpu_physical_cores,
@@ -39,60 +38,114 @@ impl MetricsService {
             kernel: row.kernel.clone(),
             arch: row.arch.clone(),
         });
-        let metrics = rows
-            .into_iter()
-            .map(|row| ServerMetricPoint {
-                timestamp: unix_timestamp(&row.timestamp),
-                cpu: row.cpu,
-                mem_used_gb: row.mem_used_gb,
-                mem_total_gb: row.mem_total,
-                // The store keeps disk usage as a percentage of total; the
-                // wire contract is GB, so derive the used amount.
-                disk_used_gb: row.total_disk * row.disk_used / 100.0,
-                disk_total_gb: row.total_disk,
-                network_in: row.network_in,
-                network_out: row.network_out,
-                uptime: row.uptime,
-            })
-            .collect();
+        let metrics = vec![server_point(&row)];
         Ok(Response::new(ServerMetricsResponse { host, metrics }))
     }
 
     pub async fn containers(
-        store: &Store,
+        docker: &DockerApi,
         request: GetContainerMetricsRequest,
     ) -> Result<Response<ContainerMetricsResponse>, Status> {
-        let limit = clamp_limit(request.limit as i64);
-        let rows = store
-            .get_last_n_container_metrics(&request.app_name, limit)
+        let summaries: Vec<ContainerSummary> = docker
+            .get_json("/containers/json")
             .await
-            .map_err(|error| Status::internal(error.to_string()))?;
-        debug!(container = %request.app_name, requested = limit, returned = rows.len(), "serving container metrics gRPC");
-
-        let metrics = rows
+            .map_err(|error| Status::internal(format!("docker container list: {error}")))?;
+        let matched: Vec<ContainerSummary> = summaries
             .into_iter()
-            .map(|row| ContainerMetricPoint {
-                id: row.id.unwrap_or(0),
-                timestamp: unix_timestamp(&row.timestamp),
-                container_id: row.container_id,
-                name: row.name,
-                cpu_perc: row.cpu_perc,
-                mem_perc: row.mem_perc,
-                mem_used_mb: row.mem_used_mb,
-                mem_total_mb: row.mem_total_mb,
-                net_in_mb: row.net_in_mb,
-                net_out_mb: row.net_out_mb,
-                block_read_mb: row.block_read_mb,
-                block_write_mb: row.block_write_mb,
-                application_id: row.application_id.unwrap_or(0),
-                compose_id: row.compose_id.unwrap_or(0),
+            .filter(|summary| {
+                summary
+                    .display_name()
+                    .as_str()
+                    .contains(request.app_name.as_str())
             })
             .collect();
+        if matched.is_empty() {
+            return Ok(Response::new(ContainerMetricsResponse { metrics: vec![] }));
+        }
+
+        // One multiplexed one-shot stats call for every matched container.
+        let mut chunks = docker
+            .get_stream(&format!(
+                "/containers/{}/stats?stream=false",
+                matched
+                    .iter()
+                    .map(|summary| summary.id.to_string())
+                    .collect::<Vec<_>>()
+                    .join("/")
+            ))
+            .await
+            .map_err(|error| Status::internal(format!("docker stats: {error}")))?;
+
+        let now = chrono::Utc::now().timestamp();
+        let mut accumulator = JsonAccumulator::new();
+        let mut metrics = Vec::new();
+        while let Some(chunk) = chunks.next().await {
+            let Ok(chunk) = chunk else { break };
+            for doc in accumulator.push::<super::stats::RawStats>(&chunk) {
+                let summary = matched.iter().find(|summary| {
+                    doc.id == summary.id.to_string() || doc.id.starts_with(summary.id.short())
+                });
+                let (application_id, compose_id) = summary
+                    .map(|summary| {
+                        (
+                            label_id(summary, "com.openoxide.application-id"),
+                            label_id(summary, "com.openoxide.compose-id"),
+                        )
+                    })
+                    .unwrap_or((0, 0));
+                let name = summary
+                    .map(|summary| summary.display_name())
+                    .map(|name| name.as_str().to_string())
+                    .unwrap_or_else(|| doc.name.trim_start_matches('/').to_string());
+                let (rx, tx_bytes) = doc.stats.network_bytes();
+                let (read, write) = doc.stats.block_io_bytes();
+                metrics.push(ContainerMetricPoint {
+                    id: 0,
+                    timestamp: now,
+                    container_id: doc.id,
+                    name,
+                    cpu_perc: doc.stats.cpu_percent(),
+                    mem_perc: doc.stats.memory.used_percent(),
+                    mem_used_mb: bytes_to_mb(doc.stats.memory.used_bytes() as f64),
+                    mem_total_mb: bytes_to_mb(doc.stats.memory.limit as f64),
+                    net_in_mb: bytes_to_mb(rx as f64),
+                    net_out_mb: bytes_to_mb(tx_bytes as f64),
+                    block_read_mb: bytes_to_mb(read as f64),
+                    block_write_mb: bytes_to_mb(write as f64),
+                    application_id,
+                    compose_id,
+                });
+            }
+        }
         Ok(Response::new(ContainerMetricsResponse { metrics }))
     }
 }
 
-/// The in-agent store persists RFC3339 strings; the wire format carries unix
+fn server_point(row: &ServerMetric) -> ServerMetricPoint {
+    ServerMetricPoint {
+        timestamp: unix_timestamp(&row.timestamp),
+        cpu: row.cpu,
+        mem_used_gb: row.mem_used_gb,
+        mem_total_gb: row.mem_total,
+        // The sample keeps disk usage as a percentage of total; the wire
+        // contract is GB, so derive the used amount.
+        disk_used_gb: row.total_disk * row.disk_used / 100.0,
+        disk_total_gb: row.total_disk,
+        network_in: row.network_in,
+        network_out: row.network_out,
+        uptime: row.uptime,
+    }
+}
+
+fn label_id(summary: &ContainerSummary, key: &str) -> i64 {
+    summary
+        .labels
+        .get(key)
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(0)
+}
+
+/// The sample carries an RFC3339 string; the wire format carries unix
 /// seconds, so the conversion happens exactly here, at the boundary.
 fn unix_timestamp(rfc3339: &str) -> i64 {
     chrono::DateTime::parse_from_rfc3339(rfc3339)
@@ -100,25 +153,9 @@ fn unix_timestamp(rfc3339: &str) -> i64 {
         .unwrap_or_default()
 }
 
-fn clamp_limit(raw: i64) -> i64 {
-    if raw <= 0 {
-        DEFAULT_LIMIT
-    } else {
-        raw.min(MAX_LIMIT)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn limit_defaults_and_is_capped() {
-        assert_eq!(clamp_limit(0), DEFAULT_LIMIT);
-        assert_eq!(clamp_limit(-5), DEFAULT_LIMIT);
-        assert_eq!(clamp_limit(10), 10);
-        assert_eq!(clamp_limit(50_000), MAX_LIMIT);
-    }
 
     #[test]
     fn timestamps_convert_at_the_boundary() {

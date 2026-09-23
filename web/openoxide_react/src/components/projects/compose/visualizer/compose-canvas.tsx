@@ -1,16 +1,27 @@
-import {useEffect, useState, useCallback, useRef} from 'react';
+import {
+	useEffect,
+	useState,
+	useCallback,
+	useRef,
+	useMemo,
+	type CSSProperties,
+} from 'react';
 import {
 	ReactFlow,
 	Controls,
 	Background,
 	BackgroundVariant,
+	Panel,
 	useNodesState,
 	useEdgesState,
 	useReactFlow,
+	useNodesInitialized,
 	type Node,
 	type Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import {Grid3x3} from 'lucide-react';
+import {cn} from '#/api/utils';
 import {
 	buildGraph,
 	composeNodeTypes,
@@ -38,6 +49,7 @@ export function CanvasInner({
 	domains,
 	gitBuildPath,
 	isGitSource,
+	readOnly = false,
 	onAddDomain,
 	onAddSchedule,
 	onAddBackup,
@@ -54,13 +66,47 @@ export function CanvasInner({
 	const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
 	const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 	const {fitView} = useReactFlow();
-	const hasFittedViewRef = useRef(false);
+	const containerRef = useRef<HTMLDivElement>(null);
 	const [contextMenu, setContextMenu] = useState<{
 		x: number;
 		y: number;
 		targetType: MenuTarget;
 		targetData: any;
 	} | null>(null);
+	const [showGrid, setShowGrid] = useState(() => {
+		if (typeof window === 'undefined') return true;
+		return localStorage.getItem('compose-canvas-grid') !== 'off';
+	});
+
+	const toggleGrid = useCallback(() => {
+		setShowGrid(prev => {
+			const next = !prev;
+			localStorage.setItem('compose-canvas-grid', next ? 'on' : 'off');
+			return next;
+		});
+	}, []);
+
+	const fitOpts = useMemo(
+		() =>
+			readOnly
+				? {padding: 0.12, minZoom: 0.05, maxZoom: 1}
+				: {padding: 0.4, minZoom: 0.3, maxZoom: 1.2},
+		[readOnly],
+	);
+
+	// Rebuild only when the graph *content* changes. Parents routinely pass
+	// freshly-allocated arrays (query fallbacks, inline `?? []`); rebuilding
+	// on those unmounts every node's measurement, briefly blanking the graph
+	// down to stray edge arrows.
+	// Payloads from ConnectRPC carry bigints, which JSON.stringify rejects.
+	const graphKey = useMemo(
+		() =>
+			JSON.stringify(
+				{services, backups, schedules, domains, readOnly},
+				(_k, v) => (typeof v === 'bigint' ? v.toString() : v),
+			),
+		[services, backups, schedules, domains, readOnly],
+	);
 
 	useEffect(() => {
 		const {nodes: n, edges: e} = buildGraph(
@@ -74,25 +120,14 @@ export function CanvasInner({
 				onAddBackup,
 				onOpenTerminal,
 				onViewLogs,
+				readOnly,
 			},
 		);
 		setNodes(n);
 		setEdges(e);
-
-		if (!hasFittedViewRef.current && n.length > 0) {
-			hasFittedViewRef.current = true;
-			const t = setTimeout(() => {
-				try {
-					fitView({padding: 0.4, minZoom: 0.3, maxZoom: 1.2});
-				} catch {}
-			}, 100);
-			return () => clearTimeout(t);
-		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
-		services,
-		backups,
-		schedules,
-		domains,
+		graphKey,
 		onAddDomain,
 		onAddSchedule,
 		onAddBackup,
@@ -100,8 +135,45 @@ export function CanvasInner({
 		onViewLogs,
 		setNodes,
 		setEdges,
-		fitView,
-	]);
+	]);;
+
+	// A node is "initialized" only once it has been measured with non-zero
+	// size. Until then edges collapse into stray arrows, so they wait here.
+	const nodesReady = useNodesInitialized();
+
+	// Re-fit every time the graph becomes measurable (initial mount and each
+	// data rebuild). A one-shot fit was racing container/node measurements on
+	// fast reloads and leaving the viewport parked on empty space.
+	useEffect(() => {
+		if (!nodesReady || nodes.length === 0) return;
+		const t = setTimeout(() => {
+			try {
+				fitView(fitOpts);
+			} catch {}
+		}, 80);
+		return () => clearTimeout(t);
+	}, [nodesReady, nodes.length, fitView, fitOpts]);
+
+	// Containers resize after mount (tab activation, card animations) and when
+	// the window shrinks; keep the graph re-fitted to the current size.
+	useEffect(() => {
+		const el = containerRef.current;
+		if (!el) return;
+		let t: ReturnType<typeof setTimeout>;
+		const ro = new ResizeObserver(() => {
+			clearTimeout(t);
+			t = setTimeout(() => {
+				try {
+					fitView(fitOpts);
+				} catch {}
+			}, 120);
+		});
+		ro.observe(el);
+		return () => {
+			clearTimeout(t);
+			ro.disconnect();
+		};
+	}, [fitView, fitOpts]);
 
 	const handleOpenMenu = useCallback(
 		(event: React.MouseEvent, node: Node) => {
@@ -117,41 +189,78 @@ export function CanvasInner({
 	);
 
 	return (
-		<div style={{width: '100%', height: '100%', position: 'relative'}}>
+		<div
+			ref={containerRef}
+			style={{width: '100%', height: '100%', position: 'relative'}}>
 			<ReactFlow
 				nodes={nodes}
-				edges={edges}
+				edges={nodesReady ? edges : []}
 				nodeTypes={composeNodeTypes}
 				edgeTypes={composeEdgeTypes}
 				onNodesChange={onNodesChange}
 				onEdgesChange={onEdgesChange}
-				onNodeContextMenu={handleOpenMenu as any}
-				onNodeClick={handleOpenMenu as any}
+				onNodeContextMenu={
+					readOnly ? undefined : (handleOpenMenu as any)
+				}
+				onNodeClick={readOnly ? undefined : (handleOpenMenu as any)}
 				nodesConnectable={false}
-				nodesDraggable={true}
+				nodesDraggable={!readOnly}
+				elementsSelectable={!readOnly}
+				panOnDrag={!readOnly}
+				zoomOnScroll={!readOnly}
+				zoomOnDoubleClick={!readOnly}
 				fitView
-				fitViewOptions={{padding: 0.4, minZoom: 0.3, maxZoom: 1.2}}
-				minZoom={0.2}
+				fitViewOptions={fitOpts}
+				minZoom={readOnly ? 0.05 : 0.2}
 				maxZoom={2}
 				proOptions={{hideAttribution: true}}
-				style={{background: '#0d1117'}}>
-				<Background
-					variant={BackgroundVariant.Lines}
-					gap={40}
-					lineWidth={0.4}
-					color="#21262d"
-					style={{background: '#0d1117'}}
-				/>
-				<Controls
-					position="bottom-right"
-					style={{
-						background: '#161b22',
-						border: '1px solid rgba(255,255,255,0.08)',
-						borderRadius: 8,
-						color: '#8b949e',
-					}}
-				/>
-				{services.length > 0 && <CanvasLegend />}
+				className={cn(
+					'bg-[color-mix(in_srgb,var(--foreground)_3.5%,var(--background))] [&_.react-flow__controls]:overflow-hidden [&_.react-flow__controls]:rounded-lg',
+					readOnly && 'bg-transparent',
+				)}
+				style={
+					{
+						'--xy-controls-button-background-color': 'var(--card)',
+						'--xy-controls-button-background-color-hover':
+							'var(--accent)',
+						'--xy-controls-button-color': 'var(--muted-foreground)',
+						'--xy-controls-button-color-hover': 'var(--foreground)',
+						'--xy-controls-button-border-color': 'var(--border)',
+						'--xy-background-pattern-color':
+							'color-mix(in srgb, var(--foreground) 18%, transparent)',
+					} as CSSProperties
+				}>
+				{!readOnly && showGrid && (
+					<Background
+						variant={BackgroundVariant.Lines}
+						gap={40}
+						lineWidth={0.6}
+					/>
+				)}
+				{!readOnly && (
+					<>
+						<Controls
+							position="bottom-right"
+							showInteractive={false}
+						/>
+						<Panel position="top-right">
+							<button
+								type="button"
+								onClick={toggleGrid}
+								aria-pressed={showGrid}
+								title={showGrid ? 'Hide grid' : 'Show grid'}
+								className={cn(
+									'flex size-8 cursor-pointer items-center justify-center rounded-lg border bg-card shadow-sm transition-colors',
+									showGrid
+										? 'border-primary/40 text-foreground'
+										: 'border-border text-muted-foreground hover:bg-accent hover:text-foreground',
+								)}>
+								<Grid3x3 className="size-4" />
+							</button>
+						</Panel>
+					</>
+				)}
+				{!readOnly && services.length > 0 && <CanvasLegend />}
 				{services.length === 0 && (
 					<CanvasEmptyState
 						isGitSource={isGitSource}

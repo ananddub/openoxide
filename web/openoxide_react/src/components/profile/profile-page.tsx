@@ -1,22 +1,19 @@
 import {useState} from 'react';
-import {
-	BadgeCheck,
-	ChevronDown,
-	Mail,
-	Palette,
-	ShieldCheck,
-} from 'lucide-react';
+import {ChevronDown, Mail, Palette, ShieldCheck} from 'lucide-react';
 import {useProfile} from '#/api/live';
 import {isSolidColorAvatar, getAvatarInitials} from '#/lib/avatar-utils';
 import {useAuthSession} from '#/stores/session-context';
 import {usePermissions} from '#/hooks/use-permissions';
+import {Button} from '#/components/ui/button';
+import {ListCard, RowTile} from '#/components/settings/list-card';
 import {InlineProfileEditor} from './inline-profile-editor';
 
 /**
- * Settings → Account. The identity card carries an expand chevron instead
- * of an Edit button: clicking it unfolds the editor (name fields + avatar
- * picker) under the identity row with a smooth height + fade animation.
- * Collapsing discards unsaved edits.
+ * Settings → Account — the house card grammar: one bordered card for the
+ * identity (avatar, name, email) with the edit control in its action slot,
+ * unfolding the inline editor under the row; a second card for the quiet
+ * facts. No in-page heading — the crumb and the rail already say
+ * "Account".
  */
 export function ProfilePage() {
 	const {data: storeProfile} = useProfile();
@@ -32,15 +29,14 @@ export function ProfilePage() {
 	const [expanded, setExpanded] = useState(false);
 
 	return (
-		<div className="flex w-full animate-in flex-col gap-6 duration-150 fade-in">
-			{/* Identity card — chevron expands the editor beneath the row */}
-			<div className="rounded-xl bg-card">
-				<div className="flex flex-wrap items-center gap-5 p-6 pb-4">
+		<div className="flex w-full animate-in flex-col gap-5 duration-150 fade-in">
+			<div className="w-full overflow-hidden rounded-xl border bg-card">
+				<div className="flex flex-wrap items-center gap-4 px-4 py-3">
 					{avatarValue ? (
 						<img
 							src={avatarValue}
 							alt=""
-							className="size-16 shrink-0 rounded-full bg-muted object-cover"
+							className="size-12 shrink-0 rounded-lg bg-muted object-cover"
 							style={
 								isSolidColorAvatar(avatarValue)
 									? {backgroundColor: avatarValue}
@@ -48,42 +44,43 @@ export function ProfilePage() {
 							}
 						/>
 					) : (
-						<div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-foreground/[0.08] text-xl font-semibold text-foreground uppercase">
+						<div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-foreground/[0.05] text-base font-medium text-foreground uppercase">
 							{initials}
 						</div>
 					)}
+
 					<div className="min-w-0 flex-1">
-						<div className="flex flex-wrap items-center gap-2">
-							<h2 className="truncate text-lg font-semibold text-foreground">
+						<div className="flex min-w-0 flex-wrap items-center gap-2">
+							<span className="truncate text-sm font-medium text-foreground">
 								{fullName || 'Unnamed'}
-							</h2>
+							</span>
 							{roleLabel && (
-								<span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+								<span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
 									<ShieldCheck className="size-3" />
 									{roleLabel}
 								</span>
 							)}
 						</div>
-						<p className="mt-0.5 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
-							<Mail className="size-3.5 shrink-0" />
+						<p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+							<Mail className="size-3 shrink-0" />
 							{email}
 						</p>
 					</div>
-					<button
+
+					<Button
+						variant="outline"
+						size="sm"
 						type="button"
 						onClick={() => setExpanded(v => !v)}
 						aria-expanded={expanded}
-						title={expanded ? 'Collapse' : 'Expand to edit profile'}
-						className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-input hover:text-foreground">
-						<span className="sr-only">
-							{expanded ? 'Collapse' : 'Expand to edit profile'}
-						</span>
+						className="h-8 shrink-0 gap-1.5 rounded-lg text-xs font-medium">
+						{expanded ? 'Close' : 'Edit profile'}
 						<ChevronDown
-							className={`size-4 transition-transform duration-300 ease-out ${
+							className={`size-3.5 transition-transform duration-300 ease-out ${
 								expanded ? 'rotate-180' : ''
 							}`}
 						/>
-					</button>
+					</Button>
 				</div>
 
 				{/* Animated expand region: grid-rows 0fr → 1fr + fade */}
@@ -106,41 +103,26 @@ export function ProfilePage() {
 				</div>
 			</div>
 
-			{/* Quiet account facts */}
-			<div className="overflow-hidden rounded-xl bg-card">
-				<div className="flex items-center gap-4 border-b border-border/40 px-5 py-4">
-					<BadgeCheck className="size-4 shrink-0 text-muted-foreground" />
-					<div className="min-w-0 flex-1">
-						<p className="text-sm font-medium text-foreground">
-							Sign-in identity
-						</p>
-						<p className="text-xs text-muted-foreground">
-							Name and avatar are visible to every member of your
-							workspaces.
-						</p>
-					</div>
-				</div>
-				<div className="divide-y divide-border/40">
-					<FactRow
-						label="Email"
-						value={email || '—'}
-						icon={<Mail className="size-3.5" />}
-					/>
-					<FactRow
-						label="Avatar"
-						value={
-							!avatarValue
-								? 'Initials'
-								: isSolidColorAvatar(avatarValue)
-									? 'Solid color'
-									: avatarValue.startsWith('data:')
-										? 'Uploaded image'
-										: 'Preset'
-						}
-						icon={<Palette className="size-3.5" />}
-					/>
-				</div>
-			</div>
+			<ListCard>
+				<FactRow
+					label="Email"
+					value={email || '—'}
+					icon={<Mail className="size-4" />}
+				/>
+				<FactRow
+					label="Avatar"
+					value={
+						!avatarValue
+							? 'Initials'
+							: isSolidColorAvatar(avatarValue)
+								? 'Solid color'
+								: avatarValue.startsWith('data:')
+									? 'Uploaded image'
+									: 'Preset'
+					}
+					icon={<Palette className="size-4" />}
+				/>
+			</ListCard>
 		</div>
 	);
 }
@@ -155,10 +137,8 @@ function FactRow({
 	icon: React.ReactNode;
 }) {
 	return (
-		<div className="flex items-center gap-4 px-5 py-3.5">
-			<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
-				{icon}
-			</span>
+		<div className="flex items-center gap-3.5 px-4 py-3">
+			<RowTile>{icon}</RowTile>
 			<span className="min-w-0 flex-1 text-sm text-muted-foreground">
 				{label}
 			</span>

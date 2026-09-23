@@ -1,4 +1,4 @@
-import {Check, ChevronsUpDown, Folder} from 'lucide-react';
+import {Check, ChevronsUpDown, Folder, FolderOpen} from 'lucide-react';
 import {cn} from '#/api/utils';
 import {
 	DropdownMenu,
@@ -11,26 +11,24 @@ import {
 import {Button} from '#/components/ui/button';
 
 interface TopBarScopeSwitcherProps {
+	projects: Array<{id: unknown; name?: string}>;
 	activeProject: {name?: string} | null;
-	activeOrg: {name?: string} | null;
 	projectId: number | null;
-	organizations: Array<{id: any; name?: string}>;
-	activeId: any;
-	switchTo: (id: number) => void;
-	setOpen: (open: boolean) => void;
-	onSelectWorkspace: () => void;
+	onAllProjects: () => void;
+	onSelectProject: (id: string) => void;
 }
 
-/** Left-hand workspace/project scope dropdown of the top bar. */
+/**
+ * Left slot of the top bar — the project scope switcher. Lists the
+ * workspace's *projects* (the org switcher lives in the sidebar rail):
+ * "All Projects" clears the deep view, rows below jump into a project.
+ */
 export function TopBarScopeSwitcher({
+	projects,
 	activeProject,
-	activeOrg,
 	projectId,
-	organizations,
-	activeId,
-	switchTo,
-	setOpen,
-	onSelectWorkspace,
+	onAllProjects,
+	onSelectProject,
 }: TopBarScopeSwitcherProps) {
 	return (
 		<DropdownMenu>
@@ -38,16 +36,14 @@ export function TopBarScopeSwitcher({
 				render={
 					<Button
 						variant="ghost"
-						className="h-8 max-w-[260px] gap-2 rounded-md px-2 text-[13px] font-medium text-foreground hover:bg-sidebar-accent">
+						className="h-9 max-w-[260px] gap-2 rounded-md px-2.5 text-[13px] font-medium text-foreground hover:bg-sidebar-accent">
 						{activeProject ? (
-							<Folder className="size-4 shrink-0 text-muted-foreground" />
+							<FolderOpen className="size-4 shrink-0 text-muted-foreground" />
 						) : (
-							<span className="flex size-4 shrink-0 items-center justify-center rounded-[4px] bg-emerald-600 text-[10px] font-semibold text-white uppercase">
-								{activeOrg?.name?.[0] ?? 'W'}
-							</span>
+							<Folder className="size-4 shrink-0 text-muted-foreground" />
 						)}
 						<span className="truncate">
-							{activeProject?.name ?? activeOrg?.name ?? 'All Projects'}
+							{activeProject?.name ?? 'All Projects'}
 						</span>
 						<ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
 					</Button>
@@ -57,54 +53,45 @@ export function TopBarScopeSwitcher({
 				align="start"
 				sideOffset={8}
 				className="w-64 rounded-lg">
-				{/* Workspace-level scope: clears project deep views. */}
 				<DropdownMenuItem
 					className={cn(
 						'gap-2.5 text-[13px]',
 						!activeProject && 'bg-accent/50',
 					)}
-					onClick={onSelectWorkspace}>
-					<span className="flex size-5 shrink-0 items-center justify-center rounded-[4px] bg-emerald-600 text-[10px] font-semibold text-white uppercase">
-						{activeOrg?.name?.[0] ?? 'W'}
-					</span>
-					<span className="min-w-0 flex-1 truncate">
-						{activeOrg?.name ?? 'All Projects'}
-					</span>
+					onClick={onAllProjects}>
+					<Folder className="size-4 shrink-0 text-muted-foreground" />
+					<span className="min-w-0 flex-1 truncate">All Projects</span>
 					{!activeProject && <Check className="size-4 shrink-0" />}
 				</DropdownMenuItem>
-				{activeProject && (
-					<DropdownMenuItem
-						className="gap-2.5 bg-accent/50 text-[13px]"
-						onClick={() => setOpen(false)}>
-						<Folder className="size-5 shrink-0 text-muted-foreground" />
-						<span className="min-w-0 flex-1 truncate">
-							{activeProject.name}
-						</span>
-						<Check className="size-4 shrink-0" />
-					</DropdownMenuItem>
+				{projects.length > 0 && (
+					<>
+						<DropdownMenuSeparator />
+						<DropdownMenuLabel className="text-[11px] font-medium text-muted-foreground">
+							Projects
+						</DropdownMenuLabel>
+					</>
 				)}
-				<DropdownMenuSeparator />
-				<DropdownMenuLabel className="text-[11px] font-medium text-muted-foreground">
-					Switch Workspace
-				</DropdownMenuLabel>
-				{organizations.map(org => {
-					const isCurrent = String(org.id) === String(activeId);
-					return (
-						<DropdownMenuItem
-							key={Number(org.id)}
-							className="gap-2.5 text-[13px]"
-							onClick={() => {
-								if (projectId !== null) onSelectWorkspace();
-								switchTo(Number(org.id));
-							}}>
-							<span className="flex size-5 shrink-0 items-center justify-center rounded-[4px] bg-emerald-600 text-[10px] font-semibold text-white uppercase">
-								{org.name?.[0] ?? 'W'}
-							</span>
-							<span className="min-w-0 flex-1 truncate">{org.name}</span>
-							{isCurrent && <Check className="size-4 shrink-0" />}
-						</DropdownMenuItem>
-					);
-				})}
+				<div className="max-h-64 overflow-y-auto">
+					{projects.map(project => {
+						const isCurrent =
+							projectId !== null &&
+							Number(project.id) === projectId;
+						return (
+							<DropdownMenuItem
+								key={String(project.id)}
+								className="gap-2.5 text-[13px]"
+								onClick={() => onSelectProject(String(project.id))}>
+								<Folder className="size-4 shrink-0 text-muted-foreground" />
+								<span className="min-w-0 flex-1 truncate">
+									{project.name ?? `Project ${project.id}`}
+								</span>
+								{isCurrent && (
+									<Check className="size-4 shrink-0" />
+								)}
+							</DropdownMenuItem>
+						);
+					})}
+				</div>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

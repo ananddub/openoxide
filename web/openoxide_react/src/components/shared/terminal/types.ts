@@ -49,4 +49,7 @@ export interface TerminalCardProps {
 	className?: string;
 	/** Open straight into the host root shell (server detail terminal). */
 	hostModeDefault?: boolean;
+	/** Render as a centered overlay modal (default). Set false to keep the
+	 * inline card for persistent in-page tabs. */
+	asModal?: boolean;
 }

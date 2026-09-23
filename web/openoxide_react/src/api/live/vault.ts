@@ -1,6 +1,7 @@
 import {
 	createServiceClient,
 	useConnectMutation,
+	useConnectQuery,
 	useResourceListQuery,
 } from './query';
 import {VaultService} from '#/gen/connect/openoxide/api/v1/vault_pb';
@@ -113,5 +114,30 @@ export function useVaultProviderTest() {
 export function useVaultTestConnection() {
 	return useConnectMutation((input: Record<string, unknown>) =>
 		vaultClient.testConnection({payload: JSON.stringify(input)}),
+	);
+}
+
+/**
+ * Secret names held by a provider. Values never reach the browser — the
+ * backend returns names only, which is what `${{vault.<name>.<secret>}}`
+ * references are built from.
+ */
+export function useVaultSecrets(providerId: number | null) {
+	return useConnectQuery<string[]>(
+		['vault_providers', 'secrets', providerId ?? 0],
+		async () => {
+			const response = await vaultClient.listSecrets({
+				id: BigInt(providerId ?? 0),
+			});
+			try {
+				const parsed = JSON.parse(response.items?.[0]?.payload || '{}');
+				return Array.isArray(parsed?.secrets)
+					? (parsed.secrets as string[])
+					: [];
+			} catch {
+				return [];
+			}
+		},
+		{enabled: providerId !== null},
 	);
 }

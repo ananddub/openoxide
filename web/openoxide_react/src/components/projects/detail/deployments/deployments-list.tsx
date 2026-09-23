@@ -1,114 +1,117 @@
+import {ChevronDown, Clock, Zap} from 'lucide-react';
+import {cn} from '#/api/utils';
 import {
-	Clock,
-	RefreshCw,
-	Terminal,
-	Trash2,
-	XCircle,
-	Zap,
-} from 'lucide-react';
-import {Button} from '#/components/ui/button';
-import {
-	formatTimestamp,
-	getStatusBadge,
-	isBuildActive,
-} from './build-status';
+	ListCard,
+	ListSkeleton,
+	ListEmpty,
+} from '#/components/settings/list-card';
+import {formatRelative, getStatusTone} from './build-status';
+import {DeploymentInlineLogs} from './deployment-inline-logs';
 
 export interface DeploymentsListProps {
 	deployments: any[];
 	isLoading?: boolean;
 	emptyLabel?: string;
+	emptyDescription?: string;
 	/** Prefix for the synthetic title of rows without one. */
 	titlePrefix?: string;
 	/** Status shown when a row carries neither status nor state. */
 	defaultStatus?: string;
-	onOpenStream: (id: number) => void;
-	onCancel?: (id: number) => void;
-	onDelete?: (id: number) => void;
+	/** Row whose inline log panel is open. */
+	expandedId?: number | null;
+	onToggleExpand?: (id: number) => void;
 }
 
 export function DeploymentsList({
 	deployments,
 	isLoading,
-	emptyLabel = 'No deployments registered yet',
+	emptyLabel = 'No deployments yet',
+	emptyDescription = 'Trigger a deploy to start the history.',
 	titlePrefix = 'Deployment',
 	defaultStatus = 'PENDING',
-	onOpenStream,
-	onCancel,
-	onDelete,
+	expandedId = null,
+	onToggleExpand,
 }: DeploymentsListProps) {
+	const safe = Array.isArray(deployments) ? deployments : [];
+
+	if (isLoading && safe.length === 0) return <ListSkeleton />;
+	if (safe.length === 0)
+		return (
+			<ListEmpty
+				icon={Zap}
+				title={emptyLabel}
+				description={emptyDescription}
+			/>
+		);
+
 	return (
-		<section className="overflow-hidden rounded-xl bg-card">
-			{isLoading && deployments.length === 0 ? (
-				<div className="flex justify-center py-12">
-					<RefreshCw className="h-6 w-6 animate-spin text-muted-foreground/45" />
-				</div>
-			) : deployments.length === 0 ? (
-				<div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-					<Zap className="mb-3 h-10 w-10 opacity-30" />
-					<p className="text-xs font-semibold">{emptyLabel}</p>
-				</div>
-			) : (
-				<div className="divide-y divide-border/60">
-					{deployments.map((e: any) => {
-						const isActive = isBuildActive(e);
-						return (
-							<div
-								key={e.id}
-								className="flex items-center justify-between p-4 transition-colors hover:bg-muted/10">
-								<div className="flex min-w-0 flex-col gap-0.5">
-									<span className="truncate text-xs font-semibold text-foreground">
+		<ListCard className="divide-border/60">
+			{safe.map((e: any) => {
+				const tone = getStatusTone(e);
+				const isOpen = Number(e.id) === Number(expandedId);
+				return (
+					<div key={e.id}>
+						<button
+							type="button"
+							onClick={() => onToggleExpand?.(Number(e.id))}
+							className="group flex w-full cursor-pointer items-center justify-between gap-4 px-4 py-3.5 text-left transition-colors hover:bg-accent/30">
+							<div className="flex min-w-0 items-center gap-3">
+								<span
+									aria-hidden
+									className={cn(
+										'size-2 shrink-0 rounded-full',
+										tone.dot,
+										tone.pulse && 'animate-pulse',
+									)}
+								/>
+								<div className="min-w-0">
+									<span className="block truncate text-sm font-medium text-foreground">
 										{e.title || `${titlePrefix} #${e.id}`}
 									</span>
 									{(e.description || e.message) && (
-										<span className="truncate text-[11px] text-muted-foreground">
+										<span className="block truncate text-xs text-muted-foreground">
 											{e.description || e.message}
 										</span>
 									)}
 								</div>
-
-								<div className="flex shrink-0 items-center gap-3">
-									<span
-										className={`rounded px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${getStatusBadge(e)}`}>
-										{e.status || e.state || defaultStatus}
-									</span>
-									<span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
-										<Clock className="h-3 w-3" />
-										{formatTimestamp(e.created_at)}
-									</span>
-
-									<Button
-										size="sm"
-										variant="outline"
-										onClick={() => onOpenStream(e.id)}
-										className="flex h-7 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-foreground hover:bg-muted">
-										<Terminal className="h-3 w-3" /> Stream Logs
-									</Button>
-
-									{isActive && onCancel && (
-										<Button
-											size="sm"
-											variant="ghost"
-											onClick={() => onCancel(e.id)}
-											className="flex h-7 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive">
-											<XCircle className="h-3 w-3" /> Cancel
-										</Button>
-									)}
-
-									{!isActive && onDelete && e.id !== undefined && (
-										<Button
-											size="sm"
-											variant="ghost"
-											onClick={() => onDelete(e.id)}
-											className="flex h-7 items-center gap-1 rounded-lg px-1.5 text-xs font-semibold text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-											<Trash2 className="h-3.5 w-3.5" />
-										</Button>
-									)}
-								</div>
 							</div>
-						);
-					})}
-				</div>
-			)}
-		</section>
+
+							<div className="flex shrink-0 items-center gap-3">
+								<span
+									className={cn(
+										'text-xs font-medium lowercase',
+										tone.text,
+									)}>
+									{String(
+										e.status || e.state || defaultStatus,
+									).toLowerCase()}
+								</span>
+								<span
+									className="flex items-center gap-1 font-mono text-xs text-muted-foreground tabular-nums"
+									title={
+										e.created_at
+											? new Date(
+													Number(e.created_at) < 1e11
+														? Number(e.created_at) * 1000
+														: Number(e.created_at),
+												).toLocaleString()
+											: undefined
+									}>
+									<Clock className="size-3" />
+									{formatRelative(e.created_at)}
+								</span>
+								<ChevronDown
+									className={cn(
+										'size-3.5 text-muted-foreground transition-transform duration-200',
+										isOpen && 'rotate-180',
+									)}
+								/>
+							</div>
+						</button>
+						{isOpen && <DeploymentInlineLogs deployment={e} />}
+					</div>
+				);
+			})}
+		</ListCard>
 	);
 }

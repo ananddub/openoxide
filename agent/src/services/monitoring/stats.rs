@@ -21,17 +21,18 @@ pub type StatsStream =
 pub struct StatsService;
 
 /// Raw stats document: CLI-relevant extras (`name`, `id`, pids) layered over
-/// the metric fields `ContainerStats` already models.
+/// the metric fields `ContainerStats` already models. Shared with the
+/// one-shot container metrics sampling in `metrics.rs`.
 #[derive(Debug, Deserialize)]
-struct RawStats {
+pub(crate) struct RawStats {
     #[serde(default)]
-    name: String,
+    pub(crate) name: String,
     #[serde(default)]
-    id: String,
+    pub(crate) id: String,
     #[serde(rename = "pids_stats", default)]
     pids: PidsStats,
     #[serde(flatten)]
-    stats: ContainerStats,
+    pub(crate) stats: ContainerStats,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -57,18 +58,18 @@ impl StatsService {
             request.container_ids
         };
 
-        // One pump task per container sharing a single muxed output channel;
-        // the stream ends naturally once every sender is dropped (containers
-        // gone, one-shot samples delivered, or the panel disconnected).
+        // Docker's stats endpoint accepts multiple containers in one request
+        // (`/containers/{id1}/{id2}/.../stats`), so the whole fan-out is one
+        // connection, one stream and one pump task. Each document carries its
+        // own `id`/`name`, so consumers can still tell containers apart.
         let (tx, rx) = mpsc::channel::<String>(64);
-        for id in ids {
-            let docker = docker.clone();
-            let tx = tx.clone();
+        if ids.is_empty() {
+            drop(tx); // no containers: the stream closes immediately
+        } else {
             tokio::spawn(async move {
-                pump(docker, id, request.stream, tx).await;
+                pump(docker, ids, request.stream, tx).await;
             });
         }
-        drop(tx);
 
         Ok(Response::new(Box::pin(
             tokio_stream::wrappers::ReceiverStream::new(rx)
@@ -77,40 +78,79 @@ impl StatsService {
     }
 }
 
-async fn pump(docker: DockerApi, id: String, stream: bool, tx: mpsc::Sender<String>) {
+async fn pump(docker: DockerApi, ids: Vec<String>, stream: bool, tx: mpsc::Sender<String>) {
     let suffix = if stream { "true" } else { "false" };
     // Docker's stats API never carries the writable-layer size (`size_rw` is
     // absent on this daemon, and `?size=1` is ignored on the stats endpoint —
-    // the CLI gets it from inspect). One inspect at stream open is cheap and
-    // the value drifts slowly; a failed lookup just reports 0.
-    let size_rw: u64 = docker
-        .get_json::<serde_json::Value>(&format!("/containers/{id}/json?size=1"))
-        .await
-        .ok()
-        .and_then(|doc| doc.get("SizeRw").and_then(|v| v.as_u64()))
-        .unwrap_or(0);
+    // the CLI gets it from inspect). One inspect round at stream open is
+    // cheap and the values drift slowly; failed lookups just report 0.
+    let sizes: Vec<(String, u64)> = futures::future::join_all(ids.iter().map(|id| {
+        let docker = docker.clone();
+        async move {
+            let size_rw = docker
+                .get_json::<serde_json::Value>(&format!("/containers/{id}/json?size=1"))
+                .await
+                .ok()
+                .and_then(|doc| doc.get("SizeRw").and_then(|v| v.as_u64()))
+                .unwrap_or(0);
+            (id.clone(), size_rw)
+        }
+    }))
+    .await
+    .into_iter()
+    .collect();
     let mut chunks = match docker
-        .get_stream(&format!("/containers/{id}/stats?stream={suffix}"))
+        .get_stream(&format!(
+            "/containers/{}/stats?stream={suffix}",
+            ids.join("/")
+        ))
         .await
     {
         Ok(chunks) => chunks,
         Err(error) => {
-            tracing::warn!(%id, %error, "could not open container stats stream");
+            tracing::warn!(count = ids.len(), %error, "could not open container stats stream");
             return;
         }
     };
 
+    // With `stream=false` Docker emits one sample per container and closes;
+    // we still stop ourselves once every requested id has been seen so the
+    // `--no-stream` contract holds even if the daemon keeps the connection.
+    let mut pending: Vec<&str> = sizes.iter().map(|(id, _)| id.as_str()).collect();
     let mut accumulator = JsonAccumulator::new();
     while let Some(Ok(chunk)) = chunks.next().await {
         for doc in accumulator.push::<RawStats>(&chunk) {
+            let size_rw = find_size(&sizes, &doc.id);
             if tx.send(to_cli_line(&doc, size_rw)).await.is_err() {
                 return; // panel consumer went away
             }
             if !stream {
-                return; // one-shot: `--no-stream` sends a single sample
+                let short = doc.id.get(..12).unwrap_or(&doc.id);
+                pending.retain(|id| {
+                    *id != doc.id
+                        && *id != short
+                        && !doc.id.starts_with(id)
+                });
+                if pending.is_empty() {
+                    return;
+                }
             }
         }
     }
+}
+
+/// Stats documents carry the full 64-char id while the request may name
+/// containers by their 12-char short id, so match by prefix either way.
+fn find_size(sizes: &[(String, u64)], doc_id: &str) -> u64 {
+    sizes
+        .iter()
+        .find(|(id, _)| {
+            doc_id == id
+                || doc_id.starts_with(id.as_str())
+                || id.starts_with(doc_id.get(..12).unwrap_or(doc_id))
+        })
+        .map(|(_, size)| *size)
+        .unwrap_or(0)
 }
 
 /// Renders one API stats document as the JSON object produced by

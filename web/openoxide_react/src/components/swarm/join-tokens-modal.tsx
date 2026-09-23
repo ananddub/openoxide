@@ -5,12 +5,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '#/components/ui/dialog';
-import {
-	Tabs,
-	TabsList,
-	TabsTrigger,
-	TabsContent,
-} from '#/components/ui/tabs';
+import {useState} from 'react';
+import {GeistSwitch} from '#/components/shared/geist-switch';
 import {ShieldCheck} from 'lucide-react';
 
 import type {RemoteServerResponse, SwarmTokens} from '#/types/api-helpers';
@@ -42,6 +38,7 @@ export function JoinTokensModal({
 	onJoinServer,
 	onClose,
 }: JoinTokensModalProps) {
+	const [mode, setMode] = useState<'registered' | 'manual'>('registered');
 	const workerCmd = tokens?.worker
 		? `docker swarm leave --force 2>/dev/null; docker swarm join --token ${tokens.worker}`
 		: '';
@@ -61,55 +58,52 @@ export function JoinTokensModal({
 					</DialogDescription>
 				</DialogHeader>
 
-				<Tabs defaultValue="registered" className="w-full pt-1">
-					<TabsList className="w-full">
-						<TabsTrigger
-							value="registered"
-							className="text-xs font-semibold">
-							Registered Servers
-						</TabsTrigger>
-						<TabsTrigger value="manual" className="text-xs font-semibold">
-							Manual / External
-						</TabsTrigger>
-					</TabsList>
+				<div className="flex flex-col gap-3 pt-1">
+					<GeistSwitch
+						fill
+						options={[
+							{key: 'registered', label: 'Registered Servers'},
+							{key: 'manual', label: 'Manual / External'},
+						]}
+						value={mode}
+						onChange={setMode}
+					/>
 
 					{/* ── Registered servers: automated 1-click join ── */}
-					<TabsContent
-						value="registered"
-						className="flex flex-col gap-3 pt-3 focus-visible:outline-none">
+					{mode === 'registered' && (
 						<JoinServerPanel
 							servers={servers}
 							nodes={nodes}
 							onLeaveRemoteSwarm={onLeaveRemoteSwarm}
 							onJoinServer={onJoinServer}
 						/>
-					</TabsContent>
+					)}
 
 					{/* ── Manual scripts, for machines not managed by OpenOxide ── */}
-					<TabsContent
-						value="manual"
-						className="flex flex-col gap-3 pt-3 focus-visible:outline-none">
-						<p className="text-[11px] text-muted-foreground">
-							Paste one of these on an external machine over SSH to join
-							it into this cluster.
-						</p>
-						<CommandBlock
-							label="Worker join script"
-							command={workerCmd}
-							isLoading={isLoading}
-						/>
-						<CommandBlock
-							label="Manager join script"
-							command={managerCmd}
-							isLoading={isLoading}
-						/>
-						<p className="flex items-center gap-1 text-[10px] text-muted-foreground">
-							<ShieldCheck className="h-3 w-3 shrink-0" />
-							Managers get full cluster control — only share this
-							script with trusted machines.
-						</p>
-					</TabsContent>
-				</Tabs>
+					{mode === 'manual' && (
+						<div className="flex flex-col gap-3">
+							<p className="text-[11px] text-muted-foreground">
+								Paste one of these on an external machine over SSH to join
+								it into this cluster.
+							</p>
+							<CommandBlock
+								label="Worker join script"
+								command={workerCmd}
+								isLoading={isLoading}
+							/>
+							<CommandBlock
+								label="Manager join script"
+								command={managerCmd}
+								isLoading={isLoading}
+							/>
+							<p className="flex items-center gap-1 text-[10px] text-muted-foreground">
+								<ShieldCheck className="h-3 w-3 shrink-0" />
+								Managers get full cluster control — only share this script
+								with trusted machines.
+							</p>
+						</div>
+					)}
+				</div>
 			</DialogContent>
 		</Dialog>
 	);

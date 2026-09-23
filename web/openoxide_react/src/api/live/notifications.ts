@@ -31,6 +31,35 @@ const notificationClient = createServiceClient(
 	NotificationOperationsService,
 );
 
+/** One row of `notification_delivery_attempts` — a dispatch attempt the
+ * backend made for a channel (status: PENDING | DELIVERED | FAILED). */
+export type NotificationDeliveryPayload = {
+	id: number;
+	notification_id: number;
+	organization_id: number;
+	trigger_name: string;
+	correlation_id: string;
+	status: string;
+	attempt: number;
+	title: string;
+	body: string;
+	error: string | null;
+	created_at: number;
+	finished_at: number | null;
+};
+
+/** Recent delivery attempts for an organization, newest first (the backend
+ * caps the page at 200). */
+export function useNotificationDeliveries(organization_id: bigint) {
+	return useResourceListQuery<NotificationDeliveryPayload>(
+		['notifications', 'deliveries', organization_id.toString()],
+		() =>
+			notificationClient.listDeliveryHistory({
+				organizationId: organization_id,
+			}),
+	);
+}
+
 /** Notifications for an organization (legacy live: useNotificationListByOrganization). */
 export function useNotificationListByOrganization(
 	organization_id: bigint,

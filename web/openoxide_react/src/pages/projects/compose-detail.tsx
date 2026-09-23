@@ -1,8 +1,5 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
-import {Layers2, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {StatusBadge} from '#/components/shared/status-badge';
-import {toast} from 'sonner';
 import {useComposeDetail} from '#/hooks/projects/use-compose-detail';
 import {useComposeUpdate} from '#/api/live';
 import {ServiceLayout} from '#/components/projects/detail/service-layout';
@@ -10,7 +7,6 @@ import {ServiceLayout} from '#/components/projects/detail/service-layout';
 // Tabs
 import {ComposeGeneralTab} from '#/components/projects/compose/detail/general-tab';
 import {ComposeArchitectureTab} from '#/components/projects/compose/detail/compose-architecture-tab';
-import {EnvironmentTab} from '#/components/projects/common/environment-tab';
 import {ComposeDomainsTab} from '#/components/projects/compose/detail/compose-domains-tab';
 import {ComposeDeploymentsTab} from '#/components/projects/compose/detail/compose-deployments-tab';
 import {ComposeLogsTab} from '#/components/projects/compose/detail/compose-logs-tab';
@@ -25,20 +21,6 @@ export const Route = createFileRoute(
 )({
 	component: ComposeDetailPage,
 });
-
-const TABS = [
-	'General',
-	'Architecture',
-	'Environment',
-	'Containers',
-	'Domains',
-	'Deployments',
-	'Schedules',
-	'Backups',
-	'Logs',
-	'Monitoring',
-	'Advanced',
-] as const;
 
 function ComposeDetailPage() {
 	const {id, composeId} = Route.useParams();
@@ -93,49 +75,23 @@ function ComposeDetailPage() {
 	// Legacy fields ride the wire payload but sit outside the union type.
 	const composeExtras = compose as {
 		app_name?: string;
-		last_error?: string;
-		compose_type?: string;
 	};
 	return (
 		<ServiceLayout
 			id={String(id)}
 			name={
 				compose.name || composeExtras.app_name || `Compose #${composeId}`
-			}
-			subtitle={composeExtras.app_name || compose.name}
-			icon={<Layers2 className="size-4 text-primary" strokeWidth={1.7} />}
-			actions={
-				<>
-					<StatusBadge
-						status={compose.compose_status || ''}
-						error={composeExtras.last_error}
-					/>
-					<span className="inline-flex items-center gap-1.5 rounded-lg bg-muted/40 px-2 py-1 text-[11px] font-medium text-muted-foreground select-none">
-						{composeExtras.compose_type === 'STACK'
-							? 'Swarm Stack'
-							: 'Docker Compose'}
-					</span>
-					<Button
-						variant="ghost"
-						size="icon"
-						title="Refresh status"
-						onClick={() => {
-							refetchAll();
-							toast.success('Compose stack refreshed');
-						}}
-						className="size-7 rounded-lg text-muted-foreground hover:text-foreground">
-						<RefreshCw className="size-3.5" />
-					</Button>
-				</>
-			}
-			tabs={TABS}
-			activeTab={activeTab}
-			onTabChange={setActiveTab}>
+			}>
 			{activeTab === 'General' && (
 				<ComposeGeneralTab
 					compose={compose}
 					onAction={handleAction}
+					handleUpdate={handleUpdateEnv}
 					onUpdated={refetchAll}
+					domains={domains}
+					schedules={schedules}
+					backups={backups}
+					onOpenArchitecture={() => setActiveTab('Architecture')}
 				/>
 			)}
 			{activeTab === 'Architecture' && (
@@ -147,9 +103,6 @@ function ComposeDetailPage() {
 					onNavigateTab={setActiveTab}
 					onRefresh={refetchAll}
 				/>
-			)}
-			{activeTab === 'Environment' && (
-				<EnvironmentTab app={compose} handleUpdate={handleUpdateEnv} />
 			)}
 			{activeTab === 'Containers' && (
 				<ComposeContainersTab compose={compose} onUpdated={refetchAll} />

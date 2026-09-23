@@ -1,14 +1,29 @@
 import {useEffect, useState} from 'react';
-import {Save, SlidersHorizontal} from 'lucide-react';
+import {SlidersHorizontal} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Textarea} from '#/components/ui/textarea';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
+import {SettingsSheet} from '#/components/shared/settings-sheet';
+import {Field, FieldGrid, SheetGroup} from '#/components/shared/field';
 import {toast} from 'sonner';
 import {
 	useDatabasePostgresAdvancedConfig,
 	useDatabaseUpdatePostgresAdvancedConfig,
 } from '#/api/live';
 import {formatApiError} from '#/api/utils';
+
+const REPLICATION_ROLES = [
+	{value: 'STANDALONE', label: 'Standalone'},
+	{value: 'PRIMARY', label: 'Primary'},
+	{value: 'REPLICA', label: 'Replica'},
+];
 
 export function DatabasePostgresConfig({database, onUpdated}: any) {
 	const id = Number(database?.id);
@@ -88,90 +103,86 @@ export function DatabasePostgresConfig({database, onUpdated}: any) {
 	};
 
 	return (
-		<section className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-sm">
-			<div>
-				<h3 className="flex items-center gap-2 text-base font-bold">
-					<SlidersHorizontal className="size-4 text-primary" /> PostgreSQL
-					Configuration
-				</h3>
-				<p className="mt-0.5 text-xs text-muted-foreground">
-					Configure postgresql.conf overrides and primary/replica behavior.
-				</p>
-			</div>
-			<div className="grid gap-4 border-t  pt-4 sm:grid-cols-2">
-				<label className="flex flex-col gap-1.5 text-[11px] font-bold text-muted-foreground uppercase">
-					Replication role
-					<select
+		<SettingsSheet
+			title="PostgreSQL Configuration"
+			description="postgresql.conf overrides and replication"
+			icon={<SlidersHorizontal className="size-4" />}
+			footer={
+				<Button
+					onClick={save}
+					disabled={saving}
+					className="h-9 gap-1.5 px-4 text-sm">
+					{saving ? 'Saving...' : 'Save changes'}
+				</Button>
+			}>
+			<SheetGroup
+				title="Replication"
+				description="Stream replication role for this instance.">
+				<Field label="Role">
+					<Select
 						value={role}
-						onChange={event => setRole(event.target.value)}
-						className="h-9 rounded-md  bg-background px-2 text-xs normal-case">
-						<option value="STANDALONE">Standalone</option>
-						<option value="PRIMARY">Primary</option>
-						<option value="REPLICA">Replica</option>
-					</select>
-				</label>
+						onValueChange={next => next && setRole(next)}>
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder="Select role" />
+						</SelectTrigger>
+						<SelectContent>
+							{REPLICATION_ROLES.map(option => (
+								<SelectItem key={option.value} value={option.value}>
+									{option.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</Field>
 				{role === 'REPLICA' && (
-					<>
-						<label className="flex flex-col gap-1.5 text-[11px] font-bold text-muted-foreground uppercase">
-							Primary host
+					<FieldGrid>
+						<Field label="Primary host">
 							<Input
 								value={host}
 								onChange={event => setHost(event.target.value)}
-								className="h-9 text-xs normal-case"
 							/>
-						</label>
-						<label className="flex flex-col gap-1.5 text-[11px] font-bold text-muted-foreground uppercase">
-							Primary port
+						</Field>
+						<Field label="Primary port">
 							<Input
 								type="number"
 								value={port}
 								onChange={event => setPort(event.target.value)}
-								className="h-9 text-xs normal-case"
 							/>
-						</label>
-						<label className="flex flex-col gap-1.5 text-[11px] font-bold text-muted-foreground uppercase">
-							Replication user
+						</Field>
+						<Field label="Replication user">
 							<Input
 								value={user}
 								onChange={event => setUser(event.target.value)}
-								className="h-9 text-xs normal-case"
 							/>
-						</label>
-						<label className="flex flex-col gap-1.5 text-[11px] font-bold text-muted-foreground uppercase sm:col-span-2">
-							Replication password
+						</Field>
+						<Field
+							label="Replication password"
+							hint={
+								(data as any)?.replication_password_configured
+									? 'Leave blank to keep the current password.'
+									: 'Stored on the server once set.'
+							}>
 							<Input
 								type="password"
 								value={password}
 								onChange={event => setPassword(event.target.value)}
-								placeholder={
-									(data as any)?.replication_password_configured
-										? 'Leave blank to keep current password'
-										: 'Enter replication password'
-								}
-								className="h-9 text-xs normal-case"
+								placeholder="••••••••"
 							/>
-						</label>
-					</>
+						</Field>
+					</FieldGrid>
 				)}
-				<label className="flex flex-col gap-1.5 text-[11px] font-bold text-muted-foreground uppercase sm:col-span-2">
-					Settings (one key=value per line)
-					<Textarea
-						value={settings}
-						onChange={event => setSettings(event.target.value)}
-						placeholder={'max_connections=200\nshared_buffers=256MB'}
-						className="min-h-32 font-mono text-xs normal-case"
-					/>
-				</label>
-			</div>
-			<div className="flex justify-end border-t  pt-4">
-				<Button
-					onClick={save}
-					disabled={saving}
-					className="h-9 gap-1.5 text-xs">
-					<Save className="size-3.5" />{' '}
-					{saving ? 'Saving...' : 'Save PostgreSQL Config'}
-				</Button>
-			</div>
-		</section>
+			</SheetGroup>
+
+			<SheetGroup
+				title="postgresql.conf overrides"
+				description="One key=value per line. Lines starting with # are ignored.">
+				<Textarea
+					value={settings}
+					onChange={event => setSettings(event.target.value)}
+					placeholder={'max_connections=200\nshared_buffers=256MB'}
+					className="min-h-40 font-mono"
+				/>
+			</SheetGroup>
+		</SettingsSheet>
 	);
 }

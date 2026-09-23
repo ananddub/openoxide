@@ -47,35 +47,17 @@ export function DockerHeader({
 	return (
 		<Titlebar
 			breadcrumbs={[{label: 'Docker Containers'}]}
-			icon={
-				<span className="relative flex items-center justify-center">
-					<span
-						className={`absolute -top-0.5 -right-0.5 size-2 rounded-full ${
-							runningContainers > 0
-								? 'animate-pulse bg-emerald-500'
-								: 'bg-muted-foreground/40'
-						}`}
-					/>
-					<span className="text-foreground/70">
-						<Server className="size-5" strokeWidth={1.7} />
-					</span>
-				</span>
-			}
-			title="Docker Containers"
-			description="Manage and inspect system-wide Docker containers running on the selected host"
-			titleSuffix={
-				<Badge
-					variant="secondary"
-					className="h-6 gap-1 px-2 font-mono text-[11px] font-medium">
-					Running:
-					<span className="font-semibold text-emerald-500">
-						{runningContainers}
-					</span>
-					/ {totalContainers}
-				</Badge>
-			}
 			actions={
 				<>
+					<Badge
+						variant="secondary"
+						className="h-6 gap-1 px-2 font-mono text-[11px] font-medium">
+						Running:
+						<span className="font-semibold text-emerald-500">
+							{runningContainers}
+						</span>
+						/ {totalContainers}
+					</Badge>
 					<Button
 						variant="outline"
 						size="sm"

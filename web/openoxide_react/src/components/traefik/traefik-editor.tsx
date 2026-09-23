@@ -2,6 +2,7 @@ import {useState, useEffect} from 'react';
 import Editor from '@monaco-editor/react';
 import {Lock, LockOpen, FileCode, Sparkles} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {useTheme} from '#/hooks/use-theme';
 
 interface TraefikEditorProps {
 	selectedFilePath: string | null;
@@ -19,6 +20,7 @@ export function TraefikEditor({
 	isLoading,
 }: TraefikEditorProps) {
 	const [isLocked, setIsLocked] = useState(true);
+	const {theme} = useTheme();
 
 	const effectiveReadOnly = isReadOnly || isLocked;
 
@@ -89,9 +91,9 @@ export function TraefikEditor({
 			</div>
 
 			{/* Full Height Monaco Code Editor */}
-			<div className="relative min-h-[350px] flex-1 overflow-hidden bg-[#1e1e1e]">
+			<div className="relative min-h-[350px] flex-1 overflow-hidden bg-white dark:bg-[#1e1e1e]">
 				{isLoading && (
-					<div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-[#1e1e1e]/80 font-mono text-xs text-slate-300">
+					<div className="absolute inset-0 z-10 flex items-center justify-center gap-2 bg-white/80 font-mono text-xs text-slate-600 dark:bg-[#1e1e1e]/80 dark:text-slate-300">
 						Loading file content...
 					</div>
 				)}
@@ -99,7 +101,7 @@ export function TraefikEditor({
 				<Editor
 					height="100%"
 					language="yaml"
-					theme="vs-dark"
+					theme={theme === 'dark' ? 'vs-dark' : 'light'}
 					value={content}
 					onChange={val => onChangeContent(val || '')}
 					options={{

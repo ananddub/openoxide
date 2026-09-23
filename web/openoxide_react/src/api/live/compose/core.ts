@@ -47,3 +47,15 @@ export const useComposeUpdate = inputMutation(
 export const useComposeDelete = idMutation(id =>
 	composeClient.deleteCompose({id}),
 );
+
+/** Move a compose stack to another environment (MoveCompose RPC). */
+export const useComposeMove = inputMutation(
+	(input: {id: number | bigint; target_environment_id: number | bigint}) =>
+		composeClient.moveCompose({
+			id: BigInt(input.id),
+			targetEnvironmentId: BigInt(input.target_environment_id),
+		}),
+	// The move changes the service's environment — refresh env-scoped lists
+	// too, which the default 'composes' prefix already covers.
+	[['composes'], ['environments'], ['overview']],
+);

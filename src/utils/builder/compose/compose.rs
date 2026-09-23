@@ -81,11 +81,26 @@ impl ComposeBuilder {
         self.ctx.emit(BuilderEvent::Routing).await;
 
         self.ctx.emit(BuilderEvent::HealthCheck).await;
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "Waiting for {} to become healthy...",
+                match spec.runtime {
+                    ComposeRuntime::Stack => format!("stack {}", spec.stack_name),
+                    ComposeRuntime::Compose => format!("compose project {}", spec.stack_name),
+                }
+            )))
+            .await;
         if let Err(error) = self.wait_healthy(spec, cancel).await {
             self.cleanup_failed_deploy(spec).await;
             self.ctx.emit(BuilderEvent::Failed(error.to_string())).await;
             return Err(error);
         }
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "Deployment {} is running",
+                spec.stack_name
+            )))
+            .await;
 
         self.ctx.emit(BuilderEvent::Deployed).await;
         Ok(ComposeDeploymentResult {

@@ -1,19 +1,14 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
-import {
-	Box,
-	Settings2,
-	RefreshCw,
-	Search,
-	Plus,
-	FolderOpen,
-} from 'lucide-react';
+import {Box, KeyRound, Search, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {EnvDropdown} from '#/components/projects/env/env-dropdown';
-import {Titlebar} from '#/components/shared/titlebar';
 import {ServiceCard} from '#/components/projects/service/service-card';
 import {ProjectModals} from '#/components/projects/dashboard/project-modals';
 import {ProjectDetailFilters} from '#/components/projects/dashboard/project-detail-filters';
+import {AddNewServiceMenu} from '#/components/projects/dashboard/add-new-service-menu';
 import {useProjectDetails} from '#/hooks/projects/use-project-details';
+import {SectionHeader} from '#/components/settings/list-card';
+import {IconTooltip} from '#/components/shared/icon-tooltip';
 
 export const Route = createFileRoute('/_app/projects/$id')({
 	component: ProjectDetailPage,
@@ -49,74 +44,60 @@ function ProjectDetailPage() {
 	} = useProjectDetails(projectId);
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
-			{/* Vercel-style titlebar: breadcrumb + title + actions */}
-			<Titlebar
-				breadcrumbs={[
-					{label: 'Projects', to: '/projects', icon: FolderOpen},
-					{label: project?.name || 'Loading...'},
-				]}
-				breadcrumbExtras={
-					<>
-						<EnvDropdown
-							envs={envs}
-							selectedId={selectedEnvId}
-							onSelect={setSelectedEnvId}
-							onCreateNew={() => setShowCreateEnv(true)}
-						/>
-						<Settings2
-							onClick={() => setShowEnvVars(true)}
-							className="size-4 shrink-0 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
-						/>
-					</>
-				}
-				title={project?.name || 'Loading...'}
+		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+			<SectionHeader
+				title={project?.name || `Project #${projectId}`}
 				description={
-					totalServices > 0
-						? `${totalServices} services across ${envs.length} ${envs.length === 1 ? 'environment' : 'environments'}`
-						: 'Create and manage services for this project'
+					project?.description ||
+					'Applications, compose stacks and databases deployed from this project.'
 				}
-				actions={
+				action={
 					<>
-						<Button
-							variant="outline"
-							size="icon"
-							onClick={handleRefresh}
-							className="size-8">
-							<RefreshCw className="size-3.5" />
-						</Button>
-						<Button
-							variant="outline"
-							onClick={() => setShowProjectEnv(true)}
-							className="h-8 gap-1.5 text-xs font-medium">
-							<Settings2 className="size-3.5" />
-							Project Env
-						</Button>
-						<Link
-							to="/projects/$id/create"
-							params={{id: String(projectId)}}
-							search={selectedEnvId ? {env: selectedEnvId} : {}}
-							className={
-								'flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90' +
-								(!selectedEnvId ? ' pointer-events-none opacity-50' : '')
-							}>
-							<Plus className="size-3.5" />
-							Create Service
-						</Link>
+						<IconTooltip label="Environment variables">
+							<Button
+								variant="outline"
+								size="icon"
+								aria-label="Environment Variables"
+								onClick={() => setShowEnvVars(true)}
+								className="size-9">
+								<KeyRound className="size-4" />
+							</Button>
+						</IconTooltip>
+						<AddNewServiceMenu
+							projectId={projectId}
+							envId={selectedEnvId ?? undefined}
+							onCreated={handleRefresh}
+						/>
 					</>
-				}
-			/>
+				}>
+				{selectedEnv?.name && (
+					<span className="shrink-0 rounded-md bg-foreground/[0.05] px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+						{selectedEnv.name}
+					</span>
+				)}
+			</SectionHeader>
 
-			{/* Filters */}
-			<ProjectDetailFilters
-				totalServices={totalServices}
-				searchQuery={searchQuery}
-				setSearchQuery={setSearchQuery}
-				typeFilter={typeFilter}
-				setTypeFilter={setTypeFilter}
-				statusFilter={statusFilter}
-				setStatusFilter={setStatusFilter}
-			/>
+			{/* One-line toolbar: env switcher · search + filters */}
+			<div className="flex w-full flex-wrap items-center gap-3">
+				<div className="flex shrink-0 items-center gap-1.5">
+					<EnvDropdown
+						envs={envs}
+						selectedId={selectedEnvId}
+						onSelect={setSelectedEnvId}
+						onCreateNew={() => setShowCreateEnv(true)}
+					/>
+				</div>
+
+				<ProjectDetailFilters
+					totalServices={totalServices}
+					searchQuery={searchQuery}
+					setSearchQuery={setSearchQuery}
+					typeFilter={typeFilter}
+					setTypeFilter={setTypeFilter}
+					statusFilter={statusFilter}
+					setStatusFilter={setStatusFilter}
+				/>
+			</div>
 
 			{/* Services */}
 			{isLoading ? (

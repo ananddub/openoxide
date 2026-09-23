@@ -84,53 +84,55 @@ export function DnsProviderFormDialog({
 
 				<form
 					onSubmit={handleSaveProvider}
-					className="flex flex-1 flex-col space-y-4 overflow-y-auto px-6 py-5">
-					<div className="space-y-1">
-						<FieldLabel>Provider Name</FieldLabel>
-						<Input
-							placeholder="e.g. Cloudflare Production"
-							value={formName}
-							onChange={e => setFormName(e.target.value)}
-							className="h-10 bg-muted/20 text-xs"
+					className="flex min-h-0 flex-1 flex-col">
+					<div className="flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto px-6 py-5">
+						<div className="space-y-1">
+							<FieldLabel>Provider Name</FieldLabel>
+							<Input
+								placeholder="e.g. Cloudflare Production"
+								value={formName}
+								onChange={e => setFormName(e.target.value)}
+								className="h-10 bg-muted/20 text-xs"
+							/>
+						</div>
+
+						<ProviderTypeSelect
+							value={formType}
+							onChange={v => setFormType(v as DnsProviderType)}
+							disabled={!!provider}
+							options={dnsProviderOptions}
 						/>
-					</div>
 
-					<ProviderTypeSelect
-						value={formType}
-						onChange={v => setFormType(v as DnsProviderType)}
-						disabled={!!provider}
-						options={dnsProviderOptions}
-					/>
-
-					{credentialKind(formType) !== 'token' && (
+						{credentialKind(formType) !== 'token' && (
+							<div className="space-y-1">
+								<FieldLabel>
+									{formType === 'GODADDY' ? 'API Key' : 'AWS Access Key ID'}
+								</FieldLabel>
+								<Input
+									value={formAccessKey}
+									onChange={e => setFormAccessKey(e.target.value)}
+									className="h-10 bg-muted/20 font-mono text-xs"
+								/>
+							</div>
+						)}
 						<div className="space-y-1">
 							<FieldLabel>
-								{formType === 'GODADDY' ? 'API Key' : 'AWS Access Key ID'}
+								{formType === 'GODADDY'
+									? 'API Secret'
+									: 'API Token / Secret Key'}
 							</FieldLabel>
 							<Input
-								value={formAccessKey}
-								onChange={e => setFormAccessKey(e.target.value)}
+								type="password"
+								placeholder={
+									provider
+										? 'Leave blank to keep existing token'
+										: 'API Token with Zone:DNS Edit permissions'
+								}
+								value={formToken}
+								onChange={e => setFormToken(e.target.value)}
 								className="h-10 bg-muted/20 font-mono text-xs"
 							/>
 						</div>
-					)}
-					<div className="space-y-1">
-						<FieldLabel>
-							{formType === 'GODADDY'
-								? 'API Secret'
-								: 'API Token / Secret Key'}
-						</FieldLabel>
-						<Input
-							type="password"
-							placeholder={
-								provider
-									? 'Leave blank to keep existing token'
-									: 'API Token with Zone:DNS Edit permissions'
-							}
-							value={formToken}
-							onChange={e => setFormToken(e.target.value)}
-							className="h-10 bg-muted/20 font-mono text-xs"
-						/>
 					</div>
 
 					<TestSaveFooter

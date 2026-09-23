@@ -1,14 +1,18 @@
 import {useEffect, useState} from 'react';
 import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {TagBadge} from '#/components/shared/tag-badge';
 import {TagColorPicker} from '#/components/tags/tag-color-picker';
+import {WizardField} from '#/components/shared/sheet-wizard';
+import {Tag as TagIcon} from 'lucide-react';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {useTagUpdate} from '#/api/live';
@@ -19,7 +23,7 @@ export interface TagItem {
 	color?: string;
 }
 
-/** Inline editor for renaming / recoloring an existing tag. */
+/** Edit Tag — Geist side sheet, same grammar as New Tag / New SSH Key. */
 export function TagEditDialog({
 	tag,
 	open,
@@ -61,65 +65,66 @@ export function TagEditDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="rounded-xl p-5 sm:max-w-sm">
-				<DialogHeader className="border-b pb-1">
-					<DialogTitle className="text-sm font-semibold">
+		<Sheet open={open} onOpenChange={onOpenChange}>
+			<SheetContent className="p-0">
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2">
+						<TagIcon className="size-4 text-primary" />
 						Edit Tag
-					</DialogTitle>
-				</DialogHeader>
+					</SheetTitle>
+					<SheetDescription>
+						Rename this label or change its badge color.
+					</SheetDescription>
+				</SheetHeader>
 
 				<form
 					onSubmit={handleSaveTag}
-					className="flex flex-col gap-3.5 pt-2">
-					<div className="flex flex-col gap-1">
-						<label className="text-[11px] font-medium text-muted-foreground">
-							Name
-						</label>
-						<Input
-							placeholder="Tag name"
-							value={tagName}
-							onChange={e => setTagName(e.target.value)}
-							className="h-8 bg-muted/20 text-xs"
-							autoFocus
-						/>
+					className="flex min-h-0 flex-1 flex-col">
+					<div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-6">
+						<WizardField label="Name" required>
+							<Input
+								placeholder="e.g. Production"
+								value={tagName}
+								onChange={e => setTagName(e.target.value)}
+								required
+								autoFocus
+								className="bg-background"
+							/>
+						</WizardField>
+
+						<WizardField
+							label="Color"
+							hint="Used for the badge across projects and resources.">
+							<TagColorPicker color={tagColor} onChange={setTagColor} />
+						</WizardField>
+
+						<div className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3.5">
+							<span className="text-[13px] text-muted-foreground">
+								Preview
+							</span>
+							<TagBadge
+								name={tagName.trim() || 'Preview'}
+								color={tagColor}
+							/>
+						</div>
 					</div>
 
-					<div className="flex flex-col gap-1.5">
-						<label className="text-[11px] font-medium text-muted-foreground">
-							Color
-						</label>
-						<TagColorPicker color={tagColor} onChange={setTagColor} />
-					</div>
-
-					{/* Preview */}
-					<div className="flex items-center justify-between border-t pt-2">
-						<span className="text-[11px] text-muted-foreground">
-							Preview:
-						</span>
-						<TagBadge
-							name={tagName.trim() || 'Preview'}
-							color={tagColor}
-						/>
-					</div>
-
-					<div className="flex items-center justify-end gap-2 border-t pt-3">
+					<SheetFooter>
 						<Button
 							type="button"
-							variant="ghost"
-							onClick={() => onOpenChange(false)}
-							className="h-8 text-xs">
+							variant="outline"
+							onClick={() => onOpenChange(false)}>
 							Cancel
 						</Button>
 						<Button
 							type="submit"
 							disabled={isSubmitting}
-							className="h-8 px-4 text-xs font-medium">
-							{isSubmitting ? 'Saving...' : 'Save'}
+							className="h-10 gap-1.5 px-5">
+							{isSubmitting ? 'Saving…' : 'Save Changes'}
 						</Button>
-					</div>
+					</SheetFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</SheetContent>
+		</Sheet>
 	);
 }

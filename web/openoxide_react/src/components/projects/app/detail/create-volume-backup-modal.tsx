@@ -21,6 +21,7 @@ import {
 } from '#/components/ui/select';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
+import {CronField} from '#/components/projects/common/cron-field';
 
 interface CreateVolumeBackupModalProps {
 	open: boolean;
@@ -37,7 +38,7 @@ export function CreateVolumeBackupModal({
 }: CreateVolumeBackupModalProps) {
 	const [name, setName] = useState('');
 	const [volumeName, setVolumeName] = useState('');
-	const [cronExpr, setCronExpr] = useState('0 0 * * *');
+	const [cronExpr, setCronExpr] = useState('');
 	const [prefix, setPrefix] = useState('volume-backups/');
 	// Live destinations query; the table-watch stream (destinations table)
 	// keeps it fresh.
@@ -133,19 +134,11 @@ export function CreateVolumeBackupModal({
 						/>
 					</div>
 
-					<div className="space-y-1.5">
-						<Label htmlFor="vol-cron" className="text-xs font-semibold">
-							Cron Schedule *
-						</Label>
-						<Input
-							id="vol-cron"
-							placeholder="0 0 * * *"
-							value={cronExpr}
-							onChange={e => setCronExpr(e.target.value)}
-							required
-							className="h-9 font-mono text-xs"
-						/>
-					</div>
+					<CronField
+						value={cronExpr}
+						onChange={setCronExpr}
+						label="Cron Schedule"
+					/>
 
 					<div className="space-y-1.5">
 						<Label htmlFor="vol-prefix" className="text-xs font-semibold">
@@ -178,10 +171,12 @@ export function CreateVolumeBackupModal({
 							onCheckedChange={setTurnOff}
 						/>
 					</div>
-
 				</form>
 				<SheetFooter>
-					<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => onOpenChange(false)}>
 						Cancel
 					</Button>
 					<Button

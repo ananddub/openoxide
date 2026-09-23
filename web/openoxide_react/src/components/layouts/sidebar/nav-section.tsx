@@ -1,4 +1,5 @@
 import {Link} from '@tanstack/react-router';
+import {ChevronRight} from 'lucide-react';
 import {
 	SidebarGroup,
 	SidebarMenu,
@@ -6,7 +7,7 @@ import {
 } from '#/components/ui/sidebar';
 import {useCan} from '#/hooks/use-permissions';
 import {cn} from '#/api/utils';
-import {type NavItem} from './enum';
+import {type NavItem, type SingleNavItem} from './enum';
 
 type NavSectionProps = {
 	items: NavItem[];
@@ -39,10 +40,7 @@ export function NavSection({
 			<SidebarMenu className="gap-px">
 				{visibleItems.map(item => {
 					if ('isSingle' in item && item.isSingle === false) return null;
-					const single = item as Extract<
-						NavItem,
-						{title: string; to: string}
-					>;
+					const single = item as SingleNavItem;
 					// ?tab= deep links: match the path, then the tab. A missing tab
 					// param means the page fell back to its first tab (Account), so
 					// the Account row stays lit on bare /settings too. currentTab is
@@ -85,6 +83,14 @@ export function NavSection({
 								/>
 								{!collapsed && (
 									<span className="flex-1 truncate">{single.title}</span>
+								)}
+								{/* This route swaps the rail to its own context rows —
+								    signal it before the click. */}
+								{!collapsed && single.railContext && (
+									<ChevronRight
+										className="size-3.5 shrink-0 opacity-50"
+										strokeWidth={2}
+									/>
 								)}
 							</Link>
 						</SidebarMenuItem>

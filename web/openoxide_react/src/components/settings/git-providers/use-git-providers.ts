@@ -93,7 +93,6 @@ export function useGitProviders() {
 	};
 
 	const handleDelete = async (id: number) => {
-		if (!confirm('Delete this Git provider?')) return;
 		try {
 			await remove.mutateAsync({params: {path: {id}}} as any);
 			toast.success('Git provider deleted');
@@ -145,6 +144,7 @@ export function useGitProviders() {
 
 	return {
 		providers,
+		isLoading: list.isLoading,
 		open,
 		manifestOpen,
 		editing,

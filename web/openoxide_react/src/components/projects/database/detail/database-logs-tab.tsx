@@ -2,6 +2,7 @@ import {useState, useEffect} from 'react';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {createServiceClient} from '#/api/live/query';
 import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
+import {SectionHeader} from '#/components/settings/list-card';
 
 const deploymentClient = createServiceClient(DeploymentService);
 
@@ -84,15 +85,21 @@ export function DatabaseLogsTab({database}: DatabaseLogsTabProps) {
 	};
 
 	return (
-		<DeploymentViewer
-			logs={streamedLogs}
-			isLoading={isLoading}
-			isLive={true}
-			isDeployment={false}
-			loadingText={`Connecting to '${appName}' container logs...`}
-			emptyText={`No runtime log output received for database '${appName}'.`}
-			onDownload={handleDownload}
-			onReload={() => setRefetchTrigger(prev => prev + 1)}
-		/>
+		<div className="flex w-full flex-col gap-5">
+			<SectionHeader
+				title="Logs"
+				description={`Container output for '${appName}', streamed live from the server.`}
+			/>
+			<DeploymentViewer
+				logs={streamedLogs}
+				isLoading={isLoading}
+				isLive={true}
+				isDeployment={false}
+				loadingText={`Connecting to '${appName}' container logs...`}
+				emptyText={`No runtime log output received for database '${appName}'.`}
+				onDownload={handleDownload}
+				onReload={() => setRefetchTrigger(prev => prev + 1)}
+			/>
+		</div>
 	);
 }

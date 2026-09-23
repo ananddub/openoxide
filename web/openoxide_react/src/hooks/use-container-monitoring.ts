@@ -20,8 +20,9 @@ export function useContainerMonitoring(
 	id: number,
 	entityType: MonitoringEntityType = 'application',
 	enabled = true,
+	live = true,
 ) {
-	const [isLive, setIsLive] = useState(true);
+	const [isLive, setIsLive] = useState(live);
 	const [isLoading, setIsLoading] = useState(false);
 	const [hasError, setHasError] = useState(false);
 	const [rawStats, setRawStats] = useState<unknown>(null);

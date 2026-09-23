@@ -1,79 +1,138 @@
-import {Calendar, Clock, Play, Power, Trash2} from 'lucide-react';
+import {Calendar, Pause, Play, Power, Trash2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {ListRow, RowTile, ViewCard} from '#/components/settings/list-card';
+import {CronChip} from '#/components/shared/cron-chip';
+import {formatTimestamp} from '#/components/projects/detail/deployments/build-status';
 
-export function ScheduleJobRow({
-	job,
-	onRun,
-	onToggle,
-	onDelete,
-}: {
+interface ScheduleJobActionsProps {
 	job: any;
 	onRun: (id: number) => void;
 	onToggle: (job: any) => void;
 	onDelete: (id: number) => void;
-}) {
+}
+
+function StatusChip({enabled}: {enabled: boolean}) {
 	return (
-		<div className="flex flex-col justify-between gap-4 p-4 transition-colors hover:bg-muted/10 sm:flex-row sm:items-center">
-			<div className="flex min-w-0 items-start gap-3">
-				<div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
-					<Calendar className="h-4 w-4" />
-				</div>
-				<div className="min-w-0">
-					<div className="flex items-center gap-2">
-						<span className="text-xs font-semibold text-foreground">
+		<span
+			className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
+				enabled
+					? 'bg-emerald-500/10 text-emerald-500'
+					: 'bg-foreground/[0.05] text-muted-foreground'
+			}`}>
+			{enabled ? 'Active' : 'Paused'}
+		</span>
+	);
+}
+
+function JobTile() {
+	return (
+		<RowTile>
+			<Calendar className="size-4" />
+		</RowTile>
+	);
+}
+
+function JobActions({
+	job,
+	enabled,
+	onRun,
+	onToggle,
+	onDelete,
+}: ScheduleJobActionsProps & {enabled: boolean}) {
+	return (
+		<>
+			<Button
+				variant="ghost"
+				size="sm"
+				onClick={() => onRun(job.id)}
+				title="Run now"
+				className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+				<Play className="size-3.5" /> Run
+			</Button>
+			<Button
+				variant="ghost"
+				size="icon"
+				onClick={() => onToggle(job)}
+				title={enabled ? 'Pause job' : 'Resume job'}
+				className="size-8 text-muted-foreground hover:text-foreground">
+				{enabled ? (
+					<Pause className="size-4" />
+				) : (
+					<Power className="size-4" />
+				)}
+			</Button>
+			<Button
+				variant="ghost"
+				size="icon"
+				onClick={() => onDelete(job.id)}
+				title="Delete job"
+				className="size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+				<Trash2 className="size-4" />
+			</Button>
+		</>
+	);
+}
+
+/** List row — tile, name + cron chips, mono command. */
+export function ScheduleJobRow(props: ScheduleJobActionsProps) {
+	const {job} = props;
+	const enabled = !!job.enabled;
+
+	return (
+		<ListRow
+			icon={<JobTile />}
+			title={job.name}
+			subtitle={
+				<>
+					<code className="font-mono">{job.command}</code>
+					<span className="text-muted-foreground/70">
+						{' '}
+						· created {formatTimestamp(job.created_at)}
+					</span>
+				</>
+			}
+			badges={
+				<>
+					<StatusChip enabled={enabled} />
+					<CronChip expression={job.cron_expression} />
+				</>
+			}>
+			<JobActions {...props} enabled={enabled} />
+		</ListRow>
+	);
+}
+
+/** Grid card — the row's counterpart. */
+export function ScheduleJobCard(props: ScheduleJobActionsProps) {
+	const {job} = props;
+	const enabled = !!job.enabled;
+
+	return (
+		<ViewCard className={enabled ? undefined : 'opacity-70'}>
+			<div className="flex items-start justify-between gap-2.5">
+				<div className="flex min-w-0 items-center gap-3">
+					<JobTile />
+					<div className="flex min-w-0 flex-col">
+						<h3 className="truncate text-sm font-semibold text-foreground">
 							{job.name}
-						</span>
-						<span
-							className={`rounded px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase ${
-								job.enabled
-									? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500'
-									: 'border- bg-muted/40 text-muted-foreground'
-							}`}>
-							{job.enabled ? 'Active' : 'Paused'}
-						</span>
-					</div>
-					<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-medium text-muted-foreground">
-						<span className="rounded bg-muted/30 px-1.5 py-0.5 font-mono text-foreground">
-							{job.cron_expression}
-						</span>
-						<span className="max-w-xs truncate font-mono text-muted-foreground">
-							{job.command}
-						</span>
-						<span className="flex items-center gap-1">
-							<Clock className="h-3 w-3" />
-							{new Date(
-								Number(job.created_at) * 1000,
-							).toLocaleDateString()}
+						</h3>
+						<span className="mt-0.5 truncate text-[11px] text-muted-foreground">
+							created {formatTimestamp(job.created_at)}
 						</span>
 					</div>
 				</div>
+				<JobActions {...props} enabled={enabled} />
 			</div>
 
-			<div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => onRun(job.id)}
-					className="flex h-7 items-center gap-1 rounded-md text-[10px] font-semibold text-foreground hover:bg-muted">
-					<Play className="h-3 w-3" /> Run Now
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon"
-					onClick={() => onToggle(job)}
-					title={job.enabled ? 'Pause Job' : 'Activate Job'}
-					className="h-7 w-7 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground">
-					<Power className="h-3.5 w-3.5" />
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon"
-					onClick={() => onDelete(job.id)}
-					title="Delete Job"
-					className="h-7 w-7 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-					<Trash2 className="h-3.5 w-3.5" />
-				</Button>
+			<div className="flex flex-col gap-2">
+				<code className="truncate rounded-md bg-foreground/[0.04] px-2 py-1 font-mono text-[11px] text-primary">
+					{job.command}
+				</code>
+				<div className="flex flex-wrap items-center gap-1.5">
+					<StatusChip enabled={enabled} />
+					<CronChip expression={job.cron_expression} />
+				</div>
 			</div>
-		</div>
+		</ViewCard>
 	);
 }

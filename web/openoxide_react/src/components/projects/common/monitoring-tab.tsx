@@ -5,6 +5,7 @@ import {
 	type MonitoringEntityType,
 } from '#/hooks/use-container-monitoring';
 import {MonitoringCards} from './monitoring/monitoring-cards';
+import {SectionHeader} from '#/components/settings/list-card';
 
 interface MonitoringTabProps {
 	app: any;
@@ -28,48 +29,47 @@ export function MonitoringTab({
 		activeMonitoring;
 
 	return (
-		<div className="flex flex-col gap-6">
-			{/* Header */}
-			<section className="flex items-center justify-between gap-4 rounded-xl bg-card p-5 shadow-xs">
-				<div>
-					<h3 className="text-sm font-bold text-foreground">
-						Container Metrics &amp; Live Telemetry
-					</h3>
-					<p className="mt-1 text-xs text-muted-foreground">
-						Real-time resource utilization for container:{' '}
-						<span className="font-mono font-semibold text-foreground">
+		<div className="flex w-full flex-col gap-5">
+			<SectionHeader
+				title="Monitoring"
+				description={
+					<>
+						Real-time resource utilization for{' '}
+						<span className="font-mono text-foreground">
 							{app?.app_name || app?.name || 'app'}
 						</span>
-					</p>
-				</div>
-				<div className="flex items-center gap-3">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={triggerRefresh}
-						disabled={isLoading}
-						className="h-8 cursor-pointer gap-1.5  text-xs font-semibold">
-						<RefreshCw
-							className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`}
-						/>
-						Refresh
-					</Button>
-					<Button
-						variant={isLive ? 'default' : 'outline'}
-						size="sm"
-						onClick={() => setIsLive(!isLive)}
-						className={`h-8 cursor-pointer gap-1.5 text-xs font-semibold ${
-							isLive
-								? ' bg-emerald-500 text-white hover:bg-emerald-600'
-								: ''
-						}`}>
-						<Radio
-							className={`h-3.5 w-3.5 ${isLive ? 'animate-pulse' : ''}`}
-						/>
-						{isLive ? 'Live Stream' : 'Stream Off'}
-					</Button>
-				</div>
-			</section>
+					</>
+				}
+				action={
+					<>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={triggerRefresh}
+							disabled={isLoading}
+							className="h-8 cursor-pointer gap-1.5 text-xs font-semibold">
+							<RefreshCw
+								className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`}
+							/>
+							Refresh
+						</Button>
+						<Button
+							variant={isLive ? 'default' : 'outline'}
+							size="sm"
+							onClick={() => setIsLive(!isLive)}
+							className={`h-8 cursor-pointer gap-1.5 text-xs font-semibold ${
+								isLive
+									? ' bg-emerald-500 text-white hover:bg-emerald-600'
+									: ''
+							}`}>
+							<Radio
+								className={`h-3.5 w-3.5 ${isLive ? 'animate-pulse' : ''}`}
+							/>
+							{isLive ? 'Live Stream' : 'Stream Off'}
+						</Button>
+					</>
+				}
+			/>
 
 			{/* States */}
 			{isLoading && !metrics && (

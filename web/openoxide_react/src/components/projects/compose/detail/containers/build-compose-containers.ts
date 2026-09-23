@@ -48,11 +48,17 @@ const resolveServiceName = (
 	cleanName: string,
 	serviceNames: string[],
 ): string => {
-	const found = serviceNames.find(
-		s =>
-			cleanName.toLowerCase().includes(`-${s.toLowerCase()}-`) ||
-			cleanName.toLowerCase().endsWith(`-${s.toLowerCase()}`),
-	);
+	const n = cleanName.toLowerCase();
+	const found = serviceNames.find(s => {
+		const l = s.toLowerCase();
+		return (
+			n === l ||
+			n.includes(`-${l}-`) ||
+			n.includes(`_${l}_`) ||
+			n.endsWith(`-${l}`) ||
+			n.endsWith(`_${l}`)
+		);
+	});
 	if (found) return found;
 	const parts = cleanName.split(/[-_]/);
 	if (parts.length >= 2 && !isNaN(Number(parts[parts.length - 1])))
@@ -122,4 +128,33 @@ export function buildComposeContainers(
 	return Array.from(unique.values()).map((c: any) =>
 		toContainerItem(c, appName, serviceNames),
 	);
+}
+
+/**
+ * Per-service live runtime state for the architecture canvas: a service is
+ * 'running' while at least one of its project containers is up, 'stopped'
+ * otherwise. Services with no containers at all stay absent from the map
+ * (never deployed → no dot rather than a false 'stopped').
+ */
+export function buildServiceStatusMap(
+	compose: any,
+	rawContainers: any[],
+	serviceNames: string[],
+): Record<string, 'running' | 'stopped'> {
+	const appName = compose?.app_name || compose?.name || '';
+	const rawApp = appName.toLowerCase().trim();
+	const map: Record<string, 'running' | 'stopped'> = {};
+	if (!rawApp) return map;
+	const cleanApp = rawApp.replace(/[^a-z0-9]/g, '');
+
+	const all = Array.isArray(rawContainers) ? rawContainers : [];
+	for (const c of all) {
+		if (!matchesProject(c, rawApp, cleanApp)) continue;
+		const cleanName = rawNameOf(c).split(',')[0].trim();
+		const svc = resolveServiceName(cleanName, serviceNames);
+		const running = isContainerRunning(c);
+		if (running || map[svc] === undefined)
+			map[svc] = running ? 'running' : 'stopped';
+	}
+	return map;
 }

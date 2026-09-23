@@ -1,4 +1,5 @@
 import type {SwarmKey} from './forms';
+import {FieldGrid} from '#/components/shared/field';
 import {SwarmSelectField} from './select-field';
 import {Num} from './field';
 import {PlacementRows} from './placement-rows';
@@ -80,16 +81,18 @@ export function SwarmPlacementForm({
 		);
 	return (
 		<div className="flex max-w-2xl flex-col gap-4">
-			<Num
-				label="nofile soft"
-				value={value.nofile_soft}
-				set={v => set('nofile_soft', v)}
-			/>
-			<Num
-				label="nofile hard"
-				value={value.nofile_hard}
-				set={v => set('nofile_hard', v)}
-			/>
+			<FieldGrid>
+				<Num
+					label="nofile soft"
+					value={value.nofile_soft}
+					set={v => set('nofile_soft', v)}
+				/>
+				<Num
+					label="nofile hard"
+					value={value.nofile_hard}
+					set={v => set('nofile_hard', v)}
+				/>
+			</FieldGrid>
 		</div>
 	);
 }

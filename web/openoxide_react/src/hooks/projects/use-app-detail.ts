@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useUrlTab} from '#/hooks/use-url-tab';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 import {useOrganizations} from '#/stores/session-context';
 import {
@@ -9,7 +9,7 @@ import {useAppStatusOverride} from './use-app-detail.status';
 import {useAppActions} from './use-app-detail.actions';
 
 export function useAppDetail(appId: number) {
-	const [activeTab, setActiveTab] = useState('General');
+	const [activeTab, setActiveTab] = useUrlTab('General');
 	const {activeOrg} = useOrganizations();
 	const orgId = BigInt(activeOrg?.id || 1);
 

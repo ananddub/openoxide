@@ -14,6 +14,7 @@ import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {useOrganizations} from '#/stores/session-context';
 import {useScheduleCreate} from '#/api/live';
+import {CronField} from '#/components/projects/common/cron-field';
 
 export function CreateCronDialog({
 	app,
@@ -29,7 +30,7 @@ export function CreateCronDialog({
 	const {activeOrg} = useOrganizations();
 	const createMutation = useScheduleCreate();
 	const [name, setName] = useState('');
-	const [cronExpression, setCronExpression] = useState('0 2 * * *');
+	const [cronExpression, setCronExpression] = useState('');
 	const [command, setCommand] = useState('echo "running scheduled task"');
 	const [creating, setCreating] = useState(false);
 
@@ -87,19 +88,11 @@ export function CreateCronDialog({
 							onChange={e => setName(e.target.value)}
 						/>
 					</div>
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="cron-expr">Cron Expression</Label>
-						<Input
-							id="cron-expr"
-							placeholder="0 2 * * *"
-							value={cronExpression}
-							onChange={e => setCronExpression(e.target.value)}
-							className="font-mono"
-						/>
-						<span className="text-xs text-muted-foreground">
-							Standard 5-part cron syntax (e.g. 0 2 * * * for 2 AM daily)
-						</span>
-					</div>
+					<CronField
+						value={cronExpression}
+						onChange={setCronExpression}
+						label="Cron Schedule"
+					/>
 					<div className="flex flex-col gap-1.5">
 						<Label htmlFor="cron-cmd">Command to Execute</Label>
 						<Input

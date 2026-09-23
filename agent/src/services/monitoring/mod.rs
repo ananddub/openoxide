@@ -1,7 +1,12 @@
 use std::sync::Arc;
 
-use crate::{docker::api::DockerApi, store::Store};
 use auto_di::singleton;
+use tokio::sync::Mutex;
+
+use crate::{
+    docker::api::DockerApi,
+    telemetry::collector::system::SystemCollector,
+};
 
 pub mod lifecycle;
 pub mod metrics;
@@ -11,30 +16,36 @@ pub mod stats;
 
 /// Agent-side service facade. Transport handlers delegate here so Docker,
 /// metrics, lifecycle and shell dependencies stay in one owned service.
+/// Host metrics are sampled live through the retained `SystemCollector`
+/// (sysinfo needs two CPU refreshes over time, so it is stateful); container
+/// metrics are read straight from the Docker API on every request.
 #[derive(Clone)]
 pub struct MonitoringService {
-    pub store: Arc<Store>,
     pub docker: Arc<DockerApi>,
+    pub system: Arc<Mutex<SystemCollector>>,
 }
 
 #[singleton]
 impl MonitoringService {
-    pub fn new(store: Arc<Store>, docker: Arc<DockerApi>) -> Self {
-        Self { store, docker }
+    pub fn new(docker: Arc<DockerApi>) -> Self {
+        Self {
+            docker,
+            system: Arc::new(Mutex::new(SystemCollector::new())),
+        }
     }
 
     pub async fn server_metrics(
         &self,
         request: crate::api::proto::GetMetricsRequest,
     ) -> Result<tonic::Response<crate::api::proto::ServerMetricsResponse>, tonic::Status> {
-        metrics::MetricsService::server(&self.store, request).await
+        metrics::MetricsService::server(&self.system, request).await
     }
 
     pub async fn container_metrics(
         &self,
         request: crate::api::proto::GetContainerMetricsRequest,
     ) -> Result<tonic::Response<crate::api::proto::ContainerMetricsResponse>, tonic::Status> {
-        metrics::MetricsService::containers(&self.store, request).await
+        metrics::MetricsService::containers(&self.docker, request).await
     }
 
     pub async fn container_states(

@@ -54,7 +54,7 @@ function AddServerPage() {
 	};
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
+		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 			{/* ── Vercel-style titlebar ── */}
 			<Titlebar
 				breadcrumbs={[
@@ -65,16 +65,13 @@ function AddServerPage() {
 					},
 					{label: 'Add Server'},
 				]}
-				icon={<Server className="text-foreground/70" />}
-				title="Add Server"
-				description="Enter the details of the server you want to connect."
 			/>
 
 			<div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
 				{/* ── Form card ── */}
 				<form
 					onSubmit={handleSubmit}
-					className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-6 ring-1 ring-border/50">
+					className="flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-6">
 					<ServerFormFields
 						name={name}
 						setName={setName}
@@ -110,10 +107,10 @@ function AddServerPage() {
 
 				{/* ── Right rail: getting started ── */}
 				<div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
-					<div className="overflow-hidden rounded-xl bg-card ring-1 ring-border/50">
+					<div className="overflow-hidden rounded-xl border bg-card">
 						<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
-							<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
-								<Info className="size-[18px] text-amber-500" />
+							<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-foreground/[0.05]">
+								<Info className="size-[18px] text-muted-foreground" />
 							</div>
 							<div className="min-w-0">
 								<h2 className="truncate text-[15px] font-semibold text-foreground">

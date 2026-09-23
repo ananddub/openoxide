@@ -39,10 +39,10 @@ function AppNotFoundPlaceholder() {
 	return <Navigate to="/projects" replace />;
 }
 /**
- * Dashboard shell, laid out like the Vercel dashboard: a fixed slim top bar
- * (workspace switcher · page title · search) spanning the full width, with
- * the nav rail starting *below* it beside a single scrolling main area.
- * Main content pads itself down by the bar's height.
+ * Dashboard shell, laid out like the Vercel dashboard: the nav rail runs
+ * the FULL viewport height on the left (top to bottom, no offsets), and
+ * the slim top bar (workspace switcher · page title · search) sits only
+ * over the content column, pinned above a single scrolling main area.
  */
 function AppLayout() {
 	useTableWatch();
@@ -52,18 +52,17 @@ function AppLayout() {
 
 	return (
 		<SidebarProvider className="h-dvh">
-			<div className="flex min-h-0 w-full flex-1 flex-col">
-				{/* Fixed global top bar: scope switcher · title · search. The
-				    rail starts below it; on mobile the SidebarTrigger in the
-				    bar is the only way to open the drawer. */}
-				<TopBar />
-				<div className="flex min-h-0 flex-1 pt-12">
-					<AppSidebar />
-					{/* Main content */}
-					<main className="min-w-0 flex-1 overflow-y-auto">
+			<div className="flex min-h-0 w-full flex-1">
+				<AppSidebar />
+				{/* Content column: the top bar overlays ONLY this column; the
+				    rail beside it is untouched full-height. On mobile the
+				    SidebarTrigger in the bar is the only drawer opener. */}
+				<main className="flex min-h-0 min-w-0 flex-1 flex-col">
+					<TopBar />
+					<div className="min-h-0 flex-1 overflow-y-auto">
 						<Outlet />
-					</main>
-				</div>
+					</div>
+				</main>
 			</div>
 		</SidebarProvider>
 	);

@@ -1,10 +1,24 @@
 import {useEffect, useState} from 'react';
-import {createPortal} from 'react-dom';
-import {Globe, RefreshCw, X} from 'lucide-react';
+import {Globe, Loader2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {toast} from 'sonner';
 import {
-	DomainFormFields,
+	StepBody,
+	StepCheckpoints,
+	type WizardStep,
+} from '#/components/shared/sheet-wizard';
+import {
+	DomainRoutingFields,
+	DomainTargetFields,
+	DomainTlsFields,
 	type DomainFormState,
 } from './domain-form-fields';
 
@@ -22,6 +36,32 @@ export type DomainFormData = {
 	middlewares: string;
 };
 
+const STEPS: WizardStep[] = [
+	{id: 'target', label: 'Target'},
+	{id: 'routing', label: 'Routing'},
+	{id: 'tls', label: 'Security'},
+];
+
+const STEP_DESC: Record<string, string> = {
+	target: 'The host people open, and the container behind it.',
+	routing: 'How that URL maps onto the path the service expects.',
+	tls: 'HTTPS, certificates and any Traefik extras.',
+};
+
+const EMPTY: DomainFormState = {
+	host: '',
+	path: '/',
+	internalPath: '/',
+	port: '3000',
+	serviceName: '',
+	https: true,
+	certificateType: 'LETSENCRYPT',
+	customResolver: '',
+	customEntrypoint: '',
+	stripPath: false,
+	middlewares: '',
+};
+
 interface DomainDialogProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -30,6 +70,7 @@ interface DomainDialogProps {
 	onSave: (data: DomainFormData) => Promise<void>;
 }
 
+/** Add / edit a domain route as a checkpoint wizard. */
 export function DomainDialog({
 	isOpen,
 	onClose,
@@ -37,25 +78,15 @@ export function DomainDialog({
 	services = [],
 	onSave,
 }: DomainDialogProps) {
-	const [state, setState] = useState<DomainFormState>({
-		host: '',
-		path: '/',
-		internalPath: '/',
-		port: '3000',
-		serviceName: '',
-		https: true,
-		certificateType: 'LETSENCRYPT',
-		customResolver: '',
-		customEntrypoint: '',
-		stripPath: false,
-		middlewares: '',
-	});
+	const [state, setState] = useState<DomainFormState>(EMPTY);
+	const [stepIdx, setStepIdx] = useState(0);
 	const [saving, setSaving] = useState(false);
 	const editingId = editingDomain?.id ?? null;
 	const defaultService = services[0] || '';
 
 	useEffect(() => {
 		if (!isOpen) return;
+		setStepIdx(0);
 		let middlewares = '';
 		try {
 			const parsed = JSON.parse(editingDomain?.middlewares || '[]');
@@ -85,37 +116,40 @@ export function DomainDialog({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isOpen, editingId]);
 
-	if (!isOpen || typeof document === 'undefined') return null;
+	const patch = <K extends keyof DomainFormState>(
+		key: K,
+		value: DomainFormState[K],
+	) => setState(current => ({...current, [key]: value}));
 
-	const submit = async (event: React.FormEvent) => {
-		event.preventDefault();
-		const normalizedPath = state.path.trim() || '/';
-		const normalizedInternal = state.internalPath.trim() || '/';
-		const numericPort = Number(state.port);
-		if (!state.host.trim()) return toast.error('Host is required');
-		if (
-			!normalizedPath.startsWith('/') ||
-			!normalizedInternal.startsWith('/')
-		)
-			return toast.error('Paths must start with /');
-		if (
-			!Number.isInteger(numericPort) ||
-			numericPort < 1 ||
-			numericPort > 65535
-		)
-			return toast.error('Port must be between 1 and 65535');
-		if (state.stripPath && normalizedPath === '/')
-			return toast.error('Strip Path requires a non-root path');
-		if (state.certificateType === 'CUSTOM' && !state.customResolver.trim())
-			return toast.error('Custom certificate resolver is required');
+	const path = state.path.trim() || '/';
+	const internalPath = state.internalPath.trim() || '/';
+	const port = Number(state.port);
+	const step = STEPS[stepIdx].id;
+	const last = stepIdx === STEPS.length - 1;
+
+	const stepReady =
+		step === 'target'
+			? !!state.host.trim() &&
+				Number.isInteger(port) &&
+				port >= 1 &&
+				port <= 65535 &&
+				(services.length === 0 || !!state.serviceName)
+			: step === 'routing'
+				? path.startsWith('/') &&
+					internalPath.startsWith('/') &&
+					(!state.stripPath || path !== '/')
+				: state.certificateType !== 'CUSTOM' ||
+					!!state.customResolver.trim();
+
+	const submit = async () => {
 		setSaving(true);
 		try {
 			await onSave({
 				host: state.host.trim(),
-				path: normalizedPath,
-				internal_path: normalizedInternal,
+				path,
+				internal_path: internalPath,
 				strip_path: state.stripPath,
-				port: numericPort,
+				port,
 				service_name: state.serviceName || undefined,
 				https: state.https,
 				certificate_type: state.https ? state.certificateType : 'NONE',
@@ -139,43 +173,80 @@ export function DomainDialog({
 		}
 	};
 
-	return createPortal(
-		<div className="pointer-events-auto fixed inset-0 z-[1000000] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
-			<div className="pointer-events-auto relative z-[1000001] my-8 w-full max-w-2xl rounded-xl bg-card shadow-lg">
-				<div className="border- flex items-center justify-between border-b bg-muted/30 p-4">
-					<div className="flex items-center gap-2">
+	const next = () => setStepIdx(i => Math.min(i + 1, STEPS.length - 1));
+
+	return (
+		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2 pr-8">
 						<Globe className="size-4 text-primary" />
-						<h3 className="text-sm font-bold">
-							{editingDomain ? 'Edit Domain Route' : 'Add Domain Route'}
-						</h3>
-					</div>
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={onClose}
-						className="size-7">
-						<X className="size-4" />
-					</Button>
+						{editingDomain ? 'Edit Domain Route' : 'Add Domain Route'}
+					</SheetTitle>
+					<SheetDescription>{STEP_DESC[step]}</SheetDescription>
+					<StepCheckpoints steps={STEPS} idx={stepIdx} />
+				</SheetHeader>
+
+				<div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-6">
+					<StepBody key={step}>
+						{step === 'target' && (
+							<DomainTargetFields
+								state={state}
+								services={services}
+								onChange={patch}
+							/>
+						)}
+						{step === 'routing' && (
+							<DomainRoutingFields
+								state={state}
+								services={services}
+								onChange={patch}
+							/>
+						)}
+						{step === 'tls' && (
+							<DomainTlsFields
+								state={state}
+								services={services}
+								onChange={patch}
+							/>
+						)}
+					</StepBody>
 				</div>
-				<form onSubmit={submit} className="flex flex-col gap-4 p-5">
-					<DomainFormFields
-						state={state}
-						services={services}
-						onChange={(key, value) =>
-							setState(current => ({...current, [key]: value}))
-						}
-					/>
-					<div className="flex justify-end border-t pt-4">
-						<Button type="submit" disabled={saving}>
-							{saving && (
-								<RefreshCw className="mr-2 size-3.5 animate-spin" />
-							)}
+
+				{last ? (
+					<SheetFooter className="justify-between">
+						<Button
+							variant="outline"
+							onClick={() => setStepIdx(i => i - 1)}>
+							Back
+						</Button>
+						<Button
+							onClick={() => void submit()}
+							disabled={saving || !stepReady}
+							className="h-10 gap-1.5 px-5">
+							{saving && <Loader2 className="size-3.5 animate-spin" />}
 							{editingDomain ? 'Update Domain' : 'Add Domain'}
 						</Button>
-					</div>
-				</form>
-			</div>
-		</div>,
-		document.body,
+					</SheetFooter>
+				) : (
+					<SheetFooter>
+						{stepIdx > 0 ? (
+							<Button
+								variant="outline"
+								onClick={() => setStepIdx(i => i - 1)}>
+								Back
+							</Button>
+						) : (
+							<Button variant="outline" onClick={onClose}>
+								Cancel
+							</Button>
+						)}
+						<Button disabled={!stepReady} onClick={next}>
+							Continue
+						</Button>
+					</SheetFooter>
+				)}
+			</SheetContent>
+		</Sheet>
 	);
 }

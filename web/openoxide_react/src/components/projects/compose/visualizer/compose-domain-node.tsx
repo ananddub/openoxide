@@ -1,5 +1,6 @@
 import {type NodeProps, type Node, Handle, Position} from '@xyflow/react';
 import {Globe, ExternalLink} from 'lucide-react';
+import {cn} from '#/api/utils';
 
 export interface ComposeDomainData extends Record<string, unknown> {
 	domain: string;
@@ -20,24 +21,12 @@ export function ComposeDomainNode({
 
 	return (
 		<div
-			style={{
-				width: 220,
-				height: 38,
-				borderRadius: 10,
-				background: '#0a1d1a',
-				border: selected
-					? '1px solid #10b981'
-					: '1px solid rgba(16,185,129,0.35)',
-				boxShadow: selected
-					? '0 0 0 3px rgba(16,185,129,0.2)'
-					: '0 2px 10px rgba(16,185,129,0.08)',
-				display: 'flex',
-				alignItems: 'center',
-				justifyContent: 'space-between',
-				padding: '0 10px',
-				gap: 8,
-				cursor: 'pointer',
-			}}>
+			className={cn(
+				'flex h-[38px] w-[220px] cursor-pointer items-center justify-between gap-2 rounded-xl border border-emerald-500/45 bg-card px-2.5 shadow-[0_1px_2px_rgb(0_0_0/0.05),0_4px_12px_rgb(0_0_0/0.08)] transition-[border-color,box-shadow] duration-100 dark:shadow-[0_2px_12px_rgb(0_0_0/0.4)]',
+				selected
+					? 'border-emerald-500 shadow-[0_0_0_3px_rgb(16_185_129/0.2)]'
+					: 'border-emerald-500/30',
+			)}>
 			{/* Only Target Handle from Service (Left side) */}
 			<Handle
 				type="target"
@@ -46,62 +35,28 @@ export function ComposeDomainNode({
 					width: 7,
 					height: 7,
 					background: '#10b981',
-					border: '2px solid #0a1d1a',
+					border: '2px solid var(--card)',
 					left: -4,
 				}}
 			/>
 
-			<div
-				style={{
-					width: 24,
-					height: 24,
-					borderRadius: 6,
-					background: 'rgba(16,185,129,0.15)',
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'center',
-					flexShrink: 0,
-				}}>
-				<Globe size={13} color="#10b981" />
+			<div className="flex size-6 shrink-0 items-center justify-center rounded-[6px] bg-emerald-500 shadow-sm">
+				<Globe size={13} className="text-white" />
 			</div>
 
 			<a
 				href={fullUrl}
 				target="_blank"
 				rel="noreferrer"
-				style={{
-					flex: 1,
-					minWidth: 0,
-					fontSize: 11.5,
-					fontWeight: 600,
-					color: '#ecfdf5',
-					textDecoration: 'none',
-					whiteSpace: 'nowrap',
-					overflow: 'hidden',
-					textOverflow: 'ellipsis',
-					display: 'flex',
-					alignItems: 'center',
-					gap: 4,
-				}}>
-				<span>{domainStr}</span>
+				className="flex min-w-0 flex-1 items-center gap-1 truncate text-[11.5px] font-semibold text-foreground no-underline">
+				<span className="truncate">{domainStr}</span>
 				<ExternalLink
 					size={10}
-					color="#6ee7b7"
-					style={{opacity: 0.7, flexShrink: 0}}
+					className="shrink-0 text-muted-foreground opacity-70"
 				/>
 			</a>
 
-			<span
-				style={{
-					fontSize: 9.5,
-					fontWeight: 700,
-					fontFamily: 'monospace',
-					color: '#10b981',
-					background: 'rgba(16,185,129,0.12)',
-					padding: '2px 5px',
-					borderRadius: 4,
-					flexShrink: 0,
-				}}>
+			<span className="shrink-0 rounded bg-emerald-500/15 px-[5px] py-[2px] font-mono text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400">
 				:{data.port || 80}
 			</span>
 		</div>

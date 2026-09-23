@@ -20,6 +20,8 @@ import {
 	type BackupFormData,
 } from '#/components/projects/detail/architecture/use-backup-actions';
 import {TabModals} from '#/components/projects/detail/architecture/tab-modals';
+import {useComposeServiceStatus} from './containers/use-compose-service-status';
+import {SectionHeader} from '#/components/settings/list-card';
 
 export function ComposeArchitectureTab({
 	compose,
@@ -32,6 +34,10 @@ export function ComposeArchitectureTab({
 	const [selectedService, setSelectedService] =
 		useState<ComposeService | null>(null);
 	const fetchedComposeFile = useRemoteComposeFile(compose);
+	const serviceStatus = useComposeServiceStatus(
+		compose,
+		fetchedComposeFile || compose?.compose_file,
+	);
 
 	const domains = Array.isArray(passedDomains) ? passedDomains : [];
 	const schedules = Array.isArray(passedSchedules) ? passedSchedules : [];
@@ -120,21 +126,15 @@ export function ComposeArchitectureTab({
 	);
 
 	return (
-		<div className="flex w-full animate-in flex-col gap-4 duration-200 fade-in">
-			<div className="flex items-center justify-between">
-				<div>
-					<h3 className="text-sm font-bold text-foreground">
-						Architecture Topology & Interactive Graph
-					</h3>
-					<p className="text-xs text-muted-foreground">
-						Click any node for context options (Attach domain, schedule,
-						backup, open terminal, view logs, or delete items).
-					</p>
-				</div>
-			</div>
+		<div className="flex w-full animate-in flex-col gap-5 duration-200 fade-in">
+			<SectionHeader
+				title="Architecture"
+				description="Live map of this stack's services, domains, volume backups and cron jobs. Click any node for context actions."
+			/>
 
 			<ComposeVisualizer
 				composeFile={fetchedComposeFile || compose?.compose_file || ''}
+				serviceStatus={serviceStatus}
 				stackName={compose?.name || compose?.app_name}
 				gitBuildPath={gitBuildPath}
 				isGitSource={isGit}

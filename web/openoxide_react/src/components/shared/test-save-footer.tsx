@@ -17,7 +17,7 @@ export function TestSaveFooter({
 	onTest: () => void;
 }) {
 	return (
-		<div className="mt-4 flex w-full items-center justify-between gap-2 border-t pt-4">
+		<div className="flex w-full shrink-0 items-center justify-between gap-3 border-t border-border px-6 py-5">
 			<Button
 				type="button"
 				variant="secondary"

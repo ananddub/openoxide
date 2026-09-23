@@ -1,15 +1,19 @@
+import {Search, ShieldCheck} from 'lucide-react';
+import {useEffect, useState} from 'react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
 import {Input} from '#/components/ui/input';
+import {Switch} from '#/components/ui/switch';
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {formatApiError} from '#/api/utils';
+import {WizardField} from '#/components/shared/sheet-wizard';
 import {
 	usePermissionGroupCreate,
 	usePermissionGroupUpdate,
@@ -17,12 +21,25 @@ import {
 
 export type Draft = {id?: number; name: string; actions: string[]};
 
-/** resource prefix for grouping the policy catalog ("app:create" → "app"). */
-const resourceOf = (action: string) => action.split(':')[0] ?? action;
-const operationOf = (action: string) => action.split(':')[1] ?? action;
+/** "app:create" → "app" / "create"; anything without a colon is its own word. */
+const split = (action: string) => {
+	const [resource = action, operation = action] = action.split(':');
+	return {resource, operation};
+};
 
-/** Create/edit permission-group dialog with the policy action picker. */
-export function GroupEditorDialog({
+const titleCase = (word: string) =>
+	word ? word[0].toUpperCase() + word.slice(1).replace(/_/g, ' ') : word;
+
+/** "app:create" → "Create app" — the row label a human can read. */
+const actionLabel = (action: string) => {
+	const {resource, operation} = split(action);
+	return resource === operation
+		? titleCase(resource)
+		: `${titleCase(operation)} ${titleCase(resource)}`;
+};
+
+/** Create/edit a permission group — house form-sheet with an action picker. */
+export function GroupEditorSheet({
 	draft,
 	setDraft,
 	policies,
@@ -33,12 +50,33 @@ export function GroupEditorDialog({
 }) {
 	const createMutation = usePermissionGroupCreate();
 	const updateMutation = usePermissionGroupUpdate();
+	const [query, setQuery] = useState('');
+
+	// Every open starts with the full catalog shown.
+	useEffect(() => {
+		if (!draft) setQuery('');
+	}, [draft]);
+
+	const actions = policies
+		.map(policy => (policy.action ?? '').trim())
+		.filter(Boolean);
+
+	const search = query.trim().toLowerCase();
+	const visible = search
+		? actions.filter(
+				action =>
+					action.toLowerCase().includes(search) ||
+					actionLabel(action).toLowerCase().includes(search),
+			)
+		: actions;
 
 	const grouped = new Map<string, string[]>();
-	for (const policy of policies) {
-		const list = grouped.get(resourceOf(policy.action)) ?? [];
-		list.push(policy.action);
-		grouped.set(resourceOf(policy.action), list);
+	for (const action of visible) {
+		const {resource} = split(action);
+		const list = grouped.get(resource) ?? [];
+
+		list.push(action);
+		grouped.set(resource, list);
 	}
 
 	const toggleAction = (action: string) =>
@@ -52,6 +90,18 @@ export function GroupEditorDialog({
 					}
 				: draft,
 		);
+
+	const toggleResource = (resource: string) => {
+		if (!draft) return;
+		const group = grouped.get(resource) ?? [];
+		const allOn = group.every(a => draft.actions.includes(a));
+		setDraft({
+			...draft,
+			actions: allOn
+				? draft.actions.filter(a => !group.includes(a))
+				: [...new Set([...draft.actions, ...group])],
+		});
+	};
 
 	const save = async () => {
 		if (!draft) return;
@@ -80,81 +130,155 @@ export function GroupEditorDialog({
 		}
 	};
 
+	const busy = createMutation.isPending || updateMutation.isPending;
+	const saving = draft?.id ? 'Save changes' : 'Create group';
+	const allSelected =
+		actions.length > 0 && draft?.actions.length === actions.length;
+
+	const toggleEverything = () =>
+		setDraft(
+			draft ? {...draft, actions: allSelected ? [] : actions} : draft,
+		);
+
 	return (
-		<Dialog open={!!draft} onOpenChange={open => !open && setDraft(null)}>
-			<DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-				<DialogHeader>
-					<DialogTitle className="text-base font-bold">
+		<Sheet open={!!draft} onOpenChange={open => !open && setDraft(null)}>
+			<SheetContent>
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2">
+						<ShieldCheck className="size-4 text-primary" />
 						{draft?.id ? 'Edit Group' : 'New Group'}
-					</DialogTitle>
-					<DialogDescription className="text-xs">
-						Name the role and tick the actions its members may perform in
+					</SheetTitle>
+					<SheetDescription>
+						Name the role and pick the actions its members may perform in
 						this organization.
-					</DialogDescription>
-				</DialogHeader>
+					</SheetDescription>
+				</SheetHeader>
+
 				{draft && (
-					<div className="space-y-4 py-2">
-						<div className="space-y-1">
-							<label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-								Name
-							</label>
-							<Input
-								value={draft.name}
-								autoFocus
-								onChange={event =>
-									setDraft({...draft, name: event.target.value})
-								}
-								placeholder="Deploy Operators"
-								className="h-10 bg-muted/20 text-xs"
-							/>
-						</div>
-						<div className="space-y-3">
-							{[...grouped.entries()].map(([resource, actions]) => (
-								<div key={resource}>
-									<p className="mb-1 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-										{resource}
+					<>
+						<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-6">
+							<WizardField label="Name" required>
+								<Input
+									value={draft.name}
+									autoFocus
+									onChange={event =>
+										setDraft({...draft, name: event.target.value})
+									}
+									placeholder="Deploy Operators"
+									className="bg-background"
+								/>
+							</WizardField>
+
+							<div className="flex items-center justify-between gap-3">
+								<p className="text-[13px] font-medium text-foreground">
+									{draft.actions.length} of {actions.length} actions
+									selected
+								</p>
+								<button
+									type="button"
+									onClick={toggleEverything}
+									className="cursor-pointer text-[13px] font-medium text-primary hover:underline">
+									{allSelected ? 'Clear all' : 'Select all'}
+								</button>
+							</div>
+
+							{actions.length === 0 ? (
+								<div className="w-full shrink-0 rounded-xl border bg-card px-4 py-8 text-center">
+									<p className="text-sm font-medium text-foreground">
+										The action catalog is empty
 									</p>
-									<div className="flex flex-wrap gap-2">
-										{actions.map(action => {
-											const active = draft.actions.includes(action);
-											return (
-												<button
-													key={action}
-													type="button"
-													onClick={() => toggleAction(action)}
-													className={
-														active
-															? 'rounded-md bg-primary/10 px-2 py-1 font-mono text-[10px] font-semibold text-primary'
-															: 'rounded-md bg-muted/20 px-2 py-1 font-mono text-[10px] text-muted-foreground hover:text-foreground'
-													}>
-													{operationOf(action)}
-												</button>
-											);
-										})}
-									</div>
+									<p className="mt-1 text-[13px] text-muted-foreground">
+										Apply the policy-catalog migration so the server
+										returns the actions a group can grant.
+									</p>
 								</div>
-							))}
+							) : (
+								<div className="relative w-full shrink-0">
+									<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/70" />
+									<Input
+										value={query}
+										onChange={event => setQuery(event.target.value)}
+										placeholder="Search actions — deploy, member, app:create"
+										className="h-9 rounded-lg bg-background pl-9 text-sm transition-colors duration-150 hover:border-foreground/25"
+									/>
+								</div>
+							)}
+
+							{actions.length > 0 && visible.length === 0 && (
+								<div className="w-full shrink-0 rounded-xl border bg-card px-4 py-8 text-center">
+									<p className="text-sm font-medium text-foreground">
+										No action matches “{query.trim()}”
+									</p>
+									<p className="mt-1 text-[13px] text-muted-foreground">
+										Try a resource like app or database, or an operation
+										like read.
+									</p>
+								</div>
+							)}
+							{actions.length > 0 && (
+								<div className="w-full shrink-0 overflow-hidden rounded-xl border bg-card">
+									{[...grouped.entries()].map(
+										([resource, groupActions]) => {
+											const allOn = groupActions.every(a =>
+												draft.actions.includes(a),
+											);
+											return (
+												<div key={resource}>
+													<div className="flex items-center justify-between gap-3 border-b bg-muted/40 px-4 py-1.5">
+														<p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+															{titleCase(resource)}
+														</p>
+														<button
+															type="button"
+															onClick={() => toggleResource(resource)}
+															className="cursor-pointer text-[11px] font-medium text-primary hover:underline">
+															{allOn ? 'Clear' : 'All'}
+														</button>
+													</div>
+													<div className="divide-y">
+														{groupActions.map(action => (
+															<label
+																key={action}
+																className="flex cursor-pointer items-center justify-between gap-4 px-4 py-2.5 transition-colors hover:bg-accent/30">
+																<span className="min-w-0 flex-1">
+																	<span className="block truncate text-sm text-foreground">
+																		{actionLabel(action)}
+																	</span>
+																	<span className="block truncate text-[11px] text-muted-foreground">
+																		{action}
+																	</span>
+																</span>
+																<Switch
+																	checked={draft.actions.includes(action)}
+																	onCheckedChange={() =>
+																		toggleAction(action)
+																	}
+																/>
+															</label>
+														))}
+													</div>
+												</div>
+											);
+										},
+									)}
+								</div>
+							)}
 						</div>
-					</div>
+
+						<SheetFooter className="justify-between">
+							<Button variant="outline" onClick={() => setDraft(null)}>
+								Cancel
+							</Button>
+							<Button
+								onClick={() => void save()}
+								disabled={busy || !draft.name.trim()}
+								className="h-10 gap-1.5 px-5">
+								{saving}
+							</Button>
+						</SheetFooter>
+					</>
 				)}
-				<DialogFooter>
-					<Button
-						type="button"
-						variant="secondary"
-						size="sm"
-						className="h-9 text-xs"
-						onClick={() => setDraft(null)}>
-						Cancel
-					</Button>
-					<Button
-						type="button"
-						size="sm"
-						className="h-9 text-xs"
-						onClick={() => void save()}>
-						{draft?.id ? 'Save' : 'Create'}
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+			</SheetContent>
+		</Sheet>
 	);
 }

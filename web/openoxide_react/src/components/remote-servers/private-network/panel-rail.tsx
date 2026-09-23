@@ -1,8 +1,10 @@
 import {Activity, Globe, Network, Shield} from 'lucide-react';
 import {serverHostLabel} from '#/api/utils';
+import {ListCard, SectionLabel} from '#/components/settings/list-card';
 import type {RemoteServerResponse} from '#/types/api-helpers';
 import type {ConnectionMode, PrivateNetworkConfig} from './types';
-import {FactRow, MODE_LABELS, statusDot} from './panel-parts';
+import {ConnectionRow} from '../server-detail-parts';
+import {MODE_LABELS, statusDot} from './panel-parts';
 
 const GUIDE: Array<{icon: typeof Globe; term: string; text: string}> = [
 	{
@@ -36,20 +38,12 @@ export function PanelRail({
 }) {
 	const configured = !!config && config.connection_mode !== 'DIRECT_SSH';
 	return (
-		<div className="flex flex-col gap-4 lg:sticky lg:top-6">
+		<div className="flex flex-col gap-5 lg:sticky lg:top-6">
 			{/* Connection facts */}
-			<div className="rounded-xl bg-card p-5 ring-1 ring-border/50">
-				<div className="mb-2 flex items-center gap-2">
-					<Network
-						className="size-4 text-muted-foreground"
-						strokeWidth={2}
-					/>
-					<h2 className="text-sm font-semibold text-foreground">
-						Connection
-					</h2>
-				</div>
-				<div className="divide-y divide-border/40">
-					<FactRow
+			<div className="flex flex-col gap-2">
+				<SectionLabel>Connection</SectionLabel>
+				<ListCard>
+					<ConnectionRow
 						icon={Shield}
 						label="Mode"
 						value={
@@ -62,7 +56,7 @@ export function PanelRail({
 						}
 						mono={false}
 					/>
-					<FactRow
+					<ConnectionRow
 						icon={Activity}
 						label="Status"
 						value={
@@ -76,12 +70,12 @@ export function PanelRail({
 						}
 						mono={false}
 					/>
-					<FactRow
+					<ConnectionRow
 						icon={Globe}
 						label="Public IP"
 						value={serverHostLabel(server.ip_address)}
 					/>
-					<FactRow
+					<ConnectionRow
 						icon={Network}
 						label="Private host"
 						value={
@@ -91,53 +85,47 @@ export function PanelRail({
 						}
 					/>
 					{configured && config?.endpoint && (
-						<FactRow
+						<ConnectionRow
 							icon={Activity}
 							label="Endpoint"
 							value={config.endpoint}
 						/>
 					)}
 					{configured && config?.dns_name && (
-						<FactRow
+						<ConnectionRow
 							icon={Globe}
 							label="DNS name"
 							value={config.dns_name}
 						/>
 					)}
 					{configured && config && config.routes.length > 0 && (
-						<FactRow
+						<ConnectionRow
 							icon={Network}
 							label="Routes"
 							value={config.routes.join(', ')}
 						/>
 					)}
-				</div>
+				</ListCard>
 			</div>
 
 			{/* Guide */}
-			<div className="rounded-xl bg-card p-5 ring-1 ring-border/50">
-				<div className="mb-3 flex items-center gap-2">
-					<Shield
-						className="size-4 text-muted-foreground"
-						strokeWidth={2}
-					/>
-					<h2 className="text-sm font-semibold text-foreground">
-						How it works
-					</h2>
+			<div className="flex flex-col gap-2">
+				<SectionLabel>How it works</SectionLabel>
+				<div className="rounded-xl border bg-card p-5">
+					<ul className="space-y-2.5 text-xs leading-relaxed text-muted-foreground">
+						{GUIDE.map(item => (
+							<li key={item.term} className="flex gap-2">
+								<item.icon className="mt-0.5 size-3.5 shrink-0" />
+								<span>
+									<strong className="font-medium text-foreground">
+										{item.term}
+									</strong>{' '}
+									{item.text}
+								</span>
+							</li>
+						))}
+					</ul>
 				</div>
-				<ul className="space-y-2.5 text-xs leading-relaxed text-muted-foreground">
-					{GUIDE.map(item => (
-						<li key={item.term} className="flex gap-2">
-							<item.icon className="mt-0.5 size-3.5 shrink-0" />
-							<span>
-								<strong className="font-medium text-foreground">
-									{item.term}
-								</strong>{' '}
-								{item.text}
-							</span>
-						</li>
-					))}
-				</ul>
 			</div>
 		</div>
 	);

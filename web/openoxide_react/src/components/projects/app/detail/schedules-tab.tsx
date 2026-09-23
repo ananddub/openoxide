@@ -1,6 +1,17 @@
-import {useState} from 'react';
-import {Calendar, Plus, RefreshCw} from 'lucide-react';
+import {useState, useMemo} from 'react';
+import {Calendar, Plus, RefreshCw, Search} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {
+	ListCard,
+	ListEmpty,
+	SectionHeader,
+	Toolbar,
+	ToolbarSearch,
+	ViewGrid,
+	ViewToggle,
+	useListView,
+} from '#/components/settings/list-card';
+import {ConfirmDeleteDialog} from '#/components/settings/confirm-delete-dialog';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {
@@ -8,9 +19,11 @@ import {
 	useScheduleRun,
 	useScheduleUpdate,
 } from '#/api/live';
-import {DeleteConfirmDialog} from '#/components/shared/delete-confirm-dialog';
 import {CreateCronDialog} from './schedules-tab/create-cron-dialog';
-import {ScheduleJobRow} from './schedules-tab/schedule-job-row';
+import {
+	ScheduleJobCard,
+	ScheduleJobRow,
+} from './schedules-tab/schedule-job-row';
 
 interface SchedulesTabProps {
 	app: any;
@@ -18,6 +31,11 @@ interface SchedulesTabProps {
 	onRefresh?: () => void;
 }
 
+/**
+ * Service → Schedules — the SSH Keys grammar: section title with the one
+ * primary action, toolbar (search + grid/list) and cron jobs as grid cards
+ * or one bordered list card.
+ */
 export function SchedulesTab({
 	app,
 	schedules: passedSchedules,
@@ -25,8 +43,27 @@ export function SchedulesTab({
 }: SchedulesTabProps) {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [deleteId, setDeleteId] = useState<number | null>(null);
+	const [query, setQuery] = useState('');
+	const [view, setView] = useListView('service-schedules-view');
 
-	const schedules = Array.isArray(passedSchedules) ? passedSchedules : [];
+	const allSchedules = Array.isArray(passedSchedules)
+		? passedSchedules
+		: [];
+	const q = query.trim().toLowerCase();
+	const schedules = useMemo(
+		() =>
+			q
+				? allSchedules.filter((s: any) =>
+						[s?.name, s?.command, s?.cron_expression]
+							.filter(Boolean)
+							.join(' ')
+							.toLowerCase()
+							.includes(q),
+					)
+				: allSchedules,
+		[allSchedules, q],
+	);
+	const hasAny = allSchedules.length > 0;
 
 	const runMutation = useScheduleRun();
 	const patchMutation = useScheduleUpdate();
@@ -65,63 +102,80 @@ export function SchedulesTab({
 		}
 	};
 
-	return (
-		<div className="flex flex-col gap-6">
-			{/* Action Header */}
-			<section className="flex items-center justify-between rounded-xl bg-card p-5">
-				<div>
-					<h3 className="text-sm font-bold text-foreground">
-						Schedules & Workers
-					</h3>
-					<p className="mt-1 text-xs text-muted-foreground">
-						Configure automated cron jobs and recurring trigger workers for
-						this service
-					</p>
-				</div>
-				<div className="flex items-center gap-2">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => onRefresh?.()}
-						className="flex h-8 items-center gap-1.5  text-xs font-semibold text-foreground hover:bg-muted">
-						<RefreshCw className="h-3.5 w-3.5" /> Refresh
-					</Button>
-					<Button
-						size="sm"
-						onClick={() => setIsCreateOpen(true)}
-						className="flex h-8 items-center gap-1.5 bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/90">
-						<Plus className="h-3.5 w-3.5" /> Create Cron Job
-					</Button>
-				</div>
-			</section>
+	const createButton = (
+		<Button onClick={() => setIsCreateOpen(true)} className="h-9 gap-1.5">
+			<Plus className="size-3.5" />
+			Create Cron Job
+		</Button>
+	);
 
-			{/* Jobs Table List */}
-			<section className="overflow-hidden rounded-xl bg-card">
-				{schedules.length === 0 ? (
-					<div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-						<Calendar className="mb-3 h-10 w-10 opacity-30" />
-						<p className="text-xs font-semibold">
-							No cron jobs configured yet
-						</p>
-						<p className="mt-1 text-[11px] text-muted-foreground/70">
-							Create a scheduled cron job to execute automated background
-							tasks
-						</p>
-					</div>
-				) : (
-					<div className="divide-y divide-border/60">
-						{schedules.map((job: any) => (
-							<ScheduleJobRow
-								key={job.id}
-								job={job}
-								onRun={handleRunNow}
-								onToggle={handleToggleEnable}
-								onDelete={setDeleteId}
-							/>
-						))}
-					</div>
-				)}
-			</section>
+	return (
+		<div className="flex w-full flex-col gap-5">
+			<SectionHeader
+				title="Schedules"
+				description="Cron jobs that run background tasks inside this service."
+				action={
+					<>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => onRefresh?.()}
+							title="Refresh"
+							className="size-9 text-muted-foreground hover:text-foreground">
+							<RefreshCw className="size-4" />
+						</Button>
+						{createButton}
+					</>
+				}
+			/>
+
+			<Toolbar action={<ViewToggle view={view} onChange={setView} />}>
+				<ToolbarSearch
+					value={query}
+					onChange={setQuery}
+					placeholder="Search schedules…"
+					className="min-w-[200px] flex-1 sm:max-w-none"
+				/>
+			</Toolbar>
+
+			{!hasAny ? (
+				<ListEmpty
+					icon={Calendar}
+					title="No cron jobs yet"
+					description="Create a scheduled cron job to run automated background tasks for this service."
+					action={createButton}
+				/>
+			) : schedules.length === 0 ? (
+				<ListEmpty
+					icon={Search}
+					title="No schedules match your search"
+					description="Try a different job name, command or cron expression."
+				/>
+			) : view === 'grid' ? (
+				<ViewGrid>
+					{schedules.map((job: any) => (
+						<ScheduleJobCard
+							key={job.id}
+							job={job}
+							onRun={handleRunNow}
+							onToggle={handleToggleEnable}
+							onDelete={setDeleteId}
+						/>
+					))}
+				</ViewGrid>
+			) : (
+				<ListCard>
+					{schedules.map((job: any) => (
+						<ScheduleJobRow
+							key={job.id}
+							job={job}
+							onRun={handleRunNow}
+							onToggle={handleToggleEnable}
+							onDelete={setDeleteId}
+						/>
+					))}
+				</ListCard>
+			)}
 
 			<CreateCronDialog
 				app={app}
@@ -130,12 +184,20 @@ export function SchedulesTab({
 				onCreated={onRefresh}
 			/>
 
-			<DeleteConfirmDialog
+			<ConfirmDeleteDialog
 				open={deleteId !== null}
 				onOpenChange={open => !open && setDeleteId(null)}
-				title="Delete Schedule"
-				description="Are you sure you want to delete this schedule?"
-				onConfirm={confirmDelete}
+				title="Delete schedule"
+				description={
+					<span>
+						This cron job stops running immediately. Deployments that
+						depend on it running lose that automation. This cannot be
+						undone.
+					</span>
+				}
+				confirmLabel="Delete schedule"
+				busy={deleteMutation.isPending}
+				onConfirm={() => void confirmDelete()}
 			/>
 		</div>
 	);

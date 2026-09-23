@@ -1,12 +1,12 @@
-import {useState} from 'react';
-import {Save, Zap} from 'lucide-react';
+import {useState, useEffect} from 'react';
+import {Terminal} from 'lucide-react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
-import {Input} from '#/components/ui/input';
-import {Label} from '#/components/ui/label';
+import {Textarea} from '#/components/ui/textarea';
+import {SettingsSheet} from '#/components/shared/settings-sheet';
+import {Field, SheetGroup, SheetNote} from '#/components/shared/field';
 import {formatApiError} from '#/api/utils';
 import {useComposeUpdate} from '#/api/live';
-import {AdvancedSection} from '#/components/projects/detail/advanced/shared';
 import type {ComposeAdvancedTabProps} from './types';
 
 export function CommandSection({
@@ -16,6 +16,10 @@ export function CommandSection({
 	const update = useComposeUpdate();
 	const [command, setCommand] = useState(compose.command || '');
 	const [saving, setSaving] = useState(false);
+
+	useEffect(() => {
+		setCommand(compose.command || '');
+	}, [compose.command]);
 
 	const save = async () => {
 		setSaving(true);
@@ -31,31 +35,38 @@ export function CommandSection({
 	};
 
 	return (
-		<AdvancedSection
-			icon={<Zap className="size-4 text-primary" />}
-			title="Deployment Command"
-			description="Shell command executed instead of the default `docker compose up`. Leave empty for the default flow.">
-			<div className="flex flex-col gap-1.5">
-				<Label className="text-xs font-bold text-muted-foreground">
-					Command
-				</Label>
-				<Input
-					placeholder="docker compose -f docker-compose.yml up -d"
-					value={command}
-					onChange={e => setCommand(e.target.value)}
-					className="font-mono text-xs"
-				/>
-			</div>
-			<div className="flex justify-end">
+		<SettingsSheet
+			title="Command"
+			description="Shell command run instead of the default compose up"
+			icon={<Terminal className="size-4" />}
+			footer={
 				<Button
 					onClick={save}
 					disabled={saving}
-					className="flex h-9 items-center gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/95">
-					<Save className="h-3.5 w-3.5" /> {saving ? 'Saving…' : 'Save'}
+					className="h-9 gap-1.5 px-4 text-sm">
+					{saving ? 'Saving...' : 'Save changes'}
 				</Button>
-			</div>
-		</AdvancedSection>
+			}>
+			<SheetGroup
+				title="Deployment command"
+				description="Overrides how the stack is brought up at deploy time.">
+				<SheetNote tone="info">
+					Leave empty to use the default
+					<code className="mx-1 rounded bg-muted/60 px-1 py-0.5 font-mono text-[12px]">
+						docker compose up -d
+					</code>
+					flow.
+				</SheetNote>
+				<Field label="Command">
+					<Textarea
+						rows={3}
+						placeholder="docker compose -f docker-compose.yml up -d"
+						value={command}
+						onChange={e => setCommand(e.target.value)}
+						className="font-mono text-xs"
+					/>
+				</Field>
+			</SheetGroup>
+		</SettingsSheet>
 	);
 }
-
-// ── Volumes / Mounts ───────────────────────────────────────────────────

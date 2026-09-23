@@ -88,7 +88,14 @@ export function SessionProvider({children}: {children: ReactNode}) {
 					orgs.length > 0
 						? orgs.find(o => o.id === preferredId) || orgs[0]
 						: null;
-				if (nextActive?.id !== activeOrg?.id) {
+				// On first load activeOrg is only `{id}` (restored from
+				// localStorage) — no name. Refresh it with the full entry even
+				// when the id already matches, or the switcher shows the
+				// "Workspace" fallback until the user manually switches.
+				const staleIdentity =
+					nextActive != null &&
+					(nextActive.id !== activeOrg?.id || !activeOrg?.name);
+				if (staleIdentity || (nextActive == null && activeOrg != null)) {
 					persistActiveOrganizationId(nextActive?.id ?? null);
 					setActiveOrgState(nextActive);
 				}

@@ -1,5 +1,4 @@
 import {Input} from '#/components/ui/input';
-import {Label} from '#/components/ui/label';
 import {Switch} from '#/components/ui/switch';
 import {
 	Select,
@@ -8,6 +7,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
+import {WizardField} from '#/components/shared/sheet-wizard';
 import type {DomainFormData} from './domain-dialog';
 
 export type DomainFormState = {
@@ -33,29 +33,36 @@ type Props = {
 	) => void;
 };
 
-const fieldClass = 'mt-1.5 font-mono text-xs';
+const mono = 'bg-background font-mono text-sm';
 
-export function DomainFormFields({state, services, onChange}: Props) {
+/** Checkpoint 1 — the host and the container it points at. */
+export function DomainTargetFields({state, services, onChange}: Props) {
 	return (
-		<>
-			<div>
-				<Label>Host *</Label>
+		<div className="flex flex-col gap-5">
+			<WizardField
+				label="Host"
+				required
+				hint="The public address people will open in a browser.">
 				<Input
-					className={fieldClass}
+					className={mono}
 					value={state.host}
 					onChange={event => onChange('host', event.target.value)}
 					placeholder="app.example.com"
+					autoFocus
 				/>
-			</div>
+			</WizardField>
+
 			{services.length > 0 && (
-				<div>
-					<Label>Compose service *</Label>
+				<WizardField
+					label="Compose service"
+					required
+					hint="Which container in the stack receives this traffic.">
 					<Select
 						value={state.serviceName}
 						onValueChange={value =>
 							value && onChange('serviceName', value)
 						}>
-						<SelectTrigger className="mt-1.5 text-xs">
+						<SelectTrigger className="text-sm">
 							<SelectValue placeholder="Select service" />
 						</SelectTrigger>
 						<SelectContent>
@@ -66,46 +73,79 @@ export function DomainFormFields({state, services, onChange}: Props) {
 							))}
 						</SelectContent>
 					</Select>
-				</div>
+				</WizardField>
 			)}
-			<div>
-				<Label>Container port *</Label>
+
+			<WizardField
+				label="Container port"
+				required
+				hint="The port the service listens on inside its container.">
 				<Input
-					className={fieldClass}
+					className={mono}
 					type="number"
 					min="1"
 					max="65535"
 					value={state.port}
 					onChange={event => onChange('port', event.target.value)}
 				/>
-			</div>
-			<div>
-				<Label>Public path</Label>
+			</WizardField>
+		</div>
+	);
+}
+
+/** Checkpoint 2 — how the public URL maps onto the container. */
+export function DomainRoutingFields({state, onChange}: Props) {
+	return (
+		<div className="flex flex-col gap-5">
+			<WizardField
+				label="Public path"
+				optional
+				hint="URL prefix this route claims — leave / for the whole host.">
 				<Input
-					className={fieldClass}
+					className={mono}
 					value={state.path}
 					onChange={event => onChange('path', event.target.value)}
 					placeholder="/api"
 				/>
-			</div>
-			<div>
-				<Label>Internal path</Label>
+			</WizardField>
+
+			<WizardField
+				label="Internal path"
+				optional
+				hint="What the container is asked for instead of the public path.">
 				<Input
-					className={fieldClass}
+					className={mono}
 					value={state.internalPath}
 					onChange={event => onChange('internalPath', event.target.value)}
 					placeholder="/"
 				/>
-			</div>
-			<ToggleField
+			</WizardField>
+
+			<SwitchRow
+				label="Strip public path"
+				description="Remove the public prefix before forwarding — needs a public path other than /."
+				checked={state.stripPath}
+				onChange={value => onChange('stripPath', value)}
+			/>
+		</div>
+	);
+}
+
+/** Checkpoint 3 — TLS, certificate resolver and Traefik extras. */
+export function DomainTlsFields({state, onChange}: Props) {
+	return (
+		<div className="flex flex-col gap-5">
+			<SwitchRow
 				label="HTTPS / SSL"
-				description="Secure traffic through Traefik"
+				description="Terminate TLS at the proxy and redirect secure traffic."
 				checked={state.https}
 				onChange={value => onChange('https', value)}
 			/>
+
 			{state.https && (
-				<div>
-					<Label>Certificate type</Label>
+				<WizardField
+					label="Certificate"
+					hint="“None” keeps HTTPS enabled without a Traefik certificate resolver.">
 					<Select
 						value={state.certificateType}
 						onValueChange={value =>
@@ -114,7 +154,7 @@ export function DomainFormFields({state, services, onChange}: Props) {
 								value as DomainFormData['certificate_type'],
 							)
 						}>
-						<SelectTrigger className="mt-1.5 text-xs">
+						<SelectTrigger className="text-sm">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
@@ -127,56 +167,55 @@ export function DomainFormFields({state, services, onChange}: Props) {
 							<SelectItem value="CUSTOM">Custom resolver</SelectItem>
 						</SelectContent>
 					</Select>
-					<p className="mt-1 text-[11px] text-muted-foreground">
-						None keeps HTTPS enabled without a Traefik certificate
-						resolver.
-					</p>
-				</div>
+				</WizardField>
 			)}
+
 			{state.https && state.certificateType === 'CUSTOM' && (
-				<div>
-					<Label>Custom certificate resolver *</Label>
+				<WizardField
+					label="Custom certificate resolver"
+					required
+					hint="The name of the resolver declared on the proxy.">
 					<Input
-						className={fieldClass}
+						className={mono}
 						value={state.customResolver}
 						onChange={event =>
 							onChange('customResolver', event.target.value)
 						}
 						placeholder="myresolver"
 					/>
-				</div>
+				</WizardField>
 			)}
-			<div>
-				<Label>Custom entrypoint</Label>
+
+			<WizardField
+				label="Custom entrypoint"
+				optional
+				hint="Override the proxy entrypoint this route attaches to.">
 				<Input
-					className={fieldClass}
+					className={mono}
 					value={state.customEntrypoint}
 					onChange={event =>
 						onChange('customEntrypoint', event.target.value)
 					}
 					placeholder="websecure"
 				/>
-			</div>
-			<div>
-				<Label>Middlewares</Label>
+			</WizardField>
+
+			<WizardField
+				label="Middlewares"
+				optional
+				hint="Comma-separated — they run in the order you list them.">
 				<Input
-					className="mt-1.5 text-xs"
+					className={mono}
 					value={state.middlewares}
 					onChange={event => onChange('middlewares', event.target.value)}
 					placeholder="auth@file, rate-limit@file"
 				/>
-			</div>
-			<ToggleField
-				label="Strip public path"
-				description="Remove the public prefix before forwarding"
-				checked={state.stripPath}
-				onChange={value => onChange('stripPath', value)}
-			/>
-		</>
+			</WizardField>
+		</div>
 	);
 }
 
-function ToggleField({
+function SwitchRow({
 	label,
 	description,
 	checked,
@@ -188,12 +227,16 @@ function ToggleField({
 	onChange: (value: boolean) => void;
 }) {
 	return (
-		<div className="flex items-center justify-between rounded-lg  p-3">
-			<div>
-				<Label>{label}</Label>
-				<p className="text-[11px] text-muted-foreground">{description}</p>
-			</div>
+		<label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border px-4 py-3.5 transition-colors hover:bg-muted/30">
+			<span className="min-w-0">
+				<span className="block text-sm font-medium text-foreground">
+					{label}
+				</span>
+				<span className="block text-[13px] leading-relaxed text-muted-foreground">
+					{description}
+				</span>
+			</span>
 			<Switch checked={checked} onCheckedChange={onChange} />
-		</div>
+		</label>
 	);
 }

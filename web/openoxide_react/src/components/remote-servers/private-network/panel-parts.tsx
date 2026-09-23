@@ -1,6 +1,6 @@
-import {Check, Globe, Network, Shield} from 'lucide-react';
+import {Globe, Network, Shield} from 'lucide-react';
 
-import {cn} from '#/api/utils';
+import {OptionRow} from '#/components/shared/sheet-wizard';
 import type {
 	ConnectionMode,
 	PrivateNetworkConfig,
@@ -77,35 +77,6 @@ export function remoteHostFromTunnel(cidr: string): string | null {
 	return `${octets[0]}.${octets[1]}.${octets[2]}.2`;
 }
 
-/** Label/value row in the right-rail cards (OpenShip Connection-card language). */
-export function FactRow({
-	icon: Icon,
-	label,
-	value,
-	mono = true,
-}: {
-	icon: typeof Globe;
-	label: string;
-	value: React.ReactNode;
-	mono?: boolean;
-}) {
-	return (
-		<div className="flex items-center justify-between gap-3 py-2.5">
-			<div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
-				<Icon className="size-4 shrink-0" strokeWidth={2} />
-				{label}
-			</div>
-			<div
-				className={cn(
-					'min-w-0 truncate text-sm text-foreground',
-					mono && 'font-mono text-[13px]',
-				)}>
-				{value}
-			</div>
-		</div>
-	);
-}
-
 export function Field({
 	label,
 	children,
@@ -121,7 +92,7 @@ export function Field({
 	);
 }
 
-/** Mode picker row rendered from MODE_TILES. */
+/** Mode picker — the wizard's option grammar, never a bare dropdown. */
 export function ModeTiles({
 	mode,
 	disabled,
@@ -132,34 +103,18 @@ export function ModeTiles({
 	onSelect: (mode: ConnectionMode) => void;
 }) {
 	return (
-		<div className="grid gap-2.5 p-5 sm:grid-cols-3">
-			{MODE_TILES.map(tile => {
-				const selected = mode === tile.value;
-				return (
-					<button
-						key={tile.value}
-						type="button"
-						onClick={() => onSelect(tile.value)}
-						disabled={disabled}
-						className={cn(
-							'flex cursor-pointer flex-col gap-1.5 rounded-xl border p-3.5 text-start transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-							selected
-								? 'border-primary/60 bg-primary/5'
-								: 'border-border/60 bg-muted/20 hover:bg-muted/40',
-						)}>
-						<span className="flex items-center gap-2 text-sm font-medium text-foreground">
-							<tile.icon className="size-4 shrink-0" strokeWidth={2} />
-							<span className="flex-1 truncate">{tile.label}</span>
-							{selected && (
-								<Check className="size-3.5 shrink-0 text-primary" />
-							)}
-						</span>
-						<span className="text-xs leading-snug text-muted-foreground">
-							{tile.desc}
-						</span>
-					</button>
-				);
-			})}
+		<div className="flex flex-col gap-2.5 border-b p-5">
+			{MODE_TILES.map(tile => (
+				<OptionRow
+					key={tile.value}
+					selected={mode === tile.value}
+					disabled={disabled}
+					onClick={() => onSelect(tile.value)}
+					icon={<tile.icon className="size-4" strokeWidth={2} />}
+					title={tile.label}
+					subtitle={tile.desc}
+				/>
+			))}
 		</div>
 	);
 }

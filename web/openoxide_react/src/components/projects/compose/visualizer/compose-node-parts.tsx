@@ -7,6 +7,7 @@ export type ComposeServiceNodeData = ComposeService & {
 	onAddBackup?: (service: ComposeService) => void;
 	onOpenTerminal?: (service: ComposeService) => void;
 	onViewLogs?: (service: ComposeService) => void;
+	readOnly?: boolean;
 };
 
 export {DockerServiceIcon as ServiceIcon} from '../../common/docker-service-icon';
@@ -16,8 +17,8 @@ export {DockerServiceIcon as ServiceIcon} from '../../common/docker-service-icon
 const handleStyle = {
 	width: 8,
 	height: 8,
-	background: '#30363d',
-	border: '2px solid #0d1117',
+	background: 'var(--muted-foreground)',
+	border: '2px solid var(--card)',
 } as const;
 
 export function NodeHandles() {

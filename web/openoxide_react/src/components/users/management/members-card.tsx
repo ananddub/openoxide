@@ -1,113 +1,90 @@
-import {Users, Search} from 'lucide-react';
-import {Input} from '#/components/ui/input';
+import {UserPlus, Users} from 'lucide-react';
+import {Button} from '#/components/ui/button';
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
-import {ListCard, ListEmpty} from '#/components/settings/list-card';
-import {MemberRow} from './member-row';
-import {
-	ROLES,
-	type UsersManagementController as Ctl,
-} from './use-users-management';
+	GridSkeleton,
+	ListCard,
+	ListEmpty,
+	ListSkeleton,
+	type ListView,
+	ViewGrid,
+} from '#/components/settings/list-card';
+import {MemberCard, MemberRow} from './member-row';
+import {type UsersManagementController as Ctl} from './use-users-management';
 
-/** Members list card: search + role filter header, avatar rows with inline
- * role control and a kebab for change-role / remove. */
-export function MembersCard({ctl}: {ctl: Ctl}) {
+/** Member grid/list — the page toolbar owns search and the role filter. */
+export function MembersCard({ctl, view}: {ctl: Ctl; view: ListView}) {
 	const {
-		members,
 		filteredMembers,
 		isLoading,
 		searchQuery,
-		setSearchQuery,
 		roleFilter,
-		setRoleFilter,
 		userProfile,
 		isSelf,
 		canManageMember,
 		can,
-		changeRole,
+		openCreate,
 		setEditingRoleUser,
 		setDeleteTarget,
 	} = ctl;
 
+	if (isLoading)
+		return view === 'grid' ? (
+			<GridSkeleton cards={4} />
+		) : (
+			<ListSkeleton rows={4} />
+		);
+
+	if (filteredMembers.length === 0) {
+		const filtering = Boolean(searchQuery) || roleFilter !== 'ALL';
+		return (
+			<ListEmpty
+				icon={Users}
+				title={filtering ? 'No members found' : 'No members yet'}
+				description={
+					filtering
+						? 'Try adjusting the search text or the role filter above.'
+						: 'Invite people to this organization so they can work on its projects.'
+				}
+				action={
+					!filtering && can('member:create') ? (
+						<Button
+							onClick={() => openCreate('invite')}
+							className="h-9 gap-1.5">
+							<UserPlus className="size-3.5" /> Invite someone
+						</Button>
+					) : undefined
+				}
+			/>
+		);
+	}
+
+	const memberProps = (member: (typeof filteredMembers)[number]) => ({
+		member,
+		self: isSelf(member),
+		profileName: userProfile?.name,
+		profileAvatar: userProfile?.avatar,
+		canEditRole: canManageMember(member),
+		canRemove:
+			can('member:delete') && member.role.toLowerCase() !== 'owner',
+		onEditRole: () => setEditingRoleUser(member),
+		onDelete: () => setDeleteTarget(member),
+	});
+
+	if (view === 'grid') {
+		return (
+			<ViewGrid>
+				{filteredMembers.map(member => (
+					<MemberCard key={String(member.id)} {...memberProps(member)} />
+				))}
+			</ViewGrid>
+		);
+	}
+
 	return (
-		<ListCard
-			title={`Members (${members.length})`}
-			description="Everyone with access to this workspace."
-			action={
-				<div className="flex items-center gap-2">
-					<div className="relative">
-						<Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-						<Input
-							placeholder="Search members..."
-							value={searchQuery}
-							onChange={e => setSearchQuery(e.target.value)}
-							className="h-8 w-48 bg-muted/40 pl-8 text-xs"
-						/>
-					</div>
-					<Select
-						value={roleFilter}
-						onValueChange={v => setRoleFilter(v ?? 'ALL')}>
-						<SelectTrigger className="h-8 w-28 bg-muted/40 text-xs">
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="ALL" className="text-xs">
-								All roles
-							</SelectItem>
-							{ROLES.map(r => (
-								<SelectItem
-									key={r}
-									value={r}
-									className="text-xs capitalize">
-									{r}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-			}>
-			{isLoading ? (
-				<div className="space-y-2 p-5">
-					{[...Array(3)].map((_, i) => (
-						<div
-							key={i}
-							className="h-12 animate-pulse rounded-xl bg-muted/30"
-						/>
-					))}
-				</div>
-			) : filteredMembers.length === 0 ? (
-				<ListEmpty
-					icon={Users}
-					title="No members found"
-					description={
-						searchQuery || roleFilter !== 'ALL'
-							? 'Try adjusting your search query or role filter.'
-							: 'Add team members to collaborate on projects.'
-					}
-				/>
-			) : (
-				<div className="divide-y divide-border/40">
-					{filteredMembers.map(member => (
-						<MemberRow
-							key={String(member.id)}
-							member={member}
-							self={isSelf(member)}
-							profileName={userProfile?.name}
-							profileAvatar={userProfile?.avatar}
-							manageable={canManageMember(member)}
-							deletable={can('member:delete')}
-							onRole={role => changeRole(member, role)}
-							onEditRole={() => setEditingRoleUser(member)}
-							onDelete={() => setDeleteTarget(member)}
-						/>
-					))}
-				</div>
-			)}
+		<ListCard>
+			{filteredMembers.map(member => (
+				<MemberRow key={String(member.id)} {...memberProps(member)} />
+			))}
 		</ListCard>
 	);
 }

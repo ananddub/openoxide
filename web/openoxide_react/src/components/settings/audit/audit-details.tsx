@@ -1,4 +1,4 @@
-import {DialogTitle, DialogDescription} from '#/components/ui/dialog';
+import {SheetDescription, SheetTitle} from '#/components/ui/sheet';
 import type {AuditLogPayload} from '#/api/live/audit';
 import {cn} from '#/api/utils';
 import {
@@ -24,9 +24,9 @@ export function AuditDetails({event}: {event: AuditLogPayload}) {
 							TONE_DOT[info.tone],
 						)}
 					/>
-					<DialogTitle className="text-lg font-semibold text-foreground">
+					<SheetTitle className="text-lg font-semibold text-foreground">
 						{event.action.replace(/_/g, ' ').toLowerCase()}
-					</DialogTitle>
+					</SheetTitle>
 				</div>
 				<p className="mt-1.5 text-sm text-foreground/80">
 					<span className="font-medium">
@@ -35,12 +35,12 @@ export function AuditDetails({event}: {event: AuditLogPayload}) {
 					{info.verb}
 					<span className="font-medium"> {resourceLabel(event)}</span>
 				</p>
-				<DialogDescription className="mt-0.5 text-xs text-muted-foreground">
+				<SheetDescription className="mt-0.5 text-xs text-muted-foreground">
 					{timeAgo(event.created_at)} · {absoluteTime(event.created_at)}
-				</DialogDescription>
+				</SheetDescription>
 			</div>
 
-			<section className="rounded-xl bg-muted/20 p-4">
+			<section className="w-full divide-y overflow-hidden rounded-xl border bg-card">
 				<DetailRow label="Who" value={event.user_email || 'System'} />
 				<DetailRow label="Role" value={event.user_role || '—'} />
 				<DetailRow label="Action" value={event.action} mono />
@@ -51,8 +51,8 @@ export function AuditDetails({event}: {event: AuditLogPayload}) {
 			</section>
 
 			{Object.keys(meta).length > 0 && (
-				<section className="overflow-hidden rounded-xl ">
-					<div className="border-b  px-4 py-2.5">
+				<section className="w-full overflow-hidden rounded-xl border bg-card">
+					<div className="border-b border-border/50 px-4 py-2.5">
 						<span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
 							Metadata
 						</span>
@@ -76,8 +76,8 @@ function DetailRow({
 	mono?: boolean;
 }) {
 	return (
-		<div className="flex items-start gap-3 py-1.5">
-			<span className="w-24 shrink-0 text-xs text-muted-foreground">
+		<div className="flex items-start gap-4 px-4 py-3">
+			<span className="w-24 shrink-0 text-[13px] text-muted-foreground">
 				{label}
 			</span>
 			<span

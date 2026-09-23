@@ -1,8 +1,13 @@
 # syntax=docker/dockerfile:1
 
-# =============================================================================
-# Stage 1: Rust static musl build
-# =============================================================================
+# Bun version for the SPA toolchain — global scope so `FROM` below can
+# expand it (COPY --from=<image:tag> can't expand stage-scoped ARGs).
+ARG BUN_VERSION=1.3.14
+
+# Official bun toolchain image (Docker Hub) — pulled once, binary COPY'd
+# into the builder (see the SPA build below).
+FROM oven/bun:${BUN_VERSION}-debian AS bun
+
 FROM rust:slim-bookworm AS backend-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -47,11 +52,13 @@ COPY src/ src/
 # bakes it into the panel binary (single-binary serving, prototype
 # pattern). lefthook's prepare step needs git hooks tooling that doesn't
 # exist in this image, hence --ignore-scripts.
-ARG BUN_VERSION=1.3.14
-ADD https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-linux-x64.zip /tmp/bun.zip
-RUN apt-get update -qq && apt-get install -y -qq unzip >/dev/null && \
-    cd /tmp && unzip -q bun.zip && \
-    mv bun-linux-x64/bun /usr/local/bin/bun && chmod +x /usr/local/bin/bun && bun --version
+# Bun comes from the official oven/bun image (Docker Hub) instead of a
+# GitHub release ADD — release-assets.githubusercontent.com times out on
+# some networks/CDNs, while registry-1.docker.io pulls reliably. The
+# -debian variant matches this stage's bookworm glibc, so the binary
+# drops in without extra deps.
+COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
+RUN bun --version
 # Install deps first (only manifests — layer caches unless lockfile changes)
 COPY web/openoxide_react/package.json web/openoxide_react/bun.lock* web/openoxide_react/
 RUN --mount=type=cache,target=/root/.bun/install/cache \

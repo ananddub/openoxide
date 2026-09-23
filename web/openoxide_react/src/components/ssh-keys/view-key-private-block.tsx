@@ -19,7 +19,7 @@ export function ViewKeyPrivateBlock({privateKey}: {privateKey?: string}) {
 	return (
 		<div className="flex flex-col gap-1.5">
 			<div className="flex items-center justify-between">
-				<label className="text-xs font-semibold text-foreground">
+				<label className="text-[13px] font-medium text-foreground">
 					Private Key
 				</label>
 				<div className="flex items-center gap-1.5">
@@ -53,11 +53,11 @@ export function ViewKeyPrivateBlock({privateKey}: {privateKey?: string}) {
 			</div>
 
 			{showPrivate ? (
-				<div className="max-h-36 overflow-y-auto rounded-md bg-zinc-950/90 p-3 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap text-emerald-400">
+				<div className="max-h-36 overflow-y-auto rounded-md border border-border/60 bg-muted/40 p-3 font-mono text-xs leading-relaxed break-all whitespace-pre-wrap text-emerald-500">
 					{privateKey || 'No private key stored for this SSH key.'}
 				</div>
 			) : (
-				<div className="flex h-10 items-center rounded-md bg-zinc-950/60 px-3 font-mono text-xs text-zinc-500 italic">
+				<div className="flex h-10 items-center rounded-md border border-border/60 bg-muted/20 px-3 font-mono text-xs text-muted-foreground italic">
 					•••••••••••••••••••••••• (Hidden for security)
 				</div>
 			)}

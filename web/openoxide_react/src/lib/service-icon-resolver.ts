@@ -3,38 +3,56 @@ export type IconResult = {
 	paths?: string[];
 	color: string;
 	viewBox?: string;
+	/** 'git' = source-build (repo/Dockerfile) → render the Git icon,
+	 *  'docker' = local image without a brand match. */
+	kind?: 'git' | 'docker';
+	/** Brand slug whose real multi-color artwork lives in
+	 *  #/components/icons/db — render that component instead of `path`. */
+	brand?: string;
 };
+
+// Real glyph data pulled from tree-shaken simple-icons modules — the
+// previous hand-written paths here were approximations and rendered as
+// wrong/garbage logos for redis/mongo/nginx/node.
+import {
+	siDocker,
+	siRedis,
+	siMongodb,
+	siNginx,
+	siNodedotjs,
+} from 'simple-icons';
 
 // Curated SVG Path & Brand Color Map for instant 0ms lookup without loading 5.7MB simple-icons bundle
 const CURATED_ICONS: Record<string, IconResult> = {
 	docker: {
-		path: 'M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.186v1.887c0 .102.083.185.185.185m-2.954-5.43h2.118a.185.185 0 00.186-.186V3.574a.185.185 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.185.185 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.186.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.186.185.186m0-2.716h2.12a.185.185 0 00.184-.186V3.574a.186.186 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954 0h2.119a.186.186 0 00.185-.186V3.574a.186.186 0 00-.185-.185H5.145a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m0 2.716h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.145a.185.185 0 00-.185.185v1.887c0 .102.083.186.185.186m-2.93 0h2.12a.185.185 0 00.184-.186V6.29a.185.185 0 00-.185-.185H2.217a.185.185 0 00-.185.185v1.887c0 .102.083.186.185.186m8.028 2.716h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.186v1.887c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186H7.315a.185.185 0 00-.185.186v1.887c0 .102.083.185.185.185m-2.955 0h2.119a.186.186 0 00.185-.185V9.006a.186.186 0 00-.185-.186H4.36a.185.185 0 00-.185.186v1.887c0 .102.083.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.185-.186H1.43a.185.185 0 00-.185.186v1.887c0 .102.083.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.406-2.652-2.822-4.595-5.508-4.544a.276.276 0 00-.27.272v3.743c0 .153.125.276.277.276h.176c1.399 0 2.533 1.134 2.533 2.533 0 1.4-1.134 2.534-2.533 2.534H2.43c-.456 0-.825.37-.825.825 0 1.258.333 2.493.963 3.573 1.547 2.651 4.385 4.27 7.426 4.27 7.03 0 12.87-4.996 13.82-11.758.077-.55.056-1.112-.051-1.303',
-		color: '#2496ED',
+		path: siDocker.path,
+		color: `#${siDocker.hex}`,
 		viewBox: '0 0 24 24',
 	},
 	postgresql: {
-		path: 'M23.996 11.026a1.764 1.764 0 01-.06.276c-.05.158-.158.468-.344.93-.372.926-.957 2.186-1.785 3.518-1.656 2.664-4.227 5.586-8.232 7.742a.56.56 0 01-.527.008c-4.237-2.115-6.907-5.01-8.59-7.666a15.76 15.76 0 01-1.785-3.52c-.186-.462-.294-.772-.344-.93a1.854 1.854 0 01-.06-.276c-.03-.178-.035-.38-.035-.615v-.063c0-.18.005-.333.023-.46.037-.253.11-.462.228-.636.236-.347.606-.554 1.05-.62.443-.066.97.02 1.57.252.6.23 1.28.61 2.02 1.13.74.52 1.54 1.18 2.37 1.96.83.78 1.68 1.68 2.52 2.66.84-.98 1.69-1.88 2.52-2.66.83-.78 1.63-1.44 2.37-1.96.74-.52 1.42-.9 2.02-1.13.6-.23 1.13-.318 1.57-.252.444.066.814.273 1.05.62.118.174.19.383.228.636.018.127.023.28.023.46v.063c0 .235-.005.437-.035.615z',
-		color: '#4169E1',
+		brand: 'postgresql',
+		path: siDocker.path,
+		color: '#336791',
 		viewBox: '0 0 24 24',
 	},
 	redis: {
-		path: 'M20.219 9.176l-8.22-4.746a.001.001 0 00-.001 0L3.78 9.176a1.442 1.442 0 00-.721 1.25v9.493c0 .518.277.997.721 1.25l8.219 4.745c.444.256.997.256 1.441 0l8.219-4.745c.444-.253.721-.732.721-1.25v-9.493a1.44 1.44 0 00-.721-1.25z',
-		color: '#DC382D',
+		path: siRedis.path,
+		color: `#${siRedis.hex}`,
 		viewBox: '0 0 24 24',
 	},
 	mongodb: {
-		path: 'M17.193 9.555c-1.566-3.864-4.22-6.526-5.193-7.555-.973 1.029-3.627 3.691-5.193 7.555-1.782 4.394-1.246 8.358 1.218 10.748 1.656 1.606 3.42 2.197 3.975 2.197.555 0 2.319-.591 3.975-2.197 2.464-2.39 3-6.354 1.218-10.748z',
-		color: '#47A248',
+		path: siMongodb.path,
+		color: `#${siMongodb.hex}`,
 		viewBox: '0 0 24 24',
 	},
 	nginx: {
-		path: 'M12 0L1.605 6v12L12 24l10.395-6V6L12 0zm5.19 15.3l-2.4-1.35V10.8l-5.58 7.35H6.81V8.7l2.4 1.35v3.15l5.58-7.35h2.4v9.45z',
-		color: '#009639',
+		path: siNginx.path,
+		color: `#${siNginx.hex}`,
 		viewBox: '0 0 24 24',
 	},
 	nodedotjs: {
-		path: 'M12 0L1.605 6v12L12 24l10.395-6V6L12 0zm.006 18.006l-4.5-2.598v-5.196l4.5 2.598v5.196z',
-		color: '#5FA04E',
+		path: siNodedotjs.path,
+		color: `#${siNodedotjs.hex}`,
 		viewBox: '0 0 24 24',
 	},
 };
@@ -53,12 +71,22 @@ const ALIASES: Record<string, string> = {
 	postgres: 'postgresql',
 	postgresql: 'postgresql',
 	pg: 'postgresql',
+	mysql: 'mysql',
+	mariadb: 'mariadb',
+	maria: 'mariadb',
 	mongo: 'mongodb',
 	mongodb: 'mongodb',
 	redis: 'redis',
 	nginx: 'nginx',
 	node: 'nodedotjs',
 	nodejs: 'nodedotjs',
+};
+
+// Brands whose real artwork ships as React components in
+// #/components/icons/db — no path here, just color for the tile tint.
+const BRAND_ICONS: Record<string, IconResult> = {
+	mysql: {brand: 'mysql', color: '#4479A1'},
+	mariadb: {brand: 'mariadb', color: '#7b8cde'},
 };
 
 export function isValidDockerImage(image?: string): boolean {
@@ -77,7 +105,45 @@ export function isValidDockerImage(image?: string): boolean {
 	return true;
 }
 
+// App nodes often carry a git repo URL or a buildpack name instead of a
+// Docker image — those must render the Git mark, not a Docker whale (or a
+// broken CDN lookup for the repo's last path segment).
+const GIT_HOSTS = [
+	'github.com',
+	'gitlab.com',
+	'bitbucket.org',
+	'dev.azure.com',
+	'gitea.',
+	'git.',
+];
+
+const BUILD_PACKS = [
+	'nixpacks',
+	'dokher',
+	'packonomic',
+	'packonic',
+	'crawtor',
+	'crautorks',
+	'railpack',
+	'buildpacks',
+	'dockerfile',
+];
+
+export function isGitSource(image?: string): boolean {
+	if (!image) return false;
+	const t = image.trim().toLowerCase();
+	if (!t) return false;
+	if (t.startsWith('http://') || t.startsWith('https://')) return true;
+	if (t.startsWith('git@') || t.endsWith('.git')) return true;
+	if (GIT_HOSTS.some(h => t.includes(h))) return true;
+	const clean = t.replace(/[^a-z0-9]/g, '');
+	return BUILD_PACKS.some(b => clean.includes(b));
+}
+
 export function resolveLocalIcon(image?: string): IconResult | null {
+	if (isGitSource(image)) {
+		return {color: '#F05032', kind: 'git'};
+	}
 	if (!isValidDockerImage(image)) {
 		return null;
 	}
@@ -100,6 +166,9 @@ export function resolveLocalIcon(image?: string): IconResult | null {
 	const targetSlug = ALIASES[clean] || clean;
 	if (CURATED_ICONS[targetSlug]) {
 		return CURATED_ICONS[targetSlug];
+	}
+	if (BRAND_ICONS[targetSlug]) {
+		return BRAND_ICONS[targetSlug];
 	}
 
 	// Default fallback to Docker 🐳 icon if not in curated list

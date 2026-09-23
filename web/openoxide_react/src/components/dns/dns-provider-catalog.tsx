@@ -1,5 +1,10 @@
-import {Globe} from 'lucide-react';
-import {CloudflareIcon, AwsIcon} from '#/components/icons/provider-icons';
+import {
+	CloudflareIcon,
+	AwsIcon,
+	HetznerIcon,
+	DigitalOceanIcon,
+	GoDaddyIcon,
+} from '#/components/icons/provider-icons';
 import type {ProviderOption} from '#/components/shared/provider-type-select';
 
 export interface DnsProviderItem {
@@ -35,17 +40,17 @@ export const dnsProviderOptions: ProviderOption[] = [
 	{
 		value: 'HETZNER',
 		label: 'Hetzner DNS',
-		icon: <Globe className={`${smallIcon} text-orange-500`} />,
+		icon: <HetznerIcon className={smallIcon} />,
 	},
 	{
 		value: 'DIGITALOCEAN',
 		label: 'DigitalOcean DNS',
-		icon: <Globe className={`${smallIcon} text-sky-500`} />,
+		icon: <DigitalOceanIcon className={smallIcon} />,
 	},
 	{
 		value: 'GODADDY',
 		label: 'GoDaddy DNS',
-		icon: <Globe className={`${smallIcon} text-green-600`} />,
+		icon: <GoDaddyIcon className={smallIcon} />,
 	},
 ];
 
@@ -59,8 +64,16 @@ export function DnsProviderIcon({
 	switch (type.toUpperCase()) {
 		case 'CLOUDFLARE':
 			return <CloudflareIcon className={className} />;
+		case 'ROUTE53':
+			return <AwsIcon className={className} />;
+		case 'HETZNER':
+			return <HetznerIcon className={className} />;
+		case 'DIGITALOCEAN':
+			return <DigitalOceanIcon className={className} />;
+		case 'GODADDY':
+			return <GoDaddyIcon className={className} />;
 		default:
-			return <Globe className={`${className} text-primary`} />;
+			return <CloudflareIcon className={className} />;
 	}
 }
 

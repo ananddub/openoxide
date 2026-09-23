@@ -1,9 +1,9 @@
 import {Input} from '#/components/ui/input';
-import {Button} from '#/components/ui/button';
-import {Plus} from 'lucide-react';
-import {Field} from './field';
+import {DataTable} from './list-shell';
 
-/** Editable key/value label list for the swarm labels form. */
+type Label = {key: string; value: string};
+
+/** Editable key/value label list rendered as a two-column table. */
 export function LabelsList({
 	value,
 	set,
@@ -11,66 +11,57 @@ export function LabelsList({
 	value: any;
 	set: (key: string, value: any) => void;
 }) {
-	const labels = Array.isArray(value)
+	const labels: Label[] = Array.isArray(value)
 		? value
 		: value?.key
 			? [{key: value.key, value: value.value || ''}]
 			: [];
-	const update = (index: number, patch: any) =>
-		set(
-			'labels',
-			labels.map((item: any, i: number) =>
-				i === index ? {...item, ...patch} : item,
-			),
-		);
 	return (
-		<div className="flex max-w-2xl flex-col gap-3">
-			<div>
-				<h4 className="text-sm font-medium">Labels</h4>
-				<p className="text-xs text-muted-foreground">
-					Add key-value labels to your service.
-				</p>
-			</div>
-			{labels.map((label: any, index: number) => (
-				<div key={index} className="flex flex-col gap-3 rounded-md  p-3">
-					<Field label="Label key">
+		<DataTable
+			title="Labels"
+			description="Add key-value labels to your service."
+			addLabel="Add label"
+			empty="No labels yet."
+			rows={labels}
+			columns={[
+				{
+					header: 'Key',
+					cell: (row, update) => (
 						<Input
-							value={label.key || ''}
+							value={row.key || ''}
 							placeholder="com.example.app.name"
-							onChange={e => update(index, {key: e.target.value})}
+							className="h-9"
+							onChange={e => update({key: e.target.value})}
 						/>
-					</Field>
-					<Field label="Label value">
+					),
+				},
+				{
+					header: 'Value',
+					cell: (row, update) => (
 						<Input
-							value={label.value || ''}
+							value={row.value || ''}
 							placeholder="my-app"
-							onChange={e => update(index, {value: e.target.value})}
+							className="h-9"
+							onChange={e => update({value: e.target.value})}
 						/>
-					</Field>
-					<Button
-						type="button"
-						variant="destructive"
-						size="sm"
-						className="w-fit"
-						onClick={() =>
-							set(
-								'labels',
-								labels.filter((_: any, i: number) => i !== index),
-							)
-						}>
-						Remove
-					</Button>
-				</div>
-			))}
-			<Button
-				type="button"
-				variant="outline"
-				size="sm"
-				className="w-fit"
-				onClick={() => set('labels', [...labels, {key: '', value: ''}])}>
-				<Plus className="mr-1 size-3" />
-				Add label
-			</Button>
-		</div>
+					),
+				},
+			]}
+			onAdd={() => set('labels', [...labels, {key: '', value: ''}])}
+			onUpdate={(index, patch) =>
+				set(
+					'labels',
+					labels.map((item, i) =>
+						i === index ? {...item, ...patch} : item,
+					),
+				)
+			}
+			onRemove={index =>
+				set(
+					'labels',
+					labels.filter((_, i) => i !== index),
+				)
+			}
+		/>
 	);
 }

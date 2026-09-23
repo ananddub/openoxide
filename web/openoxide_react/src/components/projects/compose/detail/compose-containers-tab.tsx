@@ -1,6 +1,4 @@
 import {useState, useMemo} from 'react';
-import {Box, RefreshCw} from 'lucide-react';
-import {Badge} from '#/components/ui/badge';
 import {toast} from 'sonner';
 import {
 	useComposeStart,
@@ -14,6 +12,7 @@ import {
 	type ContainerItem,
 } from './containers/container-inspect-modal';
 import {buildComposeContainers} from './containers/build-compose-containers';
+import {SectionHeader} from '#/components/settings/list-card';
 
 interface ComposeContainersTabProps {
 	compose: any;
@@ -34,11 +33,8 @@ export function ComposeContainersTab({
 
 	const serverId = compose?.destination_id || compose?.server_id;
 
-	const {
-		data: rawContainers = [],
-		refetch: refetchContainers,
-		isFetching,
-	} = useDeploymentListContainers(serverId ? Number(serverId) : null);
+	const {data: rawContainers = [], refetch: refetchContainers} =
+		useDeploymentListContainers(serverId ? Number(serverId) : null);
 
 	const serviceNames = useMemo(() => {
 		const extracted = extractServicesFromYaml(compose?.compose_file);
@@ -88,24 +84,14 @@ export function ComposeContainersTab({
 	};
 
 	return (
-		<div className="flex flex-col gap-6">
-			<section className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-card p-5 shadow-sm">
-				<div>
-					<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
-						<Box className="h-4 w-4 text-primary" /> Compose Stack
-						Containers
-						{isFetching && (
-							<RefreshCw className="ml-1 h-3.5 w-3.5 animate-spin text-muted-foreground" />
-						)}
-					</h3>
-					<p className="mt-1 text-xs text-muted-foreground">
-						Real-time status and telemetry of live Docker containers
-					</p>
-				</div>
-				<Badge variant="outline" className="px-3 py-1 font-mono text-xs">
-					Total Containers: {containersList.length}
-				</Badge>
-			</section>
+		<div className="flex w-full flex-col gap-5">
+			<SectionHeader
+				title="Containers"
+				description="Real-time status and telemetry of the live Docker containers in this stack.">
+				<span className="shrink-0 rounded-md bg-foreground/[0.05] px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
+					{containersList.length}
+				</span>
+			</SectionHeader>
 
 			<ComposeContainersTable
 				containers={containersList}

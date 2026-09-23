@@ -1,19 +1,11 @@
 import {useState} from 'react';
-import {Link2} from 'lucide-react';
+import {Link2, Package, Pencil, Plus, Trash2} from 'lucide-react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
-import {Label} from '#/components/ui/label';
 import {Switch} from '#/components/ui/switch';
-import {Badge} from '#/components/ui/badge';
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
+import {SettingsSheet} from '#/components/shared/settings-sheet';
+import {Field, SheetGroup} from '#/components/shared/field';
 import {
 	useApplicationRedirectDelete,
 	useApplicationRedirectList,
@@ -21,46 +13,48 @@ import {
 	type ApplicationRedirectPayload,
 } from '#/api/live';
 import {formatApiError} from '#/api/utils';
-import {
-	AddResourceButton,
-	AdvancedSection,
-	EmptyRow,
-	ResourceRow,
-} from '#/components/projects/detail/advanced/shared';
 
 export function RedirectsSection({app}: {app: any}) {
-	const {data: redirects = []} = useApplicationRedirectList(app.id);
+	const {data: redirects = [], refetch} = useApplicationRedirectList(app.id);
 	const upsert = useApplicationRedirectUpsert();
 	const remove = useApplicationRedirectDelete();
-	const [open, setOpen] = useState(false);
-	const [editing, setEditing] =
-		useState<ApplicationRedirectPayload | null>(null);
-	const [saving, setSaving] = useState(false);
-	const [deletingId, setDeletingId] = useState<number | null>(null);
+
+	const [view, setView] = useState<'list' | 'form'>('list');
+	const [editingId, setEditingId] = useState<number | undefined>(undefined);
 	const [regex, setRegex] = useState('');
 	const [replacement, setReplacement] = useState('');
 	const [permanent, setPermanent] = useState(true);
+	const [saving, setSaving] = useState(false);
 
-	const show = (redirect: ApplicationRedirectPayload | null) => {
-		setEditing(redirect);
+	const openForm = (redirect: ApplicationRedirectPayload | null) => {
+		setEditingId(redirect?.id);
 		setRegex(redirect?.regex || '');
 		setReplacement(redirect?.replacement || '');
 		setPermanent((redirect?.permanent ?? 1) !== 0);
-		setOpen(true);
+		setView('form');
+	};
+	const backToList = () => {
+		setView('list');
+		setEditingId(undefined);
+		setRegex('');
+		setReplacement('');
+		setPermanent(true);
 	};
 
 	const save = async () => {
+		if (!regex.trim() || !replacement.trim()) return;
 		setSaving(true);
 		try {
 			await upsert.mutateAsync({
 				application_id: app.id,
-				id: editing?.id,
+				id: editingId,
 				regex,
 				replacement,
 				permanent,
 			});
-			toast.success(editing ? 'Redirect updated' : 'Redirect added');
-			setOpen(false);
+			toast.success(editingId ? 'Redirect updated' : 'Redirect added');
+			backToList();
+			await refetch();
 		} catch (err) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -68,108 +62,174 @@ export function RedirectsSection({app}: {app: any}) {
 		}
 	};
 
-	const del = async (id: number) => {
-		setDeletingId(id);
+	const del = async (redirect: ApplicationRedirectPayload) => {
 		try {
-			await remove.mutateAsync({application_id: app.id, id});
+			await remove.mutateAsync({application_id: app.id, id: redirect.id});
 			toast.success('Redirect removed');
+			await refetch();
 		} catch (err) {
 			toast.error(formatApiError(err));
-		} finally {
-			setDeletingId(null);
 		}
 	};
 
 	return (
-		<AdvancedSection
-			icon={<Link2 className="size-4 text-primary" />}
-			title="Traefik Redirects"
-			description="Regex-based request rewrites handled at the edge router."
-			action={
-				<AddResourceButton
-					onClick={() => show(null)}
-					label="Add Redirect"
-				/>
+		<SettingsSheet
+			title={
+				view === 'form'
+					? editingId
+						? 'Edit redirect'
+						: 'Add redirect'
+					: 'Redirects'
+			}
+			description={
+				view === 'form'
+					? 'Match a request pattern and rewrite it at the edge.'
+					: 'Regex rewrites handled at the edge router'
+			}
+			icon={<Link2 className="size-4" />}
+			onOpenChange={next => {
+				if (!next) backToList();
+			}}
+			meta={
+				view === 'list' && redirects.length > 0 ? (
+					<span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+						{redirects.length}
+					</span>
+				) : undefined
+			}
+			footerLeft={
+				view === 'form' ? (
+					<Button
+						type="button"
+						variant="ghost"
+						onClick={backToList}
+						className="h-9 px-4 text-sm">
+						Back
+					</Button>
+				) : undefined
+			}
+			footer={
+				view === 'form' ? (
+					<Button
+						onClick={save}
+						disabled={
+							saving || !regex.trim() || !replacement.trim()
+						}
+						className="h-9 px-4 text-sm">
+						{saving
+							? 'Saving...'
+							: editingId
+								? 'Update redirect'
+								: 'Add redirect'}
+					</Button>
+				) : undefined
 			}>
-			<div className="flex flex-col gap-2">
-				{redirects.length === 0 ? (
-					<EmptyRow label="No redirects." />
-				) : (
-					redirects.map(redirect => (
-						<ResourceRow
-							key={redirect.id}
-							title={redirect.regex}
-							subtitle={`→ ${redirect.replacement}`}
-							badges={
-								<Badge
-									variant="secondary"
-									className="text-[10px] font-semibold">
-									{redirect.permanent ? '301' : '302'}
-								</Badge>
-							}
-							onEdit={() => show(redirect)}
-							onDelete={() => del(redirect.id)}
-							deleting={deletingId === redirect.id}
+			{view === 'list' ? (
+				<SheetGroup
+					title="Traefik redirects"
+					description="Regex-based request rewrites handled at the edge router.">
+					{redirects.length === 0 ? (
+						<div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-muted/20 px-4 py-10 text-center">
+							<Package className="size-8 text-muted-foreground/60" />
+							<p className="text-sm text-muted-foreground">
+								No redirects configured yet.
+							</p>
+							<Button
+								onClick={() => openForm(null)}
+								className="h-9 gap-1.5 px-4 text-sm">
+								<Plus className="size-4" /> Add redirect
+							</Button>
+						</div>
+					) : (
+						<>
+							<div className="flex flex-col gap-3">
+								{redirects.map(redirect => (
+									<div
+										key={redirect.id}
+										className="flex items-start justify-between gap-3 rounded-xl border border-border bg-card p-4">
+										<div className="flex min-w-0 flex-col gap-2">
+											<div className="flex items-center gap-2">
+												<span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+													{redirect.permanent ? '301' : '302'}
+												</span>
+												<span className="truncate font-mono text-sm text-foreground">
+													{redirect.regex}
+												</span>
+											</div>
+											<p className="truncate text-[13px] text-muted-foreground">
+												<span className="font-mono">
+													→ {redirect.replacement}
+												</span>
+											</p>
+										</div>
+										<div className="flex shrink-0 gap-1">
+											<Button
+												variant="ghost"
+												size="icon"
+												onClick={() => openForm(redirect)}
+												aria-label="Edit redirect">
+												<Pencil className="size-4" />
+											</Button>
+											<Button
+												variant="ghost"
+												size="icon"
+												onClick={() => del(redirect)}
+												aria-label="Delete redirect"
+												className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+												<Trash2 className="size-4" />
+											</Button>
+										</div>
+									</div>
+								))}
+							</div>
+							<Button
+								onClick={() => openForm(null)}
+								variant="outline"
+								className="h-9 w-fit gap-1.5 text-sm">
+								<Plus className="size-4" /> Add redirect
+							</Button>
+						</>
+					)}
+				</SheetGroup>
+			) : (
+				<div className="flex flex-col gap-5">
+					<Field
+						label="Regex"
+						hint="The request pattern to match.">
+						<Input
+							placeholder="https://old.example.com/(.*)"
+							value={regex}
+							onChange={e => setRegex(e.target.value)}
+							className="font-mono"
 						/>
-					))
-				)}
-			</div>
-			<Dialog open={open} onOpenChange={setOpen}>
-				<DialogContent className="sm:max-w-md">
-					<DialogHeader>
-						<DialogTitle>Redirect</DialogTitle>
-						<DialogDescription>
-							Match a request pattern and rewrite it to a target.
-						</DialogDescription>
-					</DialogHeader>
-					<div className="flex flex-col gap-3">
-						<div className="flex flex-col gap-1.5">
-							<Label className="text-xs font-bold text-muted-foreground">
-								Regex
-							</Label>
-							<Input
-								placeholder="https://old.example.com/(.*)"
-								value={regex}
-								onChange={e => setRegex(e.target.value)}
-								className="font-mono text-xs"
-							/>
-						</div>
-						<div className="flex flex-col gap-1.5">
-							<Label className="text-xs font-bold text-muted-foreground">
-								Replacement
-							</Label>
-							<Input
-								placeholder="https://example.com/$1"
-								value={replacement}
-								onChange={e => setReplacement(e.target.value)}
-								className="font-mono text-xs"
-							/>
-						</div>
-						<div className="flex items-center justify-between rounded-lg border border-border/40 px-3 py-2.5">
-							<Label className="text-xs font-bold text-muted-foreground">
+					</Field>
+					<Field
+						label="Replacement"
+						hint="Where matched requests are rewritten to.">
+						<Input
+							placeholder="https://example.com/$1"
+							value={replacement}
+							onChange={e => setReplacement(e.target.value)}
+							className="font-mono"
+						/>
+					</Field>
+					<div className="flex items-center justify-between gap-4 rounded-xl border border-border/50 px-4 py-3.5">
+						<div className="min-w-0">
+							<div className="text-sm font-medium text-foreground">
 								Permanent (301)
-							</Label>
-							<Switch checked={permanent} onCheckedChange={setPermanent} />
+							</div>
+							<div className="text-[13px] text-muted-foreground">
+								Toggle off to send a temporary 302 instead.
+							</div>
 						</div>
+						<Switch
+							checked={permanent}
+							onCheckedChange={setPermanent}
+							className="shrink-0"
+						/>
 					</div>
-					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={() => setOpen(false)}
-							className="text-xs">
-							Cancel
-						</Button>
-						<Button
-							disabled={saving || !regex.trim() || !replacement.trim()}
-							onClick={save}
-							className="text-xs">
-							{saving ? 'Saving…' : editing ? 'Update' : 'Add'}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		</AdvancedSection>
+				</div>
+			)}
+		</SettingsSheet>
 	);
 }
-
-// ── Basic Auth ─────────────────────────────────────────────────────────

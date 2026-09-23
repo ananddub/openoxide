@@ -30,18 +30,18 @@ export function ProjectModals({
 }: ProjectModalsProps) {
 	return (
 		<>
-			{showCreateEnv && (
-				<CreateEnvDialog
-					isOpen={showCreateEnv}
-					onClose={() => setShowCreateEnv(false)}
-					projectId={projectId}
-					onCreated={() => {
-						envsRefetch();
-					}}
-				/>
-			)}
+			{/* Always mounted while their data exists — the `show*` flags only
+			    drive `open`, so enter/exit animations can play. */}
+			<CreateEnvDialog
+				isOpen={showCreateEnv}
+				onClose={() => setShowCreateEnv(false)}
+				projectId={projectId}
+				onCreated={() => {
+					envsRefetch();
+				}}
+			/>
 
-			{showProjectEnv && project && (
+			{project && (
 				<EnvVariablesModal
 					isOpen={showProjectEnv}
 					onClose={() => setShowProjectEnv(false)}
@@ -52,7 +52,7 @@ export function ProjectModals({
 				/>
 			)}
 
-			{showEnvVars && project && selectedEnv && (
+			{project && selectedEnv && (
 				<EnvVariablesModal
 					isOpen={showEnvVars}
 					onClose={() => setShowEnvVars(false)}

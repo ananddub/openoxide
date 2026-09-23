@@ -1,13 +1,15 @@
+import {Clock} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
-import {Label} from '#/components/ui/label';
+import {Textarea} from '#/components/ui/textarea';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {
 	Select,
 	SelectContent,
@@ -15,7 +17,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import {Clock, Terminal} from 'lucide-react';
+import {WizardField} from '#/components/shared/sheet-wizard';
 import {
 	useScheduleDialog,
 	type ScheduleDialogProps,
@@ -30,59 +32,65 @@ const CRON_PRESETS = [
 	{label: 'Weekly', value: '0 0 * * 0'},
 ];
 
+/** Create / edit schedule — the house right sheet. */
 export function ScheduleDialog(props: ScheduleDialogProps) {
 	const {isOpen, onClose} = props;
 	const form = useScheduleDialog(props);
 
 	return (
-		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="border- max-h-[90vh] overflow-y-auto rounded-xl bg-card p-6.5 shadow-lg sm:max-w-2xl">
-				<DialogHeader className="flex flex-row items-center gap-3 space-y-0 border-b  pb-4">
-					<div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-						<Clock className="size-5" />
-					</div>
-					<div>
-						<DialogTitle className="text-base font-bold text-foreground">
-							{form.editingSchedule
-								? 'Edit Schedule Task'
-								: 'Create Schedule Task'}
-						</DialogTitle>
-						<DialogDescription className="mt-0.5 text-xs text-muted-foreground">
-							Configure automated cron jobs and command executions.
-						</DialogDescription>
-					</div>
-				</DialogHeader>
+		<Sheet
+			open={isOpen}
+			onOpenChange={open => {
+				if (!open) onClose();
+			}}>
+			<SheetContent className="p-0">
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2">
+						<Clock className="size-4 text-primary" />
+						{form.editingSchedule
+							? 'Edit Schedule Task'
+							: 'New Schedule Task'}
+					</SheetTitle>
+					<SheetDescription>
+						Run a command on a server or service on a cron schedule.
+					</SheetDescription>
+				</SheetHeader>
 
-				<form onSubmit={form.handleSubmit} className="space-y-4 pt-2">
-					<div className="w-full space-y-1.5">
-						<Label className="text-xs font-semibold">Name *</Label>
-						<Input
-							placeholder="e.g. Daily Database Backup"
-							value={form.name}
-							onChange={e => form.setName(e.target.value)}
-							required
-							className="h-9 w-full text-xs"
-						/>
-					</div>
+				<form
+					onSubmit={form.handleSubmit}
+					className="flex min-h-0 flex-1 flex-col">
+					<div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-6">
+						<WizardField label="Name" required>
+							<Input
+								placeholder="Daily Database Backup"
+								value={form.name}
+								onChange={e => form.setName(e.target.value)}
+								required
+								autoFocus
+								className="bg-background"
+							/>
+						</WizardField>
 
-					<div className="w-full space-y-1.5">
-						<Label className="text-xs font-semibold">Description</Label>
-						<Input
-							placeholder="Optional task details..."
-							value={form.description}
-							onChange={e => form.setDescription(e.target.value)}
-							className="h-9 w-full text-xs"
-						/>
-					</div>
+						<WizardField label="Description" optional>
+							<Input
+								placeholder="What this task does"
+								value={form.description}
+								onChange={e => form.setDescription(e.target.value)}
+								className="bg-background"
+							/>
+						</WizardField>
 
-					<ScheduleTargetFields form={form} />
+						<ScheduleTargetFields form={form} />
 
-					<div className="w-full space-y-1.5">
-						<div className="flex items-center justify-between">
-							<Label className="text-xs font-semibold">
-								Cron Expression *
-							</Label>
-							<div className="flex items-center gap-1">
+						<WizardField label="Cron expression" required>
+							<Input
+								placeholder="*/5 * * * *"
+								value={form.cronExpression}
+								onChange={e => form.setCronExpression(e.target.value)}
+								required
+								className="bg-background font-mono"
+							/>
+							<div className="flex flex-wrap gap-1 pt-1">
 								{CRON_PRESETS.map(preset => (
 									<Button
 										key={preset.value}
@@ -90,73 +98,56 @@ export function ScheduleDialog(props: ScheduleDialogProps) {
 										variant={
 											form.cronExpression === preset.value
 												? 'default'
-												: 'ghost'
+												: 'outline'
 										}
 										size="xs"
 										onClick={() => form.setCronExpression(preset.value)}
-										className="font-mono text-[10px]">
+										className="font-mono">
 										{preset.label}
 									</Button>
 								))}
 							</div>
-						</div>
-						<Input
-							placeholder="*/5 * * * *"
-							value={form.cronExpression}
-							onChange={e => form.setCronExpression(e.target.value)}
-							required
-							className="h-9 w-full font-mono text-xs"
-						/>
+						</WizardField>
+
+						<WizardField label="Shell">
+							<Select
+								value={form.shellType}
+								onValueChange={val => val && form.setShellType(val)}>
+								<SelectTrigger className="bg-background">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent className="bg-card">
+									<SelectItem value="bash">BASH</SelectItem>
+									<SelectItem value="sh">SH</SelectItem>
+								</SelectContent>
+							</Select>
+						</WizardField>
+
+						<WizardField label="Command" required>
+							<Textarea
+								placeholder="docker exec my_app npm run cleanup"
+								value={form.command}
+								onChange={e => form.setCommand(e.target.value)}
+								required
+								rows={4}
+								className="min-h-32 resize-y rounded-lg bg-background font-mono text-xs"
+							/>
+						</WizardField>
 					</div>
 
-					<div className="w-full space-y-1.5">
-						<Label className="text-xs font-semibold">Shell Type</Label>
-						<Select
-							value={form.shellType}
-							onValueChange={val => form.setShellType(val ?? 'bash')}>
-							<SelectTrigger className="!h-9 w-full text-xs">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent className="border- bg-card">
-								<SelectItem value="bash" className="text-xs">
-									BASH
-								</SelectItem>
-								<SelectItem value="sh" className="text-xs">
-									SH
-								</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-
-					<div className="w-full space-y-1.5">
-						<Label className="flex items-center gap-1.5 text-xs font-semibold">
-							<Terminal className="size-3.5 text-muted-foreground" />
-							Command *
-						</Label>
-						<textarea
-							placeholder="e.g. docker exec my_app npm run cleanup"
-							value={form.command}
-							onChange={e => form.setCommand(e.target.value)}
-							required
-							rows={3}
-							className="flex w-full resize-none rounded-lg bg-transparent px-3 py-2 font-mono text-xs leading-relaxed text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 dark:bg-input/30"
-						/>
-					</div>
-
-					<div className="flex justify-end border-t  pt-3">
+					<SheetFooter>
+						<Button type="button" variant="outline" onClick={onClose}>
+							Cancel
+						</Button>
 						<Button
 							type="submit"
 							disabled={form.isSubmitting}
-							className="h-9 w-full bg-primary px-5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/95 sm:w-auto">
-							{form.isSubmitting
-								? 'Saving...'
-								: form.editingSchedule
-									? 'Save Changes'
-									: 'Create Schedule'}
+							className="h-10 gap-1.5 px-5">
+							{form.editingSchedule ? 'Save Changes' : 'Create Schedule'}
 						</Button>
-					</div>
+					</SheetFooter>
 				</form>
-			</DialogContent>
-		</Dialog>
+			</SheetContent>
+		</Sheet>
 	);
 }

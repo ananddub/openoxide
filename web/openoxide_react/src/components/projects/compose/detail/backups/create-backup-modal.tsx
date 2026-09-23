@@ -49,7 +49,7 @@ export function CreateBackupModal({
 	const [volumeName, setVolumeName] = useState(
 		defaultVolumeName || 'data',
 	);
-	const [cronExpr, setCronExpr] = useState('0 2 * * *');
+	const [cronExpr, setCronExpr] = useState('');
 	const [prefix, setPrefix] = useState('');
 	const [turnOff, setTurnOff] = useState(false);
 	// Live destinations query; the table-watch stream (destinations table)

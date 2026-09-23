@@ -5,6 +5,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
+import {Field as FormField} from '#/components/shared/field';
 
 type Option = {value: string; label: string};
 type Props = {
@@ -21,13 +22,7 @@ export function SwarmSelectField({
 	onChange,
 }: Props) {
 	return (
-		<label className="flex flex-col gap-1.5 text-sm font-medium">
-			{label}
-			{selectDescription(label) && (
-				<span className="text-xs font-normal text-muted-foreground">
-					{selectDescription(label)}
-				</span>
-			)}
+		<FormField label={label} hint={selectDescription(label)}>
 			<Select value={value} onValueChange={next => next && onChange(next)}>
 				<SelectTrigger className="w-full">
 					<SelectValue placeholder={`Select ${label.toLowerCase()}`} />
@@ -40,7 +35,7 @@ export function SwarmSelectField({
 					))}
 				</SelectContent>
 			</Select>
-		</label>
+		</FormField>
 	);
 }
 

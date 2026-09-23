@@ -14,36 +14,40 @@ export function TagListItem({
 	onDelete: (tag: TagItem) => void;
 }) {
 	return (
-		<div className="group flex items-center justify-between px-4 py-2.5 transition-colors hover:bg-muted/30">
-			<div className="flex min-w-0 items-center gap-3">
-				<span
-					className="size-2.5 shrink-0 rounded-full"
-					style={{backgroundColor: tag.color || '#3b82f6'}}
-				/>
-				<span className="truncate text-xs font-medium text-foreground">
-					{tag.name}
-				</span>
-				<span className="font-mono text-[11px] text-muted-foreground/50">
-					{tag.color}
-				</span>
+		<div className="group flex items-center justify-between px-4 py-3 transition-colors hover:bg-accent/30">
+			<div className="flex min-w-0 items-center gap-3.5">
+				<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-foreground/[0.05]">
+					<span
+						className="size-3.5 shrink-0 rounded-full"
+						style={{backgroundColor: tag.color || '#3b82f6'}}
+					/>
+				</div>
+				<div className="min-w-0 flex-1">
+					<span className="block truncate text-sm font-medium text-foreground">
+						{tag.name}
+					</span>
+					<span className="font-mono text-[11px] text-muted-foreground">
+						{tag.color}
+					</span>
+				</div>
 			</div>
 
 			<div className="flex items-center gap-2">
 				<TagBadge name={tag.name} color={tag.color} />
-				<div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+				<div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
 					<Button
 						variant="ghost"
 						size="icon"
 						onClick={() => onEdit(tag)}
-						className="h-7 w-7 text-muted-foreground hover:text-foreground">
-						<Pencil className="h-3.5 w-3.5" />
+						className="size-7 text-muted-foreground hover:text-foreground">
+						<Pencil className="size-3.5" />
 					</Button>
 					<Button
 						variant="ghost"
 						size="icon"
 						onClick={() => onDelete(tag)}
-						className="h-7 w-7 text-muted-foreground hover:text-destructive">
-						<Trash2 className="h-3.5 w-3.5" />
+						className="size-7 text-muted-foreground hover:text-destructive">
+						<Trash2 className="size-3.5" />
 					</Button>
 				</div>
 			</div>

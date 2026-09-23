@@ -1,11 +1,33 @@
-use std::time::Duration;
 use sysinfo::{
     CpuRefreshKind, Disks, MemoryRefreshKind, Networks, RefreshKind, System,
 };
 use tracing::debug;
 
 use super::{bytes_to_gb, bytes_to_mb};
-use crate::store::ServerMetric;
+
+/// One live host sample: vitals plus the static host identity fields the
+/// panel's `HostInfo` wire message needs.
+#[derive(Debug, Clone)]
+pub struct ServerMetric {
+    pub timestamp: String,
+    pub cpu: f64,
+    pub cpu_model: String,
+    pub cpu_cores: i32,
+    pub cpu_physical_cores: i32,
+    pub cpu_speed: f64,
+    pub os: String,
+    pub distro: String,
+    pub kernel: String,
+    pub arch: String,
+    pub mem_used: f64,
+    pub mem_used_gb: f64,
+    pub mem_total: f64,
+    pub uptime: u64,
+    pub disk_used: f64,
+    pub total_disk: f64,
+    pub network_in: f64,
+    pub network_out: f64,
+}
 
 pub struct SystemCollector {
     system: System,
@@ -27,12 +49,7 @@ struct HostInfo {
 
 impl SystemCollector {
     pub fn new() -> Self {
-        // Only CPU + RAM are ever read from `system` (and the sample loop
-        // refreshes exactly those). new_all()/refresh_all() would also walk
-        // the whole /proc process table — hundreds of Process structs with
-        // cmd/environ/exe strings — and keep them alive for the agent's
-        // entire life, which this collector never reads.
-        let mut system = System::new_with_specifics(
+        let system = System::new_with_specifics(
             RefreshKind::nothing()
                 .with_cpu(CpuRefreshKind::nothing().with_cpu_usage().with_frequency())
                 .with_memory(MemoryRefreshKind::nothing().with_ram()),
@@ -112,7 +129,6 @@ impl SystemCollector {
             });
 
         let metric = ServerMetric {
-            id: None,
             timestamp: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
             cpu,
             cpu_model: self.host.cpu_model.clone(),
@@ -142,10 +158,6 @@ impl SystemCollector {
 
         metric
     }
-
-    pub fn interval_after_sample(refresh_rate: u64) -> Duration {
-        Duration::from_secs(refresh_rate).saturating_sub(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL)
-    }
 }
 
 #[cfg(test)]
@@ -156,21 +168,6 @@ mod tests {
     fn converts_units() {
         assert!((bytes_to_gb(1_073_741_824.0) - 1.0).abs() < f64::EPSILON);
         assert!((bytes_to_mb(1_048_576.0) - 1.0).abs() < f64::EPSILON);
-    }
-
-    #[test]
-    fn interval_subtracts_the_cpu_delta_sleep() {
-        let interval = SystemCollector::interval_after_sample(60);
-        assert!(interval < Duration::from_secs(60));
-        assert!(interval > Duration::from_secs(58));
-    }
-
-    #[test]
-    fn interval_never_underflows_for_short_refresh_rates() {
-        assert_eq!(
-            SystemCollector::interval_after_sample(0),
-            Duration::from_secs(0)
-        );
     }
 
     #[tokio::test]

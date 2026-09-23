@@ -206,7 +206,7 @@ function Sidebar({
 								Displays the mobile sidebar.
 							</SheetDescription>
 						</SheetHeader>
-						<div className="flex h-full w-full flex-col pt-12">{children}</div>
+						<div className="flex h-full w-full flex-col">{children}</div>
 					</SheetContent>
 			</Sheet>
 		);
@@ -236,7 +236,7 @@ function Sidebar({
 				data-slot="sidebar-container"
 				data-side={side}
 				className={cn(
-					'fixed inset-y-0 top-12 z-10 hidden h-[calc(100svh-3rem)] w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:-left-(--sidebar-width) data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:-right-(--sidebar-width) md:flex',
+					'fixed inset-y-0 top-0 z-10 hidden h-[100svh] w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:-left-(--sidebar-width) data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:-right-(--sidebar-width) md:flex',
 					// Adjust the padding for floating and inset variants.
 					variant === 'floating' || variant === 'inset'
 						? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'

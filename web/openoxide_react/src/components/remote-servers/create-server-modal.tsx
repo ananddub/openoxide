@@ -134,10 +134,14 @@ export function CreateServerModal({
 					</SheetDescription>
 				</SheetHeader>
 
-				<form onSubmit={handleSubmit} className="mt-2 flex flex-col gap-4">
-					<ServerFormFields {...form} sshKeys={sshKeys} />
+				<form
+					onSubmit={handleSubmit}
+					className="flex min-h-0 flex-1 flex-col">
+					<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-6">
+						<ServerFormFields {...form} sshKeys={sshKeys} />
+					</div>
 
-					<div className="mt-1 flex items-center justify-between border-t  pt-4">
+					<div className="flex items-center justify-between gap-3 border-t border-border px-6 py-5">
 						<TestConnectionButton
 							testing={testingConn}
 							result={testResult}

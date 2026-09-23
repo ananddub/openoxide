@@ -1,13 +1,16 @@
-import {Rocket, Loader2, Trash2} from 'lucide-react';
+import {useState} from 'react';
+import {RefreshCw, Rocket, Trash2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {cn} from '#/api/utils';
+import {GeistSwitch} from '#/components/shared/geist-switch';
 import {
 	TabSearchInput,
 	TabFilterSelect,
 	TabEmptyState,
-	TabTable,
 	type FilterOption,
 } from './overview-tab-parts';
-import {DeploymentItem} from '#/components/deployments/deployment-item';
+import {DeploymentsList} from '#/components/projects/detail/deployments/deployments-list';
+import {useAutoExpandBuildLogs} from '#/components/projects/detail/deployments/use-auto-expand-build-logs';
 
 const STATUS_OPTIONS: FilterOption[] = [
 	{value: 'all', label: 'All Statuses'},
@@ -15,41 +18,6 @@ const STATUS_OPTIONS: FilterOption[] = [
 	{value: 'failed', label: 'Failed'},
 	{value: 'running', label: 'Running'},
 ];
-
-function DeploymentTable({
-	items,
-	onSelect,
-	onCancel,
-	onDelete,
-}: {
-	items: any[];
-	onSelect: (dep: any) => void;
-	onCancel: (id: any) => void;
-	onDelete?: (id: any) => void;
-}) {
-	return (
-		<TabTable
-			columns={[
-				'ID',
-				'Deployment',
-				'Type',
-				'Status',
-				'Created',
-				'Actions',
-			]}>
-			{items.map((dep: any) => (
-				<DeploymentItem
-					key={dep.id}
-					deployment={dep}
-					onViewLogs={() => onSelect(dep)}
-					onViewError={() => onSelect(dep)}
-					onCancel={onCancel}
-					onDelete={onDelete}
-				/>
-			))}
-		</TabTable>
-	);
-}
 
 export function OverviewDeploymentsTab({
 	history,
@@ -61,9 +29,8 @@ export function OverviewDeploymentsTab({
 	status,
 	onStatus,
 	onClear,
-	onSelect,
-	onCancel,
-	onDelete,
+	onRefresh,
+	refreshing,
 }: {
 	history: any[];
 	queue: any[];
@@ -74,84 +41,93 @@ export function OverviewDeploymentsTab({
 	status: string;
 	onStatus: (v: string) => void;
 	onClear: () => void;
-	onSelect: (dep: any) => void;
-	onCancel: (id: any) => void;
-	onDelete: (id: any) => void;
+	onRefresh: () => void;
+	refreshing: boolean;
 }) {
+	// Row-click opens the streaming log panel inline (drag-resizable) —
+	// one shared expand state so switching sub-tabs closes the other.
+	const [expandedId, setExpandedId] = useState<number | null>(null);
+	const items = subTab === 'history' ? history : queue;
+	useAutoExpandBuildLogs(items, setExpandedId);
+
 	return (
 		<div className="space-y-4">
-			<div className="flex flex-wrap items-center justify-between gap-4 border-b  pb-3">
-				<div className="flex items-center gap-2">
+			<div className="flex flex-wrap items-center justify-between gap-4 border-b pb-3">
+				<GeistSwitch
+					options={[
+						{
+							key: 'history',
+							label: 'Deployments',
+							count: history.length,
+						},
+						{key: 'queue', label: 'Queue', count: queue.length},
+					]}
+					value={subTab}
+					onChange={onSubTab}
+				/>
+
+				<div className="flex flex-wrap items-center gap-2.5">
+					{subTab === 'history' && (
+						<>
+							<TabSearchInput
+								placeholder="Filter deployments..."
+								value={search}
+								onChange={onSearch}
+							/>
+							<TabFilterSelect
+								title="Status"
+								value={status}
+								onChange={onStatus}
+								options={STATUS_OPTIONS}
+								width="w-[150px]"
+							/>
+						</>
+					)}
 					<Button
-						variant={subTab === 'history' ? 'secondary' : 'ghost'}
+						variant="ghost"
 						size="sm"
-						onClick={() => onSubTab('history')}
-						className="h-8 text-xs font-medium">
-						Deployments ({history.length})
+						onClick={onRefresh}
+						disabled={refreshing}
+						className="flex h-9 items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+						<RefreshCw
+							className={cn(
+								'size-3.5',
+								refreshing && 'animate-spin',
+							)}
+						/>
+						Refresh
 					</Button>
 					<Button
-						variant={subTab === 'queue' ? 'secondary' : 'ghost'}
+						variant="ghost"
 						size="sm"
-						onClick={() => onSubTab('queue')}
-						className="flex h-8 items-center gap-1.5 text-xs font-medium">
-						{queue.length > 0 && (
-							<Loader2 className="size-3 animate-spin text-amber-500" />
-						)}
-						Queue ({queue.length})
+						onClick={onClear}
+						className="flex h-9 items-center gap-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+						<Trash2 className="size-3.5" /> Clear History
 					</Button>
 				</div>
-
-				{subTab === 'history' && (
-					<div className="flex flex-wrap items-center gap-2.5">
-						<TabSearchInput
-							placeholder="Filter deployments..."
-							value={search}
-							onChange={onSearch}
-						/>
-						<TabFilterSelect
-							title="Status"
-							value={status}
-							onChange={onStatus}
-							options={STATUS_OPTIONS}
-							width="w-[150px]"
-						/>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={onClear}
-							className="flex h-9 items-center gap-1.5 border-destructive/30 bg-destructive/10 text-xs font-semibold text-destructive hover:bg-destructive/20">
-							<Trash2 className="size-3.5" /> Clear History
-						</Button>
-					</div>
-				)}
 			</div>
 
-			{subTab === 'history' ? (
-				history.length === 0 ? (
+			{items.length === 0 ? (
+				subTab === 'history' ? (
 					<TabEmptyState
 						icon={Rocket}
 						title="No deployment history found"
 						description="Deployments will appear here once triggered"
 					/>
 				) : (
-					<DeploymentTable
-						items={history}
-						onSelect={onSelect}
-						onCancel={onCancel}
-						onDelete={onDelete}
+					<TabEmptyState
+						icon={Rocket}
+						title="Queue is empty"
+						description="Active or building deployments will appear here in real time"
 					/>
 				)
-			) : queue.length === 0 ? (
-				<TabEmptyState
-					icon={Rocket}
-					title="Queue is empty"
-					description="Active or building deployments will appear here in real time"
-				/>
 			) : (
-				<DeploymentTable
-					items={queue}
-					onSelect={onSelect}
-					onCancel={onCancel}
+				<DeploymentsList
+					deployments={items}
+					expandedId={expandedId}
+					onToggleExpand={id =>
+						setExpandedId(prev => (prev === id ? null : id))
+					}
 				/>
 			)}
 		</div>

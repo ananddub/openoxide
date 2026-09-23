@@ -1,7 +1,13 @@
 import {useState, useMemo, useEffect} from 'react';
-import {Calendar, Plus} from 'lucide-react';
+import {Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {Badge} from '#/components/ui/badge';
+import {
+	SectionHeader,
+	Toolbar,
+	ToolbarSearch,
+	ViewToggle,
+	useListView,
+} from '#/components/settings/list-card';
 import {toast} from 'sonner';
 import {
 	useScheduleCreate,
@@ -28,6 +34,8 @@ export function ComposeSchedulesTab({
 	schedules: passedSchedules,
 }: ComposeSchedulesTabProps) {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
+	const [query, setQuery] = useState('');
+	const [view, setView] = useListView('compose-schedules-view');
 	const [fetchedYaml, setFetchedYaml] = useState<string>('');
 
 	useEffect(() => {
@@ -73,6 +81,21 @@ export function ComposeSchedulesTab({
 		);
 	}, [passedSchedules, storeSchedules, composeId]);
 	const isLoading = false;
+
+	const q = query.trim().toLowerCase();
+	const visibleSchedules = useMemo(
+		() =>
+			q
+				? composeSchedules.filter((s: any) =>
+						[s?.name, s?.command, s?.cron_expression, s?.service_name]
+							.filter(Boolean)
+							.join(' ')
+							.toLowerCase()
+							.includes(q),
+					)
+				: composeSchedules,
+		[composeSchedules, q],
+	);
 
 	// Mutations
 	const createMutation = useScheduleCreate();
@@ -120,38 +143,39 @@ export function ComposeSchedulesTab({
 		}
 	};
 
+	const createButton = (
+		<Button onClick={() => setIsCreateOpen(true)} className="h-9 gap-1.5">
+			<Plus className="size-3.5" />
+			Create Schedule
+		</Button>
+	);
+
 	return (
-		<div className="flex flex-col gap-6">
-			{/* Top Header Card */}
-			<section className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-card p-5 shadow-sm">
-				<div>
-					<h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
-						<Calendar className="h-4 w-4 text-primary" /> Scheduled Tasks
-					</h3>
-					<p className="mt-1 text-xs text-muted-foreground">
-						Configure scheduled tasks to execute recurring commands inside
-						your compose service container
-					</p>
-				</div>
-				<div className="flex items-center gap-3">
-					<Badge variant="outline" className="px-3 py-1 font-mono text-xs">
-						Active Tasks: {composeSchedules.length}
-					</Badge>
-					<Button
-						onClick={() => setIsCreateOpen(true)}
-						size="sm"
-						className="flex h-8 items-center gap-1.5 text-xs font-semibold">
-						<Plus className="h-4 w-4" /> Create Schedule
-					</Button>
-				</div>
-			</section>
+		<div className="flex w-full flex-col gap-5">
+			<SectionHeader
+				title="Schedules"
+				description="Cron jobs that run inside this stack's service containers."
+				action={createButton}
+			/>
+
+			<Toolbar action={<ViewToggle view={view} onChange={setView} />}>
+				<ToolbarSearch
+					value={query}
+					onChange={setQuery}
+					placeholder="Search schedules…"
+					className="min-w-[200px] flex-1 sm:max-w-none"
+				/>
+			</Toolbar>
 
 			{/* Schedules Table Component (< 200 lines) */}
 			<ComposeSchedulesTable
-				schedules={composeSchedules}
+				schedules={visibleSchedules}
 				isLoading={isLoading}
+				hasQuery={q !== ''}
+				view={view}
 				onRun={handleRun}
 				onDelete={handleDelete}
+				createAction={createButton}
 			/>
 
 			{/* Create Modal Component (< 200 lines) */}

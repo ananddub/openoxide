@@ -1,4 +1,5 @@
-import {useMemo, useState} from 'react';
+import {useMemo} from 'react';
+import {useUrlTab} from '#/hooks/use-url-tab';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 import {
 	useScheduleListByDatabase,
@@ -10,7 +11,7 @@ import {useDatabaseStatus} from './use-database-detail.status';
 import {useDatabaseActions} from './use-database-detail.actions';
 
 export function useDatabaseDetail(dbId: number, targetKind?: string) {
-	const [activeTab, setActiveTab] = useState('General');
+	const [activeTab, setActiveTab] = useUrlTab('General');
 
 	const {storeDb, liveDb, currentKind, detectedKind, refetchQueries} =
 		useDatabaseQueries(dbId, targetKind);

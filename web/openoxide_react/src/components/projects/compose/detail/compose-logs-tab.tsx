@@ -7,6 +7,7 @@ import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
 import {downloadLogs} from '#/components/projects/detail/logs/use-log-stream';
 import {useDeploymentItems} from '#/api/live';
 import {extractServicesFromYaml} from '#/components/shared/terminal-card';
+import {SectionHeader} from '#/components/settings/list-card';
 
 const deploymentClient = createServiceClient(DeploymentService);
 
@@ -19,8 +20,6 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 		'container',
 	);
 	const [selectedContainer, setSelectedContainer] = useState('');
-	const [lines, setLines] = useState('500');
-	const [timestamps, setTimestamps] = useState(false);
 	const [isLive, setIsLive] = useState(true);
 	const [isLoading, setIsLoading] = useState(true);
 	const [streamedLogs, setStreamedLogs] = useState<string[]>([]);
@@ -80,7 +79,6 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 					return;
 				}
 
-				const tailParam = lines === 'all' ? 5000n : BigInt(lines);
 				const call = deploymentClient.streamComposeLogs(
 					{
 						composeId: compose?.id ? BigInt(compose.id) : undefined,
@@ -88,8 +86,8 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 						serverId: compose?.server_id
 							? BigInt(compose.server_id)
 							: undefined,
-						tail: tailParam,
-						timestamps,
+						tail: 500n,
+						timestamps: false,
 						follow: isLive,
 					},
 					{signal: controller.signal},
@@ -132,8 +130,6 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 		compose?.id,
 		activeService,
 		logMode,
-		lines,
-		timestamps,
 		isLive,
 		refetchTrigger,
 		latestBuildDeploymentId,
@@ -146,22 +142,17 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 		);
 
 	return (
-		<div className="flex flex-col gap-6">
-			{/* Controls Header Component (< 200 lines) */}
+		<div className="flex w-full flex-col gap-5">
+			<SectionHeader
+				title="Logs"
+				description="Container output and build logs streamed live from the server."
+			/>
 			<ComposeLogsHeader
 				logMode={logMode}
 				setLogMode={setLogMode}
 				activeService={activeService}
 				setSelectedContainer={setSelectedContainer}
 				availableServices={servicesList}
-				isLive={isLive}
-				setIsLive={setIsLive}
-				timestamps={timestamps}
-				setTimestamps={setTimestamps}
-				lines={lines}
-				setLines={setLines}
-				onRefresh={() => setRefetchTrigger(prev => prev + 1)}
-				onDownload={handleDownload}
 			/>
 
 			{/* Stream Viewer Component (< 200 lines) */}
@@ -169,6 +160,9 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 				logs={streamedLogs}
 				isLoading={isLoading}
 				isLive={isLive}
+				onToggleLive={
+					logMode === 'container' ? () => setIsLive(!isLive) : undefined
+				}
 				isDeployment={logMode === 'build'}
 				loadingText={
 					logMode === 'build'

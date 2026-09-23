@@ -2,11 +2,7 @@ import {Activity, ShieldCheck, User as UserIcon} from 'lucide-react';
 import type {AuditLogPayload} from '#/api/live/audit';
 
 export type EntryTone =
-	| 'success'
-	| 'danger'
-	| 'info'
-	| 'warning'
-	| 'neutral';
+	'success' | 'danger' | 'info' | 'warning' | 'neutral';
 
 export const TONE_DOT: Record<EntryTone, string> = {
 	success: 'bg-emerald-500',

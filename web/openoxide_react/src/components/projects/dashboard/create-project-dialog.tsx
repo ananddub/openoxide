@@ -64,7 +64,9 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 					</SheetDescription>
 				</SheetHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-4 pt-2">
+				<form
+					onSubmit={handleSubmit}
+					className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-6">
 					{/* Name */}
 					<div className="flex flex-col gap-1.5">
 						<Label

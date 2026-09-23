@@ -27,6 +27,18 @@ export const useApplicationCreate = inputMutation(
 		}),
 );
 
+/** Move an application to another environment (MoveApplication RPC). */
+export const useApplicationMove = inputMutation(
+	(input: {id: number | bigint; target_environment_id: number | bigint}) =>
+		applicationClient.moveApplication({
+			id: BigInt(input.id),
+			targetEnvironmentId: BigInt(input.target_environment_id),
+		}),
+	// The move changes the service's environment — refresh env-scoped lists
+	// too, which the default 'applications' prefix already covers.
+	[['applications'], ['environments'], ['overview']],
+);
+
 /** Update an application by id (legacy REST: PATCH /applications/{id}). */
 export const useApplicationUpdate = inputMutation(
 	(input: {

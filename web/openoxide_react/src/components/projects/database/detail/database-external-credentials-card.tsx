@@ -4,7 +4,7 @@ import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
 import {useDatabaseUpdate, useRemoteServerList} from '#/api/live';
-import {formatApiError} from '#/api/utils';
+import {cn, formatApiError} from '#/api/utils';
 import {
 	deriveDatabaseCredentials,
 	buildConnectionString,
@@ -14,11 +14,14 @@ import {ReadonlyField, SecretField} from './credentials-fields';
 interface DatabaseExternalCredentialsCardProps {
 	database: any;
 	onUpdated?: () => void;
+	/** Inside a SettingsCollapse — no own shell/title. */
+	embedded?: boolean;
 }
 
 export function DatabaseExternalCredentialsCard({
 	database,
 	onUpdated,
+	embedded = false,
 }: DatabaseExternalCredentialsCardProps) {
 	const [extPortInput, setExtPortInput] = useState('');
 	const [isSavingPort, setIsSavingPort] = useState(false);
@@ -82,17 +85,23 @@ export function DatabaseExternalCredentialsCard({
 	};
 
 	return (
-		<div className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-xs">
-			<div>
-				<h3 className="text-xl font-bold tracking-tight text-foreground">
-					External Credentials
-				</h3>
-				<p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-					In order to make the database reachable through the internet, you
-					must set a port and ensure that the port is not being used by
-					another application or database
-				</p>
-			</div>
+		<div
+			className={cn(
+				'flex flex-col gap-5',
+				!embedded && 'rounded-xl bg-card p-6 shadow-xs',
+			)}>
+			{!embedded && (
+				<div>
+					<h3 className="text-xl font-bold tracking-tight text-foreground">
+						External Credentials
+					</h3>
+					<p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+						In order to make the database reachable through the
+						internet, you must set a port and ensure that the port
+						is not being used by another application or database
+					</p>
+				</div>
+			)}
 
 			<div className="flex flex-col gap-5 border-t  pt-4">
 				<div className="flex w-full flex-col gap-1.5">
@@ -104,7 +113,7 @@ export function DatabaseExternalCredentialsCard({
 						value={extPortInput}
 						onChange={e => setExtPortInput(e.target.value)}
 						placeholder={db.internalPort.toString()}
-						className="border- h-9 w-full bg-background font-mono text-xs"
+						className="h-9 w-full font-mono text-xs"
 					/>
 				</div>
 

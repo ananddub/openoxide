@@ -1,19 +1,96 @@
 import type {NotificationPayload} from '#/api/live';
 import type {ProviderId} from './notification-providers';
 
-export const TRIGGERS: {key: keyof NotificationPayload; label: string}[] =
-	[
-		{key: 'on_app_deploy', label: 'App deployed'},
-		{key: 'on_app_build_error', label: 'Build failed'},
-		{key: 'on_database_backup', label: 'Database backup'},
-		{key: 'on_volume_backup', label: 'Volume backup'},
-		{key: 'on_panel_restart', label: 'Panel restart'},
-		{key: 'on_docker_cleanup', label: 'Docker cleanup'},
-		{key: 'on_server_threshold', label: 'Server threshold'},
-		{key: 'on_panel_backup', label: 'Panel backup'},
-		{key: 'on_schedule_success', label: 'Schedule success'},
-		{key: 'on_schedule_failure', label: 'Schedule failure'},
-	];
+export type TriggerGroup =
+	'Deployments' | 'Backups' | 'Platform' | 'Schedules';
+
+/**
+ * The ten events a channel can fire on. `key` is the payload column the
+ * backend persists; `event` is the `trigger_name` the delivery-attempt
+ * history stores for the same event (APP_DEPLOY for on_app_deploy, …).
+ */
+export const TRIGGERS: {
+	key: keyof NotificationPayload;
+	label: string;
+	group: TriggerGroup;
+	event: string;
+}[] = [
+	{
+		key: 'on_app_deploy',
+		label: 'App deployed',
+		group: 'Deployments',
+		event: 'APP_DEPLOY',
+	},
+	{
+		key: 'on_app_build_error',
+		label: 'Build failed',
+		group: 'Deployments',
+		event: 'APP_BUILD_ERROR',
+	},
+	{
+		key: 'on_database_backup',
+		label: 'Database backup',
+		group: 'Backups',
+		event: 'DATABASE_BACKUP',
+	},
+	{
+		key: 'on_volume_backup',
+		label: 'Volume backup',
+		group: 'Backups',
+		event: 'VOLUME_BACKUP',
+	},
+	{
+		key: 'on_panel_backup',
+		label: 'Panel backup',
+		group: 'Backups',
+		event: 'PANEL_BACKUP',
+	},
+	{
+		key: 'on_panel_restart',
+		label: 'Panel restart',
+		group: 'Platform',
+		event: 'PANEL_RESTART',
+	},
+	{
+		key: 'on_docker_cleanup',
+		label: 'Docker cleanup',
+		group: 'Platform',
+		event: 'DOCKER_CLEANUP',
+	},
+	{
+		key: 'on_server_threshold',
+		label: 'Server threshold',
+		group: 'Platform',
+		event: 'SERVER_THRESHOLD',
+	},
+	{
+		key: 'on_schedule_success',
+		label: 'Schedule success',
+		group: 'Schedules',
+		event: 'SCHEDULE_SUCCESS',
+	},
+	{
+		key: 'on_schedule_failure',
+		label: 'Schedule failure',
+		group: 'Schedules',
+		event: 'SCHEDULE_FAILURE',
+	},
+];
+
+export const TRIGGER_GROUPS = [
+	'Deployments',
+	'Backups',
+	'Platform',
+	'Schedules',
+] as const;
+
+/** Human label for a delivery history `trigger_name`. */
+export function triggerEventLabel(event: string): string {
+	return (
+		TRIGGERS.find(t => t.event === event)?.label ??
+		event.toLowerCase().replace(/_/g, ' ')
+	);
+}
 
 export function triggerSummary(n: NotificationPayload): string {
 	const on = TRIGGERS.filter(t => n[t.key] === true).map(t => t.label);

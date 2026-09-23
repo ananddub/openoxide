@@ -1,4 +1,5 @@
 import {useState, useMemo, useEffect} from 'react';
+import {useUrlTab} from '#/hooks/use-url-tab';
 import {useContainerMonitoring} from '#/hooks/use-container-monitoring';
 import {
 	useComposeGet,
@@ -13,7 +14,7 @@ import {useOrganizations} from '#/stores/session-context';
 import {useComposeActions} from './use-compose-detail.actions';
 
 export function useComposeDetail(composeId: number) {
-	const [activeTab, setActiveTab] = useState<string>('General');
+	const [activeTab, setActiveTab] = useUrlTab('General');
 	const [localStatusOverride, setLocalStatusOverride] = useState<
 		string | null
 	>(null);

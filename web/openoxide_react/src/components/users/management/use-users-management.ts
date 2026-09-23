@@ -17,6 +17,22 @@ import {usePermissions} from '#/hooks/use-permissions';
 
 export const ROLES = ['owner', 'admin', 'developer', 'viewer'] as const;
 
+/** What each role can do — shown wherever a role is being picked. */
+export const ROLE_DESC: Record<string, string> = {
+	owner: 'Full access, including billing and removing members',
+	admin: 'Manage projects, deployments and team members',
+	developer: 'Create and deploy resources, cannot manage the team',
+	viewer: 'Read-only access to the organization',
+};
+
+/** Owner first, then alphabetically — the list never reshuffles on refresh. */
+const ROLE_ORDER: Record<string, number> = {
+	owner: 0,
+	admin: 1,
+	developer: 2,
+	viewer: 3,
+};
+
 /**
  * Controller for Settings → Team: live member/invite queries (invalidated by
  * the table-watch ORGANIZATION_* stream), the role/delete/invite mutations,
@@ -27,7 +43,15 @@ export function useUsersManagement() {
 	const membersQuery = usePermissionGroupMembers();
 	const invitesQuery = usePermissionGroupInvites();
 	const members = (membersQuery.data ?? []) as unknown as MemberItem[];
-	const invites = (invitesQuery.data ?? []) as unknown as InviteItem[];
+	const invites = useMemo(
+		() =>
+			((invitesQuery.data ?? []) as unknown as InviteItem[])
+				.slice()
+				.sort(
+					(a, b) => Number(b.created_at ?? 0) - Number(a.created_at ?? 0),
+				),
+		[invitesQuery.data],
+	);
 	const userProfile = useProfile().data;
 	const {can, canAny} = usePermissions();
 
@@ -58,37 +82,55 @@ export function useUsersManagement() {
 	const [isDeleting, setIsDeleting] = useState(false);
 
 	const filteredMembers = useMemo(() => {
-		return members.filter(m => {
-			const matchesSearch =
-				m.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				(m.name || '').toLowerCase().includes(searchQuery.toLowerCase());
-			const matchesRole =
-				roleFilter === 'ALL' ||
-				m.role.toLowerCase() === roleFilter.toLowerCase();
-			return matchesSearch && matchesRole;
-		});
+		const q = searchQuery.trim().toLowerCase();
+		return members
+			.filter(m => {
+				const email = (m.email ?? '').toLowerCase();
+				const name = (m.name ?? '').toLowerCase();
+				const matchesSearch = !q || email.includes(q) || name.includes(q);
+				const matchesRole =
+					roleFilter === 'ALL' ||
+					(m.role ?? '').toLowerCase() === roleFilter.toLowerCase();
+				return matchesSearch && matchesRole;
+			})
+			.sort((a, b) => {
+				const ra = ROLE_ORDER[(a.role ?? '').toLowerCase()] ?? 9;
+				const rb = ROLE_ORDER[(b.role ?? '').toLowerCase()] ?? 9;
+				if (ra !== rb) return ra - rb;
+				return (a.name || a.email || '').localeCompare(
+					b.name || b.email || '',
+				);
+			});
 	}, [members, searchQuery, roleFilter]);
+
+	const openCreate = (mode: 'direct' | 'invite') => {
+		setActionType(mode);
+		setInputEmail('');
+		setSelectedRole('developer');
+		setIsCreateOpen(true);
+	};
 
 	const handleCreateOrInvite = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!inputEmail) return;
+		const email = inputEmail.trim().toLowerCase();
+		if (!email) return;
 		setIsSubmitting(true);
 		try {
 			if (actionType === 'direct') {
 				await addMemberMutation.mutateAsync({
-					email: inputEmail,
+					email,
 					role: selectedRole.toUpperCase(),
 				});
-				toast.success(`User ${inputEmail} added successfully`);
-				setInputEmail('');
+				toast.success(`${email} added to the workspace`);
 			} else {
 				await inviteMutation.mutateAsync({
-					email: inputEmail,
+					email,
 					role: selectedRole.toUpperCase(),
 				});
-				toast.success('Invitation sent successfully');
+				toast.success(`Invitation sent to ${email}`);
 			}
 			setIsCreateOpen(false);
+			setInputEmail('');
 		} catch (error) {
 			toast.error(formatApiError(error));
 		} finally {
@@ -133,12 +175,6 @@ export function useUsersManagement() {
 		}
 	};
 
-	const changeRole = (member: MemberItem, role: string) =>
-		updateRoleMutation
-			.mutateAsync({id: Number(member.id), role: role.toUpperCase()})
-			.then(() => toast.success('Role updated'))
-			.catch(err => toast.error(formatApiError(err)));
-
 	const isSelf = (m: MemberItem) =>
 		Boolean(
 			userProfile &&
@@ -178,11 +214,11 @@ export function useUsersManagement() {
 		setDeleteTarget,
 		isDeleting,
 		filteredMembers,
+		openCreate,
 		handleCreateOrInvite,
 		handleUpdateRole,
 		confirmDeleteUser,
 		handleRevokeInvitation,
-		changeRole,
 		isSelf,
 		canManageMember,
 	};

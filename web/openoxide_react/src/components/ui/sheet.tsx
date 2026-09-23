@@ -64,12 +64,15 @@ function SheetContent({
 					// shadow matching the Geist modal recipe.
 					'fixed z-50 flex flex-col gap-0 bg-popover bg-clip-padding text-sm text-popover-foreground shadow-[0_1px_1px_rgba(0,0,0,0.02),0_8px_24px_rgba(0,0,0,0.12),0_24px_64px_rgba(0,0,0,0.24)] transition duration-200 ease-in-out data-ending-style:opacity-0 data-starting-style:opacity-0',
 					// Side placement + slide.
-					'data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-full data-[side=right]:border-l data-[side=right]:border-border data-[side=right]:data-ending-style:translate-x-24 data-[side=right]:data-starting-style:translate-x-24',
+					// Right panel floats: inset from the top/right/bottom edges,
+					// fully bordered, with a FIXED px radius so the global
+					// --radius token can never flatten it back to a stuck drawer.
+					'data-[side=right]:inset-y-3 data-[side=right]:right-3 data-[side=right]:max-h-[calc(100dvh-1.5rem)] data-[side=right]:w-full data-[side=right]:rounded-[14px] data-[side=right]:border data-[side=right]:border-border data-[side=right]:data-ending-style:translate-x-24 data-[side=right]:data-starting-style:translate-x-24',
 					'data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-full data-[side=left]:border-r data-[side=left]:border-border data-[side=left]:data-ending-style:-translate-x-24 data-[side=left]:data-starting-style:-translate-x-24',
-					'data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:max-h-[85vh] data-[side=bottom]:border-t data-[side=bottom]:data-ending-style:translate-y-12 data-[side=bottom]:data-starting-style:translate-y-12',
+					'data-[side=bottom]:inset-x-4 data-[side=bottom]:bottom-4 data-[side=bottom]:left-4 data-[side=bottom]:right-4 data-[side=bottom]:max-h-[calc(100dvh-2rem)] data-[side=bottom]:h-auto data-[side=bottom]:w-auto data-[side=bottom]:rounded-2xl data-[side=bottom]:border data-[side=bottom]:border-border data-[side=bottom]:data-ending-style:translate-y-24 data-[side=bottom]:data-starting-style:translate-y-24',
 					'data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:max-h-[85vh] data-[side=top]:border-b data-[side=top]:data-ending-style:-translate-y-12 data-[side=top]:data-starting-style:-translate-y-12',
 					// Vercel side-panel width on desktop.
-					'sm:data-[side=right]:w-[480px] sm:data-[side=left]:w-[480px]',
+					'sm:data-[side=right]:w-[560px] sm:data-[side=left]:w-[560px]',
 					className,
 				)}
 				{...props}>

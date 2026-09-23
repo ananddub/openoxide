@@ -28,7 +28,7 @@ export function useEnvEditor(
 ) {
 	const originalEnv = app.env_var || '';
 	const [envVars, setEnvVars] = useState(originalEnv);
-	const [showSecrets, setShowSecrets] = useState(false);
+	const [showSecrets, setShowSecrets] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [saved, setSaved] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);

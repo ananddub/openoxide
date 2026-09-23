@@ -2,6 +2,8 @@ import {load as yamlLoad} from 'js-yaml';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export type ServiceStatus = 'running' | 'busy' | 'stopped' | 'error';
+
 export interface ComposeService extends Record<string, unknown> {
 	name: string;
 	image: string;
@@ -9,6 +11,47 @@ export interface ComposeService extends Record<string, unknown> {
 	envVars: Record<string, string>;
 	volumes: string[];
 	ports: string[];
+	/** Runtime state shown as a dot on the node; undefined = unknown. */
+	status?: ServiceStatus;
+}
+
+/** Maps any backend/docker status string to the node-dot vocabulary. */
+export function deriveServiceStatus(raw?: string): ServiceStatus | undefined {
+	const s = (raw || '').toUpperCase();
+	if (!s) return undefined;
+	if (['ERROR', 'FAILED', 'CRASHED', 'OFFLINE'].includes(s)) return 'error';
+	if (
+		[
+			'RUNNING',
+			'ACTIVE',
+			'READY',
+			'HEALTHY',
+			'DEPLOYED',
+			'UP',
+			'SUCCESS',
+		].includes(s)
+	)
+		return 'running';
+	if (
+		[
+			'BUSY',
+			'BUILDING',
+			'DEPLOYING',
+			'STARTING',
+			'RESTARTING',
+			'CREATING',
+			'PULLING',
+			'PREPARING',
+			'QUEUED',
+			'PENDING',
+			'INPROGRESS',
+			'IN_PROGRESS',
+			'CANCELLING',
+			'STOPPING',
+		].includes(s)
+	)
+		return 'busy';
+	return 'stopped';
 }
 
 // ─── YAML parser ─────────────────────────────────────────────────────────────

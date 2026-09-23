@@ -1,4 +1,4 @@
-import type {ComposeService} from './compose-parse';
+import type {ComposeService, ServiceStatus} from './compose-parse';
 import type {VolumeBackupData} from './compose-backup-node';
 import type {CronJobData} from './compose-cron-node';
 import type {ComposeDomainData} from './compose-domain-node';
@@ -22,6 +22,10 @@ export type ComposeGraphProps = {
 	domains?: ComposeDomainData[];
 	gitBuildPath?: string;
 	isGitSource?: boolean;
+	/** Static topology preview: no interactions, controls or menus. */
+	readOnly?: boolean;
+	/** Live per-service runtime state (service name → status). */
+	serviceStatus?: Record<string, ServiceStatus>;
 };
 
 export type CanvasInnerProps = ComposeGraphProps &
@@ -36,4 +40,5 @@ export type ComposeVisualizerProps = ComposeGraphProps &
 		composeFile?: string | null;
 		stackName?: string;
 		customServices?: ComposeService[];
+		wrapperClassName?: string;
 	};

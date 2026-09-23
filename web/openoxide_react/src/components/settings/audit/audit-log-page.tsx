@@ -4,7 +4,7 @@ import {
 	useAuditLogItems,
 	type AuditLogPayload,
 } from '#/api/live/audit';
-import {Dialog, DialogContent} from '#/components/ui/dialog';
+import {Sheet, SheetContent} from '#/components/ui/sheet';
 import {
 	PER_PAGE,
 	type CategoryId,
@@ -14,9 +14,12 @@ import {
 	dayKey,
 	dayLabel,
 } from './audit-format';
-import {AuditHeader, AuditCategoryTabs} from './audit-page-chrome';
+import {AuditCategoryTabs} from './audit-page-chrome';
 import {AuditFilterBar} from './audit-filter-bar';
 import {AuditFeed} from './audit-feed';
+import {SectionHeader, Toolbar} from '#/components/settings/list-card';
+import {Button} from '#/components/ui/button';
+import {Download, Loader2} from 'lucide-react';
 import {AuditDetails} from './audit-details';
 
 /**
@@ -133,38 +136,53 @@ export function AuditLogPage() {
 	}, [exportMutation]);
 
 	return (
-		<div className="flex w-full animate-in flex-col gap-6 duration-200 fade-in">
-			<AuditHeader
-				exporting={exportMutation.isPending}
-				onExport={() => void downloadCsv()}
+		<div className="flex w-full animate-in flex-col gap-5 duration-200 fade-in">
+			<SectionHeader
+				title="Audit Log"
+				description="Every action taken in this panel — members, permissions, servers and deployments."
+				action={
+					<Button
+						onClick={() => void downloadCsv()}
+						disabled={exportMutation.isPending}
+						variant="outline"
+						className="h-9 gap-1.5 rounded-lg px-4">
+						{exportMutation.isPending ? (
+							<Loader2 className="size-3.5 animate-spin" />
+						) : (
+							<Download className="size-3.5" />
+						)}
+						Export CSV
+					</Button>
+				}
 			/>
 
-			<AuditCategoryTabs
-				category={category}
-				counts={counts}
-				onSelect={c => {
-					setCategory(c);
-					setPage(1);
-				}}
-			/>
-
-			<AuditFilterBar
-				search={search}
-				onSearch={setSearch}
-				actor={actor}
-				onActor={v => {
-					setActor(v);
-					setPage(1);
-				}}
-				period={period}
-				onPeriod={v => {
-					setPeriod(v);
-					setPage(1);
-				}}
-				actors={actors}
-				filtersActive={filtersActive}
-				onClear={clearFilters}
-			/>
+			<Toolbar
+				action={
+					<AuditCategoryTabs
+						category={category}
+						counts={counts}
+						onSelect={c => {
+							setCategory(c);
+							setPage(1);
+						}}
+					/>
+				}>
+				<AuditFilterBar
+					search={search}
+					onSearch={setSearch}
+					actor={actor}
+					onActor={v => {
+						setActor(v);
+						setPage(1);
+					}}
+					period={period}
+					onPeriod={v => {
+						setPeriod(v);
+						setPage(1);
+					}}
+					actors={actors}
+				/>
+			</Toolbar>
 
 			<AuditFeed
 				isLoading={isLoading}
@@ -179,13 +197,17 @@ export function AuditLogPage() {
 			/>
 
 			{/* Details sheet */}
-			<Dialog
+			<Sheet
 				open={details !== null}
 				onOpenChange={open => !open && setDetails(null)}>
-				<DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[720px]">
-					{details && <AuditDetails event={details} />}
-				</DialogContent>
-			</Dialog>
+				<SheetContent className="gap-0 p-0">
+					{details && (
+						<div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-6">
+							<AuditDetails event={details} />
+						</div>
+					)}
+				</SheetContent>
+			</Sheet>
 		</div>
 	);
 }

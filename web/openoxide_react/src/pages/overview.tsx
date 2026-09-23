@@ -1,14 +1,8 @@
 import {createFileRoute} from '@tanstack/react-router';
 import {useState} from 'react';
-import {Box, Globe, Clock, Rocket, House} from 'lucide-react';
+import {Box, Globe, Clock, Rocket, LayoutDashboard} from 'lucide-react';
 import {Titlebar} from '#/components/shared/titlebar';
-import {
-	Tabs,
-	TabsList,
-	TabsTrigger,
-	TabsContent,
-} from '#/components/ui/tabs';
-import {Badge} from '#/components/ui/badge';
+import {GeistSwitch} from '#/components/shared/geist-switch';
 import {useOrganizations} from '#/stores/session-context';
 import {
 	useDomainItems,
@@ -16,7 +10,6 @@ import {
 	useDeploymentRunning,
 } from '#/api/live';
 import {useDeployments} from '#/hooks/deployments/use-deployments';
-import {DeploymentLogsDialog} from '#/components/deployments/deployment-logs-dialog';
 import {OverviewServicesTab} from '#/components/overview/overview-services-tab';
 import {OverviewBackupsTab} from '#/components/overview/overview-backups-tab';
 import {OverviewDomainsTab} from '#/components/overview/overview-domains-tab';
@@ -28,7 +21,9 @@ export const Route = createFileRoute('/_app/overview')({
 });
 
 function OverviewPage() {
-	const [activeTab, setActiveTab] = useState('services');
+	const [activeTab, setActiveTab] = useState<
+		'services' | 'backups' | 'domains' | 'deployments'
+	>('services');
 	const [deploymentSubTab, setDeploymentSubTab] = useState<
 		'history' | 'queue'
 	>('history');
@@ -55,13 +50,8 @@ function OverviewPage() {
 
 	const {
 		filteredAndSorted: rawDeploymentsList,
-		selectedDeployment,
-		setSelectedDeployment,
-		logs,
-		copied,
-		handleCopyLogs,
-		handleCancelDeployment,
-		handleDeleteDeployment,
+		handleRefresh,
+		refreshing,
 		handleClearAllDeployments,
 	} = useDeployments();
 
@@ -77,118 +67,80 @@ function OverviewPage() {
 		);
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
+		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 			{/* Vercel-style titlebar */}
 			<Titlebar
-				breadcrumbs={[{label: 'Overview', icon: House}]}
-				title="Overview"
-				description="Centralized platform overview of all applications, compose stacks, databases, volume backups, domains, and deployments"
+				breadcrumbs={[{label: 'Overview', icon: LayoutDashboard}]}
 			/>
 
 			{/* Main Overview Tabs (Services -> Backups -> Domains -> Deployments) */}
-			<Tabs
+			<GeistSwitch
+				options={[
+					{key: 'services', label: 'Services', icon: Box},
+					{
+						key: 'backups',
+						label: 'Backups',
+						icon: Clock,
+						count: filteredBackups.length,
+					},
+					{
+						key: 'domains',
+						label: 'Domains',
+						icon: Globe,
+						count: filteredDomains.length,
+					},
+					{
+						key: 'deployments',
+						label: 'Deployments',
+						icon: Rocket,
+						count: filteredDeploymentsHistory.length,
+					},
+				]}
 				value={activeTab}
-				onValueChange={setActiveTab}
-				className="w-full space-y-6">
-				<TabsList
-					variant="line"
-					className="w-full justify-start gap-6 rounded-none border-b  pb-0">
-					<TabsTrigger
-						value="services"
-						className="flex items-center gap-2 pb-2.5 text-xs font-semibold">
-						<Box className="size-4" />
-						Services
-					</TabsTrigger>
-					<TabsTrigger
-						value="backups"
-						className="flex items-center gap-2 pb-2.5 text-xs font-semibold">
-						<Clock className="size-4" />
-						Backups
-						<Badge
-							variant="secondary"
-							className="px-1.5 py-0 font-mono text-[10px]">
-							{filteredBackups.length}
-						</Badge>
-					</TabsTrigger>
-					<TabsTrigger
-						value="domains"
-						className="flex items-center gap-2 pb-2.5 text-xs font-semibold">
-						<Globe className="size-4" />
-						Domains
-						<Badge
-							variant="secondary"
-							className="px-1.5 py-0 font-mono text-[10px]">
-							{filteredDomains.length}
-						</Badge>
-					</TabsTrigger>
-					<TabsTrigger
-						value="deployments"
-						className="flex items-center gap-2 pb-2.5 text-xs font-semibold">
-						<Rocket className="size-4" />
-						Deployments
-						<Badge
-							variant="secondary"
-							className="px-1.5 py-0 font-mono text-[10px]">
-							{filteredDeploymentsHistory.length}
-						</Badge>
-					</TabsTrigger>
-				</TabsList>
-
-				<TabsContent value="services">
-					<OverviewServicesTab />
-				</TabsContent>
-
-				<TabsContent value="backups">
-					<OverviewBackupsTab
-						items={filteredBackups}
-						search={backupSearch}
-						onSearch={setBackupSearch}
-						type={backupTypeFilter}
-						onType={setBackupTypeFilter}
-						sort={backupSort}
-						onSort={setBackupSort}
-					/>
-				</TabsContent>
-
-				<TabsContent value="domains">
-					<OverviewDomainsTab
-						items={filteredDomains}
-						search={domainSearch}
-						onSearch={setDomainSearch}
-						ssl={domainSslFilter}
-						onSsl={setDomainSslFilter}
-						sort={domainSort}
-						onSort={setDomainSort}
-					/>
-				</TabsContent>
-
-				<TabsContent value="deployments">
-					<OverviewDeploymentsTab
-						history={filteredDeploymentsHistory}
-						queue={runningDeployments}
-						subTab={deploymentSubTab}
-						onSubTab={setDeploymentSubTab}
-						search={deploySearch}
-						onSearch={setDeploySearch}
-						status={deployStatusFilter}
-						onStatus={setDeployStatusFilter}
-						onClear={handleClearAllDeployments}
-						onSelect={setSelectedDeployment}
-						onCancel={handleCancelDeployment}
-						onDelete={handleDeleteDeployment}
-					/>
-				</TabsContent>
-			</Tabs>
-
-			{/* Logs Dialog */}
-			<DeploymentLogsDialog
-				selectedDeployment={selectedDeployment}
-				onClose={() => setSelectedDeployment(null)}
-				logs={logs}
-				isLogsLoading={false}
-				copied={copied}
-				onCopyLogs={handleCopyLogs}
+				onChange={setActiveTab}
 			/>
+
+			{activeTab === 'services' && <OverviewServicesTab />}
+
+			{activeTab === 'backups' && (
+				<OverviewBackupsTab
+					items={filteredBackups}
+					search={backupSearch}
+					onSearch={setBackupSearch}
+					type={backupTypeFilter}
+					onType={setBackupTypeFilter}
+					sort={backupSort}
+					onSort={setBackupSort}
+				/>
+			)}
+
+			{activeTab === 'domains' && (
+				<OverviewDomainsTab
+					items={filteredDomains}
+					search={domainSearch}
+					onSearch={setDomainSearch}
+					ssl={domainSslFilter}
+					onSsl={setDomainSslFilter}
+					sort={domainSort}
+					onSort={setDomainSort}
+				/>
+			)}
+
+			{activeTab === 'deployments' && (
+				<OverviewDeploymentsTab
+					history={filteredDeploymentsHistory}
+					queue={runningDeployments}
+					subTab={deploymentSubTab}
+					onSubTab={setDeploymentSubTab}
+					search={deploySearch}
+					onSearch={setDeploySearch}
+					status={deployStatusFilter}
+					onStatus={setDeployStatusFilter}
+					onClear={handleClearAllDeployments}
+					onRefresh={handleRefresh}
+					refreshing={refreshing}
+				/>
+			)}
 		</div>
 	);
 }

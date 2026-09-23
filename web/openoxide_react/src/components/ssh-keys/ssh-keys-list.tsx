@@ -1,53 +1,36 @@
-import {useState, useMemo} from 'react';
-import {FileKey2, Search, X} from 'lucide-react';
+import {useState} from 'react';
+import {Search} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {Input} from '#/components/ui/input';
 import {Skeleton} from '#/components/ui/skeleton';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
 import {toast} from 'sonner';
 import type {SshKeyResponse} from '#/types/api-helpers';
-import {
-	getKeyType,
-	KEY_TYPES,
-	type KeyTypeFilter,
-} from '#/components/ssh-keys/ssh-keys-shared';
 import {SshKeyRow} from '#/components/ssh-keys/ssh-key-row';
+import {SshKeyCard} from '#/components/ssh-keys/ssh-key-card';
+
+export type SshKeysView = 'grid' | 'list';
 
 interface SshKeysListProps {
+	/** Already filtered by the page toolbar. */
 	keys: SshKeyResponse[];
 	isLoading: boolean;
+	hasFilters: boolean;
+	view: SshKeysView;
+	onClearFilters: () => void;
 	onViewKey: (key: SshKeyResponse) => void;
 	onDeleteKey: (key: SshKeyResponse) => void;
 }
 
+/** Keys surface — Projects grammar: grid cards or one bordered list card. */
 export function SshKeysList({
 	keys,
 	isLoading,
+	hasFilters,
+	view,
+	onClearFilters,
 	onViewKey,
 	onDeleteKey,
 }: SshKeysListProps) {
 	const [copiedId, setCopiedId] = useState<number | null>(null);
-	const [search, setSearch] = useState('');
-	const [typeFilter, setTypeFilter] = useState<KeyTypeFilter>('All');
-
-	const keysList = Array.isArray(keys) ? keys : [];
-
-	const filtered = useMemo(() => {
-		return keysList.filter(k => {
-			const matchName = k.name
-				.toLowerCase()
-				.includes(search.toLowerCase());
-			const matchType =
-				typeFilter === 'All' || getKeyType(k.public_key) === typeFilter;
-			return matchName && matchType;
-		});
-	}, [keysList, search, typeFilter]);
 
 	const handleCopy = (id: number, pubKey: string, name: string) => {
 		if (!pubKey) return void toast.error('No public key to copy');
@@ -57,20 +40,23 @@ export function SshKeysList({
 		setTimeout(() => setCopiedId(null), 2000);
 	};
 
-	const clearFilters = () => {
-		setSearch('');
-		setTypeFilter('All');
-	};
-	const hasFilters = search !== '' || typeFilter !== 'All';
-
-	/* ── Loading ── */
 	if (isLoading) {
+		if (view === 'grid') {
+			return (
+				<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+					{[1, 2, 3, 4].map(i => (
+						<div
+							key={i}
+							className="min-h-[124px] animate-pulse rounded-lg border bg-card"
+						/>
+					))}
+				</div>
+			);
+		}
 		return (
-			<div className="flex flex-col gap-2">
+			<div className="w-full divide-y overflow-hidden rounded-xl border bg-card">
 				{[1, 2, 3].map(i => (
-					<div
-						key={i}
-						className="flex items-center gap-4 rounded-lg px-4 py-4">
+					<div key={i} className="flex items-center gap-3.5 px-4 py-3">
 						<Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
 						<div className="flex-1 space-y-2">
 							<Skeleton className="h-3.5 w-40" />
@@ -83,97 +69,59 @@ export function SshKeysList({
 		);
 	}
 
-	return (
-		<div className="flex flex-col gap-3">
-			{/* ── Search + Filter bar ── */}
-			<div className="flex items-center gap-2">
-				{/* Search */}
-				<div className="relative flex-1">
-					<Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						placeholder="Search keys…"
-						value={search}
-						onChange={e => setSearch(e.target.value)}
-						className="h-8 pl-8 text-xs"
-					/>
-					{search && (
-						<button
-							onClick={() => setSearch('')}
-							className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-							<X className="h-3 w-3" />
-						</button>
-					)}
-				</div>
-
-				{/* Type filter dropdown */}
-				<Select
-					value={typeFilter}
-					onValueChange={v => setTypeFilter(v as KeyTypeFilter)}>
-					<SelectTrigger size="sm" className="h-8 w-36 text-xs">
-						<SelectValue placeholder="Key type" />
-					</SelectTrigger>
-					<SelectContent>
-						{KEY_TYPES.map(t => (
-							<SelectItem key={t} value={t}>
-								{t === 'All' ? 'All Types' : t}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-			</div>
-
-			{/* ── Empty state ── */}
-			{keysList.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-3 rounded-lg  py-20 text-center">
-					<div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-						<FileKey2 className="h-5 w-5 text-muted-foreground" />
-					</div>
-					<div>
-						<p className="text-sm font-medium text-foreground">
-							No SSH keys yet
-						</p>
-						<p className="mt-0.5 text-xs text-muted-foreground">
-							Add a key pair to authenticate with remote servers.
-						</p>
-					</div>
-				</div>
-			) : filtered.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-2 rounded-lg  py-14 text-center">
-					<Search className="h-5 w-5 text-muted-foreground" />
-					<p className="text-sm text-muted-foreground">
-						No keys match your filter
-					</p>
+	if (keys.length === 0) {
+		return (
+			<div className="flex flex-col items-center justify-center gap-3 rounded-xl border bg-card p-12 text-center">
+				<Search className="size-10 text-muted-foreground/40" />
+				<h3 className="text-xl font-semibold tracking-[-0.01em] text-foreground">
+					No matching keys found
+				</h3>
+				<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
+					Try adjusting your search keywords or clearing the type filter.
+				</p>
+				{hasFilters && (
 					<Button
 						variant="ghost"
-						size="sm"
-						onClick={clearFilters}
-						className="h-7 text-xs">
-						Clear filters
+						onClick={onClearFilters}
+						className="mt-4 text-xs font-semibold text-primary">
+						Clear All Filters
 					</Button>
-				</div>
-			) : (
-				/* ── List ── */
-				<div className="divide-y divide-border overflow-hidden rounded-lg ">
-					{filtered.map((item: SshKeyResponse, idx: number) => (
-						<SshKeyRow
-							key={item.id}
-							item={item}
-							index={idx}
-							isCopied={copiedId === item.id}
-							onCopy={handleCopy}
-							onView={onViewKey}
-							onDelete={onDeleteKey}
-						/>
-					))}
-				</div>
-			)}
+				)}
+			</div>
+		);
+	}
 
-			{/* Result count */}
-			{hasFilters && filtered.length > 0 && (
-				<p className="px-1 text-xs text-muted-foreground">
-					Showing {filtered.length} of {keysList.length} keys
-				</p>
-			)}
+	if (view === 'grid') {
+		return (
+			<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+				{keys.map((item, idx) => (
+					<SshKeyCard
+						key={item.id}
+						item={item}
+						index={idx}
+						isCopied={copiedId === item.id}
+						onCopy={handleCopy}
+						onView={onViewKey}
+						onDelete={onDeleteKey}
+					/>
+				))}
+			</div>
+		);
+	}
+
+	return (
+		<div className="w-full divide-y overflow-hidden rounded-xl border bg-card">
+			{keys.map((item, idx) => (
+				<SshKeyRow
+					key={item.id}
+					item={item}
+					index={idx}
+					isCopied={copiedId === item.id}
+					onCopy={handleCopy}
+					onView={onViewKey}
+					onDelete={onDeleteKey}
+				/>
+			))}
 		</div>
 	);
 }

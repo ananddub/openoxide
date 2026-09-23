@@ -652,17 +652,39 @@ impl DatabaseBuilder {
             DatabaseKind::Libsql => super::libsql::build_libsql_stack(db_id, &mounts).await?,
         };
 
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "Stack configuration generated for {app_name} (image: {docker_image})"
+            )))
+            .await;
+
         self.ctx.emit(BuilderEvent::Building).await;
         self.ctx.cancelled(cancel)?;
 
         // Pull database docker image on host
         self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "Pulling image {docker_image}..."
+            )))
+            .await;
+        let pull_output = self
+            .ctx
             .docker
             .images()
             .pull(&docker_image)
             .cancel_with(cancel.clone())
             .pull()
             .await?;
+        if !pull_output.stdout.trim().is_empty() {
+            self.ctx
+                .emit(BuilderEvent::Message(pull_output.stdout.clone()))
+                .await;
+        }
+        if !pull_output.stderr.trim().is_empty() {
+            self.ctx
+                .emit(BuilderEvent::Message(pull_output.stderr.clone()))
+                .await;
+        }
 
         self.ctx.emit(BuilderEvent::ImageReady).await;
         self.ctx.cancelled(cancel)?;
@@ -672,6 +694,11 @@ impl DatabaseBuilder {
         let stack_file_path = format!("{}/stack.yml", db_dir);
 
         // 3. Ensure Swarm and Network
+        self.ctx
+            .emit(BuilderEvent::Message(
+                "Ensuring swarm manager and overlay network...".to_string(),
+            ))
+            .await;
         super::super::swarm::ensure_swarm_manager(&self.ctx.executor, &self.ctx.docker, cancel)
             .await?;
         super::super::swarm::ensure_overlay_network(
@@ -683,6 +710,11 @@ impl DatabaseBuilder {
 
         self.ctx.emit(BuilderEvent::Deploying).await;
         self.ctx.cancelled(cancel)?;
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "> docker stack deploy -c {stack_file_path} {app_name}"
+            )))
+            .await;
 
         self.ctx
             .executor
@@ -728,9 +760,24 @@ impl DatabaseBuilder {
         // Wait healthy
         self.ctx.emit(BuilderEvent::HealthCheck).await;
         let service_name = format!("{}_db", app_name);
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "Waiting for service {service_name} to become healthy..."
+            )))
+            .await;
         self.wait_healthy(&service_name, cancel).await?;
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "Service {service_name} is healthy"
+            )))
+            .await;
 
         // Post-deploy password sync: ensure container engine uses the exact password configured in database
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "Synchronising configured credentials into {service_name}..."
+            )))
+            .await;
         if let Ok(q) = auto_di::resolve::<FlashQueries>().await {
             if let Ok(creds) = q.database_management_credentials(db_id).await {
                 let password = creds.db_password.clone().unwrap_or_default();

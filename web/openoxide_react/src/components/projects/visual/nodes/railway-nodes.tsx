@@ -1,12 +1,14 @@
 import {type NodeProps, type Node} from '@xyflow/react';
 import {Globe} from 'lucide-react';
 import {
-	siPostgresql,
-	siMysql,
 	siRedis,
 	siMongodb,
-	siMariadb,
 } from 'simple-icons';
+import {
+	PostgresqlIcon,
+	MysqlIcon,
+	MariadbIcon,
+} from '#/components/icons/db/postgres-mysql';
 import {useCanvasActions} from '../canvas-context';
 import {NodeShell} from './railway-node-shell';
 
@@ -63,11 +65,14 @@ export interface DbNodeData extends Record<string, unknown> {
 
 function getDbIcon(dbType: string) {
 	const t = (dbType ?? '').toLowerCase();
-	if (t.includes('mysql')) return {icon: siMysql, color: '#4479A1'};
-	if (t.includes('redis')) return {icon: siRedis, color: '#FF4438'};
-	if (t.includes('mongo')) return {icon: siMongodb, color: '#47A248'};
-	if (t.includes('maria')) return {icon: siMariadb, color: '#7b8cde'};
-	return {icon: siPostgresql, color: '#336791'};
+	if (t.includes('mysql') && !t.includes('maria'))
+		return {brand: MysqlIcon, color: '#4479A1'};
+	if (t.includes('redis'))
+		return {icon: siRedis, color: '#FF4438'};
+	if (t.includes('mongo'))
+		return {icon: siMongodb, color: '#47A248'};
+	if (t.includes('maria')) return {brand: MariadbIcon, color: '#7b8cde'};
+	return {brand: PostgresqlIcon, color: '#336791'};
 }
 
 export function DbCanvasNode({
@@ -76,7 +81,13 @@ export function DbCanvasNode({
 }: NodeProps<DbCanvasNodeProps>) {
 	const {inspect} = useCanvasActions();
 	const running = data.status === 'RUNNING' || data.status === 'running';
-	const {icon, color} = getDbIcon(data.dbType as string);
+	const {icon, brand: BrandIcon, color} = getDbIcon(
+		data.dbType as string,
+	) as {
+		icon?: {path: string};
+		brand?: (p: {className?: string}) => React.ReactElement;
+		color: string;
+	};
 
 	return (
 		<NodeShell
@@ -87,12 +98,16 @@ export function DbCanvasNode({
 			selectedShadow={`0 0 0 3px ${color}20`}
 			handleAccent={color}
 			icon={
-				<svg
-					role="img"
-					viewBox="0 0 24 24"
-					style={{width: 14, height: 14, fill: color}}>
-					<path d={icon.path} />
-				</svg>
+				BrandIcon ? (
+					<BrandIcon className="size-[14px]" />
+				) : (
+					<svg
+						role="img"
+						viewBox="0 0 24 24"
+						style={{width: 14, height: 14, fill: color}}>
+						<path d={icon!.path} />
+					</svg>
+				)
 			}
 			name={data.name}
 			subtitle={data.dbType}

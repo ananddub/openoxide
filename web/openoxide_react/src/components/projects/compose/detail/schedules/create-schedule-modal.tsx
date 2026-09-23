@@ -35,7 +35,7 @@ export function CreateScheduleModal({
 	const [name, setName] = useState('');
 	const [serviceName, setServiceName] = useState(servicesList[0] || 'app');
 	const [command, setCommand] = useState('');
-	const [cronExpr, setCronExpr] = useState('0 * * * *');
+	const [cronExpr, setCronExpr] = useState('');
 	const [creating, setCreating] = useState(false);
 
 	useEffect(() => {
@@ -58,7 +58,7 @@ export function CreateScheduleModal({
 			setName('');
 			setServiceName(servicesList[0] || 'app');
 			setCommand('');
-			setCronExpr('0 * * * *');
+			setCronExpr('');
 		}
 	}, [editingSchedule, servicesList]);
 

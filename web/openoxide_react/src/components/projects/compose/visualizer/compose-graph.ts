@@ -16,6 +16,7 @@ export type ServiceActionHandlers = {
 	onAddBackup?: (s: ComposeService) => void;
 	onOpenTerminal?: (s: ComposeService) => void;
 	onViewLogs?: (s: ComposeService) => void;
+	readOnly?: boolean;
 };
 
 // ─── Build ReactFlow Elements ─────────────────────────────────────────────────
@@ -68,7 +69,6 @@ export function buildGraph(
 					target: svc.name,
 					type: 'composeEdge',
 					animated: true,
-					style: {stroke: '#30363d', strokeWidth: 2},
 				});
 			}
 		});
@@ -94,7 +94,6 @@ export function buildGraph(
 				target: domId,
 				type: 'composeEdge',
 				animated: true,
-				style: {stroke: '#10b981', strokeWidth: 2},
 			});
 		}
 	});
@@ -119,7 +118,6 @@ export function buildGraph(
 				target: bId,
 				type: 'composeEdge',
 				animated: true,
-				style: {stroke: '#38bdf8', strokeWidth: 2, strokeDasharray: '5,5'},
 			});
 		}
 	});
@@ -144,7 +142,6 @@ export function buildGraph(
 				target,
 				type: 'composeEdge',
 				animated: true,
-				style: {stroke: '#c084fc', strokeWidth: 2},
 			});
 		}
 	});

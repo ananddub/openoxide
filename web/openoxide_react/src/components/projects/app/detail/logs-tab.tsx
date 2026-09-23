@@ -1,5 +1,4 @@
 import {useState, useRef, useEffect, useMemo} from 'react';
-import {Box} from 'lucide-react';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {
 	Select,
@@ -10,29 +9,19 @@ import {
 } from '#/components/ui/select';
 import {createServiceClient} from '#/api/live/query';
 import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
-import {LogStreamControls} from '#/components/projects/detail/logs/log-stream-controls';
 import {
 	useLogStream,
 	downloadLogs,
 } from '#/components/projects/detail/logs/use-log-stream';
+import {SectionHeader, Toolbar} from '#/components/settings/list-card';
 
 const deploymentClient = createServiceClient(DeploymentService);
-
-const LINE_OPTIONS = [
-	{value: '50', label: '50 lines'},
-	{value: '100', label: '100 lines'},
-	{value: '200', label: '200 lines'},
-	{value: '500', label: '500 lines'},
-	{value: '1000', label: '1000 lines'},
-];
 
 interface LogsTabProps {
 	app: any;
 }
 
 export function LogsTab({app}: LogsTabProps) {
-	const [lines, setLines] = useState('500');
-	const [timestamps, setTimestamps] = useState(false);
 	const [isLive, setIsLive] = useState(true);
 	const [selectedTarget, setSelectedTarget] = useState('');
 	const scrollRef = useRef<HTMLDivElement>(null);
@@ -69,13 +58,13 @@ export function LogsTab({app}: LogsTabProps) {
 				{
 					target: activeTarget,
 					serverId: app?.server_id ? BigInt(app.server_id) : undefined,
-					tail: BigInt(lines),
-					timestamps,
+					tail: 500n,
+					timestamps: false,
 					follow: isLive,
 				},
 				{signal},
 			),
-		[activeTarget, lines, timestamps, isLive],
+		[activeTarget, isLive],
 		'Container log stream ended.',
 	);
 
@@ -89,64 +78,41 @@ export function LogsTab({app}: LogsTabProps) {
 		downloadLogs(streamedLogs, `${activeTarget || 'logs'}.txt`);
 
 	return (
-		<div className="flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm">
-			<div className="flex flex-wrap items-center justify-between gap-4">
-				<div className="flex flex-wrap items-center gap-3">
-					<div>
-						<h3 className="text-sm font-bold text-foreground">
-							Container Logs
-						</h3>
-						<p className="mt-1 text-xs text-muted-foreground">
-							Real-time terminal output stream from the running container
-						</p>
-					</div>
+		<div className="flex w-full flex-col gap-5">
+			<SectionHeader
+				title="Logs"
+				description="Live container output streamed from the server."
+			/>
 
-					{availableTargets.length > 0 && (
-						<Select
-							value={activeTarget}
-							onValueChange={val => {
-								if (val) setSelectedTarget(val);
-							}}>
-							<SelectTrigger className="ml-2 h-9 min-w-[170px]  bg-muted/30 font-mono text-xs font-bold shadow-2xs hover:bg-muted/60">
-								<Box className="mr-1 size-3.5 shrink-0 text-primary" />
-								<SelectValue placeholder="Select Container" />
-							</SelectTrigger>
-							<SelectContent className="border- bg-card">
-								<div className="mb-1 border-b  px-3 py-1.5 text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
-									App Containers
-								</div>
-								{availableTargets.map(target => (
-									<SelectItem
-										key={target}
-										value={target}
-										className="font-mono text-xs font-semibold">
-										Target: {target}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					)}
-				</div>
-
-				<LogStreamControls
-					isLive={isLive}
-					onToggleLive={() => setIsLive(!isLive)}
-					timestamps={timestamps}
-					onToggleTimestamps={setTimestamps}
-					lines={lines}
-					onLinesChange={setLines}
-					lineOptions={LINE_OPTIONS}
-					onRefresh={refetch}
-					onDownload={handleDownload}
-				/>
-			</div>
+			{availableTargets.length > 1 && (
+				<Toolbar>
+					<Select
+						value={activeTarget}
+						onValueChange={val => val && setSelectedTarget(val)}>
+						<SelectTrigger className="h-9 w-auto min-w-[180px] rounded-lg bg-card font-mono text-xs">
+							<SelectValue placeholder="Select container" />
+						</SelectTrigger>
+						<SelectContent className="bg-card">
+							{availableTargets.map(target => (
+								<SelectItem
+									key={target}
+									value={target}
+									className="font-mono text-xs">
+									{target}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</Toolbar>
+			)}
 
 			<DeploymentViewer
 				logs={streamedLogs}
 				isLoading={isLoading}
 				isLive={isLive}
-				loadingText={`Connecting to real-time container log stream for '${activeTarget}'...`}
-				emptyText={`No container log entries found for '${activeTarget}'. The application container may be stopped or initializing.`}
+				onToggleLive={() => setIsLive(!isLive)}
+				loadingText={`Connecting to '${activeTarget}' log stream...`}
+				emptyText={`No log entries for '${activeTarget}'. The container may be stopped or still starting.`}
 				onDownload={handleDownload}
 				onReload={refetch}
 			/>

@@ -3,15 +3,19 @@ import {
 	useNavigate,
 	useSearch,
 } from '@tanstack/react-router';
-import {Plus, Search, Folder} from 'lucide-react';
+import {Plus, Search} from 'lucide-react';
 import {useEffect, useState} from 'react';
 
 import {Button} from '#/components/ui/button';
-import {Titlebar} from '#/components/shared/titlebar';
 import {ProjectCard} from '#/components/projects/dashboard/project-card';
+import {ProjectListRow} from '#/components/projects/dashboard/project-list-row';
+import {
+	ProjectsToolbar,
+	type ProjectsView,
+} from '#/components/projects/dashboard/projects-toolbar';
 import {EmptyState} from '#/components/projects/dashboard/empty-state';
+import {SectionHeader} from '#/components/settings/list-card';
 import {HandleProjectDialog} from '#/components/projects/dashboard/handle-project-dialog';
-import {ProjectDashboardFilters} from '#/components/projects/dashboard/project-dashboard-filters';
 import {useProjectsList} from '#/hooks/projects/use-projects-list';
 import {
 	AlertDialog,
@@ -33,8 +37,16 @@ export const Route = createFileRoute('/_app/projects')({
 	}),
 });
 
+const VIEW_STORAGE_KEY = 'projects-view';
+
 function ProjectsPage() {
 	const [deletingId, setDeletingId] = useState<number | null>(null);
+	const [view, setView] = useState<ProjectsView>(() => {
+		if (typeof window === 'undefined') return 'grid';
+		return localStorage.getItem(VIEW_STORAGE_KEY) === 'list'
+			? 'list'
+			: 'grid';
+	});
 	const navigate = useNavigate();
 	const {create} = useSearch({from: '/_app/projects'});
 
@@ -42,7 +54,6 @@ function ProjectsPage() {
 		projects,
 		isLoadingProjects,
 		filteredAndSortedProjects,
-		allTags,
 		searchQuery,
 		setSearchQuery,
 		sortBy,
@@ -52,7 +63,6 @@ function ProjectsPage() {
 		isCreateOpen,
 		setIsCreateOpen,
 		activeOrg,
-		handleTagClick,
 		handleDeleteProject,
 	} = useProjectsList();
 
@@ -71,57 +81,71 @@ function ProjectsPage() {
 		}
 	};
 
+	const handleViewChange = (next: ProjectsView) => {
+		setView(next);
+		localStorage.setItem(VIEW_STORAGE_KEY, next);
+	};
+
 	return (
-		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
-			{/* Vercel-style titlebar */}
-			<Titlebar
-				breadcrumbs={[{label: 'Projects', icon: Folder}]}
+		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+			<SectionHeader
 				title="Projects"
-				description="Create and manage your projects"
-				actions={
+				description="Every application, database and service you manage, grouped by project."
+				action={
 					<Button
 						onClick={() => setIsCreateOpen(true)}
 						disabled={!activeOrg}
-						className="gap-1.5">
+						className="h-9 gap-1.5">
 						<Plus className="size-3.5" />
-						Create Project
+						New Project
 					</Button>
 				}
 			/>
 
-			{/* Filter Toolbar */}
-			<ProjectDashboardFilters
-				projects={projects}
+			{/* Search + filters + view toggle */}
+			<ProjectsToolbar
 				searchQuery={searchQuery}
-				setSearchQuery={setSearchQuery}
+				onSearchChange={setSearchQuery}
 				sortBy={sortBy}
-				setSortBy={setSortBy}
-				allTags={allTags}
+				onSortChange={setSortBy}
 				selectedTags={selectedTags}
-				handleTagClick={handleTagClick}
-				setSelectedTags={setSelectedTags}
+				onTagsChange={setSelectedTags}
+				view={view}
+				onViewChange={handleViewChange}
 			/>
 
-			{/* Content Cards Grid */}
+			{/* Content: grid cards or compact list */}
 			{isLoadingProjects ? (
-				<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-					{[1, 2, 3].map(i => (
+				<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+					{[1, 2, 3, 4].map(i => (
 						<div
 							key={i}
-							className="h-44 animate-pulse rounded-xl border bg-card"
+							className="h-32 animate-pulse rounded-lg border bg-card"
 						/>
 					))}
 				</div>
 			) : filteredAndSortedProjects.length > 0 ? (
-				<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-					{filteredAndSortedProjects.map(project => (
-						<ProjectCard
-							key={String(project.id)}
-							project={project as unknown as any}
-							onDelete={id => setDeletingId(id)}
-						/>
-					))}
-				</div>
+				view === 'grid' ? (
+					<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+						{filteredAndSortedProjects.map(project => (
+							<ProjectCard
+								key={String(project.id)}
+								project={project as unknown as any}
+								onDelete={id => setDeletingId(id)}
+							/>
+						))}
+					</div>
+				) : (
+					<div className="w-full divide-y overflow-hidden rounded-xl border bg-card">
+						{filteredAndSortedProjects.map(project => (
+							<ProjectListRow
+								key={String(project.id)}
+								project={project as unknown as any}
+								onDelete={id => setDeletingId(id)}
+							/>
+						))}
+					</div>
+				)
 			) : projects && projects.length > 0 ? (
 				/* Filter Empty State */
 				<div className="my-auto flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center">

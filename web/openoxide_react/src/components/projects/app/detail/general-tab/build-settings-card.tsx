@@ -8,7 +8,7 @@ import {
 	useApplicationUpdateBuildConfig,
 } from '#/api/live';
 import {ApplicationBuildType} from '#/gen/connect/openoxide/api/v1/application_pb';
-import {formatApiError} from '#/api/utils';
+import {cn, formatApiError} from '#/api/utils';
 import {
 	BUILD_TYPES,
 	RAILPACK_VERSIONS,
@@ -20,6 +20,7 @@ import {RailpackVersionField} from './build-settings-card/railpack-version-field
 interface BuildSettingsCardProps {
 	app: any;
 	onUpdated: () => void;
+	embedded?: boolean;
 }
 
 function fieldsFromApp(app: any): BuildFields {
@@ -35,6 +36,7 @@ function fieldsFromApp(app: any): BuildFields {
 export function BuildSettingsCard({
 	app,
 	onUpdated,
+	embedded,
 }: BuildSettingsCardProps) {
 	const [buildType, setBuildType] = useState<string>(
 		app.build_type || 'NIXPACKS',
@@ -112,13 +114,21 @@ export function BuildSettingsCard({
 	};
 
 	return (
-		<section className="flex flex-col gap-4 rounded-xl bg-card p-5">
-			<div>
-				<h3 className="text-sm font-bold text-foreground">Build Type</h3>
-				<p className="mt-1 text-xs text-muted-foreground">
-					Select the way of building your code
-				</p>
-			</div>
+		<section
+			className={cn(
+				'flex flex-col gap-4',
+				!embedded && 'rounded-xl bg-card p-5',
+			)}>
+			{!embedded && (
+				<div>
+					<h3 className="text-sm font-bold text-foreground">
+						Build Type
+					</h3>
+					<p className="mt-1 text-xs text-muted-foreground">
+						Select the way of building your code
+					</p>
+				</div>
+			)}
 
 			{/* Resource alert block */}
 			<div className="flex gap-3 rounded-xl bg-amber-500/5 p-4 text-xs leading-relaxed text-muted-foreground">

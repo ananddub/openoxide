@@ -42,27 +42,12 @@ export interface MenuItem {
 }
 
 const TONE = {
-	emerald: {
-		c: 'text-emerald-500',
-		h: 'hover:bg-emerald-500/10 hover:text-emerald-400',
-	},
-	emeraldBold: {
-		c: 'text-emerald-400',
-		h: 'hover:bg-emerald-500/15 hover:text-emerald-400',
-	},
-	purple: {
-		c: 'text-purple-400',
-		h: 'hover:bg-purple-500/10 hover:text-purple-400',
-	},
-	sky: {c: 'text-sky-400', h: 'hover:bg-sky-500/10 hover:text-sky-400'},
-	amber: {
-		c: 'text-amber-400',
-		h: 'hover:bg-amber-500/10 hover:text-amber-400',
-	},
-	primary: {
-		c: 'text-primary',
-		h: 'hover:bg-primary/10 hover:text-primary',
-	},
+	emerald: {c: 'text-foreground', h: 'hover:bg-muted'},
+	emeraldBold: {c: 'text-foreground', h: 'hover:bg-muted'},
+	purple: {c: 'text-foreground', h: 'hover:bg-muted'},
+	sky: {c: 'text-foreground', h: 'hover:bg-muted'},
+	amber: {c: 'text-foreground', h: 'hover:bg-muted'},
+	primary: {c: 'text-foreground', h: 'hover:bg-muted'},
 	destructive: {c: 'text-destructive', h: 'hover:bg-destructive/10'},
 };
 
@@ -91,7 +76,7 @@ export function buildMenu(
 			items.push(item(Globe, 'Add Domain', 'emerald', p.onAddDomain));
 		if (p.onAddSchedule)
 			items.push(
-				item(Clock, 'Add Schedule / Cron', 'purple', p.onAddSchedule),
+				item(Clock, 'Add Schedule', 'purple', p.onAddSchedule),
 			);
 		items.push(item(Database, 'Add Volume Backup', 'sky', p.onAddBackup));
 		items.push(

@@ -1,7 +1,11 @@
 import {KeyRound} from 'lucide-react';
 import {
-	HashicorpVaultIcon,
+	AwsIcon,
+	AzureIcon,
 	DopplerIcon,
+	HashicorpVaultIcon,
+	InfisicalIcon,
+	ScalewayIcon,
 } from '#/components/icons/provider-icons';
 import type {ProviderOption} from '#/components/shared/provider-type-select';
 
@@ -38,13 +42,20 @@ export function VaultProviderIcon({
 }) {
 	switch (type.toUpperCase()) {
 		case 'HASHICORP':
-			return (
-				<HashicorpVaultIcon className={`${className} text-amber-500`} />
-			);
+			return <HashicorpVaultIcon className={className} />;
 		case 'DOPPLER':
-			return <DopplerIcon className={`${className} text-purple-500`} />;
+			return <DopplerIcon className={className} />;
+		case 'INFISICAL':
+			return <InfisicalIcon className={className} />;
+		case 'AWS':
+		case 'AWS_PARAMETER_STORE':
+			return <AwsIcon className={className} />;
+		case 'AZURE':
+			return <AzureIcon className={className} />;
+		case 'SCALEWAY':
+			return <ScalewayIcon className={className} />;
 		default:
-			return <KeyRound className={`${className} text-primary`} />;
+			return <KeyRound className={className} />;
 	}
 }
 
@@ -62,23 +73,33 @@ export function getVaultProviderLabel(type: string) {
 	return VAULT_PROVIDER_LABELS[type.toUpperCase()] ?? type;
 }
 
+/** Env-var interpolation snippet a deployment uses to read a secret. */
+export const vaultReferenceSyntax = (name: string, secret = '<secret>') =>
+	`\${{vault.${name || '<name>'}.${secret}}}`;
+
+/** "3 projects" / "All projects" — how wide a provider is visible. */
+export function vaultScopeLabel(provider: VaultProviderItem) {
+	const count = provider.assignments?.length ?? 0;
+	if (!count) return 'All projects';
+	return `${count} project${count > 1 ? 's' : ''}`;
+}
+
 export const vaultProviderOptions: ProviderOption[] = [
-	{
-		value: 'HASHICORP',
-		label: 'HashiCorp Vault / OpenBao',
-		icon: (
-			<HashicorpVaultIcon className="size-4 shrink-0 text-amber-500" />
-		),
-	},
-	{
-		value: 'DOPPLER',
-		label: 'Doppler',
-		icon: <DopplerIcon className="size-4 shrink-0 text-purple-500" />,
-	},
-	...['INFISICAL', 'AWS', 'AWS_PARAMETER_STORE', 'AZURE', 'SCALEWAY'].map(
-		type => ({value: type, label: getVaultProviderLabel(type)}),
-	),
-];
+	'HASHICORP',
+	'DOPPLER',
+	'INFISICAL',
+	'AWS',
+	'AWS_PARAMETER_STORE',
+	'AZURE',
+	'SCALEWAY',
+].map(value => ({
+	value,
+	label:
+		value === 'HASHICORP'
+			? 'HashiCorp Vault / OpenBao'
+			: getVaultProviderLabel(value),
+	icon: <VaultProviderIcon type={value} className="size-4 shrink-0" />,
+}));
 
 // [field name, label, placeholder] triples per provider type live in
 // vault-provider-fields.tsx (VAULT_FIELD_DEFINITIONS).

@@ -1,6 +1,6 @@
 import {toast} from 'sonner';
 import {useDatabaseUpdate} from '#/api/live';
-import {formatApiError} from '#/api/utils';
+import {cn, formatApiError} from '#/api/utils';
 import {
 	deriveDatabaseCredentials,
 	buildConnectionString,
@@ -11,11 +11,14 @@ import {PasswordEditorField} from './password-editor-field';
 interface DatabaseInternalCredentialsCardProps {
 	database: any;
 	onUpdated?: () => void;
+	/** Inside a SettingsCollapse — no own shell/title. */
+	embedded?: boolean;
 }
 
 export function DatabaseInternalCredentialsCard({
 	database,
 	onUpdated,
+	embedded = false,
 }: DatabaseInternalCredentialsCardProps) {
 	const db = deriveDatabaseCredentials(database);
 	const host = database?.app_name || database?.name || 'localhost';
@@ -48,12 +51,22 @@ export function DatabaseInternalCredentialsCard({
 	};
 
 	return (
-		<div className="flex flex-col gap-5 rounded-xl bg-card p-6 shadow-xs">
-			<h3 className="text-xl font-bold tracking-tight text-foreground">
-				Internal Credentials
-			</h3>
+		<div
+			className={cn(
+				'flex flex-col gap-5',
+				!embedded && 'rounded-xl bg-card p-6 shadow-xs',
+			)}>
+			{!embedded && (
+				<h3 className="text-xl font-bold tracking-tight text-foreground">
+					Internal Credentials
+				</h3>
+			)}
 
-			<div className="grid grid-cols-1 gap-4 border-t  pt-4 md:grid-cols-2 md:gap-6">
+			<div
+				className={cn(
+					'grid grid-cols-1 gap-4 pt-4 md:grid-cols-2 md:gap-6',
+					embedded ? '' : 'border-t',
+				)}>
 				<ReadonlyField label="User" value={db.dbUser} />
 
 				{!db.isRedis && !db.isLibsql && (

@@ -1,4 +1,3 @@
-import {KeyRound} from 'lucide-react';
 import {Input} from '#/components/ui/input';
 import {
 	Select,
@@ -9,6 +8,7 @@ import {
 } from '#/components/ui/select';
 import {Switch} from '#/components/ui/switch';
 import {Textarea} from '#/components/ui/textarea';
+import {WizardField} from '#/components/shared/sheet-wizard';
 import type {CertificateForm, RemoteServer} from './certificate-types';
 
 type Props = {
@@ -28,6 +28,7 @@ const slug = (value: string) =>
 		.replace(/[^a-z0-9]+/g, '-')
 		.replace(/^-|-$/g, '');
 
+/** Scroll body of the certificate sheet — every field in the house dialect. */
 export function CertificateFormFields({
 	editing,
 	form,
@@ -35,43 +36,44 @@ export function CertificateFormFields({
 	onChange,
 }: Props) {
 	return (
-		<div className="grid gap-4">
-			<div className="grid gap-3 sm:grid-cols-2">
-				<div className="space-y-1.5">
-					<label className="text-xs font-medium">Name</label>
-					<Input
-						value={form.name}
-						onChange={event => {
-							onChange('name', event.target.value);
-							if (!editing)
-								onChange('certificate_path', slug(event.target.value));
-						}}
-						placeholder="Production wildcard"
-					/>
-				</div>
-				<div className="space-y-1.5">
-					<label className="text-xs font-medium">Directory</label>
-					<Input
-						value={form.certificate_path}
-						onChange={event =>
-							onChange('certificate_path', slug(event.target.value))
-						}
-						placeholder="production-wildcard"
-						disabled={editing}
-					/>
-				</div>
-			</div>
+		<div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-6">
+			<WizardField label="Name" required>
+				<Input
+					value={form.name}
+					onChange={event => {
+						onChange('name', event.target.value);
+						if (!editing)
+							onChange('certificate_path', slug(event.target.value));
+					}}
+					placeholder="Production wildcard"
+					className="bg-background"
+				/>
+			</WizardField>
 
-			<div className="space-y-1.5">
-				<label className="text-xs font-medium">Target server</label>
+			<WizardField
+				label="Directory"
+				required
+				hint="Folder under the panel's certificate store. Derived from the name.">
+				<Input
+					value={form.certificate_path}
+					onChange={event =>
+						onChange('certificate_path', slug(event.target.value))
+					}
+					placeholder="production-wildcard"
+					disabled={editing}
+					className="bg-background font-mono"
+				/>
+			</WizardField>
+
+			<WizardField label="Target server">
 				<Select
 					value={form.server_id}
 					onValueChange={value => value && onChange('server_id', value)}
 					disabled={editing}>
-					<SelectTrigger className="w-full text-xs">
+					<SelectTrigger className="bg-background">
 						<SelectValue placeholder="Select target server" />
 					</SelectTrigger>
-					<SelectContent>
+					<SelectContent className="bg-card">
 						<SelectItem value="local">Openoxide (local)</SelectItem>
 						{servers
 							.filter(server => server.server_type !== 'BUILD')
@@ -82,41 +84,41 @@ export function CertificateFormFields({
 							))}
 					</SelectContent>
 				</Select>
-			</div>
+			</WizardField>
 
-			<div className="space-y-1.5">
-				<label className="text-xs font-medium">Certificate chain</label>
+			<WizardField label="Certificate chain" required>
 				<Textarea
-					className="min-h-40 resize-y font-mono text-xs"
+					className="min-h-40 resize-y rounded-lg bg-background font-mono text-xs"
 					value={form.certificate_data}
 					onChange={event =>
 						onChange('certificate_data', event.target.value)
 					}
 					placeholder="-----BEGIN CERTIFICATE-----"
 				/>
-			</div>
+			</WizardField>
 
-			<div className="space-y-1.5">
-				<label className="flex items-center gap-1.5 text-xs font-medium">
-					<KeyRound className="size-3.5" />
-					Private key
-				</label>
+			<WizardField
+				label="Private key"
+				required={!editing}
+				hint={
+					editing
+						? 'Leave blank to keep the current private key.'
+						: 'Must match the certificate chain above.'
+				}>
 				<Textarea
-					className="min-h-40 resize-y font-mono text-xs"
+					className="min-h-40 resize-y rounded-lg bg-background font-mono text-xs"
 					value={form.private_key}
 					onChange={event => onChange('private_key', event.target.value)}
-					placeholder={
-						editing
-							? 'Leave blank to keep the current private key'
-							: '-----BEGIN PRIVATE KEY-----'
-					}
+					placeholder="-----BEGIN PRIVATE KEY-----"
 				/>
-			</div>
+			</WizardField>
 
-			<div className="flex items-center justify-between rounded-md  px-3 py-2.5">
-				<div>
-					<p className="text-xs font-medium">Track manual renewals</p>
-					<p className="text-[11px] text-muted-foreground">
+			<div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 px-4 py-3.5">
+				<div className="min-w-0">
+					<p className="text-[13px] font-medium text-foreground">
+						Track manual renewals
+					</p>
+					<p className="mt-0.5 text-[13px] text-muted-foreground">
 						Store replacement history for this certificate.
 					</p>
 				</div>

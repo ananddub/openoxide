@@ -1,38 +1,56 @@
-import {useMemo, useState} from 'react';
-import {createFileRoute, useNavigate} from '@tanstack/react-router';
+import {useEffect, useMemo, useRef, useState} from 'react';
+import {createFileRoute} from '@tanstack/react-router';
 import {
-	Hash,
-	Palette,
+	LayoutGrid,
+	List,
 	Plus,
-	RefreshCw,
 	Search,
 	Tag as TagIcon,
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
-import {Titlebar} from '#/components/shared/titlebar';
-import {
-	ResourceGuideCard,
-	ResourceInfoCard,
-} from '#/components/shared/resource-sidebar';
-import {useTagListAll} from '#/api/live';
+import {SectionHeader} from '#/components/settings/list-card';
 import {
 	TagEditDialog,
 	type TagItem,
 } from '#/components/tags/tag-edit-dialog';
 import {TagDeleteDialog} from '#/components/tags/tag-delete-dialog';
 import {TagListItem} from '#/components/tags/tag-list-item';
+import {TagCard} from '#/components/tags/tag-card';
+import {TagCreateSheet} from '#/components/tags/tag-create-sheet';
+import {useTagListAll} from '#/api/live';
+import {cn} from '#/api/utils';
 
 export const Route = createFileRoute('/_app/tags')({
-	component: MinimalTagsPage,
+	component: TagsPage,
 });
 
-function MinimalTagsPage() {
-	const navigate = useNavigate();
-	const [searchQuery, setSearchQuery] = useState('');
+type TagsView = 'grid' | 'list';
+
+const VIEW_STORAGE_KEY = 'tags-view';
+
+/**
+ * Tags — the SSH Keys / Projects-page grammar: a section title, then a
+ * toolbar (search + grid/list toggle + New) and cards or one bordered list
+ * card below; create opens a Geist sheet. No side rail.
+ */
+function TagsPage() {
+	const [search, setSearch] = useState('');
+	const [view, setView] = useState<TagsView>(() => {
+		if (typeof window === 'undefined') return 'grid';
+		return localStorage.getItem(VIEW_STORAGE_KEY) === 'list'
+			? 'list'
+			: 'grid';
+	});
+	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [isEditOpen, setIsEditOpen] = useState(false);
 	const [editingTag, setEditingTag] = useState<TagItem | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<TagItem | null>(null);
+
+	const handleViewChange = (next: TagsView) => {
+		setView(next);
+		localStorage.setItem(VIEW_STORAGE_KEY, next);
+	};
 
 	// Live tags query keyed ['tags','list'] — the table-watch stream
 	// invalidates it on tag changes while this page is mounted.
@@ -46,17 +64,35 @@ function MinimalTagsPage() {
 	}, [tagsListQuery.data]);
 
 	const filteredTags = useMemo(() => {
-		if (!searchQuery.trim()) return tagsList;
-		const q = searchQuery.toLowerCase();
+		if (!search.trim()) return tagsList;
+		const q = search.toLowerCase();
 		return tagsList.filter(t => t.name.toLowerCase().includes(q));
-	}, [tagsList, searchQuery]);
+	}, [tagsList, search]);
 
-	const distinctColors = useMemo(
-		() => new Set(tagsList.map(t => t.color || '#3b82f6')).size,
-		[tagsList],
-	);
+	const hasFilters = search.trim() !== '';
 
-	const handleOpenCreate = () => void navigate({to: '/tags/new'});
+	const searchRef = useRef<HTMLInputElement>(null);
+
+	// Same `/` shortcut as the Projects toolbar.
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+			const el = document.activeElement as HTMLElement | null;
+			if (
+				el &&
+				(el.tagName === 'INPUT' ||
+					el.tagName === 'TEXTAREA' ||
+					el.tagName === 'SELECT' ||
+					el.isContentEditable)
+			) {
+				return;
+			}
+			e.preventDefault();
+			searchRef.current?.focus();
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	}, []);
 
 	const handleOpenEdit = (tag: TagItem) => {
 		setEditingTag(tag);
@@ -64,104 +100,136 @@ function MinimalTagsPage() {
 	};
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1600px] animate-in flex-col gap-6 px-4 py-6 duration-200 fade-in sm:px-6 lg:px-8">
-			{/* Page Header */}
-			<Titlebar
-				breadcrumbs={[{label: 'Tags'}]}
-				icon={<TagIcon className="text-foreground/70" />}
+		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+			<SectionHeader
 				title="Tags"
-				titleSuffix={
-					<span className="font-mono text-sm font-normal text-muted-foreground/70">
-						({tagsList.length})
-					</span>
-				}
-				description="Color-coded labels for organizing projects and resources"
-				actions={
-					<Button size="sm" onClick={handleOpenCreate}>
+				description="Color-coded labels to group projects, apps and databases by environment or team."
+				action={
+					<Button
+						onClick={() => setIsCreateOpen(true)}
+						className="h-9 gap-1.5">
 						<Plus className="size-3.5" />
 						New Tag
 					</Button>
 				}
 			/>
 
-			{/* Search Row */}
-			{tagsList.length > 0 && (
-				<div className="relative max-w-xs">
-					<Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
+			{/* Search + grid/list toggle */}
+			<div className="flex w-full animate-in flex-col items-stretch gap-3 duration-200 fade-in sm:flex-row sm:items-center">
+				<div className="relative w-full sm:grow">
+					<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/70" />
 					<Input
-						placeholder="Filter tags..."
-						value={searchQuery}
-						onChange={e => setSearchQuery(e.target.value)}
-						className="h-8 bg-muted/20 pl-8 text-xs focus:bg-background"
+						ref={searchRef}
+						placeholder="Search Tags"
+						value={search}
+						onChange={e => setSearch(e.target.value)}
+						className="h-9 rounded-lg pr-11 pl-9 text-sm transition-colors duration-150 hover:border-foreground/25"
 					/>
-				</div>
-			)}
-			<div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-				<div className="flex min-w-0 flex-col gap-6">
-					{/* List Container */}
-					{isLoading ? (
-						<div className="flex min-h-[180px] items-center justify-center text-xs text-muted-foreground">
-							<RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
-							Loading...
-						</div>
-					) : filteredTags.length === 0 ? (
-						<div className="flex flex-col items-center justify-center gap-2 rounded-xl bg-muted/10 p-8 text-center">
-							<span className="text-xs text-muted-foreground">
-								{searchQuery
-									? `No tags match "${searchQuery}"`
-									: 'No tags created yet'}
-							</span>
-							{!searchQuery && (
-								<Button
-									size="sm"
-									variant="outline"
-									onClick={handleOpenCreate}
-									className="mt-1 h-7 text-xs">
-									<Plus className="mr-1 h-3 w-3" /> Create Tag
-								</Button>
-							)}
-						</div>
-					) : (
-						<div className="divide-y divide-border/40 overflow-hidden rounded-xl bg-card/50">
-							{filteredTags.map(tag => (
-								<TagListItem
-									key={tag.id}
-									tag={tag}
-									onEdit={handleOpenEdit}
-									onDelete={setDeleteTarget}
-								/>
-							))}
-						</div>
-					)}
+					<kbd
+						aria-hidden
+						className="pointer-events-none absolute top-1/2 right-3 flex size-5 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-foreground/[0.04] font-mono text-[11px] text-muted-foreground select-none">
+						/
+					</kbd>
 				</div>
 
-				{/* ── Right rail ── */}
-				<div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
-					<ResourceInfoCard
-						title="Overview"
-						icon={TagIcon}
-						rows={[
-							{icon: Hash, label: 'Total tags', value: tagsList.length},
-							{icon: Palette, label: 'Colors used', value: distinctColors},
-						]}
-					/>
-					<ResourceGuideCard
-						title="Where tags help"
-						icon={Hash}
-						steps={[
-							{
-								title: 'Group projects',
-								text: 'Attach tags to projects, apps and databases to filter dashboards by environment or team.',
-							},
-							{
-								title: 'Color code',
-								text: 'The tag color shows everywhere it is attached — quick visual status at a glance.',
-							},
-						]}
-					/>
+				<div className="flex shrink-0 items-center gap-2">
+					{/* Grid / list toggle */}
+					<div className="flex items-center rounded-lg border bg-card p-1">
+						<button
+							type="button"
+							aria-label="Grid view"
+							title="Grid view"
+							onClick={() => handleViewChange('grid')}
+							className={cn(
+								'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
+								view === 'grid' && 'bg-accent text-foreground',
+							)}>
+							<LayoutGrid className="size-3.5" />
+						</button>
+						<button
+							type="button"
+							aria-label="List view"
+							title="List view"
+							onClick={() => handleViewChange('list')}
+							className={cn(
+								'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
+								view === 'list' && 'bg-accent text-foreground',
+							)}>
+							<List className="size-3.5" />
+						</button>
+					</div>
 				</div>
 			</div>
 
+			{/* Content: grid cards or compact list */}
+			{!isLoading && tagsList.length === 0 ? (
+				<div className="flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center">
+					<TagIcon className="mb-4 size-10 text-muted-foreground/40" />
+					<h3 className="mb-2 text-xl font-semibold tracking-[-0.01em] text-foreground">
+						No tags yet
+					</h3>
+					<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
+						Create color-coded labels to group projects, apps and databases
+						by environment or team.
+					</p>
+					<Button
+						onClick={() => setIsCreateOpen(true)}
+						className="mt-4 h-9 gap-1.5 text-xs font-semibold">
+						<Plus className="size-3.5" />
+						New Tag
+					</Button>
+				</div>
+			) : isLoading ? (
+				<div className="min-h-[200px] animate-pulse rounded-xl border bg-card" />
+			) : filteredTags.length === 0 ? (
+				<div className="flex flex-col items-center justify-center gap-3 rounded-xl border bg-card p-12 text-center">
+					<Search className="size-10 text-muted-foreground/40" />
+					<h3 className="text-xl font-semibold tracking-[-0.01em] text-foreground">
+						No matching tags found
+					</h3>
+					<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
+						No tags match &ldquo;{search}&rdquo;
+					</p>
+					{hasFilters && (
+						<Button
+							variant="ghost"
+							onClick={() => setSearch('')}
+							className="mt-4 text-xs font-semibold text-primary">
+							Clear All Filters
+						</Button>
+					)}
+				</div>
+			) : view === 'grid' ? (
+				<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+					{filteredTags.map(tag => (
+						<TagCard
+							key={String(tag.id)}
+							tag={tag}
+							onEdit={handleOpenEdit}
+							onDelete={setDeleteTarget}
+						/>
+					))}
+				</div>
+			) : (
+				<div className="w-full divide-y overflow-hidden rounded-xl border bg-card">
+					{filteredTags.map(tag => (
+						<TagListItem
+							key={String(tag.id)}
+							tag={tag}
+							onEdit={handleOpenEdit}
+							onDelete={setDeleteTarget}
+						/>
+					))}
+				</div>
+			)}
+
+			{/* Create — Geist sheet */}
+			<TagCreateSheet
+				isOpen={isCreateOpen}
+				onOpenChange={setIsCreateOpen}
+			/>
+
+			{/* Edit — Geist sheet, same grammar as New Tag */}
 			<TagEditDialog
 				tag={editingTag}
 				open={isEditOpen}
