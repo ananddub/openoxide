@@ -12,7 +12,8 @@ import {usePageCrumbs, type Crumb} from './topbar-slots';
 const ROUTE_TITLES: Record<string, string> = {
 	'/': 'Overview',
 	'/projects': 'Projects',
-	'/Deployments': 'Deployments',
+	'/Deployments': 'Logs & History',
+	'/Deployments/queue': 'Active Queue',
 	'/schedules': 'Schedules',
 	'/remote-servers': 'Remote Servers',
 	'/infra': 'Web Server',
@@ -107,6 +108,12 @@ export function TopBar() {
 			return SETTINGS_TABS.find(t => t.id === tab)?.label ?? 'Settings';
 		}
 		const base = '/' + (pathSegments[0] ?? '');
+		// Two-segment routes with their own title (e.g. /Deployments/queue)
+		// win before the project-name / last-segment fallbacks.
+		const deepKey = '/' + pathSegments.slice(0, 2).join('/');
+		if (pathSegments.length === 2 && ROUTE_TITLES[deepKey]) {
+			return ROUTE_TITLES[deepKey];
+		}
 		if (ROUTE_TITLES[base] && pathSegments.length === 1) {
 			return ROUTE_TITLES[base];
 		}

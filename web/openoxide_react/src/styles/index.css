@@ -332,3 +332,50 @@ html:not(.dark)
 		0 8px 16px -4px rgb(0 0 0 / 0.06),
 		0 24px 32px -8px rgb(0 0 0 / 0.08) !important;
 }
+
+/* ── react-colorful skin ────────────────────────────────────────────────
+ * The package injects its stylesheet at runtime, so every rule is scoped
+ * one class deeper than its own to out-rank it, and reads design tokens. */
+.tag-color-panel .react-colorful {
+	width: 100%;
+	height: 170px;
+	border-radius: var(--radius);
+	box-shadow: inset 0 0 0 1px var(--border);
+}
+.tag-color-panel .react-colorful__saturation {
+	border-radius: var(--radius) var(--radius) 0 0;
+}
+.tag-color-panel .react-colorful__hue {
+	height: 14px;
+	margin-top: 10px;
+	border-radius: 9999px;
+	box-shadow: inset 0 0 0 1px var(--border);
+}
+.tag-color-panel .react-colorful__pointer {
+	width: 18px;
+	height: 18px;
+}
+.tag-color-panel .react-colorful__hue-pointer {
+	width: 16px;
+	height: 16px;
+}
+.tag-color-panel .react-colorful__pointer-fill,
+.tag-color-panel .react-colorful__slider-pointer-fill {
+	width: 100%;
+	height: 100%;
+	border: 2px solid #fff;
+	border-radius: 9999px;
+	box-shadow:
+		0 0 0 1px rgb(0 0 0 / 0.2),
+		0 1px 2px rgb(0 0 0 / 0.25);
+}
+.tag-color-panel
+	.react-colorful__interactive:focus-visible
+	.react-colorful__pointer-fill,
+.tag-color-panel
+	.react-colorful__interactive:focus-visible
+	.react-colorful__slider-pointer-fill {
+	box-shadow:
+		0 0 0 2px var(--popover),
+		0 0 0 4px var(--ring);
+}

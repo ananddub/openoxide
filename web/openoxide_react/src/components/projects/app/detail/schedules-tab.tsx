@@ -105,7 +105,7 @@ export function SchedulesTab({
 	const createButton = (
 		<Button onClick={() => setIsCreateOpen(true)} className="h-9 gap-1.5">
 			<Plus className="size-3.5" />
-			Create Cron Job
+			New Cron Job
 		</Button>
 	);
 

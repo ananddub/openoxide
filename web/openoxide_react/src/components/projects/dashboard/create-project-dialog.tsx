@@ -58,7 +58,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 		<Sheet open={isOpen} onOpenChange={onOpenChange}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle>Add a project</SheetTitle>
+					<SheetTitle>New Project</SheetTitle>
 					<SheetDescription>
 						The home of something big!
 					</SheetDescription>

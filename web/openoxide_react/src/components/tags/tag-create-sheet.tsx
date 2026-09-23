@@ -10,11 +10,10 @@ import {
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
-import {Tag as TagIcon} from 'lucide-react';
 import {formatApiError} from '#/api/utils';
 import {useTagCreate} from '#/api/live';
-import {TagBadge} from '#/components/shared/tag-badge';
 import {TagColorPicker} from '#/components/tags/tag-color-picker';
+import {TagBadge} from '#/components/shared/tag-badge';
 import {WizardField} from '#/components/shared/sheet-wizard';
 
 interface TagCreateSheetProps {
@@ -64,12 +63,9 @@ export function TagCreateSheet({
 				if (!open) reset();
 				onOpenChange(open);
 			}}>
-			<SheetContent className="p-0">
+			<SheetContent className="p-0 sm:data-[side=right]:w-[430px]">
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<TagIcon className="size-4 text-primary" />
-						New Tag
-					</SheetTitle>
+					<SheetTitle>New Tag</SheetTitle>
 					<SheetDescription>
 						Color-coded label for organizing projects and resources.
 					</SheetDescription>
@@ -79,6 +75,15 @@ export function TagCreateSheet({
 					onSubmit={handleSubmit}
 					className="flex min-h-0 flex-1 flex-col">
 					<div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-6">
+						{/* Live preview — exactly the badge shown on resources. */}
+						<div className="flex justify-center rounded-xl bg-secondary/40 px-4 py-6">
+							<TagBadge
+								name={tagName.trim() || 'New tag'}
+								color={tagColor}
+								className="px-4 py-2 text-[15px] font-semibold [&>span:first-child]:size-3"
+							/>
+						</div>
+
 						<WizardField label="Name" required>
 							<Input
 								placeholder="e.g. Production"
@@ -95,30 +100,14 @@ export function TagCreateSheet({
 							hint="Used for the badge across projects and resources.">
 							<TagColorPicker color={tagColor} onChange={setTagColor} />
 						</WizardField>
-
-						<div className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3.5">
-							<span className="text-[13px] text-muted-foreground">
-								Preview
-							</span>
-							<TagBadge
-								name={tagName.trim() || 'Preview'}
-								color={tagColor}
-							/>
-						</div>
 					</div>
 
 					<SheetFooter>
 						<Button
-							type="button"
-							variant="outline"
-							onClick={() => onOpenChange(false)}>
-							Cancel
-						</Button>
-						<Button
 							type="submit"
 							disabled={isSubmitting}
 							className="h-10 gap-1.5 px-5">
-							{isSubmitting ? 'Saving…' : 'Create Tag'}
+							{isSubmitting ? 'Saving…' : 'Save'}
 						</Button>
 					</SheetFooter>
 				</form>

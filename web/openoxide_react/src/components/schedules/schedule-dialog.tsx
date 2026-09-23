@@ -1,4 +1,3 @@
-import {Clock} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Textarea} from '#/components/ui/textarea';
@@ -45,8 +44,7 @@ export function ScheduleDialog(props: ScheduleDialogProps) {
 			}}>
 			<SheetContent className="p-0">
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<Clock className="size-4 text-primary" />
+					<SheetTitle>
 						{form.editingSchedule
 							? 'Edit Schedule Task'
 							: 'New Schedule Task'}
@@ -136,14 +134,11 @@ export function ScheduleDialog(props: ScheduleDialogProps) {
 					</div>
 
 					<SheetFooter>
-						<Button type="button" variant="outline" onClick={onClose}>
-							Cancel
-						</Button>
 						<Button
 							type="submit"
 							disabled={form.isSubmitting}
 							className="h-10 gap-1.5 px-5">
-							{form.editingSchedule ? 'Save Changes' : 'Create Schedule'}
+							{form.editingSchedule ? 'Save Changes' : 'Save'}
 						</Button>
 					</SheetFooter>
 				</form>

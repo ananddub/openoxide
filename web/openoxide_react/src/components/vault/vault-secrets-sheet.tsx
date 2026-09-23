@@ -71,9 +71,8 @@ function VaultSecretsBody({
 	return (
 		<>
 			<SheetHeader>
-				<SheetTitle className="flex items-center gap-2 pr-8">
-					<KeyRound className="size-4 text-primary" />
-					<span className="truncate">{provider.name}</span>
+				<SheetTitle className="pr-8 truncate">
+					{provider.name}
 				</SheetTitle>
 				<SheetDescription>
 					{getVaultProviderLabel(provider.provider_type)} — secret names

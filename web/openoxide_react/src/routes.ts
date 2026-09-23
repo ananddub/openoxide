@@ -21,6 +21,7 @@ export const routes = rootRoute('_root.tsx', [
 		),
 		route('projects/$id/database/$dbId', 'projects/database-detail.tsx'),
 		route('Deployments', 'deployments/index.tsx'),
+		route('Deployments/queue', 'deployments/queue.tsx'),
 		// Removed: global Monitoring page — each server now has its own overview.
 		route('schedules', 'schedules.tsx'),
 		// Disabled: host-wide Docker view — org context me expose nahi karna (see sidebar enum.ts).

@@ -10,7 +10,7 @@ import {
 import {Button} from '#/components/ui/button';
 import {useSshKeyItems} from '#/api/live';
 import {toast} from 'sonner';
-import {Copy, Check, Key, Download} from 'lucide-react';
+import {Copy, Check, Download} from 'lucide-react';
 import type {SshKeyResponse} from '#/types/api-helpers';
 import {downloadKeyFile} from '#/utils/ssh-key-utils';
 import {ViewKeyPrivateBlock} from '#/components/ssh-keys/view-key-private-block';
@@ -73,10 +73,7 @@ export function ViewKeySheet({
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<Key className="size-4 shrink-0 text-muted-foreground" />
-						<span>{activeKey.name}</span>
-					</SheetTitle>
+					<SheetTitle>{activeKey.name}</SheetTitle>
 					<SheetDescription>
 						{activeKey.description || 'SSH key details'}
 					</SheetDescription>

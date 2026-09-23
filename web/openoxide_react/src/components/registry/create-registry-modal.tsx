@@ -10,7 +10,6 @@ import {
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
-	Database,
 	Plug,
 	RefreshCw,
 	Save,
@@ -182,9 +181,8 @@ export function CreateRegistryModal({
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-1.5">
-						<Database className="size-4 text-muted-foreground" />
-						{initialData ? 'Edit Registry' : 'Add an external registry'}
+					<SheetTitle>
+						{initialData ? 'Edit Registry' : 'New External Registry'}
 					</SheetTitle>
 					<SheetDescription>{stepDesc[step]}</SheetDescription>
 					<StepCheckpoints steps={STEPS} idx={stepIdx} />
@@ -333,15 +331,11 @@ export function CreateRegistryModal({
 					</SheetFooter>
 				) : (
 					<SheetFooter>
-						{stepIdx > 0 ? (
+						{stepIdx > 0 && (
 							<Button
 								variant="outline"
 								onClick={() => setStepIdx(i => i - 1)}>
 								Back
-							</Button>
-						) : (
-							<Button variant="outline" onClick={onClose}>
-								Cancel
 							</Button>
 						)}
 						<Button

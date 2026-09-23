@@ -28,7 +28,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 				disabled={disabled}
 				className="mt-6 flex items-center gap-2">
 				<Plus className="size-4" />
-				Create Project
+				New Project
 			</Button>
 		</div>
 	);

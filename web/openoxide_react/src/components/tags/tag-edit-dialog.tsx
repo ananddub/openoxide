@@ -12,7 +12,6 @@ import {Input} from '#/components/ui/input';
 import {TagBadge} from '#/components/shared/tag-badge';
 import {TagColorPicker} from '#/components/tags/tag-color-picker';
 import {WizardField} from '#/components/shared/sheet-wizard';
-import {Tag as TagIcon} from 'lucide-react';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {useTagUpdate} from '#/api/live';
@@ -66,12 +65,9 @@ export function TagEditDialog({
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
-			<SheetContent className="p-0">
+			<SheetContent className="p-0 sm:data-[side=right]:w-[430px]">
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<TagIcon className="size-4 text-primary" />
-						Edit Tag
-					</SheetTitle>
+					<SheetTitle>Edit Tag</SheetTitle>
 					<SheetDescription>
 						Rename this label or change its badge color.
 					</SheetDescription>
@@ -81,6 +77,15 @@ export function TagEditDialog({
 					onSubmit={handleSaveTag}
 					className="flex min-h-0 flex-1 flex-col">
 					<div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-6">
+						{/* Live preview — exactly the badge shown on resources. */}
+						<div className="flex justify-center rounded-xl bg-secondary/40 px-4 py-6">
+							<TagBadge
+								name={tagName.trim() || 'New tag'}
+								color={tagColor}
+								className="px-4 py-2 text-[15px] font-semibold [&>span:first-child]:size-3"
+							/>
+						</div>
+
 						<WizardField label="Name" required>
 							<Input
 								placeholder="e.g. Production"
@@ -97,30 +102,14 @@ export function TagEditDialog({
 							hint="Used for the badge across projects and resources.">
 							<TagColorPicker color={tagColor} onChange={setTagColor} />
 						</WizardField>
-
-						<div className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3.5">
-							<span className="text-[13px] text-muted-foreground">
-								Preview
-							</span>
-							<TagBadge
-								name={tagName.trim() || 'Preview'}
-								color={tagColor}
-							/>
-						</div>
 					</div>
 
 					<SheetFooter>
 						<Button
-							type="button"
-							variant="outline"
-							onClick={() => onOpenChange(false)}>
-							Cancel
-						</Button>
-						<Button
 							type="submit"
 							disabled={isSubmitting}
 							className="h-10 gap-1.5 px-5">
-							{isSubmitting ? 'Saving…' : 'Save Changes'}
+							{isSubmitting ? 'Saving…' : 'Save'}
 						</Button>
 					</SheetFooter>
 				</form>

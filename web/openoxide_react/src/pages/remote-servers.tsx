@@ -81,7 +81,7 @@ function RemoteServersPage() {
 						}}
 						className="h-9 gap-1.5">
 						<Plus className="size-3.5" />
-						Add Server
+						New Server
 					</Button>
 				}
 			/>

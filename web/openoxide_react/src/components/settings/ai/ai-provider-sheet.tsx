@@ -116,12 +116,8 @@ export function AiProviderSheet({
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<AiProviderIcon
-							name={currentProviderName}
-							className="size-4 text-primary"
-						/>
-						{editing ? 'Edit AI Provider' : 'Add AI Provider'}
+					<SheetTitle>
+						{editing ? 'Edit AI Provider' : 'New AI Provider'}
 					</SheetTitle>
 					<SheetDescription>{STEP_DESC[step]}</SheetDescription>
 					<StepCheckpoints steps={STEPS} idx={stepIdx} />
@@ -362,17 +358,11 @@ export function AiProviderSheet({
 					</SheetFooter>
 				) : (
 					<SheetFooter>
-						{stepIdx > 0 ? (
+						{stepIdx > 0 && (
 							<Button
 								variant="outline"
 								onClick={() => setStepIdx(i => i - 1)}>
 								Back
-							</Button>
-						) : (
-							<Button
-								variant="outline"
-								onClick={() => onOpenChange(false)}>
-								Cancel
 							</Button>
 						)}
 						<Button

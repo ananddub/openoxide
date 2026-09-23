@@ -16,7 +16,6 @@ import {
 	type GitProviderFormState,
 	GIT_PROVIDER_LABELS,
 } from './git-provider-types';
-import {GitProviderIcon} from './git-provider-icon';
 import {GitProviderKindHint} from './git-provider-kind-hint';
 
 interface GitProviderEditSheetProps {
@@ -69,9 +68,8 @@ export function GitProviderEditSheet({
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
 			<SheetContent className="p-0">
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<GitProviderIcon kind={kind} className="size-4" />
-						{editing ? 'Edit' : 'Add'} {GIT_PROVIDER_LABELS[kind]}
+					<SheetTitle>
+						{editing ? 'Edit' : 'New'} {GIT_PROVIDER_LABELS[kind]}
 					</SheetTitle>
 					<SheetDescription>{KIND_DESCRIPTIONS[kind]}</SheetDescription>
 				</SheetHeader>
@@ -141,10 +139,7 @@ export function GitProviderEditSheet({
 					</div>
 				</div>
 
-				<SheetFooter className="justify-between">
-					<Button variant="outline" onClick={onClose}>
-						Cancel
-					</Button>
+				<SheetFooter>
 					<Button
 						onClick={() => void onSave()}
 						disabled={busy || !form.name}

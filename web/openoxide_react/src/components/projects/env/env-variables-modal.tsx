@@ -169,12 +169,6 @@ export function EnvVariablesModal({
 
 				<SheetFooter>
 					<Button
-						variant="outline"
-						onClick={onClose}
-						className="h-10 px-5">
-						Cancel
-					</Button>
-					<Button
 						type="submit"
 						form="env-variables-sheet-form"
 						disabled={isSubmitting || !isModified}

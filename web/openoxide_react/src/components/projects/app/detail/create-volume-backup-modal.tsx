@@ -174,16 +174,10 @@ export function CreateVolumeBackupModal({
 				</form>
 				<SheetFooter>
 					<Button
-						type="button"
-						variant="outline"
-						onClick={() => onOpenChange(false)}>
-						Cancel
-					</Button>
-					<Button
 						type="submit"
 						form="volume-backup-form"
 						disabled={isSubmitting}>
-						{isSubmitting ? 'Creating...' : 'Create Backup Rule'}
+						{isSubmitting ? 'Saving...' : 'Save'}
 					</Button>
 				</SheetFooter>
 			</SheetContent>

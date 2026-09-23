@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {Loader2, ShieldCheck} from 'lucide-react';
+import {Loader2} from 'lucide-react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
 import {
@@ -101,8 +101,7 @@ export function CertificateSheet({
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent className="p-0">
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<ShieldCheck className="size-4 text-primary" />
+					<SheetTitle>
 						{certificate ? 'Edit certificate' : 'Install certificate'}
 					</SheetTitle>
 					<SheetDescription>
@@ -115,10 +114,7 @@ export function CertificateSheet({
 					servers={servers}
 					onChange={set}
 				/>
-				<SheetFooter className="justify-between">
-					<Button variant="outline" onClick={() => onOpenChange(false)}>
-						Cancel
-					</Button>
+				<SheetFooter>
 					<Button
 						onClick={save}
 						disabled={

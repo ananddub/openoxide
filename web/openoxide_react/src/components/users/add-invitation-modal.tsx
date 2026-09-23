@@ -87,13 +87,13 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 				render={
 					<Button size="sm" className="h-9 gap-1.5 text-xs font-semibold">
 						<PlusIcon className="h-4 w-4" />
-						Create User / Invitation
+						New User / Invitation
 					</Button>
 				}
 			/>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle>Create Invitation</SheetTitle>
+					<SheetTitle>New Invitation</SheetTitle>
 					<SheetDescription>
 						Invite users to your organization or create credentials
 						directly.
@@ -181,7 +181,7 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 						disabled={isSubmitting}
 						form="add-invitation-form"
 						type="submit">
-						{mode === 'credentials' ? 'Create User' : 'Send Invitation'}
+						{mode === 'credentials' ? 'Save' : 'Send Invitation'}
 					</Button>
 				</SheetFooter>
 			</SheetContent>

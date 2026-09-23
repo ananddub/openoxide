@@ -1,4 +1,6 @@
-import {Search, X} from 'lucide-react';
+import {useEffect, useRef} from 'react';
+import {Search} from 'lucide-react';
+import {Input} from '#/components/ui/input';
 import {
 	Select,
 	SelectContent,
@@ -21,16 +23,33 @@ interface DeploymentsFiltersProps {
 	setSortDir: (val: 'asc' | 'desc') => void;
 }
 
-/** OpenShip's status switch: quiet segmented pills, not a select. */
-const FILTERS = [
-	{value: 'all', label: 'All'},
+const STATUS_FILTERS = [
+	{value: 'all', label: 'All statuses'},
 	{value: 'done', label: 'Success'},
 	{value: 'error', label: 'Failed'},
 	{value: 'running', label: 'Building'},
 	{value: 'queued', label: 'Queued'},
 	{value: 'cancelled', label: 'Canceled'},
-] as const;
+];
 
+const TYPES = [
+	{value: 'all', label: 'All types'},
+	{value: 'application', label: 'Application'},
+	{value: 'compose', label: 'Compose'},
+	{value: 'database', label: 'Database'},
+];
+
+const SORTS = [
+	{value: 'created_at-desc', label: 'Newest First'},
+	{value: 'created_at-asc', label: 'Oldest First'},
+	{value: 'title-asc', label: 'Title (A-Z)'},
+	{value: 'title-desc', label: 'Title (Z-A)'},
+];
+
+/**
+ * History toolbar in the house grammar (SSH Keys / Tags): search with the
+ * `/` focus shortcut on the left, quiet selects on the right.
+ */
 export function DeploymentsFilters({
 	searchQuery,
 	setSearchQuery,
@@ -43,68 +62,80 @@ export function DeploymentsFilters({
 	setSortBy,
 	setSortDir,
 }: DeploymentsFiltersProps) {
+	const searchRef = useRef<HTMLInputElement>(null);
+
+	// Same `/` shortcut as the SSH Keys / Tags toolbars.
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+			const el = document.activeElement as HTMLElement | null;
+			if (
+				el &&
+				(el.tagName === 'INPUT' ||
+					el.tagName === 'TEXTAREA' ||
+					el.tagName === 'SELECT' ||
+					el.isContentEditable)
+			) {
+				return;
+			}
+			e.preventDefault();
+			searchRef.current?.focus();
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	}, []);
+
 	return (
-		<div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-			{/* Search — grows, shares the row with the status switch */}
-			<div className="relative w-full sm:min-w-[220px] sm:flex-1">
-				<Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-				<input
-					type="text"
+		<div className="flex w-full animate-in flex-col items-stretch gap-3 duration-200 fade-in sm:flex-row sm:items-center">
+			<div className="relative w-full sm:grow">
+				<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/70" />
+				<Input
+					ref={searchRef}
 					placeholder="Search by title, description or logs..."
 					value={searchQuery}
 					onChange={e => setSearchQuery(e.target.value)}
-					className="h-10 w-full rounded-xl border border-border/50 bg-card ps-10 pe-9 text-sm text-foreground transition-all placeholder:text-muted-foreground focus:border-primary/20 focus:ring-2 focus:ring-primary/20 focus:outline-none"
+					className="h-9 rounded-lg pr-11 pl-9 text-sm transition-colors duration-150 hover:border-foreground/25"
 				/>
-				{searchQuery && (
-					<button
-						type="button"
-						onClick={() => setSearchQuery('')}
-						className="absolute top-1/2 right-3 -translate-y-1/2 rounded-md p-0.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground">
-						<X className="size-3.5" />
-					</button>
-				)}
+				<kbd
+					aria-hidden
+					className="pointer-events-none absolute top-1/2 right-3 flex size-5 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-foreground/[0.04] font-mono text-[11px] text-muted-foreground select-none">
+					/
+				</kbd>
 			</div>
 
-			{/* Status switch — same line as the search (shrink-0 so input yields) */}
-			<div className="inline-flex max-w-full shrink-0 flex-wrap items-center gap-1 rounded-xl bg-muted/35 p-1">
-				{FILTERS.map(f => (
-					<button
-						key={f.value}
-						type="button"
-						onClick={() => setStatusFilter(f.value)}
-						className={`inline-flex h-8 items-center rounded-lg px-3.5 text-[12px] font-medium transition-colors ${
-							statusFilter === f.value
-								? 'border border-border/60 bg-card text-foreground'
-								: 'text-muted-foreground hover:bg-background/60 hover:text-foreground'
-						}`}>
-						{f.label}
-					</button>
-				))}
-			</div>
-
-			{/* Type + sort — compact, wrap below on tight viewports */}
-			<div className="flex shrink-0 items-center gap-2">
-				<Select
-					value={typeFilter}
-					onValueChange={val => setTypeFilter(val ?? 'all')}>
-					<SelectTrigger className="!h-10 w-[130px] rounded-xl border-border/50 bg-card text-xs font-medium shadow-none">
-						<SelectValue placeholder="Type" />
+			<div className="flex shrink-0 flex-wrap items-center gap-2">
+				<Select value={statusFilter} onValueChange={setStatusFilter}>
+					<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
+						<SelectValue>
+							{STATUS_FILTERS.find(s => s.value === statusFilter)
+								?.label ?? 'All statuses'}
+						</SelectValue>
 					</SelectTrigger>
-					<SelectContent className="border- bg-popover">
-						<SelectItem value="all" className="text-xs">
-							All types
-						</SelectItem>
-						<SelectItem value="application" className="text-xs">
-							Application
-						</SelectItem>
-						<SelectItem value="compose" className="text-xs">
-							Compose
-						</SelectItem>
-						<SelectItem value="database" className="text-xs">
-							Database
-						</SelectItem>
+					<SelectContent className="bg-card">
+						{STATUS_FILTERS.map(s => (
+							<SelectItem key={s.value} value={s.value}>
+								{s.label}
+							</SelectItem>
+						))}
 					</SelectContent>
 				</Select>
+
+				<Select value={typeFilter} onValueChange={setTypeFilter}>
+					<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
+						<SelectValue>
+							{TYPES.find(t => t.value === typeFilter)?.label ??
+								'All types'}
+						</SelectValue>
+					</SelectTrigger>
+					<SelectContent className="bg-card">
+						{TYPES.map(t => (
+							<SelectItem key={t.value} value={t.value}>
+								{t.label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+
 				<Select
 					value={`${sortBy}-${sortDir}`}
 					onValueChange={val => {
@@ -114,22 +145,18 @@ export function DeploymentsFilters({
 							setSortDir(dir as 'asc' | 'desc');
 						}
 					}}>
-					<SelectTrigger className="!h-10 w-[145px] rounded-xl border-border/50 bg-card text-xs font-medium shadow-none">
-						<SelectValue placeholder="Sort by" />
+					<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
+						<SelectValue>
+							{SORTS.find(s => s.value === `${sortBy}-${sortDir}`)
+								?.label ?? 'Newest First'}
+						</SelectValue>
 					</SelectTrigger>
-					<SelectContent className="border- bg-popover">
-						<SelectItem value="created_at-desc" className="text-xs">
-							Newest First
-						</SelectItem>
-						<SelectItem value="created_at-asc" className="text-xs">
-							Oldest First
-						</SelectItem>
-						<SelectItem value="title-asc" className="text-xs">
-							Title (A-Z)
-						</SelectItem>
-						<SelectItem value="title-desc" className="text-xs">
-							Title (Z-A)
-						</SelectItem>
+					<SelectContent className="bg-card">
+						{SORTS.map(s => (
+							<SelectItem key={s.value} value={s.value}>
+								{s.label}
+							</SelectItem>
+						))}
 					</SelectContent>
 				</Select>
 			</div>

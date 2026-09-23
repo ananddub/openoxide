@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {Globe, Loader2} from 'lucide-react';
+import {Loader2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {
 	Sheet,
@@ -179,8 +179,7 @@ export function DomainDialog({
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2 pr-8">
-						<Globe className="size-4 text-primary" />
+					<SheetTitle className="pr-8">
 						{editingDomain ? 'Edit Domain Route' : 'Add Domain Route'}
 					</SheetTitle>
 					<SheetDescription>{STEP_DESC[step]}</SheetDescription>
@@ -230,15 +229,11 @@ export function DomainDialog({
 					</SheetFooter>
 				) : (
 					<SheetFooter>
-						{stepIdx > 0 ? (
+						{stepIdx > 0 && (
 							<Button
 								variant="outline"
 								onClick={() => setStepIdx(i => i - 1)}>
 								Back
-							</Button>
-						) : (
-							<Button variant="outline" onClick={onClose}>
-								Cancel
 							</Button>
 						)}
 						<Button disabled={!stepReady} onClick={next}>

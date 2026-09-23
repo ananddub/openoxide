@@ -94,12 +94,7 @@ export function SettingsSheet({
 			<Sheet open={open} onOpenChange={setSheetOpen}>
 				<SheetContent side="right" className="gap-0 p-0">
 					<SheetHeader className="pr-14">
-						<div className="flex items-center gap-2.5">
-							{icon && (
-								<span className="shrink-0 text-primary">{icon}</span>
-							)}
-							<SheetTitle>{title}</SheetTitle>
-						</div>
+						<SheetTitle>{title}</SheetTitle>
 						{description && (
 							<SheetDescription>{description}</SheetDescription>
 						)}

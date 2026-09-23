@@ -292,7 +292,6 @@ export function ServiceCard(props: ServiceCardProps) {
 				<SheetContent side="right">
 					<SheetHeader>
 						<SheetTitle className="flex items-center gap-2">
-							<Layers className="size-4 text-primary" />
 							{envSheet?.name}
 							{envSheet?.is_default && (
 								<span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">

@@ -64,7 +64,7 @@ export function EnvDropdown({
 							className="font-medium text-primary focus:text-primary">
 							<div className="flex items-center gap-1.5">
 								<Plus className="size-3.5" />
-								Create Environment
+								New Environment
 							</div>
 						</SelectItem>
 					)}

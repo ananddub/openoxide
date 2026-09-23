@@ -119,9 +119,8 @@ export function NotificationChannelSheet({
 		<Sheet open={open} onOpenChange={o => !o && onClose()}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<ProviderIcon className="size-4 text-primary" />
-						{editing ? 'Edit channel' : 'Add notification channel'}
+					<SheetTitle>
+						{editing ? 'Edit channel' : 'New notification channel'}
 					</SheetTitle>
 					<SheetDescription>{STEP_DESC[step]}</SheetDescription>
 					<StepCheckpoints steps={steps} idx={stepIdx} />
@@ -278,14 +277,15 @@ export function NotificationChannelSheet({
 				)}
 
 				{last ? (
-					<SheetFooter className="justify-between">
-						<Button
-							variant="outline"
-							onClick={() =>
-								stepIdx > 0 ? setStepIdx(i => i - 1) : onClose()
-							}>
-							{stepIdx > 0 ? 'Back' : 'Cancel'}
-						</Button>
+					<SheetFooter>
+						{stepIdx > 0 && (
+							<Button
+								variant="outline"
+								className="mr-auto"
+								onClick={() => setStepIdx(i => i - 1)}>
+								Back
+							</Button>
+						)}
 						<Button
 							onClick={() => void submit()}
 							disabled={
@@ -299,20 +299,16 @@ export function NotificationChannelSheet({
 							) : (
 								<Save className="size-3.5" />
 							)}
-							{editing ? 'Save changes' : 'Create channel'}
+							{editing ? 'Save changes' : 'Save'}
 						</Button>
 					</SheetFooter>
 				) : (
 					<SheetFooter>
-						{stepIdx > 0 ? (
+						{stepIdx > 0 && (
 							<Button
 								variant="outline"
 								onClick={() => setStepIdx(i => i - 1)}>
 								Back
-							</Button>
-						) : (
-							<Button variant="outline" onClick={onClose}>
-								Cancel
 							</Button>
 						)}
 						<Button

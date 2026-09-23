@@ -23,7 +23,7 @@ export function SchedulesHeader({
 					disabled={disabled}
 					className="h-9 gap-1.5">
 					<Plus className="size-3.5" />
-					Create Schedule
+					New Schedule
 				</Button>
 			}
 		/>

@@ -1,5 +1,5 @@
 import {useState, useEffect} from 'react';
-import {Clock, RefreshCw} from 'lucide-react';
+import {RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {
 	Sheet,
@@ -84,11 +84,10 @@ export function CreateScheduleModal({
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<Clock className="size-4 text-primary" />
+					<SheetTitle>
 						{editingSchedule
 							? 'Edit Schedule / Cron Task'
-							: 'Create Compose Schedule Task'}
+							: 'New Compose Schedule Task'}
 					</SheetTitle>
 					<SheetDescription>
 						Automate commands on container services.
@@ -113,9 +112,6 @@ export function CreateScheduleModal({
 				</form>
 
 				<SheetFooter>
-					<Button type="button" variant="outline" onClick={onClose}>
-						Cancel
-					</Button>
 					<Button
 						type="submit"
 						form="create-schedule-form"
@@ -124,7 +120,7 @@ export function CreateScheduleModal({
 						{creating ? (
 							<RefreshCw className="size-3.5 animate-spin" />
 						) : null}
-						{editingSchedule ? 'Update Schedule' : 'Create Schedule'}
+						{editingSchedule ? 'Update Schedule' : 'Save'}
 					</Button>
 				</SheetFooter>
 			</SheetContent>

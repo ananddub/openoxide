@@ -27,3 +27,15 @@ export function formatDeploymentDate(raw: unknown): string {
 	const ms = num < 1e11 ? num * 1000 : num;
 	return new Date(ms).toLocaleDateString();
 }
+
+/** Compact build duration ("48s", "2m 14s", "1h 3m") from epoch seconds. */
+export function formatDeploymentDuration(
+	startSec: number,
+	endSec: number,
+): string {
+	const s = Math.max(0, Math.round(endSec - startSec));
+	if (s < 60) return `${s}s`;
+	const m = Math.floor(s / 60);
+	if (m < 60) return `${m}m ${s % 60}s`;
+	return `${Math.floor(m / 60)}h ${m % 60}m`;
+}

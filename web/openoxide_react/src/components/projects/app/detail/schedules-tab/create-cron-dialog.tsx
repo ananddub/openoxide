@@ -69,7 +69,7 @@ export function CreateCronDialog({
 		<Sheet open={open} onOpenChange={o => !o && onClose()}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle>Create Cron Job</SheetTitle>
+					<SheetTitle>New Cron Job</SheetTitle>
 					<SheetDescription>
 						Run a command inside this application on a schedule.
 					</SheetDescription>
@@ -106,14 +106,11 @@ export function CreateCronDialog({
 				</form>
 
 				<SheetFooter>
-					<Button type="button" variant="outline" onClick={onClose}>
-						Cancel
-					</Button>
 					<Button
 						type="submit"
 						form="create-cron-form"
 						disabled={creating}>
-						{creating ? 'Creating...' : 'Create Job'}
+						{creating ? 'Saving...' : 'Save'}
 					</Button>
 				</SheetFooter>
 			</SheetContent>

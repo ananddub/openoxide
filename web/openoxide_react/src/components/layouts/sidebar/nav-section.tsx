@@ -49,13 +49,19 @@ export function NavSection({
 					const queryTab = query
 						? new URLSearchParams(query).get('tab')
 						: null;
+					// Bare route (no ?tab=) renders the page's first tab — light
+					// that row instead: /settings → account, /infra → web-server.
+					const defaultTab =
+						basePath === '/infra' ? 'web-server' : 'account';
 					const active =
 						basePath === '/'
 							? currentPath === '/'
 							: queryTab
 								? currentPath === basePath &&
-									(currentTab ?? 'account') === queryTab
-								: currentPath.startsWith(basePath);
+									(currentTab ?? defaultTab) === queryTab
+								: single.exact
+									? currentPath === basePath
+									: currentPath.startsWith(basePath);
 					return (
 						<SidebarMenuItem key={single.to}>
 							<Link

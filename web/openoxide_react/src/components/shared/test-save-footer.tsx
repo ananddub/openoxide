@@ -32,7 +32,7 @@ export function TestSaveFooter({
 				disabled={isSubmitting}
 				className="h-10 gap-1.5 px-6 text-xs font-semibold">
 				{isSubmitting && <RefreshCw className="size-3.5 animate-spin" />}
-				{editing ? 'Update' : 'Create'}
+				{editing ? 'Update' : 'Save'}
 			</Button>
 		</div>
 	);

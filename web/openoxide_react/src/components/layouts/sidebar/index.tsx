@@ -47,6 +47,7 @@ function usePageContextActive(): boolean {
 	const seg = location.pathname.split('/').filter(Boolean);
 	return (
 		seg[0] === 'settings' ||
+		seg[0] === 'infra' ||
 		(seg[0] === 'projects' && Boolean(seg[1]) && seg.length >= 4)
 	);
 }

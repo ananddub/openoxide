@@ -58,7 +58,7 @@ export function CreateEnvDialog({
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle>Create Environment</SheetTitle>
+					<SheetTitle>New Environment</SheetTitle>
 					<SheetDescription>
 						Add a new deployment target environment (e.g. Staging,
 						Production).
@@ -98,15 +98,12 @@ export function CreateEnvDialog({
 				</div>
 
 				<SheetFooter>
-					<Button variant="outline" onClick={onClose} className="h-10 px-5">
-						Cancel
-					</Button>
 					<Button
 						type="submit"
 						form="create-env-sheet-form"
 						disabled={isSubmitting || !name.trim()}
 						className="h-10 gap-1.5 px-5">
-						{isSubmitting ? 'Creating…' : 'Create'}
+						{isSubmitting ? 'Saving…' : 'Save'}
 					</Button>
 				</SheetFooter>
 			</SheetContent>

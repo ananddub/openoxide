@@ -289,7 +289,6 @@ export function CreateServiceSheet({
 	};
 
 	const option = OPTIONS.find(o => o.id === kind);
-	const Icon = option?.icon;
 	const {submitting, name, selectedEnv, selectedEnvId, dbKind, setDbKind, setDockerImage, serverId, setServerId, servers, setComposeType} =
 		form;
 
@@ -341,10 +340,7 @@ export function CreateServiceSheet({
 		<Sheet open={open} onOpenChange={o => !o && onClose()}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-1.5">
-						{Icon && <Icon className="size-4 text-muted-foreground" />}
-						Add {option?.title || 'Service'}
-					</SheetTitle>
+					<SheetTitle>New {option?.title || 'Service'}</SheetTitle>
 					<SheetDescription>{stepDesc[step]}</SheetDescription>
 					{steps.length > 1 && (
 						<Checkpoints steps={steps} idx={stepIdx} />
@@ -550,15 +546,11 @@ export function CreateServiceSheet({
 					</SheetFooter>
 				) : (
 					<SheetFooter>
-						{stepIdx > 0 ? (
+						{stepIdx > 0 && (
 							<Button
 								variant="outline"
 								onClick={() => setStepIdx(i => i - 1)}>
 								Back
-							</Button>
-						) : (
-							<Button variant="outline" onClick={onClose}>
-								Cancel
 							</Button>
 						)}
 						<Button disabled={!canContinue} onClick={next}>

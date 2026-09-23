@@ -1,5 +1,5 @@
 import {useState, useEffect} from 'react';
-import {Database, RefreshCw} from 'lucide-react';
+import {RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {
 	Sheet,
@@ -115,11 +115,10 @@ export function CreateBackupModal({
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<Database className="size-4 text-primary" />
+					<SheetTitle>
 						{editingBackup
 							? 'Edit Volume Backup Rule'
-							: 'Create Compose Volume Backup'}
+							: 'New Compose Volume Backup'}
 					</SheetTitle>
 					<SheetDescription>
 						Schedule recurring volume backups to an S3 destination.
@@ -152,9 +151,6 @@ export function CreateBackupModal({
 				</form>
 
 				<SheetFooter>
-					<Button type="button" variant="outline" onClick={onClose}>
-						Cancel
-					</Button>
 					<Button
 						type="submit"
 						form="create-backup-form"

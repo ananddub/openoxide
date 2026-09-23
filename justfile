@@ -19,6 +19,17 @@ web-deploy:
     tar -C web/openoxide_react/dist -cf - . | docker run --rm -i -v openoxide_openoxide_web_dist:/data alpine sh -c 'rm -rf /data/* && tar -C /data -xf -'
     @echo "✓ web deployed — refresh https://localhost:4000"
 
+# Watch the React source and re-run `just web-deploy` automatically: nodemon
+# debounces changes (1s after the last save), runs the deploy, and waits for
+# the next change. Only src/public/index.html are watched — dist and
+# node_modules are excluded so build output never re-triggers itself.
+web-deploy-watch:
+    cd web/openoxide_react && ./node_modules/.bin/nodemon \
+        --watch src --watch public --watch index.html \
+        --ext ts,tsx,js,jsx,css,html,svg,json \
+        --delay 1s \
+        --exec "just web-deploy"
+
 web-check:
     cd web/openoxide_react && bunx tsc --noEmit
 

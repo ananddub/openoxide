@@ -231,12 +231,6 @@ export function SshKeyCreateSheet({
 
 				<SheetFooter>
 					<Button
-						type="button"
-						variant="outline"
-						onClick={() => onOpenChange(false)}>
-						Cancel
-					</Button>
-					<Button
 						type="submit"
 						form="ssh-key-form"
 						disabled={submitting || !name.trim() || !privateKey.trim()}
@@ -244,10 +238,10 @@ export function SshKeyCreateSheet({
 						{submitting ? (
 							<>
 								<Loader2 className="size-3.5 animate-spin" />
-								Creating…
+								Saving…
 							</>
 						) : (
-							<span>Create</span>
+							<span>Save</span>
 						)}
 					</Button>
 				</SheetFooter>

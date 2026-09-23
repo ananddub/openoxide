@@ -2,12 +2,13 @@ import * as React from 'react';
 import {Loader2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {Input} from '#/components/ui/input';
 import {Label} from '#/components/ui/label';
 import {Textarea} from '#/components/ui/textarea';
@@ -49,18 +50,19 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 	});
 
 	return (
-		<Dialog open={isOpen} onOpenChange={onOpenChange}>
-			<DialogContent className="border- bg-card shadow-md sm:max-w-lg">
-				<DialogHeader>
-					<DialogTitle className="text-xl font-bold text-foreground">
+		<Sheet open={isOpen} onOpenChange={onOpenChange}>
+			<SheetContent side="right">
+				<SheetHeader>
+					<SheetTitle>
 						{isEditing ? 'Update project' : 'Add a project'}
-					</DialogTitle>
-					<DialogDescription className="text-xs text-muted-foreground">
-						The home of something big!
-					</DialogDescription>
-				</DialogHeader>
+					</SheetTitle>
+					<SheetDescription>The home of something big!</SheetDescription>
+				</SheetHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-4 pt-2">
+				<form
+					id="project-form"
+					onSubmit={handleSubmit}
+					className="flex flex-1 flex-col gap-4 overflow-y-auto px-6 py-6">
 					{/* Name */}
 					<div className="flex flex-col gap-1.5">
 						<Label
@@ -79,7 +81,7 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 						/>
 					</div>
 
-					{/* Description Textarea (Shadcn UI Textarea with Dokploy exact min-h-[96px] styling) */}
+					{/* Description */}
 					<div className="flex flex-col gap-1.5">
 						<Label
 							htmlFor="description"
@@ -108,25 +110,25 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 							disabled={isSubmitting}
 						/>
 					</div>
-
-					{/* Dialog Footer */}
-					<div className="mt-4 flex items-center justify-end border-t  pt-3">
-						<Button
-							type="submit"
-							disabled={isSubmitting || !name.trim()}
-							className="h-9 cursor-pointer gap-2 bg-primary px-4 text-xs font-bold text-primary-foreground shadow-xs hover:bg-primary/90">
-							{isSubmitting ? (
-								<>
-									<Loader2 className="size-4 animate-spin" />
-									<span>{isEditing ? 'Updating...' : 'Creating...'}</span>
-								</>
-							) : (
-								<span>{isEditing ? 'Update' : 'Create'}</span>
-							)}
-						</Button>
-					</div>
 				</form>
-			</DialogContent>
-		</Dialog>
+
+				<SheetFooter>
+					<Button
+						type="submit"
+						form="project-form"
+						disabled={isSubmitting || !name.trim()}
+						className="h-9 cursor-pointer gap-2 bg-primary px-4 text-xs font-bold text-primary-foreground shadow-xs hover:bg-primary/90">
+						{isSubmitting ? (
+							<>
+								<Loader2 className="size-4 animate-spin" />
+								<span>{isEditing ? 'Updating...' : 'Creating...'}</span>
+							</>
+						) : (
+							<span>{isEditing ? 'Update' : 'Create'}</span>
+						)}
+					</Button>
+				</SheetFooter>
+			</SheetContent>
+		</Sheet>
 	);
 };

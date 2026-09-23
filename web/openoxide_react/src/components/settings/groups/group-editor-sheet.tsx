@@ -1,4 +1,4 @@
-import {Search, ShieldCheck} from 'lucide-react';
+import {Search} from 'lucide-react';
 import {useEffect, useState} from 'react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
@@ -144,8 +144,7 @@ export function GroupEditorSheet({
 		<Sheet open={!!draft} onOpenChange={open => !open && setDraft(null)}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<ShieldCheck className="size-4 text-primary" />
+					<SheetTitle>
 						{draft?.id ? 'Edit Group' : 'New Group'}
 					</SheetTitle>
 					<SheetDescription>
@@ -265,10 +264,7 @@ export function GroupEditorSheet({
 							)}
 						</div>
 
-						<SheetFooter className="justify-between">
-							<Button variant="outline" onClick={() => setDraft(null)}>
-								Cancel
-							</Button>
+						<SheetFooter>
 							<Button
 								onClick={() => void save()}
 								disabled={busy || !draft.name.trim()}

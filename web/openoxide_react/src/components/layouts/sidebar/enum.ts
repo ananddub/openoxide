@@ -40,6 +40,9 @@ export type SingleNavItem = {
 	// The route swaps the rail to its own context rows (Settings, service
 	// detail) — the row carries a > chevron so that is visible up front.
 	railContext?: boolean;
+	// Light this row only on an exact path match — for parent-ish routes
+	// that have their own sub-pages (e.g. /Deployments vs /Deployments/queue).
+	exact?: boolean;
 };
 
 // Nav item — either a single leaf or a collapsible group with children.
@@ -99,14 +102,23 @@ export const MENU: Menu = {
 		// Disabled: Overview landing card page — kept on disk for future re-enable.
 		// {title: 'Overview', icon: LayoutDashboard, to: '/'},
 		{title: 'Projects', icon: Folder, to: '/projects'},
-		{title: 'Deployments', icon: Rocket, to: '/Deployments'},
+		// Deployments is two pages, not tabs — history at /Deployments,
+		// the live queue at /Deployments/queue. The history row matches
+		// exactly so only one lights at a time.
+		{
+			title: 'Logs & History',
+			icon: Rocket,
+			to: '/Deployments',
+			exact: true,
+		},
+		{title: 'Active Queue', icon: Activity, to: '/Deployments/queue'},
 		{title: 'Schedules', icon: Clock, to: '/schedules'},
 	],
 	infrastructure: [
 		{title: 'Remote Servers', icon: Server, to: '/remote-servers'},
-		// Web Server / Traefik / Swarm / Requests are underline tabs of one
-		// page now (pages/infra.tsx); ?tab= deep-links from the search palette.
-		{title: 'Web Server', icon: Activity, to: '/infra'},
+		// The infra page owns its rail (like Settings): this row swaps the
+		// sidebar to Web Server / Traefik / Swarm / Requests context rows.
+		{title: 'Web Server', icon: Activity, to: '/infra', railContext: true},
 		// Disabled: host-wide Docker view leaks org-unmanaged containers into org context.
 		// Re-enable (or move under Remote Servers) when decided.
 		// {title: 'Docker', icon: Blocks, to: '/docker'},
@@ -159,8 +171,8 @@ export const ROUTES: RouteItem[] = [
 		icon: item.icon,
 		group: 'Infrastructure',
 	})),
-	// The consolidated infra page's other tabs — reachable from the palette
-	// even though the sidebar shows only the "Web Server" entry.
+	// Infra rail-context tabs — the rail only shows the "Web Server" entry,
+	// so the palette keeps direct rows for the other tabs.
 	{
 		label: 'Traefik',
 		path: '/infra?tab=traefik',

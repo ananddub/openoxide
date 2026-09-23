@@ -1,12 +1,16 @@
 import {useLocation, useNavigate} from '@tanstack/react-router';
 import {
+	Activity,
 	Archive,
 	ChevronLeft,
 	Clock,
 	Container,
+	Forward,
+	GalleryVerticalEnd,
 	Globe,
 	HardDrive,
 	Network,
+	PieChart,
 	Rocket,
 	ScrollText,
 	Settings2,
@@ -87,6 +91,7 @@ function databaseTabs(kind: string | undefined): string[] {
 
 type PageContext =
 	| {kind: 'settings'}
+	| {kind: 'infra'}
 	| {
 			kind: 'service';
 			projectId: number;
@@ -105,6 +110,9 @@ function resolveContext(
 
 	// /settings?tab=… — the settings surface owns the rail.
 	if (seg[0] === 'settings') return {kind: 'settings'};
+
+	// /infra?tab=… — Web Server / Traefik / Swarm / Requests own the rail.
+	if (seg[0] === 'infra') return {kind: 'infra'};
 
 	// Only /projects/:id/family/:resourceId (service detail) — NOT the
 	// plain project page.
@@ -250,6 +258,54 @@ function SettingsContextNav({collapsed}: {collapsed: boolean}) {
 	);
 }
 
+/* ── Infra (Web Server) context ────────────────────────────────────── */
+
+const INFRA_NAV = [
+	{id: 'web-server', label: 'Web Server', icon: Activity},
+	{id: 'traefik', label: 'Traefik', icon: GalleryVerticalEnd},
+	{id: 'swarm', label: 'Swarm', icon: PieChart},
+	{id: 'requests', label: 'Requests', icon: Forward},
+] as const;
+
+function InfraContextNav({collapsed}: {collapsed: boolean}) {
+	const location = useLocation();
+	const navigate = useNavigate();
+	const currentTab =
+		typeof location.search === 'object' && location.search
+			? (location.search as Record<string, string>).tab
+			: undefined;
+
+	return (
+		<SidebarGroup className="px-2 py-1">
+			<ContextHeader
+				label="Web Server"
+				collapsed={collapsed}
+				onBack={() => void navigate({to: '/'})}
+			/>
+			<SidebarMenu className="gap-px">
+				{INFRA_NAV.map(item => {
+					const active = (currentTab ?? 'web-server') === item.id;
+					return (
+						<ContextRow
+							key={item.id}
+							icon={item.icon}
+							label={item.label}
+							active={active}
+							collapsed={collapsed}
+							onClick={() =>
+								void navigate({
+									to: '/infra',
+									search: {tab: item.id} as never,
+								})
+							}
+						/>
+					);
+				})}
+			</SidebarMenu>
+		</SidebarGroup>
+	);
+}
+
 /* ── Service context ───────────────────────────────────────────────── */
 
 function ServiceContextNav({
@@ -315,6 +371,8 @@ export function PageContextNav({collapsed}: {collapsed: boolean}) {
 	switch (ctx.kind) {
 		case 'settings':
 			return <SettingsContextNav collapsed={collapsed} />;
+		case 'infra':
+			return <InfraContextNav collapsed={collapsed} />;
 		case 'service':
 			return (
 				<ServiceContextNav

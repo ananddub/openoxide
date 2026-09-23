@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from 'react';
-import {Globe} from 'lucide-react';
 import {Input} from '#/components/ui/input';
 import {
 	Sheet,
@@ -72,9 +71,8 @@ export function DnsProviderFormDialog({
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<Globe className="size-4 text-primary" />
-						{provider ? 'Update DNS Provider' : 'Add DNS Provider'}
+					<SheetTitle>
+						{provider ? 'Update DNS Provider' : 'New DNS Provider'}
 					</SheetTitle>
 					<SheetDescription>
 						Configure API credentials for automated DNS-01 Let's Encrypt

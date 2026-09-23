@@ -146,12 +146,8 @@ export function VaultProviderFormDialog({
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<VaultProviderIcon
-							type={formType}
-							className="size-4 shrink-0"
-						/>
-						{provider ? 'Update Vault Provider' : 'Add Vault Provider'}
+					<SheetTitle>
+						{provider ? 'Update Vault Provider' : 'New Vault Provider'}
 					</SheetTitle>
 					<SheetDescription>{STEP_DESC[step]}</SheetDescription>
 					<StepCheckpoints steps={STEPS} idx={stepIdx} />
@@ -316,17 +312,14 @@ export function VaultProviderFormDialog({
 						</StepBody>
 					</div>
 
-					<div className="flex items-center justify-between gap-3 border-t border-border px-6 py-5">
-						{stepIdx > 0 ? (
-							<Button type="button" variant="outline" onClick={goBack}>
-								Back
-							</Button>
-						) : (
+					<div className="flex items-center justify-end gap-3 border-t border-border px-6 py-5">
+						{stepIdx > 0 && (
 							<Button
 								type="button"
 								variant="outline"
-								onClick={() => onOpenChange(false)}>
-								Cancel
+								className="mr-auto"
+								onClick={goBack}>
+								Back
 							</Button>
 						)}
 

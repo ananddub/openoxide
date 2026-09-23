@@ -68,10 +68,7 @@ export function GithubManifestDialog({
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<GithubIcon className="size-4" />
-						Create GitHub App
-					</SheetTitle>
+					<SheetTitle>New GitHub App</SheetTitle>
 					<SheetDescription>
 						GitHub will automatically configure the App manifest,
 						permissions, and webhook callback in OpenOxide.

@@ -1,4 +1,4 @@
-import {Mail, UserPlus, Users} from 'lucide-react';
+import {Mail, Users} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
@@ -66,10 +66,7 @@ export function TeamDialogs({ctl}: {ctl: Ctl}) {
 			<Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
 				<SheetContent>
 					<SheetHeader>
-						<SheetTitle className="flex items-center gap-2">
-							<UserPlus className="size-4 text-primary" />
-							Add a team member
-						</SheetTitle>
+						<SheetTitle>New team member</SheetTitle>
 						<SheetDescription>
 							Pick how they join, then choose the role they get in this
 							organization.
@@ -129,13 +126,7 @@ export function TeamDialogs({ctl}: {ctl: Ctl}) {
 							</WizardField>
 						</div>
 
-						<SheetFooter className="justify-between">
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => setIsCreateOpen(false)}>
-								Cancel
-							</Button>
+						<SheetFooter>
 							<Button
 								type="submit"
 								disabled={isSubmitting || !inputEmail.trim()}

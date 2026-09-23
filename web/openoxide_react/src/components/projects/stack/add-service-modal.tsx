@@ -38,7 +38,7 @@ export function AddServiceModal({
 		<Sheet open onOpenChange={open => !open && onClose()}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle>Add Service</SheetTitle>
+					<SheetTitle>New Service</SheetTitle>
 					<SheetDescription>
 						Pick a stack template to add to this environment.
 					</SheetDescription>
@@ -69,9 +69,6 @@ export function AddServiceModal({
 				</div>
 
 				<SheetFooter>
-					<Button variant="outline" onClick={onClose}>
-						Cancel
-					</Button>
 					<Button onClick={confirm} disabled={!selected} className="gap-1.5">
 						<Check className="size-3.5" /> Add Service
 					</Button>

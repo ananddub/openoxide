@@ -119,7 +119,7 @@ export function ComposeBackupsTab({
 	const createButton = (
 		<Button onClick={() => setIsCreateOpen(true)} className="h-9 gap-1.5">
 			<Plus className="size-3.5" />
-			Create Backup Rule
+			New Backup Rule
 		</Button>
 	);
 

@@ -8,14 +8,14 @@ const TONES: Record<Tone, string> = {
 	emerald: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500',
 	rose: 'border-rose-500/30 bg-rose-500/10 text-rose-500',
 	amber: 'border-amber-500/30 bg-amber-500/10 text-amber-500',
-	zinc: 'border-zinc-500/30 bg-zinc-500/10 text-zinc-400',
+	zinc: 'border-border bg-muted/60 text-muted-foreground',
 };
 
 const DOTS: Record<Tone, string> = {
 	emerald: 'bg-emerald-500',
 	rose: 'bg-rose-500',
 	amber: 'bg-amber-500',
-	zinc: 'bg-zinc-400',
+	zinc: 'bg-muted-foreground/60',
 };
 
 const RULES: {

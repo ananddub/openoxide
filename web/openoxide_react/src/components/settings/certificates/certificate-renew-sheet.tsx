@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {Clock3, Loader2, RefreshCw} from 'lucide-react';
+import {Clock3, Loader2} from 'lucide-react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
 import {Textarea} from '#/components/ui/textarea';
@@ -89,10 +89,7 @@ export function CertificateRenewSheet({
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent className="p-0">
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2">
-						<RefreshCw className="size-4 text-primary" />
-						Replace certificate
-					</SheetTitle>
+					<SheetTitle>Replace certificate</SheetTitle>
 					<SheetDescription>
 						Install a renewed PEM pair and keep an audit trail of previous
 						attempts.
@@ -164,10 +161,7 @@ export function CertificateRenewSheet({
 					</div>
 				</div>
 
-				<SheetFooter className="justify-between">
-					<Button variant="outline" onClick={() => onOpenChange(false)}>
-						Cancel
-					</Button>
+				<SheetFooter>
 					<Button
 						onClick={() => void renew()}
 						disabled={

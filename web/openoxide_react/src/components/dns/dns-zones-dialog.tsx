@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Globe, Loader2} from 'lucide-react';
+import {Loader2} from 'lucide-react';
 import {
 	useDnsRecordCreate,
 	useDnsRecordDelete,
@@ -107,8 +107,7 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 			}}>
 			<SheetContent>
 				<SheetHeader>
-					<SheetTitle className="flex items-center gap-2 pr-8">
-						<Globe className="size-4 text-primary" />
+					<SheetTitle className="pr-8">
 						Domains for {provider.name}
 					</SheetTitle>
 					<SheetDescription>

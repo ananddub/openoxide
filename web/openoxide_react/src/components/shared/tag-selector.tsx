@@ -3,9 +3,13 @@ import {ChevronDown, X, Tags as TagsIcon} from 'lucide-react';
 import {useTagListAll} from '#/api/live';
 import {TagBadge} from '#/components/shared/tag-badge';
 import {Button} from '#/components/ui/button';
-import {DropdownMenu, DropdownMenuTrigger} from '#/components/ui/dropdown';
+import {
+	Popover,
+	PopoverTrigger,
+	PopoverContent,
+} from '#/components/ui/popover';
 import {cn} from '#/api/utils';
-import {TagSelectorContent} from './tag-selector-content';
+import {TagSelectorPanel} from './tag-selector-content';
 
 export interface TagItem {
 	id: number;
@@ -31,6 +35,7 @@ export function TagSelector({
 	variant = 'form',
 	className,
 }: TagSelectorProps) {
+	const [open, setOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState('');
 	// Live tags query keyed ['tags','list'] — table-watch invalidates it
 	// while this component is mounted.
@@ -56,8 +61,7 @@ export function TagSelector({
 		);
 	};
 
-	const handleClearAll = (e: React.MouseEvent) => {
-		e.stopPropagation();
+	const handleClearAll = () => {
 		onTagsChange([]);
 	};
 
@@ -81,10 +85,16 @@ export function TagSelector({
 	}, [selectedTags, availableTags]);
 
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger
+		<Popover
+			open={open}
+			onOpenChange={next => {
+				setOpen(next);
+				if (!next) setSearchQuery('');
+			}}>
+			<PopoverTrigger
 				render={
 					<Button
+						type="button"
 						variant="outline"
 						disabled={disabled}
 						className={cn(
@@ -128,20 +138,27 @@ export function TagSelector({
 								)}
 							</div>
 						)}
-						<ChevronDown className="size-3.5 shrink-0 opacity-50" />
+						<ChevronDown
+							className={cn(
+								'size-3.5 shrink-0 text-muted-foreground transition-transform',
+								open && 'rotate-180',
+							)}
+						/>
 					</Button>
 				}
 			/>
 
-			<TagSelectorContent
-				searchQuery={searchQuery}
-				setSearchQuery={setSearchQuery}
-				availableTags={availableTags}
-				filteredTags={filteredTags}
-				selectedTags={selectedTags}
-				onToggleTag={handleToggleTag}
-				onClearAll={handleClearAll}
-			/>
-		</DropdownMenu>
+			<PopoverContent className="p-0">
+				<TagSelectorPanel
+					searchQuery={searchQuery}
+					setSearchQuery={setSearchQuery}
+					availableTags={availableTags}
+					filteredTags={filteredTags}
+					selectedTags={selectedTags}
+					onToggleTag={handleToggleTag}
+					onClearAll={handleClearAll}
+				/>
+			</PopoverContent>
+		</Popover>
 	);
 }

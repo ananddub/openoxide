@@ -107,7 +107,7 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 							size="sm"
 							className="h-9 gap-1.5 bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90">
 							<PlusIcon className="h-3.5 w-3.5" />
-							Create Tag
+							New Tag
 						</Button>
 					)
 				}
@@ -115,7 +115,7 @@ export const HandleTag = ({tagId, tagData, onSuccess}: HandleTagProps) => {
 			<DialogContent className="rounded-xl bg-card p-6 shadow-lg sm:max-w-md">
 				<DialogHeader className="space-y-1">
 					<DialogTitle className="text-base font-bold text-foreground">
-						{tagId ? 'Update' : 'Create'} Tag
+						{tagId ? 'Update' : 'New'} Tag
 					</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
 						{tagId
