@@ -10,10 +10,7 @@ import {
 	AlertDialogTitle,
 } from '#/components/ui/alert-dialog';
 
-/**
- * The one delete confirmation Settings uses — a quiet AlertDialog (modals
- * are for confirmations only; create/edit live in sheets and dialogs).
- */
+/** The one delete confirmation Settings uses — a quiet AlertDialog (modals are for confirmations only; create/edit live in sheets and dialogs). */
 export function ConfirmDeleteDialog({
 	open,
 	onOpenChange,

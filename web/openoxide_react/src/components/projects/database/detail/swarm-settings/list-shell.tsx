@@ -78,7 +78,7 @@ export function DataTable<T extends Record<string, any>>({
 										<th
 											key={i}
 											className={cn(
-												'border-b border-border px-2.5 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground',
+												'border-b border-border px-2.5 py-2 text-left text-[11px] font-semibold tracking-wide text-muted-foreground uppercase',
 												col.headClass,
 											)}>
 											{col.header}
@@ -100,10 +100,7 @@ export function DataTable<T extends Record<string, any>>({
 												{columns.map((col, i) => (
 													<td
 														key={i}
-														className={cn(
-															'px-2.5 py-2',
-															col.cellClass,
-														)}>
+														className={cn('px-2.5 py-2', col.cellClass)}>
 														{col.cell(
 															row,
 															patch => onUpdate(index, patch),
@@ -127,7 +124,7 @@ export function DataTable<T extends Record<string, any>>({
 												<tr className="border-b border-border/70 bg-muted/20 last:border-0">
 													<td
 														colSpan={columns.length + 1}
-														className="px-3 pb-3 pt-1">
+														className="px-3 pt-1 pb-3">
 														{detail}
 													</td>
 												</tr>

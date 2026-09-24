@@ -2,12 +2,361 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
+// Sole notification owner service; absorbs the former NotificationOperationsService (delivery history and resource bindings included).
 service NotificationService {
-  rpc ListNotifications(ResourceQuery) returns (ResourceListResponse);
-  rpc GetNotification(ResourceRequest) returns (ResourceResponse);
-  rpc CreateNotification(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateNotification(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteNotification(ResourceRequest) returns (Empty);
-  rpc TestNotification(ResourceRequest) returns (OperationResult);
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  rpc GetNotification(GetNotificationRequest) returns (GetNotificationResponse);
+  rpc CreateNotification(CreateNotificationRequest) returns (CreateNotificationResponse);
+  rpc UpdateNotification(UpdateNotificationRequest) returns (UpdateNotificationResponse);
+  rpc ReplaceNotification(ReplaceNotificationRequest) returns (ReplaceNotificationResponse);
+  rpc DeleteNotification(DeleteNotificationRequest) returns (Empty);
+  rpc TestNotification(TestNotificationRequest) returns (TestNotificationResponse);
+  rpc ListDeliveryHistory(ListNotificationDeliveryHistoryRequest) returns (ListNotificationDeliveryHistoryResponse);
+  rpc CreateBinding(CreateNotificationBindingRequest) returns (CreateNotificationBindingResponse);
+  rpc ListBindings(ListNotificationBindingsRequest) returns (ListNotificationBindingsResponse);
+  rpc DeleteBinding(DeleteNotificationBindingRequest) returns (Empty);
+}
+
+enum NotificationProviderType {
+  NOTIFICATION_PROVIDER_TYPE_UNSPECIFIED = 0;
+  NOTIFICATION_PROVIDER_TYPE_SLACK = 1;
+  NOTIFICATION_PROVIDER_TYPE_TELEGRAM = 2;
+  NOTIFICATION_PROVIDER_TYPE_DISCORD = 3;
+  NOTIFICATION_PROVIDER_TYPE_EMAIL = 4;
+  NOTIFICATION_PROVIDER_TYPE_RESEND = 5;
+  NOTIFICATION_PROVIDER_TYPE_GOTIFY = 6;
+  NOTIFICATION_PROVIDER_TYPE_NTFY = 7;
+  NOTIFICATION_PROVIDER_TYPE_MATTERMOST = 8;
+  NOTIFICATION_PROVIDER_TYPE_PUSHOVER = 9;
+  NOTIFICATION_PROVIDER_TYPE_CUSTOM = 10;
+  NOTIFICATION_PROVIDER_TYPE_LARK = 11;
+  NOTIFICATION_PROVIDER_TYPE_TEAMS = 12;
+}
+
+enum NotificationResourceType {
+  NOTIFICATION_RESOURCE_TYPE_UNSPECIFIED = 0;
+  NOTIFICATION_RESOURCE_TYPE_SERVER = 1;
+  NOTIFICATION_RESOURCE_TYPE_APPLICATION = 2;
+  NOTIFICATION_RESOURCE_TYPE_COMPOSE = 3;
+  NOTIFICATION_RESOURCE_TYPE_DATABASE = 4;
+}
+
+// Notification rows never echo provider credentials; config is write-only.
+message Notification {
+  int64 id = 1;
+  string name = 2;
+  NotificationProviderType notification_type = 3;
+  bool on_app_deploy = 4;
+  bool on_app_build_error = 5;
+  bool on_database_backup = 6;
+  bool on_volume_backup = 7;
+  bool on_panel_restart = 8;
+  bool on_docker_cleanup = 9;
+  bool on_server_threshold = 10;
+  bool on_panel_backup = 11;
+  bool on_schedule_success = 12;
+  bool on_schedule_failure = 13;
+  int64 organization_id = 14;
+  int64 created_at = 15;
+  int64 updated_at = 16;
+}
+
+message NotificationDeliveryAttempt {
+  int64 id = 1;
+  int64 notification_id = 2;
+  int64 organization_id = 3;
+  string trigger_name = 4;
+  string correlation_id = 5;
+  // Delivery lifecycle status as recorded by the dispatcher (free-form string).
+  string status = 6;
+  int64 attempt = 7;
+  string title = 8;
+  string body = 9;
+  optional string error = 10;
+  int64 created_at = 11;
+  optional int64 finished_at = 12;
+}
+
+message NotificationBinding {
+  int64 id = 1;
+  int64 notification_id = 2;
+  int64 organization_id = 3;
+  NotificationResourceType resource_type = 4;
+  int64 resource_id = 5;
+  int64 created_at = 6;
+}
+
+
+message NotificationSlackConfig {
+  // Opaque Slack incoming-webhook URL embedding its secret token.
+  string webhook_url = 1 [(buf.validate.field).string.min_len = 1];
+  optional string channel = 2;
+}
+
+message NotificationTelegramConfig {
+  // Opaque Telegram bot token (secret).
+  string bot_token = 1 [(buf.validate.field).string.min_len = 1];
+  string chat_id = 2 [(buf.validate.field).string.min_len = 1];
+  optional string message_thread_id = 3;
+}
+
+message NotificationDiscordConfig {
+  // Opaque Discord webhook URL embedding its secret token.
+  string webhook_url = 1 [(buf.validate.field).string.min_len = 1];
+  bool decoration = 2;
+}
+
+message NotificationEmailConfig {
+  string smtp_server = 1 [(buf.validate.field).string.min_len = 1];
+  int64 smtp_port = 2;
+  string username = 3 [(buf.validate.field).string.min_len = 1];
+  // SMTP account password (secret).
+  string password = 4;
+  string from_address = 5 [(buf.validate.field).string.min_len = 1];
+  repeated string to_addresses = 6 [(buf.validate.field).repeated = {min_items: 1}];
+}
+
+message NotificationResendConfig {
+  // Resend API key (secret).
+  string api_key = 1 [(buf.validate.field).string.min_len = 1];
+  string from_address = 2 [(buf.validate.field).string.min_len = 1];
+  repeated string to_addresses = 3 [(buf.validate.field).repeated = {min_items: 1}];
+}
+
+message NotificationGotifyConfig {
+  string server_url = 1 [(buf.validate.field).string.min_len = 1];
+  // Gotify application token (secret).
+  string app_token = 2 [(buf.validate.field).string.min_len = 1];
+  int64 priority = 3;
+  bool decoration = 4;
+}
+
+message NotificationNtfyConfig {
+  string server_url = 1 [(buf.validate.field).string.min_len = 1];
+  string topic = 2 [(buf.validate.field).string.min_len = 1];
+  // Optional ntfy access token (secret).
+  optional string access_token = 3;
+  int64 priority = 4;
+}
+
+message NotificationMattermostConfig {
+  // Opaque Mattermost webhook URL embedding its secret token.
+  string webhook_url = 1 [(buf.validate.field).string.min_len = 1];
+  optional string channel = 2;
+  optional string username = 3;
+}
+
+message NotificationCustomConfig {
+  string endpoint = 1 [(buf.validate.field).string.min_len = 1];
+  // Extra HTTP headers as a JSON object document.
+  optional string headers = 2;
+}
+
+// Shared by the LARK and TEAMS webhook-url providers.
+message NotificationWebhookUrlConfig {
+  // Opaque provider webhook URL embedding its secret token.
+  string webhook_url = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message NotificationPushoverConfig {
+  // Pushover user key (secret).
+  string user_key = 1 [(buf.validate.field).string.min_len = 1];
+  // Pushover application API token (secret).
+  string api_token = 2 [(buf.validate.field).string.min_len = 1];
+  int64 priority = 3;
+  optional int64 retry = 4;
+  optional int64 expire = 5;
+}
+
+
+message ListNotificationsRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListNotificationsResponse {
+  repeated Notification notifications = 1;
+}
+
+message GetNotificationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message GetNotificationResponse {
+  Notification notification = 1;
+}
+
+message CreateNotificationRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+  bool on_app_deploy = 3;
+  bool on_app_build_error = 4;
+  bool on_database_backup = 5;
+  bool on_volume_backup = 6;
+  bool on_panel_restart = 7;
+  bool on_docker_cleanup = 8;
+  bool on_server_threshold = 9;
+  bool on_panel_backup = 10;
+  bool on_schedule_success = 11;
+  bool on_schedule_failure = 12;
+  // Exactly one provider config must be set; it also fixes the stored notification_type.
+  oneof provider {
+    NotificationSlackConfig slack = 13;
+    NotificationTelegramConfig telegram = 14;
+    NotificationDiscordConfig discord = 15;
+    NotificationEmailConfig email = 16;
+    NotificationResendConfig resend = 17;
+    NotificationGotifyConfig gotify = 18;
+    NotificationNtfyConfig ntfy = 19;
+    NotificationMattermostConfig mattermost = 20;
+    NotificationCustomConfig custom = 21;
+    NotificationWebhookUrlConfig lark = 22;
+    NotificationPushoverConfig pushover = 23;
+    NotificationWebhookUrlConfig teams = 24;
+  }
+}
+
+message CreateNotificationResponse {
+  Notification notification = 1;
+}
+
+// PATCH semantics: absent fields keep their stored values. Provider config fields update the stored channel config in place; the provider kind itself is immutable here (use ReplaceNotification to change it).
+message UpdateNotificationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+  optional string name = 3 [(buf.validate.field).string.max_len = 255];
+  optional bool on_app_deploy = 4;
+  optional bool on_app_build_error = 5;
+  optional bool on_database_backup = 6;
+  optional bool on_volume_backup = 7;
+  optional bool on_panel_restart = 8;
+  optional bool on_docker_cleanup = 9;
+  optional bool on_server_threshold = 10;
+  optional bool on_panel_backup = 11;
+  optional bool on_schedule_success = 12;
+  optional bool on_schedule_failure = 13;
+  optional string webhook_url = 14;
+  optional string channel = 15;
+  optional string username = 16;
+  optional int64 decoration = 17;
+  // Opaque Telegram bot token (secret).
+  optional string bot_token = 18;
+  optional string chat_id = 19;
+  optional string message_thread_id = 20;
+  optional string smtp_server = 21;
+  optional int64 smtp_port = 22;
+  // SMTP account password (secret).
+  optional string password = 23;
+  optional string from_address = 24;
+  // Present-and-nonempty replaces the stored recipient list.
+  repeated string to_addresses = 25;
+  // Resend API key (secret).
+  optional string api_key = 26;
+  optional string server_url = 27;
+  // Gotify application token (secret).
+  optional string app_token = 28;
+  optional int64 priority = 29;
+  optional string topic = 30;
+  // Optional ntfy access token (secret).
+  optional string access_token = 31;
+  optional string endpoint = 32;
+  // Extra HTTP headers as a JSON object document.
+  optional string headers = 33;
+  // Pushover user key (secret).
+  optional string user_key = 34;
+  // Pushover application API token (secret).
+  optional string api_token = 35;
+  optional int64 retry = 36;
+  optional int64 expire = 37;
+}
+
+message UpdateNotificationResponse {
+  Notification notification = 1;
+}
+
+// Full replacement of the notification, including its provider kind.
+message ReplaceNotificationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+  string name = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  bool on_app_deploy = 4;
+  bool on_app_build_error = 5;
+  bool on_database_backup = 6;
+  bool on_volume_backup = 7;
+  bool on_panel_restart = 8;
+  bool on_docker_cleanup = 9;
+  bool on_server_threshold = 10;
+  bool on_panel_backup = 11;
+  bool on_schedule_success = 12;
+  bool on_schedule_failure = 13;
+  oneof provider {
+    NotificationSlackConfig slack = 14;
+    NotificationTelegramConfig telegram = 15;
+    NotificationDiscordConfig discord = 16;
+    NotificationEmailConfig email = 17;
+    NotificationResendConfig resend = 18;
+    NotificationGotifyConfig gotify = 19;
+    NotificationNtfyConfig ntfy = 20;
+    NotificationMattermostConfig mattermost = 21;
+    NotificationCustomConfig custom = 22;
+    NotificationWebhookUrlConfig lark = 23;
+    NotificationPushoverConfig pushover = 24;
+    NotificationWebhookUrlConfig teams = 25;
+  }
+}
+
+message ReplaceNotificationResponse {
+  Notification notification = 1;
+}
+
+message DeleteNotificationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message TestNotificationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message TestNotificationResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+
+message ListNotificationDeliveryHistoryRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListNotificationDeliveryHistoryResponse {
+  repeated NotificationDeliveryAttempt attempts = 1;
+}
+
+
+message CreateNotificationBindingRequest {
+  int64 notification_id = 1 [(buf.validate.field).int64.gt = 0];
+  NotificationResourceType resource_type = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 resource_id = 3 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 4 [(buf.validate.field).int64.gt = 0];
+}
+
+message CreateNotificationBindingResponse {
+  // The create path only returns the new binding id; the row is re-read via ListBindings.
+  int64 id = 1;
+}
+
+message ListNotificationBindingsRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListNotificationBindingsResponse {
+  repeated NotificationBinding bindings = 1;
+}
+
+message DeleteNotificationBindingRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
 }

@@ -64,8 +64,7 @@ export function ComposeSchedulesTab({
 		return getComposeServiceNames(compose, fetchedYaml);
 	}, [compose, fetchedYaml]);
 
-	// Live schedules query; the table-watch stream (schedules tables) keeps
-	// it fresh, so no zustand slice involved.
+	// Live schedules query; the table-watch stream (schedules tables) keeps it fresh, so no zustand slice involved.
 	const composeId = compose?.id;
 	const {activeOrg} = useOrganizations();
 	const {data: storeSchedules = []} = useScheduleListByOrganization(

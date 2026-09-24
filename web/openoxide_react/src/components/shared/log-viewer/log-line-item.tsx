@@ -32,8 +32,7 @@ export const LogLineItem = React.memo(
 			);
 		}, [entry.clean, isWrapLines]);
 
-		// Docker/Swarm sends error events (health fail, scheduling fail) via stdout.
-		// Detect them and promote to stderr so the badge + color reflect the real severity.
+		// Docker/Swarm sends error events (health fail, scheduling fail) via stdout. Detect them and promote to stderr so the badge + color reflect the real severity.
 		const effectiveStream = useMemo((): typeof entry.stream => {
 			if (entry.stream === 'STDERR') return 'STDERR';
 			const t = entry.clean;

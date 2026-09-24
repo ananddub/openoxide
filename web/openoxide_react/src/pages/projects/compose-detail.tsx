@@ -1,6 +1,6 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
 import {Button} from '#/components/ui/button';
-import {useComposeDetail} from '#/hooks/projects/use-compose-detail';
+import {useComposeDetail} from '#/hooks/projects/compose/use-compose-detail';
 import {useComposeUpdate} from '#/api/live';
 import {ServiceLayout} from '#/components/projects/detail/service-layout';
 

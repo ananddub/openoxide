@@ -44,11 +44,7 @@ export const Route = createFileRoute('/_app/ssh-keys')({
 
 const VIEW_STORAGE_KEY = 'ssh-keys-view';
 
-/**
- * SSH Keys — the Projects-page grammar: a section title, then a toolbar
- * (search + filter + New) and one bordered list card below; create opens a
- * Geist sheet, delete a quiet AlertDialog. No side rail.
- */
+/** SSH Keys — the Projects-page grammar: a section title, then a toolbar (search + filter + New) and one bordered list card below; create opens a Geist sheet, delete a quiet AlertDialog. No side rail. */
 function SshKeysPage() {
 	const [search, setSearch] = useState('');
 	const [typeFilter, setTypeFilter] = useState<KeyTypeFilter>('All');

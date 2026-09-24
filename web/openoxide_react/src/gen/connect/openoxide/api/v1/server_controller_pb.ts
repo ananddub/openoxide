@@ -2,86 +2,664 @@
 // @generated from file openoxide/api/v1/server_controller.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	EmptySchema,
-	OperationResultSchema,
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceRequestSchema,
-	ResourceResponseSchema,
-	StreamQuerySchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/server_controller.proto.
  */
-export const file_openoxide_api_v1_server_controller: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'CihvcGVub3hpZGUvYXBpL3YxL3NlcnZlcl9jb250cm9sbGVyLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMusEChdTZXJ2ZXJDb250cm9sbGVyU2VydmljZRJcChRUZXN0RGlyZWN0Q29ubmVjdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSVgoOVGVzdENvbm5lY3Rpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0Ek0KBUF1ZGl0EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJNCgVTZXR1cBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSVgoPU3RyZWFtU2V0dXBMb2dzEh0ub3Blbm94aWRlLmFwaS52MS5TdHJlYW1RdWVyeRoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZTABElcKDExpc3RTZXNzaW9ucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USSwoNRGVsZXRlU2Vzc2lvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z',
-		[file_openoxide_api_v1_common],
-	);
+export const file_openoxide_api_v1_server_controller: GenFile = /*@__PURE__*/
+  fileDesc("CihvcGVub3hpZGUvYXBpL3YxL3NlcnZlcl9jb250cm9sbGVyLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIkYKD1NlcnZlclRvb2xTdGF0ZRIRCglpbnN0YWxsZWQYASABKAgSFAoHdmVyc2lvbhgCIAEoCUgAiAEBQgoKCF92ZXJzaW9uIjkKFlNlcnZlclBvcnRBdmFpbGFiaWxpdHkSDAoEcG9ydBgBIAEoDRIRCglhdmFpbGFibGUYAiABKAgivgQKC1NlcnZlckF1ZGl0Eg0KBW9zX2lkGAEgASgJEhQKDGFyY2hpdGVjdHVyZRgCIAEoCRIxCgZkb2NrZXIYAyABKAsyIS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlclRvb2xTdGF0ZRIuCgNnaXQYBCABKAsyIS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlclRvb2xTdGF0ZRIxCgZyY2xvbmUYBSABKAsyIS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlclRvb2xTdGF0ZRIwCgVyc3luYxgGIAEoCzIhLm9wZW5veGlkZS5hcGkudjEuU2VydmVyVG9vbFN0YXRlEjMKCG5peHBhY2tzGAcgASgLMiEub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJUb29sU3RhdGUSMwoIcmFpbHBhY2sYCCABKAsyIS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlclRvb2xTdGF0ZRI1CgpidWlsZHBhY2tzGAkgASgLMiEub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJUb29sU3RhdGUSFAoMc3dhcm1fYWN0aXZlGAogASgIEhYKDm5ldHdvcmtfZXhpc3RzGAsgASgIEh0KFWJhc2VfZGlyZWN0b3J5X2V4aXN0cxgMIAEoCBIbChNkb2NrZXJfZ3JvdXBfbWVtYmVyGA0gASgIEjcKBXBvcnRzGA4gAygLMigub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJQb3J0QXZhaWxhYmlsaXR5IngKElNlcnZlclNldHVwT3V0Y29tZRI0Cgljb21wbGV0ZWQYASADKA4yIS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlclNldHVwU3RlcBIsCgVhdWRpdBgCIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuU2VydmVyQXVkaXQiqQEKFFNlcnZlckNvbm5lY3Rpb25JbmZvEhEKCWNvbm5lY3RlZBgBIAEoCBIXCg9yZXVzZWRfc2Vzc2lvbnMYAiABKAQSFQoNbWF4X3Bvb2xfc2l6ZRgDIAEoBBITCgtjb25uZWN0aW9ucxgEIAEoBBIXCg9hY3RpdmVfY2hhbm5lbHMYBSABKAQSIAoYbWF4X2NoYW5uZWxzX3Blcl9zZXNzaW9uGAYgASgEIq8BCitTZXJ2ZXJDb250cm9sbGVyVGVzdERpcmVjdENvbm5lY3Rpb25SZXF1ZXN0Eh4KCmlwX2FkZHJlc3MYASABKAlCCrpIB3IFEAEY/wESHAoEcG9ydBgCIAEoDUIJukgGKgQY//8DSACIAQESHAoIdXNlcm5hbWUYAyABKAlCCrpIB3IFEAEY/wESGwoKc3NoX2tleV9pZBgEIAEoA0IHukgEIgIgAEIHCgVfcG9ydCJqCixTZXJ2ZXJDb250cm9sbGVyVGVzdERpcmVjdENvbm5lY3Rpb25SZXNwb25zZRI6Cgpjb25uZWN0aW9uGAEgASgLMiYub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJDb25uZWN0aW9uSW5mbyLWAQolU2VydmVyQ29udHJvbGxlclRlc3RDb25uZWN0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIrChRob3N0X2tleV9maW5nZXJwcmludBgCIAEoCUIIukgFcgMY/wFIAIgBARIaCg1zdWRvX3Bhc3N3b3JkGAMgASgJSAGIAQESFgoJcG9vbF9zaXplGAQgASgNSAKIAQFCFwoVX2hvc3Rfa2V5X2ZpbmdlcnByaW50QhAKDl9zdWRvX3Bhc3N3b3JkQgwKCl9wb29sX3NpemUiZAomU2VydmVyQ29udHJvbGxlclRlc3RDb25uZWN0aW9uUmVzcG9uc2USOgoKY29ubmVjdGlvbhgBIAEoCzImLm9wZW5veGlkZS5hcGkudjEuU2VydmVyQ29ubmVjdGlvbkluZm8izQEKHFNlcnZlckNvbnRyb2xsZXJBdWRpdFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASKwoUaG9zdF9rZXlfZmluZ2VycHJpbnQYAiABKAlCCLpIBXIDGP8BSACIAQESGgoNc3Vkb19wYXNzd29yZBgDIAEoCUgBiAEBEhYKCXBvb2xfc2l6ZRgEIAEoDUgCiAEBQhcKFV9ob3N0X2tleV9maW5nZXJwcmludEIQCg5fc3Vkb19wYXNzd29yZEIMCgpfcG9vbF9zaXplIk0KHVNlcnZlckNvbnRyb2xsZXJBdWRpdFJlc3BvbnNlEiwKBWF1ZGl0GAEgASgLMh0ub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJBdWRpdCLXAgocU2VydmVyQ29udHJvbGxlclNldHVwUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIcChRpbnN0YWxsX2RlcGVuZGVuY2llcxgCIAEoCBIlCg5hZHZlcnRpc2VfYWRkchgDIAEoCUIIukgFcgMY/wFIAIgBARIhCgphY21lX2VtYWlsGAQgASgJQgi6SAVyAxj/AUgBiAEBEisKFGhvc3Rfa2V5X2ZpbmdlcnByaW50GAUgASgJQgi6SAVyAxj/AUgCiAEBEhoKDXN1ZG9fcGFzc3dvcmQYBiABKAlIA4gBARIWCglwb29sX3NpemUYByABKA1IBIgBAUIRCg9fYWR2ZXJ0aXNlX2FkZHJCDQoLX2FjbWVfZW1haWxCFwoVX2hvc3Rfa2V5X2ZpbmdlcnByaW50QhAKDl9zdWRvX3Bhc3N3b3JkQgwKCl9wb29sX3NpemUiVgodU2VydmVyQ29udHJvbGxlclNldHVwUmVzcG9uc2USNQoHb3V0Y29tZRgBIAEoCzIkLm9wZW5veGlkZS5hcGkudjEuU2VydmVyU2V0dXBPdXRjb21lIuECCiZTZXJ2ZXJDb250cm9sbGVyU3RyZWFtU2V0dXBMb2dzUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIcChRpbnN0YWxsX2RlcGVuZGVuY2llcxgCIAEoCBIlCg5hZHZlcnRpc2VfYWRkchgDIAEoCUIIukgFcgMY/wFIAIgBARIhCgphY21lX2VtYWlsGAQgASgJQgi6SAVyAxj/AUgBiAEBEisKFGhvc3Rfa2V5X2ZpbmdlcnByaW50GAUgASgJQgi6SAVyAxj/AUgCiAEBEhoKDXN1ZG9fcGFzc3dvcmQYBiABKAlIA4gBARIWCglwb29sX3NpemUYByABKA1IBIgBAUIRCg9fYWR2ZXJ0aXNlX2FkZHJCDQoLX2FjbWVfZW1haWxCFwoVX2hvc3Rfa2V5X2ZpbmdlcnByaW50QhAKDl9zdWRvX3Bhc3N3b3JkQgwKCl9wb29sX3NpemUicwonU2VydmVyQ29udHJvbGxlclN0cmVhbVNldHVwTG9nc1Jlc3BvbnNlEhEKCXNlcnZlcl9pZBgBIAEoAxI1CgdvdXRjb21lGAIgASgLMiQub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJTZXR1cE91dGNvbWUiJQojU2VydmVyQ29udHJvbGxlckxpc3RTZXNzaW9uc1JlcXVlc3QiYAokU2VydmVyQ29udHJvbGxlckxpc3RTZXNzaW9uc1Jlc3BvbnNlEjgKCHNlc3Npb25zGAEgAygLMiYub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJDb25uZWN0aW9uSW5mbyI7CiRTZXJ2ZXJDb250cm9sbGVyRGVsZXRlU2Vzc2lvblJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAqvAIKD1NlcnZlclNldHVwU3RlcBIhCh1TRVJWRVJfU0VUVVBfU1RFUF9VTlNQRUNJRklFRBAAEiIKHlNFUlZFUl9TRVRVUF9TVEVQX0RFUEVOREVOQ0lFUxABEiEKHVNFUlZFUl9TRVRVUF9TVEVQX0JVSUxEX1RPT0xTEAISIQodU0VSVkVSX1NFVFVQX1NURVBfRElSRUNUT1JJRVMQAxIbChdTRVJWRVJfU0VUVVBfU1RFUF9TV0FSTRAEEh0KGVNFUlZFUl9TRVRVUF9TVEVQX05FVFdPUksQBRIkCiBTRVJWRVJfU0VUVVBfU1RFUF9UUkFFRklLX0NPTkZJRxAGEh0KGVNFUlZFUl9TRVRVUF9TVEVQX1RSQUVGSUsQBxIbChdTRVJWRVJfU0VUVVBfU1RFUF9BR0VOVBAIMvcGChdTZXJ2ZXJDb250cm9sbGVyU2VydmljZRKVAQoUVGVzdERpcmVjdENvbm5lY3Rpb24SPS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckNvbnRyb2xsZXJUZXN0RGlyZWN0Q29ubmVjdGlvblJlcXVlc3QaPi5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckNvbnRyb2xsZXJUZXN0RGlyZWN0Q29ubmVjdGlvblJlc3BvbnNlEoMBCg5UZXN0Q29ubmVjdGlvbhI3Lm9wZW5veGlkZS5hcGkudjEuU2VydmVyQ29udHJvbGxlclRlc3RDb25uZWN0aW9uUmVxdWVzdBo4Lm9wZW5veGlkZS5hcGkudjEuU2VydmVyQ29udHJvbGxlclRlc3RDb25uZWN0aW9uUmVzcG9uc2USaAoFQXVkaXQSLi5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckNvbnRyb2xsZXJBdWRpdFJlcXVlc3QaLy5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckNvbnRyb2xsZXJBdWRpdFJlc3BvbnNlEmgKBVNldHVwEi4ub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJDb250cm9sbGVyU2V0dXBSZXF1ZXN0Gi8ub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJDb250cm9sbGVyU2V0dXBSZXNwb25zZRKIAQoPU3RyZWFtU2V0dXBMb2dzEjgub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJDb250cm9sbGVyU3RyZWFtU2V0dXBMb2dzUmVxdWVzdBo5Lm9wZW5veGlkZS5hcGkudjEuU2VydmVyQ29udHJvbGxlclN0cmVhbVNldHVwTG9nc1Jlc3BvbnNlMAESfQoMTGlzdFNlc3Npb25zEjUub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJDb250cm9sbGVyTGlzdFNlc3Npb25zUmVxdWVzdBo2Lm9wZW5veGlkZS5hcGkudjEuU2VydmVyQ29udHJvbGxlckxpc3RTZXNzaW9uc1Jlc3BvbnNlEmAKDURlbGV0ZVNlc3Npb24SNi5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckNvbnRyb2xsZXJEZWxldGVTZXNzaW9uUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHliBnByb3RvMw", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+
+/**
+ * @generated from message openoxide.api.v1.ServerToolState
+ */
+export type ServerToolState = Message<"openoxide.api.v1.ServerToolState"> & {
+  /**
+   * @generated from field: bool installed = 1;
+   */
+  installed: boolean;
+
+  /**
+   * @generated from field: optional string version = 2;
+   */
+  version?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerToolState.
+ * Use `create(ServerToolStateSchema)` to create a new message.
+ */
+export const ServerToolStateSchema: GenMessage<ServerToolState> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 0);
+
+/**
+ * @generated from message openoxide.api.v1.ServerPortAvailability
+ */
+export type ServerPortAvailability = Message<"openoxide.api.v1.ServerPortAvailability"> & {
+  /**
+   * @generated from field: uint32 port = 1;
+   */
+  port: number;
+
+  /**
+   * @generated from field: bool available = 2;
+   */
+  available: boolean;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerPortAvailability.
+ * Use `create(ServerPortAvailabilitySchema)` to create a new message.
+ */
+export const ServerPortAvailabilitySchema: GenMessage<ServerPortAvailability> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 1);
+
+/**
+ * @generated from message openoxide.api.v1.ServerAudit
+ */
+export type ServerAudit = Message<"openoxide.api.v1.ServerAudit"> & {
+  /**
+   * @generated from field: string os_id = 1;
+   */
+  osId: string;
+
+  /**
+   * @generated from field: string architecture = 2;
+   */
+  architecture: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerToolState docker = 3;
+   */
+  docker?: ServerToolState | undefined;
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerToolState git = 4;
+   */
+  git?: ServerToolState | undefined;
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerToolState rclone = 5;
+   */
+  rclone?: ServerToolState | undefined;
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerToolState rsync = 6;
+   */
+  rsync?: ServerToolState | undefined;
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerToolState nixpacks = 7;
+   */
+  nixpacks?: ServerToolState | undefined;
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerToolState railpack = 8;
+   */
+  railpack?: ServerToolState | undefined;
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerToolState buildpacks = 9;
+   */
+  buildpacks?: ServerToolState | undefined;
+
+  /**
+   * @generated from field: bool swarm_active = 10;
+   */
+  swarmActive: boolean;
+
+  /**
+   * @generated from field: bool network_exists = 11;
+   */
+  networkExists: boolean;
+
+  /**
+   * @generated from field: bool base_directory_exists = 12;
+   */
+  baseDirectoryExists: boolean;
+
+  /**
+   * @generated from field: bool docker_group_member = 13;
+   */
+  dockerGroupMember: boolean;
+
+  /**
+   * @generated from field: repeated openoxide.api.v1.ServerPortAvailability ports = 14;
+   */
+  ports: ServerPortAvailability[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerAudit.
+ * Use `create(ServerAuditSchema)` to create a new message.
+ */
+export const ServerAuditSchema: GenMessage<ServerAudit> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 2);
+
+/**
+ * @generated from message openoxide.api.v1.ServerSetupOutcome
+ */
+export type ServerSetupOutcome = Message<"openoxide.api.v1.ServerSetupOutcome"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.ServerSetupStep completed = 1;
+   */
+  completed: ServerSetupStep[];
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerAudit audit = 2;
+   */
+  audit?: ServerAudit | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerSetupOutcome.
+ * Use `create(ServerSetupOutcomeSchema)` to create a new message.
+ */
+export const ServerSetupOutcomeSchema: GenMessage<ServerSetupOutcome> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 3);
+
+/**
+ * @generated from message openoxide.api.v1.ServerConnectionInfo
+ */
+export type ServerConnectionInfo = Message<"openoxide.api.v1.ServerConnectionInfo"> & {
+  /**
+   * @generated from field: bool connected = 1;
+   */
+  connected: boolean;
+
+  /**
+   * @generated from field: uint64 reused_sessions = 2;
+   */
+  reusedSessions: bigint;
+
+  /**
+   * @generated from field: uint64 max_pool_size = 3;
+   */
+  maxPoolSize: bigint;
+
+  /**
+   * @generated from field: uint64 connections = 4;
+   */
+  connections: bigint;
+
+  /**
+   * @generated from field: uint64 active_channels = 5;
+   */
+  activeChannels: bigint;
+
+  /**
+   * @generated from field: uint64 max_channels_per_session = 6;
+   */
+  maxChannelsPerSession: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerConnectionInfo.
+ * Use `create(ServerConnectionInfoSchema)` to create a new message.
+ */
+export const ServerConnectionInfoSchema: GenMessage<ServerConnectionInfo> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 4);
+
+/**
+ * Probes an unsaved endpoint before a server row exists.
+ *
+ * @generated from message openoxide.api.v1.ServerControllerTestDirectConnectionRequest
+ */
+export type ServerControllerTestDirectConnectionRequest = Message<"openoxide.api.v1.ServerControllerTestDirectConnectionRequest"> & {
+  /**
+   * @generated from field: string ip_address = 1;
+   */
+  ipAddress: string;
+
+  /**
+   * @generated from field: optional uint32 port = 2;
+   */
+  port?: number | undefined;
+
+  /**
+   * @generated from field: string username = 3;
+   */
+  username: string;
+
+  /**
+   * @generated from field: int64 ssh_key_id = 4;
+   */
+  sshKeyId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerControllerTestDirectConnectionRequest.
+ * Use `create(ServerControllerTestDirectConnectionRequestSchema)` to create a new message.
+ */
+export const ServerControllerTestDirectConnectionRequestSchema: GenMessage<ServerControllerTestDirectConnectionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 5);
+
+/**
+ * @generated from message openoxide.api.v1.ServerControllerTestDirectConnectionResponse
+ */
+export type ServerControllerTestDirectConnectionResponse = Message<"openoxide.api.v1.ServerControllerTestDirectConnectionResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.ServerConnectionInfo connection = 1;
+   */
+  connection?: ServerConnectionInfo | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerControllerTestDirectConnectionResponse.
+ * Use `create(ServerControllerTestDirectConnectionResponseSchema)` to create a new message.
+ */
+export const ServerControllerTestDirectConnectionResponseSchema: GenMessage<ServerControllerTestDirectConnectionResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 6);
+
+/**
+ * @generated from message openoxide.api.v1.ServerControllerTestConnectionRequest
+ */
+export type ServerControllerTestConnectionRequest = Message<"openoxide.api.v1.ServerControllerTestConnectionRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * SSH host-key SHA-256 fingerprint pin; empty disables pinning.
+   *
+   * @generated from field: optional string host_key_fingerprint = 2;
+   */
+  hostKeyFingerprint?: string | undefined;
+
+  /**
+   * Sudo credential document; only sent for privileged setup steps.
+   *
+   * @generated from field: optional string sudo_password = 3;
+   */
+  sudoPassword?: string | undefined;
+
+  /**
+   * @generated from field: optional uint32 pool_size = 4;
+   */
+  poolSize?: number | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerControllerTestConnectionRequest.
+ * Use `create(ServerControllerTestConnectionRequestSchema)` to create a new message.
+ */
+export const ServerControllerTestConnectionRequestSchema: GenMessage<ServerControllerTestConnectionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 7);
+
+/**
+ * @generated from message openoxide.api.v1.ServerControllerTestConnectionResponse
+ */
+export type ServerControllerTestConnectionResponse = Message<"openoxide.api.v1.ServerControllerTestConnectionResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.ServerConnectionInfo connection = 1;
+   */
+  connection?: ServerConnectionInfo | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerControllerTestConnectionResponse.
+ * Use `create(ServerControllerTestConnectionResponseSchema)` to create a new message.
+ */
+export const ServerControllerTestConnectionResponseSchema: GenMessage<ServerControllerTestConnectionResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 8);
+
+/**
+ * @generated from message openoxide.api.v1.ServerControllerAuditRequest
+ */
+export type ServerControllerAuditRequest = Message<"openoxide.api.v1.ServerControllerAuditRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional string host_key_fingerprint = 2;
+   */
+  hostKeyFingerprint?: string | undefined;
+
+  /**
+   * @generated from field: optional string sudo_password = 3;
+   */
+  sudoPassword?: string | undefined;
+
+  /**
+   * @generated from field: optional uint32 pool_size = 4;
+   */
+  poolSize?: number | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerControllerAuditRequest.
+ * Use `create(ServerControllerAuditRequestSchema)` to create a new message.
+ */
+export const ServerControllerAuditRequestSchema: GenMessage<ServerControllerAuditRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 9);
+
+/**
+ * @generated from message openoxide.api.v1.ServerControllerAuditResponse
+ */
+export type ServerControllerAuditResponse = Message<"openoxide.api.v1.ServerControllerAuditResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.ServerAudit audit = 1;
+   */
+  audit?: ServerAudit | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerControllerAuditResponse.
+ * Use `create(ServerControllerAuditResponseSchema)` to create a new message.
+ */
+export const ServerControllerAuditResponseSchema: GenMessage<ServerControllerAuditResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 10);
+
+/**
+ * @generated from message openoxide.api.v1.ServerControllerSetupRequest
+ */
+export type ServerControllerSetupRequest = Message<"openoxide.api.v1.ServerControllerSetupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: bool install_dependencies = 2;
+   */
+  installDependencies: boolean;
+
+  /**
+   * Swarm advertise address override; server's private/public IP when unset.
+   *
+   * @generated from field: optional string advertise_addr = 3;
+   */
+  advertiseAddr?: string | undefined;
+
+  /**
+   * @generated from field: optional string acme_email = 4;
+   */
+  acmeEmail?: string | undefined;
+
+  /**
+   * @generated from field: optional string host_key_fingerprint = 5;
+   */
+  hostKeyFingerprint?: string | undefined;
+
+  /**
+   * @generated from field: optional string sudo_password = 6;
+   */
+  sudoPassword?: string | undefined;
+
+  /**
+   * @generated from field: optional uint32 pool_size = 7;
+   */
+  poolSize?: number | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerControllerSetupRequest.
+ * Use `create(ServerControllerSetupRequestSchema)` to create a new message.
+ */
+export const ServerControllerSetupRequestSchema: GenMessage<ServerControllerSetupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 11);
+
+/**
+ * @generated from message openoxide.api.v1.ServerControllerSetupResponse
+ */
+export type ServerControllerSetupResponse = Message<"openoxide.api.v1.ServerControllerSetupResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.ServerSetupOutcome outcome = 1;
+   */
+  outcome?: ServerSetupOutcome | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerControllerSetupResponse.
+ * Use `create(ServerControllerSetupResponseSchema)` to create a new message.
+ */
+export const ServerControllerSetupResponseSchema: GenMessage<ServerControllerSetupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 12);
+
+/**
+ * @generated from message openoxide.api.v1.ServerControllerStreamSetupLogsRequest
+ */
+export type ServerControllerStreamSetupLogsRequest = Message<"openoxide.api.v1.ServerControllerStreamSetupLogsRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: bool install_dependencies = 2;
+   */
+  installDependencies: boolean;
+
+  /**
+   * @generated from field: optional string advertise_addr = 3;
+   */
+  advertiseAddr?: string | undefined;
+
+  /**
+   * @generated from field: optional string acme_email = 4;
+   */
+  acmeEmail?: string | undefined;
+
+  /**
+   * @generated from field: optional string host_key_fingerprint = 5;
+   */
+  hostKeyFingerprint?: string | undefined;
+
+  /**
+   * @generated from field: optional string sudo_password = 6;
+   */
+  sudoPassword?: string | undefined;
+
+  /**
+   * @generated from field: optional uint32 pool_size = 7;
+   */
+  poolSize?: number | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerControllerStreamSetupLogsRequest.
+ * Use `create(ServerControllerStreamSetupLogsRequestSchema)` to create a new message.
+ */
+export const ServerControllerStreamSetupLogsRequestSchema: GenMessage<ServerControllerStreamSetupLogsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 13);
+
+/**
+ * One completion event is emitted when the streamed setup finishes.
+ *
+ * @generated from message openoxide.api.v1.ServerControllerStreamSetupLogsResponse
+ */
+export type ServerControllerStreamSetupLogsResponse = Message<"openoxide.api.v1.ServerControllerStreamSetupLogsResponse"> & {
+  /**
+   * @generated from field: int64 server_id = 1;
+   */
+  serverId: bigint;
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerSetupOutcome outcome = 2;
+   */
+  outcome?: ServerSetupOutcome | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerControllerStreamSetupLogsResponse.
+ * Use `create(ServerControllerStreamSetupLogsResponseSchema)` to create a new message.
+ */
+export const ServerControllerStreamSetupLogsResponseSchema: GenMessage<ServerControllerStreamSetupLogsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 14);
+
+/**
+ * @generated from message openoxide.api.v1.ServerControllerListSessionsRequest
+ */
+export type ServerControllerListSessionsRequest = Message<"openoxide.api.v1.ServerControllerListSessionsRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerControllerListSessionsRequest.
+ * Use `create(ServerControllerListSessionsRequestSchema)` to create a new message.
+ */
+export const ServerControllerListSessionsRequestSchema: GenMessage<ServerControllerListSessionsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 15);
+
+/**
+ * @generated from message openoxide.api.v1.ServerControllerListSessionsResponse
+ */
+export type ServerControllerListSessionsResponse = Message<"openoxide.api.v1.ServerControllerListSessionsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.ServerConnectionInfo sessions = 1;
+   */
+  sessions: ServerConnectionInfo[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerControllerListSessionsResponse.
+ * Use `create(ServerControllerListSessionsResponseSchema)` to create a new message.
+ */
+export const ServerControllerListSessionsResponseSchema: GenMessage<ServerControllerListSessionsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 16);
+
+/**
+ * @generated from message openoxide.api.v1.ServerControllerDeleteSessionRequest
+ */
+export type ServerControllerDeleteSessionRequest = Message<"openoxide.api.v1.ServerControllerDeleteSessionRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerControllerDeleteSessionRequest.
+ * Use `create(ServerControllerDeleteSessionRequestSchema)` to create a new message.
+ */
+export const ServerControllerDeleteSessionRequestSchema: GenMessage<ServerControllerDeleteSessionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server_controller, 17);
+
+/**
+ * Closed set: `SetupStep` match arms in the setup outcome mapper.
+ *
+ * @generated from enum openoxide.api.v1.ServerSetupStep
+ */
+export enum ServerSetupStep {
+  /**
+   * @generated from enum value: SERVER_SETUP_STEP_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: SERVER_SETUP_STEP_DEPENDENCIES = 1;
+   */
+  DEPENDENCIES = 1,
+
+  /**
+   * @generated from enum value: SERVER_SETUP_STEP_BUILD_TOOLS = 2;
+   */
+  BUILD_TOOLS = 2,
+
+  /**
+   * @generated from enum value: SERVER_SETUP_STEP_DIRECTORIES = 3;
+   */
+  DIRECTORIES = 3,
+
+  /**
+   * @generated from enum value: SERVER_SETUP_STEP_SWARM = 4;
+   */
+  SWARM = 4,
+
+  /**
+   * @generated from enum value: SERVER_SETUP_STEP_NETWORK = 5;
+   */
+  NETWORK = 5,
+
+  /**
+   * @generated from enum value: SERVER_SETUP_STEP_TRAEFIK_CONFIG = 6;
+   */
+  TRAEFIK_CONFIG = 6,
+
+  /**
+   * @generated from enum value: SERVER_SETUP_STEP_TRAEFIK = 7;
+   */
+  TRAEFIK = 7,
+
+  /**
+   * @generated from enum value: SERVER_SETUP_STEP_AGENT = 8;
+   */
+  AGENT = 8,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.ServerSetupStep.
+ */
+export const ServerSetupStepSchema: GenEnum<ServerSetupStep> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_server_controller, 0);
 
 /**
  * @generated from service openoxide.api.v1.ServerControllerService
  */
 export const ServerControllerService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerControllerService.TestDirectConnection
-	 */
-	testDirectConnection: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerControllerService.TestConnection
-	 */
-	testConnection: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerControllerService.Audit
-	 */
-	audit: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerControllerService.Setup
-	 */
-	setup: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerControllerService.StreamSetupLogs
-	 */
-	streamSetupLogs: {
-		methodKind: 'server_streaming';
-		input: typeof StreamQuerySchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerControllerService.ListSessions
-	 */
-	listSessions: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerControllerService.DeleteSession
-	 */
-	deleteSession: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_server_controller, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.ServerControllerService.TestDirectConnection
+   */
+  testDirectConnection: {
+    methodKind: "unary";
+    input: typeof ServerControllerTestDirectConnectionRequestSchema;
+    output: typeof ServerControllerTestDirectConnectionResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerControllerService.TestConnection
+   */
+  testConnection: {
+    methodKind: "unary";
+    input: typeof ServerControllerTestConnectionRequestSchema;
+    output: typeof ServerControllerTestConnectionResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerControllerService.Audit
+   */
+  audit: {
+    methodKind: "unary";
+    input: typeof ServerControllerAuditRequestSchema;
+    output: typeof ServerControllerAuditResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerControllerService.Setup
+   */
+  setup: {
+    methodKind: "unary";
+    input: typeof ServerControllerSetupRequestSchema;
+    output: typeof ServerControllerSetupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerControllerService.StreamSetupLogs
+   */
+  streamSetupLogs: {
+    methodKind: "server_streaming";
+    input: typeof ServerControllerStreamSetupLogsRequestSchema;
+    output: typeof ServerControllerStreamSetupLogsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerControllerService.ListSessions
+   */
+  listSessions: {
+    methodKind: "unary";
+    input: typeof ServerControllerListSessionsRequestSchema;
+    output: typeof ServerControllerListSessionsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerControllerService.DeleteSession
+   */
+  deleteSession: {
+    methodKind: "unary";
+    input: typeof ServerControllerDeleteSessionRequestSchema;
+    output: typeof EmptySchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_server_controller, 0);
+

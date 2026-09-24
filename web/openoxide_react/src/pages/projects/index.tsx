@@ -16,7 +16,7 @@ import {
 import {EmptyState} from '#/components/projects/dashboard/empty-state';
 import {SectionHeader} from '#/components/settings/list-card';
 import {HandleProjectDialog} from '#/components/projects/dashboard/handle-project-dialog';
-import {useProjectsList} from '#/hooks/projects/use-projects-list';
+import {useProjectsList} from '#/hooks/projects/list/use-projects-list';
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -66,8 +66,7 @@ function ProjectsPage() {
 		handleDeleteProject,
 	} = useProjectsList();
 
-	// The rail's "New Project" CTA links here with ?create=1; open the
-	// dialog and drop the param so a refresh doesn't re-trigger it.
+	// The rail's "New Project" CTA links here with ?create=1; open the dialog and drop the param so a refresh doesn't re-trigger it.
 	useEffect(() => {
 		if (create !== 1) return;
 		setIsCreateOpen(true);

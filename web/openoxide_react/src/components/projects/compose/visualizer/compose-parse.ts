@@ -16,10 +16,13 @@ export interface ComposeService extends Record<string, unknown> {
 }
 
 /** Maps any backend/docker status string to the node-dot vocabulary. */
-export function deriveServiceStatus(raw?: string): ServiceStatus | undefined {
+export function deriveServiceStatus(
+	raw?: string,
+): ServiceStatus | undefined {
 	const s = (raw || '').toUpperCase();
 	if (!s) return undefined;
-	if (['ERROR', 'FAILED', 'CRASHED', 'OFFLINE'].includes(s)) return 'error';
+	if (['ERROR', 'FAILED', 'CRASHED', 'OFFLINE'].includes(s))
+		return 'error';
 	if (
 		[
 			'RUNNING',

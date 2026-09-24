@@ -5,28 +5,38 @@ export type TestResult = 'idle' | 'success' | 'failed';
 
 const STATES: Record<
 	TestResult | 'testing',
-	{title: string; cls: string; icon: typeof Plug; iconCls: string}
+	{
+		title: string;
+		label: string;
+		cls: string;
+		icon: typeof Plug;
+		iconCls: string;
+	}
 > = {
 	testing: {
 		title: 'Testing SSH Connection...',
+		label: 'Testing…',
 		cls: ' hover:bg-muted/80',
 		icon: RefreshCw,
 		iconCls: 'animate-spin text-primary',
 	},
 	success: {
 		title: 'SSH Connection Verified',
+		label: 'Connection Verified',
 		cls: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20',
 		icon: CheckCircle2,
 		iconCls: 'text-emerald-500',
 	},
 	failed: {
 		title: 'SSH Connection Failed',
+		label: 'Connection Failed',
 		cls: 'border-rose-500/50 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20',
 		icon: XCircle,
 		iconCls: 'text-rose-500',
 	},
 	idle: {
 		title: 'Test SSH Connection',
+		label: 'Test Connection',
 		cls: ' hover:bg-muted/80',
 		icon: Plug,
 		iconCls: 'text-muted-foreground hover:text-foreground',
@@ -51,12 +61,13 @@ export function TestConnectionButton({
 		<Button
 			type="button"
 			variant="outline"
-			size="icon"
+			size="sm"
 			onClick={onClick}
 			disabled={disabled}
 			title={state.title}
-			className={`h-9 w-9 rounded-lg transition-all ${state.cls}`}>
-			<Icon className={`h-4 w-4 ${state.iconCls}`} />
+			className={`h-9 gap-1.5 rounded-lg px-3 text-xs transition-all ${state.cls}`}>
+			<Icon className={`size-3.5 ${state.iconCls}`} />
+			{state.label}
 		</Button>
 	);
 }

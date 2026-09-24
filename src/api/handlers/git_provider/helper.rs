@@ -1,92 +1,15 @@
 use connectrpc::{ConnectError, ErrorCode};
-use serde::{Deserialize, Serialize};
 
-use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
-use crate::flash_gen::models::GitProviders;
+use crate::api::connect::generated::openoxide::api::v1::{
+    GitProvider as GitProviderProto, GitProviderCollaboratorPermission,
+    GitProviderConfig as GitProviderConfigProto, GitProviderReference, GitProviderRepository,
+    GitProviderType as ProtoGitProviderType, GitProviderWebhookInfo,
+};
 use crate::services::integrations::git::{GitProviderConfigView, GitProviderView};
+use crate::utils::provider::discovery::{
+    CollaboratorPermission, GitReferenceInfo, ProviderWebhookInfo, RepositoryInfo,
+};
 use crate::utils::provider::GitProviderType;
-
-/// Mirror of `GitProviderService::view` (private to the service module) so
-/// realtime streams can map raw `GitProviders` rows into the same response
-/// DTO the REST get/list endpoints return. `webhook_configured` mirrors the
-/// `git_providers_has_webhook_secret` SQL (`webhook_secret` non-null and
-/// non-empty) straight from the row column.
-pub fn git_provider_response_from_model(row: GitProviders) -> GitProviderResponseDto {
-    let kind: Option<GitProviderType> = row.provider_type.parse().ok();
-    let value: serde_json::Value =
-        serde_json::from_str(&row.config_json).unwrap_or_default();
-
-    let text = |key: &str| value.get(key).and_then(|v| v.as_str()).map(str::to_string);
-    let present = |key: &str| value.get(key).is_some_and(|v| !v.is_null());
-
-    let (configured, config) = match kind {
-        Some(GitProviderType::Github) => (
-            present("app_id") && present("installation_id") && present("private_key"),
-            GitProviderConfigView {
-                app_name: text("app_name"),
-                app_id: value.get("app_id").and_then(|v| v.as_i64()),
-                client_id: text("client_id"),
-                installation_id: text("installation_id"),
-                has_client_secret: present("client_secret"),
-                has_private_key: present("private_key"),
-                ..Default::default()
-            },
-        ),
-        Some(GitProviderType::Gitlab) => (
-            present("access_token"),
-            GitProviderConfigView {
-                url: text("url"),
-                internal_url: text("internal_url"),
-                application_id: text("application_id"),
-                redirect_uri: text("redirect_uri"),
-                group_name: text("group_name"),
-                has_client_secret: present("secret"),
-                has_access_token: present("access_token"),
-                ..Default::default()
-            },
-        ),
-        Some(GitProviderType::Gitea) => (
-            present("access_token"),
-            GitProviderConfigView {
-                url: text("url"),
-                internal_url: text("internal_url"),
-                redirect_uri: text("redirect_uri"),
-                client_id: text("client_id"),
-                scopes: text("scopes"),
-                has_client_secret: present("client_secret"),
-                has_access_token: present("access_token"),
-                ..Default::default()
-            },
-        ),
-        Some(GitProviderType::Bitbucket) => (
-            present("api_token") || present("app_password"),
-            GitProviderConfigView {
-                username: text("username"),
-                email: text("email"),
-                workspace: text("workspace_name"),
-                has_app_password: present("app_password"),
-                has_api_token: present("api_token"),
-                ..Default::default()
-            },
-        ),
-        None => (false, GitProviderConfigView::default()),
-    };
-
-    GitProviderResponseDto::from(GitProviderView {
-        id: row.id,
-        name: row.name,
-        provider_type: row.provider_type,
-        shared: row.shared != 0,
-        configured,
-        webhook_configured: row
-            .webhook_secret
-            .as_deref()
-            .is_some_and(|secret| !secret.is_empty()),
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-        config,
-    })
-}
 
 pub fn map_db_error(err: sqlx::Error) -> ConnectError {
     match &err {
@@ -120,182 +43,99 @@ pub fn provider_error(err: String) -> ConnectError {
     }
 }
 
-pub fn provider_to_resource(dto: GitProviderResponseDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "git_provider".into(),
-        payload,
+pub fn provider_type_to_proto(value: GitProviderType) -> ProtoGitProviderType {
+    match value {
+        GitProviderType::Github => ProtoGitProviderType::Github,
+        GitProviderType::Gitlab => ProtoGitProviderType::Gitlab,
+        GitProviderType::Gitea => ProtoGitProviderType::Gitea,
+        GitProviderType::Bitbucket => ProtoGitProviderType::Bitbucket,
+    }
+}
+
+/// Maps the stored provider-type string (`GITHUB`, `GITLAB`, ...) onto the
+/// proto enum; unknown or missing values collapse to `UNSPECIFIED`.
+pub fn provider_type_str_to_proto(value: &str) -> ProtoGitProviderType {
+    value
+        .parse::<GitProviderType>()
+        .ok()
+        .map(provider_type_to_proto)
+        .unwrap_or(ProtoGitProviderType::Unspecified)
+}
+
+pub fn config_to_proto(view: GitProviderConfigView) -> GitProviderConfigProto {
+    GitProviderConfigProto {
+        url: view.url,
+        internal_url: view.internal_url,
+        app_name: view.app_name,
+        app_id: view.app_id,
+        client_id: view.client_id,
+        installation_id: view.installation_id,
+        application_id: view.application_id,
+        redirect_uri: view.redirect_uri,
+        group_name: view.group_name,
+        scopes: view.scopes,
+        username: view.username,
+        email: view.email,
+        workspace: view.workspace,
+        has_client_secret: view.has_client_secret,
+        has_private_key: view.has_private_key,
+        has_access_token: view.has_access_token,
+        has_app_password: view.has_app_password,
+        has_api_token: view.has_api_token,
         ..Default::default()
     }
 }
 
-// ── Helper DTOs for deserializing ResourceRequest payloads ────────────
-
-#[derive(Debug, Deserialize)]
-pub struct ProviderBaseDto {
-    pub name: String,
-    pub shared: Option<bool>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CreateGithubProviderDto {
-    pub provider: ProviderBaseDto,
-    pub app_name: Option<String>,
-    pub app_id: Option<i64>,
-    pub client_id: Option<String>,
-    pub client_secret: Option<String>,
-    pub installation_id: Option<String>,
-    pub private_key: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CreateGitlabProviderDto {
-    pub provider: ProviderBaseDto,
-    pub url: String,
-    pub internal_url: Option<String>,
-    pub application_id: Option<String>,
-    pub redirect_uri: Option<String>,
-    pub secret: Option<String>,
-    pub access_token: Option<String>,
-    pub refresh_token: Option<String>,
-    pub group_name: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CreateGiteaProviderDto {
-    pub provider: ProviderBaseDto,
-    pub url: String,
-    pub internal_url: Option<String>,
-    pub redirect_uri: Option<String>,
-    pub client_id: Option<String>,
-    pub client_secret: Option<String>,
-    pub access_token: Option<String>,
-    pub refresh_token: Option<String>,
-    pub scopes: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CreateBitbucketProviderDto {
-    pub provider: ProviderBaseDto,
-    pub username: Option<String>,
-    pub email: Option<String>,
-    pub app_password: Option<String>,
-    pub api_token: Option<String>,
-    pub workspace: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct GitProviderResponseDto {
-    pub id: i64,
-    pub name: String,
-    pub provider_type: String,
-    pub shared: bool,
-    pub configured: bool,
-    pub webhook_configured: bool,
-    pub created_at: i64,
-    pub updated_at: i64,
-    pub config: GitProviderConfigDto,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct GitProviderConfigDto {
-    pub url: Option<String>,
-    pub internal_url: Option<String>,
-    pub app_name: Option<String>,
-    pub app_id: Option<i64>,
-    pub client_id: Option<String>,
-    pub installation_id: Option<String>,
-    pub application_id: Option<String>,
-    pub redirect_uri: Option<String>,
-    pub group_name: Option<String>,
-    pub scopes: Option<String>,
-    pub username: Option<String>,
-    pub email: Option<String>,
-    pub workspace: Option<String>,
-    pub has_client_secret: bool,
-    pub has_private_key: bool,
-    pub has_access_token: bool,
-    pub has_app_password: bool,
-    pub has_api_token: bool,
-}
-
-impl From<GitProviderConfigView> for GitProviderConfigDto {
-    fn from(v: GitProviderConfigView) -> Self {
-        Self {
-            url: v.url,
-            internal_url: v.internal_url,
-            app_name: v.app_name,
-            app_id: v.app_id,
-            client_id: v.client_id,
-            installation_id: v.installation_id,
-            application_id: v.application_id,
-            redirect_uri: v.redirect_uri,
-            group_name: v.group_name,
-            scopes: v.scopes,
-            username: v.username,
-            email: v.email,
-            workspace: v.workspace,
-            has_client_secret: v.has_client_secret,
-            has_private_key: v.has_private_key,
-            has_access_token: v.has_access_token,
-            has_app_password: v.has_app_password,
-            has_api_token: v.has_api_token,
-        }
+pub fn provider_to_proto(view: GitProviderView) -> GitProviderProto {
+    GitProviderProto {
+        id: view.id,
+        name: view.name,
+        provider_type: ::buffa::EnumValue::Known(provider_type_str_to_proto(&view.provider_type)),
+        shared: view.shared,
+        configured: view.configured,
+        webhook_configured: view.webhook_configured,
+        created_at: view.created_at,
+        updated_at: view.updated_at,
+        config: ::buffa::MessageField::some(config_to_proto(view.config)),
+        ..Default::default()
     }
 }
 
-#[derive(Debug, Serialize)]
-pub struct CreatedGitProviderResponseDto {
-    pub provider: GitProviderResponseDto,
-    pub webhook_secret: String,
+pub fn repository_to_proto(info: RepositoryInfo) -> GitProviderRepository {
+    GitProviderRepository {
+        owner: info.owner,
+        name: info.name,
+        full_name: info.full_name,
+        private: info.private,
+        default_branch: info.default_branch,
+        clone_url: info.clone_url,
+        ..Default::default()
+    }
 }
 
-#[derive(Debug, Serialize)]
-pub struct WebhookSecretResponseDto {
-    pub webhook_secret: String,
+pub fn reference_to_proto(info: GitReferenceInfo) -> GitProviderReference {
+    GitProviderReference {
+        name: info.name,
+        commit: info.commit,
+        ..Default::default()
+    }
 }
 
-#[derive(Debug, Deserialize)]
-pub struct RepositoryReferenceQueryDto {
-    pub owner: String,
-    pub repository: String,
+pub fn webhook_info_to_proto(info: ProviderWebhookInfo) -> GitProviderWebhookInfo {
+    GitProviderWebhookInfo {
+        id: info.id,
+        url: info.url,
+        active: info.active,
+        ..Default::default()
+    }
 }
 
-#[derive(Debug, Deserialize)]
-pub struct WebhookRepositoryDto {
-    pub owner: String,
-    pub repository: String,
-    pub callback_url: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct OAuthCallbackDto {
-    pub code: Option<String>,
-    pub state: String,
-    pub installation_id: Option<String>,
-    pub setup_action: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CollaboratorPermissionQueryDto {
-    pub owner: String,
-    pub repository: String,
-    pub username: String,
-}
-
-impl From<GitProviderView> for GitProviderResponseDto {
-    fn from(value: GitProviderView) -> Self {
-        Self {
-            id: value.id,
-            name: value.name,
-            provider_type: value.provider_type,
-            shared: value.shared,
-            configured: value.configured,
-            webhook_configured: value.webhook_configured,
-            created_at: value.created_at,
-            updated_at: value.updated_at,
-            config: value.config.into(),
-        }
+pub fn permission_to_proto(permission: CollaboratorPermission) -> GitProviderCollaboratorPermission {
+    GitProviderCollaboratorPermission {
+        username: permission.username,
+        level: permission.level,
+        can_write: permission.can_write,
+        can_admin: permission.can_admin,
+        ..Default::default()
     }
 }

@@ -21,8 +21,7 @@ export const RAILPACK_VERSIONS = [
 	'0.2.2',
 ] as const;
 
-// Ids are the wire enum names (ApplicationBuildType) so the value read
-// back from GetApplication selects the same radio after a save.
+// Ids are the wire enum names (ApplicationBuildType) so the value read back from GetApplication selects the same radio after a save.
 export const BUILD_TYPES: {id: string; label: string; isNew?: boolean}[] =
 	[
 		{id: 'DOCKERFILE', label: 'Dockerfile'},

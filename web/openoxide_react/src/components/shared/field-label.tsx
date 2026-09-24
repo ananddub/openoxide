@@ -1,10 +1,6 @@
 import React from 'react';
 
-/**
- * Small uppercase muted label used above form inputs across provider
- * dialogs and settings cards. Replaces the repeated
- * `text-[11px] font-bold tracking-wider ... uppercase` inline label.
- */
+/** Small uppercase muted label used above form inputs across provider dialogs and settings cards. Replaces the repeated `text-[11px] font-bold tracking-wider ... uppercase` inline label. */
 export function FieldLabel({
 	children,
 	htmlFor,

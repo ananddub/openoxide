@@ -61,8 +61,7 @@ message SearchLogsRequest {
 message StreamTargetRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];
 }
-// Global live container stats for the monitoring page. No server_id means
-// the panel host's Agent; the stream covers every running container.
+// Global live container stats for the monitoring page. No server_id means the panel host's Agent; the stream covers every running container.
 message DockerStatsRequest {
   optional int64 server_id = 1;
 }

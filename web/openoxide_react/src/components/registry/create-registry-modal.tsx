@@ -9,12 +9,7 @@ import {
 } from '#/components/ui/sheet';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
-import {
-	Plug,
-	RefreshCw,
-	Save,
-	Server as ServerIcon,
-} from 'lucide-react';
+import {Plug, RefreshCw, Save, Server as ServerIcon} from 'lucide-react';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {
@@ -100,9 +95,7 @@ export function CreateRegistryModal({
 		}
 		setIsTesting(true);
 		try {
-			// The RegistryService only exposes a raw-credentials test
-			// (TestRegistry); there is no test-by-id RPC, so a password is
-			// always required — even when editing an existing registry.
+			// The RegistryService only exposes a raw-credentials test (TestRegistry); there is no test-by-id RPC, so a password is always required — even when editing an existing registry.
 			if (!password) {
 				toast.error('Password is required to test connection');
 				setIsTesting(false);

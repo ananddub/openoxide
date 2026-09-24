@@ -1,12 +1,15 @@
 import {
 	createServiceClient,
 	useConnectMutation,
-	useResourceListQuery,
+	useConnectQuery,
 } from './query';
 import {useOverviewDomains} from './overview';
-// Only DomainOperationsService is served by the backend (DomainService has
-// no controller), so the live layer targets the operations variant.
-import {DomainOperationsService} from '#/gen/connect/openoxide/api/v1/domain_operations_pb';
+import {
+	DomainCertificateType,
+	DomainService,
+	DomainType,
+	type Domain,
+} from '#/gen/connect/openoxide/api/v1/domain_pb';
 
 type LiveRow = Record<string, any>;
 
@@ -33,72 +36,202 @@ export type DomainPayload = {
 	[key: string]: unknown;
 };
 
-const domainClient = createServiceClient(DomainOperationsService);
+/** Create/update request fields. Keeps the legacy snake_case form-data shape (see `DomainFormData` in the domain dialog) so call sites stay untouched; the mapper converts to typed request fields. */
+export type DomainInput = {
+	id?: number | bigint | string;
+	host?: string;
+	path?: string;
+	internal_path?: string;
+	port?: number | string | bigint;
+	https?: boolean;
+	strip_path?: boolean;
+	/** "LETSENCRYPT" | "CUSTOM" | "NONE" (case-insensitive). */
+	certificate_type?: string;
+	custom_cert_resolver?: string;
+	custom_entrypoint?: string;
+	middlewares?: string;
+	service_name?: string;
+	/** "APPLICATION" | "COMPOSE" (case-insensitive). */
+	domain_type?: string;
+	application_id?: number | string | bigint;
+	compose_id?: number | string | bigint;
+	[key: string]: unknown;
+};
 
-/** Payload ids deserialize from JSON as numbers; coerce before comparing. */
-function payloadIdEquals(value: unknown, expected: bigint): boolean {
-	if (value === undefined || value === null) return false;
+const domainClient = createServiceClient(DomainService);
+
+/** Empty strings from the legacy JSON payloads mean "unset". */
+function optionalString(value: unknown): string | undefined {
+	if (value === undefined || value === null) return undefined;
+	const text = String(value);
+	return text === '' ? undefined : text;
+}
+
+function optionalBigInt(value: unknown): bigint | undefined {
+	if (value === undefined || value === null || value === '')
+		return undefined;
 	try {
-		return BigInt(value as string | number | bigint) === expected;
+		return BigInt(value as number | string | bigint);
 	} catch {
-		return false;
+		return undefined;
 	}
 }
 
-/**
- * Domains attached to a compose (legacy live: useDomainListByCompose).
- * ListDomains has no server-side compose filter; the attachment lives
- * inside each JSON payload, so fetch all and filter client-side on
- * `compose_id`.
- */
+function certificateTypeName(type: DomainCertificateType): string {
+	switch (type) {
+		case DomainCertificateType.LETSENCRYPT:
+			return 'LETSENCRYPT';
+		case DomainCertificateType.CUSTOM:
+			return 'CUSTOM';
+		case DomainCertificateType.NONE:
+		case DomainCertificateType.UNSPECIFIED:
+		default:
+			return 'NONE';
+	}
+}
+
+function parseCertificateType(
+	value: unknown,
+): DomainCertificateType | undefined {
+	if (value === undefined || value === null || value === '')
+		return undefined;
+	switch (String(value).toUpperCase()) {
+		case 'LETSENCRYPT':
+		case 'ACME':
+			return DomainCertificateType.LETSENCRYPT;
+		case 'CUSTOM':
+			return DomainCertificateType.CUSTOM;
+		case 'NONE':
+			return DomainCertificateType.NONE;
+		default:
+			return undefined;
+	}
+}
+
+function domainTypeName(type: DomainType): string {
+	switch (type) {
+		case DomainType.APPLICATION:
+			return 'APPLICATION';
+		case DomainType.COMPOSE:
+			return 'COMPOSE';
+		default:
+			return 'UNSPECIFIED';
+	}
+}
+
+function parseDomainType(value: unknown): DomainType | undefined {
+	if (value === undefined || value === null || value === '')
+		return undefined;
+	switch (String(value).toUpperCase()) {
+		case 'APPLICATION':
+			return DomainType.APPLICATION;
+		case 'COMPOSE':
+			return DomainType.COMPOSE;
+		default:
+			return undefined;
+	}
+}
+
+/** Typed `Domain` → legacy snake_case payload. The proto message carries a single `service_id`; the application/compose split is derived from `domain_type` so payload consumers keep seeing `application_id` / `compose_id`. */
+function toDomainPayload(domain: Domain): DomainPayload {
+	return {
+		id: domain.id,
+		host: domain.host,
+		path: domain.path,
+		internal_path: domain.internalPath,
+		port: domain.port,
+		https: domain.https,
+		strip_path: domain.stripPath,
+		certificate_type: certificateTypeName(domain.certificateType),
+		custom_cert_resolver: domain.customCertResolver,
+		custom_entrypoint: domain.customEntrypoint,
+		middlewares: domain.middlewares,
+		domain_type: domainTypeName(domain.domainType),
+		application_id:
+			domain.domainType === DomainType.APPLICATION
+				? domain.serviceId
+				: undefined,
+		compose_id:
+			domain.domainType === DomainType.COMPOSE
+				? domain.serviceId
+				: undefined,
+		service_name: domain.serviceName,
+		created_at: domain.createdAt,
+		updated_at: domain.updatedAt,
+	};
+}
+
+/** Domains attached to a compose (legacy live: useDomainListByCompose). */
 export function useDomainListByCompose(composeId: bigint) {
-	const query = useResourceListQuery<DomainPayload>(
+	return useConnectQuery<DomainPayload[]>(
 		['domains', 'list', 'compose', composeId.toString()],
-		() => domainClient.listDomains({}),
+		async () => {
+			const response = await domainClient.listComposeDomains({composeId});
+			return response.domains.map(toDomainPayload);
+		},
+		{enabled: composeId > 0n},
 	);
-	return {
-		...query,
-		data: query.data?.filter(domain =>
-			payloadIdEquals(domain.compose_id, composeId),
-		),
-	};
 }
 
-/**
- * Domains attached to an application (legacy live: useDomainListByApplication).
- * Same reason as compose: only the payload carries `application_id`, so
- * filter client-side after parsing.
- */
+/** Domains attached to an application (legacy live: useDomainListByApplication). */
 export function useDomainListByApplication(applicationId: bigint) {
-	const query = useResourceListQuery<DomainPayload>(
+	return useConnectQuery<DomainPayload[]>(
 		['domains', 'list', 'application', applicationId.toString()],
-		() => domainClient.listDomains({}),
+		async () => {
+			const response = await domainClient.listApplicationDomains({
+				applicationId,
+			});
+			return response.domains.map(toDomainPayload);
+		},
+		{enabled: applicationId > 0n},
 	);
-	return {
-		...query,
-		data: query.data?.filter(domain =>
-			payloadIdEquals(domain.application_id, applicationId),
-		),
-	};
 }
 
-/** Create a domain (host, route, certificate and application_id/compose_id linkage in the payload). */
+/** Create a domain (host, route, certificate and application_id/compose_id linkage). */
 export function useDomainCreate() {
 	return useConnectMutation(
-		(input: Record<string, unknown>) =>
-			domainClient.createDomain({payload: JSON.stringify(input)}),
+		(input: DomainInput) =>
+			domainClient.createDomain({
+				host: String(input.host ?? ''),
+				https: Boolean(input.https),
+				port: optionalBigInt(input.port),
+				path: optionalString(input.path),
+				internalPath: optionalString(input.internal_path),
+				customEntrypoint: optionalString(input.custom_entrypoint),
+				serviceName: optionalString(input.service_name),
+				customCertResolver: optionalString(input.custom_cert_resolver),
+				stripPath: Boolean(input.strip_path),
+				middlewares: optionalString(input.middlewares),
+				domainType: parseDomainType(input.domain_type),
+				certificateType: parseCertificateType(input.certificate_type),
+				applicationId: optionalBigInt(input.application_id),
+				composeId: optionalBigInt(input.compose_id),
+			}),
 		{invalidate: [['domains']]},
 	);
 }
 
-/** Update a domain by id (fields to change in the payload). */
+/** Update a domain by id (only the patchable fields are sent). */
 export function useDomainUpdate() {
 	return useConnectMutation(
-		(input: {id: number | bigint; [field: string]: unknown}) => {
+		(input: DomainInput & {id: number | bigint}) => {
 			const {id, ...body} = input;
 			return domainClient.updateDomain({
 				id: BigInt(id),
-				payload: JSON.stringify(body),
+				host: optionalString(body.host),
+				https: body.https === undefined ? undefined : Boolean(body.https),
+				port: optionalBigInt(body.port),
+				path: optionalString(body.path),
+				internalPath: optionalString(body.internal_path),
+				customEntrypoint: optionalString(body.custom_entrypoint),
+				serviceName: optionalString(body.service_name),
+				customCertResolver: optionalString(body.custom_cert_resolver),
+				stripPath:
+					body.strip_path === undefined
+						? undefined
+						: Boolean(body.strip_path),
+				middlewares: optionalString(body.middlewares),
+				certificateType: parseCertificateType(body.certificate_type),
 			});
 		},
 		{invalidate: [['domains']]},
@@ -113,10 +246,7 @@ export function useDomainDelete() {
 	);
 }
 
-/**
- * Legacy domain item shape the former zustand `domains` slice carried
- * (`domain` alias for `host`, numeric ids, uppercased certificate_type).
- */
+/** Legacy domain item shape the former zustand `domains` slice carried (`domain` alias for `host`, numeric ids, uppercased certificate_type). */
 export type DomainItemPayload = {
 	id: number;
 	domain: string;
@@ -158,8 +288,7 @@ function toDomainItem(d: LiveRow): DomainItemPayload {
 			? Number(d.application_id)
 			: undefined,
 		compose_id: d.compose_id ? Number(d.compose_id) : undefined,
-		// The domain's own compose service name (not the joined app display
-		// name) — the edit dialog's service selector matches against this.
+		// The domain's own compose service name (not the joined app display name) — the edit dialog's service selector matches against this.
 		service_name: d.domain_service_name || d.service_name,
 		project_name: d.project_name,
 		created_at: Number(d.created_at || 0),
@@ -167,12 +296,7 @@ function toDomainItem(d: LiveRow): DomainItemPayload {
 	};
 }
 
-/**
- * Legacy-shaped domains for the active organization (the former zustand
- * `domains` slice data). Built over useOverviewDomains, whose key prefix
- * `['overview-domains']` is invalidated by the table-watch DOMAINS entry,
- * so mutations and backend changes refetch automatically.
- */
+/** Legacy-shaped domains for the active organization (the former zustand `domains` slice data). Built over useOverviewDomains, whose key prefix `['overview-domains']` is invalidated by the table-watch DOMAINS entry, so mutations and backend changes refetch automatically. The overview item keeps `project_name` and `domain_service_name`, which the plain Domain message does not carry. */
 export function useDomainItems(organizationId?: bigint) {
 	void organizationId;
 	const query = useOverviewDomains();

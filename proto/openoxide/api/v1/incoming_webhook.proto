@@ -1,12 +1,51 @@
 syntax = "proto3";
 package openoxide.api.v1;
-import "openoxide/api/v1/common.proto";
+
+import "openoxide/api/v1/webhook.proto";
 import "buf/validate/validate.proto";
 
-service IncomingWebhookService { rpc HandleWebhook(IncomingWebhookRequest) returns (OperationResult); }
+service IncomingWebhookService {
+  rpc HandleWebhook(IncomingWebhookRequest) returns (IncomingWebhookResponse);
+}
+
 message IncomingWebhookRequest {
-  string provider = 1 [(buf.validate.field).string = {in: ["github", "gitlab", "gitea", "bitbucket"]}];
+  // Git provider the event was posted by (Rust GitProviderType).
+  WebhookProviderType provider = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  // Row id of the git provider instance whose stored secret verifies this event.
   int64 provider_id = 2 [(buf.validate.field).int64.gt = 0];
+  // Raw provider event body, forwarded verbatim for signature verification and parsing.
   string payload = 3 [(buf.validate.field).string = {min_len: 1, max_len: 10485760}];
+  // Provider signature header (HMAC digest or token); opaque to the panel.
   string signature = 4 [(buf.validate.field).string.max_len = 1024];
+}
+
+// Result of the auto-deploy dispatch triggered by one accepted webhook event.
+message IncomingWebhookDispatchOutcome {
+  // Normalized event class; provider-dependent spelling ("push", "tag", "ping", ...).
+  string event_type = 1;
+  optional string provider = 2;
+  optional string owner = 3;
+  optional string repository = 4;
+  int64 applications_queued = 5;
+  int64 compose_projects_queued = 6;
+  int64 skipped_by_watch_paths = 7;
+  int64 already_running = 8;
+  optional string pull_request_number = 9;
+  optional string pull_request_action = 10;
+  optional string source_branch = 11;
+  optional string source_owner = 12;
+  optional string source_repository = 13;
+  optional string target_branch = 14;
+  optional string commit = 15;
+  optional string author = 16;
+  int64 previews_created = 17;
+  int64 previews_redeployed = 18;
+  int64 previews_removed = 19;
+  int64 previews_skipped_permission = 20;
+  int64 previews_skipped_limit = 21;
+}
+
+message IncomingWebhookResponse {
+  bool success = 1;
+  IncomingWebhookDispatchOutcome outcome = 2;
 }

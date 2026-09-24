@@ -73,7 +73,7 @@ export function LogViewer({
 			{/* Terminal Window Container using Shadcn UI bg-card &  */}
 			<div
 				ref={scrollRef}
-				className={`rounded-xl bg-card p-3 text-xs text-card-foreground ${heightClass} flex w-full flex-col gap-0.5 overflow-y-auto shadow-sm [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30`}
+				className={`rounded-xl bg-card p-3 text-xs text-card-foreground ${heightClass} flex w-full flex-col gap-0.5 overflow-y-auto shadow-sm`}
 				style={{
 					fontFamily: `'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, SFMono-Regular, monospace`,
 				}}>

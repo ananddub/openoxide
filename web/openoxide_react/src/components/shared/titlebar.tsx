@@ -1,6 +1,9 @@
 import {useEffect, useId} from 'react';
 import type {ReactNode} from 'react';
-import {setPageCrumbs, type Crumb} from '#/components/layouts/topbar/topbar-slots';
+import {
+	setPageCrumbs,
+	type Crumb,
+} from '#/components/layouts/topbar/topbar-slots';
 import {cn} from '#/api/utils';
 
 /**
@@ -37,8 +40,7 @@ export function Titlebar({
 }) {
 	const key = useId();
 
-	// Publish the crumb trail to the top bar's center slot. Serialized
-	// deps keep the effect to real content changes.
+	// Publish the crumb trail to the top bar's center slot. Serialized deps keep the effect to real content changes.
 	useEffect(() => {
 		setPageCrumbs(key, breadcrumbs ?? []);
 		return () => setPageCrumbs(key, null);

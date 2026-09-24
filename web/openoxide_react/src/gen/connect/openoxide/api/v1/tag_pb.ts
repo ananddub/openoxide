@@ -2,108 +2,457 @@
 // @generated from file openoxide/api/v1/tag.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	EmptySchema,
-	OperationResultSchema,
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceRequestSchema,
-	ResourceResponseSchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/tag.proto.
  */
-export const file_openoxide_api_v1_tag: GenFile /*@__PURE__*/ = fileDesc(
-	'ChpvcGVub3hpZGUvYXBpL3YxL3RhZy5wcm90bxIQb3Blbm94aWRlLmFwaS52MTLCBgoKVGFnU2VydmljZRJTCghMaXN0VGFncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USTwoGR2V0VGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUgoJQ3JlYXRlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUgoJVXBkYXRlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USRwoJRGVsZXRlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5Ek4KBkFkZFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSRwoJUmVtb3ZlVGFnEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EloKD0xpc3RQcm9qZWN0VGFncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoQQXR0YWNoUHJvamVjdFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSTgoQRGV0YWNoUHJvamVjdFRhZxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z',
-	[file_openoxide_api_v1_common],
-);
+export const file_openoxide_api_v1_tag: GenFile = /*@__PURE__*/
+  fileDesc("ChpvcGVub3hpZGUvYXBpL3YxL3RhZy5wcm90bxIQb3Blbm94aWRlLmFwaS52MSJbCgNUYWcSCgoCaWQYASABKAMSDAoEbmFtZRgCIAEoCRINCgVjb2xvchgDIAEoCRIXCg9vcmdhbml6YXRpb25faWQYBCABKAMSEgoKY3JlYXRlZF9hdBgFIAEoAyIRCg9MaXN0VGFnc1JlcXVlc3QiNwoQTGlzdFRhZ3NSZXNwb25zZRIjCgR0YWdzGAEgAygLMhUub3Blbm94aWRlLmFwaS52MS5UYWciJAoNR2V0VGFnUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACI0Cg5HZXRUYWdSZXNwb25zZRIiCgN0YWcYASABKAsyFS5vcGVub3hpZGUuYXBpLnYxLlRhZyJ/ChBDcmVhdGVUYWdSZXF1ZXN0EhgKBG5hbWUYASABKAlCCrpIB3IFEAEY/wESFgoFY29sb3IYAiABKAlCB7pIBHICEAESJQoPb3JnYW5pemF0aW9uX2lkGAMgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCI3ChFDcmVhdGVUYWdSZXNwb25zZRIiCgN0YWcYASABKAsyFS5vcGVub3hpZGUuYXBpLnYxLlRhZyJrChBVcGRhdGVUYWdSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEhsKBG5hbWUYAiABKAlCCLpIBXIDGP8BSACIAQESEgoFY29sb3IYAyABKAlIAYgBAUIHCgVfbmFtZUIICgZfY29sb3IiNwoRVXBkYXRlVGFnUmVzcG9uc2USIgoDdGFnGAEgASgLMhUub3Blbm94aWRlLmFwaS52MS5UYWciJwoQRGVsZXRlVGFnUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACIkCg1BZGRUYWdSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIiEKDkFkZFRhZ1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiJwoQUmVtb3ZlVGFnUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACI1ChZMaXN0UHJvamVjdFRhZ3NSZXF1ZXN0EhsKCnByb2plY3RfaWQYASABKANCB7pIBCICIAAiPgoXTGlzdFByb2plY3RUYWdzUmVzcG9uc2USIwoEdGFncxgBIAMoCzIVLm9wZW5veGlkZS5hcGkudjEuVGFnIk8KF0F0dGFjaFByb2plY3RUYWdSZXF1ZXN0EhsKCnByb2plY3RfaWQYASABKANCB7pIBCICIAASFwoGdGFnX2lkGAIgASgDQge6SAQiAiAAIisKGEF0dGFjaFByb2plY3RUYWdSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIIk8KF0RldGFjaFByb2plY3RUYWdSZXF1ZXN0EhsKCnByb2plY3RfaWQYASABKANCB7pIBCICIAASFwoGdGFnX2lkGAIgASgDQge6SAQiAiAAMuQGCgpUYWdTZXJ2aWNlElEKCExpc3RUYWdzEiEub3Blbm94aWRlLmFwaS52MS5MaXN0VGFnc1JlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLkxpc3RUYWdzUmVzcG9uc2USSwoGR2V0VGFnEh8ub3Blbm94aWRlLmFwaS52MS5HZXRUYWdSZXF1ZXN0GiAub3Blbm94aWRlLmFwaS52MS5HZXRUYWdSZXNwb25zZRJUCglDcmVhdGVUYWcSIi5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZVRhZ1JlcXVlc3QaIy5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZVRhZ1Jlc3BvbnNlElQKCVVwZGF0ZVRhZxIiLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlVGFnUmVxdWVzdBojLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlVGFnUmVzcG9uc2USSAoJRGVsZXRlVGFnEiIub3Blbm94aWRlLmFwaS52MS5EZWxldGVUYWdSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJLCgZBZGRUYWcSHy5vcGVub3hpZGUuYXBpLnYxLkFkZFRhZ1JlcXVlc3QaIC5vcGVub3hpZGUuYXBpLnYxLkFkZFRhZ1Jlc3BvbnNlEkgKCVJlbW92ZVRhZxIiLm9wZW5veGlkZS5hcGkudjEuUmVtb3ZlVGFnUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSZgoPTGlzdFByb2plY3RUYWdzEigub3Blbm94aWRlLmFwaS52MS5MaXN0UHJvamVjdFRhZ3NSZXF1ZXN0Gikub3Blbm94aWRlLmFwaS52MS5MaXN0UHJvamVjdFRhZ3NSZXNwb25zZRJpChBBdHRhY2hQcm9qZWN0VGFnEikub3Blbm94aWRlLmFwaS52MS5BdHRhY2hQcm9qZWN0VGFnUmVxdWVzdBoqLm9wZW5veGlkZS5hcGkudjEuQXR0YWNoUHJvamVjdFRhZ1Jlc3BvbnNlElYKEERldGFjaFByb2plY3RUYWcSKS5vcGVub3hpZGUuYXBpLnYxLkRldGFjaFByb2plY3RUYWdSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+
+/**
+ * @generated from message openoxide.api.v1.Tag
+ */
+export type Tag = Message<"openoxide.api.v1.Tag"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * Free-form hex color, e.g. "#6b7280".
+   *
+   * @generated from field: string color = 3;
+   */
+  color: string;
+
+  /**
+   * @generated from field: int64 organization_id = 4;
+   */
+  organizationId: bigint;
+
+  /**
+   * @generated from field: int64 created_at = 5;
+   */
+  createdAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.Tag.
+ * Use `create(TagSchema)` to create a new message.
+ */
+export const TagSchema: GenMessage<Tag> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 0);
+
+/**
+ * @generated from message openoxide.api.v1.ListTagsRequest
+ */
+export type ListTagsRequest = Message<"openoxide.api.v1.ListTagsRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListTagsRequest.
+ * Use `create(ListTagsRequestSchema)` to create a new message.
+ */
+export const ListTagsRequestSchema: GenMessage<ListTagsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 1);
+
+/**
+ * @generated from message openoxide.api.v1.ListTagsResponse
+ */
+export type ListTagsResponse = Message<"openoxide.api.v1.ListTagsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.Tag tags = 1;
+   */
+  tags: Tag[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListTagsResponse.
+ * Use `create(ListTagsResponseSchema)` to create a new message.
+ */
+export const ListTagsResponseSchema: GenMessage<ListTagsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 2);
+
+/**
+ * @generated from message openoxide.api.v1.GetTagRequest
+ */
+export type GetTagRequest = Message<"openoxide.api.v1.GetTagRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetTagRequest.
+ * Use `create(GetTagRequestSchema)` to create a new message.
+ */
+export const GetTagRequestSchema: GenMessage<GetTagRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 3);
+
+/**
+ * @generated from message openoxide.api.v1.GetTagResponse
+ */
+export type GetTagResponse = Message<"openoxide.api.v1.GetTagResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Tag tag = 1;
+   */
+  tag?: Tag | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetTagResponse.
+ * Use `create(GetTagResponseSchema)` to create a new message.
+ */
+export const GetTagResponseSchema: GenMessage<GetTagResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 4);
+
+/**
+ * @generated from message openoxide.api.v1.CreateTagRequest
+ */
+export type CreateTagRequest = Message<"openoxide.api.v1.CreateTagRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string color = 2;
+   */
+  color: string;
+
+  /**
+   * @generated from field: optional int64 organization_id = 3;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateTagRequest.
+ * Use `create(CreateTagRequestSchema)` to create a new message.
+ */
+export const CreateTagRequestSchema: GenMessage<CreateTagRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 5);
+
+/**
+ * @generated from message openoxide.api.v1.CreateTagResponse
+ */
+export type CreateTagResponse = Message<"openoxide.api.v1.CreateTagResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Tag tag = 1;
+   */
+  tag?: Tag | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateTagResponse.
+ * Use `create(CreateTagResponseSchema)` to create a new message.
+ */
+export const CreateTagResponseSchema: GenMessage<CreateTagResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 6);
+
+/**
+ * @generated from message openoxide.api.v1.UpdateTagRequest
+ */
+export type UpdateTagRequest = Message<"openoxide.api.v1.UpdateTagRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional string name = 2;
+   */
+  name?: string | undefined;
+
+  /**
+   * @generated from field: optional string color = 3;
+   */
+  color?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateTagRequest.
+ * Use `create(UpdateTagRequestSchema)` to create a new message.
+ */
+export const UpdateTagRequestSchema: GenMessage<UpdateTagRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 7);
+
+/**
+ * @generated from message openoxide.api.v1.UpdateTagResponse
+ */
+export type UpdateTagResponse = Message<"openoxide.api.v1.UpdateTagResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Tag tag = 1;
+   */
+  tag?: Tag | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateTagResponse.
+ * Use `create(UpdateTagResponseSchema)` to create a new message.
+ */
+export const UpdateTagResponseSchema: GenMessage<UpdateTagResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 8);
+
+/**
+ * @generated from message openoxide.api.v1.DeleteTagRequest
+ */
+export type DeleteTagRequest = Message<"openoxide.api.v1.DeleteTagRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DeleteTagRequest.
+ * Use `create(DeleteTagRequestSchema)` to create a new message.
+ */
+export const DeleteTagRequestSchema: GenMessage<DeleteTagRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 9);
+
+/**
+ * @generated from message openoxide.api.v1.AddTagRequest
+ */
+export type AddTagRequest = Message<"openoxide.api.v1.AddTagRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AddTagRequest.
+ * Use `create(AddTagRequestSchema)` to create a new message.
+ */
+export const AddTagRequestSchema: GenMessage<AddTagRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 10);
+
+/**
+ * @generated from message openoxide.api.v1.AddTagResponse
+ */
+export type AddTagResponse = Message<"openoxide.api.v1.AddTagResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AddTagResponse.
+ * Use `create(AddTagResponseSchema)` to create a new message.
+ */
+export const AddTagResponseSchema: GenMessage<AddTagResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 11);
+
+/**
+ * @generated from message openoxide.api.v1.RemoveTagRequest
+ */
+export type RemoveTagRequest = Message<"openoxide.api.v1.RemoveTagRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoveTagRequest.
+ * Use `create(RemoveTagRequestSchema)` to create a new message.
+ */
+export const RemoveTagRequestSchema: GenMessage<RemoveTagRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 12);
+
+/**
+ * @generated from message openoxide.api.v1.ListProjectTagsRequest
+ */
+export type ListProjectTagsRequest = Message<"openoxide.api.v1.ListProjectTagsRequest"> & {
+  /**
+   * @generated from field: int64 project_id = 1;
+   */
+  projectId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListProjectTagsRequest.
+ * Use `create(ListProjectTagsRequestSchema)` to create a new message.
+ */
+export const ListProjectTagsRequestSchema: GenMessage<ListProjectTagsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 13);
+
+/**
+ * @generated from message openoxide.api.v1.ListProjectTagsResponse
+ */
+export type ListProjectTagsResponse = Message<"openoxide.api.v1.ListProjectTagsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.Tag tags = 1;
+   */
+  tags: Tag[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListProjectTagsResponse.
+ * Use `create(ListProjectTagsResponseSchema)` to create a new message.
+ */
+export const ListProjectTagsResponseSchema: GenMessage<ListProjectTagsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 14);
+
+/**
+ * @generated from message openoxide.api.v1.AttachProjectTagRequest
+ */
+export type AttachProjectTagRequest = Message<"openoxide.api.v1.AttachProjectTagRequest"> & {
+  /**
+   * @generated from field: int64 project_id = 1;
+   */
+  projectId: bigint;
+
+  /**
+   * @generated from field: int64 tag_id = 2;
+   */
+  tagId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AttachProjectTagRequest.
+ * Use `create(AttachProjectTagRequestSchema)` to create a new message.
+ */
+export const AttachProjectTagRequestSchema: GenMessage<AttachProjectTagRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 15);
+
+/**
+ * @generated from message openoxide.api.v1.AttachProjectTagResponse
+ */
+export type AttachProjectTagResponse = Message<"openoxide.api.v1.AttachProjectTagResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AttachProjectTagResponse.
+ * Use `create(AttachProjectTagResponseSchema)` to create a new message.
+ */
+export const AttachProjectTagResponseSchema: GenMessage<AttachProjectTagResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 16);
+
+/**
+ * @generated from message openoxide.api.v1.DetachProjectTagRequest
+ */
+export type DetachProjectTagRequest = Message<"openoxide.api.v1.DetachProjectTagRequest"> & {
+  /**
+   * @generated from field: int64 project_id = 1;
+   */
+  projectId: bigint;
+
+  /**
+   * @generated from field: int64 tag_id = 2;
+   */
+  tagId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DetachProjectTagRequest.
+ * Use `create(DetachProjectTagRequestSchema)` to create a new message.
+ */
+export const DetachProjectTagRequestSchema: GenMessage<DetachProjectTagRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_tag, 17);
 
 /**
  * @generated from service openoxide.api.v1.TagService
  */
 export const TagService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.TagService.ListTags
-	 */
-	listTags: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.TagService.GetTag
-	 */
-	getTag: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.TagService.CreateTag
-	 */
-	createTag: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.TagService.UpdateTag
-	 */
-	updateTag: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.TagService.DeleteTag
-	 */
-	deleteTag: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.TagService.AddTag
-	 */
-	addTag: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.TagService.RemoveTag
-	 */
-	removeTag: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.TagService.ListProjectTags
-	 */
-	listProjectTags: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.TagService.AttachProjectTag
-	 */
-	attachProjectTag: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.TagService.DetachProjectTag
-	 */
-	detachProjectTag: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_tag, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.TagService.ListTags
+   */
+  listTags: {
+    methodKind: "unary";
+    input: typeof ListTagsRequestSchema;
+    output: typeof ListTagsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.TagService.GetTag
+   */
+  getTag: {
+    methodKind: "unary";
+    input: typeof GetTagRequestSchema;
+    output: typeof GetTagResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.TagService.CreateTag
+   */
+  createTag: {
+    methodKind: "unary";
+    input: typeof CreateTagRequestSchema;
+    output: typeof CreateTagResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.TagService.UpdateTag
+   */
+  updateTag: {
+    methodKind: "unary";
+    input: typeof UpdateTagRequestSchema;
+    output: typeof UpdateTagResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.TagService.DeleteTag
+   */
+  deleteTag: {
+    methodKind: "unary";
+    input: typeof DeleteTagRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.TagService.AddTag
+   */
+  addTag: {
+    methodKind: "unary";
+    input: typeof AddTagRequestSchema;
+    output: typeof AddTagResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.TagService.RemoveTag
+   */
+  removeTag: {
+    methodKind: "unary";
+    input: typeof RemoveTagRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.TagService.ListProjectTags
+   */
+  listProjectTags: {
+    methodKind: "unary";
+    input: typeof ListProjectTagsRequestSchema;
+    output: typeof ListProjectTagsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.TagService.AttachProjectTag
+   */
+  attachProjectTag: {
+    methodKind: "unary";
+    input: typeof AttachProjectTagRequestSchema;
+    output: typeof AttachProjectTagResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.TagService.DetachProjectTag
+   */
+  detachProjectTag: {
+    methodKind: "unary";
+    input: typeof DetachProjectTagRequestSchema;
+    output: typeof EmptySchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_tag, 0);
+

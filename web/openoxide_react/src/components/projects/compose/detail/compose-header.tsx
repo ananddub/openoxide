@@ -36,9 +36,9 @@ export function ComposeHeader({
 				<Link
 					to={`/projects/${id}` as any}
 					search={
-						(compose as any)?.environment_id
+						((compose as any)?.environment_id
 							? {env: Number((compose as any).environment_id)}
-							: undefined
+							: undefined) as any
 					}
 					className="transition-colors hover:text-foreground">
 					Project Details

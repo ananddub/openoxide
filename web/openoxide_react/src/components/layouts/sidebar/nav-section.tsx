@@ -5,7 +5,7 @@ import {
 	SidebarMenu,
 	SidebarMenuItem,
 } from '#/components/ui/sidebar';
-import {useCan} from '#/hooks/use-permissions';
+import {useCan} from '#/hooks/permissions/use-permissions';
 import {cn} from '#/api/utils';
 import {type NavItem, type SingleNavItem} from './enum';
 
@@ -16,12 +16,7 @@ type NavSectionProps = {
 	collapsed: boolean;
 };
 
-/**
- * One section of the rail, Geist style: flat rows, no section titles —
- * separators between groups carry the rhythm. Selected = gray-alpha fill
- * with gray-1000 text; hover = one step lighter. The Vercel dashboard
- * nav grammar.
- */
+/** One section of the rail, Geist style: flat rows, no section titles — separators between groups carry the rhythm. Selected = gray-alpha fill with gray-1000 text; hover = one step lighter. The Vercel dashboard nav grammar. */
 export function NavSection({
 	items,
 	currentPath,
@@ -41,16 +36,12 @@ export function NavSection({
 				{visibleItems.map(item => {
 					if ('isSingle' in item && item.isSingle === false) return null;
 					const single = item as SingleNavItem;
-					// ?tab= deep links: match the path, then the tab. A missing tab
-					// param means the page fell back to its first tab (Account), so
-					// the Account row stays lit on bare /settings too. currentTab is
-					// TanStack's reactive search param — window.location would go stale.
+					// ?tab= deep links: match the path, then the tab. A missing tab param means the page fell back to its first tab (Account), so the Account row stays lit on bare /settings too. currentTab is TanStack's reactive search param — window.location would go stale.
 					const [basePath, query] = single.to.split('?');
 					const queryTab = query
 						? new URLSearchParams(query).get('tab')
 						: null;
-					// Bare route (no ?tab=) renders the page's first tab — light
-					// that row instead: /settings → account, /infra → web-server.
+					// Bare route (no ?tab=) renders the page's first tab — light that row instead: /settings → account, /infra → web-server.
 					const defaultTab =
 						basePath === '/infra' ? 'web-server' : 'account';
 					const active =
@@ -59,9 +50,7 @@ export function NavSection({
 							: queryTab
 								? currentPath === basePath &&
 									(currentTab ?? defaultTab) === queryTab
-								: single.exact
-									? currentPath === basePath
-									: currentPath.startsWith(basePath);
+								: currentPath.startsWith(basePath);
 					return (
 						<SidebarMenuItem key={single.to}>
 							<Link

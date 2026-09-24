@@ -2,208 +2,1111 @@
 // @generated from file openoxide/api/v1/permission.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	EmptySchema,
-	OperationResultSchema,
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceRequestSchema,
-	ResourceResponseSchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/permission.proto.
  */
-export const file_openoxide_api_v1_permission: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'CiFvcGVub3hpZGUvYXBpL3YxL3Blcm1pc3Npb24ucHJvdG8SEG9wZW5veGlkZS5hcGkudjEy+g4KEVBlcm1pc3Npb25TZXJ2aWNlEloKD0xpc3RQZXJtaXNzaW9ucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVgoNR2V0UGVybWlzc2lvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElkKEENyZWF0ZVBlcm1pc3Npb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJZChBVcGRhdGVQZXJtaXNzaW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USTgoQRGVsZXRlUGVybWlzc2lvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJVCgpMaXN0R3JvdXBzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJRCghHZXRHcm91cBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElQKC0NyZWF0ZUdyb3VwEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVAoLVXBkYXRlR3JvdXASIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJJCgtEZWxldGVHcm91cBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJXCgxMaXN0UG9saWNpZXMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElcKEEdldE15UGVybWlzc2lvbnMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWQoRQXNzaWduTWVtYmVyR3JvdXASIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElYKC0xpc3RNZW1iZXJzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJRCglBZGRNZW1iZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElgKEFVwZGF0ZU1lbWJlclJvbGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0EkoKDFJlbW92ZU1lbWJlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJWCgtMaXN0SW52aXRlcxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVQoMQ3JlYXRlSW52aXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVAoMQWNjZXB0SW52aXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJKCgxDYW5jZWxJbnZpdGUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSWwoTUmVwbGFjZVVzZXJQb2xpY2llcxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHRiBnByb3RvMw',
-		[file_openoxide_api_v1_common],
-	);
+export const file_openoxide_api_v1_permission: GenFile = /*@__PURE__*/
+  fileDesc("CiFvcGVub3hpZGUvYXBpL3YxL3Blcm1pc3Npb24ucHJvdG8SEG9wZW5veGlkZS5hcGkudjEiqQEKD1Blcm1pc3Npb25Hcm91cBIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEhEKCWlzX3N5c3RlbRgDIAEoCBIcCg9vcmdhbml6YXRpb25faWQYBCABKANIAIgBARIPCgdhY3Rpb25zGAUgAygJEhIKCmNyZWF0ZWRfYXQYBiABKAMSEgoKdXBkYXRlZF9hdBgHIAEoA0ISChBfb3JnYW5pemF0aW9uX2lkIi4KEFBlcm1pc3Npb25Qb2xpY3kSCgoCaWQYASABKAMSDgoGYWN0aW9uGAIgASgJIu0BChBQZXJtaXNzaW9uTWVtYmVyEg8KAmlkGAEgASgDSACIAQESDwoHdXNlcl9pZBgCIAEoAxINCgVlbWFpbBgDIAEoCRITCgZhdmF0YXIYBCABKAlIAYgBARIXCg9vcmdhbml6YXRpb25faWQYBSABKAMSNwoEcm9sZRgGIAEoDjIkLm9wZW5veGlkZS5hcGkudjEuUGVybWlzc2lvblVzZXJSb2xlSAKIAQESEgoKY3JlYXRlZF9hdBgHIAEoAxISCgp1cGRhdGVkX2F0GAggASgDQgUKA19pZEIJCgdfYXZhdGFyQgcKBV9yb2xlItYBChBQZXJtaXNzaW9uSW52aXRlEgoKAmlkGAEgASgDEg0KBWVtYWlsGAIgASgJEjcKBHJvbGUYAyABKA4yJC5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25Vc2VyUm9sZUgAiAEBEhAKCGdyb3VwX2lkGAQgASgDEhcKD29yZ2FuaXphdGlvbl9pZBgFIAEoAxISCgppbnZpdGVkX2J5GAYgASgDEhIKCmV4cGlyZWRfYXQYByABKAMSEgoKY3JlYXRlZF9hdBgIIAEoA0IHCgVfcm9sZSJ0ChlQZXJtaXNzaW9uVXNlclBvbGljeUVudHJ5EhEKCXBvbGljeV9pZBgBIAEoAxJECgZlZmZlY3QYAiABKA4yKC5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25Qb2xpY3lFZmZlY3RCCrpIB4IBBBABIAAiGAoWTGlzdFBlcm1pc3Npb25zUmVxdWVzdCJMChdMaXN0UGVybWlzc2lvbnNSZXNwb25zZRIxCgZncm91cHMYASADKAsyIS5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25Hcm91cCIrChRHZXRQZXJtaXNzaW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJJChVHZXRQZXJtaXNzaW9uUmVzcG9uc2USMAoFZ3JvdXAYASABKAsyIS5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25Hcm91cCJEChdDcmVhdGVQZXJtaXNzaW9uUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEg8KB2FjdGlvbnMYAiADKAkiJgoYQ3JlYXRlUGVybWlzc2lvblJlc3BvbnNlEgoKAmlkGAEgASgDIlkKF1VwZGF0ZVBlcm1pc3Npb25SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEhgKBG5hbWUYAiABKAlCCrpIB3IFEAEY/wESDwoHYWN0aW9ucxgDIAMoCSIuChdEZWxldGVQZXJtaXNzaW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACIdChtQZXJtaXNzaW9uTGlzdEdyb3Vwc1JlcXVlc3QiUQocUGVybWlzc2lvbkxpc3RHcm91cHNSZXNwb25zZRIxCgZncm91cHMYASADKAsyIS5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25Hcm91cCIwChlQZXJtaXNzaW9uR2V0R3JvdXBSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIk4KGlBlcm1pc3Npb25HZXRHcm91cFJlc3BvbnNlEjAKBWdyb3VwGAEgASgLMiEub3Blbm94aWRlLmFwaS52MS5QZXJtaXNzaW9uR3JvdXAiSQocUGVybWlzc2lvbkNyZWF0ZUdyb3VwUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEg8KB2FjdGlvbnMYAiADKAkiKwodUGVybWlzc2lvbkNyZWF0ZUdyb3VwUmVzcG9uc2USCgoCaWQYASABKAMiXgocUGVybWlzc2lvblVwZGF0ZUdyb3VwUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIYCgRuYW1lGAIgASgJQgq6SAdyBRABGP8BEg8KB2FjdGlvbnMYAyADKAkiMwocUGVybWlzc2lvbkRlbGV0ZUdyb3VwUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACIfCh1QZXJtaXNzaW9uTGlzdFBvbGljaWVzUmVxdWVzdCJWCh5QZXJtaXNzaW9uTGlzdFBvbGljaWVzUmVzcG9uc2USNAoIcG9saWNpZXMYASADKAsyIi5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25Qb2xpY3kiGQoXR2V0TXlQZXJtaXNzaW9uc1JlcXVlc3QieAoYR2V0TXlQZXJtaXNzaW9uc1Jlc3BvbnNlEjIKBHJvbGUYASABKA4yJC5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25Vc2VyUm9sZRIXCg9vcmdhbml6YXRpb25faWQYAiABKAMSDwoHYWN0aW9ucxgDIAMoCSJUCiJQZXJtaXNzaW9uQXNzaWduTWVtYmVyR3JvdXBSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEhkKCGdyb3VwX2lkGAIgASgDQge6SAQiAiAAIh4KHFBlcm1pc3Npb25MaXN0TWVtYmVyc1JlcXVlc3QiVAodUGVybWlzc2lvbkxpc3RNZW1iZXJzUmVzcG9uc2USMwoHbWVtYmVycxgBIAMoCzIiLm9wZW5veGlkZS5hcGkudjEuUGVybWlzc2lvbk1lbWJlciKnAQoaUGVybWlzc2lvbkFkZE1lbWJlclJlcXVlc3QSGQoFZW1haWwYASABKAlCCrpIB3IFEAEYwAISHwoIcGFzc3dvcmQYAiABKAlCCLpIBXIDGIAISACIAQESQAoEcm9sZRgDIAEoDjIkLm9wZW5veGlkZS5hcGkudjEuUGVybWlzc2lvblVzZXJSb2xlQgy6SAmCAQYQASAAIAFCCwoJX3Bhc3N3b3JkInoKIVBlcm1pc3Npb25VcGRhdGVNZW1iZXJSb2xlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABJACgRyb2xlGAIgASgOMiQub3Blbm94aWRlLmFwaS52MS5QZXJtaXNzaW9uVXNlclJvbGVCDLpICYIBBhABIAAgASI0Ch1QZXJtaXNzaW9uUmVtb3ZlTWVtYmVyUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACIeChxQZXJtaXNzaW9uTGlzdEludml0ZXNSZXF1ZXN0IlQKHVBlcm1pc3Npb25MaXN0SW52aXRlc1Jlc3BvbnNlEjMKB2ludml0ZXMYASADKAsyIi5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25JbnZpdGUilwEKHVBlcm1pc3Npb25DcmVhdGVJbnZpdGVSZXF1ZXN0EhkKBWVtYWlsGAEgASgJQgq6SAdyBRABGMACEkAKBHJvbGUYAiABKA4yJC5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25Vc2VyUm9sZUIMukgJggEGEAEgACABEhkKCGdyb3VwX2lkGAMgASgDQge6SAQiAiAAIi8KHlBlcm1pc3Npb25DcmVhdGVJbnZpdGVSZXNwb25zZRINCgV0b2tlbhgBIAEoCSI6Ch1QZXJtaXNzaW9uQWNjZXB0SW52aXRlUmVxdWVzdBIZCgV0b2tlbhgBIAEoCUIKukgHcgUQARiAICI0Ch1QZXJtaXNzaW9uQ2FuY2VsSW52aXRlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJ6CiRQZXJtaXNzaW9uUmVwbGFjZVVzZXJQb2xpY2llc1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASPQoIcG9saWNpZXMYAiADKAsyKy5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25Vc2VyUG9saWN5RW50cnkqmwEKElBlcm1pc3Npb25Vc2VyUm9sZRIkCiBQRVJNSVNTSU9OX1VTRVJfUk9MRV9VTlNQRUNJRklFRBAAEh4KGlBFUk1JU1NJT05fVVNFUl9ST0xFX09XTkVSEAESHgoaUEVSTUlTU0lPTl9VU0VSX1JPTEVfQURNSU4QAhIfChtQRVJNSVNTSU9OX1VTRVJfUk9MRV9NRU1CRVIQAyqJAQoWUGVybWlzc2lvblBvbGljeUVmZmVjdBIoCiRQRVJNSVNTSU9OX1BPTElDWV9FRkZFQ1RfVU5TUEVDSUZJRUQQABIiCh5QRVJNSVNTSU9OX1BPTElDWV9FRkZFQ1RfR1JBTlQQARIhCh1QRVJNSVNTSU9OX1BPTElDWV9FRkZFQ1RfREVOWRACMq0RChFQZXJtaXNzaW9uU2VydmljZRJmCg9MaXN0UGVybWlzc2lvbnMSKC5vcGVub3hpZGUuYXBpLnYxLkxpc3RQZXJtaXNzaW9uc1JlcXVlc3QaKS5vcGVub3hpZGUuYXBpLnYxLkxpc3RQZXJtaXNzaW9uc1Jlc3BvbnNlEmAKDUdldFBlcm1pc3Npb24SJi5vcGVub3hpZGUuYXBpLnYxLkdldFBlcm1pc3Npb25SZXF1ZXN0Gicub3Blbm94aWRlLmFwaS52MS5HZXRQZXJtaXNzaW9uUmVzcG9uc2USaQoQQ3JlYXRlUGVybWlzc2lvbhIpLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlUGVybWlzc2lvblJlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZVBlcm1pc3Npb25SZXNwb25zZRJWChBVcGRhdGVQZXJtaXNzaW9uEikub3Blbm94aWRlLmFwaS52MS5VcGRhdGVQZXJtaXNzaW9uUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSVgoQRGVsZXRlUGVybWlzc2lvbhIpLm9wZW5veGlkZS5hcGkudjEuRGVsZXRlUGVybWlzc2lvblJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EmsKCkxpc3RHcm91cHMSLS5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25MaXN0R3JvdXBzUmVxdWVzdBouLm9wZW5veGlkZS5hcGkudjEuUGVybWlzc2lvbkxpc3RHcm91cHNSZXNwb25zZRJlCghHZXRHcm91cBIrLm9wZW5veGlkZS5hcGkudjEuUGVybWlzc2lvbkdldEdyb3VwUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuUGVybWlzc2lvbkdldEdyb3VwUmVzcG9uc2USbgoLQ3JlYXRlR3JvdXASLi5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25DcmVhdGVHcm91cFJlcXVlc3QaLy5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25DcmVhdGVHcm91cFJlc3BvbnNlElYKC1VwZGF0ZUdyb3VwEi4ub3Blbm94aWRlLmFwaS52MS5QZXJtaXNzaW9uVXBkYXRlR3JvdXBSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJWCgtEZWxldGVHcm91cBIuLm9wZW5veGlkZS5hcGkudjEuUGVybWlzc2lvbkRlbGV0ZUdyb3VwUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkScQoMTGlzdFBvbGljaWVzEi8ub3Blbm94aWRlLmFwaS52MS5QZXJtaXNzaW9uTGlzdFBvbGljaWVzUmVxdWVzdBowLm9wZW5veGlkZS5hcGkudjEuUGVybWlzc2lvbkxpc3RQb2xpY2llc1Jlc3BvbnNlEmkKEEdldE15UGVybWlzc2lvbnMSKS5vcGVub3hpZGUuYXBpLnYxLkdldE15UGVybWlzc2lvbnNSZXF1ZXN0Gioub3Blbm94aWRlLmFwaS52MS5HZXRNeVBlcm1pc3Npb25zUmVzcG9uc2USYgoRQXNzaWduTWVtYmVyR3JvdXASNC5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25Bc3NpZ25NZW1iZXJHcm91cFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5Em4KC0xpc3RNZW1iZXJzEi4ub3Blbm94aWRlLmFwaS52MS5QZXJtaXNzaW9uTGlzdE1lbWJlcnNSZXF1ZXN0Gi8ub3Blbm94aWRlLmFwaS52MS5QZXJtaXNzaW9uTGlzdE1lbWJlcnNSZXNwb25zZRJSCglBZGRNZW1iZXISLC5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25BZGRNZW1iZXJSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJgChBVcGRhdGVNZW1iZXJSb2xlEjMub3Blbm94aWRlLmFwaS52MS5QZXJtaXNzaW9uVXBkYXRlTWVtYmVyUm9sZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElgKDFJlbW92ZU1lbWJlchIvLm9wZW5veGlkZS5hcGkudjEuUGVybWlzc2lvblJlbW92ZU1lbWJlclJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5Em4KC0xpc3RJbnZpdGVzEi4ub3Blbm94aWRlLmFwaS52MS5QZXJtaXNzaW9uTGlzdEludml0ZXNSZXF1ZXN0Gi8ub3Blbm94aWRlLmFwaS52MS5QZXJtaXNzaW9uTGlzdEludml0ZXNSZXNwb25zZRJxCgxDcmVhdGVJbnZpdGUSLy5vcGVub3hpZGUuYXBpLnYxLlBlcm1pc3Npb25DcmVhdGVJbnZpdGVSZXF1ZXN0GjAub3Blbm94aWRlLmFwaS52MS5QZXJtaXNzaW9uQ3JlYXRlSW52aXRlUmVzcG9uc2USWAoMQWNjZXB0SW52aXRlEi8ub3Blbm94aWRlLmFwaS52MS5QZXJtaXNzaW9uQWNjZXB0SW52aXRlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSWAoMQ2FuY2VsSW52aXRlEi8ub3Blbm94aWRlLmFwaS52MS5QZXJtaXNzaW9uQ2FuY2VsSW52aXRlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSZgoTUmVwbGFjZVVzZXJQb2xpY2llcxI2Lm9wZW5veGlkZS5hcGkudjEuUGVybWlzc2lvblJlcGxhY2VVc2VyUG9saWNpZXNSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
 
 /**
+ * Permission group ("role"): a named action set inside an organization.
+ *
+ * @generated from message openoxide.api.v1.PermissionGroup
+ */
+export type PermissionGroup = Message<"openoxide.api.v1.PermissionGroup"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: bool is_system = 3;
+   */
+  isSystem: boolean;
+
+  /**
+   * Null for global system groups.
+   *
+   * @generated from field: optional int64 organization_id = 4;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * Effective action strings, e.g. "PROJECT:read"; `*` grants everything.
+   *
+   * @generated from field: repeated string actions = 5;
+   */
+  actions: string[];
+
+  /**
+   * @generated from field: int64 created_at = 6;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 7;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionGroup.
+ * Use `create(PermissionGroupSchema)` to create a new message.
+ */
+export const PermissionGroupSchema: GenMessage<PermissionGroup> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 0);
+
+/**
+ * Catalog entry of an addressable policy.
+ *
+ * @generated from message openoxide.api.v1.PermissionPolicy
+ */
+export type PermissionPolicy = Message<"openoxide.api.v1.PermissionPolicy"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string action = 2;
+   */
+  action: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionPolicy.
+ * Use `create(PermissionPolicySchema)` to create a new message.
+ */
+export const PermissionPolicySchema: GenMessage<PermissionPolicy> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 1);
+
+/**
+ * Organization member projection.
+ *
+ * @generated from message openoxide.api.v1.PermissionMember
+ */
+export type PermissionMember = Message<"openoxide.api.v1.PermissionMember"> & {
+  /**
+   * Row id of the membership; absent when the projection has no row.
+   *
+   * @generated from field: optional int64 id = 1;
+   */
+  id?: bigint | undefined;
+
+  /**
+   * @generated from field: int64 user_id = 2;
+   */
+  userId: bigint;
+
+  /**
+   * @generated from field: string email = 3;
+   */
+  email: string;
+
+  /**
+   * @generated from field: optional string avatar = 4;
+   */
+  avatar?: string | undefined;
+
+  /**
+   * @generated from field: int64 organization_id = 5;
+   */
+  organizationId: bigint;
+
+  /**
+   * @generated from field: optional openoxide.api.v1.PermissionUserRole role = 6;
+   */
+  role?: PermissionUserRole | undefined;
+
+  /**
+   * @generated from field: int64 created_at = 7;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 8;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionMember.
+ * Use `create(PermissionMemberSchema)` to create a new message.
+ */
+export const PermissionMemberSchema: GenMessage<PermissionMember> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 2);
+
+/**
+ * Pending organization invitation.
+ *
+ * @generated from message openoxide.api.v1.PermissionInvite
+ */
+export type PermissionInvite = Message<"openoxide.api.v1.PermissionInvite"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string email = 2;
+   */
+  email: string;
+
+  /**
+   * @generated from field: optional openoxide.api.v1.PermissionUserRole role = 3;
+   */
+  role?: PermissionUserRole | undefined;
+
+  /**
+   * @generated from field: int64 group_id = 4;
+   */
+  groupId: bigint;
+
+  /**
+   * @generated from field: int64 organization_id = 5;
+   */
+  organizationId: bigint;
+
+  /**
+   * @generated from field: int64 invited_by = 6;
+   */
+  invitedBy: bigint;
+
+  /**
+   * @generated from field: int64 expired_at = 7;
+   */
+  expiredAt: bigint;
+
+  /**
+   * @generated from field: int64 created_at = 8;
+   */
+  createdAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionInvite.
+ * Use `create(PermissionInviteSchema)` to create a new message.
+ */
+export const PermissionInviteSchema: GenMessage<PermissionInvite> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 3);
+
+/**
+ * One entry of a full per-user policy replacement.
+ *
+ * @generated from message openoxide.api.v1.PermissionUserPolicyEntry
+ */
+export type PermissionUserPolicyEntry = Message<"openoxide.api.v1.PermissionUserPolicyEntry"> & {
+  /**
+   * @generated from field: int64 policy_id = 1;
+   */
+  policyId: bigint;
+
+  /**
+   * @generated from field: openoxide.api.v1.PermissionPolicyEffect effect = 2;
+   */
+  effect: PermissionPolicyEffect;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionUserPolicyEntry.
+ * Use `create(PermissionUserPolicyEntrySchema)` to create a new message.
+ */
+export const PermissionUserPolicyEntrySchema: GenMessage<PermissionUserPolicyEntry> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 4);
+
+/**
+ * @generated from message openoxide.api.v1.ListPermissionsRequest
+ */
+export type ListPermissionsRequest = Message<"openoxide.api.v1.ListPermissionsRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListPermissionsRequest.
+ * Use `create(ListPermissionsRequestSchema)` to create a new message.
+ */
+export const ListPermissionsRequestSchema: GenMessage<ListPermissionsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 5);
+
+/**
+ * @generated from message openoxide.api.v1.ListPermissionsResponse
+ */
+export type ListPermissionsResponse = Message<"openoxide.api.v1.ListPermissionsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.PermissionGroup groups = 1;
+   */
+  groups: PermissionGroup[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListPermissionsResponse.
+ * Use `create(ListPermissionsResponseSchema)` to create a new message.
+ */
+export const ListPermissionsResponseSchema: GenMessage<ListPermissionsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 6);
+
+/**
+ * @generated from message openoxide.api.v1.GetPermissionRequest
+ */
+export type GetPermissionRequest = Message<"openoxide.api.v1.GetPermissionRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetPermissionRequest.
+ * Use `create(GetPermissionRequestSchema)` to create a new message.
+ */
+export const GetPermissionRequestSchema: GenMessage<GetPermissionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 7);
+
+/**
+ * @generated from message openoxide.api.v1.GetPermissionResponse
+ */
+export type GetPermissionResponse = Message<"openoxide.api.v1.GetPermissionResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.PermissionGroup group = 1;
+   */
+  group?: PermissionGroup | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetPermissionResponse.
+ * Use `create(GetPermissionResponseSchema)` to create a new message.
+ */
+export const GetPermissionResponseSchema: GenMessage<GetPermissionResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 8);
+
+/**
+ * @generated from message openoxide.api.v1.CreatePermissionRequest
+ */
+export type CreatePermissionRequest = Message<"openoxide.api.v1.CreatePermissionRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: repeated string actions = 2;
+   */
+  actions: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreatePermissionRequest.
+ * Use `create(CreatePermissionRequestSchema)` to create a new message.
+ */
+export const CreatePermissionRequestSchema: GenMessage<CreatePermissionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 9);
+
+/**
+ * @generated from message openoxide.api.v1.CreatePermissionResponse
+ */
+export type CreatePermissionResponse = Message<"openoxide.api.v1.CreatePermissionResponse"> & {
+  /**
+   * The create endpoint only echoes the new row id.
+   *
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreatePermissionResponse.
+ * Use `create(CreatePermissionResponseSchema)` to create a new message.
+ */
+export const CreatePermissionResponseSchema: GenMessage<CreatePermissionResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 10);
+
+/**
+ * @generated from message openoxide.api.v1.UpdatePermissionRequest
+ */
+export type UpdatePermissionRequest = Message<"openoxide.api.v1.UpdatePermissionRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * Full replacement of the group's action list.
+   *
+   * @generated from field: repeated string actions = 3;
+   */
+  actions: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdatePermissionRequest.
+ * Use `create(UpdatePermissionRequestSchema)` to create a new message.
+ */
+export const UpdatePermissionRequestSchema: GenMessage<UpdatePermissionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 11);
+
+/**
+ * @generated from message openoxide.api.v1.DeletePermissionRequest
+ */
+export type DeletePermissionRequest = Message<"openoxide.api.v1.DeletePermissionRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DeletePermissionRequest.
+ * Use `create(DeletePermissionRequestSchema)` to create a new message.
+ */
+export const DeletePermissionRequestSchema: GenMessage<DeletePermissionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 12);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionListGroupsRequest
+ */
+export type PermissionListGroupsRequest = Message<"openoxide.api.v1.PermissionListGroupsRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionListGroupsRequest.
+ * Use `create(PermissionListGroupsRequestSchema)` to create a new message.
+ */
+export const PermissionListGroupsRequestSchema: GenMessage<PermissionListGroupsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 13);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionListGroupsResponse
+ */
+export type PermissionListGroupsResponse = Message<"openoxide.api.v1.PermissionListGroupsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.PermissionGroup groups = 1;
+   */
+  groups: PermissionGroup[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionListGroupsResponse.
+ * Use `create(PermissionListGroupsResponseSchema)` to create a new message.
+ */
+export const PermissionListGroupsResponseSchema: GenMessage<PermissionListGroupsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 14);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionGetGroupRequest
+ */
+export type PermissionGetGroupRequest = Message<"openoxide.api.v1.PermissionGetGroupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionGetGroupRequest.
+ * Use `create(PermissionGetGroupRequestSchema)` to create a new message.
+ */
+export const PermissionGetGroupRequestSchema: GenMessage<PermissionGetGroupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 15);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionGetGroupResponse
+ */
+export type PermissionGetGroupResponse = Message<"openoxide.api.v1.PermissionGetGroupResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.PermissionGroup group = 1;
+   */
+  group?: PermissionGroup | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionGetGroupResponse.
+ * Use `create(PermissionGetGroupResponseSchema)` to create a new message.
+ */
+export const PermissionGetGroupResponseSchema: GenMessage<PermissionGetGroupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 16);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionCreateGroupRequest
+ */
+export type PermissionCreateGroupRequest = Message<"openoxide.api.v1.PermissionCreateGroupRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: repeated string actions = 2;
+   */
+  actions: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionCreateGroupRequest.
+ * Use `create(PermissionCreateGroupRequestSchema)` to create a new message.
+ */
+export const PermissionCreateGroupRequestSchema: GenMessage<PermissionCreateGroupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 17);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionCreateGroupResponse
+ */
+export type PermissionCreateGroupResponse = Message<"openoxide.api.v1.PermissionCreateGroupResponse"> & {
+  /**
+   * The create endpoint only echoes the new row id.
+   *
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionCreateGroupResponse.
+ * Use `create(PermissionCreateGroupResponseSchema)` to create a new message.
+ */
+export const PermissionCreateGroupResponseSchema: GenMessage<PermissionCreateGroupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 18);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionUpdateGroupRequest
+ */
+export type PermissionUpdateGroupRequest = Message<"openoxide.api.v1.PermissionUpdateGroupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * Full replacement of the group's action list.
+   *
+   * @generated from field: repeated string actions = 3;
+   */
+  actions: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionUpdateGroupRequest.
+ * Use `create(PermissionUpdateGroupRequestSchema)` to create a new message.
+ */
+export const PermissionUpdateGroupRequestSchema: GenMessage<PermissionUpdateGroupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 19);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionDeleteGroupRequest
+ */
+export type PermissionDeleteGroupRequest = Message<"openoxide.api.v1.PermissionDeleteGroupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionDeleteGroupRequest.
+ * Use `create(PermissionDeleteGroupRequestSchema)` to create a new message.
+ */
+export const PermissionDeleteGroupRequestSchema: GenMessage<PermissionDeleteGroupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 20);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionListPoliciesRequest
+ */
+export type PermissionListPoliciesRequest = Message<"openoxide.api.v1.PermissionListPoliciesRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionListPoliciesRequest.
+ * Use `create(PermissionListPoliciesRequestSchema)` to create a new message.
+ */
+export const PermissionListPoliciesRequestSchema: GenMessage<PermissionListPoliciesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 21);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionListPoliciesResponse
+ */
+export type PermissionListPoliciesResponse = Message<"openoxide.api.v1.PermissionListPoliciesResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.PermissionPolicy policies = 1;
+   */
+  policies: PermissionPolicy[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionListPoliciesResponse.
+ * Use `create(PermissionListPoliciesResponseSchema)` to create a new message.
+ */
+export const PermissionListPoliciesResponseSchema: GenMessage<PermissionListPoliciesResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 22);
+
+/**
+ * @generated from message openoxide.api.v1.GetMyPermissionsRequest
+ */
+export type GetMyPermissionsRequest = Message<"openoxide.api.v1.GetMyPermissionsRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetMyPermissionsRequest.
+ * Use `create(GetMyPermissionsRequestSchema)` to create a new message.
+ */
+export const GetMyPermissionsRequestSchema: GenMessage<GetMyPermissionsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 23);
+
+/**
+ * @generated from message openoxide.api.v1.GetMyPermissionsResponse
+ */
+export type GetMyPermissionsResponse = Message<"openoxide.api.v1.GetMyPermissionsResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.PermissionUserRole role = 1;
+   */
+  role: PermissionUserRole;
+
+  /**
+   * @generated from field: int64 organization_id = 2;
+   */
+  organizationId: bigint;
+
+  /**
+   * Effective action strings; `*` for owners/admins.
+   *
+   * @generated from field: repeated string actions = 3;
+   */
+  actions: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetMyPermissionsResponse.
+ * Use `create(GetMyPermissionsResponseSchema)` to create a new message.
+ */
+export const GetMyPermissionsResponseSchema: GenMessage<GetMyPermissionsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 24);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionAssignMemberGroupRequest
+ */
+export type PermissionAssignMemberGroupRequest = Message<"openoxide.api.v1.PermissionAssignMemberGroupRequest"> & {
+  /**
+   * User id of the member whose group assignment changes.
+   *
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: int64 group_id = 2;
+   */
+  groupId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionAssignMemberGroupRequest.
+ * Use `create(PermissionAssignMemberGroupRequestSchema)` to create a new message.
+ */
+export const PermissionAssignMemberGroupRequestSchema: GenMessage<PermissionAssignMemberGroupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 25);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionListMembersRequest
+ */
+export type PermissionListMembersRequest = Message<"openoxide.api.v1.PermissionListMembersRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionListMembersRequest.
+ * Use `create(PermissionListMembersRequestSchema)` to create a new message.
+ */
+export const PermissionListMembersRequestSchema: GenMessage<PermissionListMembersRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 26);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionListMembersResponse
+ */
+export type PermissionListMembersResponse = Message<"openoxide.api.v1.PermissionListMembersResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.PermissionMember members = 1;
+   */
+  members: PermissionMember[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionListMembersResponse.
+ * Use `create(PermissionListMembersResponseSchema)` to create a new message.
+ */
+export const PermissionListMembersResponseSchema: GenMessage<PermissionListMembersResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 27);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionAddMemberRequest
+ */
+export type PermissionAddMemberRequest = Message<"openoxide.api.v1.PermissionAddMemberRequest"> & {
+  /**
+   * @generated from field: string email = 1;
+   */
+  email: string;
+
+  /**
+   * @generated from field: optional string password = 2;
+   */
+  password?: string | undefined;
+
+  /**
+   * @generated from field: openoxide.api.v1.PermissionUserRole role = 3;
+   */
+  role: PermissionUserRole;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionAddMemberRequest.
+ * Use `create(PermissionAddMemberRequestSchema)` to create a new message.
+ */
+export const PermissionAddMemberRequestSchema: GenMessage<PermissionAddMemberRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 28);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionUpdateMemberRoleRequest
+ */
+export type PermissionUpdateMemberRoleRequest = Message<"openoxide.api.v1.PermissionUpdateMemberRoleRequest"> & {
+  /**
+   * User id of the member.
+   *
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: openoxide.api.v1.PermissionUserRole role = 2;
+   */
+  role: PermissionUserRole;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionUpdateMemberRoleRequest.
+ * Use `create(PermissionUpdateMemberRoleRequestSchema)` to create a new message.
+ */
+export const PermissionUpdateMemberRoleRequestSchema: GenMessage<PermissionUpdateMemberRoleRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 29);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionRemoveMemberRequest
+ */
+export type PermissionRemoveMemberRequest = Message<"openoxide.api.v1.PermissionRemoveMemberRequest"> & {
+  /**
+   * User id of the member.
+   *
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionRemoveMemberRequest.
+ * Use `create(PermissionRemoveMemberRequestSchema)` to create a new message.
+ */
+export const PermissionRemoveMemberRequestSchema: GenMessage<PermissionRemoveMemberRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 30);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionListInvitesRequest
+ */
+export type PermissionListInvitesRequest = Message<"openoxide.api.v1.PermissionListInvitesRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionListInvitesRequest.
+ * Use `create(PermissionListInvitesRequestSchema)` to create a new message.
+ */
+export const PermissionListInvitesRequestSchema: GenMessage<PermissionListInvitesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 31);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionListInvitesResponse
+ */
+export type PermissionListInvitesResponse = Message<"openoxide.api.v1.PermissionListInvitesResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.PermissionInvite invites = 1;
+   */
+  invites: PermissionInvite[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionListInvitesResponse.
+ * Use `create(PermissionListInvitesResponseSchema)` to create a new message.
+ */
+export const PermissionListInvitesResponseSchema: GenMessage<PermissionListInvitesResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 32);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionCreateInviteRequest
+ */
+export type PermissionCreateInviteRequest = Message<"openoxide.api.v1.PermissionCreateInviteRequest"> & {
+  /**
+   * @generated from field: string email = 1;
+   */
+  email: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.PermissionUserRole role = 2;
+   */
+  role: PermissionUserRole;
+
+  /**
+   * @generated from field: int64 group_id = 3;
+   */
+  groupId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionCreateInviteRequest.
+ * Use `create(PermissionCreateInviteRequestSchema)` to create a new message.
+ */
+export const PermissionCreateInviteRequestSchema: GenMessage<PermissionCreateInviteRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 33);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionCreateInviteResponse
+ */
+export type PermissionCreateInviteResponse = Message<"openoxide.api.v1.PermissionCreateInviteResponse"> & {
+  /**
+   * Opaque invitation token to be delivered to the invitee.
+   *
+   * @generated from field: string token = 1;
+   */
+  token: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionCreateInviteResponse.
+ * Use `create(PermissionCreateInviteResponseSchema)` to create a new message.
+ */
+export const PermissionCreateInviteResponseSchema: GenMessage<PermissionCreateInviteResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 34);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionAcceptInviteRequest
+ */
+export type PermissionAcceptInviteRequest = Message<"openoxide.api.v1.PermissionAcceptInviteRequest"> & {
+  /**
+   * Opaque invitation token; no row id is carried.
+   *
+   * @generated from field: string token = 1;
+   */
+  token: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionAcceptInviteRequest.
+ * Use `create(PermissionAcceptInviteRequestSchema)` to create a new message.
+ */
+export const PermissionAcceptInviteRequestSchema: GenMessage<PermissionAcceptInviteRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 35);
+
+/**
+ * @generated from message openoxide.api.v1.PermissionCancelInviteRequest
+ */
+export type PermissionCancelInviteRequest = Message<"openoxide.api.v1.PermissionCancelInviteRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionCancelInviteRequest.
+ * Use `create(PermissionCancelInviteRequestSchema)` to create a new message.
+ */
+export const PermissionCancelInviteRequestSchema: GenMessage<PermissionCancelInviteRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 36);
+
+/**
+ * Full replacement of the target user's policy override list.
+ *
+ * @generated from message openoxide.api.v1.PermissionReplaceUserPoliciesRequest
+ */
+export type PermissionReplaceUserPoliciesRequest = Message<"openoxide.api.v1.PermissionReplaceUserPoliciesRequest"> & {
+  /**
+   * User id whose policies are replaced.
+   *
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: repeated openoxide.api.v1.PermissionUserPolicyEntry policies = 2;
+   */
+  policies: PermissionUserPolicyEntry[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.PermissionReplaceUserPoliciesRequest.
+ * Use `create(PermissionReplaceUserPoliciesRequestSchema)` to create a new message.
+ */
+export const PermissionReplaceUserPoliciesRequestSchema: GenMessage<PermissionReplaceUserPoliciesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_permission, 37);
+
+/**
+ * Membership roles (`UserRole` string enum); assignment endpoints only accept `ADMIN` or `MEMBER`.
+ *
+ * @generated from enum openoxide.api.v1.PermissionUserRole
+ */
+export enum PermissionUserRole {
+  /**
+   * @generated from enum value: PERMISSION_USER_ROLE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: PERMISSION_USER_ROLE_OWNER = 1;
+   */
+  OWNER = 1,
+
+  /**
+   * @generated from enum value: PERMISSION_USER_ROLE_ADMIN = 2;
+   */
+  ADMIN = 2,
+
+  /**
+   * @generated from enum value: PERMISSION_USER_ROLE_MEMBER = 3;
+   */
+  MEMBER = 3,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.PermissionUserRole.
+ */
+export const PermissionUserRoleSchema: GenEnum<PermissionUserRole> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_permission, 0);
+
+/**
+ * Policy effect on a per-user policy override (`PolicyEffect` string enum).
+ *
+ * @generated from enum openoxide.api.v1.PermissionPolicyEffect
+ */
+export enum PermissionPolicyEffect {
+  /**
+   * @generated from enum value: PERMISSION_POLICY_EFFECT_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: PERMISSION_POLICY_EFFECT_GRANT = 1;
+   */
+  GRANT = 1,
+
+  /**
+   * @generated from enum value: PERMISSION_POLICY_EFFECT_DENY = 2;
+   */
+  DENY = 2,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.PermissionPolicyEffect.
+ */
+export const PermissionPolicyEffectSchema: GenEnum<PermissionPolicyEffect> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_permission, 1);
+
+/**
+ * Group, policy, member and invite management for the active organization; `ListPermissions`/`GetPermission`/`CreatePermission`/`UpdatePermission`/`DeletePermission` are aliases of the corresponding `*Group` rpcs and share the `PermissionGroup` payload.
+ *
  * @generated from service openoxide.api.v1.PermissionService
  */
 export const PermissionService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.ListPermissions
-	 */
-	listPermissions: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.GetPermission
-	 */
-	getPermission: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.CreatePermission
-	 */
-	createPermission: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.UpdatePermission
-	 */
-	updatePermission: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.DeletePermission
-	 */
-	deletePermission: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.ListGroups
-	 */
-	listGroups: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.GetGroup
-	 */
-	getGroup: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.CreateGroup
-	 */
-	createGroup: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.UpdateGroup
-	 */
-	updateGroup: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.DeleteGroup
-	 */
-	deleteGroup: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.ListPolicies
-	 */
-	listPolicies: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * Effective actions for the calling user inside the active organization
-	 * (auth-only: every member may inspect their own grants to gate the UI).
-	 *
-	 * @generated from rpc openoxide.api.v1.PermissionService.GetMyPermissions
-	 */
-	getMyPermissions: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.AssignMemberGroup
-	 */
-	assignMemberGroup: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.ListMembers
-	 */
-	listMembers: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.AddMember
-	 */
-	addMember: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.UpdateMemberRole
-	 */
-	updateMemberRole: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.RemoveMember
-	 */
-	removeMember: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.ListInvites
-	 */
-	listInvites: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.CreateInvite
-	 */
-	createInvite: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.AcceptInvite
-	 */
-	acceptInvite: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.CancelInvite
-	 */
-	cancelInvite: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PermissionService.ReplaceUserPolicies
-	 */
-	replaceUserPolicies: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_permission, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.ListPermissions
+   */
+  listPermissions: {
+    methodKind: "unary";
+    input: typeof ListPermissionsRequestSchema;
+    output: typeof ListPermissionsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.GetPermission
+   */
+  getPermission: {
+    methodKind: "unary";
+    input: typeof GetPermissionRequestSchema;
+    output: typeof GetPermissionResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.CreatePermission
+   */
+  createPermission: {
+    methodKind: "unary";
+    input: typeof CreatePermissionRequestSchema;
+    output: typeof CreatePermissionResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.UpdatePermission
+   */
+  updatePermission: {
+    methodKind: "unary";
+    input: typeof UpdatePermissionRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.DeletePermission
+   */
+  deletePermission: {
+    methodKind: "unary";
+    input: typeof DeletePermissionRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.ListGroups
+   */
+  listGroups: {
+    methodKind: "unary";
+    input: typeof PermissionListGroupsRequestSchema;
+    output: typeof PermissionListGroupsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.GetGroup
+   */
+  getGroup: {
+    methodKind: "unary";
+    input: typeof PermissionGetGroupRequestSchema;
+    output: typeof PermissionGetGroupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.CreateGroup
+   */
+  createGroup: {
+    methodKind: "unary";
+    input: typeof PermissionCreateGroupRequestSchema;
+    output: typeof PermissionCreateGroupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.UpdateGroup
+   */
+  updateGroup: {
+    methodKind: "unary";
+    input: typeof PermissionUpdateGroupRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.DeleteGroup
+   */
+  deleteGroup: {
+    methodKind: "unary";
+    input: typeof PermissionDeleteGroupRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.ListPolicies
+   */
+  listPolicies: {
+    methodKind: "unary";
+    input: typeof PermissionListPoliciesRequestSchema;
+    output: typeof PermissionListPoliciesResponseSchema;
+  },
+  /**
+   * Effective actions for the calling user inside the active organization (auth-only: every member may inspect their own grants to gate the UI).
+   *
+   * @generated from rpc openoxide.api.v1.PermissionService.GetMyPermissions
+   */
+  getMyPermissions: {
+    methodKind: "unary";
+    input: typeof GetMyPermissionsRequestSchema;
+    output: typeof GetMyPermissionsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.AssignMemberGroup
+   */
+  assignMemberGroup: {
+    methodKind: "unary";
+    input: typeof PermissionAssignMemberGroupRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.ListMembers
+   */
+  listMembers: {
+    methodKind: "unary";
+    input: typeof PermissionListMembersRequestSchema;
+    output: typeof PermissionListMembersResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.AddMember
+   */
+  addMember: {
+    methodKind: "unary";
+    input: typeof PermissionAddMemberRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.UpdateMemberRole
+   */
+  updateMemberRole: {
+    methodKind: "unary";
+    input: typeof PermissionUpdateMemberRoleRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.RemoveMember
+   */
+  removeMember: {
+    methodKind: "unary";
+    input: typeof PermissionRemoveMemberRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.ListInvites
+   */
+  listInvites: {
+    methodKind: "unary";
+    input: typeof PermissionListInvitesRequestSchema;
+    output: typeof PermissionListInvitesResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.CreateInvite
+   */
+  createInvite: {
+    methodKind: "unary";
+    input: typeof PermissionCreateInviteRequestSchema;
+    output: typeof PermissionCreateInviteResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.AcceptInvite
+   */
+  acceptInvite: {
+    methodKind: "unary";
+    input: typeof PermissionAcceptInviteRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.CancelInvite
+   */
+  cancelInvite: {
+    methodKind: "unary";
+    input: typeof PermissionCancelInviteRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PermissionService.ReplaceUserPolicies
+   */
+  replaceUserPolicies: {
+    methodKind: "unary";
+    input: typeof PermissionReplaceUserPoliciesRequestSchema;
+    output: typeof EmptySchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_permission, 0);
+

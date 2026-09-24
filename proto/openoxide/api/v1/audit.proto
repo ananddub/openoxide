@@ -1,9 +1,47 @@
 syntax = "proto3";
 package openoxide.api.v1;
 
-import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
 service AuditService {
-  rpc ListAuditLogs(ResourceQuery) returns (ResourceListResponse);
-  rpc ExportAuditLogs(ResourceQuery) returns (ResourceResponse);
+  rpc ListAuditLogs(AuditListAuditLogsRequest) returns (AuditListAuditLogsResponse);
+  rpc ExportAuditLogs(AuditExportAuditLogsRequest) returns (AuditExportAuditLogsResponse);
+}
+
+message AuditLog {
+  int64 id = 1;
+  string user_email = 2;
+  string user_role = 3;
+  // Performed action verb (not a closed set; written by callers).
+  string action = 4;
+  string resource_type = 5;
+  optional string resource_id = 6;
+  optional string resource_name = 7;
+  // Opaque JSON audit context.
+  optional string metadata = 8;
+  optional int64 organization_id = 9;
+  optional int64 user_id = 10;
+  int64 created_at = 11;
+}
+
+// `action` narrows the list to one action verb; absent means all actions.
+message AuditListAuditLogsRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string action = 2 [(buf.validate.field).string.max_len = 255];
+  optional int64 limit = 3 [(buf.validate.field).int64 = {gte: 1, lte: 500}];
+  optional int64 offset = 4 [(buf.validate.field).int64.gte = 0];
+}
+
+message AuditListAuditLogsResponse {
+  repeated AuditLog logs = 1;
+}
+
+// Export is organization-scoped from the authenticated session and capped server-side at 500 rows.
+message AuditExportAuditLogsRequest {
+  optional string action = 1 [(buf.validate.field).string.max_len = 255];
+}
+
+// CSV with header id,created_at,user_email,user_role,action,resource_type,resource_id,resource_name.
+message AuditExportAuditLogsResponse {
+  string csv = 1;
 }

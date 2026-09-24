@@ -1,22 +1,49 @@
 import {useConnectMutation} from '../query';
 import {permissionClient} from './shared';
+import {PermissionUserRole} from '#/gen/connect/openoxide/api/v1/permission_pb';
 
-/** Add a member to the active organization (email/role fields in the payload). */
+/** Legacy role strings ("owner", "OWNER", "developer", "viewer", ...) → the membership enum; only OWNER/ADMIN/MEMBER exist server-side, so any other value (or an absent role) maps to UNSPECIFIED. */
+function parseRole(value: unknown): PermissionUserRole {
+	switch (String(value ?? '').toUpperCase()) {
+		case 'OWNER':
+			return PermissionUserRole.OWNER;
+		case 'ADMIN':
+			return PermissionUserRole.ADMIN;
+		case 'MEMBER':
+			return PermissionUserRole.MEMBER;
+		default:
+			return PermissionUserRole.UNSPECIFIED;
+	}
+}
+
+/** Add a member to the active organization (email/role/password fields). */
 export function useMemberAdd() {
 	return useConnectMutation(
-		(input: Record<string, unknown>) =>
-			permissionClient.addMember({payload: JSON.stringify(input)}),
+		(input: {
+			email?: string;
+			role?: string;
+			password?: string;
+			[key: string]: unknown;
+		}) =>
+			permissionClient.addMember({
+				email: String(input.email ?? ''),
+				password:
+					typeof input.password === 'string' && input.password
+						? input.password
+						: undefined,
+				role: parseRole(input.role),
+			}),
 		{invalidate: [['permission-members']]},
 	);
 }
 
-/** Update an organization member's role by member id (role in the payload). */
+/** Update an organization member's role by member id. */
 export function useMemberUpdateRole() {
 	return useConnectMutation(
 		(input: {id: number | bigint; role: string}) =>
 			permissionClient.updateMemberRole({
 				id: BigInt(input.id),
-				payload: JSON.stringify({role: input.role}),
+				role: parseRole(input.role),
 			}),
 		{invalidate: [['permission-members']]},
 	);
@@ -31,23 +58,32 @@ export function useMemberRemove() {
 	);
 }
 
-/** Create an invitation (email/role fields in the payload). */
+/** Create an invitation (email/role/group_id fields); resolves to the opaque invite token the email link carries. */
 export function useInviteCreate() {
 	return useConnectMutation(
-		(input: Record<string, unknown>) =>
-			permissionClient.createInvite({payload: JSON.stringify(input)}),
+		(input: {
+			email?: string;
+			role?: string;
+			group_id?: number | bigint;
+			[key: string]: unknown;
+		}) =>
+			permissionClient.createInvite({
+				email: String(input.email ?? ''),
+				role: parseRole(input.role),
+				groupId:
+					input.group_id === undefined || input.group_id === null
+						? 0n
+						: BigInt(input.group_id),
+			}),
 		{invalidate: [['permission-invites']]},
 	);
 }
 
-/**
- * Cancel an invitation by id. CancelInvite is a Resource-pattern request
- * whose target id travels in the payload JSON.
- */
+/** Cancel an invitation by id. */
 export function useInviteCancel() {
 	return useConnectMutation(
 		(id: number | bigint | string) =>
-			permissionClient.cancelInvite({payload: JSON.stringify({id})}),
+			permissionClient.cancelInvite({id: BigInt(id)}),
 		{invalidate: [['permission-invites']]},
 	);
 }
@@ -56,19 +92,23 @@ export function useInviteCancel() {
 export function usePermissionGroupCreate() {
 	return useConnectMutation(
 		(input: {name: string; actions: string[]}) =>
-			permissionClient.createGroup({payload: JSON.stringify(input)}),
+			permissionClient.createGroup({
+				name: input.name,
+				actions: input.actions,
+			}),
 		{invalidate: [['permission-groups']]},
 	);
 }
 
-/** Update a permission group (name and/or action ids). */
+/** Update a permission group (name and action ids are full replacements). */
 export function usePermissionGroupUpdate() {
 	return useConnectMutation(
 		(input: {id: number | bigint; name?: string; actions?: string[]}) => {
-			const {id, ...body} = input;
+			const {id, name, actions} = input;
 			return permissionClient.updateGroup({
 				id: BigInt(id),
-				payload: JSON.stringify(body),
+				name: name ?? '',
+				actions: actions ?? [],
 			});
 		},
 		{invalidate: [['permission-groups']]},
@@ -90,7 +130,7 @@ export function useMemberGroupAssign() {
 		(input: {member_id: number | bigint; group_id: number | bigint}) =>
 			permissionClient.assignMemberGroup({
 				id: BigInt(input.member_id),
-				payload: JSON.stringify({group_id: input.group_id}),
+				groupId: BigInt(input.group_id),
 			}),
 		{invalidate: [['permission-members']]},
 	);

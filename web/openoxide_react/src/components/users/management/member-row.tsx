@@ -134,11 +134,7 @@ function Menu({
 	);
 }
 
-/**
- * A single team-member row. The role is always visible as a quiet chip —
- * the actions that change it live in the hover kebab, so a row never looks
- * different just because someone can edit it.
- */
+/** A single team-member row. The role is always visible as a quiet chip — the actions that change it live in the hover kebab, so a row never looks different just because someone can edit it. */
 export function MemberRow(props: MemberProps) {
 	const {member, self} = props;
 	const {displayName, displayAvatar, role} = memberView(props);
@@ -197,7 +193,7 @@ export function MemberCard(props: MemberProps) {
 					<Chips role={role} self={self} member={member} />
 				</div>
 				{canAct && (
-					<div className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+					<div className="shrink-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
 						<Menu
 							role={role}
 							canEditRole={props.canEditRole}

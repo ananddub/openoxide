@@ -1,6 +1,6 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
 import {Button} from '#/components/ui/button';
-import {useDatabaseDetail} from '#/hooks/projects/use-database-detail';
+import {useDatabaseDetail} from '#/hooks/projects/database/use-database-detail';
 import {useDatabaseUpdate, parseDatabaseKind} from '#/api/live';
 
 import {ServiceLayout} from '#/components/projects/detail/service-layout';
@@ -9,8 +9,7 @@ import {DatabaseDetailTabs} from '#/components/projects/database/detail/database
 export const Route = createFileRoute('/_app/projects/$id/database/$dbId')({
 	validateSearch: (search: Record<string, unknown>) => ({
 		kind: (search.kind as string) || undefined,
-		// The active service tab rides the URL so the sidebar's project
-		// nav and deep links can drive it.
+		// The active service tab rides the URL so the sidebar's project nav and deep links can drive it.
 		tab: (search.tab as string) || undefined,
 	}),
 	component: DatabaseDetailPage,
@@ -90,8 +89,7 @@ function DatabaseDetailPage() {
 	return (
 		<ServiceLayout
 			id={String(id)}
-			name={database.name || dbExtras.app_name}
-		>
+			name={database.name || dbExtras.app_name}>
 			<DatabaseDetailTabs
 				activeTab={activeTab}
 				database={database}

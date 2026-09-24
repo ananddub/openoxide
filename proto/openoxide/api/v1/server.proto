@@ -2,23 +2,231 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "openoxide/api/v1/server_controller.proto";
+import "openoxide/api/v1/server_private_network.proto";
+import "buf/validate/validate.proto";
 
 service ServerService {
-  rpc ListServers(ResourceQuery) returns (ResourceListResponse);
-  rpc GetServer(ResourceRequest) returns (ResourceResponse);
-  rpc CreateServer(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateServer(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteServer(ResourceRequest) returns (Empty);
-  rpc TestConnection(ResourceRequest) returns (OperationResult);
-  rpc SetupServer(ResourceRequest) returns (OperationResult);
-  rpc StartServer(ResourceRequest) returns (OperationResult);
-  rpc StopServer(ResourceRequest) returns (OperationResult);
-  rpc RestartServer(ResourceRequest) returns (OperationResult);
-  rpc RemoveServer(ResourceRequest) returns (Empty);
-  rpc GetServerErrors(ResourceRequest) returns (ResourceListResponse);
-  rpc ListRemoteServers(ResourceQuery) returns (ResourceListResponse);
-  rpc ListPrivateNetworks(ResourceQuery) returns (ResourceListResponse);
-  rpc CreatePrivateNetwork(ResourceRequest) returns (ResourceResponse);
-  rpc UpdatePrivateNetwork(ResourceRequest) returns (ResourceResponse);
-  rpc DeletePrivateNetwork(ResourceRequest) returns (Empty);
+  rpc ListServers(ServerListServersRequest) returns (ServerListServersResponse);
+  rpc GetServer(ServerGetServerRequest) returns (ServerGetServerResponse);
+  rpc CreateServer(ServerCreateServerRequest) returns (ServerCreateServerResponse);
+  rpc UpdateServer(ServerUpdateServerRequest) returns (ServerUpdateServerResponse);
+  rpc DeleteServer(ServerDeleteServerRequest) returns (Empty);
+  rpc TestConnection(ServerTestConnectionRequest) returns (ServerTestConnectionResponse);
+  rpc SetupServer(ServerSetupServerRequest) returns (ServerSetupServerResponse);
+  rpc StartServer(ServerStartServerRequest) returns (Empty);
+  rpc StopServer(ServerStopServerRequest) returns (Empty);
+  rpc RestartServer(ServerRestartServerRequest) returns (Empty);
+  rpc RemoveServer(ServerRemoveServerRequest) returns (Empty);
+  rpc GetServerErrors(ServerGetServerErrorsRequest) returns (ServerGetServerErrorsResponse);
+  rpc ListRemoteServers(ServerListRemoteServersRequest) returns (ServerListRemoteServersResponse);
+  rpc ListPrivateNetworks(ServerListPrivateNetworksRequest) returns (ServerListPrivateNetworksResponse);
+  rpc CreatePrivateNetwork(ServerCreatePrivateNetworkRequest) returns (ServerCreatePrivateNetworkResponse);
+  rpc UpdatePrivateNetwork(ServerUpdatePrivateNetworkRequest) returns (ServerUpdatePrivateNetworkResponse);
+  rpc DeletePrivateNetwork(ServerDeletePrivateNetworkRequest) returns (Empty);
+}
+
+// Closed set: only ACTIVE/INACTIVE are ever written to `servers.server_status`.
+enum ServerStatus {
+  SERVER_STATUS_UNSPECIFIED = 0;
+  SERVER_STATUS_ACTIVE = 1;
+  SERVER_STATUS_INACTIVE = 2;
+}
+
+// Closed set: `RemoteServerTypeDto` (DEPLOY/BUILD).
+enum ServerType {
+  SERVER_TYPE_UNSPECIFIED = 0;
+  SERVER_TYPE_DEPLOY = 1;
+  SERVER_TYPE_BUILD = 2;
+}
+
+message Server {
+  int64 id = 1;
+  string name = 2;
+  optional string description = 3;
+  string ip_address = 4;
+  int64 port = 5;
+  string username = 6;
+  string app_name = 7;
+  ServerStatus server_status = 8;
+  ServerType server_type = 9;
+  // Integer-as-boolean in storage.
+  bool enable_docker_cleanup = 10;
+  optional string log_cleanup_cron = 11;
+  string command = 12;
+  // Metrics collection configuration as a JSON document.
+  string metrics_config = 13;
+  optional int64 ssh_key_id = 14;
+  int64 created_at = 15;
+  int64 updated_at = 16;
+  optional string build_memory_limit = 17;
+  optional string build_cpu_limit = 18;
+}
+
+message ServerListServersRequest {}
+
+message ServerListServersResponse {
+  repeated Server servers = 1;
+}
+
+message ServerGetServerRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerGetServerResponse {
+  Server server = 1;
+}
+
+message ServerCreateServerRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional string description = 2 [(buf.validate.field).string.max_len = 1000];
+  string ip_address = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  // SSH port; 0 means the default 22.
+  int64 port = 4;
+  // SSH user; empty means the default "root".
+  string username = 5 [(buf.validate.field).string.max_len = 255];
+  ServerType server_type = 6 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional int64 ssh_key_id = 7 [(buf.validate.field).int64.gt = 0];
+  optional string build_memory_limit = 8 [(buf.validate.field).string.max_len = 255];
+  optional string build_cpu_limit = 9 [(buf.validate.field).string.max_len = 255];
+}
+
+message ServerCreateServerResponse {
+  Server server = 1;
+}
+
+// PATCH semantics: absent fields keep their stored values.
+message ServerUpdateServerRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string name = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional string description = 3 [(buf.validate.field).string.max_len = 1000];
+  optional string ip_address = 4 [(buf.validate.field).string.max_len = 255];
+  optional int64 port = 5;
+  optional string username = 6 [(buf.validate.field).string.max_len = 255];
+  optional ServerStatus server_status = 7 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional ServerType server_type = 8 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  // Integer-as-boolean in storage.
+  optional bool enable_docker_cleanup = 9;
+  optional string log_cleanup_cron = 10;
+  optional string command = 11;
+  // Metrics collection configuration as a JSON document.
+  optional string metrics_config = 12 [(buf.validate.field).string.max_len = 1048576];
+  optional int64 ssh_key_id = 13 [(buf.validate.field).int64.gt = 0];
+  optional string build_memory_limit = 14 [(buf.validate.field).string.max_len = 255];
+  optional string build_cpu_limit = 15 [(buf.validate.field).string.max_len = 255];
+}
+
+message ServerUpdateServerResponse {
+  Server server = 1;
+}
+
+message ServerDeleteServerRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerTestConnectionRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  // SSH host-key SHA-256 fingerprint pin; empty disables pinning.
+  optional string host_key_fingerprint = 2 [(buf.validate.field).string.max_len = 255];
+  // Sudo credential document; only sent for privileged steps.
+  optional string sudo_password = 3;
+  optional uint32 pool_size = 4;
+}
+
+message ServerTestConnectionResponse {
+  ServerConnectionInfo connection = 1;
+}
+
+message ServerSetupServerRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  bool install_dependencies = 2;
+  // Swarm advertise address override; server's private/public IP when unset.
+  optional string advertise_addr = 3 [(buf.validate.field).string.max_len = 255];
+  optional string acme_email = 4 [(buf.validate.field).string.max_len = 255];
+  optional string host_key_fingerprint = 5 [(buf.validate.field).string.max_len = 255];
+  optional string sudo_password = 6;
+  optional uint32 pool_size = 7;
+}
+
+message ServerSetupServerResponse {
+  ServerSetupOutcome outcome = 1;
+}
+
+message ServerStartServerRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerStopServerRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerRestartServerRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+// Detaches the panel from a server without deleting the row.
+message ServerRemoveServerRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerGetServerErrorsRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerGetServerErrorsResponse {
+  repeated string errors = 1;
+}
+
+message ServerListRemoteServersRequest {}
+
+message ServerListRemoteServersResponse {
+  repeated Server servers = 1;
+}
+
+message ServerListPrivateNetworksRequest {}
+
+message ServerListPrivateNetworksResponse {
+  repeated ServerPrivateNetwork networks = 1;
+}
+
+message ServerCreatePrivateNetworkRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  ServerConnectionMode connection_mode = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional ServerPrivateNetworkProvider provider = 3 [(buf.validate.field).enum = {defined_only: true}];
+  optional string private_host = 4 [(buf.validate.field).string.max_len = 255];
+  optional string tunnel_address = 5 [(buf.validate.field).string.max_len = 255];
+  // WireGuard public key (base64 key material).
+  optional string public_key = 6 [(buf.validate.field).string.max_len = 255];
+  optional string endpoint = 7 [(buf.validate.field).string.max_len = 255];
+  optional uint32 listen_port = 8 [(buf.validate.field).uint32.lte = 65535];
+  optional uint32 persistent_keepalive = 9;
+  optional string dns_name = 10 [(buf.validate.field).string.max_len = 255];
+  repeated string routes = 11 [(buf.validate.field).repeated.max_items = 64];
+}
+
+message ServerCreatePrivateNetworkResponse {
+  ServerPrivateNetwork network = 1;
+}
+
+message ServerUpdatePrivateNetworkRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  ServerConnectionMode connection_mode = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional ServerPrivateNetworkProvider provider = 3 [(buf.validate.field).enum = {defined_only: true}];
+  optional string private_host = 4 [(buf.validate.field).string.max_len = 255];
+  optional string tunnel_address = 5 [(buf.validate.field).string.max_len = 255];
+  // WireGuard public key (base64 key material).
+  optional string public_key = 6 [(buf.validate.field).string.max_len = 255];
+  optional string endpoint = 7 [(buf.validate.field).string.max_len = 255];
+  optional uint32 listen_port = 8 [(buf.validate.field).uint32.lte = 65535];
+  optional uint32 persistent_keepalive = 9;
+  optional string dns_name = 10 [(buf.validate.field).string.max_len = 255];
+  repeated string routes = 11 [(buf.validate.field).repeated.max_items = 64];
+}
+
+message ServerUpdatePrivateNetworkResponse {
+  ServerPrivateNetwork network = 1;
+}
+
+message ServerDeletePrivateNetworkRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
 }

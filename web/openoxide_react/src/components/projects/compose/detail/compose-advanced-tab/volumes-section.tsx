@@ -24,7 +24,9 @@ export function VolumesSection({compose}: {compose: any}) {
 	const remove = useComposeMountDelete();
 
 	const [view, setView] = useState<'list' | 'form'>('list');
-	const [editingId, setEditingId] = useState<number | undefined>(undefined);
+	const [editingId, setEditingId] = useState<number | undefined>(
+		undefined,
+	);
 	const [state, setState] = useState<MountFormState>(emptyMountForm);
 	const [saving, setSaving] = useState(false);
 
@@ -74,7 +76,11 @@ export function VolumesSection({compose}: {compose: any}) {
 	return (
 		<SettingsSheet
 			title={
-				view === 'form' ? (editingId ? 'Edit volume' : 'Add volume') : 'Volumes'
+				view === 'form'
+					? editingId
+						? 'Edit volume'
+						: 'Add volume'
+					: 'Volumes'
 			}
 			description={
 				view === 'form'
@@ -148,7 +154,7 @@ export function VolumesSection({compose}: {compose: any}) {
 										className="flex items-start justify-between gap-3 rounded-xl border border-border bg-card p-4">
 										<div className="flex min-w-0 flex-col gap-2">
 											<div className="flex items-center gap-2">
-												<span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+												<span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-primary uppercase">
 													{mount.mount_type}
 												</span>
 												<span className="truncate font-mono text-sm text-foreground">

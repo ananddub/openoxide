@@ -1,9 +1,6 @@
 import {type NodeProps, type Node} from '@xyflow/react';
 import {Globe} from 'lucide-react';
-import {
-	siRedis,
-	siMongodb,
-} from 'simple-icons';
+import {siRedis, siMongodb} from 'simple-icons';
 import {
 	PostgresqlIcon,
 	MysqlIcon,
@@ -67,10 +64,8 @@ function getDbIcon(dbType: string) {
 	const t = (dbType ?? '').toLowerCase();
 	if (t.includes('mysql') && !t.includes('maria'))
 		return {brand: MysqlIcon, color: '#4479A1'};
-	if (t.includes('redis'))
-		return {icon: siRedis, color: '#FF4438'};
-	if (t.includes('mongo'))
-		return {icon: siMongodb, color: '#47A248'};
+	if (t.includes('redis')) return {icon: siRedis, color: '#FF4438'};
+	if (t.includes('mongo')) return {icon: siMongodb, color: '#47A248'};
 	if (t.includes('maria')) return {brand: MariadbIcon, color: '#7b8cde'};
 	return {brand: PostgresqlIcon, color: '#336791'};
 }
@@ -81,9 +76,11 @@ export function DbCanvasNode({
 }: NodeProps<DbCanvasNodeProps>) {
 	const {inspect} = useCanvasActions();
 	const running = data.status === 'RUNNING' || data.status === 'running';
-	const {icon, brand: BrandIcon, color} = getDbIcon(
-		data.dbType as string,
-	) as {
+	const {
+		icon,
+		brand: BrandIcon,
+		color,
+	} = getDbIcon(data.dbType as string) as {
 		icon?: {path: string};
 		brand?: (p: {className?: string}) => React.ReactElement;
 		color: string;

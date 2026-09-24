@@ -3,28 +3,18 @@ package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
 
-// Table-level change notifications. The server never streams row data over
-// this channel — only which tables changed within the caller's organization.
-// Clients react by refetching through their regular (permission-checked)
-// queries, so realtime routing inherits query-level access control.
+// Table-level change notifications; the server never streams row data here, only which tables changed within the caller's organization. Clients refetch through their regular permission-checked queries, so realtime routing inherits query-level access control.
 service RealtimeService {
-  // Opens a per-organization watch stream. The first event always carries
-  // every table (a resync snapshot) so subscribers can cover the gap between
-  // their initial fetch and the stream opening; subsequent events carry only
-  // the tables that changed. Events are coalesced, so a burst of commits on
-  // the same table collapses into one notification.
+  // Opens a per-organization watch stream; the first event always carries every table as a resync snapshot covering the gap between the initial fetch and the stream opening, later events carry only changed tables, and a burst of commits on one table coalesces into a single notification.
   rpc WatchTables(Empty) returns (stream WatchTablesEvent);
 }
 
 message WatchTablesEvent {
-  // Tables whose rows changed since the previous event. An event listing all
-  // tables is a resync: clients should treat every watched query as stale.
+  // Tables whose rows changed since the previous event; an event listing all tables is a resync, so clients should treat every watched query as stale.
   repeated WatchedTable tables = 1;
 }
 
-// Every user-facing SQLite table that can invalidate frontend queries.
-// Internal churn tables (auth tokens, schedule execution locks) are
-// deliberately absent — they rotate too fast to be useful as signals.
+// Every user-facing SQLite table that can invalidate frontend queries; internal churn tables (auth tokens, schedule execution locks) are deliberately absent — they rotate too fast to be useful as signals.
 enum WatchedTable {
   WATCHED_TABLE_UNSPECIFIED = 0;
   WATCHED_TABLE_AI_GENERATIONS = 1;

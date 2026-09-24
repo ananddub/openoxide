@@ -26,7 +26,9 @@ export function PortsSection({app}: {app: any}) {
 	const remove = useApplicationPortDelete();
 
 	const [view, setView] = useState<'list' | 'form'>('list');
-	const [published, setPublished] = useState<number | undefined>(undefined);
+	const [published, setPublished] = useState<number | undefined>(
+		undefined,
+	);
 	const [target, setTarget] = useState<number | undefined>(undefined);
 	const [protocol, setProtocol] = useState('TCP');
 	const [mode, setMode] = useState('HOST');
@@ -139,7 +141,7 @@ export function PortsSection({app}: {app: any}) {
 										className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4">
 										<div className="flex min-w-0 flex-col gap-1.5">
 											<div className="flex items-center gap-2">
-												<span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+												<span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-primary uppercase">
 													{port.protocol}
 												</span>
 												<span className="truncate font-mono text-sm text-foreground">
@@ -183,7 +185,9 @@ export function PortsSection({app}: {app: any}) {
 						<Num label="Target port" value={target} set={setTarget} />
 					</FieldGrid>
 					<FieldGrid>
-						<Field label="Protocol" hint="Transport protocol for the port.">
+						<Field
+							label="Protocol"
+							hint="Transport protocol for the port.">
 							<Select
 								value={protocol}
 								onValueChange={next => next && setProtocol(next)}>

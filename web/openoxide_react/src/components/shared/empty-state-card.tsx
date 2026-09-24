@@ -3,10 +3,7 @@ import {Button} from '#/components/ui/button';
 import {Card} from '#/components/ui/card';
 import {Plus} from 'lucide-react';
 
-/**
- * Centered "nothing here yet" card with icon, copy and a call-to-action
- * button. Used by provider list pages (vault, dns, ...) and sections.
- */
+/** Centered "nothing here yet" card with icon, copy and a call-to-action button. Used by provider list pages (vault, dns, ...) and sections. */
 export function EmptyStateCard({
 	icon,
 	title,

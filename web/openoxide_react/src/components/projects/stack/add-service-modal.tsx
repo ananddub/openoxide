@@ -69,7 +69,10 @@ export function AddServiceModal({
 				</div>
 
 				<SheetFooter>
-					<Button onClick={confirm} disabled={!selected} className="gap-1.5">
+					<Button
+						onClick={confirm}
+						disabled={!selected}
+						className="gap-1.5">
 						<Check className="size-3.5" /> Add Service
 					</Button>
 				</SheetFooter>

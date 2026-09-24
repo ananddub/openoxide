@@ -1,15 +1,22 @@
 use connectrpc::{ConnectError, ErrorCode};
-use serde::{Deserialize, Serialize};
 
-use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
+use crate::api::connect::generated::openoxide::api::v1::{
+    Schedule as ScheduleProto, ScheduleAction as ProtoScheduleAction,
+    ScheduleConcurrencyPolicy as ProtoScheduleConcurrencyPolicy,
+    ScheduleExecution as ScheduleExecutionProto,
+    ScheduleExecutionStatus as ProtoScheduleExecutionStatus,
+    ScheduleMissedRunPolicy as ProtoScheduleMissedRunPolicy,
+    ScheduleRun as ScheduleRunProto, ScheduleRuntimePolicy as ScheduleRuntimePolicyProto,
+    ScheduleShellType as ProtoScheduleShellType, ScheduleTriggerKind as ProtoScheduleTriggerKind,
+    ScheduleType as ProtoScheduleType,
+};
 use crate::flash_gen::models::{ScheduleExecutions, ScheduleRuntimePolicies, Schedules};
 use crate::services::automation::schedule::ScheduleRunResult;
-use crate::services::automation::schedule::types::{
-    ConcurrencyPolicy, MissedRunPolicy, ScheduleExecutionStatus, ScheduleTriggerKind,
-};
 
 pub async fn refresh_schedule_runner() {
-    if let Ok(runner) = auto_di::resolve::<crate::services::automation::schedule::ScheduleRunner>().await {
+    if let Ok(runner) =
+        auto_di::resolve::<crate::services::automation::schedule::ScheduleRunner>().await
+    {
         if let Err(error) = runner.refresh_jobs().await {
             tracing::error!(%error, "could not refresh scheduler after schedule mutation");
         }
@@ -30,194 +37,215 @@ pub fn map_sqlx_error(error: sqlx::Error) -> ConnectError {
     }
 }
 
-pub fn schedule_to_resource(dto: ScheduleResponseDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "schedule".into(),
-        payload,
+fn shell_type_to_proto(value: &str) -> ProtoScheduleShellType {
+    match value {
+        "BASH" => ProtoScheduleShellType::Bash,
+        "SH" => ProtoScheduleShellType::Sh,
+        _ => ProtoScheduleShellType::Unspecified,
+    }
+}
+
+fn schedule_type_to_proto(value: &str) -> ProtoScheduleType {
+    match value {
+        "APPLICATION" => ProtoScheduleType::Application,
+        "COMPOSE" => ProtoScheduleType::Compose,
+        "DATABASE" => ProtoScheduleType::Database,
+        "SERVER" => ProtoScheduleType::Server,
+        "DOKPANEL-SERVER" => ProtoScheduleType::DokpanelServer,
+        _ => ProtoScheduleType::Unspecified,
+    }
+}
+
+fn schedule_action_to_proto(value: &str) -> ProtoScheduleAction {
+    match value {
+        "EXEC" => ProtoScheduleAction::Exec,
+        "DEPLOY" => ProtoScheduleAction::Deploy,
+        "REDEPLOY" => ProtoScheduleAction::Redeploy,
+        "REBUILD" => ProtoScheduleAction::Rebuild,
+        "RELOAD" => ProtoScheduleAction::Reload,
+        "START" => ProtoScheduleAction::Start,
+        "STOP" => ProtoScheduleAction::Stop,
+        _ => ProtoScheduleAction::Unspecified,
+    }
+}
+
+fn trigger_kind_to_proto(value: &str) -> ProtoScheduleTriggerKind {
+    match value {
+        "CRON" => ProtoScheduleTriggerKind::Cron,
+        "MANUAL" => ProtoScheduleTriggerKind::Manual,
+        "MISSED" => ProtoScheduleTriggerKind::Missed,
+        "RETRY" => ProtoScheduleTriggerKind::Retry,
+        _ => ProtoScheduleTriggerKind::Unspecified,
+    }
+}
+
+fn execution_status_to_proto(value: &str) -> ProtoScheduleExecutionStatus {
+    match value {
+        "RUNNING" => ProtoScheduleExecutionStatus::Running,
+        "SUCCEEDED" => ProtoScheduleExecutionStatus::Succeeded,
+        "FAILED" => ProtoScheduleExecutionStatus::Failed,
+        "SKIPPED" => ProtoScheduleExecutionStatus::Skipped,
+        _ => ProtoScheduleExecutionStatus::Unspecified,
+    }
+}
+
+fn missed_run_policy_to_proto(value: &str) -> ProtoScheduleMissedRunPolicy {
+    match value {
+        "SKIP" => ProtoScheduleMissedRunPolicy::Skip,
+        "RUN_ONCE" => ProtoScheduleMissedRunPolicy::RunOnce,
+        _ => ProtoScheduleMissedRunPolicy::Unspecified,
+    }
+}
+
+fn concurrency_policy_to_proto(value: &str) -> ProtoScheduleConcurrencyPolicy {
+    match value {
+        "SKIP" => ProtoScheduleConcurrencyPolicy::Skip,
+        "QUEUE" => ProtoScheduleConcurrencyPolicy::Queue,
+        "ALLOW" => ProtoScheduleConcurrencyPolicy::Allow,
+        _ => ProtoScheduleConcurrencyPolicy::Unspecified,
+    }
+}
+
+// ── proto → stored-string conversions for write inputs ────────────────
+
+pub fn shell_type_from_proto(value: ::buffa::EnumValue<ProtoScheduleShellType>) -> &'static str {
+    match value {
+        ::buffa::EnumValue::Known(ProtoScheduleShellType::Bash) => "BASH",
+        ::buffa::EnumValue::Known(ProtoScheduleShellType::Sh) => "SH",
+        _ => "BASH",
+    }
+}
+
+pub fn schedule_type_from_proto(value: ::buffa::EnumValue<ProtoScheduleType>) -> &'static str {
+    match value {
+        ::buffa::EnumValue::Known(ProtoScheduleType::Application) => "APPLICATION",
+        ::buffa::EnumValue::Known(ProtoScheduleType::Compose) => "COMPOSE",
+        ::buffa::EnumValue::Known(ProtoScheduleType::Database) => "DATABASE",
+        ::buffa::EnumValue::Known(ProtoScheduleType::Server) => "SERVER",
+        ::buffa::EnumValue::Known(ProtoScheduleType::DokpanelServer) => "DOKPANEL-SERVER",
+        _ => "APPLICATION",
+    }
+}
+
+pub fn schedule_action_from_proto(value: ::buffa::EnumValue<ProtoScheduleAction>) -> &'static str {
+    match value {
+        ::buffa::EnumValue::Known(ProtoScheduleAction::Exec) => "EXEC",
+        ::buffa::EnumValue::Known(ProtoScheduleAction::Deploy) => "DEPLOY",
+        ::buffa::EnumValue::Known(ProtoScheduleAction::Redeploy) => "REDEPLOY",
+        ::buffa::EnumValue::Known(ProtoScheduleAction::Rebuild) => "REBUILD",
+        ::buffa::EnumValue::Known(ProtoScheduleAction::Reload) => "RELOAD",
+        ::buffa::EnumValue::Known(ProtoScheduleAction::Start) => "START",
+        ::buffa::EnumValue::Known(ProtoScheduleAction::Stop) => "STOP",
+        _ => "EXEC",
+    }
+}
+
+pub fn missed_run_policy_from_proto(
+    value: ::buffa::EnumValue<ProtoScheduleMissedRunPolicy>,
+) -> &'static str {
+    match value {
+        ::buffa::EnumValue::Known(ProtoScheduleMissedRunPolicy::Skip) => "SKIP",
+        ::buffa::EnumValue::Known(ProtoScheduleMissedRunPolicy::RunOnce) => "RUN_ONCE",
+        _ => "SKIP",
+    }
+}
+
+pub fn concurrency_policy_from_proto(
+    value: ::buffa::EnumValue<ProtoScheduleConcurrencyPolicy>,
+) -> &'static str {
+    match value {
+        ::buffa::EnumValue::Known(ProtoScheduleConcurrencyPolicy::Skip) => "SKIP",
+        ::buffa::EnumValue::Known(ProtoScheduleConcurrencyPolicy::Queue) => "QUEUE",
+        ::buffa::EnumValue::Known(ProtoScheduleConcurrencyPolicy::Allow) => "ALLOW",
+        _ => "SKIP",
+    }
+}
+
+// ── row → proto mappers ───────────────────────────────────────────────
+
+pub fn schedule_to_proto(value: Schedules) -> ScheduleProto {
+    ScheduleProto {
+        id: value.id,
+        name: value.name,
+        description: value.description,
+        cron_expression: value.cron_expression,
+        app_name: value.app_name,
+        service_name: value.service_name,
+        shell_type: ::buffa::EnumValue::Known(shell_type_to_proto(&value.shell_type)),
+        schedule_type: ::buffa::EnumValue::Known(schedule_type_to_proto(&value.schedule_type)),
+        schedule_action: ::buffa::EnumValue::Known(schedule_action_to_proto(
+            &value.schedule_action,
+        )),
+        command: value.command,
+        script: value.script,
+        timezone: value.timezone,
+        enabled: value.enabled != 0,
+        service_id: value.service_id,
+        // Typed linkage mirrors derived from (schedule_type, service_id);
+        // exactly one is set, matching the previous payload behaviour.
+        application_id: (value.schedule_type == "APPLICATION")
+            .then_some(value.service_id)
+            .flatten(),
+        compose_id: (value.schedule_type == "COMPOSE")
+            .then_some(value.service_id)
+            .flatten(),
+        database_id: (value.schedule_type == "DATABASE")
+            .then_some(value.service_id)
+            .flatten(),
+        server_id: value.server_id,
+        organization_id: value.organization_id,
+        created_at: value.created_at,
+        updated_at: value.updated_at,
         ..Default::default()
     }
 }
 
-pub fn execution_to_resource(dto: ScheduleExecutionDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "schedule_execution".into(),
-        payload,
+pub fn run_result_to_proto(value: ScheduleRunResult) -> ScheduleRunProto {
+    ScheduleRunProto {
+        schedule: ::buffa::MessageField::some(schedule_to_proto(value.schedule)),
+        action: value.action,
+        deployment_id: value.deployment_id,
+        message: value.message,
+        stdout: value.stdout,
+        stderr: value.stderr,
         ..Default::default()
     }
 }
 
-// ── Helper DTOs for ResourceRequest/ResourceResponse payloads ────────────
-
-#[derive(Debug, Clone, Serialize)]
-pub struct ScheduleLogDto {
-    pub content: String,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct ScheduleResponseDto {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub cron_expression: String,
-    pub app_name: String,
-    pub service_name: Option<String>,
-    pub shell_type: String,
-    pub schedule_type: String,
-    pub schedule_action: String,
-    pub command: String,
-    pub script: Option<String>,
-    pub timezone: Option<String>,
-    pub enabled: i64,
-    pub service_id: Option<i64>,
-    // Typed linkage mirrors for the detail-page filters: exactly one is set
-    // from (schedule_type, service_id), matching the overview-domain pattern.
-    pub application_id: Option<i64>,
-    pub compose_id: Option<i64>,
-    pub database_id: Option<i64>,
-    pub server_id: Option<i64>,
-    pub organization_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-impl From<Schedules> for ScheduleResponseDto {
-    fn from(value: Schedules) -> Self {
-        Self {
-            id: value.id,
-            name: value.name,
-            description: value.description,
-            cron_expression: value.cron_expression,
-            app_name: value.app_name,
-            service_name: value.service_name,
-            shell_type: value.shell_type,
-            schedule_action: value.schedule_action,
-            command: value.command,
-            script: value.script,
-            timezone: value.timezone,
-            enabled: value.enabled,
-            service_id: value.service_id,
-            application_id: (value.schedule_type == "APPLICATION")
-                .then_some(value.service_id)
-                .flatten(),
-            compose_id: (value.schedule_type == "COMPOSE")
-                .then_some(value.service_id)
-                .flatten(),
-            database_id: (value.schedule_type == "DATABASE")
-                .then_some(value.service_id)
-                .flatten(),
-            schedule_type: value.schedule_type,
-            server_id: value.server_id,
-            organization_id: value.organization_id,
-            created_at: value.created_at,
-            updated_at: value.updated_at,
-        }
+pub fn runtime_policy_to_proto(value: ScheduleRuntimePolicies) -> ScheduleRuntimePolicyProto {
+    ScheduleRuntimePolicyProto {
+        schedule_id: value.schedule_id,
+        retry_count: value.retry_count,
+        retry_delay_seconds: value.retry_delay_seconds,
+        missed_run_policy: ::buffa::EnumValue::Known(missed_run_policy_to_proto(
+            &value.missed_run_policy,
+        )),
+        concurrency_policy: ::buffa::EnumValue::Known(concurrency_policy_to_proto(
+            &value.concurrency_policy,
+        )),
+        lease_seconds: value.lease_seconds,
+        notify_on_success: value.notify_on_success != 0,
+        notify_on_failure: value.notify_on_failure != 0,
+        last_scheduled_at: value.last_scheduled_at,
+        updated_at: value.updated_at,
+        ..Default::default()
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct ScheduleRunResponseDto {
-    pub schedule: ScheduleResponseDto,
-    pub action: String,
-    pub deployment_id: Option<i64>,
-    pub message: String,
-    pub stdout: Option<String>,
-    pub stderr: Option<String>,
-}
-
-impl From<ScheduleRunResult> for ScheduleRunResponseDto {
-    fn from(value: ScheduleRunResult) -> Self {
-        Self {
-            schedule: ScheduleResponseDto::from(value.schedule),
-            action: value.action,
-            deployment_id: value.deployment_id,
-            message: value.message,
-            stdout: value.stdout,
-            stderr: value.stderr,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct UpdateScheduleRuntimePolicyDto {
-    pub retry_count: i64,
-    pub retry_delay_seconds: i64,
-    pub missed_run_policy: MissedRunPolicy,
-    pub concurrency_policy: ConcurrencyPolicy,
-    pub lease_seconds: i64,
-    pub notify_on_success: bool,
-    pub notify_on_failure: bool,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct ScheduleRuntimePolicyDto {
-    pub schedule_id: i64,
-    pub retry_count: i64,
-    pub retry_delay_seconds: i64,
-    pub missed_run_policy: MissedRunPolicy,
-    pub concurrency_policy: ConcurrencyPolicy,
-    pub lease_seconds: i64,
-    pub notify_on_success: bool,
-    pub notify_on_failure: bool,
-    pub last_scheduled_at: Option<i64>,
-    pub updated_at: i64,
-}
-
-impl From<ScheduleRuntimePolicies> for ScheduleRuntimePolicyDto {
-    fn from(value: ScheduleRuntimePolicies) -> Self {
-        Self {
-            schedule_id: value.schedule_id,
-            retry_count: value.retry_count,
-            retry_delay_seconds: value.retry_delay_seconds,
-            missed_run_policy: MissedRunPolicy::try_from(value.missed_run_policy.as_str())
-                .expect("database enforces missed run policy"),
-            concurrency_policy: ConcurrencyPolicy::try_from(value.concurrency_policy.as_str())
-                .expect("database enforces concurrency policy"),
-            lease_seconds: value.lease_seconds,
-            notify_on_success: value.notify_on_success != 0,
-            notify_on_failure: value.notify_on_failure != 0,
-            last_scheduled_at: value.last_scheduled_at,
-            updated_at: value.updated_at,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct ScheduleExecutionDto {
-    pub id: i64,
-    pub schedule_id: i64,
-    pub organization_id: Option<i64>,
-    pub trigger_kind: ScheduleTriggerKind,
-    pub status: ScheduleExecutionStatus,
-    pub attempt: i64,
-    pub scheduled_at: i64,
-    pub started_at: i64,
-    pub finished_at: Option<i64>,
-    pub message: Option<String>,
-    pub stdout: Option<String>,
-    pub stderr: Option<String>,
-}
-
-impl From<ScheduleExecutions> for ScheduleExecutionDto {
-    fn from(value: ScheduleExecutions) -> Self {
-        Self {
-            id: value.id,
-            schedule_id: value.schedule_id,
-            organization_id: value.organization_id,
-            trigger_kind: ScheduleTriggerKind::try_from(value.trigger_kind.as_str())
-                .expect("database enforces schedule trigger"),
-            status: ScheduleExecutionStatus::try_from(value.status.as_str())
-                .expect("database enforces execution status"),
-            attempt: value.attempt,
-            scheduled_at: value.scheduled_at,
-            started_at: value.started_at,
-            finished_at: value.finished_at,
-            message: value.message,
-            stdout: value.stdout,
-            stderr: value.stderr,
-        }
+pub fn execution_to_proto(value: ScheduleExecutions) -> ScheduleExecutionProto {
+    ScheduleExecutionProto {
+        id: value.id,
+        schedule_id: value.schedule_id,
+        organization_id: value.organization_id,
+        trigger_kind: ::buffa::EnumValue::Known(trigger_kind_to_proto(&value.trigger_kind)),
+        status: ::buffa::EnumValue::Known(execution_status_to_proto(&value.status)),
+        attempt: value.attempt,
+        scheduled_at: value.scheduled_at,
+        started_at: value.started_at,
+        finished_at: value.finished_at,
+        message: value.message,
+        stdout: value.stdout,
+        stderr: value.stderr,
+        ..Default::default()
     }
 }

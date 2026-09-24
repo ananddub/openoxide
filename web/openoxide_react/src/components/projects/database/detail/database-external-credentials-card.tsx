@@ -96,9 +96,9 @@ export function DatabaseExternalCredentialsCard({
 						External Credentials
 					</h3>
 					<p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-						In order to make the database reachable through the
-						internet, you must set a port and ensure that the port
-						is not being used by another application or database
+						In order to make the database reachable through the internet,
+						you must set a port and ensure that the port is not being used
+						by another application or database
 					</p>
 				</div>
 			)}

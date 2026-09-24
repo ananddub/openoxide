@@ -37,11 +37,7 @@ interface DomainsSectionProps {
 	previewTitle?: string;
 }
 
-/**
- * Domains surface — same grammar as Schedules / SSH Keys: `SectionHeader`
- * carrying the title and the create action, a quiet `Toolbar` (search + TLS
- * filter + grid/list switch) under it, then the list card or card grid.
- */
+/** Domains surface — same grammar as Schedules / SSH Keys: `SectionHeader` carrying the title and the create action, a quiet `Toolbar` (search + TLS filter + grid/list switch) under it, then the list card or card grid. */
 export function DomainsSection({
 	domains,
 	isLoading,

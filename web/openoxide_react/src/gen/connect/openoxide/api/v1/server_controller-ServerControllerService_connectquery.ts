@@ -2,19 +2,17 @@
 // @generated from file openoxide/api/v1/server_controller.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {ServerControllerService} from './server_controller_pb';
+import { ServerControllerService } from "./server_controller_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.ServerControllerService.TestDirectConnection
  */
-export const testDirectConnection =
-	ServerControllerService.method.testDirectConnection;
+export const testDirectConnection = ServerControllerService.method.testDirectConnection;
 
 /**
  * @generated from rpc openoxide.api.v1.ServerControllerService.TestConnection
  */
-export const testConnection =
-	ServerControllerService.method.testConnection;
+export const testConnection = ServerControllerService.method.testConnection;
 
 /**
  * @generated from rpc openoxide.api.v1.ServerControllerService.Audit

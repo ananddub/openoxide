@@ -2,15 +2,240 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
+// Sole swarm owner service; absorbs the former SwarmOperationsService; `server_id` selects the target engine, absent means the panel's local Docker daemon.
 service SwarmService {
-  rpc GetSettings(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateSettings(ResourceRequest) returns (ResourceResponse);
-  rpc ListNetworks(ResourceQuery) returns (ResourceListResponse);
-  rpc CreateNetwork(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateNetwork(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteNetwork(ResourceRequest) returns (Empty);
-  rpc ListServices(ResourceQuery) returns (ResourceListResponse);
-  rpc GetService(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateService(ResourceRequest) returns (ResourceResponse);
+  rpc GetSettings(SwarmGetSettingsRequest) returns (SwarmGetSettingsResponse);
+  rpc UpdateSettings(SwarmUpdateSettingsRequest) returns (SwarmUpdateSettingsResponse);
+  rpc ListNetworks(SwarmListNetworksRequest) returns (SwarmListNetworksResponse);
+  rpc CreateNetwork(SwarmCreateNetworkRequest) returns (SwarmCreateNetworkResponse);
+  rpc UpdateNetwork(SwarmUpdateNetworkRequest) returns (SwarmUpdateNetworkResponse);
+  rpc DeleteNetwork(SwarmDeleteNetworkRequest) returns (Empty);
+  rpc ListServices(SwarmListServicesRequest) returns (SwarmListServicesResponse);
+  rpc GetService(SwarmGetServiceRequest) returns (SwarmGetServiceResponse);
+  rpc UpdateService(SwarmUpdateServiceRequest) returns (SwarmUpdateServiceResponse);
+  rpc Info(SwarmInfoRequest) returns (SwarmInfoResponse);
+  rpc GetJoinTokens(SwarmGetJoinTokensRequest) returns (SwarmGetJoinTokensResponse);
+  rpc ListNodes(SwarmListNodesRequest) returns (SwarmListNodesResponse);
+  rpc PromoteNode(SwarmPromoteNodeRequest) returns (Empty);
+  rpc DemoteNode(SwarmDemoteNodeRequest) returns (Empty);
+  rpc UpdateNodeAvailability(SwarmUpdateNodeAvailabilityRequest) returns (Empty);
+  rpc RemoveNode(SwarmRemoveNodeRequest) returns (Empty);
+  rpc Leave(SwarmLeaveRequest) returns (Empty);
+  rpc Join(SwarmJoinRequest) returns (Empty);
+}
+
+enum SwarmNodeRole {
+  SWARM_NODE_ROLE_UNSPECIFIED = 0;
+  SWARM_NODE_ROLE_WORKER = 1;
+  SWARM_NODE_ROLE_MANAGER = 2;
+}
+
+enum SwarmRole {
+  SWARM_ROLE_UNSPECIFIED = 0;
+  SWARM_ROLE_WORKER = 1;
+  SWARM_ROLE_MANAGER = 2;
+}
+
+enum SwarmNodeAvailability {
+  SWARM_NODE_AVAILABILITY_UNSPECIFIED = 0;
+  SWARM_NODE_AVAILABILITY_ACTIVE = 1;
+  SWARM_NODE_AVAILABILITY_PAUSE = 2;
+  SWARM_NODE_AVAILABILITY_DRAIN = 3;
+}
+
+// kind "swarm_info": `docker swarm inspect` summary for one engine.
+message SwarmInfo {
+  string node_id = 1;
+  string node_addr = 2;
+  // Swarm state of the local node, e.g. "active"/"inactive"/"pending".
+  string local_node_state = 3;
+  bool control_available = 4;
+  int64 nodes = 5;
+  int64 managers = 6;
+}
+
+// kind "swarm_tokens": join tokens for one cluster.
+message SwarmJoinTokens {
+  string worker = 1;
+  string manager = 2;
+}
+
+// kind "swarm_node": one `docker node inspect` summary.
+message SwarmNode {
+  // Node id as issued by Docker (not a panel row id).
+  string id = 1;
+  string hostname = 2;
+  // Node status state, e.g. "ready"/"down".
+  string status = 3;
+  // Node availability as reported by Docker ("active"/"pause"/"drain").
+  string availability = 4;
+  // From `Spec.Role`, the authoritative config value.
+  SwarmNodeRole role = 5;
+  bool is_leader = 6;
+  // "reachable" | "unreachable" | "" (empty for workers).
+  string reachability = 7;
+  string ip_address = 8;
+  string engine_version = 9;
+}
+
+// Panel-level swarm settings document (not yet served by any controller; per-service swarm templates live on DatabaseService instead).
+message SwarmSettingsDocument {
+  // Opaque JSON document of cluster-level swarm defaults.
+  string settings_json = 1;
+}
+
+// Opaque `docker network` record (raw CLI JSON; fields are engine-dependent).
+message SwarmNetwork {
+  string id = 1;
+  string name = 2;
+  string network_json = 3;
+}
+
+// Opaque `docker service` record (raw CLI JSON; fields are engine-dependent).
+message SwarmServiceInfo {
+  string id = 1;
+  string name = 2;
+  string service_json = 3;
+}
+
+message SwarmGetSettingsRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message SwarmGetSettingsResponse {
+  SwarmSettingsDocument settings = 1;
+}
+
+message SwarmUpdateSettingsRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  SwarmSettingsDocument settings = 2 [(buf.validate.field).required = true];
+}
+
+message SwarmUpdateSettingsResponse {
+  SwarmSettingsDocument settings = 1;
+}
+
+message SwarmListNetworksRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message SwarmListNetworksResponse {
+  repeated SwarmNetwork networks = 1;
+}
+
+message SwarmCreateNetworkRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  string name = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  // Opaque JSON document of network options (driver, labels, ...).
+  optional string config_json = 3 [(buf.validate.field).string.max_len = 1048576];
+}
+
+message SwarmCreateNetworkResponse {
+  SwarmNetwork network = 1;
+}
+
+message SwarmUpdateNetworkRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  string network_id = 2 [(buf.validate.field).string.min_len = 1];
+  // Opaque JSON document of the network fields to replace.
+  string config_json = 3 [(buf.validate.field).string.max_len = 1048576];
+}
+
+message SwarmUpdateNetworkResponse {
+  SwarmNetwork network = 1;
+}
+
+message SwarmDeleteNetworkRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  string network_id = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+message SwarmListServicesRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message SwarmListServicesResponse {
+  repeated SwarmServiceInfo services = 1;
+}
+
+message SwarmGetServiceRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  string service_id = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+message SwarmGetServiceResponse {
+  SwarmServiceInfo service = 1;
+}
+
+message SwarmUpdateServiceRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  string service_id = 2 [(buf.validate.field).string.min_len = 1];
+  // Opaque JSON document of the service spec fields to replace.
+  string spec_json = 3 [(buf.validate.field).string.max_len = 1048576];
+}
+
+message SwarmUpdateServiceResponse {
+  SwarmServiceInfo service = 1;
+}
+
+message SwarmInfoRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message SwarmInfoResponse {
+  SwarmInfo info = 1;
+}
+
+message SwarmGetJoinTokensRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message SwarmGetJoinTokensResponse {
+  SwarmJoinTokens tokens = 1;
+}
+
+message SwarmListNodesRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message SwarmListNodesResponse {
+  repeated SwarmNode nodes = 1;
+}
+
+message SwarmPromoteNodeRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  string node_id = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+message SwarmDemoteNodeRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  string node_id = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+message SwarmUpdateNodeAvailabilityRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  string node_id = 2 [(buf.validate.field).string.min_len = 1];
+  SwarmNodeAvailability availability = 3 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+}
+
+message SwarmRemoveNodeRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  string node_id = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+// Force is required when a manager leaves; it resets the node so it can join another cluster.
+message SwarmLeaveRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  bool force = 2;
+}
+
+// Joins one server into another server's cluster in one shot: the target force-leaves any standalone swarm first, then joins with a VPN-aware advertise address.
+message SwarmJoinRequest {
+  // Server that should join the cluster.
+  int64 target_server_id = 1 [(buf.validate.field).int64.gt = 0];
+  // Server whose cluster to join; absent means the local engine's cluster.
+  optional int64 manager_server_id = 2 [(buf.validate.field).int64.gt = 0];
+  SwarmRole role = 3 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
 }

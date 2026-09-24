@@ -76,9 +76,7 @@ export function BuildSettingsCard({
 	const handleSaveBuildType = async () => {
 		setSavingBuild(true);
 		try {
-			// Build type rides UpdateApplication; the details ride the
-			// dedicated UpdateBuildConfig RPC (UpdateApplication has no
-			// dockerfile/publish-directory/version-pin fields at all).
+			// Build type rides UpdateApplication; the details ride the dedicated UpdateBuildConfig RPC (UpdateApplication has no dockerfile/publish-directory/version-pin fields at all).
 			await patchBuildType.mutateAsync({
 				id: app.id,
 				build_type:
@@ -121,9 +119,7 @@ export function BuildSettingsCard({
 			)}>
 			{!embedded && (
 				<div>
-					<h3 className="text-sm font-bold text-foreground">
-						Build Type
-					</h3>
+					<h3 className="text-sm font-bold text-foreground">Build Type</h3>
 					<p className="mt-1 text-xs text-muted-foreground">
 						Select the way of building your code
 					</p>

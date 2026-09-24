@@ -15,12 +15,16 @@ import {
 import {formatApiError} from '#/api/utils';
 
 export function RedirectsSection({app}: {app: any}) {
-	const {data: redirects = [], refetch} = useApplicationRedirectList(app.id);
+	const {data: redirects = [], refetch} = useApplicationRedirectList(
+		app.id,
+	);
 	const upsert = useApplicationRedirectUpsert();
 	const remove = useApplicationRedirectDelete();
 
 	const [view, setView] = useState<'list' | 'form'>('list');
-	const [editingId, setEditingId] = useState<number | undefined>(undefined);
+	const [editingId, setEditingId] = useState<number | undefined>(
+		undefined,
+	);
 	const [regex, setRegex] = useState('');
 	const [replacement, setReplacement] = useState('');
 	const [permanent, setPermanent] = useState(true);
@@ -112,9 +116,7 @@ export function RedirectsSection({app}: {app: any}) {
 				view === 'form' ? (
 					<Button
 						onClick={save}
-						disabled={
-							saving || !regex.trim() || !replacement.trim()
-						}
+						disabled={saving || !regex.trim() || !replacement.trim()}
 						className="h-9 px-4 text-sm">
 						{saving
 							? 'Saving...'
@@ -149,7 +151,7 @@ export function RedirectsSection({app}: {app: any}) {
 										className="flex items-start justify-between gap-3 rounded-xl border border-border bg-card p-4">
 										<div className="flex min-w-0 flex-col gap-2">
 											<div className="flex items-center gap-2">
-												<span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+												<span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-primary uppercase">
 													{redirect.permanent ? '301' : '302'}
 												</span>
 												<span className="truncate font-mono text-sm text-foreground">
@@ -193,9 +195,7 @@ export function RedirectsSection({app}: {app: any}) {
 				</SheetGroup>
 			) : (
 				<div className="flex flex-col gap-5">
-					<Field
-						label="Regex"
-						hint="The request pattern to match.">
+					<Field label="Regex" hint="The request pattern to match.">
 						<Input
 							placeholder="https://old.example.com/(.*)"
 							value={regex}

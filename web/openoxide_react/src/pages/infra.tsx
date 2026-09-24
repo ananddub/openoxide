@@ -1,29 +1,21 @@
-import {
-	createFileRoute,
-	useNavigate,
-	useSearch,
-} from '@tanstack/react-router';
+import {createFileRoute, useSearch} from '@tanstack/react-router';
 import type {ComponentType} from 'react';
-import {
-	Activity,
-	Forward,
-	GalleryVerticalEnd,
-	PieChart,
-} from 'lucide-react';
-import {GeistSwitch} from '#/components/shared/geist-switch';
 import {Titlebar} from '#/components/shared/titlebar';
+import {SectionHeader} from '#/components/settings/list-card';
 import {WebServerSettingsPage} from './settings/server';
 import {TraefikPanel} from './traefik';
 import {SwarmPanel} from './swarm';
 import {RequestsPanel} from './requests';
 
 /**
- * Web Server / Traefik / Swarm / Requests — one page, OpenShip-style
- * underline tabs (the same bar the server detail uses). The tab is URL
- * driven (`?tab=`) so every section deep-links; the sidebar carries a
- * single "Web Server" entry instead of four.
+ * Web Server / Traefik / Swarm / Requests — settings grammar: no in-page
+ * tab strip. The section switcher is the sidebar rail (`InfraContextNav`
+ * renders these rows on this route), the top bar carries the crumb, and
+ * the page paints nothing but the active section's content. The tab is
+ * URL driven (`?tab=`) — the same param the rail writes — so deep links,
+ * refresh and back/forward all keep the active section.
  *
- * The first two panels are scrollable content; Traefik/Requests are
+ * Web Server/Swarm are scrollable content; Traefik/Requests are
  * fixed-height workbenches (file tree + editor / live table), so the
  * content area switches between "page scroll" and "fill remaining
  * height" per tab.
@@ -34,9 +26,8 @@ type InfraTabId = 'web-server' | 'traefik' | 'swarm' | 'requests';
 type InfraTab = {
 	id: InfraTabId;
 	label: string;
-	icon: ComponentType<{className?: string}>;
 	component: ComponentType;
-	/** Page header shown above the panel; swaps with the tab. */
+	/** Section header title + description shown above the panel. */
 	title: string;
 	description: string;
 	/** Workbench tabs fill the viewport instead of scrolling the page. */
@@ -56,7 +47,6 @@ const INFRA_TABS: InfraTab[] = [
 	{
 		id: 'web-server',
 		label: 'Web Server',
-		icon: Activity,
 		component: WebServerSettingsPage,
 		title: 'Web Server',
 		description:
@@ -65,7 +55,6 @@ const INFRA_TABS: InfraTab[] = [
 	{
 		id: 'traefik',
 		label: 'Traefik',
-		icon: GalleryVerticalEnd,
 		component: TraefikPanel,
 		title: 'Traefik Configuration',
 		description:
@@ -75,7 +64,6 @@ const INFRA_TABS: InfraTab[] = [
 	{
 		id: 'swarm',
 		label: 'Swarm',
-		icon: PieChart,
 		component: SwarmPanel,
 		title: 'Docker Swarm',
 		description:
@@ -84,7 +72,6 @@ const INFRA_TABS: InfraTab[] = [
 	{
 		id: 'requests',
 		label: 'Requests',
-		icon: Forward,
 		component: RequestsPanel,
 		title: 'Request Log',
 		description: 'Live Traefik access log for routed traffic.',
@@ -100,46 +87,41 @@ function isInfraTab(value: unknown): value is InfraTabId {
 
 function InfraPage() {
 	const {tab} = useSearch({from: '/_app/infra'});
-	const navigate = useNavigate();
 	const active = INFRA_TABS.find(t => t.id === tab) ?? INFRA_TABS[0];
 	const Active = active.component;
 
-	const select = (id: InfraTabId) =>
-		void navigate({
-			to: '/infra',
-			search: {tab: id === INFRA_TABS[0].id ? undefined : id},
-			replace: true,
-		});
-	return (
-		<div className="flex h-full min-h-0 w-full flex-col">
-			{/* Titlebar (title swaps with tab) + tab strip — fixed; content scrolls below */}
-			<div className="mx-auto flex w-full max-w-[1920px] shrink-0 flex-col gap-4 px-4 pt-4">
-				<Titlebar breadcrumbs={[{label: active.title}]}>
-					{/* Geist Switch segment selector; the titlebar's closing
-					    hairline runs edge-to-edge below it. */}
-					<GeistSwitch
-						options={INFRA_TABS.map(({id, label, icon}) => ({
-							key: id,
-							label,
-							icon,
-						}))}
-						value={active.id}
-						onChange={select}
-					/>
-				</Titlebar>
-			</div>
+	const crumbs =
+		active.id === 'web-server'
+			? [{label: active.title}]
+			: [{label: 'Web Server', to: '/infra'}, {label: active.title}];
 
-			{active.fixedHeight ? (
-				<div className="mx-auto flex min-h-0 w-full max-w-[1920px] flex-1 flex-col px-4 pb-4">
+	if (active.fixedHeight) {
+		return (
+			<div className="flex h-full min-h-0 w-full flex-col">
+				<div className="mx-auto flex w-full max-w-[1920px] shrink-0 flex-col px-4 pt-4">
+					<Titlebar breadcrumbs={crumbs} />
+					<SectionHeader
+						title={active.title}
+						description={active.description}
+					/>
+				</div>
+				<div className="mx-auto flex min-h-0 w-full max-w-[1920px] flex-1 flex-col px-4 py-4">
 					<Active />
 				</div>
-			) : (
-				<div className="min-h-0 flex-1 overflow-y-auto">
-					<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
-						<Active />
-					</div>
-				</div>
-			)}
+			</div>
+		);
+	}
+
+	return (
+		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+			<Titlebar breadcrumbs={crumbs} />
+			<SectionHeader
+				title={active.title}
+				description={active.description}
+			/>
+			<div className="min-w-0">
+				<Active />
+			</div>
 		</div>
 	);
 }

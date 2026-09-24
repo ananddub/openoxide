@@ -75,9 +75,7 @@ export function buildMenu(
 		if (p.onAddDomain)
 			items.push(item(Globe, 'Add Domain', 'emerald', p.onAddDomain));
 		if (p.onAddSchedule)
-			items.push(
-				item(Clock, 'Add Schedule', 'purple', p.onAddSchedule),
-			);
+			items.push(item(Clock, 'Add Schedule', 'purple', p.onAddSchedule));
 		items.push(item(Database, 'Add Volume Backup', 'sky', p.onAddBackup));
 		items.push(
 			item(SquareTerminal, 'Terminal', 'emeraldBold', p.onOpenTerminal, {

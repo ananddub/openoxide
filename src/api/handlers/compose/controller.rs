@@ -2,14 +2,17 @@
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    Compose, ComposeDependencies, ComposeExport, ComposeMountRequest, ComposeOperation,
-    ComposeOperationRequest, ComposePatchRequest, ComposePreview, ComposeService,
-    ComposeServiceExt, ComposeWebhookToken, CreateComposeRequest, DeleteComposeRequest,
-    Empty, ExportComposeRequest, GetComposeRequest, ImportComposeRequest,
-    InstallTemplateRequest, ListComposesRequest, ListComposesResponse,
-    MoveComposeRequest, PreviewComposeRequest, ResourceListResponse, ResourceResponse,
-    ServiceMutationRequest, SetComposeSourceRequest, SetRawSourceRequest,
-    UpdateComposeRequest, UpdateComposeResourcesRequest, UploadComposeRequest,
+    Compose, ComposeCreateMountRequest, ComposeCreateMountResponse, ComposeCreatePatchRequest,
+    ComposeCreatePatchResponse, ComposeDependencies, ComposeExport, ComposeMountRequest,
+    ComposeOperation, ComposeOperationRequest, ComposePatchRequest, ComposeListMountsRequest,
+    ComposeListMountsResponse, ComposeListPatchesRequest, ComposeListPatchesResponse,
+    ComposePatchType, ComposePreview,
+    ComposeService, ComposeServiceExt, ComposeUpdateMountRequest, ComposeUpdateMountResponse,
+    ComposeUpdatePatchRequest, ComposeUpdatePatchResponse, ComposeWebhookToken,
+    CreateComposeRequest, DeleteComposeRequest, Empty, ExportComposeRequest, GetComposeRequest,
+    ImportComposeRequest, InstallTemplateRequest, ListComposesRequest, ListComposesResponse,
+    MoveComposeRequest, PreviewComposeRequest, ServiceMutationRequest, SetComposeSourceRequest,
+    SetRawSourceRequest, UpdateComposeRequest, UpdateComposeResourcesRequest, UploadComposeRequest,
 };
 use crate::services::compute::compose::crud::{
     ComposeOperationResponseDto, ComposeResponseDto, CreateComposeDto, PatchComposeDto,
@@ -392,10 +395,10 @@ impl ComposeService for ComposeController {
         let dto = InstallComposeTemplateDto {
             name: request.name.map(str::to_owned).unwrap_or_else(|| "compose".into()),
             description: None,
-            environment_id: 0,
-            server_id: None,
+            environment_id: request.environment_id,
+            server_id: request.server_id,
             compose_file: request.template.to_owned(),
-            env_var: None,
+            env_var: request.env_var.map(str::to_owned),
         };
         let item = self.management.install_template(dto).await.map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
@@ -493,43 +496,51 @@ impl ComposeService for ComposeController {
     async fn list_mounts<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ComposeMountRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, ComposeListMountsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ComposeListMountsResponse> + Send + use<'a>> {
         let items = self.mounts.list(request.compose_id).await.map_err(map_error)?;
-        let items = items.into_iter()
+        let mounts = items
+            .into_iter()
             .map(ComposeMountResponseDto::from)
-            .map(mount_to_resource)
+            .map(mount_to_proto)
             .collect();
-        Response::ok(ResourceListResponse { items, ..Default::default() })
+        Response::ok(ComposeListMountsResponse { mounts, ..Default::default() })
     }
 
     #[permission(Application, CanCreate)]
     async fn create_mount<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ComposeMountRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, ComposeCreateMountRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ComposeCreateMountResponse> + Send + use<'a>> {
+        let input = mount_request_from_create(&request);
         let item = self
             .mounts
-            .create(request.compose_id, request.to_owned_message())
+            .create(request.compose_id, input)
             .await
             .map_err(map_error)?;
-        Response::ok(mount_to_resource(ComposeMountResponseDto::from(item)))
+        Response::ok(ComposeCreateMountResponse {
+            mount: ::buffa::MessageField::some(mount_to_proto(ComposeMountResponseDto::from(item))),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanCreate)]
     async fn update_mount<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ComposeMountRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let id = request.id.ok_or_else(|| ConnectError::invalid_argument("mount id is required"))?;
+        request: ServiceRequest<'_, ComposeUpdateMountRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ComposeUpdateMountResponse> + Send + use<'a>> {
+        let input = mount_request_from_update(&request);
         let item = self
             .mounts
-            .update(request.compose_id, id, request.to_owned_message())
+            .update(request.compose_id, request.id, input)
             .await
             .map_err(map_error)?;
-        Response::ok(mount_to_resource(ComposeMountResponseDto::from(item)))
+        Response::ok(ComposeUpdateMountResponse {
+            mount: ::buffa::MessageField::some(mount_to_proto(ComposeMountResponseDto::from(item))),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanDelete)]
@@ -551,41 +562,47 @@ impl ComposeService for ComposeController {
     async fn list_patches<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ComposePatchRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, ComposeListPatchesRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ComposeListPatchesResponse> + Send + use<'a>> {
         let items = self.patches.list(request.compose_id).await.map_err(map_error)?;
-        let items = items.into_iter()
+        let patches = items
+            .into_iter()
             .map(ComposePatchResponseDto::from)
-            .map(patch_to_resource)
+            .map(patch_to_proto)
             .collect();
-        Response::ok(ResourceListResponse { items, ..Default::default() })
+        Response::ok(ComposeListPatchesResponse { patches, ..Default::default() })
     }
 
     #[permission(Application, CanCreate)]
     async fn create_patch<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ComposePatchRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let dto: UpsertComposePatchDto =
-            parse_patch_request(&request.patch_type, &request.payload)
-                .map_err(ConnectError::invalid_argument)?;
+        request: ServiceRequest<'_, ComposeCreatePatchRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ComposeCreatePatchResponse> + Send + use<'a>> {
+        let dto = patch_dto_from_request(&request)?;
         let item = self.patches.create(request.compose_id, dto).await.map_err(map_error)?;
-        Response::ok(patch_to_resource(ComposePatchResponseDto::from(item)))
+        Response::ok(ComposeCreatePatchResponse {
+            patch: ::buffa::MessageField::some(patch_to_proto(ComposePatchResponseDto::from(item))),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanCreate)]
     async fn update_patch<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ComposePatchRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let id = request.id.ok_or_else(|| ConnectError::invalid_argument("patch id is required"))?;
-        let dto: UpsertComposePatchDto =
-            parse_patch_request(&request.patch_type, &request.payload)
-                .map_err(ConnectError::invalid_argument)?;
-        let item = self.patches.update(request.compose_id, id, dto).await.map_err(map_error)?;
-        Response::ok(patch_to_resource(ComposePatchResponseDto::from(item)))
+        request: ServiceRequest<'_, ComposeUpdatePatchRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ComposeUpdatePatchResponse> + Send + use<'a>> {
+        let dto = patch_dto_from_request(&request)?;
+        let item = self
+            .patches
+            .update(request.compose_id, request.id, dto)
+            .await
+            .map_err(map_error)?;
+        Response::ok(ComposeUpdatePatchResponse {
+            patch: ::buffa::MessageField::some(patch_to_proto(ComposePatchResponseDto::from(item))),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanDelete)]
@@ -604,29 +621,94 @@ impl ComposeService for ComposeController {
     }
 }
 
-/// `ComposePatchRequest.payload` carries the patch body as JSON
-/// (`{file_path, enabled, content}`); `patch_type` is a separate
-/// SCREAMING_SNAKE_CASE enum string.
-fn parse_patch_request(
-    patch_type: &str,
-    payload: &str,
-) -> Result<UpsertComposePatchDto, String> {
-    #[derive(serde::Deserialize)]
-    struct PatchBody {
-        file_path: String,
-        #[serde(default = "enabled_default")]
-        enabled: bool,
-        content: String,
+/// Typed create-mount request → the string-based service `ComposeMountRequest`.
+fn mount_request_from_create(
+    request: &ServiceRequest<'_, ComposeCreateMountRequest>,
+) -> ComposeMountRequest {
+    ComposeMountRequest {
+        compose_id: request.compose_id,
+        id: None,
+        mount_type: compose_mount_type_to_spec_str(request.mount_type),
+        host_path: request.host_path.map(str::to_owned),
+        volume_name: request.volume_name.map(str::to_owned),
+        file_path: request.file_path.map(str::to_owned),
+        content: request.content.map(str::to_owned),
+        mount_path: request.mount_path.to_owned(),
     }
-    fn enabled_default() -> bool {
-        true
+}
+
+/// Typed update-mount request → the string-based service `ComposeMountRequest`.
+fn mount_request_from_update(
+    request: &ServiceRequest<'_, ComposeUpdateMountRequest>,
+) -> ComposeMountRequest {
+    ComposeMountRequest {
+        compose_id: request.compose_id,
+        id: Some(request.id),
+        mount_type: compose_mount_type_to_spec_str(request.mount_type),
+        host_path: request.host_path.map(str::to_owned),
+        volume_name: request.volume_name.map(str::to_owned),
+        file_path: request.file_path.map(str::to_owned),
+        content: request.content.map(str::to_owned),
+        mount_path: request.mount_path.to_owned(),
     }
-    let body: PatchBody = serde_json::from_str(payload).map_err(|e| e.to_string())?;
-    let parsed = patch_type.parse().map_err(|e: String| e)?;
+}
+
+/// Typed patch request → service `UpsertComposePatchDto`. Both create and
+/// update requests share the same field layout, so a single generic helper
+/// covers them via the trait the generated messages implement.
+fn patch_dto_from_request<R>(request: &R) -> Result<UpsertComposePatchDto, ConnectError>
+where
+    R: PatchRequestFields,
+{
+    let patch_type = request.patch_type();
+    let parsed = match patch_type {
+        buffa::EnumValue::Known(ComposePatchType::Delete) => "DELETE",
+        _ => "UPDATE",
+    };
     Ok(UpsertComposePatchDto {
-        patch_type: parsed,
-        file_path: body.file_path,
-        enabled: body.enabled,
-        content: body.content,
+        patch_type: parsed.parse().map_err(ConnectError::invalid_argument)?,
+        file_path: request.file_path(),
+        enabled: request.enabled(),
+        content: request.content(),
     })
+}
+
+/// Minimal accessor trait so `patch_dto_from_request` can read the identical
+/// fields off the create and update patch request views without duplicating
+/// the body.
+trait PatchRequestFields {
+    fn patch_type(&self) -> buffa::EnumValue<ComposePatchType>;
+    fn file_path(&self) -> String;
+    fn enabled(&self) -> bool;
+    fn content(&self) -> String;
+}
+
+impl PatchRequestFields for ServiceRequest<'_, ComposeCreatePatchRequest> {
+    fn patch_type(&self) -> buffa::EnumValue<ComposePatchType> {
+        self.patch_type
+    }
+    fn file_path(&self) -> String {
+        self.file_path.to_owned()
+    }
+    fn enabled(&self) -> bool {
+        self.enabled
+    }
+    fn content(&self) -> String {
+        self.content.to_owned()
+    }
+}
+
+impl PatchRequestFields for ServiceRequest<'_, ComposeUpdatePatchRequest> {
+    fn patch_type(&self) -> buffa::EnumValue<ComposePatchType> {
+        self.patch_type
+    }
+    fn file_path(&self) -> String {
+        self.file_path.to_owned()
+    }
+    fn enabled(&self) -> bool {
+        self.enabled
+    }
+    fn content(&self) -> String {
+        self.content.to_owned()
+    }
 }

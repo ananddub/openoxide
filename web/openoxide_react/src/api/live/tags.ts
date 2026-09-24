@@ -1,9 +1,9 @@
 import {
 	createServiceClient,
 	useConnectMutation,
-	useResourceListQuery,
+	useConnectQuery,
 } from './query';
-import {TagService} from '#/gen/connect/openoxide/api/v1/tag_pb';
+import {TagService, type Tag} from '#/gen/connect/openoxide/api/v1/tag_pb';
 
 export type TagPayload = {
 	id: number;
@@ -15,32 +15,54 @@ export type TagPayload = {
 
 const tagClient = createServiceClient(TagService);
 
-/** All tags (legacy live: useTagListAll). */
-export function useTagListAll() {
-	return useResourceListQuery<TagPayload>(['tags', 'list'], () =>
-		tagClient.listTags({}),
-	);
+function toTagPayload(tag: Tag): TagPayload {
+	return {
+		id: Number(tag.id),
+		name: tag.name,
+		color: tag.color,
+		organization_id: Number(tag.organizationId),
+		created_at: Number(tag.createdAt),
+	};
 }
 
-/** Create a tag (name + color in the payload). */
+/** All tags (legacy live: useTagListAll). */
+export function useTagListAll() {
+	return useConnectQuery<TagPayload[]>(['tags', 'list'], async () => {
+		const response = await tagClient.listTags({});
+		return response.tags.map(toTagPayload);
+	});
+}
+
+/** Create a tag. Organization scoping derives from the session on the
+ * server; `organization_id` is optional and only forwarded when set. */
 export function useTagCreate() {
 	return useConnectMutation(
-		(input: {name: string; color: string}) =>
-			tagClient.createTag({payload: JSON.stringify(input)}),
+		(input: {
+			name: string;
+			color: string;
+			organization_id?: number | bigint;
+		}) =>
+			tagClient.createTag({
+				name: input.name,
+				color: input.color,
+				organizationId:
+					input.organization_id !== undefined
+						? BigInt(input.organization_id)
+						: undefined,
+			}),
 		{invalidate: [['tags']]},
 	);
 }
 
-/** Update a tag (name + color in the payload). */
+/** Update a tag (absent fields keep their stored value). */
 export function useTagUpdate() {
 	return useConnectMutation(
-		(input: {id: number; name: string; color: string}) => {
-			const {id, ...body} = input;
-			return tagClient.updateTag({
-				id: BigInt(id),
-				payload: JSON.stringify(body),
-			});
-		},
+		(input: {id: number | bigint; name?: string; color?: string}) =>
+			tagClient.updateTag({
+				id: BigInt(input.id),
+				name: input.name,
+				color: input.color,
+			}),
 		{invalidate: [['tags'], ['projects']]},
 	);
 }
@@ -48,7 +70,7 @@ export function useTagUpdate() {
 /** Delete a tag by id. */
 export function useTagDelete() {
 	return useConnectMutation(
-		(id: number) => tagClient.deleteTag({id: BigInt(id)}),
+		(id: number | bigint) => tagClient.deleteTag({id: BigInt(id)}),
 		// Deleting a tag drops it from project cards, so refresh those too.
 		{invalidate: [['tags'], ['projects']]},
 	);

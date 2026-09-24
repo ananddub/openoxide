@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/settings.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {SettingsService} from './settings_pb';
+import { SettingsService } from "./settings_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.SettingsService.GetSettings

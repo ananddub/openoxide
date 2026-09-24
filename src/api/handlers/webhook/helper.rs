@@ -1,13 +1,52 @@
 use connectrpc::ConnectError;
 
+use crate::api::connect::generated::openoxide::api::v1::{
+    IncomingWebhookDispatchOutcome as IncomingWebhookDispatchOutcomeProto,
+    WebhookProviderType as ProtoWebhookProviderType,
+};
 use crate::services::integrations::git::webhooks::{
-    GitProviderKind, WebhookCredential, verify_hmac_sha256, verify_token,
+    DispatchOutcome, GitProviderKind, WebhookCredential, verify_hmac_sha256, verify_token,
 };
 
-pub fn parse_provider(value: &str) -> Result<GitProviderKind, ConnectError> {
-    value
-        .parse()
-        .map_err(|e: String| ConnectError::not_found(e))
+pub fn parse_provider(
+    value: ::buffa::EnumValue<ProtoWebhookProviderType>,
+) -> Result<GitProviderKind, ConnectError> {
+    match value {
+        ::buffa::EnumValue::Known(ProtoWebhookProviderType::Github) => Ok(GitProviderKind::Github),
+        ::buffa::EnumValue::Known(ProtoWebhookProviderType::Gitlab) => Ok(GitProviderKind::Gitlab),
+        ::buffa::EnumValue::Known(ProtoWebhookProviderType::Gitea) => Ok(GitProviderKind::Gitea),
+        ::buffa::EnumValue::Known(ProtoWebhookProviderType::Bitbucket) => {
+            Ok(GitProviderKind::Bitbucket)
+        }
+        _ => Err(ConnectError::invalid_argument("unsupported webhook provider")),
+    }
+}
+
+pub fn outcome_to_proto(outcome: DispatchOutcome) -> IncomingWebhookDispatchOutcomeProto {
+    IncomingWebhookDispatchOutcomeProto {
+        event_type: outcome.event_type,
+        provider: outcome.provider,
+        owner: outcome.owner,
+        repository: outcome.repository,
+        applications_queued: outcome.applications_queued as i64,
+        compose_projects_queued: outcome.compose_projects_queued as i64,
+        skipped_by_watch_paths: outcome.skipped_by_watch_paths as i64,
+        already_running: outcome.already_running as i64,
+        pull_request_number: outcome.pull_request_number,
+        pull_request_action: outcome.pull_request_action,
+        source_branch: outcome.source_branch,
+        source_owner: outcome.source_owner,
+        source_repository: outcome.source_repository,
+        target_branch: outcome.target_branch,
+        commit: outcome.commit,
+        author: outcome.author,
+        previews_created: outcome.previews_created as i64,
+        previews_redeployed: outcome.previews_redeployed as i64,
+        previews_removed: outcome.previews_removed as i64,
+        previews_skipped_permission: outcome.previews_skipped_permission as i64,
+        previews_skipped_limit: outcome.previews_skipped_limit as i64,
+        ..Default::default()
+    }
 }
 
 pub fn verify_request(

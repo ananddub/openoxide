@@ -98,12 +98,7 @@ type Props = {
 	domains: OverviewDomainItemPayload[];
 };
 
-/**
- * One project row inside a card, laid out like OpenShip's dashboard
- * ProjectCard: icon tile, name + domain, meta badges (stack, hosting,
- * source), status pill, relative time, trailing arrow. The whole row is a
- * stretched link.
- */
+/** One project row inside a card, laid out like OpenShip's dashboard ProjectCard: icon tile, name + domain, meta badges (stack, hosting, source), status pill, relative time, trailing arrow. The whole row is a stretched link. */
 export function ProjectRow({project, services, domains}: Props) {
 	const svc = primaryService(services);
 	const pill = statusPill(services);

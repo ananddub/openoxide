@@ -31,11 +31,7 @@ interface SchedulesTabProps {
 	onRefresh?: () => void;
 }
 
-/**
- * Service → Schedules — the SSH Keys grammar: section title with the one
- * primary action, toolbar (search + grid/list) and cron jobs as grid cards
- * or one bordered list card.
- */
+/** Service → Schedules — the SSH Keys grammar: section title with the one primary action, toolbar (search + grid/list) and cron jobs as grid cards or one bordered list card. */
 export function SchedulesTab({
 	app,
 	schedules: passedSchedules,

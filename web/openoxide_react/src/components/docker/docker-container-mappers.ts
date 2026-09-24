@@ -1,9 +1,6 @@
 import type {GlobalContainerItem} from './docker-inspect-modal';
 
-/**
- * Transform raw Docker / running-deployment API rows into the unified
- * GlobalContainerItem shape consumed by the Docker page.
- */
+/** Transform raw Docker / running-deployment API rows into the unified GlobalContainerItem shape consumed by the Docker page. */
 export function mapGlobalContainers(
 	rawDockerContainers: unknown,
 	rawRunning: unknown,

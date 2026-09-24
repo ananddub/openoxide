@@ -13,10 +13,7 @@ export interface LogLevelOption {
 	label: string;
 }
 
-/**
- * Shared live-log control bar: stream/pause toggle, timestamps checkbox,
- * optional tail-lines select, refresh and download buttons.
- */
+/** Shared live-log control bar: stream/pause toggle, timestamps checkbox, optional tail-lines select, refresh and download buttons. */
 export function LogStreamControls({
 	isLive,
 	onToggleLive,

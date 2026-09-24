@@ -5,11 +5,7 @@ import {
 	TooltipTrigger,
 } from '#/components/ui/tooltip';
 
-/**
- * House tooltip for icon-only controls — the dark bubble instead of the
- * slow, unstyled browser `title`. Wrap a single element; keep its
- * `aria-label` for screen readers and drop the `title`.
- */
+/** House tooltip for icon-only controls — the dark bubble instead of the slow, unstyled browser `title`. Wrap a single element; keep its `aria-label` for screen readers and drop the `title`. */
 export function IconTooltip({
 	label,
 	side = 'top',

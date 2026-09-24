@@ -61,7 +61,9 @@ export function DatabaseAdvancedMetadata({database, onUpdated}: any) {
 					placeholder="my-primary-db"
 				/>
 			</Field>
-			<Field label="Description" hint="Optional notes about what this database holds.">
+			<Field
+				label="Description"
+				hint="Optional notes about what this database holds.">
 				<Textarea
 					value={description}
 					onChange={event => setDescription(event.target.value)}

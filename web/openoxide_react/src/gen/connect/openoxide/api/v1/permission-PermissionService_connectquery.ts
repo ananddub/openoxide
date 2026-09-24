@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/permission.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {PermissionService} from './permission_pb';
+import { PermissionService } from "./permission_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.PermissionService.ListPermissions
@@ -60,8 +60,7 @@ export const deleteGroup = PermissionService.method.deleteGroup;
 export const listPolicies = PermissionService.method.listPolicies;
 
 /**
- * Effective actions for the calling user inside the active organization
- * (auth-only: every member may inspect their own grants to gate the UI).
+ * Effective actions for the calling user inside the active organization (auth-only: every member may inspect their own grants to gate the UI).
  *
  * @generated from rpc openoxide.api.v1.PermissionService.GetMyPermissions
  */
@@ -70,8 +69,7 @@ export const getMyPermissions = PermissionService.method.getMyPermissions;
 /**
  * @generated from rpc openoxide.api.v1.PermissionService.AssignMemberGroup
  */
-export const assignMemberGroup =
-	PermissionService.method.assignMemberGroup;
+export const assignMemberGroup = PermissionService.method.assignMemberGroup;
 
 /**
  * @generated from rpc openoxide.api.v1.PermissionService.ListMembers
@@ -116,5 +114,4 @@ export const cancelInvite = PermissionService.method.cancelInvite;
 /**
  * @generated from rpc openoxide.api.v1.PermissionService.ReplaceUserPolicies
  */
-export const replaceUserPolicies =
-	PermissionService.method.replaceUserPolicies;
+export const replaceUserPolicies = PermissionService.method.replaceUserPolicies;

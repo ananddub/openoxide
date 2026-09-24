@@ -15,8 +15,7 @@ export type OrganizationPayload = {
 	owner_id: bigint;
 	created_at: bigint;
 	updated_at: bigint;
-	// Caller's effective role in this organization (ListOrganizations):
-	// OWNER / ADMIN / MEMBER.
+	// Caller's effective role in this organization (ListOrganizations): OWNER / ADMIN / MEMBER.
 	role?: string;
 };
 
@@ -147,8 +146,7 @@ export function useUserUpdate() {
 				lastName: input.last_name,
 				avatar: input.avatar,
 			}),
-		// The profile query is keyed ['auth', 'profile'] — the same prefix
-		// the table-watch USERS entry invalidates.
+		// The profile query is keyed ['auth', 'profile'] — the same prefix the table-watch USERS entry invalidates.
 		{invalidate: [['auth']]},
 	);
 }
@@ -162,11 +160,7 @@ export type ProfilePayload = {
 	avatar?: string;
 };
 
-/**
- * Signed-in user's profile (the former zustand `profile` slice data).
- * Key prefix `['auth']` matches the table-watch USERS entry, so profile
- * updates refetch automatically.
- */
+/** Signed-in user's profile (the former zustand `profile` slice data). Key prefix `['auth']` matches the table-watch USERS entry, so profile updates refetch automatically. */
 export function useProfile() {
 	return useConnectQuery<ProfilePayload>(['auth', 'profile'], async () => {
 		const user = await authClient.whoAmI({});

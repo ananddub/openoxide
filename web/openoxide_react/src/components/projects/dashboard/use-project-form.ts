@@ -2,13 +2,11 @@ import * as React from 'react';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {useProjectCreate, useProjectUpdate} from '#/api/live';
-import {getTagsFromDescription} from '#/hooks/projects/use-projects-list';
+import {getTagsFromDescription} from '#/utils/project-tags';
 
 type Project = Record<string, any>;
 
-/**
- * Owns the create/update project form state, tag parsing and submission.
- */
+/** Owns the create/update project form state, tag parsing and submission. */
 export function useProjectForm({
 	project,
 	isOpen,

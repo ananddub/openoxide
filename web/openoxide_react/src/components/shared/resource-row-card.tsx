@@ -2,10 +2,7 @@ import React from 'react';
 import {Card} from '#/components/ui/card';
 import {Badge} from '#/components/ui/badge';
 
-/**
- * Horizontal provider/resource card row: leading icon, bold name with an
- * optional outline badge, extra meta content and trailing actions.
- */
+/** Horizontal provider/resource card row: leading icon, bold name with an optional outline badge, extra meta content and trailing actions. */
 export function ResourceRowCard({
 	icon,
 	name,

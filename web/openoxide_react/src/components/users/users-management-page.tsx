@@ -22,13 +22,7 @@ import {MembersCard} from './management/members-card';
 import {InvitationsCard} from './management/invitations-card';
 import {TeamDialogs} from './management/dialogs';
 
-/**
- * Settings → Team — the resource-page grammar: a section title, then a
- * toolbar (search + role filter + grid/list), then the member grid or one
- * bordered list card of avatar rows, then pending invitations under a quiet
- * label. All state, mutations and dialogs live in ./management so this stays
- * a thin composition.
- */
+/** Settings → Team — the resource-page grammar: a section title, then a toolbar (search + role filter + grid/list), then the member grid or one bordered list card of avatar rows, then pending invitations under a quiet label. All state, mutations and dialogs live in ./management so this stays a thin composition. */
 export function UsersManagementPage() {
 	const ctl = useUsersManagement();
 	const [view, setView] = useListView('settings-team-view');

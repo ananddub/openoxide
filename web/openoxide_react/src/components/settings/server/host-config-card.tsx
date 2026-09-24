@@ -21,7 +21,7 @@ export function HostConfigCard() {
 
 	if (!canManage) {
 		return (
-			<p className="rounded-xl bg-card px-4 py-3 text-xs text-muted-foreground ring-1 ring-border/50">
+			<p className="rounded-xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground">
 				Host configuration is managed by the organization owner (requires
 				org:write).
 			</p>
@@ -29,7 +29,7 @@ export function HostConfigCard() {
 	}
 
 	return (
-		<div className="overflow-hidden rounded-xl bg-card ring-1 ring-border/50">
+		<div className="overflow-hidden rounded-xl border border-border bg-card">
 			<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
 				<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
 					<Shield className="size-[18px] text-muted-foreground" />

@@ -19,7 +19,7 @@ import {
 import {ListRow, RowTile, ViewCard} from '#/components/settings/list-card';
 import {CronChip} from '#/components/shared/cron-chip';
 import {cn} from '#/api/utils';
-import type {Schedule} from '#/hooks/use-schedules';
+import type {Schedule} from '#/hooks/schedules/use-schedules';
 
 interface ScheduleItemProps {
 	schedule: Schedule;
@@ -49,7 +49,7 @@ function Chips({
 		<>
 			<CronChip expression={s.cron_expression} />
 			{s.shell_type && (
-				<span className="shrink-0 rounded-md bg-foreground/[0.05] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+				<span className="shrink-0 rounded-md bg-foreground/[0.05] px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
 					{s.shell_type}
 				</span>
 			)}

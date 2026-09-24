@@ -1,10 +1,5 @@
 import {useEffect, useRef} from 'react';
-import {
-	ArrowUpDown,
-	LayoutGrid,
-	List,
-	Search,
-} from 'lucide-react';
+import {ArrowUpDown, LayoutGrid, List, Search} from 'lucide-react';
 import {Input} from '#/components/ui/input';
 import {
 	Select,
@@ -48,8 +43,7 @@ export function ProjectsToolbar({
 }: ProjectsToolbarProps) {
 	const searchRef = useRef<HTMLInputElement>(null);
 
-	// Vercel's `/` shortcut: focus search from anywhere unless already
-	// typing in a field.
+	// Vercel's `/` shortcut: focus search from anywhere unless already typing in a field.
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -102,7 +96,9 @@ export function ProjectsToolbar({
 				/>
 
 				{/* Sort */}
-				<Select value={sortBy} onValueChange={val => val && onSortChange(val)}>
+				<Select
+					value={sortBy}
+					onValueChange={val => val && onSortChange(val)}>
 					<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
 						<div className="flex min-w-0 items-center gap-2">
 							<ArrowUpDown className="size-3.5 shrink-0 text-muted-foreground" />
@@ -142,7 +138,7 @@ export function ProjectsToolbar({
 						)}>
 						<List className="size-3.5" />
 					</button>
-					</div>
+				</div>
 			</div>
 		</div>
 	);

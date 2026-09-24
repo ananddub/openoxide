@@ -1,12 +1,7 @@
 import {useRef, type ComponentType, type KeyboardEvent} from 'react';
 import {cn} from '#/api/utils';
 
-/**
- * Geist "Switch" (https://vercel.com/geist/switch) — a segmented selector
- * for a small set (2–3, at most a handful) of mutually exclusive options.
- * Radio semantics: one segment is checked, Arrow keys cycle the selection.
- * The active segment inverts (solid foreground fill), the rest stay quiet.
- */
+/** Geist "Switch" (https://vercel.com/geist/switch) — a segmented selector for a small set (2–3, at most a handful) of mutually exclusive options. Radio semantics: one segment is checked, Arrow keys cycle the selection. The active segment inverts (solid foreground fill), the rest stay quiet. */
 
 export type SwitchOption<K extends string> = {
 	key: K;

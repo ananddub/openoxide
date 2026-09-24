@@ -12,8 +12,11 @@ import {toast} from 'sonner';
 import {useDeploymentItems} from '#/api/live';
 import {createServiceClient} from '#/api/live/query';
 import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
-import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
-import {isBuildActive, isBuildSucceeded} from '#/components/projects/detail/deployments/build-status';
+import {extractLogLines} from '#/utils/log-lines';
+import {
+	isBuildActive,
+	isBuildSucceeded,
+} from '#/components/projects/detail/deployments/build-status';
 import {
 	Collapsible,
 	CollapsibleTrigger,
@@ -65,9 +68,7 @@ function StatusIcon({status}: {status: string}) {
 			<CircleCheck className="size-[18px] fill-blue-500 text-white" />
 		);
 	if (s.includes('ERROR') || s.includes('FAIL') || s.includes('CRASH'))
-		return (
-			<CircleX className="size-[18px] fill-red-500 text-white" />
-		);
+		return <CircleX className="size-[18px] fill-red-500 text-white" />;
 	if (isBuildActive({status: s}))
 		return <Loader className="size-[18px] animate-spin text-amber-500" />;
 	return <CircleDashed className="size-[18px] text-neutral-500" />;
@@ -78,16 +79,8 @@ interface BuildLogsSectionProps {
 	kind: LogsKind;
 }
 
-/**
- * Latest build/deploy log for this entity, embedded in the architecture
- * card — a faithful port of the reference build-logs panel: chevron +
- * plain-case header with duration and status circle, copy/line-count +
- * find-in-logs toolbar, and a full-bleed black mono log surface.
- */
-export function BuildLogsSection({
-	entityId,
-	kind,
-}: BuildLogsSectionProps) {
+/** Latest build/deploy log for this entity, embedded in the architecture card — a faithful port of the reference build-logs panel: chevron + plain-case header with duration and status circle, copy/line-count + find-in-logs toolbar, and a full-bleed black mono log surface. */
+export function BuildLogsSection({entityId, kind}: BuildLogsSectionProps) {
 	const [open, setOpen] = useState(false);
 	const [query, setQuery] = useState('');
 	const [logs, setLogs] = useState('');
@@ -106,8 +99,7 @@ export function BuildLogsSection({
 
 	const deploymentId = latest ? Number(latest.id ?? 0) : 0;
 
-	// Auto-follow the build: open the strip when a build starts, close it on
-	// success, and leave it open when the build failed so the error reads.
+	// Auto-follow the build: open the strip when a build starts, close it on success, and leave it open when the build failed so the error reads.
 	const watched = useRef<number | null>(null);
 	useEffect(() => {
 		if (!deploymentId) return;
@@ -253,49 +245,48 @@ export function BuildLogsSection({
 								{lines.length === 1 ? '' : 's'}
 							</span>
 							<div className="relative ml-auto w-72">
-								<Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+								<Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
 								<input
 									ref={searchRef}
 									value={query}
 									onChange={e => setQuery(e.target.value)}
 									placeholder="Find in logs"
-									className="h-8 w-full rounded-lg border border-border bg-muted/30 pl-8 pr-14 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-neutral-500"
+									className="h-8 w-full rounded-lg border border-border bg-muted/30 pr-14 pl-8 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-neutral-500"
 								/>
-								<kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+								<kbd className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
 									Ctrl+F
 								</kbd>
 							</div>
 						</div>
 
 						{/* Theme-aware log surface — bordered, no inset */}
-						<div className={cn('max-h-[420px] overflow-auto border-x border-b border-border', LOG_SURFACE_CLS)}>
+						<div
+							className={cn(
+								'max-h-[420px] overflow-auto border-x border-b border-border',
+								LOG_SURFACE_CLS,
+							)}>
 							{lines.length === 0 && isLoading ? (
 								<p className="flex items-center gap-2 py-2 font-mono text-[12.5px] text-muted-foreground">
 									<Loader className="size-3.5 animate-spin" />
 									Loading build logs...
 								</p>
-								) : visibleLines.length > 0 ? (
-									<div className="flex flex-col">
-										{visibleLines.map((line, i) => {
-											const [ts, rest] =
-												splitTimestamp(line);
-											return (
-												<span
-													key={i}
-													className={cn(
-														'break-all whitespace-pre-wrap font-mono text-[12.5px] leading-[25px]',
-														lineTone(line),
-													)}>
-													{ts && (
-														<span className={LOG_TS_CLS}>
-															{ts}
-														</span>
-													)}
-													{rest || ' '}
-												</span>
-											);
-										})}
-									</div>
+							) : visibleLines.length > 0 ? (
+								<div className="flex flex-col">
+									{visibleLines.map((line, i) => {
+										const [ts, rest] = splitTimestamp(line);
+										return (
+											<span
+												key={i}
+												className={cn(
+													'font-mono text-[12.5px] leading-[25px] break-all whitespace-pre-wrap',
+													lineTone(line),
+												)}>
+												{ts && <span className={LOG_TS_CLS}>{ts}</span>}
+												{rest || ' '}
+											</span>
+										);
+									})}
+								</div>
 							) : (
 								<p className="py-2 font-mono text-[12.5px] text-muted-foreground">
 									No log line matches "{query.trim()}".
@@ -305,8 +296,7 @@ export function BuildLogsSection({
 					</div>
 				) : (
 					<p className="px-5 pb-4 text-[13px] text-muted-foreground">
-						Build logs will appear here after the first
-						deployment.
+						Build logs will appear here after the first deployment.
 					</p>
 				)}
 			</CollapsibleContent>

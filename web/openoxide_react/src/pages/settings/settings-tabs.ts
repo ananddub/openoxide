@@ -7,7 +7,11 @@ import {AuditLogsSettingsPage} from './audit-logs';
 import {NotificationsPage} from './notifications';
 
 export type SettingsTabId =
-	'account' | 'team' | 'groups' | 'audit' | 'notifications';
+	| 'account'
+	| 'team'
+	| 'groups'
+	| 'audit'
+	| 'notifications';
 
 export type SettingsTab = {
 	id: SettingsTabId;

@@ -19,7 +19,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import type {Schedule} from '#/hooks/use-schedules';
+import type {Schedule} from '#/hooks/schedules/use-schedules';
 import {ScheduleCard, ScheduleListItem} from './schedule-list-item';
 
 interface SchedulesListProps {
@@ -35,10 +35,7 @@ interface SchedulesListProps {
 const STATUS_FILTERS = ['All', 'Enabled', 'Disabled'] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
 
-/**
- * Automated schedules surface — the SSH Keys grammar: toolbar (search +
- * status filter + grid/list) above grid cards or one bordered list card.
- */
+/** Automated schedules surface — the SSH Keys grammar: toolbar (search + status filter + grid/list) above grid cards or one bordered list card. */
 export function SchedulesList({
 	schedules,
 	isLoading,

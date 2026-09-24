@@ -3,11 +3,7 @@ import {Check} from 'lucide-react';
 import {Label} from '#/components/ui/label';
 import {cn} from '#/api/utils';
 
-/**
- * Building blocks for the "Add Service" sheet grammar: a checkpoint row that
- * tells you what is being asked, radio-style choice rows, and a field that
- * gives its control room to breathe.
- */
+/** Building blocks for the "Add Service" sheet grammar: a checkpoint row that tells you what is being asked, radio-style choice rows, and a field that gives its control room to breathe. */
 
 export type WizardStep = {id: string; label: string};
 
@@ -58,7 +54,7 @@ export function StepCheckpoints({
 /** Wrapper so each step slides in; the step itself owns its spacing. */
 export function StepBody({children}: {children: ReactNode}) {
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-right-4 duration-200 ease-out">
+		<div className="animate-in duration-200 ease-out fade-in-0 slide-in-from-right-4">
 			{children}
 		</div>
 	);
@@ -107,7 +103,7 @@ export function OptionRow({
 				)}
 			</span>
 			{selected && (
-				<span className="flex size-5 shrink-0 animate-in zoom-in-75 duration-150 items-center justify-center rounded-full bg-primary text-primary-foreground">
+				<span className="flex size-5 shrink-0 animate-in items-center justify-center rounded-full bg-primary text-primary-foreground duration-150 zoom-in-75">
 					<Check className="size-3" />
 				</span>
 			)}

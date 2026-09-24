@@ -23,11 +23,7 @@ interface DatabaseDeploymentsTabProps {
 	) => Promise<void>;
 }
 
-/**
- * Read-only provisioning/deployment history for a database. Deploy /
- * redeploy / start / stop live on the General tab, so this view only
- * carries the audit log plus its Cancel/Clear controls.
- */
+/** Read-only provisioning/deployment history for a database. Deploy / redeploy / start / stop live on the General tab, so this view only carries the audit log plus its Cancel/Clear controls. */
 export function DatabaseDeploymentsTab({
 	dbId,
 	kind = 'postgres',

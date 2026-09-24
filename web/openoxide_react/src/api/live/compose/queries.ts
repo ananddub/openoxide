@@ -1,5 +1,5 @@
 import {useActiveOrgId, useConnectQuery} from '../query';
-import type {OverviewServiceItemPayload} from '../overview';
+import {OverviewServiceType} from '#/gen/connect/openoxide/api/v1/overview_pb';
 import {composeClient, overviewClient} from './shared';
 import {
 	toComposePayload,
@@ -7,12 +7,7 @@ import {
 	type ComposePayload,
 } from './types';
 
-/**
- * Organization-wide compose list (legacy app-store `composes` slice).
- * There is no org-wide Compose RPC, so this derives from the overview
- * services stream and is keyed under the `composes` prefix so
- * SERVICE_COMPOSE table changes invalidate it.
- */
+/** Organization-wide compose list (legacy app-store `composes` slice). There is no org-wide Compose RPC, so this derives from the overview services stream and is keyed under the `composes` prefix so SERVICE_COMPOSE table changes invalidate it. */
 export function useComposeList() {
 	const orgId = useActiveOrgId();
 	return useConnectQuery<ComposeItemPayload[]>(
@@ -21,26 +16,25 @@ export function useComposeList() {
 			const response = await overviewClient.listOrganizationServices({
 				organizationId: orgId,
 			});
-			return response.items
-				.map(
-					item => JSON.parse(item.payload) as OverviewServiceItemPayload,
+			return response.services
+				.filter(
+					service => service.serviceType === OverviewServiceType.COMPOSE,
 				)
-				.filter(service => service.service_type === 'COMPOSE')
 				.map(
 					service =>
 						({
 							id: Number(service.id),
 							name: service.name,
-							project_id: Number(service.project_id),
-							environment_id: Number(service.environment_id),
+							project_id: Number(service.projectId),
+							environment_id: Number(service.environmentId),
 							status: service.status,
 							server_id:
-								service.server_id === null
+								service.serverId === undefined
 									? undefined
-									: Number(service.server_id),
-							server_name: service.server_name ?? undefined,
-							created_at: Number(service.created_at),
-							updated_at: Number(service.created_at),
+									: Number(service.serverId),
+							server_name: service.serverName,
+							created_at: Number(service.createdAt),
+							updated_at: Number(service.createdAt),
 						}) satisfies ComposeItemPayload,
 				);
 		},

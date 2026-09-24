@@ -149,7 +149,7 @@ export function CertificateRenewSheet({
 												</p>
 											)}
 											{item.error && (
-												<p className="mt-0.5 break-all text-[13px] text-destructive">
+												<p className="mt-0.5 text-[13px] break-all text-destructive">
 													{item.error}
 												</p>
 											)}

@@ -114,10 +114,7 @@ function KebabMenu({
 	);
 }
 
-/**
- * DNS providers surface — Projects grammar: grid cards or one bordered
- * list card, matching the SSH Keys page.
- */
+/** DNS providers surface — Projects grammar: grid cards or one bordered list card, matching the SSH Keys page. */
 export function DnsProvidersList({
 	providers,
 	isLoading,

@@ -162,7 +162,7 @@ export function NotificationChannelCard(props: ChannelProps) {
 				<div className="flex min-w-0 flex-wrap items-center gap-1.5">
 					<ChannelChips channel={channel} failed={!!failed} />
 				</div>
-				<div className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+				<div className="shrink-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
 					<ChannelMenu
 						channel={channel}
 						testing={testing}

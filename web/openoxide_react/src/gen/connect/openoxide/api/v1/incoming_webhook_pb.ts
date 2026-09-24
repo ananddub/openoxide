@@ -2,73 +2,214 @@
 // @generated from file openoxide/api/v1/incoming_webhook.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {
-	GenFile,
-	GenMessage,
-	GenService,
-} from '@bufbuild/protobuf/codegenv2';
-import {
-	fileDesc,
-	messageDesc,
-	serviceDesc,
-} from '@bufbuild/protobuf/codegenv2';
-import type {OperationResultSchema} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
-import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
-import type {Message} from '@bufbuild/protobuf';
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { WebhookProviderType } from "./webhook_pb";
+import { file_openoxide_api_v1_webhook } from "./webhook_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/incoming_webhook.proto.
  */
-export const file_openoxide_api_v1_incoming_webhook: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'CidvcGVub3hpZGUvYXBpL3YxL2luY29taW5nX3dlYmhvb2sucHJvdG8SEG9wZW5veGlkZS5hcGkudjEirQEKFkluY29taW5nV2ViaG9va1JlcXVlc3QSOQoIcHJvdmlkZXIYASABKAlCJ7pIJHIiUgZnaXRodWJSBmdpdGxhYlIFZ2l0ZWFSCWJpdGJ1Y2tldBIcCgtwcm92aWRlcl9pZBgCIAEoA0IHukgEIgIgABIdCgdwYXlsb2FkGAMgASgJQgy6SAlyBxABGICAgAUSGwoJc2lnbmF0dXJlGAQgASgJQgi6SAVyAxiACDJ2ChZJbmNvbWluZ1dlYmhvb2tTZXJ2aWNlElwKDUhhbmRsZVdlYmhvb2sSKC5vcGVub3hpZGUuYXBpLnYxLkluY29taW5nV2ViaG9va1JlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdGIGcHJvdG8z',
-		[file_openoxide_api_v1_common, file_buf_validate_validate],
-	);
+export const file_openoxide_api_v1_incoming_webhook: GenFile = /*@__PURE__*/
+  fileDesc("CidvcGVub3hpZGUvYXBpL3YxL2luY29taW5nX3dlYmhvb2sucHJvdG8SEG9wZW5veGlkZS5hcGkudjEitwEKFkluY29taW5nV2ViaG9va1JlcXVlc3QSQwoIcHJvdmlkZXIYASABKA4yJS5vcGVub3hpZGUuYXBpLnYxLldlYmhvb2tQcm92aWRlclR5cGVCCrpIB4IBBBABIAASHAoLcHJvdmlkZXJfaWQYAiABKANCB7pIBCICIAASHQoHcGF5bG9hZBgDIAEoCUIMukgJcgcQARiAgIAFEhsKCXNpZ25hdHVyZRgEIAEoCUIIukgFcgMYgAginQYKHkluY29taW5nV2ViaG9va0Rpc3BhdGNoT3V0Y29tZRISCgpldmVudF90eXBlGAEgASgJEhUKCHByb3ZpZGVyGAIgASgJSACIAQESEgoFb3duZXIYAyABKAlIAYgBARIXCgpyZXBvc2l0b3J5GAQgASgJSAKIAQESGwoTYXBwbGljYXRpb25zX3F1ZXVlZBgFIAEoAxIfChdjb21wb3NlX3Byb2plY3RzX3F1ZXVlZBgGIAEoAxIeChZza2lwcGVkX2J5X3dhdGNoX3BhdGhzGAcgASgDEhcKD2FscmVhZHlfcnVubmluZxgIIAEoAxIgChNwdWxsX3JlcXVlc3RfbnVtYmVyGAkgASgJSAOIAQESIAoTcHVsbF9yZXF1ZXN0X2FjdGlvbhgKIAEoCUgEiAEBEhoKDXNvdXJjZV9icmFuY2gYCyABKAlIBYgBARIZCgxzb3VyY2Vfb3duZXIYDCABKAlIBogBARIeChFzb3VyY2VfcmVwb3NpdG9yeRgNIAEoCUgHiAEBEhoKDXRhcmdldF9icmFuY2gYDiABKAlICIgBARITCgZjb21taXQYDyABKAlICYgBARITCgZhdXRob3IYECABKAlICogBARIYChBwcmV2aWV3c19jcmVhdGVkGBEgASgDEhsKE3ByZXZpZXdzX3JlZGVwbG95ZWQYEiABKAMSGAoQcHJldmlld3NfcmVtb3ZlZBgTIAEoAxIjChtwcmV2aWV3c19za2lwcGVkX3Blcm1pc3Npb24YFCABKAMSHgoWcHJldmlld3Nfc2tpcHBlZF9saW1pdBgVIAEoA0ILCglfcHJvdmlkZXJCCAoGX293bmVyQg0KC19yZXBvc2l0b3J5QhYKFF9wdWxsX3JlcXVlc3RfbnVtYmVyQhYKFF9wdWxsX3JlcXVlc3RfYWN0aW9uQhAKDl9zb3VyY2VfYnJhbmNoQg8KDV9zb3VyY2Vfb3duZXJCFAoSX3NvdXJjZV9yZXBvc2l0b3J5QhAKDl90YXJnZXRfYnJhbmNoQgkKB19jb21taXRCCQoHX2F1dGhvciJtChdJbmNvbWluZ1dlYmhvb2tSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEkEKB291dGNvbWUYAiABKAsyMC5vcGVub3hpZGUuYXBpLnYxLkluY29taW5nV2ViaG9va0Rpc3BhdGNoT3V0Y29tZTJ+ChZJbmNvbWluZ1dlYmhvb2tTZXJ2aWNlEmQKDUhhbmRsZVdlYmhvb2sSKC5vcGVub3hpZGUuYXBpLnYxLkluY29taW5nV2ViaG9va1JlcXVlc3QaKS5vcGVub3hpZGUuYXBpLnYxLkluY29taW5nV2ViaG9va1Jlc3BvbnNlYgZwcm90bzM", [file_openoxide_api_v1_webhook, file_buf_validate_validate]);
 
 /**
  * @generated from message openoxide.api.v1.IncomingWebhookRequest
  */
-export type IncomingWebhookRequest =
-	Message<'openoxide.api.v1.IncomingWebhookRequest'> & {
-		/**
-		 * @generated from field: string provider = 1;
-		 */
-		provider: string;
+export type IncomingWebhookRequest = Message<"openoxide.api.v1.IncomingWebhookRequest"> & {
+  /**
+   * Git provider the event was posted by (Rust GitProviderType).
+   *
+   * @generated from field: openoxide.api.v1.WebhookProviderType provider = 1;
+   */
+  provider: WebhookProviderType;
 
-		/**
-		 * @generated from field: int64 provider_id = 2;
-		 */
-		providerId: bigint;
+  /**
+   * Row id of the git provider instance whose stored secret verifies this event.
+   *
+   * @generated from field: int64 provider_id = 2;
+   */
+  providerId: bigint;
 
-		/**
-		 * @generated from field: string payload = 3;
-		 */
-		payload: string;
+  /**
+   * Raw provider event body, forwarded verbatim for signature verification and parsing.
+   *
+   * @generated from field: string payload = 3;
+   */
+  payload: string;
 
-		/**
-		 * @generated from field: string signature = 4;
-		 */
-		signature: string;
-	};
+  /**
+   * Provider signature header (HMAC digest or token); opaque to the panel.
+   *
+   * @generated from field: string signature = 4;
+   */
+  signature: string;
+};
 
 /**
  * Describes the message openoxide.api.v1.IncomingWebhookRequest.
  * Use `create(IncomingWebhookRequestSchema)` to create a new message.
  */
-export const IncomingWebhookRequestSchema: GenMessage<IncomingWebhookRequest> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_incoming_webhook, 0);
+export const IncomingWebhookRequestSchema: GenMessage<IncomingWebhookRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_incoming_webhook, 0);
+
+/**
+ * Result of the auto-deploy dispatch triggered by one accepted webhook event.
+ *
+ * @generated from message openoxide.api.v1.IncomingWebhookDispatchOutcome
+ */
+export type IncomingWebhookDispatchOutcome = Message<"openoxide.api.v1.IncomingWebhookDispatchOutcome"> & {
+  /**
+   * Normalized event class; provider-dependent spelling ("push", "tag", "ping", ...).
+   *
+   * @generated from field: string event_type = 1;
+   */
+  eventType: string;
+
+  /**
+   * @generated from field: optional string provider = 2;
+   */
+  provider?: string | undefined;
+
+  /**
+   * @generated from field: optional string owner = 3;
+   */
+  owner?: string | undefined;
+
+  /**
+   * @generated from field: optional string repository = 4;
+   */
+  repository?: string | undefined;
+
+  /**
+   * @generated from field: int64 applications_queued = 5;
+   */
+  applicationsQueued: bigint;
+
+  /**
+   * @generated from field: int64 compose_projects_queued = 6;
+   */
+  composeProjectsQueued: bigint;
+
+  /**
+   * @generated from field: int64 skipped_by_watch_paths = 7;
+   */
+  skippedByWatchPaths: bigint;
+
+  /**
+   * @generated from field: int64 already_running = 8;
+   */
+  alreadyRunning: bigint;
+
+  /**
+   * @generated from field: optional string pull_request_number = 9;
+   */
+  pullRequestNumber?: string | undefined;
+
+  /**
+   * @generated from field: optional string pull_request_action = 10;
+   */
+  pullRequestAction?: string | undefined;
+
+  /**
+   * @generated from field: optional string source_branch = 11;
+   */
+  sourceBranch?: string | undefined;
+
+  /**
+   * @generated from field: optional string source_owner = 12;
+   */
+  sourceOwner?: string | undefined;
+
+  /**
+   * @generated from field: optional string source_repository = 13;
+   */
+  sourceRepository?: string | undefined;
+
+  /**
+   * @generated from field: optional string target_branch = 14;
+   */
+  targetBranch?: string | undefined;
+
+  /**
+   * @generated from field: optional string commit = 15;
+   */
+  commit?: string | undefined;
+
+  /**
+   * @generated from field: optional string author = 16;
+   */
+  author?: string | undefined;
+
+  /**
+   * @generated from field: int64 previews_created = 17;
+   */
+  previewsCreated: bigint;
+
+  /**
+   * @generated from field: int64 previews_redeployed = 18;
+   */
+  previewsRedeployed: bigint;
+
+  /**
+   * @generated from field: int64 previews_removed = 19;
+   */
+  previewsRemoved: bigint;
+
+  /**
+   * @generated from field: int64 previews_skipped_permission = 20;
+   */
+  previewsSkippedPermission: bigint;
+
+  /**
+   * @generated from field: int64 previews_skipped_limit = 21;
+   */
+  previewsSkippedLimit: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.IncomingWebhookDispatchOutcome.
+ * Use `create(IncomingWebhookDispatchOutcomeSchema)` to create a new message.
+ */
+export const IncomingWebhookDispatchOutcomeSchema: GenMessage<IncomingWebhookDispatchOutcome> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_incoming_webhook, 1);
+
+/**
+ * @generated from message openoxide.api.v1.IncomingWebhookResponse
+ */
+export type IncomingWebhookResponse = Message<"openoxide.api.v1.IncomingWebhookResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: openoxide.api.v1.IncomingWebhookDispatchOutcome outcome = 2;
+   */
+  outcome?: IncomingWebhookDispatchOutcome | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.IncomingWebhookResponse.
+ * Use `create(IncomingWebhookResponseSchema)` to create a new message.
+ */
+export const IncomingWebhookResponseSchema: GenMessage<IncomingWebhookResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_incoming_webhook, 2);
 
 /**
  * @generated from service openoxide.api.v1.IncomingWebhookService
  */
 export const IncomingWebhookService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.IncomingWebhookService.HandleWebhook
-	 */
-	handleWebhook: {
-		methodKind: 'unary';
-		input: typeof IncomingWebhookRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_incoming_webhook, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.IncomingWebhookService.HandleWebhook
+   */
+  handleWebhook: {
+    methodKind: "unary";
+    input: typeof IncomingWebhookRequestSchema;
+    output: typeof IncomingWebhookResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_incoming_webhook, 0);
+

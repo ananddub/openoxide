@@ -1,11 +1,7 @@
 import type {ReactNode} from 'react';
 import {cn} from '#/api/utils';
 
-/**
- * Sheet-native form building blocks. The database Advanced panels reuse
- * these so every side-panel form shares one airy, legible rhythm instead
- * of the cramped micro-label look the inline accordions used.
- */
+/** Sheet-native form building blocks. The database Advanced panels reuse these so every side-panel form shares one airy, legible rhythm instead of the cramped micro-label look the inline accordions used. */
 
 /** Label + control + optional helper line, stacked. */
 export function Field({
@@ -25,7 +21,7 @@ export function Field({
 		<div className={cn('flex flex-col gap-2', className)}>
 			<label
 				htmlFor={htmlFor}
-				className="text-sm font-medium leading-none text-foreground">
+				className="text-sm leading-none font-medium text-foreground">
 				{label}
 			</label>
 			{children}
@@ -47,7 +43,8 @@ export function FieldGrid({
 	children: ReactNode;
 }) {
 	return (
-		<div className={cn('grid grid-cols-1 gap-5 sm:grid-cols-2', className)}>
+		<div
+			className={cn('grid grid-cols-1 gap-5 sm:grid-cols-2', className)}>
 			{children}
 		</div>
 	);
@@ -66,7 +63,7 @@ export function SheetGroup({
 	return (
 		<section className="flex flex-col gap-5">
 			<div className="flex flex-col gap-1 border-b border-border pb-3">
-				<h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+				<h4 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 					{title}
 				</h4>
 				{description && (

@@ -39,14 +39,9 @@ export type {VaultProviderItem};
 
 const VIEW_STORAGE_KEY = 'vault-providers-view';
 
-/**
- * Vault providers — the SSH Keys / Projects grammar: toolbar (search +
- * provider filter + view switch + New) above a bordered list card or grid
- * cards, create/edit in a right sheet, delete a quiet AlertDialog.
- */
+/** Vault providers — the SSH Keys / Projects grammar: toolbar (search + provider filter + view switch + New) above a bordered list card or grid cards, create/edit in a right sheet, delete a quiet AlertDialog. */
 export function VaultProvidersPage() {
-	// Live vault providers query; the table-watch stream (vault_providers
-	// table) invalidates it while mounted, so no zustand slice involved.
+	// Live vault providers query; the table-watch stream (vault_providers table) invalidates it while mounted, so no zustand slice involved.
 	const providersQuery = useVaultList();
 	const providers = (providersQuery.data ?? []) as VaultProviderItem[];
 	const deleteMutation = useVaultProviderDelete();

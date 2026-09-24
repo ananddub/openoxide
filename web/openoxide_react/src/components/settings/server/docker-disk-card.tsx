@@ -5,7 +5,7 @@ import {Button} from '#/components/ui/button';
 import {Checkbox} from '#/components/ui/checkbox';
 import {Skeleton} from '#/components/ui/skeleton';
 import {useDockerDiskUsage, useDockerPrune} from '#/api/live';
-import {usePermissions} from '#/hooks/use-permissions';
+import {usePermissions} from '#/hooks/permissions/use-permissions';
 
 const PRUNE_TARGETS = [
 	['containers', 'Containers'],
@@ -59,7 +59,7 @@ export function DockerDiskCard() {
 	};
 
 	return (
-		<div className="overflow-hidden rounded-xl bg-card ring-1 ring-border/50">
+		<div className="overflow-hidden rounded-xl border border-border bg-card">
 			<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
 				<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
 					<Container className="size-[18px] text-muted-foreground" />

@@ -46,10 +46,7 @@ const SORTS = [
 	{value: 'title-desc', label: 'Title (Z-A)'},
 ];
 
-/**
- * History toolbar in the house grammar (SSH Keys / Tags): search with the
- * `/` focus shortcut on the left, quiet selects on the right.
- */
+/** History toolbar in the house grammar (SSH Keys / Tags): search with the `/` focus shortcut on the left, quiet selects on the right. */
 export function DeploymentsFilters({
 	searchQuery,
 	setSearchQuery,
@@ -104,11 +101,15 @@ export function DeploymentsFilters({
 			</div>
 
 			<div className="flex shrink-0 flex-wrap items-center gap-2">
-				<Select value={statusFilter} onValueChange={setStatusFilter}>
+				<Select
+					value={statusFilter}
+					onValueChange={val => {
+						if (val !== null) setStatusFilter(val);
+					}}>
 					<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
 						<SelectValue>
-							{STATUS_FILTERS.find(s => s.value === statusFilter)
-								?.label ?? 'All statuses'}
+							{STATUS_FILTERS.find(s => s.value === statusFilter)?.label ??
+								'All statuses'}
 						</SelectValue>
 					</SelectTrigger>
 					<SelectContent className="bg-card">
@@ -120,7 +121,11 @@ export function DeploymentsFilters({
 					</SelectContent>
 				</Select>
 
-				<Select value={typeFilter} onValueChange={setTypeFilter}>
+				<Select
+					value={typeFilter}
+					onValueChange={val => {
+						if (val !== null) setTypeFilter(val);
+					}}>
 					<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
 						<SelectValue>
 							{TYPES.find(t => t.value === typeFilter)?.label ??

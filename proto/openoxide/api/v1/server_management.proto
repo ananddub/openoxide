@@ -1,16 +1,143 @@
 syntax = "proto3";
 package openoxide.api.v1;
 
-import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
 service ServerManagementService {
-  rpc GetManagement(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateManagement(ResourceRequest) returns (ResourceResponse);
-  rpc RepairAudit(ResourceRequest) returns (OperationResult);
-  rpc ConfigureGpu(ResourceRequest) returns (OperationResult);
-  rpc RunCleanup(ResourceRequest) returns (OperationResult);
-  rpc ListCleanupHistory(ResourceQuery) returns (ResourceListResponse);
-  rpc Upgrade(ResourceRequest) returns (OperationResult);
-  rpc Backup(ResourceRequest) returns (OperationResult);
-  rpc Diagnostics(ResourceRequest) returns (ResourceResponse);
+  rpc GetManagement(ServerManagementGetRequest) returns (ServerManagementGetResponse);
+  rpc UpdateManagement(ServerManagementUpdateRequest) returns (ServerManagementUpdateResponse);
+  rpc RepairAudit(ServerManagementRepairAuditRequest) returns (ServerManagementRepairAuditResponse);
+  rpc ConfigureGpu(ServerManagementConfigureGpuRequest) returns (ServerManagementConfigureGpuResponse);
+  rpc RunCleanup(ServerManagementRunCleanupRequest) returns (ServerManagementRunCleanupResponse);
+  rpc ListCleanupHistory(ServerManagementListCleanupHistoryRequest) returns (ServerManagementListCleanupHistoryResponse);
+  rpc Upgrade(ServerManagementUpgradeRequest) returns (ServerManagementUpgradeResponse);
+  rpc Backup(ServerManagementBackupRequest) returns (ServerManagementBackupResponse);
+  rpc Diagnostics(ServerManagementDiagnosticsRequest) returns (ServerManagementDiagnosticsResponse);
+}
+
+// Closed set: cleanup executions are finished with exactly one of the two literals written by `ServerCleanupService::run`.
+enum ServerCleanupStatus {
+  SERVER_CLEANUP_STATUS_UNSPECIFIED = 0;
+  SERVER_CLEANUP_STATUS_SUCCEEDED = 1;
+  SERVER_CLEANUP_STATUS_FAILED = 2;
+}
+
+message ServerCleanupPolicy {
+  bool containers = 1;
+  bool images = 2;
+  bool networks = 3;
+  bool volumes = 4;
+  bool packages = 5;
+}
+
+message ServerManagement {
+  int64 server_id = 1;
+  bool maintenance_mode = 2;
+  optional string maintenance_message = 3;
+  map<string, string> labels = 4;
+  ServerCleanupPolicy cleanup_policy = 5;
+  bool gpu_enabled = 6;
+  int64 updated_at = 7;
+}
+
+// Generic remote-command outcome returned by repair/GPU/cleanup/upgrade/diagnostic runs.
+message ServerActionResult {
+  bool success = 1;
+  string stdout = 2;
+  string stderr = 3;
+}
+
+message ServerBackup {
+  string remote_path = 1;
+  int64 created_at = 2;
+}
+
+message ServerCleanupExecution {
+  int64 id = 1;
+  int64 server_id = 2;
+  ServerCleanupStatus status = 3;
+  // Cleanup policy snapshot as a JSON document.
+  string policy = 4;
+  optional string stdout = 5;
+  optional string stderr = 6;
+  int64 started_at = 7;
+  optional int64 finished_at = 8;
+}
+
+message ServerManagementGetRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerManagementGetResponse {
+  ServerManagement management = 1;
+}
+
+// Full replacement semantics (PUT): every field is required.
+message ServerManagementUpdateRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  bool maintenance_mode = 2;
+  optional string maintenance_message = 3 [(buf.validate.field).string.max_len = 1000];
+  map<string, string> labels = 4 [(buf.validate.field).map = {max_pairs: 64}];
+  ServerCleanupPolicy cleanup_policy = 5;
+  bool gpu_enabled = 6;
+}
+
+message ServerManagementUpdateResponse {
+  ServerManagement management = 1;
+}
+
+message ServerManagementRepairAuditRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerManagementRepairAuditResponse {
+  ServerActionResult result = 1;
+}
+
+message ServerManagementConfigureGpuRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerManagementConfigureGpuResponse {
+  ServerActionResult result = 1;
+}
+
+message ServerManagementRunCleanupRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerManagementRunCleanupResponse {
+  ServerActionResult result = 1;
+}
+
+message ServerManagementListCleanupHistoryRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerManagementListCleanupHistoryResponse {
+  repeated ServerCleanupExecution executions = 1;
+}
+
+message ServerManagementUpgradeRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerManagementUpgradeResponse {
+  ServerActionResult result = 1;
+}
+
+message ServerManagementBackupRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerManagementBackupResponse {
+  ServerBackup backup = 1;
+}
+
+message ServerManagementDiagnosticsRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerManagementDiagnosticsResponse {
+  ServerActionResult result = 1;
 }

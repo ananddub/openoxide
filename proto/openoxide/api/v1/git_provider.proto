@@ -2,30 +2,390 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
 service GitProviderService {
-  rpc ListGitProviders(ResourceQuery) returns (ResourceListResponse);
-  rpc GetGitProvider(ResourceRequest) returns (ResourceResponse);
-  rpc CreateGithubProvider(ResourceRequest) returns (ResourceResponse);
-  rpc CreateGitlabProvider(ResourceRequest) returns (ResourceResponse);
-  rpc CreateGiteaProvider(ResourceRequest) returns (ResourceResponse);
-  rpc CreateBitbucketProvider(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateGithubProvider(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateGitlabProvider(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateGiteaProvider(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateBitbucketProvider(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteGitProvider(ResourceRequest) returns (Empty);
-  rpc TestGitProvider(ResourceRequest) returns (OperationResult);
-  rpc RotateWebhookSecret(ResourceRequest) returns (ResourceResponse);
-  rpc ListRepositories(ResourceRequest) returns (ResourceListResponse);
-  rpc ListBranches(ResourceRequest) returns (ResourceListResponse);
-  rpc ListTags(ResourceRequest) returns (ResourceListResponse);
-  rpc Authorize(ResourceRequest) returns (ResourceResponse);
-  rpc OAuthCallback(ResourceRequest) returns (ResourceResponse);
-  rpc Disconnect(ResourceRequest) returns (Empty);
-  rpc GetCollaboratorPermission(ResourceRequest) returns (OperationResult);
-  rpc GetWebhookStatus(ResourceRequest) returns (OperationResult);
-  rpc InstallWebhook(ResourceRequest) returns (OperationResult);
-  rpc RecreateWebhook(ResourceRequest) returns (OperationResult);
-  rpc DeleteWebhook(ResourceRequest) returns (Empty);
+  rpc ListGitProviders(ListGitProvidersRequest) returns (ListGitProvidersResponse);
+  rpc GetGitProvider(GetGitProviderRequest) returns (GetGitProviderResponse);
+  rpc CreateGithubProvider(CreateGithubProviderRequest) returns (CreateGithubProviderResponse);
+  rpc CreateGitlabProvider(CreateGitlabProviderRequest) returns (CreateGitlabProviderResponse);
+  rpc CreateGiteaProvider(CreateGiteaProviderRequest) returns (CreateGiteaProviderResponse);
+  rpc CreateBitbucketProvider(CreateBitbucketProviderRequest) returns (CreateBitbucketProviderResponse);
+  rpc UpdateGithubProvider(UpdateGithubProviderRequest) returns (UpdateGithubProviderResponse);
+  rpc UpdateGitlabProvider(UpdateGitlabProviderRequest) returns (UpdateGitlabProviderResponse);
+  rpc UpdateGiteaProvider(UpdateGiteaProviderRequest) returns (UpdateGiteaProviderResponse);
+  rpc UpdateBitbucketProvider(UpdateBitbucketProviderRequest) returns (UpdateBitbucketProviderResponse);
+  rpc DeleteGitProvider(DeleteGitProviderRequest) returns (Empty);
+  rpc TestGitProvider(TestGitProviderRequest) returns (TestGitProviderResponse);
+  rpc RotateWebhookSecret(GitRotateWebhookSecretRequest) returns (GitRotateWebhookSecretResponse);
+  rpc ListRepositories(GitListRepositoriesRequest) returns (GitListRepositoriesResponse);
+  rpc ListBranches(GitListRepositoryBranchesRequest) returns (GitListRepositoryBranchesResponse);
+  rpc ListTags(GitListTagsRequest) returns (GitListTagsResponse);
+  rpc Authorize(GitAuthorizeRequest) returns (GitAuthorizeResponse);
+  rpc OAuthCallback(GitOAuthCallbackRequest) returns (GitOAuthCallbackResponse);
+  rpc Disconnect(GitDisconnectRequest) returns (Empty);
+  rpc GetCollaboratorPermission(GitGetCollaboratorPermissionRequest) returns (GitGetCollaboratorPermissionResponse);
+  rpc GetWebhookStatus(GitGetWebhookStatusRequest) returns (GitGetWebhookStatusResponse);
+  rpc InstallWebhook(GitInstallWebhookRequest) returns (GitInstallWebhookResponse);
+  rpc RecreateWebhook(GitRecreateWebhookRequest) returns (GitRecreateWebhookResponse);
+  rpc DeleteWebhook(GitDeleteWebhookRequest) returns (Empty);
+}
+
+// Provider kinds, mirroring the `GitProviderType` string enum stored on the provider row (`GITHUB`, `GITLAB`, `GITEA`, `BITBUCKET`).
+enum GitProviderType {
+  GIT_PROVIDER_TYPE_UNSPECIFIED = 0;
+  GIT_PROVIDER_TYPE_GITHUB = 1;
+  GIT_PROVIDER_TYPE_GITLAB = 2;
+  GIT_PROVIDER_TYPE_GITEA = 3;
+  GIT_PROVIDER_TYPE_BITBUCKET = 4;
+}
+
+// Non-secret config projection of a stored provider; secrets are masked to `has_*` presence flags server-side.
+message GitProviderConfig {
+  optional string url = 1;
+  optional string internal_url = 2;
+  optional string app_name = 3;
+  optional int64 app_id = 4;
+  optional string client_id = 5;
+  optional string installation_id = 6;
+  optional string application_id = 7;
+  optional string redirect_uri = 8;
+  optional string group_name = 9;
+  optional string scopes = 10;
+  optional string username = 11;
+  optional string email = 12;
+  optional string workspace = 13;
+  bool has_client_secret = 14;
+  bool has_private_key = 15;
+  bool has_access_token = 16;
+  bool has_app_password = 17;
+  bool has_api_token = 18;
+}
+
+message GitProvider {
+  int64 id = 1;
+  string name = 2;
+  GitProviderType provider_type = 3;
+  bool shared = 4;
+  bool configured = 5;
+  bool webhook_configured = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+  GitProviderConfig config = 9;
+}
+
+// Repository summary returned by provider discovery (`RepositoryInfo`).
+message GitProviderRepository {
+  string owner = 1;
+  string name = 2;
+  string full_name = 3;
+  bool private = 4;
+  optional string default_branch = 5;
+  optional string clone_url = 6;
+}
+
+// Branch or tag reference returned by provider discovery (`GitReferenceInfo`).
+message GitProviderReference {
+  string name = 1;
+  optional string commit = 2;
+}
+
+// Provider-side webhook registration (`ProviderWebhookInfo`).
+message GitProviderWebhookInfo {
+  // Webhook identifier as issued by the provider (not a panel row id).
+  string id = 1;
+  string url = 2;
+  bool active = 3;
+}
+
+// Collaborator access report (`CollaboratorPermission`); `level` is a provider-specific string (e.g. "admin", "write", "read", "none").
+message GitProviderCollaboratorPermission {
+  string username = 1;
+  string level = 2;
+  bool can_write = 3;
+  bool can_admin = 4;
+}
+
+message ListGitProvidersRequest {}
+
+message ListGitProvidersResponse {
+  repeated GitProvider providers = 1;
+}
+
+message GetGitProviderRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message GetGitProviderResponse {
+  GitProvider provider = 1;
+}
+
+message CreateGithubProviderRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  // Omitted means shared (server default `true`).
+  optional bool shared = 2;
+  optional string app_name = 3 [(buf.validate.field).string.max_len = 255];
+  optional int64 app_id = 4;
+  optional string client_id = 5 [(buf.validate.field).string.max_len = 255];
+  optional string client_secret = 6 [(buf.validate.field).string.max_len = 1048576];
+  optional string installation_id = 7 [(buf.validate.field).string.max_len = 255];
+  // GitHub App PEM private key; opaque secret material.
+  optional string private_key = 8 [(buf.validate.field).string.max_len = 1048576];
+}
+
+message CreateGithubProviderResponse {
+  GitProvider provider = 1;
+  string webhook_secret = 2;
+}
+
+message CreateGitlabProviderRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  // Omitted means shared (server default `true`).
+  optional bool shared = 2;
+  string url = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 2048];
+  optional string internal_url = 4 [(buf.validate.field).string.max_len = 2048];
+  optional string application_id = 5 [(buf.validate.field).string.max_len = 255];
+  optional string redirect_uri = 6 [(buf.validate.field).string.max_len = 2048];
+  optional string secret = 7 [(buf.validate.field).string.max_len = 1048576];
+  optional string access_token = 8 [(buf.validate.field).string.max_len = 1048576];
+  optional string refresh_token = 9 [(buf.validate.field).string.max_len = 1048576];
+  optional string group_name = 10 [(buf.validate.field).string.max_len = 255];
+}
+
+message CreateGitlabProviderResponse {
+  GitProvider provider = 1;
+  string webhook_secret = 2;
+}
+
+message CreateGiteaProviderRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  // Omitted means shared (server default `true`).
+  optional bool shared = 2;
+  string url = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 2048];
+  optional string internal_url = 4 [(buf.validate.field).string.max_len = 2048];
+  optional string redirect_uri = 5 [(buf.validate.field).string.max_len = 2048];
+  optional string client_id = 6 [(buf.validate.field).string.max_len = 255];
+  optional string client_secret = 7 [(buf.validate.field).string.max_len = 1048576];
+  optional string access_token = 8 [(buf.validate.field).string.max_len = 1048576];
+  optional string refresh_token = 9 [(buf.validate.field).string.max_len = 1048576];
+  optional string scopes = 10 [(buf.validate.field).string.max_len = 1024];
+}
+
+message CreateGiteaProviderResponse {
+  GitProvider provider = 1;
+  string webhook_secret = 2;
+}
+
+message CreateBitbucketProviderRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  // Omitted means shared (server default `true`).
+  optional bool shared = 2;
+  optional string username = 3 [(buf.validate.field).string.max_len = 255];
+  optional string email = 4 [(buf.validate.field).string.max_len = 320];
+  optional string app_password = 5 [(buf.validate.field).string.max_len = 1048576];
+  optional string api_token = 6 [(buf.validate.field).string.max_len = 1048576];
+  optional string workspace = 7 [(buf.validate.field).string.max_len = 255];
+}
+
+message CreateBitbucketProviderResponse {
+  GitProvider provider = 1;
+  string webhook_secret = 2;
+}
+
+// The stored DTO requires `name` on every update; remaining credential fields are optional patches (absent keeps the stored value).
+message UpdateGithubProviderRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string name = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional bool shared = 3;
+  optional string app_name = 4 [(buf.validate.field).string.max_len = 255];
+  optional int64 app_id = 5;
+  optional string client_id = 6 [(buf.validate.field).string.max_len = 255];
+  optional string client_secret = 7 [(buf.validate.field).string.max_len = 1048576];
+  optional string installation_id = 8 [(buf.validate.field).string.max_len = 255];
+  // GitHub App PEM private key; opaque secret material.
+  optional string private_key = 9 [(buf.validate.field).string.max_len = 1048576];
+}
+
+message UpdateGithubProviderResponse {
+  GitProvider provider = 1;
+}
+
+message UpdateGitlabProviderRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string name = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional bool shared = 3;
+  optional string url = 4 [(buf.validate.field).string.max_len = 2048];
+  optional string internal_url = 5 [(buf.validate.field).string.max_len = 2048];
+  optional string application_id = 6 [(buf.validate.field).string.max_len = 255];
+  optional string redirect_uri = 7 [(buf.validate.field).string.max_len = 2048];
+  optional string secret = 8 [(buf.validate.field).string.max_len = 1048576];
+  optional string access_token = 9 [(buf.validate.field).string.max_len = 1048576];
+  optional string refresh_token = 10 [(buf.validate.field).string.max_len = 1048576];
+  optional string group_name = 11 [(buf.validate.field).string.max_len = 255];
+}
+
+message UpdateGitlabProviderResponse {
+  GitProvider provider = 1;
+}
+
+message UpdateGiteaProviderRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string name = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional bool shared = 3;
+  optional string url = 4 [(buf.validate.field).string.max_len = 2048];
+  optional string internal_url = 5 [(buf.validate.field).string.max_len = 2048];
+  optional string redirect_uri = 6 [(buf.validate.field).string.max_len = 2048];
+  optional string client_id = 7 [(buf.validate.field).string.max_len = 255];
+  optional string client_secret = 8 [(buf.validate.field).string.max_len = 1048576];
+  optional string access_token = 9 [(buf.validate.field).string.max_len = 1048576];
+  optional string refresh_token = 10 [(buf.validate.field).string.max_len = 1048576];
+  optional string scopes = 11 [(buf.validate.field).string.max_len = 1024];
+}
+
+message UpdateGiteaProviderResponse {
+  GitProvider provider = 1;
+}
+
+message UpdateBitbucketProviderRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string name = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional bool shared = 3;
+  optional string username = 4 [(buf.validate.field).string.max_len = 255];
+  optional string email = 5 [(buf.validate.field).string.max_len = 320];
+  optional string app_password = 6 [(buf.validate.field).string.max_len = 1048576];
+  optional string api_token = 7 [(buf.validate.field).string.max_len = 1048576];
+  optional string workspace = 8 [(buf.validate.field).string.max_len = 255];
+}
+
+message UpdateBitbucketProviderResponse {
+  GitProvider provider = 1;
+}
+
+message DeleteGitProviderRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message TestGitProviderRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message TestGitProviderResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GitRotateWebhookSecretRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message GitRotateWebhookSecretResponse {
+  string webhook_secret = 1;
+}
+
+message GitListRepositoriesRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message GitListRepositoriesResponse {
+  repeated GitProviderRepository repositories = 1;
+}
+
+message GitListRepositoryBranchesRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+  string owner = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string repository = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+}
+
+message GitListRepositoryBranchesResponse {
+  repeated GitProviderReference branches = 1;
+}
+
+message GitListTagsRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+  string owner = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string repository = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+}
+
+message GitListTagsResponse {
+  repeated GitProviderReference tags = 1;
+}
+
+message GitAuthorizeRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message GitAuthorizeResponse {
+  // Browser authorization URL to redirect the user to.
+  string url = 1;
+  // Signed opaque state token to be echoed back by the callback.
+  string state = 2;
+}
+
+message GitOAuthCallbackRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string code = 2 [(buf.validate.field).string.max_len = 4096];
+  string state = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 4096];
+  optional string installation_id = 4 [(buf.validate.field).string.max_len = 255];
+  // GitHub setup-action query parameter; accepted by the DTO but not used.
+  optional string setup_action = 5 [(buf.validate.field).string.max_len = 255];
+}
+
+message GitOAuthCallbackResponse {
+  GitProvider provider = 1;
+}
+
+message GitDisconnectRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message GitGetCollaboratorPermissionRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+  string owner = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string repository = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string username = 4 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+}
+
+message GitGetCollaboratorPermissionResponse {
+  GitProviderCollaboratorPermission permission = 1;
+}
+
+message GitGetWebhookStatusRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+  string owner = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string repository = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string callback_url = 4 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 2048];
+}
+
+message GitGetWebhookStatusResponse {
+  // Absent when no matching webhook is registered on the repository.
+  optional GitProviderWebhookInfo webhook = 1;
+}
+
+message GitInstallWebhookRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+  string owner = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string repository = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string callback_url = 4 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 2048];
+}
+
+message GitInstallWebhookResponse {
+  GitProviderWebhookInfo webhook = 1;
+}
+
+message GitRecreateWebhookRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+  string owner = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string repository = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string callback_url = 4 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 2048];
+}
+
+message GitRecreateWebhookResponse {
+  GitProviderWebhookInfo webhook = 1;
+}
+
+message GitDeleteWebhookRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+  string owner = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string repository = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string callback_url = 4 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 2048];
 }

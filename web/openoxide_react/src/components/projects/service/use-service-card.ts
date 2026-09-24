@@ -28,10 +28,7 @@ import {
 
 export type {ServiceCardProps, ServiceAction} from './service-card-types';
 
-/**
- * Owns every service-card behaviour: type-aware routing, lifecycle status
- * flags, per-kind mutations and the derived action menu descriptor list.
- */
+/** Owns every service-card behaviour: type-aware routing, lifecycle status flags, per-kind mutations and the derived action menu descriptor list. */
 export function useServiceCard({
 	projectId,
 	type,

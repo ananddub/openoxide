@@ -73,7 +73,11 @@ export const getStatusTone = (
 	if (s === 'CANCELLING')
 		return {dot: 'bg-amber-500', text: 'text-amber-500', pulse: true};
 	if (s === 'CANCELLED' || s === 'STOPPEDBYUSER')
-		return {dot: 'bg-zinc-500', text: 'text-muted-foreground', pulse: false};
+		return {
+			dot: 'bg-zinc-500',
+			text: 'text-muted-foreground',
+			pulse: false,
+		};
 	if (
 		s.includes('DONE') ||
 		s.includes('HEALTHY') ||

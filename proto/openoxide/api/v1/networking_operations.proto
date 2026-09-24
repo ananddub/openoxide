@@ -1,11 +1,96 @@
 syntax = "proto3";
 package openoxide.api.v1;
 
-import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
+// Networking utilities: CDN purge plus domain and root-overlay-network diagnostics. Not a domain/certificate/DNS CRUD owner service.
 service NetworkingOperationsService {
-  rpc PurgeCdn(ResourceRequest) returns (OperationResult);
-  rpc DiagnoseDomains(ResourceRequest) returns (ResourceResponse);
-  rpc DiagnoseRootNetwork(ResourceRequest) returns (ResourceResponse);
-  rpc RepairRootNetwork(ResourceRequest) returns (OperationResult);
+  rpc PurgeCdn(NetworkingPurgeCdnRequest) returns (NetworkingPurgeCdnResponse);
+  rpc DiagnoseDomains(NetworkingDiagnoseDomainsRequest) returns (NetworkingDiagnoseDomainsResponse);
+  rpc DiagnoseRootNetwork(NetworkingDiagnoseRootNetworkRequest) returns (NetworkingDiagnoseRootNetworkResponse);
+  rpc RepairRootNetwork(NetworkingRepairRootNetworkRequest) returns (NetworkingRepairRootNetworkResponse);
+}
+
+// Closed set mirroring `CdnProvider`.
+enum NetworkingCdnProvider {
+  NETWORKING_CDN_PROVIDER_UNSPECIFIED = 0;
+  NETWORKING_CDN_PROVIDER_CLOUDFLARE = 1;
+  NETWORKING_CDN_PROVIDER_FASTLY = 2;
+  NETWORKING_CDN_PROVIDER_BUNNY = 3;
+}
+
+message NetworkingDomainDiagnostic {
+  // Lower-cased host that was probed.
+  string host = 1;
+  repeated string resolved_addresses = 2;
+  bool dns_ok = 3;
+  bool tcp_ok = 4;
+  bool http_ok = 5;
+  optional uint32 http_status = 6;
+  optional string error = 7;
+}
+
+message NetworkingRootNetworkStatus {
+  // Overlay network name (the `openoxide` root network).
+  string name = 1;
+  bool exists = 2;
+  // Encrypted attachable overlay/swarm network with the expected name.
+  bool healthy = 3;
+  bool repaired = 4;
+  optional string driver = 5;
+  optional string scope = 6;
+  optional bool attachable = 7;
+  int64 connected_resources = 8;
+  optional string issue = 9;
+}
+
+message NetworkingPurgeCdnRequest {
+  NetworkingCdnProvider provider = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  // Provider API token; never echoed back in the response.
+  string api_token = 2 [(buf.validate.field).string.min_len = 1];
+  // Cloudflare only.
+  optional string zone_id = 3 [(buf.validate.field).string.max_len = 255];
+  // Fastly only.
+  optional string service_id = 4 [(buf.validate.field).string.max_len = 255];
+  // Bunny only.
+  optional int64 pull_zone_id = 5;
+  bool purge_all = 6;
+  repeated string urls = 7 [(buf.validate.field).repeated.max_items = 1000];
+}
+
+message NetworkingPurgeCdnResponse {
+  string provider = 1;
+  bool success = 2;
+  // Upstream provider HTTP status code.
+  uint32 status = 3;
+  optional string request_id = 4;
+  // Truncated provider response body.
+  string message = 5;
+}
+
+message NetworkingDiagnoseDomainsRequest {
+  string host = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional uint32 port = 2 [(buf.validate.field).uint32.lte = 65535];
+  bool https = 3;
+  optional string path = 4 [(buf.validate.field).string.max_len = 2000];
+}
+
+message NetworkingDiagnoseDomainsResponse {
+  NetworkingDomainDiagnostic diagnostic = 1;
+}
+
+message NetworkingDiagnoseRootNetworkRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message NetworkingDiagnoseRootNetworkResponse {
+  NetworkingRootNetworkStatus status = 1;
+}
+
+message NetworkingRepairRootNetworkRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message NetworkingRepairRootNetworkResponse {
+  NetworkingRootNetworkStatus status = 1;
 }

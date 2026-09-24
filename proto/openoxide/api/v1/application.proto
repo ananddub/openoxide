@@ -47,31 +47,31 @@ service ApplicationService {
   rpc ListApplicationMiddlewares(ResourceListRequest) returns (ApplicationMiddlewares);
   rpc ListApplicationRedirects(ResourceListRequest) returns (ApplicationRedirects);
   rpc ListApplicationSecurity(ResourceListRequest) returns (ApplicationSecurity);
-  rpc ListPorts(ResourceRequest) returns (ResourceListResponse);
-  rpc CreatePort(ResourceRequest) returns (ResourceResponse);
-  rpc UpdatePort(ResourceRequest) returns (ResourceResponse);
-  rpc DeletePort(ResourceRequest) returns (Empty);
-  rpc ListMounts(ResourceRequest) returns (ResourceListResponse);
-  rpc CreateMount(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateMount(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteMount(ResourceRequest) returns (Empty);
-  rpc ListPatches(ResourceRequest) returns (ResourceListResponse);
-  rpc CreatePatch(ResourceRequest) returns (ResourceResponse);
-  rpc UpdatePatch(ResourceRequest) returns (ResourceResponse);
-  rpc DeletePatch(ResourceRequest) returns (Empty);
-  rpc ListMiddlewares(ResourceRequest) returns (ResourceListResponse);
-  rpc CreateMiddleware(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateMiddleware(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteMiddleware(ResourceRequest) returns (Empty);
-  rpc ListRedirects(ResourceRequest) returns (ResourceListResponse);
-  rpc CreateRedirect(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateRedirect(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteRedirect(ResourceRequest) returns (Empty);
-  rpc GetSecurity(ResourceRequest) returns (ResourceResponse);
-  rpc CreateSecurity(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateSecurity(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteSecurity(ResourceRequest) returns (Empty);
-  rpc UpdateNetworks(ResourceRequest) returns (OperationResult);
+  rpc ListPorts(ApplicationListPortsRequest) returns (ApplicationListPortsResponse);
+  rpc CreatePort(ApplicationCreatePortRequest) returns (ApplicationCreatePortResponse);
+  rpc UpdatePort(ApplicationUpdatePortRequest) returns (ApplicationUpdatePortResponse);
+  rpc DeletePort(ApplicationDeletePortRequest) returns (Empty);
+  rpc ListMounts(ApplicationListMountsRequest) returns (ApplicationListMountsResponse);
+  rpc CreateMount(ApplicationCreateMountRequest) returns (ApplicationCreateMountResponse);
+  rpc UpdateMount(ApplicationUpdateMountRequest) returns (ApplicationUpdateMountResponse);
+  rpc DeleteMount(ApplicationDeleteMountRequest) returns (Empty);
+  rpc ListPatches(ApplicationListPatchesRequest) returns (ApplicationListPatchesResponse);
+  rpc CreatePatch(ApplicationCreatePatchRequest) returns (ApplicationCreatePatchResponse);
+  rpc UpdatePatch(ApplicationUpdatePatchRequest) returns (ApplicationUpdatePatchResponse);
+  rpc DeletePatch(ApplicationDeletePatchRequest) returns (Empty);
+  rpc ListMiddlewares(ApplicationListMiddlewaresRequest) returns (ApplicationListMiddlewaresResponse);
+  rpc CreateMiddleware(ApplicationCreateMiddlewareRequest) returns (ApplicationCreateMiddlewareResponse);
+  rpc UpdateMiddleware(ApplicationUpdateMiddlewareRequest) returns (ApplicationUpdateMiddlewareResponse);
+  rpc DeleteMiddleware(ApplicationDeleteMiddlewareRequest) returns (Empty);
+  rpc ListRedirects(ApplicationListRedirectsRequest) returns (ApplicationListRedirectsResponse);
+  rpc CreateRedirect(ApplicationCreateRedirectRequest) returns (ApplicationCreateRedirectResponse);
+  rpc UpdateRedirect(ApplicationUpdateRedirectRequest) returns (ApplicationUpdateRedirectResponse);
+  rpc DeleteRedirect(ApplicationDeleteRedirectRequest) returns (Empty);
+  rpc GetSecurity(ApplicationGetSecurityRequest) returns (ApplicationGetSecurityResponse);
+  rpc CreateSecurity(ApplicationCreateSecurityRequest) returns (ApplicationCreateSecurityResponse);
+  rpc UpdateSecurity(ApplicationUpdateSecurityRequest) returns (ApplicationUpdateSecurityResponse);
+  rpc DeleteSecurity(ApplicationDeleteSecurityRequest) returns (Empty);
+  rpc UpdateNetworks(ApplicationUpdateNetworksRequest) returns (ApplicationUpdateNetworksResponse);
 }
 
 enum ApplicationSourceType {
@@ -124,8 +124,7 @@ message Application {
   optional int64 preview_port = 26;
   int64 created_at = 27;
   int64 updated_at = 28;
-  // Build/resource round-trip fields: the settings cards read these back
-  // after save; without them every card re-rendered blank defaults.
+  // Build/resource round-trip fields: the settings cards read these back after save; without them every card re-rendered blank defaults.
   optional string dockerfile = 29;
   optional string docker_context_path = 30;
   optional string docker_build_stage = 31;
@@ -272,8 +271,7 @@ message UpdateBuildConfigRequest {
   optional bool clean_cache = 13;
   optional bool enable_submodules = 14;
   optional string watch_paths = 15;
-  // Railpack/Heroku version pins and the autodeploy switch (service_git)
-  // — the build-settings and deploy-settings cards persist through here.
+  // Railpack/Heroku version pins and the autodeploy switch (service_git) — the build-settings and deploy-settings cards persist through here.
   optional string railpack_version = 16;
   optional string heroku_version = 17;
   optional bool auto_deploy = 18;
@@ -367,4 +365,384 @@ message ApplicationRedirects {
 }
 message ApplicationSecurity {
   repeated string items = 1;
+}
+
+// ── Sub-resource enums (closed sets from the request DTOs) ─────────────
+
+enum ApplicationPortProtocol {
+  APPLICATION_PORT_PROTOCOL_UNSPECIFIED = 0;
+  APPLICATION_PORT_PROTOCOL_TCP = 1;
+  APPLICATION_PORT_PROTOCOL_UDP = 2;
+}
+
+enum ApplicationPortPublishMode {
+  APPLICATION_PORT_PUBLISH_MODE_UNSPECIFIED = 0;
+  APPLICATION_PORT_PUBLISH_MODE_HOST = 1;
+  APPLICATION_PORT_PUBLISH_MODE_INGRESS = 2;
+}
+
+enum ApplicationMountType {
+  APPLICATION_MOUNT_TYPE_UNSPECIFIED = 0;
+  APPLICATION_MOUNT_TYPE_VOLUME = 1;
+  APPLICATION_MOUNT_TYPE_BIND = 2;
+  APPLICATION_MOUNT_TYPE_FILE = 3;
+}
+
+enum ApplicationPatchType {
+  APPLICATION_PATCH_TYPE_UNSPECIFIED = 0;
+  APPLICATION_PATCH_TYPE_CREATE = 1;
+  APPLICATION_PATCH_TYPE_UPDATE = 2;
+  APPLICATION_PATCH_TYPE_DELETE = 3;
+}
+
+enum ApplicationMiddlewareType {
+  APPLICATION_MIDDLEWARE_TYPE_UNSPECIFIED = 0;
+  APPLICATION_MIDDLEWARE_TYPE_COMPRESS = 1;
+  APPLICATION_MIDDLEWARE_TYPE_HEADERS = 2;
+  APPLICATION_MIDDLEWARE_TYPE_RATE_LIMIT = 3;
+  APPLICATION_MIDDLEWARE_TYPE_IP_ALLOWLIST = 4;
+}
+
+// ── Sub-resource entities ──────────────────────────────────────────────
+
+message ApplicationPort {
+  int64 id = 1;
+  int64 published_port = 2;
+  int64 target_port = 3;
+  ApplicationPortProtocol protocol = 4;
+  ApplicationPortPublishMode publish_mode = 5;
+  int64 application_id = 6;
+  int64 created_at = 7;
+}
+
+message ApplicationMount {
+  int64 id = 1;
+  ApplicationMountType mount_type = 2;
+  optional string host_path = 3;
+  optional string volume_name = 4;
+  optional string file_path = 5;
+  // Inline file content for FILE mounts.
+  optional string content = 6;
+  string mount_path = 7;
+  int64 application_id = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+}
+
+message ApplicationPatch {
+  int64 id = 1;
+  ApplicationPatchType patch_type = 2;
+  string file_path = 3;
+  bool enabled = 4;
+  // Patch file body (raw text); cleared for DELETE patches.
+  string content = 5;
+  int64 application_id = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+}
+
+message ApplicationMiddlewareHeader {
+  string name = 1;
+  string value = 2;
+}
+
+message ApplicationMiddleware {
+  int64 id = 1;
+  int64 application_id = 2;
+  string name = 3;
+  ApplicationMiddlewareType middleware_type = 4;
+  bool enabled = 5;
+  repeated ApplicationMiddlewareHeader headers = 6;
+  optional int64 average = 7;
+  optional int64 burst = 8;
+  repeated string source_ranges = 9;
+  int64 created_at = 10;
+  int64 updated_at = 11;
+}
+
+message ApplicationRedirect {
+  int64 id = 1;
+  string regex = 2;
+  string replacement = 3;
+  bool permanent = 4;
+  // Opaque Traefik routing-config key.
+  optional int64 unique_config_key = 5;
+  int64 application_id = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+}
+
+message ApplicationSecurityRule {
+  int64 id = 1;
+  string username = 2;
+  // Password material is never echoed back; presence only.
+  bool has_password = 3;
+  int64 application_id = 4;
+  int64 created_at = 5;
+}
+
+// ── Ports ──────────────────────────────────────────────────────────────
+
+message ApplicationListPortsRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ApplicationListPortsResponse {
+  repeated ApplicationPort ports = 1;
+}
+
+message ApplicationCreatePortRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 published_port = 2;
+  int64 target_port = 3;
+  ApplicationPortProtocol protocol = 4 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  ApplicationPortPublishMode publish_mode = 5 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+}
+
+message ApplicationCreatePortResponse {
+  ApplicationPort port = 1;
+}
+
+message ApplicationUpdatePortRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  int64 published_port = 3;
+  int64 target_port = 4;
+  ApplicationPortProtocol protocol = 5 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  ApplicationPortPublishMode publish_mode = 6 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+}
+
+message ApplicationUpdatePortResponse {
+  ApplicationPort port = 1;
+}
+
+message ApplicationDeletePortRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+// ── Mounts ─────────────────────────────────────────────────────────────
+
+message ApplicationListMountsRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ApplicationListMountsResponse {
+  repeated ApplicationMount mounts = 1;
+}
+
+message ApplicationCreateMountRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  ApplicationMountType mount_type = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional string host_path = 3;
+  optional string volume_name = 4;
+  optional string file_path = 5;
+  // Inline file content for FILE mounts.
+  optional string content = 6 [(buf.validate.field).string.max_len = 1048576];
+  string mount_path = 7 [(buf.validate.field).string.min_len = 1];
+}
+
+message ApplicationCreateMountResponse {
+  ApplicationMount mount = 1;
+}
+
+message ApplicationUpdateMountRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  ApplicationMountType mount_type = 3 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional string host_path = 4;
+  optional string volume_name = 5;
+  optional string file_path = 6;
+  // Inline file content for FILE mounts.
+  optional string content = 7 [(buf.validate.field).string.max_len = 1048576];
+  string mount_path = 8 [(buf.validate.field).string.min_len = 1];
+}
+
+message ApplicationUpdateMountResponse {
+  ApplicationMount mount = 1;
+}
+
+message ApplicationDeleteMountRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+// ── Patches ────────────────────────────────────────────────────────────
+
+message ApplicationListPatchesRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ApplicationListPatchesResponse {
+  repeated ApplicationPatch patches = 1;
+}
+
+message ApplicationCreatePatchRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  ApplicationPatchType patch_type = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  string file_path = 3 [(buf.validate.field).string.min_len = 1];
+  bool enabled = 4;
+  // Patch file body (raw text); cleared for DELETE patches.
+  string content = 5 [(buf.validate.field).string.max_len = 1048576];
+}
+
+message ApplicationCreatePatchResponse {
+  ApplicationPatch patch = 1;
+}
+
+message ApplicationUpdatePatchRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  ApplicationPatchType patch_type = 3 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  string file_path = 4 [(buf.validate.field).string.min_len = 1];
+  bool enabled = 5;
+  // Patch file body (raw text); cleared for DELETE patches.
+  string content = 6 [(buf.validate.field).string.max_len = 1048576];
+}
+
+message ApplicationUpdatePatchResponse {
+  ApplicationPatch patch = 1;
+}
+
+message ApplicationDeletePatchRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+// ── Middlewares ────────────────────────────────────────────────────────
+
+message ApplicationListMiddlewaresRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ApplicationListMiddlewaresResponse {
+  repeated ApplicationMiddleware middlewares = 1;
+}
+
+message ApplicationCreateMiddlewareRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  string name = 2 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  ApplicationMiddlewareType middleware_type = 3 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  bool enabled = 4;
+  repeated ApplicationMiddlewareHeader headers = 5;
+  optional int64 average = 6;
+  optional int64 burst = 7;
+  repeated string source_ranges = 8;
+}
+
+message ApplicationCreateMiddlewareResponse {
+  ApplicationMiddleware middleware = 1;
+}
+
+message ApplicationUpdateMiddlewareRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  string name = 3 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  ApplicationMiddlewareType middleware_type = 4 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  bool enabled = 5;
+  repeated ApplicationMiddlewareHeader headers = 6;
+  optional int64 average = 7;
+  optional int64 burst = 8;
+  repeated string source_ranges = 9;
+}
+
+message ApplicationUpdateMiddlewareResponse {
+  ApplicationMiddleware middleware = 1;
+}
+
+message ApplicationDeleteMiddlewareRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+// ── Redirects ──────────────────────────────────────────────────────────
+
+message ApplicationListRedirectsRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ApplicationListRedirectsResponse {
+  repeated ApplicationRedirect redirects = 1;
+}
+
+message ApplicationCreateRedirectRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  string regex = 2 [(buf.validate.field).string.min_len = 1];
+  string replacement = 3 [(buf.validate.field).string.min_len = 1];
+  bool permanent = 4;
+  // Opaque Traefik routing-config key.
+  optional int64 unique_config_key = 5;
+}
+
+message ApplicationCreateRedirectResponse {
+  ApplicationRedirect redirect = 1;
+}
+
+message ApplicationUpdateRedirectRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  string regex = 3 [(buf.validate.field).string.min_len = 1];
+  string replacement = 4 [(buf.validate.field).string.min_len = 1];
+  bool permanent = 5;
+  // Opaque Traefik routing-config key.
+  optional int64 unique_config_key = 6;
+}
+
+message ApplicationUpdateRedirectResponse {
+  ApplicationRedirect redirect = 1;
+}
+
+message ApplicationDeleteRedirectRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+// ── Security ───────────────────────────────────────────────────────────
+
+message ApplicationGetSecurityRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+// `get_security` returns the application's whole rule set, not a single row.
+message ApplicationGetSecurityResponse {
+  repeated ApplicationSecurityRule security = 1;
+}
+
+message ApplicationCreateSecurityRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  string username = 2 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  string password = 3 [(buf.validate.field).string.min_len = 1];
+}
+
+message ApplicationCreateSecurityResponse {
+  ApplicationSecurityRule security = 1;
+}
+
+message ApplicationUpdateSecurityRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  string username = 3 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  string password = 4 [(buf.validate.field).string.min_len = 1];
+}
+
+message ApplicationUpdateSecurityResponse {
+  ApplicationSecurityRule security = 1;
+}
+
+message ApplicationDeleteSecurityRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+// ── Networks ───────────────────────────────────────────────────────────
+
+message ApplicationUpdateNetworksRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+  repeated int64 network_ids = 2;
+  bool detach_rustploy_network = 3;
+}
+
+message ApplicationUpdateNetworksResponse {
+  bool success = 1;
+  string operation = 2;
 }

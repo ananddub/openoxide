@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import {Toaster as Sonner, toast, type ToasterProps} from 'sonner';
 
-import {useTheme} from '#/hooks/use-theme';
+import {useTheme} from '#/hooks/ui/use-theme';
 
 export function showToastOnReload(
 	message: string,

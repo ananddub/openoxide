@@ -18,12 +18,7 @@ interface PrivateNetworkPanelProps {
 	server: RemoteServerResponse;
 }
 
-/**
- * Private Network tab on the server detail page. OpenShip layout: primary
- * card on the left (mode tiles + contextual config + actions), a sticky
- * right rail that always shows the live connection facts and a short
- * guide — so the page never reads as an empty form.
- */
+/** Private Network tab on the server detail page. OpenShip layout: primary card on the left (mode tiles + contextual config + actions), a sticky right rail that always shows the live connection facts and a short guide — so the page never reads as an empty form. */
 export function PrivateNetworkPanel({server}: PrivateNetworkPanelProps) {
 	const pn = usePrivateNetwork(server);
 	const {

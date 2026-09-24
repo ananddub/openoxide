@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/database.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {DatabaseService} from './database_pb';
+import { DatabaseService } from "./database_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.DatabaseService.GetDatabase
@@ -67,8 +67,7 @@ export const getSwarmSettings = DatabaseService.method.getSwarmSettings;
 /**
  * @generated from rpc openoxide.api.v1.DatabaseService.UpdateSwarmSettings
  */
-export const updateSwarmSettings =
-	DatabaseService.method.updateSwarmSettings;
+export const updateSwarmSettings = DatabaseService.method.updateSwarmSettings;
 
 /**
  * @generated from rpc openoxide.api.v1.DatabaseService.ListMounts
@@ -123,11 +122,9 @@ export const validateDatabase = DatabaseService.method.validateDatabase;
 /**
  * @generated from rpc openoxide.api.v1.DatabaseService.GetPostgresAdvancedConfig
  */
-export const getPostgresAdvancedConfig =
-	DatabaseService.method.getPostgresAdvancedConfig;
+export const getPostgresAdvancedConfig = DatabaseService.method.getPostgresAdvancedConfig;
 
 /**
  * @generated from rpc openoxide.api.v1.DatabaseService.UpdatePostgresAdvancedConfig
  */
-export const updatePostgresAdvancedConfig =
-	DatabaseService.method.updatePostgresAdvancedConfig;
+export const updatePostgresAdvancedConfig = DatabaseService.method.updatePostgresAdvancedConfig;

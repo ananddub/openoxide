@@ -51,10 +51,7 @@ export function formatAdded(value?: number | string): string | null {
 	});
 }
 
-/**
- * Usage bar. Neutral foreground tone by default — amber past 70%, red past
- * 90%. Colour tracks the data, not per-metric branding.
- */
+/** Usage bar. Neutral foreground tone by default — amber past 70%, red past 90%. Colour tracks the data, not per-metric branding. */
 function UsageBar({pct}: {pct: number}) {
 	const tone =
 		pct >= 90

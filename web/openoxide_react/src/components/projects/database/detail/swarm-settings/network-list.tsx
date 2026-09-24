@@ -81,7 +81,7 @@ export function NetworkList({
 									}))
 								}
 								aria-expanded={expanded}
-								className="flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+								className="flex items-center gap-1 rounded-md px-1.5 py-1 text-xs whitespace-nowrap text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
 								<ChevronRight
 									className={cn(
 										'size-3.5 transition-transform',

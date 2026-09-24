@@ -1,5 +1,6 @@
 import {useState} from 'react';
 import {Button} from '#/components/ui/button';
+import {Skeleton} from '#/components/ui/skeleton';
 import {
 	Activity,
 	Check,
@@ -37,14 +38,28 @@ export function SwarmInfoCard({
 	const [copiedId, setCopiedId] = useState(false);
 
 	if (isLoading) {
+		/* Card-shaped placeholder — same footprint as the real rail card. */
 		return (
-			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-				{[1, 2, 3, 4].map(i => (
-					<div
-						key={i}
-						className="h-[86px] animate-pulse rounded-xl bg-muted/40"
-					/>
-				))}
+			<div className="overflow-hidden rounded-xl border bg-card">
+				<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
+					<Skeleton className="size-9 shrink-0 rounded-lg" />
+					<div className="flex-1 space-y-2">
+						<Skeleton className="h-3.5 w-32" />
+						<Skeleton className="h-3 w-20" />
+					</div>
+					<Skeleton className="h-5 w-16 rounded-full" />
+				</div>
+				<div className="divide-y divide-border/40 px-5">
+					{[1, 2, 3, 4].map(i => (
+						<div key={i} className="flex items-center gap-3 py-3">
+							<Skeleton className="size-8 shrink-0 rounded-lg" />
+							<div className="flex-1 space-y-1.5">
+								<Skeleton className="h-3 w-24" />
+								<Skeleton className="h-3.5 w-16" />
+							</div>
+						</div>
+					))}
+				</div>
 			</div>
 		);
 	}
@@ -54,7 +69,7 @@ export function SwarmInfoCard({
 
 	if (!isActive) {
 		return (
-			<div className="flex flex-col items-center justify-center gap-4 rounded-xl bg-muted/10 px-6 py-16 text-center ring-1 ring-border/50">
+			<div className="flex flex-col items-center justify-center gap-4 rounded-xl border bg-card px-6 py-16 text-center">
 				<div className="flex size-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
 					<ShieldAlert className="size-5" />
 				</div>
@@ -74,10 +89,10 @@ export function SwarmInfoCard({
 	const nodeId = info?.node_id || '';
 
 	return (
-		<div className="overflow-hidden rounded-xl bg-card ring-1 ring-border/50">
+		<div className="overflow-hidden rounded-xl border border-border bg-card">
 			{/* Header — identity + state */}
 			<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
-				<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
+				<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-foreground/[0.05]">
 					<Network className="size-[18px] text-muted-foreground" />
 				</div>
 				<div className="min-w-0 flex-1">
@@ -115,7 +130,7 @@ export function SwarmInfoCard({
 					mono
 				/>
 				<div className="flex items-center gap-3 py-3">
-					<div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/60">
+					<div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-foreground/[0.05]">
 						<Hash className="size-4 text-muted-foreground" />
 					</div>
 					<div className="min-w-0 flex-1">
@@ -151,7 +166,7 @@ export function SwarmInfoCard({
 					size="sm"
 					onClick={onLeaveSwarm}
 					title="Leave Swarm Cluster"
-					className="h-8 w-full cursor-pointer gap-1.5 text-xs text-rose-500 hover:bg-rose-500/10 hover:text-rose-600">
+					className="h-8 w-full cursor-pointer gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive">
 					<LogOut className="size-3.5" />
 					Leave Swarm
 				</Button>
@@ -175,7 +190,7 @@ function Stat({
 }) {
 	return (
 		<div className="flex items-center gap-3 py-3">
-			<div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/60">
+			<div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-foreground/[0.05]">
 				<Icon className="size-4 text-muted-foreground" />
 			</div>
 			<div className="min-w-0">

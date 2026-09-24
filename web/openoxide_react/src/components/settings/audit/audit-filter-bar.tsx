@@ -8,11 +8,7 @@ import {
 import {ToolbarSearch} from '#/components/settings/list-card';
 import {PERIODS, type PeriodKey} from './audit-format';
 
-/**
- * Audit filters — a fragment of toolbar controls (search, actor, period);
- * the toolbar itself owns the layout. Each control resets itself, so no
- * separate clear action here.
- */
+/** Audit filters — a fragment of toolbar controls (search, actor, period); the toolbar itself owns the layout. Each control resets itself, so no separate clear action here. */
 export function AuditFilterBar({
 	search,
 	onSearch,

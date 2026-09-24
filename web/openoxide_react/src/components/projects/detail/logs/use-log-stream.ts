@@ -2,12 +2,7 @@ import {useState, useEffect, useCallback} from 'react';
 
 type LogEvent = {payload?: string; error?: string};
 
-/**
- * Drives a ConnectRPC log stream: buffers chunks on newline boundaries,
- * strips carriage returns and keep-alive frames, and accumulates clean
- * lines. Resubscribes whenever `deps` change (or `refetch` fires) and
- * aborts the previous stream on cleanup.
- */
+/** Drives a ConnectRPC log stream: buffers chunks on newline boundaries, strips carriage returns and keep-alive frames, and accumulates clean lines. Resubscribes whenever `deps` change (or `refetch` fires) and aborts the previous stream on cleanup. */
 export function useLogStream(
 	subscribe: (signal: AbortSignal) => AsyncIterable<LogEvent>,
 	deps: unknown[],

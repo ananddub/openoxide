@@ -20,11 +20,7 @@ interface SettingsCollapseProps {
 	children: ReactNode;
 }
 
-/**
- * Geist-collapse strip for embedding inside the architecture card:
- * full-width header line that expands into the settings body below,
- * matching the Git Integration strip.
- */
+/** Geist-collapse strip for embedding inside the architecture card: full-width header line that expands into the settings body below, matching the Git Integration strip. */
 export function SettingsCollapse({
 	title,
 	description,
@@ -55,9 +51,7 @@ export function SettingsCollapse({
 						!open && '-rotate-90',
 					)}
 				/>
-				{icon && (
-					<span className="shrink-0 text-primary">{icon}</span>
-				)}
+				{icon && <span className="shrink-0 text-primary">{icon}</span>}
 				<span className="flex min-w-0 flex-col">
 					<span className="truncate text-sm font-medium text-foreground">
 						{title}
@@ -69,9 +63,7 @@ export function SettingsCollapse({
 					)}
 				</span>
 				{meta && (
-					<span className="ml-auto flex items-center gap-2">
-						{meta}
-					</span>
+					<span className="ml-auto flex items-center gap-2">{meta}</span>
 				)}
 			</CollapsibleTrigger>
 			<CollapsibleContent>

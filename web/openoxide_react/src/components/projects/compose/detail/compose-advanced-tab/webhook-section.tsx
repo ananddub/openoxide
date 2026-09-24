@@ -68,8 +68,8 @@ export function WebhookSection({compose}: {compose: any}) {
 				) : (
 					<>
 						<SheetNote tone="warn">
-							Rotating invalidates the previous secret. The token is
-							shown once — copy it before closing.
+							Rotating invalidates the previous secret. The token is shown
+							once — copy it before closing.
 						</SheetNote>
 						<Button
 							variant="outline"

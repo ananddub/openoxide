@@ -28,12 +28,7 @@ export type DeploymentPayload = {
 const deploymentClient = createServiceClient(DeploymentService);
 
 function toDeploymentPayload(deployment: Deployment): DeploymentPayload {
-	// Legacy consumers filter on flat resource ids; the proto carries them
-	// as resourceType ("Deploying Database"/"Application deploy" etc.) +
-	// resourceId. Map back so database_id/application_id/compose_id filters
-	// keep working. resourceType is the deployment's human title on the wire
-	// (the backend fills it from deployments.title), so expose it as `title`
-	// too — the history rows render e.title.
+	// Legacy consumers filter on flat resource ids; the proto carries them as resourceType ("Deploying Database"/"Application deploy" etc.) + resourceId. Map back so database_id/application_id/compose_id filters keep working. resourceType is the deployment's human title on the wire (the backend fills it from deployments.title), so expose it as `title` too — the history rows render e.title.
 	const rid = Number(deployment.resourceId);
 	const type = (deployment.resourceType || '').toLowerCase();
 	return {
@@ -65,14 +60,7 @@ export function useDeploymentList() {
 	);
 }
 
-/**
- * Live deployment list under the table-watch-managed `deployments` key
- * prefix (DEPLOYMENTS table → refetch while the page is mounted). The
- * query cache replaces the former zustand `deployments` slice; payload
- * shape is the legacy snake_case one (id, application_id/compose_id/
- * database_id, status, created_at, …) so consumers keep working
- * unchanged.
- */
+/** Live deployment list under the table-watch-managed `deployments` key prefix (DEPLOYMENTS table → refetch while the page is mounted). The query cache replaces the former zustand `deployments` slice; payload shape is the legacy snake_case one (id, application_id/compose_id/ database_id, status, created_at, …) so consumers keep working unchanged. */
 export type DeploymentItemPayload = {
 	id: number;
 	status: string;
@@ -90,17 +78,54 @@ export type DeploymentItemPayload = {
 	[key: string]: unknown;
 };
 
+/** Mirrors `FINAL_STATES` in
+ * `components/projects/detail/deployments/build-status.ts`: a deployment in
+ * one of these statuses gets `finished_at = updated_at`, which keeps
+ * `isBuildActive` (and the duration column) honest. */
+const FINAL_DEPLOYMENT_STATES = [
+	'DONE',
+	'DEPLOYED',
+	'SUCCESS',
+	'FAILED',
+	'ERROR',
+	'CANCELLED',
+	'CANCELED',
+	'STOPPED',
+	'STOPPEDBYUSER',
+];
+
+function toDeploymentItemPayload(
+	deployment: Deployment,
+): DeploymentItemPayload {
+	const rid = Number(deployment.resourceId);
+	const type = (deployment.resourceType || '').toLowerCase();
+	const status = (deployment.status || '').toUpperCase();
+	const finished = FINAL_DEPLOYMENT_STATES.includes(status);
+	return {
+		id: Number(deployment.id),
+		status: deployment.status,
+		state: deployment.status,
+		application_id: type.includes('application') ? rid : null,
+		compose_id: type.includes('compose') ? rid : null,
+		database_id: type.includes('database') ? rid : null,
+		title: deployment.resourceType,
+		description: null,
+		error_message: deployment.error ?? null,
+		log_content: deployment.logs ?? null,
+		created_at: Number(deployment.createdAt),
+		finished_at: finished ? Number(deployment.updatedAt) : null,
+		last_state_at: Number(deployment.updatedAt),
+		user_id: Number(deployment.userId ?? 0n),
+		user_email: deployment.userEmail ?? null,
+	};
+}
+
 export function useDeploymentItems() {
 	return useConnectQuery<DeploymentItemPayload[]>(
 		['deployments'],
 		async () => {
 			const response = await deploymentClient.listDeployments({});
-			return response.deployments.map(
-				deployment =>
-					JSON.parse(
-						JSON.stringify(toDeploymentPayload(deployment)),
-					) as DeploymentItemPayload,
-			);
+			return response.deployments.map(toDeploymentItemPayload);
 		},
 	);
 }
@@ -170,12 +195,7 @@ export type DockerContainerPayload = {
 	status?: string;
 };
 
-/**
- * Docker containers visible to the panel (legacy REST: GET
- * /deployments/docker/containers?server_id=...). ListContainers has no
- * server filter on the wire; the serverId only keys the query cache so
- * callers can switch contexts (local server for any null/undefined id).
- */
+/** Docker containers visible to the panel (legacy REST: GET /deployments/docker/containers?server_id=...). ListContainers has no server filter on the wire; the serverId only keys the query cache so callers can switch contexts (local server for any null/undefined id). */
 export function useDeploymentListContainers(
 	serverId?: number | bigint | null,
 	options?: {enabled?: boolean; refetchInterval?: number},

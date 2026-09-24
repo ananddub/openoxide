@@ -1,11 +1,7 @@
 import {cn} from '#/api/utils';
 import {CATEGORIES, type CategoryId} from './audit-format';
 
-/**
- * Category picker — the segmented `rounded-lg border bg-card p-1` group
- * the resource toolbars use for view toggles, with a quiet count per
- * segment.
- */
+/** Category picker — the segmented `rounded-lg border bg-card p-1` group the resource toolbars use for view toggles, with a quiet count per segment. */
 export function AuditCategoryTabs({
 	category,
 	counts,
@@ -23,7 +19,7 @@ export function AuditCategoryTabs({
 					type="button"
 					onClick={() => onSelect(c.id)}
 					className={cn(
-						'flex shrink-0 self-stretch cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground',
+						'flex shrink-0 cursor-pointer items-center gap-1.5 self-stretch rounded-md px-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground',
 						category === c.id && 'bg-accent text-foreground',
 					)}>
 					<c.icon className="size-3.5" strokeWidth={1.7} />

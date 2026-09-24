@@ -1,13 +1,12 @@
-import {
-	useActiveOrgId,
-	useConnectQuery,
-	useResourceListQuery,
-} from '../query';
-import type {OverviewServiceItemPayload} from '../overview';
+import {useActiveOrgId, useConnectQuery} from '../query';
 import {
 	DatabaseKind,
 	type AdvancedConfig,
 } from '#/gen/connect/openoxide/api/v1/database_pb';
+import {
+	OverviewServiceType,
+	type OverviewServiceItem,
+} from '#/gen/connect/openoxide/api/v1/overview_pb';
 import {
 	databaseClient,
 	databaseNetworkClient,
@@ -25,12 +24,7 @@ import {
 	type DatabaseSwarmSettingsPayload,
 } from './types';
 
-/**
- * Organization-wide database list (legacy app-store `databases` slice).
- * There is no org-wide Database RPC, so this derives from the overview
- * services stream and is keyed under the `databases` prefix so
- * SERVICE_DATABASE table changes invalidate it.
- */
+/** Organization-wide database list (legacy app-store `databases` slice). There is no org-wide Database RPC, so this derives from the overview services stream and is keyed under the `databases` prefix so SERVICE_DATABASE table changes invalidate it. */
 export function useDatabaseList() {
 	const orgId = useActiveOrgId();
 	return useConnectQuery<DatabaseItemPayload[]>(
@@ -39,37 +33,34 @@ export function useDatabaseList() {
 			const response = await overviewClient.listOrganizationServices({
 				organizationId: orgId,
 			});
-			return response.items
-				.map(
-					item => JSON.parse(item.payload) as OverviewServiceItemPayload,
+			return response.services
+				.filter(
+					(service: OverviewServiceItem) =>
+						service.serviceType === OverviewServiceType.DATABASE,
 				)
-				.filter(service => service.service_type === 'DATABASE')
 				.map(
-					service =>
+					(service: OverviewServiceItem) =>
 						({
 							id: Number(service.id),
 							name: service.name,
-							kind: (service.db_kind ?? '').toLowerCase() || undefined,
-							project_id: Number(service.project_id),
-							environment_id: Number(service.environment_id),
+							kind: (service.dbKind ?? '').toLowerCase() || undefined,
+							project_id: Number(service.projectId),
+							environment_id: Number(service.environmentId),
 							status: service.status,
 							server_id:
-								service.server_id === null
+								service.serverId === undefined
 									? undefined
-									: Number(service.server_id),
-							server_name: service.server_name ?? undefined,
-							created_at: Number(service.created_at),
-							updated_at: Number(service.created_at),
+									: Number(service.serverId),
+							server_name: service.serverName ?? undefined,
+							created_at: Number(service.createdAt),
+							updated_at: Number(service.createdAt),
 						}) satisfies DatabaseItemPayload,
 				);
 		},
 	);
 }
 
-/**
- * Single database of any kind (legacy live: per-kind getters).
- * GetDatabaseRequest requires the kind discriminator alongside the id.
- */
+/** Single database of any kind (legacy live: per-kind getters). GetDatabaseRequest requires the kind discriminator alongside the id. */
 export function useDatabaseGet(kind: DatabaseKind, id: bigint) {
 	return useConnectQuery<DatabasePayload>(
 		['databases', 'get', kind.toString(), id.toString()],
@@ -79,8 +70,7 @@ export function useDatabaseGet(kind: DatabaseKind, id: bigint) {
 	);
 }
 
-// Per-kind thin wrappers preserving the legacy hook surface; each just
-// resolves to useDatabaseGet with its DatabaseKind.
+// Per-kind thin wrappers preserving the legacy hook surface; each just resolves to useDatabaseGet with its DatabaseKind.
 export function usePostgresGet(id: bigint) {
 	return useDatabaseGet(DatabaseKind.POSTGRES, id);
 }
@@ -152,8 +142,21 @@ export function useDatabasePostgresAdvancedConfig(id: bigint) {
 
 /** Database networks across servers (legacy REST: GET /database-networks). */
 export function useDatabaseNetworkList() {
-	return useResourceListQuery<DatabaseNetworkPayload>(
+	return useConnectQuery<DatabaseNetworkPayload[]>(
 		['database-networks', 'list'],
-		() => databaseNetworkClient.listNetworks({}),
+		async () => {
+			const response = await databaseNetworkClient.listNetworks({});
+			return response.networks.map(network => ({
+				id: Number(network.id),
+				name: network.name,
+				docker_network_name: network.dockerNetworkName,
+				description: network.description,
+				external: network.external,
+				server_id:
+					network.serverId === undefined ? null : Number(network.serverId),
+				created_at: network.createdAt,
+				updated_at: network.updatedAt,
+			}));
+		},
 	);
 }

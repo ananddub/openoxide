@@ -128,7 +128,7 @@ export function AiSettingsList({items, view, onEdit, onDelete}: Props) {
 								<ProviderChip item={item} />
 								<StatusChip enabled={!!item.is_enabled} />
 							</div>
-							<div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+							<div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
 								<Actions item={item} onEdit={onEdit} onDelete={onDelete} />
 							</div>
 						</div>

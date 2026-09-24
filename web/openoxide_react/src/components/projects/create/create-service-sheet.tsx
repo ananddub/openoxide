@@ -98,7 +98,7 @@ function Checkpoints({steps, idx}: {steps: Step[]; idx: number}) {
 					)}
 					<span
 						className={cn(
-							'flex items-center gap-1.5 whitespace-nowrap text-[11px]',
+							'flex items-center gap-1.5 text-[11px] whitespace-nowrap',
 							i === idx
 								? 'font-medium text-foreground'
 								: 'text-muted-foreground',
@@ -160,7 +160,7 @@ function SelectRow({
 				)}
 			</span>
 			{selected && (
-				<span className="flex size-5 shrink-0 animate-in zoom-in-75 duration-150 items-center justify-center rounded-full bg-primary text-primary-foreground">
+				<span className="flex size-5 shrink-0 animate-in items-center justify-center rounded-full bg-primary text-primary-foreground duration-150 zoom-in-75">
 					<Check className="size-3" />
 				</span>
 			)}
@@ -201,7 +201,9 @@ function PlanCard({
 						</span>
 					)}
 				</span>
-				<span className="block text-[13px] text-muted-foreground">{desc}</span>
+				<span className="block text-[13px] text-muted-foreground">
+					{desc}
+				</span>
 			</span>
 			<span
 				className={cn(
@@ -266,7 +268,8 @@ export function CreateServiceSheet({
 		const preset = PRESETS.find(p => p.id === plan);
 		const cpu =
 			plan === 'custom' ? customCpu.trim() || undefined : preset?.cpu;
-		const mem = plan === 'custom' ? customMem.trim() || undefined : preset?.mem;
+		const mem =
+			plan === 'custom' ? customMem.trim() || undefined : preset?.mem;
 		if (!cpu && !mem) return;
 		try {
 			if (kind === 'application') {
@@ -289,8 +292,19 @@ export function CreateServiceSheet({
 	};
 
 	const option = OPTIONS.find(o => o.id === kind);
-	const {submitting, name, selectedEnv, selectedEnvId, dbKind, setDbKind, setDockerImage, serverId, setServerId, servers, setComposeType} =
-		form;
+	const {
+		submitting,
+		name,
+		selectedEnv,
+		selectedEnvId,
+		dbKind,
+		setDbKind,
+		setDockerImage,
+		serverId,
+		setServerId,
+		servers,
+		setComposeType,
+	} = form;
 
 	const canContinue =
 		step === 'stack'
@@ -329,7 +343,8 @@ export function CreateServiceSheet({
 	});
 	const showLocal = !serverQ || 'local this server'.includes(serverQ);
 
-	const stepDesc: Record<Step, string> = {		stack: 'Choose how your stack is orchestrated.',
+	const stepDesc: Record<Step, string> = {
+		stack: 'Choose how your stack is orchestrated.',
 		engine: 'Create databases that you can connect to your services.',
 		server: 'Choose where this service will run.',
 		resources: 'Pick a plan or set custom CPU and memory limits.',
@@ -342,15 +357,13 @@ export function CreateServiceSheet({
 				<SheetHeader>
 					<SheetTitle>New {option?.title || 'Service'}</SheetTitle>
 					<SheetDescription>{stepDesc[step]}</SheetDescription>
-					{steps.length > 1 && (
-						<Checkpoints steps={steps} idx={stepIdx} />
-					)}
+					{steps.length > 1 && <Checkpoints steps={steps} idx={stepIdx} />}
 				</SheetHeader>
 
 				<div className="flex-1 overflow-y-auto px-6 py-6">
 					<div
 						key={step}
-						className="animate-in fade-in-0 slide-in-from-right-4 duration-200 ease-out">
+						className="animate-in duration-200 ease-out fade-in-0 slide-in-from-right-4">
 						{step === 'stack' && (
 							<div className="flex flex-col gap-2">
 								<SelectRow
@@ -410,9 +423,7 @@ export function CreateServiceSheet({
 									<Input
 										placeholder="Search servers…"
 										value={serverQuery}
-										onChange={e =>
-											setServerQuery(e.target.value)
-										}
+										onChange={e => setServerQuery(e.target.value)}
 										className="bg-background pl-9"
 									/>
 								</div>
@@ -436,13 +447,11 @@ export function CreateServiceSheet({
 											subtitle={s.ip_address}
 										/>
 									))}
-									{!showLocal &&
-										visibleServers.length === 0 && (
-											<p className="py-6 text-center text-[13px] text-muted-foreground">
-												No servers match "
-												{serverQuery.trim()}".
-											</p>
-										)}
+									{!showLocal && visibleServers.length === 0 && (
+										<p className="py-6 text-center text-[13px] text-muted-foreground">
+											No servers match "{serverQuery.trim()}".
+										</p>
+									)}
 								</div>
 							</div>
 						)}
@@ -466,7 +475,7 @@ export function CreateServiceSheet({
 									desc="Set your own CPU and memory limits."
 								/>
 								{plan === 'custom' && (
-									<div className="mt-1 grid grid-cols-2 gap-3 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+									<div className="mt-1 grid animate-in grid-cols-2 gap-3 duration-200 fade-in-0 slide-in-from-top-2">
 										<div className="flex flex-col gap-1.5">
 											<span className="text-[13px] font-medium text-foreground">
 												vCPU
@@ -533,9 +542,7 @@ export function CreateServiceSheet({
 							<Button
 								type="submit"
 								form={FORM_ID}
-								disabled={
-									submitting || !name.trim() || !selectedEnvId
-								}
+								disabled={submitting || !name.trim() || !selectedEnvId}
 								className="h-10 gap-1.5 px-5">
 								<Save className="size-3.5" />
 								{submitting

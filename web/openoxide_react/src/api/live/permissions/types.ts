@@ -1,8 +1,4 @@
-/**
- * Permission payloads mirror the legacy live shape (snake_case JSON payloads
- * of the identity DTOs). The organization context travels in the
- * `X-Organization-Id` header attached by the transport.
- */
+/** Permission payloads mirror the legacy live shape (snake_case JSON payloads of the identity DTOs). The organization context travels in the `X-Organization-Id` header attached by the transport. */
 export type OrganizationMemberPayload = {
 	id: bigint | null;
 	user_id: bigint;

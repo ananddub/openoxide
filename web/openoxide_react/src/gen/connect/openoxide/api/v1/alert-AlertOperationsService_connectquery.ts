@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/alert.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {AlertOperationsService} from './alert_pb';
+import { AlertOperationsService } from "./alert_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.AlertOperationsService.ListRules
@@ -42,8 +42,7 @@ export const testRule = AlertOperationsService.method.testRule;
 /**
  * @generated from rpc openoxide.api.v1.AlertOperationsService.AcknowledgeEvent
  */
-export const acknowledgeEvent =
-	AlertOperationsService.method.acknowledgeEvent;
+export const acknowledgeEvent = AlertOperationsService.method.acknowledgeEvent;
 
 /**
  * @generated from rpc openoxide.api.v1.AlertOperationsService.SilenceEvent

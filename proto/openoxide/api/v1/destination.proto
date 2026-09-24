@@ -2,12 +2,91 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
 service DestinationService {
-  rpc ListDestinations(ResourceQuery) returns (ResourceListResponse);
-  rpc GetDestination(ResourceRequest) returns (ResourceResponse);
-  rpc CreateDestination(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateDestination(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteDestination(ResourceRequest) returns (Empty);
-  rpc TestDestination(ResourceRequest) returns (OperationResult);
+  rpc ListDestinations(ListDestinationsRequest) returns (ListDestinationsResponse);
+  rpc GetDestination(GetDestinationRequest) returns (GetDestinationResponse);
+  rpc CreateDestination(CreateDestinationRequest) returns (CreateDestinationResponse);
+  rpc UpdateDestination(UpdateDestinationRequest) returns (UpdateDestinationResponse);
+  rpc DeleteDestination(DeleteDestinationRequest) returns (Empty);
+  rpc TestDestination(TestDestinationRequest) returns (TestDestinationResponse);
+}
+
+message Destination {
+  // UUID primary key.
+  string id = 1;
+  string name = 2;
+  // rclone provider label (S3, R2, BACKBLAZE, MINIO, WASABI, ...).
+  string provider = 3;
+  string access_key = 4;
+  string secret_access_key = 5;
+  string bucket = 6;
+  string region = 7;
+  string endpoint = 8;
+  int64 organization_id = 9;
+  int64 created_at = 10;
+  int64 updated_at = 11;
+}
+
+message ListDestinationsRequest {}
+
+message ListDestinationsResponse {
+  repeated Destination destinations = 1;
+}
+
+message GetDestinationRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message GetDestinationResponse {
+  Destination destination = 1;
+}
+
+// The authenticated organization always owns the created row.
+message CreateDestinationRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string provider = 2 [(buf.validate.field).string.min_len = 1];
+  string access_key = 3;
+  string secret_access_key = 4;
+  string bucket = 5 [(buf.validate.field).string.min_len = 1];
+  string region = 6;
+  string endpoint = 7;
+}
+
+message CreateDestinationResponse {
+  Destination destination = 1;
+}
+
+message UpdateDestinationRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+  optional string name = 2 [(buf.validate.field).string.max_len = 255];
+  optional string provider = 3;
+  optional string access_key = 4;
+  optional string secret_access_key = 5;
+  optional string bucket = 6;
+  optional string region = 7;
+  optional string endpoint = 8;
+}
+
+message UpdateDestinationResponse {
+  Destination destination = 1;
+}
+
+message DeleteDestinationRequest {
+  string id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+// Raw credentials test used before a destination row exists.
+message TestDestinationRequest {
+  string provider = 1 [(buf.validate.field).string.min_len = 1];
+  string access_key = 2;
+  string secret_access_key = 3;
+  string bucket = 4 [(buf.validate.field).string.min_len = 1];
+  string region = 5;
+  string endpoint = 6;
+}
+
+message TestDestinationResponse {
+  bool success = 1;
 }

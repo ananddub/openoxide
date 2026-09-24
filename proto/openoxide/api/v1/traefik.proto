@@ -2,17 +2,201 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
+// Sole Traefik owner service; absorbs the former TraefikOperationsService.
 service TraefikService {
-  rpc ListFiles(ResourceQuery) returns (ResourceListResponse);
-  rpc GetFileTree(ResourceQuery) returns (ResourceListResponse);
-  rpc GetFileContent(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateFileContent(ResourceRequest) returns (OperationResult);
-  rpc Health(Empty) returns (OperationResult);
-  rpc GetRequestStatus(Empty) returns (OperationResult);
-  rpc ToggleRequests(ResourceRequest) returns (OperationResult);
-  rpc GetRequestLogs(ResourceQuery) returns (ResourceListResponse);
-  rpc GetVersion(Empty) returns (ResourceResponse);
-  rpc UpdateVersion(ResourceRequest) returns (OperationResult);
-  rpc RenderMiddleware(ResourceRequest) returns (ResourceResponse);
+  rpc ListFiles(TraefikListFilesRequest) returns (TraefikListFilesResponse);
+  rpc GetFileTree(TraefikGetFileTreeRequest) returns (TraefikGetFileTreeResponse);
+  rpc GetFileContent(TraefikGetFileContentRequest) returns (TraefikGetFileContentResponse);
+  rpc UpdateFileContent(TraefikUpdateFileContentRequest) returns (Empty);
+  rpc Health(TraefikHealthRequest) returns (TraefikHealthResponse);
+  rpc GetRequestStatus(TraefikGetRequestStatusRequest) returns (TraefikGetRequestStatusResponse);
+  rpc ToggleRequests(TraefikToggleRequestsRequest) returns (TraefikToggleRequestsResponse);
+  rpc GetRequestLogs(TraefikGetRequestLogsRequest) returns (TraefikGetRequestLogsResponse);
+  rpc GetVersion(TraefikGetVersionRequest) returns (TraefikGetVersionResponse);
+  rpc UpdateVersion(TraefikUpdateVersionRequest) returns (TraefikUpdateVersionResponse);
+  rpc RenderMiddleware(TraefikRenderMiddlewareRequest) returns (TraefikRenderMiddlewareResponse);
+}
+
+enum TraefikFileNodeType {
+  TRAEFIK_FILE_NODE_TYPE_UNSPECIFIED = 0;
+  TRAEFIK_FILE_NODE_TYPE_FILE = 1;
+  TRAEFIK_FILE_NODE_TYPE_DIRECTORY = 2;
+}
+
+// Closed set mirroring `StructuredMiddlewareKind`.
+enum TraefikMiddlewareKind {
+  TRAEFIK_MIDDLEWARE_KIND_UNSPECIFIED = 0;
+  TRAEFIK_MIDDLEWARE_KIND_STRIP_PREFIX = 1;
+  TRAEFIK_MIDDLEWARE_KIND_ADD_PREFIX = 2;
+  TRAEFIK_MIDDLEWARE_KIND_REDIRECT_SCHEME = 3;
+  TRAEFIK_MIDDLEWARE_KIND_COMPRESS = 4;
+  TRAEFIK_MIDDLEWARE_KIND_RATE_LIMIT = 5;
+  TRAEFIK_MIDDLEWARE_KIND_IP_ALLOW_LIST = 6;
+  TRAEFIK_MIDDLEWARE_KIND_REQUEST_HEADERS = 7;
+  TRAEFIK_MIDDLEWARE_KIND_RESPONSE_HEADERS = 8;
+}
+
+message TraefikFileNode {
+  string name = 1;
+  // Path relative to the Traefik config base directory.
+  string relative_path = 2;
+  uint64 size = 3;
+  bool is_readonly = 4;
+  // Unix epoch seconds as reported by the filesystem.
+  uint64 modified_at = 5;
+}
+
+message TraefikFileTreeNode {
+  string name = 1;
+  string relative_path = 2;
+  TraefikFileNodeType node_type = 3;
+  uint64 size = 4;
+  bool is_readonly = 5;
+  uint64 modified_at = 6;
+  repeated TraefikFileTreeNode children = 7;
+}
+
+message TraefikFileContent {
+  string path = 1;
+  // Opaque Traefik config document (.yml/.yaml/.json); shape is file-specific.
+  string content = 2;
+  bool is_readonly = 3;
+}
+
+message TraefikHealth {
+  bool is_healthy = 1;
+  // Coarse rawdata endpoint state ("ok" or "unreachable").
+  string rawdata_status = 2;
+  repeated string configuration_errors = 3;
+}
+
+message TraefikRequestsStatus {
+  bool is_active = 1;
+  string log_path = 2;
+  string cron_expression = 3;
+}
+
+message TraefikLogEntry {
+  // Timestamp string as emitted by the Traefik access log (RFC 3339).
+  string timestamp = 1;
+  string client_ip = 2;
+  string method = 3;
+  string path = 4;
+  uint32 status = 5;
+  double duration_ms = 6;
+  string service_name = 7;
+  string router_name = 8;
+}
+
+message TraefikVersion {
+  optional int64 server_id = 1;
+  string current_image = 2;
+  string desired_version = 3;
+}
+
+message TraefikMiddleware {
+  // Docker-label middleware reference, e.g. `openoxide-auth@docker`.
+  string reference = 1;
+  // Rendered Traefik Docker labels; values are opaque YAML fragments.
+  map<string, string> labels = 2;
+}
+
+message TraefikListFilesRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message TraefikListFilesResponse {
+  repeated TraefikFileNode files = 1;
+}
+
+message TraefikGetFileTreeRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message TraefikGetFileTreeResponse {
+  repeated TraefikFileTreeNode nodes = 1;
+}
+
+message TraefikGetFileContentRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  string path = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+message TraefikGetFileContentResponse {
+  TraefikFileContent file = 1;
+}
+
+message TraefikUpdateFileContentRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  string path = 2 [(buf.validate.field).string.min_len = 1];
+  // Full replacement document; validated as a YAML mapping server-side.
+  string content = 3;
+}
+
+message TraefikHealthRequest {}
+
+message TraefikHealthResponse {
+  TraefikHealth health = 1;
+}
+
+message TraefikGetRequestStatusRequest {}
+
+message TraefikGetRequestStatusResponse {
+  TraefikRequestsStatus status = 1;
+}
+
+message TraefikToggleRequestsRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  bool enable = 2;
+}
+
+message TraefikToggleRequestsResponse {
+  // Whether request logging is active after the toggle.
+  bool active = 1;
+}
+
+message TraefikGetRequestLogsRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 page = 2 [(buf.validate.field).int64.gte = 1];
+  optional int64 page_size = 3 [(buf.validate.field).int64 = {gte: 1, lte: 100}];
+  optional string search = 4 [(buf.validate.field).string.max_len = 1000];
+  optional uint32 status = 5;
+}
+
+message TraefikGetRequestLogsResponse {
+  repeated TraefikLogEntry entries = 1;
+  int64 total_count = 2;
+  int64 page = 3;
+  int64 page_size = 4;
+}
+
+message TraefikGetVersionRequest {}
+
+message TraefikGetVersionResponse {
+  TraefikVersion version = 1;
+}
+
+message TraefikUpdateVersionRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  string version = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+message TraefikUpdateVersionResponse {
+  TraefikVersion version = 1;
+}
+
+message TraefikRenderMiddlewareRequest {
+  TraefikMiddlewareKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  // Middleware name; alphanumerics, `-` and `_` only (server-validated).
+  string name = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  // Kind-specific scalar values (e.g. `prefix`, `scheme`, `average`, `burst`, headers).
+  map<string, string> values = 3;
+  // Kind-specific list input (prefix list for strip-prefix, source ranges for allow-list).
+  repeated string list = 4;
+}
+
+message TraefikRenderMiddlewareResponse {
+  TraefikMiddleware middleware = 1;
 }

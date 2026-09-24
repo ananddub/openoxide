@@ -1,9 +1,12 @@
 use connectrpc::{ConnectError, ErrorCode};
-use serde::Deserialize;
 
-use crate::services::platform::ai::{
-    AiDeployInput, AiGenerationOutput, AiSettingInput, AiSettingUpdate,
+use crate::api::connect::generated::openoxide::api::v1::{
+    AiComposeSuggestion as AiComposeSuggestionProto, AiDomain as AiDomainProto,
+    AiEnvironmentVariable as AiEnvironmentVariableProto, AiGeneratedFile as AiGeneratedFileProto,
+    AiGeneration as AiGenerationProto, AiGenerationOutput as AiGenerationOutputProto,
+    AiProvider, AiSetting as AiSettingProto,
 };
+use crate::services::platform::ai::{AiGenerationView, AiSettingView};
 
 pub fn map_error(error: String) -> ConnectError {
     let lower = error.to_ascii_lowercase();
@@ -21,109 +24,83 @@ pub fn map_error(error: String) -> ConnectError {
     }
 }
 
-// ── AI payload DTOs ──────────────────────────────────────────────
-
-#[derive(Debug, Deserialize)]
-pub struct CreateAiSettingDto {
-    pub name: String,
-    pub api_url: String,
-    pub api_key: String,
-    pub model: String,
-    #[serde(default = "default_true")]
-    pub is_enabled: bool,
+fn provider_to_proto(provider: &str) -> ::buffa::EnumValue<AiProvider> {
+    let known = match provider {
+        "openai" => AiProvider::Openai,
+        "anthropic" => AiProvider::Anthropic,
+        "gemini" => AiProvider::Gemini,
+        "ollama" => AiProvider::Ollama,
+        "openai_compatible" => AiProvider::OpenaiCompatible,
+        _ => AiProvider::Unspecified,
+    };
+    ::buffa::EnumValue::Known(known)
 }
 
-impl From<CreateAiSettingDto> for AiSettingInput {
-    fn from(value: CreateAiSettingDto) -> Self {
-        Self {
-            name: value.name,
-            api_url: value.api_url,
-            api_key: value.api_key,
-            model: value.model,
-            is_enabled: value.is_enabled,
-        }
+pub fn setting_to_proto(view: AiSettingView) -> AiSettingProto {
+    AiSettingProto {
+        id: view.id,
+        name: view.name,
+        api_url: view.api_url,
+        model: view.model,
+        is_enabled: view.is_enabled,
+        provider: provider_to_proto(&view.provider),
+        has_api_key: view.has_api_key,
+        organization_id: view.organization_id,
+        created_at: view.created_at,
+        updated_at: view.updated_at,
     }
 }
 
-#[derive(Debug, Deserialize)]
-pub struct UpdateAiSettingDto {
-    pub name: Option<String>,
-    pub api_url: Option<String>,
-    pub api_key: Option<String>,
-    pub model: Option<String>,
-    pub is_enabled: Option<bool>,
-}
-
-impl From<UpdateAiSettingDto> for AiSettingUpdate {
-    fn from(value: UpdateAiSettingDto) -> Self {
-        Self {
-            name: value.name,
-            api_url: value.api_url,
-            api_key: value.api_key,
-            model: value.model,
-            is_enabled: value.is_enabled,
-        }
+pub fn generation_to_proto(view: AiGenerationView) -> AiGenerationProto {
+    AiGenerationProto {
+        id: view.id,
+        ai_setting_id: view.ai_setting_id,
+        organization_id: view.organization_id,
+        created_by: view.created_by,
+        prompt: view.prompt,
+        output: ::buffa::MessageField::some(AiGenerationOutputProto {
+            suggestions: view
+                .output
+                .suggestions
+                .into_iter()
+                .map(|s| AiComposeSuggestionProto {
+                    id: s.id,
+                    name: s.name,
+                    short_description: s.short_description,
+                    description: s.description,
+                    docker_compose: s.docker_compose,
+                    env_variables: s
+                        .env_variables
+                        .into_iter()
+                        .map(|e| AiEnvironmentVariableProto {
+                            name: e.name,
+                            value: e.value,
+                        })
+                        .collect(),
+                    domains: s
+                        .domains
+                        .into_iter()
+                        .map(|d| AiDomainProto {
+                            host: d.host,
+                            port: d.port,
+                            service_name: d.service_name,
+                        })
+                        .collect(),
+                    config_files: s
+                        .config_files
+                        .into_iter()
+                        .map(|f| AiGeneratedFileProto {
+                            file_path: f.file_path,
+                            content: f.content,
+                        })
+                        .collect(),
+                })
+                .collect(),
+        }),
+        status: view.status,
+        compose_id: view.compose_id,
+        created_at: view.created_at,
+        updated_at: view.updated_at,
+        ..Default::default()
     }
-}
-
-#[derive(Debug, Deserialize)]
-pub struct DiscoverAiModelsDto {
-    pub api_url: String,
-    pub api_key: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct TestAiConnectionDto {
-    pub api_url: String,
-    pub api_key: String,
-    pub model: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct GenerateComposeDto {
-    pub ai_setting_id: i64,
-    pub request: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ReviewAiGenerationDto {
-    pub output: AiGenerationOutput,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct DeployAiGenerationDto {
-    pub suggestion_id: String,
-    pub environment_id: i64,
-    pub server_id: Option<i64>,
-    #[serde(default)]
-    pub deploy_now: bool,
-}
-
-impl From<DeployAiGenerationDto> for AiDeployInput {
-    fn from(value: DeployAiGenerationDto) -> Self {
-        Self {
-            suggestion_id: value.suggestion_id,
-            environment_id: value.environment_id,
-            server_id: value.server_id,
-            deploy_now: value.deploy_now,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum AiLogContextDto {
-    Build,
-    Runtime,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct AnalyzeLogsDto {
-    pub ai_setting_id: i64,
-    pub context: AiLogContextDto,
-    pub logs: String,
-}
-
-pub fn default_true() -> bool {
-    true
 }

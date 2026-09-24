@@ -24,12 +24,7 @@ function readAccessToken(): string {
 	}
 }
 
-/**
- * Connect 2.x surfaces failed unary calls as thrown ConnectErrors —
- * there is no response object to inspect. An expired/invalid access
- * token arrives as the `unauthenticated` code (the wire maps HTTP 401
- * onto it), which is the signal to refresh once and replay.
- */
+/** Connect 2.x surfaces failed unary calls as thrown ConnectErrors — there is no response object to inspect. An expired/invalid access token arrives as the `unauthenticated` code (the wire maps HTTP 401 onto it), which is the signal to refresh once and replay. */
 function isUnauthenticatedError(error: unknown): boolean {
 	return (
 		error instanceof ConnectError && error.code === Code.Unauthenticated
@@ -37,9 +32,7 @@ function isUnauthenticatedError(error: unknown): boolean {
 }
 
 export const authInterceptor: Interceptor = next => async req => {
-	// The refresh RPC itself must never enter the refresh-and-replay path:
-	// a rejected refresh would call refreshAccessToken again, which is
-	// already in flight (promise dedupe), deadlocking the await chain.
+	// The refresh RPC itself must never enter the refresh-and-replay path: a rejected refresh would call refreshAccessToken again, which is already in flight (promise dedupe), deadlocking the await chain.
 	const isRefreshCall = req.url.endsWith('/AuthService/Refresh');
 
 	const headers = new Headers(req.header);

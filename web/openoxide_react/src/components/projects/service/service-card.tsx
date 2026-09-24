@@ -1,5 +1,5 @@
 import React, {useMemo, useState, useEffect} from 'react';
-import {MoreVertical, Trash2, Server, Layers} from 'lucide-react';
+import {MoreVertical, Trash2, Server, Layers, KeyRound} from 'lucide-react';
 import {Link} from '@tanstack/react-router';
 import {cn} from '#/api/utils';
 import {
@@ -57,10 +57,7 @@ function EnvSection({
 					<span className="truncate">
 						{env.name}
 						{env.is_default && (
-							<span className="text-muted-foreground">
-								{' '}
-								(Default)
-							</span>
+							<span className="text-muted-foreground"> (Default)</span>
 						)}
 					</span>
 					<span className="ml-auto shrink-0 font-mono text-[10px] text-muted-foreground">
@@ -83,7 +80,9 @@ export function ServiceCard(props: ServiceCardProps) {
 		y: number;
 	} | null>(null);
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-	const [envSheet, setEnvSheet] = useState<EnvironmentPayload | null>(null);
+	const [envSheet, setEnvSheet] = useState<EnvironmentPayload | null>(
+		null,
+	);
 
 	const projectIdBig = useMemo(
 		() => BigInt(Number(projectId) || 0),
@@ -289,57 +288,71 @@ export function ServiceCard(props: ServiceCardProps) {
 				onOpenChange={open => {
 					if (!open) setEnvSheet(null);
 				}}>
-				<SheetContent side="right">
-					<SheetHeader>
-						<SheetTitle className="flex items-center gap-2">
-							{envSheet?.name}
-							{envSheet?.is_default && (
-								<span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-									Default
-								</span>
-							)}
-						</SheetTitle>
-						<SheetDescription>
-							{envSheet?.description?.trim() ||
-								'Basic environment details'}
-						</SheetDescription>
-					</SheetHeader>
-
-					<div className="flex-1 overflow-y-auto px-6 py-6">
-						<div className="flex items-center justify-between border-b border-border pb-3">
-							<span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-								Variables
+				<SheetContent
+				side="right"
+				className="gap-0 p-0 sm:data-[side=right]:w-[640px]">
+				<SheetHeader className="px-5 pt-5 pb-4">
+					<SheetTitle className="flex items-center gap-2">
+						{envSheet?.name}
+						{envSheet?.is_default && (
+							<span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+								Default
 							</span>
-							<span className="font-mono text-xs text-muted-foreground">
-								{envVarKeys(envSheet?.env_var).length} keys
+						)}
+					</SheetTitle>
+					<SheetDescription>
+						{envSheet?.description?.trim() ||
+							'Basic environment details'}
+					</SheetDescription>
+				</SheetHeader>
+
+				<div className="flex min-h-0 flex-1 flex-col px-5 pt-4 pb-5">
+					{/* Same card grammar as the env editors — read-only */}
+					<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card">
+						<div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/40 px-3 py-2">
+							<KeyRound className="size-3.5 shrink-0 text-muted-foreground/70" />
+							<span className="truncate font-mono text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+								{`${String(envSheet?.name || 'env')
+									.toLowerCase()
+									.replace(/[^a-z0-9]+/g, '-')
+									.replace(/^-|-$/g, '') || 'env'}.env`}
+							</span>
+							<span className="shrink-0 rounded-full bg-foreground/[0.06] px-1.5 py-px font-mono text-[10px] tabular-nums text-muted-foreground">
+								{envVarKeys(envSheet?.env_var).length}
 							</span>
 						</div>
-						{envVarKeys(envSheet?.env_var).length > 0 ? (
-							<ul className="divide-y divide-border/60">
-								{envVarKeys(envSheet?.env_var).map(key => (
-									<li
+						<div className="min-h-0 flex-1 overflow-y-auto">
+							{envVarKeys(envSheet?.env_var).length >
+								0 ? (
+								envVarKeys(envSheet?.env_var).map(key => (
+									<div
 										key={key}
-										className="flex items-center py-2">
-										<span className="truncate font-mono text-xs text-foreground">
+										className="flex h-11 items-center border-b border-border/60 px-3 transition-colors last:border-b-0 hover:bg-accent/30">
+										<span className="min-w-0 flex-1 truncate font-mono text-xs font-semibold tracking-wide text-foreground uppercase">
 											{key}
 										</span>
-									</li>
-								))}
-							</ul>
-						) : (
-							<p className="py-4 text-xs text-muted-foreground">
-								No variables defined.
-							</p>
-						)}
-						{envSheet && (
-							<p className="mt-4 text-[11px] text-muted-foreground">
-								Edited from Projects → Environments. Values
-								are hidden here to keep this view quick to
-								scan.
-							</p>
-						)}
+										<span className="shrink-0 font-mono text-xs text-muted-foreground/40 select-none">
+											••••••••
+										</span>
+									</div>
+								))
+							) : (
+								<p className="px-4 py-8 text-center text-xs text-muted-foreground">
+									No variables defined.
+								</p>
+							)}
+						</div>
 					</div>
-				</SheetContent>
+
+					{envSheet && (
+						<p className="mt-3 shrink-0 text-[11px] leading-normal text-muted-foreground">
+							Edited from Projects → Environments. Values
+							are hidden here to keep this view quick to
+							scan.
+						</p>
+					)}
+				</div>
+			</SheetContent>
 			</Sheet>
 		</>
 	);

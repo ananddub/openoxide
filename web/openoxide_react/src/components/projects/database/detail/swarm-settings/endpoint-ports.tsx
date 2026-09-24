@@ -68,7 +68,9 @@ export function EndpointPorts({
 							value={row.TargetPort ?? ''}
 							placeholder="0"
 							className={numberCell}
-							onChange={e => update({TargetPort: toNumber(e.target.value)})}
+							onChange={e =>
+								update({TargetPort: toNumber(e.target.value)})
+							}
 						/>
 					),
 				},

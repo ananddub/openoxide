@@ -39,11 +39,7 @@ interface ArchitectureGitSectionProps {
 	onUpdated?: () => void;
 }
 
-/**
- * Vercel-style collapsible integration strip inside the architecture card:
- * provider/repo summary in the trigger, full source details plus the deploy
- * key dropdown in the panel (custom-Git sources only).
- */
+/** Vercel-style collapsible integration strip inside the architecture card: provider/repo summary in the trigger, full source details plus the deploy key dropdown in the panel (custom-Git sources only). */
 export function ArchitectureGitSection({
 	entity,
 	kind,
@@ -162,11 +158,7 @@ export function ArchitectureGitSection({
 				<div className="grid gap-x-8 gap-y-4 px-5 pt-1 pb-5 sm:grid-cols-2 lg:grid-cols-4">
 					<Field
 						label="Repository"
-						value={
-							provider === 'GIT'
-								? repoUrl
-								: repoSummary || repo
-						}
+						value={provider === 'GIT' ? repoUrl : repoSummary || repo}
 					/>
 					<Field label="Branch" value={branch} />
 					<Field label="Build path" value={buildPath} />
@@ -178,11 +170,7 @@ export function ArchitectureGitSection({
 							</p>
 							<div className="mt-1 flex items-center gap-1.5">
 								<Select
-									value={
-										currentKeyId
-											? String(currentKeyId)
-											: 'none'
-									}
+									value={currentKeyId ? String(currentKeyId) : 'none'}
 									onValueChange={v => {
 										if (v) changeCredential(v);
 									}}>
@@ -190,18 +178,13 @@ export function ArchitectureGitSection({
 										disabled={saving}
 										className="h-8 min-w-0 flex-1 cursor-pointer rounded-lg bg-card text-xs">
 										<span className="truncate">
-											{currentKey?.name ??
-												'No key attached'}
+											{currentKey?.name ?? 'No key attached'}
 										</span>
 									</SelectTrigger>
 									<SelectContent className="bg-card">
-										<SelectItem value="none">
-											No key attached
-										</SelectItem>
+										<SelectItem value="none">No key attached</SelectItem>
 										{keys.map(k => (
-											<SelectItem
-												key={k.id}
-												value={String(k.id)}>
+											<SelectItem key={k.id} value={String(k.id)}>
 												{k.name}
 											</SelectItem>
 										))}

@@ -1,5 +1,9 @@
 import {createServiceClient, useConnectQuery} from './query';
-import {MonitoringOperationsService} from '#/gen/connect/openoxide/api/v1/monitoring_operations_pb';
+import {
+	MonitoringService,
+	type MonitoringContainerState,
+	type MonitoringServerMetric,
+} from '#/gen/connect/openoxide/api/v1/monitoring_pb';
 
 /** Container state point from the monitoring agent (ContainerStatePoint JSON). */
 export type ContainerStatePayload = {
@@ -14,25 +18,32 @@ export type ContainerStatePayload = {
 	[key: string]: unknown;
 };
 
-const monitoringClient = createServiceClient(MonitoringOperationsService);
+const monitoringClient = createServiceClient(MonitoringService);
 
-/**
- * Container states for a server (legacy live: useMonitoringContainerStates).
- * GetContainerStates wraps the whole state list inside a single
- * `ResourceListResponse` item payload, so the parsed result is an array.
- * `null` (server not picked yet) disables the query — firing it with id 0
- * only produces a not-found round-trip.
- */
+function toContainerStatePayload(
+	state: MonitoringContainerState,
+): ContainerStatePayload {
+	return {
+		container_id: state.containerId,
+		name: state.name,
+		state: state.state,
+		status: state.status,
+		application_id: state.applicationId,
+		compose_id: state.composeId,
+		compose_project: state.composeProject,
+		compose_service: state.composeService,
+	};
+}
+
+/** Container states for a server (legacy live: useMonitoringContainerStates). `null` (server not picked yet) disables the query — firing it with id 0 only produces a not-found round-trip. */
 export function useMonitoringContainerStates(serverId: bigint | null) {
 	return useConnectQuery<ContainerStatePayload[]>(
 		['monitoring', 'container-states', (serverId ?? 0n).toString()],
 		async () => {
 			const response = await monitoringClient.getContainerStates({
-				id: serverId ?? 0n,
-				payload: '',
+				serverId: serverId ?? 0n,
 			});
-			const raw = response.items[0]?.payload;
-			return raw ? (JSON.parse(raw) as ContainerStatePayload[]) : [];
+			return response.states.map(toContainerStatePayload);
 		},
 		{enabled: serverId !== null},
 	);
@@ -63,22 +74,44 @@ export type ServerMetricPayload = {
 	network_out: number;
 };
 
-/**
- * Newest-first server metric samples for one server (agent history via the
- * panel's MonitoringOperations.GetServerMetrics — the agent's get_last_n
- * returns the newest point FIRST). `null` server id disables the query.
- */
+function toServerMetricPayload(
+	metric: MonitoringServerMetric,
+): ServerMetricPayload {
+	return {
+		timestamp:
+			metric.timestamp === undefined
+				? undefined
+				: String(metric.timestamp),
+		server_id: Number(metric.serverId),
+		cpu: metric.cpu,
+		cpu_model: metric.cpuModel,
+		cpu_cores: Number(metric.cpuCores),
+		cpu_physical_cores: Number(metric.cpuPhysicalCores),
+		cpu_speed: metric.cpuSpeed,
+		os: metric.os,
+		distro: metric.distro,
+		kernel: metric.kernel,
+		arch: metric.arch,
+		mem_used: metric.memUsed,
+		mem_used_gb: metric.memUsedGb,
+		mem_total: metric.memTotal,
+		uptime: Number(metric.uptime),
+		disk_used: metric.diskUsed,
+		total_disk: metric.totalDisk,
+		network_in: metric.networkIn,
+		network_out: metric.networkOut,
+	};
+}
+
+/** Newest-first server metric samples for one server (agent history via the panel's MonitoringService.GetServerMetrics — the agent's get_last_n returns the newest point FIRST). The typed request has no limit field, so the page is trimmed client-side. `null` server id disables the query. */
 export function useServerMetrics(serverId: bigint | null, limit = 50) {
 	return useConnectQuery<ServerMetricPayload[]>(
 		['monitoring', 'server-metrics', (serverId ?? 0n).toString(), limit],
 		async () => {
 			const response = await monitoringClient.getServerMetrics({
-				id: serverId ?? 0n,
-				payload: JSON.stringify({limit}),
+				serverId: serverId ?? 0n,
 			});
-			return response.payload
-				? (JSON.parse(response.payload) as ServerMetricPayload[])
-				: [];
+			return response.metrics.slice(0, limit).map(toServerMetricPayload);
 		},
 		{enabled: serverId !== null, refetchInterval: 15_000},
 	);

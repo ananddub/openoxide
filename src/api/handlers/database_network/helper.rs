@@ -1,6 +1,6 @@
 use connectrpc::{ConnectError, ErrorCode};
 
-use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
+use crate::api::connect::generated::openoxide::api::v1::DatabaseNetwork;
 use crate::services::networking::database_network::DatabaseNetworkResponseDto;
 
 pub fn map_sqlx_error(error: sqlx::Error) -> ConnectError {
@@ -17,12 +17,16 @@ pub fn map_sqlx_error(error: sqlx::Error) -> ConnectError {
     }
 }
 
-pub fn network_to_resource(dto: DatabaseNetworkResponseDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
+pub fn network_to_proto(dto: DatabaseNetworkResponseDto) -> DatabaseNetwork {
+    DatabaseNetwork {
         id: dto.id,
-        kind: "database_network".into(),
-        payload,
+        name: dto.name,
+        docker_network_name: dto.docker_network_name,
+        description: dto.description,
+        external: dto.external,
+        server_id: dto.server_id,
+        created_at: dto.created_at,
+        updated_at: dto.updated_at,
         ..Default::default()
     }
 }

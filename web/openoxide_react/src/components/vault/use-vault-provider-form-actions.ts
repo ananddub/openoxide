@@ -28,10 +28,7 @@ export interface VaultFormValues {
 
 const TOKEN_REQUIRED_TYPES = ['HASHICORP', 'DOPPLER'];
 
-/**
- * Create/update and connection-test actions for the vault provider form.
- * Reads current values lazily so the dialog only owns form state.
- */
+/** Create/update and connection-test actions for the vault provider form. Reads current values lazily so the dialog only owns form state. */
 export function useVaultProviderFormActions(
 	getValues: () => VaultFormValues,
 ) {

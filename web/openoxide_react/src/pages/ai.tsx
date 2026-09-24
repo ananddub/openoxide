@@ -61,8 +61,7 @@ export function AiSettingsPage() {
 	);
 	const hasFilters = q !== '' || status !== 'All';
 
-	// Cache invalidation comes from the table-watch stream (ai_settings
-	// table → refetch while this page is mounted).
+	// Cache invalidation comes from the table-watch stream (ai_settings table → refetch while this page is mounted).
 	const deleteMutation = useConnectMutation(
 		async (id: number) => {
 			await deleteAiSetting(id);

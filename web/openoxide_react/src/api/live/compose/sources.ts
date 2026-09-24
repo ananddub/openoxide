@@ -34,8 +34,7 @@ function toSetSourceRequest(input: ComposeSourceInput) {
 	};
 }
 
-// The four hosted-forge setters share the same request shape; only the RPC
-// method differs, so build them from one factory.
+// The four hosted-forge setters share the same request shape; only the RPC method differs, so build them from one factory.
 const forgeSource = (
 	call: (req: ReturnType<typeof toSetSourceRequest>) => Promise<unknown>,
 ) =>
@@ -66,11 +65,7 @@ export const useComposeSetBitbucketSource = forgeSource(req =>
 	composeClient.setBitbucketSource(req),
 );
 
-/**
- * Point a compose at a custom Git URL (legacy REST: PATCH /compose/{id}/source/git).
- * The shared source request carries the build path and (for private repos)
- * the SSH key id alongside url/branch.
- */
+/** Point a compose at a custom Git URL (legacy REST: PATCH /compose/{id}/source/git). The shared source request carries the build path and (for private repos) the SSH key id alongside url/branch. */
 export function useComposeSetCustomGitSource() {
 	return useConnectMutation(
 		(input: {

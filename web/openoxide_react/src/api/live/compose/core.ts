@@ -55,7 +55,24 @@ export const useComposeMove = inputMutation(
 			id: BigInt(input.id),
 			targetEnvironmentId: BigInt(input.target_environment_id),
 		}),
-	// The move changes the service's environment — refresh env-scoped lists
-	// too, which the default 'composes' prefix already covers.
+	// The move changes the service's environment — refresh env-scoped lists too, which the default 'composes' prefix already covers.
 	[['composes'], ['environments'], ['overview']],
+);
+
+/** Install a raw docker-compose template as a new RAW compose (InstallTemplate RPC); `env_var` is seeded as .env-style KEY=VALUE lines. */
+export const useComposeInstallTemplate = inputMutation(
+	(input: {
+		template: string;
+		environment_id: number | bigint;
+		name?: string;
+		server_id?: number | bigint;
+		env_var?: string;
+	}) =>
+		composeClient.installTemplate({
+			template: input.template,
+			environmentId: BigInt(input.environment_id),
+			name: input.name,
+			serverId: big(input.server_id),
+			envVar: input.env_var,
+		}),
 );

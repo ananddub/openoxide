@@ -11,8 +11,7 @@ export function triggerSearch(): void {
 	window.dispatchEvent(new CustomEvent('openoxide:open-search'));
 }
 
-// Keyboard-driven command palette. Opens on Cmd/Ctrl+K.
-// Routes are grouped dynamically from ROUTES — no hardcoded group names.
+// Keyboard-driven command palette. Opens on Cmd/Ctrl+K. Routes are grouped dynamically from ROUTES — no hardcoded group names.
 export function SearchDialog() {
 	const [open, setOpen] = React.useState(false);
 	const [query, setQuery] = React.useState('');
@@ -56,9 +55,7 @@ export function SearchDialog() {
 		setSelectedIndex(0);
 	}, [query]);
 
-	// Close dialog first, then navigate to avoid dialog blocking route transition.
-	// ROUTES entries may carry a query (`/infra?tab=…`) — TanStack's `to` is
-	// path-only, so split the search out and pass it as `search`.
+	// Close dialog first, then navigate to avoid dialog blocking route transition. ROUTES entries may carry a query (`/infra?tab=…`) — TanStack's `to` is path-only, so split the search out and pass it as `search`.
 	const handleNavigate = (path: string) => {
 		setOpen(false);
 		const [to, query] = path.split('?');

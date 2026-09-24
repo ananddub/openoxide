@@ -31,11 +31,7 @@ interface VolumeBackupsTabProps {
 	onRefresh?: () => void;
 }
 
-/**
- * Service → Backups — the SSH Keys grammar: section title with the one
- * primary action, toolbar (search + grid/list) and rules as grid cards or
- * one bordered list card.
- */
+/** Service → Backups — the SSH Keys grammar: section title with the one primary action, toolbar (search + grid/list) and rules as grid cards or one bordered list card. */
 export function VolumeBackupsTab({
 	app,
 	backups: passedBackups,

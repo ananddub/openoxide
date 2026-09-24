@@ -2,49 +2,707 @@
 // @generated from file openoxide/api/v1/overview.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/overview.proto.
  */
-export const file_openoxide_api_v1_overview: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'Ch9vcGVub3hpZGUvYXBpL3YxL292ZXJ2aWV3LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMpoCCg9PdmVydmlld1NlcnZpY2USVwoMTGlzdFNlcnZpY2VzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJWCgtMaXN0RG9tYWlucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVgoLTGlzdEJhY2t1cHMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlYgZwcm90bzM',
-		[file_openoxide_api_v1_common],
-	);
+export const file_openoxide_api_v1_overview: GenFile = /*@__PURE__*/
+  fileDesc("Ch9vcGVub3hpZGUvYXBpL3YxL292ZXJ2aWV3LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIt4CChNPdmVydmlld1NlcnZpY2VJdGVtEgoKAmlkGAEgASgDEgwKBG5hbWUYAiABKAkSOwoMc2VydmljZV90eXBlGAMgASgOMiUub3Blbm94aWRlLmFwaS52MS5PdmVydmlld1NlcnZpY2VUeXBlEg4KBnN0YXR1cxgEIAEoCRISCgpjcmVhdGVkX2F0GAUgASgDEhIKCnByb2plY3RfaWQYBiABKAMSFAoMcHJvamVjdF9uYW1lGAcgASgJEhYKDmVudmlyb25tZW50X2lkGAggASgDEhgKEGVudmlyb25tZW50X25hbWUYCSABKAkSFAoHZGJfa2luZBgKIAEoCUgAiAEBEhYKCXNlcnZlcl9pZBgLIAEoA0gBiAEBEhgKC3NlcnZlcl9uYW1lGAwgASgJSAKIAQFCCgoIX2RiX2tpbmRCDAoKX3NlcnZlcl9pZEIOCgxfc2VydmVyX25hbWUiqwQKEk92ZXJ2aWV3RG9tYWluSXRlbRIKCgJpZBgBIAEoAxIMCgRob3N0GAIgASgJEhEKBHBhdGgYAyABKAlIAIgBARIRCgRwb3J0GAQgASgFSAGIAQESDQoFaHR0cHMYBSABKAgSGwoOYXBwbGljYXRpb25faWQYBiABKANIAogBARIXCgpjb21wb3NlX2lkGAcgASgDSAOIAQESFAoMc2VydmljZV9uYW1lGAggASgJEhQKDHByb2plY3RfbmFtZRgJIAEoCRIaCg1pbnRlcm5hbF9wYXRoGAogASgJSASIAQESHgoRY3VzdG9tX2VudHJ5cG9pbnQYCyABKAlIBYgBARIhChRjdXN0b21fY2VydF9yZXNvbHZlchgMIAEoCUgGiAEBEhIKCnN0cmlwX3BhdGgYDSABKAgSEwoLbWlkZGxld2FyZXMYDiABKAkSEwoLZG9tYWluX3R5cGUYDyABKAkSGAoQY2VydGlmaWNhdGVfdHlwZRgQIAEoCRIgChNkb21haW5fc2VydmljZV9uYW1lGBEgASgJSAeIAQFCBwoFX3BhdGhCBwoFX3BvcnRCEQoPX2FwcGxpY2F0aW9uX2lkQg0KC19jb21wb3NlX2lkQhAKDl9pbnRlcm5hbF9wYXRoQhQKEl9jdXN0b21fZW50cnlwb2ludEIXChVfY3VzdG9tX2NlcnRfcmVzb2x2ZXJCFgoUX2RvbWFpbl9zZXJ2aWNlX25hbWUirgQKEk92ZXJ2aWV3QmFja3VwSXRlbRIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEjkKC2JhY2t1cF90eXBlGAMgASgOMiQub3Blbm94aWRlLmFwaS52MS5PdmVydmlld0JhY2t1cFR5cGUSNgoGc3RhdHVzGAQgASgOMiYub3Blbm94aWRlLmFwaS52MS5PdmVydmlld0JhY2t1cFN0YXR1cxITCgtkZXN0aW5hdGlvbhgFIAEoCRISCgpjcmVhdGVkX2F0GAYgASgDEhcKCnNlcnZpY2VfaWQYByABKANIAIgBARIbCg5hcHBsaWNhdGlvbl9pZBgIIAEoA0gBiAEBEhcKCmNvbXBvc2VfaWQYCSABKANIAogBARIYCgtwb3N0Z3Jlc19pZBgKIAEoA0gDiAEBEhUKCG15c3FsX2lkGAsgASgDSASIAQESFwoKbWFyaWFkYl9pZBgMIAEoA0gFiAEBEhUKCG1vbmdvX2lkGA0gASgDSAaIAQESFQoIcmVkaXNfaWQYDiABKANIB4gBARIWCglsaWJzcWxfaWQYDyABKANICIgBAUINCgtfc2VydmljZV9pZEIRCg9fYXBwbGljYXRpb25faWRCDQoLX2NvbXBvc2VfaWRCDgoMX3Bvc3RncmVzX2lkQgsKCV9teXNxbF9pZEINCgtfbWFyaWFkYl9pZEILCglfbW9uZ29faWRCCwoJX3JlZGlzX2lkQgwKCl9saWJzcWxfaWQi5AEKG092ZXJ2aWV3TGlzdFNlcnZpY2VzUmVxdWVzdBIlCg9vcmdhbml6YXRpb25faWQYASABKANCB7pIBCICIABIAIgBARIkCg5lbnZpcm9ubWVudF9pZBgCIAEoA0IHukgEIgIgAEgBiAEBEh4KBWxpbWl0GAMgASgDQgq6SAciBRjoBygBSAKIAQESHAoGb2Zmc2V0GAQgASgDQge6SAQiAigASAOIAQFCEgoQX29yZ2FuaXphdGlvbl9pZEIRCg9fZW52aXJvbm1lbnRfaWRCCAoGX2xpbWl0QgkKB19vZmZzZXQiVwocT3ZlcnZpZXdMaXN0U2VydmljZXNSZXNwb25zZRI3CghzZXJ2aWNlcxgBIAMoCzIlLm9wZW5veGlkZS5hcGkudjEuT3ZlcnZpZXdTZXJ2aWNlSXRlbSLjAQoaT3ZlcnZpZXdMaXN0RG9tYWluc1JlcXVlc3QSJQoPb3JnYW5pemF0aW9uX2lkGAEgASgDQge6SAQiAiAASACIAQESJAoOZW52aXJvbm1lbnRfaWQYAiABKANCB7pIBCICIABIAYgBARIeCgVsaW1pdBgDIAEoA0IKukgHIgUY6AcoAUgCiAEBEhwKBm9mZnNldBgEIAEoA0IHukgEIgIoAEgDiAEBQhIKEF9vcmdhbml6YXRpb25faWRCEQoPX2Vudmlyb25tZW50X2lkQggKBl9saW1pdEIJCgdfb2Zmc2V0IlQKG092ZXJ2aWV3TGlzdERvbWFpbnNSZXNwb25zZRI1Cgdkb21haW5zGAEgAygLMiQub3Blbm94aWRlLmFwaS52MS5PdmVydmlld0RvbWFpbkl0ZW0i4wEKGk92ZXJ2aWV3TGlzdEJhY2t1cHNSZXF1ZXN0EiUKD29yZ2FuaXphdGlvbl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEiQKDmVudmlyb25tZW50X2lkGAIgASgDQge6SAQiAiAASAGIAQESHgoFbGltaXQYAyABKANCCrpIByIFGOgHKAFIAogBARIcCgZvZmZzZXQYBCABKANCB7pIBCICKABIA4gBAUISChBfb3JnYW5pemF0aW9uX2lkQhEKD19lbnZpcm9ubWVudF9pZEIICgZfbGltaXRCCQoHX29mZnNldCJUChtPdmVydmlld0xpc3RCYWNrdXBzUmVzcG9uc2USNQoHYmFja3VwcxgBIAMoCzIkLm9wZW5veGlkZS5hcGkudjEuT3ZlcnZpZXdCYWNrdXBJdGVtIrcBCidPdmVydmlld0xpc3RPcmdhbml6YXRpb25TZXJ2aWNlc1JlcXVlc3QSJQoPb3JnYW5pemF0aW9uX2lkGAEgASgDQge6SAQiAiAASACIAQESHgoFbGltaXQYAiABKANCCrpIByIFGOgHKAFIAYgBARIcCgZvZmZzZXQYAyABKANCB7pIBCICKABIAogBAUISChBfb3JnYW5pemF0aW9uX2lkQggKBl9saW1pdEIJCgdfb2Zmc2V0ImMKKE92ZXJ2aWV3TGlzdE9yZ2FuaXphdGlvblNlcnZpY2VzUmVzcG9uc2USNwoIc2VydmljZXMYASADKAsyJS5vcGVub3hpZGUuYXBpLnYxLk92ZXJ2aWV3U2VydmljZUl0ZW0itgEKJk92ZXJ2aWV3TGlzdE9yZ2FuaXphdGlvbkRvbWFpbnNSZXF1ZXN0EiUKD29yZ2FuaXphdGlvbl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEh4KBWxpbWl0GAIgASgDQgq6SAciBRjoBygBSAGIAQESHAoGb2Zmc2V0GAMgASgDQge6SAQiAigASAKIAQFCEgoQX29yZ2FuaXphdGlvbl9pZEIICgZfbGltaXRCCQoHX29mZnNldCJgCidPdmVydmlld0xpc3RPcmdhbml6YXRpb25Eb21haW5zUmVzcG9uc2USNQoHZG9tYWlucxgBIAMoCzIkLm9wZW5veGlkZS5hcGkudjEuT3ZlcnZpZXdEb21haW5JdGVtIrYBCiZPdmVydmlld0xpc3RPcmdhbml6YXRpb25CYWNrdXBzUmVxdWVzdBIlCg9vcmdhbml6YXRpb25faWQYASABKANCB7pIBCICIABIAIgBARIeCgVsaW1pdBgCIAEoA0IKukgHIgUY6AcoAUgBiAEBEhwKBm9mZnNldBgDIAEoA0IHukgEIgIoAEgCiAEBQhIKEF9vcmdhbml6YXRpb25faWRCCAoGX2xpbWl0QgkKB19vZmZzZXQiYAonT3ZlcnZpZXdMaXN0T3JnYW5pemF0aW9uQmFja3Vwc1Jlc3BvbnNlEjUKB2JhY2t1cHMYASADKAsyJC5vcGVub3hpZGUuYXBpLnYxLk92ZXJ2aWV3QmFja3VwSXRlbSqiAQoTT3ZlcnZpZXdTZXJ2aWNlVHlwZRIlCiFPVkVSVklFV19TRVJWSUNFX1RZUEVfVU5TUEVDSUZJRUQQABIdChlPVkVSVklFV19TRVJWSUNFX1RZUEVfQVBQEAESIQodT1ZFUlZJRVdfU0VSVklDRV9UWVBFX0NPTVBPU0UQAhIiCh5PVkVSVklFV19TRVJWSUNFX1RZUEVfREFUQUJBU0UQAyp+ChJPdmVydmlld0JhY2t1cFR5cGUSJAogT1ZFUlZJRVdfQkFDS1VQX1RZUEVfVU5TUEVDSUZJRUQQABIhCh1PVkVSVklFV19CQUNLVVBfVFlQRV9EQVRBQkFTRRABEh8KG09WRVJWSUVXX0JBQ0tVUF9UWVBFX1ZPTFVNRRACKocBChRPdmVydmlld0JhY2t1cFN0YXR1cxImCiJPVkVSVklFV19CQUNLVVBfU1RBVFVTX1VOU1BFQ0lGSUVEEAASIgoeT1ZFUlZJRVdfQkFDS1VQX1NUQVRVU19FTkFCTEVEEAESIwofT1ZFUlZJRVdfQkFDS1VQX1NUQVRVU19ESVNBQkxFRBACMo4GCg9PdmVydmlld1NlcnZpY2USbQoMTGlzdFNlcnZpY2VzEi0ub3Blbm94aWRlLmFwaS52MS5PdmVydmlld0xpc3RTZXJ2aWNlc1JlcXVlc3QaLi5vcGVub3hpZGUuYXBpLnYxLk92ZXJ2aWV3TGlzdFNlcnZpY2VzUmVzcG9uc2USagoLTGlzdERvbWFpbnMSLC5vcGVub3hpZGUuYXBpLnYxLk92ZXJ2aWV3TGlzdERvbWFpbnNSZXF1ZXN0Gi0ub3Blbm94aWRlLmFwaS52MS5PdmVydmlld0xpc3REb21haW5zUmVzcG9uc2USagoLTGlzdEJhY2t1cHMSLC5vcGVub3hpZGUuYXBpLnYxLk92ZXJ2aWV3TGlzdEJhY2t1cHNSZXF1ZXN0Gi0ub3Blbm94aWRlLmFwaS52MS5PdmVydmlld0xpc3RCYWNrdXBzUmVzcG9uc2USkQEKGExpc3RPcmdhbml6YXRpb25TZXJ2aWNlcxI5Lm9wZW5veGlkZS5hcGkudjEuT3ZlcnZpZXdMaXN0T3JnYW5pemF0aW9uU2VydmljZXNSZXF1ZXN0Gjoub3Blbm94aWRlLmFwaS52MS5PdmVydmlld0xpc3RPcmdhbml6YXRpb25TZXJ2aWNlc1Jlc3BvbnNlEo4BChdMaXN0T3JnYW5pemF0aW9uRG9tYWlucxI4Lm9wZW5veGlkZS5hcGkudjEuT3ZlcnZpZXdMaXN0T3JnYW5pemF0aW9uRG9tYWluc1JlcXVlc3QaOS5vcGVub3hpZGUuYXBpLnYxLk92ZXJ2aWV3TGlzdE9yZ2FuaXphdGlvbkRvbWFpbnNSZXNwb25zZRKOAQoXTGlzdE9yZ2FuaXphdGlvbkJhY2t1cHMSOC5vcGVub3hpZGUuYXBpLnYxLk92ZXJ2aWV3TGlzdE9yZ2FuaXphdGlvbkJhY2t1cHNSZXF1ZXN0Gjkub3Blbm94aWRlLmFwaS52MS5PdmVydmlld0xpc3RPcmdhbml6YXRpb25CYWNrdXBzUmVzcG9uc2ViBnByb3RvMw", [file_buf_validate_validate]);
 
 /**
+ * @generated from message openoxide.api.v1.OverviewServiceItem
+ */
+export type OverviewServiceItem = Message<"openoxide.api.v1.OverviewServiceItem"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.OverviewServiceType service_type = 3;
+   */
+  serviceType: OverviewServiceType;
+
+  /**
+   * Free-form runtime status string from the services table.
+   *
+   * @generated from field: string status = 4;
+   */
+  status: string;
+
+  /**
+   * @generated from field: int64 created_at = 5;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 project_id = 6;
+   */
+  projectId: bigint;
+
+  /**
+   * @generated from field: string project_name = 7;
+   */
+  projectName: string;
+
+  /**
+   * @generated from field: int64 environment_id = 8;
+   */
+  environmentId: bigint;
+
+  /**
+   * @generated from field: string environment_name = 9;
+   */
+  environmentName: string;
+
+  /**
+   * Lowercased database kind; only set for DATABASE services.
+   *
+   * @generated from field: optional string db_kind = 10;
+   */
+  dbKind?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 server_id = 11;
+   */
+  serverId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string server_name = 12;
+   */
+  serverName?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewServiceItem.
+ * Use `create(OverviewServiceItemSchema)` to create a new message.
+ */
+export const OverviewServiceItemSchema: GenMessage<OverviewServiceItem> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 0);
+
+/**
+ * Mirrors the domains table columns so detail-page edit dialogs can hydrate from the list; keep aligned with the Domain message in domain.proto.
+ *
+ * @generated from message openoxide.api.v1.OverviewDomainItem
+ */
+export type OverviewDomainItem = Message<"openoxide.api.v1.OverviewDomainItem"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string host = 2;
+   */
+  host: string;
+
+  /**
+   * @generated from field: optional string path = 3;
+   */
+  path?: string | undefined;
+
+  /**
+   * @generated from field: optional int32 port = 4;
+   */
+  port?: number | undefined;
+
+  /**
+   * @generated from field: bool https = 5;
+   */
+  https: boolean;
+
+  /**
+   * @generated from field: optional int64 application_id = 6;
+   */
+  applicationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 compose_id = 7;
+   */
+  composeId?: bigint | undefined;
+
+  /**
+   * @generated from field: string service_name = 8;
+   */
+  serviceName: string;
+
+  /**
+   * @generated from field: string project_name = 9;
+   */
+  projectName: string;
+
+  /**
+   * @generated from field: optional string internal_path = 10;
+   */
+  internalPath?: string | undefined;
+
+  /**
+   * @generated from field: optional string custom_entrypoint = 11;
+   */
+  customEntrypoint?: string | undefined;
+
+  /**
+   * @generated from field: optional string custom_cert_resolver = 12;
+   */
+  customCertResolver?: string | undefined;
+
+  /**
+   * @generated from field: bool strip_path = 13;
+   */
+  stripPath: boolean;
+
+  /**
+   * JSON array of middleware names stored verbatim on the row.
+   *
+   * @generated from field: string middlewares = 14;
+   */
+  middlewares: string;
+
+  /**
+   * Raw domains-table strings (APPLICATION/COMPOSE, ACME/CUSTOM/...); passed through without panel-side normalisation.
+   *
+   * @generated from field: string domain_type = 15;
+   */
+  domainType: string;
+
+  /**
+   * @generated from field: string certificate_type = 16;
+   */
+  certificateType: string;
+
+  /**
+   * @generated from field: optional string domain_service_name = 17;
+   */
+  domainServiceName?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewDomainItem.
+ * Use `create(OverviewDomainItemSchema)` to create a new message.
+ */
+export const OverviewDomainItemSchema: GenMessage<OverviewDomainItem> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 1);
+
+/**
+ * The linkage mirrors are flattened into the payload top level and only the column matching the backup's service kind is set.
+ *
+ * @generated from message openoxide.api.v1.OverviewBackupItem
+ */
+export type OverviewBackupItem = Message<"openoxide.api.v1.OverviewBackupItem"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.OverviewBackupType backup_type = 3;
+   */
+  backupType: OverviewBackupType;
+
+  /**
+   * @generated from field: openoxide.api.v1.OverviewBackupStatus status = 4;
+   */
+  status: OverviewBackupStatus;
+
+  /**
+   * Display label ("Destination #<id>"), not a stable identifier.
+   *
+   * @generated from field: string destination = 5;
+   */
+  destination: string;
+
+  /**
+   * @generated from field: int64 created_at = 6;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: optional int64 service_id = 7;
+   */
+  serviceId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 application_id = 8;
+   */
+  applicationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 compose_id = 9;
+   */
+  composeId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 postgres_id = 10;
+   */
+  postgresId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 mysql_id = 11;
+   */
+  mysqlId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 mariadb_id = 12;
+   */
+  mariadbId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 mongo_id = 13;
+   */
+  mongoId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 redis_id = 14;
+   */
+  redisId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 libsql_id = 15;
+   */
+  libsqlId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewBackupItem.
+ * Use `create(OverviewBackupItemSchema)` to create a new message.
+ */
+export const OverviewBackupItemSchema: GenMessage<OverviewBackupItem> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 2);
+
+/**
+ * Legacy aliases (no server-side implementation yet); same shapes as the organization-scoped rpcs below.
+ *
+ * @generated from message openoxide.api.v1.OverviewListServicesRequest
+ */
+export type OverviewListServicesRequest = Message<"openoxide.api.v1.OverviewListServicesRequest"> & {
+  /**
+   * @generated from field: optional int64 organization_id = 1;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 environment_id = 2;
+   */
+  environmentId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 limit = 3;
+   */
+  limit?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 offset = 4;
+   */
+  offset?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewListServicesRequest.
+ * Use `create(OverviewListServicesRequestSchema)` to create a new message.
+ */
+export const OverviewListServicesRequestSchema: GenMessage<OverviewListServicesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 3);
+
+/**
+ * @generated from message openoxide.api.v1.OverviewListServicesResponse
+ */
+export type OverviewListServicesResponse = Message<"openoxide.api.v1.OverviewListServicesResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.OverviewServiceItem services = 1;
+   */
+  services: OverviewServiceItem[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewListServicesResponse.
+ * Use `create(OverviewListServicesResponseSchema)` to create a new message.
+ */
+export const OverviewListServicesResponseSchema: GenMessage<OverviewListServicesResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 4);
+
+/**
+ * @generated from message openoxide.api.v1.OverviewListDomainsRequest
+ */
+export type OverviewListDomainsRequest = Message<"openoxide.api.v1.OverviewListDomainsRequest"> & {
+  /**
+   * @generated from field: optional int64 organization_id = 1;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 environment_id = 2;
+   */
+  environmentId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 limit = 3;
+   */
+  limit?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 offset = 4;
+   */
+  offset?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewListDomainsRequest.
+ * Use `create(OverviewListDomainsRequestSchema)` to create a new message.
+ */
+export const OverviewListDomainsRequestSchema: GenMessage<OverviewListDomainsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 5);
+
+/**
+ * @generated from message openoxide.api.v1.OverviewListDomainsResponse
+ */
+export type OverviewListDomainsResponse = Message<"openoxide.api.v1.OverviewListDomainsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.OverviewDomainItem domains = 1;
+   */
+  domains: OverviewDomainItem[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewListDomainsResponse.
+ * Use `create(OverviewListDomainsResponseSchema)` to create a new message.
+ */
+export const OverviewListDomainsResponseSchema: GenMessage<OverviewListDomainsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 6);
+
+/**
+ * @generated from message openoxide.api.v1.OverviewListBackupsRequest
+ */
+export type OverviewListBackupsRequest = Message<"openoxide.api.v1.OverviewListBackupsRequest"> & {
+  /**
+   * @generated from field: optional int64 organization_id = 1;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 environment_id = 2;
+   */
+  environmentId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 limit = 3;
+   */
+  limit?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 offset = 4;
+   */
+  offset?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewListBackupsRequest.
+ * Use `create(OverviewListBackupsRequestSchema)` to create a new message.
+ */
+export const OverviewListBackupsRequestSchema: GenMessage<OverviewListBackupsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 7);
+
+/**
+ * @generated from message openoxide.api.v1.OverviewListBackupsResponse
+ */
+export type OverviewListBackupsResponse = Message<"openoxide.api.v1.OverviewListBackupsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.OverviewBackupItem backups = 1;
+   */
+  backups: OverviewBackupItem[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewListBackupsResponse.
+ * Use `create(OverviewListBackupsResponseSchema)` to create a new message.
+ */
+export const OverviewListBackupsResponseSchema: GenMessage<OverviewListBackupsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 8);
+
+/**
+ * @generated from message openoxide.api.v1.OverviewListOrganizationServicesRequest
+ */
+export type OverviewListOrganizationServicesRequest = Message<"openoxide.api.v1.OverviewListOrganizationServicesRequest"> & {
+  /**
+   * @generated from field: optional int64 organization_id = 1;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 limit = 2;
+   */
+  limit?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 offset = 3;
+   */
+  offset?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewListOrganizationServicesRequest.
+ * Use `create(OverviewListOrganizationServicesRequestSchema)` to create a new message.
+ */
+export const OverviewListOrganizationServicesRequestSchema: GenMessage<OverviewListOrganizationServicesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 9);
+
+/**
+ * @generated from message openoxide.api.v1.OverviewListOrganizationServicesResponse
+ */
+export type OverviewListOrganizationServicesResponse = Message<"openoxide.api.v1.OverviewListOrganizationServicesResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.OverviewServiceItem services = 1;
+   */
+  services: OverviewServiceItem[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewListOrganizationServicesResponse.
+ * Use `create(OverviewListOrganizationServicesResponseSchema)` to create a new message.
+ */
+export const OverviewListOrganizationServicesResponseSchema: GenMessage<OverviewListOrganizationServicesResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 10);
+
+/**
+ * @generated from message openoxide.api.v1.OverviewListOrganizationDomainsRequest
+ */
+export type OverviewListOrganizationDomainsRequest = Message<"openoxide.api.v1.OverviewListOrganizationDomainsRequest"> & {
+  /**
+   * @generated from field: optional int64 organization_id = 1;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 limit = 2;
+   */
+  limit?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 offset = 3;
+   */
+  offset?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewListOrganizationDomainsRequest.
+ * Use `create(OverviewListOrganizationDomainsRequestSchema)` to create a new message.
+ */
+export const OverviewListOrganizationDomainsRequestSchema: GenMessage<OverviewListOrganizationDomainsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 11);
+
+/**
+ * @generated from message openoxide.api.v1.OverviewListOrganizationDomainsResponse
+ */
+export type OverviewListOrganizationDomainsResponse = Message<"openoxide.api.v1.OverviewListOrganizationDomainsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.OverviewDomainItem domains = 1;
+   */
+  domains: OverviewDomainItem[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewListOrganizationDomainsResponse.
+ * Use `create(OverviewListOrganizationDomainsResponseSchema)` to create a new message.
+ */
+export const OverviewListOrganizationDomainsResponseSchema: GenMessage<OverviewListOrganizationDomainsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 12);
+
+/**
+ * @generated from message openoxide.api.v1.OverviewListOrganizationBackupsRequest
+ */
+export type OverviewListOrganizationBackupsRequest = Message<"openoxide.api.v1.OverviewListOrganizationBackupsRequest"> & {
+  /**
+   * @generated from field: optional int64 organization_id = 1;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 limit = 2;
+   */
+  limit?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 offset = 3;
+   */
+  offset?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewListOrganizationBackupsRequest.
+ * Use `create(OverviewListOrganizationBackupsRequestSchema)` to create a new message.
+ */
+export const OverviewListOrganizationBackupsRequestSchema: GenMessage<OverviewListOrganizationBackupsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 13);
+
+/**
+ * @generated from message openoxide.api.v1.OverviewListOrganizationBackupsResponse
+ */
+export type OverviewListOrganizationBackupsResponse = Message<"openoxide.api.v1.OverviewListOrganizationBackupsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.OverviewBackupItem backups = 1;
+   */
+  backups: OverviewBackupItem[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.OverviewListOrganizationBackupsResponse.
+ * Use `create(OverviewListOrganizationBackupsResponseSchema)` to create a new message.
+ */
+export const OverviewListOrganizationBackupsResponseSchema: GenMessage<OverviewListOrganizationBackupsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_overview, 14);
+
+/**
+ * Panel-normalised service kind ("APP" | "COMPOSE" | "DATABASE").
+ *
+ * @generated from enum openoxide.api.v1.OverviewServiceType
+ */
+export enum OverviewServiceType {
+  /**
+   * @generated from enum value: OVERVIEW_SERVICE_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: OVERVIEW_SERVICE_TYPE_APP = 1;
+   */
+  APP = 1,
+
+  /**
+   * @generated from enum value: OVERVIEW_SERVICE_TYPE_COMPOSE = 2;
+   */
+  COMPOSE = 2,
+
+  /**
+   * @generated from enum value: OVERVIEW_SERVICE_TYPE_DATABASE = 3;
+   */
+  DATABASE = 3,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.OverviewServiceType.
+ */
+export const OverviewServiceTypeSchema: GenEnum<OverviewServiceType> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_overview, 0);
+
+/**
+ * @generated from enum openoxide.api.v1.OverviewBackupType
+ */
+export enum OverviewBackupType {
+  /**
+   * @generated from enum value: OVERVIEW_BACKUP_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: OVERVIEW_BACKUP_TYPE_DATABASE = 1;
+   */
+  DATABASE = 1,
+
+  /**
+   * @generated from enum value: OVERVIEW_BACKUP_TYPE_VOLUME = 2;
+   */
+  VOLUME = 2,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.OverviewBackupType.
+ */
+export const OverviewBackupTypeSchema: GenEnum<OverviewBackupType> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_overview, 1);
+
+/**
+ * @generated from enum openoxide.api.v1.OverviewBackupStatus
+ */
+export enum OverviewBackupStatus {
+  /**
+   * @generated from enum value: OVERVIEW_BACKUP_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: OVERVIEW_BACKUP_STATUS_ENABLED = 1;
+   */
+  ENABLED = 1,
+
+  /**
+   * @generated from enum value: OVERVIEW_BACKUP_STATUS_DISABLED = 2;
+   */
+  DISABLED = 2,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.OverviewBackupStatus.
+ */
+export const OverviewBackupStatusSchema: GenEnum<OverviewBackupStatus> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_overview, 2);
+
+/**
+ * Sole overview owner service; absorbs the former OverviewOperationsService.
+ *
  * @generated from service openoxide.api.v1.OverviewService
  */
 export const OverviewService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.OverviewService.ListServices
-	 */
-	listServices: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.OverviewService.ListDomains
-	 */
-	listDomains: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.OverviewService.ListBackups
-	 */
-	listBackups: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_overview, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.OverviewService.ListServices
+   */
+  listServices: {
+    methodKind: "unary";
+    input: typeof OverviewListServicesRequestSchema;
+    output: typeof OverviewListServicesResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.OverviewService.ListDomains
+   */
+  listDomains: {
+    methodKind: "unary";
+    input: typeof OverviewListDomainsRequestSchema;
+    output: typeof OverviewListDomainsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.OverviewService.ListBackups
+   */
+  listBackups: {
+    methodKind: "unary";
+    input: typeof OverviewListBackupsRequestSchema;
+    output: typeof OverviewListBackupsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.OverviewService.ListOrganizationServices
+   */
+  listOrganizationServices: {
+    methodKind: "unary";
+    input: typeof OverviewListOrganizationServicesRequestSchema;
+    output: typeof OverviewListOrganizationServicesResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.OverviewService.ListOrganizationDomains
+   */
+  listOrganizationDomains: {
+    methodKind: "unary";
+    input: typeof OverviewListOrganizationDomainsRequestSchema;
+    output: typeof OverviewListOrganizationDomainsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.OverviewService.ListOrganizationBackups
+   */
+  listOrganizationBackups: {
+    methodKind: "unary";
+    input: typeof OverviewListOrganizationBackupsRequestSchema;
+    output: typeof OverviewListOrganizationBackupsResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_overview, 0);
+

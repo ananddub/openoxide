@@ -22,8 +22,7 @@ message Organization {
   int64 owner_id = 5;
   int64 created_at = 6;
   int64 updated_at = 7;
-  // Caller's role in this organization (OWNER/ADMIN/MEMBER); populated by
-  // ListOrganizations so the switcher can show per-org authority.
+  // Caller's role in this organization (OWNER/ADMIN/MEMBER); populated by ListOrganizations so the switcher can show per-org authority.
   optional string role = 8;
 }
 

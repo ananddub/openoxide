@@ -2,109 +2,607 @@
 // @generated from file openoxide/api/v1/registry.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	EmptySchema,
-	OperationResultSchema,
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceRequestSchema,
-	ResourceResponseSchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/registry.proto.
  */
-export const file_openoxide_api_v1_registry: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'Ch9vcGVub3hpZGUvYXBpL3YxL3JlZ2lzdHJ5LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMvwGCg9SZWdpc3RyeVNlcnZpY2USWQoOTGlzdFJlZ2lzdHJpZXMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElQKC0dldFJlZ2lzdHJ5EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVwoOQ3JlYXRlUmVnaXN0cnkSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJXCg5VcGRhdGVSZWdpc3RyeRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlEkwKDkRlbGV0ZVJlZ2lzdHJ5EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElQKDFRlc3RSZWdpc3RyeRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSXQoQTGlzdFJlcG9zaXRvcmllcxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJVCghMaXN0VGFncxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJZChFSb3RhdGVDcmVkZW50aWFscxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSUQoIR2V0VXNhZ2USIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZWIGcHJvdG8z',
-		[file_openoxide_api_v1_common],
-	);
+export const file_openoxide_api_v1_registry: GenFile = /*@__PURE__*/
+  fileDesc("Ch9vcGVub3hpZGUvYXBpL3YxL3JlZ2lzdHJ5LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxItIBCghSZWdpc3RyeRIKCgJpZBgBIAEoAxIVCg1yZWdpc3RyeV9uYW1lGAIgASgJEhkKDGltYWdlX3ByZWZpeBgDIAEoCUgAiAEBEhAKCHVzZXJuYW1lGAQgASgJEhAKCHBhc3N3b3JkGAUgASgJEhQKDHJlZ2lzdHJ5X3VybBgGIAEoCRIVCg1yZWdpc3RyeV90eXBlGAcgASgJEhIKCmNyZWF0ZWRfYXQYCCABKAMSEgoKdXBkYXRlZF9hdBgJIAEoA0IPCg1faW1hZ2VfcHJlZml4Im8KFlJlZ2lzdHJ5VXNhZ2VSZWZlcmVuY2USEwoLcmVzb3VyY2VfaWQYASABKAkSFQoNcmVzb3VyY2VfbmFtZRgCIAEoCRIVCg1yZXNvdXJjZV90eXBlGAMgASgJEhIKCnVzYWdlX2tpbmQYBCABKAkiFwoVTGlzdFJlZ2lzdHJpZXNSZXF1ZXN0IkgKFkxpc3RSZWdpc3RyaWVzUmVzcG9uc2USLgoKcmVnaXN0cmllcxgBIAMoCzIaLm9wZW5veGlkZS5hcGkudjEuUmVnaXN0cnkiKQoSR2V0UmVnaXN0cnlSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIkMKE0dldFJlZ2lzdHJ5UmVzcG9uc2USLAoIcmVnaXN0cnkYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLlJlZ2lzdHJ5IskBChVDcmVhdGVSZWdpc3RyeVJlcXVlc3QSIQoNcmVnaXN0cnlfbmFtZRgBIAEoCUIKukgHcgUQARj/ARIZCgxpbWFnZV9wcmVmaXgYAiABKAlIAIgBARIQCgh1c2VybmFtZRgDIAEoCRIQCghwYXNzd29yZBgEIAEoCRIdCgxyZWdpc3RyeV91cmwYBSABKAlCB7pIBHICEAESHgoNcmVnaXN0cnlfdHlwZRgGIAEoCUIHukgEcgIQAUIPCg1faW1hZ2VfcHJlZml4IkYKFkNyZWF0ZVJlZ2lzdHJ5UmVzcG9uc2USLAoIcmVnaXN0cnkYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLlJlZ2lzdHJ5IrICChVVcGRhdGVSZWdpc3RyeVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASJAoNcmVnaXN0cnlfbmFtZRgCIAEoCUIIukgFcgMY/wFIAIgBARIZCgxpbWFnZV9wcmVmaXgYAyABKAlIAYgBARIVCgh1c2VybmFtZRgEIAEoCUgCiAEBEhUKCHBhc3N3b3JkGAUgASgJSAOIAQESGQoMcmVnaXN0cnlfdXJsGAYgASgJSASIAQESGgoNcmVnaXN0cnlfdHlwZRgHIAEoCUgFiAEBQhAKDl9yZWdpc3RyeV9uYW1lQg8KDV9pbWFnZV9wcmVmaXhCCwoJX3VzZXJuYW1lQgsKCV9wYXNzd29yZEIPCg1fcmVnaXN0cnlfdXJsQhAKDl9yZWdpc3RyeV90eXBlIkYKFlVwZGF0ZVJlZ2lzdHJ5UmVzcG9uc2USLAoIcmVnaXN0cnkYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLlJlZ2lzdHJ5IiwKFURlbGV0ZVJlZ2lzdHJ5UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJwChNUZXN0UmVnaXN0cnlSZXF1ZXN0EhgKAmlkGAEgASgDQge6SAQiAiAASACIAQESFAoMcmVnaXN0cnlfdXJsGAIgASgJEhAKCHVzZXJuYW1lGAMgASgJEhAKCHBhc3N3b3JkGAQgASgJQgUKA19pZCInChRUZXN0UmVnaXN0cnlSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIIj8KH0xpc3RSZWdpc3RyeVJlcG9zaXRvcmllc1JlcXVlc3QSHAoLcmVnaXN0cnlfaWQYASABKANCB7pIBCICIAAiOAogTGlzdFJlZ2lzdHJ5UmVwb3NpdG9yaWVzUmVzcG9uc2USFAoMcmVwb3NpdG9yaWVzGAEgAygJIlQKF0xpc3RSZWdpc3RyeVRhZ3NSZXF1ZXN0EhwKC3JlZ2lzdHJ5X2lkGAEgASgDQge6SAQiAiAAEhsKCnJlcG9zaXRvcnkYAiABKAlCB7pIBHICEAEiPAoYTGlzdFJlZ2lzdHJ5VGFnc1Jlc3BvbnNlEhIKCnJlcG9zaXRvcnkYASABKAkSDAoEdGFncxgCIAMoCSJ2CiBSb3RhdGVSZWdpc3RyeUNyZWRlbnRpYWxzUmVxdWVzdBIcCgtyZWdpc3RyeV9pZBgBIAEoA0IHukgEIgIgABIZCgh1c2VybmFtZRgCIAEoCUIHukgEcgIQARIZCghwYXNzd29yZBgDIAEoCUIHukgEcgIQASJRCiFSb3RhdGVSZWdpc3RyeUNyZWRlbnRpYWxzUmVzcG9uc2USLAoIcmVnaXN0cnkYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLlJlZ2lzdHJ5IjcKF0dldFJlZ2lzdHJ5VXNhZ2VSZXF1ZXN0EhwKC3JlZ2lzdHJ5X2lkGAEgASgDQge6SAQiAiAAIlMKGEdldFJlZ2lzdHJ5VXNhZ2VSZXNwb25zZRI3CgV1c2FnZRgBIAMoCzIoLm9wZW5veGlkZS5hcGkudjEuUmVnaXN0cnlVc2FnZVJlZmVyZW5jZTKOCAoPUmVnaXN0cnlTZXJ2aWNlEmMKDkxpc3RSZWdpc3RyaWVzEicub3Blbm94aWRlLmFwaS52MS5MaXN0UmVnaXN0cmllc1JlcXVlc3QaKC5vcGVub3hpZGUuYXBpLnYxLkxpc3RSZWdpc3RyaWVzUmVzcG9uc2USWgoLR2V0UmVnaXN0cnkSJC5vcGVub3hpZGUuYXBpLnYxLkdldFJlZ2lzdHJ5UmVxdWVzdBolLm9wZW5veGlkZS5hcGkudjEuR2V0UmVnaXN0cnlSZXNwb25zZRJjCg5DcmVhdGVSZWdpc3RyeRInLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlUmVnaXN0cnlSZXF1ZXN0Gigub3Blbm94aWRlLmFwaS52MS5DcmVhdGVSZWdpc3RyeVJlc3BvbnNlEmMKDlVwZGF0ZVJlZ2lzdHJ5Eicub3Blbm94aWRlLmFwaS52MS5VcGRhdGVSZWdpc3RyeVJlcXVlc3QaKC5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZVJlZ2lzdHJ5UmVzcG9uc2USUgoORGVsZXRlUmVnaXN0cnkSJy5vcGVub3hpZGUuYXBpLnYxLkRlbGV0ZVJlZ2lzdHJ5UmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSXQoMVGVzdFJlZ2lzdHJ5EiUub3Blbm94aWRlLmFwaS52MS5UZXN0UmVnaXN0cnlSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5UZXN0UmVnaXN0cnlSZXNwb25zZRJ5ChBMaXN0UmVwb3NpdG9yaWVzEjEub3Blbm94aWRlLmFwaS52MS5MaXN0UmVnaXN0cnlSZXBvc2l0b3JpZXNSZXF1ZXN0GjIub3Blbm94aWRlLmFwaS52MS5MaXN0UmVnaXN0cnlSZXBvc2l0b3JpZXNSZXNwb25zZRJhCghMaXN0VGFncxIpLm9wZW5veGlkZS5hcGkudjEuTGlzdFJlZ2lzdHJ5VGFnc1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLkxpc3RSZWdpc3RyeVRhZ3NSZXNwb25zZRJ8ChFSb3RhdGVDcmVkZW50aWFscxIyLm9wZW5veGlkZS5hcGkudjEuUm90YXRlUmVnaXN0cnlDcmVkZW50aWFsc1JlcXVlc3QaMy5vcGVub3hpZGUuYXBpLnYxLlJvdGF0ZVJlZ2lzdHJ5Q3JlZGVudGlhbHNSZXNwb25zZRJhCghHZXRVc2FnZRIpLm9wZW5veGlkZS5hcGkudjEuR2V0UmVnaXN0cnlVc2FnZVJlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLkdldFJlZ2lzdHJ5VXNhZ2VSZXNwb25zZWIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+
+/**
+ * @generated from message openoxide.api.v1.Registry
+ */
+export type Registry = Message<"openoxide.api.v1.Registry"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string registry_name = 2;
+   */
+  registryName: string;
+
+  /**
+   * @generated from field: optional string image_prefix = 3;
+   */
+  imagePrefix?: string | undefined;
+
+  /**
+   * @generated from field: string username = 4;
+   */
+  username: string;
+
+  /**
+   * @generated from field: string password = 5;
+   */
+  password: string;
+
+  /**
+   * @generated from field: string registry_url = 6;
+   */
+  registryUrl: string;
+
+  /**
+   * Free-form provider label (dockerhub, ghcr, custom, ...).
+   *
+   * @generated from field: string registry_type = 7;
+   */
+  registryType: string;
+
+  /**
+   * @generated from field: int64 created_at = 8;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 9;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.Registry.
+ * Use `create(RegistrySchema)` to create a new message.
+ */
+export const RegistrySchema: GenMessage<Registry> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 0);
+
+/**
+ * @generated from message openoxide.api.v1.RegistryUsageReference
+ */
+export type RegistryUsageReference = Message<"openoxide.api.v1.RegistryUsageReference"> & {
+  /**
+   * @generated from field: string resource_id = 1;
+   */
+  resourceId: string;
+
+  /**
+   * @generated from field: string resource_name = 2;
+   */
+  resourceName: string;
+
+  /**
+   * @generated from field: string resource_type = 3;
+   */
+  resourceType: string;
+
+  /**
+   * @generated from field: string usage_kind = 4;
+   */
+  usageKind: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RegistryUsageReference.
+ * Use `create(RegistryUsageReferenceSchema)` to create a new message.
+ */
+export const RegistryUsageReferenceSchema: GenMessage<RegistryUsageReference> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 1);
+
+/**
+ * @generated from message openoxide.api.v1.ListRegistriesRequest
+ */
+export type ListRegistriesRequest = Message<"openoxide.api.v1.ListRegistriesRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListRegistriesRequest.
+ * Use `create(ListRegistriesRequestSchema)` to create a new message.
+ */
+export const ListRegistriesRequestSchema: GenMessage<ListRegistriesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 2);
+
+/**
+ * @generated from message openoxide.api.v1.ListRegistriesResponse
+ */
+export type ListRegistriesResponse = Message<"openoxide.api.v1.ListRegistriesResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.Registry registries = 1;
+   */
+  registries: Registry[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListRegistriesResponse.
+ * Use `create(ListRegistriesResponseSchema)` to create a new message.
+ */
+export const ListRegistriesResponseSchema: GenMessage<ListRegistriesResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 3);
+
+/**
+ * @generated from message openoxide.api.v1.GetRegistryRequest
+ */
+export type GetRegistryRequest = Message<"openoxide.api.v1.GetRegistryRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetRegistryRequest.
+ * Use `create(GetRegistryRequestSchema)` to create a new message.
+ */
+export const GetRegistryRequestSchema: GenMessage<GetRegistryRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 4);
+
+/**
+ * @generated from message openoxide.api.v1.GetRegistryResponse
+ */
+export type GetRegistryResponse = Message<"openoxide.api.v1.GetRegistryResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Registry registry = 1;
+   */
+  registry?: Registry | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetRegistryResponse.
+ * Use `create(GetRegistryResponseSchema)` to create a new message.
+ */
+export const GetRegistryResponseSchema: GenMessage<GetRegistryResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 5);
+
+/**
+ * @generated from message openoxide.api.v1.CreateRegistryRequest
+ */
+export type CreateRegistryRequest = Message<"openoxide.api.v1.CreateRegistryRequest"> & {
+  /**
+   * @generated from field: string registry_name = 1;
+   */
+  registryName: string;
+
+  /**
+   * @generated from field: optional string image_prefix = 2;
+   */
+  imagePrefix?: string | undefined;
+
+  /**
+   * @generated from field: string username = 3;
+   */
+  username: string;
+
+  /**
+   * @generated from field: string password = 4;
+   */
+  password: string;
+
+  /**
+   * @generated from field: string registry_url = 5;
+   */
+  registryUrl: string;
+
+  /**
+   * @generated from field: string registry_type = 6;
+   */
+  registryType: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateRegistryRequest.
+ * Use `create(CreateRegistryRequestSchema)` to create a new message.
+ */
+export const CreateRegistryRequestSchema: GenMessage<CreateRegistryRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 6);
+
+/**
+ * @generated from message openoxide.api.v1.CreateRegistryResponse
+ */
+export type CreateRegistryResponse = Message<"openoxide.api.v1.CreateRegistryResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Registry registry = 1;
+   */
+  registry?: Registry | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateRegistryResponse.
+ * Use `create(CreateRegistryResponseSchema)` to create a new message.
+ */
+export const CreateRegistryResponseSchema: GenMessage<CreateRegistryResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 7);
+
+/**
+ * An absent field keeps its stored value; `image_prefix` present-but-empty clears it.
+ *
+ * @generated from message openoxide.api.v1.UpdateRegistryRequest
+ */
+export type UpdateRegistryRequest = Message<"openoxide.api.v1.UpdateRegistryRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional string registry_name = 2;
+   */
+  registryName?: string | undefined;
+
+  /**
+   * @generated from field: optional string image_prefix = 3;
+   */
+  imagePrefix?: string | undefined;
+
+  /**
+   * @generated from field: optional string username = 4;
+   */
+  username?: string | undefined;
+
+  /**
+   * @generated from field: optional string password = 5;
+   */
+  password?: string | undefined;
+
+  /**
+   * @generated from field: optional string registry_url = 6;
+   */
+  registryUrl?: string | undefined;
+
+  /**
+   * @generated from field: optional string registry_type = 7;
+   */
+  registryType?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateRegistryRequest.
+ * Use `create(UpdateRegistryRequestSchema)` to create a new message.
+ */
+export const UpdateRegistryRequestSchema: GenMessage<UpdateRegistryRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 8);
+
+/**
+ * @generated from message openoxide.api.v1.UpdateRegistryResponse
+ */
+export type UpdateRegistryResponse = Message<"openoxide.api.v1.UpdateRegistryResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Registry registry = 1;
+   */
+  registry?: Registry | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateRegistryResponse.
+ * Use `create(UpdateRegistryResponseSchema)` to create a new message.
+ */
+export const UpdateRegistryResponseSchema: GenMessage<UpdateRegistryResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 9);
+
+/**
+ * @generated from message openoxide.api.v1.DeleteRegistryRequest
+ */
+export type DeleteRegistryRequest = Message<"openoxide.api.v1.DeleteRegistryRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DeleteRegistryRequest.
+ * Use `create(DeleteRegistryRequestSchema)` to create a new message.
+ */
+export const DeleteRegistryRequestSchema: GenMessage<DeleteRegistryRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 10);
+
+/**
+ * With `id` set, the saved registry's stored credentials are tested; otherwise the raw url/username/password are used (create dialog).
+ *
+ * @generated from message openoxide.api.v1.TestRegistryRequest
+ */
+export type TestRegistryRequest = Message<"openoxide.api.v1.TestRegistryRequest"> & {
+  /**
+   * @generated from field: optional int64 id = 1;
+   */
+  id?: bigint | undefined;
+
+  /**
+   * @generated from field: string registry_url = 2;
+   */
+  registryUrl: string;
+
+  /**
+   * @generated from field: string username = 3;
+   */
+  username: string;
+
+  /**
+   * @generated from field: string password = 4;
+   */
+  password: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.TestRegistryRequest.
+ * Use `create(TestRegistryRequestSchema)` to create a new message.
+ */
+export const TestRegistryRequestSchema: GenMessage<TestRegistryRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 11);
+
+/**
+ * @generated from message openoxide.api.v1.TestRegistryResponse
+ */
+export type TestRegistryResponse = Message<"openoxide.api.v1.TestRegistryResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+};
+
+/**
+ * Describes the message openoxide.api.v1.TestRegistryResponse.
+ * Use `create(TestRegistryResponseSchema)` to create a new message.
+ */
+export const TestRegistryResponseSchema: GenMessage<TestRegistryResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 12);
+
+/**
+ * @generated from message openoxide.api.v1.ListRegistryRepositoriesRequest
+ */
+export type ListRegistryRepositoriesRequest = Message<"openoxide.api.v1.ListRegistryRepositoriesRequest"> & {
+  /**
+   * @generated from field: int64 registry_id = 1;
+   */
+  registryId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListRegistryRepositoriesRequest.
+ * Use `create(ListRegistryRepositoriesRequestSchema)` to create a new message.
+ */
+export const ListRegistryRepositoriesRequestSchema: GenMessage<ListRegistryRepositoriesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 13);
+
+/**
+ * @generated from message openoxide.api.v1.ListRegistryRepositoriesResponse
+ */
+export type ListRegistryRepositoriesResponse = Message<"openoxide.api.v1.ListRegistryRepositoriesResponse"> & {
+  /**
+   * @generated from field: repeated string repositories = 1;
+   */
+  repositories: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListRegistryRepositoriesResponse.
+ * Use `create(ListRegistryRepositoriesResponseSchema)` to create a new message.
+ */
+export const ListRegistryRepositoriesResponseSchema: GenMessage<ListRegistryRepositoriesResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 14);
+
+/**
+ * @generated from message openoxide.api.v1.ListRegistryTagsRequest
+ */
+export type ListRegistryTagsRequest = Message<"openoxide.api.v1.ListRegistryTagsRequest"> & {
+  /**
+   * @generated from field: int64 registry_id = 1;
+   */
+  registryId: bigint;
+
+  /**
+   * @generated from field: string repository = 2;
+   */
+  repository: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListRegistryTagsRequest.
+ * Use `create(ListRegistryTagsRequestSchema)` to create a new message.
+ */
+export const ListRegistryTagsRequestSchema: GenMessage<ListRegistryTagsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 15);
+
+/**
+ * @generated from message openoxide.api.v1.ListRegistryTagsResponse
+ */
+export type ListRegistryTagsResponse = Message<"openoxide.api.v1.ListRegistryTagsResponse"> & {
+  /**
+   * @generated from field: string repository = 1;
+   */
+  repository: string;
+
+  /**
+   * @generated from field: repeated string tags = 2;
+   */
+  tags: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListRegistryTagsResponse.
+ * Use `create(ListRegistryTagsResponseSchema)` to create a new message.
+ */
+export const ListRegistryTagsResponseSchema: GenMessage<ListRegistryTagsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 16);
+
+/**
+ * @generated from message openoxide.api.v1.RotateRegistryCredentialsRequest
+ */
+export type RotateRegistryCredentialsRequest = Message<"openoxide.api.v1.RotateRegistryCredentialsRequest"> & {
+  /**
+   * @generated from field: int64 registry_id = 1;
+   */
+  registryId: bigint;
+
+  /**
+   * @generated from field: string username = 2;
+   */
+  username: string;
+
+  /**
+   * @generated from field: string password = 3;
+   */
+  password: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RotateRegistryCredentialsRequest.
+ * Use `create(RotateRegistryCredentialsRequestSchema)` to create a new message.
+ */
+export const RotateRegistryCredentialsRequestSchema: GenMessage<RotateRegistryCredentialsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 17);
+
+/**
+ * @generated from message openoxide.api.v1.RotateRegistryCredentialsResponse
+ */
+export type RotateRegistryCredentialsResponse = Message<"openoxide.api.v1.RotateRegistryCredentialsResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Registry registry = 1;
+   */
+  registry?: Registry | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RotateRegistryCredentialsResponse.
+ * Use `create(RotateRegistryCredentialsResponseSchema)` to create a new message.
+ */
+export const RotateRegistryCredentialsResponseSchema: GenMessage<RotateRegistryCredentialsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 18);
+
+/**
+ * @generated from message openoxide.api.v1.GetRegistryUsageRequest
+ */
+export type GetRegistryUsageRequest = Message<"openoxide.api.v1.GetRegistryUsageRequest"> & {
+  /**
+   * @generated from field: int64 registry_id = 1;
+   */
+  registryId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetRegistryUsageRequest.
+ * Use `create(GetRegistryUsageRequestSchema)` to create a new message.
+ */
+export const GetRegistryUsageRequestSchema: GenMessage<GetRegistryUsageRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 19);
+
+/**
+ * @generated from message openoxide.api.v1.GetRegistryUsageResponse
+ */
+export type GetRegistryUsageResponse = Message<"openoxide.api.v1.GetRegistryUsageResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.RegistryUsageReference usage = 1;
+   */
+  usage: RegistryUsageReference[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetRegistryUsageResponse.
+ * Use `create(GetRegistryUsageResponseSchema)` to create a new message.
+ */
+export const GetRegistryUsageResponseSchema: GenMessage<GetRegistryUsageResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_registry, 20);
 
 /**
  * @generated from service openoxide.api.v1.RegistryService
  */
 export const RegistryService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.RegistryService.ListRegistries
-	 */
-	listRegistries: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RegistryService.GetRegistry
-	 */
-	getRegistry: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RegistryService.CreateRegistry
-	 */
-	createRegistry: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RegistryService.UpdateRegistry
-	 */
-	updateRegistry: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RegistryService.DeleteRegistry
-	 */
-	deleteRegistry: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RegistryService.TestRegistry
-	 */
-	testRegistry: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RegistryService.ListRepositories
-	 */
-	listRepositories: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RegistryService.ListTags
-	 */
-	listTags: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RegistryService.RotateCredentials
-	 */
-	rotateCredentials: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RegistryService.GetUsage
-	 */
-	getUsage: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_registry, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.RegistryService.ListRegistries
+   */
+  listRegistries: {
+    methodKind: "unary";
+    input: typeof ListRegistriesRequestSchema;
+    output: typeof ListRegistriesResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RegistryService.GetRegistry
+   */
+  getRegistry: {
+    methodKind: "unary";
+    input: typeof GetRegistryRequestSchema;
+    output: typeof GetRegistryResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RegistryService.CreateRegistry
+   */
+  createRegistry: {
+    methodKind: "unary";
+    input: typeof CreateRegistryRequestSchema;
+    output: typeof CreateRegistryResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RegistryService.UpdateRegistry
+   */
+  updateRegistry: {
+    methodKind: "unary";
+    input: typeof UpdateRegistryRequestSchema;
+    output: typeof UpdateRegistryResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RegistryService.DeleteRegistry
+   */
+  deleteRegistry: {
+    methodKind: "unary";
+    input: typeof DeleteRegistryRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RegistryService.TestRegistry
+   */
+  testRegistry: {
+    methodKind: "unary";
+    input: typeof TestRegistryRequestSchema;
+    output: typeof TestRegistryResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RegistryService.ListRepositories
+   */
+  listRepositories: {
+    methodKind: "unary";
+    input: typeof ListRegistryRepositoriesRequestSchema;
+    output: typeof ListRegistryRepositoriesResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RegistryService.ListTags
+   */
+  listTags: {
+    methodKind: "unary";
+    input: typeof ListRegistryTagsRequestSchema;
+    output: typeof ListRegistryTagsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RegistryService.RotateCredentials
+   */
+  rotateCredentials: {
+    methodKind: "unary";
+    input: typeof RotateRegistryCredentialsRequestSchema;
+    output: typeof RotateRegistryCredentialsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RegistryService.GetUsage
+   */
+  getUsage: {
+    methodKind: "unary";
+    input: typeof GetRegistryUsageRequestSchema;
+    output: typeof GetRegistryUsageResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_registry, 0);
+

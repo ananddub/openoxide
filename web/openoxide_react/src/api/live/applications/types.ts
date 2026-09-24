@@ -1,13 +1,17 @@
 import {
 	ApplicationSourceType,
 	ApplicationBuildType,
+	ApplicationPortProtocol,
+	ApplicationPortPublishMode,
+	ApplicationMountType,
 	type Application,
+	type ApplicationPort,
+	type ApplicationMount,
+	type ApplicationRedirect,
+	type ApplicationSecurityRule,
 } from '#/gen/connect/openoxide/api/v1/application_pb';
 
-/**
- * Org-wide application list item (all-optional fields) derived from the
- * overview services stream.
- */
+/** Org-wide application list item (all-optional fields) derived from the overview services stream. */
 export type ApplicationItemPayload = {
 	id: number;
 	name?: string;
@@ -125,8 +129,7 @@ const enumName = (
 export function toApplicationPayload(
 	application: Application,
 ): ApplicationPayload {
-	// The custom-git card's provider id is 'GIT'; the proto enum name is
-	// 'CUSTOM_GIT' (DB discriminator 'CUSTOM'). Collapse both to the card id.
+	// The custom-git card's provider id is 'GIT'; the proto enum name is 'CUSTOM_GIT' (DB discriminator 'CUSTOM'). Collapse both to the card id.
 	const sourceTypeName = enumName(
 		ApplicationSourceType,
 		application.sourceType,
@@ -184,5 +187,59 @@ export function toApplicationPayload(
 		enable_submodules: application.enableSubmodules,
 		created_at: application.createdAt,
 		updated_at: application.updatedAt,
+	};
+}
+
+// ── Sub-resource mappers (proto entity → snake_case payload for the UI) ──
+
+export function toApplicationPortPayload(
+	port: ApplicationPort,
+): ApplicationPortPayload {
+	return {
+		id: Number(port.id),
+		published_port: Number(port.publishedPort),
+		target_port: Number(port.targetPort),
+		protocol: enumName(ApplicationPortProtocol, port.protocol),
+		publish_mode: enumName(ApplicationPortPublishMode, port.publishMode),
+		application_id: Number(port.applicationId),
+	};
+}
+
+export function toApplicationMountPayload(
+	mount: ApplicationMount,
+): ApplicationMountPayload {
+	return {
+		id: Number(mount.id),
+		mount_type: enumName(ApplicationMountType, mount.mountType),
+		host_path: mount.hostPath,
+		volume_name: mount.volumeName,
+		file_path: mount.filePath,
+		content: mount.content,
+		mount_path: mount.mountPath,
+		application_id: Number(mount.applicationId),
+	};
+}
+
+export function toApplicationRedirectPayload(
+	redirect: ApplicationRedirect,
+): ApplicationRedirectPayload {
+	return {
+		id: Number(redirect.id),
+		regex: redirect.regex,
+		replacement: redirect.replacement,
+		// The payload keeps the legacy 1/0 shape; the proto is a real bool.
+		permanent: redirect.permanent ? 1 : 0,
+		application_id: Number(redirect.applicationId),
+	};
+}
+
+export function toApplicationSecurityPayload(
+	rule: ApplicationSecurityRule,
+): ApplicationSecurityPayload {
+	return {
+		id: Number(rule.id),
+		username: rule.username,
+		has_password: rule.hasPassword,
+		application_id: Number(rule.applicationId),
 	};
 }

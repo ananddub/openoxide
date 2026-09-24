@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {cn} from '#/api/utils';
-import type {Schedule} from '#/hooks/use-schedules';
+import type {Schedule} from '#/hooks/schedules/use-schedules';
 import {useProjectListByOrganization} from '#/api/live';
 import {useOrganizations} from '#/stores/session-context';
 
@@ -34,8 +34,7 @@ export function ScheduleCard({
 	const s = schedule;
 	const isEnabled = s.enabled === 1;
 
-	// Live projects query keyed ['projects','list',org] — table-watch
-	// invalidates it while the schedules page is mounted.
+	// Live projects query keyed ['projects','list',org] — table-watch invalidates it while the schedules page is mounted.
 	const {activeOrg} = useOrganizations();
 	const projectsQuery = useProjectListByOrganization(
 		BigInt(activeOrg?.id || 1),

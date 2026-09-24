@@ -1,4 +1,9 @@
-import {AlertTriangle, FileText, FolderInput, HardDrive} from 'lucide-react';
+import {
+	AlertTriangle,
+	FileText,
+	FolderInput,
+	HardDrive,
+} from 'lucide-react';
 import {Input} from '#/components/ui/input';
 import {Textarea} from '#/components/ui/textarea';
 import {Field, FieldGrid} from '#/components/shared/field';
@@ -70,7 +75,7 @@ export function MountFields({
 			)}
 
 			<div className="flex flex-col gap-2.5">
-				<p className="text-sm font-medium leading-none text-foreground">
+				<p className="text-sm leading-none font-medium text-foreground">
 					Mount type
 				</p>
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -88,9 +93,7 @@ export function MountFields({
 										: 'border-border/50 text-foreground hover:border-border hover:bg-muted/30',
 								)}>
 								<option.icon className="size-5" />
-								<span className="text-sm font-medium">
-									{option.label}
-								</span>
+								<span className="text-sm font-medium">{option.label}</span>
 							</button>
 						);
 					})}

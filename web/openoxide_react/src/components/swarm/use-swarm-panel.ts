@@ -41,9 +41,7 @@ export function useSwarmPanel() {
 	const leaveMutation = useSwarmLeave();
 	const joinMutation = useSwarmJoin();
 
-	// Cached for 15s so revisiting the page (or switching tabs back) shows the
-	// last-known cluster state instantly instead of re-running an SSH round
-	// trip per server before anything paints.
+	// Cached for 15s so revisiting the page (or switching tabs back) shows the last-known cluster state instantly instead of re-running an SSH round trip per server before anything paints.
 	const swarmQuery = useQuery({
 		queryKey: ['swarm-overview', selectedServerId, serverIdsKey],
 		queryFn: async (): Promise<SwarmOverview> => {
@@ -76,9 +74,7 @@ export function useSwarmPanel() {
 	const isLoading = swarmQuery.isLoading;
 	const isRefreshing = swarmQuery.isFetching;
 
-	// Tokens are only needed once the "Add Node" modal is opened — fetching
-	// them on every page load was one of three parallel SSH round trips per
-	// server that nobody was looking at yet.
+	// Tokens are only needed once the "New Node" panel is opened — fetching them on every page load was one of three parallel SSH round trips per server that nobody was looking at yet.
 	const tokensQuery = useQuery({
 		queryKey: ['swarm-tokens', activeServerId],
 		queryFn: async (): Promise<SwarmTokens | null> => {

@@ -2,161 +2,1438 @@
 // @generated from file openoxide/api/v1/remote_server.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	EmptySchema,
-	OperationResultSchema,
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceRequestSchema,
-	ResourceResponseSchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/remote_server.proto.
  */
-export const file_openoxide_api_v1_remote_server: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'CiRvcGVub3hpZGUvYXBpL3YxL3JlbW90ZV9zZXJ2ZXIucHJvdG8SEG9wZW5veGlkZS5hcGkudjEy1woKE1JlbW90ZVNlcnZlclNlcnZpY2USXAoRTGlzdFJlbW90ZVNlcnZlcnMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElgKD0dldFJlbW90ZVNlcnZlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElsKEkNyZWF0ZVJlbW90ZVNlcnZlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElsKElVwZGF0ZVJlbW90ZVNlcnZlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElAKCEFjdGl2YXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJSCgpEZWFjdGl2YXRlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJWCg5UZXN0Q29ubmVjdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSUAoSRGVsZXRlUmVtb3RlU2VydmVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElsKE01pZ3JhdGVEZXBlbmRlbmNpZXMSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElUKDEdldE1pZ3JhdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElkKEVJvbGxiYWNrTWlncmF0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJXCg9DYW5jZWxNaWdyYXRpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElYKDk1pZ3JhdGVTZXJ2aWNlEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJbCg5MaXN0TWlncmF0aW9ucxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJhChRMaXN0TWlncmF0aW9uT2JqZWN0cxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZWIGcHJvdG8z',
-		[file_openoxide_api_v1_common],
-	);
+export const file_openoxide_api_v1_remote_server: GenFile = /*@__PURE__*/
+  fileDesc("CiRvcGVub3hpZGUvYXBpL3YxL3JlbW90ZV9zZXJ2ZXIucHJvdG8SEG9wZW5veGlkZS5hcGkudjEixAQKDFJlbW90ZVNlcnZlchIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEhgKC2Rlc2NyaXB0aW9uGAMgASgJSACIAQESEgoKaXBfYWRkcmVzcxgEIAEoCRIMCgRwb3J0GAUgASgDEhAKCHVzZXJuYW1lGAYgASgJEhAKCGFwcF9uYW1lGAcgASgJEjsKDXNlcnZlcl9zdGF0dXMYCCABKA4yJC5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlclN0YXR1cxI3CgtzZXJ2ZXJfdHlwZRgJIAEoDjIiLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyVHlwZRIdChVlbmFibGVfZG9ja2VyX2NsZWFudXAYCiABKAgSHQoQbG9nX2NsZWFudXBfY3JvbhgLIAEoCUgBiAEBEg8KB2NvbW1hbmQYDCABKAkSFgoObWV0cmljc19jb25maWcYDSABKAkSFwoKc3NoX2tleV9pZBgOIAEoA0gCiAEBEhIKCmNyZWF0ZWRfYXQYDyABKAMSEgoKdXBkYXRlZF9hdBgQIAEoAxIfChJidWlsZF9tZW1vcnlfbGltaXQYESABKAlIA4gBARIcCg9idWlsZF9jcHVfbGltaXQYEiABKAlIBIgBAUIOCgxfZGVzY3JpcHRpb25CEwoRX2xvZ19jbGVhbnVwX2Nyb25CDQoLX3NzaF9rZXlfaWRCFQoTX2J1aWxkX21lbW9yeV9saW1pdEISChBfYnVpbGRfY3B1X2xpbWl0IpcDCh9SZW1vdGVTZXJ2ZXJEZXBlbmRlbmN5TWlncmF0aW9uEhQKDG1pZ3JhdGlvbl9pZBgBIAEoCRJHCgZzdGF0dXMYAiABKA4yNy5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlckRlcGVuZGVuY3lNaWdyYXRpb25TdGF0dXMSGAoQc291cmNlX3NlcnZlcl9pZBgDIAEoAxIYChB0YXJnZXRfc2VydmVyX2lkGAQgASgDEhQKDGFwcGxpY2F0aW9ucxgFIAEoAxIZChFidWlsZF9hc3NpZ25tZW50cxgGIAEoAxIYChBjb21wb3NlX3Byb2plY3RzGAcgASgDEhEKCWRhdGFiYXNlcxgIIAEoAxIUCgxjZXJ0aWZpY2F0ZXMYCSABKAMSEQoJc2NoZWR1bGVzGAogASgDEhsKE3F1ZXVlZF9hcHBsaWNhdGlvbnMYCyABKAMSHwoXcXVldWVkX2NvbXBvc2VfcHJvamVjdHMYDCABKAMSEgoFZXJyb3IYDSABKAlIAIgBAUIICgZfZXJyb3IimgMKIFJlbW90ZVNlcnZlckFwcGxpY2F0aW9uTWlncmF0aW9uEgoKAmlkGAEgASgJEhcKD29yZ2FuaXphdGlvbl9pZBgCIAEoAxISCgpzZXJ2aWNlX2lkGAMgASgDEhgKEHNvdXJjZV9zZXJ2ZXJfaWQYBCABKAMSGAoQdGFyZ2V0X3NlcnZlcl9pZBgFIAEoAxJICgZzdGF0dXMYBiABKA4yOC5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlckFwcGxpY2F0aW9uTWlncmF0aW9uU3RhdHVzEjsKBXBoYXNlGAcgASgOMiwub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJNaWdyYXRpb25QaGFzZRIQCghwcm9ncmVzcxgIIAEoAxIYChBjYW5jZWxfcmVxdWVzdGVkGAkgASgIEhIKBWVycm9yGAogASgJSACIAQESEAoIbG9nX3BhdGgYCyABKAkSEgoKY3JlYXRlZF9hdBgMIAEoAxISCgp1cGRhdGVkX2F0GA0gASgDQggKBl9lcnJvciKQAgobUmVtb3RlU2VydmVyTWlncmF0aW9uT2JqZWN0EhQKDG1pZ3JhdGlvbl9pZBgBIAEoCRIPCgdvYmpfa2V5GAIgASgJEj8KBGtpbmQYAyABKA4yMS5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlck1pZ3JhdGlvbk9iamVjdEtpbmQSEgoKc291cmNlX3JlZhgEIAEoCRIQCghkZXN0X3JlZhgFIAEoCRIOCgZzdGF0dXMYBiABKAkSDQoFYnl0ZXMYByABKAMSEgoFZXJyb3IYCCABKAlIAIgBARISCgpjcmVhdGVkX2F0GAkgASgDEhIKCnVwZGF0ZWRfYXQYCiABKANCCAoGX2Vycm9yIhkKF1JlbW90ZVNlcnZlckxpc3RSZXF1ZXN0IksKGFJlbW90ZVNlcnZlckxpc3RSZXNwb25zZRIvCgdzZXJ2ZXJzGAEgAygLMh4ub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXIiLQoWUmVtb3RlU2VydmVyR2V0UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJJChdSZW1vdGVTZXJ2ZXJHZXRSZXNwb25zZRIuCgZzZXJ2ZXIYASABKAsyHi5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlciKnAwoZUmVtb3RlU2VydmVyQ3JlYXRlUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEiIKC2Rlc2NyaXB0aW9uGAIgASgJQgi6SAVyAxjoB0gAiAEBEh4KCmlwX2FkZHJlc3MYAyABKAlCCrpIB3IFEAEY/wESDAoEcG9ydBgEIAEoAxIaCgh1c2VybmFtZRgFIAEoCUIIukgFcgMY/wESQwoLc2VydmVyX3R5cGUYBiABKA4yIi5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlclR5cGVCCrpIB4IBBBABIAASIAoKc3NoX2tleV9pZBgHIAEoA0IHukgEIgIgAEgBiAEBEikKEmJ1aWxkX21lbW9yeV9saW1pdBgIIAEoCUIIukgFcgMY/wFIAogBARImCg9idWlsZF9jcHVfbGltaXQYCSABKAlCCLpIBXIDGP8BSAOIAQFCDgoMX2Rlc2NyaXB0aW9uQg0KC19zc2hfa2V5X2lkQhUKE19idWlsZF9tZW1vcnlfbGltaXRCEgoQX2J1aWxkX2NwdV9saW1pdCJMChpSZW1vdGVTZXJ2ZXJDcmVhdGVSZXNwb25zZRIuCgZzZXJ2ZXIYASABKAsyHi5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlciLABgoZUmVtb3RlU2VydmVyVXBkYXRlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIdCgRuYW1lGAIgASgJQgq6SAdyBRABGP8BSACIAQESIgoLZGVzY3JpcHRpb24YAyABKAlCCLpIBXIDGOgHSAGIAQESIQoKaXBfYWRkcmVzcxgEIAEoCUIIukgFcgMY/wFIAogBARIRCgRwb3J0GAUgASgDSAOIAQESHwoIdXNlcm5hbWUYBiABKAlCCLpIBXIDGP8BSASIAQESTAoNc2VydmVyX3N0YXR1cxgHIAEoDjIkLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyU3RhdHVzQgq6SAeCAQQQASAASAWIAQESSAoLc2VydmVyX3R5cGUYCCABKA4yIi5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlclR5cGVCCrpIB4IBBBABIABIBogBARIiChVlbmFibGVfZG9ja2VyX2NsZWFudXAYCSABKAhIB4gBARIdChBsb2dfY2xlYW51cF9jcm9uGAogASgJSAiIAQESFAoHY29tbWFuZBgLIAEoCUgJiAEBEiYKDm1ldHJpY3NfY29uZmlnGAwgASgJQgm6SAZyBBiAgEBICogBARIgCgpzc2hfa2V5X2lkGA0gASgDQge6SAQiAiAASAuIAQESKQoSYnVpbGRfbWVtb3J5X2xpbWl0GA4gASgJQgi6SAVyAxj/AUgMiAEBEiYKD2J1aWxkX2NwdV9saW1pdBgPIAEoCUIIukgFcgMY/wFIDYgBAUIHCgVfbmFtZUIOCgxfZGVzY3JpcHRpb25CDQoLX2lwX2FkZHJlc3NCBwoFX3BvcnRCCwoJX3VzZXJuYW1lQhAKDl9zZXJ2ZXJfc3RhdHVzQg4KDF9zZXJ2ZXJfdHlwZUIYChZfZW5hYmxlX2RvY2tlcl9jbGVhbnVwQhMKEV9sb2dfY2xlYW51cF9jcm9uQgoKCF9jb21tYW5kQhEKD19tZXRyaWNzX2NvbmZpZ0INCgtfc3NoX2tleV9pZEIVChNfYnVpbGRfbWVtb3J5X2xpbWl0QhIKEF9idWlsZF9jcHVfbGltaXQiTAoaUmVtb3RlU2VydmVyVXBkYXRlUmVzcG9uc2USLgoGc2VydmVyGAEgASgLMh4ub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXIiMgobUmVtb3RlU2VydmVyQWN0aXZhdGVSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIoQBChxSZW1vdGVTZXJ2ZXJBY3RpdmF0ZVJlc3BvbnNlEi4KBnNlcnZlchgBIAEoCzIeLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyEjQKBmFjdGlvbhgCIAEoDjIkLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyQWN0aW9uIjQKHVJlbW90ZVNlcnZlckRlYWN0aXZhdGVSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIoYBCh5SZW1vdGVTZXJ2ZXJEZWFjdGl2YXRlUmVzcG9uc2USLgoGc2VydmVyGAEgASgLMh4ub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXISNAoGYWN0aW9uGAIgASgOMiQub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJBY3Rpb24iOAohUmVtb3RlU2VydmVyVGVzdENvbm5lY3Rpb25SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIooBCiJSZW1vdGVTZXJ2ZXJUZXN0Q29ubmVjdGlvblJlc3BvbnNlEi4KBnNlcnZlchgBIAEoCzIeLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyEjQKBmFjdGlvbhgCIAEoDjIkLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyQWN0aW9uIjAKGVJlbW90ZVNlcnZlckRlbGV0ZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiYAomUmVtb3RlU2VydmVyTWlncmF0ZURlcGVuZGVuY2llc1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASIQoQdGFyZ2V0X3NlcnZlcl9pZBgCIAEoA0IHukgEIgIgACJvCidSZW1vdGVTZXJ2ZXJNaWdyYXRlRGVwZW5kZW5jaWVzUmVzcG9uc2USRAoJbWlncmF0aW9uGAEgASgLMjEub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJEZXBlbmRlbmN5TWlncmF0aW9uIkAKH1JlbW90ZVNlcnZlckdldE1pZ3JhdGlvblJlcXVlc3QSHQoMbWlncmF0aW9uX2lkGAEgASgJQge6SARyAhABImgKIFJlbW90ZVNlcnZlckdldE1pZ3JhdGlvblJlc3BvbnNlEkQKCW1pZ3JhdGlvbhgBIAEoCzIxLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyRGVwZW5kZW5jeU1pZ3JhdGlvbiJFCiRSZW1vdGVTZXJ2ZXJSb2xsYmFja01pZ3JhdGlvblJlcXVlc3QSHQoMbWlncmF0aW9uX2lkGAEgASgJQge6SARyAhABIm0KJVJlbW90ZVNlcnZlclJvbGxiYWNrTWlncmF0aW9uUmVzcG9uc2USRAoJbWlncmF0aW9uGAEgASgLMjEub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJEZXBlbmRlbmN5TWlncmF0aW9uIkMKIlJlbW90ZVNlcnZlckNhbmNlbE1pZ3JhdGlvblJlcXVlc3QSHQoMbWlncmF0aW9uX2lkGAEgASgJQge6SARyAhABImwKI1JlbW90ZVNlcnZlckNhbmNlbE1pZ3JhdGlvblJlc3BvbnNlEkUKCW1pZ3JhdGlvbhgBIAEoCzIyLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyQXBwbGljYXRpb25NaWdyYXRpb24iWwohUmVtb3RlU2VydmVyTWlncmF0ZVNlcnZpY2VSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEiEKEHRhcmdldF9zZXJ2ZXJfaWQYAiABKANCB7pIBCICIAAiawoiUmVtb3RlU2VydmVyTWlncmF0ZVNlcnZpY2VSZXNwb25zZRJFCgltaWdyYXRpb24YASABKAsyMi5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlckFwcGxpY2F0aW9uTWlncmF0aW9uIkAKIVJlbW90ZVNlcnZlckxpc3RNaWdyYXRpb25zUmVxdWVzdBIbCgpzZXJ2aWNlX2lkGAEgASgDQge6SAQiAiAAImwKIlJlbW90ZVNlcnZlckxpc3RNaWdyYXRpb25zUmVzcG9uc2USRgoKbWlncmF0aW9ucxgBIAMoCzIyLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyQXBwbGljYXRpb25NaWdyYXRpb24iSAonUmVtb3RlU2VydmVyTGlzdE1pZ3JhdGlvbk9iamVjdHNSZXF1ZXN0Eh0KDG1pZ3JhdGlvbl9pZBgBIAEoCUIHukgEcgIQASJqCihSZW1vdGVTZXJ2ZXJMaXN0TWlncmF0aW9uT2JqZWN0c1Jlc3BvbnNlEj4KB29iamVjdHMYASADKAsyLS5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlck1pZ3JhdGlvbk9iamVjdCpzChBSZW1vdGVTZXJ2ZXJUeXBlEiIKHlJFTU9URV9TRVJWRVJfVFlQRV9VTlNQRUNJRklFRBAAEh0KGVJFTU9URV9TRVJWRVJfVFlQRV9ERVBMT1kQARIcChhSRU1PVEVfU0VSVkVSX1RZUEVfQlVJTEQQAip+ChJSZW1vdGVTZXJ2ZXJTdGF0dXMSJAogUkVNT1RFX1NFUlZFUl9TVEFUVVNfVU5TUEVDSUZJRUQQABIfChtSRU1PVEVfU0VSVkVSX1NUQVRVU19BQ1RJVkUQARIhCh1SRU1PVEVfU0VSVkVSX1NUQVRVU19JTkFDVElWRRACKqwBChJSZW1vdGVTZXJ2ZXJBY3Rpb24SJAogUkVNT1RFX1NFUlZFUl9BQ1RJT05fVU5TUEVDSUZJRUQQABIhCh1SRU1PVEVfU0VSVkVSX0FDVElPTl9BQ1RJVkFURRABEiMKH1JFTU9URV9TRVJWRVJfQUNUSU9OX0RFQUNUSVZBVEUQAhIoCiRSRU1PVEVfU0VSVkVSX0FDVElPTl9URVNUX0NPTk5FQ1RJT04QAyrDAgolUmVtb3RlU2VydmVyRGVwZW5kZW5jeU1pZ3JhdGlvblN0YXR1cxI5CjVSRU1PVEVfU0VSVkVSX0RFUEVOREVOQ1lfTUlHUkFUSU9OX1NUQVRVU19VTlNQRUNJRklFRBAAEjUKMVJFTU9URV9TRVJWRVJfREVQRU5ERU5DWV9NSUdSQVRJT05fU1RBVFVTX1JVTk5JTkcQARI3CjNSRU1PVEVfU0VSVkVSX0RFUEVOREVOQ1lfTUlHUkFUSU9OX1NUQVRVU19TVUNDRUVERUQQAhI0CjBSRU1PVEVfU0VSVkVSX0RFUEVOREVOQ1lfTUlHUkFUSU9OX1NUQVRVU19GQUlMRUQQAxI5CjVSRU1PVEVfU0VSVkVSX0RFUEVOREVOQ1lfTUlHUkFUSU9OX1NUQVRVU19ST0xMRURfQkFDSxAEKoADCiZSZW1vdGVTZXJ2ZXJBcHBsaWNhdGlvbk1pZ3JhdGlvblN0YXR1cxI6CjZSRU1PVEVfU0VSVkVSX0FQUExJQ0FUSU9OX01JR1JBVElPTl9TVEFUVVNfVU5TUEVDSUZJRUQQABI2CjJSRU1PVEVfU0VSVkVSX0FQUExJQ0FUSU9OX01JR1JBVElPTl9TVEFUVVNfUlVOTklORxABEjcKM1JFTU9URV9TRVJWRVJfQVBQTElDQVRJT05fTUlHUkFUSU9OX1NUQVRVU19BUFBMWUlORxACEjgKNFJFTU9URV9TRVJWRVJfQVBQTElDQVRJT05fTUlHUkFUSU9OX1NUQVRVU19TVUNDRUVERUQQAxI1CjFSRU1PVEVfU0VSVkVSX0FQUExJQ0FUSU9OX01JR1JBVElPTl9TVEFUVVNfRkFJTEVEEAQSOAo0UkVNT1RFX1NFUlZFUl9BUFBMSUNBVElPTl9NSUdSQVRJT05fU1RBVFVTX0NBTkNFTExFRBAFKvsEChpSZW1vdGVTZXJ2ZXJNaWdyYXRpb25QaGFzZRItCilSRU1PVEVfU0VSVkVSX01JR1JBVElPTl9QSEFTRV9VTlNQRUNJRklFRBAAEisKJ1JFTU9URV9TRVJWRVJfTUlHUkFUSU9OX1BIQVNFX1BSRUZMSUdIVBABEikKJVJFTU9URV9TRVJWRVJfTUlHUkFUSU9OX1BIQVNFX1FVSUVTQ0UQAhImCiJSRU1PVEVfU0VSVkVSX01JR1JBVElPTl9QSEFTRV9TWU5DEAMSKAokUkVNT1RFX1NFUlZFUl9NSUdSQVRJT05fUEhBU0VfVkVSSUZZEAQSJwojUkVNT1RFX1NFUlZFUl9NSUdSQVRJT05fUEhBU0VfQVBQTFkQBRIpCiVSRU1PVEVfU0VSVkVSX01JR1JBVElPTl9QSEFTRV9SRVBPSU5UEAYSKgomUkVNT1RFX1NFUlZFUl9NSUdSQVRJT05fUEhBU0VfUkVERVBMT1kQBxIoCiRSRU1PVEVfU0VSVkVSX01JR1JBVElPTl9QSEFTRV9IRUFMVEgQCBIsCihSRU1PVEVfU0VSVkVSX01JR1JBVElPTl9QSEFTRV9TVVBFUlNFREVEEAkSKAokUkVNT1RFX1NFUlZFUl9NSUdSQVRJT05fUEhBU0VfRkFJTEVEEAoSLQopUkVNT1RFX1NFUlZFUl9NSUdSQVRJT05fUEhBU0VfUk9MTEVEX0JBQ0sQCxIrCidSRU1PVEVfU0VSVkVSX01JR1JBVElPTl9QSEFTRV9DQU5DRUxMRUQQDBImCiJSRU1PVEVfU0VSVkVSX01JR1JBVElPTl9QSEFTRV9ET05FEA0q7QIKH1JlbW90ZVNlcnZlck1pZ3JhdGlvbk9iamVjdEtpbmQSMwovUkVNT1RFX1NFUlZFUl9NSUdSQVRJT05fT0JKRUNUX0tJTkRfVU5TUEVDSUZJRUQQABIuCipSRU1PVEVfU0VSVkVSX01JR1JBVElPTl9PQkpFQ1RfS0lORF9WT0xVTUUQARIsCihSRU1PVEVfU0VSVkVSX01JR1JBVElPTl9PQkpFQ1RfS0lORF9CSU5EEAISLgoqUkVNT1RFX1NFUlZFUl9NSUdSQVRJT05fT0JKRUNUX0tJTkRfREJEQVRBEAMSLAooUkVNT1RFX1NFUlZFUl9NSUdSQVRJT05fT0JKRUNUX0tJTkRfRFVNUBAEEisKJ1JFTU9URV9TRVJWRVJfTUlHUkFUSU9OX09CSkVDVF9LSU5EX1NSQxAFEiwKKFJFTU9URV9TRVJWRVJfTUlHUkFUSU9OX09CSkVDVF9LSU5EX0NFUlQQBjKVDgoTUmVtb3RlU2VydmVyU2VydmljZRJqChFMaXN0UmVtb3RlU2VydmVycxIpLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyTGlzdFJlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlckxpc3RSZXNwb25zZRJmCg9HZXRSZW1vdGVTZXJ2ZXISKC5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlckdldFJlcXVlc3QaKS5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlckdldFJlc3BvbnNlEm8KEkNyZWF0ZVJlbW90ZVNlcnZlchIrLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyQ3JlYXRlUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyQ3JlYXRlUmVzcG9uc2USbwoSVXBkYXRlUmVtb3RlU2VydmVyEisub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJVcGRhdGVSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJVcGRhdGVSZXNwb25zZRJpCghBY3RpdmF0ZRItLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyQWN0aXZhdGVSZXF1ZXN0Gi4ub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJBY3RpdmF0ZVJlc3BvbnNlEm8KCkRlYWN0aXZhdGUSLy5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlckRlYWN0aXZhdGVSZXF1ZXN0GjAub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJEZWFjdGl2YXRlUmVzcG9uc2USewoOVGVzdENvbm5lY3Rpb24SMy5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlclRlc3RDb25uZWN0aW9uUmVxdWVzdBo0Lm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyVGVzdENvbm5lY3Rpb25SZXNwb25zZRJaChJEZWxldGVSZW1vdGVTZXJ2ZXISKy5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlckRlbGV0ZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EooBChNNaWdyYXRlRGVwZW5kZW5jaWVzEjgub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJNaWdyYXRlRGVwZW5kZW5jaWVzUmVxdWVzdBo5Lm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyTWlncmF0ZURlcGVuZGVuY2llc1Jlc3BvbnNlEnUKDEdldE1pZ3JhdGlvbhIxLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyR2V0TWlncmF0aW9uUmVxdWVzdBoyLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyR2V0TWlncmF0aW9uUmVzcG9uc2UShAEKEVJvbGxiYWNrTWlncmF0aW9uEjYub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJSb2xsYmFja01pZ3JhdGlvblJlcXVlc3QaNy5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlclJvbGxiYWNrTWlncmF0aW9uUmVzcG9uc2USfgoPQ2FuY2VsTWlncmF0aW9uEjQub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJDYW5jZWxNaWdyYXRpb25SZXF1ZXN0GjUub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJDYW5jZWxNaWdyYXRpb25SZXNwb25zZRJ7Cg5NaWdyYXRlU2VydmljZRIzLm9wZW5veGlkZS5hcGkudjEuUmVtb3RlU2VydmVyTWlncmF0ZVNlcnZpY2VSZXF1ZXN0GjQub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJNaWdyYXRlU2VydmljZVJlc3BvbnNlEnsKDkxpc3RNaWdyYXRpb25zEjMub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJMaXN0TWlncmF0aW9uc1JlcXVlc3QaNC5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlckxpc3RNaWdyYXRpb25zUmVzcG9uc2USjQEKFExpc3RNaWdyYXRpb25PYmplY3RzEjkub3Blbm94aWRlLmFwaS52MS5SZW1vdGVTZXJ2ZXJMaXN0TWlncmF0aW9uT2JqZWN0c1JlcXVlc3QaOi5vcGVub3hpZGUuYXBpLnYxLlJlbW90ZVNlcnZlckxpc3RNaWdyYXRpb25PYmplY3RzUmVzcG9uc2ViBnByb3RvMw", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServer
+ */
+export type RemoteServer = Message<"openoxide.api.v1.RemoteServer"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: optional string description = 3;
+   */
+  description?: string | undefined;
+
+  /**
+   * @generated from field: string ip_address = 4;
+   */
+  ipAddress: string;
+
+  /**
+   * @generated from field: int64 port = 5;
+   */
+  port: bigint;
+
+  /**
+   * @generated from field: string username = 6;
+   */
+  username: string;
+
+  /**
+   * @generated from field: string app_name = 7;
+   */
+  appName: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerStatus server_status = 8;
+   */
+  serverStatus: RemoteServerStatus;
+
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerType server_type = 9;
+   */
+  serverType: RemoteServerType;
+
+  /**
+   * Integer-as-boolean in storage.
+   *
+   * @generated from field: bool enable_docker_cleanup = 10;
+   */
+  enableDockerCleanup: boolean;
+
+  /**
+   * @generated from field: optional string log_cleanup_cron = 11;
+   */
+  logCleanupCron?: string | undefined;
+
+  /**
+   * @generated from field: string command = 12;
+   */
+  command: string;
+
+  /**
+   * Metrics collection configuration as a JSON document.
+   *
+   * @generated from field: string metrics_config = 13;
+   */
+  metricsConfig: string;
+
+  /**
+   * @generated from field: optional int64 ssh_key_id = 14;
+   */
+  sshKeyId?: bigint | undefined;
+
+  /**
+   * @generated from field: int64 created_at = 15;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 16;
+   */
+  updatedAt: bigint;
+
+  /**
+   * @generated from field: optional string build_memory_limit = 17;
+   */
+  buildMemoryLimit?: string | undefined;
+
+  /**
+   * @generated from field: optional string build_cpu_limit = 18;
+   */
+  buildCpuLimit?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServer.
+ * Use `create(RemoteServerSchema)` to create a new message.
+ */
+export const RemoteServerSchema: GenMessage<RemoteServer> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 0);
+
+/**
+ * Result of `server_migrations` metadata moves (whole/dependency scope).
+ *
+ * @generated from message openoxide.api.v1.RemoteServerDependencyMigration
+ */
+export type RemoteServerDependencyMigration = Message<"openoxide.api.v1.RemoteServerDependencyMigration"> & {
+  /**
+   * UUID migration identifier.
+   *
+   * @generated from field: string migration_id = 1;
+   */
+  migrationId: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerDependencyMigrationStatus status = 2;
+   */
+  status: RemoteServerDependencyMigrationStatus;
+
+  /**
+   * @generated from field: int64 source_server_id = 3;
+   */
+  sourceServerId: bigint;
+
+  /**
+   * @generated from field: int64 target_server_id = 4;
+   */
+  targetServerId: bigint;
+
+  /**
+   * @generated from field: int64 applications = 5;
+   */
+  applications: bigint;
+
+  /**
+   * @generated from field: int64 build_assignments = 6;
+   */
+  buildAssignments: bigint;
+
+  /**
+   * @generated from field: int64 compose_projects = 7;
+   */
+  composeProjects: bigint;
+
+  /**
+   * @generated from field: int64 databases = 8;
+   */
+  databases: bigint;
+
+  /**
+   * @generated from field: int64 certificates = 9;
+   */
+  certificates: bigint;
+
+  /**
+   * @generated from field: int64 schedules = 10;
+   */
+  schedules: bigint;
+
+  /**
+   * @generated from field: int64 queued_applications = 11;
+   */
+  queuedApplications: bigint;
+
+  /**
+   * @generated from field: int64 queued_compose_projects = 12;
+   */
+  queuedComposeProjects: bigint;
+
+  /**
+   * @generated from field: optional string error = 13;
+   */
+  error?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerDependencyMigration.
+ * Use `create(RemoteServerDependencyMigrationSchema)` to create a new message.
+ */
+export const RemoteServerDependencyMigrationSchema: GenMessage<RemoteServerDependencyMigration> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 1);
+
+/**
+ * A stateful `application_migrations` row (single-service migration).
+ *
+ * @generated from message openoxide.api.v1.RemoteServerApplicationMigration
+ */
+export type RemoteServerApplicationMigration = Message<"openoxide.api.v1.RemoteServerApplicationMigration"> & {
+  /**
+   * UUID primary key.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: int64 organization_id = 2;
+   */
+  organizationId: bigint;
+
+  /**
+   * @generated from field: int64 service_id = 3;
+   */
+  serviceId: bigint;
+
+  /**
+   * @generated from field: int64 source_server_id = 4;
+   */
+  sourceServerId: bigint;
+
+  /**
+   * @generated from field: int64 target_server_id = 5;
+   */
+  targetServerId: bigint;
+
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerApplicationMigrationStatus status = 6;
+   */
+  status: RemoteServerApplicationMigrationStatus;
+
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerMigrationPhase phase = 7;
+   */
+  phase: RemoteServerMigrationPhase;
+
+  /**
+   * Percent complete (0-100).
+   *
+   * @generated from field: int64 progress = 8;
+   */
+  progress: bigint;
+
+  /**
+   * Cooperative cancellation flag, integer-as-boolean in storage.
+   *
+   * @generated from field: bool cancel_requested = 9;
+   */
+  cancelRequested: boolean;
+
+  /**
+   * @generated from field: optional string error = 10;
+   */
+  error?: string | undefined;
+
+  /**
+   * @generated from field: string log_path = 11;
+   */
+  logPath: string;
+
+  /**
+   * @generated from field: int64 created_at = 12;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 13;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerApplicationMigration.
+ * Use `create(RemoteServerApplicationMigrationSchema)` to create a new message.
+ */
+export const RemoteServerApplicationMigrationSchema: GenMessage<RemoteServerApplicationMigration> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 2);
+
+/**
+ * A per-object checkpoint of a stateful migration.
+ *
+ * @generated from message openoxide.api.v1.RemoteServerMigrationObject
+ */
+export type RemoteServerMigrationObject = Message<"openoxide.api.v1.RemoteServerMigrationObject"> & {
+  /**
+   * @generated from field: string migration_id = 1;
+   */
+  migrationId: string;
+
+  /**
+   * Hash-derived unique key of the tracked object within the migration.
+   *
+   * @generated from field: string obj_key = 2;
+   */
+  objKey: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerMigrationObjectKind kind = 3;
+   */
+  kind: RemoteServerMigrationObjectKind;
+
+  /**
+   * @generated from field: string source_ref = 4;
+   */
+  sourceRef: string;
+
+  /**
+   * @generated from field: string dest_ref = 5;
+   */
+  destRef: string;
+
+  /**
+   * Checkpoint status as recorded by the runner (open set: e.g. "PENDING", "VERIFIED", "APPLIED", "DONE", "FAILED").
+   *
+   * @generated from field: string status = 6;
+   */
+  status: string;
+
+  /**
+   * @generated from field: int64 bytes = 7;
+   */
+  bytes: bigint;
+
+  /**
+   * @generated from field: optional string error = 8;
+   */
+  error?: string | undefined;
+
+  /**
+   * @generated from field: int64 created_at = 9;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 10;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerMigrationObject.
+ * Use `create(RemoteServerMigrationObjectSchema)` to create a new message.
+ */
+export const RemoteServerMigrationObjectSchema: GenMessage<RemoteServerMigrationObject> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 3);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerListRequest
+ */
+export type RemoteServerListRequest = Message<"openoxide.api.v1.RemoteServerListRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerListRequest.
+ * Use `create(RemoteServerListRequestSchema)` to create a new message.
+ */
+export const RemoteServerListRequestSchema: GenMessage<RemoteServerListRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 4);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerListResponse
+ */
+export type RemoteServerListResponse = Message<"openoxide.api.v1.RemoteServerListResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.RemoteServer servers = 1;
+   */
+  servers: RemoteServer[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerListResponse.
+ * Use `create(RemoteServerListResponseSchema)` to create a new message.
+ */
+export const RemoteServerListResponseSchema: GenMessage<RemoteServerListResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 5);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerGetRequest
+ */
+export type RemoteServerGetRequest = Message<"openoxide.api.v1.RemoteServerGetRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerGetRequest.
+ * Use `create(RemoteServerGetRequestSchema)` to create a new message.
+ */
+export const RemoteServerGetRequestSchema: GenMessage<RemoteServerGetRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 6);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerGetResponse
+ */
+export type RemoteServerGetResponse = Message<"openoxide.api.v1.RemoteServerGetResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServer server = 1;
+   */
+  server?: RemoteServer | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerGetResponse.
+ * Use `create(RemoteServerGetResponseSchema)` to create a new message.
+ */
+export const RemoteServerGetResponseSchema: GenMessage<RemoteServerGetResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 7);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerCreateRequest
+ */
+export type RemoteServerCreateRequest = Message<"openoxide.api.v1.RemoteServerCreateRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: optional string description = 2;
+   */
+  description?: string | undefined;
+
+  /**
+   * @generated from field: string ip_address = 3;
+   */
+  ipAddress: string;
+
+  /**
+   * SSH port; 0 means the default 22.
+   *
+   * @generated from field: int64 port = 4;
+   */
+  port: bigint;
+
+  /**
+   * SSH user; empty means the default "root".
+   *
+   * @generated from field: string username = 5;
+   */
+  username: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerType server_type = 6;
+   */
+  serverType: RemoteServerType;
+
+  /**
+   * @generated from field: optional int64 ssh_key_id = 7;
+   */
+  sshKeyId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string build_memory_limit = 8;
+   */
+  buildMemoryLimit?: string | undefined;
+
+  /**
+   * @generated from field: optional string build_cpu_limit = 9;
+   */
+  buildCpuLimit?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerCreateRequest.
+ * Use `create(RemoteServerCreateRequestSchema)` to create a new message.
+ */
+export const RemoteServerCreateRequestSchema: GenMessage<RemoteServerCreateRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 8);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerCreateResponse
+ */
+export type RemoteServerCreateResponse = Message<"openoxide.api.v1.RemoteServerCreateResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServer server = 1;
+   */
+  server?: RemoteServer | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerCreateResponse.
+ * Use `create(RemoteServerCreateResponseSchema)` to create a new message.
+ */
+export const RemoteServerCreateResponseSchema: GenMessage<RemoteServerCreateResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 9);
+
+/**
+ * PATCH semantics: absent fields keep their stored values.
+ *
+ * @generated from message openoxide.api.v1.RemoteServerUpdateRequest
+ */
+export type RemoteServerUpdateRequest = Message<"openoxide.api.v1.RemoteServerUpdateRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional string name = 2;
+   */
+  name?: string | undefined;
+
+  /**
+   * @generated from field: optional string description = 3;
+   */
+  description?: string | undefined;
+
+  /**
+   * @generated from field: optional string ip_address = 4;
+   */
+  ipAddress?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 port = 5;
+   */
+  port?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string username = 6;
+   */
+  username?: string | undefined;
+
+  /**
+   * @generated from field: optional openoxide.api.v1.RemoteServerStatus server_status = 7;
+   */
+  serverStatus?: RemoteServerStatus | undefined;
+
+  /**
+   * @generated from field: optional openoxide.api.v1.RemoteServerType server_type = 8;
+   */
+  serverType?: RemoteServerType | undefined;
+
+  /**
+   * Integer-as-boolean in storage.
+   *
+   * @generated from field: optional bool enable_docker_cleanup = 9;
+   */
+  enableDockerCleanup?: boolean | undefined;
+
+  /**
+   * @generated from field: optional string log_cleanup_cron = 10;
+   */
+  logCleanupCron?: string | undefined;
+
+  /**
+   * @generated from field: optional string command = 11;
+   */
+  command?: string | undefined;
+
+  /**
+   * Metrics collection configuration as a JSON document.
+   *
+   * @generated from field: optional string metrics_config = 12;
+   */
+  metricsConfig?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 ssh_key_id = 13;
+   */
+  sshKeyId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string build_memory_limit = 14;
+   */
+  buildMemoryLimit?: string | undefined;
+
+  /**
+   * @generated from field: optional string build_cpu_limit = 15;
+   */
+  buildCpuLimit?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerUpdateRequest.
+ * Use `create(RemoteServerUpdateRequestSchema)` to create a new message.
+ */
+export const RemoteServerUpdateRequestSchema: GenMessage<RemoteServerUpdateRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 10);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerUpdateResponse
+ */
+export type RemoteServerUpdateResponse = Message<"openoxide.api.v1.RemoteServerUpdateResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServer server = 1;
+   */
+  server?: RemoteServer | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerUpdateResponse.
+ * Use `create(RemoteServerUpdateResponseSchema)` to create a new message.
+ */
+export const RemoteServerUpdateResponseSchema: GenMessage<RemoteServerUpdateResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 11);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerActivateRequest
+ */
+export type RemoteServerActivateRequest = Message<"openoxide.api.v1.RemoteServerActivateRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerActivateRequest.
+ * Use `create(RemoteServerActivateRequestSchema)` to create a new message.
+ */
+export const RemoteServerActivateRequestSchema: GenMessage<RemoteServerActivateRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 12);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerActivateResponse
+ */
+export type RemoteServerActivateResponse = Message<"openoxide.api.v1.RemoteServerActivateResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServer server = 1;
+   */
+  server?: RemoteServer | undefined;
+
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerAction action = 2;
+   */
+  action: RemoteServerAction;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerActivateResponse.
+ * Use `create(RemoteServerActivateResponseSchema)` to create a new message.
+ */
+export const RemoteServerActivateResponseSchema: GenMessage<RemoteServerActivateResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 13);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerDeactivateRequest
+ */
+export type RemoteServerDeactivateRequest = Message<"openoxide.api.v1.RemoteServerDeactivateRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerDeactivateRequest.
+ * Use `create(RemoteServerDeactivateRequestSchema)` to create a new message.
+ */
+export const RemoteServerDeactivateRequestSchema: GenMessage<RemoteServerDeactivateRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 14);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerDeactivateResponse
+ */
+export type RemoteServerDeactivateResponse = Message<"openoxide.api.v1.RemoteServerDeactivateResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServer server = 1;
+   */
+  server?: RemoteServer | undefined;
+
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerAction action = 2;
+   */
+  action: RemoteServerAction;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerDeactivateResponse.
+ * Use `create(RemoteServerDeactivateResponseSchema)` to create a new message.
+ */
+export const RemoteServerDeactivateResponseSchema: GenMessage<RemoteServerDeactivateResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 15);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerTestConnectionRequest
+ */
+export type RemoteServerTestConnectionRequest = Message<"openoxide.api.v1.RemoteServerTestConnectionRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerTestConnectionRequest.
+ * Use `create(RemoteServerTestConnectionRequestSchema)` to create a new message.
+ */
+export const RemoteServerTestConnectionRequestSchema: GenMessage<RemoteServerTestConnectionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 16);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerTestConnectionResponse
+ */
+export type RemoteServerTestConnectionResponse = Message<"openoxide.api.v1.RemoteServerTestConnectionResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServer server = 1;
+   */
+  server?: RemoteServer | undefined;
+
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerAction action = 2;
+   */
+  action: RemoteServerAction;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerTestConnectionResponse.
+ * Use `create(RemoteServerTestConnectionResponseSchema)` to create a new message.
+ */
+export const RemoteServerTestConnectionResponseSchema: GenMessage<RemoteServerTestConnectionResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 17);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerDeleteRequest
+ */
+export type RemoteServerDeleteRequest = Message<"openoxide.api.v1.RemoteServerDeleteRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerDeleteRequest.
+ * Use `create(RemoteServerDeleteRequestSchema)` to create a new message.
+ */
+export const RemoteServerDeleteRequestSchema: GenMessage<RemoteServerDeleteRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 18);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerMigrateDependenciesRequest
+ */
+export type RemoteServerMigrateDependenciesRequest = Message<"openoxide.api.v1.RemoteServerMigrateDependenciesRequest"> & {
+  /**
+   * Source server id.
+   *
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: int64 target_server_id = 2;
+   */
+  targetServerId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerMigrateDependenciesRequest.
+ * Use `create(RemoteServerMigrateDependenciesRequestSchema)` to create a new message.
+ */
+export const RemoteServerMigrateDependenciesRequestSchema: GenMessage<RemoteServerMigrateDependenciesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 19);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerMigrateDependenciesResponse
+ */
+export type RemoteServerMigrateDependenciesResponse = Message<"openoxide.api.v1.RemoteServerMigrateDependenciesResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerDependencyMigration migration = 1;
+   */
+  migration?: RemoteServerDependencyMigration | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerMigrateDependenciesResponse.
+ * Use `create(RemoteServerMigrateDependenciesResponseSchema)` to create a new message.
+ */
+export const RemoteServerMigrateDependenciesResponseSchema: GenMessage<RemoteServerMigrateDependenciesResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 20);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerGetMigrationRequest
+ */
+export type RemoteServerGetMigrationRequest = Message<"openoxide.api.v1.RemoteServerGetMigrationRequest"> & {
+  /**
+   * Dependency-migration UUID as returned by MigrateDependencies.
+   *
+   * @generated from field: string migration_id = 1;
+   */
+  migrationId: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerGetMigrationRequest.
+ * Use `create(RemoteServerGetMigrationRequestSchema)` to create a new message.
+ */
+export const RemoteServerGetMigrationRequestSchema: GenMessage<RemoteServerGetMigrationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 21);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerGetMigrationResponse
+ */
+export type RemoteServerGetMigrationResponse = Message<"openoxide.api.v1.RemoteServerGetMigrationResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerDependencyMigration migration = 1;
+   */
+  migration?: RemoteServerDependencyMigration | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerGetMigrationResponse.
+ * Use `create(RemoteServerGetMigrationResponseSchema)` to create a new message.
+ */
+export const RemoteServerGetMigrationResponseSchema: GenMessage<RemoteServerGetMigrationResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 22);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerRollbackMigrationRequest
+ */
+export type RemoteServerRollbackMigrationRequest = Message<"openoxide.api.v1.RemoteServerRollbackMigrationRequest"> & {
+  /**
+   * @generated from field: string migration_id = 1;
+   */
+  migrationId: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerRollbackMigrationRequest.
+ * Use `create(RemoteServerRollbackMigrationRequestSchema)` to create a new message.
+ */
+export const RemoteServerRollbackMigrationRequestSchema: GenMessage<RemoteServerRollbackMigrationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 23);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerRollbackMigrationResponse
+ */
+export type RemoteServerRollbackMigrationResponse = Message<"openoxide.api.v1.RemoteServerRollbackMigrationResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerDependencyMigration migration = 1;
+   */
+  migration?: RemoteServerDependencyMigration | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerRollbackMigrationResponse.
+ * Use `create(RemoteServerRollbackMigrationResponseSchema)` to create a new message.
+ */
+export const RemoteServerRollbackMigrationResponseSchema: GenMessage<RemoteServerRollbackMigrationResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 24);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerCancelMigrationRequest
+ */
+export type RemoteServerCancelMigrationRequest = Message<"openoxide.api.v1.RemoteServerCancelMigrationRequest"> & {
+  /**
+   * Stateful application-migration UUID.
+   *
+   * @generated from field: string migration_id = 1;
+   */
+  migrationId: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerCancelMigrationRequest.
+ * Use `create(RemoteServerCancelMigrationRequestSchema)` to create a new message.
+ */
+export const RemoteServerCancelMigrationRequestSchema: GenMessage<RemoteServerCancelMigrationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 25);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerCancelMigrationResponse
+ */
+export type RemoteServerCancelMigrationResponse = Message<"openoxide.api.v1.RemoteServerCancelMigrationResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerApplicationMigration migration = 1;
+   */
+  migration?: RemoteServerApplicationMigration | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerCancelMigrationResponse.
+ * Use `create(RemoteServerCancelMigrationResponseSchema)` to create a new message.
+ */
+export const RemoteServerCancelMigrationResponseSchema: GenMessage<RemoteServerCancelMigrationResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 26);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerMigrateServiceRequest
+ */
+export type RemoteServerMigrateServiceRequest = Message<"openoxide.api.v1.RemoteServerMigrateServiceRequest"> & {
+  /**
+   * Application/compose service id.
+   *
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: int64 target_server_id = 2;
+   */
+  targetServerId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerMigrateServiceRequest.
+ * Use `create(RemoteServerMigrateServiceRequestSchema)` to create a new message.
+ */
+export const RemoteServerMigrateServiceRequestSchema: GenMessage<RemoteServerMigrateServiceRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 27);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerMigrateServiceResponse
+ */
+export type RemoteServerMigrateServiceResponse = Message<"openoxide.api.v1.RemoteServerMigrateServiceResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.RemoteServerApplicationMigration migration = 1;
+   */
+  migration?: RemoteServerApplicationMigration | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerMigrateServiceResponse.
+ * Use `create(RemoteServerMigrateServiceResponseSchema)` to create a new message.
+ */
+export const RemoteServerMigrateServiceResponseSchema: GenMessage<RemoteServerMigrateServiceResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 28);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerListMigrationsRequest
+ */
+export type RemoteServerListMigrationsRequest = Message<"openoxide.api.v1.RemoteServerListMigrationsRequest"> & {
+  /**
+   * Application/compose service id.
+   *
+   * @generated from field: int64 service_id = 1;
+   */
+  serviceId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerListMigrationsRequest.
+ * Use `create(RemoteServerListMigrationsRequestSchema)` to create a new message.
+ */
+export const RemoteServerListMigrationsRequestSchema: GenMessage<RemoteServerListMigrationsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 29);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerListMigrationsResponse
+ */
+export type RemoteServerListMigrationsResponse = Message<"openoxide.api.v1.RemoteServerListMigrationsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.RemoteServerApplicationMigration migrations = 1;
+   */
+  migrations: RemoteServerApplicationMigration[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerListMigrationsResponse.
+ * Use `create(RemoteServerListMigrationsResponseSchema)` to create a new message.
+ */
+export const RemoteServerListMigrationsResponseSchema: GenMessage<RemoteServerListMigrationsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 30);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerListMigrationObjectsRequest
+ */
+export type RemoteServerListMigrationObjectsRequest = Message<"openoxide.api.v1.RemoteServerListMigrationObjectsRequest"> & {
+  /**
+   * Stateful application-migration UUID.
+   *
+   * @generated from field: string migration_id = 1;
+   */
+  migrationId: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerListMigrationObjectsRequest.
+ * Use `create(RemoteServerListMigrationObjectsRequestSchema)` to create a new message.
+ */
+export const RemoteServerListMigrationObjectsRequestSchema: GenMessage<RemoteServerListMigrationObjectsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 31);
+
+/**
+ * @generated from message openoxide.api.v1.RemoteServerListMigrationObjectsResponse
+ */
+export type RemoteServerListMigrationObjectsResponse = Message<"openoxide.api.v1.RemoteServerListMigrationObjectsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.RemoteServerMigrationObject objects = 1;
+   */
+  objects: RemoteServerMigrationObject[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.RemoteServerListMigrationObjectsResponse.
+ * Use `create(RemoteServerListMigrationObjectsResponseSchema)` to create a new message.
+ */
+export const RemoteServerListMigrationObjectsResponseSchema: GenMessage<RemoteServerListMigrationObjectsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_remote_server, 32);
+
+/**
+ * Closed set: `RemoteServerTypeDto` (DEPLOY/BUILD).
+ *
+ * @generated from enum openoxide.api.v1.RemoteServerType
+ */
+export enum RemoteServerType {
+  /**
+   * @generated from enum value: REMOTE_SERVER_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_TYPE_DEPLOY = 1;
+   */
+  DEPLOY = 1,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_TYPE_BUILD = 2;
+   */
+  BUILD = 2,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.RemoteServerType.
+ */
+export const RemoteServerTypeSchema: GenEnum<RemoteServerType> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_remote_server, 0);
+
+/**
+ * Closed set: `RemoteServerStatus` / `RemoteServerStatusDto` (ACTIVE/INACTIVE).
+ *
+ * @generated from enum openoxide.api.v1.RemoteServerStatus
+ */
+export enum RemoteServerStatus {
+  /**
+   * @generated from enum value: REMOTE_SERVER_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_STATUS_ACTIVE = 1;
+   */
+  ACTIVE = 1,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_STATUS_INACTIVE = 2;
+   */
+  INACTIVE = 2,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.RemoteServerStatus.
+ */
+export const RemoteServerStatusSchema: GenEnum<RemoteServerStatus> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_remote_server, 1);
+
+/**
+ * Closed set: `RemoteServerAction` enum.
+ *
+ * @generated from enum openoxide.api.v1.RemoteServerAction
+ */
+export enum RemoteServerAction {
+  /**
+   * @generated from enum value: REMOTE_SERVER_ACTION_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_ACTION_ACTIVATE = 1;
+   */
+  ACTIVATE = 1,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_ACTION_DEACTIVATE = 2;
+   */
+  DEACTIVATE = 2,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_ACTION_TEST_CONNECTION = 3;
+   */
+  TEST_CONNECTION = 3,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.RemoteServerAction.
+ */
+export const RemoteServerActionSchema: GenEnum<RemoteServerAction> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_remote_server, 2);
+
+/**
+ * Closed set: the only status literals written for `server_migrations` rows.
+ *
+ * @generated from enum openoxide.api.v1.RemoteServerDependencyMigrationStatus
+ */
+export enum RemoteServerDependencyMigrationStatus {
+  /**
+   * @generated from enum value: REMOTE_SERVER_DEPENDENCY_MIGRATION_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_DEPENDENCY_MIGRATION_STATUS_RUNNING = 1;
+   */
+  RUNNING = 1,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_DEPENDENCY_MIGRATION_STATUS_SUCCEEDED = 2;
+   */
+  SUCCEEDED = 2,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_DEPENDENCY_MIGRATION_STATUS_FAILED = 3;
+   */
+  FAILED = 3,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_DEPENDENCY_MIGRATION_STATUS_ROLLED_BACK = 4;
+   */
+  ROLLED_BACK = 4,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.RemoteServerDependencyMigrationStatus.
+ */
+export const RemoteServerDependencyMigrationStatusSchema: GenEnum<RemoteServerDependencyMigrationStatus> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_remote_server, 3);
+
+/**
+ * Closed set: status literals written for `application_migrations` rows ("RUNNING"/"APPLYING" from the phase setter, plus the terminal updates).
+ *
+ * @generated from enum openoxide.api.v1.RemoteServerApplicationMigrationStatus
+ */
+export enum RemoteServerApplicationMigrationStatus {
+  /**
+   * @generated from enum value: REMOTE_SERVER_APPLICATION_MIGRATION_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_APPLICATION_MIGRATION_STATUS_RUNNING = 1;
+   */
+  RUNNING = 1,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_APPLICATION_MIGRATION_STATUS_APPLYING = 2;
+   */
+  APPLYING = 2,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_APPLICATION_MIGRATION_STATUS_SUCCEEDED = 3;
+   */
+  SUCCEEDED = 3,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_APPLICATION_MIGRATION_STATUS_FAILED = 4;
+   */
+  FAILED = 4,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_APPLICATION_MIGRATION_STATUS_CANCELLED = 5;
+   */
+  CANCELLED = 5,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.RemoteServerApplicationMigrationStatus.
+ */
+export const RemoteServerApplicationMigrationStatusSchema: GenEnum<RemoteServerApplicationMigrationStatus> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_remote_server, 4);
+
+/**
+ * Closed set: `MigrationPhase::as_str` match arms plus the terminal DONE stamp.
+ *
+ * @generated from enum openoxide.api.v1.RemoteServerMigrationPhase
+ */
+export enum RemoteServerMigrationPhase {
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_PREFLIGHT = 1;
+   */
+  PREFLIGHT = 1,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_QUIESCE = 2;
+   */
+  QUIESCE = 2,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_SYNC = 3;
+   */
+  SYNC = 3,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_VERIFY = 4;
+   */
+  VERIFY = 4,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_APPLY = 5;
+   */
+  APPLY = 5,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_REPOINT = 6;
+   */
+  REPOINT = 6,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_REDEPLOY = 7;
+   */
+  REDEPLOY = 7,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_HEALTH = 8;
+   */
+  HEALTH = 8,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_SUPERSEDED = 9;
+   */
+  SUPERSEDED = 9,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_FAILED = 10;
+   */
+  FAILED = 10,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_ROLLED_BACK = 11;
+   */
+  ROLLED_BACK = 11,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_CANCELLED = 12;
+   */
+  CANCELLED = 12,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_PHASE_DONE = 13;
+   */
+  DONE = 13,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.RemoteServerMigrationPhase.
+ */
+export const RemoteServerMigrationPhaseSchema: GenEnum<RemoteServerMigrationPhase> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_remote_server, 5);
+
+/**
+ * Closed set: `MigrationObjectKind::as_str` match arms.
+ *
+ * @generated from enum openoxide.api.v1.RemoteServerMigrationObjectKind
+ */
+export enum RemoteServerMigrationObjectKind {
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_OBJECT_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_OBJECT_KIND_VOLUME = 1;
+   */
+  VOLUME = 1,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_OBJECT_KIND_BIND = 2;
+   */
+  BIND = 2,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_OBJECT_KIND_DBDATA = 3;
+   */
+  DBDATA = 3,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_OBJECT_KIND_DUMP = 4;
+   */
+  DUMP = 4,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_OBJECT_KIND_SRC = 5;
+   */
+  SRC = 5,
+
+  /**
+   * @generated from enum value: REMOTE_SERVER_MIGRATION_OBJECT_KIND_CERT = 6;
+   */
+  CERT = 6,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.RemoteServerMigrationObjectKind.
+ */
+export const RemoteServerMigrationObjectKindSchema: GenEnum<RemoteServerMigrationObjectKind> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_remote_server, 6);
 
 /**
  * @generated from service openoxide.api.v1.RemoteServerService
  */
 export const RemoteServerService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.ListRemoteServers
-	 */
-	listRemoteServers: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.GetRemoteServer
-	 */
-	getRemoteServer: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.CreateRemoteServer
-	 */
-	createRemoteServer: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.UpdateRemoteServer
-	 */
-	updateRemoteServer: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.Activate
-	 */
-	activate: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.Deactivate
-	 */
-	deactivate: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.TestConnection
-	 */
-	testConnection: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.DeleteRemoteServer
-	 */
-	deleteRemoteServer: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.MigrateDependencies
-	 */
-	migrateDependencies: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.GetMigration
-	 */
-	getMigration: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.RollbackMigration
-	 */
-	rollbackMigration: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * Flags a RUNNING application_migrations row for cooperative cancellation;
-	 * the runner honours it at the next phase/object boundary.
-	 *
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.CancelMigration
-	 */
-	cancelMigration: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * Triggers (or resumes) a stateful single-service migration. id carries the
-	 * service id, payload a JSON object {"target_server_id": "..."}. Returns
-	 * the application_migrations row JSON.
-	 *
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.MigrateService
-	 */
-	migrateService: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * Lists stateful migrations for a service (id = service id), newest first.
-	 *
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.ListMigrations
-	 */
-	listMigrations: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * Lists per-object checkpoints of one stateful migration (payload = the
-	 * migration id string).
-	 *
-	 * @generated from rpc openoxide.api.v1.RemoteServerService.ListMigrationObjects
-	 */
-	listMigrationObjects: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceListResponseSchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_remote_server, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.RemoteServerService.ListRemoteServers
+   */
+  listRemoteServers: {
+    methodKind: "unary";
+    input: typeof RemoteServerListRequestSchema;
+    output: typeof RemoteServerListResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RemoteServerService.GetRemoteServer
+   */
+  getRemoteServer: {
+    methodKind: "unary";
+    input: typeof RemoteServerGetRequestSchema;
+    output: typeof RemoteServerGetResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RemoteServerService.CreateRemoteServer
+   */
+  createRemoteServer: {
+    methodKind: "unary";
+    input: typeof RemoteServerCreateRequestSchema;
+    output: typeof RemoteServerCreateResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RemoteServerService.UpdateRemoteServer
+   */
+  updateRemoteServer: {
+    methodKind: "unary";
+    input: typeof RemoteServerUpdateRequestSchema;
+    output: typeof RemoteServerUpdateResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RemoteServerService.Activate
+   */
+  activate: {
+    methodKind: "unary";
+    input: typeof RemoteServerActivateRequestSchema;
+    output: typeof RemoteServerActivateResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RemoteServerService.Deactivate
+   */
+  deactivate: {
+    methodKind: "unary";
+    input: typeof RemoteServerDeactivateRequestSchema;
+    output: typeof RemoteServerDeactivateResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RemoteServerService.TestConnection
+   */
+  testConnection: {
+    methodKind: "unary";
+    input: typeof RemoteServerTestConnectionRequestSchema;
+    output: typeof RemoteServerTestConnectionResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RemoteServerService.DeleteRemoteServer
+   */
+  deleteRemoteServer: {
+    methodKind: "unary";
+    input: typeof RemoteServerDeleteRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RemoteServerService.MigrateDependencies
+   */
+  migrateDependencies: {
+    methodKind: "unary";
+    input: typeof RemoteServerMigrateDependenciesRequestSchema;
+    output: typeof RemoteServerMigrateDependenciesResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RemoteServerService.GetMigration
+   */
+  getMigration: {
+    methodKind: "unary";
+    input: typeof RemoteServerGetMigrationRequestSchema;
+    output: typeof RemoteServerGetMigrationResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.RemoteServerService.RollbackMigration
+   */
+  rollbackMigration: {
+    methodKind: "unary";
+    input: typeof RemoteServerRollbackMigrationRequestSchema;
+    output: typeof RemoteServerRollbackMigrationResponseSchema;
+  },
+  /**
+   * Flags a RUNNING application_migrations row for cooperative cancellation; the runner honours it at the next phase/object boundary.
+   *
+   * @generated from rpc openoxide.api.v1.RemoteServerService.CancelMigration
+   */
+  cancelMigration: {
+    methodKind: "unary";
+    input: typeof RemoteServerCancelMigrationRequestSchema;
+    output: typeof RemoteServerCancelMigrationResponseSchema;
+  },
+  /**
+   * Triggers (or resumes) a stateful single-service migration.
+   *
+   * @generated from rpc openoxide.api.v1.RemoteServerService.MigrateService
+   */
+  migrateService: {
+    methodKind: "unary";
+    input: typeof RemoteServerMigrateServiceRequestSchema;
+    output: typeof RemoteServerMigrateServiceResponseSchema;
+  },
+  /**
+   * Lists stateful migrations for a service, newest first.
+   *
+   * @generated from rpc openoxide.api.v1.RemoteServerService.ListMigrations
+   */
+  listMigrations: {
+    methodKind: "unary";
+    input: typeof RemoteServerListMigrationsRequestSchema;
+    output: typeof RemoteServerListMigrationsResponseSchema;
+  },
+  /**
+   * Lists per-object checkpoints of one stateful migration.
+   *
+   * @generated from rpc openoxide.api.v1.RemoteServerService.ListMigrationObjects
+   */
+  listMigrationObjects: {
+    methodKind: "unary";
+    input: typeof RemoteServerListMigrationObjectsRequestSchema;
+    output: typeof RemoteServerListMigrationObjectsResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_remote_server, 0);
+

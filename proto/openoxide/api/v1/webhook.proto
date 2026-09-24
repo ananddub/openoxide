@@ -2,12 +2,92 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
+// Management surface for repository webhooks (the receive side lives in IncomingWebhookService.HandleWebhook).
 service WebhookService {
-  rpc ListWebhooks(ResourceQuery) returns (ResourceListResponse);
-  rpc GetWebhook(ResourceRequest) returns (ResourceResponse);
-  rpc CreateWebhook(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateWebhook(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteWebhook(ResourceRequest) returns (Empty);
-  rpc TestWebhook(ResourceRequest) returns (OperationResult);
+  rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse);
+  rpc GetWebhook(GetWebhookRequest) returns (GetWebhookResponse);
+  rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse);
+  rpc UpdateWebhook(UpdateWebhookRequest) returns (UpdateWebhookResponse);
+  rpc DeleteWebhook(DeleteWebhookRequest) returns (Empty);
+  rpc TestWebhook(TestWebhookRequest) returns (TestWebhookResponse);
+}
+
+// Closed set shared with IncomingWebhookRequest.provider (Rust GitProviderType).
+enum WebhookProviderType {
+  WEBHOOK_PROVIDER_TYPE_UNSPECIFIED = 0;
+  WEBHOOK_PROVIDER_TYPE_GITHUB = 1;
+  WEBHOOK_PROVIDER_TYPE_GITLAB = 2;
+  WEBHOOK_PROVIDER_TYPE_GITEA = 3;
+  WEBHOOK_PROVIDER_TYPE_BITBUCKET = 4;
+}
+
+message Webhook {
+  int64 id = 1;
+  int64 organization_id = 2;
+  WebhookProviderType provider = 3;
+  // Row id of the git provider instance the webhook is installed through.
+  int64 provider_id = 4;
+  string owner = 5;
+  string repository = 6;
+  // Panel callback URL the provider posts events to.
+  string callback_url = 7;
+}
+
+message ListWebhooksRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListWebhooksResponse {
+  repeated Webhook webhooks = 1;
+}
+
+message GetWebhookRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message GetWebhookResponse {
+  Webhook webhook = 1;
+}
+
+message CreateWebhookRequest {
+  WebhookProviderType provider = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 provider_id = 2 [(buf.validate.field).int64.gt = 0];
+  string owner = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string repository = 4 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string callback_url = 5 [(buf.validate.field).string.min_len = 1];
+}
+
+message CreateWebhookResponse {
+  Webhook webhook = 1;
+}
+
+// PATCH semantics: absent fields keep their stored values.
+message UpdateWebhookRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+  optional string owner = 3 [(buf.validate.field).string.max_len = 255];
+  optional string repository = 4 [(buf.validate.field).string.max_len = 255];
+  optional string callback_url = 5;
+}
+
+message UpdateWebhookResponse {
+  Webhook webhook = 1;
+}
+
+message DeleteWebhookRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message TestWebhookRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message TestWebhookResponse {
+  bool success = 1;
+  string message = 2;
 }

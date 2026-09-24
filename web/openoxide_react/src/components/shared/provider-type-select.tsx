@@ -14,10 +14,7 @@ export interface ProviderOption {
 	icon?: React.ReactNode;
 }
 
-/**
- * Labelled provider-type dropdown whose trigger previews the selected
- * option's icon and label. Used by DNS / Vault provider forms.
- */
+/** Labelled provider-type dropdown whose trigger previews the selected option's icon and label. Used by DNS / Vault provider forms. */
 export function ProviderTypeSelect({
 	label = 'Provider Type',
 	value,

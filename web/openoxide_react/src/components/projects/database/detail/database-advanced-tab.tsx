@@ -85,7 +85,10 @@ export function DatabaseAdvancedTab({
 					database={database}
 					onUpdated={onUpdated}
 				/>
-				<DatabaseAdvancedVolumes database={database} onUpdated={onUpdated} />
+				<DatabaseAdvancedVolumes
+					database={database}
+					onUpdated={onUpdated}
+				/>
 				<DatabaseAdvancedNetworks
 					database={database}
 					onUpdated={onUpdated}

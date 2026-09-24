@@ -1,6 +1,4 @@
-// Response/mutation payload types. The wire payloads carry the backend
-// DTO's snake_case fields, so these are structural definitions matching the
-// JSON the live hooks parse. Keep field names in sync with backend DTOs.
+// Response/mutation payload types. The wire payloads carry the backend DTO's snake_case fields, so these are structural definitions matching the JSON the live hooks parse. Keep field names in sync with backend DTOs.
 
 type Payload = Record<string, any>;
 

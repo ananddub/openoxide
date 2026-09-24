@@ -1,10 +1,158 @@
 syntax = "proto3";
 package openoxide.api.v1;
 
-import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
+// Sole overview owner service; absorbs the former OverviewOperationsService.
 service OverviewService {
-  rpc ListServices(ResourceQuery) returns (ResourceListResponse);
-  rpc ListDomains(ResourceQuery) returns (ResourceListResponse);
-  rpc ListBackups(ResourceQuery) returns (ResourceListResponse);
+  rpc ListServices(OverviewListServicesRequest) returns (OverviewListServicesResponse);
+  rpc ListDomains(OverviewListDomainsRequest) returns (OverviewListDomainsResponse);
+  rpc ListBackups(OverviewListBackupsRequest) returns (OverviewListBackupsResponse);
+  rpc ListOrganizationServices(OverviewListOrganizationServicesRequest) returns (OverviewListOrganizationServicesResponse);
+  rpc ListOrganizationDomains(OverviewListOrganizationDomainsRequest) returns (OverviewListOrganizationDomainsResponse);
+  rpc ListOrganizationBackups(OverviewListOrganizationBackupsRequest) returns (OverviewListOrganizationBackupsResponse);
+}
+
+// Panel-normalised service kind ("APP" | "COMPOSE" | "DATABASE").
+enum OverviewServiceType {
+  OVERVIEW_SERVICE_TYPE_UNSPECIFIED = 0;
+  OVERVIEW_SERVICE_TYPE_APP = 1;
+  OVERVIEW_SERVICE_TYPE_COMPOSE = 2;
+  OVERVIEW_SERVICE_TYPE_DATABASE = 3;
+}
+
+enum OverviewBackupType {
+  OVERVIEW_BACKUP_TYPE_UNSPECIFIED = 0;
+  OVERVIEW_BACKUP_TYPE_DATABASE = 1;
+  OVERVIEW_BACKUP_TYPE_VOLUME = 2;
+}
+
+enum OverviewBackupStatus {
+  OVERVIEW_BACKUP_STATUS_UNSPECIFIED = 0;
+  OVERVIEW_BACKUP_STATUS_ENABLED = 1;
+  OVERVIEW_BACKUP_STATUS_DISABLED = 2;
+}
+
+message OverviewServiceItem {
+  int64 id = 1;
+  string name = 2;
+  OverviewServiceType service_type = 3;
+  // Free-form runtime status string from the services table.
+  string status = 4;
+  int64 created_at = 5;
+  int64 project_id = 6;
+  string project_name = 7;
+  int64 environment_id = 8;
+  string environment_name = 9;
+  // Lowercased database kind; only set for DATABASE services.
+  optional string db_kind = 10;
+  optional int64 server_id = 11;
+  optional string server_name = 12;
+}
+
+// Mirrors the domains table columns so detail-page edit dialogs can hydrate from the list; keep aligned with the Domain message in domain.proto.
+message OverviewDomainItem {
+  int64 id = 1;
+  string host = 2;
+  optional string path = 3;
+  optional int32 port = 4;
+  bool https = 5;
+  optional int64 application_id = 6;
+  optional int64 compose_id = 7;
+  string service_name = 8;
+  string project_name = 9;
+  optional string internal_path = 10;
+  optional string custom_entrypoint = 11;
+  optional string custom_cert_resolver = 12;
+  bool strip_path = 13;
+  // JSON array of middleware names stored verbatim on the row.
+  string middlewares = 14;
+  // Raw domains-table strings (APPLICATION/COMPOSE, ACME/CUSTOM/...); passed through without panel-side normalisation.
+  string domain_type = 15;
+  string certificate_type = 16;
+  optional string domain_service_name = 17;
+}
+
+// The linkage mirrors are flattened into the payload top level and only the column matching the backup's service kind is set.
+message OverviewBackupItem {
+  int64 id = 1;
+  string name = 2;
+  OverviewBackupType backup_type = 3;
+  OverviewBackupStatus status = 4;
+  // Display label ("Destination #<id>"), not a stable identifier.
+  string destination = 5;
+  int64 created_at = 6;
+  optional int64 service_id = 7;
+  optional int64 application_id = 8;
+  optional int64 compose_id = 9;
+  optional int64 postgres_id = 10;
+  optional int64 mysql_id = 11;
+  optional int64 mariadb_id = 12;
+  optional int64 mongo_id = 13;
+  optional int64 redis_id = 14;
+  optional int64 libsql_id = 15;
+}
+
+// Legacy aliases (no server-side implementation yet); same shapes as the organization-scoped rpcs below.
+message OverviewListServicesRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 environment_id = 2 [(buf.validate.field).int64.gt = 0];
+  optional int64 limit = 3 [(buf.validate.field).int64 = {gte: 1, lte: 1000}];
+  optional int64 offset = 4 [(buf.validate.field).int64.gte = 0];
+}
+
+message OverviewListServicesResponse {
+  repeated OverviewServiceItem services = 1;
+}
+
+message OverviewListDomainsRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 environment_id = 2 [(buf.validate.field).int64.gt = 0];
+  optional int64 limit = 3 [(buf.validate.field).int64 = {gte: 1, lte: 1000}];
+  optional int64 offset = 4 [(buf.validate.field).int64.gte = 0];
+}
+
+message OverviewListDomainsResponse {
+  repeated OverviewDomainItem domains = 1;
+}
+
+message OverviewListBackupsRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 environment_id = 2 [(buf.validate.field).int64.gt = 0];
+  optional int64 limit = 3 [(buf.validate.field).int64 = {gte: 1, lte: 1000}];
+  optional int64 offset = 4 [(buf.validate.field).int64.gte = 0];
+}
+
+message OverviewListBackupsResponse {
+  repeated OverviewBackupItem backups = 1;
+}
+
+message OverviewListOrganizationServicesRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 limit = 2 [(buf.validate.field).int64 = {gte: 1, lte: 1000}];
+  optional int64 offset = 3 [(buf.validate.field).int64.gte = 0];
+}
+
+message OverviewListOrganizationServicesResponse {
+  repeated OverviewServiceItem services = 1;
+}
+
+message OverviewListOrganizationDomainsRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 limit = 2 [(buf.validate.field).int64 = {gte: 1, lte: 1000}];
+  optional int64 offset = 3 [(buf.validate.field).int64.gte = 0];
+}
+
+message OverviewListOrganizationDomainsResponse {
+  repeated OverviewDomainItem domains = 1;
+}
+
+message OverviewListOrganizationBackupsRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 limit = 2 [(buf.validate.field).int64 = {gte: 1, lte: 1000}];
+  optional int64 offset = 3 [(buf.validate.field).int64.gte = 0];
+}
+
+message OverviewListOrganizationBackupsResponse {
+  repeated OverviewBackupItem backups = 1;
 }

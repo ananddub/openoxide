@@ -1,9 +1,15 @@
 import {
 	createServiceClient,
 	useConnectMutation,
-	useResourceListQuery,
+	useConnectQuery,
 } from './query';
-import {DnsService} from '#/gen/connect/openoxide/api/v1/dns_pb';
+import {
+	DnsProviderType,
+	DnsService,
+	type DnsProvider,
+	type DnsRecord,
+	type DnsZone,
+} from '#/gen/connect/openoxide/api/v1/dns_pb';
 
 export type DnsProviderPayload = {
 	id: number;
@@ -23,75 +29,167 @@ export type DnsZonePayload = {
 	[key: string]: unknown;
 };
 
+/** DNS record entry (backend DnsRecordDto JSON). */
+export type DnsRecordPayload = {
+	id: string;
+	zone_id: string;
+	record_type: string;
+	name: string;
+	content: string;
+	ttl?: number;
+	proxied?: boolean;
+};
+
 const dnsClient = createServiceClient(DnsService);
+
+/** Wire string the UI catalogs compare against (e.g. 'CLOUDFLARE'). */
+function dnsProviderTypeToWire(providerType: DnsProviderType): string {
+	switch (providerType) {
+		case DnsProviderType.CLOUDFLARE:
+			return 'CLOUDFLARE';
+		case DnsProviderType.ROUTE53:
+			return 'ROUTE53';
+		case DnsProviderType.HETZNER:
+			return 'HETZNER';
+		case DnsProviderType.DIGITALOCEAN:
+			return 'DIGITALOCEAN';
+		case DnsProviderType.GODADDY:
+			return 'GODADDY';
+		default:
+			return '';
+	}
+}
+
+/** Accepts catalog labels case-insensitively ('cloudflare', 'ROUTE53', ...)
+ * or the numeric generated enum value directly. */
+function dnsProviderTypeFromWire(
+	providerType: string | DnsProviderType | undefined,
+): DnsProviderType {
+	if (typeof providerType === 'number') return providerType;
+	switch (providerType?.toUpperCase()) {
+		case 'CLOUDFLARE':
+			return DnsProviderType.CLOUDFLARE;
+		case 'ROUTE53':
+			return DnsProviderType.ROUTE53;
+		case 'HETZNER':
+			return DnsProviderType.HETZNER;
+		case 'DIGITALOCEAN':
+			return DnsProviderType.DIGITALOCEAN;
+		case 'GODADDY':
+			return DnsProviderType.GODADDY;
+		default:
+			return DnsProviderType.UNSPECIFIED;
+	}
+}
+
+function toDnsProviderPayload(provider: DnsProvider): DnsProviderPayload {
+	return {
+		id: Number(provider.id),
+		name: provider.name,
+		provider_type: dnsProviderTypeToWire(provider.providerType),
+		credentials_json: provider.credentialsJson,
+		organization_id: Number(provider.organizationId),
+		created_at: Number(provider.createdAt),
+		updated_at: Number(provider.updatedAt),
+	};
+}
+
+function toDnsZonePayload(zone: DnsZone): DnsZonePayload {
+	return {
+		id: zone.id,
+		name: zone.name,
+		status: zone.status,
+	};
+}
+
+function toDnsRecordPayload(record: DnsRecord): DnsRecordPayload {
+	return {
+		id: record.id,
+		zone_id: record.zoneId,
+		record_type: record.recordType,
+		name: record.name,
+		content: record.content,
+		ttl: record.ttl,
+		proxied: record.proxied,
+	};
+}
 
 /** DNS providers (legacy live: useDnsList). */
 export function useDnsList() {
-	return useResourceListQuery<DnsProviderPayload>(
+	return useConnectQuery<DnsProviderPayload[]>(
 		['dns_providers', 'list'],
-		() => dnsClient.listProviders({}),
+		async () => {
+			const response = await dnsClient.listProviders({});
+			return response.providers.map(toDnsProviderPayload);
+		},
 	);
 }
 
 /** DNS zones for a provider by id (legacy REST: GET /dns-providers/{id}/zones). */
 export function useDnsZoneList(providerId: bigint) {
-	return useResourceListQuery<DnsZonePayload>(
+	return useConnectQuery<DnsZonePayload[]>(
 		['dns', 'zones', providerId.toString()],
-		() => dnsClient.listZones({id: providerId}),
+		async () => {
+			const response = await dnsClient.listZones({providerId});
+			return response.zones.map(toDnsZonePayload);
+		},
 	);
 }
 
 /** DNS records of a zone (legacy REST: GET /dns-providers/{id}/zones/{zone_id}/records). */
 export function useDnsRecordList(providerId: bigint, zoneId: string) {
-	return useResourceListQuery<Record<string, unknown>>(
+	return useConnectQuery<DnsRecordPayload[]>(
 		['dns', 'records', providerId.toString(), zoneId],
-		() =>
-			dnsClient.listRecords({
-				id: providerId,
-				payload: JSON.stringify({zone_id: zoneId}),
-			}),
+		async () => {
+			const response = await dnsClient.listRecords({
+				providerId,
+				zoneId,
+			});
+			return response.records.map(toDnsRecordPayload);
+		},
+		{enabled: zoneId !== ''},
 	);
 }
 
-/**
- * Create a DNS provider. The DNS controller scopes strictly by the
- * `organization_id` on the request (no header fallback), so the input
- * carries it explicitly; provider fields ride in the payload.
- */
+/** Create a DNS provider. Organization scoping derives from the session on the server; `organization_id` is accepted for call-site compatibility and ignored. */
 export function useDnsProviderCreate() {
 	return useConnectMutation(
 		(input: {
-			organization_id: number | bigint;
+			name: string;
+			provider_type: string | DnsProviderType;
+			credentials_json: string;
+			organization_id?: number | bigint;
 			[field: string]: unknown;
-		}) => {
-			const {organization_id, ...body} = input;
-			return dnsClient.createProvider({
-				organizationId: BigInt(organization_id),
-				payload: JSON.stringify(body),
-			});
-		},
+		}) =>
+			dnsClient.createProvider({
+				name: input.name,
+				providerType: dnsProviderTypeFromWire(input.provider_type),
+				credentialsJson: input.credentials_json,
+			}),
 		{invalidate: [['dns_providers']]},
 	);
 }
 
-/** Update a DNS provider by id (fields to change in the payload). */
+/** Update a DNS provider by id (absent fields keep their stored value). */
 export function useDnsProviderUpdate() {
 	return useConnectMutation(
 		(input: {
 			id: number | bigint;
+			name?: string;
+			provider_type?: string | DnsProviderType;
+			credentials_json?: string;
 			organization_id?: number | bigint;
 			[field: string]: unknown;
-		}) => {
-			const {id, organization_id, ...body} = input;
-			return dnsClient.updateProvider({
-				id: BigInt(id),
-				organizationId:
-					organization_id !== undefined
-						? BigInt(organization_id)
+		}) =>
+			dnsClient.updateProvider({
+				id: BigInt(input.id),
+				name: input.name,
+				providerType:
+					input.provider_type !== undefined
+						? dnsProviderTypeFromWire(input.provider_type)
 						: undefined,
-				payload: JSON.stringify(body),
-			});
-		},
+				credentialsJson: input.credentials_json,
+			}),
 		{invalidate: [['dns_providers']]},
 	);
 }
@@ -100,13 +198,7 @@ export function useDnsProviderUpdate() {
 export function useDnsProviderDelete() {
 	return useConnectMutation(
 		(input: {id: number | bigint; organization_id?: number | bigint}) =>
-			dnsClient.deleteProvider({
-				id: BigInt(input.id),
-				organizationId:
-					input.organization_id !== undefined
-						? BigInt(input.organization_id)
-						: undefined,
-			}),
+			dnsClient.deleteProvider({id: BigInt(input.id)}),
 		{invalidate: [['dns_providers']]},
 	);
 }
@@ -115,76 +207,66 @@ export function useDnsProviderDelete() {
 export function useDnsProviderTest() {
 	return useConnectMutation(
 		(input: {id: number | bigint; organization_id?: number | bigint}) =>
-			dnsClient.testProvider({
-				id: BigInt(input.id),
-				organizationId:
-					input.organization_id !== undefined
-						? BigInt(input.organization_id)
-						: undefined,
-			}),
+			dnsClient.testProvider({id: BigInt(input.id)}),
 		{invalidate: [['dns_providers']]},
 	);
 }
 
-/**
- * Test unsaved DNS credentials (provider_type/credentials_json in the
- * payload; nothing is persisted).
- */
+/** Test unsaved DNS credentials (provider_type/credentials_json; nothing is persisted). Extra fields (e.g. a display name) are ignored. */
 export function useDnsTestConnection() {
-	return useConnectMutation((input: Record<string, unknown>) =>
-		dnsClient.testConnection({payload: JSON.stringify(input)}),
+	return useConnectMutation(
+		(input: {
+			provider_type: string | DnsProviderType;
+			credentials_json: string;
+			[field: string]: unknown;
+		}) =>
+			dnsClient.testConnection({
+				providerType: dnsProviderTypeFromWire(input.provider_type),
+				credentialsJson: input.credentials_json,
+			}),
 	);
 }
 
-/**
- * Create (upsert) a DNS record on a provider; `provider_id` targets the
- * provider and zone/record fields ride in the payload.
- */
+/** Create (upsert) a DNS record on a provider. */
 export function useDnsRecordCreate() {
 	return useConnectMutation(
 		(input: {
 			provider_id: number | bigint;
+			zone_id: string;
+			record_type: string;
+			name: string;
+			content: string;
+			ttl?: number;
+			proxied?: boolean;
 			organization_id?: number | bigint;
-			[field: string]: unknown;
-		}) => {
-			const {provider_id, organization_id, ...body} = input;
-			return dnsClient.createRecord({
-				id: BigInt(provider_id),
-				organizationId:
-					organization_id !== undefined
-						? BigInt(organization_id)
-						: undefined,
-				payload: JSON.stringify(body),
-			});
-		},
-		// Records live at the DNS provider (no CDC table), so the zone and
-		// record queries must be invalidated directly.
+		}) =>
+			dnsClient.createRecord({
+				providerId: BigInt(input.provider_id),
+				zoneId: input.zone_id,
+				recordType: input.record_type,
+				name: input.name,
+				content: input.content,
+				ttl: input.ttl,
+				proxied: input.proxied,
+			}),
+		// Records live at the DNS provider (no CDC table), so the zone and record queries must be invalidated directly.
 		{invalidate: [['dns']]},
 	);
 }
 
-/**
- * Delete a DNS record on a provider; `provider_id` targets the provider and
- * `{zone_id, name}` ride in the payload.
- */
+/** Delete a DNS record on a provider, targeted by zone + record name. */
 export function useDnsRecordDelete() {
 	return useConnectMutation(
 		(input: {
 			provider_id: number | bigint;
-			organization_id?: number | bigint;
 			zone_id: string;
 			name: string;
+			organization_id?: number | bigint;
 		}) =>
 			dnsClient.deleteRecord({
-				id: BigInt(input.provider_id),
-				organizationId:
-					input.organization_id !== undefined
-						? BigInt(input.organization_id)
-						: undefined,
-				payload: JSON.stringify({
-					zone_id: input.zone_id,
-					name: input.name,
-				}),
+				providerId: BigInt(input.provider_id),
+				zoneId: input.zone_id,
+				name: input.name,
 			}),
 		{invalidate: [['dns']]},
 	);

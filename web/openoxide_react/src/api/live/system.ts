@@ -4,15 +4,12 @@ import {
 	useConnectQuery,
 } from './query';
 import {SystemService} from '#/gen/connect/openoxide/api/v1/system_pb';
-import {GlobalOperationsApiService} from '#/gen/connect/openoxide/api/v1/global_pb';
+import {GlobalService} from '#/gen/connect/openoxide/api/v1/global_pb';
 
-/**
- * Panel instance operations over ConnectRPC: runtime health (database +
- * docker), host Docker disk usage, and Docker prune.
- */
+/** Panel instance operations over ConnectRPC: runtime health (database + docker), host Docker disk usage, and Docker prune. */
 
 const systemClient = createServiceClient(SystemService);
-const dockerClient = createServiceClient(GlobalOperationsApiService);
+const dockerClient = createServiceClient(GlobalService);
 
 /** `SystemService.Health` result (backend gate: org:read). */
 export type SystemHealthPayload = {
@@ -28,8 +25,8 @@ export function useSystemHealth(options?: {enabled?: boolean}) {
 			const response = await systemClient.health({});
 			return {
 				success: response.success,
-				operation: response.operation,
-				message: response.message || null,
+				operation: 'health',
+				message: response.message ?? null,
 			};
 		},
 		options,
@@ -51,7 +48,7 @@ export function useDockerDiskUsage(options?: {enabled?: boolean}) {
 		['system', 'disk-usage'],
 		async () => {
 			const response = await dockerClient.diskUsage({});
-			const parsed = JSON.parse(response.payload || '{}') as {
+			const parsed = JSON.parse(response.dataJson || '{}') as {
 				items?: DockerDiskUsageItem[];
 			};
 			return parsed.items ?? [];
@@ -68,11 +65,33 @@ export type DockerPrunePayload = {
 	volumes: boolean;
 };
 
+/** Prune result reduced to the legacy operation-result shape. */
+export type DockerPruneResult = {
+	success: boolean;
+	operation: string;
+	message: string | null;
+};
+
 /** Run docker prune (backend gate: server:create). */
 export function useDockerPrune() {
 	return useConnectMutation(
-		(input: DockerPrunePayload) =>
-			dockerClient.prune({payload: JSON.stringify(input)}),
+		async (input: DockerPrunePayload) => {
+			const response = await dockerClient.prune({
+				containers: input.containers,
+				images: input.images,
+				networks: input.networks,
+				volumes: input.volumes,
+			});
+			return {
+				success: true,
+				operation: 'prune',
+				message:
+					response.operations
+						.map(operation => operation.stdout.trim())
+						.filter(Boolean)
+						.join('\n') || null,
+			} satisfies DockerPruneResult;
+		},
 		{invalidate: [['system', 'disk-usage']]},
 	);
 }

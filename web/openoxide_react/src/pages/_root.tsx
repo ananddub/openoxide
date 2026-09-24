@@ -19,16 +19,11 @@ import '#/styles/index.css';
 
 const authClient = createServiceClient(AuthService);
 
-// The root `beforeLoad` re-runs on EVERY client-side navigation, so the
-// session bootstrap is memoized: exactly one `whoAmI` round-trip per page
-// load instead of a blocking auth call on every route change.
+// The root `beforeLoad` re-runs on EVERY client-side navigation, so the session bootstrap is memoized: exactly one `whoAmI` round-trip per page load instead of a blocking auth call on every route change.
 let sessionBootstrap: Promise<void> | null = null;
 
 async function bootstrapSession(): Promise<void> {
-	// First page load: the provider has not mounted yet, so push the
-	// whoAmI result into the pending handoff that SessionProvider
-	// consumes as its initial state. On client-side navigations the
-	// provider is live and imperative actions exist.
+	// First page load: the provider has not mounted yet, so push the whoAmI result into the pending handoff that SessionProvider consumes as its initial state. On client-side navigations the provider is live and imperative actions exist.
 	const live = getSessionActions();
 
 	const applyUser = (user: {
@@ -59,8 +54,7 @@ async function bootstrapSession(): Promise<void> {
 	}
 
 	try {
-		// An expired access token is refreshed and the call replayed by
-		// the auth interceptor — never retry manually on top of it.
+		// An expired access token is refreshed and the call replayed by the auth interceptor — never retry manually on top of it.
 		const user = await authClient.whoAmI({});
 		applyUser(user);
 	} catch (error) {
@@ -68,15 +62,11 @@ async function bootstrapSession(): Promise<void> {
 			error instanceof ConnectError &&
 			error.code === Code.Unauthenticated
 		) {
-			// The interceptor already tried refresh-and-replay and the
-			// backend still rejected us: the refresh token is missing or
-			// dead. Drop the session now — keeping it would re-run this
-			// whole whoAmI → refresh → whoAmI chain on every navigation.
+			// The interceptor already tried refresh-and-replay and the backend still rejected us: the refresh token is missing or dead. Drop the session now — keeping it would re-run this whole whoAmI → refresh → whoAmI chain on every navigation.
 			clearUser();
 			return;
 		}
-		// Transport/unknown failure (backend briefly down): keep the
-		// stored session and let the next navigation bootstrap again.
+		// Transport/unknown failure (backend briefly down): keep the stored session and let the next navigation bootstrap again.
 		console.error('Failed to authenticate session:', error);
 		sessionBootstrap = null;
 	}

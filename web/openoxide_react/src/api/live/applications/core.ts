@@ -4,10 +4,7 @@ import {
 } from '#/gen/connect/openoxide/api/v1/application_pb';
 import {applicationClient, big, idMutation, inputMutation} from './shared';
 
-/**
- * Create an application (legacy REST: POST /applications). Source and build
- * types are the generated enum values (e.g. ApplicationSourceType.GITHUB).
- */
+/** Create an application (legacy REST: POST /applications). Source and build types are the generated enum values (e.g. ApplicationSourceType.GITHUB). */
 export const useApplicationCreate = inputMutation(
 	(input: {
 		name: string;
@@ -34,8 +31,7 @@ export const useApplicationMove = inputMutation(
 			id: BigInt(input.id),
 			targetEnvironmentId: BigInt(input.target_environment_id),
 		}),
-	// The move changes the service's environment — refresh env-scoped lists
-	// too, which the default 'applications' prefix already covers.
+	// The move changes the service's environment — refresh env-scoped lists too, which the default 'applications' prefix already covers.
 	[['applications'], ['environments'], ['overview']],
 );
 

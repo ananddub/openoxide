@@ -11,6 +11,7 @@ import {
 import {KindPicker} from '#/components/projects/create/kind-picker';
 import {ServiceForm} from '#/components/projects/create/service-form';
 import {InfoRail} from '#/components/projects/create/info-rail';
+import {TemplateGallerySheet} from '#/components/templates/template-gallery-sheet';
 import {useCreateService} from '#/components/projects/create/use-create-service';
 import type {ServiceKind} from '#/components/projects/create/constants';
 
@@ -77,8 +78,7 @@ function CreateServicePage() {
 								What do you want to create?
 							</h2>
 							<p className="text-[13px] text-muted-foreground">
-								Pick a service type, then configure it in the next
-								step.
+								Pick a service type, then configure it in the next step.
 							</p>
 						</div>
 
@@ -115,6 +115,11 @@ function CreateServicePage() {
 					</div>
 				)}
 			</StepBody>
+
+			<TemplateGallerySheet
+				open={form.templateGalleryOpen}
+				onClose={() => form.setTemplateGalleryOpen(false)}
+			/>
 		</div>
 	);
 }

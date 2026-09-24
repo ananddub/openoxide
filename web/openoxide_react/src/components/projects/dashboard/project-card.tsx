@@ -77,7 +77,8 @@ function StatusRing({status}: {status: string}) {
 				fill="none"
 				stroke="currentColor"
 				strokeOpacity="0.2"
-				strokeWidth="1.5" />
+				strokeWidth="1.5"
+			/>
 			{arc > 0 && (
 				<circle
 					cx="8"
@@ -88,18 +89,14 @@ function StatusRing({status}: {status: string}) {
 					strokeWidth="1.5"
 					strokeLinecap="round"
 					strokeDasharray={`${arc} ${c - arc}`}
-					transform="rotate(-90 8 8)" />
+					transform="rotate(-90 8 8)"
+				/>
 			)}
 		</svg>
 	);
 }
 
-/**
- * Vercel-style project tile — airy two-tier layout: circular identity
- * avatar + name with a muted subtitle line on top, action menu on the
- * right, and a quiet meta row (counts + short created date) pinned to the
- * bottom. Flat background-100 surface, hairline edge, no elevation.
- */
+/** Vercel-style project tile — airy two-tier layout: circular identity avatar + name with a muted subtitle line on top, action menu on the right, and a quiet meta row (counts + short created date) pinned to the bottom. Flat background-100 surface, hairline edge, no elevation. */
 export const ProjectCard: React.FC<ProjectCardProps> = ({
 	project,
 	onDelete,
@@ -157,7 +154,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 										variant="ghost"
 										size="icon"
 										className="size-7 rounded-md text-muted-foreground hover:bg-muted/80 hover:text-foreground focus-visible:ring-0"
-											title={`${project.name} actions`}
+										title={`${project.name} actions`}
 										aria-label={`Project ${project.name} actions`}>
 										<MoreHorizontal className="size-4" />
 									</Button>
@@ -208,9 +205,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 					<span className="font-medium text-foreground">
 						{totalEnvironments}
 					</span>
-					<span>
-						{totalEnvironments === 1 ? 'env' : 'envs'}
-					</span>
+					<span>{totalEnvironments === 1 ? 'env' : 'envs'}</span>
 					<span className="ml-auto shrink-0">
 						{shortDate(project.created_at)}
 					</span>

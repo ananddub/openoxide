@@ -26,7 +26,7 @@ import {useRemoteComposeFile} from '../compose-architecture-tab/use-remote-compo
 import {useComposeServiceStatus} from '../containers/use-compose-service-status';
 import {UsageRingsStrip} from './architecture-usage-rings';
 import {ArchitectureGitSection} from './architecture-git-section';
-import type {MonitoringEntityType} from '#/hooks/use-container-monitoring';
+import type {MonitoringEntityType} from '#/hooks/monitoring/use-container-monitoring';
 
 export type StatusTone = 'ok' | 'busy' | 'off' | 'bad';
 
@@ -53,9 +53,7 @@ export function statusToneFor(raw?: string): StatusTone {
 		].includes(s)
 	)
 		return 'busy';
-	if (
-		['RUNNING', 'ACTIVE', 'READY', 'HEALTHY', 'DEPLOYED'].includes(s)
-	)
+	if (['RUNNING', 'ACTIVE', 'READY', 'HEALTHY', 'DEPLOYED'].includes(s))
 		return 'ok';
 	return 'off';
 }
@@ -87,9 +85,7 @@ function DetailsList({rows}: {rows: PreviewRow[]}) {
 						key={row.label}
 						className="flex items-center justify-between gap-3 py-2 text-xs">
 						<span className="flex shrink-0 items-center gap-2 font-medium text-muted-foreground">
-							{RowIcon && (
-								<RowIcon className="size-3.5 shrink-0" />
-							)}
+							{RowIcon && <RowIcon className="size-3.5 shrink-0" />}
 							{row.label}
 						</span>
 						<span className="min-w-0 truncate text-right">
@@ -194,12 +190,7 @@ interface ArchitecturePreviewCardProps {
 	onOpen: () => void;
 }
 
-/**
- * Vercel "Production Deployment"-style summary card: header with actions,
- * left = read-only architecture map (click opens the full interactive
- * graph), right = key metadata rows. General visitors get the topology
- * here; deploy controls live in the collapsible settings below.
- */
+/** Vercel "Production Deployment"-style summary card: header with actions, left = read-only architecture map (click opens the full interactive graph), right = key metadata rows. General visitors get the topology here; deploy controls live in the collapsible settings below. */
 export function ArchitecturePreviewCard({
 	compose,
 	customServices,
@@ -263,10 +254,7 @@ export function ArchitecturePreviewCard({
 					{
 						label: 'Status',
 						value: (
-							<StatusValue
-								status={status}
-								errorDetail={errorDetail}
-							/>
+							<StatusValue status={status} errorDetail={errorDetail} />
 						),
 					},
 				]
@@ -318,7 +306,7 @@ export function ArchitecturePreviewCard({
 						}
 					}}
 					aria-label="Open full architecture view"
-					className="group relative flex min-h-[280px] cursor-pointer overflow-hidden rounded-lg bg-muted/40 outline-none ring-1 ring-border/70 transition-[box-shadow] focus-visible:ring-2 focus-visible:ring-ring group-hover:shadow-md sm:min-h-[360px]">
+					className="group relative flex min-h-[280px] cursor-pointer overflow-hidden rounded-lg bg-muted/40 ring-1 ring-border/70 transition-[box-shadow] outline-none group-hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring sm:min-h-[360px]">
 					<div className="pointer-events-none h-full w-full">
 						<ComposeVisualizer
 							readOnly
@@ -326,18 +314,14 @@ export function ArchitecturePreviewCard({
 							serviceStatus={serviceStatus}
 							customServices={customServices}
 							composeFile={
-								fetchedComposeFile ||
-								compose?.compose_file ||
-								''
+								fetchedComposeFile || compose?.compose_file || ''
 							}
 							stackName={compose?.name || compose?.app_name}
 							gitBuildPath={gitBuildPath}
 							isGitSource={isGit}
 							backups={composeBackups as any}
 							schedules={
-								(Array.isArray(schedules)
-									? schedules
-									: []) as any
+								(Array.isArray(schedules) ? schedules : []) as any
 							}
 							domains={domainList as any}
 						/>
@@ -354,10 +338,7 @@ export function ArchitecturePreviewCard({
 					<DetailsList rows={allRows} />
 
 					{monitor && monitor.id > 0 && (
-						<UsageRingsStrip
-							id={monitor.id}
-							entityType={monitor.type}
-						/>
+						<UsageRingsStrip id={monitor.id} entityType={monitor.type} />
 					)}
 				</div>
 			</div>

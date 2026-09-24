@@ -88,7 +88,7 @@ export function ProviderTabs({
 	providers: {id: string; label: string; icon: IconJsx}[];
 }) {
 	return (
-		<div className="relative -mb-[1px] flex w-full flex-nowrap gap-0 overflow-x-auto border-b pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+		<div className="relative -mb-[1px] flex w-full [scrollbar-width:none] flex-nowrap gap-0 overflow-x-auto border-b pb-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
 			{providers.map(p => {
 				const isActive = value === p.id;
 				return (
@@ -96,7 +96,7 @@ export function ProviderTabs({
 						key={p.id}
 						type="button"
 						onClick={() => onChange(p.id)}
-						className={`-mb-[1px] flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap border-b-2 px-2.5 pt-2 pb-2 text-xs font-bold transition-all ${
+						className={`-mb-[1px] flex shrink-0 cursor-pointer items-center gap-1 border-b-2 px-2.5 pt-2 pb-2 text-xs font-bold whitespace-nowrap transition-all ${
 							isActive
 								? 'border-foreground font-bold text-foreground'
 								: ' text-muted-foreground hover:text-foreground'

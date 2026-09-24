@@ -14,6 +14,17 @@ export type VolumeBackupPayload = {
 	organization_id?: bigint;
 	created_at: bigint;
 	updated_at: bigint;
+	service_id?: bigint;
+	application_id?: bigint;
+	compose_id?: bigint;
+	database_id?: bigint;
+	postgres_id?: bigint;
+	mysql_id?: bigint;
+	mariadb_id?: bigint;
+	mongo_id?: bigint;
+	redis_id?: bigint;
+	libsql_id?: bigint;
+	[key: string]: unknown;
 };
 
 export type DatabaseBackupPayload = {
@@ -36,10 +47,7 @@ export type DatabaseBackupPayload = {
 	[key: string]: unknown;
 };
 
-/**
- * Legacy backup item shape the former zustand `backups` slice carried
- * (numeric id, `destination` name).
- */
+/** Legacy backup item shape the former zustand `backups` slice carried (numeric id, `destination` name). */
 export type BackupItemPayload = {
 	id: number;
 	name: string;

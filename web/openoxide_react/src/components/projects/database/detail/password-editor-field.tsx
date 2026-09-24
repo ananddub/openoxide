@@ -2,10 +2,7 @@ import {useState} from 'react';
 import {Eye, EyeOff, Pencil, Check, X, RefreshCw} from 'lucide-react';
 import {FieldLabel, Input, Button} from './credentials-fields';
 
-/**
- * Read-only password display that flips into an editable row with a
- * reveal toggle, save and cancel control.
- */
+/** Read-only password display that flips into an editable row with a reveal toggle, save and cancel control. */
 export function PasswordEditorField({
 	currentPassword,
 	onSave,

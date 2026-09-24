@@ -20,11 +20,7 @@ const ACTIVE_STATUSES = [
 	'PENDING',
 ];
 
-/**
- * Derives compose deployment/lifecycle state from the live deployments feed
- * plus any in-flight TanStack mutations, and mirrors the backend transition
- * by clearing the local `actionInFlight` flag once it is observable.
- */
+/** Derives compose deployment/lifecycle state from the live deployments feed plus any in-flight TanStack mutations, and mirrors the backend transition by clearing the local `actionInFlight` flag once it is observable. */
 export function useComposeDeployState(compose: any) {
 	const [actionInFlight, setActionInFlight] =
 		useState<ComposeActionType | null>(null);

@@ -46,7 +46,10 @@ export function SwarmNodeMenu({
 		<DropdownMenu>
 			<DropdownMenuTrigger
 				render={
-					<button className="flex size-6 shrink-0 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:text-foreground" />
+					<button
+						aria-label="Node actions"
+						className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+					/>
 				}>
 				<MoreVertical className="size-4" />
 			</DropdownMenuTrigger>

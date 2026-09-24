@@ -17,11 +17,7 @@ import type {useCreateService} from './use-create-service';
 
 type Form = ReturnType<typeof useCreateService>;
 
-/**
- * The create-service form: fields adapt to the chosen service kind.
- * `sheet` mode renders plain Geist fields (no card chrome) with submit
- * placed outside via `formId`; page mode keeps the card + inline footer.
- */
+/** The create-service form: fields adapt to the chosen service kind. `sheet` mode renders plain Geist fields (no card chrome) with submit placed outside via `formId`; page mode keeps the card + inline footer. */
 export function ServiceForm({
 	form,
 	sheet,
@@ -63,7 +59,11 @@ export function ServiceForm({
 		<>
 			{isDatabase && !sheet && <EngineField form={form} />}
 
-			<div className={cn('grid gap-4', sheet || hideServer ? 'grid-cols-1' : 'sm:grid-cols-2')}>
+			<div
+				className={cn(
+					'grid gap-4',
+					sheet || hideServer ? 'grid-cols-1' : 'sm:grid-cols-2',
+				)}>
 				<Field label="Name">
 					<Input
 						autoFocus
@@ -75,7 +75,9 @@ export function ServiceForm({
 				</Field>
 				{!hideServer && (
 					<Field label="Server">
-						<Select value={serverId} onValueChange={v => v && setServerId(v)}>
+						<Select
+							value={serverId}
+							onValueChange={v => v && setServerId(v)}>
 							<SelectTrigger className="w-full bg-background">
 								<SelectValue />
 							</SelectTrigger>
@@ -159,7 +161,9 @@ export function ServiceForm({
 				<Button
 					type="submit"
 					disabled={submitting || !name.trim() || !selectedEnvId}
-					className={cn('flex h-9 items-center gap-1.5 text-xs font-semibold')}>
+					className={cn(
+						'flex h-9 items-center gap-1.5 text-xs font-semibold',
+					)}>
 					<Save className="size-3.5" />
 					{submitting
 						? 'Creating…'

@@ -45,10 +45,7 @@ function BackupTile() {
 	);
 }
 
-/**
- * Compose / database volume-backup rules — grid cards or one bordered list
- * card, matching the SSH Keys page.
- */
+/** Compose / database volume-backup rules — grid cards or one bordered list card, matching the SSH Keys page. */
 export function ComposeBackupsTable({
 	backups,
 	isLoading,

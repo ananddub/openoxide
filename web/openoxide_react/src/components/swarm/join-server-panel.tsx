@@ -41,11 +41,7 @@ export function JoinServerPanel({
 		s => String(s.id) === selectedRemoteServerId,
 	);
 
-	// `_serverId` on `nodes` only records which query happened to discover a
-	// node, not which registered server it actually is — useless for "is
-	// server X part of this cluster". Ask server X directly for its own
-	// swarm node_id and check whether that id shows up in this cluster's
-	// member list; that's the only reliable identity link we have.
+	// `_serverId` on `nodes` only records which query happened to discover a node, not which registered server it actually is — useless for "is server X part of this cluster". Ask server X directly for its own swarm node_id and check whether that id shows up in this cluster's member list; that's the only reliable identity link we have.
 	const selectedIdentityQuery = useQuery({
 		queryKey: ['swarm-node-identity', selectedRemoteServerId],
 		queryFn: async () => {
@@ -104,7 +100,7 @@ export function JoinServerPanel({
 				<Select
 					value={selectedRemoteServerId}
 					onValueChange={val => val && setSelectedRemoteServerId(val)}>
-					<SelectTrigger className="border- h-9 w-full bg-background text-xs">
+					<SelectTrigger className="h-9 w-full border-border bg-background text-xs">
 						<SelectValue placeholder="Select a server…">
 							{selectedRemoteServer
 								? `${selectedRemoteServer.name} (${selectedRemoteServer.ip_address})`
@@ -158,7 +154,7 @@ export function JoinServerPanel({
 									onValueChange={v => setRole(v as 'worker' | 'manager')}>
 									<SelectTrigger
 										size="sm"
-										className="border- h-8 w-full bg-background text-xs">
+										className="h-8 w-full border-border bg-background text-xs">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>

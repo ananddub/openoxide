@@ -3,7 +3,7 @@ import {createPortal} from 'react-dom';
 import {Terminal as TerminalIcon, X} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
-import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
+import {extractLogLines} from '#/utils/log-lines';
 import {useDeploymentItems} from '#/api/live';
 import {createServiceClient} from '#/api/live/query';
 import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';

@@ -27,11 +27,7 @@ function dayWords(field: string): string | null {
 	return days.map(d => DAY_NAMES[d]).join(', ');
 }
 
-/**
- * Plain-English cadence for a 5-field cron expression — "Every day at 02:00"
- * instead of `0 2 * * *`. Returns null for shapes too unusual to read out,
- * so the caller can fall back to the expression itself.
- */
+/** Plain-English cadence for a 5-field cron expression — "Every day at 02:00" instead of `0 2 * * *`. Returns null for shapes too unusual to read out, so the caller can fall back to the expression itself. */
 export function describeCron(expression?: string): string | null {
 	const fields = (expression ?? '').trim().split(/\s+/);
 	if (fields.length !== 5) return null;

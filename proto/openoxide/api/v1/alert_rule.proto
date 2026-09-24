@@ -2,12 +2,123 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
+// Rule CRUD surface; the same typed messages are reused by AlertOperationsService (alert.proto), which owns events on top of rules.
 service AlertRuleService {
-  rpc ListRules(ResourceQuery) returns (ResourceListResponse);
-  rpc GetRule(ResourceRequest) returns (ResourceResponse);
-  rpc CreateRule(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateRule(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteRule(ResourceRequest) returns (Empty);
-  rpc TestRule(ResourceRequest) returns (OperationResult);
+  rpc ListRules(ListAlertRulesRequest) returns (ListAlertRulesResponse);
+  rpc GetRule(GetAlertRuleRequest) returns (GetAlertRuleResponse);
+  rpc CreateRule(CreateAlertRuleRequest) returns (CreateAlertRuleResponse);
+  rpc UpdateRule(UpdateAlertRuleRequest) returns (UpdateAlertRuleResponse);
+  rpc DeleteRule(DeleteAlertRuleRequest) returns (Empty);
+  rpc TestRule(TestAlertRuleRequest) returns (TestAlertRuleResponse);
+}
+
+// Watched resource kind (Rust TargetKind).
+enum AlertTargetKind {
+  ALERT_TARGET_KIND_UNSPECIFIED = 0;
+  ALERT_TARGET_KIND_SERVER = 1;
+  ALERT_TARGET_KIND_APPLICATION = 2;
+  ALERT_TARGET_KIND_DATABASE = 3;
+  ALERT_TARGET_KIND_COMPOSE = 4;
+}
+
+// Watched metric (Rust MetricKind).
+enum AlertMetricKind {
+  ALERT_METRIC_KIND_UNSPECIFIED = 0;
+  ALERT_METRIC_KIND_CPU = 1;
+  ALERT_METRIC_KIND_MEMORY = 2;
+  ALERT_METRIC_KIND_DISK = 3;
+}
+
+// Comparison operator (Rust Operator).
+enum AlertOperator {
+  ALERT_OPERATOR_UNSPECIFIED = 0;
+  ALERT_OPERATOR_GREATER_THAN = 1;
+  ALERT_OPERATOR_GREATER_OR_EQUAL = 2;
+  ALERT_OPERATOR_LESS_THAN = 3;
+  ALERT_OPERATOR_LESS_OR_EQUAL = 4;
+  ALERT_OPERATOR_EQUAL = 5;
+}
+
+message AlertRule {
+  int64 id = 1;
+  string name = 2;
+  AlertTargetKind target_kind = 3;
+  int64 target_id = 4;
+  AlertMetricKind metric = 5;
+  AlertOperator operator = 6;
+  double threshold = 7;
+  // Seconds a breach must persist; also drives the post-fire cooldown.
+  int64 duration_seconds = 8;
+  bool enabled = 9;
+  int64 organization_id = 10;
+  int64 created_at = 11;
+  int64 updated_at = 12;
+}
+
+message ListAlertRulesRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListAlertRulesResponse {
+  repeated AlertRule rules = 1;
+}
+
+message GetAlertRuleRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message GetAlertRuleResponse {
+  AlertRule rule = 1;
+}
+
+message CreateAlertRuleRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  AlertTargetKind target_kind = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 target_id = 3 [(buf.validate.field).int64.gt = 0];
+  AlertMetricKind metric = 4 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  AlertOperator operator = 5 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  double threshold = 6;
+  int64 duration_seconds = 7 [(buf.validate.field).int64.gt = 0];
+  bool enabled = 8;
+  int64 organization_id = 9 [(buf.validate.field).int64.gt = 0];
+}
+
+message CreateAlertRuleResponse {
+  AlertRule rule = 1;
+}
+
+// Full replacement of the rule definition; organization is fixed to the stored row and cannot be moved between tenants.
+message UpdateAlertRuleRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+  string name = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  AlertTargetKind target_kind = 4 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 target_id = 5 [(buf.validate.field).int64.gt = 0];
+  AlertMetricKind metric = 6 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  AlertOperator operator = 7 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  double threshold = 8;
+  int64 duration_seconds = 9 [(buf.validate.field).int64.gt = 0];
+  bool enabled = 10;
+}
+
+message UpdateAlertRuleResponse {
+  AlertRule rule = 1;
+}
+
+message DeleteAlertRuleRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+// Fires a canned test message through an existing notification channel.
+message TestAlertRuleRequest {
+  int64 notification_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message TestAlertRuleResponse {
+  bool delivered = 1;
+  string message = 2;
 }

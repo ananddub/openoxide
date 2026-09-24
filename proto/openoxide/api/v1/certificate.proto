@@ -1,0 +1,128 @@
+syntax = "proto3";
+package openoxide.api.v1;
+
+import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
+
+// Sole certificate owner service; replaces CertificateOperationsService.
+service CertificateService {
+  rpc ListCertificates(ListCertificatesRequest) returns (ListCertificatesResponse);
+  rpc GetCertificate(GetCertificateRequest) returns (GetCertificateResponse);
+  rpc CreateCertificate(CreateCertificateRequest) returns (CreateCertificateResponse);
+  rpc UpdateCertificate(UpdateCertificateRequest) returns (UpdateCertificateResponse);
+  rpc DeleteCertificate(DeleteCertificateRequest) returns (Empty);
+  rpc ListDependencies(ListCertificateDependenciesRequest) returns (ListCertificateDependenciesResponse);
+  rpc RenewCertificate(RenewCertificateRequest) returns (RenewCertificateResponse);
+  rpc ListRenewals(ListCertificateRenewalsRequest) returns (ListCertificateRenewalsResponse);
+}
+
+enum CertificateRenewalStatus {
+  CERTIFICATE_RENEWAL_STATUS_UNSPECIFIED = 0;
+  CERTIFICATE_RENEWAL_STATUS_RUNNING = 1;
+  CERTIFICATE_RENEWAL_STATUS_SUCCEEDED = 2;
+  CERTIFICATE_RENEWAL_STATUS_FAILED = 3;
+}
+
+message Certificate {
+  int64 id = 1;
+  string name = 2;
+  // PEM certificate chain.
+  string certificate_data = 3;
+  // Private key material is never echoed back; presence only.
+  bool has_private_key = 4;
+  string certificate_path = 5;
+  bool auto_renew = 6;
+  optional string server_id = 7;
+  int64 organization_id = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+}
+
+message CertificateRenewal {
+  int64 id = 1;
+  int64 certificate_id = 2;
+  int64 organization_id = 3;
+  CertificateRenewalStatus status = 4;
+  optional int64 previous_expires_at = 5;
+  optional int64 new_expires_at = 6;
+  optional string error = 7;
+  int64 started_at = 8;
+  optional int64 finished_at = 9;
+}
+
+message CertificateDependencies {
+  int64 renewals = 1;
+  int64 running_renewals = 2;
+}
+
+message ListCertificatesRequest {}
+
+message ListCertificatesResponse {
+  repeated Certificate certificates = 1;
+}
+
+message GetCertificateRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message GetCertificateResponse {
+  Certificate certificate = 1;
+}
+
+message CreateCertificateRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  string certificate_data = 2 [(buf.validate.field).string.min_len = 1];
+  string private_key = 3;
+  string certificate_path = 4 [(buf.validate.field).string.min_len = 1];
+  bool auto_renew = 5;
+  optional string server_id = 6;
+}
+
+message CreateCertificateResponse {
+  Certificate certificate = 1;
+}
+
+// An absent field keeps its stored value; `server_id` present-but-empty detaches the server.
+message UpdateCertificateRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string name = 2 [(buf.validate.field).string.max_len = 255];
+  optional string certificate_data = 3;
+  optional string private_key = 4;
+  optional string certificate_path = 5;
+  optional bool auto_renew = 6;
+  optional string server_id = 7;
+}
+
+message UpdateCertificateResponse {
+  Certificate certificate = 1;
+}
+
+message DeleteCertificateRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListCertificateDependenciesRequest {
+  int64 certificate_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListCertificateDependenciesResponse {
+  CertificateDependencies dependencies = 1;
+}
+
+message RenewCertificateRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string certificate_data = 2 [(buf.validate.field).string.min_len = 1];
+  string private_key = 3 [(buf.validate.field).string.min_len = 1];
+}
+
+message RenewCertificateResponse {
+  Certificate certificate = 1;
+}
+
+message ListCertificateRenewalsRequest {
+  int64 certificate_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListCertificateRenewalsResponse {
+  repeated CertificateRenewal renewals = 1;
+}

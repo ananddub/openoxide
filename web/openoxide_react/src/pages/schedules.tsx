@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
-import {useSchedules} from '#/hooks/use-schedules';
+import {useSchedules} from '#/hooks/schedules/use-schedules';
 import {SchedulesHeader} from '#/components/schedules/schedules-header';
 import {SchedulesList} from '#/components/schedules/schedules-list';
 import {ScheduleDialog} from '#/components/schedules/schedule-dialog';

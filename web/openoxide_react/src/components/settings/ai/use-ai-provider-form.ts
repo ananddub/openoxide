@@ -45,8 +45,7 @@ export function useAiProviderForm({
 
 	useEffect(() => {
 		if (open) reset();
-		// Reset when the parent switches between create and edit while mounted.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// Reset when the parent switches between create and edit while mounted. eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open, editing]);
 
 	const set = (key: keyof AiForm, value: string | boolean) =>

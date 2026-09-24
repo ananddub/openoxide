@@ -2,93 +2,2300 @@
 // @generated from file openoxide/api/v1/backup.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	EmptySchema,
-	OperationResultSchema,
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceRequestSchema,
-	ResourceResponseSchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/backup.proto.
  */
-export const file_openoxide_api_v1_backup: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'Ch1vcGVub3hpZGUvYXBpL3YxL2JhY2t1cC5wcm90bxIQb3Blbm94aWRlLmFwaS52MTK8BQoNQmFja3VwU2VydmljZRJWCgtMaXN0QmFja3VwcxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USUgoJR2V0QmFja3VwEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVQoMQ3JlYXRlQmFja3VwEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVQoMVXBkYXRlQmFja3VwEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USSgoMRGVsZXRlQmFja3VwEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElEKCVJ1bkJhY2t1cBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSVQoNUmVzdG9yZUJhY2t1cBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSWwoTVmFsaWRhdGVEZXN0aW5hdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHRiBnByb3RvMw',
-		[file_openoxide_api_v1_common],
-	);
+export const file_openoxide_api_v1_backup: GenFile = /*@__PURE__*/
+  fileDesc("Ch1vcGVub3hpZGUvYXBpL3YxL2JhY2t1cC5wcm90bxIQb3Blbm94aWRlLmFwaS52MSLCAwoOQmFja3VwRGF0YWJhc2USCgoCaWQYASABKAMSEAoIYXBwX25hbWUYAiABKAkSEAoIc2NoZWR1bGUYAyABKAkSDwoHZW5hYmxlZBgEIAEoCBIVCg1kYXRhYmFzZV9uYW1lGAUgASgJEg4KBnByZWZpeBgGIAEoCRIZCgxzZXJ2aWNlX25hbWUYByABKAlIAIgBARIeChFrZWVwX2xhdGVzdF9jb3VudBgIIAEoA0gBiAEBEhMKC2JhY2t1cF90eXBlGAkgASgJEhoKDWRhdGFiYXNlX3R5cGUYCiABKAlIAogBARIVCghtZXRhZGF0YRgLIAEoCUgDiAEBEhcKCnNlcnZpY2VfaWQYDCABKANIBIgBARIWCg5kZXN0aW5hdGlvbl9pZBgNIAEoAxIXCg9vcmdhbml6YXRpb25faWQYDiABKAMSEgoKY3JlYXRlZF9hdBgPIAEoAxISCgp1cGRhdGVkX2F0GBAgASgDQg8KDV9zZXJ2aWNlX25hbWVCFAoSX2tlZXBfbGF0ZXN0X2NvdW50QhAKDl9kYXRhYmFzZV90eXBlQgsKCV9tZXRhZGF0YUINCgtfc2VydmljZV9pZCLQBQoMQmFja3VwVm9sdW1lEgoKAmlkGAEgASgDEgwKBG5hbWUYAiABKAkSEwoLdm9sdW1lX25hbWUYAyABKAkSDgoGcHJlZml4GAQgASgJEhQKDHNlcnZpY2VfdHlwZRgFIAEoCRIQCghhcHBfbmFtZRgGIAEoCRIZCgxzZXJ2aWNlX25hbWUYByABKAlIAIgBARIQCgh0dXJuX29mZhgIIAEoCBIXCg9jcm9uX2V4cHJlc3Npb24YCSABKAkSHgoRa2VlcF9sYXRlc3RfY291bnQYCiABKANIAYgBARIPCgdlbmFibGVkGAsgASgIEhYKDmRlc3RpbmF0aW9uX2lkGAwgASgDEhcKD29yZ2FuaXphdGlvbl9pZBgNIAEoAxIXCgpzZXJ2aWNlX2lkGA4gASgDSAKIAQESGwoOYXBwbGljYXRpb25faWQYDyABKANIA4gBARIXCgpjb21wb3NlX2lkGBAgASgDSASIAQESGAoLcG9zdGdyZXNfaWQYESABKANIBYgBARIVCghteXNxbF9pZBgSIAEoA0gGiAEBEhcKCm1hcmlhZGJfaWQYEyABKANIB4gBARIVCghtb25nb19pZBgUIAEoA0gIiAEBEhUKCHJlZGlzX2lkGBUgASgDSAmIAQESFgoJbGlic3FsX2lkGBYgASgDSAqIAQESEgoKY3JlYXRlZF9hdBgXIAEoAxISCgp1cGRhdGVkX2F0GBggASgDQg8KDV9zZXJ2aWNlX25hbWVCFAoSX2tlZXBfbGF0ZXN0X2NvdW50Qg0KC19zZXJ2aWNlX2lkQhEKD19hcHBsaWNhdGlvbl9pZEINCgtfY29tcG9zZV9pZEIOCgxfcG9zdGdyZXNfaWRCCwoJX215c3FsX2lkQg0KC19tYXJpYWRiX2lkQgsKCV9tb25nb19pZEILCglfcmVkaXNfaWRCDAoKX2xpYnNxbF9pZCLUAwoPQmFja3VwRXhlY3V0aW9uEgoKAmlkGAEgASgDEjEKC2JhY2t1cF9raW5kGAIgASgOMhwub3Blbm94aWRlLmFwaS52MS5CYWNrdXBLaW5kEjQKCW9wZXJhdGlvbhgDIAEoDjIhLm9wZW5veGlkZS5hcGkudjEuQmFja3VwT3BlcmF0aW9uEhYKCWJhY2t1cF9pZBgEIAEoA0gAiAEBEjcKBnN0YXR1cxgFIAEoDjInLm9wZW5veGlkZS5hcGkudjEuQmFja3VwRXhlY3V0aW9uU3RhdHVzEhcKCm9iamVjdF9rZXkYBiABKAlIAYgBARIcCg9jaGVja3N1bV9zaGEyNTYYByABKAlIAogBARIXCgpzaXplX2J5dGVzGAggASgDSAOIAQESDwoHYXR0ZW1wdBgJIAEoAxISCgVlcnJvchgKIAEoCUgEiAEBEhIKCnN0YXJ0ZWRfYXQYCyABKAMSGAoLZmluaXNoZWRfYXQYDCABKANIBYgBAUIMCgpfYmFja3VwX2lkQg0KC19vYmplY3Rfa2V5QhIKEF9jaGVja3N1bV9zaGEyNTZCDQoLX3NpemVfYnl0ZXNCCAoGX2Vycm9yQg4KDF9maW5pc2hlZF9hdCJRCgpCYWNrdXBGaWxlEgwKBG5hbWUYASABKAkSDAoEcGF0aBgCIAEoCRISCgpzaXplX2J5dGVzGAMgASgDEhMKC21vZGlmaWVkX2F0GAQgASgJIl4KDUJhY2t1cEFyY2hpdmUSDAoEcGF0aBgBIAEoCRIXCg9jaGVja3N1bV9zaGEyNTYYAiABKAkSEgoKc2l6ZV9ieXRlcxgDIAEoAxISCgpjcmVhdGVkX2F0GAQgASgDInQKE0JhY2t1cFN0YWdlZFJlc3RvcmUSEgoKcmVzdG9yZV9pZBgBIAEoCRIXCg9jaGVja3N1bV9zaGEyNTYYAiABKAkSGAoQcmVzdGFydF9yZXF1aXJlZBgDIAEoCBIWCg5wZW5kaW5nX21hcmtlchgEIAEoCSJeChNCYWNrdXBSZXN0b3JlU3RhdHVzEhIKCnJlc3RvcmVfaWQYASABKAkSDgoGc3RhdHVzGAIgASgJEg8KB21lc3NhZ2UYAyABKAkSEgoKdXBkYXRlZF9hdBgEIAEoAyJyChZCYWNrdXBSZXRlbnRpb25QcmV2aWV3EioKBGtlZXAYASADKAsyHC5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cEZpbGUSLAoGZGVsZXRlGAIgAygLMhwub3Blbm94aWRlLmFwaS52MS5CYWNrdXBGaWxlImQKD0JhY2t1cEludGVncml0eRINCgV2YWxpZBgBIAEoCBIXCg9leHBlY3RlZF9zaGEyNTYYAiABKAkSFQoNYWN0dWFsX3NoYTI1NhgDIAEoCRISCgpzaXplX2J5dGVzGAQgASgDIhoKGEJhY2t1cExpc3RCYWNrdXBzUmVxdWVzdCJOChlCYWNrdXBMaXN0QmFja3Vwc1Jlc3BvbnNlEjEKB2JhY2t1cHMYASADKAsyIC5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cERhdGFiYXNlIi0KFkJhY2t1cEdldEJhY2t1cFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiSwoXQmFja3VwR2V0QmFja3VwUmVzcG9uc2USMAoGYmFja3VwGAEgASgLMiAub3Blbm94aWRlLmFwaS52MS5CYWNrdXBEYXRhYmFzZSLjAwoZQmFja3VwQ3JlYXRlQmFja3VwUmVxdWVzdBIcCghhcHBfbmFtZRgBIAEoCUIKukgHcgUQARj/ARIZCghzY2hlZHVsZRgCIAEoCUIHukgEcgIQARIeCg1kYXRhYmFzZV9uYW1lGAMgASgJQge6SARyAhABEhcKBnByZWZpeBgEIAEoCUIHukgEcgIQARIjCgxzZXJ2aWNlX25hbWUYBSABKAlCCLpIBXIDGP8BSACIAQESJwoRa2VlcF9sYXRlc3RfY291bnQYBiABKANCB7pIBCICKABIAYgBARIcCgtiYWNrdXBfdHlwZRgHIAEoCUIHukgEcgIQARIeCg1kYXRhYmFzZV90eXBlGAggASgJQge6SARyAhABEiAKCG1ldGFkYXRhGAkgASgJQgm6SAZyBBiAgEBIAogBARIgCgpzZXJ2aWNlX2lkGAogASgDQge6SAQiAiAASAOIAQESHwoOZGVzdGluYXRpb25faWQYCyABKANCB7pIBCICIAASIAoPb3JnYW5pemF0aW9uX2lkGAwgASgDQge6SAQiAiAAQg8KDV9zZXJ2aWNlX25hbWVCFAoSX2tlZXBfbGF0ZXN0X2NvdW50QgsKCV9tZXRhZGF0YUINCgtfc2VydmljZV9pZCJOChpCYWNrdXBDcmVhdGVCYWNrdXBSZXNwb25zZRIwCgZiYWNrdXAYASABKAsyIC5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cERhdGFiYXNlIqcEChlCYWNrdXBVcGRhdGVCYWNrdXBSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEh8KCGFwcF9uYW1lGAIgASgJQgi6SAVyAxj/AUgAiAEBEhUKCHNjaGVkdWxlGAMgASgJSAGIAQESGgoNZGF0YWJhc2VfbmFtZRgEIAEoCUgCiAEBEhMKBnByZWZpeBgFIAEoCUgDiAEBEiMKDHNlcnZpY2VfbmFtZRgGIAEoCUIIukgFcgMY/wFIBIgBARInChFrZWVwX2xhdGVzdF9jb3VudBgHIAEoA0IHukgEIgIoAEgFiAEBEhgKC2JhY2t1cF90eXBlGAggASgJSAaIAQESGgoNZGF0YWJhc2VfdHlwZRgJIAEoCUgHiAEBEiAKCG1ldGFkYXRhGAogASgJQgm6SAZyBBiAgEBICIgBARIkCg5kZXN0aW5hdGlvbl9pZBgLIAEoA0IHukgEIgIgAEgJiAEBEhQKB2VuYWJsZWQYDCABKAhICogBAUILCglfYXBwX25hbWVCCwoJX3NjaGVkdWxlQhAKDl9kYXRhYmFzZV9uYW1lQgkKB19wcmVmaXhCDwoNX3NlcnZpY2VfbmFtZUIUChJfa2VlcF9sYXRlc3RfY291bnRCDgoMX2JhY2t1cF90eXBlQhAKDl9kYXRhYmFzZV90eXBlQgsKCV9tZXRhZGF0YUIRCg9fZGVzdGluYXRpb25faWRCCgoIX2VuYWJsZWQiTgoaQmFja3VwVXBkYXRlQmFja3VwUmVzcG9uc2USMAoGYmFja3VwGAEgASgLMiAub3Blbm94aWRlLmFwaS52MS5CYWNrdXBEYXRhYmFzZSIwChlCYWNrdXBEZWxldGVCYWNrdXBSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIi0KFkJhY2t1cFJ1bkJhY2t1cFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiTwoaQmFja3VwUmVzdG9yZUJhY2t1cFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASHAoLYmFja3VwX2ZpbGUYAiABKAlCB7pIBHICEAEiQwogQmFja3VwVmFsaWRhdGVEZXN0aW5hdGlvblJlcXVlc3QSHwoOZGVzdGluYXRpb25faWQYASABKANCB7pIBCICIAAiRQohQmFja3VwVmFsaWRhdGVEZXN0aW5hdGlvblJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCSJVCh1CYWNrdXBSdW5Db21wb3NlQmFja3VwUmVxdWVzdBIbCgpjb21wb3NlX2lkGAEgASgDQge6SAQiAiAAEhcKD2luY2x1ZGVfc2VjcmV0cxgCIAEoCCJSCh5CYWNrdXBSdW5Db21wb3NlQmFja3VwUmVzcG9uc2USMAoHYXJjaGl2ZRgBIAEoCzIfLm9wZW5veGlkZS5hcGkudjEuQmFja3VwQXJjaGl2ZSIdChtCYWNrdXBSdW5QYW5lbEJhY2t1cFJlcXVlc3QiUAocQmFja3VwUnVuUGFuZWxCYWNrdXBSZXNwb25zZRIwCgdhcmNoaXZlGAEgASgLMh8ub3Blbm94aWRlLmFwaS52MS5CYWNrdXBBcmNoaXZlImcKGUJhY2t1cFN0YWdlUmVzdG9yZVJlcXVlc3QSGAoHYXJjaGl2ZRgBIAEoCUIHukgEcgIQARIcCg9jaGVja3N1bV9zaGEyNTYYAiABKAlIAIgBAUISChBfY2hlY2tzdW1fc2hhMjU2IlMKGkJhY2t1cFN0YWdlUmVzdG9yZVJlc3BvbnNlEjUKBnN0YWdlZBgBIAEoCzIlLm9wZW5veGlkZS5hcGkudjEuQmFja3VwU3RhZ2VkUmVzdG9yZSI8Ch1CYWNrdXBHZXRSZXN0b3JlU3RhdHVzUmVxdWVzdBIbCgpyZXN0b3JlX2lkGAEgASgJQge6SARyAhABIlcKHkJhY2t1cEdldFJlc3RvcmVTdGF0dXNSZXNwb25zZRI1CgZzdGF0dXMYASABKAsyJS5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFJlc3RvcmVTdGF0dXMiQgocQmFja3VwUm9sbGJhY2tSZXN0b3JlUmVxdWVzdBIiChFyZWNvdmVyeV9kYXRhYmFzZRgBIAEoCUIHukgEcgIQASJWCh1CYWNrdXBSb2xsYmFja1Jlc3RvcmVSZXNwb25zZRI1CgZzdGFnZWQYASABKAsyJS5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFN0YWdlZFJlc3RvcmUiYwoWQmFja3VwTGlzdEZpbGVzUmVxdWVzdBIfCg5kZXN0aW5hdGlvbl9pZBgBIAEoA0IHukgEIgIgABIdCgZwcmVmaXgYAiABKAlCCLpIBXIDGIAISACIAQFCCQoHX3ByZWZpeCJGChdCYWNrdXBMaXN0RmlsZXNSZXNwb25zZRIrCgVmaWxlcxgBIAMoCzIcLm9wZW5veGlkZS5hcGkudjEuQmFja3VwRmlsZSJZChlCYWNrdXBEb3dubG9hZEZpbGVSZXF1ZXN0Eh8KDmRlc3RpbmF0aW9uX2lkGAEgASgDQge6SAQiAiAAEhsKCm9iamVjdF9rZXkYAiABKAlCB7pIBHICEAEiRAoaQmFja3VwRG93bmxvYWRGaWxlUmVzcG9uc2USEgoKc2l6ZV9ieXRlcxgBIAEoAxISCgpvYmplY3Rfa2V5GAIgASgJIogBCh1CYWNrdXBQcmV2aWV3UmV0ZW50aW9uUmVxdWVzdBIfCg5kZXN0aW5hdGlvbl9pZBgBIAEoA0IHukgEIgIgABIdCgZwcmVmaXgYAiABKAlCCLpIBXIDGIAISACIAQESHAoLa2VlcF9sYXRlc3QYAyABKANCB7pIBCICKAFCCQoHX3ByZWZpeCJbCh5CYWNrdXBQcmV2aWV3UmV0ZW50aW9uUmVzcG9uc2USOQoHcHJldmlldxgBIAEoCzIoLm9wZW5veGlkZS5hcGkudjEuQmFja3VwUmV0ZW50aW9uUHJldmlldyJ6ChhCYWNrdXBWZXJpZnlGaWxlc1JlcXVlc3QSHwoOZGVzdGluYXRpb25faWQYASABKANCB7pIBCICIAASGwoKb2JqZWN0X2tleRgCIAEoCUIHukgEcgIQARIgCg9jaGVja3N1bV9zaGEyNTYYAyABKAlCB7pIBHICEAEiUQoZQmFja3VwVmVyaWZ5RmlsZXNSZXNwb25zZRI0CglpbnRlZ3JpdHkYASABKAsyIS5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cEludGVncml0eSJHChtCYWNrdXBMaXN0RXhlY3V0aW9uc1JlcXVlc3QSHgoFbGltaXQYASABKANCCrpIByIFGPQDKAFIAIgBAUIICgZfbGltaXQiVQocQmFja3VwTGlzdEV4ZWN1dGlvbnNSZXNwb25zZRI1CgpleGVjdXRpb25zGAEgAygLMiEub3Blbm94aWRlLmFwaS52MS5CYWNrdXBFeGVjdXRpb24iMgobQmFja3VwUmV0cnlFeGVjdXRpb25SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIiIKIEJhY2t1cExpc3REYXRhYmFzZUJhY2t1cHNSZXF1ZXN0IlYKIUJhY2t1cExpc3REYXRhYmFzZUJhY2t1cHNSZXNwb25zZRIxCgdiYWNrdXBzGAEgAygLMiAub3Blbm94aWRlLmFwaS52MS5CYWNrdXBEYXRhYmFzZSI1Ch5CYWNrdXBHZXREYXRhYmFzZUJhY2t1cFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiUwofQmFja3VwR2V0RGF0YWJhc2VCYWNrdXBSZXNwb25zZRIwCgZiYWNrdXAYASABKAsyIC5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cERhdGFiYXNlIusDCiFCYWNrdXBDcmVhdGVEYXRhYmFzZUJhY2t1cFJlcXVlc3QSHAoIYXBwX25hbWUYASABKAlCCrpIB3IFEAEY/wESGQoIc2NoZWR1bGUYAiABKAlCB7pIBHICEAESHgoNZGF0YWJhc2VfbmFtZRgDIAEoCUIHukgEcgIQARIXCgZwcmVmaXgYBCABKAlCB7pIBHICEAESIwoMc2VydmljZV9uYW1lGAUgASgJQgi6SAVyAxj/AUgAiAEBEicKEWtlZXBfbGF0ZXN0X2NvdW50GAYgASgDQge6SAQiAigASAGIAQESHAoLYmFja3VwX3R5cGUYByABKAlCB7pIBHICEAESHgoNZGF0YWJhc2VfdHlwZRgIIAEoCUIHukgEcgIQARIgCghtZXRhZGF0YRgJIAEoCUIJukgGcgQYgIBASAKIAQESIAoKc2VydmljZV9pZBgKIAEoA0IHukgEIgIgAEgDiAEBEh8KDmRlc3RpbmF0aW9uX2lkGAsgASgDQge6SAQiAiAAEiAKD29yZ2FuaXphdGlvbl9pZBgMIAEoA0IHukgEIgIgAEIPCg1fc2VydmljZV9uYW1lQhQKEl9rZWVwX2xhdGVzdF9jb3VudEILCglfbWV0YWRhdGFCDQoLX3NlcnZpY2VfaWQiVgoiQmFja3VwQ3JlYXRlRGF0YWJhc2VCYWNrdXBSZXNwb25zZRIwCgZiYWNrdXAYASABKAsyIC5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cERhdGFiYXNlIq8ECiFCYWNrdXBVcGRhdGVEYXRhYmFzZUJhY2t1cFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASHwoIYXBwX25hbWUYAiABKAlCCLpIBXIDGP8BSACIAQESFQoIc2NoZWR1bGUYAyABKAlIAYgBARIaCg1kYXRhYmFzZV9uYW1lGAQgASgJSAKIAQESEwoGcHJlZml4GAUgASgJSAOIAQESIwoMc2VydmljZV9uYW1lGAYgASgJQgi6SAVyAxj/AUgEiAEBEicKEWtlZXBfbGF0ZXN0X2NvdW50GAcgASgDQge6SAQiAigASAWIAQESGAoLYmFja3VwX3R5cGUYCCABKAlIBogBARIaCg1kYXRhYmFzZV90eXBlGAkgASgJSAeIAQESIAoIbWV0YWRhdGEYCiABKAlCCbpIBnIEGICAQEgIiAEBEiQKDmRlc3RpbmF0aW9uX2lkGAsgASgDQge6SAQiAiAASAmIAQESFAoHZW5hYmxlZBgMIAEoCEgKiAEBQgsKCV9hcHBfbmFtZUILCglfc2NoZWR1bGVCEAoOX2RhdGFiYXNlX25hbWVCCQoHX3ByZWZpeEIPCg1fc2VydmljZV9uYW1lQhQKEl9rZWVwX2xhdGVzdF9jb3VudEIOCgxfYmFja3VwX3R5cGVCEAoOX2RhdGFiYXNlX3R5cGVCCwoJX21ldGFkYXRhQhEKD19kZXN0aW5hdGlvbl9pZEIKCghfZW5hYmxlZCJWCiJCYWNrdXBVcGRhdGVEYXRhYmFzZUJhY2t1cFJlc3BvbnNlEjAKBmJhY2t1cBgBIAEoCzIgLm9wZW5veGlkZS5hcGkudjEuQmFja3VwRGF0YWJhc2UiOAohQmFja3VwRGVsZXRlRGF0YWJhc2VCYWNrdXBSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIjUKHkJhY2t1cFJ1bkRhdGFiYXNlQmFja3VwUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACIgCh5CYWNrdXBMaXN0Vm9sdW1lQmFja3Vwc1JlcXVlc3QiUgofQmFja3VwTGlzdFZvbHVtZUJhY2t1cHNSZXNwb25zZRIvCgdiYWNrdXBzGAEgAygLMh4ub3Blbm94aWRlLmFwaS52MS5CYWNrdXBWb2x1bWUiMwocQmFja3VwR2V0Vm9sdW1lQmFja3VwUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJPCh1CYWNrdXBHZXRWb2x1bWVCYWNrdXBSZXNwb25zZRIuCgZiYWNrdXAYASABKAsyHi5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFZvbHVtZSK0BwofQmFja3VwQ3JlYXRlVm9sdW1lQmFja3VwUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEhwKC3ZvbHVtZV9uYW1lGAIgASgJQge6SARyAhABEhcKBnByZWZpeBgDIAEoCUIHukgEcgIQARIdCgxzZXJ2aWNlX3R5cGUYBCABKAlCB7pIBHICEAESHAoIYXBwX25hbWUYBSABKAlCCrpIB3IFEAEY/wESIwoMc2VydmljZV9uYW1lGAYgASgJQgi6SAVyAxj/AUgAiAEBEhAKCHR1cm5fb2ZmGAcgASgIEiAKD2Nyb25fZXhwcmVzc2lvbhgIIAEoCUIHukgEcgIQARInChFrZWVwX2xhdGVzdF9jb3VudBgJIAEoA0IHukgEIgIoAEgBiAEBEiQKDmRlc3RpbmF0aW9uX2lkGAogASgDQge6SAQiAiAASAKIAQESJQoPb3JnYW5pemF0aW9uX2lkGAsgASgDQge6SAQiAiAASAOIAQESIAoKc2VydmljZV9pZBgMIAEoA0IHukgEIgIgAEgEiAEBEiQKDmFwcGxpY2F0aW9uX2lkGA0gASgDQge6SAQiAiAASAWIAQESIAoKY29tcG9zZV9pZBgOIAEoA0IHukgEIgIgAEgGiAEBEiEKC2RhdGFiYXNlX2lkGA8gASgDQge6SAQiAiAASAeIAQESIQoLcG9zdGdyZXNfaWQYECABKANCB7pIBCICIABICIgBARIeCghteXNxbF9pZBgRIAEoA0IHukgEIgIgAEgJiAEBEiAKCm1hcmlhZGJfaWQYEiABKANCB7pIBCICIABICogBARIeCghtb25nb19pZBgTIAEoA0IHukgEIgIgAEgLiAEBEh4KCHJlZGlzX2lkGBQgASgDQge6SAQiAiAASAyIAQESHwoJbGlic3FsX2lkGBUgASgDQge6SAQiAiAASA2IAQFCDwoNX3NlcnZpY2VfbmFtZUIUChJfa2VlcF9sYXRlc3RfY291bnRCEQoPX2Rlc3RpbmF0aW9uX2lkQhIKEF9vcmdhbml6YXRpb25faWRCDQoLX3NlcnZpY2VfaWRCEQoPX2FwcGxpY2F0aW9uX2lkQg0KC19jb21wb3NlX2lkQg4KDF9kYXRhYmFzZV9pZEIOCgxfcG9zdGdyZXNfaWRCCwoJX215c3FsX2lkQg0KC19tYXJpYWRiX2lkQgsKCV9tb25nb19pZEILCglfcmVkaXNfaWRCDAoKX2xpYnNxbF9pZCJSCiBCYWNrdXBDcmVhdGVWb2x1bWVCYWNrdXBSZXNwb25zZRIuCgZiYWNrdXAYASABKAsyHi5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFZvbHVtZSKmBAofQmFja3VwVXBkYXRlVm9sdW1lQmFja3VwUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIbCgRuYW1lGAIgASgJQgi6SAVyAxj/AUgAiAEBEhgKC3ZvbHVtZV9uYW1lGAMgASgJSAGIAQESEwoGcHJlZml4GAQgASgJSAKIAQESGQoMc2VydmljZV90eXBlGAUgASgJSAOIAQESHwoIYXBwX25hbWUYBiABKAlCCLpIBXIDGP8BSASIAQESIwoMc2VydmljZV9uYW1lGAcgASgJQgi6SAVyAxj/AUgFiAEBEhUKCHR1cm5fb2ZmGAggASgISAaIAQESHAoPY3Jvbl9leHByZXNzaW9uGAkgASgJSAeIAQESJwoRa2VlcF9sYXRlc3RfY291bnQYCiABKANCB7pIBCICKABICIgBARIkCg5kZXN0aW5hdGlvbl9pZBgLIAEoA0IHukgEIgIgAEgJiAEBEhQKB2VuYWJsZWQYDCABKAhICogBAUIHCgVfbmFtZUIOCgxfdm9sdW1lX25hbWVCCQoHX3ByZWZpeEIPCg1fc2VydmljZV90eXBlQgsKCV9hcHBfbmFtZUIPCg1fc2VydmljZV9uYW1lQgsKCV90dXJuX29mZkISChBfY3Jvbl9leHByZXNzaW9uQhQKEl9rZWVwX2xhdGVzdF9jb3VudEIRCg9fZGVzdGluYXRpb25faWRCCgoIX2VuYWJsZWQiUgogQmFja3VwVXBkYXRlVm9sdW1lQmFja3VwUmVzcG9uc2USLgoGYmFja3VwGAEgASgLMh4ub3Blbm94aWRlLmFwaS52MS5CYWNrdXBWb2x1bWUiNgofQmFja3VwRGVsZXRlVm9sdW1lQmFja3VwUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACIzChxCYWNrdXBSdW5Wb2x1bWVCYWNrdXBSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIlEKHEJhY2t1cFJlc3RvcmVEYXRhYmFzZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASHAoLYmFja3VwX2ZpbGUYAiABKAlCB7pIBHICEAEiTwoaQmFja3VwUmVzdG9yZVZvbHVtZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASHAoLYmFja3VwX2ZpbGUYAiABKAlCB7pIBHICEAEqkgEKCkJhY2t1cEtpbmQSGwoXQkFDS1VQX0tJTkRfVU5TUEVDSUZJRUQQABIYChRCQUNLVVBfS0lORF9EQVRBQkFTRRABEhYKEkJBQ0tVUF9LSU5EX1ZPTFVNRRACEhUKEUJBQ0tVUF9LSU5EX1BBTkVMEAMSHgoaQkFDS1VQX0tJTkRfQ09NUE9TRV9DT05GSUcQBCpuCg9CYWNrdXBPcGVyYXRpb24SIAocQkFDS1VQX09QRVJBVElPTl9VTlNQRUNJRklFRBAAEhsKF0JBQ0tVUF9PUEVSQVRJT05fQkFDS1VQEAESHAoYQkFDS1VQX09QRVJBVElPTl9SRVNUT1JFEAIqsAEKFUJhY2t1cEV4ZWN1dGlvblN0YXR1cxInCiNCQUNLVVBfRVhFQ1VUSU9OX1NUQVRVU19VTlNQRUNJRklFRBAAEiMKH0JBQ0tVUF9FWEVDVVRJT05fU1RBVFVTX1JVTk5JTkcQARIlCiFCQUNLVVBfRVhFQ1VUSU9OX1NUQVRVU19TVUNDRUVERUQQAhIiCh5CQUNLVVBfRVhFQ1VUSU9OX1NUQVRVU19GQUlMRUQQAzKEHAoNQmFja3VwU2VydmljZRJmCgtMaXN0QmFja3VwcxIqLm9wZW5veGlkZS5hcGkudjEuQmFja3VwTGlzdEJhY2t1cHNSZXF1ZXN0Gisub3Blbm94aWRlLmFwaS52MS5CYWNrdXBMaXN0QmFja3Vwc1Jlc3BvbnNlEmAKCUdldEJhY2t1cBIoLm9wZW5veGlkZS5hcGkudjEuQmFja3VwR2V0QmFja3VwUmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuQmFja3VwR2V0QmFja3VwUmVzcG9uc2USaQoMQ3JlYXRlQmFja3VwEisub3Blbm94aWRlLmFwaS52MS5CYWNrdXBDcmVhdGVCYWNrdXBSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5CYWNrdXBDcmVhdGVCYWNrdXBSZXNwb25zZRJpCgxVcGRhdGVCYWNrdXASKy5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFVwZGF0ZUJhY2t1cFJlcXVlc3QaLC5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFVwZGF0ZUJhY2t1cFJlc3BvbnNlElQKDERlbGV0ZUJhY2t1cBIrLm9wZW5veGlkZS5hcGkudjEuQmFja3VwRGVsZXRlQmFja3VwUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSTgoJUnVuQmFja3VwEigub3Blbm94aWRlLmFwaS52MS5CYWNrdXBSdW5CYWNrdXBSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJWCg1SZXN0b3JlQmFja3VwEiwub3Blbm94aWRlLmFwaS52MS5CYWNrdXBSZXN0b3JlQmFja3VwUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSfgoTVmFsaWRhdGVEZXN0aW5hdGlvbhIyLm9wZW5veGlkZS5hcGkudjEuQmFja3VwVmFsaWRhdGVEZXN0aW5hdGlvblJlcXVlc3QaMy5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFZhbGlkYXRlRGVzdGluYXRpb25SZXNwb25zZRJ1ChBSdW5Db21wb3NlQmFja3VwEi8ub3Blbm94aWRlLmFwaS52MS5CYWNrdXBSdW5Db21wb3NlQmFja3VwUmVxdWVzdBowLm9wZW5veGlkZS5hcGkudjEuQmFja3VwUnVuQ29tcG9zZUJhY2t1cFJlc3BvbnNlEm8KDlJ1blBhbmVsQmFja3VwEi0ub3Blbm94aWRlLmFwaS52MS5CYWNrdXBSdW5QYW5lbEJhY2t1cFJlcXVlc3QaLi5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFJ1blBhbmVsQmFja3VwUmVzcG9uc2USaQoMU3RhZ2VSZXN0b3JlEisub3Blbm94aWRlLmFwaS52MS5CYWNrdXBTdGFnZVJlc3RvcmVSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5CYWNrdXBTdGFnZVJlc3RvcmVSZXNwb25zZRJ1ChBHZXRSZXN0b3JlU3RhdHVzEi8ub3Blbm94aWRlLmFwaS52MS5CYWNrdXBHZXRSZXN0b3JlU3RhdHVzUmVxdWVzdBowLm9wZW5veGlkZS5hcGkudjEuQmFja3VwR2V0UmVzdG9yZVN0YXR1c1Jlc3BvbnNlEnIKD1JvbGxiYWNrUmVzdG9yZRIuLm9wZW5veGlkZS5hcGkudjEuQmFja3VwUm9sbGJhY2tSZXN0b3JlUmVxdWVzdBovLm9wZW5veGlkZS5hcGkudjEuQmFja3VwUm9sbGJhY2tSZXN0b3JlUmVzcG9uc2USYAoJTGlzdEZpbGVzEigub3Blbm94aWRlLmFwaS52MS5CYWNrdXBMaXN0RmlsZXNSZXF1ZXN0Gikub3Blbm94aWRlLmFwaS52MS5CYWNrdXBMaXN0RmlsZXNSZXNwb25zZRJpCgxEb3dubG9hZEZpbGUSKy5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cERvd25sb2FkRmlsZVJlcXVlc3QaLC5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cERvd25sb2FkRmlsZVJlc3BvbnNlEnUKEFByZXZpZXdSZXRlbnRpb24SLy5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFByZXZpZXdSZXRlbnRpb25SZXF1ZXN0GjAub3Blbm94aWRlLmFwaS52MS5CYWNrdXBQcmV2aWV3UmV0ZW50aW9uUmVzcG9uc2USZgoLVmVyaWZ5RmlsZXMSKi5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFZlcmlmeUZpbGVzUmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuQmFja3VwVmVyaWZ5RmlsZXNSZXNwb25zZRJvCg5MaXN0RXhlY3V0aW9ucxItLm9wZW5veGlkZS5hcGkudjEuQmFja3VwTGlzdEV4ZWN1dGlvbnNSZXF1ZXN0Gi4ub3Blbm94aWRlLmFwaS52MS5CYWNrdXBMaXN0RXhlY3V0aW9uc1Jlc3BvbnNlElgKDlJldHJ5RXhlY3V0aW9uEi0ub3Blbm94aWRlLmFwaS52MS5CYWNrdXBSZXRyeUV4ZWN1dGlvblJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5En4KE0xpc3REYXRhYmFzZUJhY2t1cHMSMi5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cExpc3REYXRhYmFzZUJhY2t1cHNSZXF1ZXN0GjMub3Blbm94aWRlLmFwaS52MS5CYWNrdXBMaXN0RGF0YWJhc2VCYWNrdXBzUmVzcG9uc2USeAoRR2V0RGF0YWJhc2VCYWNrdXASMC5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cEdldERhdGFiYXNlQmFja3VwUmVxdWVzdBoxLm9wZW5veGlkZS5hcGkudjEuQmFja3VwR2V0RGF0YWJhc2VCYWNrdXBSZXNwb25zZRKBAQoUQ3JlYXRlRGF0YWJhc2VCYWNrdXASMy5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cENyZWF0ZURhdGFiYXNlQmFja3VwUmVxdWVzdBo0Lm9wZW5veGlkZS5hcGkudjEuQmFja3VwQ3JlYXRlRGF0YWJhc2VCYWNrdXBSZXNwb25zZRKBAQoUVXBkYXRlRGF0YWJhc2VCYWNrdXASMy5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFVwZGF0ZURhdGFiYXNlQmFja3VwUmVxdWVzdBo0Lm9wZW5veGlkZS5hcGkudjEuQmFja3VwVXBkYXRlRGF0YWJhc2VCYWNrdXBSZXNwb25zZRJkChREZWxldGVEYXRhYmFzZUJhY2t1cBIzLm9wZW5veGlkZS5hcGkudjEuQmFja3VwRGVsZXRlRGF0YWJhc2VCYWNrdXBSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJeChFSdW5EYXRhYmFzZUJhY2t1cBIwLm9wZW5veGlkZS5hcGkudjEuQmFja3VwUnVuRGF0YWJhc2VCYWNrdXBSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJ4ChFMaXN0Vm9sdW1lQmFja3VwcxIwLm9wZW5veGlkZS5hcGkudjEuQmFja3VwTGlzdFZvbHVtZUJhY2t1cHNSZXF1ZXN0GjEub3Blbm94aWRlLmFwaS52MS5CYWNrdXBMaXN0Vm9sdW1lQmFja3Vwc1Jlc3BvbnNlEnIKD0dldFZvbHVtZUJhY2t1cBIuLm9wZW5veGlkZS5hcGkudjEuQmFja3VwR2V0Vm9sdW1lQmFja3VwUmVxdWVzdBovLm9wZW5veGlkZS5hcGkudjEuQmFja3VwR2V0Vm9sdW1lQmFja3VwUmVzcG9uc2USewoSQ3JlYXRlVm9sdW1lQmFja3VwEjEub3Blbm94aWRlLmFwaS52MS5CYWNrdXBDcmVhdGVWb2x1bWVCYWNrdXBSZXF1ZXN0GjIub3Blbm94aWRlLmFwaS52MS5CYWNrdXBDcmVhdGVWb2x1bWVCYWNrdXBSZXNwb25zZRJ7ChJVcGRhdGVWb2x1bWVCYWNrdXASMS5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFVwZGF0ZVZvbHVtZUJhY2t1cFJlcXVlc3QaMi5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFVwZGF0ZVZvbHVtZUJhY2t1cFJlc3BvbnNlEmAKEkRlbGV0ZVZvbHVtZUJhY2t1cBIxLm9wZW5veGlkZS5hcGkudjEuQmFja3VwRGVsZXRlVm9sdW1lQmFja3VwUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSWgoPUnVuVm9sdW1lQmFja3VwEi4ub3Blbm94aWRlLmFwaS52MS5CYWNrdXBSdW5Wb2x1bWVCYWNrdXBSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJaCg9SZXN0b3JlRGF0YWJhc2USLi5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFJlc3RvcmVEYXRhYmFzZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElYKDVJlc3RvcmVWb2x1bWUSLC5vcGVub3hpZGUuYXBpLnYxLkJhY2t1cFJlc3RvcmVWb2x1bWVSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
 
 /**
+ * kind "database_backup": a scheduled database backup rule.
+ *
+ * @generated from message openoxide.api.v1.BackupDatabase
+ */
+export type BackupDatabase = Message<"openoxide.api.v1.BackupDatabase"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string app_name = 2;
+   */
+  appName: string;
+
+  /**
+   * Cron expression driving the schedule.
+   *
+   * @generated from field: string schedule = 3;
+   */
+  schedule: string;
+
+  /**
+   * @generated from field: bool enabled = 4;
+   */
+  enabled: boolean;
+
+  /**
+   * @generated from field: string database_name = 5;
+   */
+  databaseName: string;
+
+  /**
+   * @generated from field: string prefix = 6;
+   */
+  prefix: string;
+
+  /**
+   * @generated from field: optional string service_name = 7;
+   */
+  serviceName?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 keep_latest_count = 8;
+   */
+  keepLatestCount?: bigint | undefined;
+
+  /**
+   * Free-form backup engine selector (e.g. "pg_dump").
+   *
+   * @generated from field: string backup_type = 9;
+   */
+  backupType: string;
+
+  /**
+   * Free-form database flavor stored as a string; canonical inputs are POSTGRES/POSTGRESQL/MYSQL/MARIADB/MONGO/MONGODB/REDIS/LIBSQL.
+   *
+   * @generated from field: optional string database_type = 10;
+   */
+  databaseType?: string | undefined;
+
+  /**
+   * Optional JSON document with extra backup configuration.
+   *
+   * @generated from field: optional string metadata = 11;
+   */
+  metadata?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 service_id = 12;
+   */
+  serviceId?: bigint | undefined;
+
+  /**
+   * @generated from field: int64 destination_id = 13;
+   */
+  destinationId: bigint;
+
+  /**
+   * @generated from field: int64 organization_id = 14;
+   */
+  organizationId: bigint;
+
+  /**
+   * @generated from field: int64 created_at = 15;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 16;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupDatabase.
+ * Use `create(BackupDatabaseSchema)` to create a new message.
+ */
+export const BackupDatabaseSchema: GenMessage<BackupDatabase> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 0);
+
+/**
+ * kind "volume_backup": a scheduled volume backup rule.
+ *
+ * @generated from message openoxide.api.v1.BackupVolume
+ */
+export type BackupVolume = Message<"openoxide.api.v1.BackupVolume"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string volume_name = 3;
+   */
+  volumeName: string;
+
+  /**
+   * @generated from field: string prefix = 4;
+   */
+  prefix: string;
+
+  /**
+   * Free-form service flavor stored as a string (APPLICATION, COMPOSE, POSTGRES, MYSQL, MARIADB, MONGO, REDIS, LIBSQL, "standalone", ...).
+   *
+   * @generated from field: string service_type = 5;
+   */
+  serviceType: string;
+
+  /**
+   * @generated from field: string app_name = 6;
+   */
+  appName: string;
+
+  /**
+   * @generated from field: optional string service_name = 7;
+   */
+  serviceName?: string | undefined;
+
+  /**
+   * Stops the owning service for the duration of the backup.
+   *
+   * @generated from field: bool turn_off = 8;
+   */
+  turnOff: boolean;
+
+  /**
+   * @generated from field: string cron_expression = 9;
+   */
+  cronExpression: string;
+
+  /**
+   * @generated from field: optional int64 keep_latest_count = 10;
+   */
+  keepLatestCount?: bigint | undefined;
+
+  /**
+   * @generated from field: bool enabled = 11;
+   */
+  enabled: boolean;
+
+  /**
+   * @generated from field: int64 destination_id = 12;
+   */
+  destinationId: bigint;
+
+  /**
+   * @generated from field: int64 organization_id = 13;
+   */
+  organizationId: bigint;
+
+  /**
+   * @generated from field: optional int64 service_id = 14;
+   */
+  serviceId?: bigint | undefined;
+
+  /**
+   * Typed linkage mirrors derived from (service_type, service_id).
+   *
+   * @generated from field: optional int64 application_id = 15;
+   */
+  applicationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 compose_id = 16;
+   */
+  composeId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 postgres_id = 17;
+   */
+  postgresId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 mysql_id = 18;
+   */
+  mysqlId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 mariadb_id = 19;
+   */
+  mariadbId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 mongo_id = 20;
+   */
+  mongoId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 redis_id = 21;
+   */
+  redisId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 libsql_id = 22;
+   */
+  libsqlId?: bigint | undefined;
+
+  /**
+   * @generated from field: int64 created_at = 23;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 24;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupVolume.
+ * Use `create(BackupVolumeSchema)` to create a new message.
+ */
+export const BackupVolumeSchema: GenMessage<BackupVolume> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 1);
+
+/**
+ * kind "backup_execution": one recorded backup/restore run.
+ *
+ * @generated from message openoxide.api.v1.BackupExecution
+ */
+export type BackupExecution = Message<"openoxide.api.v1.BackupExecution"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: openoxide.api.v1.BackupKind backup_kind = 2;
+   */
+  backupKind: BackupKind;
+
+  /**
+   * @generated from field: openoxide.api.v1.BackupOperation operation = 3;
+   */
+  operation: BackupOperation;
+
+  /**
+   * @generated from field: optional int64 backup_id = 4;
+   */
+  backupId?: bigint | undefined;
+
+  /**
+   * @generated from field: openoxide.api.v1.BackupExecutionStatus status = 5;
+   */
+  status: BackupExecutionStatus;
+
+  /**
+   * @generated from field: optional string object_key = 6;
+   */
+  objectKey?: string | undefined;
+
+  /**
+   * @generated from field: optional string checksum_sha256 = 7;
+   */
+  checksumSha256?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 size_bytes = 8;
+   */
+  sizeBytes?: bigint | undefined;
+
+  /**
+   * @generated from field: int64 attempt = 9;
+   */
+  attempt: bigint;
+
+  /**
+   * @generated from field: optional string error = 10;
+   */
+  error?: string | undefined;
+
+  /**
+   * @generated from field: int64 started_at = 11;
+   */
+  startedAt: bigint;
+
+  /**
+   * @generated from field: optional int64 finished_at = 12;
+   */
+  finishedAt?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupExecution.
+ * Use `create(BackupExecutionSchema)` to create a new message.
+ */
+export const BackupExecutionSchema: GenMessage<BackupExecution> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 2);
+
+/**
+ * kind "backup_file": one remote object listed through rclone.
+ *
+ * @generated from message openoxide.api.v1.BackupFile
+ */
+export type BackupFile = Message<"openoxide.api.v1.BackupFile"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string path = 2;
+   */
+  path: string;
+
+  /**
+   * @generated from field: int64 size_bytes = 3;
+   */
+  sizeBytes: bigint;
+
+  /**
+   * Provider-formatted modification timestamp string.
+   *
+   * @generated from field: string modified_at = 4;
+   */
+  modifiedAt: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupFile.
+ * Use `create(BackupFileSchema)` to create a new message.
+ */
+export const BackupFileSchema: GenMessage<BackupFile> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 3);
+
+/**
+ * Local archive produced by a panel or compose-config backup.
+ *
+ * @generated from message openoxide.api.v1.BackupArchive
+ */
+export type BackupArchive = Message<"openoxide.api.v1.BackupArchive"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: string checksum_sha256 = 2;
+   */
+  checksumSha256: string;
+
+  /**
+   * @generated from field: int64 size_bytes = 3;
+   */
+  sizeBytes: bigint;
+
+  /**
+   * @generated from field: int64 created_at = 4;
+   */
+  createdAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupArchive.
+ * Use `create(BackupArchiveSchema)` to create a new message.
+ */
+export const BackupArchiveSchema: GenMessage<BackupArchive> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 4);
+
+/**
+ * Staged restore (or rollback) awaiting a panel restart.
+ *
+ * @generated from message openoxide.api.v1.BackupStagedRestore
+ */
+export type BackupStagedRestore = Message<"openoxide.api.v1.BackupStagedRestore"> & {
+  /**
+   * @generated from field: string restore_id = 1;
+   */
+  restoreId: string;
+
+  /**
+   * @generated from field: string checksum_sha256 = 2;
+   */
+  checksumSha256: string;
+
+  /**
+   * @generated from field: bool restart_required = 3;
+   */
+  restartRequired: boolean;
+
+  /**
+   * @generated from field: string pending_marker = 4;
+   */
+  pendingMarker: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupStagedRestore.
+ * Use `create(BackupStagedRestoreSchema)` to create a new message.
+ */
+export const BackupStagedRestoreSchema: GenMessage<BackupStagedRestore> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 5);
+
+/**
+ * kind "panel_restore_status": progress of a staged panel restore.
+ *
+ * @generated from message openoxide.api.v1.BackupRestoreStatus
+ */
+export type BackupRestoreStatus = Message<"openoxide.api.v1.BackupRestoreStatus"> & {
+  /**
+   * @generated from field: string restore_id = 1;
+   */
+  restoreId: string;
+
+  /**
+   * "PENDING_RESTART" while staged; terminal values come from the restore history file, so the string stays free-form.
+   *
+   * @generated from field: string status = 2;
+   */
+  status: string;
+
+  /**
+   * @generated from field: string message = 3;
+   */
+  message: string;
+
+  /**
+   * @generated from field: int64 updated_at = 4;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRestoreStatus.
+ * Use `create(BackupRestoreStatusSchema)` to create a new message.
+ */
+export const BackupRestoreStatusSchema: GenMessage<BackupRestoreStatus> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 6);
+
+/**
+ * kind "retention_preview": which files a keep-latest rule would keep/delete.
+ *
+ * @generated from message openoxide.api.v1.BackupRetentionPreview
+ */
+export type BackupRetentionPreview = Message<"openoxide.api.v1.BackupRetentionPreview"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.BackupFile keep = 1;
+   */
+  keep: BackupFile[];
+
+  /**
+   * @generated from field: repeated openoxide.api.v1.BackupFile delete = 2;
+   */
+  delete: BackupFile[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRetentionPreview.
+ * Use `create(BackupRetentionPreviewSchema)` to create a new message.
+ */
+export const BackupRetentionPreviewSchema: GenMessage<BackupRetentionPreview> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 7);
+
+/**
+ * kind "backup_integrity": checksum verification outcome for one object.
+ *
+ * @generated from message openoxide.api.v1.BackupIntegrity
+ */
+export type BackupIntegrity = Message<"openoxide.api.v1.BackupIntegrity"> & {
+  /**
+   * @generated from field: bool valid = 1;
+   */
+  valid: boolean;
+
+  /**
+   * @generated from field: string expected_sha256 = 2;
+   */
+  expectedSha256: string;
+
+  /**
+   * @generated from field: string actual_sha256 = 3;
+   */
+  actualSha256: string;
+
+  /**
+   * @generated from field: int64 size_bytes = 4;
+   */
+  sizeBytes: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupIntegrity.
+ * Use `create(BackupIntegritySchema)` to create a new message.
+ */
+export const BackupIntegritySchema: GenMessage<BackupIntegrity> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 8);
+
+/**
+ * @generated from message openoxide.api.v1.BackupListBackupsRequest
+ */
+export type BackupListBackupsRequest = Message<"openoxide.api.v1.BackupListBackupsRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupListBackupsRequest.
+ * Use `create(BackupListBackupsRequestSchema)` to create a new message.
+ */
+export const BackupListBackupsRequestSchema: GenMessage<BackupListBackupsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 9);
+
+/**
+ * @generated from message openoxide.api.v1.BackupListBackupsResponse
+ */
+export type BackupListBackupsResponse = Message<"openoxide.api.v1.BackupListBackupsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.BackupDatabase backups = 1;
+   */
+  backups: BackupDatabase[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupListBackupsResponse.
+ * Use `create(BackupListBackupsResponseSchema)` to create a new message.
+ */
+export const BackupListBackupsResponseSchema: GenMessage<BackupListBackupsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 10);
+
+/**
+ * @generated from message openoxide.api.v1.BackupGetBackupRequest
+ */
+export type BackupGetBackupRequest = Message<"openoxide.api.v1.BackupGetBackupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupGetBackupRequest.
+ * Use `create(BackupGetBackupRequestSchema)` to create a new message.
+ */
+export const BackupGetBackupRequestSchema: GenMessage<BackupGetBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 11);
+
+/**
+ * @generated from message openoxide.api.v1.BackupGetBackupResponse
+ */
+export type BackupGetBackupResponse = Message<"openoxide.api.v1.BackupGetBackupResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupDatabase backup = 1;
+   */
+  backup?: BackupDatabase | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupGetBackupResponse.
+ * Use `create(BackupGetBackupResponseSchema)` to create a new message.
+ */
+export const BackupGetBackupResponseSchema: GenMessage<BackupGetBackupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 12);
+
+/**
+ * @generated from message openoxide.api.v1.BackupCreateBackupRequest
+ */
+export type BackupCreateBackupRequest = Message<"openoxide.api.v1.BackupCreateBackupRequest"> & {
+  /**
+   * @generated from field: string app_name = 1;
+   */
+  appName: string;
+
+  /**
+   * @generated from field: string schedule = 2;
+   */
+  schedule: string;
+
+  /**
+   * @generated from field: string database_name = 3;
+   */
+  databaseName: string;
+
+  /**
+   * @generated from field: string prefix = 4;
+   */
+  prefix: string;
+
+  /**
+   * @generated from field: optional string service_name = 5;
+   */
+  serviceName?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 keep_latest_count = 6;
+   */
+  keepLatestCount?: bigint | undefined;
+
+  /**
+   * @generated from field: string backup_type = 7;
+   */
+  backupType: string;
+
+  /**
+   * @generated from field: string database_type = 8;
+   */
+  databaseType: string;
+
+  /**
+   * Optional JSON document with extra backup configuration.
+   *
+   * @generated from field: optional string metadata = 9;
+   */
+  metadata?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 service_id = 10;
+   */
+  serviceId?: bigint | undefined;
+
+  /**
+   * @generated from field: int64 destination_id = 11;
+   */
+  destinationId: bigint;
+
+  /**
+   * @generated from field: int64 organization_id = 12;
+   */
+  organizationId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupCreateBackupRequest.
+ * Use `create(BackupCreateBackupRequestSchema)` to create a new message.
+ */
+export const BackupCreateBackupRequestSchema: GenMessage<BackupCreateBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 13);
+
+/**
+ * @generated from message openoxide.api.v1.BackupCreateBackupResponse
+ */
+export type BackupCreateBackupResponse = Message<"openoxide.api.v1.BackupCreateBackupResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupDatabase backup = 1;
+   */
+  backup?: BackupDatabase | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupCreateBackupResponse.
+ * Use `create(BackupCreateBackupResponseSchema)` to create a new message.
+ */
+export const BackupCreateBackupResponseSchema: GenMessage<BackupCreateBackupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 14);
+
+/**
+ * An absent field keeps its stored value; `enabled` replaces the i64 flag.
+ *
+ * @generated from message openoxide.api.v1.BackupUpdateBackupRequest
+ */
+export type BackupUpdateBackupRequest = Message<"openoxide.api.v1.BackupUpdateBackupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional string app_name = 2;
+   */
+  appName?: string | undefined;
+
+  /**
+   * @generated from field: optional string schedule = 3;
+   */
+  schedule?: string | undefined;
+
+  /**
+   * @generated from field: optional string database_name = 4;
+   */
+  databaseName?: string | undefined;
+
+  /**
+   * @generated from field: optional string prefix = 5;
+   */
+  prefix?: string | undefined;
+
+  /**
+   * @generated from field: optional string service_name = 6;
+   */
+  serviceName?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 keep_latest_count = 7;
+   */
+  keepLatestCount?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string backup_type = 8;
+   */
+  backupType?: string | undefined;
+
+  /**
+   * @generated from field: optional string database_type = 9;
+   */
+  databaseType?: string | undefined;
+
+  /**
+   * @generated from field: optional string metadata = 10;
+   */
+  metadata?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 destination_id = 11;
+   */
+  destinationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional bool enabled = 12;
+   */
+  enabled?: boolean | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupUpdateBackupRequest.
+ * Use `create(BackupUpdateBackupRequestSchema)` to create a new message.
+ */
+export const BackupUpdateBackupRequestSchema: GenMessage<BackupUpdateBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 15);
+
+/**
+ * @generated from message openoxide.api.v1.BackupUpdateBackupResponse
+ */
+export type BackupUpdateBackupResponse = Message<"openoxide.api.v1.BackupUpdateBackupResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupDatabase backup = 1;
+   */
+  backup?: BackupDatabase | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupUpdateBackupResponse.
+ * Use `create(BackupUpdateBackupResponseSchema)` to create a new message.
+ */
+export const BackupUpdateBackupResponseSchema: GenMessage<BackupUpdateBackupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 16);
+
+/**
+ * @generated from message openoxide.api.v1.BackupDeleteBackupRequest
+ */
+export type BackupDeleteBackupRequest = Message<"openoxide.api.v1.BackupDeleteBackupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupDeleteBackupRequest.
+ * Use `create(BackupDeleteBackupRequestSchema)` to create a new message.
+ */
+export const BackupDeleteBackupRequestSchema: GenMessage<BackupDeleteBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 17);
+
+/**
+ * @generated from message openoxide.api.v1.BackupRunBackupRequest
+ */
+export type BackupRunBackupRequest = Message<"openoxide.api.v1.BackupRunBackupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRunBackupRequest.
+ * Use `create(BackupRunBackupRequestSchema)` to create a new message.
+ */
+export const BackupRunBackupRequestSchema: GenMessage<BackupRunBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 18);
+
+/**
+ * @generated from message openoxide.api.v1.BackupRestoreBackupRequest
+ */
+export type BackupRestoreBackupRequest = Message<"openoxide.api.v1.BackupRestoreBackupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string backup_file = 2;
+   */
+  backupFile: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRestoreBackupRequest.
+ * Use `create(BackupRestoreBackupRequestSchema)` to create a new message.
+ */
+export const BackupRestoreBackupRequestSchema: GenMessage<BackupRestoreBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 19);
+
+/**
+ * @generated from message openoxide.api.v1.BackupValidateDestinationRequest
+ */
+export type BackupValidateDestinationRequest = Message<"openoxide.api.v1.BackupValidateDestinationRequest"> & {
+  /**
+   * @generated from field: int64 destination_id = 1;
+   */
+  destinationId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupValidateDestinationRequest.
+ * Use `create(BackupValidateDestinationRequestSchema)` to create a new message.
+ */
+export const BackupValidateDestinationRequestSchema: GenMessage<BackupValidateDestinationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 20);
+
+/**
+ * @generated from message openoxide.api.v1.BackupValidateDestinationResponse
+ */
+export type BackupValidateDestinationResponse = Message<"openoxide.api.v1.BackupValidateDestinationResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: string message = 2;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupValidateDestinationResponse.
+ * Use `create(BackupValidateDestinationResponseSchema)` to create a new message.
+ */
+export const BackupValidateDestinationResponseSchema: GenMessage<BackupValidateDestinationResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 21);
+
+/**
+ * @generated from message openoxide.api.v1.BackupRunComposeBackupRequest
+ */
+export type BackupRunComposeBackupRequest = Message<"openoxide.api.v1.BackupRunComposeBackupRequest"> & {
+  /**
+   * Compose id the config bundle is exported for (former envelope `id`).
+   *
+   * @generated from field: int64 compose_id = 1;
+   */
+  composeId: bigint;
+
+  /**
+   * @generated from field: bool include_secrets = 2;
+   */
+  includeSecrets: boolean;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRunComposeBackupRequest.
+ * Use `create(BackupRunComposeBackupRequestSchema)` to create a new message.
+ */
+export const BackupRunComposeBackupRequestSchema: GenMessage<BackupRunComposeBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 22);
+
+/**
+ * @generated from message openoxide.api.v1.BackupRunComposeBackupResponse
+ */
+export type BackupRunComposeBackupResponse = Message<"openoxide.api.v1.BackupRunComposeBackupResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupArchive archive = 1;
+   */
+  archive?: BackupArchive | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRunComposeBackupResponse.
+ * Use `create(BackupRunComposeBackupResponseSchema)` to create a new message.
+ */
+export const BackupRunComposeBackupResponseSchema: GenMessage<BackupRunComposeBackupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 23);
+
+/**
+ * @generated from message openoxide.api.v1.BackupRunPanelBackupRequest
+ */
+export type BackupRunPanelBackupRequest = Message<"openoxide.api.v1.BackupRunPanelBackupRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRunPanelBackupRequest.
+ * Use `create(BackupRunPanelBackupRequestSchema)` to create a new message.
+ */
+export const BackupRunPanelBackupRequestSchema: GenMessage<BackupRunPanelBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 24);
+
+/**
+ * @generated from message openoxide.api.v1.BackupRunPanelBackupResponse
+ */
+export type BackupRunPanelBackupResponse = Message<"openoxide.api.v1.BackupRunPanelBackupResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupArchive archive = 1;
+   */
+  archive?: BackupArchive | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRunPanelBackupResponse.
+ * Use `create(BackupRunPanelBackupResponseSchema)` to create a new message.
+ */
+export const BackupRunPanelBackupResponseSchema: GenMessage<BackupRunPanelBackupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 25);
+
+/**
+ * @generated from message openoxide.api.v1.BackupStageRestoreRequest
+ */
+export type BackupStageRestoreRequest = Message<"openoxide.api.v1.BackupStageRestoreRequest"> & {
+  /**
+   * Absolute path to a .tar.gz panel archive inside the backup directory.
+   *
+   * @generated from field: string archive = 1;
+   */
+  archive: string;
+
+  /**
+   * @generated from field: optional string checksum_sha256 = 2;
+   */
+  checksumSha256?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupStageRestoreRequest.
+ * Use `create(BackupStageRestoreRequestSchema)` to create a new message.
+ */
+export const BackupStageRestoreRequestSchema: GenMessage<BackupStageRestoreRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 26);
+
+/**
+ * @generated from message openoxide.api.v1.BackupStageRestoreResponse
+ */
+export type BackupStageRestoreResponse = Message<"openoxide.api.v1.BackupStageRestoreResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupStagedRestore staged = 1;
+   */
+  staged?: BackupStagedRestore | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupStageRestoreResponse.
+ * Use `create(BackupStageRestoreResponseSchema)` to create a new message.
+ */
+export const BackupStageRestoreResponseSchema: GenMessage<BackupStageRestoreResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 27);
+
+/**
+ * @generated from message openoxide.api.v1.BackupGetRestoreStatusRequest
+ */
+export type BackupGetRestoreStatusRequest = Message<"openoxide.api.v1.BackupGetRestoreStatusRequest"> & {
+  /**
+   * Restore handle returned by StageRestore/RollbackRestore.
+   *
+   * @generated from field: string restore_id = 1;
+   */
+  restoreId: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupGetRestoreStatusRequest.
+ * Use `create(BackupGetRestoreStatusRequestSchema)` to create a new message.
+ */
+export const BackupGetRestoreStatusRequestSchema: GenMessage<BackupGetRestoreStatusRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 28);
+
+/**
+ * @generated from message openoxide.api.v1.BackupGetRestoreStatusResponse
+ */
+export type BackupGetRestoreStatusResponse = Message<"openoxide.api.v1.BackupGetRestoreStatusResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupRestoreStatus status = 1;
+   */
+  status?: BackupRestoreStatus | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupGetRestoreStatusResponse.
+ * Use `create(BackupGetRestoreStatusResponseSchema)` to create a new message.
+ */
+export const BackupGetRestoreStatusResponseSchema: GenMessage<BackupGetRestoreStatusResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 29);
+
+/**
+ * @generated from message openoxide.api.v1.BackupRollbackRestoreRequest
+ */
+export type BackupRollbackRestoreRequest = Message<"openoxide.api.v1.BackupRollbackRestoreRequest"> & {
+  /**
+   * Absolute path to a `.pre-restore-` database snapshot.
+   *
+   * @generated from field: string recovery_database = 1;
+   */
+  recoveryDatabase: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRollbackRestoreRequest.
+ * Use `create(BackupRollbackRestoreRequestSchema)` to create a new message.
+ */
+export const BackupRollbackRestoreRequestSchema: GenMessage<BackupRollbackRestoreRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 30);
+
+/**
+ * @generated from message openoxide.api.v1.BackupRollbackRestoreResponse
+ */
+export type BackupRollbackRestoreResponse = Message<"openoxide.api.v1.BackupRollbackRestoreResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupStagedRestore staged = 1;
+   */
+  staged?: BackupStagedRestore | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRollbackRestoreResponse.
+ * Use `create(BackupRollbackRestoreResponseSchema)` to create a new message.
+ */
+export const BackupRollbackRestoreResponseSchema: GenMessage<BackupRollbackRestoreResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 31);
+
+/**
+ * @generated from message openoxide.api.v1.BackupListFilesRequest
+ */
+export type BackupListFilesRequest = Message<"openoxide.api.v1.BackupListFilesRequest"> & {
+  /**
+   * S3 destination the objects are listed through (former envelope `organization_id` slot).
+   *
+   * @generated from field: int64 destination_id = 1;
+   */
+  destinationId: bigint;
+
+  /**
+   * Object key prefix filter; empty lists the whole destination.
+   *
+   * @generated from field: optional string prefix = 2;
+   */
+  prefix?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupListFilesRequest.
+ * Use `create(BackupListFilesRequestSchema)` to create a new message.
+ */
+export const BackupListFilesRequestSchema: GenMessage<BackupListFilesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 32);
+
+/**
+ * @generated from message openoxide.api.v1.BackupListFilesResponse
+ */
+export type BackupListFilesResponse = Message<"openoxide.api.v1.BackupListFilesResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.BackupFile files = 1;
+   */
+  files: BackupFile[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupListFilesResponse.
+ * Use `create(BackupListFilesResponseSchema)` to create a new message.
+ */
+export const BackupListFilesResponseSchema: GenMessage<BackupListFilesResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 33);
+
+/**
+ * @generated from message openoxide.api.v1.BackupDownloadFileRequest
+ */
+export type BackupDownloadFileRequest = Message<"openoxide.api.v1.BackupDownloadFileRequest"> & {
+  /**
+   * @generated from field: int64 destination_id = 1;
+   */
+  destinationId: bigint;
+
+  /**
+   * @generated from field: string object_key = 2;
+   */
+  objectKey: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupDownloadFileRequest.
+ * Use `create(BackupDownloadFileRequestSchema)` to create a new message.
+ */
+export const BackupDownloadFileRequestSchema: GenMessage<BackupDownloadFileRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 34);
+
+/**
+ * The file is streamed back to the node; the reply only reports its metadata.
+ *
+ * @generated from message openoxide.api.v1.BackupDownloadFileResponse
+ */
+export type BackupDownloadFileResponse = Message<"openoxide.api.v1.BackupDownloadFileResponse"> & {
+  /**
+   * @generated from field: int64 size_bytes = 1;
+   */
+  sizeBytes: bigint;
+
+  /**
+   * @generated from field: string object_key = 2;
+   */
+  objectKey: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupDownloadFileResponse.
+ * Use `create(BackupDownloadFileResponseSchema)` to create a new message.
+ */
+export const BackupDownloadFileResponseSchema: GenMessage<BackupDownloadFileResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 35);
+
+/**
+ * @generated from message openoxide.api.v1.BackupPreviewRetentionRequest
+ */
+export type BackupPreviewRetentionRequest = Message<"openoxide.api.v1.BackupPreviewRetentionRequest"> & {
+  /**
+   * @generated from field: int64 destination_id = 1;
+   */
+  destinationId: bigint;
+
+  /**
+   * @generated from field: optional string prefix = 2;
+   */
+  prefix?: string | undefined;
+
+  /**
+   * @generated from field: int64 keep_latest = 3;
+   */
+  keepLatest: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupPreviewRetentionRequest.
+ * Use `create(BackupPreviewRetentionRequestSchema)` to create a new message.
+ */
+export const BackupPreviewRetentionRequestSchema: GenMessage<BackupPreviewRetentionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 36);
+
+/**
+ * @generated from message openoxide.api.v1.BackupPreviewRetentionResponse
+ */
+export type BackupPreviewRetentionResponse = Message<"openoxide.api.v1.BackupPreviewRetentionResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupRetentionPreview preview = 1;
+   */
+  preview?: BackupRetentionPreview | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupPreviewRetentionResponse.
+ * Use `create(BackupPreviewRetentionResponseSchema)` to create a new message.
+ */
+export const BackupPreviewRetentionResponseSchema: GenMessage<BackupPreviewRetentionResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 37);
+
+/**
+ * @generated from message openoxide.api.v1.BackupVerifyFilesRequest
+ */
+export type BackupVerifyFilesRequest = Message<"openoxide.api.v1.BackupVerifyFilesRequest"> & {
+  /**
+   * @generated from field: int64 destination_id = 1;
+   */
+  destinationId: bigint;
+
+  /**
+   * @generated from field: string object_key = 2;
+   */
+  objectKey: string;
+
+  /**
+   * @generated from field: string checksum_sha256 = 3;
+   */
+  checksumSha256: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupVerifyFilesRequest.
+ * Use `create(BackupVerifyFilesRequestSchema)` to create a new message.
+ */
+export const BackupVerifyFilesRequestSchema: GenMessage<BackupVerifyFilesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 38);
+
+/**
+ * @generated from message openoxide.api.v1.BackupVerifyFilesResponse
+ */
+export type BackupVerifyFilesResponse = Message<"openoxide.api.v1.BackupVerifyFilesResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupIntegrity integrity = 1;
+   */
+  integrity?: BackupIntegrity | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupVerifyFilesResponse.
+ * Use `create(BackupVerifyFilesResponseSchema)` to create a new message.
+ */
+export const BackupVerifyFilesResponseSchema: GenMessage<BackupVerifyFilesResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 39);
+
+/**
+ * @generated from message openoxide.api.v1.BackupListExecutionsRequest
+ */
+export type BackupListExecutionsRequest = Message<"openoxide.api.v1.BackupListExecutionsRequest"> & {
+  /**
+   * Cap on returned rows; the server clamps it to 1..=500 (default 100).
+   *
+   * @generated from field: optional int64 limit = 1;
+   */
+  limit?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupListExecutionsRequest.
+ * Use `create(BackupListExecutionsRequestSchema)` to create a new message.
+ */
+export const BackupListExecutionsRequestSchema: GenMessage<BackupListExecutionsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 40);
+
+/**
+ * @generated from message openoxide.api.v1.BackupListExecutionsResponse
+ */
+export type BackupListExecutionsResponse = Message<"openoxide.api.v1.BackupListExecutionsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.BackupExecution executions = 1;
+   */
+  executions: BackupExecution[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupListExecutionsResponse.
+ * Use `create(BackupListExecutionsResponseSchema)` to create a new message.
+ */
+export const BackupListExecutionsResponseSchema: GenMessage<BackupListExecutionsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 41);
+
+/**
+ * @generated from message openoxide.api.v1.BackupRetryExecutionRequest
+ */
+export type BackupRetryExecutionRequest = Message<"openoxide.api.v1.BackupRetryExecutionRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRetryExecutionRequest.
+ * Use `create(BackupRetryExecutionRequestSchema)` to create a new message.
+ */
+export const BackupRetryExecutionRequestSchema: GenMessage<BackupRetryExecutionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 42);
+
+/**
+ * @generated from message openoxide.api.v1.BackupListDatabaseBackupsRequest
+ */
+export type BackupListDatabaseBackupsRequest = Message<"openoxide.api.v1.BackupListDatabaseBackupsRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupListDatabaseBackupsRequest.
+ * Use `create(BackupListDatabaseBackupsRequestSchema)` to create a new message.
+ */
+export const BackupListDatabaseBackupsRequestSchema: GenMessage<BackupListDatabaseBackupsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 43);
+
+/**
+ * @generated from message openoxide.api.v1.BackupListDatabaseBackupsResponse
+ */
+export type BackupListDatabaseBackupsResponse = Message<"openoxide.api.v1.BackupListDatabaseBackupsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.BackupDatabase backups = 1;
+   */
+  backups: BackupDatabase[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupListDatabaseBackupsResponse.
+ * Use `create(BackupListDatabaseBackupsResponseSchema)` to create a new message.
+ */
+export const BackupListDatabaseBackupsResponseSchema: GenMessage<BackupListDatabaseBackupsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 44);
+
+/**
+ * @generated from message openoxide.api.v1.BackupGetDatabaseBackupRequest
+ */
+export type BackupGetDatabaseBackupRequest = Message<"openoxide.api.v1.BackupGetDatabaseBackupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupGetDatabaseBackupRequest.
+ * Use `create(BackupGetDatabaseBackupRequestSchema)` to create a new message.
+ */
+export const BackupGetDatabaseBackupRequestSchema: GenMessage<BackupGetDatabaseBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 45);
+
+/**
+ * @generated from message openoxide.api.v1.BackupGetDatabaseBackupResponse
+ */
+export type BackupGetDatabaseBackupResponse = Message<"openoxide.api.v1.BackupGetDatabaseBackupResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupDatabase backup = 1;
+   */
+  backup?: BackupDatabase | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupGetDatabaseBackupResponse.
+ * Use `create(BackupGetDatabaseBackupResponseSchema)` to create a new message.
+ */
+export const BackupGetDatabaseBackupResponseSchema: GenMessage<BackupGetDatabaseBackupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 46);
+
+/**
+ * @generated from message openoxide.api.v1.BackupCreateDatabaseBackupRequest
+ */
+export type BackupCreateDatabaseBackupRequest = Message<"openoxide.api.v1.BackupCreateDatabaseBackupRequest"> & {
+  /**
+   * @generated from field: string app_name = 1;
+   */
+  appName: string;
+
+  /**
+   * @generated from field: string schedule = 2;
+   */
+  schedule: string;
+
+  /**
+   * @generated from field: string database_name = 3;
+   */
+  databaseName: string;
+
+  /**
+   * @generated from field: string prefix = 4;
+   */
+  prefix: string;
+
+  /**
+   * @generated from field: optional string service_name = 5;
+   */
+  serviceName?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 keep_latest_count = 6;
+   */
+  keepLatestCount?: bigint | undefined;
+
+  /**
+   * @generated from field: string backup_type = 7;
+   */
+  backupType: string;
+
+  /**
+   * @generated from field: string database_type = 8;
+   */
+  databaseType: string;
+
+  /**
+   * Optional JSON document with extra backup configuration.
+   *
+   * @generated from field: optional string metadata = 9;
+   */
+  metadata?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 service_id = 10;
+   */
+  serviceId?: bigint | undefined;
+
+  /**
+   * @generated from field: int64 destination_id = 11;
+   */
+  destinationId: bigint;
+
+  /**
+   * @generated from field: int64 organization_id = 12;
+   */
+  organizationId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupCreateDatabaseBackupRequest.
+ * Use `create(BackupCreateDatabaseBackupRequestSchema)` to create a new message.
+ */
+export const BackupCreateDatabaseBackupRequestSchema: GenMessage<BackupCreateDatabaseBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 47);
+
+/**
+ * @generated from message openoxide.api.v1.BackupCreateDatabaseBackupResponse
+ */
+export type BackupCreateDatabaseBackupResponse = Message<"openoxide.api.v1.BackupCreateDatabaseBackupResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupDatabase backup = 1;
+   */
+  backup?: BackupDatabase | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupCreateDatabaseBackupResponse.
+ * Use `create(BackupCreateDatabaseBackupResponseSchema)` to create a new message.
+ */
+export const BackupCreateDatabaseBackupResponseSchema: GenMessage<BackupCreateDatabaseBackupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 48);
+
+/**
+ * An absent field keeps its stored value.
+ *
+ * @generated from message openoxide.api.v1.BackupUpdateDatabaseBackupRequest
+ */
+export type BackupUpdateDatabaseBackupRequest = Message<"openoxide.api.v1.BackupUpdateDatabaseBackupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional string app_name = 2;
+   */
+  appName?: string | undefined;
+
+  /**
+   * @generated from field: optional string schedule = 3;
+   */
+  schedule?: string | undefined;
+
+  /**
+   * @generated from field: optional string database_name = 4;
+   */
+  databaseName?: string | undefined;
+
+  /**
+   * @generated from field: optional string prefix = 5;
+   */
+  prefix?: string | undefined;
+
+  /**
+   * @generated from field: optional string service_name = 6;
+   */
+  serviceName?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 keep_latest_count = 7;
+   */
+  keepLatestCount?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string backup_type = 8;
+   */
+  backupType?: string | undefined;
+
+  /**
+   * @generated from field: optional string database_type = 9;
+   */
+  databaseType?: string | undefined;
+
+  /**
+   * @generated from field: optional string metadata = 10;
+   */
+  metadata?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 destination_id = 11;
+   */
+  destinationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional bool enabled = 12;
+   */
+  enabled?: boolean | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupUpdateDatabaseBackupRequest.
+ * Use `create(BackupUpdateDatabaseBackupRequestSchema)` to create a new message.
+ */
+export const BackupUpdateDatabaseBackupRequestSchema: GenMessage<BackupUpdateDatabaseBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 49);
+
+/**
+ * @generated from message openoxide.api.v1.BackupUpdateDatabaseBackupResponse
+ */
+export type BackupUpdateDatabaseBackupResponse = Message<"openoxide.api.v1.BackupUpdateDatabaseBackupResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupDatabase backup = 1;
+   */
+  backup?: BackupDatabase | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupUpdateDatabaseBackupResponse.
+ * Use `create(BackupUpdateDatabaseBackupResponseSchema)` to create a new message.
+ */
+export const BackupUpdateDatabaseBackupResponseSchema: GenMessage<BackupUpdateDatabaseBackupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 50);
+
+/**
+ * @generated from message openoxide.api.v1.BackupDeleteDatabaseBackupRequest
+ */
+export type BackupDeleteDatabaseBackupRequest = Message<"openoxide.api.v1.BackupDeleteDatabaseBackupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupDeleteDatabaseBackupRequest.
+ * Use `create(BackupDeleteDatabaseBackupRequestSchema)` to create a new message.
+ */
+export const BackupDeleteDatabaseBackupRequestSchema: GenMessage<BackupDeleteDatabaseBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 51);
+
+/**
+ * @generated from message openoxide.api.v1.BackupRunDatabaseBackupRequest
+ */
+export type BackupRunDatabaseBackupRequest = Message<"openoxide.api.v1.BackupRunDatabaseBackupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRunDatabaseBackupRequest.
+ * Use `create(BackupRunDatabaseBackupRequestSchema)` to create a new message.
+ */
+export const BackupRunDatabaseBackupRequestSchema: GenMessage<BackupRunDatabaseBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 52);
+
+/**
+ * @generated from message openoxide.api.v1.BackupListVolumeBackupsRequest
+ */
+export type BackupListVolumeBackupsRequest = Message<"openoxide.api.v1.BackupListVolumeBackupsRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupListVolumeBackupsRequest.
+ * Use `create(BackupListVolumeBackupsRequestSchema)` to create a new message.
+ */
+export const BackupListVolumeBackupsRequestSchema: GenMessage<BackupListVolumeBackupsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 53);
+
+/**
+ * @generated from message openoxide.api.v1.BackupListVolumeBackupsResponse
+ */
+export type BackupListVolumeBackupsResponse = Message<"openoxide.api.v1.BackupListVolumeBackupsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.BackupVolume backups = 1;
+   */
+  backups: BackupVolume[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupListVolumeBackupsResponse.
+ * Use `create(BackupListVolumeBackupsResponseSchema)` to create a new message.
+ */
+export const BackupListVolumeBackupsResponseSchema: GenMessage<BackupListVolumeBackupsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 54);
+
+/**
+ * @generated from message openoxide.api.v1.BackupGetVolumeBackupRequest
+ */
+export type BackupGetVolumeBackupRequest = Message<"openoxide.api.v1.BackupGetVolumeBackupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupGetVolumeBackupRequest.
+ * Use `create(BackupGetVolumeBackupRequestSchema)` to create a new message.
+ */
+export const BackupGetVolumeBackupRequestSchema: GenMessage<BackupGetVolumeBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 55);
+
+/**
+ * @generated from message openoxide.api.v1.BackupGetVolumeBackupResponse
+ */
+export type BackupGetVolumeBackupResponse = Message<"openoxide.api.v1.BackupGetVolumeBackupResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupVolume backup = 1;
+   */
+  backup?: BackupVolume | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupGetVolumeBackupResponse.
+ * Use `create(BackupGetVolumeBackupResponseSchema)` to create a new message.
+ */
+export const BackupGetVolumeBackupResponseSchema: GenMessage<BackupGetVolumeBackupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 56);
+
+/**
+ * At least one of `service_id` and the typed linkage ids must resolve to a service; the server folds them into a single services row.
+ *
+ * @generated from message openoxide.api.v1.BackupCreateVolumeBackupRequest
+ */
+export type BackupCreateVolumeBackupRequest = Message<"openoxide.api.v1.BackupCreateVolumeBackupRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string volume_name = 2;
+   */
+  volumeName: string;
+
+  /**
+   * @generated from field: string prefix = 3;
+   */
+  prefix: string;
+
+  /**
+   * @generated from field: string service_type = 4;
+   */
+  serviceType: string;
+
+  /**
+   * @generated from field: string app_name = 5;
+   */
+  appName: string;
+
+  /**
+   * @generated from field: optional string service_name = 6;
+   */
+  serviceName?: string | undefined;
+
+  /**
+   * @generated from field: bool turn_off = 7;
+   */
+  turnOff: boolean;
+
+  /**
+   * @generated from field: string cron_expression = 8;
+   */
+  cronExpression: string;
+
+  /**
+   * @generated from field: optional int64 keep_latest_count = 9;
+   */
+  keepLatestCount?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 destination_id = 10;
+   */
+  destinationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 organization_id = 11;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 service_id = 12;
+   */
+  serviceId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 application_id = 13;
+   */
+  applicationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 compose_id = 14;
+   */
+  composeId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 database_id = 15;
+   */
+  databaseId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 postgres_id = 16;
+   */
+  postgresId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 mysql_id = 17;
+   */
+  mysqlId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 mariadb_id = 18;
+   */
+  mariadbId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 mongo_id = 19;
+   */
+  mongoId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 redis_id = 20;
+   */
+  redisId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 libsql_id = 21;
+   */
+  libsqlId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupCreateVolumeBackupRequest.
+ * Use `create(BackupCreateVolumeBackupRequestSchema)` to create a new message.
+ */
+export const BackupCreateVolumeBackupRequestSchema: GenMessage<BackupCreateVolumeBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 57);
+
+/**
+ * @generated from message openoxide.api.v1.BackupCreateVolumeBackupResponse
+ */
+export type BackupCreateVolumeBackupResponse = Message<"openoxide.api.v1.BackupCreateVolumeBackupResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupVolume backup = 1;
+   */
+  backup?: BackupVolume | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupCreateVolumeBackupResponse.
+ * Use `create(BackupCreateVolumeBackupResponseSchema)` to create a new message.
+ */
+export const BackupCreateVolumeBackupResponseSchema: GenMessage<BackupCreateVolumeBackupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 58);
+
+/**
+ * An absent field keeps its stored value.
+ *
+ * @generated from message openoxide.api.v1.BackupUpdateVolumeBackupRequest
+ */
+export type BackupUpdateVolumeBackupRequest = Message<"openoxide.api.v1.BackupUpdateVolumeBackupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional string name = 2;
+   */
+  name?: string | undefined;
+
+  /**
+   * @generated from field: optional string volume_name = 3;
+   */
+  volumeName?: string | undefined;
+
+  /**
+   * @generated from field: optional string prefix = 4;
+   */
+  prefix?: string | undefined;
+
+  /**
+   * @generated from field: optional string service_type = 5;
+   */
+  serviceType?: string | undefined;
+
+  /**
+   * @generated from field: optional string app_name = 6;
+   */
+  appName?: string | undefined;
+
+  /**
+   * @generated from field: optional string service_name = 7;
+   */
+  serviceName?: string | undefined;
+
+  /**
+   * @generated from field: optional bool turn_off = 8;
+   */
+  turnOff?: boolean | undefined;
+
+  /**
+   * @generated from field: optional string cron_expression = 9;
+   */
+  cronExpression?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 keep_latest_count = 10;
+   */
+  keepLatestCount?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 destination_id = 11;
+   */
+  destinationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional bool enabled = 12;
+   */
+  enabled?: boolean | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupUpdateVolumeBackupRequest.
+ * Use `create(BackupUpdateVolumeBackupRequestSchema)` to create a new message.
+ */
+export const BackupUpdateVolumeBackupRequestSchema: GenMessage<BackupUpdateVolumeBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 59);
+
+/**
+ * @generated from message openoxide.api.v1.BackupUpdateVolumeBackupResponse
+ */
+export type BackupUpdateVolumeBackupResponse = Message<"openoxide.api.v1.BackupUpdateVolumeBackupResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.BackupVolume backup = 1;
+   */
+  backup?: BackupVolume | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupUpdateVolumeBackupResponse.
+ * Use `create(BackupUpdateVolumeBackupResponseSchema)` to create a new message.
+ */
+export const BackupUpdateVolumeBackupResponseSchema: GenMessage<BackupUpdateVolumeBackupResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 60);
+
+/**
+ * @generated from message openoxide.api.v1.BackupDeleteVolumeBackupRequest
+ */
+export type BackupDeleteVolumeBackupRequest = Message<"openoxide.api.v1.BackupDeleteVolumeBackupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupDeleteVolumeBackupRequest.
+ * Use `create(BackupDeleteVolumeBackupRequestSchema)` to create a new message.
+ */
+export const BackupDeleteVolumeBackupRequestSchema: GenMessage<BackupDeleteVolumeBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 61);
+
+/**
+ * @generated from message openoxide.api.v1.BackupRunVolumeBackupRequest
+ */
+export type BackupRunVolumeBackupRequest = Message<"openoxide.api.v1.BackupRunVolumeBackupRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRunVolumeBackupRequest.
+ * Use `create(BackupRunVolumeBackupRequestSchema)` to create a new message.
+ */
+export const BackupRunVolumeBackupRequestSchema: GenMessage<BackupRunVolumeBackupRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 62);
+
+/**
+ * @generated from message openoxide.api.v1.BackupRestoreDatabaseRequest
+ */
+export type BackupRestoreDatabaseRequest = Message<"openoxide.api.v1.BackupRestoreDatabaseRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string backup_file = 2;
+   */
+  backupFile: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRestoreDatabaseRequest.
+ * Use `create(BackupRestoreDatabaseRequestSchema)` to create a new message.
+ */
+export const BackupRestoreDatabaseRequestSchema: GenMessage<BackupRestoreDatabaseRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 63);
+
+/**
+ * @generated from message openoxide.api.v1.BackupRestoreVolumeRequest
+ */
+export type BackupRestoreVolumeRequest = Message<"openoxide.api.v1.BackupRestoreVolumeRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string backup_file = 2;
+   */
+  backupFile: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.BackupRestoreVolumeRequest.
+ * Use `create(BackupRestoreVolumeRequestSchema)` to create a new message.
+ */
+export const BackupRestoreVolumeRequestSchema: GenMessage<BackupRestoreVolumeRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_backup, 64);
+
+/**
+ * @generated from enum openoxide.api.v1.BackupKind
+ */
+export enum BackupKind {
+  /**
+   * @generated from enum value: BACKUP_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: BACKUP_KIND_DATABASE = 1;
+   */
+  DATABASE = 1,
+
+  /**
+   * @generated from enum value: BACKUP_KIND_VOLUME = 2;
+   */
+  VOLUME = 2,
+
+  /**
+   * @generated from enum value: BACKUP_KIND_PANEL = 3;
+   */
+  PANEL = 3,
+
+  /**
+   * @generated from enum value: BACKUP_KIND_COMPOSE_CONFIG = 4;
+   */
+  COMPOSE_CONFIG = 4,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.BackupKind.
+ */
+export const BackupKindSchema: GenEnum<BackupKind> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_backup, 0);
+
+/**
+ * @generated from enum openoxide.api.v1.BackupOperation
+ */
+export enum BackupOperation {
+  /**
+   * @generated from enum value: BACKUP_OPERATION_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: BACKUP_OPERATION_BACKUP = 1;
+   */
+  BACKUP = 1,
+
+  /**
+   * @generated from enum value: BACKUP_OPERATION_RESTORE = 2;
+   */
+  RESTORE = 2,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.BackupOperation.
+ */
+export const BackupOperationSchema: GenEnum<BackupOperation> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_backup, 1);
+
+/**
+ * @generated from enum openoxide.api.v1.BackupExecutionStatus
+ */
+export enum BackupExecutionStatus {
+  /**
+   * @generated from enum value: BACKUP_EXECUTION_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: BACKUP_EXECUTION_STATUS_RUNNING = 1;
+   */
+  RUNNING = 1,
+
+  /**
+   * @generated from enum value: BACKUP_EXECUTION_STATUS_SUCCEEDED = 2;
+   */
+  SUCCEEDED = 2,
+
+  /**
+   * @generated from enum value: BACKUP_EXECUTION_STATUS_FAILED = 3;
+   */
+  FAILED = 3,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.BackupExecutionStatus.
+ */
+export const BackupExecutionStatusSchema: GenEnum<BackupExecutionStatus> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_backup, 2);
+
+/**
+ * Sole backup owner service; absorbs the former BackupOperationsService.
+ *
  * @generated from service openoxide.api.v1.BackupService
  */
 export const BackupService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.BackupService.ListBackups
-	 */
-	listBackups: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.BackupService.GetBackup
-	 */
-	getBackup: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.BackupService.CreateBackup
-	 */
-	createBackup: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.BackupService.UpdateBackup
-	 */
-	updateBackup: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.BackupService.DeleteBackup
-	 */
-	deleteBackup: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.BackupService.RunBackup
-	 */
-	runBackup: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.BackupService.RestoreBackup
-	 */
-	restoreBackup: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.BackupService.ValidateDestination
-	 */
-	validateDestination: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_backup, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.ListBackups
+   */
+  listBackups: {
+    methodKind: "unary";
+    input: typeof BackupListBackupsRequestSchema;
+    output: typeof BackupListBackupsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.GetBackup
+   */
+  getBackup: {
+    methodKind: "unary";
+    input: typeof BackupGetBackupRequestSchema;
+    output: typeof BackupGetBackupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.CreateBackup
+   */
+  createBackup: {
+    methodKind: "unary";
+    input: typeof BackupCreateBackupRequestSchema;
+    output: typeof BackupCreateBackupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.UpdateBackup
+   */
+  updateBackup: {
+    methodKind: "unary";
+    input: typeof BackupUpdateBackupRequestSchema;
+    output: typeof BackupUpdateBackupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.DeleteBackup
+   */
+  deleteBackup: {
+    methodKind: "unary";
+    input: typeof BackupDeleteBackupRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.RunBackup
+   */
+  runBackup: {
+    methodKind: "unary";
+    input: typeof BackupRunBackupRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.RestoreBackup
+   */
+  restoreBackup: {
+    methodKind: "unary";
+    input: typeof BackupRestoreBackupRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.ValidateDestination
+   */
+  validateDestination: {
+    methodKind: "unary";
+    input: typeof BackupValidateDestinationRequestSchema;
+    output: typeof BackupValidateDestinationResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.RunComposeBackup
+   */
+  runComposeBackup: {
+    methodKind: "unary";
+    input: typeof BackupRunComposeBackupRequestSchema;
+    output: typeof BackupRunComposeBackupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.RunPanelBackup
+   */
+  runPanelBackup: {
+    methodKind: "unary";
+    input: typeof BackupRunPanelBackupRequestSchema;
+    output: typeof BackupRunPanelBackupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.StageRestore
+   */
+  stageRestore: {
+    methodKind: "unary";
+    input: typeof BackupStageRestoreRequestSchema;
+    output: typeof BackupStageRestoreResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.GetRestoreStatus
+   */
+  getRestoreStatus: {
+    methodKind: "unary";
+    input: typeof BackupGetRestoreStatusRequestSchema;
+    output: typeof BackupGetRestoreStatusResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.RollbackRestore
+   */
+  rollbackRestore: {
+    methodKind: "unary";
+    input: typeof BackupRollbackRestoreRequestSchema;
+    output: typeof BackupRollbackRestoreResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.ListFiles
+   */
+  listFiles: {
+    methodKind: "unary";
+    input: typeof BackupListFilesRequestSchema;
+    output: typeof BackupListFilesResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.DownloadFile
+   */
+  downloadFile: {
+    methodKind: "unary";
+    input: typeof BackupDownloadFileRequestSchema;
+    output: typeof BackupDownloadFileResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.PreviewRetention
+   */
+  previewRetention: {
+    methodKind: "unary";
+    input: typeof BackupPreviewRetentionRequestSchema;
+    output: typeof BackupPreviewRetentionResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.VerifyFiles
+   */
+  verifyFiles: {
+    methodKind: "unary";
+    input: typeof BackupVerifyFilesRequestSchema;
+    output: typeof BackupVerifyFilesResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.ListExecutions
+   */
+  listExecutions: {
+    methodKind: "unary";
+    input: typeof BackupListExecutionsRequestSchema;
+    output: typeof BackupListExecutionsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.RetryExecution
+   */
+  retryExecution: {
+    methodKind: "unary";
+    input: typeof BackupRetryExecutionRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.ListDatabaseBackups
+   */
+  listDatabaseBackups: {
+    methodKind: "unary";
+    input: typeof BackupListDatabaseBackupsRequestSchema;
+    output: typeof BackupListDatabaseBackupsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.GetDatabaseBackup
+   */
+  getDatabaseBackup: {
+    methodKind: "unary";
+    input: typeof BackupGetDatabaseBackupRequestSchema;
+    output: typeof BackupGetDatabaseBackupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.CreateDatabaseBackup
+   */
+  createDatabaseBackup: {
+    methodKind: "unary";
+    input: typeof BackupCreateDatabaseBackupRequestSchema;
+    output: typeof BackupCreateDatabaseBackupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.UpdateDatabaseBackup
+   */
+  updateDatabaseBackup: {
+    methodKind: "unary";
+    input: typeof BackupUpdateDatabaseBackupRequestSchema;
+    output: typeof BackupUpdateDatabaseBackupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.DeleteDatabaseBackup
+   */
+  deleteDatabaseBackup: {
+    methodKind: "unary";
+    input: typeof BackupDeleteDatabaseBackupRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.RunDatabaseBackup
+   */
+  runDatabaseBackup: {
+    methodKind: "unary";
+    input: typeof BackupRunDatabaseBackupRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.ListVolumeBackups
+   */
+  listVolumeBackups: {
+    methodKind: "unary";
+    input: typeof BackupListVolumeBackupsRequestSchema;
+    output: typeof BackupListVolumeBackupsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.GetVolumeBackup
+   */
+  getVolumeBackup: {
+    methodKind: "unary";
+    input: typeof BackupGetVolumeBackupRequestSchema;
+    output: typeof BackupGetVolumeBackupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.CreateVolumeBackup
+   */
+  createVolumeBackup: {
+    methodKind: "unary";
+    input: typeof BackupCreateVolumeBackupRequestSchema;
+    output: typeof BackupCreateVolumeBackupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.UpdateVolumeBackup
+   */
+  updateVolumeBackup: {
+    methodKind: "unary";
+    input: typeof BackupUpdateVolumeBackupRequestSchema;
+    output: typeof BackupUpdateVolumeBackupResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.DeleteVolumeBackup
+   */
+  deleteVolumeBackup: {
+    methodKind: "unary";
+    input: typeof BackupDeleteVolumeBackupRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.RunVolumeBackup
+   */
+  runVolumeBackup: {
+    methodKind: "unary";
+    input: typeof BackupRunVolumeBackupRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.RestoreDatabase
+   */
+  restoreDatabase: {
+    methodKind: "unary";
+    input: typeof BackupRestoreDatabaseRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.BackupService.RestoreVolume
+   */
+  restoreVolume: {
+    methodKind: "unary";
+    input: typeof BackupRestoreVolumeRequestSchema;
+    output: typeof EmptySchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_backup, 0);
+

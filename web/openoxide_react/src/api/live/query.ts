@@ -7,27 +7,18 @@ import {
 } from '@tanstack/react-query';
 import {createServiceClient} from '#/api/connect';
 import {useOrganizations} from '#/stores/session-context';
-import {readResourceList, readResource} from '#/api/live/resource';
 
 /**
  * Live-data hook helpers over ConnectRPC queries.
  *
- * Payloads keep the backend DTO's snake_case JSON fields (Rust serde wire
- * format); liveness comes from refetches driven by the realtime table-watch
- * stream.
+ * Services speak the generated typed protobuf messages; liveness comes from
+ * refetches driven by the realtime table-watch stream.
  */
 
-// QueryClient defaults: 5 min staleTime, refetchOnWindowFocus off. Live
-// queries lean on the table-watch stream (useTableWatch) for freshness:
-// data is cached for 1 minute, and any table change in the active
-// organization invalidates the affected queries immediately — so a longer
-// staleTime no longer means stale screens, only fewer redundant fetches.
+// QueryClient defaults: 5 min staleTime, refetchOnWindowFocus off. Live queries lean on the table-watch stream (useTableWatch) for freshness: data is cached for 1 minute, and any table change in the active organization invalidates the affected queries immediately — so a longer staleTime no longer means stale screens, only fewer redundant fetches.
 export const LIVE_STALE_TIME_MS = 60_000;
 
-/**
- * Active organization id for org-scoped list queries (falls back to the
- * legacy default org 1, mirroring useTableWatch's org resolution).
- */
+/** Active organization id for org-scoped list queries (falls back to the legacy default org 1, mirroring useTableWatch's org resolution). */
 export function useActiveOrgId(): bigint {
 	const activeOrg = useOrganizations().activeOrg;
 	return BigInt(activeOrg?.id || 1);
@@ -48,39 +39,7 @@ export function useConnectQuery<Output>(
 	});
 }
 
-/** Wraps a Resource-pattern list response into its parsed payload array. */
-export function useResourceListQuery<Payload>(
-	key: unknown[],
-	fetcher: () => Promise<{items: Array<{payload: string}>}>,
-): UseQueryResult<Payload[]> {
-	return useConnectQuery(key, async () => {
-		const response = await fetcher();
-		return readResourceList<Payload>(response);
-	});
-}
-
-/** Wraps a Resource-pattern single response into its parsed payload. */
-export function useResourceQuery<Payload>(
-	key: unknown[],
-	fetcher: () => Promise<{payload: string}>,
-	options?: {enabled?: boolean},
-): UseQueryResult<Payload> {
-	return useConnectQuery(
-		key,
-		async () => {
-			const response = await fetcher();
-			return readResource<Payload>(response);
-		},
-		options,
-	);
-}
-
-/**
- * Mutation over a ConnectRPC client method. The table-watch stream
- * invalidates affected queries on success, so no manual invalidation list
- * is needed; pass `invalidate` only when a mutation must refresh something
- * the stream cannot observe (e.g. agent-side state).
- */
+/** Mutation over a ConnectRPC client method. The table-watch stream invalidates affected queries on success, so no manual invalidation list is needed; pass `invalidate` only when a mutation must refresh something the stream cannot observe (e.g. agent-side state). */
 export function useConnectMutation<Input, Output>(
 	mutate: (input: Input) => Promise<Output>,
 	options?: {

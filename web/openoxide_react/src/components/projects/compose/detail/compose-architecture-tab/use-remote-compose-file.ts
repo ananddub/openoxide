@@ -1,10 +1,7 @@
 import {useEffect, useState} from 'react';
 import {buildRawGitUrl} from './raw-git-url';
 
-/**
- * Resolve the compose file text, falling back to fetching the raw
- * docker-compose.yml over HTTPS from GitHub/GitLab when the DB value is empty.
- */
+/** Resolve the compose file text, falling back to fetching the raw docker-compose.yml over HTTPS from GitHub/GitLab when the DB value is empty. */
 export function useRemoteComposeFile(compose: any): string {
 	const [fetched, setFetched] = useState('');
 

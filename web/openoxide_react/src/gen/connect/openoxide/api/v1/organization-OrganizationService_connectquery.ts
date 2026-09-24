@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/organization.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {OrganizationService} from './organization_pb';
+import { OrganizationService } from "./organization_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.OrganizationService.GetOrganization
@@ -12,29 +12,24 @@ export const getOrganization = OrganizationService.method.getOrganization;
 /**
  * @generated from rpc openoxide.api.v1.OrganizationService.ListOrganizations
  */
-export const listOrganizations =
-	OrganizationService.method.listOrganizations;
+export const listOrganizations = OrganizationService.method.listOrganizations;
 
 /**
  * @generated from rpc openoxide.api.v1.OrganizationService.LeaveOrganization
  */
-export const leaveOrganization =
-	OrganizationService.method.leaveOrganization;
+export const leaveOrganization = OrganizationService.method.leaveOrganization;
 
 /**
  * @generated from rpc openoxide.api.v1.OrganizationService.CreateOrganization
  */
-export const createOrganization =
-	OrganizationService.method.createOrganization;
+export const createOrganization = OrganizationService.method.createOrganization;
 
 /**
  * @generated from rpc openoxide.api.v1.OrganizationService.UpdateOrganization
  */
-export const updateOrganization =
-	OrganizationService.method.updateOrganization;
+export const updateOrganization = OrganizationService.method.updateOrganization;
 
 /**
  * @generated from rpc openoxide.api.v1.OrganizationService.DeleteOrganization
  */
-export const deleteOrganization =
-	OrganizationService.method.deleteOrganization;
+export const deleteOrganization = OrganizationService.method.deleteOrganization;

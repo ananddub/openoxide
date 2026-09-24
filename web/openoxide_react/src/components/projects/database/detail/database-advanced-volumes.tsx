@@ -185,8 +185,8 @@ export function DatabaseAdvancedVolumes({database, onUpdated}: any) {
 					) : (
 						<>
 							<SheetNote tone="warn">
-								Redeploy the database after adding, editing, or deleting
-								a mount.
+								Redeploy the database after adding, editing, or deleting a
+								mount.
 							</SheetNote>
 							<div className="flex flex-col gap-3">
 								{mounts.map(mount => (
@@ -195,7 +195,7 @@ export function DatabaseAdvancedVolumes({database, onUpdated}: any) {
 										className="flex items-start justify-between gap-3 rounded-xl border border-border bg-card p-4">
 										<div className="flex min-w-0 flex-col gap-2">
 											<div className="flex items-center gap-2">
-												<span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+												<span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-primary uppercase">
 													{mount.mount_type}
 												</span>
 												<span className="truncate font-mono text-sm text-foreground">
@@ -261,7 +261,7 @@ export function DatabaseAdvancedVolumes({database, onUpdated}: any) {
 					)}
 
 					<div className="flex flex-col gap-2.5">
-						<p className="text-sm font-medium leading-none text-foreground">
+						<p className="text-sm leading-none font-medium text-foreground">
 							Mount type
 						</p>
 						<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

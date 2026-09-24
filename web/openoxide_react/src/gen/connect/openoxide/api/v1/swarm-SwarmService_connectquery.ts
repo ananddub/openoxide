@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/swarm.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {SwarmService} from './swarm_pb';
+import { SwarmService } from "./swarm_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.SwarmService.GetSettings
@@ -48,3 +48,48 @@ export const getService = SwarmService.method.getService;
  * @generated from rpc openoxide.api.v1.SwarmService.UpdateService
  */
 export const updateService = SwarmService.method.updateService;
+
+/**
+ * @generated from rpc openoxide.api.v1.SwarmService.Info
+ */
+export const info = SwarmService.method.info;
+
+/**
+ * @generated from rpc openoxide.api.v1.SwarmService.GetJoinTokens
+ */
+export const getJoinTokens = SwarmService.method.getJoinTokens;
+
+/**
+ * @generated from rpc openoxide.api.v1.SwarmService.ListNodes
+ */
+export const listNodes = SwarmService.method.listNodes;
+
+/**
+ * @generated from rpc openoxide.api.v1.SwarmService.PromoteNode
+ */
+export const promoteNode = SwarmService.method.promoteNode;
+
+/**
+ * @generated from rpc openoxide.api.v1.SwarmService.DemoteNode
+ */
+export const demoteNode = SwarmService.method.demoteNode;
+
+/**
+ * @generated from rpc openoxide.api.v1.SwarmService.UpdateNodeAvailability
+ */
+export const updateNodeAvailability = SwarmService.method.updateNodeAvailability;
+
+/**
+ * @generated from rpc openoxide.api.v1.SwarmService.RemoveNode
+ */
+export const removeNode = SwarmService.method.removeNode;
+
+/**
+ * @generated from rpc openoxide.api.v1.SwarmService.Leave
+ */
+export const leave = SwarmService.method.leave;
+
+/**
+ * @generated from rpc openoxide.api.v1.SwarmService.Join
+ */
+export const join = SwarmService.method.join;

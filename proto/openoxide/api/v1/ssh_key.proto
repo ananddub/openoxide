@@ -2,14 +2,106 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
 service SshKeyService {
-  rpc ListKeys(ResourceQuery) returns (ResourceListResponse);
-  rpc GetKey(ResourceRequest) returns (ResourceResponse);
-  rpc CreateKey(ResourceRequest) returns (ResourceResponse);
-  rpc GenerateKey(ResourceRequest) returns (ResourceResponse);
-  rpc GeneratePair(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateKey(ResourceRequest) returns (ResourceResponse);
-  rpc MarkUsed(ResourceRequest) returns (OperationResult);
-  rpc DeleteKey(ResourceRequest) returns (Empty);
+  rpc ListKeys(SshKeyListKeysRequest) returns (SshKeyListKeysResponse);
+  rpc GetKey(SshKeyGetKeyRequest) returns (SshKeyGetKeyResponse);
+  rpc CreateKey(SshKeyCreateKeyRequest) returns (SshKeyCreateKeyResponse);
+  rpc GenerateKey(SshKeyGenerateKeyRequest) returns (SshKeyGenerateKeyResponse);
+  rpc GeneratePair(SshKeyGeneratePairRequest) returns (SshKeyGeneratePairResponse);
+  rpc UpdateKey(SshKeyUpdateKeyRequest) returns (SshKeyUpdateKeyResponse);
+  rpc MarkUsed(SshKeyMarkUsedRequest) returns (Empty);
+  rpc DeleteKey(SshKeyDeleteKeyRequest) returns (Empty);
+}
+
+// Key algorithm selector for generation; the service only accepts these two.
+enum SshKeyType {
+  SSH_KEY_TYPE_UNSPECIFIED = 0;
+  SSH_KEY_TYPE_ED25519 = 1;
+  SSH_KEY_TYPE_RSA = 2;
+}
+
+message SshKey {
+  int64 id = 1;
+  string name = 2;
+  optional string description = 3;
+  // OpenSSH public key line.
+  string public_key = 4;
+  // OpenSSH/PEM private key material; present when a key pair is stored.
+  optional string private_key = 5;
+  bool has_private_key = 6;
+  optional int64 last_used_at = 7;
+  int64 created_at = 8;
+  int64 updated_at = 9;
+}
+
+message SshKeyListKeysRequest {}
+
+message SshKeyListKeysResponse {
+  repeated SshKey keys = 1;
+}
+
+message SshKeyGetKeyRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message SshKeyGetKeyResponse {
+  SshKey key = 1;
+}
+
+message SshKeyCreateKeyRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional string description = 2 [(buf.validate.field).string.max_len = 1024];
+  // OpenSSH public key line.
+  string public_key = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 1048576];
+  // Optional OpenSSH/PEM private key material; empty means no private key.
+  string private_key = 4 [(buf.validate.field).string.max_len = 1048576];
+}
+
+message SshKeyCreateKeyResponse {
+  SshKey key = 1;
+}
+
+message SshKeyGenerateKeyRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional string description = 2 [(buf.validate.field).string.max_len = 1024];
+  SshKeyType key_type = 3 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+}
+
+message SshKeyGenerateKeyResponse {
+  SshKey key = 1;
+}
+
+// Omit `key_type` to use the server default (ed25519).
+message SshKeyGeneratePairRequest {
+  optional SshKeyType key_type = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+}
+
+message SshKeyGeneratePairResponse {
+  // Freshly generated OpenSSH/PEM private key material.
+  string private_key = 1;
+  // Matching OpenSSH public key line.
+  string public_key = 2;
+}
+
+message SshKeyUpdateKeyRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string name = 2 [(buf.validate.field).string.max_len = 255];
+  optional string description = 3 [(buf.validate.field).string.max_len = 1024];
+  optional string public_key = 4 [(buf.validate.field).string.max_len = 1048576];
+  // OpenSSH/PEM private key material.
+  optional string private_key = 5 [(buf.validate.field).string.max_len = 1048576];
+}
+
+message SshKeyUpdateKeyResponse {
+  SshKey key = 1;
+}
+
+message SshKeyMarkUsedRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message SshKeyDeleteKeyRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
 }

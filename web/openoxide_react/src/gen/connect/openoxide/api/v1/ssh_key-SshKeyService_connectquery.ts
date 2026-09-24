@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/ssh_key.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {SshKeyService} from './ssh_key_pb';
+import { SshKeyService } from "./ssh_key_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.SshKeyService.ListKeys

@@ -1,8 +1,9 @@
 use connectrpc::{ConnectError, ErrorCode};
 
-use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
+use crate::api::connect::generated::openoxide::api::v1::{
+    SshKey as SshKeyProto, SshKeyType as ProtoSshKeyType,
+};
 use crate::flash_gen::models::SshKeys;
-use serde::{Deserialize, Serialize};
 
 pub fn map_db_error(err: sqlx::Error) -> ConnectError {
     match &err {
@@ -22,72 +23,33 @@ pub fn map_db_error(err: sqlx::Error) -> ConnectError {
     }
 }
 
-pub fn key_to_resource(dto: SshKeyResponseDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "ssh_key".into(),
-        payload,
+pub fn key_to_proto(row: SshKeys) -> SshKeyProto {
+    let has_priv = !row.private_key.is_empty();
+    let private_key = if has_priv { Some(row.private_key) } else { None };
+    SshKeyProto {
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        public_key: row.public_key,
+        private_key,
+        has_private_key: has_priv,
+        last_used_at: row.last_used_at,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
         ..Default::default()
     }
 }
 
-// ── Helper DTOs for deserializing ResourceRequest payloads ────────────
-
-#[derive(Debug, Deserialize)]
-pub struct GenerateSshKeyDto {
-    pub name: String,
-    pub description: Option<String>,
-    pub key_type: String, // "ed25519" or "rsa"
-}
-
-#[derive(Debug, Deserialize)]
-pub struct GeneratePairRequestDto {
-    #[serde(default = "default_key_type")]
-    pub key_type: String, // "ed25519" or "rsa"
-}
-
-pub fn default_key_type() -> String {
-    "ed25519".into()
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct GeneratePairResponseDto {
-    pub private_key: String,
-    pub public_key: String,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct SshKeyResponseDto {
-    pub id: i64,
-    pub name: String,
-    pub description: Option<String>,
-    pub public_key: String,
-    pub private_key: Option<String>,
-    pub has_private_key: bool,
-    pub last_used_at: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-impl From<SshKeys> for SshKeyResponseDto {
-    fn from(value: SshKeys) -> Self {
-        let has_priv = !value.private_key.is_empty();
-        let priv_key = if has_priv {
-            Some(value.private_key)
-        } else {
-            None
-        };
-        Self {
-            id: value.id,
-            name: value.name,
-            description: value.description,
-            public_key: value.public_key,
-            private_key: priv_key,
-            has_private_key: has_priv,
-            last_used_at: value.last_used_at,
-            created_at: value.created_at,
-            updated_at: value.updated_at,
-        }
+/// Maps the typed key-type enum to the lowercase string accepted by the
+/// SSH key service and `utils::ssh::generate_keypair`.
+pub fn key_type_to_str(
+    value: ::buffa::EnumValue<ProtoSshKeyType>,
+) -> Result<&'static str, ConnectError> {
+    match value {
+        ::buffa::EnumValue::Known(ProtoSshKeyType::Ed25519) => Ok("ed25519"),
+        ::buffa::EnumValue::Known(ProtoSshKeyType::Rsa) => Ok("rsa"),
+        _ => Err(ConnectError::invalid_argument(
+            "unsupported key type; supported: ED25519, RSA",
+        )),
     }
 }

@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/system.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {SystemService} from './system_pb';
+import { SystemService } from "./system_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.SystemService.Health

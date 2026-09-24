@@ -29,12 +29,7 @@ export const Route = createFileRoute('/_app/registry')({
 
 const VIEW_STORAGE_KEY = 'registry-view';
 
-/**
- * Container Registries — the SSH Keys / Projects-page grammar: a section
- * title, then a toolbar (search + grid/list toggle + New) and cards or one
- * bordered list card below; create/edit opens a Geist sheet, delete a quiet
- * AlertDialog. No side rail.
- */
+/** Container Registries — the SSH Keys / Projects-page grammar: a section title, then a toolbar (search + grid/list toggle + New) and cards or one bordered list card below; create/edit opens a Geist sheet, delete a quiet AlertDialog. No side rail. */
 function RegistryPage() {
 	const [search, setSearch] = useState('');
 	const [view, setView] = useState<SshKeysView>(() => {
@@ -243,7 +238,7 @@ function RegistryPage() {
 							Cancel
 						</AlertDialogCancel>
 						<AlertDialogAction
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
 							onClick={e => {
 								e.preventDefault();
 								void confirmDelete();

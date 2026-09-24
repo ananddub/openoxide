@@ -52,8 +52,7 @@ export function useAccountSwitcher() {
 		org => String(org.id) === String(activeId),
 	);
 	const activeRole = (activeEntry?.role ?? 'MEMBER').toUpperCase();
-	// Plan chip carries the PLAN name (Vercel grammar), never the org
-	// name — that lives on the left half of the pill.
+	// Plan chip carries the PLAN name (Vercel grammar), never the org name — that lives on the left half of the pill.
 	const planLabel = organizations.length > 1 ? 'Team' : 'Hobby';
 
 	const switchTo = (id: number) => {
@@ -72,8 +71,7 @@ export function useAccountSwitcher() {
 				role: target.role,
 			});
 		}
-		// Every query is organization-scoped server-side; drop the cache so
-		// nothing from the previous workspace survives the switch.
+		// Every query is organization-scoped server-side; drop the cache so nothing from the previous workspace survives the switch.
 		queryClient.invalidateQueries();
 		setOpen(false);
 	};

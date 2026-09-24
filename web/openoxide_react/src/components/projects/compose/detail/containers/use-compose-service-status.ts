@@ -9,13 +9,7 @@ import {buildServiceStatusMap} from './build-compose-containers';
 
 const POLL_MS = 7_000;
 
-/**
- * Live per-service runtime state for the compose architecture canvas.
- * Containers are not a table-watch stream, so this polls the docker
- * snapshot and matches container names to compose service names. Services
- * whose containers cannot be matched fall back to the stack-level
- * `compose_status`, which the monitoring reconciler keeps live.
- */
+/** Live per-service runtime state for the compose architecture canvas. Containers are not a table-watch stream, so this polls the docker snapshot and matches container names to compose service names. Services whose containers cannot be matched fall back to the stack-level `compose_status`, which the monitoring reconciler keeps live. */
 export function useComposeServiceStatus(
 	compose: any,
 	composeFile?: string | null,

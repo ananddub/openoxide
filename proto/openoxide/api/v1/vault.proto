@@ -2,16 +2,149 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
 service VaultService {
-  rpc ListProviders(ResourceQuery) returns (ResourceListResponse);
-  rpc GetProvider(ResourceRequest) returns (ResourceResponse);
-  rpc CreateProvider(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateProvider(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteProvider(ResourceRequest) returns (Empty);
-  rpc TestProvider(ResourceRequest) returns (OperationResult);
-  rpc TestConnection(ResourceRequest) returns (OperationResult);
-  rpc ListSecrets(ResourceRequest) returns (ResourceListResponse);
-  rpc ListAssignments(ResourceRequest) returns (ResourceListResponse);
-  rpc UpdateAssignments(ResourceRequest) returns (OperationResult);
+  rpc ListProviders(ListVaultProvidersRequest) returns (ListVaultProvidersResponse);
+  rpc GetProvider(GetVaultProviderRequest) returns (GetVaultProviderResponse);
+  rpc CreateProvider(CreateVaultProviderRequest) returns (CreateVaultProviderResponse);
+  rpc UpdateProvider(UpdateVaultProviderRequest) returns (UpdateVaultProviderResponse);
+  rpc DeleteProvider(DeleteVaultProviderRequest) returns (Empty);
+  rpc TestProvider(TestVaultProviderRequest) returns (TestVaultProviderResponse);
+  rpc TestConnection(TestVaultConnectionRequest) returns (TestVaultConnectionResponse);
+  rpc ListSecrets(ListVaultSecretsRequest) returns (ListVaultSecretsResponse);
+  rpc ListAssignments(ListVaultAssignmentsRequest) returns (ListVaultAssignmentsResponse);
+  rpc UpdateAssignments(UpdateVaultAssignmentsRequest) returns (UpdateVaultAssignmentsResponse);
+}
+
+enum VaultProviderType {
+  VAULT_PROVIDER_TYPE_UNSPECIFIED = 0;
+  VAULT_PROVIDER_TYPE_HASHICORP = 1;
+  VAULT_PROVIDER_TYPE_INFISICAL = 2;
+  VAULT_PROVIDER_TYPE_DOPPLER = 3;
+  VAULT_PROVIDER_TYPE_AWS = 4;
+  VAULT_PROVIDER_TYPE_AWS_PARAMETER_STORE = 5;
+  VAULT_PROVIDER_TYPE_SCALEWAY = 6;
+  VAULT_PROVIDER_TYPE_AZURE = 7;
+}
+
+message VaultProvider {
+  int64 id = 1;
+  string name = 2;
+  VaultProviderType provider_type = 3;
+  string api_url = 4;
+  // Masked server-side once a token is stored; never the real secret.
+  string auth_token = 5;
+  optional string namespace = 6;
+  // Provider-specific settings document (also carries `_assignments`).
+  optional string config_json = 7;
+  int64 organization_id = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+  repeated VaultProviderAssignment assignments = 11;
+}
+
+message VaultProviderAssignment {
+  int64 project_id = 1;
+  repeated int64 environment_ids = 2;
+}
+
+message ListVaultProvidersRequest {}
+
+message ListVaultProvidersResponse {
+  repeated VaultProvider providers = 1;
+}
+
+message GetVaultProviderRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message GetVaultProviderResponse {
+  VaultProvider provider = 1;
+}
+
+message CreateVaultProviderRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  VaultProviderType provider_type = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  string api_url = 3 [(buf.validate.field).string.min_len = 1];
+  string auth_token = 4;
+  optional string namespace = 5;
+  optional string config_json = 6 [(buf.validate.field).string.max_len = 1048576];
+  repeated VaultProviderAssignment assignments = 7;
+}
+
+message CreateVaultProviderResponse {
+  VaultProvider provider = 1;
+}
+
+// provider_type is immutable after creation; an absent auth_token keeps the stored token, a present-but-empty one clears it; `assignments` must be a full replacement list, absent means "leave unchanged".
+message UpdateVaultProviderRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string name = 2 [(buf.validate.field).string.max_len = 255];
+  optional string api_url = 3;
+  optional string auth_token = 4;
+  optional string namespace = 5;
+  optional string config_json = 6 [(buf.validate.field).string.max_len = 1048576];
+  optional VaultAssignmentsUpdate assignments = 7;
+}
+
+message VaultAssignmentsUpdate {
+  repeated VaultProviderAssignment assignments = 1;
+}
+
+message UpdateVaultProviderResponse {
+  VaultProvider provider = 1;
+}
+
+message DeleteVaultProviderRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message TestVaultProviderRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message TestVaultProviderResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Unsaved-credentials test used by the create dialog.
+message TestVaultConnectionRequest {
+  VaultProviderType provider_type = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  string api_url = 2 [(buf.validate.field).string.min_len = 1];
+  string auth_token = 3;
+  optional string namespace = 4;
+  optional string config_json = 5 [(buf.validate.field).string.max_len = 1048576];
+}
+
+message TestVaultConnectionResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ListVaultSecretsRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListVaultSecretsResponse {
+  repeated string secrets = 1;
+}
+
+message ListVaultAssignmentsRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListVaultAssignmentsResponse {
+  repeated VaultProviderAssignment assignments = 1;
+}
+
+// Full replacement of the provider's assignment list.
+message UpdateVaultAssignmentsRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+  repeated VaultProviderAssignment assignments = 2;
+}
+
+message UpdateVaultAssignmentsResponse {
+  repeated VaultProviderAssignment assignments = 1;
 }

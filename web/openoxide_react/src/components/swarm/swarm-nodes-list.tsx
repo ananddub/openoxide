@@ -1,6 +1,8 @@
-import {useState, useMemo} from 'react';
-import {Input} from '#/components/ui/input';
-import {Skeleton} from '#/components/ui/skeleton';
+import {useMemo, useState} from 'react';
+import {Plus, RefreshCw, Search, Server} from 'lucide-react';
+import {toast} from 'sonner';
+import {cn} from '#/api/utils';
+import {Button} from '#/components/ui/button';
 import {
 	Select,
 	SelectContent,
@@ -8,8 +10,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import {Server, Search} from 'lucide-react';
-import {toast} from 'sonner';
+import {
+	ListCard,
+	ListEmpty,
+	ListSkeleton,
+	Toolbar,
+	ToolbarSearch,
+} from '#/components/settings/list-card';
+import type {RemoteServerResponse} from '#/types/api-helpers';
 import {
 	ROLE_FILTERS,
 	nodeRole,
@@ -23,6 +31,13 @@ export type {TaggedSwarmNode} from './swarm-node-shared';
 interface SwarmNodesListProps {
 	nodes: TaggedSwarmNode[];
 	isLoading: boolean;
+	servers: RemoteServerResponse[];
+	selectedServerId: string;
+	onSelectServer: (id: string) => void;
+	isRefreshing: boolean;
+	onRefresh: () => void;
+	isSwarmActive: boolean;
+	onOpenTokens: () => void;
 	onPromote: (nodeId: string, node?: TaggedSwarmNode) => void;
 	onDemote: (nodeId: string, node?: TaggedSwarmNode) => void;
 	onSetAvailability: (
@@ -33,9 +48,27 @@ interface SwarmNodesListProps {
 	onRemoveNode: (nodeId: string, node?: TaggedSwarmNode) => void;
 }
 
+function engineLabel(
+	servers: RemoteServerResponse[],
+	selectedServerId: string,
+) {
+	if (selectedServerId === 'all') return 'All Engines';
+	if (selectedServerId === 'local') return 'Local Engine';
+	const srv = servers.find(s => String(s.id) === selectedServerId);
+	return srv ? srv.name : 'Select Engine';
+}
+
+/** Nodes surface — house toolbar (search + filters left, actions right) over ONE bordered list card. */
 export function SwarmNodesList({
 	nodes,
 	isLoading,
+	servers,
+	selectedServerId,
+	onSelectServer,
+	isRefreshing,
+	onRefresh,
+	isSwarmActive,
+	onOpenTokens,
 	onPromote,
 	onDemote,
 	onSetAvailability,
@@ -68,10 +101,7 @@ export function SwarmNodesList({
 		});
 	}, [nodes, search, roleFilter]);
 
-	// Docker refuses to demote a swarm's last manager (it would leave the
-	// cluster without anyone to run Raft consensus). Count managers per
-	// cluster so we can disable that action up front instead of surfacing a
-	// raw Docker RPC error after the click.
+	// Docker refuses to demote a swarm's last manager, so disable that action up front.
 	const managersPerCluster = useMemo(() => {
 		const counts = new Map<string, number>();
 		for (const n of nodes) {
@@ -84,46 +114,49 @@ export function SwarmNodesList({
 
 	const hasFilters = search !== '' || roleFilter !== 'All';
 
-	/* ── Loading ── */
-	if (isLoading) {
-		return (
-			<div className="flex flex-col gap-2">
-				{[1, 2, 3].map(i => (
-					<div
-						key={i}
-						className="flex items-center gap-4 rounded-lg px-4 py-4">
-						<Skeleton className="h-8 w-8 shrink-0 rounded-full" />
-						<div className="flex-1 space-y-2">
-							<Skeleton className="h-3.5 w-40" />
-							<Skeleton className="h-3 w-56" />
-						</div>
-						<Skeleton className="h-5 w-16 rounded-full" />
-					</div>
-				))}
-			</div>
-		);
-	}
-
 	return (
 		<div className="flex flex-col gap-3">
-			<div className="flex items-center gap-2">
-				<div className="relative flex-1">
-					<Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						placeholder="Search by hostname or node ID…"
-						value={search}
-						onChange={e => setSearch(e.target.value)}
-						className="h-8 pl-8 text-xs"
-					/>
-				</div>
-
+			<Toolbar
+				action={
+					<>
+						<Button
+							variant="outline"
+							onClick={onRefresh}
+							disabled={isRefreshing}
+							className="h-9 gap-1.5">
+							<RefreshCw
+								className={cn(
+									'size-3.5',
+									isRefreshing && 'animate-spin',
+								)}
+							/>
+							Refresh
+						</Button>
+						{isSwarmActive && (
+							<Button
+								onClick={onOpenTokens}
+								className="h-9 gap-1.5">
+								<Plus className="size-3.5" />
+								New Node
+							</Button>
+						)}
+					</>
+				}>
+				<ToolbarSearch
+					placeholder="Search by hostname or node ID…"
+					value={search}
+					onChange={setSearch}
+					className="sm:max-w-xs"
+				/>
 				<Select
 					value={roleFilter}
 					onValueChange={v => setRoleFilter(v as RoleFilter)}>
-					<SelectTrigger size="sm" className="h-8 w-36 text-xs">
-						<SelectValue placeholder="Role" />
+					<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
+						<SelectValue>
+							{roleFilter === 'All' ? 'All Roles' : roleFilter}
+						</SelectValue>
 					</SelectTrigger>
-					<SelectContent>
+					<SelectContent className="bg-card">
 						{ROLE_FILTERS.map(f => (
 							<SelectItem key={f} value={f}>
 								{f === 'All' ? 'All Roles' : f}
@@ -131,41 +164,68 @@ export function SwarmNodesList({
 						))}
 					</SelectContent>
 				</Select>
-			</div>
+				<Select
+					value={selectedServerId}
+					onValueChange={val => val && onSelectServer(val)}>
+					<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
+						<Server className="size-3.5 shrink-0 text-muted-foreground" />
+						<SelectValue>
+							{engineLabel(servers, selectedServerId)}
+						</SelectValue>
+					</SelectTrigger>
+					<SelectContent className="bg-card">
+						<SelectItem value="all">
+							All Clusters &amp; Remote Servers
+						</SelectItem>
+						<SelectItem value="local">
+							Local Engine (Docker)
+						</SelectItem>
+						{servers.map(srv => (
+							<SelectItem key={srv.id} value={String(srv.id)}>
+								{srv.name} ({srv.ip_address})
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</Toolbar>
 
-			{!nodes || nodes.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-card py-20 text-center ring-1 ring-border/50">
-					<div className="flex size-12 items-center justify-center rounded-full bg-muted">
-						<Server className="size-5 text-muted-foreground" />
-					</div>
-					<div>
-						<p className="text-sm font-medium text-foreground">
-							No Swarm nodes discovered
-						</p>
-						<p className="mt-0.5 text-xs text-muted-foreground">
-							Make sure Docker Swarm is initialized on this host engine.
-						</p>
-					</div>
-				</div>
+			{isLoading ? (
+				<ListSkeleton rows={3} />
+			) : !nodes || nodes.length === 0 ? (
+				<ListEmpty
+					icon={Server}
+					title="No Swarm nodes discovered"
+					description="Make sure Docker Swarm is initialized on this host engine."
+					action={
+						isSwarmActive ? (
+							<Button
+								onClick={onOpenTokens}
+								className="h-9 gap-1.5 text-xs font-semibold">
+								<Plus className="size-3.5" />
+								New Node
+							</Button>
+						) : undefined
+					}
+				/>
 			) : filtered.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-2 rounded-xl bg-card py-14 text-center ring-1 ring-border/50">
-					<Search className="size-5 text-muted-foreground" />
-					<p className="text-sm text-muted-foreground">
-						No nodes match your filter
-					</p>
-					<button
-						type="button"
-						onClick={() => {
-							setSearch('');
-							setRoleFilter('All');
-						}}
-						className="cursor-pointer text-xs font-medium text-primary hover:underline">
-						Clear filters
-					</button>
-				</div>
+				<ListEmpty
+					icon={Search}
+					title="No matching nodes"
+					description="No nodes match your current search or role filter."
+					action={
+						<Button
+							variant="ghost"
+							onClick={() => {
+								setSearch('');
+								setRoleFilter('All');
+							}}
+							className="text-xs font-semibold text-primary">
+							Clear filters
+						</Button>
+					}
+				/>
 			) : (
-				/* ── List ── */
-				<div className="divide-y divide-border/50 overflow-hidden rounded-xl bg-card ring-1 ring-border/50">
+				<ListCard>
 					{filtered.map(node => {
 						const clusterKey = String(node._serverId ?? 'local');
 						return (
@@ -185,10 +245,9 @@ export function SwarmNodesList({
 							/>
 						);
 					})}
-				</div>
+				</ListCard>
 			)}
 
-			{/* Result count */}
 			{hasFilters && filtered.length > 0 && (
 				<p className="px-1 text-xs text-muted-foreground">
 					Showing {filtered.length} of {nodes.length} nodes

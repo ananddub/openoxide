@@ -101,8 +101,7 @@ export const vaultProviderOptions: ProviderOption[] = [
 	icon: <VaultProviderIcon type={value} className="size-4 shrink-0" />,
 }));
 
-// [field name, label, placeholder] triples per provider type live in
-// vault-provider-fields.tsx (VAULT_FIELD_DEFINITIONS).
+// [field name, label, placeholder] triples per provider type live in vault-provider-fields.tsx (VAULT_FIELD_DEFINITIONS).
 
 export function buildVaultConfig(
 	formType: VaultProviderType,

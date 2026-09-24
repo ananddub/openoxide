@@ -1,8 +1,22 @@
-use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    Empty, GitProviderService, GitProviderServiceExt, OperationResult, ResourceListResponse,
-    ResourceQuery, ResourceRequest, ResourceResponse,
+    CreateBitbucketProviderRequest, CreateBitbucketProviderResponse, CreateGithubProviderRequest,
+    CreateGithubProviderResponse, CreateGiteaProviderRequest, CreateGiteaProviderResponse,
+    CreateGitlabProviderRequest, CreateGitlabProviderResponse, DeleteGitProviderRequest,
+    Empty, GetGitProviderRequest, GetGitProviderResponse, GitAuthorizeRequest,
+    GitAuthorizeResponse, GitDeleteWebhookRequest, GitDisconnectRequest,
+    GitGetCollaboratorPermissionRequest, GitGetCollaboratorPermissionResponse,
+    GitGetWebhookStatusRequest, GitGetWebhookStatusResponse, GitInstallWebhookRequest,
+    GitInstallWebhookResponse, GitListRepositoriesRequest, GitListRepositoriesResponse,
+    GitListRepositoryBranchesRequest, GitListRepositoryBranchesResponse, GitListTagsRequest,
+    GitListTagsResponse, GitOAuthCallbackRequest, GitOAuthCallbackResponse,
+    GitProviderService, GitProviderServiceExt, GitRecreateWebhookRequest,
+    GitRecreateWebhookResponse, GitRotateWebhookSecretRequest, GitRotateWebhookSecretResponse,
+    ListGitProvidersRequest, ListGitProvidersResponse, TestGitProviderRequest,
+    TestGitProviderResponse, UpdateBitbucketProviderRequest, UpdateBitbucketProviderResponse,
+    UpdateGithubProviderRequest, UpdateGithubProviderResponse, UpdateGiteaProviderRequest,
+    UpdateGiteaProviderResponse, UpdateGitlabProviderRequest, UpdateGitlabProviderResponse,
 };
 use crate::services::integrations::git::{CreateProvider, ProviderCredentials, UpdateProvider};
 
@@ -15,20 +29,17 @@ impl GitProviderService for GitProviderController {
     async fn list_git_providers<'a>(
         &'a self,
         ctx: RequestContext,
-        _query: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        _request: ServiceRequest<'_, ListGitProvidersRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ListGitProvidersResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let items = self
             .service
-            .list(auth.organization_id)
+            .list(org_id)
             .await
             .map_err(map_db_error)?;
-        let items = items
-            .into_iter()
-            .map(GitProviderResponseDto::from)
-            .map(provider_to_resource)
-            .collect();
-        Response::ok(ResourceListResponse {
-            items,
+        let providers = items.into_iter().map(provider_to_proto).collect();
+        Response::ok(ListGitProvidersResponse {
+            providers,
             ..Default::default()
         })
     }
@@ -37,49 +48,49 @@ impl GitProviderService for GitProviderController {
     async fn get_git_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, GetGitProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<GetGitProviderResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let provider = self
             .service
-            .get(request.id, auth.organization_id)
+            .get(request.id, org_id)
             .await
             .map_err(map_db_error)?;
-        Response::ok(provider_to_resource(GitProviderResponseDto::from(provider)))
+        Response::ok(GetGitProviderResponse {
+            provider: ::buffa::MessageField::some(provider_to_proto(provider)),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanCreate)]
     async fn create_github_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let dto: CreateGithubProviderDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, CreateGithubProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<CreateGithubProviderResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let (provider, webhook_secret) = self
             .service
-            .create(CreateProvider {
-                name: dto.provider.name,
-                shared: dto.provider.shared.unwrap_or(true),
-                credentials: ProviderCredentials::Github {
-                    app_name: dto.app_name,
-                    app_id: dto.app_id,
-                    client_id: dto.client_id,
-                    client_secret: dto.client_secret,
-                    installation_id: dto.installation_id,
-                    private_key: dto.private_key,
+            .create(
+                CreateProvider {
+                    name: request.name.to_owned(),
+                    shared: request.shared.unwrap_or(true),
+                    credentials: ProviderCredentials::Github {
+                        app_name: request.app_name.map(str::to_owned),
+                        app_id: request.app_id,
+                        client_id: request.client_id.map(str::to_owned),
+                        client_secret: request.client_secret.map(str::to_owned),
+                        installation_id: request.installation_id.map(str::to_owned),
+                        private_key: request.private_key.map(str::to_owned),
+                    },
                 },
-            }, auth.organization_id)
+                org_id,
+            )
             .await
             .map_err(map_db_error)?;
-        let created = CreatedGitProviderResponseDto {
-            provider: provider.into(),
+        Response::ok(CreateGithubProviderResponse {
+            provider: ::buffa::MessageField::some(provider_to_proto(provider)),
             webhook_secret,
-        };
-        let payload = serde_json::to_string(&created).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: created.provider.id,
-            kind: "git_provider".into(),
-            payload,
             ..Default::default()
         })
     }
@@ -88,37 +99,33 @@ impl GitProviderService for GitProviderController {
     async fn create_gitlab_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let dto: CreateGitlabProviderDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, CreateGitlabProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<CreateGitlabProviderResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let (provider, webhook_secret) = self
             .service
-            .create(CreateProvider {
-                name: dto.provider.name,
-                shared: dto.provider.shared.unwrap_or(true),
-                credentials: ProviderCredentials::Gitlab {
-                    url: dto.url,
-                    internal_url: dto.internal_url,
-                    application_id: dto.application_id,
-                    redirect_uri: dto.redirect_uri,
-                    secret: dto.secret,
-                    access_token: dto.access_token,
-                    refresh_token: dto.refresh_token,
-                    group_name: dto.group_name,
+            .create(
+                CreateProvider {
+                    name: request.name.to_owned(),
+                    shared: request.shared.unwrap_or(true),
+                    credentials: ProviderCredentials::Gitlab {
+                        url: request.url.to_owned(),
+                        internal_url: request.internal_url.map(str::to_owned),
+                        application_id: request.application_id.map(str::to_owned),
+                        redirect_uri: request.redirect_uri.map(str::to_owned),
+                        secret: request.secret.map(str::to_owned),
+                        access_token: request.access_token.map(str::to_owned),
+                        refresh_token: request.refresh_token.map(str::to_owned),
+                        group_name: request.group_name.map(str::to_owned),
+                    },
                 },
-            }, auth.organization_id)
+                org_id,
+            )
             .await
             .map_err(map_db_error)?;
-        let created = CreatedGitProviderResponseDto {
-            provider: provider.into(),
+        Response::ok(CreateGitlabProviderResponse {
+            provider: ::buffa::MessageField::some(provider_to_proto(provider)),
             webhook_secret,
-        };
-        let payload = serde_json::to_string(&created).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: created.provider.id,
-            kind: "git_provider".into(),
-            payload,
             ..Default::default()
         })
     }
@@ -127,37 +134,33 @@ impl GitProviderService for GitProviderController {
     async fn create_gitea_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let dto: CreateGiteaProviderDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, CreateGiteaProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<CreateGiteaProviderResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let (provider, webhook_secret) = self
             .service
-            .create(CreateProvider {
-                name: dto.provider.name,
-                shared: dto.provider.shared.unwrap_or(true),
-                credentials: ProviderCredentials::Gitea {
-                    url: dto.url,
-                    internal_url: dto.internal_url,
-                    redirect_uri: dto.redirect_uri,
-                    client_id: dto.client_id,
-                    client_secret: dto.client_secret,
-                    access_token: dto.access_token,
-                    refresh_token: dto.refresh_token,
-                    scopes: dto.scopes,
+            .create(
+                CreateProvider {
+                    name: request.name.to_owned(),
+                    shared: request.shared.unwrap_or(true),
+                    credentials: ProviderCredentials::Gitea {
+                        url: request.url.to_owned(),
+                        internal_url: request.internal_url.map(str::to_owned),
+                        redirect_uri: request.redirect_uri.map(str::to_owned),
+                        client_id: request.client_id.map(str::to_owned),
+                        client_secret: request.client_secret.map(str::to_owned),
+                        access_token: request.access_token.map(str::to_owned),
+                        refresh_token: request.refresh_token.map(str::to_owned),
+                        scopes: request.scopes.map(str::to_owned),
+                    },
                 },
-            }, auth.organization_id)
+                org_id,
+            )
             .await
             .map_err(map_db_error)?;
-        let created = CreatedGitProviderResponseDto {
-            provider: provider.into(),
+        Response::ok(CreateGiteaProviderResponse {
+            provider: ::buffa::MessageField::some(provider_to_proto(provider)),
             webhook_secret,
-        };
-        let payload = serde_json::to_string(&created).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: created.provider.id,
-            kind: "git_provider".into(),
-            payload,
             ..Default::default()
         })
     }
@@ -166,34 +169,31 @@ impl GitProviderService for GitProviderController {
     async fn create_bitbucket_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let dto: CreateBitbucketProviderDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, CreateBitbucketProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<CreateBitbucketProviderResponse> + Send + use<'a>>
+    {
+        let org_id = auth.organization_id;
         let (provider, webhook_secret) = self
             .service
-            .create(CreateProvider {
-                name: dto.provider.name,
-                shared: dto.provider.shared.unwrap_or(true),
-                credentials: ProviderCredentials::Bitbucket {
-                    username: dto.username,
-                    email: dto.email,
-                    app_password: dto.app_password,
-                    api_token: dto.api_token,
-                    workspace: dto.workspace,
+            .create(
+                CreateProvider {
+                    name: request.name.to_owned(),
+                    shared: request.shared.unwrap_or(true),
+                    credentials: ProviderCredentials::Bitbucket {
+                        username: request.username.map(str::to_owned),
+                        email: request.email.map(str::to_owned),
+                        app_password: request.app_password.map(str::to_owned),
+                        api_token: request.api_token.map(str::to_owned),
+                        workspace: request.workspace.map(str::to_owned),
+                    },
                 },
-            }, auth.organization_id)
+                org_id,
+            )
             .await
             .map_err(map_db_error)?;
-        let created = CreatedGitProviderResponseDto {
-            provider: provider.into(),
+        Response::ok(CreateBitbucketProviderResponse {
+            provider: ::buffa::MessageField::some(provider_to_proto(provider)),
             webhook_secret,
-        };
-        let payload = serde_json::to_string(&created).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: created.provider.id,
-            kind: "git_provider".into(),
-            payload,
             ..Default::default()
         })
     }
@@ -202,137 +202,147 @@ impl GitProviderService for GitProviderController {
     async fn update_github_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let dto: CreateGithubProviderDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, UpdateGithubProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<UpdateGithubProviderResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let provider = self
             .service
             .update(
                 request.id,
                 UpdateProvider {
-                    name: dto.provider.name,
-                    shared: dto.provider.shared,
+                    name: request.name.to_owned(),
+                    shared: request.shared,
                     credentials: ProviderCredentials::Github {
-                        app_name: dto.app_name,
-                        app_id: dto.app_id,
-                        client_id: dto.client_id,
-                        client_secret: dto.client_secret,
-                        installation_id: dto.installation_id,
-                        private_key: dto.private_key,
+                        app_name: request.app_name.map(str::to_owned),
+                        app_id: request.app_id,
+                        client_id: request.client_id.map(str::to_owned),
+                        client_secret: request.client_secret.map(str::to_owned),
+                        installation_id: request.installation_id.map(str::to_owned),
+                        private_key: request.private_key.map(str::to_owned),
                     },
                 },
-                auth.organization_id,
+                org_id,
             )
             .await
             .map_err(map_db_error)?;
-        Response::ok(provider_to_resource(GitProviderResponseDto::from(provider)))
+        Response::ok(UpdateGithubProviderResponse {
+            provider: ::buffa::MessageField::some(provider_to_proto(provider)),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanCreate)]
     async fn update_gitlab_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let dto: CreateGitlabProviderDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, UpdateGitlabProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<UpdateGitlabProviderResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let provider = self
             .service
             .update(
                 request.id,
                 UpdateProvider {
-                    name: dto.provider.name,
-                    shared: dto.provider.shared,
+                    name: request.name.to_owned(),
+                    shared: request.shared,
                     credentials: ProviderCredentials::Gitlab {
-                        url: dto.url,
-                        internal_url: dto.internal_url,
-                        application_id: dto.application_id,
-                        redirect_uri: dto.redirect_uri,
-                        secret: dto.secret,
-                        access_token: dto.access_token,
-                        refresh_token: dto.refresh_token,
-                        group_name: dto.group_name,
+                        url: request.url.map(str::to_owned).unwrap_or_default(),
+                        internal_url: request.internal_url.map(str::to_owned),
+                        application_id: request.application_id.map(str::to_owned),
+                        redirect_uri: request.redirect_uri.map(str::to_owned),
+                        secret: request.secret.map(str::to_owned),
+                        access_token: request.access_token.map(str::to_owned),
+                        refresh_token: request.refresh_token.map(str::to_owned),
+                        group_name: request.group_name.map(str::to_owned),
                     },
                 },
-                auth.organization_id,
+                org_id,
             )
             .await
             .map_err(map_db_error)?;
-        Response::ok(provider_to_resource(GitProviderResponseDto::from(provider)))
+        Response::ok(UpdateGitlabProviderResponse {
+            provider: ::buffa::MessageField::some(provider_to_proto(provider)),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanCreate)]
     async fn update_gitea_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let dto: CreateGiteaProviderDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, UpdateGiteaProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<UpdateGiteaProviderResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let provider = self
             .service
             .update(
                 request.id,
                 UpdateProvider {
-                    name: dto.provider.name,
-                    shared: dto.provider.shared,
+                    name: request.name.to_owned(),
+                    shared: request.shared,
                     credentials: ProviderCredentials::Gitea {
-                        url: dto.url,
-                        internal_url: dto.internal_url,
-                        redirect_uri: dto.redirect_uri,
-                        client_id: dto.client_id,
-                        client_secret: dto.client_secret,
-                        access_token: dto.access_token,
-                        refresh_token: dto.refresh_token,
-                        scopes: dto.scopes,
+                        url: request.url.map(str::to_owned).unwrap_or_default(),
+                        internal_url: request.internal_url.map(str::to_owned),
+                        redirect_uri: request.redirect_uri.map(str::to_owned),
+                        client_id: request.client_id.map(str::to_owned),
+                        client_secret: request.client_secret.map(str::to_owned),
+                        access_token: request.access_token.map(str::to_owned),
+                        refresh_token: request.refresh_token.map(str::to_owned),
+                        scopes: request.scopes.map(str::to_owned),
                     },
                 },
-                auth.organization_id,
+                org_id,
             )
             .await
             .map_err(map_db_error)?;
-        Response::ok(provider_to_resource(GitProviderResponseDto::from(provider)))
+        Response::ok(UpdateGiteaProviderResponse {
+            provider: ::buffa::MessageField::some(provider_to_proto(provider)),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanCreate)]
     async fn update_bitbucket_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let dto: CreateBitbucketProviderDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, UpdateBitbucketProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<UpdateBitbucketProviderResponse> + Send + use<'a>>
+    {
+        let org_id = auth.organization_id;
         let provider = self
             .service
             .update(
                 request.id,
                 UpdateProvider {
-                    name: dto.provider.name,
-                    shared: dto.provider.shared,
+                    name: request.name.to_owned(),
+                    shared: request.shared,
                     credentials: ProviderCredentials::Bitbucket {
-                        username: dto.username,
-                        email: dto.email,
-                        app_password: dto.app_password,
-                        api_token: dto.api_token,
-                        workspace: dto.workspace,
+                        username: request.username.map(str::to_owned),
+                        email: request.email.map(str::to_owned),
+                        app_password: request.app_password.map(str::to_owned),
+                        api_token: request.api_token.map(str::to_owned),
+                        workspace: request.workspace.map(str::to_owned),
                     },
                 },
-                auth.organization_id,
+                org_id,
             )
             .await
             .map_err(map_db_error)?;
-        Response::ok(provider_to_resource(GitProviderResponseDto::from(provider)))
+        Response::ok(UpdateBitbucketProviderResponse {
+            provider: ::buffa::MessageField::some(provider_to_proto(provider)),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanDelete)]
     async fn delete_git_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
+        request: ServiceRequest<'_, DeleteGitProviderRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         self.service
-            .delete(request.id, auth.organization_id)
+            .delete(request.id, org_id)
             .await
             .map_err(map_db_error)?;
         Response::ok(Empty::default())
@@ -342,15 +352,16 @@ impl GitProviderService for GitProviderController {
     async fn test_git_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        request: ServiceRequest<'_, TestGitProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<TestGitProviderResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         self.service
-            .test_connection(request.id, auth.organization_id)
+            .test_connection(request.id, org_id)
             .await
             .map_err(provider_error)?;
-        Response::ok(OperationResult {
+        Response::ok(TestGitProviderResponse {
             success: true,
-            operation: "test_connection".into(),
+            message: "connection test succeeded".into(),
             ..Default::default()
         })
     }
@@ -359,19 +370,17 @@ impl GitProviderService for GitProviderController {
     async fn rotate_webhook_secret<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, GitRotateWebhookSecretRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<GitRotateWebhookSecretResponse> + Send + use<'a>>
+    {
+        let org_id = auth.organization_id;
         let webhook_secret = self
             .service
-            .rotate_secret(request.id, auth.organization_id)
+            .rotate_secret(request.id, org_id)
             .await
             .map_err(map_db_error)?;
-        let resp = WebhookSecretResponseDto { webhook_secret };
-        let payload = serde_json::to_string(&resp).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: request.id,
-            kind: "webhook_secret".into(),
-            payload,
+        Response::ok(GitRotateWebhookSecretResponse {
+            webhook_secret,
             ..Default::default()
         })
     }
@@ -380,27 +389,17 @@ impl GitProviderService for GitProviderController {
     async fn list_repositories<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, GitListRepositoriesRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<GitListRepositoriesResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let repos = self
             .service
-            .repositories(request.id, auth.organization_id)
+            .repositories(request.provider_id, org_id)
             .await
             .map_err(provider_error)?;
-        let items = repos
-            .into_iter()
-            .map(|r| {
-                let payload = serde_json::to_string(&r).unwrap_or_default();
-                ResourceResponse {
-                    id: 0,
-                    kind: "repository".into(),
-                    payload,
-                    ..Default::default()
-                }
-            })
-            .collect();
-        Response::ok(ResourceListResponse {
-            items,
+        let repositories = repos.into_iter().map(repository_to_proto).collect();
+        Response::ok(GitListRepositoriesResponse {
+            repositories,
             ..Default::default()
         })
     }
@@ -409,29 +408,23 @@ impl GitProviderService for GitProviderController {
     async fn list_branches<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let query: RepositoryReferenceQueryDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, GitListRepositoryBranchesRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<GitListRepositoryBranchesResponse> + Send + use<'a>>
+    {
+        let org_id = auth.organization_id;
         let refs = self
             .service
-            .branches(request.id, &query.owner, &query.repository, auth.organization_id)
+            .branches(
+                request.provider_id,
+                request.owner,
+                request.repository,
+                org_id,
+            )
             .await
             .map_err(provider_error)?;
-        let items = refs
-            .into_iter()
-            .map(|r| {
-                let payload = serde_json::to_string(&r).unwrap_or_default();
-                ResourceResponse {
-                    id: 0,
-                    kind: "git_reference".into(),
-                    payload,
-                    ..Default::default()
-                }
-            })
-            .collect();
-        Response::ok(ResourceListResponse {
-            items,
+        let branches = refs.into_iter().map(reference_to_proto).collect();
+        Response::ok(GitListRepositoryBranchesResponse {
+            branches,
             ..Default::default()
         })
     }
@@ -440,29 +433,22 @@ impl GitProviderService for GitProviderController {
     async fn list_tags<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let query: RepositoryReferenceQueryDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, GitListTagsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<GitListTagsResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let refs = self
             .service
-            .tags(request.id, &query.owner, &query.repository, auth.organization_id)
+            .tags(
+                request.provider_id,
+                request.owner,
+                request.repository,
+                org_id,
+            )
             .await
             .map_err(provider_error)?;
-        let items = refs
-            .into_iter()
-            .map(|r| {
-                let payload = serde_json::to_string(&r).unwrap_or_default();
-                ResourceResponse {
-                    id: 0,
-                    kind: "git_reference".into(),
-                    payload,
-                    ..Default::default()
-                }
-            })
-            .collect();
-        Response::ok(ResourceListResponse {
-            items,
+        let tags = refs.into_iter().map(reference_to_proto).collect();
+        Response::ok(GitListTagsResponse {
+            tags,
             ..Default::default()
         })
     }
@@ -471,18 +457,17 @@ impl GitProviderService for GitProviderController {
     async fn authorize<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, GitAuthorizeRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<GitAuthorizeResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let info = self
             .service
-            .authorization(request.id, auth.organization_id)
+            .authorization(request.provider_id, org_id)
             .await
             .map_err(provider_error)?;
-        let payload = serde_json::to_string(&info).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: request.id,
-            kind: "authorization".into(),
-            payload,
+        Response::ok(GitAuthorizeResponse {
+            url: info.url,
+            state: info.state,
             ..Default::default()
         })
     }
@@ -490,32 +475,35 @@ impl GitProviderService for GitProviderController {
     async fn o_auth_callback<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let dto: OAuthCallbackDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, GitOAuthCallbackRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<GitOAuthCallbackResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let provider = self
             .service
             .complete_authorization(
-                request.id,
-                &dto.state,
-                dto.code.as_deref(),
-                dto.installation_id.as_deref(),
-                auth.organization_id,
+                request.provider_id,
+                request.state,
+                request.code,
+                request.installation_id,
+                org_id,
             )
             .await
             .map_err(provider_error)?;
-        Response::ok(provider_to_resource(GitProviderResponseDto::from(provider)))
+        Response::ok(GitOAuthCallbackResponse {
+            provider: ::buffa::MessageField::some(provider_to_proto(provider)),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanDelete)]
     async fn disconnect<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
+        request: ServiceRequest<'_, GitDisconnectRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         self.service
-            .disconnect(request.id, auth.organization_id)
+            .disconnect(request.provider_id, org_id)
             .await
             .map_err(provider_error)?;
         Response::ok(Empty::default())
@@ -525,26 +513,24 @@ impl GitProviderService for GitProviderController {
     async fn get_collaborator_permission<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let query: CollaboratorPermissionQueryDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let perm = self
+        request: ServiceRequest<'_, GitGetCollaboratorPermissionRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<GitGetCollaboratorPermissionResponse> + Send + use<'a>,
+    > {
+        let org_id = auth.organization_id;
+        let permission = self
             .service
             .collaborator_permission(
-                request.id,
-                &query.owner,
-                &query.repository,
-                &query.username,
-                auth.organization_id,
+                request.provider_id,
+                request.owner,
+                request.repository,
+                request.username,
+                org_id,
             )
             .await
             .map_err(provider_error)?;
-        let payload = serde_json::to_string(&perm).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "get_collaborator_permission".into(),
-            payload: Some(payload),
+        Response::ok(GitGetCollaboratorPermissionResponse {
+            permission: ::buffa::MessageField::some(permission_to_proto(permission)),
             ..Default::default()
         })
     }
@@ -553,26 +539,26 @@ impl GitProviderService for GitProviderController {
     async fn get_webhook_status<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let query: WebhookRepositoryDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, GitGetWebhookStatusRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<GitGetWebhookStatusResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let info = self
             .service
             .webhook_status(
-                request.id,
-                &query.owner,
-                &query.repository,
-                &query.callback_url,
-                auth.organization_id,
+                request.provider_id,
+                request.owner,
+                request.repository,
+                request.callback_url,
+                org_id,
             )
             .await
             .map_err(provider_error)?;
-        let payload = serde_json::to_string(&info).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "get_webhook_status".into(),
-            payload: Some(payload),
+        let webhook = info
+            .map(webhook_info_to_proto)
+            .map(::buffa::MessageField::some)
+            .unwrap_or_default();
+        Response::ok(GitGetWebhookStatusResponse {
+            webhook,
             ..Default::default()
         })
     }
@@ -581,26 +567,22 @@ impl GitProviderService for GitProviderController {
     async fn install_webhook<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let dto: WebhookRepositoryDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, GitInstallWebhookRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<GitInstallWebhookResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let info = self
             .service
             .install_webhook(
-                request.id,
-                &dto.owner,
-                &dto.repository,
-                &dto.callback_url,
-                auth.organization_id,
+                request.provider_id,
+                request.owner,
+                request.repository,
+                request.callback_url,
+                org_id,
             )
             .await
             .map_err(provider_error)?;
-        let payload = serde_json::to_string(&info).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "install_webhook".into(),
-            payload: Some(payload),
+        Response::ok(GitInstallWebhookResponse {
+            webhook: ::buffa::MessageField::some(webhook_info_to_proto(info)),
             ..Default::default()
         })
     }
@@ -609,26 +591,22 @@ impl GitProviderService for GitProviderController {
     async fn recreate_webhook<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let dto: WebhookRepositoryDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, GitRecreateWebhookRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<GitRecreateWebhookResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
         let info = self
             .service
             .recreate_webhook(
-                request.id,
-                &dto.owner,
-                &dto.repository,
-                &dto.callback_url,
-                auth.organization_id,
+                request.provider_id,
+                request.owner,
+                request.repository,
+                request.callback_url,
+                org_id,
             )
             .await
             .map_err(provider_error)?;
-        let payload = serde_json::to_string(&info).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "recreate_webhook".into(),
-            payload: Some(payload),
+        Response::ok(GitRecreateWebhookResponse {
+            webhook: ::buffa::MessageField::some(webhook_info_to_proto(info)),
             ..Default::default()
         })
     }
@@ -637,17 +615,16 @@ impl GitProviderService for GitProviderController {
     async fn delete_webhook<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
+        request: ServiceRequest<'_, GitDeleteWebhookRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        let query: WebhookRepositoryDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let org_id = auth.organization_id;
         self.service
             .remove_webhook(
-                request.id,
-                &query.owner,
-                &query.repository,
-                &query.callback_url,
-                auth.organization_id,
+                request.provider_id,
+                request.owner,
+                request.repository,
+                request.callback_url,
+                org_id,
             )
             .await
             .map_err(provider_error)?;

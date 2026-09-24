@@ -44,10 +44,7 @@ function ScheduleTile() {
 	);
 }
 
-/**
- * Compose / database schedules surface — grid cards or one bordered list
- * card, matching the SSH Keys page.
- */
+/** Compose / database schedules surface — grid cards or one bordered list card, matching the SSH Keys page. */
 export function ComposeSchedulesTable({
 	schedules,
 	isLoading,

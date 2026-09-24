@@ -12,10 +12,7 @@ import {
 	type EntryTone,
 } from './activity-model';
 
-/**
- * Merged activity feed — deployments and audit events in one day-grouped,
- * sentence-rendered timeline. Pure model helpers live in `./activity-model`.
- */
+/** Merged activity feed — deployments and audit events in one day-grouped, sentence-rendered timeline. Pure model helpers live in `./activity-model`. */
 
 export type {ActivityEntry, EntryTone} from './activity-model';
 export {

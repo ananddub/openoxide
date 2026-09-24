@@ -35,13 +35,13 @@ service ComposeService {
   rpc ClearDeploymentHistory(ComposeOperationRequest) returns (Empty);
   rpc CleanupDeploymentQueue(ComposeOperationRequest) returns (Empty);
   rpc ForceKillDeployment(ComposeOperationRequest) returns (Empty);
-  rpc ListMounts(ComposeMountRequest) returns (ResourceListResponse);
-  rpc CreateMount(ComposeMountRequest) returns (ResourceResponse);
-  rpc UpdateMount(ComposeMountRequest) returns (ResourceResponse);
+  rpc ListMounts(ComposeListMountsRequest) returns (ComposeListMountsResponse);
+  rpc CreateMount(ComposeCreateMountRequest) returns (ComposeCreateMountResponse);
+  rpc UpdateMount(ComposeUpdateMountRequest) returns (ComposeUpdateMountResponse);
   rpc DeleteMount(ComposeMountRequest) returns (Empty);
-  rpc ListPatches(ComposePatchRequest) returns (ResourceListResponse);
-  rpc CreatePatch(ComposePatchRequest) returns (ResourceResponse);
-  rpc UpdatePatch(ComposePatchRequest) returns (ResourceResponse);
+  rpc ListPatches(ComposeListPatchesRequest) returns (ComposeListPatchesResponse);
+  rpc CreatePatch(ComposeCreatePatchRequest) returns (ComposeCreatePatchResponse);
+  rpc UpdatePatch(ComposeUpdatePatchRequest) returns (ComposeUpdatePatchResponse);
   rpc DeletePatch(ComposePatchRequest) returns (Empty);
 }
 message Compose {
@@ -57,8 +57,7 @@ message Compose {
   optional string compose_file = 10;
   int64 created_at = 11;
   int64 updated_at = 12;
-  // Source round-trip: the source-settings card re-seeds from these after
-  // save/refetch. Without them every provider except GitHub-looked unset.
+  // Source round-trip: the source-settings card re-seeds from these after save/refetch; without them every provider except GitHub looked unset.
   optional string owner = 13;
   optional string gitlab_repository = 14;
   optional string gitlab_owner = 15;
@@ -93,8 +92,7 @@ message CreateComposeRequest {
   int64 environment_id = 3 [(buf.validate.field).int64.gt = 0];
   optional int64 server_id = 4;
   optional string compose_file = 5;
-  // Canonical ComposeType spelling ("DOCKER-COMPOSE" | "STACK"); unset
-  // defaults to DOCKER-COMPOSE. Unknown values are rejected, not coerced.
+  // Canonical ComposeType spelling ("DOCKER-COMPOSE" | "STACK"); unset defaults to DOCKER-COMPOSE. Unknown values are rejected, not coerced.
   optional string compose_type = 6;
 }
 message UpdateComposeRequest {
@@ -158,6 +156,9 @@ message InstallTemplateRequest {
   string template = 1 [(buf.validate.field).string.min_len = 1];
   int64 environment_id = 2 [(buf.validate.field).int64.gt = 0];
   optional string name = 3;
+  optional int64 server_id = 4;
+  // .env-style KEY=VALUE lines seeded on the new compose after install.
+  optional string env_var = 5;
 }
 message ExportComposeRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];
@@ -195,4 +196,117 @@ message ComposePatchRequest {
   optional int64 id = 2 [(buf.validate.field).int64.gt = 0];
   string patch_type = 3 [(buf.validate.field).string.min_len = 1];
   string payload = 4 [(buf.validate.field).string = {min_len: 1, max_len: 1048576}];
+}
+
+enum ComposeMountType {
+  COMPOSE_MOUNT_TYPE_UNSPECIFIED = 0;
+  COMPOSE_MOUNT_TYPE_VOLUME = 1;
+  COMPOSE_MOUNT_TYPE_BIND = 2;
+  COMPOSE_MOUNT_TYPE_FILE = 3;
+}
+
+enum ComposePatchType {
+  COMPOSE_PATCH_TYPE_UNSPECIFIED = 0;
+  COMPOSE_PATCH_TYPE_UPDATE = 1;
+  COMPOSE_PATCH_TYPE_DELETE = 2;
+}
+
+message ComposeMount {
+  int64 id = 1;
+  ComposeMountType mount_type = 2;
+  optional string host_path = 3;
+  optional string volume_name = 4;
+  optional string file_path = 5;
+  // Inline file content for FILE mounts.
+  optional string content = 6;
+  string mount_path = 7;
+  int64 compose_id = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+}
+
+message ComposePatch {
+  int64 id = 1;
+  ComposePatchType patch_type = 2;
+  string file_path = 3;
+  bool enabled = 4;
+  // Patch file body (raw text).
+  string content = 5;
+  int64 compose_id = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+}
+
+message ComposeListMountsRequest {
+  int64 compose_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ComposeListMountsResponse {
+  repeated ComposeMount mounts = 1;
+}
+
+message ComposeCreateMountRequest {
+  int64 compose_id = 1 [(buf.validate.field).int64.gt = 0];
+  ComposeMountType mount_type = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional string host_path = 3;
+  optional string volume_name = 4;
+  optional string file_path = 5;
+  // Inline file content for FILE mounts.
+  optional string content = 6 [(buf.validate.field).string.max_len = 1048576];
+  string mount_path = 7 [(buf.validate.field).string.min_len = 1];
+}
+
+message ComposeCreateMountResponse {
+  ComposeMount mount = 1;
+}
+
+message ComposeUpdateMountRequest {
+  int64 compose_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  ComposeMountType mount_type = 3 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional string host_path = 4;
+  optional string volume_name = 5;
+  optional string file_path = 6;
+  // Inline file content for FILE mounts.
+  optional string content = 7 [(buf.validate.field).string.max_len = 1048576];
+  string mount_path = 8 [(buf.validate.field).string.min_len = 1];
+}
+
+message ComposeUpdateMountResponse {
+  ComposeMount mount = 1;
+}
+
+message ComposeListPatchesRequest {
+  int64 compose_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ComposeListPatchesResponse {
+  repeated ComposePatch patches = 1;
+}
+
+message ComposeCreatePatchRequest {
+  int64 compose_id = 1 [(buf.validate.field).int64.gt = 0];
+  ComposePatchType patch_type = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  string file_path = 3 [(buf.validate.field).string.min_len = 1];
+  bool enabled = 4;
+  // Patch file body (raw text); cleared for DELETE patches.
+  string content = 5 [(buf.validate.field).string.max_len = 1048576];
+}
+
+message ComposeCreatePatchResponse {
+  ComposePatch patch = 1;
+}
+
+message ComposeUpdatePatchRequest {
+  int64 compose_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 id = 2 [(buf.validate.field).int64.gt = 0];
+  ComposePatchType patch_type = 3 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  string file_path = 4 [(buf.validate.field).string.min_len = 1];
+  bool enabled = 5;
+  // Patch file body (raw text); cleared for DELETE patches.
+  string content = 6 [(buf.validate.field).string.max_len = 1048576];
+}
+
+message ComposeUpdatePatchResponse {
+  ComposePatch patch = 1;
 }

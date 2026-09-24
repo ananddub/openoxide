@@ -56,10 +56,7 @@ const PROVIDER_HINTS: Record<string, string> = {
 	SCALEWAY: 'Scaleway Secret Manager',
 };
 
-/**
- * Create / edit vault provider — a four-checkpoint wizard: pick provider,
- * enter credentials, scope to projects, then review + test.
- */
+/** Create / edit vault provider — a four-checkpoint wizard: pick provider, enter credentials, scope to projects, then review + test. */
 export function VaultProviderFormDialog({
 	open,
 	onOpenChange,
@@ -303,7 +300,7 @@ export function VaultProviderFormDialog({
 										<p className="mb-1.5 text-[13px] font-medium text-foreground">
 											Reference your secrets with
 										</p>
-										<code className="break-all font-mono text-[12px] text-primary">
+										<code className="font-mono text-[12px] break-all text-primary">
 											{`\${{vault.${formName || '<name>'}.<secret>}}`}
 										</code>
 									</div>

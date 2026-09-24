@@ -26,11 +26,7 @@ const STATUS_DOT: Record<string, string> = {
 
 const ROWS = 8;
 
-/**
- * Alerts rail entry — the organization's recent delivery attempts, read
- * straight from the same live query the Settings page uses. Rows are quiet
- * text (no per-row action); the one control is the jump to the full history.
- */
+/** Alerts rail entry — the organization's recent delivery attempts, read straight from the same live query the Settings page uses. Rows are quiet text (no per-row action); the one control is the jump to the full history. */
 export function SidebarNotifications({collapsed}: {collapsed: boolean}) {
 	const navigate = useNavigate();
 	const orgId = useActiveOrgId();

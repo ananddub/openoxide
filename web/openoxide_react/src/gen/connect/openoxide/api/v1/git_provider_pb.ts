@@ -2,221 +2,1805 @@
 // @generated from file openoxide/api/v1/git_provider.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	EmptySchema,
-	OperationResultSchema,
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceRequestSchema,
-	ResourceResponseSchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/git_provider.proto.
  */
-export const file_openoxide_api_v1_git_provider: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'CiNvcGVub3hpZGUvYXBpL3YxL2dpdF9wcm92aWRlci5wcm90bxIQb3Blbm94aWRlLmFwaS52MTKQEQoSR2l0UHJvdmlkZXJTZXJ2aWNlElsKEExpc3RHaXRQcm92aWRlcnMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElcKDkdldEdpdFByb3ZpZGVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USXQoUQ3JlYXRlR2l0aHViUHJvdmlkZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJdChRDcmVhdGVHaXRsYWJQcm92aWRlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElwKE0NyZWF0ZUdpdGVhUHJvdmlkZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJgChdDcmVhdGVCaXRidWNrZXRQcm92aWRlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlEl0KFFVwZGF0ZUdpdGh1YlByb3ZpZGVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USXQoUVXBkYXRlR2l0bGFiUHJvdmlkZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJcChNVcGRhdGVHaXRlYVByb3ZpZGVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USYAoXVXBkYXRlQml0YnVja2V0UHJvdmlkZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJPChFEZWxldGVHaXRQcm92aWRlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJXCg9UZXN0R2l0UHJvdmlkZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElwKE1JvdGF0ZVdlYmhvb2tTZWNyZXQSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJdChBMaXN0UmVwb3NpdG9yaWVzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElkKDExpc3RCcmFuY2hlcxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJVCghMaXN0VGFncxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJSCglBdXRob3JpemUSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJWCg1PQXV0aENhbGxiYWNrEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USSAoKRGlzY29ubmVjdBIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJhChlHZXRDb2xsYWJvcmF0b3JQZXJtaXNzaW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJYChBHZXRXZWJob29rU3RhdHVzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJWCg5JbnN0YWxsV2ViaG9vaxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSVwoPUmVjcmVhdGVXZWJob29rEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJLCg1EZWxldGVXZWJob29rEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5YgZwcm90bzM',
-		[file_openoxide_api_v1_common],
-	);
+export const file_openoxide_api_v1_git_provider: GenFile = /*@__PURE__*/
+  fileDesc("CiNvcGVub3hpZGUvYXBpL3YxL2dpdF9wcm92aWRlci5wcm90bxIQb3Blbm94aWRlLmFwaS52MSKABQoRR2l0UHJvdmlkZXJDb25maWcSEAoDdXJsGAEgASgJSACIAQESGQoMaW50ZXJuYWxfdXJsGAIgASgJSAGIAQESFQoIYXBwX25hbWUYAyABKAlIAogBARITCgZhcHBfaWQYBCABKANIA4gBARIWCgljbGllbnRfaWQYBSABKAlIBIgBARIcCg9pbnN0YWxsYXRpb25faWQYBiABKAlIBYgBARIbCg5hcHBsaWNhdGlvbl9pZBgHIAEoCUgGiAEBEhkKDHJlZGlyZWN0X3VyaRgIIAEoCUgHiAEBEhcKCmdyb3VwX25hbWUYCSABKAlICIgBARITCgZzY29wZXMYCiABKAlICYgBARIVCgh1c2VybmFtZRgLIAEoCUgKiAEBEhIKBWVtYWlsGAwgASgJSAuIAQESFgoJd29ya3NwYWNlGA0gASgJSAyIAQESGQoRaGFzX2NsaWVudF9zZWNyZXQYDiABKAgSFwoPaGFzX3ByaXZhdGVfa2V5GA8gASgIEhgKEGhhc19hY2Nlc3NfdG9rZW4YECABKAgSGAoQaGFzX2FwcF9wYXNzd29yZBgRIAEoCBIVCg1oYXNfYXBpX3Rva2VuGBIgASgIQgYKBF91cmxCDwoNX2ludGVybmFsX3VybEILCglfYXBwX25hbWVCCQoHX2FwcF9pZEIMCgpfY2xpZW50X2lkQhIKEF9pbnN0YWxsYXRpb25faWRCEQoPX2FwcGxpY2F0aW9uX2lkQg8KDV9yZWRpcmVjdF91cmlCDQoLX2dyb3VwX25hbWVCCQoHX3Njb3Blc0ILCglfdXNlcm5hbWVCCAoGX2VtYWlsQgwKCl93b3Jrc3BhY2Ui/gEKC0dpdFByb3ZpZGVyEgoKAmlkGAEgASgDEgwKBG5hbWUYAiABKAkSOAoNcHJvdmlkZXJfdHlwZRgDIAEoDjIhLm9wZW5veGlkZS5hcGkudjEuR2l0UHJvdmlkZXJUeXBlEg4KBnNoYXJlZBgEIAEoCBISCgpjb25maWd1cmVkGAUgASgIEhoKEndlYmhvb2tfY29uZmlndXJlZBgGIAEoCBISCgpjcmVhdGVkX2F0GAcgASgDEhIKCnVwZGF0ZWRfYXQYCCABKAMSMwoGY29uZmlnGAkgASgLMiMub3Blbm94aWRlLmFwaS52MS5HaXRQcm92aWRlckNvbmZpZyKuAQoVR2l0UHJvdmlkZXJSZXBvc2l0b3J5Eg0KBW93bmVyGAEgASgJEgwKBG5hbWUYAiABKAkSEQoJZnVsbF9uYW1lGAMgASgJEg8KB3ByaXZhdGUYBCABKAgSGwoOZGVmYXVsdF9icmFuY2gYBSABKAlIAIgBARIWCgljbG9uZV91cmwYBiABKAlIAYgBAUIRCg9fZGVmYXVsdF9icmFuY2hCDAoKX2Nsb25lX3VybCJEChRHaXRQcm92aWRlclJlZmVyZW5jZRIMCgRuYW1lGAEgASgJEhMKBmNvbW1pdBgCIAEoCUgAiAEBQgkKB19jb21taXQiQQoWR2l0UHJvdmlkZXJXZWJob29rSW5mbxIKCgJpZBgBIAEoCRILCgN1cmwYAiABKAkSDgoGYWN0aXZlGAMgASgIImoKIUdpdFByb3ZpZGVyQ29sbGFib3JhdG9yUGVybWlzc2lvbhIQCgh1c2VybmFtZRgBIAEoCRINCgVsZXZlbBgCIAEoCRIRCgljYW5fd3JpdGUYAyABKAgSEQoJY2FuX2FkbWluGAQgASgIIhkKF0xpc3RHaXRQcm92aWRlcnNSZXF1ZXN0IkwKGExpc3RHaXRQcm92aWRlcnNSZXNwb25zZRIwCglwcm92aWRlcnMYASADKAsyHS5vcGVub3hpZGUuYXBpLnYxLkdpdFByb3ZpZGVyIiwKFUdldEdpdFByb3ZpZGVyUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJJChZHZXRHaXRQcm92aWRlclJlc3BvbnNlEi8KCHByb3ZpZGVyGAEgASgLMh0ub3Blbm94aWRlLmFwaS52MS5HaXRQcm92aWRlciL/AgobQ3JlYXRlR2l0aHViUHJvdmlkZXJSZXF1ZXN0EhgKBG5hbWUYASABKAlCCrpIB3IFEAEY/wESEwoGc2hhcmVkGAIgASgISACIAQESHwoIYXBwX25hbWUYAyABKAlCCLpIBXIDGP8BSAGIAQESEwoGYXBwX2lkGAQgASgDSAKIAQESIAoJY2xpZW50X2lkGAUgASgJQgi6SAVyAxj/AUgDiAEBEiUKDWNsaWVudF9zZWNyZXQYBiABKAlCCbpIBnIEGICAQEgEiAEBEiYKD2luc3RhbGxhdGlvbl9pZBgHIAEoCUIIukgFcgMY/wFIBYgBARIjCgtwcml2YXRlX2tleRgIIAEoCUIJukgGcgQYgIBASAaIAQFCCQoHX3NoYXJlZEILCglfYXBwX25hbWVCCQoHX2FwcF9pZEIMCgpfY2xpZW50X2lkQhAKDl9jbGllbnRfc2VjcmV0QhIKEF9pbnN0YWxsYXRpb25faWRCDgoMX3ByaXZhdGVfa2V5ImcKHENyZWF0ZUdpdGh1YlByb3ZpZGVyUmVzcG9uc2USLwoIcHJvdmlkZXIYASABKAsyHS5vcGVub3hpZGUuYXBpLnYxLkdpdFByb3ZpZGVyEhYKDndlYmhvb2tfc2VjcmV0GAIgASgJIuMDChtDcmVhdGVHaXRsYWJQcm92aWRlclJlcXVlc3QSGAoEbmFtZRgBIAEoCUIKukgHcgUQARj/ARITCgZzaGFyZWQYAiABKAhIAIgBARIXCgN1cmwYAyABKAlCCrpIB3IFEAEYgBASIwoMaW50ZXJuYWxfdXJsGAQgASgJQgi6SAVyAxiAEEgBiAEBEiUKDmFwcGxpY2F0aW9uX2lkGAUgASgJQgi6SAVyAxj/AUgCiAEBEiMKDHJlZGlyZWN0X3VyaRgGIAEoCUIIukgFcgMYgBBIA4gBARIeCgZzZWNyZXQYByABKAlCCbpIBnIEGICAQEgEiAEBEiQKDGFjY2Vzc190b2tlbhgIIAEoCUIJukgGcgQYgIBASAWIAQESJQoNcmVmcmVzaF90b2tlbhgJIAEoCUIJukgGcgQYgIBASAaIAQESIQoKZ3JvdXBfbmFtZRgKIAEoCUIIukgFcgMY/wFIB4gBAUIJCgdfc2hhcmVkQg8KDV9pbnRlcm5hbF91cmxCEQoPX2FwcGxpY2F0aW9uX2lkQg8KDV9yZWRpcmVjdF91cmlCCQoHX3NlY3JldEIPCg1fYWNjZXNzX3Rva2VuQhAKDl9yZWZyZXNoX3Rva2VuQg0KC19ncm91cF9uYW1lImcKHENyZWF0ZUdpdGxhYlByb3ZpZGVyUmVzcG9uc2USLwoIcHJvdmlkZXIYASABKAsyHS5vcGVub3hpZGUuYXBpLnYxLkdpdFByb3ZpZGVyEhYKDndlYmhvb2tfc2VjcmV0GAIgASgJIt4DChpDcmVhdGVHaXRlYVByb3ZpZGVyUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEhMKBnNoYXJlZBgCIAEoCEgAiAEBEhcKA3VybBgDIAEoCUIKukgHcgUQARiAEBIjCgxpbnRlcm5hbF91cmwYBCABKAlCCLpIBXIDGIAQSAGIAQESIwoMcmVkaXJlY3RfdXJpGAUgASgJQgi6SAVyAxiAEEgCiAEBEiAKCWNsaWVudF9pZBgGIAEoCUIIukgFcgMY/wFIA4gBARIlCg1jbGllbnRfc2VjcmV0GAcgASgJQgm6SAZyBBiAgEBIBIgBARIkCgxhY2Nlc3NfdG9rZW4YCCABKAlCCbpIBnIEGICAQEgFiAEBEiUKDXJlZnJlc2hfdG9rZW4YCSABKAlCCbpIBnIEGICAQEgGiAEBEh0KBnNjb3BlcxgKIAEoCUIIukgFcgMYgAhIB4gBAUIJCgdfc2hhcmVkQg8KDV9pbnRlcm5hbF91cmxCDwoNX3JlZGlyZWN0X3VyaUIMCgpfY2xpZW50X2lkQhAKDl9jbGllbnRfc2VjcmV0Qg8KDV9hY2Nlc3NfdG9rZW5CEAoOX3JlZnJlc2hfdG9rZW5CCQoHX3Njb3BlcyJmChtDcmVhdGVHaXRlYVByb3ZpZGVyUmVzcG9uc2USLwoIcHJvdmlkZXIYASABKAsyHS5vcGVub3hpZGUuYXBpLnYxLkdpdFByb3ZpZGVyEhYKDndlYmhvb2tfc2VjcmV0GAIgASgJIsgCCh5DcmVhdGVCaXRidWNrZXRQcm92aWRlclJlcXVlc3QSGAoEbmFtZRgBIAEoCUIKukgHcgUQARj/ARITCgZzaGFyZWQYAiABKAhIAIgBARIfCgh1c2VybmFtZRgDIAEoCUIIukgFcgMY/wFIAYgBARIcCgVlbWFpbBgEIAEoCUIIukgFcgMYwAJIAogBARIkCgxhcHBfcGFzc3dvcmQYBSABKAlCCbpIBnIEGICAQEgDiAEBEiEKCWFwaV90b2tlbhgGIAEoCUIJukgGcgQYgIBASASIAQESIAoJd29ya3NwYWNlGAcgASgJQgi6SAVyAxj/AUgFiAEBQgkKB19zaGFyZWRCCwoJX3VzZXJuYW1lQggKBl9lbWFpbEIPCg1fYXBwX3Bhc3N3b3JkQgwKCl9hcGlfdG9rZW5CDAoKX3dvcmtzcGFjZSJqCh9DcmVhdGVCaXRidWNrZXRQcm92aWRlclJlc3BvbnNlEi8KCHByb3ZpZGVyGAEgASgLMh0ub3Blbm94aWRlLmFwaS52MS5HaXRQcm92aWRlchIWCg53ZWJob29rX3NlY3JldBgCIAEoCSKUAwobVXBkYXRlR2l0aHViUHJvdmlkZXJSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEhgKBG5hbWUYAiABKAlCCrpIB3IFEAEY/wESEwoGc2hhcmVkGAMgASgISACIAQESHwoIYXBwX25hbWUYBCABKAlCCLpIBXIDGP8BSAGIAQESEwoGYXBwX2lkGAUgASgDSAKIAQESIAoJY2xpZW50X2lkGAYgASgJQgi6SAVyAxj/AUgDiAEBEiUKDWNsaWVudF9zZWNyZXQYByABKAlCCbpIBnIEGICAQEgEiAEBEiYKD2luc3RhbGxhdGlvbl9pZBgIIAEoCUIIukgFcgMY/wFIBYgBARIjCgtwcml2YXRlX2tleRgJIAEoCUIJukgGcgQYgIBASAaIAQFCCQoHX3NoYXJlZEILCglfYXBwX25hbWVCCQoHX2FwcF9pZEIMCgpfY2xpZW50X2lkQhAKDl9jbGllbnRfc2VjcmV0QhIKEF9pbnN0YWxsYXRpb25faWRCDgoMX3ByaXZhdGVfa2V5Ik8KHFVwZGF0ZUdpdGh1YlByb3ZpZGVyUmVzcG9uc2USLwoIcHJvdmlkZXIYASABKAsyHS5vcGVub3hpZGUuYXBpLnYxLkdpdFByb3ZpZGVyIoMEChtVcGRhdGVHaXRsYWJQcm92aWRlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASGAoEbmFtZRgCIAEoCUIKukgHcgUQARj/ARITCgZzaGFyZWQYAyABKAhIAIgBARIaCgN1cmwYBCABKAlCCLpIBXIDGIAQSAGIAQESIwoMaW50ZXJuYWxfdXJsGAUgASgJQgi6SAVyAxiAEEgCiAEBEiUKDmFwcGxpY2F0aW9uX2lkGAYgASgJQgi6SAVyAxj/AUgDiAEBEiMKDHJlZGlyZWN0X3VyaRgHIAEoCUIIukgFcgMYgBBIBIgBARIeCgZzZWNyZXQYCCABKAlCCbpIBnIEGICAQEgFiAEBEiQKDGFjY2Vzc190b2tlbhgJIAEoCUIJukgGcgQYgIBASAaIAQESJQoNcmVmcmVzaF90b2tlbhgKIAEoCUIJukgGcgQYgIBASAeIAQESIQoKZ3JvdXBfbmFtZRgLIAEoCUIIukgFcgMY/wFICIgBAUIJCgdfc2hhcmVkQgYKBF91cmxCDwoNX2ludGVybmFsX3VybEIRCg9fYXBwbGljYXRpb25faWRCDwoNX3JlZGlyZWN0X3VyaUIJCgdfc2VjcmV0Qg8KDV9hY2Nlc3NfdG9rZW5CEAoOX3JlZnJlc2hfdG9rZW5CDQoLX2dyb3VwX25hbWUiTwocVXBkYXRlR2l0bGFiUHJvdmlkZXJSZXNwb25zZRIvCghwcm92aWRlchgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuR2l0UHJvdmlkZXIi/gMKGlVwZGF0ZUdpdGVhUHJvdmlkZXJSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEhgKBG5hbWUYAiABKAlCCrpIB3IFEAEY/wESEwoGc2hhcmVkGAMgASgISACIAQESGgoDdXJsGAQgASgJQgi6SAVyAxiAEEgBiAEBEiMKDGludGVybmFsX3VybBgFIAEoCUIIukgFcgMYgBBIAogBARIjCgxyZWRpcmVjdF91cmkYBiABKAlCCLpIBXIDGIAQSAOIAQESIAoJY2xpZW50X2lkGAcgASgJQgi6SAVyAxj/AUgEiAEBEiUKDWNsaWVudF9zZWNyZXQYCCABKAlCCbpIBnIEGICAQEgFiAEBEiQKDGFjY2Vzc190b2tlbhgJIAEoCUIJukgGcgQYgIBASAaIAQESJQoNcmVmcmVzaF90b2tlbhgKIAEoCUIJukgGcgQYgIBASAeIAQESHQoGc2NvcGVzGAsgASgJQgi6SAVyAxiACEgIiAEBQgkKB19zaGFyZWRCBgoEX3VybEIPCg1faW50ZXJuYWxfdXJsQg8KDV9yZWRpcmVjdF91cmlCDAoKX2NsaWVudF9pZEIQCg5fY2xpZW50X3NlY3JldEIPCg1fYWNjZXNzX3Rva2VuQhAKDl9yZWZyZXNoX3Rva2VuQgkKB19zY29wZXMiTgobVXBkYXRlR2l0ZWFQcm92aWRlclJlc3BvbnNlEi8KCHByb3ZpZGVyGAEgASgLMh0ub3Blbm94aWRlLmFwaS52MS5HaXRQcm92aWRlciLdAgoeVXBkYXRlQml0YnVja2V0UHJvdmlkZXJSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEhgKBG5hbWUYAiABKAlCCrpIB3IFEAEY/wESEwoGc2hhcmVkGAMgASgISACIAQESHwoIdXNlcm5hbWUYBCABKAlCCLpIBXIDGP8BSAGIAQESHAoFZW1haWwYBSABKAlCCLpIBXIDGMACSAKIAQESJAoMYXBwX3Bhc3N3b3JkGAYgASgJQgm6SAZyBBiAgEBIA4gBARIhCglhcGlfdG9rZW4YByABKAlCCbpIBnIEGICAQEgEiAEBEiAKCXdvcmtzcGFjZRgIIAEoCUIIukgFcgMY/wFIBYgBAUIJCgdfc2hhcmVkQgsKCV91c2VybmFtZUIICgZfZW1haWxCDwoNX2FwcF9wYXNzd29yZEIMCgpfYXBpX3Rva2VuQgwKCl93b3Jrc3BhY2UiUgofVXBkYXRlQml0YnVja2V0UHJvdmlkZXJSZXNwb25zZRIvCghwcm92aWRlchgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuR2l0UHJvdmlkZXIiLwoYRGVsZXRlR2l0UHJvdmlkZXJSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIi0KFlRlc3RHaXRQcm92aWRlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiOwoXVGVzdEdpdFByb3ZpZGVyUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJIjQKHUdpdFJvdGF0ZVdlYmhvb2tTZWNyZXRSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIjgKHkdpdFJvdGF0ZVdlYmhvb2tTZWNyZXRSZXNwb25zZRIWCg53ZWJob29rX3NlY3JldBgBIAEoCSI6ChpHaXRMaXN0UmVwb3NpdG9yaWVzUmVxdWVzdBIcCgtwcm92aWRlcl9pZBgBIAEoA0IHukgEIgIgACJcChtHaXRMaXN0UmVwb3NpdG9yaWVzUmVzcG9uc2USPQoMcmVwb3NpdG9yaWVzGAEgAygLMicub3Blbm94aWRlLmFwaS52MS5HaXRQcm92aWRlclJlcG9zaXRvcnkiewogR2l0TGlzdFJlcG9zaXRvcnlCcmFuY2hlc1JlcXVlc3QSHAoLcHJvdmlkZXJfaWQYASABKANCB7pIBCICIAASGQoFb3duZXIYAiABKAlCCrpIB3IFEAEY/wESHgoKcmVwb3NpdG9yeRgDIAEoCUIKukgHcgUQARj/ASJdCiFHaXRMaXN0UmVwb3NpdG9yeUJyYW5jaGVzUmVzcG9uc2USOAoIYnJhbmNoZXMYASADKAsyJi5vcGVub3hpZGUuYXBpLnYxLkdpdFByb3ZpZGVyUmVmZXJlbmNlIm0KEkdpdExpc3RUYWdzUmVxdWVzdBIcCgtwcm92aWRlcl9pZBgBIAEoA0IHukgEIgIgABIZCgVvd25lchgCIAEoCUIKukgHcgUQARj/ARIeCgpyZXBvc2l0b3J5GAMgASgJQgq6SAdyBRABGP8BIksKE0dpdExpc3RUYWdzUmVzcG9uc2USNAoEdGFncxgBIAMoCzImLm9wZW5veGlkZS5hcGkudjEuR2l0UHJvdmlkZXJSZWZlcmVuY2UiMwoTR2l0QXV0aG9yaXplUmVxdWVzdBIcCgtwcm92aWRlcl9pZBgBIAEoA0IHukgEIgIgACIyChRHaXRBdXRob3JpemVSZXNwb25zZRILCgN1cmwYASABKAkSDQoFc3RhdGUYAiABKAki6gEKF0dpdE9BdXRoQ2FsbGJhY2tSZXF1ZXN0EhwKC3Byb3ZpZGVyX2lkGAEgASgDQge6SAQiAiAAEhsKBGNvZGUYAiABKAlCCLpIBXIDGIAgSACIAQESGQoFc3RhdGUYAyABKAlCCrpIB3IFEAEYgCASJgoPaW5zdGFsbGF0aW9uX2lkGAQgASgJQgi6SAVyAxj/AUgBiAEBEiMKDHNldHVwX2FjdGlvbhgFIAEoCUIIukgFcgMY/wFIAogBAUIHCgVfY29kZUISChBfaW5zdGFsbGF0aW9uX2lkQg8KDV9zZXR1cF9hY3Rpb24iSwoYR2l0T0F1dGhDYWxsYmFja1Jlc3BvbnNlEi8KCHByb3ZpZGVyGAEgASgLMh0ub3Blbm94aWRlLmFwaS52MS5HaXRQcm92aWRlciI0ChRHaXREaXNjb25uZWN0UmVxdWVzdBIcCgtwcm92aWRlcl9pZBgBIAEoA0IHukgEIgIgACKcAQojR2l0R2V0Q29sbGFib3JhdG9yUGVybWlzc2lvblJlcXVlc3QSHAoLcHJvdmlkZXJfaWQYASABKANCB7pIBCICIAASGQoFb3duZXIYAiABKAlCCrpIB3IFEAEY/wESHgoKcmVwb3NpdG9yeRgDIAEoCUIKukgHcgUQARj/ARIcCgh1c2VybmFtZRgEIAEoCUIKukgHcgUQARj/ASJvCiRHaXRHZXRDb2xsYWJvcmF0b3JQZXJtaXNzaW9uUmVzcG9uc2USRwoKcGVybWlzc2lvbhgBIAEoCzIzLm9wZW5veGlkZS5hcGkudjEuR2l0UHJvdmlkZXJDb2xsYWJvcmF0b3JQZXJtaXNzaW9uIpcBChpHaXRHZXRXZWJob29rU3RhdHVzUmVxdWVzdBIcCgtwcm92aWRlcl9pZBgBIAEoA0IHukgEIgIgABIZCgVvd25lchgCIAEoCUIKukgHcgUQARj/ARIeCgpyZXBvc2l0b3J5GAMgASgJQgq6SAdyBRABGP8BEiAKDGNhbGxiYWNrX3VybBgEIAEoCUIKukgHcgUQARiAECJpChtHaXRHZXRXZWJob29rU3RhdHVzUmVzcG9uc2USPgoHd2ViaG9vaxgBIAEoCzIoLm9wZW5veGlkZS5hcGkudjEuR2l0UHJvdmlkZXJXZWJob29rSW5mb0gAiAEBQgoKCF93ZWJob29rIpUBChhHaXRJbnN0YWxsV2ViaG9va1JlcXVlc3QSHAoLcHJvdmlkZXJfaWQYASABKANCB7pIBCICIAASGQoFb3duZXIYAiABKAlCCrpIB3IFEAEY/wESHgoKcmVwb3NpdG9yeRgDIAEoCUIKukgHcgUQARj/ARIgCgxjYWxsYmFja191cmwYBCABKAlCCrpIB3IFEAEYgBAiVgoZR2l0SW5zdGFsbFdlYmhvb2tSZXNwb25zZRI5Cgd3ZWJob29rGAEgASgLMigub3Blbm94aWRlLmFwaS52MS5HaXRQcm92aWRlcldlYmhvb2tJbmZvIpYBChlHaXRSZWNyZWF0ZVdlYmhvb2tSZXF1ZXN0EhwKC3Byb3ZpZGVyX2lkGAEgASgDQge6SAQiAiAAEhkKBW93bmVyGAIgASgJQgq6SAdyBRABGP8BEh4KCnJlcG9zaXRvcnkYAyABKAlCCrpIB3IFEAEY/wESIAoMY2FsbGJhY2tfdXJsGAQgASgJQgq6SAdyBRABGIAQIlcKGkdpdFJlY3JlYXRlV2ViaG9va1Jlc3BvbnNlEjkKB3dlYmhvb2sYASABKAsyKC5vcGVub3hpZGUuYXBpLnYxLkdpdFByb3ZpZGVyV2ViaG9va0luZm8ilAEKF0dpdERlbGV0ZVdlYmhvb2tSZXF1ZXN0EhwKC3Byb3ZpZGVyX2lkGAEgASgDQge6SAQiAiAAEhkKBW93bmVyGAIgASgJQgq6SAdyBRABGP8BEh4KCnJlcG9zaXRvcnkYAyABKAlCCrpIB3IFEAEY/wESIAoMY2FsbGJhY2tfdXJsGAQgASgJQgq6SAdyBRABGIAQKq4BCg9HaXRQcm92aWRlclR5cGUSIQodR0lUX1BST1ZJREVSX1RZUEVfVU5TUEVDSUZJRUQQABIcChhHSVRfUFJPVklERVJfVFlQRV9HSVRIVUIQARIcChhHSVRfUFJPVklERVJfVFlQRV9HSVRMQUIQAhIbChdHSVRfUFJPVklERVJfVFlQRV9HSVRFQRADEh8KG0dJVF9QUk9WSURFUl9UWVBFX0JJVEJVQ0tFVBAEMuYUChJHaXRQcm92aWRlclNlcnZpY2USaQoQTGlzdEdpdFByb3ZpZGVycxIpLm9wZW5veGlkZS5hcGkudjEuTGlzdEdpdFByb3ZpZGVyc1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLkxpc3RHaXRQcm92aWRlcnNSZXNwb25zZRJjCg5HZXRHaXRQcm92aWRlchInLm9wZW5veGlkZS5hcGkudjEuR2V0R2l0UHJvdmlkZXJSZXF1ZXN0Gigub3Blbm94aWRlLmFwaS52MS5HZXRHaXRQcm92aWRlclJlc3BvbnNlEnUKFENyZWF0ZUdpdGh1YlByb3ZpZGVyEi0ub3Blbm94aWRlLmFwaS52MS5DcmVhdGVHaXRodWJQcm92aWRlclJlcXVlc3QaLi5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZUdpdGh1YlByb3ZpZGVyUmVzcG9uc2USdQoUQ3JlYXRlR2l0bGFiUHJvdmlkZXISLS5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZUdpdGxhYlByb3ZpZGVyUmVxdWVzdBouLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlR2l0bGFiUHJvdmlkZXJSZXNwb25zZRJyChNDcmVhdGVHaXRlYVByb3ZpZGVyEiwub3Blbm94aWRlLmFwaS52MS5DcmVhdGVHaXRlYVByb3ZpZGVyUmVxdWVzdBotLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlR2l0ZWFQcm92aWRlclJlc3BvbnNlEn4KF0NyZWF0ZUJpdGJ1Y2tldFByb3ZpZGVyEjAub3Blbm94aWRlLmFwaS52MS5DcmVhdGVCaXRidWNrZXRQcm92aWRlclJlcXVlc3QaMS5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZUJpdGJ1Y2tldFByb3ZpZGVyUmVzcG9uc2USdQoUVXBkYXRlR2l0aHViUHJvdmlkZXISLS5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZUdpdGh1YlByb3ZpZGVyUmVxdWVzdBouLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlR2l0aHViUHJvdmlkZXJSZXNwb25zZRJ1ChRVcGRhdGVHaXRsYWJQcm92aWRlchItLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlR2l0bGFiUHJvdmlkZXJSZXF1ZXN0Gi4ub3Blbm94aWRlLmFwaS52MS5VcGRhdGVHaXRsYWJQcm92aWRlclJlc3BvbnNlEnIKE1VwZGF0ZUdpdGVhUHJvdmlkZXISLC5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZUdpdGVhUHJvdmlkZXJSZXF1ZXN0Gi0ub3Blbm94aWRlLmFwaS52MS5VcGRhdGVHaXRlYVByb3ZpZGVyUmVzcG9uc2USfgoXVXBkYXRlQml0YnVja2V0UHJvdmlkZXISMC5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZUJpdGJ1Y2tldFByb3ZpZGVyUmVxdWVzdBoxLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlQml0YnVja2V0UHJvdmlkZXJSZXNwb25zZRJYChFEZWxldGVHaXRQcm92aWRlchIqLm9wZW5veGlkZS5hcGkudjEuRGVsZXRlR2l0UHJvdmlkZXJSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJmCg9UZXN0R2l0UHJvdmlkZXISKC5vcGVub3hpZGUuYXBpLnYxLlRlc3RHaXRQcm92aWRlclJlcXVlc3QaKS5vcGVub3hpZGUuYXBpLnYxLlRlc3RHaXRQcm92aWRlclJlc3BvbnNlEngKE1JvdGF0ZVdlYmhvb2tTZWNyZXQSLy5vcGVub3hpZGUuYXBpLnYxLkdpdFJvdGF0ZVdlYmhvb2tTZWNyZXRSZXF1ZXN0GjAub3Blbm94aWRlLmFwaS52MS5HaXRSb3RhdGVXZWJob29rU2VjcmV0UmVzcG9uc2USbwoQTGlzdFJlcG9zaXRvcmllcxIsLm9wZW5veGlkZS5hcGkudjEuR2l0TGlzdFJlcG9zaXRvcmllc1JlcXVlc3QaLS5vcGVub3hpZGUuYXBpLnYxLkdpdExpc3RSZXBvc2l0b3JpZXNSZXNwb25zZRJ3CgxMaXN0QnJhbmNoZXMSMi5vcGVub3hpZGUuYXBpLnYxLkdpdExpc3RSZXBvc2l0b3J5QnJhbmNoZXNSZXF1ZXN0GjMub3Blbm94aWRlLmFwaS52MS5HaXRMaXN0UmVwb3NpdG9yeUJyYW5jaGVzUmVzcG9uc2USVwoITGlzdFRhZ3MSJC5vcGVub3hpZGUuYXBpLnYxLkdpdExpc3RUYWdzUmVxdWVzdBolLm9wZW5veGlkZS5hcGkudjEuR2l0TGlzdFRhZ3NSZXNwb25zZRJaCglBdXRob3JpemUSJS5vcGVub3hpZGUuYXBpLnYxLkdpdEF1dGhvcml6ZVJlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLkdpdEF1dGhvcml6ZVJlc3BvbnNlEmYKDU9BdXRoQ2FsbGJhY2sSKS5vcGVub3hpZGUuYXBpLnYxLkdpdE9BdXRoQ2FsbGJhY2tSZXF1ZXN0Gioub3Blbm94aWRlLmFwaS52MS5HaXRPQXV0aENhbGxiYWNrUmVzcG9uc2USTQoKRGlzY29ubmVjdBImLm9wZW5veGlkZS5hcGkudjEuR2l0RGlzY29ubmVjdFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EooBChlHZXRDb2xsYWJvcmF0b3JQZXJtaXNzaW9uEjUub3Blbm94aWRlLmFwaS52MS5HaXRHZXRDb2xsYWJvcmF0b3JQZXJtaXNzaW9uUmVxdWVzdBo2Lm9wZW5veGlkZS5hcGkudjEuR2l0R2V0Q29sbGFib3JhdG9yUGVybWlzc2lvblJlc3BvbnNlEm8KEEdldFdlYmhvb2tTdGF0dXMSLC5vcGVub3hpZGUuYXBpLnYxLkdpdEdldFdlYmhvb2tTdGF0dXNSZXF1ZXN0Gi0ub3Blbm94aWRlLmFwaS52MS5HaXRHZXRXZWJob29rU3RhdHVzUmVzcG9uc2USaQoOSW5zdGFsbFdlYmhvb2sSKi5vcGVub3hpZGUuYXBpLnYxLkdpdEluc3RhbGxXZWJob29rUmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuR2l0SW5zdGFsbFdlYmhvb2tSZXNwb25zZRJsCg9SZWNyZWF0ZVdlYmhvb2sSKy5vcGVub3hpZGUuYXBpLnYxLkdpdFJlY3JlYXRlV2ViaG9va1JlcXVlc3QaLC5vcGVub3hpZGUuYXBpLnYxLkdpdFJlY3JlYXRlV2ViaG9va1Jlc3BvbnNlElMKDURlbGV0ZVdlYmhvb2sSKS5vcGVub3hpZGUuYXBpLnYxLkdpdERlbGV0ZVdlYmhvb2tSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+
+/**
+ * Non-secret config projection of a stored provider; secrets are masked to `has_*` presence flags server-side.
+ *
+ * @generated from message openoxide.api.v1.GitProviderConfig
+ */
+export type GitProviderConfig = Message<"openoxide.api.v1.GitProviderConfig"> & {
+  /**
+   * @generated from field: optional string url = 1;
+   */
+  url?: string | undefined;
+
+  /**
+   * @generated from field: optional string internal_url = 2;
+   */
+  internalUrl?: string | undefined;
+
+  /**
+   * @generated from field: optional string app_name = 3;
+   */
+  appName?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 app_id = 4;
+   */
+  appId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string client_id = 5;
+   */
+  clientId?: string | undefined;
+
+  /**
+   * @generated from field: optional string installation_id = 6;
+   */
+  installationId?: string | undefined;
+
+  /**
+   * @generated from field: optional string application_id = 7;
+   */
+  applicationId?: string | undefined;
+
+  /**
+   * @generated from field: optional string redirect_uri = 8;
+   */
+  redirectUri?: string | undefined;
+
+  /**
+   * @generated from field: optional string group_name = 9;
+   */
+  groupName?: string | undefined;
+
+  /**
+   * @generated from field: optional string scopes = 10;
+   */
+  scopes?: string | undefined;
+
+  /**
+   * @generated from field: optional string username = 11;
+   */
+  username?: string | undefined;
+
+  /**
+   * @generated from field: optional string email = 12;
+   */
+  email?: string | undefined;
+
+  /**
+   * @generated from field: optional string workspace = 13;
+   */
+  workspace?: string | undefined;
+
+  /**
+   * @generated from field: bool has_client_secret = 14;
+   */
+  hasClientSecret: boolean;
+
+  /**
+   * @generated from field: bool has_private_key = 15;
+   */
+  hasPrivateKey: boolean;
+
+  /**
+   * @generated from field: bool has_access_token = 16;
+   */
+  hasAccessToken: boolean;
+
+  /**
+   * @generated from field: bool has_app_password = 17;
+   */
+  hasAppPassword: boolean;
+
+  /**
+   * @generated from field: bool has_api_token = 18;
+   */
+  hasApiToken: boolean;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitProviderConfig.
+ * Use `create(GitProviderConfigSchema)` to create a new message.
+ */
+export const GitProviderConfigSchema: GenMessage<GitProviderConfig> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 0);
+
+/**
+ * @generated from message openoxide.api.v1.GitProvider
+ */
+export type GitProvider = Message<"openoxide.api.v1.GitProvider"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.GitProviderType provider_type = 3;
+   */
+  providerType: GitProviderType;
+
+  /**
+   * @generated from field: bool shared = 4;
+   */
+  shared: boolean;
+
+  /**
+   * @generated from field: bool configured = 5;
+   */
+  configured: boolean;
+
+  /**
+   * @generated from field: bool webhook_configured = 6;
+   */
+  webhookConfigured: boolean;
+
+  /**
+   * @generated from field: int64 created_at = 7;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 8;
+   */
+  updatedAt: bigint;
+
+  /**
+   * @generated from field: openoxide.api.v1.GitProviderConfig config = 9;
+   */
+  config?: GitProviderConfig | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitProvider.
+ * Use `create(GitProviderSchema)` to create a new message.
+ */
+export const GitProviderSchema: GenMessage<GitProvider> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 1);
+
+/**
+ * Repository summary returned by provider discovery (`RepositoryInfo`).
+ *
+ * @generated from message openoxide.api.v1.GitProviderRepository
+ */
+export type GitProviderRepository = Message<"openoxide.api.v1.GitProviderRepository"> & {
+  /**
+   * @generated from field: string owner = 1;
+   */
+  owner: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string full_name = 3;
+   */
+  fullName: string;
+
+  /**
+   * @generated from field: bool private = 4;
+   */
+  private: boolean;
+
+  /**
+   * @generated from field: optional string default_branch = 5;
+   */
+  defaultBranch?: string | undefined;
+
+  /**
+   * @generated from field: optional string clone_url = 6;
+   */
+  cloneUrl?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitProviderRepository.
+ * Use `create(GitProviderRepositorySchema)` to create a new message.
+ */
+export const GitProviderRepositorySchema: GenMessage<GitProviderRepository> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 2);
+
+/**
+ * Branch or tag reference returned by provider discovery (`GitReferenceInfo`).
+ *
+ * @generated from message openoxide.api.v1.GitProviderReference
+ */
+export type GitProviderReference = Message<"openoxide.api.v1.GitProviderReference"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: optional string commit = 2;
+   */
+  commit?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitProviderReference.
+ * Use `create(GitProviderReferenceSchema)` to create a new message.
+ */
+export const GitProviderReferenceSchema: GenMessage<GitProviderReference> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 3);
+
+/**
+ * Provider-side webhook registration (`ProviderWebhookInfo`).
+ *
+ * @generated from message openoxide.api.v1.GitProviderWebhookInfo
+ */
+export type GitProviderWebhookInfo = Message<"openoxide.api.v1.GitProviderWebhookInfo"> & {
+  /**
+   * Webhook identifier as issued by the provider (not a panel row id).
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string url = 2;
+   */
+  url: string;
+
+  /**
+   * @generated from field: bool active = 3;
+   */
+  active: boolean;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitProviderWebhookInfo.
+ * Use `create(GitProviderWebhookInfoSchema)` to create a new message.
+ */
+export const GitProviderWebhookInfoSchema: GenMessage<GitProviderWebhookInfo> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 4);
+
+/**
+ * Collaborator access report (`CollaboratorPermission`); `level` is a provider-specific string (e.g. "admin", "write", "read", "none").
+ *
+ * @generated from message openoxide.api.v1.GitProviderCollaboratorPermission
+ */
+export type GitProviderCollaboratorPermission = Message<"openoxide.api.v1.GitProviderCollaboratorPermission"> & {
+  /**
+   * @generated from field: string username = 1;
+   */
+  username: string;
+
+  /**
+   * @generated from field: string level = 2;
+   */
+  level: string;
+
+  /**
+   * @generated from field: bool can_write = 3;
+   */
+  canWrite: boolean;
+
+  /**
+   * @generated from field: bool can_admin = 4;
+   */
+  canAdmin: boolean;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitProviderCollaboratorPermission.
+ * Use `create(GitProviderCollaboratorPermissionSchema)` to create a new message.
+ */
+export const GitProviderCollaboratorPermissionSchema: GenMessage<GitProviderCollaboratorPermission> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 5);
+
+/**
+ * @generated from message openoxide.api.v1.ListGitProvidersRequest
+ */
+export type ListGitProvidersRequest = Message<"openoxide.api.v1.ListGitProvidersRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListGitProvidersRequest.
+ * Use `create(ListGitProvidersRequestSchema)` to create a new message.
+ */
+export const ListGitProvidersRequestSchema: GenMessage<ListGitProvidersRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 6);
+
+/**
+ * @generated from message openoxide.api.v1.ListGitProvidersResponse
+ */
+export type ListGitProvidersResponse = Message<"openoxide.api.v1.ListGitProvidersResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.GitProvider providers = 1;
+   */
+  providers: GitProvider[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListGitProvidersResponse.
+ * Use `create(ListGitProvidersResponseSchema)` to create a new message.
+ */
+export const ListGitProvidersResponseSchema: GenMessage<ListGitProvidersResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 7);
+
+/**
+ * @generated from message openoxide.api.v1.GetGitProviderRequest
+ */
+export type GetGitProviderRequest = Message<"openoxide.api.v1.GetGitProviderRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetGitProviderRequest.
+ * Use `create(GetGitProviderRequestSchema)` to create a new message.
+ */
+export const GetGitProviderRequestSchema: GenMessage<GetGitProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 8);
+
+/**
+ * @generated from message openoxide.api.v1.GetGitProviderResponse
+ */
+export type GetGitProviderResponse = Message<"openoxide.api.v1.GetGitProviderResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.GitProvider provider = 1;
+   */
+  provider?: GitProvider | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetGitProviderResponse.
+ * Use `create(GetGitProviderResponseSchema)` to create a new message.
+ */
+export const GetGitProviderResponseSchema: GenMessage<GetGitProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 9);
+
+/**
+ * @generated from message openoxide.api.v1.CreateGithubProviderRequest
+ */
+export type CreateGithubProviderRequest = Message<"openoxide.api.v1.CreateGithubProviderRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * Omitted means shared (server default `true`).
+   *
+   * @generated from field: optional bool shared = 2;
+   */
+  shared?: boolean | undefined;
+
+  /**
+   * @generated from field: optional string app_name = 3;
+   */
+  appName?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 app_id = 4;
+   */
+  appId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string client_id = 5;
+   */
+  clientId?: string | undefined;
+
+  /**
+   * @generated from field: optional string client_secret = 6;
+   */
+  clientSecret?: string | undefined;
+
+  /**
+   * @generated from field: optional string installation_id = 7;
+   */
+  installationId?: string | undefined;
+
+  /**
+   * GitHub App PEM private key; opaque secret material.
+   *
+   * @generated from field: optional string private_key = 8;
+   */
+  privateKey?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateGithubProviderRequest.
+ * Use `create(CreateGithubProviderRequestSchema)` to create a new message.
+ */
+export const CreateGithubProviderRequestSchema: GenMessage<CreateGithubProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 10);
+
+/**
+ * @generated from message openoxide.api.v1.CreateGithubProviderResponse
+ */
+export type CreateGithubProviderResponse = Message<"openoxide.api.v1.CreateGithubProviderResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.GitProvider provider = 1;
+   */
+  provider?: GitProvider | undefined;
+
+  /**
+   * @generated from field: string webhook_secret = 2;
+   */
+  webhookSecret: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateGithubProviderResponse.
+ * Use `create(CreateGithubProviderResponseSchema)` to create a new message.
+ */
+export const CreateGithubProviderResponseSchema: GenMessage<CreateGithubProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 11);
+
+/**
+ * @generated from message openoxide.api.v1.CreateGitlabProviderRequest
+ */
+export type CreateGitlabProviderRequest = Message<"openoxide.api.v1.CreateGitlabProviderRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * Omitted means shared (server default `true`).
+   *
+   * @generated from field: optional bool shared = 2;
+   */
+  shared?: boolean | undefined;
+
+  /**
+   * @generated from field: string url = 3;
+   */
+  url: string;
+
+  /**
+   * @generated from field: optional string internal_url = 4;
+   */
+  internalUrl?: string | undefined;
+
+  /**
+   * @generated from field: optional string application_id = 5;
+   */
+  applicationId?: string | undefined;
+
+  /**
+   * @generated from field: optional string redirect_uri = 6;
+   */
+  redirectUri?: string | undefined;
+
+  /**
+   * @generated from field: optional string secret = 7;
+   */
+  secret?: string | undefined;
+
+  /**
+   * @generated from field: optional string access_token = 8;
+   */
+  accessToken?: string | undefined;
+
+  /**
+   * @generated from field: optional string refresh_token = 9;
+   */
+  refreshToken?: string | undefined;
+
+  /**
+   * @generated from field: optional string group_name = 10;
+   */
+  groupName?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateGitlabProviderRequest.
+ * Use `create(CreateGitlabProviderRequestSchema)` to create a new message.
+ */
+export const CreateGitlabProviderRequestSchema: GenMessage<CreateGitlabProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 12);
+
+/**
+ * @generated from message openoxide.api.v1.CreateGitlabProviderResponse
+ */
+export type CreateGitlabProviderResponse = Message<"openoxide.api.v1.CreateGitlabProviderResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.GitProvider provider = 1;
+   */
+  provider?: GitProvider | undefined;
+
+  /**
+   * @generated from field: string webhook_secret = 2;
+   */
+  webhookSecret: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateGitlabProviderResponse.
+ * Use `create(CreateGitlabProviderResponseSchema)` to create a new message.
+ */
+export const CreateGitlabProviderResponseSchema: GenMessage<CreateGitlabProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 13);
+
+/**
+ * @generated from message openoxide.api.v1.CreateGiteaProviderRequest
+ */
+export type CreateGiteaProviderRequest = Message<"openoxide.api.v1.CreateGiteaProviderRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * Omitted means shared (server default `true`).
+   *
+   * @generated from field: optional bool shared = 2;
+   */
+  shared?: boolean | undefined;
+
+  /**
+   * @generated from field: string url = 3;
+   */
+  url: string;
+
+  /**
+   * @generated from field: optional string internal_url = 4;
+   */
+  internalUrl?: string | undefined;
+
+  /**
+   * @generated from field: optional string redirect_uri = 5;
+   */
+  redirectUri?: string | undefined;
+
+  /**
+   * @generated from field: optional string client_id = 6;
+   */
+  clientId?: string | undefined;
+
+  /**
+   * @generated from field: optional string client_secret = 7;
+   */
+  clientSecret?: string | undefined;
+
+  /**
+   * @generated from field: optional string access_token = 8;
+   */
+  accessToken?: string | undefined;
+
+  /**
+   * @generated from field: optional string refresh_token = 9;
+   */
+  refreshToken?: string | undefined;
+
+  /**
+   * @generated from field: optional string scopes = 10;
+   */
+  scopes?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateGiteaProviderRequest.
+ * Use `create(CreateGiteaProviderRequestSchema)` to create a new message.
+ */
+export const CreateGiteaProviderRequestSchema: GenMessage<CreateGiteaProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 14);
+
+/**
+ * @generated from message openoxide.api.v1.CreateGiteaProviderResponse
+ */
+export type CreateGiteaProviderResponse = Message<"openoxide.api.v1.CreateGiteaProviderResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.GitProvider provider = 1;
+   */
+  provider?: GitProvider | undefined;
+
+  /**
+   * @generated from field: string webhook_secret = 2;
+   */
+  webhookSecret: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateGiteaProviderResponse.
+ * Use `create(CreateGiteaProviderResponseSchema)` to create a new message.
+ */
+export const CreateGiteaProviderResponseSchema: GenMessage<CreateGiteaProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 15);
+
+/**
+ * @generated from message openoxide.api.v1.CreateBitbucketProviderRequest
+ */
+export type CreateBitbucketProviderRequest = Message<"openoxide.api.v1.CreateBitbucketProviderRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * Omitted means shared (server default `true`).
+   *
+   * @generated from field: optional bool shared = 2;
+   */
+  shared?: boolean | undefined;
+
+  /**
+   * @generated from field: optional string username = 3;
+   */
+  username?: string | undefined;
+
+  /**
+   * @generated from field: optional string email = 4;
+   */
+  email?: string | undefined;
+
+  /**
+   * @generated from field: optional string app_password = 5;
+   */
+  appPassword?: string | undefined;
+
+  /**
+   * @generated from field: optional string api_token = 6;
+   */
+  apiToken?: string | undefined;
+
+  /**
+   * @generated from field: optional string workspace = 7;
+   */
+  workspace?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateBitbucketProviderRequest.
+ * Use `create(CreateBitbucketProviderRequestSchema)` to create a new message.
+ */
+export const CreateBitbucketProviderRequestSchema: GenMessage<CreateBitbucketProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 16);
+
+/**
+ * @generated from message openoxide.api.v1.CreateBitbucketProviderResponse
+ */
+export type CreateBitbucketProviderResponse = Message<"openoxide.api.v1.CreateBitbucketProviderResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.GitProvider provider = 1;
+   */
+  provider?: GitProvider | undefined;
+
+  /**
+   * @generated from field: string webhook_secret = 2;
+   */
+  webhookSecret: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateBitbucketProviderResponse.
+ * Use `create(CreateBitbucketProviderResponseSchema)` to create a new message.
+ */
+export const CreateBitbucketProviderResponseSchema: GenMessage<CreateBitbucketProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 17);
+
+/**
+ * The stored DTO requires `name` on every update; remaining credential fields are optional patches (absent keeps the stored value).
+ *
+ * @generated from message openoxide.api.v1.UpdateGithubProviderRequest
+ */
+export type UpdateGithubProviderRequest = Message<"openoxide.api.v1.UpdateGithubProviderRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: optional bool shared = 3;
+   */
+  shared?: boolean | undefined;
+
+  /**
+   * @generated from field: optional string app_name = 4;
+   */
+  appName?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 app_id = 5;
+   */
+  appId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string client_id = 6;
+   */
+  clientId?: string | undefined;
+
+  /**
+   * @generated from field: optional string client_secret = 7;
+   */
+  clientSecret?: string | undefined;
+
+  /**
+   * @generated from field: optional string installation_id = 8;
+   */
+  installationId?: string | undefined;
+
+  /**
+   * GitHub App PEM private key; opaque secret material.
+   *
+   * @generated from field: optional string private_key = 9;
+   */
+  privateKey?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateGithubProviderRequest.
+ * Use `create(UpdateGithubProviderRequestSchema)` to create a new message.
+ */
+export const UpdateGithubProviderRequestSchema: GenMessage<UpdateGithubProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 18);
+
+/**
+ * @generated from message openoxide.api.v1.UpdateGithubProviderResponse
+ */
+export type UpdateGithubProviderResponse = Message<"openoxide.api.v1.UpdateGithubProviderResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.GitProvider provider = 1;
+   */
+  provider?: GitProvider | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateGithubProviderResponse.
+ * Use `create(UpdateGithubProviderResponseSchema)` to create a new message.
+ */
+export const UpdateGithubProviderResponseSchema: GenMessage<UpdateGithubProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 19);
+
+/**
+ * @generated from message openoxide.api.v1.UpdateGitlabProviderRequest
+ */
+export type UpdateGitlabProviderRequest = Message<"openoxide.api.v1.UpdateGitlabProviderRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: optional bool shared = 3;
+   */
+  shared?: boolean | undefined;
+
+  /**
+   * @generated from field: optional string url = 4;
+   */
+  url?: string | undefined;
+
+  /**
+   * @generated from field: optional string internal_url = 5;
+   */
+  internalUrl?: string | undefined;
+
+  /**
+   * @generated from field: optional string application_id = 6;
+   */
+  applicationId?: string | undefined;
+
+  /**
+   * @generated from field: optional string redirect_uri = 7;
+   */
+  redirectUri?: string | undefined;
+
+  /**
+   * @generated from field: optional string secret = 8;
+   */
+  secret?: string | undefined;
+
+  /**
+   * @generated from field: optional string access_token = 9;
+   */
+  accessToken?: string | undefined;
+
+  /**
+   * @generated from field: optional string refresh_token = 10;
+   */
+  refreshToken?: string | undefined;
+
+  /**
+   * @generated from field: optional string group_name = 11;
+   */
+  groupName?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateGitlabProviderRequest.
+ * Use `create(UpdateGitlabProviderRequestSchema)` to create a new message.
+ */
+export const UpdateGitlabProviderRequestSchema: GenMessage<UpdateGitlabProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 20);
+
+/**
+ * @generated from message openoxide.api.v1.UpdateGitlabProviderResponse
+ */
+export type UpdateGitlabProviderResponse = Message<"openoxide.api.v1.UpdateGitlabProviderResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.GitProvider provider = 1;
+   */
+  provider?: GitProvider | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateGitlabProviderResponse.
+ * Use `create(UpdateGitlabProviderResponseSchema)` to create a new message.
+ */
+export const UpdateGitlabProviderResponseSchema: GenMessage<UpdateGitlabProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 21);
+
+/**
+ * @generated from message openoxide.api.v1.UpdateGiteaProviderRequest
+ */
+export type UpdateGiteaProviderRequest = Message<"openoxide.api.v1.UpdateGiteaProviderRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: optional bool shared = 3;
+   */
+  shared?: boolean | undefined;
+
+  /**
+   * @generated from field: optional string url = 4;
+   */
+  url?: string | undefined;
+
+  /**
+   * @generated from field: optional string internal_url = 5;
+   */
+  internalUrl?: string | undefined;
+
+  /**
+   * @generated from field: optional string redirect_uri = 6;
+   */
+  redirectUri?: string | undefined;
+
+  /**
+   * @generated from field: optional string client_id = 7;
+   */
+  clientId?: string | undefined;
+
+  /**
+   * @generated from field: optional string client_secret = 8;
+   */
+  clientSecret?: string | undefined;
+
+  /**
+   * @generated from field: optional string access_token = 9;
+   */
+  accessToken?: string | undefined;
+
+  /**
+   * @generated from field: optional string refresh_token = 10;
+   */
+  refreshToken?: string | undefined;
+
+  /**
+   * @generated from field: optional string scopes = 11;
+   */
+  scopes?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateGiteaProviderRequest.
+ * Use `create(UpdateGiteaProviderRequestSchema)` to create a new message.
+ */
+export const UpdateGiteaProviderRequestSchema: GenMessage<UpdateGiteaProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 22);
+
+/**
+ * @generated from message openoxide.api.v1.UpdateGiteaProviderResponse
+ */
+export type UpdateGiteaProviderResponse = Message<"openoxide.api.v1.UpdateGiteaProviderResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.GitProvider provider = 1;
+   */
+  provider?: GitProvider | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateGiteaProviderResponse.
+ * Use `create(UpdateGiteaProviderResponseSchema)` to create a new message.
+ */
+export const UpdateGiteaProviderResponseSchema: GenMessage<UpdateGiteaProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 23);
+
+/**
+ * @generated from message openoxide.api.v1.UpdateBitbucketProviderRequest
+ */
+export type UpdateBitbucketProviderRequest = Message<"openoxide.api.v1.UpdateBitbucketProviderRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: optional bool shared = 3;
+   */
+  shared?: boolean | undefined;
+
+  /**
+   * @generated from field: optional string username = 4;
+   */
+  username?: string | undefined;
+
+  /**
+   * @generated from field: optional string email = 5;
+   */
+  email?: string | undefined;
+
+  /**
+   * @generated from field: optional string app_password = 6;
+   */
+  appPassword?: string | undefined;
+
+  /**
+   * @generated from field: optional string api_token = 7;
+   */
+  apiToken?: string | undefined;
+
+  /**
+   * @generated from field: optional string workspace = 8;
+   */
+  workspace?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateBitbucketProviderRequest.
+ * Use `create(UpdateBitbucketProviderRequestSchema)` to create a new message.
+ */
+export const UpdateBitbucketProviderRequestSchema: GenMessage<UpdateBitbucketProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 24);
+
+/**
+ * @generated from message openoxide.api.v1.UpdateBitbucketProviderResponse
+ */
+export type UpdateBitbucketProviderResponse = Message<"openoxide.api.v1.UpdateBitbucketProviderResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.GitProvider provider = 1;
+   */
+  provider?: GitProvider | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateBitbucketProviderResponse.
+ * Use `create(UpdateBitbucketProviderResponseSchema)` to create a new message.
+ */
+export const UpdateBitbucketProviderResponseSchema: GenMessage<UpdateBitbucketProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 25);
+
+/**
+ * @generated from message openoxide.api.v1.DeleteGitProviderRequest
+ */
+export type DeleteGitProviderRequest = Message<"openoxide.api.v1.DeleteGitProviderRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DeleteGitProviderRequest.
+ * Use `create(DeleteGitProviderRequestSchema)` to create a new message.
+ */
+export const DeleteGitProviderRequestSchema: GenMessage<DeleteGitProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 26);
+
+/**
+ * @generated from message openoxide.api.v1.TestGitProviderRequest
+ */
+export type TestGitProviderRequest = Message<"openoxide.api.v1.TestGitProviderRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.TestGitProviderRequest.
+ * Use `create(TestGitProviderRequestSchema)` to create a new message.
+ */
+export const TestGitProviderRequestSchema: GenMessage<TestGitProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 27);
+
+/**
+ * @generated from message openoxide.api.v1.TestGitProviderResponse
+ */
+export type TestGitProviderResponse = Message<"openoxide.api.v1.TestGitProviderResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: string message = 2;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.TestGitProviderResponse.
+ * Use `create(TestGitProviderResponseSchema)` to create a new message.
+ */
+export const TestGitProviderResponseSchema: GenMessage<TestGitProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 28);
+
+/**
+ * @generated from message openoxide.api.v1.GitRotateWebhookSecretRequest
+ */
+export type GitRotateWebhookSecretRequest = Message<"openoxide.api.v1.GitRotateWebhookSecretRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitRotateWebhookSecretRequest.
+ * Use `create(GitRotateWebhookSecretRequestSchema)` to create a new message.
+ */
+export const GitRotateWebhookSecretRequestSchema: GenMessage<GitRotateWebhookSecretRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 29);
+
+/**
+ * @generated from message openoxide.api.v1.GitRotateWebhookSecretResponse
+ */
+export type GitRotateWebhookSecretResponse = Message<"openoxide.api.v1.GitRotateWebhookSecretResponse"> & {
+  /**
+   * @generated from field: string webhook_secret = 1;
+   */
+  webhookSecret: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitRotateWebhookSecretResponse.
+ * Use `create(GitRotateWebhookSecretResponseSchema)` to create a new message.
+ */
+export const GitRotateWebhookSecretResponseSchema: GenMessage<GitRotateWebhookSecretResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 30);
+
+/**
+ * @generated from message openoxide.api.v1.GitListRepositoriesRequest
+ */
+export type GitListRepositoriesRequest = Message<"openoxide.api.v1.GitListRepositoriesRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitListRepositoriesRequest.
+ * Use `create(GitListRepositoriesRequestSchema)` to create a new message.
+ */
+export const GitListRepositoriesRequestSchema: GenMessage<GitListRepositoriesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 31);
+
+/**
+ * @generated from message openoxide.api.v1.GitListRepositoriesResponse
+ */
+export type GitListRepositoriesResponse = Message<"openoxide.api.v1.GitListRepositoriesResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.GitProviderRepository repositories = 1;
+   */
+  repositories: GitProviderRepository[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitListRepositoriesResponse.
+ * Use `create(GitListRepositoriesResponseSchema)` to create a new message.
+ */
+export const GitListRepositoriesResponseSchema: GenMessage<GitListRepositoriesResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 32);
+
+/**
+ * @generated from message openoxide.api.v1.GitListRepositoryBranchesRequest
+ */
+export type GitListRepositoryBranchesRequest = Message<"openoxide.api.v1.GitListRepositoryBranchesRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+
+  /**
+   * @generated from field: string owner = 2;
+   */
+  owner: string;
+
+  /**
+   * @generated from field: string repository = 3;
+   */
+  repository: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitListRepositoryBranchesRequest.
+ * Use `create(GitListRepositoryBranchesRequestSchema)` to create a new message.
+ */
+export const GitListRepositoryBranchesRequestSchema: GenMessage<GitListRepositoryBranchesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 33);
+
+/**
+ * @generated from message openoxide.api.v1.GitListRepositoryBranchesResponse
+ */
+export type GitListRepositoryBranchesResponse = Message<"openoxide.api.v1.GitListRepositoryBranchesResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.GitProviderReference branches = 1;
+   */
+  branches: GitProviderReference[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitListRepositoryBranchesResponse.
+ * Use `create(GitListRepositoryBranchesResponseSchema)` to create a new message.
+ */
+export const GitListRepositoryBranchesResponseSchema: GenMessage<GitListRepositoryBranchesResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 34);
+
+/**
+ * @generated from message openoxide.api.v1.GitListTagsRequest
+ */
+export type GitListTagsRequest = Message<"openoxide.api.v1.GitListTagsRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+
+  /**
+   * @generated from field: string owner = 2;
+   */
+  owner: string;
+
+  /**
+   * @generated from field: string repository = 3;
+   */
+  repository: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitListTagsRequest.
+ * Use `create(GitListTagsRequestSchema)` to create a new message.
+ */
+export const GitListTagsRequestSchema: GenMessage<GitListTagsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 35);
+
+/**
+ * @generated from message openoxide.api.v1.GitListTagsResponse
+ */
+export type GitListTagsResponse = Message<"openoxide.api.v1.GitListTagsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.GitProviderReference tags = 1;
+   */
+  tags: GitProviderReference[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitListTagsResponse.
+ * Use `create(GitListTagsResponseSchema)` to create a new message.
+ */
+export const GitListTagsResponseSchema: GenMessage<GitListTagsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 36);
+
+/**
+ * @generated from message openoxide.api.v1.GitAuthorizeRequest
+ */
+export type GitAuthorizeRequest = Message<"openoxide.api.v1.GitAuthorizeRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitAuthorizeRequest.
+ * Use `create(GitAuthorizeRequestSchema)` to create a new message.
+ */
+export const GitAuthorizeRequestSchema: GenMessage<GitAuthorizeRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 37);
+
+/**
+ * @generated from message openoxide.api.v1.GitAuthorizeResponse
+ */
+export type GitAuthorizeResponse = Message<"openoxide.api.v1.GitAuthorizeResponse"> & {
+  /**
+   * Browser authorization URL to redirect the user to.
+   *
+   * @generated from field: string url = 1;
+   */
+  url: string;
+
+  /**
+   * Signed opaque state token to be echoed back by the callback.
+   *
+   * @generated from field: string state = 2;
+   */
+  state: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitAuthorizeResponse.
+ * Use `create(GitAuthorizeResponseSchema)` to create a new message.
+ */
+export const GitAuthorizeResponseSchema: GenMessage<GitAuthorizeResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 38);
+
+/**
+ * @generated from message openoxide.api.v1.GitOAuthCallbackRequest
+ */
+export type GitOAuthCallbackRequest = Message<"openoxide.api.v1.GitOAuthCallbackRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+
+  /**
+   * @generated from field: optional string code = 2;
+   */
+  code?: string | undefined;
+
+  /**
+   * @generated from field: string state = 3;
+   */
+  state: string;
+
+  /**
+   * @generated from field: optional string installation_id = 4;
+   */
+  installationId?: string | undefined;
+
+  /**
+   * GitHub setup-action query parameter; accepted by the DTO but not used.
+   *
+   * @generated from field: optional string setup_action = 5;
+   */
+  setupAction?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitOAuthCallbackRequest.
+ * Use `create(GitOAuthCallbackRequestSchema)` to create a new message.
+ */
+export const GitOAuthCallbackRequestSchema: GenMessage<GitOAuthCallbackRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 39);
+
+/**
+ * @generated from message openoxide.api.v1.GitOAuthCallbackResponse
+ */
+export type GitOAuthCallbackResponse = Message<"openoxide.api.v1.GitOAuthCallbackResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.GitProvider provider = 1;
+   */
+  provider?: GitProvider | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitOAuthCallbackResponse.
+ * Use `create(GitOAuthCallbackResponseSchema)` to create a new message.
+ */
+export const GitOAuthCallbackResponseSchema: GenMessage<GitOAuthCallbackResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 40);
+
+/**
+ * @generated from message openoxide.api.v1.GitDisconnectRequest
+ */
+export type GitDisconnectRequest = Message<"openoxide.api.v1.GitDisconnectRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitDisconnectRequest.
+ * Use `create(GitDisconnectRequestSchema)` to create a new message.
+ */
+export const GitDisconnectRequestSchema: GenMessage<GitDisconnectRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 41);
+
+/**
+ * @generated from message openoxide.api.v1.GitGetCollaboratorPermissionRequest
+ */
+export type GitGetCollaboratorPermissionRequest = Message<"openoxide.api.v1.GitGetCollaboratorPermissionRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+
+  /**
+   * @generated from field: string owner = 2;
+   */
+  owner: string;
+
+  /**
+   * @generated from field: string repository = 3;
+   */
+  repository: string;
+
+  /**
+   * @generated from field: string username = 4;
+   */
+  username: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitGetCollaboratorPermissionRequest.
+ * Use `create(GitGetCollaboratorPermissionRequestSchema)` to create a new message.
+ */
+export const GitGetCollaboratorPermissionRequestSchema: GenMessage<GitGetCollaboratorPermissionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 42);
+
+/**
+ * @generated from message openoxide.api.v1.GitGetCollaboratorPermissionResponse
+ */
+export type GitGetCollaboratorPermissionResponse = Message<"openoxide.api.v1.GitGetCollaboratorPermissionResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.GitProviderCollaboratorPermission permission = 1;
+   */
+  permission?: GitProviderCollaboratorPermission | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitGetCollaboratorPermissionResponse.
+ * Use `create(GitGetCollaboratorPermissionResponseSchema)` to create a new message.
+ */
+export const GitGetCollaboratorPermissionResponseSchema: GenMessage<GitGetCollaboratorPermissionResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 43);
+
+/**
+ * @generated from message openoxide.api.v1.GitGetWebhookStatusRequest
+ */
+export type GitGetWebhookStatusRequest = Message<"openoxide.api.v1.GitGetWebhookStatusRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+
+  /**
+   * @generated from field: string owner = 2;
+   */
+  owner: string;
+
+  /**
+   * @generated from field: string repository = 3;
+   */
+  repository: string;
+
+  /**
+   * @generated from field: string callback_url = 4;
+   */
+  callbackUrl: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitGetWebhookStatusRequest.
+ * Use `create(GitGetWebhookStatusRequestSchema)` to create a new message.
+ */
+export const GitGetWebhookStatusRequestSchema: GenMessage<GitGetWebhookStatusRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 44);
+
+/**
+ * @generated from message openoxide.api.v1.GitGetWebhookStatusResponse
+ */
+export type GitGetWebhookStatusResponse = Message<"openoxide.api.v1.GitGetWebhookStatusResponse"> & {
+  /**
+   * Absent when no matching webhook is registered on the repository.
+   *
+   * @generated from field: optional openoxide.api.v1.GitProviderWebhookInfo webhook = 1;
+   */
+  webhook?: GitProviderWebhookInfo | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitGetWebhookStatusResponse.
+ * Use `create(GitGetWebhookStatusResponseSchema)` to create a new message.
+ */
+export const GitGetWebhookStatusResponseSchema: GenMessage<GitGetWebhookStatusResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 45);
+
+/**
+ * @generated from message openoxide.api.v1.GitInstallWebhookRequest
+ */
+export type GitInstallWebhookRequest = Message<"openoxide.api.v1.GitInstallWebhookRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+
+  /**
+   * @generated from field: string owner = 2;
+   */
+  owner: string;
+
+  /**
+   * @generated from field: string repository = 3;
+   */
+  repository: string;
+
+  /**
+   * @generated from field: string callback_url = 4;
+   */
+  callbackUrl: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitInstallWebhookRequest.
+ * Use `create(GitInstallWebhookRequestSchema)` to create a new message.
+ */
+export const GitInstallWebhookRequestSchema: GenMessage<GitInstallWebhookRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 46);
+
+/**
+ * @generated from message openoxide.api.v1.GitInstallWebhookResponse
+ */
+export type GitInstallWebhookResponse = Message<"openoxide.api.v1.GitInstallWebhookResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.GitProviderWebhookInfo webhook = 1;
+   */
+  webhook?: GitProviderWebhookInfo | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitInstallWebhookResponse.
+ * Use `create(GitInstallWebhookResponseSchema)` to create a new message.
+ */
+export const GitInstallWebhookResponseSchema: GenMessage<GitInstallWebhookResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 47);
+
+/**
+ * @generated from message openoxide.api.v1.GitRecreateWebhookRequest
+ */
+export type GitRecreateWebhookRequest = Message<"openoxide.api.v1.GitRecreateWebhookRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+
+  /**
+   * @generated from field: string owner = 2;
+   */
+  owner: string;
+
+  /**
+   * @generated from field: string repository = 3;
+   */
+  repository: string;
+
+  /**
+   * @generated from field: string callback_url = 4;
+   */
+  callbackUrl: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitRecreateWebhookRequest.
+ * Use `create(GitRecreateWebhookRequestSchema)` to create a new message.
+ */
+export const GitRecreateWebhookRequestSchema: GenMessage<GitRecreateWebhookRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 48);
+
+/**
+ * @generated from message openoxide.api.v1.GitRecreateWebhookResponse
+ */
+export type GitRecreateWebhookResponse = Message<"openoxide.api.v1.GitRecreateWebhookResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.GitProviderWebhookInfo webhook = 1;
+   */
+  webhook?: GitProviderWebhookInfo | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitRecreateWebhookResponse.
+ * Use `create(GitRecreateWebhookResponseSchema)` to create a new message.
+ */
+export const GitRecreateWebhookResponseSchema: GenMessage<GitRecreateWebhookResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 49);
+
+/**
+ * @generated from message openoxide.api.v1.GitDeleteWebhookRequest
+ */
+export type GitDeleteWebhookRequest = Message<"openoxide.api.v1.GitDeleteWebhookRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+
+  /**
+   * @generated from field: string owner = 2;
+   */
+  owner: string;
+
+  /**
+   * @generated from field: string repository = 3;
+   */
+  repository: string;
+
+  /**
+   * @generated from field: string callback_url = 4;
+   */
+  callbackUrl: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GitDeleteWebhookRequest.
+ * Use `create(GitDeleteWebhookRequestSchema)` to create a new message.
+ */
+export const GitDeleteWebhookRequestSchema: GenMessage<GitDeleteWebhookRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_git_provider, 50);
+
+/**
+ * Provider kinds, mirroring the `GitProviderType` string enum stored on the provider row (`GITHUB`, `GITLAB`, `GITEA`, `BITBUCKET`).
+ *
+ * @generated from enum openoxide.api.v1.GitProviderType
+ */
+export enum GitProviderType {
+  /**
+   * @generated from enum value: GIT_PROVIDER_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: GIT_PROVIDER_TYPE_GITHUB = 1;
+   */
+  GITHUB = 1,
+
+  /**
+   * @generated from enum value: GIT_PROVIDER_TYPE_GITLAB = 2;
+   */
+  GITLAB = 2,
+
+  /**
+   * @generated from enum value: GIT_PROVIDER_TYPE_GITEA = 3;
+   */
+  GITEA = 3,
+
+  /**
+   * @generated from enum value: GIT_PROVIDER_TYPE_BITBUCKET = 4;
+   */
+  BITBUCKET = 4,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.GitProviderType.
+ */
+export const GitProviderTypeSchema: GenEnum<GitProviderType> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_git_provider, 0);
 
 /**
  * @generated from service openoxide.api.v1.GitProviderService
  */
 export const GitProviderService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.ListGitProviders
-	 */
-	listGitProviders: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.GetGitProvider
-	 */
-	getGitProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.CreateGithubProvider
-	 */
-	createGithubProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.CreateGitlabProvider
-	 */
-	createGitlabProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.CreateGiteaProvider
-	 */
-	createGiteaProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.CreateBitbucketProvider
-	 */
-	createBitbucketProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGithubProvider
-	 */
-	updateGithubProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGitlabProvider
-	 */
-	updateGitlabProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGiteaProvider
-	 */
-	updateGiteaProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.UpdateBitbucketProvider
-	 */
-	updateBitbucketProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.DeleteGitProvider
-	 */
-	deleteGitProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.TestGitProvider
-	 */
-	testGitProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.RotateWebhookSecret
-	 */
-	rotateWebhookSecret: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.ListRepositories
-	 */
-	listRepositories: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.ListBranches
-	 */
-	listBranches: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.ListTags
-	 */
-	listTags: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.Authorize
-	 */
-	authorize: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.OAuthCallback
-	 */
-	oAuthCallback: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.Disconnect
-	 */
-	disconnect: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.GetCollaboratorPermission
-	 */
-	getCollaboratorPermission: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.GetWebhookStatus
-	 */
-	getWebhookStatus: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.InstallWebhook
-	 */
-	installWebhook: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.RecreateWebhook
-	 */
-	recreateWebhook: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.GitProviderService.DeleteWebhook
-	 */
-	deleteWebhook: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_git_provider, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.ListGitProviders
+   */
+  listGitProviders: {
+    methodKind: "unary";
+    input: typeof ListGitProvidersRequestSchema;
+    output: typeof ListGitProvidersResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.GetGitProvider
+   */
+  getGitProvider: {
+    methodKind: "unary";
+    input: typeof GetGitProviderRequestSchema;
+    output: typeof GetGitProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.CreateGithubProvider
+   */
+  createGithubProvider: {
+    methodKind: "unary";
+    input: typeof CreateGithubProviderRequestSchema;
+    output: typeof CreateGithubProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.CreateGitlabProvider
+   */
+  createGitlabProvider: {
+    methodKind: "unary";
+    input: typeof CreateGitlabProviderRequestSchema;
+    output: typeof CreateGitlabProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.CreateGiteaProvider
+   */
+  createGiteaProvider: {
+    methodKind: "unary";
+    input: typeof CreateGiteaProviderRequestSchema;
+    output: typeof CreateGiteaProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.CreateBitbucketProvider
+   */
+  createBitbucketProvider: {
+    methodKind: "unary";
+    input: typeof CreateBitbucketProviderRequestSchema;
+    output: typeof CreateBitbucketProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGithubProvider
+   */
+  updateGithubProvider: {
+    methodKind: "unary";
+    input: typeof UpdateGithubProviderRequestSchema;
+    output: typeof UpdateGithubProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGitlabProvider
+   */
+  updateGitlabProvider: {
+    methodKind: "unary";
+    input: typeof UpdateGitlabProviderRequestSchema;
+    output: typeof UpdateGitlabProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGiteaProvider
+   */
+  updateGiteaProvider: {
+    methodKind: "unary";
+    input: typeof UpdateGiteaProviderRequestSchema;
+    output: typeof UpdateGiteaProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.UpdateBitbucketProvider
+   */
+  updateBitbucketProvider: {
+    methodKind: "unary";
+    input: typeof UpdateBitbucketProviderRequestSchema;
+    output: typeof UpdateBitbucketProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.DeleteGitProvider
+   */
+  deleteGitProvider: {
+    methodKind: "unary";
+    input: typeof DeleteGitProviderRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.TestGitProvider
+   */
+  testGitProvider: {
+    methodKind: "unary";
+    input: typeof TestGitProviderRequestSchema;
+    output: typeof TestGitProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.RotateWebhookSecret
+   */
+  rotateWebhookSecret: {
+    methodKind: "unary";
+    input: typeof GitRotateWebhookSecretRequestSchema;
+    output: typeof GitRotateWebhookSecretResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.ListRepositories
+   */
+  listRepositories: {
+    methodKind: "unary";
+    input: typeof GitListRepositoriesRequestSchema;
+    output: typeof GitListRepositoriesResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.ListBranches
+   */
+  listBranches: {
+    methodKind: "unary";
+    input: typeof GitListRepositoryBranchesRequestSchema;
+    output: typeof GitListRepositoryBranchesResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.ListTags
+   */
+  listTags: {
+    methodKind: "unary";
+    input: typeof GitListTagsRequestSchema;
+    output: typeof GitListTagsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.Authorize
+   */
+  authorize: {
+    methodKind: "unary";
+    input: typeof GitAuthorizeRequestSchema;
+    output: typeof GitAuthorizeResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.OAuthCallback
+   */
+  oAuthCallback: {
+    methodKind: "unary";
+    input: typeof GitOAuthCallbackRequestSchema;
+    output: typeof GitOAuthCallbackResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.Disconnect
+   */
+  disconnect: {
+    methodKind: "unary";
+    input: typeof GitDisconnectRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.GetCollaboratorPermission
+   */
+  getCollaboratorPermission: {
+    methodKind: "unary";
+    input: typeof GitGetCollaboratorPermissionRequestSchema;
+    output: typeof GitGetCollaboratorPermissionResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.GetWebhookStatus
+   */
+  getWebhookStatus: {
+    methodKind: "unary";
+    input: typeof GitGetWebhookStatusRequestSchema;
+    output: typeof GitGetWebhookStatusResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.InstallWebhook
+   */
+  installWebhook: {
+    methodKind: "unary";
+    input: typeof GitInstallWebhookRequestSchema;
+    output: typeof GitInstallWebhookResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.RecreateWebhook
+   */
+  recreateWebhook: {
+    methodKind: "unary";
+    input: typeof GitRecreateWebhookRequestSchema;
+    output: typeof GitRecreateWebhookResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.GitProviderService.DeleteWebhook
+   */
+  deleteWebhook: {
+    methodKind: "unary";
+    input: typeof GitDeleteWebhookRequestSchema;
+    output: typeof EmptySchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_git_provider, 0);
+

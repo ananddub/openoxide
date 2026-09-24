@@ -2,116 +2,702 @@
 // @generated from file openoxide/api/v1/dns.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	EmptySchema,
-	OperationResultSchema,
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceRequestSchema,
-	ResourceResponseSchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/dns.proto.
  */
-export const file_openoxide_api_v1_dns: GenFile /*@__PURE__*/ = fileDesc(
-	'ChpvcGVub3hpZGUvYXBpL3YxL2Rucy5wcm90bxIQb3Blbm94aWRlLmFwaS52MTK/BwoKRG5zU2VydmljZRJYCg1MaXN0UHJvdmlkZXJzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJUCgtHZXRQcm92aWRlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElcKDkNyZWF0ZVByb3ZpZGVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVwoOVXBkYXRlUHJvdmlkZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJMCg5EZWxldGVQcm92aWRlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJUCgxUZXN0UHJvdmlkZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElYKDlRlc3RDb25uZWN0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJWCglMaXN0Wm9uZXMSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoLTGlzdFJlY29yZHMSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVQoMQ3JlYXRlUmVjb3JkEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USSgoMRGVsZXRlUmVjb3JkEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5YgZwcm90bzM',
-	[file_openoxide_api_v1_common],
-);
+export const file_openoxide_api_v1_dns: GenFile = /*@__PURE__*/
+  fileDesc("ChpvcGVub3hpZGUvYXBpL3YxL2Rucy5wcm90bxIQb3Blbm94aWRlLmFwaS52MSK8AQoLRG5zUHJvdmlkZXISCgoCaWQYASABKAMSDAoEbmFtZRgCIAEoCRI4Cg1wcm92aWRlcl90eXBlGAMgASgOMiEub3Blbm94aWRlLmFwaS52MS5EbnNQcm92aWRlclR5cGUSGAoQY3JlZGVudGlhbHNfanNvbhgEIAEoCRIXCg9vcmdhbml6YXRpb25faWQYBSABKAMSEgoKY3JlYXRlZF9hdBgGIAEoAxISCgp1cGRhdGVkX2F0GAcgASgDIkMKB0Ruc1pvbmUSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRITCgZzdGF0dXMYAyABKAlIAIgBAUIJCgdfc3RhdHVzIpgBCglEbnNSZWNvcmQSCgoCaWQYASABKAkSDwoHem9uZV9pZBgCIAEoCRITCgtyZWNvcmRfdHlwZRgDIAEoCRIMCgRuYW1lGAQgASgJEg8KB2NvbnRlbnQYBSABKAkSEAoDdHRsGAYgASgNSACIAQESFAoHcHJveGllZBgHIAEoCEgBiAEBQgYKBF90dGxCCgoIX3Byb3hpZWQiGQoXTGlzdERuc1Byb3ZpZGVyc1JlcXVlc3QiTAoYTGlzdERuc1Byb3ZpZGVyc1Jlc3BvbnNlEjAKCXByb3ZpZGVycxgBIAMoCzIdLm9wZW5veGlkZS5hcGkudjEuRG5zUHJvdmlkZXIiLAoVR2V0RG5zUHJvdmlkZXJSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIkkKFkdldERuc1Byb3ZpZGVyUmVzcG9uc2USLwoIcHJvdmlkZXIYASABKAsyHS5vcGVub3hpZGUuYXBpLnYxLkRuc1Byb3ZpZGVyIqEBChhDcmVhdGVEbnNQcm92aWRlclJlcXVlc3QSGAoEbmFtZRgBIAEoCUIKukgHcgUQARj/ARJECg1wcm92aWRlcl90eXBlGAIgASgOMiEub3Blbm94aWRlLmFwaS52MS5EbnNQcm92aWRlclR5cGVCCrpIB4IBBBABIAASJQoQY3JlZGVudGlhbHNfanNvbhgDIAEoCUILukgIcgYQARiAgEAiTAoZQ3JlYXRlRG5zUHJvdmlkZXJSZXNwb25zZRIvCghwcm92aWRlchgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuRG5zUHJvdmlkZXIi8QEKGFVwZGF0ZURuc1Byb3ZpZGVyUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIbCgRuYW1lGAIgASgJQgi6SAVyAxj/AUgAiAEBEkkKDXByb3ZpZGVyX3R5cGUYAyABKA4yIS5vcGVub3hpZGUuYXBpLnYxLkRuc1Byb3ZpZGVyVHlwZUIKukgHggEEEAEgAEgBiAEBEigKEGNyZWRlbnRpYWxzX2pzb24YBCABKAlCCbpIBnIEGICAQEgCiAEBQgcKBV9uYW1lQhAKDl9wcm92aWRlcl90eXBlQhMKEV9jcmVkZW50aWFsc19qc29uIkwKGVVwZGF0ZURuc1Byb3ZpZGVyUmVzcG9uc2USLwoIcHJvdmlkZXIYASABKAsyHS5vcGVub3hpZGUuYXBpLnYxLkRuc1Byb3ZpZGVyIi8KGERlbGV0ZURuc1Byb3ZpZGVyUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACItChZUZXN0RG5zUHJvdmlkZXJSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIjsKF1Rlc3REbnNQcm92aWRlclJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCSKHAQoYVGVzdERuc0Nvbm5lY3Rpb25SZXF1ZXN0EkQKDXByb3ZpZGVyX3R5cGUYASABKA4yIS5vcGVub3hpZGUuYXBpLnYxLkRuc1Byb3ZpZGVyVHlwZUIKukgHggEEEAEgABIlChBjcmVkZW50aWFsc19qc29uGAIgASgJQgu6SAhyBhABGICAQCI9ChlUZXN0RG5zQ29ubmVjdGlvblJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCSIzChNMaXN0RG5zWm9uZXNSZXF1ZXN0EhwKC3Byb3ZpZGVyX2lkGAEgASgDQge6SAQiAiAAIkAKFExpc3REbnNab25lc1Jlc3BvbnNlEigKBXpvbmVzGAEgAygLMhkub3Blbm94aWRlLmFwaS52MS5EbnNab25lIk8KFUxpc3REbnNSZWNvcmRzUmVxdWVzdBIcCgtwcm92aWRlcl9pZBgBIAEoA0IHukgEIgIgABIYCgd6b25lX2lkGAIgASgJQge6SARyAhABIkYKFkxpc3REbnNSZWNvcmRzUmVzcG9uc2USLAoHcmVjb3JkcxgBIAMoCzIbLm9wZW5veGlkZS5hcGkudjEuRG5zUmVjb3JkItsBChZDcmVhdGVEbnNSZWNvcmRSZXF1ZXN0EhwKC3Byb3ZpZGVyX2lkGAEgASgDQge6SAQiAiAAEhgKB3pvbmVfaWQYAiABKAlCB7pIBHICEAESHAoLcmVjb3JkX3R5cGUYAyABKAlCB7pIBHICEAESFQoEbmFtZRgEIAEoCUIHukgEcgIQARIYCgdjb250ZW50GAUgASgJQge6SARyAhABEhAKA3R0bBgGIAEoDUgAiAEBEhQKB3Byb3hpZWQYByABKAhIAYgBAUIGCgRfdHRsQgoKCF9wcm94aWVkIkYKF0NyZWF0ZURuc1JlY29yZFJlc3BvbnNlEisKBnJlY29yZBgBIAEoCzIbLm9wZW5veGlkZS5hcGkudjEuRG5zUmVjb3JkImcKFkRlbGV0ZURuc1JlY29yZFJlcXVlc3QSHAoLcHJvdmlkZXJfaWQYASABKANCB7pIBCICIAASGAoHem9uZV9pZBgCIAEoCUIHukgEcgIQARIVCgRuYW1lGAMgASgJQge6SARyAhABKtcBCg9EbnNQcm92aWRlclR5cGUSIQodRE5TX1BST1ZJREVSX1RZUEVfVU5TUEVDSUZJRUQQABIgChxETlNfUFJPVklERVJfVFlQRV9DTE9VREZMQVJFEAESHQoZRE5TX1BST1ZJREVSX1RZUEVfUk9VVEU1MxACEh0KGUROU19QUk9WSURFUl9UWVBFX0hFVFpORVIQAxIiCh5ETlNfUFJPVklERVJfVFlQRV9ESUdJVEFMT0NFQU4QBBIdChlETlNfUFJPVklERVJfVFlQRV9HT0RBRERZEAUyyQgKCkRuc1NlcnZpY2USZgoNTGlzdFByb3ZpZGVycxIpLm9wZW5veGlkZS5hcGkudjEuTGlzdERuc1Byb3ZpZGVyc1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLkxpc3REbnNQcm92aWRlcnNSZXNwb25zZRJgCgtHZXRQcm92aWRlchInLm9wZW5veGlkZS5hcGkudjEuR2V0RG5zUHJvdmlkZXJSZXF1ZXN0Gigub3Blbm94aWRlLmFwaS52MS5HZXREbnNQcm92aWRlclJlc3BvbnNlEmkKDkNyZWF0ZVByb3ZpZGVyEioub3Blbm94aWRlLmFwaS52MS5DcmVhdGVEbnNQcm92aWRlclJlcXVlc3QaKy5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZURuc1Byb3ZpZGVyUmVzcG9uc2USaQoOVXBkYXRlUHJvdmlkZXISKi5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZURuc1Byb3ZpZGVyUmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlRG5zUHJvdmlkZXJSZXNwb25zZRJVCg5EZWxldGVQcm92aWRlchIqLm9wZW5veGlkZS5hcGkudjEuRGVsZXRlRG5zUHJvdmlkZXJSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJjCgxUZXN0UHJvdmlkZXISKC5vcGVub3hpZGUuYXBpLnYxLlRlc3REbnNQcm92aWRlclJlcXVlc3QaKS5vcGVub3hpZGUuYXBpLnYxLlRlc3REbnNQcm92aWRlclJlc3BvbnNlEmkKDlRlc3RDb25uZWN0aW9uEioub3Blbm94aWRlLmFwaS52MS5UZXN0RG5zQ29ubmVjdGlvblJlcXVlc3QaKy5vcGVub3hpZGUuYXBpLnYxLlRlc3REbnNDb25uZWN0aW9uUmVzcG9uc2USWgoJTGlzdFpvbmVzEiUub3Blbm94aWRlLmFwaS52MS5MaXN0RG5zWm9uZXNSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5MaXN0RG5zWm9uZXNSZXNwb25zZRJgCgtMaXN0UmVjb3JkcxInLm9wZW5veGlkZS5hcGkudjEuTGlzdERuc1JlY29yZHNSZXF1ZXN0Gigub3Blbm94aWRlLmFwaS52MS5MaXN0RG5zUmVjb3Jkc1Jlc3BvbnNlEmMKDENyZWF0ZVJlY29yZBIoLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlRG5zUmVjb3JkUmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlRG5zUmVjb3JkUmVzcG9uc2USUQoMRGVsZXRlUmVjb3JkEigub3Blbm94aWRlLmFwaS52MS5EZWxldGVEbnNSZWNvcmRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+
+/**
+ * @generated from message openoxide.api.v1.DnsProvider
+ */
+export type DnsProvider = Message<"openoxide.api.v1.DnsProvider"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.DnsProviderType provider_type = 3;
+   */
+  providerType: DnsProviderType;
+
+  /**
+   * Provider credentials document; shape is provider-specific.
+   *
+   * @generated from field: string credentials_json = 4;
+   */
+  credentialsJson: string;
+
+  /**
+   * @generated from field: int64 organization_id = 5;
+   */
+  organizationId: bigint;
+
+  /**
+   * @generated from field: int64 created_at = 6;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 7;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DnsProvider.
+ * Use `create(DnsProviderSchema)` to create a new message.
+ */
+export const DnsProviderSchema: GenMessage<DnsProvider> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 0);
+
+/**
+ * @generated from message openoxide.api.v1.DnsZone
+ */
+export type DnsZone = Message<"openoxide.api.v1.DnsZone"> & {
+  /**
+   * Zone identifier as issued by the provider (not a panel row id).
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: optional string status = 3;
+   */
+  status?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DnsZone.
+ * Use `create(DnsZoneSchema)` to create a new message.
+ */
+export const DnsZoneSchema: GenMessage<DnsZone> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 1);
+
+/**
+ * @generated from message openoxide.api.v1.DnsRecord
+ */
+export type DnsRecord = Message<"openoxide.api.v1.DnsRecord"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string zone_id = 2;
+   */
+  zoneId: string;
+
+  /**
+   * Provider-native record type ("A", "AAAA", "CNAME", "TXT", "MX", ...).
+   *
+   * @generated from field: string record_type = 3;
+   */
+  recordType: string;
+
+  /**
+   * @generated from field: string name = 4;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string content = 5;
+   */
+  content: string;
+
+  /**
+   * @generated from field: optional uint32 ttl = 6;
+   */
+  ttl?: number | undefined;
+
+  /**
+   * @generated from field: optional bool proxied = 7;
+   */
+  proxied?: boolean | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DnsRecord.
+ * Use `create(DnsRecordSchema)` to create a new message.
+ */
+export const DnsRecordSchema: GenMessage<DnsRecord> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 2);
+
+/**
+ * @generated from message openoxide.api.v1.ListDnsProvidersRequest
+ */
+export type ListDnsProvidersRequest = Message<"openoxide.api.v1.ListDnsProvidersRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListDnsProvidersRequest.
+ * Use `create(ListDnsProvidersRequestSchema)` to create a new message.
+ */
+export const ListDnsProvidersRequestSchema: GenMessage<ListDnsProvidersRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 3);
+
+/**
+ * @generated from message openoxide.api.v1.ListDnsProvidersResponse
+ */
+export type ListDnsProvidersResponse = Message<"openoxide.api.v1.ListDnsProvidersResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.DnsProvider providers = 1;
+   */
+  providers: DnsProvider[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListDnsProvidersResponse.
+ * Use `create(ListDnsProvidersResponseSchema)` to create a new message.
+ */
+export const ListDnsProvidersResponseSchema: GenMessage<ListDnsProvidersResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 4);
+
+/**
+ * @generated from message openoxide.api.v1.GetDnsProviderRequest
+ */
+export type GetDnsProviderRequest = Message<"openoxide.api.v1.GetDnsProviderRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetDnsProviderRequest.
+ * Use `create(GetDnsProviderRequestSchema)` to create a new message.
+ */
+export const GetDnsProviderRequestSchema: GenMessage<GetDnsProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 5);
+
+/**
+ * @generated from message openoxide.api.v1.GetDnsProviderResponse
+ */
+export type GetDnsProviderResponse = Message<"openoxide.api.v1.GetDnsProviderResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.DnsProvider provider = 1;
+   */
+  provider?: DnsProvider | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetDnsProviderResponse.
+ * Use `create(GetDnsProviderResponseSchema)` to create a new message.
+ */
+export const GetDnsProviderResponseSchema: GenMessage<GetDnsProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 6);
+
+/**
+ * @generated from message openoxide.api.v1.CreateDnsProviderRequest
+ */
+export type CreateDnsProviderRequest = Message<"openoxide.api.v1.CreateDnsProviderRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.DnsProviderType provider_type = 2;
+   */
+  providerType: DnsProviderType;
+
+  /**
+   * @generated from field: string credentials_json = 3;
+   */
+  credentialsJson: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateDnsProviderRequest.
+ * Use `create(CreateDnsProviderRequestSchema)` to create a new message.
+ */
+export const CreateDnsProviderRequestSchema: GenMessage<CreateDnsProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 7);
+
+/**
+ * @generated from message openoxide.api.v1.CreateDnsProviderResponse
+ */
+export type CreateDnsProviderResponse = Message<"openoxide.api.v1.CreateDnsProviderResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.DnsProvider provider = 1;
+   */
+  provider?: DnsProvider | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateDnsProviderResponse.
+ * Use `create(CreateDnsProviderResponseSchema)` to create a new message.
+ */
+export const CreateDnsProviderResponseSchema: GenMessage<CreateDnsProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 8);
+
+/**
+ * @generated from message openoxide.api.v1.UpdateDnsProviderRequest
+ */
+export type UpdateDnsProviderRequest = Message<"openoxide.api.v1.UpdateDnsProviderRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional string name = 2;
+   */
+  name?: string | undefined;
+
+  /**
+   * @generated from field: optional openoxide.api.v1.DnsProviderType provider_type = 3;
+   */
+  providerType?: DnsProviderType | undefined;
+
+  /**
+   * @generated from field: optional string credentials_json = 4;
+   */
+  credentialsJson?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateDnsProviderRequest.
+ * Use `create(UpdateDnsProviderRequestSchema)` to create a new message.
+ */
+export const UpdateDnsProviderRequestSchema: GenMessage<UpdateDnsProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 9);
+
+/**
+ * @generated from message openoxide.api.v1.UpdateDnsProviderResponse
+ */
+export type UpdateDnsProviderResponse = Message<"openoxide.api.v1.UpdateDnsProviderResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.DnsProvider provider = 1;
+   */
+  provider?: DnsProvider | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateDnsProviderResponse.
+ * Use `create(UpdateDnsProviderResponseSchema)` to create a new message.
+ */
+export const UpdateDnsProviderResponseSchema: GenMessage<UpdateDnsProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 10);
+
+/**
+ * @generated from message openoxide.api.v1.DeleteDnsProviderRequest
+ */
+export type DeleteDnsProviderRequest = Message<"openoxide.api.v1.DeleteDnsProviderRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DeleteDnsProviderRequest.
+ * Use `create(DeleteDnsProviderRequestSchema)` to create a new message.
+ */
+export const DeleteDnsProviderRequestSchema: GenMessage<DeleteDnsProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 11);
+
+/**
+ * @generated from message openoxide.api.v1.TestDnsProviderRequest
+ */
+export type TestDnsProviderRequest = Message<"openoxide.api.v1.TestDnsProviderRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.TestDnsProviderRequest.
+ * Use `create(TestDnsProviderRequestSchema)` to create a new message.
+ */
+export const TestDnsProviderRequestSchema: GenMessage<TestDnsProviderRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 12);
+
+/**
+ * @generated from message openoxide.api.v1.TestDnsProviderResponse
+ */
+export type TestDnsProviderResponse = Message<"openoxide.api.v1.TestDnsProviderResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: string message = 2;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.TestDnsProviderResponse.
+ * Use `create(TestDnsProviderResponseSchema)` to create a new message.
+ */
+export const TestDnsProviderResponseSchema: GenMessage<TestDnsProviderResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 13);
+
+/**
+ * Unsaved-credentials test used by the create dialog before a provider row exists.
+ *
+ * @generated from message openoxide.api.v1.TestDnsConnectionRequest
+ */
+export type TestDnsConnectionRequest = Message<"openoxide.api.v1.TestDnsConnectionRequest"> & {
+  /**
+   * @generated from field: openoxide.api.v1.DnsProviderType provider_type = 1;
+   */
+  providerType: DnsProviderType;
+
+  /**
+   * @generated from field: string credentials_json = 2;
+   */
+  credentialsJson: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.TestDnsConnectionRequest.
+ * Use `create(TestDnsConnectionRequestSchema)` to create a new message.
+ */
+export const TestDnsConnectionRequestSchema: GenMessage<TestDnsConnectionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 14);
+
+/**
+ * @generated from message openoxide.api.v1.TestDnsConnectionResponse
+ */
+export type TestDnsConnectionResponse = Message<"openoxide.api.v1.TestDnsConnectionResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: string message = 2;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.TestDnsConnectionResponse.
+ * Use `create(TestDnsConnectionResponseSchema)` to create a new message.
+ */
+export const TestDnsConnectionResponseSchema: GenMessage<TestDnsConnectionResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 15);
+
+/**
+ * @generated from message openoxide.api.v1.ListDnsZonesRequest
+ */
+export type ListDnsZonesRequest = Message<"openoxide.api.v1.ListDnsZonesRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListDnsZonesRequest.
+ * Use `create(ListDnsZonesRequestSchema)` to create a new message.
+ */
+export const ListDnsZonesRequestSchema: GenMessage<ListDnsZonesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 16);
+
+/**
+ * @generated from message openoxide.api.v1.ListDnsZonesResponse
+ */
+export type ListDnsZonesResponse = Message<"openoxide.api.v1.ListDnsZonesResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.DnsZone zones = 1;
+   */
+  zones: DnsZone[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListDnsZonesResponse.
+ * Use `create(ListDnsZonesResponseSchema)` to create a new message.
+ */
+export const ListDnsZonesResponseSchema: GenMessage<ListDnsZonesResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 17);
+
+/**
+ * @generated from message openoxide.api.v1.ListDnsRecordsRequest
+ */
+export type ListDnsRecordsRequest = Message<"openoxide.api.v1.ListDnsRecordsRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+
+  /**
+   * @generated from field: string zone_id = 2;
+   */
+  zoneId: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListDnsRecordsRequest.
+ * Use `create(ListDnsRecordsRequestSchema)` to create a new message.
+ */
+export const ListDnsRecordsRequestSchema: GenMessage<ListDnsRecordsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 18);
+
+/**
+ * @generated from message openoxide.api.v1.ListDnsRecordsResponse
+ */
+export type ListDnsRecordsResponse = Message<"openoxide.api.v1.ListDnsRecordsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.DnsRecord records = 1;
+   */
+  records: DnsRecord[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListDnsRecordsResponse.
+ * Use `create(ListDnsRecordsResponseSchema)` to create a new message.
+ */
+export const ListDnsRecordsResponseSchema: GenMessage<ListDnsRecordsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 19);
+
+/**
+ * @generated from message openoxide.api.v1.CreateDnsRecordRequest
+ */
+export type CreateDnsRecordRequest = Message<"openoxide.api.v1.CreateDnsRecordRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+
+  /**
+   * @generated from field: string zone_id = 2;
+   */
+  zoneId: string;
+
+  /**
+   * @generated from field: string record_type = 3;
+   */
+  recordType: string;
+
+  /**
+   * @generated from field: string name = 4;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string content = 5;
+   */
+  content: string;
+
+  /**
+   * @generated from field: optional uint32 ttl = 6;
+   */
+  ttl?: number | undefined;
+
+  /**
+   * @generated from field: optional bool proxied = 7;
+   */
+  proxied?: boolean | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateDnsRecordRequest.
+ * Use `create(CreateDnsRecordRequestSchema)` to create a new message.
+ */
+export const CreateDnsRecordRequestSchema: GenMessage<CreateDnsRecordRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 20);
+
+/**
+ * @generated from message openoxide.api.v1.CreateDnsRecordResponse
+ */
+export type CreateDnsRecordResponse = Message<"openoxide.api.v1.CreateDnsRecordResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.DnsRecord record = 1;
+   */
+  record?: DnsRecord | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateDnsRecordResponse.
+ * Use `create(CreateDnsRecordResponseSchema)` to create a new message.
+ */
+export const CreateDnsRecordResponseSchema: GenMessage<CreateDnsRecordResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 21);
+
+/**
+ * @generated from message openoxide.api.v1.DeleteDnsRecordRequest
+ */
+export type DeleteDnsRecordRequest = Message<"openoxide.api.v1.DeleteDnsRecordRequest"> & {
+  /**
+   * @generated from field: int64 provider_id = 1;
+   */
+  providerId: bigint;
+
+  /**
+   * @generated from field: string zone_id = 2;
+   */
+  zoneId: string;
+
+  /**
+   * @generated from field: string name = 3;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DeleteDnsRecordRequest.
+ * Use `create(DeleteDnsRecordRequestSchema)` to create a new message.
+ */
+export const DeleteDnsRecordRequestSchema: GenMessage<DeleteDnsRecordRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_dns, 22);
+
+/**
+ * @generated from enum openoxide.api.v1.DnsProviderType
+ */
+export enum DnsProviderType {
+  /**
+   * @generated from enum value: DNS_PROVIDER_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: DNS_PROVIDER_TYPE_CLOUDFLARE = 1;
+   */
+  CLOUDFLARE = 1,
+
+  /**
+   * @generated from enum value: DNS_PROVIDER_TYPE_ROUTE53 = 2;
+   */
+  ROUTE53 = 2,
+
+  /**
+   * @generated from enum value: DNS_PROVIDER_TYPE_HETZNER = 3;
+   */
+  HETZNER = 3,
+
+  /**
+   * @generated from enum value: DNS_PROVIDER_TYPE_DIGITALOCEAN = 4;
+   */
+  DIGITALOCEAN = 4,
+
+  /**
+   * @generated from enum value: DNS_PROVIDER_TYPE_GODADDY = 5;
+   */
+  GODADDY = 5,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.DnsProviderType.
+ */
+export const DnsProviderTypeSchema: GenEnum<DnsProviderType> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_dns, 0);
 
 /**
  * @generated from service openoxide.api.v1.DnsService
  */
 export const DnsService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.DnsService.ListProviders
-	 */
-	listProviders: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DnsService.GetProvider
-	 */
-	getProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DnsService.CreateProvider
-	 */
-	createProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DnsService.UpdateProvider
-	 */
-	updateProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DnsService.DeleteProvider
-	 */
-	deleteProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DnsService.TestProvider
-	 */
-	testProvider: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DnsService.TestConnection
-	 */
-	testConnection: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DnsService.ListZones
-	 */
-	listZones: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DnsService.ListRecords
-	 */
-	listRecords: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DnsService.CreateRecord
-	 */
-	createRecord: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DnsService.DeleteRecord
-	 */
-	deleteRecord: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_dns, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.DnsService.ListProviders
+   */
+  listProviders: {
+    methodKind: "unary";
+    input: typeof ListDnsProvidersRequestSchema;
+    output: typeof ListDnsProvidersResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DnsService.GetProvider
+   */
+  getProvider: {
+    methodKind: "unary";
+    input: typeof GetDnsProviderRequestSchema;
+    output: typeof GetDnsProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DnsService.CreateProvider
+   */
+  createProvider: {
+    methodKind: "unary";
+    input: typeof CreateDnsProviderRequestSchema;
+    output: typeof CreateDnsProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DnsService.UpdateProvider
+   */
+  updateProvider: {
+    methodKind: "unary";
+    input: typeof UpdateDnsProviderRequestSchema;
+    output: typeof UpdateDnsProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DnsService.DeleteProvider
+   */
+  deleteProvider: {
+    methodKind: "unary";
+    input: typeof DeleteDnsProviderRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DnsService.TestProvider
+   */
+  testProvider: {
+    methodKind: "unary";
+    input: typeof TestDnsProviderRequestSchema;
+    output: typeof TestDnsProviderResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DnsService.TestConnection
+   */
+  testConnection: {
+    methodKind: "unary";
+    input: typeof TestDnsConnectionRequestSchema;
+    output: typeof TestDnsConnectionResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DnsService.ListZones
+   */
+  listZones: {
+    methodKind: "unary";
+    input: typeof ListDnsZonesRequestSchema;
+    output: typeof ListDnsZonesResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DnsService.ListRecords
+   */
+  listRecords: {
+    methodKind: "unary";
+    input: typeof ListDnsRecordsRequestSchema;
+    output: typeof ListDnsRecordsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DnsService.CreateRecord
+   */
+  createRecord: {
+    methodKind: "unary";
+    input: typeof CreateDnsRecordRequestSchema;
+    output: typeof CreateDnsRecordResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DnsService.DeleteRecord
+   */
+  deleteRecord: {
+    methodKind: "unary";
+    input: typeof DeleteDnsRecordRequestSchema;
+    output: typeof EmptySchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_dns, 0);
+

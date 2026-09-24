@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/deployment.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {DeploymentService} from './deployment_pb';
+import { DeploymentService } from "./deployment_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.DeploymentService.ListDeployments
@@ -17,14 +17,12 @@ export const searchLogs = DeploymentService.method.searchLogs;
 /**
  * @generated from rpc openoxide.api.v1.DeploymentService.ListActiveDeployments
  */
-export const listActiveDeployments =
-	DeploymentService.method.listActiveDeployments;
+export const listActiveDeployments = DeploymentService.method.listActiveDeployments;
 
 /**
  * @generated from rpc openoxide.api.v1.DeploymentService.ListRunningDeployments
  */
-export const listRunningDeployments =
-	DeploymentService.method.listRunningDeployments;
+export const listRunningDeployments = DeploymentService.method.listRunningDeployments;
 
 /**
  * @generated from rpc openoxide.api.v1.DeploymentService.GetDeployment
@@ -34,8 +32,7 @@ export const getDeployment = DeploymentService.method.getDeployment;
 /**
  * @generated from rpc openoxide.api.v1.DeploymentService.ExportContainerLogs
  */
-export const exportContainerLogs =
-	DeploymentService.method.exportContainerLogs;
+export const exportContainerLogs = DeploymentService.method.exportContainerLogs;
 
 /**
  * @generated from rpc openoxide.api.v1.DeploymentService.ListContainers
@@ -45,14 +42,12 @@ export const listContainers = DeploymentService.method.listContainers;
 /**
  * @generated from rpc openoxide.api.v1.DeploymentService.ExportServiceLogs
  */
-export const exportServiceLogs =
-	DeploymentService.method.exportServiceLogs;
+export const exportServiceLogs = DeploymentService.method.exportServiceLogs;
 
 /**
  * @generated from rpc openoxide.api.v1.DeploymentService.ExportComposeLogs
  */
-export const exportComposeLogs =
-	DeploymentService.method.exportComposeLogs;
+export const exportComposeLogs = DeploymentService.method.exportComposeLogs;
 
 /**
  * @generated from rpc openoxide.api.v1.DeploymentService.CancelDeployment
@@ -67,20 +62,17 @@ export const deleteDeployment = DeploymentService.method.deleteDeployment;
 /**
  * @generated from rpc openoxide.api.v1.DeploymentService.DeleteApplicationDeployments
  */
-export const deleteApplicationDeployments =
-	DeploymentService.method.deleteApplicationDeployments;
+export const deleteApplicationDeployments = DeploymentService.method.deleteApplicationDeployments;
 
 /**
  * @generated from rpc openoxide.api.v1.DeploymentService.DeleteComposeDeployments
  */
-export const deleteComposeDeployments =
-	DeploymentService.method.deleteComposeDeployments;
+export const deleteComposeDeployments = DeploymentService.method.deleteComposeDeployments;
 
 /**
  * @generated from rpc openoxide.api.v1.DeploymentService.DeleteDatabaseDeployments
  */
-export const deleteDatabaseDeployments =
-	DeploymentService.method.deleteDatabaseDeployments;
+export const deleteDatabaseDeployments = DeploymentService.method.deleteDatabaseDeployments;
 
 /**
  * @generated from rpc openoxide.api.v1.DeploymentService.ClearDeployments

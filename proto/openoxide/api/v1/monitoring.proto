@@ -2,9 +2,266 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
+// Sole monitoring owner service; absorbs the former MonitoringOperationsService.
 service MonitoringService {
-  rpc GetOverview(ResourceRequest) returns (ResourceResponse);
-  rpc GetMetrics(ResourceRequest) returns (ResourceResponse);
-  rpc GetContainerState(ResourceRequest) returns (ResourceResponse);
+  rpc GetOverview(MonitoringGetOverviewRequest) returns (Empty);
+  rpc GetMetrics(MonitoringGetMetricsRequest) returns (Empty);
+  rpc GetContainerState(MonitoringGetContainerStateRequest) returns (Empty);
+  rpc GetLocalMetrics(MonitoringGetLocalMetricsRequest) returns (MonitoringGetLocalMetricsResponse);
+  rpc GetServerMetrics(MonitoringGetServerMetricsRequest) returns (MonitoringGetServerMetricsResponse);
+  rpc GetContainerMetrics(MonitoringGetContainerMetricsRequest) returns (MonitoringGetContainerMetricsResponse);
+  rpc GetContainerStates(MonitoringGetContainerStatesRequest) returns (MonitoringGetContainerStatesResponse);
+  rpc CreateAgentToken(MonitoringCreateAgentTokenRequest) returns (MonitoringCreateAgentTokenResponse);
+  rpc GetAgentStatus(MonitoringGetAgentStatusRequest) returns (MonitoringGetAgentStatusResponse);
+  rpc StartAgent(MonitoringStartAgentRequest) returns (MonitoringStartAgentResponse);
+  rpc StopAgent(MonitoringStopAgentRequest) returns (MonitoringStopAgentResponse);
+  rpc RestartAgent(MonitoringRestartAgentRequest) returns (MonitoringRestartAgentResponse);
+  rpc ReinstallAgent(MonitoringReinstallAgentRequest) returns (MonitoringReinstallAgentResponse);
+  rpc ExportServerMetrics(MonitoringExportServerMetricsRequest) returns (MonitoringExportServerMetricsResponse);
+  rpc GetPrometheusMetrics(MonitoringGetPrometheusMetricsRequest) returns (MonitoringGetPrometheusMetricsResponse);
+  rpc CreateMaintenanceWindow(MonitoringCreateMaintenanceWindowRequest) returns (MonitoringCreateMaintenanceWindowResponse);
+  rpc ListMaintenanceWindows(MonitoringListMaintenanceWindowsRequest) returns (MonitoringListMaintenanceWindowsResponse);
+  rpc DeleteMaintenanceWindow(MonitoringDeleteMaintenanceWindowRequest) returns (Empty);
+}
+
+// Derived from the agent heartbeat: ONLINE within 30s, OFFLINE once seen, NEVER_SEEN when no heartbeat was ever recorded.
+enum MonitoringAgentState {
+  MONITORING_AGENT_STATE_UNSPECIFIED = 0;
+  MONITORING_AGENT_STATE_ONLINE = 1;
+  MONITORING_AGENT_STATE_OFFLINE = 2;
+  MONITORING_AGENT_STATE_NEVER_SEEN = 3;
+}
+
+// One server metric sample returned by the agent (host facts repeated per row).
+message MonitoringServerMetric {
+  optional int64 timestamp = 1;
+  int64 server_id = 2;
+  // CPU utilisation percent.
+  double cpu = 3;
+  string cpu_model = 4;
+  int64 cpu_cores = 5;
+  int64 cpu_physical_cores = 6;
+  double cpu_speed = 7;
+  string os = 8;
+  string distro = 9;
+  string kernel = 10;
+  string arch = 11;
+  // Memory / disk utilisation percents.
+  double mem_used = 12;
+  double mem_used_gb = 13;
+  double mem_total = 14;
+  int64 uptime = 15;
+  double disk_used = 16;
+  double total_disk = 17;
+  double network_in = 18;
+  double network_out = 19;
+}
+
+// Fixed-key projection of the agent's per-container metrics_json document.
+message MonitoringContainerStats {
+  double cpu_percent = 1;
+  double memory_percent = 2;
+  double memory_used_mb = 3;
+  double memory_limit_mb = 4;
+  double net_rx_kbps = 5;
+  double net_tx_kbps = 6;
+  double block_read_mb = 7;
+  double block_write_mb = 8;
+}
+
+message MonitoringContainerMetric {
+  optional int64 id = 1;
+  int64 timestamp = 2;
+  string container_id = 3;
+  string container_name = 4;
+  MonitoringContainerStats stats = 5;
+  int64 server_id = 6;
+  optional int64 application_id = 7;
+  optional int64 compose_id = 8;
+}
+
+// Container state point as reported by the agent; `state` is the Docker-native status string (no panel-side closed set).
+message MonitoringContainerState {
+  string container_id = 1;
+  string name = 2;
+  string state = 3;
+  string status = 4;
+  int64 application_id = 5;
+  int64 compose_id = 6;
+  string compose_project = 7;
+  string compose_service = 8;
+}
+
+message MonitoringAgentStatus {
+  int64 server_id = 1;
+  int64 organization_id = 2;
+  optional int64 last_seen_at = 3;
+  optional string agent_version = 4;
+  MonitoringAgentState state = 5;
+}
+
+// Result of an agent lifecycle command; `action` echoes the verb ("start", "stop", "restart", "reinstall").
+message MonitoringAgentAction {
+  string action = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message MonitoringMaintenanceWindow {
+  int64 id = 1;
+  int64 organization_id = 2;
+  optional int64 server_id = 3;
+  int64 starts_at = 4;
+  int64 ends_at = 5;
+  string reason = 6;
+  int64 created_at = 7;
+}
+
+// Legacy stub: no server-side implementation yet; envelope carries the addressed resource only.
+message MonitoringGetOverviewRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message MonitoringGetMetricsRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message MonitoringGetContainerStateRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message MonitoringGetLocalMetricsRequest {}
+
+message MonitoringGetLocalMetricsResponse {
+  string status = 1;
+  string service = 2;
+  repeated string endpoints = 3;
+}
+
+message MonitoringGetServerMetricsRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+// History capped server-side at 50 samples.
+message MonitoringGetServerMetricsResponse {
+  repeated MonitoringServerMetric metrics = 1;
+}
+
+message MonitoringGetContainerMetricsRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+  optional string app_name = 3 [(buf.validate.field).string.max_len = 255];
+  optional int64 limit = 4 [(buf.validate.field).int64 = {gte: 1, lte: 1000}];
+}
+
+message MonitoringGetContainerMetricsResponse {
+  repeated MonitoringContainerMetric metrics = 1;
+}
+
+message MonitoringGetContainerStatesRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message MonitoringGetContainerStatesResponse {
+  repeated MonitoringContainerState states = 1;
+}
+
+// Rotates the server's agent token; the plaintext token is returned once.
+message MonitoringCreateAgentTokenRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message MonitoringCreateAgentTokenResponse {
+  int64 server_id = 1;
+  int64 organization_id = 2;
+  string token = 3;
+}
+
+message MonitoringGetAgentStatusRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message MonitoringGetAgentStatusResponse {
+  MonitoringAgentStatus status = 1;
+}
+
+message MonitoringStartAgentRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message MonitoringStartAgentResponse {
+  MonitoringAgentAction action = 1;
+}
+
+message MonitoringStopAgentRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message MonitoringStopAgentResponse {
+  MonitoringAgentAction action = 1;
+}
+
+message MonitoringRestartAgentRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message MonitoringRestartAgentResponse {
+  MonitoringAgentAction action = 1;
+}
+
+message MonitoringReinstallAgentRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message MonitoringReinstallAgentResponse {
+  MonitoringAgentAction action = 1;
+}
+
+message MonitoringExportServerMetricsRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+// CSV export (up to 1000 samples) with header timestamp,server_id,cpu,mem_used,mem_total,disk_used,total_disk,network_in,network_out.
+message MonitoringExportServerMetricsResponse {
+  string csv = 1;
+}
+
+// Single latest sample rendered in Prometheus exposition format.
+message MonitoringGetPrometheusMetricsRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message MonitoringGetPrometheusMetricsResponse {
+  string prometheus_text = 1;
+}
+
+// `ends_at` must follow `starts_at`; absent organization_id uses the authenticated scope.
+message MonitoringCreateMaintenanceWindowRequest {
+  optional int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 starts_at = 2;
+  int64 ends_at = 3;
+  string reason = 4 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 1000];
+  optional int64 organization_id = 5 [(buf.validate.field).int64.gt = 0];
+}
+
+message MonitoringCreateMaintenanceWindowResponse {
+  int64 id = 1;
+}
+
+message MonitoringListMaintenanceWindowsRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 limit = 2 [(buf.validate.field).int64 = {gte: 1, lte: 1000}];
+  optional int64 offset = 3 [(buf.validate.field).int64.gte = 0];
+}
+
+message MonitoringListMaintenanceWindowsResponse {
+  repeated MonitoringMaintenanceWindow windows = 1;
+}
+
+message MonitoringDeleteMaintenanceWindowRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
 }

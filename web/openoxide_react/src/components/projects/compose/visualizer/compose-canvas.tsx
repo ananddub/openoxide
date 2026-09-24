@@ -94,11 +94,7 @@ export function CanvasInner({
 		[readOnly],
 	);
 
-	// Rebuild only when the graph *content* changes. Parents routinely pass
-	// freshly-allocated arrays (query fallbacks, inline `?? []`); rebuilding
-	// on those unmounts every node's measurement, briefly blanking the graph
-	// down to stray edge arrows.
-	// Payloads from ConnectRPC carry bigints, which JSON.stringify rejects.
+	// Rebuild only when the graph *content* changes. Parents routinely pass freshly-allocated arrays (query fallbacks, inline `?? []`); rebuilding on those unmounts every node's measurement, briefly blanking the graph down to stray edge arrows. Payloads from ConnectRPC carry bigints, which JSON.stringify rejects.
 	const graphKey = useMemo(
 		() =>
 			JSON.stringify(
@@ -135,15 +131,12 @@ export function CanvasInner({
 		onViewLogs,
 		setNodes,
 		setEdges,
-	]);;
+	]);
 
-	// A node is "initialized" only once it has been measured with non-zero
-	// size. Until then edges collapse into stray arrows, so they wait here.
+	// A node is "initialized" only once it has been measured with non-zero size. Until then edges collapse into stray arrows, so they wait here.
 	const nodesReady = useNodesInitialized();
 
-	// Re-fit every time the graph becomes measurable (initial mount and each
-	// data rebuild). A one-shot fit was racing container/node measurements on
-	// fast reloads and leaving the viewport parked on empty space.
+	// Re-fit every time the graph becomes measurable (initial mount and each data rebuild). A one-shot fit was racing container/node measurements on fast reloads and leaving the viewport parked on empty space.
 	useEffect(() => {
 		if (!nodesReady || nodes.length === 0) return;
 		const t = setTimeout(() => {
@@ -154,8 +147,7 @@ export function CanvasInner({
 		return () => clearTimeout(t);
 	}, [nodesReady, nodes.length, fitView, fitOpts]);
 
-	// Containers resize after mount (tab activation, card animations) and when
-	// the window shrinks; keep the graph re-fitted to the current size.
+	// Containers resize after mount (tab activation, card animations) and when the window shrinks; keep the graph re-fitted to the current size.
 	useEffect(() => {
 		const el = containerRef.current;
 		if (!el) return;
@@ -199,9 +191,7 @@ export function CanvasInner({
 				edgeTypes={composeEdgeTypes}
 				onNodesChange={onNodesChange}
 				onEdgesChange={onEdgesChange}
-				onNodeContextMenu={
-					readOnly ? undefined : (handleOpenMenu as any)
-				}
+				onNodeContextMenu={readOnly ? undefined : (handleOpenMenu as any)}
 				onNodeClick={readOnly ? undefined : (handleOpenMenu as any)}
 				nodesConnectable={false}
 				nodesDraggable={!readOnly}
@@ -221,8 +211,7 @@ export function CanvasInner({
 				style={
 					{
 						'--xy-controls-button-background-color': 'var(--card)',
-						'--xy-controls-button-background-color-hover':
-							'var(--accent)',
+						'--xy-controls-button-background-color-hover': 'var(--accent)',
 						'--xy-controls-button-color': 'var(--muted-foreground)',
 						'--xy-controls-button-color-hover': 'var(--foreground)',
 						'--xy-controls-button-border-color': 'var(--border)',
@@ -239,10 +228,7 @@ export function CanvasInner({
 				)}
 				{!readOnly && (
 					<>
-						<Controls
-							position="bottom-right"
-							showInteractive={false}
-						/>
+						<Controls position="bottom-right" showInteractive={false} />
 						<Panel position="top-right">
 							<button
 								type="button"

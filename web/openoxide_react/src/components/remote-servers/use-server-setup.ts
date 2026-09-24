@@ -5,14 +5,9 @@ import {
 	useRemoteServerTestConnection,
 	useRemoteServerAudit,
 } from '#/api/live';
-import {createServiceClient} from '#/api/live/query';
-import {ServerControllerService} from '#/gen/connect/openoxide/api/v1/server_controller_pb';
-import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
+import {serverControllerClient} from '#/api/live/servers/shared';
+import {ServerSetupStep} from '#/gen/connect/openoxide/api/v1/server_controller_pb';
 import type {RemoteServerResponse} from '#/types/api-helpers';
-
-const serverControllerClient = createServiceClient(
-	ServerControllerService,
-);
 
 /** Test / audit / streamed-setup actions behind the Setup & Audit dialog. */
 export function useServerSetup(server: RemoteServerResponse | null) {
@@ -60,33 +55,32 @@ export function useServerSetup(server: RemoteServerResponse | null) {
 	const setup = async (advertiseAddr: string) => {
 		if (!server?.id) return;
 		setSettingUp(true);
-		setSetupLogs([]);
+		setSetupLogs([
+			`Running setup on ${server.name}… this can take a few minutes.`,
+		]);
 		try {
 			const call = serverControllerClient.streamSetupLogs({
 				id: BigInt(server.id),
-				filter: JSON.stringify({
-					host_key_fingerprint: '',
-					install_dependencies: true,
-					...(advertiseAddr.trim()
-						? {advertise_addr: advertiseAddr.trim()}
-						: {}),
-				}),
+				installDependencies: true,
+				hostKeyFingerprint: '',
+				advertiseAddr: advertiseAddr.trim() || undefined,
 			});
 
-			let failedMessage = '';
 			for await (const event of call) {
-				const lines = extractLogLines(event.payload);
+				const lines = (event.outcome?.completed ?? []).map(
+					step => `Setup step completed: ${ServerSetupStep[step]}`,
+				);
 				if (lines.length > 0) {
-					failedMessage ||=
-						lines.find(line => line.includes('Setup Server failed')) || '';
 					setSetupLogs(prev => [...prev, ...lines]);
 				}
 			}
-			if (failedMessage) throw new Error(failedMessage);
 
+			setSetupLogs(prev => [...prev, 'Setup completed successfully.']);
 			toast.success(`Server ${server.name} setup completed successfully!`);
 		} catch (err: unknown) {
-			toast.error(formatApiError(err));
+			const message = formatApiError(err);
+			setSetupLogs(prev => [...prev, `Setup failed: ${message}`]);
+			toast.error(`Setup failed: ${message}`);
 		} finally {
 			setSettingUp(false);
 		}

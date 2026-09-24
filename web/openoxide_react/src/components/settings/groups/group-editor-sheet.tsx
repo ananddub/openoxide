@@ -1,9 +1,9 @@
 import {Search} from 'lucide-react';
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
+import {Checkbox} from '#/components/ui/checkbox';
 import {Input} from '#/components/ui/input';
-import {Switch} from '#/components/ui/switch';
 import {
 	Sheet,
 	SheetContent,
@@ -30,15 +30,26 @@ const split = (action: string) => {
 const titleCase = (word: string) =>
 	word ? word[0].toUpperCase() + word.slice(1).replace(/_/g, ' ') : word;
 
-/** "app:create" → "Create app" — the row label a human can read. */
-const actionLabel = (action: string) => {
-	const {resource, operation} = split(action);
-	return resource === operation
-		? titleCase(resource)
-		: `${titleCase(operation)} ${titleCase(resource)}`;
+/** Column order a reader expects; anything new lands at the end, alphabetically. */
+const OP_ORDER = [
+	'read',
+	'create',
+	'update',
+	'delete',
+	'deploy',
+	'write',
+	'monitor',
+];
+
+const opRank = (op: string) => {
+	const i = OP_ORDER.indexOf(op);
+	return i === -1 ? OP_ORDER.length : i;
 };
 
-/** Create/edit a permission group — house form-sheet with an action picker. */
+/** Resource + operation of an action, ready for the matrix. */
+type Row = {resource: string; cells: Map<string, string>};
+
+/** Create/edit a permission group — a resource × operation checkbox grid. */
 export function GroupEditorSheet({
 	draft,
 	setDraft,
@@ -57,49 +68,82 @@ export function GroupEditorSheet({
 		if (!draft) setQuery('');
 	}, [draft]);
 
-	const actions = policies
-		.map(policy => (policy.action ?? '').trim())
-		.filter(Boolean);
+	const catalog = useMemo(
+		() =>
+			policies.map(policy => (policy.action ?? '').trim()).filter(Boolean),
+		[policies],
+	);
+
+	const {rows, ops} = useMemo(() => {
+		const byResource = new Map<string, Map<string, string>>();
+		const operations = new Set<string>();
+		for (const action of catalog) {
+			const {resource, operation} = split(action);
+			const cells = byResource.get(resource) ?? new Map<string, string>();
+			cells.set(operation, action);
+			byResource.set(resource, cells);
+			operations.add(operation);
+		}
+		return {
+			rows: [...byResource.entries()]
+				.map(([resource, cells]): Row => ({resource, cells}))
+				.sort((a, b) => a.resource.localeCompare(b.resource)),
+			ops: [...operations].sort(
+				(a, b) => opRank(a) - opRank(b) || a.localeCompare(b),
+			),
+		};
+	}, [catalog]);
 
 	const search = query.trim().toLowerCase();
-	const visible = search
-		? actions.filter(
-				action =>
-					action.toLowerCase().includes(search) ||
-					actionLabel(action).toLowerCase().includes(search),
+	const visibleRows = search
+		? rows.filter(
+				row =>
+					row.resource.includes(search) ||
+					[...row.cells.keys()].some(op => op.includes(search)) ||
+					[...row.cells.values()].some(action => action.includes(search)),
 			)
-		: actions;
+		: rows;
 
-	const grouped = new Map<string, string[]>();
-	for (const action of visible) {
-		const {resource} = split(action);
-		const list = grouped.get(resource) ?? [];
+	// Actions outside the catalog (a retired or not-yet-synced code) are kept verbatim so editing a group never silently drops them.
+	const unknown = catalog.length
+		? (draft?.actions ?? []).filter(a => !catalog.includes(a))
+		: [];
 
-		list.push(action);
-		grouped.set(resource, list);
-	}
-
-	const toggleAction = (action: string) =>
-		setDraft(
-			draft
-				? {
-						...draft,
-						actions: draft.actions.includes(action)
-							? draft.actions.filter(item => item !== action)
-							: [...draft.actions, action],
-					}
-				: draft,
-		);
-
-	const toggleResource = (resource: string) => {
+	const replace = (target: string[], on: boolean, next: string[]) => {
 		if (!draft) return;
-		const group = grouped.get(resource) ?? [];
-		const allOn = group.every(a => draft.actions.includes(a));
+		const targetSet = new Set(target);
 		setDraft({
 			...draft,
-			actions: allOn
-				? draft.actions.filter(a => !group.includes(a))
-				: [...new Set([...draft.actions, ...group])],
+			actions: [
+				...unknown,
+				...draft.actions.filter(a => !targetSet.has(a)),
+				...(on ? next : []),
+			],
+		});
+	};
+
+	const selected = new Set(draft?.actions ?? []);
+
+	const toggleAction = (action: string) =>
+		replace([action], !selected.has(action), [action]);
+
+	const toggleRow = (row: Row) => {
+		const list = [...row.cells.values()];
+		replace(list, !list.every(a => selected.has(a)), list);
+	};
+
+	const toggleColumn = (op: string) => {
+		const list = visibleRows
+			.map(row => row.cells.get(op))
+			.filter((a): a is string => !!a);
+		replace(list, !list.every(a => selected.has(a)), list);
+	};
+
+	const toggleEverything = () => {
+		if (!draft) return;
+		setDraft({
+			...draft,
+			actions: allSelected ? unknown : [...unknown, ...catalog],
 		});
 	};
 
@@ -132,24 +176,25 @@ export function GroupEditorSheet({
 
 	const busy = createMutation.isPending || updateMutation.isPending;
 	const saving = draft?.id ? 'Save changes' : 'Create group';
+	const selectedCount = (draft?.actions ?? []).filter(a =>
+		catalog.includes(a),
+	).length;
 	const allSelected =
-		actions.length > 0 && draft?.actions.length === actions.length;
+		catalog.length > 0 && selectedCount === catalog.length;
 
-	const toggleEverything = () =>
-		setDraft(
-			draft ? {...draft, actions: allSelected ? [] : actions} : draft,
-		);
+	const grid = {
+		gridTemplateColumns: `minmax(120px,1.3fr) repeat(${ops.length}, minmax(56px,1fr))`,
+		minWidth: '440px',
+	};
 
 	return (
 		<Sheet open={!!draft} onOpenChange={open => !open && setDraft(null)}>
-			<SheetContent>
+			<SheetContent className="max-w-[calc(100vw_-_1.5rem)] sm:data-[side=right]:w-[720px]">
 				<SheetHeader>
-					<SheetTitle>
-						{draft?.id ? 'Edit Group' : 'New Group'}
-					</SheetTitle>
+					<SheetTitle>{draft?.id ? 'Edit Group' : 'New Group'}</SheetTitle>
 					<SheetDescription>
-						Name the role and pick the actions its members may perform in
-						this organization.
+						Name the role, then tick what its members may do. Rows are
+						things, columns are actions.
 					</SheetDescription>
 				</SheetHeader>
 
@@ -170,18 +215,17 @@ export function GroupEditorSheet({
 
 							<div className="flex items-center justify-between gap-3">
 								<p className="text-[13px] font-medium text-foreground">
-									{draft.actions.length} of {actions.length} actions
-									selected
+									{selectedCount} of {catalog.length} allowed
 								</p>
 								<button
 									type="button"
 									onClick={toggleEverything}
 									className="cursor-pointer text-[13px] font-medium text-primary hover:underline">
-									{allSelected ? 'Clear all' : 'Select all'}
+									{allSelected ? 'Clear all' : 'Allow everything'}
 								</button>
 							</div>
 
-							{actions.length === 0 ? (
+							{catalog.length === 0 ? (
 								<div className="w-full shrink-0 rounded-xl border bg-card px-4 py-8 text-center">
 									<p className="text-sm font-medium text-foreground">
 										The action catalog is empty
@@ -197,71 +241,127 @@ export function GroupEditorSheet({
 									<Input
 										value={query}
 										onChange={event => setQuery(event.target.value)}
-										placeholder="Search actions — deploy, member, app:create"
+										placeholder="Filter — app, read, deploy"
 										className="h-9 rounded-lg bg-background pl-9 text-sm transition-colors duration-150 hover:border-foreground/25"
 									/>
 								</div>
 							)}
 
-							{actions.length > 0 && visible.length === 0 && (
+							{catalog.length > 0 && visibleRows.length === 0 && (
 								<div className="w-full shrink-0 rounded-xl border bg-card px-4 py-8 text-center">
 									<p className="text-sm font-medium text-foreground">
-										No action matches “{query.trim()}”
+										Nothing matches “{query.trim()}”
 									</p>
 									<p className="mt-1 text-[13px] text-muted-foreground">
-										Try a resource like app or database, or an operation
-										like read.
+										Try a resource like app or database, or an action like
+										read.
 									</p>
 								</div>
 							)}
-							{actions.length > 0 && (
+
+							{catalog.length > 0 && visibleRows.length > 0 && (
 								<div className="w-full shrink-0 overflow-hidden rounded-xl border bg-card">
-									{[...grouped.entries()].map(
-										([resource, groupActions]) => {
-											const allOn = groupActions.every(a =>
-												draft.actions.includes(a),
-											);
+									<div className="max-h-[52vh] overflow-auto">
+										{/* Column headers — tick one to take the whole column. */}
+										<div
+											style={grid}
+											className="sticky top-0 z-10 grid items-center border-b bg-muted/50 backdrop-blur-sm">
+											<div className="px-3 py-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+												Access
+											</div>
+											{ops.map(op => {
+												const column = visibleRows
+													.map(row => row.cells.get(op))
+													.filter((a): a is string => !!a);
+												const on =
+													column.length > 0 &&
+													column.every(a => selected.has(a));
+												return (
+													<button
+														key={op}
+														type="button"
+														onClick={() => toggleColumn(op)}
+														title={`${on ? 'Clear' : 'Select all'} ${titleCase(op)}`}
+														className="flex cursor-pointer flex-col items-center gap-1 py-2 transition-colors hover:bg-accent/40">
+														<Checkbox
+															checked={on}
+															tabIndex={-1}
+															className="pointer-events-none"
+														/>
+														<span className="text-[10px] leading-none text-muted-foreground">
+															{titleCase(op)}
+														</span>
+													</button>
+												);
+											})}
+										</div>
+
+										{visibleRows.map(row => {
+											const list = [...row.cells.values()];
+											const allOn = list.every(a => selected.has(a));
 											return (
-												<div key={resource}>
-													<div className="flex items-center justify-between gap-3 border-b bg-muted/40 px-4 py-1.5">
-														<p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-															{titleCase(resource)}
-														</p>
-														<button
-															type="button"
-															onClick={() => toggleResource(resource)}
-															className="cursor-pointer text-[11px] font-medium text-primary hover:underline">
-															{allOn ? 'Clear' : 'All'}
-														</button>
-													</div>
-													<div className="divide-y">
-														{groupActions.map(action => (
-															<label
-																key={action}
-																className="flex cursor-pointer items-center justify-between gap-4 px-4 py-2.5 transition-colors hover:bg-accent/30">
-																<span className="min-w-0 flex-1">
-																	<span className="block truncate text-sm text-foreground">
-																		{actionLabel(action)}
-																	</span>
-																	<span className="block truncate text-[11px] text-muted-foreground">
-																		{action}
-																	</span>
+												<div
+													key={row.resource}
+													style={grid}
+													className="grid items-center border-b border-border/60 last:border-b-0">
+													<button
+														type="button"
+														onClick={() => toggleRow(row)}
+														title={
+															allOn
+																? `Clear ${titleCase(row.resource)}`
+																: `Allow everything on ${titleCase(row.resource)}`
+														}
+														className="flex cursor-pointer items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-accent/40">
+														<Checkbox
+															checked={allOn}
+															tabIndex={-1}
+															className="pointer-events-none"
+														/>
+														<span className="truncate text-[13px] font-medium text-foreground">
+															{titleCase(row.resource)}
+														</span>
+													</button>
+													{ops.map(op => {
+														const action = row.cells.get(op);
+														if (!action) {
+															return (
+																<span
+																	key={op}
+																	title="Not available"
+																	className="text-center text-[13px] text-muted-foreground/30">
+																	—
 																</span>
-																<Switch
-																	checked={draft.actions.includes(action)}
-																	onCheckedChange={() =>
-																		toggleAction(action)
-																	}
+															);
+														}
+														return (
+															<button
+																key={op}
+																type="button"
+																onClick={() => toggleAction(action)}
+																title={`${titleCase(op)} ${titleCase(row.resource)} · ${action}`}
+																aria-pressed={selected.has(action)}
+																className="grid cursor-pointer place-items-center py-2 transition-colors hover:bg-accent/40">
+																<Checkbox
+																	checked={selected.has(action)}
+																	tabIndex={-1}
+																	className="pointer-events-none"
 																/>
-															</label>
-														))}
-													</div>
+															</button>
+														);
+													})}
 												</div>
 											);
-										},
-									)}
+										})}
+									</div>
 								</div>
 							)}
+
+							<p className="text-[12px] leading-relaxed text-muted-foreground/80">
+								Unticked means denied — a member in this group cannot do
+								that action. Members can belong to several groups; their
+								permissions add up.
+							</p>
 						</div>
 
 						<SheetFooter>

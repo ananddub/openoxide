@@ -35,9 +35,9 @@ export function AppHeader({
 				<Link
 					to={`/projects/${id}` as any}
 					search={
-						(app as any)?.environment_id
+						((app as any)?.environment_id
 							? {env: Number((app as any).environment_id)}
-							: undefined
+							: undefined) as any
 					}
 					className="transition-colors hover:text-foreground">
 					Project Details

@@ -34,9 +34,7 @@ export function ComposeServiceNode({
 		<div
 			className={cn(
 				'relative w-[260px] overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgb(0_0_0/0.05),0_4px_12px_rgb(0_0_0/0.08)] transition-[border-color,box-shadow] duration-100 dark:shadow-[0_2px_12px_rgb(0_0_0/0.4)]',
-				selected
-					? 'border-primary/50 shadow-[0_0_0_3px_var(--ring)]'
-					: '',
+				selected ? 'border-primary/50 shadow-[0_0_0_3px_var(--ring)]' : '',
 			)}>
 			{/* Main body */}
 			<div className="px-3.5 pt-3 pb-2.5">
@@ -48,7 +46,7 @@ export function ComposeServiceNode({
 							<span
 								title={STATUS_DOT[status].label}
 								className={cn(
-									'absolute -right-0.5 -top-0.5 size-2.5 rounded-full ring-2 ring-card',
+									'absolute -top-0.5 -right-0.5 size-2.5 rounded-full ring-2 ring-card',
 									STATUS_DOT[status].cls,
 								)}
 							/>
@@ -84,10 +82,7 @@ export function ComposeServiceNode({
 
 				{/* Config row */}
 				<div className="flex items-center gap-[7px]">
-					<SlidersHorizontal
-						size={11}
-						className="text-muted-foreground"
-					/>
+					<SlidersHorizontal size={11} className="text-muted-foreground" />
 					<span className="text-[11px] text-muted-foreground">
 						{envCount > 0
 							? `${envCount} variable${envCount > 1 ? 's' : ''}`

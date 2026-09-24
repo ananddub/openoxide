@@ -18,10 +18,7 @@ export function getAccessToken(): string {
 }
 export const getApiBaseUrl = () => {
 	if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
-	// Same-origin by default (the Caddy proxy in the dev stack and the
-	// embedded serving in production both expose the panel API on the UI
-	// origin) — mirrors the prototype's `baseUrl: ""` pattern. Cross-origin
-	// direct-panel callers can still pin VITE_API_URL.
+	// Same-origin by default (the Caddy proxy in the dev stack and the embedded serving in production both expose the panel API on the UI origin) — mirrors the prototype's `baseUrl: ""` pattern. Cross-origin direct-panel callers can still pin VITE_API_URL.
 	return '';
 };
 
@@ -35,17 +32,13 @@ const REFRESH_RETRY_COOLDOWN_MS = 15_000;
 // createServiceClient() runs while connect.ts's transport is still
 // undefined (bundler-evaluated), which silently breaks every refresh call.
 
-/**
- * Refreshes the access token through the ConnectRPC AuthService and
- * rewrites the stored session (user.id / tokens.accessToken, camelCase).
- */
+/** Refreshes the access token through the ConnectRPC AuthService and rewrites the stored session (user.id / tokens.accessToken, camelCase). */
 export async function refreshAccessToken(): Promise<string | null> {
 	if (refreshPromise) return refreshPromise;
 
 	refreshPromise = (async () => {
 		let refreshToken = '';
-		// The api layer may load before the provider mounts; fall back to
-		// no-ops so token refresh never crashes on early calls.
+		// The api layer may load before the provider mounts; fall back to no-ops so token refresh never crashes on early calls.
 		const {logout, setAuth} = getSessionActions() ?? {
 			logout: () => {},
 			setAuth: () => {},
@@ -100,8 +93,7 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 			return newSession.tokens.accessToken || null;
 		} catch {
-			// A failed refresh means the session is gone; the cooldown keeps
-			// a broken backend from being hammered on every request.
+			// A failed refresh means the session is gone; the cooldown keeps a broken backend from being hammered on every request.
 			refreshRetryToken = refreshToken;
 			refreshRetryAfter = Date.now() + REFRESH_RETRY_COOLDOWN_MS;
 			return null;

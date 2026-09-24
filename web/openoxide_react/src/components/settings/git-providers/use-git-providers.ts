@@ -18,6 +18,10 @@ import {
 	INITIAL_GIT_PROVIDER_FORM,
 } from './git-provider-types';
 import {buildGitProviderPayload} from './git-provider-payload';
+import type {
+	GitProviderInput,
+	GitProviderPayload,
+} from '#/api/live/git_providers';
 
 export function useGitProviders() {
 	const list = useGitProviderList();
@@ -73,11 +77,13 @@ export function useGitProviders() {
 
 	const handleAuthorize = async (id: number) => {
 		try {
-			const response = await gitProviderClient.authorize({id: BigInt(id)});
-			const data = response.payload ? JSON.parse(response.payload) : null;
-			if (!data?.url)
+			// Typed authorize request: providerId in, auth URL straight back.
+			const response = await gitProviderClient.authorize({
+				providerId: BigInt(id),
+			});
+			if (!response.url)
 				throw new Error('Provider returned no authorization URL');
-			window.open(data.url, '_blank', 'noopener,noreferrer');
+			window.open(response.url, '_blank', 'noopener,noreferrer');
 		} catch {
 			toast.error('Could not start authorization');
 		}
@@ -85,7 +91,7 @@ export function useGitProviders() {
 
 	const handleTest = async (id: number) => {
 		try {
-			await test.mutateAsync({params: {path: {id}}} as any);
+			await test.mutateAsync(id);
 			toast.success('Connection successful');
 		} catch (e) {
 			toast.error(formatApiError(e));
@@ -94,7 +100,7 @@ export function useGitProviders() {
 
 	const handleDelete = async (id: number) => {
 		try {
-			await remove.mutateAsync({params: {path: {id}}} as any);
+			await remove.mutateAsync(id);
 			toast.success('Git provider deleted');
 			await list.refetch();
 		} catch (e) {
@@ -109,25 +115,30 @@ export function useGitProviders() {
 		}
 		setBusy(true);
 		try {
-			let result: any;
+			// The builder returns `{provider: {name, shared}, ...fields}`;
+			// flatten it into the typed create/update input.
+			const {provider: base, ...fields} = buildGitProviderPayload(
+				kind,
+				form,
+			);
+			const input: GitProviderInput = {
+				kind,
+				name: base.name,
+				shared: base.shared,
+				...fields,
+			};
+			let result: GitProviderPayload | undefined;
 			if (editing) {
-				result = await update.mutateAsync({
-					params: {path: {id: editing.id, kind}},
-					body: buildGitProviderPayload(kind, form),
-				} as any);
+				result = await update.mutateAsync({...input, id: editing.id});
 			} else {
-				result = await create.mutateAsync({
-					params: {path: {kind}},
-					body: buildGitProviderPayload(kind, form),
-				} as any);
+				result = await create.mutateAsync(input);
 			}
 			toast.success(
 				editing ? 'Git provider updated' : 'Git provider created',
 			);
 			setOpen(false);
 			await list.refetch();
-			const providerId =
-				editing?.id || result?.data?.provider?.id || result?.provider?.id;
+			const providerId = editing?.id || result?.id;
 			if (
 				!editing &&
 				providerId &&

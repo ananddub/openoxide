@@ -1,6 +1,6 @@
 import {useMemo} from 'react';
 import {useTagListAll, useOverviewServices} from '#/api/live';
-import {getTagsFromDescription} from '#/hooks/projects/use-projects-list';
+import {getTagsFromDescription} from '#/utils/project-tags';
 
 type Project = Record<string, any>;
 
@@ -13,16 +13,12 @@ const PALETTE = [
 	'#06b6d4',
 ];
 
-/**
- * Derives the dashboard project card display data (service/env counts,
- * deployment server names, tag names and badge colors) from the live store.
- */
+/** Derives the dashboard project card display data (service/env counts, deployment server names, tag names and badge colors) from the live store. */
 export function useProjectCardData(project: Project) {
 	const overviewServices = useOverviewServices().data ?? [];
 	const availableTags = useTagListAll().data ?? [];
 
-	// created_at is a Connect proto int64 (bigint at runtime); coerce before
-	// arithmetic to avoid a TypeError crashing the card render.
+	// created_at is a Connect proto int64 (bigint at runtime); coerce before arithmetic to avoid a TypeError crashing the card render.
 	const formatDate = (timestamp?: number | bigint) => {
 		const seconds = Number(timestamp ?? 0);
 		if (!seconds) return 'recently';
@@ -38,9 +34,7 @@ export function useProjectCardData(project: Project) {
 	);
 	const totalEnvironments = envIds.size > 0 ? envIds.size : 1;
 
-	// Aggregate the project's health from its services' statuses so the card
-	// can carry the status pill (it was dropped from the service detail
-	// header). Priority: any error > any running > any in-flight > stopped.
+	// Aggregate the project's health from its services' statuses so the card can carry the status pill (it was dropped from the service detail header). Priority: any error > any running > any in-flight > stopped.
 	const status = useMemo(() => {
 		if (totalServices === 0) return null;
 		const codes = projectServices.map(s =>

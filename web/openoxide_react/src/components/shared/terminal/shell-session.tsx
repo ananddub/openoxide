@@ -4,11 +4,10 @@ import {FitAddon} from '@xterm/addon-fit';
 import type {ITheme} from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 import {useTerminalSocket} from '#/hooks/terminal/use-terminal-socket';
-import {useTheme} from '#/hooks/use-theme';
+import {useTheme} from '#/hooks/ui/use-theme';
 import type {ShellStatus} from './types';
 
-// xterm resolves literal colors only — CSS vars never reach it, so the
-// palette is spelled out per mode and swapped live on theme change.
+// xterm resolves literal colors only — CSS vars never reach it, so the palette is spelled out per mode and swapped live on theme change.
 const DARK_TERMINAL_THEME: ITheme = {
 	background: '#0a0a0a',
 	foreground: '#e6e6e6',
@@ -117,9 +116,7 @@ export function ShellSession({
 			setTermInstance(null);
 			fitRef.current = null;
 		};
-		// xtermTheme is read only for the initial paint; live swaps happen in
-		// the theme effect below — recreating here would drop the PTY session.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// xtermTheme is read only for the initial paint; live swaps happen in the theme effect below — recreating here would drop the PTY session. eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [enabled]);
 
 	// Repaint with the active palette whenever the app theme flips.

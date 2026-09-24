@@ -61,12 +61,7 @@ export const Route = createFileRoute('/_app/settings/notifications')({
 
 type ViewId = 'channels' | 'deliveries';
 
-/**
- * Notifications — the SSH Keys / S3 grammar: one toolbar row (search ·
- * filter · view toggle · New) above a single bordered list card. The two
- * views are the organization's channels and the alerts the backend actually
- * delivered for them. Create/edit is a sheet, delete a quiet confirm dialog.
- */
+/** Notifications — the SSH Keys / S3 grammar: one toolbar row (search · filter · view toggle · New) above a single bordered list card. The two views are the organization's channels and the alerts the backend actually delivered for them. Create/edit is a sheet, delete a quiet confirm dialog. */
 export function NotificationsPage() {
 	const orgId = useActiveOrgId();
 	const {data: channels = [], isLoading} =

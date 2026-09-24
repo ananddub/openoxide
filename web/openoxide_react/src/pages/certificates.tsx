@@ -59,9 +59,7 @@ export function CertificatesPage() {
 		[items, servers, q],
 	);
 
-	// Cache invalidation comes from the table-watch stream (certificates
-	// table → refetch while this page is mounted); the mutation only needs
-	// error handling here.
+	// Cache invalidation comes from the table-watch stream (certificates table → refetch while this page is mounted); the mutation only needs error handling here.
 	const removeMutation = useConnectMutation(
 		async (certificate: Certificate) => {
 			await deleteCertificate(Number(certificate.id));

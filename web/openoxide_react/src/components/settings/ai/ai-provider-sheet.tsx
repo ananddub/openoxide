@@ -54,7 +54,8 @@ const STEPS: WizardStep[] = [
 const STEP_DESC: Record<string, string> = {
 	provider: 'Pick a provider, or point at any OpenAI-compatible endpoint.',
 	credentials: 'Where OpenOxide connects and how it authenticates.',
-	model: 'Choose the model to use — Discover lists what the endpoint serves.',
+	model:
+		'Choose the model to use — Discover lists what the endpoint serves.',
 	review: 'Name it, then decide whether it is enabled.',
 };
 
@@ -86,8 +87,7 @@ export function AiProviderSheet({
 	const step = STEPS[stepIdx].id;
 	const last = stepIdx === STEPS.length - 1;
 
-	// Sync the chosen provider each time the sheet opens — derived from the
-	// editing target / defaults, not the (async) form state, to avoid a stale read.
+	// Sync the chosen provider each time the sheet opens — derived from the editing target / defaults, not the (async) form state, to avoid a stale read.
 	useEffect(() => {
 		if (!open) return;
 		setStepIdx(0);
@@ -132,17 +132,10 @@ export function AiProviderSheet({
 										key={p.name}
 										selected={picked === p.name}
 										onClick={() =>
-											pickPreset(
-												p.name,
-												p.url,
-												p.defaultModel,
-											)
+											pickPreset(p.name, p.url, p.defaultModel)
 										}
 										icon={
-											<AiProviderIcon
-												name={p.name}
-												className="size-5"
-											/>
+											<AiProviderIcon name={p.name} className="size-5" />
 										}
 										title={p.name}
 										subtitle={p.description}
@@ -166,9 +159,7 @@ export function AiProviderSheet({
 									hint="Presets fill this in automatically — edit it only for a custom gateway.">
 									<Input
 										value={form.api_url}
-										onChange={e =>
-											set('api_url', e.target.value)
-										}
+										onChange={e => set('api_url', e.target.value)}
 										placeholder="https://api.openai.com/v1"
 										className="bg-background font-mono"
 									/>
@@ -185,9 +176,7 @@ export function AiProviderSheet({
 									<Input
 										type="password"
 										value={form.api_key}
-										onChange={e =>
-											set('api_key', e.target.value)
-										}
+										onChange={e => set('api_key', e.target.value)}
 										placeholder="sk-..."
 										className="bg-background font-mono"
 									/>
@@ -206,15 +195,11 @@ export function AiProviderSheet({
 											variant="ghost"
 											size="sm"
 											onClick={() => void discover()}
-											disabled={
-												discovering || !form.api_url
-											}
+											disabled={discovering || !form.api_url}
 											className="h-7 gap-1.5 px-2 text-[13px] font-medium text-primary">
 											<RefreshCw
 												className={`size-3.5 ${
-													discovering
-														? 'animate-spin'
-														: ''
+													discovering ? 'animate-spin' : ''
 												}`}
 											/>
 											Discover
@@ -222,9 +207,7 @@ export function AiProviderSheet({
 									}>
 									<Input
 										value={form.model}
-										onChange={e =>
-											set('model', e.target.value)
-										}
+										onChange={e => set('model', e.target.value)}
 										placeholder="e.g. gpt-4o, claude-3-5-sonnet, llama3.2"
 										className="bg-background font-mono"
 									/>
@@ -234,17 +217,13 @@ export function AiProviderSheet({
 									<WizardField label="Discovered Models">
 										<Select
 											value={form.model}
-											onValueChange={v =>
-												v && set('model', v)
-											}>
+											onValueChange={v => v && set('model', v)}>
 											<SelectTrigger className="bg-background font-mono">
 												<SelectValue placeholder="Choose a model" />
 											</SelectTrigger>
 											<SelectContent className="bg-card">
 												{models.map(m => (
-													<SelectItem
-														key={m}
-														value={m}>
+													<SelectItem key={m} value={m}>
 														<span className="font-mono text-[13px]">
 															{m}
 														</span>
@@ -288,9 +267,7 @@ export function AiProviderSheet({
 								<WizardField label="Provider Name" required>
 									<Input
 										value={form.name}
-										onChange={e =>
-											set('name', e.target.value)
-										}
+										onChange={e => set('name', e.target.value)}
 										placeholder="e.g. OpenAI Production"
 										className="bg-background"
 									/>
@@ -302,15 +279,12 @@ export function AiProviderSheet({
 											Enable this provider
 										</p>
 										<p className="mt-0.5 text-[13px] text-muted-foreground">
-											Used for log diagnosis and the
-											assistant.
+											Used for log diagnosis and the assistant.
 										</p>
 									</div>
 									<Switch
 										checked={form.is_enabled}
-										onCheckedChange={v =>
-											set('is_enabled', v)
-										}
+										onCheckedChange={v => set('is_enabled', v)}
 									/>
 								</div>
 							</div>

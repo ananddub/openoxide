@@ -5,11 +5,7 @@ import {
 	type Mount,
 } from '#/gen/connect/openoxide/api/v1/database_pb';
 
-/**
- * Org-wide database list item (all-optional fields) derived from the
- * overview services stream — keyed under the `databases` prefix so
- * SERVICE_DATABASE table changes invalidate it.
- */
+/** Org-wide database list item (all-optional fields) derived from the overview services stream — keyed under the `databases` prefix so SERVICE_DATABASE table changes invalidate it. */
 export type DatabaseItemPayload = {
 	id: number;
 	name?: string;

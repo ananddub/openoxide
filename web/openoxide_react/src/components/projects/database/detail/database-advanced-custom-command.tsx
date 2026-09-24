@@ -93,7 +93,9 @@ export function DatabaseAdvancedCustomCommand({
 				title="Image & entrypoint"
 				description="Override the container image and startup command.">
 				<div className="flex flex-col gap-5">
-					<Field label="Docker image tag" hint="Leave blank to keep the default.">
+					<Field
+						label="Docker image tag"
+						hint="Leave blank to keep the default.">
 						<Input
 							placeholder="postgres:16-alpine"
 							value={dockerImage}

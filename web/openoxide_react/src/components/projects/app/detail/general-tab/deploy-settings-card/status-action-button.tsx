@@ -2,10 +2,7 @@ import {RefreshCw, Play, Ban} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import type {ActionType} from './actions';
 
-/**
- * 4-state action button: Stopping / Cancelling / Cancel (building) /
- * Stop (running) / Start (idle, error or stopped).
- */
+/** 4-state action button: Stopping / Cancelling / Cancel (building) / Stop (running) / Start (idle, error or stopped). */
 export function StatusActionButton({
 	app,
 	isBuilding,

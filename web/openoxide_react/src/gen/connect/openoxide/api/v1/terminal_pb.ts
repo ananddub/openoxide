@@ -2,402 +2,371 @@
 // @generated from file openoxide/api/v1/terminal.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {
-	GenEnum,
-	GenFile,
-	GenMessage,
-	GenService,
-} from '@bufbuild/protobuf/codegenv2';
-import {
-	enumDesc,
-	fileDesc,
-	messageDesc,
-	serviceDesc,
-} from '@bufbuild/protobuf/codegenv2';
-import type {EmptySchema} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
-import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
-import type {Message} from '@bufbuild/protobuf';
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/terminal.proto.
  */
-export const file_openoxide_api_v1_terminal: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'Ch9vcGVub3hpZGUvYXBpL3YxL3Rlcm1pbmFsLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIrQCChNPcGVuVGVybWluYWxSZXF1ZXN0EjgKBGtpbmQYASABKA4yHi5vcGVub3hpZGUuYXBpLnYxLlRlcm1pbmFsS2luZEIKukgHggEEEAEgABIfCglzZXJ2ZXJfaWQYAiABKANCB7pIBCICIABIAIgBARIgCgljb250YWluZXIYAyABKAlCCLpIBXIDGP8BSAGIAQESHAoFc2hlbGwYBCABKAlCCLpIBXIDGP8BSAKIAQESHQoEY29scxgFIAEoDUIKukgHKgUY6AcoAUgDiAEBEh0KBHJvd3MYBiABKA1CCrpIByoFGOgHKAFIBIgBARIMCgRob3N0GAcgASgIQgwKCl9zZXJ2ZXJfaWRCDAoKX2NvbnRhaW5lckIICgZfc2hlbGxCBwoFX2NvbHNCBwoFX3Jvd3Mi+gEKDVRlcm1pbmFsRXZlbnQSEgoKc2Vzc2lvbl9pZBgBIAEoCRI0CgdzdGFydGVkGAIgASgLMiEub3Blbm94aWRlLmFwaS52MS5UZXJtaW5hbFN0YXJ0ZWRIABIyCgZvdXRwdXQYAyABKAsyIC5vcGVub3hpZGUuYXBpLnYxLlRlcm1pbmFsT3V0cHV0SAASMAoFZXJyb3IYBCABKAsyHy5vcGVub3hpZGUuYXBpLnYxLlRlcm1pbmFsRXJyb3JIABIuCgRleGl0GAUgASgLMh4ub3Blbm94aWRlLmFwaS52MS5UZXJtaW5hbEV4aXRIAEIJCgdwYXlsb2FkIlsKD1Rlcm1pbmFsU3RhcnRlZBIsCgRraW5kGAEgASgOMh4ub3Blbm94aWRlLmFwaS52MS5UZXJtaW5hbEtpbmQSEQoEaG9zdBgCIAEoCUgAiAEBQgcKBV9ob3N0ImIKDlRlcm1pbmFsT3V0cHV0EkIKBnN0cmVhbRgBIAEoDjImLm9wZW5veGlkZS5hcGkudjEuVGVybWluYWxPdXRwdXRTdHJlYW1CCrpIB4IBBBABIAASDAoEZGF0YRgCIAEoDCI8Cg1UZXJtaW5hbEVycm9yEg8KB21lc3NhZ2UYASABKAkSEQoEY29kZRgCIAEoCUgAiAEBQgcKBV9jb2RlIioKDFRlcm1pbmFsRXhpdBIRCgRjb2RlGAEgASgFSACIAQFCBwoFX2NvZGUi1wEKF0V4ZWN1dGlvbkNvbW1hbmRSZXF1ZXN0EhsKCnNlc3Npb25faWQYASABKAlCB7pIBHICEAESMAoFaW5wdXQYAiABKAsyHy5vcGVub3hpZGUuYXBpLnYxLlRlcm1pbmFsSW5wdXRIABIyCgZyZXNpemUYAyABKAsyIC5vcGVub3hpZGUuYXBpLnYxLlRlcm1pbmFsUmVzaXplSAASLgoEc3RvcBgEIAEoCzIeLm9wZW5veGlkZS5hcGkudjEuVGVybWluYWxTdG9wSABCCQoHY29tbWFuZCIoCg1UZXJtaW5hbElucHV0EhcKBGRhdGEYASABKAxCCbpIBnoEGICABCJECg5UZXJtaW5hbFJlc2l6ZRIYCgRjb2xzGAEgASgNQgq6SAcqBRjoBygBEhgKBHJvd3MYAiABKA1CCrpIByoFGOgHKAEiDgoMVGVybWluYWxTdG9wKmgKDFRlcm1pbmFsS2luZBIdChlURVJNSU5BTF9LSU5EX1VOU1BFQ0lGSUVEEAASGAoUVEVSTUlOQUxfS0lORF9ET0NLRVIQARIfChtURVJNSU5BTF9LSU5EX1JFTU9URV9TRVJWRVIQAiqEAQoUVGVybWluYWxPdXRwdXRTdHJlYW0SJgoiVEVSTUlOQUxfT1VUUFVUX1NUUkVBTV9VTlNQRUNJRklFRBAAEiEKHVRFUk1JTkFMX09VVFBVVF9TVFJFQU1fU1RET1VUEAESIQodVEVSTUlOQUxfT1VUUFVUX1NUUkVBTV9TVERFUlIQAjLDAQoPVGVybWluYWxTZXJ2aWNlElgKDE9wZW5UZXJtaW5hbBIlLm9wZW5veGlkZS5hcGkudjEuT3BlblRlcm1pbmFsUmVxdWVzdBofLm9wZW5veGlkZS5hcGkudjEuVGVybWluYWxFdmVudDABElYKEEV4ZWN1dGlvbkNvbW1hbmQSKS5vcGVub3hpZGUuYXBpLnYxLkV4ZWN1dGlvbkNvbW1hbmRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z',
-		[file_openoxide_api_v1_common, file_buf_validate_validate],
-	);
+export const file_openoxide_api_v1_terminal: GenFile = /*@__PURE__*/
+  fileDesc("Ch9vcGVub3hpZGUvYXBpL3YxL3Rlcm1pbmFsLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIrQCChNPcGVuVGVybWluYWxSZXF1ZXN0EjgKBGtpbmQYASABKA4yHi5vcGVub3hpZGUuYXBpLnYxLlRlcm1pbmFsS2luZEIKukgHggEEEAEgABIfCglzZXJ2ZXJfaWQYAiABKANCB7pIBCICIABIAIgBARIgCgljb250YWluZXIYAyABKAlCCLpIBXIDGP8BSAGIAQESHAoFc2hlbGwYBCABKAlCCLpIBXIDGP8BSAKIAQESHQoEY29scxgFIAEoDUIKukgHKgUY6AcoAUgDiAEBEh0KBHJvd3MYBiABKA1CCrpIByoFGOgHKAFIBIgBARIMCgRob3N0GAcgASgIQgwKCl9zZXJ2ZXJfaWRCDAoKX2NvbnRhaW5lckIICgZfc2hlbGxCBwoFX2NvbHNCBwoFX3Jvd3Mi+gEKDVRlcm1pbmFsRXZlbnQSEgoKc2Vzc2lvbl9pZBgBIAEoCRI0CgdzdGFydGVkGAIgASgLMiEub3Blbm94aWRlLmFwaS52MS5UZXJtaW5hbFN0YXJ0ZWRIABIyCgZvdXRwdXQYAyABKAsyIC5vcGVub3hpZGUuYXBpLnYxLlRlcm1pbmFsT3V0cHV0SAASMAoFZXJyb3IYBCABKAsyHy5vcGVub3hpZGUuYXBpLnYxLlRlcm1pbmFsRXJyb3JIABIuCgRleGl0GAUgASgLMh4ub3Blbm94aWRlLmFwaS52MS5UZXJtaW5hbEV4aXRIAEIJCgdwYXlsb2FkIlsKD1Rlcm1pbmFsU3RhcnRlZBIsCgRraW5kGAEgASgOMh4ub3Blbm94aWRlLmFwaS52MS5UZXJtaW5hbEtpbmQSEQoEaG9zdBgCIAEoCUgAiAEBQgcKBV9ob3N0ImIKDlRlcm1pbmFsT3V0cHV0EkIKBnN0cmVhbRgBIAEoDjImLm9wZW5veGlkZS5hcGkudjEuVGVybWluYWxPdXRwdXRTdHJlYW1CCrpIB4IBBBABIAASDAoEZGF0YRgCIAEoDCI8Cg1UZXJtaW5hbEVycm9yEg8KB21lc3NhZ2UYASABKAkSEQoEY29kZRgCIAEoCUgAiAEBQgcKBV9jb2RlIioKDFRlcm1pbmFsRXhpdBIRCgRjb2RlGAEgASgFSACIAQFCBwoFX2NvZGUi1wEKF0V4ZWN1dGlvbkNvbW1hbmRSZXF1ZXN0EhsKCnNlc3Npb25faWQYASABKAlCB7pIBHICEAESMAoFaW5wdXQYAiABKAsyHy5vcGVub3hpZGUuYXBpLnYxLlRlcm1pbmFsSW5wdXRIABIyCgZyZXNpemUYAyABKAsyIC5vcGVub3hpZGUuYXBpLnYxLlRlcm1pbmFsUmVzaXplSAASLgoEc3RvcBgEIAEoCzIeLm9wZW5veGlkZS5hcGkudjEuVGVybWluYWxTdG9wSABCCQoHY29tbWFuZCIoCg1UZXJtaW5hbElucHV0EhcKBGRhdGEYASABKAxCCbpIBnoEGICABCJECg5UZXJtaW5hbFJlc2l6ZRIYCgRjb2xzGAEgASgNQgq6SAcqBRjoBygBEhgKBHJvd3MYAiABKA1CCrpIByoFGOgHKAEiDgoMVGVybWluYWxTdG9wKmgKDFRlcm1pbmFsS2luZBIdChlURVJNSU5BTF9LSU5EX1VOU1BFQ0lGSUVEEAASGAoUVEVSTUlOQUxfS0lORF9ET0NLRVIQARIfChtURVJNSU5BTF9LSU5EX1JFTU9URV9TRVJWRVIQAiqEAQoUVGVybWluYWxPdXRwdXRTdHJlYW0SJgoiVEVSTUlOQUxfT1VUUFVUX1NUUkVBTV9VTlNQRUNJRklFRBAAEiEKHVRFUk1JTkFMX09VVFBVVF9TVFJFQU1fU1RET1VUEAESIQodVEVSTUlOQUxfT1VUUFVUX1NUUkVBTV9TVERFUlIQAjLDAQoPVGVybWluYWxTZXJ2aWNlElgKDE9wZW5UZXJtaW5hbBIlLm9wZW5veGlkZS5hcGkudjEuT3BlblRlcm1pbmFsUmVxdWVzdBofLm9wZW5veGlkZS5hcGkudjEuVGVybWluYWxFdmVudDABElYKEEV4ZWN1dGlvbkNvbW1hbmQSKS5vcGVub3hpZGUuYXBpLnYxLkV4ZWN1dGlvbkNvbW1hbmRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
 
 /**
  * @generated from message openoxide.api.v1.OpenTerminalRequest
  */
-export type OpenTerminalRequest =
-	Message<'openoxide.api.v1.OpenTerminalRequest'> & {
-		/**
-		 * @generated from field: openoxide.api.v1.TerminalKind kind = 1;
-		 */
-		kind: TerminalKind;
+export type OpenTerminalRequest = Message<"openoxide.api.v1.OpenTerminalRequest"> & {
+  /**
+   * @generated from field: openoxide.api.v1.TerminalKind kind = 1;
+   */
+  kind: TerminalKind;
 
-		/**
-		 * Required for TERMINAL_KIND_REMOTE_SERVER; optional for
-		 * TERMINAL_KIND_DOCKER (falls back to the local Agent).
-		 *
-		 * @generated from field: optional int64 server_id = 2;
-		 */
-		serverId?: bigint | undefined;
+  /**
+   * Required for TERMINAL_KIND_REMOTE_SERVER; optional for TERMINAL_KIND_DOCKER (falls back to the local Agent).
+   *
+   * @generated from field: optional int64 server_id = 2;
+   */
+  serverId?: bigint | undefined;
 
-		/**
-		 * Container name for TERMINAL_KIND_DOCKER.
-		 *
-		 * @generated from field: optional string container = 3;
-		 */
-		container?: string | undefined;
+  /**
+   * Container name for TERMINAL_KIND_DOCKER.
+   *
+   * @generated from field: optional string container = 3;
+   */
+  container?: string | undefined;
 
-		/**
-		 * @generated from field: optional string shell = 4;
-		 */
-		shell?: string | undefined;
+  /**
+   * @generated from field: optional string shell = 4;
+   */
+  shell?: string | undefined;
 
-		/**
-		 * @generated from field: optional uint32 cols = 5;
-		 */
-		cols?: number | undefined;
+  /**
+   * @generated from field: optional uint32 cols = 5;
+   */
+  cols?: number | undefined;
 
-		/**
-		 * @generated from field: optional uint32 rows = 6;
-		 */
-		rows?: number | undefined;
+  /**
+   * @generated from field: optional uint32 rows = 6;
+   */
+  rows?: number | undefined;
 
-		/**
-		 * TERMINAL_KIND_DOCKER only: escape through the Agent to the host itself
-		 * (privileged helper container + chroot) instead of a workload container.
-		 *
-		 * @generated from field: bool host = 7;
-		 */
-		host: boolean;
-	};
+  /**
+   * TERMINAL_KIND_DOCKER only: escape through the Agent to the host itself (privileged helper container + chroot) instead of a workload container.
+   *
+   * @generated from field: bool host = 7;
+   */
+  host: boolean;
+};
 
 /**
  * Describes the message openoxide.api.v1.OpenTerminalRequest.
  * Use `create(OpenTerminalRequestSchema)` to create a new message.
  */
-export const OpenTerminalRequestSchema: GenMessage<OpenTerminalRequest> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_terminal, 0);
+export const OpenTerminalRequestSchema: GenMessage<OpenTerminalRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_terminal, 0);
 
 /**
  * @generated from message openoxide.api.v1.TerminalEvent
  */
-export type TerminalEvent = Message<'openoxide.api.v1.TerminalEvent'> & {
-	/**
-	 * @generated from field: string session_id = 1;
-	 */
-	sessionId: string;
+export type TerminalEvent = Message<"openoxide.api.v1.TerminalEvent"> & {
+  /**
+   * @generated from field: string session_id = 1;
+   */
+  sessionId: string;
 
-	/**
-	 * @generated from oneof openoxide.api.v1.TerminalEvent.payload
-	 */
-	payload:
-		| {
-				/**
-				 * @generated from field: openoxide.api.v1.TerminalStarted started = 2;
-				 */
-				value: TerminalStarted;
-				case: 'started';
-		  }
-		| {
-				/**
-				 * @generated from field: openoxide.api.v1.TerminalOutput output = 3;
-				 */
-				value: TerminalOutput;
-				case: 'output';
-		  }
-		| {
-				/**
-				 * @generated from field: openoxide.api.v1.TerminalError error = 4;
-				 */
-				value: TerminalError;
-				case: 'error';
-		  }
-		| {
-				/**
-				 * @generated from field: openoxide.api.v1.TerminalExit exit = 5;
-				 */
-				value: TerminalExit;
-				case: 'exit';
-		  }
-		| {case: undefined; value?: undefined};
+  /**
+   * @generated from oneof openoxide.api.v1.TerminalEvent.payload
+   */
+  payload: {
+    /**
+     * @generated from field: openoxide.api.v1.TerminalStarted started = 2;
+     */
+    value: TerminalStarted;
+    case: "started";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.TerminalOutput output = 3;
+     */
+    value: TerminalOutput;
+    case: "output";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.TerminalError error = 4;
+     */
+    value: TerminalError;
+    case: "error";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.TerminalExit exit = 5;
+     */
+    value: TerminalExit;
+    case: "exit";
+  } | { case: undefined; value?: undefined };
 };
 
 /**
  * Describes the message openoxide.api.v1.TerminalEvent.
  * Use `create(TerminalEventSchema)` to create a new message.
  */
-export const TerminalEventSchema: GenMessage<TerminalEvent> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_terminal, 1);
+export const TerminalEventSchema: GenMessage<TerminalEvent> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_terminal, 1);
 
 /**
  * @generated from message openoxide.api.v1.TerminalStarted
  */
-export type TerminalStarted =
-	Message<'openoxide.api.v1.TerminalStarted'> & {
-		/**
-		 * @generated from field: openoxide.api.v1.TerminalKind kind = 1;
-		 */
-		kind: TerminalKind;
+export type TerminalStarted = Message<"openoxide.api.v1.TerminalStarted"> & {
+  /**
+   * @generated from field: openoxide.api.v1.TerminalKind kind = 1;
+   */
+  kind: TerminalKind;
 
-		/**
-		 * @generated from field: optional string host = 2;
-		 */
-		host?: string | undefined;
-	};
+  /**
+   * @generated from field: optional string host = 2;
+   */
+  host?: string | undefined;
+};
 
 /**
  * Describes the message openoxide.api.v1.TerminalStarted.
  * Use `create(TerminalStartedSchema)` to create a new message.
  */
-export const TerminalStartedSchema: GenMessage<TerminalStarted> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_terminal, 2);
+export const TerminalStartedSchema: GenMessage<TerminalStarted> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_terminal, 2);
 
 /**
  * @generated from message openoxide.api.v1.TerminalOutput
  */
-export type TerminalOutput = Message<'openoxide.api.v1.TerminalOutput'> & {
-	/**
-	 * @generated from field: openoxide.api.v1.TerminalOutputStream stream = 1;
-	 */
-	stream: TerminalOutputStream;
+export type TerminalOutput = Message<"openoxide.api.v1.TerminalOutput"> & {
+  /**
+   * @generated from field: openoxide.api.v1.TerminalOutputStream stream = 1;
+   */
+  stream: TerminalOutputStream;
 
-	/**
-	 * @generated from field: bytes data = 2;
-	 */
-	data: Uint8Array;
+  /**
+   * @generated from field: bytes data = 2;
+   */
+  data: Uint8Array;
 };
 
 /**
  * Describes the message openoxide.api.v1.TerminalOutput.
  * Use `create(TerminalOutputSchema)` to create a new message.
  */
-export const TerminalOutputSchema: GenMessage<TerminalOutput> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_terminal, 3);
+export const TerminalOutputSchema: GenMessage<TerminalOutput> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_terminal, 3);
 
 /**
  * @generated from message openoxide.api.v1.TerminalError
  */
-export type TerminalError = Message<'openoxide.api.v1.TerminalError'> & {
-	/**
-	 * @generated from field: string message = 1;
-	 */
-	message: string;
+export type TerminalError = Message<"openoxide.api.v1.TerminalError"> & {
+  /**
+   * @generated from field: string message = 1;
+   */
+  message: string;
 
-	/**
-	 * @generated from field: optional string code = 2;
-	 */
-	code?: string | undefined;
+  /**
+   * @generated from field: optional string code = 2;
+   */
+  code?: string | undefined;
 };
 
 /**
  * Describes the message openoxide.api.v1.TerminalError.
  * Use `create(TerminalErrorSchema)` to create a new message.
  */
-export const TerminalErrorSchema: GenMessage<TerminalError> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_terminal, 4);
+export const TerminalErrorSchema: GenMessage<TerminalError> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_terminal, 4);
 
 /**
  * @generated from message openoxide.api.v1.TerminalExit
  */
-export type TerminalExit = Message<'openoxide.api.v1.TerminalExit'> & {
-	/**
-	 * @generated from field: optional int32 code = 1;
-	 */
-	code?: number | undefined;
+export type TerminalExit = Message<"openoxide.api.v1.TerminalExit"> & {
+  /**
+   * @generated from field: optional int32 code = 1;
+   */
+  code?: number | undefined;
 };
 
 /**
  * Describes the message openoxide.api.v1.TerminalExit.
  * Use `create(TerminalExitSchema)` to create a new message.
  */
-export const TerminalExitSchema: GenMessage<TerminalExit> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_terminal, 5);
+export const TerminalExitSchema: GenMessage<TerminalExit> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_terminal, 5);
 
 /**
  * @generated from message openoxide.api.v1.ExecutionCommandRequest
  */
-export type ExecutionCommandRequest =
-	Message<'openoxide.api.v1.ExecutionCommandRequest'> & {
-		/**
-		 * @generated from field: string session_id = 1;
-		 */
-		sessionId: string;
+export type ExecutionCommandRequest = Message<"openoxide.api.v1.ExecutionCommandRequest"> & {
+  /**
+   * @generated from field: string session_id = 1;
+   */
+  sessionId: string;
 
-		/**
-		 * @generated from oneof openoxide.api.v1.ExecutionCommandRequest.command
-		 */
-		command:
-			| {
-					/**
-					 * @generated from field: openoxide.api.v1.TerminalInput input = 2;
-					 */
-					value: TerminalInput;
-					case: 'input';
-			  }
-			| {
-					/**
-					 * @generated from field: openoxide.api.v1.TerminalResize resize = 3;
-					 */
-					value: TerminalResize;
-					case: 'resize';
-			  }
-			| {
-					/**
-					 * @generated from field: openoxide.api.v1.TerminalStop stop = 4;
-					 */
-					value: TerminalStop;
-					case: 'stop';
-			  }
-			| {case: undefined; value?: undefined};
-	};
+  /**
+   * @generated from oneof openoxide.api.v1.ExecutionCommandRequest.command
+   */
+  command: {
+    /**
+     * @generated from field: openoxide.api.v1.TerminalInput input = 2;
+     */
+    value: TerminalInput;
+    case: "input";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.TerminalResize resize = 3;
+     */
+    value: TerminalResize;
+    case: "resize";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.TerminalStop stop = 4;
+     */
+    value: TerminalStop;
+    case: "stop";
+  } | { case: undefined; value?: undefined };
+};
 
 /**
  * Describes the message openoxide.api.v1.ExecutionCommandRequest.
  * Use `create(ExecutionCommandRequestSchema)` to create a new message.
  */
-export const ExecutionCommandRequestSchema: GenMessage<ExecutionCommandRequest> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_terminal, 6);
+export const ExecutionCommandRequestSchema: GenMessage<ExecutionCommandRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_terminal, 6);
 
 /**
  * @generated from message openoxide.api.v1.TerminalInput
  */
-export type TerminalInput = Message<'openoxide.api.v1.TerminalInput'> & {
-	/**
-	 * @generated from field: bytes data = 1;
-	 */
-	data: Uint8Array;
+export type TerminalInput = Message<"openoxide.api.v1.TerminalInput"> & {
+  /**
+   * @generated from field: bytes data = 1;
+   */
+  data: Uint8Array;
 };
 
 /**
  * Describes the message openoxide.api.v1.TerminalInput.
  * Use `create(TerminalInputSchema)` to create a new message.
  */
-export const TerminalInputSchema: GenMessage<TerminalInput> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_terminal, 7);
+export const TerminalInputSchema: GenMessage<TerminalInput> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_terminal, 7);
 
 /**
  * @generated from message openoxide.api.v1.TerminalResize
  */
-export type TerminalResize = Message<'openoxide.api.v1.TerminalResize'> & {
-	/**
-	 * @generated from field: uint32 cols = 1;
-	 */
-	cols: number;
+export type TerminalResize = Message<"openoxide.api.v1.TerminalResize"> & {
+  /**
+   * @generated from field: uint32 cols = 1;
+   */
+  cols: number;
 
-	/**
-	 * @generated from field: uint32 rows = 2;
-	 */
-	rows: number;
+  /**
+   * @generated from field: uint32 rows = 2;
+   */
+  rows: number;
 };
 
 /**
  * Describes the message openoxide.api.v1.TerminalResize.
  * Use `create(TerminalResizeSchema)` to create a new message.
  */
-export const TerminalResizeSchema: GenMessage<TerminalResize> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_terminal, 8);
+export const TerminalResizeSchema: GenMessage<TerminalResize> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_terminal, 8);
 
 /**
  * @generated from message openoxide.api.v1.TerminalStop
  */
-export type TerminalStop = Message<'openoxide.api.v1.TerminalStop'> & {};
+export type TerminalStop = Message<"openoxide.api.v1.TerminalStop"> & {
+};
 
 /**
  * Describes the message openoxide.api.v1.TerminalStop.
  * Use `create(TerminalStopSchema)` to create a new message.
  */
-export const TerminalStopSchema: GenMessage<TerminalStop> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_terminal, 9);
+export const TerminalStopSchema: GenMessage<TerminalStop> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_terminal, 9);
 
 /**
  * @generated from enum openoxide.api.v1.TerminalKind
  */
 export enum TerminalKind {
-	/**
-	 * @generated from enum value: TERMINAL_KIND_UNSPECIFIED = 0;
-	 */
-	UNSPECIFIED = 0,
+  /**
+   * @generated from enum value: TERMINAL_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
 
-	/**
-	 * @generated from enum value: TERMINAL_KIND_DOCKER = 1;
-	 */
-	DOCKER = 1,
+  /**
+   * @generated from enum value: TERMINAL_KIND_DOCKER = 1;
+   */
+  DOCKER = 1,
 
-	/**
-	 * @generated from enum value: TERMINAL_KIND_REMOTE_SERVER = 2;
-	 */
-	REMOTE_SERVER = 2,
+  /**
+   * @generated from enum value: TERMINAL_KIND_REMOTE_SERVER = 2;
+   */
+  REMOTE_SERVER = 2,
 }
 
 /**
  * Describes the enum openoxide.api.v1.TerminalKind.
  */
-export const TerminalKindSchema: GenEnum<TerminalKind> /*@__PURE__*/ =
-	enumDesc(file_openoxide_api_v1_terminal, 0);
+export const TerminalKindSchema: GenEnum<TerminalKind> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_terminal, 0);
 
 /**
  * @generated from enum openoxide.api.v1.TerminalOutputStream
  */
 export enum TerminalOutputStream {
-	/**
-	 * @generated from enum value: TERMINAL_OUTPUT_STREAM_UNSPECIFIED = 0;
-	 */
-	UNSPECIFIED = 0,
+  /**
+   * @generated from enum value: TERMINAL_OUTPUT_STREAM_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
 
-	/**
-	 * @generated from enum value: TERMINAL_OUTPUT_STREAM_STDOUT = 1;
-	 */
-	STDOUT = 1,
+  /**
+   * @generated from enum value: TERMINAL_OUTPUT_STREAM_STDOUT = 1;
+   */
+  STDOUT = 1,
 
-	/**
-	 * @generated from enum value: TERMINAL_OUTPUT_STREAM_STDERR = 2;
-	 */
-	STDERR = 2,
+  /**
+   * @generated from enum value: TERMINAL_OUTPUT_STREAM_STDERR = 2;
+   */
+  STDERR = 2,
 }
 
 /**
  * Describes the enum openoxide.api.v1.TerminalOutputStream.
  */
-export const TerminalOutputStreamSchema: GenEnum<TerminalOutputStream> /*@__PURE__*/ =
-	enumDesc(file_openoxide_api_v1_terminal, 1);
+export const TerminalOutputStreamSchema: GenEnum<TerminalOutputStream> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_terminal, 1);
 
 /**
- * Interactive terminal over the panel's ConnectRPC API. Browsers cannot
- * stream request bodies over the Connect protocol, so the session is split
- * in two legs: a server-streaming RPC that carries all terminal output for
- * the session lifetime, and a unary RPC that feeds input, resize and stop
- * commands addressed by the session id returned in the first `started`
- * event.
+ * Interactive terminal over the panel's ConnectRPC API. Browsers cannot stream request bodies over the Connect protocol, so the session is split in two legs: a server-streaming RPC carries all terminal output for the session lifetime, and a unary RPC feeds input, resize and stop commands addressed by the session id returned in the first `started` event.
  *
  * @generated from service openoxide.api.v1.TerminalService
  */
 export const TerminalService: GenService<{
-	/**
-	 * Opens a Docker or SSH PTY session and streams its output. The first
-	 * event is always `started` carrying the `session_id`; the stream ends
-	 * after `exit` or `error`.
-	 *
-	 * @generated from rpc openoxide.api.v1.TerminalService.OpenTerminal
-	 */
-	openTerminal: {
-		methodKind: 'server_streaming';
-		input: typeof OpenTerminalRequestSchema;
-		output: typeof TerminalEventSchema;
-	};
-	/**
-	 * Sends a command (input / resize / stop) to an open terminal session.
-	 *
-	 * @generated from rpc openoxide.api.v1.TerminalService.ExecutionCommand
-	 */
-	executionCommand: {
-		methodKind: 'unary';
-		input: typeof ExecutionCommandRequestSchema;
-		output: typeof EmptySchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_terminal, 0);
+  /**
+   * Opens a Docker or SSH PTY session and streams its output. The first event is always `started` carrying the `session_id`; the stream ends after `exit` or `error`.
+   *
+   * @generated from rpc openoxide.api.v1.TerminalService.OpenTerminal
+   */
+  openTerminal: {
+    methodKind: "server_streaming";
+    input: typeof OpenTerminalRequestSchema;
+    output: typeof TerminalEventSchema;
+  },
+  /**
+   * Sends a command (input / resize / stop) to an open terminal session.
+   *
+   * @generated from rpc openoxide.api.v1.TerminalService.ExecutionCommand
+   */
+  executionCommand: {
+    methodKind: "unary";
+    input: typeof ExecutionCommandRequestSchema;
+    output: typeof EmptySchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_terminal, 0);
+

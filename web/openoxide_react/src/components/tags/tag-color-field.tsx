@@ -14,10 +14,7 @@ const PRESET_COLORS = [
 	'#64748b', // Slate
 ];
 
-/**
- * Full color editor: native picker swatch, hex input and a preset row.
- * Shared by the tag create / update dialog.
- */
+/** Full color editor: native picker swatch, hex input and a preset row. Shared by the tag create / update dialog. */
 export function TagColorField({
 	color,
 	onChange,

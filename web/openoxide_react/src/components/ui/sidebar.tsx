@@ -2,7 +2,7 @@ import * as React from 'react';
 import {mergeProps} from '@base-ui/react/merge-props';
 import {useRender} from '@base-ui/react/use-render';
 import {cva, type VariantProps} from 'class-variance-authority';
-import {useIsMobile} from '#/hooks/use-mobile.ts';
+import {useIsMobile} from '#/hooks/ui/use-mobile';
 import {cn} from '#/api/utils.ts';
 import {Button} from '#/components/ui/button.tsx';
 import {Input} from '#/components/ui/input.tsx';
@@ -68,8 +68,7 @@ function SidebarProvider({
 	const isMobile = useIsMobile();
 	const [openMobile, setOpenMobile] = React.useState(false);
 
-	// This is the internal state of the sidebar.
-	// We use openProp and setOpenProp for control from outside the component.
+	// This is the internal state of the sidebar. We use openProp and setOpenProp for control from outside the component.
 	const [_open, _setOpen] = React.useState(defaultOpen);
 	const open = openProp ?? _open;
 	const setOpen = React.useCallback(
@@ -110,8 +109,7 @@ function SidebarProvider({
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	}, [toggleSidebar]);
 
-	// We add a state so that we can do data-state="expanded" or "collapsed".
-	// This makes it easier to style the sidebar with Tailwind classes.
+	// We add a state so that we can do data-state="expanded" or "collapsed". This makes it easier to style the sidebar with Tailwind classes.
 	const state = open ? 'expanded' : 'collapsed';
 
 	const contextValue = React.useMemo<SidebarContextProps>(
@@ -188,26 +186,28 @@ function Sidebar({
 
 	if (isMobile) {
 		return (
-			<Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>					<SheetContent
-						dir={dir}
-						data-sidebar="sidebar"
-						data-slot="sidebar"
-						data-mobile="true"
-						className="w-(--sidebar-width) bg-background! p-0 text-sidebar-foreground [&>button]:hidden"
-						style={
-							{
-								'--sidebar-width': SIDEBAR_WIDTH_MOBILE,
-							} as React.CSSProperties
-						}
-						side={side}>
-						<SheetHeader className="sr-only">
-							<SheetTitle>Sidebar</SheetTitle>
-							<SheetDescription>
-								Displays the mobile sidebar.
-							</SheetDescription>
-						</SheetHeader>
-						<div className="flex h-full w-full flex-col">{children}</div>
-					</SheetContent>
+			<Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+				{' '}
+				<SheetContent
+					dir={dir}
+					data-sidebar="sidebar"
+					data-slot="sidebar"
+					data-mobile="true"
+					className="w-(--sidebar-width) bg-background! p-0 text-sidebar-foreground [&>button]:hidden"
+					style={
+						{
+							'--sidebar-width': SIDEBAR_WIDTH_MOBILE,
+						} as React.CSSProperties
+					}
+					side={side}>
+					<SheetHeader className="sr-only">
+						<SheetTitle>Sidebar</SheetTitle>
+						<SheetDescription>
+							Displays the mobile sidebar.
+						</SheetDescription>
+					</SheetHeader>
+					<div className="flex h-full w-full flex-col">{children}</div>
+				</SheetContent>
 			</Sheet>
 		);
 	}

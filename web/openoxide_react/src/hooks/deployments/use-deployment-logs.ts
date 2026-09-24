@@ -2,70 +2,12 @@ import * as React from 'react';
 import {toast} from 'sonner';
 import {createServiceClient} from '#/api/live/query';
 import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
+import {extractLogLines} from '#/utils/log-lines';
 import type {Deployment} from './use-deployments';
 
 const deploymentClient = createServiceClient(DeploymentService);
 
-export function extractLogLines(rawData: unknown): string[] {
-	if (!rawData) return [];
-	if (typeof rawData === 'string') {
-		const trimmed = rawData.trim();
-		if (
-			!trimmed ||
-			trimmed.startsWith('event:') ||
-			trimmed.includes('event: log') ||
-			trimmed.includes('event: deployment') ||
-			trimmed.startsWith('id:') ||
-			trimmed.startsWith(':') ||
-			trimmed.includes('keep-alive')
-		) {
-			return [];
-		}
-		if (trimmed.startsWith('data:')) {
-			const content = trimmed.slice(5).trim();
-			if (!content || content.includes('keep-alive')) return [];
-			try {
-				const parsed = JSON.parse(content);
-				return extractLogLines(parsed);
-			} catch {
-				return content
-					.split('\n')
-					.filter(l => l.trim() && !l.includes('keep-alive'));
-			}
-		}
-		return rawData.split('\n');
-	}
-
-	if (typeof rawData === 'object' && rawData !== null) {
-		const obj = rawData as Record<string, unknown>;
-		if (obj.type === 'keep-alive' || obj.event === 'keep-alive') return [];
-		const candidate =
-			obj.line ??
-			obj.message ??
-			obj.data ??
-			obj.log ??
-			obj.text ??
-			obj.content ??
-			obj.output;
-		if (candidate !== undefined && candidate !== null) {
-			if (typeof candidate === 'object') {
-				return [JSON.stringify(candidate)];
-			}
-			return String(candidate)
-				.split('\n')
-				.filter(l => l.trim() && !l.includes('keep-alive'));
-		}
-		return [JSON.stringify(rawData)];
-	}
-
-	return [String(rawData)];
-}
-
-/**
- * Streams a deployment's build log over the panel's ConnectRPC stream,
- * appending lines as the deployment progresses. The stored `log_content`
- * (if any) renders immediately while the stream catches up.
- */
+/** Streams a deployment's build log over the panel's ConnectRPC stream, appending lines as the deployment progresses. The stored `log_content` (if any) renders immediately while the stream catches up. */
 export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 	const [logs, setLogs] = React.useState<string>('');
 	const [isLogsLoading, setIsLogsLoading] = React.useState(false);
@@ -116,8 +58,7 @@ export function useDeploymentLogs(selectedDeployment: Deployment | null) {
 				}
 				if (isMounted) setIsLogsLoading(false);
 			} catch {
-				// Stream failed (network drop, abort); fall back to the
-				// stored snapshot.
+				// Stream failed (network drop, abort); fall back to the stored snapshot.
 				if (isMounted) {
 					if (depWithLogs.log_content) {
 						setLogs(depWithLogs.log_content);

@@ -24,13 +24,7 @@ interface StatefulMigrationPanelProps {
 	servers: RemoteServerResponse[];
 }
 
-/**
- * Single-service stateful migration: rsyncs the chosen service's data
- * (source dir, volumes, binds) into the target's staging area, verifies,
- * promotes, repoints only that service, redeploys and health-gates it —
- * the source keeps everything until REPOINT, and cancel is offered while
- * the row is still RUNNING.
- */
+/** Single-service stateful migration: rsyncs the chosen service's data (source dir, volumes, binds) into the target's staging area, verifies, promotes, repoints only that service, redeploys and health-gates it — the source keeps everything until REPOINT, and cancel is offered while the row is still RUNNING. */
 export function StatefulMigrationPanel({
 	server,
 	servers,

@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/preview.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {PreviewDeploymentService} from './preview_pb';
+import { PreviewDeploymentService } from "./preview_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.PreviewDeploymentService.ListPreviews
@@ -22,8 +22,7 @@ export const createPreview = PreviewDeploymentService.method.createPreview;
 /**
  * @generated from rpc openoxide.api.v1.PreviewDeploymentService.RedeployPreview
  */
-export const redeployPreview =
-	PreviewDeploymentService.method.redeployPreview;
+export const redeployPreview = PreviewDeploymentService.method.redeployPreview;
 
 /**
  * @generated from rpc openoxide.api.v1.PreviewDeploymentService.DeletePreview

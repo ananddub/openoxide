@@ -1,7 +1,8 @@
 use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    AuditService, AuditServiceExt, ResourceListResponse, ResourceQuery, ResourceResponse,
+    AuditExportAuditLogsRequest, AuditExportAuditLogsResponse, AuditListAuditLogsRequest,
+    AuditListAuditLogsResponse, AuditService, AuditServiceExt,
 };
 use crate::flash_gen::audit_logs::{
     AuditLogsListByOrganizationAndActionParams, AuditLogsListByOrganizationParams,
@@ -16,12 +17,13 @@ impl AuditService for AuditController {
     async fn list_audit_logs<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, AuditListAuditLogsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AuditListAuditLogsResponse> + Send + use<'a>>
+    {
         let organization_id = request.organization_id.unwrap_or(0);
         let limit = request.limit.unwrap_or(100).clamp(1, 500);
         let offset = request.offset.unwrap_or(0).max(0);
-        let action = request.query.as_deref();
+        let action = request.action;
 
         let (rows, _total) = match action {
             Some(action) => {
@@ -30,7 +32,7 @@ impl AuditService for AuditController {
                     .audit_logs_list_by_organization_and_action(
                         &AuditLogsListByOrganizationAndActionParams {
                             organization_id,
-                            action: action.to_string(),
+                            action: action.to_owned(),
                             limit,
                             offset,
                         },
@@ -63,32 +65,22 @@ impl AuditService for AuditController {
             }
         };
 
-        let items = rows
-            .into_iter()
-            .map(|row| {
-                let payload = serde_json::to_string(&AuditLogDto::from(row))
-                    .unwrap_or_default();
-                ResourceResponse {
-                    id: 0,
-                    kind: "audit_log".into(),
-                    payload,
-                    ..Default::default()
-                }
-            })
-            .collect();
-
-        Response::ok(ResourceListResponse { items, ..Default::default() })
+        let logs = rows.into_iter().map(log_to_proto).collect();
+        Response::ok(AuditListAuditLogsResponse {
+            logs,
+            ..Default::default()
+        })
     }
 
     #[permission(AuditLog, CanRead)]
     async fn export_audit_logs<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let auth = Self::extract_auth(&ctx).await?;
+        request: ServiceRequest<'_, AuditExportAuditLogsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AuditExportAuditLogsResponse> + Send + use<'a>>
+    {
         let organization_id = auth.organization_id;
-        let action = request.query.as_deref();
+        let action = request.action;
 
         let rows = match action {
             Some(action) => {
@@ -96,7 +88,7 @@ impl AuditService for AuditController {
                     .audit_logs_list_by_organization_and_action(
                         &AuditLogsListByOrganizationAndActionParams {
                             organization_id,
-                            action: action.to_string(),
+                            action: action.to_owned(),
                             limit: 500,
                             offset: 0,
                         },
@@ -132,10 +124,8 @@ impl AuditService for AuditController {
             ));
         }
 
-        Response::ok(ResourceResponse {
-            id: 0,
-            kind: "audit_log_export".into(),
-            payload: csv,
+        Response::ok(AuditExportAuditLogsResponse {
+            csv,
             ..Default::default()
         })
     }

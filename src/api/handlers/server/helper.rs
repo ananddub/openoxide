@@ -1,7 +1,10 @@
 use auto_di::resolve;
 use connectrpc::{ConnectError, ErrorCode};
-use serde::{Deserialize, Serialize};
 
+use crate::api::connect::generated::openoxide::api::v1::{
+    ServerAudit as ServerAuditProto, ServerConnectionInfo, ServerPortAvailability,
+    ServerSetupOutcome, ServerSetupStep, ServerToolState,
+};
 use crate::utils::exec::{ExecError, SshHostKey};
 use crate::utils::setup::{PortAvailability, ServerAudit, SetupOutcome, SetupStep, ToolState};
 
@@ -89,139 +92,76 @@ pub fn host_key_policy(server_id: i64, host_key: &Option<String>) -> SshHostKey 
     }
 }
 
-// ── Helper DTOs for the generic Resource endpoints (moved from the retired
-//    api::dto layer; JSON payload contract must not change) ─────────────
+// ── Proto mappings for the typed ServerController RPCs ─────────────────
 
-#[derive(Clone, Debug, Default, Deserialize)]
-pub struct ServerConnectionDto {
-    pub host_key_fingerprint: Option<String>,
-    pub sudo_password: Option<String>,
-    pub pool_size: Option<usize>,
-}
-
-#[derive(Clone, Debug, Default, Deserialize)]
-pub struct TestDirectConnectionDto {
-    pub ip_address: String,
-    pub port: Option<u16>,
-    pub username: String,
-    pub ssh_key_id: Option<i64>,
-}
-
-#[derive(Clone, Debug, Default, Deserialize)]
-pub struct SetupServerDto {
-    #[serde(default)]
-    pub install_dependencies: bool,
-    pub advertise_addr: Option<String>,
-    pub acme_email: Option<String>,
-    pub host_key_fingerprint: Option<String>,
-    pub sudo_password: Option<String>,
-    pub pool_size: Option<usize>,
-}
-
-#[derive(Clone, Debug, Serialize)]
-pub struct ToolStateDto {
-    pub installed: bool,
-    pub version: Option<String>,
-}
-impl From<ToolState> for ToolStateDto {
-    fn from(v: ToolState) -> Self {
-        Self {
-            installed: v.installed,
-            version: v.version,
-        }
+/// Placeholder connection report emitted by the probe RPCs: the panel does
+/// not expose the live SSH session pool counters over ConnectRPC yet.
+pub fn placeholder_connection_info() -> ServerConnectionInfo {
+    ServerConnectionInfo {
+        connected: true,
+        ..Default::default()
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
-pub struct PortAvailabilityDto {
-    pub port: u16,
-    pub available: bool,
-}
-impl From<PortAvailability> for PortAvailabilityDto {
-    fn from(v: PortAvailability) -> Self {
-        Self {
-            port: v.port,
-            available: v.available,
-        }
+fn tool_state_to_proto(state: ToolState) -> ServerToolState {
+    ServerToolState {
+        installed: state.installed,
+        version: state.version,
+        ..Default::default()
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
-pub struct ServerAuditDto {
-    pub os_id: String,
-    pub architecture: String,
-    pub docker: ToolStateDto,
-    pub git: ToolStateDto,
-    pub rclone: ToolStateDto,
-    pub rsync: ToolStateDto,
-    pub nixpacks: ToolStateDto,
-    pub railpack: ToolStateDto,
-    pub buildpacks: ToolStateDto,
-    pub swarm_active: bool,
-    pub network_exists: bool,
-    pub base_directory_exists: bool,
-    pub docker_group_member: bool,
-    pub ports: Vec<PortAvailabilityDto>,
-}
-impl From<ServerAudit> for ServerAuditDto {
-    fn from(v: ServerAudit) -> Self {
-        Self {
-            os_id: v.os_id,
-            architecture: v.architecture,
-            docker: v.docker.into(),
-            git: v.git.into(),
-            rclone: v.rclone.into(),
-            rsync: v.rsync.into(),
-            nixpacks: v.nixpacks.into(),
-            railpack: v.railpack.into(),
-            buildpacks: v.buildpacks.into(),
-            swarm_active: v.swarm_active,
-            network_exists: v.network_exists,
-            base_directory_exists: v.base_directory_exists,
-            docker_group_member: v.docker_group_member,
-            ports: v.ports.into_iter().map(Into::into).collect(),
-        }
+fn port_to_proto(port: PortAvailability) -> ServerPortAvailability {
+    ServerPortAvailability {
+        port: u32::from(port.port),
+        available: port.available,
+        ..Default::default()
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
-pub struct SetupOutcomeDto {
-    pub completed: Vec<String>,
-    pub audit: ServerAuditDto,
-}
-impl From<SetupOutcome> for SetupOutcomeDto {
-    fn from(v: SetupOutcome) -> Self {
-        Self {
-            completed: v
-                .completed
-                .into_iter()
-                .map(|s| {
-                    match s {
-                        SetupStep::Dependencies => "dependencies",
-                        SetupStep::BuildTools => "build-tools",
-                        SetupStep::Directories => "directories",
-                        SetupStep::Swarm => "swarm",
-                        SetupStep::Network => "network",
-                        SetupStep::TraefikConfig => "traefik-config",
-                        SetupStep::Traefik => "traefik",
-                        SetupStep::Agent => "agent",
-                    }
-                    .into()
-                })
-                .collect(),
-            audit: v.audit.into(),
-        }
+pub fn audit_to_proto(audit: ServerAudit) -> ServerAuditProto {
+    ServerAuditProto {
+        os_id: audit.os_id,
+        architecture: audit.architecture,
+        docker: ::buffa::MessageField::some(tool_state_to_proto(audit.docker)),
+        git: ::buffa::MessageField::some(tool_state_to_proto(audit.git)),
+        rclone: ::buffa::MessageField::some(tool_state_to_proto(audit.rclone)),
+        rsync: ::buffa::MessageField::some(tool_state_to_proto(audit.rsync)),
+        nixpacks: ::buffa::MessageField::some(tool_state_to_proto(audit.nixpacks)),
+        railpack: ::buffa::MessageField::some(tool_state_to_proto(audit.railpack)),
+        buildpacks: ::buffa::MessageField::some(tool_state_to_proto(audit.buildpacks)),
+        swarm_active: audit.swarm_active,
+        network_exists: audit.network_exists,
+        base_directory_exists: audit.base_directory_exists,
+        docker_group_member: audit.docker_group_member,
+        ports: audit.ports.into_iter().map(port_to_proto).collect(),
+        ..Default::default()
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
-pub struct ServerConnectionResponseDto {
-    pub connected: bool,
-    pub reused_sessions: usize,
-    pub max_pool_size: usize,
-    pub connections: usize,
-    pub active_channels: usize,
-    pub max_channels_per_session: usize,
+fn step_to_proto(step: SetupStep) -> ServerSetupStep {
+    match step {
+        SetupStep::Dependencies => ServerSetupStep::Dependencies,
+        SetupStep::BuildTools => ServerSetupStep::BuildTools,
+        SetupStep::Directories => ServerSetupStep::Directories,
+        SetupStep::Swarm => ServerSetupStep::Swarm,
+        SetupStep::Network => ServerSetupStep::Network,
+        SetupStep::TraefikConfig => ServerSetupStep::TraefikConfig,
+        SetupStep::Traefik => ServerSetupStep::Traefik,
+        SetupStep::Agent => ServerSetupStep::Agent,
+    }
+}
+
+pub fn outcome_to_proto(outcome: SetupOutcome) -> ServerSetupOutcome {
+    ServerSetupOutcome {
+        completed: outcome
+            .completed
+            .into_iter()
+            .map(|step| ::buffa::EnumValue::Known(step_to_proto(step)))
+            .collect(),
+        audit: ::buffa::MessageField::some(audit_to_proto(outcome.audit)),
+        ..Default::default()
+    }
 }
 
 #[cfg(test)]

@@ -37,8 +37,7 @@ export function TagSelector({
 }: TagSelectorProps) {
 	const [open, setOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState('');
-	// Live tags query keyed ['tags','list'] — table-watch invalidates it
-	// while this component is mounted.
+	// Live tags query keyed ['tags','list'] — table-watch invalidates it while this component is mounted.
 	const rawTags = useTagListAll().data;
 
 	const availableTags: TagItem[] = useMemo(() => {

@@ -9,8 +9,7 @@ export function ComposeEdge({
 	const mx = (sourceX + targetX) / 2;
 	const path = `M${sourceX} ${sourceY} C${mx} ${sourceY} ${mx} ${targetY} ${targetX} ${targetY}`;
 
-	// SVG attrs can't resolve var(); apply colors via `style` instead so
-	// edges follow the active theme.
+	// SVG attrs can't resolve var(); apply colors via `style` instead so edges follow the active theme.
 	const strokeStyle = selected
 		? {stroke: 'var(--primary)', opacity: 0.9}
 		: {stroke: 'var(--muted-foreground)', opacity: 0.45};

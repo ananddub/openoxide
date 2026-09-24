@@ -8,11 +8,11 @@ import {
 	type OpenTerminalRequest,
 	OpenTerminalRequestSchema,
 } from '#/gen/connect/openoxide/api/v1/terminal_pb';
-import {handleTerminalKey} from './terminal-keyhandler';
+import {handleTerminalKey} from '#/utils/terminal-keyhandler';
 import {
 	consumeTerminalStream,
 	type TerminalStatus,
-} from './terminal-stream';
+} from '#/utils/terminal-stream';
 
 interface UseTerminalSocketOptions {
 	isOpen: boolean;

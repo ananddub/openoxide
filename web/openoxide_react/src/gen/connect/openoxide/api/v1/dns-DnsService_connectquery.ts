@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/dns.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {DnsService} from './dns_pb';
+import { DnsService } from "./dns_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.DnsService.ListProviders

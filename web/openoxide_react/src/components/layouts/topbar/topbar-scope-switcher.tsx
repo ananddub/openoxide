@@ -18,11 +18,7 @@ interface TopBarScopeSwitcherProps {
 	onSelectProject: (id: string) => void;
 }
 
-/**
- * Left slot of the top bar — the project scope switcher. Lists the
- * workspace's *projects* (the org switcher lives in the sidebar rail):
- * "All Projects" clears the deep view, rows below jump into a project.
- */
+/** Left slot of the top bar — the project scope switcher. Lists the workspace's *projects* (the org switcher lives in the sidebar rail): "All Projects" clears the deep view, rows below jump into a project. */
 export function TopBarScopeSwitcher({
 	projects,
 	activeProject,
@@ -74,8 +70,7 @@ export function TopBarScopeSwitcher({
 				<div className="max-h-64 overflow-y-auto">
 					{projects.map(project => {
 						const isCurrent =
-							projectId !== null &&
-							Number(project.id) === projectId;
+							projectId !== null && Number(project.id) === projectId;
 						return (
 							<DropdownMenuItem
 								key={String(project.id)}
@@ -85,9 +80,7 @@ export function TopBarScopeSwitcher({
 								<span className="min-w-0 flex-1 truncate">
 									{project.name ?? `Project ${project.id}`}
 								</span>
-								{isCurrent && (
-									<Check className="size-4 shrink-0" />
-								)}
+								{isCurrent && <Check className="size-4 shrink-0" />}
 							</DropdownMenuItem>
 						);
 					})}

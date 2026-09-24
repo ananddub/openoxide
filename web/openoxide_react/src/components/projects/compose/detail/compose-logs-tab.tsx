@@ -3,7 +3,7 @@ import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {ComposeLogsHeader} from './logs/compose-logs-header';
 import {createServiceClient} from '#/api/live/query';
 import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
-import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
+import {extractLogLines} from '#/utils/log-lines';
 import {downloadLogs} from '#/components/projects/detail/logs/use-log-stream';
 import {useDeploymentItems} from '#/api/live';
 import {extractServicesFromYaml} from '#/components/shared/terminal-card';
@@ -37,9 +37,7 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 	const activeService =
 		selectedContainer.trim() || servicesList[0] || 'app';
 
-	// ConnectRPC log streams. Container mode tails the compose project's
-	// service logs; build mode streams the latest deployment's build log
-	// (the old REST build endpoint never worked).
+	// ConnectRPC log streams. Container mode tails the compose project's service logs; build mode streams the latest deployment's build log (the old REST build endpoint never worked).
 	const {data: allDeployments = []} = useDeploymentItems();
 	const latestBuildDeploymentId = useMemo(() => {
 		const mine = allDeployments.filter(

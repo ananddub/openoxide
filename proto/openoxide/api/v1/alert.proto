@@ -2,14 +2,65 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "openoxide/api/v1/alert_rule.proto";
+import "buf/validate/validate.proto";
+
+// Operations surface: rule CRUD (shared messages with AlertRuleService) plus the fired-event stream and its lifecycle actions.
 service AlertOperationsService {
-  rpc ListRules(ResourceQuery) returns (ResourceListResponse);
-  rpc ListEvents(ResourceQuery) returns (ResourceListResponse);
-  rpc GetRule(ResourceRequest) returns (ResourceResponse);
-  rpc CreateRule(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateRule(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteRule(ResourceRequest) returns (Empty);
-  rpc TestRule(ResourceRequest) returns (OperationResult);
-  rpc AcknowledgeEvent(ResourceRequest) returns (OperationResult);
-  rpc SilenceEvent(ResourceRequest) returns (OperationResult);
+  rpc ListRules(ListAlertRulesRequest) returns (ListAlertRulesResponse);
+  rpc ListEvents(ListAlertEventsRequest) returns (ListAlertEventsResponse);
+  rpc GetRule(GetAlertRuleRequest) returns (GetAlertRuleResponse);
+  rpc CreateRule(CreateAlertRuleRequest) returns (CreateAlertRuleResponse);
+  rpc UpdateRule(UpdateAlertRuleRequest) returns (UpdateAlertRuleResponse);
+  rpc DeleteRule(DeleteAlertRuleRequest) returns (Empty);
+  rpc TestRule(TestAlertRuleRequest) returns (TestAlertRuleResponse);
+  rpc AcknowledgeEvent(AcknowledgeAlertEventRequest) returns (Empty);
+  rpc SilenceEvent(SilenceAlertEventRequest) returns (Empty);
+}
+
+// Event lifecycle state (Rust AlertEventState).
+enum AlertEventState {
+  ALERT_EVENT_STATE_UNSPECIFIED = 0;
+  ALERT_EVENT_STATE_FIRING = 1;
+  ALERT_EVENT_STATE_RESOLVED = 2;
+  ALERT_EVENT_STATE_NO_DATA = 3;
+}
+
+message AlertEvent {
+  int64 id = 1;
+  int64 alert_rule_id = 2;
+  int64 organization_id = 3;
+  // Stable target identity key recorded when the rule fired.
+  string target_key = 4;
+  AlertEventState state = 5;
+  optional double value = 6;
+  optional double threshold = 7;
+  string message = 8;
+  int64 created_at = 9;
+  optional int64 acknowledged_at = 10;
+  optional int64 acknowledged_by = 11;
+  optional int64 silenced_until = 12;
+  optional int64 resolved_at = 13;
+  // Correlation id linking the event to notification delivery attempts.
+  optional string notification_correlation_id = 14;
+}
+
+message ListAlertEventsRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListAlertEventsResponse {
+  repeated AlertEvent events = 1;
+}
+
+message AcknowledgeAlertEventRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message SilenceAlertEventRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+  // Unix seconds until which further notifications for the event are muted.
+  int64 until = 3 [(buf.validate.field).int64.gt = 0];
 }

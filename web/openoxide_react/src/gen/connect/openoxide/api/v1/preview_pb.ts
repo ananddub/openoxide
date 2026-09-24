@@ -2,225 +2,280 @@
 // @generated from file openoxide/api/v1/preview.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {
-	GenFile,
-	GenMessage,
-	GenService,
-} from '@bufbuild/protobuf/codegenv2';
-import {
-	fileDesc,
-	messageDesc,
-	serviceDesc,
-} from '@bufbuild/protobuf/codegenv2';
-import type {EmptySchema} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
-import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
-import type {Message} from '@bufbuild/protobuf';
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/preview.proto.
  */
-export const file_openoxide_api_v1_preview: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'Ch5vcGVub3hpZGUvYXBpL3YxL3ByZXZpZXcucHJvdG8SEG9wZW5veGlkZS5hcGkudjEixwEKEVByZXZpZXdEZXBsb3ltZW50EgoKAmlkGAEgASgDEhYKDmFwcGxpY2F0aW9uX2lkGAIgASgDEg4KBnN0YXR1cxgDIAEoCRITCgZicmFuY2gYBCABKAlIAIgBARIQCgN1cmwYBSABKAlIAYgBARISCgVlcnJvchgGIAEoCUgCiAEBEhIKCmNyZWF0ZWRfYXQYByABKAMSEgoKdXBkYXRlZF9hdBgIIAEoA0IJCgdfYnJhbmNoQgYKBF91cmxCCAoGX2Vycm9yIk4KE0xpc3RQcmV2aWV3c1JlcXVlc3QSJAoOYXBwbGljYXRpb25faWQYASABKANCB7pIBCICIABIAIgBAUIRCg9fYXBwbGljYXRpb25faWQiTQoUTGlzdFByZXZpZXdzUmVzcG9uc2USNQoIcHJldmlld3MYASADKAsyIy5vcGVub3hpZGUuYXBpLnYxLlByZXZpZXdEZXBsb3ltZW50IigKEUdldFByZXZpZXdSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAInMKFENyZWF0ZVByZXZpZXdSZXF1ZXN0Eh8KDmFwcGxpY2F0aW9uX2lkGAEgASgDQge6SAQiAiAAEhoKBmJyYW5jaBgCIAEoCUIKukgHcgUQARj/ARITCgZjb21taXQYAyABKAlIAIgBAUIJCgdfY29tbWl0Ii4KF1ByZXZpZXdPcGVyYXRpb25SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAMucDChhQcmV2aWV3RGVwbG95bWVudFNlcnZpY2USXQoMTGlzdFByZXZpZXdzEiUub3Blbm94aWRlLmFwaS52MS5MaXN0UHJldmlld3NSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5MaXN0UHJldmlld3NSZXNwb25zZRJWCgpHZXRQcmV2aWV3EiMub3Blbm94aWRlLmFwaS52MS5HZXRQcmV2aWV3UmVxdWVzdBojLm9wZW5veGlkZS5hcGkudjEuUHJldmlld0RlcGxveW1lbnQSXAoNQ3JlYXRlUHJldmlldxImLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlUHJldmlld1JlcXVlc3QaIy5vcGVub3hpZGUuYXBpLnYxLlByZXZpZXdEZXBsb3ltZW50EmEKD1JlZGVwbG95UHJldmlldxIpLm9wZW5veGlkZS5hcGkudjEuUHJldmlld09wZXJhdGlvblJlcXVlc3QaIy5vcGVub3hpZGUuYXBpLnYxLlByZXZpZXdEZXBsb3ltZW50ElMKDURlbGV0ZVByZXZpZXcSKS5vcGVub3hpZGUuYXBpLnYxLlByZXZpZXdPcGVyYXRpb25SZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z',
-		[file_openoxide_api_v1_common, file_buf_validate_validate],
-	);
+export const file_openoxide_api_v1_preview: GenFile = /*@__PURE__*/
+  fileDesc("Ch5vcGVub3hpZGUvYXBpL3YxL3ByZXZpZXcucHJvdG8SEG9wZW5veGlkZS5hcGkudjEixwEKEVByZXZpZXdEZXBsb3ltZW50EgoKAmlkGAEgASgDEhYKDmFwcGxpY2F0aW9uX2lkGAIgASgDEg4KBnN0YXR1cxgDIAEoCRITCgZicmFuY2gYBCABKAlIAIgBARIQCgN1cmwYBSABKAlIAYgBARISCgVlcnJvchgGIAEoCUgCiAEBEhIKCmNyZWF0ZWRfYXQYByABKAMSEgoKdXBkYXRlZF9hdBgIIAEoA0IJCgdfYnJhbmNoQgYKBF91cmxCCAoGX2Vycm9yIk4KE0xpc3RQcmV2aWV3c1JlcXVlc3QSJAoOYXBwbGljYXRpb25faWQYASABKANCB7pIBCICIABIAIgBAUIRCg9fYXBwbGljYXRpb25faWQiTQoUTGlzdFByZXZpZXdzUmVzcG9uc2USNQoIcHJldmlld3MYASADKAsyIy5vcGVub3hpZGUuYXBpLnYxLlByZXZpZXdEZXBsb3ltZW50IigKEUdldFByZXZpZXdSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIkoKEkdldFByZXZpZXdSZXNwb25zZRI0CgdwcmV2aWV3GAEgASgLMiMub3Blbm94aWRlLmFwaS52MS5QcmV2aWV3RGVwbG95bWVudCJzChRDcmVhdGVQcmV2aWV3UmVxdWVzdBIfCg5hcHBsaWNhdGlvbl9pZBgBIAEoA0IHukgEIgIgABIaCgZicmFuY2gYAiABKAlCCrpIB3IFEAEY/wESEwoGY29tbWl0GAMgASgJSACIAQFCCQoHX2NvbW1pdCJNChVDcmVhdGVQcmV2aWV3UmVzcG9uc2USNAoHcHJldmlldxgBIAEoCzIjLm9wZW5veGlkZS5hcGkudjEuUHJldmlld0RlcGxveW1lbnQiLQoWUmVkZXBsb3lQcmV2aWV3UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJPChdSZWRlcGxveVByZXZpZXdSZXNwb25zZRI0CgdwcmV2aWV3GAEgASgLMiMub3Blbm94aWRlLmFwaS52MS5QcmV2aWV3RGVwbG95bWVudCIrChREZWxldGVQcmV2aWV3UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgADLuAwoYUHJldmlld0RlcGxveW1lbnRTZXJ2aWNlEl0KDExpc3RQcmV2aWV3cxIlLm9wZW5veGlkZS5hcGkudjEuTGlzdFByZXZpZXdzUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuTGlzdFByZXZpZXdzUmVzcG9uc2USVwoKR2V0UHJldmlldxIjLm9wZW5veGlkZS5hcGkudjEuR2V0UHJldmlld1JlcXVlc3QaJC5vcGVub3hpZGUuYXBpLnYxLkdldFByZXZpZXdSZXNwb25zZRJgCg1DcmVhdGVQcmV2aWV3EiYub3Blbm94aWRlLmFwaS52MS5DcmVhdGVQcmV2aWV3UmVxdWVzdBonLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlUHJldmlld1Jlc3BvbnNlEmYKD1JlZGVwbG95UHJldmlldxIoLm9wZW5veGlkZS5hcGkudjEuUmVkZXBsb3lQcmV2aWV3UmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuUmVkZXBsb3lQcmV2aWV3UmVzcG9uc2USUAoNRGVsZXRlUHJldmlldxImLm9wZW5veGlkZS5hcGkudjEuRGVsZXRlUHJldmlld1JlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5YgZwcm90bzM", [file_openoxide_api_v1_common, file_buf_validate_validate]);
 
 /**
  * @generated from message openoxide.api.v1.PreviewDeployment
  */
-export type PreviewDeployment =
-	Message<'openoxide.api.v1.PreviewDeployment'> & {
-		/**
-		 * @generated from field: int64 id = 1;
-		 */
-		id: bigint;
+export type PreviewDeployment = Message<"openoxide.api.v1.PreviewDeployment"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
 
-		/**
-		 * @generated from field: int64 application_id = 2;
-		 */
-		applicationId: bigint;
+  /**
+   * @generated from field: int64 application_id = 2;
+   */
+  applicationId: bigint;
 
-		/**
-		 * @generated from field: string status = 3;
-		 */
-		status: string;
+  /**
+   * Provider/deployment lifecycle string (e.g. "ERROR", "CLOSED"); open set.
+   *
+   * @generated from field: string status = 3;
+   */
+  status: string;
 
-		/**
-		 * @generated from field: optional string branch = 4;
-		 */
-		branch?: string | undefined;
+  /**
+   * @generated from field: optional string branch = 4;
+   */
+  branch?: string | undefined;
 
-		/**
-		 * @generated from field: optional string url = 5;
-		 */
-		url?: string | undefined;
+  /**
+   * @generated from field: optional string url = 5;
+   */
+  url?: string | undefined;
 
-		/**
-		 * @generated from field: optional string error = 6;
-		 */
-		error?: string | undefined;
+  /**
+   * @generated from field: optional string error = 6;
+   */
+  error?: string | undefined;
 
-		/**
-		 * @generated from field: int64 created_at = 7;
-		 */
-		createdAt: bigint;
+  /**
+   * @generated from field: int64 created_at = 7;
+   */
+  createdAt: bigint;
 
-		/**
-		 * @generated from field: int64 updated_at = 8;
-		 */
-		updatedAt: bigint;
-	};
+  /**
+   * @generated from field: int64 updated_at = 8;
+   */
+  updatedAt: bigint;
+};
 
 /**
  * Describes the message openoxide.api.v1.PreviewDeployment.
  * Use `create(PreviewDeploymentSchema)` to create a new message.
  */
-export const PreviewDeploymentSchema: GenMessage<PreviewDeployment> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_preview, 0);
+export const PreviewDeploymentSchema: GenMessage<PreviewDeployment> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_preview, 0);
 
 /**
  * @generated from message openoxide.api.v1.ListPreviewsRequest
  */
-export type ListPreviewsRequest =
-	Message<'openoxide.api.v1.ListPreviewsRequest'> & {
-		/**
-		 * @generated from field: optional int64 application_id = 1;
-		 */
-		applicationId?: bigint | undefined;
-	};
+export type ListPreviewsRequest = Message<"openoxide.api.v1.ListPreviewsRequest"> & {
+  /**
+   * @generated from field: optional int64 application_id = 1;
+   */
+  applicationId?: bigint | undefined;
+};
 
 /**
  * Describes the message openoxide.api.v1.ListPreviewsRequest.
  * Use `create(ListPreviewsRequestSchema)` to create a new message.
  */
-export const ListPreviewsRequestSchema: GenMessage<ListPreviewsRequest> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_preview, 1);
+export const ListPreviewsRequestSchema: GenMessage<ListPreviewsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_preview, 1);
 
 /**
  * @generated from message openoxide.api.v1.ListPreviewsResponse
  */
-export type ListPreviewsResponse =
-	Message<'openoxide.api.v1.ListPreviewsResponse'> & {
-		/**
-		 * @generated from field: repeated openoxide.api.v1.PreviewDeployment previews = 1;
-		 */
-		previews: PreviewDeployment[];
-	};
+export type ListPreviewsResponse = Message<"openoxide.api.v1.ListPreviewsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.PreviewDeployment previews = 1;
+   */
+  previews: PreviewDeployment[];
+};
 
 /**
  * Describes the message openoxide.api.v1.ListPreviewsResponse.
  * Use `create(ListPreviewsResponseSchema)` to create a new message.
  */
-export const ListPreviewsResponseSchema: GenMessage<ListPreviewsResponse> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_preview, 2);
+export const ListPreviewsResponseSchema: GenMessage<ListPreviewsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_preview, 2);
 
 /**
  * @generated from message openoxide.api.v1.GetPreviewRequest
  */
-export type GetPreviewRequest =
-	Message<'openoxide.api.v1.GetPreviewRequest'> & {
-		/**
-		 * @generated from field: int64 id = 1;
-		 */
-		id: bigint;
-	};
+export type GetPreviewRequest = Message<"openoxide.api.v1.GetPreviewRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
 
 /**
  * Describes the message openoxide.api.v1.GetPreviewRequest.
  * Use `create(GetPreviewRequestSchema)` to create a new message.
  */
-export const GetPreviewRequestSchema: GenMessage<GetPreviewRequest> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_preview, 3);
+export const GetPreviewRequestSchema: GenMessage<GetPreviewRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_preview, 3);
+
+/**
+ * @generated from message openoxide.api.v1.GetPreviewResponse
+ */
+export type GetPreviewResponse = Message<"openoxide.api.v1.GetPreviewResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.PreviewDeployment preview = 1;
+   */
+  preview?: PreviewDeployment | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetPreviewResponse.
+ * Use `create(GetPreviewResponseSchema)` to create a new message.
+ */
+export const GetPreviewResponseSchema: GenMessage<GetPreviewResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_preview, 4);
 
 /**
  * @generated from message openoxide.api.v1.CreatePreviewRequest
  */
-export type CreatePreviewRequest =
-	Message<'openoxide.api.v1.CreatePreviewRequest'> & {
-		/**
-		 * @generated from field: int64 application_id = 1;
-		 */
-		applicationId: bigint;
+export type CreatePreviewRequest = Message<"openoxide.api.v1.CreatePreviewRequest"> & {
+  /**
+   * @generated from field: int64 application_id = 1;
+   */
+  applicationId: bigint;
 
-		/**
-		 * @generated from field: string branch = 2;
-		 */
-		branch: string;
+  /**
+   * @generated from field: string branch = 2;
+   */
+  branch: string;
 
-		/**
-		 * @generated from field: optional string commit = 3;
-		 */
-		commit?: string | undefined;
-	};
+  /**
+   * @generated from field: optional string commit = 3;
+   */
+  commit?: string | undefined;
+};
 
 /**
  * Describes the message openoxide.api.v1.CreatePreviewRequest.
  * Use `create(CreatePreviewRequestSchema)` to create a new message.
  */
-export const CreatePreviewRequestSchema: GenMessage<CreatePreviewRequest> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_preview, 4);
+export const CreatePreviewRequestSchema: GenMessage<CreatePreviewRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_preview, 5);
 
 /**
- * @generated from message openoxide.api.v1.PreviewOperationRequest
+ * @generated from message openoxide.api.v1.CreatePreviewResponse
  */
-export type PreviewOperationRequest =
-	Message<'openoxide.api.v1.PreviewOperationRequest'> & {
-		/**
-		 * @generated from field: int64 id = 1;
-		 */
-		id: bigint;
-	};
+export type CreatePreviewResponse = Message<"openoxide.api.v1.CreatePreviewResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.PreviewDeployment preview = 1;
+   */
+  preview?: PreviewDeployment | undefined;
+};
 
 /**
- * Describes the message openoxide.api.v1.PreviewOperationRequest.
- * Use `create(PreviewOperationRequestSchema)` to create a new message.
+ * Describes the message openoxide.api.v1.CreatePreviewResponse.
+ * Use `create(CreatePreviewResponseSchema)` to create a new message.
  */
-export const PreviewOperationRequestSchema: GenMessage<PreviewOperationRequest> /*@__PURE__*/ =
-	messageDesc(file_openoxide_api_v1_preview, 5);
+export const CreatePreviewResponseSchema: GenMessage<CreatePreviewResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_preview, 6);
+
+/**
+ * @generated from message openoxide.api.v1.RedeployPreviewRequest
+ */
+export type RedeployPreviewRequest = Message<"openoxide.api.v1.RedeployPreviewRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RedeployPreviewRequest.
+ * Use `create(RedeployPreviewRequestSchema)` to create a new message.
+ */
+export const RedeployPreviewRequestSchema: GenMessage<RedeployPreviewRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_preview, 7);
+
+/**
+ * @generated from message openoxide.api.v1.RedeployPreviewResponse
+ */
+export type RedeployPreviewResponse = Message<"openoxide.api.v1.RedeployPreviewResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.PreviewDeployment preview = 1;
+   */
+  preview?: PreviewDeployment | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.RedeployPreviewResponse.
+ * Use `create(RedeployPreviewResponseSchema)` to create a new message.
+ */
+export const RedeployPreviewResponseSchema: GenMessage<RedeployPreviewResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_preview, 8);
+
+/**
+ * @generated from message openoxide.api.v1.DeletePreviewRequest
+ */
+export type DeletePreviewRequest = Message<"openoxide.api.v1.DeletePreviewRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DeletePreviewRequest.
+ * Use `create(DeletePreviewRequestSchema)` to create a new message.
+ */
+export const DeletePreviewRequestSchema: GenMessage<DeletePreviewRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_preview, 9);
 
 /**
  * @generated from service openoxide.api.v1.PreviewDeploymentService
  */
 export const PreviewDeploymentService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.PreviewDeploymentService.ListPreviews
-	 */
-	listPreviews: {
-		methodKind: 'unary';
-		input: typeof ListPreviewsRequestSchema;
-		output: typeof ListPreviewsResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PreviewDeploymentService.GetPreview
-	 */
-	getPreview: {
-		methodKind: 'unary';
-		input: typeof GetPreviewRequestSchema;
-		output: typeof PreviewDeploymentSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PreviewDeploymentService.CreatePreview
-	 */
-	createPreview: {
-		methodKind: 'unary';
-		input: typeof CreatePreviewRequestSchema;
-		output: typeof PreviewDeploymentSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PreviewDeploymentService.RedeployPreview
-	 */
-	redeployPreview: {
-		methodKind: 'unary';
-		input: typeof PreviewOperationRequestSchema;
-		output: typeof PreviewDeploymentSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.PreviewDeploymentService.DeletePreview
-	 */
-	deletePreview: {
-		methodKind: 'unary';
-		input: typeof PreviewOperationRequestSchema;
-		output: typeof EmptySchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_preview, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.PreviewDeploymentService.ListPreviews
+   */
+  listPreviews: {
+    methodKind: "unary";
+    input: typeof ListPreviewsRequestSchema;
+    output: typeof ListPreviewsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PreviewDeploymentService.GetPreview
+   */
+  getPreview: {
+    methodKind: "unary";
+    input: typeof GetPreviewRequestSchema;
+    output: typeof GetPreviewResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PreviewDeploymentService.CreatePreview
+   */
+  createPreview: {
+    methodKind: "unary";
+    input: typeof CreatePreviewRequestSchema;
+    output: typeof CreatePreviewResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PreviewDeploymentService.RedeployPreview
+   */
+  redeployPreview: {
+    methodKind: "unary";
+    input: typeof RedeployPreviewRequestSchema;
+    output: typeof RedeployPreviewResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.PreviewDeploymentService.DeletePreview
+   */
+  deletePreview: {
+    methodKind: "unary";
+    input: typeof DeletePreviewRequestSchema;
+    output: typeof EmptySchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_preview, 0);
+

@@ -46,9 +46,7 @@ export function useStackCanvasGraph() {
 		[nodes.length, setNodes],
 	);
 
-	// ── Dependency auto-wire ──────────────────────────────────────────────────
-	// Parses  ${{ServiceName.VARIABLE}}  in env var values.
-	// Triggers on blur of any env var input (via onUpdate → setNodes → nodes change).
+	// ── Dependency auto-wire ────────────────────────────────────────────────── Parses  ${{ServiceName.VARIABLE}}  in env var values. Triggers on blur of any env var input (via onUpdate → setNodes → nodes change).
 	useEffect(() => {
 		if (nodes.length < 2) {
 			setEdges(es => es.filter(e => !e.id.startsWith('dep-')));

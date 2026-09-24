@@ -1,8 +1,7 @@
 // ─── URL regex ────────────────────────────────────────────────────────────────
 export const URL_REGEX = /(https?:\/\/[^\s<>'"]+)/gi;
 
-// ─── Deployment Stage Badges ──────────────────────────────────────────────────
-// Matches [BUILDING], [HEALTH_CHECK], [DEPLOYING], etc. — from DeployState enum
+// ─── Deployment Stage Badges ────────────────────────────────────────────────── Matches [BUILDING], [HEALTH_CHECK], [DEPLOYING], etc. — from DeployState enum
 export const DEPLOY_STAGE_RE =
 	/\[(QUEUED|PREPARING|GIT_CLONE|GIT_RETRY|GIT_SUCCESS|DOCKER_IMAGE_PULL|DOCKER_IMAGE_BUILD|DOCKER_BUILD_RETRY|DOCKER_BUILD_SUCCESS|DOCKER_COMPOSE_PULL|DOCKER_COMPOSE_DOWN|DOCKER_COMPOSE_UP|DOCKER_COMPOSE_RESTART|DOCKER_COMPOSE_RETRY|CONTAINER_CREATING|CONTAINER_STARTING|CONTAINER_RUNNING|CONTAINER_STOPPING|CONTAINER_STOPPED|CONTAINER_RESTARTING|BUILDING|BUILDING_RETRY|BUILD_SUCCESS|IMAGE_READY|DEPLOYING|HEALTH_CHECK|WAITING_FOR_HEALTHY|DEPLOYED|CANCELLED|STOPPED_BY_USER|ROLLING_BACK|ROLLBACK_SUCCESS|ROLLBACK_FAILED|CLEANING_UP|CLEANUP_COMPLETE|FAILED|RECOVER_AFTER_RESTART|SOURCE_READY|ROUTING)\]/gi;
 
@@ -82,18 +81,7 @@ export const METHOD_COLORS: Record<string, string> = {
 	CONNECT: 'bg-zinc-500/15 text-zinc-400 border-zinc-600/30',
 };
 
-// ─── Master Token Regex ───────────────────────────────────────────────────────
-// Groups:
-//  g1  Deployment stage tag   [BUILDING] [HEALTH_CHECK] etc.
-//  g2  HTTP verbs             GET POST PUT DELETE PATCH HEAD OPTIONS
-//  g3  HTTP status (context)  HTTP/1.1 200 | status: 404
-//  g4  IPv4+port / localhost
-//  g5  UUID
-//  g6  sha256 digest
-//  g7  double-quoted string
-//  g8  key=value
-// NOTE: Timestamps are handled by LogDate (from log-parser) and NOT re-highlighted here
-//       to avoid duplicate/broken rendering in the log text body.
+// ─── Master Token Regex ─────────────────────────────────────────────────────── Groups:  g1  Deployment stage tag   [BUILDING] [HEALTH_CHECK] etc.  g2  HTTP verbs             GET POST PUT DELETE PATCH HEAD OPTIONS  g3  HTTP status (context)  HTTP/1.1 200 | status: 404  g4  IPv4+port / localhost  g5  UUID  g6  sha256 digest  g7  double-quoted string  g8  key=value NOTE: Timestamps are handled by LogDate (from log-parser) and NOT re-highlighted here       to avoid duplicate/broken rendering in the log text body.
 export const TOKEN_RE = new RegExp(
 	[
 		String.raw`(\[(?:QUEUED|PREPARING|GIT_CLONE|GIT_RETRY|GIT_SUCCESS|DOCKER_IMAGE_PULL|DOCKER_IMAGE_BUILD|DOCKER_BUILD_RETRY|DOCKER_BUILD_SUCCESS|DOCKER_COMPOSE_PULL|DOCKER_COMPOSE_DOWN|DOCKER_COMPOSE_UP|DOCKER_COMPOSE_RESTART|DOCKER_COMPOSE_RETRY|CONTAINER_CREATING|CONTAINER_STARTING|CONTAINER_RUNNING|CONTAINER_STOPPING|CONTAINER_STOPPED|CONTAINER_RESTARTING|BUILDING|BUILDING_RETRY|BUILD_SUCCESS|IMAGE_READY|DEPLOYING|HEALTH_CHECK|WAITING_FOR_HEALTHY|DEPLOYED|CANCELLED|STOPPED_BY_USER|ROLLING_BACK|ROLLBACK_SUCCESS|ROLLBACK_FAILED|CLEANING_UP|CLEANUP_COMPLETE|FAILED|RECOVER_AFTER_RESTART|SOURCE_READY|ROUTING)\])`,

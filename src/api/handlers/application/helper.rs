@@ -1,9 +1,25 @@
 use connectrpc::{ConnectError, ErrorCode};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    Application as ApplicationProto, ApplicationBuildType, ApplicationOperation,
-    ApplicationSourceType, ResourceResponse,
+    Application as ApplicationProto, ApplicationBuildType, ApplicationMiddleware,
+    ApplicationMiddlewareHeader, ApplicationMiddlewareType, ApplicationMount, ApplicationMountType,
+    ApplicationOperation, ApplicationPatch, ApplicationPatchType, ApplicationPort,
+    ApplicationPortProtocol, ApplicationPortPublishMode, ApplicationRedirect,
+    ApplicationSecurityRule, ApplicationSourceType,
 };
+use crate::services::compute::application::middleware::{
+    ApplicationMiddlewareResponseDto, ApplicationMiddlewareType as AppMiddlewareType,
+};
+use crate::services::compute::application::mount::ApplicationMountResponseDto;
+use crate::services::compute::application::patch::{
+    ApplicationPatchResponseDto, ApplicationPatchType as AppPatchType,
+};
+use crate::services::compute::application::port::{
+    ApplicationPortResponseDto, PortProtocol, PortPublishMode,
+};
+use crate::services::compute::application::redirect::ApplicationRedirectResponseDto;
+use crate::services::compute::application::security::ApplicationSecurityResponseDto;
+use crate::utils::builder::spec::MountType as SpecMountType;
 
 pub fn app_to_proto(value: crate::services::compute::application::ApplicationRecord) -> ApplicationProto {
     use crate::services::compute::database::crud::parse_json_string_vec;
@@ -123,72 +139,188 @@ pub fn operation_result(
     }
 }
 
-pub fn middleware_to_resource(
-    value: crate::services::compute::application::middleware::ApplicationMiddlewareResponseDto,
-) -> ResourceResponse {
-    let id = value.id;
-    let payload = serde_json::to_string(&value).unwrap_or_default();
-    ResourceResponse {
-        id,
-        kind: "application_middleware".into(),
-        payload,
+// ── Sub-resource entity builders (service DTO → typed proto) ───────
+
+fn protocol_to_proto(s: &str) -> buffa::EnumValue<ApplicationPortProtocol> {
+    (match s {
+        "UDP" => ApplicationPortProtocol::Udp,
+        _ => ApplicationPortProtocol::Tcp,
+    })
+    .into()
+}
+
+fn publish_mode_to_proto(s: &str) -> buffa::EnumValue<ApplicationPortPublishMode> {
+    (match s {
+        "INGRESS" => ApplicationPortPublishMode::Ingress,
+        _ => ApplicationPortPublishMode::Host,
+    })
+    .into()
+}
+
+pub fn port_to_proto(value: ApplicationPortResponseDto) -> ApplicationPort {
+    ApplicationPort {
+        id: value.id,
+        published_port: value.published_port,
+        target_port: value.target_port,
+        protocol: protocol_to_proto(&value.protocol),
+        publish_mode: publish_mode_to_proto(&value.publish_mode),
+        application_id: value.application_id,
+        created_at: value.created_at,
         ..Default::default()
     }
 }
 
-pub fn mount_to_resource(value: crate::flash_gen::models::Mounts) -> ResourceResponse {
-    let dto = crate::services::compute::application::mount::ApplicationMountResponseDto::from(value);
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "application_mount".into(),
-        payload,
+fn mount_type_to_proto(s: &str) -> buffa::EnumValue<ApplicationMountType> {
+    (match s {
+        "BIND" => ApplicationMountType::Bind,
+        "FILE" => ApplicationMountType::File,
+        _ => ApplicationMountType::Volume,
+    })
+    .into()
+}
+
+pub fn mount_to_proto(value: ApplicationMountResponseDto) -> ApplicationMount {
+    ApplicationMount {
+        id: value.id,
+        mount_type: mount_type_to_proto(&value.mount_type),
+        host_path: value.host_path,
+        volume_name: value.volume_name,
+        file_path: value.file_path,
+        content: value.content,
+        mount_path: value.mount_path,
+        application_id: value.application_id,
+        created_at: value.created_at,
+        updated_at: value.updated_at,
         ..Default::default()
     }
 }
 
-pub fn patch_to_resource(value: crate::flash_gen::models::Patches) -> ResourceResponse {
-    let dto = crate::services::compute::application::patch::ApplicationPatchResponseDto::from(value);
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "application_patch".into(),
-        payload,
+fn patch_type_to_proto(s: &str) -> buffa::EnumValue<ApplicationPatchType> {
+    (match s {
+        "UPDATE" => ApplicationPatchType::Update,
+        "DELETE" => ApplicationPatchType::Delete,
+        _ => ApplicationPatchType::Create,
+    })
+    .into()
+}
+
+pub fn patch_to_proto(value: ApplicationPatchResponseDto) -> ApplicationPatch {
+    ApplicationPatch {
+        id: value.id,
+        patch_type: patch_type_to_proto(&value.patch_type),
+        file_path: value.file_path,
+        enabled: value.enabled,
+        content: value.content,
+        application_id: value.application_id,
+        created_at: value.created_at,
+        updated_at: value.updated_at,
         ..Default::default()
     }
 }
 
-pub fn port_to_resource(value: crate::flash_gen::models::Ports) -> ResourceResponse {
-    let dto = crate::services::compute::application::port::ApplicationPortResponseDto::from(value);
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "application_port".into(),
-        payload,
+fn middleware_type_to_proto(s: &str) -> buffa::EnumValue<ApplicationMiddlewareType> {
+    (match s {
+        "HEADERS" => ApplicationMiddlewareType::Headers,
+        "RATE_LIMIT" => ApplicationMiddlewareType::RateLimit,
+        "IP_ALLOWLIST" => ApplicationMiddlewareType::IpAllowlist,
+        _ => ApplicationMiddlewareType::Compress,
+    })
+    .into()
+}
+
+pub fn middleware_to_proto(value: ApplicationMiddlewareResponseDto) -> ApplicationMiddleware {
+    ApplicationMiddleware {
+        id: value.id,
+        application_id: value.application_id,
+        name: value.name,
+        middleware_type: middleware_type_to_proto(&value.middleware_type),
+        enabled: value.enabled,
+        headers: value
+            .headers
+            .into_iter()
+            .map(|h| ApplicationMiddlewareHeader {
+                name: h.name,
+                value: h.value,
+                ..Default::default()
+            })
+            .collect(),
+        average: value.average,
+        burst: value.burst,
+        source_ranges: value.source_ranges,
+        created_at: value.created_at,
+        updated_at: value.updated_at,
         ..Default::default()
     }
 }
 
-pub fn redirect_to_resource(value: crate::services::compute::application::redirect::Redirect) -> ResourceResponse {
-    let dto =
-        crate::services::compute::application::redirect::ApplicationRedirectResponseDto::from(value);
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "application_redirect".into(),
-        payload,
+pub fn redirect_to_proto(value: ApplicationRedirectResponseDto) -> ApplicationRedirect {
+    ApplicationRedirect {
+        id: value.id,
+        regex: value.regex,
+        replacement: value.replacement,
+        permanent: value.permanent != 0,
+        unique_config_key: value.unique_config_key,
+        application_id: value.application_id,
+        created_at: value.created_at,
+        updated_at: value.updated_at,
         ..Default::default()
     }
 }
 
-pub fn security_to_resource(value: crate::flash_gen::models::Security) -> ResourceResponse {
-    let dto =
-        crate::services::compute::application::security::ApplicationSecurityResponseDto::from(value);
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "application_security".into(),
-        payload,
+pub fn security_to_proto(value: ApplicationSecurityResponseDto) -> ApplicationSecurityRule {
+    ApplicationSecurityRule {
+        id: value.id,
+        username: value.username,
+        has_password: value.has_password,
+        application_id: value.application_id,
+        created_at: value.created_at,
         ..Default::default()
+    }
+}
+
+// ── Sub-resource request enums (typed proto → service enum) ────────
+
+pub fn protocol_from_proto(value: buffa::EnumValue<ApplicationPortProtocol>) -> PortProtocol {
+    match value {
+        buffa::EnumValue::Known(ApplicationPortProtocol::Udp) => PortProtocol::Udp,
+        _ => PortProtocol::Tcp,
+    }
+}
+
+pub fn publish_mode_from_proto(value: buffa::EnumValue<ApplicationPortPublishMode>) -> PortPublishMode {
+    match value {
+        buffa::EnumValue::Known(ApplicationPortPublishMode::Ingress) => PortPublishMode::Ingress,
+        _ => PortPublishMode::Host,
+    }
+}
+
+pub fn mount_type_from_proto(value: buffa::EnumValue<ApplicationMountType>) -> SpecMountType {
+    match value {
+        buffa::EnumValue::Known(ApplicationMountType::Bind) => SpecMountType::Bind,
+        buffa::EnumValue::Known(ApplicationMountType::File) => SpecMountType::File,
+        _ => SpecMountType::Volume,
+    }
+}
+
+pub fn patch_type_from_proto(value: buffa::EnumValue<ApplicationPatchType>) -> AppPatchType {
+    match value {
+        buffa::EnumValue::Known(ApplicationPatchType::Update) => AppPatchType::Update,
+        buffa::EnumValue::Known(ApplicationPatchType::Delete) => AppPatchType::Delete,
+        _ => AppPatchType::Create,
+    }
+}
+
+pub fn middleware_type_from_proto(
+    value: buffa::EnumValue<ApplicationMiddlewareType>,
+) -> AppMiddlewareType {
+    match value {
+        buffa::EnumValue::Known(ApplicationMiddlewareType::Headers) => AppMiddlewareType::Headers,
+        buffa::EnumValue::Known(ApplicationMiddlewareType::RateLimit) => {
+            AppMiddlewareType::RateLimit
+        }
+        buffa::EnumValue::Known(ApplicationMiddlewareType::IpAllowlist) => {
+            AppMiddlewareType::IpAllowlist
+        }
+        _ => AppMiddlewareType::Compress,
     }
 }

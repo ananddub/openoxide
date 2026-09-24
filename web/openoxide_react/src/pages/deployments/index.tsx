@@ -1,5 +1,5 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
-import {RefreshCw, Rocket, SearchX, Trash2} from 'lucide-react';
+import {Rocket, SearchX, Trash2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {
 	ListEmpty,
@@ -8,7 +8,6 @@ import {
 } from '#/components/settings/list-card';
 import {DeploymentActivityList} from '#/components/deployments/deployment-activity-list';
 import {DeploymentsFilters} from '#/components/deployments/deployments-filters';
-import {cn} from '#/api/utils';
 import {useDeploymentsPage} from '#/hooks/deployments/use-deployments-page';
 
 export const Route = createFileRoute('/_app/Deployments')({
@@ -18,11 +17,7 @@ export const Route = createFileRoute('/_app/Deployments')({
 	}),
 });
 
-/**
- * Logs & History — its own page (no tab switch): the same SectionHeader
- * grammar as the rest of the rail, the filters toolbar and ONE bordered
- * table card below. The live stream lives at /Deployments/queue.
- */
+/** Logs & History — its own page (no tab switch): the same SectionHeader grammar as the rest of the rail, the filters toolbar and ONE bordered table card below. The live stream lives at /Deployments/queue. */
 function DeploymentsPage() {
 	const dp = useDeploymentsPage();
 
@@ -37,33 +32,13 @@ function DeploymentsPage() {
 				title="Logs & History"
 				description="Every build and deploy stream across your projects."
 				action={
-					<>
-						<span className="select-none text-xs text-muted-foreground">
-							{dp.isLoading
-								? 'Loading...'
-								: `${dp.deployments.length} deployments`}
-						</span>
-						<Button
-							variant="ghost"
-							onClick={dp.handleRefresh}
-							disabled={dp.refreshing}
-							className="h-8 gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
-							<RefreshCw
-								className={cn(
-									'size-3.5',
-									dp.refreshing && 'animate-spin',
-								)}
-							/>
-							Refresh
-						</Button>
-						<Button
-							variant="ghost"
-							onClick={dp.handleClearAllDeployments}
-							className="h-8 gap-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-							<Trash2 className="size-3.5" />
-							Clear History
-						</Button>
-					</>
+					<Button
+						variant="ghost"
+						onClick={dp.handleClearAllDeployments}
+						className="h-8 gap-1.5 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+						<Trash2 className="size-3.5" />
+						Clear History
+					</Button>
 				}
 			/>
 
@@ -104,9 +79,7 @@ function DeploymentsPage() {
 							title="No deployments yet"
 							description="Deploy your first app or database and its build history will appear here."
 							action={
-								<Link
-									to="/projects"
-									search={{create: 1} as never}>
+								<Link to="/projects" search={{create: 1} as never}>
 									<Button className="h-9 gap-1.5 text-xs font-semibold">
 										New Project
 									</Button>
@@ -115,9 +88,7 @@ function DeploymentsPage() {
 						/>
 					)
 				) : (
-					<DeploymentActivityList
-						deployments={dp.filteredAndSorted}
-					/>
+					<DeploymentActivityList deployments={dp.filteredAndSorted} />
 				)}
 			</div>
 		</div>

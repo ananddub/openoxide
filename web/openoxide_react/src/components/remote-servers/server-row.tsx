@@ -1,5 +1,4 @@
-// Disabled: detail-page click navigation — the /remote-servers/$id page is
-// off for now (see remote-servers/server-row links below).
+import {Link} from '@tanstack/react-router';
 import {Check, Plug, RefreshCw, Server, Terminal, X} from 'lucide-react';
 import type {RemoteServerResponse} from '#/types/api-helpers';
 import {ServerRowMenu} from './server-row-menu';
@@ -73,8 +72,11 @@ export function ServerCard({
 
 	return (
 		<div className="group flex flex-col gap-4 rounded-xl border bg-card p-4 transition-colors hover:bg-accent/30">
-			{/* Link to /remote-servers/$id removed — detail disabled for now. */}
-			<div className="flex min-w-0 items-start gap-3 text-start">
+			<Link
+				to="/remote-servers/$id"
+				params={{id: String(item.id)}}
+				aria-label={`Open server ${item.name}`}
+				className="flex min-w-0 items-start gap-3 text-start transition-opacity hover:opacity-80">
 				<RowTile>
 					<Server className="size-4" />
 				</RowTile>
@@ -101,7 +103,7 @@ export function ServerCard({
 					/>
 					{sm.label}
 				</span>
-			</div>
+			</Link>
 
 			{/* Footer: test + terminal + overflow menu */}
 			<div className="flex items-center justify-between border-t border-border pt-3">
@@ -169,8 +171,11 @@ export function ServerRow({
 
 	return (
 		<div className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/40">
-			{/* Link to /remote-servers/$id removed — detail disabled for now. */}
-			<div className="flex min-w-0 flex-1 items-center gap-3 text-start">
+			<Link
+				to="/remote-servers/$id"
+				params={{id: String(item.id)}}
+				aria-label={`Open server ${item.name}`}
+				className="flex min-w-0 flex-1 items-center gap-3 text-start transition-opacity hover:opacity-80">
 				<RowTile>
 					<Server className="size-4" />
 				</RowTile>
@@ -182,7 +187,7 @@ export function ServerRow({
 						{serverHostLabel(item.ip_address)}
 					</p>
 				</div>
-			</div>
+			</Link>
 
 			{/* Right: status pill + actions */}
 			<div className="flex shrink-0 items-center gap-3">

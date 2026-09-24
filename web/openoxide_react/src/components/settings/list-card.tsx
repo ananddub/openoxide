@@ -40,12 +40,7 @@ export function Toolbar({
 	);
 }
 
-/**
- * Section heading with a full-bleed rule under it: title (+ inline extras
- * like a status pill) and one quiet note below, actions on the right. The
- * `-mx-4`/`px-4` pair lets the rule touch the page edges while the text
- * stays aligned with the content column.
- */
+/** Section heading with a full-bleed rule under it: title (+ inline extras like a status pill) and one quiet note below, actions on the right. The `-mx-4`/`px-4` pair lets the rule touch the page edges while the text stays aligned with the content column. */
 export function SectionHeader({
 	title,
 	description,
@@ -194,10 +189,7 @@ export function GridSkeleton({cards = 4}: {cards?: number}) {
 	);
 }
 
-/**
- * Grid card shell — the card counterpart of a `ListRow`: flat hairline
- * card, identity row on top, meta pinned to the bottom.
- */
+/** Grid card shell — the card counterpart of a `ListRow`: flat hairline card, identity row on top, meta pinned to the bottom. */
 export function ViewCard({
 	children,
 	className,
@@ -270,7 +262,7 @@ export function ListRow({
 				)}
 			</div>
 			{children && (
-				<div className="flex shrink-0 items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+				<div className="flex shrink-0 items-center gap-1.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
 					{children}
 				</div>
 			)}

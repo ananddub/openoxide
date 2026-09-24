@@ -6,7 +6,7 @@ import {ServiceCard} from '#/components/projects/service/service-card';
 import {ProjectModals} from '#/components/projects/dashboard/project-modals';
 import {ProjectDetailFilters} from '#/components/projects/dashboard/project-detail-filters';
 import {AddNewServiceMenu} from '#/components/projects/dashboard/add-new-service-menu';
-import {useProjectDetails} from '#/hooks/projects/use-project-details';
+import {useProjectDetails} from '#/hooks/projects/project/use-project-details';
 import {SectionHeader} from '#/components/settings/list-card';
 import {IconTooltip} from '#/components/shared/icon-tooltip';
 

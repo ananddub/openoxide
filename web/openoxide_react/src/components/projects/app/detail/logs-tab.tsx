@@ -46,8 +46,7 @@ export function LogsTab({app}: LogsTabProps) {
 		app?.name ||
 		'app';
 
-	// ConnectRPC log stream: panel tails the container/service logs on the
-	// Agent and pushes each chunk as a DeploymentEvent.
+	// ConnectRPC log stream: panel tails the container/service logs on the Agent and pushes each chunk as a DeploymentEvent.
 	const {
 		logs: streamedLogs,
 		isLoading,

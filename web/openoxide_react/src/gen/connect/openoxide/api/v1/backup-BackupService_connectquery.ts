@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/backup.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {BackupService} from './backup_pb';
+import { BackupService } from "./backup_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.BackupService.ListBackups
@@ -42,5 +42,129 @@ export const restoreBackup = BackupService.method.restoreBackup;
 /**
  * @generated from rpc openoxide.api.v1.BackupService.ValidateDestination
  */
-export const validateDestination =
-	BackupService.method.validateDestination;
+export const validateDestination = BackupService.method.validateDestination;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.RunComposeBackup
+ */
+export const runComposeBackup = BackupService.method.runComposeBackup;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.RunPanelBackup
+ */
+export const runPanelBackup = BackupService.method.runPanelBackup;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.StageRestore
+ */
+export const stageRestore = BackupService.method.stageRestore;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.GetRestoreStatus
+ */
+export const getRestoreStatus = BackupService.method.getRestoreStatus;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.RollbackRestore
+ */
+export const rollbackRestore = BackupService.method.rollbackRestore;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.ListFiles
+ */
+export const listFiles = BackupService.method.listFiles;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.DownloadFile
+ */
+export const downloadFile = BackupService.method.downloadFile;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.PreviewRetention
+ */
+export const previewRetention = BackupService.method.previewRetention;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.VerifyFiles
+ */
+export const verifyFiles = BackupService.method.verifyFiles;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.ListExecutions
+ */
+export const listExecutions = BackupService.method.listExecutions;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.RetryExecution
+ */
+export const retryExecution = BackupService.method.retryExecution;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.ListDatabaseBackups
+ */
+export const listDatabaseBackups = BackupService.method.listDatabaseBackups;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.GetDatabaseBackup
+ */
+export const getDatabaseBackup = BackupService.method.getDatabaseBackup;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.CreateDatabaseBackup
+ */
+export const createDatabaseBackup = BackupService.method.createDatabaseBackup;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.UpdateDatabaseBackup
+ */
+export const updateDatabaseBackup = BackupService.method.updateDatabaseBackup;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.DeleteDatabaseBackup
+ */
+export const deleteDatabaseBackup = BackupService.method.deleteDatabaseBackup;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.RunDatabaseBackup
+ */
+export const runDatabaseBackup = BackupService.method.runDatabaseBackup;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.ListVolumeBackups
+ */
+export const listVolumeBackups = BackupService.method.listVolumeBackups;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.GetVolumeBackup
+ */
+export const getVolumeBackup = BackupService.method.getVolumeBackup;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.CreateVolumeBackup
+ */
+export const createVolumeBackup = BackupService.method.createVolumeBackup;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.UpdateVolumeBackup
+ */
+export const updateVolumeBackup = BackupService.method.updateVolumeBackup;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.DeleteVolumeBackup
+ */
+export const deleteVolumeBackup = BackupService.method.deleteVolumeBackup;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.RunVolumeBackup
+ */
+export const runVolumeBackup = BackupService.method.runVolumeBackup;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.RestoreDatabase
+ */
+export const restoreDatabase = BackupService.method.restoreDatabase;
+
+/**
+ * @generated from rpc openoxide.api.v1.BackupService.RestoreVolume
+ */
+export const restoreVolume = BackupService.method.restoreVolume;

@@ -12,13 +12,7 @@ import {
 	persistActiveOrganizationId,
 } from './organization-context';
 
-/**
- * Session state (auth user + active organization) as plain React context.
- * Server data lives in the TanStack Query cache — this context holds only
- * the two pieces of state that are genuinely session-scoped.
- *
- * Consumers use the `useAuthSession` / `useOrganizations` hooks.
- */
+// Session state (auth user + active organization); server data lives in the Query cache.
 
 type AuthState = {
 	user: User | null;
@@ -38,13 +32,9 @@ type SessionState = AuthState & OrganizationState;
 
 const SessionContext = createContext<SessionState | null>(null);
 
-// ── First-load handoff ──────────────────────────────────────────────────────
-// The router's root beforeLoad runs BEFORE the provider mounts, so it
-// cannot push the whoAmI result into context. It stashes the resolved
-// user here instead; SessionProvider reads it as its initial state.
+// ── First-load handoff: beforeLoad stashes the user for the provider's first mount.
 let pendingUser: User | null = null;
 
-/** Stashes the user resolved in beforeLoad for the provider's first mount. */
 export function setPendingUser(user: User | null) {
 	pendingUser = user;
 }
@@ -70,8 +60,7 @@ export function SessionProvider({children}: {children: ReactNode}) {
 		};
 
 		const setOrganizations = (orgs: Record<string, any>[]) => {
-			// Same de-dupe as the legacy store: identical id+name lists keep
-			// the current state (and its identity) untouched.
+			// Identical id+name lists keep the current state (and its identity) untouched.
 			setOrganizationsState(current => {
 				if (
 					current.length === orgs.length &&
@@ -84,14 +73,22 @@ export function SessionProvider({children}: {children: ReactNode}) {
 				}
 
 				const preferredId = activeOrg?.id ?? getActiveOrganizationId();
+				// The server lists orgs newest-first; with no stored preference land on
+				// the primary (oldest owned) workspace so a later-created empty org
+				// doesn't become the default and hide the main data.
+				const owned = orgs.filter(
+					(o) => user?.id != null && Number(o.owner_id) === Number(user.id),
+				);
+				const pool = owned.length > 0 ? owned : orgs;
+				const primary = pool.reduce<Record<string, any> | null>(
+					(min, o) => (min == null || Number(o.id) < Number(min.id) ? o : min),
+					null,
+				);
 				const nextActive =
 					orgs.length > 0
-						? orgs.find(o => o.id === preferredId) || orgs[0]
+						? orgs.find(o => o.id === preferredId) || primary
 						: null;
-				// On first load activeOrg is only `{id}` (restored from
-				// localStorage) — no name. Refresh it with the full entry even
-				// when the id already matches, or the switcher shows the
-				// "Workspace" fallback until the user manually switches.
+				// {id}-only activeOrg on first load: refresh even when the id matches.
 				const staleIdentity =
 					nextActive != null &&
 					(nextActive.id !== activeOrg?.id || !activeOrg?.name);
@@ -137,10 +134,7 @@ function useSession(): SessionState {
 	return context;
 }
 
-// ── Imperative bridge for non-hook code ─────────────────────────────────────
-// The router's beforeLoad runs before React renders, so it cannot consume
-// context. A module-level ref (kept in sync by the provider) covers that
-// window without any global store.
+// ── Imperative bridge: a module-level ref serves code that runs before React renders.
 
 let sessionRef: {
 	setAuth: (user: User) => void;
@@ -155,11 +149,7 @@ function setSessionRef(ref: {
 	sessionRef = ref;
 }
 
-/**
- * Imperative auth actions for non-hook code. Returns null when the
- * provider has not mounted yet (root beforeLoad on first page load) —
- * callers should fall back to setPendingUser in that window.
- */
+// Null until the provider mounts — callers fall back to setPendingUser.
 export function getSessionActions(): {
 	setAuth: (user: User) => void;
 	logout: () => void;

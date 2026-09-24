@@ -111,7 +111,7 @@ export function DangerSection({app}: {app: any}) {
 								<Button
 									onClick={handleDeleteApp}
 									disabled={deleting}
-									className="h-9 bg-destructive px-4 text-xs font-semibold text-destructive-foreground shadow-md hover:bg-destructive/90">
+									className="text-destructive-foreground h-9 bg-destructive px-4 text-xs font-semibold shadow-md hover:bg-destructive/90">
 									{deleting ? 'Deleting…' : 'Yes, Delete application'}
 								</Button>
 								<Button
@@ -129,8 +129,8 @@ export function DangerSection({app}: {app: any}) {
 									<Trash2 className="size-3.5" /> Delete Application
 								</p>
 								<p className="mt-0.5 text-[11px] text-muted-foreground">
-									Permanently remove this application and all
-									associated data, settings, domains and routes.
+									Permanently remove this application and all associated
+									data, settings, domains and routes.
 								</p>
 							</div>
 							<Button

@@ -2,7 +2,6 @@ import {
 	createServiceClient,
 	useConnectMutation,
 	useConnectQuery,
-	useResourceListQuery,
 } from './query';
 import {ProjectService} from '#/gen/connect/openoxide/api/v1/project_pb';
 import type {Project} from '#/gen/connect/openoxide/api/v1/project_pb';
@@ -109,5 +108,4 @@ export function useProjectDelete() {
 	);
 }
 
-// Re-export so agents building sibling modules share the same helpers.
-export {useResourceListQuery, useConnectQuery};
+export {useConnectQuery};

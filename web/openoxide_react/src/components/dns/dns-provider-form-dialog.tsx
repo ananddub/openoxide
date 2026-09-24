@@ -18,10 +18,7 @@ import {
 } from './dns-provider-catalog';
 import {useDnsProviderFormActions} from './use-dns-provider-form-actions';
 
-/**
- * Create / edit DNS provider modal, including the credentials test call.
- * Owns all form state; `provider` seeds the form when editing.
- */
+/** Create / edit DNS provider modal, including the credentials test call. Owns all form state; `provider` seeds the form when editing. */
 export function DnsProviderFormDialog({
 	open,
 	onOpenChange,
@@ -104,7 +101,9 @@ export function DnsProviderFormDialog({
 						{credentialKind(formType) !== 'token' && (
 							<div className="space-y-1">
 								<FieldLabel>
-									{formType === 'GODADDY' ? 'API Key' : 'AWS Access Key ID'}
+									{formType === 'GODADDY'
+										? 'API Key'
+										: 'AWS Access Key ID'}
 								</FieldLabel>
 								<Input
 									value={formAccessKey}

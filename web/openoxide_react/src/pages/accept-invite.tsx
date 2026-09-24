@@ -16,13 +16,7 @@ export const Route = createFileRoute('/_app/accept-invite')({
 	component: AcceptInvitePage,
 });
 
-/**
- * Landing target of the invite email link (/accept-invite?token=...).
- * AcceptInvite matches the token against the signed-in user's email
- * server-side; on success the user joins the organization and the sidebar
- * workspace switcher (which refetches ['organizations'] on invalidation)
- * immediately offers the new workspace.
- */
+/** Landing target of the invite email link (/accept-invite?token=...). AcceptInvite matches the token against the signed-in user's email server-side; on success the user joins the organization and the sidebar workspace switcher (which refetches ['organizations'] on invalidation) immediately offers the new workspace. */
 function AcceptInvitePage() {
 	const {token} = Route.useSearch();
 	const navigate = useNavigate();
@@ -32,9 +26,7 @@ function AcceptInvitePage() {
 
 	const accept = useConnectMutation(
 		(tokenValue: string) =>
-			permissionClient.acceptInvite({
-				payload: JSON.stringify({token: tokenValue}),
-			}),
+			permissionClient.acceptInvite({token: tokenValue}),
 		{invalidate: [['organizations'], ['permission-invites']]},
 	);
 

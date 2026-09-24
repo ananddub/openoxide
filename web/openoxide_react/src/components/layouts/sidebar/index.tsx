@@ -28,7 +28,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
-import {useTheme} from '#/hooks/use-theme';
+import {useTheme} from '#/hooks/ui/use-theme';
 import {useAuthSession} from '#/stores/session-context';
 import {useProfile} from '#/api/live';
 import {getAvatarInitials, isSolidColorAvatar} from '#/lib/avatar-utils';
@@ -48,14 +48,12 @@ function usePageContextActive(): boolean {
 	return (
 		seg[0] === 'settings' ||
 		seg[0] === 'infra' ||
+		seg[0] === 'Deployments' ||
 		(seg[0] === 'projects' && Boolean(seg[1]) && seg.length >= 4)
 	);
 }
 
-/**
- * The panel rail: global menu by default; inside a service detail (or
- * settings) it swaps to that context's rows (Vercel behavior).
- */
+/** The panel rail: global menu by default; inside a service detail (or settings) it swaps to that context's rows (Vercel behavior). */
 export function AppSidebar() {
 	const location = useLocation();
 	const contextActive = usePageContextActive();
@@ -185,7 +183,7 @@ export function AppSidebar() {
 										)}>
 										{isSolidColorAvatar(avatarValue) ? (
 											<span
-												className="size-6 shrink-0 rounded-full ring-1 ring-inset ring-border/50"
+												className="size-6 shrink-0 rounded-full ring-1 ring-border/50 ring-inset"
 												style={{backgroundColor: avatarValue}}
 											/>
 										) : avatarValue ? (

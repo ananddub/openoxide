@@ -84,8 +84,7 @@ export function getDnsProviderLabel(type: string) {
 	);
 }
 
-// Credential field layout per provider: single token, AWS pair, or
-// key/secret pair. `token` is always the secret half.
+// Credential field layout per provider: single token, AWS pair, or key/secret pair. `token` is always the secret half.
 export function credentialKind(type: string): 'token' | 'aws' | 'keypair' {
 	return type === 'ROUTE53'
 		? 'aws'

@@ -10,7 +10,7 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import {useEnvironmentListByProject} from '#/api/live';
-import {useProjectsList} from '#/hooks/projects/use-projects-list';
+import {useProjectsList} from '#/hooks/projects/list/use-projects-list';
 import {parseVaultAssignments} from './vault-provider-catalog';
 
 interface AssignmentRow {
@@ -18,11 +18,7 @@ interface AssignmentRow {
 	environment_ids: number[];
 }
 
-/**
- * Project/environment scoping editor for a vault provider. Stored as the
- * same JSON array the backend expects; an empty selection means the provider
- * is available to every project in the organization.
- */
+/** Project/environment scoping editor for a vault provider. Stored as the same JSON array the backend expects; an empty selection means the provider is available to every project in the organization. */
 export function VaultProviderAssignments({
 	value,
 	onChange,

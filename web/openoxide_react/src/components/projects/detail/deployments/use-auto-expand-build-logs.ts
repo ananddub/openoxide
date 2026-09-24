@@ -6,11 +6,7 @@ import {
 } from 'react';
 import {isBuildActive, isBuildSucceeded} from './build-status';
 
-/**
- * Keeps the inline build-log row of the active deployment open while it
- * builds, closes it automatically when the build succeeds, and leaves it
- * open when the build fails so the error is visible without a click.
- */
+/** Keeps the inline build-log row of the active deployment open while it builds, closes it automatically when the build succeeds, and leaves it open when the build fails so the error is visible without a click. */
 export function useAutoExpandBuildLogs(
 	deployments: any[],
 	setExpandedId: Dispatch<SetStateAction<number | null>>,

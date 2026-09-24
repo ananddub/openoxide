@@ -7,7 +7,7 @@ import {FieldGroup} from '#/components/ui/field';
 import {AuthError} from '#/components/auth/shared';
 import {AuthInput, AuthPasswordInput} from './fields';
 import {signInSchema, type SignInSchema} from '#/schema/signin.schema';
-import {useSignin} from '#/hooks/use-signin';
+import {useSignin} from '#/hooks/auth/use-signin';
 
 export function SignInForm() {
 	const [apiError, setApiError] = React.useState<string | null>(null);

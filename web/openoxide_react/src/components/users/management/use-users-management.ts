@@ -13,7 +13,7 @@ import {
 	type MemberItem,
 	type InviteItem,
 } from '#/api/live';
-import {usePermissions} from '#/hooks/use-permissions';
+import {usePermissions} from '#/hooks/permissions/use-permissions';
 
 export const ROLES = ['owner', 'admin', 'developer', 'viewer'] as const;
 
@@ -33,12 +33,7 @@ const ROLE_ORDER: Record<string, number> = {
 	viewer: 3,
 };
 
-/**
- * Controller for Settings → Team: live member/invite queries (invalidated by
- * the table-watch ORGANIZATION_* stream), the role/delete/invite mutations,
- * filter state, and the dialog open targets. Kept out of the page component so
- * the render layer stays a thin composition of cards + dialogs.
- */
+/** Controller for Settings → Team: live member/invite queries (invalidated by the table-watch ORGANIZATION_* stream), the role/delete/invite mutations, filter state, and the dialog open targets. Kept out of the page component so the render layer stays a thin composition of cards + dialogs. */
 export function useUsersManagement() {
 	const membersQuery = usePermissionGroupMembers();
 	const invitesQuery = usePermissionGroupInvites();

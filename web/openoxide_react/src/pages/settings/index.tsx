@@ -1,6 +1,6 @@
 import {createFileRoute, useSearch} from '@tanstack/react-router';
 import {Settings} from 'lucide-react';
-import {usePermissions} from '#/hooks/use-permissions';
+import {usePermissions} from '#/hooks/permissions/use-permissions';
 import {Titlebar} from '#/components/shared/titlebar';
 import {
 	SETTINGS_TABS,

@@ -23,11 +23,7 @@ const normalize = (value: string) => {
 	return HEX.test(v) ? v : null;
 };
 
-/**
- * Preset dots plus an inline free-choice panel. The panel hosts a
- * react-colorful saturation/hue field, skinned to the design tokens by the
- * `.tag-color-panel` rules in styles/index.css.
- */
+/** Preset dots plus an inline free-choice panel. The panel hosts a react-colorful saturation/hue field, skinned to the design tokens by the `.tag-color-panel` rules in styles/index.css. */
 export function TagColorPicker({
 	color,
 	onChange,

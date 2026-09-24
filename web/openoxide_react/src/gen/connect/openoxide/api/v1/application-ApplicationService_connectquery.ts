@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/application.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {ApplicationService} from './application_pb';
+import { ApplicationService } from "./application_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.GetApplication
@@ -17,32 +17,27 @@ export const listApplications = ApplicationService.method.listApplications;
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.CreateApplication
  */
-export const createApplication =
-	ApplicationService.method.createApplication;
+export const createApplication = ApplicationService.method.createApplication;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdateApplication
  */
-export const updateApplication =
-	ApplicationService.method.updateApplication;
+export const updateApplication = ApplicationService.method.updateApplication;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.DeleteApplication
  */
-export const deleteApplication =
-	ApplicationService.method.deleteApplication;
+export const deleteApplication = ApplicationService.method.deleteApplication;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.ImportApplication
  */
-export const importApplication =
-	ApplicationService.method.importApplication;
+export const importApplication = ApplicationService.method.importApplication;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.ExportApplication
  */
-export const exportApplication =
-	ApplicationService.method.exportApplication;
+export const exportApplication = ApplicationService.method.exportApplication;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.SetGithubSource
@@ -57,8 +52,7 @@ export const setGitlabSource = ApplicationService.method.setGitlabSource;
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.SetBitbucketSource
  */
-export const setBitbucketSource =
-	ApplicationService.method.setBitbucketSource;
+export const setBitbucketSource = ApplicationService.method.setBitbucketSource;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.SetGiteaSource
@@ -68,8 +62,7 @@ export const setGiteaSource = ApplicationService.method.setGiteaSource;
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.SetCustomGitSource
  */
-export const setCustomGitSource =
-	ApplicationService.method.setCustomGitSource;
+export const setCustomGitSource = ApplicationService.method.setCustomGitSource;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.SetDockerSource
@@ -84,20 +77,17 @@ export const setDropSource = ApplicationService.method.setDropSource;
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdateBuildConfig
  */
-export const updateBuildConfig =
-	ApplicationService.method.updateBuildConfig;
+export const updateBuildConfig = ApplicationService.method.updateBuildConfig;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdateResourceConfig
  */
-export const updateResourceConfig =
-	ApplicationService.method.updateResourceConfig;
+export const updateResourceConfig = ApplicationService.method.updateResourceConfig;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdatePreviewConfig
  */
-export const updatePreviewConfig =
-	ApplicationService.method.updatePreviewConfig;
+export const updatePreviewConfig = ApplicationService.method.updatePreviewConfig;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.Deploy
@@ -137,8 +127,7 @@ export const cancel = ApplicationService.method.cancel;
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.RotateWebhookToken
  */
-export const rotateWebhookToken =
-	ApplicationService.method.rotateWebhookToken;
+export const rotateWebhookToken = ApplicationService.method.rotateWebhookToken;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.MoveApplication
@@ -148,20 +137,17 @@ export const moveApplication = ApplicationService.method.moveApplication;
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.ClearDeploymentHistory
  */
-export const clearDeploymentHistory =
-	ApplicationService.method.clearDeploymentHistory;
+export const clearDeploymentHistory = ApplicationService.method.clearDeploymentHistory;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.CleanupDeploymentQueue
  */
-export const cleanupDeploymentQueue =
-	ApplicationService.method.cleanupDeploymentQueue;
+export const cleanupDeploymentQueue = ApplicationService.method.cleanupDeploymentQueue;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.ForceKillDeployment
  */
-export const forceKillDeployment =
-	ApplicationService.method.forceKillDeployment;
+export const forceKillDeployment = ApplicationService.method.forceKillDeployment;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.ListRollbacks
@@ -186,44 +172,37 @@ export const listDependencies = ApplicationService.method.listDependencies;
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationPorts
  */
-export const listApplicationPorts =
-	ApplicationService.method.listApplicationPorts;
+export const listApplicationPorts = ApplicationService.method.listApplicationPorts;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationMounts
  */
-export const listApplicationMounts =
-	ApplicationService.method.listApplicationMounts;
+export const listApplicationMounts = ApplicationService.method.listApplicationMounts;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationNetworks
  */
-export const listApplicationNetworks =
-	ApplicationService.method.listApplicationNetworks;
+export const listApplicationNetworks = ApplicationService.method.listApplicationNetworks;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationPatches
  */
-export const listApplicationPatches =
-	ApplicationService.method.listApplicationPatches;
+export const listApplicationPatches = ApplicationService.method.listApplicationPatches;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationMiddlewares
  */
-export const listApplicationMiddlewares =
-	ApplicationService.method.listApplicationMiddlewares;
+export const listApplicationMiddlewares = ApplicationService.method.listApplicationMiddlewares;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationRedirects
  */
-export const listApplicationRedirects =
-	ApplicationService.method.listApplicationRedirects;
+export const listApplicationRedirects = ApplicationService.method.listApplicationRedirects;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationSecurity
  */
-export const listApplicationSecurity =
-	ApplicationService.method.listApplicationSecurity;
+export const listApplicationSecurity = ApplicationService.method.listApplicationSecurity;
 
 /**
  * @generated from rpc openoxide.api.v1.ApplicationService.ListPorts

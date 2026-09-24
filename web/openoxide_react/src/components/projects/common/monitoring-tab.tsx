@@ -3,7 +3,7 @@ import {Button} from '#/components/ui/button';
 import {
 	useContainerMonitoring,
 	type MonitoringEntityType,
-} from '#/hooks/use-container-monitoring';
+} from '#/hooks/monitoring/use-container-monitoring';
 import {MonitoringCards} from './monitoring/monitoring-cards';
 import {SectionHeader} from '#/components/settings/list-card';
 

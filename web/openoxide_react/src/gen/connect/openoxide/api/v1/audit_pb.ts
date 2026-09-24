@@ -2,41 +2,197 @@
 // @generated from file openoxide/api/v1/audit.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceResponseSchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/audit.proto.
  */
-export const file_openoxide_api_v1_audit: GenFile /*@__PURE__*/ = fileDesc(
-	'ChxvcGVub3hpZGUvYXBpL3YxL2F1ZGl0LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMsABCgxBdWRpdFNlcnZpY2USWAoNTGlzdEF1ZGl0TG9ncxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVgoPRXhwb3J0QXVkaXRMb2dzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlYgZwcm90bzM',
-	[file_openoxide_api_v1_common],
-);
+export const file_openoxide_api_v1_audit: GenFile = /*@__PURE__*/
+  fileDesc("ChxvcGVub3hpZGUvYXBpL3YxL2F1ZGl0LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIsgCCghBdWRpdExvZxIKCgJpZBgBIAEoAxISCgp1c2VyX2VtYWlsGAIgASgJEhEKCXVzZXJfcm9sZRgDIAEoCRIOCgZhY3Rpb24YBCABKAkSFQoNcmVzb3VyY2VfdHlwZRgFIAEoCRIYCgtyZXNvdXJjZV9pZBgGIAEoCUgAiAEBEhoKDXJlc291cmNlX25hbWUYByABKAlIAYgBARIVCghtZXRhZGF0YRgIIAEoCUgCiAEBEhwKD29yZ2FuaXphdGlvbl9pZBgJIAEoA0gDiAEBEhQKB3VzZXJfaWQYCiABKANIBIgBARISCgpjcmVhdGVkX2F0GAsgASgDQg4KDF9yZXNvdXJjZV9pZEIQCg5fcmVzb3VyY2VfbmFtZUILCglfbWV0YWRhdGFCEgoQX29yZ2FuaXphdGlvbl9pZEIKCghfdXNlcl9pZCLTAQoZQXVkaXRMaXN0QXVkaXRMb2dzUmVxdWVzdBIlCg9vcmdhbml6YXRpb25faWQYASABKANCB7pIBCICIABIAIgBARIdCgZhY3Rpb24YAiABKAlCCLpIBXIDGP8BSAGIAQESHgoFbGltaXQYAyABKANCCrpIByIFGPQDKAFIAogBARIcCgZvZmZzZXQYBCABKANCB7pIBCICKABIA4gBAUISChBfb3JnYW5pemF0aW9uX2lkQgkKB19hY3Rpb25CCAoGX2xpbWl0QgkKB19vZmZzZXQiRgoaQXVkaXRMaXN0QXVkaXRMb2dzUmVzcG9uc2USKAoEbG9ncxgBIAMoCzIaLm9wZW5veGlkZS5hcGkudjEuQXVkaXRMb2ciRwobQXVkaXRFeHBvcnRBdWRpdExvZ3NSZXF1ZXN0Eh0KBmFjdGlvbhgBIAEoCUIIukgFcgMY/wFIAIgBAUIJCgdfYWN0aW9uIisKHEF1ZGl0RXhwb3J0QXVkaXRMb2dzUmVzcG9uc2USCwoDY3N2GAEgASgJMuwBCgxBdWRpdFNlcnZpY2USagoNTGlzdEF1ZGl0TG9ncxIrLm9wZW5veGlkZS5hcGkudjEuQXVkaXRMaXN0QXVkaXRMb2dzUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuQXVkaXRMaXN0QXVkaXRMb2dzUmVzcG9uc2UScAoPRXhwb3J0QXVkaXRMb2dzEi0ub3Blbm94aWRlLmFwaS52MS5BdWRpdEV4cG9ydEF1ZGl0TG9nc1JlcXVlc3QaLi5vcGVub3hpZGUuYXBpLnYxLkF1ZGl0RXhwb3J0QXVkaXRMb2dzUmVzcG9uc2ViBnByb3RvMw", [file_buf_validate_validate]);
+
+/**
+ * @generated from message openoxide.api.v1.AuditLog
+ */
+export type AuditLog = Message<"openoxide.api.v1.AuditLog"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string user_email = 2;
+   */
+  userEmail: string;
+
+  /**
+   * @generated from field: string user_role = 3;
+   */
+  userRole: string;
+
+  /**
+   * Performed action verb (not a closed set; written by callers).
+   *
+   * @generated from field: string action = 4;
+   */
+  action: string;
+
+  /**
+   * @generated from field: string resource_type = 5;
+   */
+  resourceType: string;
+
+  /**
+   * @generated from field: optional string resource_id = 6;
+   */
+  resourceId?: string | undefined;
+
+  /**
+   * @generated from field: optional string resource_name = 7;
+   */
+  resourceName?: string | undefined;
+
+  /**
+   * Opaque JSON audit context.
+   *
+   * @generated from field: optional string metadata = 8;
+   */
+  metadata?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 organization_id = 9;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 user_id = 10;
+   */
+  userId?: bigint | undefined;
+
+  /**
+   * @generated from field: int64 created_at = 11;
+   */
+  createdAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AuditLog.
+ * Use `create(AuditLogSchema)` to create a new message.
+ */
+export const AuditLogSchema: GenMessage<AuditLog> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_audit, 0);
+
+/**
+ * `action` narrows the list to one action verb; absent means all actions.
+ *
+ * @generated from message openoxide.api.v1.AuditListAuditLogsRequest
+ */
+export type AuditListAuditLogsRequest = Message<"openoxide.api.v1.AuditListAuditLogsRequest"> & {
+  /**
+   * @generated from field: optional int64 organization_id = 1;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string action = 2;
+   */
+  action?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 limit = 3;
+   */
+  limit?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 offset = 4;
+   */
+  offset?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AuditListAuditLogsRequest.
+ * Use `create(AuditListAuditLogsRequestSchema)` to create a new message.
+ */
+export const AuditListAuditLogsRequestSchema: GenMessage<AuditListAuditLogsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_audit, 1);
+
+/**
+ * @generated from message openoxide.api.v1.AuditListAuditLogsResponse
+ */
+export type AuditListAuditLogsResponse = Message<"openoxide.api.v1.AuditListAuditLogsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.AuditLog logs = 1;
+   */
+  logs: AuditLog[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.AuditListAuditLogsResponse.
+ * Use `create(AuditListAuditLogsResponseSchema)` to create a new message.
+ */
+export const AuditListAuditLogsResponseSchema: GenMessage<AuditListAuditLogsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_audit, 2);
+
+/**
+ * Export is organization-scoped from the authenticated session and capped server-side at 500 rows.
+ *
+ * @generated from message openoxide.api.v1.AuditExportAuditLogsRequest
+ */
+export type AuditExportAuditLogsRequest = Message<"openoxide.api.v1.AuditExportAuditLogsRequest"> & {
+  /**
+   * @generated from field: optional string action = 1;
+   */
+  action?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AuditExportAuditLogsRequest.
+ * Use `create(AuditExportAuditLogsRequestSchema)` to create a new message.
+ */
+export const AuditExportAuditLogsRequestSchema: GenMessage<AuditExportAuditLogsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_audit, 3);
+
+/**
+ * CSV with header id,created_at,user_email,user_role,action,resource_type,resource_id,resource_name.
+ *
+ * @generated from message openoxide.api.v1.AuditExportAuditLogsResponse
+ */
+export type AuditExportAuditLogsResponse = Message<"openoxide.api.v1.AuditExportAuditLogsResponse"> & {
+  /**
+   * @generated from field: string csv = 1;
+   */
+  csv: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AuditExportAuditLogsResponse.
+ * Use `create(AuditExportAuditLogsResponseSchema)` to create a new message.
+ */
+export const AuditExportAuditLogsResponseSchema: GenMessage<AuditExportAuditLogsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_audit, 4);
 
 /**
  * @generated from service openoxide.api.v1.AuditService
  */
 export const AuditService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.AuditService.ListAuditLogs
-	 */
-	listAuditLogs: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AuditService.ExportAuditLogs
-	 */
-	exportAuditLogs: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceResponseSchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_audit, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.AuditService.ListAuditLogs
+   */
+  listAuditLogs: {
+    methodKind: "unary";
+    input: typeof AuditListAuditLogsRequestSchema;
+    output: typeof AuditListAuditLogsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AuditService.ExportAuditLogs
+   */
+  exportAuditLogs: {
+    methodKind: "unary";
+    input: typeof AuditExportAuditLogsRequestSchema;
+    output: typeof AuditExportAuditLogsResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_audit, 0);
+

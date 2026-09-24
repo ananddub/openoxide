@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/public.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {PublicService} from './public_pb';
+import { PublicService } from "./public_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.PublicService.ListGitBranches

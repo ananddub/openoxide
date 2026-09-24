@@ -1,6 +1,9 @@
 use connectrpc::{ConnectError, ErrorCode};
 
-use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
+use crate::api::connect::generated::openoxide::api::v1::{
+    Domain as DomainProto, DomainCertificateType as ProtoDomainCertificateType,
+    DomainType as ProtoDomainType,
+};
 use crate::services::networking::domain::DomainRecord;
 
 pub fn map_error(err: sqlx::Error) -> ConnectError {
@@ -17,57 +20,58 @@ pub fn map_error(err: sqlx::Error) -> ConnectError {
     }
 }
 
-pub fn domain_to_resource(dto: DomainResponseDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "domain".into(),
-        payload,
-        ..Default::default()
+pub fn domain_type_to_proto(value: &str) -> ProtoDomainType {
+    match value.to_ascii_uppercase().as_str() {
+        "APPLICATION" => ProtoDomainType::Application,
+        "COMPOSE" => ProtoDomainType::Compose,
+        _ => ProtoDomainType::Unspecified,
     }
 }
 
-// ── Helper DTOs for serializing ResourceResponse payloads ────────────
-
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct DomainResponseDto {
-    pub id: i64,
-    pub host: String,
-    pub https: bool,
-    pub port: Option<i64>,
-    pub path: Option<String>,
-    pub internal_path: Option<String>,
-    pub custom_entrypoint: Option<String>,
-    pub service_name: Option<String>,
-    pub custom_cert_resolver: Option<String>,
-    pub strip_path: bool,
-    pub middlewares: String,
-    pub domain_type: String,
-    pub certificate_type: String,
-    pub service_id: Option<i64>,
-    pub created_at: i64,
-    pub updated_at: i64,
+pub fn proto_to_domain_type(value: ::buffa::EnumValue<ProtoDomainType>) -> String {
+    match value {
+        ::buffa::EnumValue::Known(ProtoDomainType::Compose) => "COMPOSE".into(),
+        _ => "APPLICATION".into(),
+    }
 }
 
-impl From<DomainRecord> for DomainResponseDto {
-    fn from(value: DomainRecord) -> Self {
-        Self {
-            id: value.id,
-            host: value.host,
-            https: value.https != 0,
-            port: value.port,
-            path: value.path,
-            internal_path: value.internal_path,
-            custom_entrypoint: value.custom_entrypoint,
-            service_name: value.service_name,
-            custom_cert_resolver: value.custom_cert_resolver,
-            strip_path: value.strip_path != 0,
-            middlewares: value.middlewares,
-            domain_type: value.domain_type,
-            certificate_type: value.certificate_type,
-            service_id: value.service_id,
-            created_at: value.created_at,
-            updated_at: value.updated_at,
-        }
+pub fn certificate_type_to_proto(value: &str) -> ProtoDomainCertificateType {
+    match value.to_ascii_uppercase().as_str() {
+        "LETSENCRYPT" => ProtoDomainCertificateType::Letsencrypt,
+        "CUSTOM" => ProtoDomainCertificateType::Custom,
+        "NONE" => ProtoDomainCertificateType::None,
+        _ => ProtoDomainCertificateType::Unspecified,
+    }
+}
+
+pub fn proto_to_certificate_type(value: ::buffa::EnumValue<ProtoDomainCertificateType>) -> String {
+    match value {
+        ::buffa::EnumValue::Known(ProtoDomainCertificateType::Letsencrypt) => "LETSENCRYPT".into(),
+        ::buffa::EnumValue::Known(ProtoDomainCertificateType::Custom) => "CUSTOM".into(),
+        _ => "NONE".into(),
+    }
+}
+
+pub fn domain_to_proto(record: DomainRecord) -> DomainProto {
+    let domain_type = domain_type_to_proto(&record.domain_type);
+    let certificate_type = certificate_type_to_proto(&record.certificate_type);
+    DomainProto {
+        id: record.id,
+        host: record.host,
+        https: record.https != 0,
+        port: record.port,
+        path: record.path,
+        internal_path: record.internal_path,
+        custom_entrypoint: record.custom_entrypoint,
+        service_name: record.service_name,
+        custom_cert_resolver: record.custom_cert_resolver,
+        strip_path: record.strip_path != 0,
+        middlewares: record.middlewares,
+        domain_type: ::buffa::EnumValue::Known(domain_type),
+        certificate_type: ::buffa::EnumValue::Known(certificate_type),
+        service_id: record.service_id,
+        created_at: record.created_at,
+        updated_at: record.updated_at,
+        ..Default::default()
     }
 }

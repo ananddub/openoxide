@@ -29,8 +29,7 @@ function DialogOverlay({
 		<DialogPrimitive.Backdrop
 			data-slot="dialog-overlay"
 			className={cn(
-				// Geist modal scrim: dark enough to seat the surface, slight
-				// blur keeps the page readable behind it.
+				// Geist modal scrim: dark enough to seat the surface, slight blur keeps the page readable behind it.
 				'fixed inset-0 isolate z-50 bg-black/50 duration-150 supports-backdrop-filter:backdrop-blur-[2px] data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0',
 				className,
 			)}
@@ -53,9 +52,7 @@ function DialogContent({
 			<DialogPrimitive.Popup
 				data-slot="dialog-content"
 				className={cn(
-					// Geist modal surface: hairline edge (alpha ladder), the
-					// elevated two-layer shadow — tight contact layer + wide
-					// soft ambient — and roomy padding.
+					// Geist modal surface: hairline edge (alpha ladder), the elevated two-layer shadow — tight contact layer + wide soft ambient — and roomy padding.
 					'fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl border border-border bg-popover p-6 text-sm text-popover-foreground shadow-[0_1px_2px_rgba(0,0,0,0.04),0_16px_40px_-8px_rgba(0,0,0,0.18),0_32px_64px_-16px_rgba(0,0,0,0.12)] duration-150 outline-none sm:max-w-lg dark:shadow-[0_1px_2px_rgba(0,0,0,0.4),0_16px_40px_-8px_rgba(0,0,0,0.6),0_32px_64px_-16px_rgba(0,0,0,0.5)] data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
 					className,
 				)}
@@ -99,8 +96,7 @@ function DialogFooter({
 	showCloseButton?: boolean;
 }) {
 	return (
-		// Geist modal footer: actions right-aligned on the surface — no
-		// tinted band, just a hairline to separate from the body.
+		// Geist modal footer: actions right-aligned on the surface — no tinted band, just a hairline to separate from the body.
 		<div
 			data-slot="dialog-footer"
 			className={cn(

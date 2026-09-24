@@ -1,20 +1,15 @@
 import {createServiceClient, useConnectMutation} from '../query';
-import {OverviewOperationsService} from '#/gen/connect/openoxide/api/v1/overview_operations_pb';
+import {OverviewService} from '#/gen/connect/openoxide/api/v1/overview_pb';
 import {ComposeService} from '#/gen/connect/openoxide/api/v1/compose_pb';
 
 export const composeClient = createServiceClient(ComposeService);
-export const overviewClient = createServiceClient(
-	OverviewOperationsService,
-);
+export const overviewClient = createServiceClient(OverviewService);
 
 /** snake_case-optional id coercion that keeps `undefined` out of the proto. */
 export const big = (value: number | bigint | undefined) =>
 	value !== undefined ? BigInt(value) : undefined;
 
-/**
- * Builds an id-only mutation hook (deploy/stop/delete style RPCs) with the
- * given cache invalidation set; defaults to the `composes` prefix.
- */
+/** Builds an id-only mutation hook (deploy/stop/delete style RPCs) with the given cache invalidation set; defaults to the `composes` prefix. */
 export const idMutation = (
 	call: (id: bigint) => Promise<unknown>,
 	invalidate: string[][] = [['composes']],

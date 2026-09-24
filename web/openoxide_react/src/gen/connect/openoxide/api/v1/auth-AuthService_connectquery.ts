@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/auth.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {AuthService} from './auth_pb';
+import { AuthService } from "./auth_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.AuthService.Signup
@@ -42,8 +42,7 @@ export const updateUser = AuthService.method.updateUser;
 /**
  * @generated from rpc openoxide.api.v1.AuthService.RequestPasswordReset
  */
-export const requestPasswordReset =
-	AuthService.method.requestPasswordReset;
+export const requestPasswordReset = AuthService.method.requestPasswordReset;
 
 /**
  * @generated from rpc openoxide.api.v1.AuthService.ResetPassword
@@ -53,20 +52,17 @@ export const resetPassword = AuthService.method.resetPassword;
 /**
  * @generated from rpc openoxide.api.v1.AuthService.GetEmailVerificationStatus
  */
-export const getEmailVerificationStatus =
-	AuthService.method.getEmailVerificationStatus;
+export const getEmailVerificationStatus = AuthService.method.getEmailVerificationStatus;
 
 /**
  * @generated from rpc openoxide.api.v1.AuthService.RequestEmailVerification
  */
-export const requestEmailVerification =
-	AuthService.method.requestEmailVerification;
+export const requestEmailVerification = AuthService.method.requestEmailVerification;
 
 /**
  * @generated from rpc openoxide.api.v1.AuthService.ConfirmEmailVerification
  */
-export const confirmEmailVerification =
-	AuthService.method.confirmEmailVerification;
+export const confirmEmailVerification = AuthService.method.confirmEmailVerification;
 
 /**
  * @generated from rpc openoxide.api.v1.AuthService.GetTwoFactorStatus
@@ -91,8 +87,7 @@ export const disableTwoFactor = AuthService.method.disableTwoFactor;
 /**
  * @generated from rpc openoxide.api.v1.AuthService.RegenerateRecoveryCodes
  */
-export const regenerateRecoveryCodes =
-	AuthService.method.regenerateRecoveryCodes;
+export const regenerateRecoveryCodes = AuthService.method.regenerateRecoveryCodes;
 
 /**
  * @generated from rpc openoxide.api.v1.AuthService.ListSessions
@@ -107,17 +102,14 @@ export const revokeSession = AuthService.method.revokeSession;
 /**
  * @generated from rpc openoxide.api.v1.AuthService.ListPersonalAccessTokens
  */
-export const listPersonalAccessTokens =
-	AuthService.method.listPersonalAccessTokens;
+export const listPersonalAccessTokens = AuthService.method.listPersonalAccessTokens;
 
 /**
  * @generated from rpc openoxide.api.v1.AuthService.CreatePersonalAccessToken
  */
-export const createPersonalAccessToken =
-	AuthService.method.createPersonalAccessToken;
+export const createPersonalAccessToken = AuthService.method.createPersonalAccessToken;
 
 /**
  * @generated from rpc openoxide.api.v1.AuthService.RevokePersonalAccessToken
  */
-export const revokePersonalAccessToken =
-	AuthService.method.revokePersonalAccessToken;
+export const revokePersonalAccessToken = AuthService.method.revokePersonalAccessToken;

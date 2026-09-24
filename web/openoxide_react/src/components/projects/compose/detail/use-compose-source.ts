@@ -49,10 +49,7 @@ function stateFromCompose(compose: any): ComposeSourceState {
 	};
 }
 
-/**
- * Owns the compose source form state, GitHub file auto-preview and the
- * provider-dispatched save (mirrors the app source-settings-card).
- */
+/** Owns the compose source form state, GitHub file auto-preview and the provider-dispatched save (mirrors the app source-settings-card). */
 export function useComposeSource(compose: any, onUpdated: () => void) {
 	const [source, setSource] = useState<ComposeSourceState>(() =>
 		stateFromCompose(compose),
@@ -73,8 +70,7 @@ export function useComposeSource(compose: any, onUpdated: () => void) {
 	const onPatch = (patch: Partial<ComposeSourceState>) =>
 		setSource(s => ({...s, ...patch}));
 
-	// Preview helper: fetch the compose file from GitHub raw when the
-	// editor is empty and a GitHub repo is configured.
+	// Preview helper: fetch the compose file from GitHub raw when the editor is empty and a GitHub repo is configured.
 	const {
 		provider,
 		repoOwner,
@@ -113,8 +109,7 @@ export function useComposeSource(compose: any, onUpdated: () => void) {
 		setSavingSource(true);
 		try {
 			if (!compose?.id) return;
-			// Guard before hitting the server: an empty required field used to
-			// surface as an opaque "[not_found] related resource not found".
+			// Guard before hitting the server: an empty required field used to surface as an opaque "[not_found] related resource not found".
 			if (provider === 'RAW' && !composeFile.trim()) {
 				toast.error('Compose file content is required');
 				return;

@@ -65,15 +65,13 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 			return toast.error('Record name and content are required');
 		try {
 			await upsert.mutateAsync({
-				params: {path: {id: provider.id}},
-				body: {
-					zone_id: draft.zoneId,
-					record_type: draft.recordType,
-					name: draft.name.trim(),
-					content: draft.content.trim(),
-					ttl: draft.ttl ? Number(draft.ttl) : undefined,
-				},
-			} as any);
+				provider_id: provider.id,
+				zone_id: draft.zoneId,
+				record_type: draft.recordType,
+				name: draft.name.trim(),
+				content: draft.content.trim(),
+				ttl: draft.ttl ? Number(draft.ttl) : undefined,
+			});
 			toast.success(draft.recordId ? 'Record updated' : 'Record created');
 			setDraft(null);
 			await recordsQuery.refetch();
@@ -81,14 +79,14 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 			toast.error(formatApiError(error));
 		}
 	};
-	const deleteRecord = async (recordId: string) => {
+	const deleteRecord = async (record: DnsRecord) => {
 		if (!expanded || !confirm('Delete this DNS record?')) return;
 		try {
 			await remove.mutateAsync({
-				params: {
-					path: {id: provider.id, zone_id: expanded, record_id: recordId},
-				},
-			} as any);
+				provider_id: provider.id,
+				zone_id: expanded,
+				name: record.name,
+			});
 			toast.success('Record deleted');
 			await recordsQuery.refetch();
 		} catch (error) {
@@ -142,7 +140,7 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 								setExpanded(expanded === zone.id ? null : zone.id)
 							}
 							onEdit={record => startEdit(record, zone.id)}
-							onDelete={record => deleteRecord(record.id)}
+							onDelete={record => deleteRecord(record)}
 							onCreate={() => startCreate(zone.id, zone.name)}
 						/>
 					))}

@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/alert_rule.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {AlertRuleService} from './alert_rule_pb';
+import { AlertRuleService } from "./alert_rule_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.AlertRuleService.ListRules

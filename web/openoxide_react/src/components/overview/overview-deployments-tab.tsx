@@ -44,8 +44,7 @@ export function OverviewDeploymentsTab({
 	onRefresh: () => void;
 	refreshing: boolean;
 }) {
-	// Row-click opens the streaming log panel inline (drag-resizable) —
-	// one shared expand state so switching sub-tabs closes the other.
+	// Row-click opens the streaming log panel inline (drag-resizable) — one shared expand state so switching sub-tabs closes the other.
 	const [expandedId, setExpandedId] = useState<number | null>(null);
 	const items = subTab === 'history' ? history : queue;
 	useAutoExpandBuildLogs(items, setExpandedId);
@@ -90,10 +89,7 @@ export function OverviewDeploymentsTab({
 						disabled={refreshing}
 						className="flex h-9 items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
 						<RefreshCw
-							className={cn(
-								'size-3.5',
-								refreshing && 'animate-spin',
-							)}
+							className={cn('size-3.5', refreshing && 'animate-spin')}
 						/>
 						Refresh
 					</Button>

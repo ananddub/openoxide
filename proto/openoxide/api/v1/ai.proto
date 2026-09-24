@@ -2,21 +2,267 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
+// AI provider settings, model discovery, compose generation and log analysis.
 service AiService {
-  rpc ListSettings(ResourceQuery) returns (ResourceListResponse);
-  rpc GetSettings(ResourceRequest) returns (ResourceResponse);
-  rpc CreateSettings(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateSettings(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteSettings(ResourceRequest) returns (Empty);
-  rpc ListModels(ResourceRequest) returns (ResourceListResponse);
-  rpc TestSettings(ResourceRequest) returns (OperationResult);
-  rpc DiscoverModels(ResourceRequest) returns (ResourceListResponse);
-  rpc TestConnection(ResourceRequest) returns (OperationResult);
-  rpc ListGenerations(ResourceQuery) returns (ResourceListResponse);
-  rpc GetGeneration(ResourceRequest) returns (ResourceResponse);
-  rpc CreateGeneration(ResourceRequest) returns (ResourceResponse);
-  rpc ReviewGeneration(ResourceRequest) returns (OperationResult);
-  rpc DeployGeneration(ResourceRequest) returns (OperationResult);
-  rpc AnalyzeLogs(ResourceRequest) returns (ResourceResponse);
+  rpc ListSettings(AiListSettingsRequest) returns (AiListSettingsResponse);
+  rpc GetSettings(AiGetSettingsRequest) returns (AiGetSettingsResponse);
+  rpc CreateSettings(AiCreateSettingsRequest) returns (AiCreateSettingsResponse);
+  rpc UpdateSettings(AiUpdateSettingsRequest) returns (AiUpdateSettingsResponse);
+  rpc DeleteSettings(AiDeleteSettingsRequest) returns (Empty);
+  rpc ListModels(AiListModelsRequest) returns (AiListModelsResponse);
+  rpc TestSettings(AiTestSettingsRequest) returns (AiTestSettingsResponse);
+  rpc DiscoverModels(AiDiscoverModelsRequest) returns (AiDiscoverModelsResponse);
+  rpc TestConnection(AiTestConnectionRequest) returns (AiTestConnectionResponse);
+  rpc ListGenerations(AiListGenerationsRequest) returns (AiListGenerationsResponse);
+  rpc GetGeneration(AiGetGenerationRequest) returns (AiGetGenerationResponse);
+  rpc CreateGeneration(AiCreateGenerationRequest) returns (AiCreateGenerationResponse);
+  rpc ReviewGeneration(AiReviewGenerationRequest) returns (AiReviewGenerationResponse);
+  rpc DeployGeneration(AiDeployGenerationRequest) returns (AiDeployGenerationResponse);
+  rpc AnalyzeLogs(AiAnalyzeLogsRequest) returns (AiAnalyzeLogsResponse);
+}
+
+// Provider detected from the configured api_url (AiProviderKind::detect).
+enum AiProvider {
+  AI_PROVIDER_UNSPECIFIED = 0;
+  AI_PROVIDER_OPENAI = 1;
+  AI_PROVIDER_ANTHROPIC = 2;
+  AI_PROVIDER_GEMINI = 3;
+  AI_PROVIDER_OLLAMA = 4;
+  AI_PROVIDER_OPENAI_COMPATIBLE = 5;
+}
+
+// Log corpus fed to the analyzer (AiLogContextDto).
+enum AiLogContext {
+  AI_LOG_CONTEXT_UNSPECIFIED = 0;
+  AI_LOG_CONTEXT_BUILD = 1;
+  AI_LOG_CONTEXT_RUNTIME = 2;
+}
+
+// Stored provider configuration; the API key is never echoed back (`has_api_key` reports presence only).
+message AiSetting {
+  int64 id = 1;
+  string name = 2;
+  string api_url = 3;
+  string model = 4;
+  bool is_enabled = 5;
+  AiProvider provider = 6;
+  bool has_api_key = 7;
+  int64 organization_id = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+}
+
+message AiEnvironmentVariable {
+  string name = 1;
+  string value = 2;
+}
+
+message AiDomain {
+  string host = 1;
+  int64 port = 2;
+  string service_name = 3;
+}
+
+message AiGeneratedFile {
+  string file_path = 1;
+  // File body as text; config files are plain-text templates.
+  string content = 2;
+}
+
+// One deployable compose suggestion produced by the model.
+message AiComposeSuggestion {
+  // Model-issued suggestion identifier; unique within one output.
+  string id = 1;
+  string name = 2;
+  string short_description = 3;
+  string description = 4;
+  // Docker Compose document (YAML).
+  string docker_compose = 5;
+  repeated AiEnvironmentVariable env_variables = 6;
+  repeated AiDomain domains = 7;
+  repeated AiGeneratedFile config_files = 8;
+}
+
+// Validated model output: one to three compose suggestions.
+message AiGenerationOutput {
+  repeated AiComposeSuggestion suggestions = 1;
+}
+
+// One generation run: the prompt plus its (reviewable) model output.
+message AiGeneration {
+  int64 id = 1;
+  int64 ai_setting_id = 2;
+  int64 organization_id = 3;
+  int64 created_by = 4;
+  // Natural-language prompt echoed back verbatim.
+  string prompt = 5;
+  AiGenerationOutput output = 6;
+  // Lifecycle status string ("REVIEWED", "DEPLOYING", "DEPLOYED", ...).
+  string status = 7;
+  // Compose service row created by deployment, once deployed.
+  optional int64 compose_id = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+}
+
+message AiListSettingsRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message AiListSettingsResponse {
+  repeated AiSetting settings = 1;
+}
+
+message AiGetSettingsRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message AiGetSettingsResponse {
+  AiSetting setting = 1;
+}
+
+message AiCreateSettingsRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 100];
+  string api_url = 2 [(buf.validate.field).string.min_len = 1];
+  // Secret stored server-side; never echoed back on reads.
+  string api_key = 3;
+  string model = 4 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 200];
+  bool is_enabled = 5;
+  optional int64 organization_id = 6 [(buf.validate.field).int64.gt = 0];
+}
+
+message AiCreateSettingsResponse {
+  AiSetting setting = 1;
+}
+
+// An absent `api_key` keeps the stored key.
+message AiUpdateSettingsRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string name = 2 [(buf.validate.field).string.max_len = 100];
+  optional string api_url = 3;
+  optional string api_key = 4;
+  optional string model = 5 [(buf.validate.field).string.max_len = 200];
+  optional bool is_enabled = 6;
+  optional int64 organization_id = 7 [(buf.validate.field).int64.gt = 0];
+}
+
+message AiUpdateSettingsResponse {
+  AiSetting setting = 1;
+}
+
+message AiDeleteSettingsRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+// Model names offered by the stored provider configuration.
+message AiListModelsRequest {
+  int64 setting_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message AiListModelsResponse {
+  repeated string models = 1;
+}
+
+message AiTestSettingsRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message AiTestSettingsResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Model discovery against unsaved credentials (create dialog).
+message AiDiscoverModelsRequest {
+  string api_url = 1 [(buf.validate.field).string.min_len = 1];
+  string api_key = 2;
+}
+
+message AiDiscoverModelsResponse {
+  repeated string models = 1;
+}
+
+// Connectivity test against unsaved credentials.
+message AiTestConnectionRequest {
+  string api_url = 1 [(buf.validate.field).string.min_len = 1];
+  string api_key = 2;
+  string model = 3 [(buf.validate.field).string.min_len = 1];
+}
+
+message AiTestConnectionResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message AiListGenerationsRequest {
+  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 limit = 2 [(buf.validate.field).int64 = {gte: 1, lte: 100}];
+}
+
+message AiListGenerationsResponse {
+  repeated AiGeneration generations = 1;
+}
+
+message AiGetGenerationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message AiGetGenerationResponse {
+  AiGeneration generation = 1;
+}
+
+message AiCreateGenerationRequest {
+  int64 ai_setting_id = 1 [(buf.validate.field).int64.gt = 0];
+  // Free-form natural-language prompt for the compose generation.
+  string request = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 8000];
+}
+
+message AiCreateGenerationResponse {
+  AiGeneration generation = 1;
+}
+
+// Full replacement of the generation output after human review.
+message AiReviewGenerationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+  AiGenerationOutput output = 3;
+}
+
+message AiReviewGenerationResponse {
+  AiGeneration generation = 1;
+}
+
+message AiDeployGenerationRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
+  // Selects one suggestion from the reviewed generation output.
+  string suggestion_id = 3 [(buf.validate.field).string.min_len = 1];
+  int64 environment_id = 4 [(buf.validate.field).int64.gt = 0];
+  optional int64 server_id = 5 [(buf.validate.field).int64.gt = 0];
+  bool deploy_now = 6;
+}
+
+message AiDeployGenerationResponse {
+  AiGeneration generation = 1;
+  int64 compose_id = 2;
+  optional int64 deployment_id = 3;
+}
+
+message AiAnalyzeLogsRequest {
+  int64 ai_setting_id = 1 [(buf.validate.field).int64.gt = 0];
+  AiLogContext context = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  // Raw log corpus sent to the model for analysis.
+  string logs = 3 [(buf.validate.field).string.min_len = 1];
+}
+
+message AiAnalyzeLogsResponse {
+  // Model-authored analysis text (markdown; not structured JSON).
+  string analysis = 1;
 }

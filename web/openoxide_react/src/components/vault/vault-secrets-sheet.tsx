@@ -25,11 +25,7 @@ import {
 } from './vault-provider-catalog';
 import type {VaultProviderItem} from './vault-provider-catalog';
 
-/**
- * Secret browser for one vault provider — the backend only ever returns
- * secret *names*, so this sheet is read-only by design: it shows what can be
- * referenced, and copies the `${{vault.<name>.<secret>}}` snippet.
- */
+/** Secret browser for one vault provider — the backend only ever returns secret *names*, so this sheet is read-only by design: it shows what can be referenced, and copies the `${{vault.<name>.<secret>}}` snippet. */
 export function VaultSecretsSheet({
 	provider,
 	onClose,
@@ -71,9 +67,7 @@ function VaultSecretsBody({
 	return (
 		<>
 			<SheetHeader>
-				<SheetTitle className="pr-8 truncate">
-					{provider.name}
-				</SheetTitle>
+				<SheetTitle className="truncate pr-8">{provider.name}</SheetTitle>
 				<SheetDescription>
 					{getVaultProviderLabel(provider.provider_type)} — secret names
 					only. Values are resolved by the backend when a deployment is

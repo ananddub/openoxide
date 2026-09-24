@@ -1,16 +1,15 @@
 import {
 	createServiceClient,
 	useConnectMutation,
-	useResourceListQuery,
+	useConnectQuery,
 	useActiveOrgId,
 } from './query';
-import {AuditService} from '#/gen/connect/openoxide/api/v1/audit_pb';
+import {
+	AuditService,
+	type AuditLog,
+} from '#/gen/connect/openoxide/api/v1/audit_pb';
 
-/**
- * Audit log rows as emitted by the panel's audit writers (`audit_logs`
- * table). `action` is an UPPER_SNAKE verb (`PERMISSION_GROUP_CREATED`),
- * `metadata` is a JSON string with resource details.
- */
+/** Audit log rows as emitted by the panel's audit writers (`audit_logs` table). `action` is an UPPER_SNAKE verb (`PERMISSION_GROUP_CREATED`), `metadata` is a JSON string with resource details. */
 export type AuditLogPayload = {
 	id: number;
 	user_email: string;
@@ -27,11 +26,25 @@ export type AuditLogPayload = {
 
 const auditClient = createServiceClient(AuditService);
 
-/**
- * Audit log list scoped to the active organization, keyed under the
- * `audit_logs` query prefix so the table-watch stream (AUDIT_LOGS)
- * invalidates it while mounted. `query` filters by exact action.
- */
+/** Typed `AuditLog` → legacy payload (int64s narrow to numbers). */
+function toAuditLogPayload(log: AuditLog): AuditLogPayload {
+	return {
+		id: Number(log.id),
+		user_email: log.userEmail,
+		user_role: log.userRole,
+		action: log.action,
+		resource_type: log.resourceType,
+		resource_id: log.resourceId,
+		resource_name: log.resourceName,
+		metadata: log.metadata,
+		organization_id:
+			log.organizationId === undefined ? null : Number(log.organizationId),
+		user_id: log.userId === undefined ? null : Number(log.userId),
+		created_at: Number(log.createdAt),
+	};
+}
+
+/** Audit log list scoped to the active organization, keyed under the `audit_logs` query prefix so the table-watch stream (AUDIT_LOGS) invalidates it while mounted. `query` filters by exact action. */
 export function useAuditLogItems(options?: {
 	action?: string;
 	limit?: number;
@@ -39,25 +52,25 @@ export function useAuditLogItems(options?: {
 	const orgId = useActiveOrgId();
 	const action = options?.action;
 	const limit = options?.limit ?? 200;
-	return useResourceListQuery<AuditLogPayload>(
+	return useConnectQuery<AuditLogPayload[]>(
 		['audit_logs', orgId.toString(), action ?? '', limit],
-		() =>
-			auditClient.listAuditLogs({
+		async () => {
+			const response = await auditClient.listAuditLogs({
 				organizationId: orgId,
 				limit: BigInt(limit),
-				query: action,
-			}),
+				action: action || undefined,
+			});
+			return response.logs.map(toAuditLogPayload);
+		},
 	);
 }
 
-/** CSV export of the org's audit log (payload is raw CSV text). */
+/** CSV export of the active org's audit log (resolved value is raw CSV text). */
 export function useAuditExport() {
-	const orgId = useActiveOrgId();
 	return useConnectMutation(async (action?: string) => {
 		const response = await auditClient.exportAuditLogs({
-			organizationId: orgId,
-			query: action,
+			action: action || undefined,
 		});
-		return response.payload;
+		return response.csv;
 	});
 }

@@ -3,18 +3,12 @@ import {ChevronDown, Mail, Palette, ShieldCheck} from 'lucide-react';
 import {useProfile} from '#/api/live';
 import {isSolidColorAvatar, getAvatarInitials} from '#/lib/avatar-utils';
 import {useAuthSession} from '#/stores/session-context';
-import {usePermissions} from '#/hooks/use-permissions';
+import {usePermissions} from '#/hooks/permissions/use-permissions';
 import {Button} from '#/components/ui/button';
 import {ListCard, RowTile} from '#/components/settings/list-card';
 import {InlineProfileEditor} from './inline-profile-editor';
 
-/**
- * Settings → Account — the house card grammar: one bordered card for the
- * identity (avatar, name, email) with the edit control in its action slot,
- * unfolding the inline editor under the row; a second card for the quiet
- * facts. No in-page heading — the crumb and the rail already say
- * "Account".
- */
+/** Settings → Account — the house card grammar: one bordered card for the identity (avatar, name, email) with the edit control in its action slot, unfolding the inline editor under the row; a second card for the quiet facts. No in-page heading — the crumb and the rail already say "Account". */
 export function ProfilePage() {
 	const {data: storeProfile} = useProfile();
 	const {user: authUser} = useAuthSession();

@@ -1,6 +1,11 @@
 use connectrpc::{ConnectError, ErrorCode};
 
-use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
+use crate::api::connect::generated::openoxide::api::v1::{
+    Certificate as CertificateProto, CertificateDependencies as CertificateDependenciesProto,
+    CertificateRenewal as CertificateRenewalProto,
+    CertificateRenewalStatus as ProtoCertificateRenewalStatus,
+};
+use crate::flash_gen::resource_dependencies::CertificateDependencyCountsRow;
 use crate::flash_gen::models::{CertificateRenewals, Certificates};
 
 pub fn map_error(err: sqlx::Error) -> ConnectError {
@@ -17,84 +22,51 @@ pub fn map_error(err: sqlx::Error) -> ConnectError {
     }
 }
 
-pub fn cert_to_resource(dto: CertificateResponseDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: 0,
-        kind: "certificate".into(),
-        payload,
+pub fn renewal_status_to_proto(value: &str) -> ProtoCertificateRenewalStatus {
+    match value.to_ascii_uppercase().as_str() {
+        "RUNNING" => ProtoCertificateRenewalStatus::Running,
+        "SUCCEEDED" => ProtoCertificateRenewalStatus::Succeeded,
+        "FAILED" => ProtoCertificateRenewalStatus::Failed,
+        _ => ProtoCertificateRenewalStatus::Unspecified,
+    }
+}
+
+pub fn cert_to_proto(value: Certificates) -> CertificateProto {
+    CertificateProto {
+        id: value.id,
+        name: value.name,
+        certificate_data: value.certificate_data,
+        has_private_key: !value.private_key.is_empty(),
+        certificate_path: value.certificate_path,
+        auto_renew: value.auto_renew != 0,
+        server_id: value.server_id.map(|id| id.to_string()),
+        organization_id: value.organization_id,
+        created_at: value.created_at,
+        updated_at: value.updated_at,
         ..Default::default()
     }
 }
 
-pub fn renewal_to_resource(dto: CertificateRenewalDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "certificate_renewal".into(),
-        payload,
+pub fn renewal_to_proto(value: CertificateRenewals) -> CertificateRenewalProto {
+    let status = renewal_status_to_proto(&value.status);
+    CertificateRenewalProto {
+        id: value.id,
+        certificate_id: value.certificate_id,
+        organization_id: value.organization_id,
+        status: ::buffa::EnumValue::Known(status),
+        previous_expires_at: value.previous_expires_at,
+        new_expires_at: value.new_expires_at,
+        error: value.error,
+        started_at: value.started_at,
+        finished_at: value.finished_at,
         ..Default::default()
     }
 }
 
-// ── Helper DTOs for serializing ResourceResponse payloads ────────────
-
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct CertificateResponseDto {
-    pub id: String,
-    pub name: String,
-    pub certificate_data: String,
-    pub has_private_key: bool,
-    pub certificate_path: String,
-    pub auto_renew: i64,
-    pub server_id: Option<String>,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-impl From<Certificates> for CertificateResponseDto {
-    fn from(val: Certificates) -> Self {
-        Self {
-            id: val.id.to_string(),
-            name: val.name,
-            certificate_data: val.certificate_data,
-            has_private_key: !val.private_key.is_empty(),
-            certificate_path: val.certificate_path,
-            auto_renew: val.auto_renew,
-            server_id: val.server_id.map(|id| id.to_string()),
-            organization_id: val.organization_id,
-            created_at: val.created_at,
-            updated_at: val.updated_at,
-        }
-    }
-}
-
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct CertificateRenewalDto {
-    pub id: i64,
-    pub certificate_id: i64,
-    pub organization_id: i64,
-    pub status: String,
-    pub previous_expires_at: Option<i64>,
-    pub new_expires_at: Option<i64>,
-    pub error: Option<String>,
-    pub started_at: i64,
-    pub finished_at: Option<i64>,
-}
-
-impl From<CertificateRenewals> for CertificateRenewalDto {
-    fn from(v: CertificateRenewals) -> Self {
-        Self {
-            id: v.id,
-            certificate_id: v.certificate_id,
-            organization_id: v.organization_id,
-            status: v.status,
-            previous_expires_at: v.previous_expires_at,
-            new_expires_at: v.new_expires_at,
-            error: v.error,
-            started_at: v.started_at,
-            finished_at: v.finished_at,
-        }
+pub fn dependencies_to_proto(row: CertificateDependencyCountsRow) -> CertificateDependenciesProto {
+    CertificateDependenciesProto {
+        renewals: row.renewals,
+        running_renewals: row.running_renewals,
+        ..Default::default()
     }
 }

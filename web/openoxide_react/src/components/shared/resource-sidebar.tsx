@@ -1,11 +1,7 @@
 import {Link} from '@tanstack/react-router';
 import {ArrowLeft, type LucideIcon} from 'lucide-react';
 
-/**
- * Right-hand column shared by the resource list pages (SSH Keys, Tags,
- * Registry, Destinations, Vault). Keeps the 1600px grid balanced on wide
- * screens: the list owns the main column, this owns a sticky 340px rail.
- */
+/** Right-hand column shared by the resource list pages (SSH Keys, Tags, Registry, Destinations, Vault). Keeps the 1600px grid balanced on wide screens: the list owns the main column, this owns a sticky 340px rail. */
 
 export interface ResourceRow {
 	icon: LucideIcon;

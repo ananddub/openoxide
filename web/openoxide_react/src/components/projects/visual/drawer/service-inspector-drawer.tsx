@@ -124,7 +124,7 @@ export function ServiceInspectorDrawer({
 
 				{/* Tabs Navigation: Overview, Config, Live Logs (Geist Switch) */}
 				<div className="flex min-h-0 flex-1 flex-col">
-					<div className="bg-muted/10 border-b px-5 py-2.5">
+					<div className="border-b bg-muted/10 px-5 py-2.5">
 						<GeistSwitch
 							options={[
 								{key: 'overview', label: 'Overview', icon: Activity},

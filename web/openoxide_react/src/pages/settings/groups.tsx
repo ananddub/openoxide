@@ -7,7 +7,7 @@ import {
 	usePermissionGroupList,
 	usePolicyList,
 } from '#/api/live';
-import {usePermissions} from '#/hooks/use-permissions';
+import {usePermissions} from '#/hooks/permissions/use-permissions';
 import {formatApiError} from '#/api/utils';
 import {Button} from '#/components/ui/button';
 import {

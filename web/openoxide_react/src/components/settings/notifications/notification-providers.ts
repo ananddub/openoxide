@@ -52,12 +52,7 @@ const f = (
 	extra: Partial<NotificationField> = {},
 ): NotificationField => ({key, label, ...extra});
 
-/**
- * One entry per `NotificationProvider` the backend understands
- * (src/services/integrations/notification/types.rs). `fields` mirror the
- * provider's config DTO in src/api/handlers/notification/helper.rs — the
- * required ones are exactly the keys serde refuses to deserialize without.
- */
+/** One entry per `NotificationProvider` the backend understands (src/services/integrations/notification/types.rs). `fields` mirror the provider's config DTO in src/api/handlers/notification/helper.rs — the required ones are exactly the keys serde refuses to deserialize without. */
 export const PROVIDERS: ProviderMeta[] = [
 	{
 		id: 'DISCORD',

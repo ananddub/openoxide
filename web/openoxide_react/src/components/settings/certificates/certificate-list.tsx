@@ -167,7 +167,7 @@ export function CertificateList({
 									{item.certificate_path}
 								</code>
 							</div>
-							<div className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+							<div className="shrink-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
 								<Menu
 									item={item}
 									onEdit={onEdit}

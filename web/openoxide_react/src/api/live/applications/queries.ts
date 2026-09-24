@@ -1,5 +1,5 @@
 import {useActiveOrgId, useConnectQuery} from '../query';
-import type {OverviewServiceItemPayload} from '../overview';
+import {OverviewServiceType} from '#/gen/connect/openoxide/api/v1/overview_pb';
 import {applicationClient, overviewClient} from './shared';
 import {
 	toApplicationPayload,
@@ -31,13 +31,7 @@ export function useApplicationListByEnvironment(environmentId: bigint) {
 	);
 }
 
-/**
- * Organization-wide application list (legacy app-store `applications`
- * slice). There is no org-wide Application RPC, so this derives from the
- * overview services stream — the same source the legacy realtime sync fed
- * the store from — and is keyed under the `applications` prefix so
- * SERVICE_APPLICATION table changes invalidate it.
- */
+/** Organization-wide application list (legacy app-store `applications` slice). There is no org-wide Application RPC, so this derives from the overview services stream — the same source the legacy realtime sync fed the store from — and is keyed under the `applications` prefix so SERVICE_APPLICATION table changes invalidate it. */
 export function useApplicationList() {
 	const orgId = useActiveOrgId();
 	return useConnectQuery<ApplicationItemPayload[]>(
@@ -46,27 +40,24 @@ export function useApplicationList() {
 			const response = await overviewClient.listOrganizationServices({
 				organizationId: orgId,
 			});
-			return response.items
-				.map(
-					item => JSON.parse(item.payload) as OverviewServiceItemPayload,
-				)
-				.filter(service => service.service_type === 'APP')
+			return response.services
+				.filter(service => service.serviceType === OverviewServiceType.APP)
 				.map(
 					service =>
 						({
 							id: Number(service.id),
 							name: service.name,
 							app_name: service.name,
-							project_id: Number(service.project_id),
-							environment_id: Number(service.environment_id),
+							project_id: Number(service.projectId),
+							environment_id: Number(service.environmentId),
 							status: service.status,
 							server_id:
-								service.server_id === null
+								service.serverId === undefined
 									? undefined
-									: Number(service.server_id),
-							server_name: service.server_name ?? undefined,
-							created_at: Number(service.created_at),
-							updated_at: Number(service.created_at),
+									: Number(service.serverId),
+							server_name: service.serverName,
+							created_at: Number(service.createdAt),
+							updated_at: Number(service.createdAt),
 						}) satisfies ApplicationItemPayload,
 				);
 		},

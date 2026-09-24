@@ -7,7 +7,7 @@ import {FieldGroup} from '#/components/ui/field';
 import {AuthError} from '#/components/auth/shared';
 import {AuthInput, AuthPasswordInput} from './fields';
 import {signUpSchema, type SignUpSchema} from '#/schema/signup.schema';
-import {useSignup} from '#/hooks/use-signup';
+import {useSignup} from '#/hooks/auth/use-signup';
 
 export function SignUpForm() {
 	const [apiError, setApiError] = React.useState<string | null>(null);

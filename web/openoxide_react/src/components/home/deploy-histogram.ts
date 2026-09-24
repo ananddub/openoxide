@@ -1,7 +1,4 @@
-/**
- * 14-day histogram from the deployment lists the home hook already
- * fetched (kept dependency-light: reads the same raw shapes).
- */
+/** 14-day histogram from the deployment lists the home hook already fetched (kept dependency-light: reads the same raw shapes). */
 export function buildDeployHistogram(
 	deployStats: unknown,
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -18,8 +15,7 @@ export function buildDeployHistogram(
 			count: 0,
 		};
 	});
-	// The hook owns the raw list; until it is threaded through, show a
-	// quiet empty histogram instead of fake data.
+	// The hook owns the raw list; until it is threaded through, show a quiet empty histogram instead of fake data.
 	void deployStats;
 	return {days};
 }

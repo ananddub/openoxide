@@ -25,15 +25,13 @@ interface SettingsSheetProps {
 	footerLeft?: ReactNode;
 	/** Fires when the sheet opens/closes, so callers can reset sub-views. */
 	onOpenChange?: (open: boolean) => void;
+	/** Extra classes for the SheetContent shell (e.g. a wider panel for
+	 * editor-heavy forms). */
+	contentClassName?: string;
 	children: ReactNode;
 }
 
-/**
- * Geist settings strip whose body lives in a right-side sheet instead of
- * collapsing inline. The row looks like `SettingsCollapse`; clicking it
- * slides open a panel holding the form (title + description + children),
- * with an optional sticky footer for the Save action.
- */
+/** Geist settings strip whose body lives in a right-side sheet instead of collapsing inline. The row looks like `SettingsCollapse`; clicking it slides open a panel holding the form (title + description + children), with an optional sticky footer for the Save action. */
 export function SettingsSheet({
 	title,
 	description,
@@ -43,6 +41,7 @@ export function SettingsSheet({
 	footer,
 	footerLeft,
 	onOpenChange,
+	contentClassName,
 	children,
 }: SettingsSheetProps) {
 	const [open, setOpen] = useState(defaultOpen);
@@ -63,12 +62,10 @@ export function SettingsSheet({
 					}
 				}}
 				className={cn(
-					'group flex w-full cursor-pointer items-center gap-3 border-t border-border px-5 py-3.5 text-left transition-colors first:border-t-0 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+					'group flex w-full cursor-pointer items-center gap-3 border-t border-border px-5 py-3.5 text-left transition-colors first:border-t-0 hover:bg-muted/30 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
 					open && 'bg-muted/30',
 				)}>
-				{icon && (
-					<span className="shrink-0 text-primary">{icon}</span>
-				)}
+				{icon && <span className="shrink-0 text-primary">{icon}</span>}
 				<span className="flex min-w-0 flex-col">
 					<span className="truncate text-sm font-medium text-foreground">
 						{title}
@@ -92,7 +89,9 @@ export function SettingsSheet({
 			</div>
 
 			<Sheet open={open} onOpenChange={setSheetOpen}>
-				<SheetContent side="right" className="gap-0 p-0">
+				<SheetContent
+					side="right"
+					className={cn('gap-0 p-0', contentClassName)}>
 					<SheetHeader className="pr-14">
 						<SheetTitle>{title}</SheetTitle>
 						{description && (

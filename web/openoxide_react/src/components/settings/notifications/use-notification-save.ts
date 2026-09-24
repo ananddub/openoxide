@@ -58,8 +58,7 @@ export function useNotificationSave({
 		}
 		try {
 			if (editing) {
-				// Config edits need the provider fields re-supplied; the patch
-				// covers name + triggers, which is what the edit dialog exposes.
+				// Config edits need the provider fields re-supplied; the patch covers name + triggers, which is what the edit dialog exposes.
 				await updateMutation.mutateAsync({
 					id: editing.id,
 					name: draft.name.trim(),

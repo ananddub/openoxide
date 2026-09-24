@@ -1,6 +1,6 @@
 import {createFileRoute, Link} from '@tanstack/react-router';
 import {Button} from '#/components/ui/button';
-import {useAppDetail} from '#/hooks/projects/use-app-detail';
+import {useAppDetail} from '#/hooks/projects/app/use-app-detail';
 import {ServiceLayout} from '#/components/projects/detail/service-layout';
 
 // Tabs

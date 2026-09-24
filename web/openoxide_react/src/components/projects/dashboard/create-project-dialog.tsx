@@ -59,9 +59,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 			<SheetContent>
 				<SheetHeader>
 					<SheetTitle>New Project</SheetTitle>
-					<SheetDescription>
-						The home of something big!
-					</SheetDescription>
+					<SheetDescription>The home of something big!</SheetDescription>
 				</SheetHeader>
 
 				<form

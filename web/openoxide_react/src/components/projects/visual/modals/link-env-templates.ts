@@ -15,10 +15,7 @@ export const resolveDbPort = (dbType: string, port?: number): number =>
 	port ||
 	(dbType === 'redis' ? 6379 : dbType === 'mongodb' ? 27017 : 5432);
 
-/**
- * Proposes template environment variables based on the connected database type
- * (postgres / redis / generic).
- */
+/** Proposes template environment variables based on the connected database type (postgres / redis / generic). */
 export function buildLinkEnvTemplates(
 	targetNode?: TargetNode,
 ): LinkEnvTemplate[] {

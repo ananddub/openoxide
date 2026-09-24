@@ -29,11 +29,7 @@ type TagsView = 'grid' | 'list';
 
 const VIEW_STORAGE_KEY = 'tags-view';
 
-/**
- * Tags — the SSH Keys / Projects-page grammar: a section title, then a
- * toolbar (search + grid/list toggle + New) and cards or one bordered list
- * card below; create opens a Geist sheet. No side rail.
- */
+/** Tags — the SSH Keys / Projects-page grammar: a section title, then a toolbar (search + grid/list toggle + New) and cards or one bordered list card below; create opens a Geist sheet. No side rail. */
 function TagsPage() {
 	const [search, setSearch] = useState('');
 	const [view, setView] = useState<TagsView>(() => {
@@ -52,8 +48,7 @@ function TagsPage() {
 		localStorage.setItem(VIEW_STORAGE_KEY, next);
 	};
 
-	// Live tags query keyed ['tags','list'] — the table-watch stream
-	// invalidates it on tag changes while this page is mounted.
+	// Live tags query keyed ['tags','list'] — the table-watch stream invalidates it on tag changes while this page is mounted.
 	const tagsListQuery = useTagListAll();
 	const isLoading = tagsListQuery.isLoading;
 

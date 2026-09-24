@@ -27,11 +27,7 @@ export interface DeploymentViewerProps {
 const ICON_BTN =
 	'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:cursor-default disabled:opacity-40';
 
-/**
- * Minimalist log surface — same black terminal look as the architecture
- * card's Build Logs strip: plain white mono lines, dim timestamps, colour
- * only on error/warning/success, plus line count and find-in-logs.
- */
+/** Minimalist log surface — same black terminal look as the architecture card's Build Logs strip: plain white mono lines, dim timestamps, colour only on error/warning/success, plus line count and find-in-logs. */
 export function DeploymentViewer({
 	logs,
 	isLoading = false,
@@ -48,8 +44,7 @@ export function DeploymentViewer({
 	const searchRef = useRef<HTMLInputElement>(null);
 	const scrollRef = useRef<HTMLDivElement>(null);
 
-	// Callers may pass raw stream chunks containing embedded newlines; colour
-	// and count per real line so one FATAL doesn't redden the whole blob.
+	// Callers may pass raw stream chunks containing embedded newlines; colour and count per real line so one FATAL doesn't redden the whole blob.
 	const lines = useMemo(
 		() =>
 			(logs ?? [])
@@ -97,15 +92,15 @@ export function DeploymentViewer({
 					{query.trim() && ` · ${visibleLines.length} match`}
 				</span>
 				<div className="relative ml-auto w-72 max-w-[50%]">
-					<Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+					<Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
 					<input
 						ref={searchRef}
 						value={query}
 						onChange={e => setQuery(e.target.value)}
 						placeholder="Find in logs"
-						className="h-8 w-full rounded-lg border border-border bg-muted/30 pl-8 pr-14 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-neutral-500"
+						className="h-8 w-full rounded-lg border border-border bg-muted/30 pr-14 pl-8 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-neutral-500"
 					/>
-					<kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+					<kbd className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
 						Ctrl+F
 					</kbd>
 				</div>
@@ -120,9 +115,7 @@ export function DeploymentViewer({
 								? 'border-emerald-500/30 text-emerald-500'
 								: 'border-border text-muted-foreground hover:text-foreground',
 						)}>
-						<Radio
-							className={cn('size-3', isLive && 'animate-pulse')}
-						/>
+						<Radio className={cn('size-3', isLive && 'animate-pulse')} />
 						{isLive ? 'Live' : 'Paused'}
 					</button>
 				)}
@@ -147,42 +140,36 @@ export function DeploymentViewer({
 			</div>
 
 			{/* Theme-aware log surface — flush inside the card */}
-			<div
-				ref={scrollRef}
-				className={cn(LOG_SURFACE_CLS, heightClass)}>
-					{isLoading && lines.length === 0 ? (
-						<p className="flex items-center gap-2 py-2 font-mono text-[12.5px] text-muted-foreground">
-							<Loader className="size-3.5 animate-spin" />
-							{loadingText}
-						</p>
-					) : visibleLines.length === 0 ? (
-						<p className="py-2 font-mono text-[12.5px] text-muted-foreground">
-							{query.trim()
-								? `No log line matches "${query.trim()}".`
-								: emptyText}
-						</p>
-					) : (
-						<div className="flex flex-col">
-							{visibleLines.map((line, idx) => {
-								const [ts, rest] = splitTimestamp(line);
-								return (
-									<span
-										key={idx}
-										className={cn(
-											'break-all whitespace-pre-wrap font-mono text-[12.5px] leading-[25px]',
-											lineTone(line),
-										)}>
-										{ts && (
-											<span className={LOG_TS_CLS}>
-												{ts}
-											</span>
-										)}
-										{rest || ' '}
-									</span>
-								);
-							})}
-						</div>
-						)}
+			<div ref={scrollRef} className={cn(LOG_SURFACE_CLS, heightClass)}>
+				{isLoading && lines.length === 0 ? (
+					<p className="flex items-center gap-2 py-2 font-mono text-[12.5px] text-muted-foreground">
+						<Loader className="size-3.5 animate-spin" />
+						{loadingText}
+					</p>
+				) : visibleLines.length === 0 ? (
+					<p className="py-2 font-mono text-[12.5px] text-muted-foreground">
+						{query.trim()
+							? `No log line matches "${query.trim()}".`
+							: emptyText}
+					</p>
+				) : (
+					<div className="flex flex-col">
+						{visibleLines.map((line, idx) => {
+							const [ts, rest] = splitTimestamp(line);
+							return (
+								<span
+									key={idx}
+									className={cn(
+										'font-mono text-[12.5px] leading-[25px] break-all whitespace-pre-wrap',
+										lineTone(line),
+									)}>
+									{ts && <span className={LOG_TS_CLS}>{ts}</span>}
+									{rest || ' '}
+								</span>
+							);
+						})}
+					</div>
+				)}
 			</div>
 		</div>
 	);

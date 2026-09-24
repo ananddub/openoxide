@@ -39,6 +39,7 @@ export const routes = rootRoute('_root.tsx', [
 		route('vault', 'vault.tsx'),
 		route('dns', 'dns.tsx'),
 		route('tags', 'tags.tsx'),
+		route('templates', 'templates.tsx'),
 		route('users', 'users.tsx'),
 		route('settings', 'settings/index.tsx'),
 		route('settings/audit-logs', 'settings/audit-logs.tsx'),

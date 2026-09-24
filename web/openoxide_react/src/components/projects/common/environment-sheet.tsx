@@ -1,5 +1,6 @@
-import {Check, Eye, EyeOff} from 'lucide-react';
-import {useEnvEditor} from './use-env-editor';
+import {useEffect, useRef, useState} from 'react';
+import {Check} from 'lucide-react';
+import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
 import {
 	Sheet,
@@ -9,6 +10,12 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from '#/components/ui/sheet';
+import {
+	EnvRowsCard,
+	parseEnv,
+	serializeEnv,
+	type EnvRow,
+} from './env-rows-editor';
 
 interface EnvironmentSheetProps {
 	open: boolean;
@@ -26,11 +33,6 @@ const envFileName = (app: any) =>
 			.replace(/^-|-$/g, '') || 'service'
 	}.env`;
 
-/**
- * Panel body. Rendered only while the sheet is open — Monaco attaches to the
- * container ref once on init and never retries, so mounting it against a
- * closed sheet left an editor that could not be typed into.
- */
 function EnvironmentSheetBody({
 	app,
 	handleUpdate,
@@ -38,18 +40,45 @@ function EnvironmentSheetBody({
 	app: any;
 	handleUpdate: (body: any) => Promise<void>;
 }) {
-	const {
-		showSecrets,
-		setShowSecrets,
-		saved,
-		saving,
-		isModified,
-		containerRef,
-		handleSave,
-	} = useEnvEditor(app, handleUpdate);
+	const original = String(app.env_var || '');
+	const [rows, setRows] = useState<EnvRow[]>(() => parseEnv(original));
+	const [saving, setSaving] = useState(false);
+	const [saved, setSaved] = useState(false);
+
+	const isModified = serializeEnv(rows) !== serializeEnv(parseEnv(original));
+
+	const handleSave = async () => {
+		setSaving(true);
+		try {
+			await handleUpdate({env_var: serializeEnv(rows)});
+			toast.success('Environment variables saved successfully');
+			setSaved(true);
+			setTimeout(() => setSaved(false), 2000);
+		} catch {
+			toast.error('Failed to save environment variables');
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	// Ctrl/⌘+S saves without hunting for the button.
+	const saveRef = useRef<() => void>(() => {});
+	saveRef.current = () => {
+		if (!saving && isModified) void handleSave();
+	};
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+				e.preventDefault();
+				saveRef.current();
+			}
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	}, []);
 
 	return (
-		<SheetContent className="sm:data-[side=right]:w-[640px]">
+		<SheetContent className="gap-0 p-0 sm:data-[side=right]:w-[640px]">
 			<SheetHeader className="px-5 pt-5 pb-4">
 				<SheetTitle>Environment variables</SheetTitle>
 				<SheetDescription>
@@ -58,44 +87,13 @@ function EnvironmentSheetBody({
 				</SheetDescription>
 			</SheetHeader>
 
-			<div className="flex min-h-0 flex-1 flex-col gap-2.5 px-5 pt-4 pb-5">
-				<div className="flex items-center justify-between gap-3">
-					<div className="flex min-w-0 items-center gap-2">
-						<span className="truncate font-mono text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-							{envFileName(app)}
-						</span>
-						{isModified && (
-							<span className="shrink-0 rounded-md bg-foreground/[0.05] px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-								Unsaved changes
-							</span>
-						)}
-					</div>
-
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => setShowSecrets(!showSecrets)}
-						className="h-7 shrink-0 gap-1.5 rounded-lg text-xs">
-						{showSecrets ? (
-							<EyeOff className="size-3.5" />
-						) : (
-							<Eye className="size-3.5" />
-						)}
-						{showSecrets ? 'Hide values' : 'Show values'}
-					</Button>
-				</div>
-
-				{/* Editor fills the panel — no fixed height slab */}
-				<div
-					ref={containerRef}
-					className="min-h-[280px] flex-1 overflow-hidden rounded-xl border border-border bg-zinc-950"
+			<div className="flex min-h-0 flex-1 flex-col px-5 pt-4 pb-5">
+				<EnvRowsCard
+					rows={rows}
+					onRowsChange={setRows}
+					fileName={envFileName(app)}
+					isModified={isModified}
 				/>
-
-				<p className="text-[11px] leading-normal text-muted-foreground">
-					{showSecrets
-						? 'Values are stored encrypted on the panel.'
-						: 'Values are masked to read-only. Show them to keep editing.'}
-				</p>
 			</div>
 
 			<SheetFooter className="px-5 py-4">
@@ -106,8 +104,7 @@ function EnvironmentSheetBody({
 				)}
 				<Button
 					onClick={() => void handleSave()}
-					disabled={saving || !showSecrets}
-					title={!showSecrets ? 'Show values to edit and save' : undefined}
+					disabled={saving || !isModified}
 					className="h-8 px-4 text-xs">
 					{saving ? 'Saving…' : 'Save'}
 				</Button>

@@ -19,9 +19,9 @@ export function RequestsActivatePanel({
 					Requests are not activated
 				</h3>
 				<p className="max-w-md text-xs leading-relaxed text-muted-foreground">
-					Activate requests to see incoming traffic statistics and monitor your
-					application's usage. After activation, reload Traefik for changes to
-					take effect.
+					Activate requests to see incoming traffic statistics and monitor
+					your application's usage. After activation, reload Traefik for
+					changes to take effect.
 				</p>
 			</div>
 			<Button

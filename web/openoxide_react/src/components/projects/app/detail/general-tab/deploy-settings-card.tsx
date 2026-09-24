@@ -44,8 +44,7 @@ export function DeploySettingsCard({
 	);
 	const [activeLoading, setActiveLoading] = useState<string | null>(null);
 
-	// Autodeploy + clean-cache ride the dedicated UpdateBuildConfig RPC —
-	// they were local-only state, so toggles silently reset on refetch.
+	// Autodeploy + clean-cache ride the dedicated UpdateBuildConfig RPC — they were local-only state, so toggles silently reset on refetch.
 	const patchBuildConfig = useApplicationUpdateBuildConfig();
 	const persistFlag = async (
 		flag: 'auto_deploy' | 'clean_cache',
@@ -62,8 +61,7 @@ export function DeploySettingsCard({
 		}
 	};
 
-	// Live deployments query filtered to this app; the table-watch stream
-	// (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
+	// Live deployments query filtered to this app; the table-watch stream (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
 	const {data: storeDeployments = []} = useDeploymentItems();
 	const hasActiveDeployment = useMemo(
 		() =>
@@ -86,8 +84,7 @@ export function DeploySettingsCard({
 		'active',
 		'ok',
 	].includes(status);
-	// Autodeploy is a webhook-driven service_git flag; it is meaningless
-	// for Docker/Drop sources (they have no repository to push to).
+	// Autodeploy is a webhook-driven service_git flag; it is meaningless for Docker/Drop sources (they have no repository to push to).
 	const isGitSource = !['DOCKER', 'DROP', 'NONE', ''].includes(
 		(app?.source_type || '').toUpperCase(),
 	);
@@ -128,29 +125,29 @@ export function DeploySettingsCard({
 				{!embedded && (
 					<div className="flex flex-wrap items-center gap-2">
 						<PrimaryActionButtons
-						isBuilding={isBuilding}
-						isProcessing={isProcessing}
-						activeLoading={activeLoading}
-						onExecute={executeAction}
-					/>
+							isBuilding={isBuilding}
+							isProcessing={isProcessing}
+							activeLoading={activeLoading}
+							onExecute={executeAction}
+						/>
 
-					<StatusActionButton
-						app={app}
-						isBuilding={isBuilding}
-						isRunning={isRunning}
-						activeLoading={activeLoading}
-						disabled={isProcessing}
-						onExecute={executeAction}
-					/>
+						<StatusActionButton
+							app={app}
+							isBuilding={isBuilding}
+							isRunning={isRunning}
+							activeLoading={activeLoading}
+							disabled={isProcessing}
+							onExecute={executeAction}
+						/>
 
-					{/* Terminal Access Button */}
-					<Button
-						onClick={() => setShowTerminal(true)}
-						disabled={isProcessing || !isRunning}
-						variant="outline"
-						size="sm"
-						className="flex h-9 items-center gap-1.5 rounded-lg  font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
-						<Terminal className="h-4 w-4 text-primary" /> Open Terminal
+						{/* Terminal Access Button */}
+						<Button
+							onClick={() => setShowTerminal(true)}
+							disabled={isProcessing || !isRunning}
+							variant="outline"
+							size="sm"
+							className="flex h-9 items-center gap-1.5 rounded-lg  font-semibold text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50">
+							<Terminal className="h-4 w-4 text-primary" /> Open Terminal
 						</Button>
 					</div>
 				)}

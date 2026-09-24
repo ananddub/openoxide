@@ -2,16 +2,131 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
 service RegistryService {
-  rpc ListRegistries(ResourceQuery) returns (ResourceListResponse);
-  rpc GetRegistry(ResourceRequest) returns (ResourceResponse);
-  rpc CreateRegistry(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateRegistry(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteRegistry(ResourceRequest) returns (Empty);
-  rpc TestRegistry(ResourceRequest) returns (OperationResult);
-  rpc ListRepositories(ResourceRequest) returns (ResourceListResponse);
-  rpc ListTags(ResourceRequest) returns (ResourceListResponse);
-  rpc RotateCredentials(ResourceRequest) returns (OperationResult);
-  rpc GetUsage(ResourceRequest) returns (ResourceResponse);
+  rpc ListRegistries(ListRegistriesRequest) returns (ListRegistriesResponse);
+  rpc GetRegistry(GetRegistryRequest) returns (GetRegistryResponse);
+  rpc CreateRegistry(CreateRegistryRequest) returns (CreateRegistryResponse);
+  rpc UpdateRegistry(UpdateRegistryRequest) returns (UpdateRegistryResponse);
+  rpc DeleteRegistry(DeleteRegistryRequest) returns (Empty);
+  rpc TestRegistry(TestRegistryRequest) returns (TestRegistryResponse);
+  rpc ListRepositories(ListRegistryRepositoriesRequest) returns (ListRegistryRepositoriesResponse);
+  rpc ListTags(ListRegistryTagsRequest) returns (ListRegistryTagsResponse);
+  rpc RotateCredentials(RotateRegistryCredentialsRequest) returns (RotateRegistryCredentialsResponse);
+  rpc GetUsage(GetRegistryUsageRequest) returns (GetRegistryUsageResponse);
+}
+
+message Registry {
+  int64 id = 1;
+  string registry_name = 2;
+  optional string image_prefix = 3;
+  string username = 4;
+  string password = 5;
+  string registry_url = 6;
+  // Free-form provider label (dockerhub, ghcr, custom, ...).
+  string registry_type = 7;
+  int64 created_at = 8;
+  int64 updated_at = 9;
+}
+
+message RegistryUsageReference {
+  string resource_id = 1;
+  string resource_name = 2;
+  string resource_type = 3;
+  string usage_kind = 4;
+}
+
+message ListRegistriesRequest {}
+
+message ListRegistriesResponse {
+  repeated Registry registries = 1;
+}
+
+message GetRegistryRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message GetRegistryResponse {
+  Registry registry = 1;
+}
+
+message CreateRegistryRequest {
+  string registry_name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional string image_prefix = 2;
+  string username = 3;
+  string password = 4;
+  string registry_url = 5 [(buf.validate.field).string.min_len = 1];
+  string registry_type = 6 [(buf.validate.field).string.min_len = 1];
+}
+
+message CreateRegistryResponse {
+  Registry registry = 1;
+}
+
+// An absent field keeps its stored value; `image_prefix` present-but-empty clears it.
+message UpdateRegistryRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string registry_name = 2 [(buf.validate.field).string.max_len = 255];
+  optional string image_prefix = 3;
+  optional string username = 4;
+  optional string password = 5;
+  optional string registry_url = 6;
+  optional string registry_type = 7;
+}
+
+message UpdateRegistryResponse {
+  Registry registry = 1;
+}
+
+message DeleteRegistryRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+// With `id` set, the saved registry's stored credentials are tested; otherwise the raw url/username/password are used (create dialog).
+message TestRegistryRequest {
+  optional int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string registry_url = 2;
+  string username = 3;
+  string password = 4;
+}
+
+message TestRegistryResponse {
+  bool success = 1;
+}
+
+message ListRegistryRepositoriesRequest {
+  int64 registry_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListRegistryRepositoriesResponse {
+  repeated string repositories = 1;
+}
+
+message ListRegistryTagsRequest {
+  int64 registry_id = 1 [(buf.validate.field).int64.gt = 0];
+  string repository = 2 [(buf.validate.field).string.min_len = 1];
+}
+
+message ListRegistryTagsResponse {
+  string repository = 1;
+  repeated string tags = 2;
+}
+
+message RotateRegistryCredentialsRequest {
+  int64 registry_id = 1 [(buf.validate.field).int64.gt = 0];
+  string username = 2 [(buf.validate.field).string.min_len = 1];
+  string password = 3 [(buf.validate.field).string.min_len = 1];
+}
+
+message RotateRegistryCredentialsResponse {
+  Registry registry = 1;
+}
+
+message GetRegistryUsageRequest {
+  int64 registry_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message GetRegistryUsageResponse {
+  repeated RegistryUsageReference usage = 1;
 }

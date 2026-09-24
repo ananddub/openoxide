@@ -136,7 +136,7 @@ export function TraefikFileTree({
 						type="submit"
 						size="sm"
 						className="h-7 px-2.5 text-xs font-semibold">
-						Add
+						Save
 					</Button>
 				</form>
 			)}

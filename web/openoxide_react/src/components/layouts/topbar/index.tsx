@@ -1,7 +1,7 @@
 import {Fragment, useMemo} from 'react';
 import {Link, useLocation, useNavigate} from '@tanstack/react-router';
 import {useSidebar, SidebarTrigger} from '#/components/ui/sidebar';
-import {useProjectsList} from '#/hooks/projects/use-projects-list';
+import {useProjectsList} from '#/hooks/projects/list/use-projects-list';
 import {SETTINGS_TABS} from '#/pages/settings/settings-tabs';
 import {SearchDialog} from './search-bus';
 import {TopBarScopeSwitcher} from './topbar-scope-switcher';
@@ -72,12 +72,7 @@ function CenterCrumbs({crumbs}: {crumbs: Crumb[]}) {
 	);
 }
 
-/**
- * Content column's top bar: the project scope switcher on the left, the
- * page's breadcrumb trail CENTERED (pages register it via topbar-slots;
- * plain route title as fallback), the product wordmark on the right.
- * Sits beside the rail (inside the content column), not above it.
- */
+/** Content column's top bar: the project scope switcher on the left, the page's breadcrumb trail CENTERED (pages register it via topbar-slots; plain route title as fallback), the product wordmark on the right. Sits beside the rail (inside the content column), not above it. */
 export function TopBar() {
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -108,8 +103,7 @@ export function TopBar() {
 			return SETTINGS_TABS.find(t => t.id === tab)?.label ?? 'Settings';
 		}
 		const base = '/' + (pathSegments[0] ?? '');
-		// Two-segment routes with their own title (e.g. /Deployments/queue)
-		// win before the project-name / last-segment fallbacks.
+		// Two-segment routes with their own title (e.g. /Deployments/queue) win before the project-name / last-segment fallbacks.
 		const deepKey = '/' + pathSegments.slice(0, 2).join('/');
 		if (pathSegments.length === 2 && ROUTE_TITLES[deepKey]) {
 			return ROUTE_TITLES[deepKey];

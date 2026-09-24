@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/database_network.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {DatabaseNetworkService} from './database_network_pb';
+import { DatabaseNetworkService } from "./database_network_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListNetworks
@@ -12,8 +12,7 @@ export const listNetworks = DatabaseNetworkService.method.listNetworks;
 /**
  * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListServerNetworks
  */
-export const listServerNetworks =
-	DatabaseNetworkService.method.listServerNetworks;
+export const listServerNetworks = DatabaseNetworkService.method.listServerNetworks;
 
 /**
  * @generated from rpc openoxide.api.v1.DatabaseNetworkService.GetNetwork
@@ -38,5 +37,4 @@ export const deleteNetwork = DatabaseNetworkService.method.deleteNetwork;
 /**
  * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListDependencies
  */
-export const listDependencies =
-	DatabaseNetworkService.method.listDependencies;
+export const listDependencies = DatabaseNetworkService.method.listDependencies;

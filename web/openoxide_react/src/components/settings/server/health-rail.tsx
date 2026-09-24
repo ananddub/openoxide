@@ -3,7 +3,7 @@ import {Activity, HardDrive, Server, Sparkles} from 'lucide-react';
 import {Skeleton} from '#/components/ui/skeleton';
 import {useSystemHealth} from '#/api/live';
 import {useTraefikHealth} from '#/api/live/traefik';
-import {usePermissions} from '#/hooks/use-permissions';
+import {usePermissions} from '#/hooks/permissions/use-permissions';
 import {ResourceGuideCard} from '#/components/shared/resource-sidebar';
 
 function HealthRow(props: {
@@ -64,7 +64,7 @@ export function HealthRail() {
 
 	return (
 		<div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
-			<div className="overflow-hidden rounded-xl bg-card ring-1 ring-border/50">
+			<div className="overflow-hidden rounded-xl border border-border bg-card">
 				<div className="flex items-center gap-3 border-b border-border/50 px-5 py-4">
 					<div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
 						<Activity className="size-[18px] text-muted-foreground" />

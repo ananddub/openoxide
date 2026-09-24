@@ -3,7 +3,7 @@ import {cn} from '#/api/utils';
 import {
 	useContainerMonitoring,
 	type MonitoringEntityType,
-} from '#/hooks/use-container-monitoring';
+} from '#/hooks/monitoring/use-container-monitoring';
 
 function toneFor(percent: number) {
 	if (percent >= 85) return 'text-rose-500';
@@ -74,10 +74,7 @@ interface UsageRingsProps {
 	entityType: MonitoringEntityType;
 }
 
-/**
- * Live docker-stats gauges for the architecture card: one-shot snapshot
- * (CPU / memory / disk rings + net I/O) laid out as an aligned 2×2 block.
- */
+/** Live docker-stats gauges for the architecture card: one-shot snapshot (CPU / memory / disk rings + net I/O) laid out as an aligned 2×2 block. */
 export function UsageRingsStrip({id, entityType}: UsageRingsProps) {
 	const {metrics, hasError} = useContainerMonitoring(
 		id,
@@ -110,11 +107,7 @@ export function UsageRingsStrip({id, entityType}: UsageRingsProps) {
 				<UsageRing
 					label="Memory"
 					percent={metrics?.memPercent ?? 0}
-					sub={
-						metrics
-							? `${metrics.memUsage} / ${metrics.memLimit}`
-							: '—'
-					}
+					sub={metrics ? `${metrics.memUsage} / ${metrics.memLimit}` : '—'}
 					ready={!!metrics}
 				/>
 				<UsageRing

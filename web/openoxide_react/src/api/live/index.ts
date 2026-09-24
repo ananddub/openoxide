@@ -1,5 +1,4 @@
-// Live-data hooks over ConnectRPC queries (list/get/mutation), one module
-// per backend service.
+// Live-data hooks over ConnectRPC queries (list/get/mutation), one module per backend service.
 export * from './query';
 export * from './projects';
 export * from './ai';
@@ -20,7 +19,6 @@ export * from './organization';
 export * from './overview';
 export * from './permissions';
 export * from './registry';
-export * from './resource';
 export * from './schedules';
 export * from './servers';
 export * from './settings';
@@ -28,6 +26,7 @@ export * from './ssh_keys';
 export * from './system';
 export * from './swarm';
 export * from './tags';
+export * from './templates';
 export * from './traefik';
 export * from './vault';
 export * from './git_providers';

@@ -2,11 +2,7 @@ import {cn} from '#/api/utils';
 import {describeCron} from '#/utils/cron';
 import {IconTooltip} from '#/components/shared/icon-tooltip';
 
-/**
- * When a job actually runs, said out loud — "Every day at 02:00" rather than
- * `0 2 * * *`. The raw expression stays available on hover, and an unusual
- * shape that cannot be read out is shown as-is.
- */
+/** When a job actually runs, said out loud — "Every day at 02:00" rather than `0 2 * * *`. The raw expression stays available on hover, and an unusual shape that cannot be read out is shown as-is. */
 export function CronChip({
 	expression,
 	className,

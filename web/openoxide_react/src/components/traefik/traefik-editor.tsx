@@ -2,7 +2,7 @@ import {useState, useEffect} from 'react';
 import Editor from '@monaco-editor/react';
 import {Lock, LockOpen, FileCode, Sparkles} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {useTheme} from '#/hooks/use-theme';
+import {useTheme} from '#/hooks/ui/use-theme';
 
 interface TraefikEditorProps {
 	selectedFilePath: string | null;
@@ -48,7 +48,7 @@ export function TraefikEditor({
 	const fullPathDisplay = `/etc/openoxide/traefik/${selectedFilePath}`;
 
 	return (
-		<div className="flex h-full min-h-[450px] flex-1 flex-col overflow-hidden bg-[#1e1e1e]">
+		<div className="flex h-full min-h-[450px] flex-1 flex-col overflow-hidden bg-background">
 			{/* Clean Toolbar Header */}
 			<div className="flex shrink-0 items-center justify-between border-b  bg-muted/20 px-3.5 py-2">
 				<div className="flex items-center gap-2.5 truncate">

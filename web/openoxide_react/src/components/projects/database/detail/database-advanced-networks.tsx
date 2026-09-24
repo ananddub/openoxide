@@ -102,7 +102,9 @@ export function DatabaseAdvancedNetworks({database, onUpdated}: any) {
 				title="Attached networks"
 				description="Overlay networks this database joins.">
 				{available.length === 0 ? (
-					<SheetNote>No database networks are available for this server.</SheetNote>
+					<SheetNote>
+						No database networks are available for this server.
+					</SheetNote>
 				) : (
 					<div className="flex flex-col gap-2.5">
 						{available.map(network => {

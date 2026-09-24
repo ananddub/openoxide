@@ -32,15 +32,9 @@ export type {DnsProviderItem};
 
 const VIEW_STORAGE_KEY = 'dns-providers-view';
 
-/**
- * DNS providers — the SSH Keys / Projects grammar: a section title with the
- * primary action, then a toolbar (search + provider filter + grid/list
- * toggle) and grid cards or one bordered list card below; create/edit opens
- * a Geist sheet, delete a quiet AlertDialog.
- */
+/** DNS providers — the SSH Keys / Projects grammar: a section title with the primary action, then a toolbar (search + provider filter + grid/list toggle) and grid cards or one bordered list card below; create/edit opens a Geist sheet, delete a quiet AlertDialog. */
 export function DnsProvidersPage() {
-	// Live DNS providers query; the table-watch stream (dns_providers
-	// table) invalidates it while mounted, so no zustand slice involved.
+	// Live DNS providers query; the table-watch stream (dns_providers table) invalidates it while mounted, so no zustand slice involved.
 	const providersQuery = useDnsList();
 	const providers = (providersQuery.data ?? []) as DnsProviderItem[];
 	const deleteMutation = useDnsProviderDelete();

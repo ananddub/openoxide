@@ -14,8 +14,7 @@ function BlueprintPage() {
 	const projectId = Number(id);
 	const [selectedEnvId, setSelectedEnvId] = useState<number | undefined>();
 
-	// Live query keyed ['projects','get',id] — table-watch refetches
-	// while this page is mounted.
+	// Live query keyed ['projects','get',id] — table-watch refetches while this page is mounted.
 	const {data: project} = useProjectGet(BigInt(projectId));
 	const {data: rawEnvs} = useEnvironmentListByProject(BigInt(projectId));
 	const envs = rawEnvs ?? [];

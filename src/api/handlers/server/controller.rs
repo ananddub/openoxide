@@ -4,15 +4,18 @@ use auto_di::resolve;
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
-    ServerControllerService, ServerControllerServiceExt, StreamQuery,
+    Empty, ServerControllerAuditRequest, ServerControllerAuditResponse,
+    ServerControllerDeleteSessionRequest, ServerControllerListSessionsRequest,
+    ServerControllerListSessionsResponse, ServerControllerService, ServerControllerServiceExt,
+    ServerControllerSetupRequest, ServerControllerSetupResponse,
+    ServerControllerStreamSetupLogsRequest, ServerControllerStreamSetupLogsResponse,
+    ServerControllerTestConnectionRequest, ServerControllerTestConnectionResponse,
+    ServerControllerTestDirectConnectionRequest, ServerControllerTestDirectConnectionResponse,
 };
 use crate::core::config::Config;
 use crate::services::infrastructure::server::RemoteServerStatus;
-use crate::utils::{
-    exec::{RemoteExecutor, SshAuth, SshHostKey},
-    setup::{ServerSetup, SetupConfig},
-};
+use crate::utils::exec::{RemoteExecutor, SshAuth, SshHostKey};
+use crate::utils::setup::{ServerSetup, SetupConfig};
 
 use super::helper::*;
 use super::init::ServerController;
@@ -23,36 +26,31 @@ impl ServerControllerService for ServerController {
     async fn test_direct_connection<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let body: TestDirectConnectionDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-
-        let port = body.port.unwrap_or(22);
-        let auth = if let Some(key_id) = body.ssh_key_id {
-            let key = match self.queries.ssh_keys_get_by_id(key_id).await {
-                Ok(key) => key,
-                Err(sqlx::Error::RowNotFound) => {
-                    return Err(ConnectError::not_found("SSH Key not found"));
-                }
-                Err(error) => return Err(map_db_error(error)),
-            };
-            if key.private_key.trim().is_empty() {
-                return Err(ConnectError::invalid_argument(
-                    "Selected SSH Key has no private key",
-                ));
+        request: ServiceRequest<'_, ServerControllerTestDirectConnectionRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ServerControllerTestDirectConnectionResponse> + Send + use<'a>,
+    > {
+        let port = u16::try_from(request.port.unwrap_or(22))
+            .map_err(|_| ConnectError::invalid_argument("SSH port must be between 0 and 65535"))?;
+        let key_id = request.ssh_key_id;
+        let key = match self.queries.ssh_keys_get_by_id(key_id).await {
+            Ok(key) => key,
+            Err(sqlx::Error::RowNotFound) => {
+                return Err(ConnectError::not_found("SSH Key not found"));
             }
-            SshAuth::key_pair(key.private_key, key.public_key)
-        } else {
-            return Err(ConnectError::invalid_argument(
-                "SSH Key ID is required to test connection",
-            ));
+            Err(error) => return Err(map_db_error(error)),
         };
+        if key.private_key.trim().is_empty() {
+            return Err(ConnectError::invalid_argument(
+                "Selected SSH Key has no private key",
+            ));
+        }
+        let auth = SshAuth::key_pair(key.private_key, key.public_key);
 
         let executor = RemoteExecutor::new(
-            body.ip_address,
+            request.ip_address.to_owned(),
             port,
-            body.username,
+            request.username.to_owned(),
             auth,
             SshHostKey::InsecureAcceptAny,
         )
@@ -62,19 +60,8 @@ impl ServerControllerService for ServerController {
             .await
             .map_err(map_exec_error)?;
 
-        let payload = serde_json::to_string(&ServerConnectionResponseDto {
-            connected: true,
-            reused_sessions: 0,
-            max_pool_size: 0,
-            connections: 0,
-            active_channels: 0,
-            max_channels_per_session: 0,
-        })
-        .unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "test_direct_connection".into(),
-            payload: Some(payload),
+        Response::ok(ServerControllerTestDirectConnectionResponse {
+            connection: ::buffa::MessageField::some(placeholder_connection_info()),
             ..Default::default()
         })
     }
@@ -83,18 +70,19 @@ impl ServerControllerService for ServerController {
     async fn test_connection<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let body: ServerConnectionDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ServerControllerTestConnectionRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ServerControllerTestConnectionResponse> + Send + use<'a>,
+    > {
         let id = request.id;
+        let host_key = request.host_key_fingerprint.map(str::to_owned);
 
         let executor = self
             .executor(
                 id,
-                &body.host_key_fingerprint,
-                body.sudo_password.as_deref(),
-                body.pool_size,
+                &host_key,
+                request.sudo_password,
+                request.pool_size.map(|size| size as usize),
                 false,
             )
             .await?;
@@ -108,19 +96,8 @@ impl ServerControllerService for ServerController {
             .map_err(map_db_error)?;
         trigger_monitoring_refresh(id);
 
-        let payload = serde_json::to_string(&ServerConnectionResponseDto {
-            connected: true,
-            reused_sessions: 0,
-            max_pool_size: 0,
-            connections: 0,
-            active_channels: 0,
-            max_channels_per_session: 0,
-        })
-        .unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "test_connection".into(),
-            payload: Some(payload),
+        Response::ok(ServerControllerTestConnectionResponse {
+            connection: ::buffa::MessageField::some(placeholder_connection_info()),
             ..Default::default()
         })
     }
@@ -129,18 +106,18 @@ impl ServerControllerService for ServerController {
     async fn audit<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let body: ServerConnectionDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ServerControllerAuditRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ServerControllerAuditResponse> + Send + use<'a>>
+    {
         let id = request.id;
+        let host_key = request.host_key_fingerprint.map(str::to_owned);
 
         let executor = self
             .executor(
                 id,
-                &body.host_key_fingerprint,
-                body.sudo_password.as_deref(),
-                body.pool_size,
+                &host_key,
+                request.sudo_password,
+                request.pool_size.map(|size| size as usize),
                 false,
             )
             .await?;
@@ -155,12 +132,8 @@ impl ServerControllerService for ServerController {
             .map_err(map_db_error)?;
         trigger_monitoring_refresh(id);
 
-        let payload =
-            serde_json::to_string(&ServerAuditDto::from(audit)).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "audit".into(),
-            payload: Some(payload),
+        Response::ok(ServerControllerAuditResponse {
+            audit: ::buffa::MessageField::some(audit_to_proto(audit)),
             ..Default::default()
         })
     }
@@ -169,18 +142,18 @@ impl ServerControllerService for ServerController {
     async fn setup<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let body: SetupServerDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ServerControllerSetupRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ServerControllerSetupResponse> + Send + use<'a>>
+    {
         let id = request.id;
+        let host_key = request.host_key_fingerprint.map(str::to_owned);
 
         let executor = self
             .executor(
                 id,
-                &body.host_key_fingerprint,
-                body.sudo_password.as_deref(),
-                body.pool_size,
+                &host_key,
+                request.sudo_password,
+                request.pool_size.map(|size| size as usize),
                 true,
             )
             .await?;
@@ -205,14 +178,14 @@ impl ServerControllerService for ServerController {
         config.agent_token = Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
         config.advertise_addr = self
             .service
-            .setup_advertise_addr(id, body.advertise_addr)
+            .setup_advertise_addr(id, request.advertise_addr.map(str::to_owned))
             .await
             .map_err(map_db_error)?;
-        if let Some(email) = body.acme_email {
-            config.acme_email = email;
+        if let Some(email) = request.acme_email {
+            config.acme_email = email.to_owned();
         }
         let outcome = ServerSetup::new_remote(executor, config)
-            .setup_all_oneshot(body.install_dependencies)
+            .setup_all_oneshot(request.install_dependencies)
             .await
             .map_err(map_exec_error)?;
         self.service
@@ -224,12 +197,8 @@ impl ServerControllerService for ServerController {
             .await
             .map_err(map_db_error)?;
 
-        let payload =
-            serde_json::to_string(&SetupOutcomeDto::from(outcome)).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "setup".into(),
-            payload: Some(payload),
+        Response::ok(ServerControllerSetupResponse {
+            outcome: ::buffa::MessageField::some(outcome_to_proto(outcome)),
             ..Default::default()
         })
     }
@@ -238,22 +207,24 @@ impl ServerControllerService for ServerController {
     async fn stream_setup_logs(
         &self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, StreamQuery>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<ResourceResponse> + Send + use<>>> {
+        request: ServiceRequest<'_, ServerControllerStreamSetupLogsRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<
+            impl connectrpc::Encodable<ServerControllerStreamSetupLogsResponse> + Send + use<>,
+        >,
+    > {
         // Run the setup to completion and emit a single completion event,
         // then close the stream. True incremental log streaming can be
         // layered on later without changing the proto contract.
         let id = request.id;
-
-        let body: SetupServerDto = serde_json::from_str(request.filter.as_deref().unwrap_or_default())
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let host_key = request.host_key_fingerprint.map(str::to_owned);
 
         let executor = self
             .executor(
                 id,
-                &body.host_key_fingerprint,
-                body.sudo_password.as_deref(),
-                body.pool_size,
+                &host_key,
+                request.sudo_password,
+                request.pool_size.map(|size| size as usize),
                 true,
             )
             .await?;
@@ -278,14 +249,14 @@ impl ServerControllerService for ServerController {
         config.agent_token = Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
         config.advertise_addr = self
             .service
-            .setup_advertise_addr(id, body.advertise_addr)
+            .setup_advertise_addr(id, request.advertise_addr.map(str::to_owned))
             .await
             .map_err(map_db_error)?;
-        if let Some(email) = body.acme_email {
-            config.acme_email = email;
+        if let Some(email) = request.acme_email {
+            config.acme_email = email.to_owned();
         }
 
-        let install_dependencies = body.install_dependencies;
+        let install_dependencies = request.install_dependencies;
         let service = Arc::clone(&self.service);
         let result = ServerSetup::new_remote(executor, config)
             .setup_all_oneshot(install_dependencies)
@@ -299,12 +270,9 @@ impl ServerControllerService for ServerController {
                 if let Err(error) = service.touch_test_connection(id).await {
                     tracing::warn!(server_id = id, %error, "failed to update connection timestamp after streamed setup");
                 }
-                let payload =
-                    serde_json::to_string(&SetupOutcomeDto::from(outcome)).unwrap_or_default();
-                let item = ResourceResponse {
-                    id,
-                    kind: "setup_logs_complete".into(),
-                    payload,
+                let item = ServerControllerStreamSetupLogsResponse {
+                    server_id: id,
+                    outcome: ::buffa::MessageField::some(outcome_to_proto(outcome)),
                     ..Default::default()
                 };
                 Response::stream_ok(futures::stream::once(async move { Ok(item) }))
@@ -320,27 +288,14 @@ impl ServerControllerService for ServerController {
     async fn list_sessions<'a>(
         &'a self,
         ctx: RequestContext,
-        _query: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        _query: ServiceRequest<'_, ServerControllerListSessionsRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ServerControllerListSessionsResponse> + Send + use<'a>,
+    > {
         // The original handler was a live-query placeholder that always
         // returned a connected response. Preserve that behaviour.
-        let payload = serde_json::to_string(&ServerConnectionResponseDto {
-            connected: true,
-            reused_sessions: 0,
-            max_pool_size: 0,
-            connections: 0,
-            active_channels: 0,
-            max_channels_per_session: 0,
-        })
-        .unwrap_or_default();
-        let item = ResourceResponse {
-            id: 0,
-            kind: "server_sessions".into(),
-            payload,
-            ..Default::default()
-        };
-        Response::ok(ResourceListResponse {
-            items: vec![item],
+        Response::ok(ServerControllerListSessionsResponse {
+            sessions: vec![placeholder_connection_info()],
             ..Default::default()
         })
     }
@@ -349,10 +304,9 @@ impl ServerControllerService for ServerController {
     async fn delete_session<'a>(
         &'a self,
         ctx: RequestContext,
-        _request: ServiceRequest<'_, ResourceRequest>,
+        _request: ServiceRequest<'_, ServerControllerDeleteSessionRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         // Original handler returned NO_CONTENT — in ConnectRPC we return Empty.
         Response::ok(Empty::default())
     }
 }
-

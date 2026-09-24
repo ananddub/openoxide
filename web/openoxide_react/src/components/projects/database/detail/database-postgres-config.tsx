@@ -37,9 +37,7 @@ export function DatabasePostgresConfig({database, onUpdated}: any) {
 	const [password, setPassword] = useState('');
 	const [saving, setSaving] = useState(false);
 
-	// The proto carries one JSON blob, so the backend folds the replica
-	// connection fields into the settings map on GET. Lift them back out for
-	// the form and show only the real postgresql.conf tunables in the box.
+	// The proto carries one JSON blob, so the backend folds the replica connection fields into the settings map on GET. Lift them back out for the form and show only the real postgresql.conf tunables in the box.
 	const REPLICA_KEYS = [
 		'primary_host',
 		'primary_port',
@@ -78,8 +76,7 @@ export function DatabasePostgresConfig({database, onUpdated}: any) {
 
 		setSaving(true);
 		try {
-			// Replica fields ride inside the settings map; the backend lifts
-			// them into the DTO and keeps them for the next GET round-trip.
+			// Replica fields ride inside the settings map; the backend lifts them into the DTO and keeps them for the next GET round-trip.
 			if (role === 'REPLICA') {
 				parsed.primary_host = host.trim();
 				parsed.primary_port = String(port || 5432);

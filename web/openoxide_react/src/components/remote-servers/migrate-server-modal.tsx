@@ -13,7 +13,6 @@ import {
 	useRemoteServerMigrateDependencies,
 	useRemoteServerMigration,
 	useRemoteServerRollbackMigration,
-	type ServerMigrationPayload,
 } from '#/api/live';
 
 import type {RemoteServerResponse} from '#/types/api-helpers';
@@ -64,8 +63,7 @@ export function MigrateServerModal({
 	};
 
 	const handleClose = () => {
-		// Allow closing anytime; the migration keeps running server-side and
-		// can be resumed/rolled back from the row's live status later.
+		// Allow closing anytime; the migration keeps running server-side and can be resumed/rolled back from the row's live status later.
 		reset();
 		onClose();
 	};
@@ -74,14 +72,11 @@ export function MigrateServerModal({
 		if (!server?.id || !targetId) return;
 		setStarting(true);
 		try {
-			const result = await migrateMutation.mutateAsync({
+			const dto = await migrateMutation.mutateAsync({
 				id: server.id,
 				target_server_id: BigInt(targetId),
 			});
-			const dto = JSON.parse(
-				result.payload || '{}',
-			) as ServerMigrationPayload;
-			if (!dto.migration_id) {
+			if (!dto?.migration_id) {
 				throw new Error('migration did not return an id');
 			}
 			setMigrationId(dto.migration_id);

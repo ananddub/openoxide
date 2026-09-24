@@ -13,10 +13,7 @@ export interface SwarmOverview {
 	activeServerId: number | undefined;
 }
 
-// Backend SSH connect timeout is 15s per server — fine for one server, but
-// "All Clusters" awaits every server together, so one unreachable box (bad
-// key, dead host) drags the whole page down to its worst case. Bound each
-// server's contribution so a single broken one can't block the rest.
+// Backend SSH connect timeout is 15s per server — fine for one server, but "All Clusters" awaits every server together, so one unreachable box (bad key, dead host) drags the whole page down to its worst case. Bound each server's contribution so a single broken one can't block the rest.
 export const PER_SERVER_TIMEOUT_MS = 4000;
 
 export function withTimeout<T>(
@@ -51,15 +48,12 @@ export async function fetchServerSwarm(
 		) {
 			return {info: null, nodes: []};
 		}
-		// Worker nodes are "active" too but Docker refuses `node ls`/`join-token`
-		// on them (managers-only commands) — asking would just log a failed
-		// SSH round trip for nothing.
+		// Worker nodes are "active" too but Docker refuses `node ls`/`join-token` on them (managers-only commands) — asking would just log a failed SSH round trip for nothing.
 		if (!info.control_available) {
 			return {info, nodes: []};
 		}
 		const rawNodes = await swarmNodes(serverId ?? null);
-		// The Connect payload carries the same NodeDto fields as the
-		// generated type; the cast bridges the two type sources.
+		// The Connect payload carries the same NodeDto fields as the generated type; the cast bridges the two type sources.
 		const nodes = (rawNodes || []).map(n => ({
 			...n,
 			_serverId: serverId,
@@ -88,9 +82,7 @@ export async function fetchAllClustersSwarm(
 			}),
 		),
 	);
-	// Prefer an actual manager as the cluster reference — only managers
-	// can issue join tokens or list nodes, so picking a worker here would
-	// make every later action fail the same way `/swarm/nodes` just did.
+	// Prefer an actual manager as the cluster reference — only managers can issue join tokens or list nodes, so picking a worker here would make every later action fail the same way `/swarm/nodes` just did.
 	const managerIdx = results.findIndex(r => r.info?.control_available);
 	const activeIdx =
 		managerIdx >= 0 ? managerIdx : results.findIndex(r => r.info !== null);

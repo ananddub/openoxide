@@ -21,10 +21,7 @@ export interface DnsFormValues {
 	token: string;
 }
 
-/**
- * Create/update and connection-test actions for the DNS provider form.
- * Reads current values lazily so the dialog only owns form state.
- */
+/** Create/update and connection-test actions for the DNS provider form. Reads current values lazily so the dialog only owns form state. */
 export function useDnsProviderFormActions(getValues: () => DnsFormValues) {
 	const {activeOrg} = useOrganizations();
 	const createMutation = useDnsProviderCreate();

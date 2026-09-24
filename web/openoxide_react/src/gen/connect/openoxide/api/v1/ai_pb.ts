@@ -2,148 +2,1183 @@
 // @generated from file openoxide/api/v1/ai.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	EmptySchema,
-	OperationResultSchema,
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceRequestSchema,
-	ResourceResponseSchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/ai.proto.
  */
-export const file_openoxide_api_v1_ai: GenFile /*@__PURE__*/ = fileDesc(
-	'ChlvcGVub3hpZGUvYXBpL3YxL2FpLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxMrcKCglBaVNlcnZpY2USVwoMTGlzdFNldHRpbmdzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJUCgtHZXRTZXR0aW5ncxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElcKDkNyZWF0ZVNldHRpbmdzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVwoOVXBkYXRlU2V0dGluZ3MSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJMCg5EZWxldGVTZXR0aW5ncxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJXCgpMaXN0TW9kZWxzEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElQKDFRlc3RTZXR0aW5ncxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSWwoORGlzY292ZXJNb2RlbHMSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVgoOVGVzdENvbm5lY3Rpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0EloKD0xpc3RHZW5lcmF0aW9ucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USVgoNR2V0R2VuZXJhdGlvbhIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElkKEENyZWF0ZUdlbmVyYXRpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJYChBSZXZpZXdHZW5lcmF0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJYChBEZXBsb3lHZW5lcmF0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJUCgtBbmFseXplTG9ncxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlYgZwcm90bzM',
-	[file_openoxide_api_v1_common],
-);
+export const file_openoxide_api_v1_ai: GenFile = /*@__PURE__*/
+  fileDesc("ChlvcGVub3hpZGUvYXBpL3YxL2FpLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIt8BCglBaVNldHRpbmcSCgoCaWQYASABKAMSDAoEbmFtZRgCIAEoCRIPCgdhcGlfdXJsGAMgASgJEg0KBW1vZGVsGAQgASgJEhIKCmlzX2VuYWJsZWQYBSABKAgSLgoIcHJvdmlkZXIYBiABKA4yHC5vcGVub3hpZGUuYXBpLnYxLkFpUHJvdmlkZXISEwoLaGFzX2FwaV9rZXkYByABKAgSFwoPb3JnYW5pemF0aW9uX2lkGAggASgDEhIKCmNyZWF0ZWRfYXQYCSABKAMSEgoKdXBkYXRlZF9hdBgKIAEoAyI0ChVBaUVudmlyb25tZW50VmFyaWFibGUSDAoEbmFtZRgBIAEoCRINCgV2YWx1ZRgCIAEoCSI8CghBaURvbWFpbhIMCgRob3N0GAEgASgJEgwKBHBvcnQYAiABKAMSFAoMc2VydmljZV9uYW1lGAMgASgJIjUKD0FpR2VuZXJhdGVkRmlsZRIRCglmaWxlX3BhdGgYASABKAkSDwoHY29udGVudBgCIAEoCSKdAgoTQWlDb21wb3NlU3VnZ2VzdGlvbhIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhkKEXNob3J0X2Rlc2NyaXB0aW9uGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEhYKDmRvY2tlcl9jb21wb3NlGAUgASgJEj4KDWVudl92YXJpYWJsZXMYBiADKAsyJy5vcGVub3hpZGUuYXBpLnYxLkFpRW52aXJvbm1lbnRWYXJpYWJsZRIrCgdkb21haW5zGAcgAygLMhoub3Blbm94aWRlLmFwaS52MS5BaURvbWFpbhI3Cgxjb25maWdfZmlsZXMYCCADKAsyIS5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGVkRmlsZSJQChJBaUdlbmVyYXRpb25PdXRwdXQSOgoLc3VnZ2VzdGlvbnMYASADKAsyJS5vcGVub3hpZGUuYXBpLnYxLkFpQ29tcG9zZVN1Z2dlc3Rpb24ihAIKDEFpR2VuZXJhdGlvbhIKCgJpZBgBIAEoAxIVCg1haV9zZXR0aW5nX2lkGAIgASgDEhcKD29yZ2FuaXphdGlvbl9pZBgDIAEoAxISCgpjcmVhdGVkX2J5GAQgASgDEg4KBnByb21wdBgFIAEoCRI0CgZvdXRwdXQYBiABKAsyJC5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbk91dHB1dBIOCgZzdGF0dXMYByABKAkSFwoKY29tcG9zZV9pZBgIIAEoA0gAiAEBEhIKCmNyZWF0ZWRfYXQYCSABKAMSEgoKdXBkYXRlZF9hdBgKIAEoA0INCgtfY29tcG9zZV9pZCJSChVBaUxpc3RTZXR0aW5nc1JlcXVlc3QSJQoPb3JnYW5pemF0aW9uX2lkGAEgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCJHChZBaUxpc3RTZXR0aW5nc1Jlc3BvbnNlEi0KCHNldHRpbmdzGAEgAygLMhsub3Blbm94aWRlLmFwaS52MS5BaVNldHRpbmciZgoUQWlHZXRTZXR0aW5nc1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASJQoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCJFChVBaUdldFNldHRpbmdzUmVzcG9uc2USLAoHc2V0dGluZxgBIAEoCzIbLm9wZW5veGlkZS5hcGkudjEuQWlTZXR0aW5nIscBChdBaUNyZWF0ZVNldHRpbmdzUmVxdWVzdBIXCgRuYW1lGAEgASgJQgm6SAZyBBABGGQSGAoHYXBpX3VybBgCIAEoCUIHukgEcgIQARIPCgdhcGlfa2V5GAMgASgJEhkKBW1vZGVsGAQgASgJQgq6SAdyBRABGMgBEhIKCmlzX2VuYWJsZWQYBSABKAgSJQoPb3JnYW5pemF0aW9uX2lkGAYgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCJIChhBaUNyZWF0ZVNldHRpbmdzUmVzcG9uc2USLAoHc2V0dGluZxgBIAEoCzIbLm9wZW5veGlkZS5hcGkudjEuQWlTZXR0aW5nIqICChdBaVVwZGF0ZVNldHRpbmdzUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIaCgRuYW1lGAIgASgJQge6SARyAhhkSACIAQESFAoHYXBpX3VybBgDIAEoCUgBiAEBEhQKB2FwaV9rZXkYBCABKAlIAogBARIcCgVtb2RlbBgFIAEoCUIIukgFcgMYyAFIA4gBARIXCgppc19lbmFibGVkGAYgASgISASIAQESJQoPb3JnYW5pemF0aW9uX2lkGAcgASgDQge6SAQiAiAASAWIAQFCBwoFX25hbWVCCgoIX2FwaV91cmxCCgoIX2FwaV9rZXlCCAoGX21vZGVsQg0KC19pc19lbmFibGVkQhIKEF9vcmdhbml6YXRpb25faWQiSAoYQWlVcGRhdGVTZXR0aW5nc1Jlc3BvbnNlEiwKB3NldHRpbmcYASABKAsyGy5vcGVub3hpZGUuYXBpLnYxLkFpU2V0dGluZyJpChdBaURlbGV0ZVNldHRpbmdzUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIlCg9vcmdhbml6YXRpb25faWQYAiABKANCB7pIBCICIABIAIgBAUISChBfb3JnYW5pemF0aW9uX2lkIm0KE0FpTGlzdE1vZGVsc1JlcXVlc3QSGwoKc2V0dGluZ19pZBgBIAEoA0IHukgEIgIgABIlCg9vcmdhbml6YXRpb25faWQYAiABKANCB7pIBCICIABIAIgBAUISChBfb3JnYW5pemF0aW9uX2lkIiYKFEFpTGlzdE1vZGVsc1Jlc3BvbnNlEg4KBm1vZGVscxgBIAMoCSJnChVBaVRlc3RTZXR0aW5nc1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASJQoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCI6ChZBaVRlc3RTZXR0aW5nc1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCSJEChdBaURpc2NvdmVyTW9kZWxzUmVxdWVzdBIYCgdhcGlfdXJsGAEgASgJQge6SARyAhABEg8KB2FwaV9rZXkYAiABKAkiKgoYQWlEaXNjb3Zlck1vZGVsc1Jlc3BvbnNlEg4KBm1vZGVscxgBIAMoCSJcChdBaVRlc3RDb25uZWN0aW9uUmVxdWVzdBIYCgdhcGlfdXJsGAEgASgJQge6SARyAhABEg8KB2FwaV9rZXkYAiABKAkSFgoFbW9kZWwYAyABKAlCB7pIBHICEAEiPAoYQWlUZXN0Q29ubmVjdGlvblJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCSJ+ChhBaUxpc3RHZW5lcmF0aW9uc1JlcXVlc3QSJQoPb3JnYW5pemF0aW9uX2lkGAEgASgDQge6SAQiAiAASACIAQESHQoFbGltaXQYAiABKANCCbpIBiIEGGQoAUgBiAEBQhIKEF9vcmdhbml6YXRpb25faWRCCAoGX2xpbWl0IlAKGUFpTGlzdEdlbmVyYXRpb25zUmVzcG9uc2USMwoLZ2VuZXJhdGlvbnMYASADKAsyHi5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbiJoChZBaUdldEdlbmVyYXRpb25SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEiUKD29yZ2FuaXphdGlvbl9pZBgCIAEoA0IHukgEIgIgAEgAiAEBQhIKEF9vcmdhbml6YXRpb25faWQiTQoXQWlHZXRHZW5lcmF0aW9uUmVzcG9uc2USMgoKZ2VuZXJhdGlvbhgBIAEoCzIeLm9wZW5veGlkZS5hcGkudjEuQWlHZW5lcmF0aW9uIlgKGUFpQ3JlYXRlR2VuZXJhdGlvblJlcXVlc3QSHgoNYWlfc2V0dGluZ19pZBgBIAEoA0IHukgEIgIgABIbCgdyZXF1ZXN0GAIgASgJQgq6SAdyBRABGMA+IlAKGkFpQ3JlYXRlR2VuZXJhdGlvblJlc3BvbnNlEjIKCmdlbmVyYXRpb24YASABKAsyHi5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbiKhAQoZQWlSZXZpZXdHZW5lcmF0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIlCg9vcmdhbml6YXRpb25faWQYAiABKANCB7pIBCICIABIAIgBARI0CgZvdXRwdXQYAyABKAsyJC5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbk91dHB1dEISChBfb3JnYW5pemF0aW9uX2lkIlAKGkFpUmV2aWV3R2VuZXJhdGlvblJlc3BvbnNlEjIKCmdlbmVyYXRpb24YASABKAsyHi5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbiLvAQoZQWlEZXBsb3lHZW5lcmF0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIlCg9vcmdhbml6YXRpb25faWQYAiABKANCB7pIBCICIABIAIgBARIeCg1zdWdnZXN0aW9uX2lkGAMgASgJQge6SARyAhABEh8KDmVudmlyb25tZW50X2lkGAQgASgDQge6SAQiAiAAEh8KCXNlcnZlcl9pZBgFIAEoA0IHukgEIgIgAEgBiAEBEhIKCmRlcGxveV9ub3cYBiABKAhCEgoQX29yZ2FuaXphdGlvbl9pZEIMCgpfc2VydmVyX2lkIpIBChpBaURlcGxveUdlbmVyYXRpb25SZXNwb25zZRIyCgpnZW5lcmF0aW9uGAEgASgLMh4ub3Blbm94aWRlLmFwaS52MS5BaUdlbmVyYXRpb24SEgoKY29tcG9zZV9pZBgCIAEoAxIaCg1kZXBsb3ltZW50X2lkGAMgASgDSACIAQFCEAoOX2RlcGxveW1lbnRfaWQiigEKFEFpQW5hbHl6ZUxvZ3NSZXF1ZXN0Eh4KDWFpX3NldHRpbmdfaWQYASABKANCB7pIBCICIAASOwoHY29udGV4dBgCIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuQWlMb2dDb250ZXh0Qgq6SAeCAQQQASAAEhUKBGxvZ3MYAyABKAlCB7pIBHICEAEiKQoVQWlBbmFseXplTG9nc1Jlc3BvbnNlEhAKCGFuYWx5c2lzGAEgASgJKq8BCgpBaVByb3ZpZGVyEhsKF0FJX1BST1ZJREVSX1VOU1BFQ0lGSUVEEAASFgoSQUlfUFJPVklERVJfT1BFTkFJEAESGQoVQUlfUFJPVklERVJfQU5USFJPUElDEAISFgoSQUlfUFJPVklERVJfR0VNSU5JEAMSFgoSQUlfUFJPVklERVJfT0xMQU1BEAQSIQodQUlfUFJPVklERVJfT1BFTkFJX0NPTVBBVElCTEUQBSpkCgxBaUxvZ0NvbnRleHQSHgoaQUlfTE9HX0NPTlRFWFRfVU5TUEVDSUZJRUQQABIYChRBSV9MT0dfQ09OVEVYVF9CVUlMRBABEhoKFkFJX0xPR19DT05URVhUX1JVTlRJTUUQAjKHDAoJQWlTZXJ2aWNlEmEKDExpc3RTZXR0aW5ncxInLm9wZW5veGlkZS5hcGkudjEuQWlMaXN0U2V0dGluZ3NSZXF1ZXN0Gigub3Blbm94aWRlLmFwaS52MS5BaUxpc3RTZXR0aW5nc1Jlc3BvbnNlEl4KC0dldFNldHRpbmdzEiYub3Blbm94aWRlLmFwaS52MS5BaUdldFNldHRpbmdzUmVxdWVzdBonLm9wZW5veGlkZS5hcGkudjEuQWlHZXRTZXR0aW5nc1Jlc3BvbnNlEmcKDkNyZWF0ZVNldHRpbmdzEikub3Blbm94aWRlLmFwaS52MS5BaUNyZWF0ZVNldHRpbmdzUmVxdWVzdBoqLm9wZW5veGlkZS5hcGkudjEuQWlDcmVhdGVTZXR0aW5nc1Jlc3BvbnNlEmcKDlVwZGF0ZVNldHRpbmdzEikub3Blbm94aWRlLmFwaS52MS5BaVVwZGF0ZVNldHRpbmdzUmVxdWVzdBoqLm9wZW5veGlkZS5hcGkudjEuQWlVcGRhdGVTZXR0aW5nc1Jlc3BvbnNlElQKDkRlbGV0ZVNldHRpbmdzEikub3Blbm94aWRlLmFwaS52MS5BaURlbGV0ZVNldHRpbmdzUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSWwoKTGlzdE1vZGVscxIlLm9wZW5veGlkZS5hcGkudjEuQWlMaXN0TW9kZWxzUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuQWlMaXN0TW9kZWxzUmVzcG9uc2USYQoMVGVzdFNldHRpbmdzEicub3Blbm94aWRlLmFwaS52MS5BaVRlc3RTZXR0aW5nc1JlcXVlc3QaKC5vcGVub3hpZGUuYXBpLnYxLkFpVGVzdFNldHRpbmdzUmVzcG9uc2USZwoORGlzY292ZXJNb2RlbHMSKS5vcGVub3hpZGUuYXBpLnYxLkFpRGlzY292ZXJNb2RlbHNSZXF1ZXN0Gioub3Blbm94aWRlLmFwaS52MS5BaURpc2NvdmVyTW9kZWxzUmVzcG9uc2USZwoOVGVzdENvbm5lY3Rpb24SKS5vcGVub3hpZGUuYXBpLnYxLkFpVGVzdENvbm5lY3Rpb25SZXF1ZXN0Gioub3Blbm94aWRlLmFwaS52MS5BaVRlc3RDb25uZWN0aW9uUmVzcG9uc2USagoPTGlzdEdlbmVyYXRpb25zEioub3Blbm94aWRlLmFwaS52MS5BaUxpc3RHZW5lcmF0aW9uc1JlcXVlc3QaKy5vcGVub3hpZGUuYXBpLnYxLkFpTGlzdEdlbmVyYXRpb25zUmVzcG9uc2USZAoNR2V0R2VuZXJhdGlvbhIoLm9wZW5veGlkZS5hcGkudjEuQWlHZXRHZW5lcmF0aW9uUmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuQWlHZXRHZW5lcmF0aW9uUmVzcG9uc2USbQoQQ3JlYXRlR2VuZXJhdGlvbhIrLm9wZW5veGlkZS5hcGkudjEuQWlDcmVhdGVHZW5lcmF0aW9uUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuQWlDcmVhdGVHZW5lcmF0aW9uUmVzcG9uc2USbQoQUmV2aWV3R2VuZXJhdGlvbhIrLm9wZW5veGlkZS5hcGkudjEuQWlSZXZpZXdHZW5lcmF0aW9uUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuQWlSZXZpZXdHZW5lcmF0aW9uUmVzcG9uc2USbQoQRGVwbG95R2VuZXJhdGlvbhIrLm9wZW5veGlkZS5hcGkudjEuQWlEZXBsb3lHZW5lcmF0aW9uUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuQWlEZXBsb3lHZW5lcmF0aW9uUmVzcG9uc2USXgoLQW5hbHl6ZUxvZ3MSJi5vcGVub3hpZGUuYXBpLnYxLkFpQW5hbHl6ZUxvZ3NSZXF1ZXN0Gicub3Blbm94aWRlLmFwaS52MS5BaUFuYWx5emVMb2dzUmVzcG9uc2ViBnByb3RvMw", [file_openoxide_api_v1_common, file_buf_validate_validate]);
 
 /**
+ * Stored provider configuration; the API key is never echoed back (`has_api_key` reports presence only).
+ *
+ * @generated from message openoxide.api.v1.AiSetting
+ */
+export type AiSetting = Message<"openoxide.api.v1.AiSetting"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string api_url = 3;
+   */
+  apiUrl: string;
+
+  /**
+   * @generated from field: string model = 4;
+   */
+  model: string;
+
+  /**
+   * @generated from field: bool is_enabled = 5;
+   */
+  isEnabled: boolean;
+
+  /**
+   * @generated from field: openoxide.api.v1.AiProvider provider = 6;
+   */
+  provider: AiProvider;
+
+  /**
+   * @generated from field: bool has_api_key = 7;
+   */
+  hasApiKey: boolean;
+
+  /**
+   * @generated from field: int64 organization_id = 8;
+   */
+  organizationId: bigint;
+
+  /**
+   * @generated from field: int64 created_at = 9;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 10;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiSetting.
+ * Use `create(AiSettingSchema)` to create a new message.
+ */
+export const AiSettingSchema: GenMessage<AiSetting> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 0);
+
+/**
+ * @generated from message openoxide.api.v1.AiEnvironmentVariable
+ */
+export type AiEnvironmentVariable = Message<"openoxide.api.v1.AiEnvironmentVariable"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string value = 2;
+   */
+  value: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiEnvironmentVariable.
+ * Use `create(AiEnvironmentVariableSchema)` to create a new message.
+ */
+export const AiEnvironmentVariableSchema: GenMessage<AiEnvironmentVariable> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 1);
+
+/**
+ * @generated from message openoxide.api.v1.AiDomain
+ */
+export type AiDomain = Message<"openoxide.api.v1.AiDomain"> & {
+  /**
+   * @generated from field: string host = 1;
+   */
+  host: string;
+
+  /**
+   * @generated from field: int64 port = 2;
+   */
+  port: bigint;
+
+  /**
+   * @generated from field: string service_name = 3;
+   */
+  serviceName: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiDomain.
+ * Use `create(AiDomainSchema)` to create a new message.
+ */
+export const AiDomainSchema: GenMessage<AiDomain> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 2);
+
+/**
+ * @generated from message openoxide.api.v1.AiGeneratedFile
+ */
+export type AiGeneratedFile = Message<"openoxide.api.v1.AiGeneratedFile"> & {
+  /**
+   * @generated from field: string file_path = 1;
+   */
+  filePath: string;
+
+  /**
+   * File body as text; config files are plain-text templates.
+   *
+   * @generated from field: string content = 2;
+   */
+  content: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiGeneratedFile.
+ * Use `create(AiGeneratedFileSchema)` to create a new message.
+ */
+export const AiGeneratedFileSchema: GenMessage<AiGeneratedFile> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 3);
+
+/**
+ * One deployable compose suggestion produced by the model.
+ *
+ * @generated from message openoxide.api.v1.AiComposeSuggestion
+ */
+export type AiComposeSuggestion = Message<"openoxide.api.v1.AiComposeSuggestion"> & {
+  /**
+   * Model-issued suggestion identifier; unique within one output.
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string short_description = 3;
+   */
+  shortDescription: string;
+
+  /**
+   * @generated from field: string description = 4;
+   */
+  description: string;
+
+  /**
+   * Docker Compose document (YAML).
+   *
+   * @generated from field: string docker_compose = 5;
+   */
+  dockerCompose: string;
+
+  /**
+   * @generated from field: repeated openoxide.api.v1.AiEnvironmentVariable env_variables = 6;
+   */
+  envVariables: AiEnvironmentVariable[];
+
+  /**
+   * @generated from field: repeated openoxide.api.v1.AiDomain domains = 7;
+   */
+  domains: AiDomain[];
+
+  /**
+   * @generated from field: repeated openoxide.api.v1.AiGeneratedFile config_files = 8;
+   */
+  configFiles: AiGeneratedFile[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiComposeSuggestion.
+ * Use `create(AiComposeSuggestionSchema)` to create a new message.
+ */
+export const AiComposeSuggestionSchema: GenMessage<AiComposeSuggestion> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 4);
+
+/**
+ * Validated model output: one to three compose suggestions.
+ *
+ * @generated from message openoxide.api.v1.AiGenerationOutput
+ */
+export type AiGenerationOutput = Message<"openoxide.api.v1.AiGenerationOutput"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.AiComposeSuggestion suggestions = 1;
+   */
+  suggestions: AiComposeSuggestion[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiGenerationOutput.
+ * Use `create(AiGenerationOutputSchema)` to create a new message.
+ */
+export const AiGenerationOutputSchema: GenMessage<AiGenerationOutput> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 5);
+
+/**
+ * One generation run: the prompt plus its (reviewable) model output.
+ *
+ * @generated from message openoxide.api.v1.AiGeneration
+ */
+export type AiGeneration = Message<"openoxide.api.v1.AiGeneration"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: int64 ai_setting_id = 2;
+   */
+  aiSettingId: bigint;
+
+  /**
+   * @generated from field: int64 organization_id = 3;
+   */
+  organizationId: bigint;
+
+  /**
+   * @generated from field: int64 created_by = 4;
+   */
+  createdBy: bigint;
+
+  /**
+   * Natural-language prompt echoed back verbatim.
+   *
+   * @generated from field: string prompt = 5;
+   */
+  prompt: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.AiGenerationOutput output = 6;
+   */
+  output?: AiGenerationOutput | undefined;
+
+  /**
+   * Lifecycle status string ("REVIEWED", "DEPLOYING", "DEPLOYED", ...).
+   *
+   * @generated from field: string status = 7;
+   */
+  status: string;
+
+  /**
+   * Compose service row created by deployment, once deployed.
+   *
+   * @generated from field: optional int64 compose_id = 8;
+   */
+  composeId?: bigint | undefined;
+
+  /**
+   * @generated from field: int64 created_at = 9;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 10;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiGeneration.
+ * Use `create(AiGenerationSchema)` to create a new message.
+ */
+export const AiGenerationSchema: GenMessage<AiGeneration> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 6);
+
+/**
+ * @generated from message openoxide.api.v1.AiListSettingsRequest
+ */
+export type AiListSettingsRequest = Message<"openoxide.api.v1.AiListSettingsRequest"> & {
+  /**
+   * @generated from field: optional int64 organization_id = 1;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiListSettingsRequest.
+ * Use `create(AiListSettingsRequestSchema)` to create a new message.
+ */
+export const AiListSettingsRequestSchema: GenMessage<AiListSettingsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 7);
+
+/**
+ * @generated from message openoxide.api.v1.AiListSettingsResponse
+ */
+export type AiListSettingsResponse = Message<"openoxide.api.v1.AiListSettingsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.AiSetting settings = 1;
+   */
+  settings: AiSetting[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiListSettingsResponse.
+ * Use `create(AiListSettingsResponseSchema)` to create a new message.
+ */
+export const AiListSettingsResponseSchema: GenMessage<AiListSettingsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 8);
+
+/**
+ * @generated from message openoxide.api.v1.AiGetSettingsRequest
+ */
+export type AiGetSettingsRequest = Message<"openoxide.api.v1.AiGetSettingsRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiGetSettingsRequest.
+ * Use `create(AiGetSettingsRequestSchema)` to create a new message.
+ */
+export const AiGetSettingsRequestSchema: GenMessage<AiGetSettingsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 9);
+
+/**
+ * @generated from message openoxide.api.v1.AiGetSettingsResponse
+ */
+export type AiGetSettingsResponse = Message<"openoxide.api.v1.AiGetSettingsResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.AiSetting setting = 1;
+   */
+  setting?: AiSetting | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiGetSettingsResponse.
+ * Use `create(AiGetSettingsResponseSchema)` to create a new message.
+ */
+export const AiGetSettingsResponseSchema: GenMessage<AiGetSettingsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 10);
+
+/**
+ * @generated from message openoxide.api.v1.AiCreateSettingsRequest
+ */
+export type AiCreateSettingsRequest = Message<"openoxide.api.v1.AiCreateSettingsRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string api_url = 2;
+   */
+  apiUrl: string;
+
+  /**
+   * Secret stored server-side; never echoed back on reads.
+   *
+   * @generated from field: string api_key = 3;
+   */
+  apiKey: string;
+
+  /**
+   * @generated from field: string model = 4;
+   */
+  model: string;
+
+  /**
+   * @generated from field: bool is_enabled = 5;
+   */
+  isEnabled: boolean;
+
+  /**
+   * @generated from field: optional int64 organization_id = 6;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiCreateSettingsRequest.
+ * Use `create(AiCreateSettingsRequestSchema)` to create a new message.
+ */
+export const AiCreateSettingsRequestSchema: GenMessage<AiCreateSettingsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 11);
+
+/**
+ * @generated from message openoxide.api.v1.AiCreateSettingsResponse
+ */
+export type AiCreateSettingsResponse = Message<"openoxide.api.v1.AiCreateSettingsResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.AiSetting setting = 1;
+   */
+  setting?: AiSetting | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiCreateSettingsResponse.
+ * Use `create(AiCreateSettingsResponseSchema)` to create a new message.
+ */
+export const AiCreateSettingsResponseSchema: GenMessage<AiCreateSettingsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 12);
+
+/**
+ * An absent `api_key` keeps the stored key.
+ *
+ * @generated from message openoxide.api.v1.AiUpdateSettingsRequest
+ */
+export type AiUpdateSettingsRequest = Message<"openoxide.api.v1.AiUpdateSettingsRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional string name = 2;
+   */
+  name?: string | undefined;
+
+  /**
+   * @generated from field: optional string api_url = 3;
+   */
+  apiUrl?: string | undefined;
+
+  /**
+   * @generated from field: optional string api_key = 4;
+   */
+  apiKey?: string | undefined;
+
+  /**
+   * @generated from field: optional string model = 5;
+   */
+  model?: string | undefined;
+
+  /**
+   * @generated from field: optional bool is_enabled = 6;
+   */
+  isEnabled?: boolean | undefined;
+
+  /**
+   * @generated from field: optional int64 organization_id = 7;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiUpdateSettingsRequest.
+ * Use `create(AiUpdateSettingsRequestSchema)` to create a new message.
+ */
+export const AiUpdateSettingsRequestSchema: GenMessage<AiUpdateSettingsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 13);
+
+/**
+ * @generated from message openoxide.api.v1.AiUpdateSettingsResponse
+ */
+export type AiUpdateSettingsResponse = Message<"openoxide.api.v1.AiUpdateSettingsResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.AiSetting setting = 1;
+   */
+  setting?: AiSetting | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiUpdateSettingsResponse.
+ * Use `create(AiUpdateSettingsResponseSchema)` to create a new message.
+ */
+export const AiUpdateSettingsResponseSchema: GenMessage<AiUpdateSettingsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 14);
+
+/**
+ * @generated from message openoxide.api.v1.AiDeleteSettingsRequest
+ */
+export type AiDeleteSettingsRequest = Message<"openoxide.api.v1.AiDeleteSettingsRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiDeleteSettingsRequest.
+ * Use `create(AiDeleteSettingsRequestSchema)` to create a new message.
+ */
+export const AiDeleteSettingsRequestSchema: GenMessage<AiDeleteSettingsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 15);
+
+/**
+ * Model names offered by the stored provider configuration.
+ *
+ * @generated from message openoxide.api.v1.AiListModelsRequest
+ */
+export type AiListModelsRequest = Message<"openoxide.api.v1.AiListModelsRequest"> & {
+  /**
+   * @generated from field: int64 setting_id = 1;
+   */
+  settingId: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiListModelsRequest.
+ * Use `create(AiListModelsRequestSchema)` to create a new message.
+ */
+export const AiListModelsRequestSchema: GenMessage<AiListModelsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 16);
+
+/**
+ * @generated from message openoxide.api.v1.AiListModelsResponse
+ */
+export type AiListModelsResponse = Message<"openoxide.api.v1.AiListModelsResponse"> & {
+  /**
+   * @generated from field: repeated string models = 1;
+   */
+  models: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiListModelsResponse.
+ * Use `create(AiListModelsResponseSchema)` to create a new message.
+ */
+export const AiListModelsResponseSchema: GenMessage<AiListModelsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 17);
+
+/**
+ * @generated from message openoxide.api.v1.AiTestSettingsRequest
+ */
+export type AiTestSettingsRequest = Message<"openoxide.api.v1.AiTestSettingsRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiTestSettingsRequest.
+ * Use `create(AiTestSettingsRequestSchema)` to create a new message.
+ */
+export const AiTestSettingsRequestSchema: GenMessage<AiTestSettingsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 18);
+
+/**
+ * @generated from message openoxide.api.v1.AiTestSettingsResponse
+ */
+export type AiTestSettingsResponse = Message<"openoxide.api.v1.AiTestSettingsResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: string message = 2;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiTestSettingsResponse.
+ * Use `create(AiTestSettingsResponseSchema)` to create a new message.
+ */
+export const AiTestSettingsResponseSchema: GenMessage<AiTestSettingsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 19);
+
+/**
+ * Model discovery against unsaved credentials (create dialog).
+ *
+ * @generated from message openoxide.api.v1.AiDiscoverModelsRequest
+ */
+export type AiDiscoverModelsRequest = Message<"openoxide.api.v1.AiDiscoverModelsRequest"> & {
+  /**
+   * @generated from field: string api_url = 1;
+   */
+  apiUrl: string;
+
+  /**
+   * @generated from field: string api_key = 2;
+   */
+  apiKey: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiDiscoverModelsRequest.
+ * Use `create(AiDiscoverModelsRequestSchema)` to create a new message.
+ */
+export const AiDiscoverModelsRequestSchema: GenMessage<AiDiscoverModelsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 20);
+
+/**
+ * @generated from message openoxide.api.v1.AiDiscoverModelsResponse
+ */
+export type AiDiscoverModelsResponse = Message<"openoxide.api.v1.AiDiscoverModelsResponse"> & {
+  /**
+   * @generated from field: repeated string models = 1;
+   */
+  models: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiDiscoverModelsResponse.
+ * Use `create(AiDiscoverModelsResponseSchema)` to create a new message.
+ */
+export const AiDiscoverModelsResponseSchema: GenMessage<AiDiscoverModelsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 21);
+
+/**
+ * Connectivity test against unsaved credentials.
+ *
+ * @generated from message openoxide.api.v1.AiTestConnectionRequest
+ */
+export type AiTestConnectionRequest = Message<"openoxide.api.v1.AiTestConnectionRequest"> & {
+  /**
+   * @generated from field: string api_url = 1;
+   */
+  apiUrl: string;
+
+  /**
+   * @generated from field: string api_key = 2;
+   */
+  apiKey: string;
+
+  /**
+   * @generated from field: string model = 3;
+   */
+  model: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiTestConnectionRequest.
+ * Use `create(AiTestConnectionRequestSchema)` to create a new message.
+ */
+export const AiTestConnectionRequestSchema: GenMessage<AiTestConnectionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 22);
+
+/**
+ * @generated from message openoxide.api.v1.AiTestConnectionResponse
+ */
+export type AiTestConnectionResponse = Message<"openoxide.api.v1.AiTestConnectionResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: string message = 2;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiTestConnectionResponse.
+ * Use `create(AiTestConnectionResponseSchema)` to create a new message.
+ */
+export const AiTestConnectionResponseSchema: GenMessage<AiTestConnectionResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 23);
+
+/**
+ * @generated from message openoxide.api.v1.AiListGenerationsRequest
+ */
+export type AiListGenerationsRequest = Message<"openoxide.api.v1.AiListGenerationsRequest"> & {
+  /**
+   * @generated from field: optional int64 organization_id = 1;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 limit = 2;
+   */
+  limit?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiListGenerationsRequest.
+ * Use `create(AiListGenerationsRequestSchema)` to create a new message.
+ */
+export const AiListGenerationsRequestSchema: GenMessage<AiListGenerationsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 24);
+
+/**
+ * @generated from message openoxide.api.v1.AiListGenerationsResponse
+ */
+export type AiListGenerationsResponse = Message<"openoxide.api.v1.AiListGenerationsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.AiGeneration generations = 1;
+   */
+  generations: AiGeneration[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiListGenerationsResponse.
+ * Use `create(AiListGenerationsResponseSchema)` to create a new message.
+ */
+export const AiListGenerationsResponseSchema: GenMessage<AiListGenerationsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 25);
+
+/**
+ * @generated from message openoxide.api.v1.AiGetGenerationRequest
+ */
+export type AiGetGenerationRequest = Message<"openoxide.api.v1.AiGetGenerationRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiGetGenerationRequest.
+ * Use `create(AiGetGenerationRequestSchema)` to create a new message.
+ */
+export const AiGetGenerationRequestSchema: GenMessage<AiGetGenerationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 26);
+
+/**
+ * @generated from message openoxide.api.v1.AiGetGenerationResponse
+ */
+export type AiGetGenerationResponse = Message<"openoxide.api.v1.AiGetGenerationResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.AiGeneration generation = 1;
+   */
+  generation?: AiGeneration | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiGetGenerationResponse.
+ * Use `create(AiGetGenerationResponseSchema)` to create a new message.
+ */
+export const AiGetGenerationResponseSchema: GenMessage<AiGetGenerationResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 27);
+
+/**
+ * @generated from message openoxide.api.v1.AiCreateGenerationRequest
+ */
+export type AiCreateGenerationRequest = Message<"openoxide.api.v1.AiCreateGenerationRequest"> & {
+  /**
+   * @generated from field: int64 ai_setting_id = 1;
+   */
+  aiSettingId: bigint;
+
+  /**
+   * Free-form natural-language prompt for the compose generation.
+   *
+   * @generated from field: string request = 2;
+   */
+  request: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiCreateGenerationRequest.
+ * Use `create(AiCreateGenerationRequestSchema)` to create a new message.
+ */
+export const AiCreateGenerationRequestSchema: GenMessage<AiCreateGenerationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 28);
+
+/**
+ * @generated from message openoxide.api.v1.AiCreateGenerationResponse
+ */
+export type AiCreateGenerationResponse = Message<"openoxide.api.v1.AiCreateGenerationResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.AiGeneration generation = 1;
+   */
+  generation?: AiGeneration | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiCreateGenerationResponse.
+ * Use `create(AiCreateGenerationResponseSchema)` to create a new message.
+ */
+export const AiCreateGenerationResponseSchema: GenMessage<AiCreateGenerationResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 29);
+
+/**
+ * Full replacement of the generation output after human review.
+ *
+ * @generated from message openoxide.api.v1.AiReviewGenerationRequest
+ */
+export type AiReviewGenerationRequest = Message<"openoxide.api.v1.AiReviewGenerationRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: openoxide.api.v1.AiGenerationOutput output = 3;
+   */
+  output?: AiGenerationOutput | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiReviewGenerationRequest.
+ * Use `create(AiReviewGenerationRequestSchema)` to create a new message.
+ */
+export const AiReviewGenerationRequestSchema: GenMessage<AiReviewGenerationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 30);
+
+/**
+ * @generated from message openoxide.api.v1.AiReviewGenerationResponse
+ */
+export type AiReviewGenerationResponse = Message<"openoxide.api.v1.AiReviewGenerationResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.AiGeneration generation = 1;
+   */
+  generation?: AiGeneration | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiReviewGenerationResponse.
+ * Use `create(AiReviewGenerationResponseSchema)` to create a new message.
+ */
+export const AiReviewGenerationResponseSchema: GenMessage<AiReviewGenerationResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 31);
+
+/**
+ * @generated from message openoxide.api.v1.AiDeployGenerationRequest
+ */
+export type AiDeployGenerationRequest = Message<"openoxide.api.v1.AiDeployGenerationRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * Selects one suggestion from the reviewed generation output.
+   *
+   * @generated from field: string suggestion_id = 3;
+   */
+  suggestionId: string;
+
+  /**
+   * @generated from field: int64 environment_id = 4;
+   */
+  environmentId: bigint;
+
+  /**
+   * @generated from field: optional int64 server_id = 5;
+   */
+  serverId?: bigint | undefined;
+
+  /**
+   * @generated from field: bool deploy_now = 6;
+   */
+  deployNow: boolean;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiDeployGenerationRequest.
+ * Use `create(AiDeployGenerationRequestSchema)` to create a new message.
+ */
+export const AiDeployGenerationRequestSchema: GenMessage<AiDeployGenerationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 32);
+
+/**
+ * @generated from message openoxide.api.v1.AiDeployGenerationResponse
+ */
+export type AiDeployGenerationResponse = Message<"openoxide.api.v1.AiDeployGenerationResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.AiGeneration generation = 1;
+   */
+  generation?: AiGeneration | undefined;
+
+  /**
+   * @generated from field: int64 compose_id = 2;
+   */
+  composeId: bigint;
+
+  /**
+   * @generated from field: optional int64 deployment_id = 3;
+   */
+  deploymentId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiDeployGenerationResponse.
+ * Use `create(AiDeployGenerationResponseSchema)` to create a new message.
+ */
+export const AiDeployGenerationResponseSchema: GenMessage<AiDeployGenerationResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 33);
+
+/**
+ * @generated from message openoxide.api.v1.AiAnalyzeLogsRequest
+ */
+export type AiAnalyzeLogsRequest = Message<"openoxide.api.v1.AiAnalyzeLogsRequest"> & {
+  /**
+   * @generated from field: int64 ai_setting_id = 1;
+   */
+  aiSettingId: bigint;
+
+  /**
+   * @generated from field: openoxide.api.v1.AiLogContext context = 2;
+   */
+  context: AiLogContext;
+
+  /**
+   * Raw log corpus sent to the model for analysis.
+   *
+   * @generated from field: string logs = 3;
+   */
+  logs: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiAnalyzeLogsRequest.
+ * Use `create(AiAnalyzeLogsRequestSchema)` to create a new message.
+ */
+export const AiAnalyzeLogsRequestSchema: GenMessage<AiAnalyzeLogsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 34);
+
+/**
+ * @generated from message openoxide.api.v1.AiAnalyzeLogsResponse
+ */
+export type AiAnalyzeLogsResponse = Message<"openoxide.api.v1.AiAnalyzeLogsResponse"> & {
+  /**
+   * Model-authored analysis text (markdown; not structured JSON).
+   *
+   * @generated from field: string analysis = 1;
+   */
+  analysis: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiAnalyzeLogsResponse.
+ * Use `create(AiAnalyzeLogsResponseSchema)` to create a new message.
+ */
+export const AiAnalyzeLogsResponseSchema: GenMessage<AiAnalyzeLogsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ai, 35);
+
+/**
+ * Provider detected from the configured api_url (AiProviderKind::detect).
+ *
+ * @generated from enum openoxide.api.v1.AiProvider
+ */
+export enum AiProvider {
+  /**
+   * @generated from enum value: AI_PROVIDER_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: AI_PROVIDER_OPENAI = 1;
+   */
+  OPENAI = 1,
+
+  /**
+   * @generated from enum value: AI_PROVIDER_ANTHROPIC = 2;
+   */
+  ANTHROPIC = 2,
+
+  /**
+   * @generated from enum value: AI_PROVIDER_GEMINI = 3;
+   */
+  GEMINI = 3,
+
+  /**
+   * @generated from enum value: AI_PROVIDER_OLLAMA = 4;
+   */
+  OLLAMA = 4,
+
+  /**
+   * @generated from enum value: AI_PROVIDER_OPENAI_COMPATIBLE = 5;
+   */
+  OPENAI_COMPATIBLE = 5,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.AiProvider.
+ */
+export const AiProviderSchema: GenEnum<AiProvider> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_ai, 0);
+
+/**
+ * Log corpus fed to the analyzer (AiLogContextDto).
+ *
+ * @generated from enum openoxide.api.v1.AiLogContext
+ */
+export enum AiLogContext {
+  /**
+   * @generated from enum value: AI_LOG_CONTEXT_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: AI_LOG_CONTEXT_BUILD = 1;
+   */
+  BUILD = 1,
+
+  /**
+   * @generated from enum value: AI_LOG_CONTEXT_RUNTIME = 2;
+   */
+  RUNTIME = 2,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.AiLogContext.
+ */
+export const AiLogContextSchema: GenEnum<AiLogContext> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_ai, 1);
+
+/**
+ * AI provider settings, model discovery, compose generation and log analysis.
+ *
  * @generated from service openoxide.api.v1.AiService
  */
 export const AiService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.ListSettings
-	 */
-	listSettings: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.GetSettings
-	 */
-	getSettings: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.CreateSettings
-	 */
-	createSettings: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.UpdateSettings
-	 */
-	updateSettings: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.DeleteSettings
-	 */
-	deleteSettings: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.ListModels
-	 */
-	listModels: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.TestSettings
-	 */
-	testSettings: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.DiscoverModels
-	 */
-	discoverModels: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.TestConnection
-	 */
-	testConnection: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.ListGenerations
-	 */
-	listGenerations: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.GetGeneration
-	 */
-	getGeneration: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.CreateGeneration
-	 */
-	createGeneration: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.ReviewGeneration
-	 */
-	reviewGeneration: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.DeployGeneration
-	 */
-	deployGeneration: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.AiService.AnalyzeLogs
-	 */
-	analyzeLogs: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_ai, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.ListSettings
+   */
+  listSettings: {
+    methodKind: "unary";
+    input: typeof AiListSettingsRequestSchema;
+    output: typeof AiListSettingsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.GetSettings
+   */
+  getSettings: {
+    methodKind: "unary";
+    input: typeof AiGetSettingsRequestSchema;
+    output: typeof AiGetSettingsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.CreateSettings
+   */
+  createSettings: {
+    methodKind: "unary";
+    input: typeof AiCreateSettingsRequestSchema;
+    output: typeof AiCreateSettingsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.UpdateSettings
+   */
+  updateSettings: {
+    methodKind: "unary";
+    input: typeof AiUpdateSettingsRequestSchema;
+    output: typeof AiUpdateSettingsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.DeleteSettings
+   */
+  deleteSettings: {
+    methodKind: "unary";
+    input: typeof AiDeleteSettingsRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.ListModels
+   */
+  listModels: {
+    methodKind: "unary";
+    input: typeof AiListModelsRequestSchema;
+    output: typeof AiListModelsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.TestSettings
+   */
+  testSettings: {
+    methodKind: "unary";
+    input: typeof AiTestSettingsRequestSchema;
+    output: typeof AiTestSettingsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.DiscoverModels
+   */
+  discoverModels: {
+    methodKind: "unary";
+    input: typeof AiDiscoverModelsRequestSchema;
+    output: typeof AiDiscoverModelsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.TestConnection
+   */
+  testConnection: {
+    methodKind: "unary";
+    input: typeof AiTestConnectionRequestSchema;
+    output: typeof AiTestConnectionResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.ListGenerations
+   */
+  listGenerations: {
+    methodKind: "unary";
+    input: typeof AiListGenerationsRequestSchema;
+    output: typeof AiListGenerationsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.GetGeneration
+   */
+  getGeneration: {
+    methodKind: "unary";
+    input: typeof AiGetGenerationRequestSchema;
+    output: typeof AiGetGenerationResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.CreateGeneration
+   */
+  createGeneration: {
+    methodKind: "unary";
+    input: typeof AiCreateGenerationRequestSchema;
+    output: typeof AiCreateGenerationResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.ReviewGeneration
+   */
+  reviewGeneration: {
+    methodKind: "unary";
+    input: typeof AiReviewGenerationRequestSchema;
+    output: typeof AiReviewGenerationResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.DeployGeneration
+   */
+  deployGeneration: {
+    methodKind: "unary";
+    input: typeof AiDeployGenerationRequestSchema;
+    output: typeof AiDeployGenerationResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.AiService.AnalyzeLogs
+   */
+  analyzeLogs: {
+    methodKind: "unary";
+    input: typeof AiAnalyzeLogsRequestSchema;
+    output: typeof AiAnalyzeLogsResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_ai, 0);
+

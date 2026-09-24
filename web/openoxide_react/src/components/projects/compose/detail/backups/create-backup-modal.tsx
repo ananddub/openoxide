@@ -52,8 +52,7 @@ export function CreateBackupModal({
 	const [cronExpr, setCronExpr] = useState('');
 	const [prefix, setPrefix] = useState('');
 	const [turnOff, setTurnOff] = useState(false);
-	// Live destinations query; the table-watch stream (destinations table)
-	// keeps it fresh.
+	// Live destinations query; the table-watch stream (destinations table) keeps it fresh.
 	const destinations = useDestinationList().data ?? [];
 	const [destinationId, setDestinationId] = useState('');
 	const [saving, setSaving] = useState(false);

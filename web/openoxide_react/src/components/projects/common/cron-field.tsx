@@ -14,11 +14,7 @@ export const CRON_PRESETS = [
 	{label: 'Monthly on the 1st', value: '0 0 1 * *'},
 ];
 
-/**
- * Cron schedule picker used by every service schedule/backup form. One field:
- * type or focus to get frequency suggestions, or just type your own custom
- * 5-part expression — no separate preset row above.
- */
+/** Cron schedule picker used by every service schedule/backup form. One field: type or focus to get frequency suggestions, or just type your own custom 5-part expression — no separate preset row above. */
 export function CronField({
 	value,
 	onChange,

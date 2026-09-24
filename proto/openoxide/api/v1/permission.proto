@@ -2,30 +2,243 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
+// Group, policy, member and invite management for the active organization; `ListPermissions`/`GetPermission`/`CreatePermission`/`UpdatePermission`/`DeletePermission` are aliases of the corresponding `*Group` rpcs and share the `PermissionGroup` payload.
 service PermissionService {
-  rpc ListPermissions(ResourceQuery) returns (ResourceListResponse);
-  rpc GetPermission(ResourceRequest) returns (ResourceResponse);
-  rpc CreatePermission(ResourceRequest) returns (ResourceResponse);
-  rpc UpdatePermission(ResourceRequest) returns (ResourceResponse);
-  rpc DeletePermission(ResourceRequest) returns (Empty);
-  rpc ListGroups(ResourceQuery) returns (ResourceListResponse);
-  rpc GetGroup(ResourceRequest) returns (ResourceResponse);
-  rpc CreateGroup(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateGroup(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteGroup(ResourceRequest) returns (Empty);
-  rpc ListPolicies(ResourceQuery) returns (ResourceListResponse);
-  // Effective actions for the calling user inside the active organization
-  // (auth-only: every member may inspect their own grants to gate the UI).
-  rpc GetMyPermissions(ResourceQuery) returns (ResourceResponse);
-  rpc AssignMemberGroup(ResourceRequest) returns (OperationResult);
-  rpc ListMembers(ResourceQuery) returns (ResourceListResponse);
-  rpc AddMember(ResourceRequest) returns (OperationResult);
-  rpc UpdateMemberRole(ResourceRequest) returns (OperationResult);
-  rpc RemoveMember(ResourceRequest) returns (Empty);
-  rpc ListInvites(ResourceQuery) returns (ResourceListResponse);
-  rpc CreateInvite(ResourceRequest) returns (ResourceResponse);
-  rpc AcceptInvite(ResourceRequest) returns (OperationResult);
-  rpc CancelInvite(ResourceRequest) returns (Empty);
-  rpc ReplaceUserPolicies(ResourceRequest) returns (OperationResult);
+  rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse);
+  rpc GetPermission(GetPermissionRequest) returns (GetPermissionResponse);
+  rpc CreatePermission(CreatePermissionRequest) returns (CreatePermissionResponse);
+  rpc UpdatePermission(UpdatePermissionRequest) returns (Empty);
+  rpc DeletePermission(DeletePermissionRequest) returns (Empty);
+  rpc ListGroups(PermissionListGroupsRequest) returns (PermissionListGroupsResponse);
+  rpc GetGroup(PermissionGetGroupRequest) returns (PermissionGetGroupResponse);
+  rpc CreateGroup(PermissionCreateGroupRequest) returns (PermissionCreateGroupResponse);
+  rpc UpdateGroup(PermissionUpdateGroupRequest) returns (Empty);
+  rpc DeleteGroup(PermissionDeleteGroupRequest) returns (Empty);
+  rpc ListPolicies(PermissionListPoliciesRequest) returns (PermissionListPoliciesResponse);
+  // Effective actions for the calling user inside the active organization (auth-only: every member may inspect their own grants to gate the UI).
+  rpc GetMyPermissions(GetMyPermissionsRequest) returns (GetMyPermissionsResponse);
+  rpc AssignMemberGroup(PermissionAssignMemberGroupRequest) returns (Empty);
+  rpc ListMembers(PermissionListMembersRequest) returns (PermissionListMembersResponse);
+  rpc AddMember(PermissionAddMemberRequest) returns (Empty);
+  rpc UpdateMemberRole(PermissionUpdateMemberRoleRequest) returns (Empty);
+  rpc RemoveMember(PermissionRemoveMemberRequest) returns (Empty);
+  rpc ListInvites(PermissionListInvitesRequest) returns (PermissionListInvitesResponse);
+  rpc CreateInvite(PermissionCreateInviteRequest) returns (PermissionCreateInviteResponse);
+  rpc AcceptInvite(PermissionAcceptInviteRequest) returns (Empty);
+  rpc CancelInvite(PermissionCancelInviteRequest) returns (Empty);
+  rpc ReplaceUserPolicies(PermissionReplaceUserPoliciesRequest) returns (Empty);
+}
+
+// Membership roles (`UserRole` string enum); assignment endpoints only accept `ADMIN` or `MEMBER`.
+enum PermissionUserRole {
+  PERMISSION_USER_ROLE_UNSPECIFIED = 0;
+  PERMISSION_USER_ROLE_OWNER = 1;
+  PERMISSION_USER_ROLE_ADMIN = 2;
+  PERMISSION_USER_ROLE_MEMBER = 3;
+}
+
+// Policy effect on a per-user policy override (`PolicyEffect` string enum).
+enum PermissionPolicyEffect {
+  PERMISSION_POLICY_EFFECT_UNSPECIFIED = 0;
+  PERMISSION_POLICY_EFFECT_GRANT = 1;
+  PERMISSION_POLICY_EFFECT_DENY = 2;
+}
+
+// Permission group ("role"): a named action set inside an organization.
+message PermissionGroup {
+  int64 id = 1;
+  string name = 2;
+  bool is_system = 3;
+  // Null for global system groups.
+  optional int64 organization_id = 4;
+  // Effective action strings, e.g. "PROJECT:read"; `*` grants everything.
+  repeated string actions = 5;
+  int64 created_at = 6;
+  int64 updated_at = 7;
+}
+
+// Catalog entry of an addressable policy.
+message PermissionPolicy {
+  int64 id = 1;
+  string action = 2;
+}
+
+// Organization member projection.
+message PermissionMember {
+  // Row id of the membership; absent when the projection has no row.
+  optional int64 id = 1;
+  int64 user_id = 2;
+  string email = 3;
+  optional string avatar = 4;
+  int64 organization_id = 5;
+  optional PermissionUserRole role = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+}
+
+// Pending organization invitation.
+message PermissionInvite {
+  int64 id = 1;
+  string email = 2;
+  optional PermissionUserRole role = 3;
+  int64 group_id = 4;
+  int64 organization_id = 5;
+  int64 invited_by = 6;
+  int64 expired_at = 7;
+  int64 created_at = 8;
+}
+
+// One entry of a full per-user policy replacement.
+message PermissionUserPolicyEntry {
+  int64 policy_id = 1;
+  PermissionPolicyEffect effect = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+}
+
+message ListPermissionsRequest {}
+
+message ListPermissionsResponse {
+  repeated PermissionGroup groups = 1;
+}
+
+message GetPermissionRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message GetPermissionResponse {
+  PermissionGroup group = 1;
+}
+
+message CreatePermissionRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  repeated string actions = 2;
+}
+
+message CreatePermissionResponse {
+  // The create endpoint only echoes the new row id.
+  int64 id = 1;
+}
+
+message UpdatePermissionRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string name = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  // Full replacement of the group's action list.
+  repeated string actions = 3;
+}
+
+message DeletePermissionRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message PermissionListGroupsRequest {}
+
+message PermissionListGroupsResponse {
+  repeated PermissionGroup groups = 1;
+}
+
+message PermissionGetGroupRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message PermissionGetGroupResponse {
+  PermissionGroup group = 1;
+}
+
+message PermissionCreateGroupRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  repeated string actions = 2;
+}
+
+message PermissionCreateGroupResponse {
+  // The create endpoint only echoes the new row id.
+  int64 id = 1;
+}
+
+message PermissionUpdateGroupRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  string name = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  // Full replacement of the group's action list.
+  repeated string actions = 3;
+}
+
+message PermissionDeleteGroupRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message PermissionListPoliciesRequest {}
+
+message PermissionListPoliciesResponse {
+  repeated PermissionPolicy policies = 1;
+}
+
+message GetMyPermissionsRequest {}
+
+message GetMyPermissionsResponse {
+  PermissionUserRole role = 1;
+  int64 organization_id = 2;
+  // Effective action strings; `*` for owners/admins.
+  repeated string actions = 3;
+}
+
+message PermissionAssignMemberGroupRequest {
+  // User id of the member whose group assignment changes.
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 group_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message PermissionListMembersRequest {}
+
+message PermissionListMembersResponse {
+  repeated PermissionMember members = 1;
+}
+
+message PermissionAddMemberRequest {
+  string email = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 320];
+  optional string password = 2 [(buf.validate.field).string.max_len = 1024];
+  PermissionUserRole role = 3 [(buf.validate.field).enum = {defined_only: true, not_in: [0, 1]}];
+}
+
+message PermissionUpdateMemberRoleRequest {
+  // User id of the member.
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  PermissionUserRole role = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0, 1]}];
+}
+
+message PermissionRemoveMemberRequest {
+  // User id of the member.
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message PermissionListInvitesRequest {}
+
+message PermissionListInvitesResponse {
+  repeated PermissionInvite invites = 1;
+}
+
+message PermissionCreateInviteRequest {
+  string email = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 320];
+  PermissionUserRole role = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0, 1]}];
+  int64 group_id = 3 [(buf.validate.field).int64.gt = 0];
+}
+
+message PermissionCreateInviteResponse {
+  // Opaque invitation token to be delivered to the invitee.
+  string token = 1;
+}
+
+message PermissionAcceptInviteRequest {
+  // Opaque invitation token; no row id is carried.
+  string token = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 4096];
+}
+
+message PermissionCancelInviteRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+// Full replacement of the target user's policy override list.
+message PermissionReplaceUserPoliciesRequest {
+  // User id whose policies are replaced.
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  repeated PermissionUserPolicyEntry policies = 2;
 }

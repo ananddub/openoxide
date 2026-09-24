@@ -14,10 +14,7 @@ interface DeploymentInlineLogsProps {
 	deployment: any;
 }
 
-/**
- * Inline streaming build-log panel — opens under the clicked deployment
- * row (no modal). The bottom grip is draggable to resize the surface.
- */
+/** Inline streaming build-log panel — opens under the clicked deployment row (no modal). The bottom grip is draggable to resize the surface. */
 export function DeploymentInlineLogs({
 	deployment,
 }: DeploymentInlineLogsProps) {
@@ -39,16 +36,11 @@ export function DeploymentInlineLogs({
 		}
 	}, [logs.length, isLive]);
 
-	const lines = (logs ?? [])
-		.map(stripAnsi)
-		.filter(l => l.trim() !== '');
+	const lines = (logs ?? []).map(stripAnsi).filter(l => l.trim() !== '');
 
 	return (
 		<div className="flex flex-col border-t border-border">
-			<div
-				ref={scrollRef}
-				style={{height}}
-				className={LOG_SURFACE_CLS}>
+			<div ref={scrollRef} style={{height}} className={LOG_SURFACE_CLS}>
 				{lines.length === 0 ? (
 					<p className="flex items-center gap-2 py-2 font-mono text-[12.5px] text-muted-foreground">
 						<Loader className="size-3.5 animate-spin" />
@@ -61,12 +53,8 @@ export function DeploymentInlineLogs({
 							return (
 								<span
 									key={idx}
-									className={`break-all whitespace-pre-wrap font-mono text-[12.5px] leading-[25px] ${lineTone(line)}`}>
-									{ts && (
-										<span className={LOG_TS_CLS}>
-											{ts}
-										</span>
-									)}
+									className={`font-mono text-[12.5px] leading-[25px] break-all whitespace-pre-wrap ${lineTone(line)}`}>
+									{ts && <span className={LOG_TS_CLS}>{ts}</span>}
 									{rest || ' '}
 								</span>
 							);
@@ -85,9 +73,7 @@ export function DeploymentInlineLogs({
 				onPointerMove={e => {
 					if (!dragRef.current) return;
 					const dy = e.clientY - dragRef.current.y;
-					setHeight(
-						Math.min(720, Math.max(140, dragRef.current.h + dy)),
-					);
+					setHeight(Math.min(720, Math.max(140, dragRef.current.h + dy)));
 				}}
 				onPointerUp={() => (dragRef.current = null)}
 				onPointerCancel={() => (dragRef.current = null)}

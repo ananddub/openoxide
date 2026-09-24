@@ -10,19 +10,16 @@ import {
 	MariadbIcon,
 } from '#/components/icons/db/postgres-mysql';
 
-const BRAND_ICONS: Record<string, (p: {className?: string}) => React.ReactElement> =
-	{
-		postgresql: PostgresqlIcon,
-		mysql: MysqlIcon,
-		mariadb: MariadbIcon,
-	};
+const BRAND_ICONS: Record<
+	string,
+	(p: {className?: string}) => React.ReactElement
+> = {
+	postgresql: PostgresqlIcon,
+	mysql: MysqlIcon,
+	mariadb: MariadbIcon,
+};
 
-/**
- * 3-tier hybrid Docker service icon:
- *  1. match against local simple-icons set,
- *  2. remote dashboard-icons CDN for valid image tags,
- *  3. fallback to the Docker logo.
- */
+/** 3-tier hybrid Docker service icon:  1. match against local simple-icons set,  2. remote dashboard-icons CDN for valid image tags,  3. fallback to the Docker logo. */
 export function DockerServiceIcon({
 	image,
 	size = 36,
@@ -57,7 +54,9 @@ export function DockerServiceIcon({
 	if (known?.kind === 'git') {
 		return (
 			<div style={{...tile, background: `${known.color}18`}}>
-				<svg viewBox="0 0 24 24" style={{width: 20, height: 20, fill: known.color}}>
+				<svg
+					viewBox="0 0 24 24"
+					style={{width: 20, height: 20, fill: known.color}}>
 					<path d={siGit.path} />
 				</svg>
 			</div>

@@ -2,12 +2,7 @@ interface Props {
 	className?: string;
 }
 
-/**
- * LLM-provider brand glyphs. Monochrome (currentColor) so they read on the
- * dark UI inside both plain text and tinted row tiles. Anthropic / Gemini /
- * Mistral / Ollama / OpenRouter paths come from `simple-icons` (24×24);
- * OpenAI is hand-built because it was dropped from the icon set.
- */
+/** LLM-provider brand glyphs. Monochrome (currentColor) so they read on the dark UI inside both plain text and tinted row tiles. Anthropic / Gemini / Mistral / Ollama / OpenRouter paths come from `simple-icons` (24×24); OpenAI is hand-built because it was dropped from the icon set. */
 
 export const OpenAIIcon = ({className = 'size-4'}: Props) => (
 	<svg

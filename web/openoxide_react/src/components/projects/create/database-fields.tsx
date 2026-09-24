@@ -26,10 +26,7 @@ const DB_ICONS: Record<string, ComponentType<{className?: string}>> = {
 	libsql: LibsqlIcon,
 };
 
-/**
- * Vertical provider list — Vercel "Browse Storage" pattern: full-width rows
- * with logo + name + description, filled blue check on the selected row.
- */
+/** Vertical provider list — Vercel "Browse Storage" pattern: full-width rows with logo + name + description, filled blue check on the selected row. */
 export function DbEngineList({
 	selected,
 	onSelect,
@@ -75,7 +72,7 @@ export function DbEngineList({
 							</span>
 						</span>
 						{isSelected && (
-							<span className="flex size-5 shrink-0 animate-in zoom-in-75 duration-150 items-center justify-center rounded-full bg-primary text-primary-foreground">
+							<span className="flex size-5 shrink-0 animate-in items-center justify-center rounded-full bg-primary text-primary-foreground duration-150 zoom-in-75">
 								<Check className="size-3" />
 							</span>
 						)}
@@ -125,7 +122,13 @@ export function EngineField({form}: {form: Form}) {
 }
 
 /** Per-engine credential + image fields, each as a full-width row. */
-export function DbDetailFields({form, sheet}: {form: Form; sheet?: boolean}) {
+export function DbDetailFields({
+	form,
+	sheet,
+}: {
+	form: Form;
+	sheet?: boolean;
+}) {
 	const {
 		dbKind,
 		dbName,

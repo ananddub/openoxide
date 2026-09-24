@@ -10,10 +10,7 @@ import {
 	DialogTitle,
 } from '#/components/ui/dialog';
 
-/**
- * Destructive "Delete Permanently" confirmation modal shared by provider
- * and resource list pages.
- */
+/** Destructive "Delete Permanently" confirmation modal shared by provider and resource list pages. */
 export function DeleteConfirmDialog({
 	open,
 	onOpenChange,

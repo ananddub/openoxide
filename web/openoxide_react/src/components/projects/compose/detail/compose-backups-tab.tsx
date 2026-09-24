@@ -69,8 +69,7 @@ export function ComposeBackupsTab({
 		return getComposeServiceNames(compose, fetchedYaml);
 	}, [compose, fetchedYaml]);
 
-	// Live backups query; the table-watch stream (backups tables) keeps it
-	// fresh, so no zustand slice involved.
+	// Live backups query; the table-watch stream (backups tables) keeps it fresh, so no zustand slice involved.
 	const {activeOrg} = useOrganizations();
 	const {data: storeBackups = []} = useBackupItems(
 		BigInt(activeOrg?.id || 1),

@@ -1,9 +1,15 @@
-use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    Empty, OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
-    VaultService, VaultServiceExt,
+    CreateVaultProviderRequest, CreateVaultProviderResponse, DeleteVaultProviderRequest, Empty,
+    GetVaultProviderRequest, GetVaultProviderResponse, ListVaultAssignmentsRequest,
+    ListVaultAssignmentsResponse, ListVaultProvidersRequest, ListVaultProvidersResponse,
+    ListVaultSecretsRequest, ListVaultSecretsResponse, TestVaultConnectionRequest,
+    TestVaultConnectionResponse, TestVaultProviderRequest, TestVaultProviderResponse,
+    UpdateVaultAssignmentsRequest, UpdateVaultAssignmentsResponse, UpdateVaultProviderRequest,
+    UpdateVaultProviderResponse, VaultService, VaultServiceExt,
 };
+use crate::api::connect::generated::openoxide::api::v1::__buffa::view::VaultProviderAssignmentView;
 use crate::services::integrations::vault::{
     CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderAssignmentDto,
 };
@@ -11,23 +17,35 @@ use crate::services::integrations::vault::{
 use super::helper::*;
 use super::init::VaultController;
 
+fn assignments_to_dto(
+    views: &[VaultProviderAssignmentView<'_>],
+) -> Vec<VaultProviderAssignmentDto> {
+    views
+        .iter()
+        .map(|a| VaultProviderAssignmentDto {
+            project_id: a.project_id,
+            environment_ids: a.environment_ids.to_vec(),
+        })
+        .collect()
+}
+
 #[auto_grpc::service(connect = true, auth = true)]
 impl VaultService for VaultController {
     #[permission(Server, CanRead)]
     async fn list_providers<'a>(
         &'a self,
         ctx: RequestContext,
-        _query: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        _query: ServiceRequest<'_, ListVaultProvidersRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ListVaultProvidersResponse> + Send + use<'a>> {
         let org_id = auth.organization_id;
         let items = self
             .service
             .list_providers(org_id)
             .await
             .map_err(map_vault_error)?;
-        let items = items.into_iter().map(provider_to_resource).collect();
-        Response::ok(ResourceListResponse {
-            items,
+        let providers = items.into_iter().map(provider_to_proto).collect();
+        Response::ok(ListVaultProvidersResponse {
+            providers,
             ..Default::default()
         })
     }
@@ -36,56 +54,81 @@ impl VaultService for VaultController {
     async fn get_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, GetVaultProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<GetVaultProviderResponse> + Send + use<'a>> {
         let org_id = auth.organization_id;
         let provider = self
             .service
             .get_provider(request.id, org_id)
             .await
             .map_err(map_vault_error)?;
-        Response::ok(provider_to_resource(provider))
+        Response::ok(GetVaultProviderResponse {
+            provider: ::buffa::MessageField::some(provider_to_proto(provider)),
+            ..Default::default()
+        })
     }
 
     #[permission(Server, CanCreate)]
     async fn create_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, CreateVaultProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<CreateVaultProviderResponse> + Send + use<'a>> {
         let org_id = auth.organization_id;
-        let dto: CreateVaultProviderDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let dto = CreateVaultProviderDto {
+            name: request.name.to_owned(),
+            provider_type: proto_to_provider_type(request.provider_type)?,
+            api_url: request.api_url.to_owned(),
+            auth_token: request.auth_token.to_owned(),
+            namespace: request.namespace.map(str::to_owned),
+            config_json: request.config_json.map(str::to_owned),
+            assignments: assignments_to_dto(&request.assignments),
+        };
         let provider = self
             .service
             .create_provider(org_id, dto)
             .await
             .map_err(map_vault_error)?;
-        Response::ok(provider_to_resource(provider))
+        Response::ok(CreateVaultProviderResponse {
+            provider: ::buffa::MessageField::some(provider_to_proto(provider)),
+            ..Default::default()
+        })
     }
 
     #[permission(Server, CanUpdate)]
     async fn update_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, UpdateVaultProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<UpdateVaultProviderResponse> + Send + use<'a>> {
         let org_id = auth.organization_id;
-        let dto: UpdateVaultProviderDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let dto = UpdateVaultProviderDto {
+            name: request.name.map(str::to_owned),
+            api_url: request.api_url.map(str::to_owned),
+            auth_token: request.auth_token.map(str::to_owned),
+            namespace: request.namespace.map(str::to_owned),
+            config_json: request.config_json.map(str::to_owned),
+            assignments: request
+                .assignments
+                .as_option()
+                .map(|update| assignments_to_dto(&update.assignments)),
+        };
         let provider = self
             .service
             .update_provider(request.id, org_id, dto)
             .await
             .map_err(map_vault_error)?;
-        Response::ok(provider_to_resource(provider))
+        Response::ok(UpdateVaultProviderResponse {
+            provider: ::buffa::MessageField::some(provider_to_proto(provider)),
+            ..Default::default()
+        })
     }
 
     #[permission(Server, CanDelete)]
     async fn delete_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
+        request: ServiceRequest<'_, DeleteVaultProviderRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         let org_id = auth.organization_id;
         self.service
@@ -99,18 +142,17 @@ impl VaultService for VaultController {
     async fn test_provider<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        request: ServiceRequest<'_, TestVaultProviderRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<TestVaultProviderResponse> + Send + use<'a>> {
         let org_id = auth.organization_id;
         let result = self
             .service
             .test_connection(request.id, org_id)
             .await
             .map_err(map_vault_error)?;
-        Response::ok(OperationResult {
+        Response::ok(TestVaultProviderResponse {
             success: result.success,
-            operation: "test_provider".into(),
-            message: Some(result.message),
+            message: result.message,
             ..Default::default()
         })
     }
@@ -119,25 +161,26 @@ impl VaultService for VaultController {
     async fn test_connection<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let dto: CreateVaultProviderDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, TestVaultConnectionRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<TestVaultConnectionResponse> + Send + use<'a>>
+    {
+        let provider_type = proto_to_provider_type(request.provider_type)?;
+        let api_url = request.api_url.to_owned();
+        let auth_token = request.auth_token.to_owned();
         let result = self
             .service
             .test_credentials(
-                dto.provider_type,
-                &dto.api_url,
-                &dto.auth_token,
-                dto.namespace,
-                dto.config_json.as_deref(),
+                provider_type,
+                &api_url,
+                &auth_token,
+                request.namespace.map(str::to_owned),
+                request.config_json,
             )
             .await
             .map_err(map_vault_error)?;
-        Response::ok(OperationResult {
+        Response::ok(TestVaultConnectionResponse {
             success: result.success,
-            operation: "test_connection".into(),
-            message: Some(result.message),
+            message: result.message,
             ..Default::default()
         })
     }
@@ -146,23 +189,16 @@ impl VaultService for VaultController {
     async fn list_secrets<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, ListVaultSecretsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ListVaultSecretsResponse> + Send + use<'a>> {
         let org_id = auth.organization_id;
         let result = self
             .service
-            .list_secret_names(request.id, org_id)
+            .list_secret_names(request.provider_id, org_id)
             .await
             .map_err(map_vault_error)?;
-        let payload = serde_json::to_string(&result).unwrap_or_default();
-        let items = vec![ResourceResponse {
-            id: request.id,
-            kind: "vault_secrets".into(),
-            payload,
-            ..Default::default()
-        }];
-        Response::ok(ResourceListResponse {
-            items,
+        Response::ok(ListVaultSecretsResponse {
+            secrets: result.secrets,
             ..Default::default()
         })
     }
@@ -171,17 +207,18 @@ impl VaultService for VaultController {
     async fn list_assignments<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, ListVaultAssignmentsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ListVaultAssignmentsResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let assignments = self
             .service
-            .get_assignments(request.id, org_id)
+            .get_assignments(request.provider_id, org_id)
             .await
             .map_err(map_vault_error)?;
-        let items = assignments.into_iter().map(assignment_to_resource).collect();
-        Response::ok(ResourceListResponse {
-            items,
+        let assignments = assignments.into_iter().map(assignment_to_proto).collect();
+        Response::ok(ListVaultAssignmentsResponse {
+            assignments,
             ..Default::default()
         })
     }
@@ -190,21 +227,20 @@ impl VaultService for VaultController {
     async fn update_assignments<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        request: ServiceRequest<'_, UpdateVaultAssignmentsRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<UpdateVaultAssignmentsResponse> + Send + use<'a>,
+    > {
         let org_id = auth.organization_id;
-        let assignments: Vec<VaultProviderAssignmentDto> = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let assignments = assignments_to_dto(&request.assignments);
         let result = self
             .service
-            .set_assignments(request.id, org_id, assignments)
+            .set_assignments(request.provider_id, org_id, assignments)
             .await
             .map_err(map_vault_error)?;
-        let payload = serde_json::to_string(&result).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "update_assignments".into(),
-            payload: Some(payload),
+        let assignments = result.into_iter().map(assignment_to_proto).collect();
+        Response::ok(UpdateVaultAssignmentsResponse {
+            assignments,
             ..Default::default()
         })
     }

@@ -24,19 +24,16 @@ export function OverviewServicesTab() {
 	const [pageSize, setPageSize] = useState(50);
 	const [pageIndex, setPageIndex] = useState(0);
 
-	// Live query keyed ['overview-services'] — the table-watch stream
-	// refetches it on any services-table change while the tab is mounted.
+	// Live query keyed ['overview-services'] — the table-watch stream refetches it on any services-table change while the tab is mounted.
 	const servicesQuery = useOverviewServices();
-	// Live projects query keyed ['projects','list',org] — table-watch
-	// invalidates it while the overview page is mounted.
+	// Live projects query keyed ['projects','list',org] — table-watch invalidates it while the overview page is mounted.
 	const {activeOrg} = useOrganizations();
 	const projectsQuery = useProjectListByOrganization(
 		BigInt(activeOrg?.id || 1),
 	);
 	const projectsToUse = (projectsQuery.data ?? []) as any[];
 	const {data: remoteServers = []} = useRemoteServerList();
-	// Live servers query; the table-watch stream keeps it fresh, so no
-	// zustand fallback is needed anymore.
+	// Live servers query; the table-watch stream keeps it fresh, so no zustand fallback is needed anymore.
 	const rawServices = servicesQuery.data ?? [];
 
 	const isLoading = servicesQuery.isLoading && rawServices.length === 0;

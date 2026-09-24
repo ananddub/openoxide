@@ -47,13 +47,13 @@ export function CommandBlock({
 					{copied ? 'Copied' : 'Copy'}
 				</Button>
 			</div>
-			<div className="max-h-24 w-full min-w-0 overflow-y-auto rounded bg-zinc-950 p-2.5 font-mono text-[11px] leading-relaxed break-all text-zinc-200 select-all">
+			<div className="max-h-24 w-full min-w-0 overflow-y-auto rounded border border-border bg-background p-2.5 font-mono text-[11px] leading-relaxed break-all text-foreground select-all">
 				{isLoading ? (
-					<span className="text-zinc-500">Loading token…</span>
+					<span className="text-muted-foreground">Loading token…</span>
 				) : command ? (
 					command
 				) : (
-					<span className="text-zinc-500">Token unavailable</span>
+					<span className="text-muted-foreground">Token unavailable</span>
 				)}
 			</div>
 		</div>

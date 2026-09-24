@@ -23,16 +23,11 @@ import {
 	SidebarMenu,
 	SidebarMenuItem,
 } from '#/components/ui/sidebar';
-import {useCan} from '#/hooks/use-permissions';
-import {useUrlTab} from '#/hooks/use-url-tab';
+import {useCan} from '#/hooks/permissions/use-permissions';
+import {useUrlTab} from '#/hooks/ui/use-url-tab';
 import {SETTINGS_TABS} from '#/pages/settings/settings-tabs';
 
-/**
- * Page-aware rail context: the nav swaps to context rows ONLY inside a
- * service detail page (or settings) — plain project pages keep the
- * global menu. The header is the Vercel "< Title" row: a thin chevron
- * plus the centered context name; the whole header is the back control.
- */
+/** Page-aware rail context: the nav swaps to context rows ONLY inside a service detail page (or settings) — plain project pages keep the global menu. The header is the Vercel "< Title" row: a thin chevron plus the centered context name; the whole header is the back control. */
 
 const TAB_ICONS: Record<string, LucideIcon> = {
 	General: Settings2,
@@ -92,6 +87,7 @@ function databaseTabs(kind: string | undefined): string[] {
 type PageContext =
 	| {kind: 'settings'}
 	| {kind: 'infra'}
+	| {kind: 'deployments'}
 	| {
 			kind: 'service';
 			projectId: number;
@@ -114,8 +110,10 @@ function resolveContext(
 	// /infra?tab=… — Web Server / Traefik / Swarm / Requests own the rail.
 	if (seg[0] === 'infra') return {kind: 'infra'};
 
-	// Only /projects/:id/family/:resourceId (service detail) — NOT the
-	// plain project page.
+	// /Deployments and /Deployments/queue — the two views own the rail.
+	if (seg[0] === 'Deployments') return {kind: 'deployments'};
+
+	// Only /projects/:id/family/:resourceId (service detail) — NOT the plain project page.
 	if (seg[0] !== 'projects' || !seg[1] || seg.length < 4) return null;
 	const projectId = Number(seg[1]);
 	if (Number.isNaN(projectId)) return null;
@@ -308,6 +306,51 @@ function InfraContextNav({collapsed}: {collapsed: boolean}) {
 
 /* ── Service context ───────────────────────────────────────────────── */
 
+/* ── Deployments context ─────────────────────────────────────────── */
+
+const DEPLOYMENTS_NAV = [
+	{
+		id: 'history',
+		label: 'Logs & History',
+		icon: ScrollText,
+		to: '/Deployments',
+	},
+	{
+		id: 'queue',
+		label: 'Active Queue',
+		icon: Activity,
+		to: '/Deployments/queue',
+	},
+] as const;
+
+function DeploymentsContextNav({collapsed}: {collapsed: boolean}) {
+	const location = useLocation();
+	const navigate = useNavigate();
+	const path = location.pathname.replace(/\/+$/, '') || '/';
+
+	return (
+		<SidebarGroup className="px-2 py-1">
+			<ContextHeader
+				label="Deployments"
+				collapsed={collapsed}
+				onBack={() => void navigate({to: '/'})}
+			/>
+			<SidebarMenu className="gap-px">
+				{DEPLOYMENTS_NAV.map(item => (
+					<ContextRow
+						key={item.id}
+						icon={item.icon}
+						label={item.label}
+						active={path === item.to}
+						collapsed={collapsed}
+						onClick={() => void navigate({to: item.to as never})}
+					/>
+				))}
+			</SidebarMenu>
+		</SidebarGroup>
+	);
+}
+
 function ServiceContextNav({
 	projectId,
 	tabs,
@@ -322,8 +365,7 @@ function ServiceContextNav({
 	const navigate = useNavigate();
 	const [activeTab, setActiveTab] = useUrlTab('General');
 
-	// Stale param guard: arriving from a service with a tab this one lacks
-	// (app Logs → compose without Logs) would leave nothing selected.
+	// Stale param guard: arriving from a service with a tab this one lacks (app Logs → compose without Logs) would leave nothing selected.
 	const effective = tabs.includes(activeTab) ? activeTab : 'General';
 	if (effective !== activeTab) {
 		queueMicrotask(() => setActiveTab(effective));
@@ -373,6 +415,8 @@ export function PageContextNav({collapsed}: {collapsed: boolean}) {
 			return <SettingsContextNav collapsed={collapsed} />;
 		case 'infra':
 			return <InfraContextNav collapsed={collapsed} />;
+		case 'deployments':
+			return <DeploymentsContextNav collapsed={collapsed} />;
 		case 'service':
 			return (
 				<ServiceContextNav

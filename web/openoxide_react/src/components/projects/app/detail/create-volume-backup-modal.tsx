@@ -40,8 +40,7 @@ export function CreateVolumeBackupModal({
 	const [volumeName, setVolumeName] = useState('');
 	const [cronExpr, setCronExpr] = useState('');
 	const [prefix, setPrefix] = useState('volume-backups/');
-	// Live destinations query; the table-watch stream (destinations table)
-	// keeps it fresh.
+	// Live destinations query; the table-watch stream (destinations table) keeps it fresh.
 	const destinations = useDestinationList().data ?? [];
 	const [destinationId, setDestinationId] = useState('');
 	const [turnOff, setTurnOff] = useState(false);

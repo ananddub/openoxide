@@ -24,8 +24,7 @@ interface TagItem {
 
 export const TagManager = () => {
 	const [searchQuery, setSearchQuery] = useState('');
-	// Live tags query keyed ['tags','list'] — table-watch invalidates it
-	// while this component is mounted.
+	// Live tags query keyed ['tags','list'] — table-watch invalidates it while this component is mounted.
 	const tagsQuery = useTagListAll();
 	const rawTags = tagsQuery.data;
 	const isLoading = tagsQuery.isLoading;
@@ -134,9 +133,7 @@ export const TagManager = () => {
 											type="destructive"
 											onClick={async () => {
 												await deleteMutation
-													.mutateAsync({
-														params: {path: {id: tag.id}},
-													})
+													.mutateAsync(tag.id)
 													.then(async () => {
 														toast.success('Tag deleted successfully');
 													})

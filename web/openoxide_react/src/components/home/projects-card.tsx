@@ -50,8 +50,8 @@ export function ProjectsCard({
 						No projects yet
 					</h3>
 					<p className="mx-auto mb-5 max-w-sm text-sm leading-relaxed text-muted-foreground">
-						Deploy applications, compose stacks, and databases to see
-						them here.
+						Deploy applications, compose stacks, and databases to see them
+						here.
 					</p>
 					<Link
 						to="/projects"

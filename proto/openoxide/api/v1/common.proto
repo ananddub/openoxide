@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package openoxide.api.v1;
 
-import "buf/validate/validate.proto";
-
 message Empty {}
 
 message User {
@@ -19,43 +17,4 @@ message User {
 message TokenPair {
   string access_token = 1;
   string refresh_token = 2;
-}
-
-// Control-plane envelope payloads. Domain JSON stays validated inside
-// `payload` while resource identifiers and operation names stay strongly typed.
-message ResourceRequest {
-  int64 id = 1 [(buf.validate.field).int64.gte = 0];
-  optional int64 organization_id = 2 [(buf.validate.field).int64.gt = 0];
-  optional int64 environment_id = 3 [(buf.validate.field).int64.gt = 0];
-  string payload = 4 [(buf.validate.field).string.max_len = 1048576];
-}
-
-message ResourceResponse {
-  int64 id = 1;
-  string kind = 2;
-  string payload = 3;
-}
-
-message ResourceListResponse {
-  repeated ResourceResponse items = 1;
-}
-
-message ResourceQuery {
-  optional int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
-  optional int64 environment_id = 2 [(buf.validate.field).int64.gt = 0];
-  optional string query = 3 [(buf.validate.field).string.max_len = 1000];
-  optional int64 limit = 4 [(buf.validate.field).int64 = {gte: 1, lte: 1000}];
-  optional int64 offset = 5 [(buf.validate.field).int64.gte = 0];
-}
-
-message OperationResult {
-  bool success = 1;
-  string operation = 2;
-  optional string message = 3;
-  optional string payload = 4;
-}
-
-message StreamQuery {
-  int64 id = 1 [(buf.validate.field).int64.gt = 0];
-  optional string filter = 2 [(buf.validate.field).string.max_len = 1000];
 }

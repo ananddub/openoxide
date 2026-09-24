@@ -32,7 +32,7 @@ const DESCRIPTIONS: Record<string, string> = {
 		'How long to wait to judge a task before moving on.',
 	'Stop Grace Period (nanoseconds)':
 		'Time to wait before forcefully stopping a task.',
-	'Parallelism': 'Number of tasks updated in parallel at once.',
+	Parallelism: 'Number of tasks updated in parallel at once.',
 	'Max Failure Ratio':
 		'Fraction of failed tasks that aborts the whole update.',
 	Replicas: 'Number of task copies the service should run.',
@@ -96,7 +96,8 @@ export function Num({
 	step?: number;
 	min?: number;
 }) {
-	const current = value == null || value === '' ? undefined : Number(value);
+	const current =
+		value == null || value === '' ? undefined : Number(value);
 	const base = Number.isFinite(current) ? (current as number) : min;
 	const bump = (delta: number) =>
 		set(parseFloat((base + delta).toFixed(6)));

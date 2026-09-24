@@ -1,10 +1,21 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    AiService, AiServiceExt, Empty, OperationResult, ResourceListResponse,
-    ResourceQuery, ResourceRequest, ResourceResponse,
+    AiAnalyzeLogsRequest, AiAnalyzeLogsResponse, AiCreateGenerationRequest,
+    AiCreateGenerationResponse, AiCreateSettingsRequest, AiCreateSettingsResponse,
+    AiDeleteSettingsRequest, AiDeployGenerationRequest, AiDeployGenerationResponse,
+    AiDiscoverModelsRequest, AiDiscoverModelsResponse, AiGetGenerationRequest,
+    AiGetGenerationResponse, AiGetSettingsRequest, AiGetSettingsResponse, AiListGenerationsRequest,
+    AiListGenerationsResponse, AiListModelsRequest, AiListModelsResponse, AiListSettingsRequest,
+    AiListSettingsResponse, AiLogContext, AiReviewGenerationRequest, AiReviewGenerationResponse,
+    AiService, AiServiceExt, AiTestConnectionRequest, AiTestConnectionResponse,
+    AiTestSettingsRequest, AiTestSettingsResponse, AiUpdateSettingsRequest,
+    AiUpdateSettingsResponse, Empty,
 };
-use crate::services::platform::ai::AiLogContext;
+use crate::services::platform::ai::{
+    AiDeployInput, AiGenerationOutput as AppAiGenerationOutput, AiLogContext as AppAiLogContext,
+    AiSettingInput, AiSettingUpdate,
+};
 
 use super::helper::*;
 use super::init::AiController;
@@ -15,46 +26,35 @@ impl AiService for AiController {
     async fn list_settings<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, AiListSettingsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiListSettingsResponse> + Send + use<'a>> {
         let organization_id = request.organization_id.unwrap_or(0);
         let items = self
             .service
             .list_settings(organization_id)
             .await
             .map_err(map_error)?;
-        let items = items
-            .into_iter()
-            .map(|dto| {
-                let payload = serde_json::to_string(&dto).unwrap_or_default();
-                ResourceResponse {
-                    id: dto.id,
-                    kind: "ai_setting".into(),
-                    payload,
-                    ..Default::default()
-                }
-            })
-            .collect();
-        Response::ok(ResourceListResponse { items, ..Default::default() })
+        let settings = items.into_iter().map(setting_to_proto).collect();
+        Response::ok(AiListSettingsResponse {
+            settings,
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanRead)]
     async fn get_settings<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, AiGetSettingsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiGetSettingsResponse> + Send + use<'a>> {
         let organization_id = request.organization_id.unwrap_or(0);
         let setting = self
             .service
             .get_setting(request.id, organization_id)
             .await
             .map_err(map_error)?;
-        let payload = serde_json::to_string(&setting).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: setting.id,
-            kind: "ai_setting".into(),
-            payload,
+        Response::ok(AiGetSettingsResponse {
+            setting: ::buffa::MessageField::some(setting_to_proto(setting)),
             ..Default::default()
         })
     }
@@ -63,21 +63,23 @@ impl AiService for AiController {
     async fn create_settings<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, AiCreateSettingsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiCreateSettingsResponse> + Send + use<'a>> {
         let organization_id = request.organization_id.unwrap_or(0);
-        let dto: CreateAiSettingDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let input = AiSettingInput {
+            name: request.name.to_owned(),
+            api_url: request.api_url.to_owned(),
+            api_key: request.api_key.to_owned(),
+            model: request.model.to_owned(),
+            is_enabled: request.is_enabled,
+        };
         let setting = self
             .service
-            .create_setting(organization_id, dto.into())
+            .create_setting(organization_id, input)
             .await
             .map_err(map_error)?;
-        let payload = serde_json::to_string(&setting).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: setting.id,
-            kind: "ai_setting".into(),
-            payload,
+        Response::ok(AiCreateSettingsResponse {
+            setting: ::buffa::MessageField::some(setting_to_proto(setting)),
             ..Default::default()
         })
     }
@@ -86,21 +88,23 @@ impl AiService for AiController {
     async fn update_settings<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, AiUpdateSettingsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiUpdateSettingsResponse> + Send + use<'a>> {
         let organization_id = request.organization_id.unwrap_or(0);
-        let dto: UpdateAiSettingDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let input = AiSettingUpdate {
+            name: request.name.map(str::to_owned),
+            api_url: request.api_url.map(str::to_owned),
+            api_key: request.api_key.map(str::to_owned),
+            model: request.model.map(str::to_owned),
+            is_enabled: request.is_enabled,
+        };
         let setting = self
             .service
-            .update_setting(request.id, organization_id, dto.into())
+            .update_setting(request.id, organization_id, input)
             .await
             .map_err(map_error)?;
-        let payload = serde_json::to_string(&setting).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: setting.id,
-            kind: "ai_setting".into(),
-            payload,
+        Response::ok(AiUpdateSettingsResponse {
+            setting: ::buffa::MessageField::some(setting_to_proto(setting)),
             ..Default::default()
         })
     }
@@ -109,7 +113,7 @@ impl AiService for AiController {
     async fn delete_settings<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
+        request: ServiceRequest<'_, AiDeleteSettingsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         let organization_id = request.organization_id.unwrap_or(0);
         let deleted = self
@@ -128,44 +132,34 @@ impl AiService for AiController {
     async fn list_models<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, AiListModelsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiListModelsResponse> + Send + use<'a>> {
         let organization_id = request.organization_id.unwrap_or(0);
         let models = self
             .service
-            .discover_setting_models(request.id, organization_id)
+            .discover_setting_models(request.setting_id, organization_id)
             .await
             .map_err(map_error)?;
-        let items = models
-            .into_iter()
-            .map(|m| {
-                let payload = serde_json::to_string(&m).unwrap_or_default();
-                ResourceResponse {
-                    id: 0,
-                    kind: "ai_model".into(),
-                    payload,
-                    ..Default::default()
-                }
-            })
-            .collect();
-        Response::ok(ResourceListResponse { items, ..Default::default() })
+        Response::ok(AiListModelsResponse {
+            models,
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanRead)]
     async fn test_settings<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        request: ServiceRequest<'_, AiTestSettingsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiTestSettingsResponse> + Send + use<'a>> {
         let organization_id = request.organization_id.unwrap_or(0);
         self.service
             .test_setting(request.id, organization_id)
             .await
             .map_err(map_error)?;
-        Response::ok(OperationResult {
+        Response::ok(AiTestSettingsResponse {
             success: true,
-            operation: "test_settings".into(),
-            message: Some("connection successful".into()),
+            message: "connection successful".into(),
             ..Default::default()
         })
     }
@@ -174,46 +168,36 @@ impl AiService for AiController {
     async fn discover_models<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let dto: DiscoverAiModelsDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, AiDiscoverModelsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiDiscoverModelsResponse> + Send + use<'a>> {
         let models = self
             .service
-            .discover_models(dto.api_url, dto.api_key)
+            .discover_models(request.api_url.to_owned(), request.api_key.to_owned())
             .await
             .map_err(map_error)?;
-        let items = models
-            .into_iter()
-            .map(|m| {
-                let payload = serde_json::to_string(&m).unwrap_or_default();
-                ResourceResponse {
-                    id: 0,
-                    kind: "ai_model".into(),
-                    payload,
-                    ..Default::default()
-                }
-            })
-            .collect();
-        Response::ok(ResourceListResponse { items, ..Default::default() })
+        Response::ok(AiDiscoverModelsResponse {
+            models,
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanRead)]
     async fn test_connection<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let dto: TestAiConnectionDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, AiTestConnectionRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiTestConnectionResponse> + Send + use<'a>> {
         self.service
-            .test_connection(dto.api_url, dto.api_key, dto.model)
+            .test_connection(
+                request.api_url.to_owned(),
+                request.api_key.to_owned(),
+                request.model.to_owned(),
+            )
             .await
             .map_err(map_error)?;
-        Response::ok(OperationResult {
+        Response::ok(AiTestConnectionResponse {
             success: true,
-            operation: "test_connection".into(),
-            message: Some("connection successful".into()),
+            message: "connection successful".into(),
             ..Default::default()
         })
     }
@@ -222,8 +206,8 @@ impl AiService for AiController {
     async fn list_generations<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, AiListGenerationsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiListGenerationsResponse> + Send + use<'a>> {
         let organization_id = request.organization_id.unwrap_or(0);
         let limit = request.limit.unwrap_or(50);
         let items = self
@@ -231,38 +215,27 @@ impl AiService for AiController {
             .list_generations(organization_id, limit)
             .await
             .map_err(map_error)?;
-        let items = items
-            .into_iter()
-            .map(|dto| {
-                let payload = serde_json::to_string(&dto).unwrap_or_default();
-                ResourceResponse {
-                    id: dto.id,
-                    kind: "ai_generation".into(),
-                    payload,
-                    ..Default::default()
-                }
-            })
-            .collect();
-        Response::ok(ResourceListResponse { items, ..Default::default() })
+        let generations = items.into_iter().map(generation_to_proto).collect();
+        Response::ok(AiListGenerationsResponse {
+            generations,
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanRead)]
     async fn get_generation<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, AiGetGenerationRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiGetGenerationResponse> + Send + use<'a>> {
         let organization_id = request.organization_id.unwrap_or(0);
         let generation = self
             .service
             .get_generation(request.id, organization_id)
             .await
             .map_err(map_error)?;
-        let payload = serde_json::to_string(&generation).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: generation.id,
-            kind: "ai_generation".into(),
-            payload,
+        Response::ok(AiGetGenerationResponse {
+            generation: ::buffa::MessageField::some(generation_to_proto(generation)),
             ..Default::default()
         })
     }
@@ -271,22 +244,22 @@ impl AiService for AiController {
     async fn create_generation<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, AiCreateGenerationRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiCreateGenerationResponse> + Send + use<'a>> {
         let auth = Self::extract_auth(&ctx).await?;
         let organization_id = auth.organization_id;
-        let dto: GenerateComposeDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
         let generation = self
             .service
-            .generate(dto.ai_setting_id, organization_id, auth.user_id(), dto.request)
+            .generate(
+                request.ai_setting_id,
+                organization_id,
+                auth.user_id(),
+                request.request.to_owned(),
+            )
             .await
             .map_err(map_error)?;
-        let payload = serde_json::to_string(&generation).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: generation.id,
-            kind: "ai_generation".into(),
-            payload,
+        Response::ok(AiCreateGenerationResponse {
+            generation: ::buffa::MessageField::some(generation_to_proto(generation)),
             ..Default::default()
         })
     }
@@ -295,18 +268,20 @@ impl AiService for AiController {
     async fn review_generation<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        request: ServiceRequest<'_, AiReviewGenerationRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiReviewGenerationResponse> + Send + use<'a>> {
         let organization_id = request.organization_id.unwrap_or(0);
-        let dto: ReviewAiGenerationDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        self.service
-            .review_generation(request.id, organization_id, dto.output)
+        let output_view = request.output.as_option().ok_or_else(|| {
+            ConnectError::invalid_argument("review generation requires an output")
+        })?;
+        let output = output_view_to_dto(output_view);
+        let generation = self
+            .service
+            .review_generation(request.id, organization_id, output)
             .await
             .map_err(map_error)?;
-        Response::ok(OperationResult {
-            success: true,
-            operation: "review_generation".into(),
+        Response::ok(AiReviewGenerationResponse {
+            generation: ::buffa::MessageField::some(generation_to_proto(generation)),
             ..Default::default()
         })
     }
@@ -315,21 +290,24 @@ impl AiService for AiController {
     async fn deploy_generation<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        request: ServiceRequest<'_, AiDeployGenerationRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiDeployGenerationResponse> + Send + use<'a>> {
         let organization_id = request.organization_id.unwrap_or(0);
-        let dto: DeployAiGenerationDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let input = AiDeployInput {
+            suggestion_id: request.suggestion_id.to_owned(),
+            environment_id: request.environment_id,
+            server_id: request.server_id,
+            deploy_now: request.deploy_now,
+        };
         let result = self
             .service
-            .deploy_generation(request.id, organization_id, dto.into())
+            .deploy_generation(request.id, organization_id, input)
             .await
             .map_err(map_error)?;
-        let payload = serde_json::to_string(&result).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "deploy_generation".into(),
-            payload: Some(payload),
+        Response::ok(AiDeployGenerationResponse {
+            generation: ::buffa::MessageField::some(generation_to_proto(result.generation)),
+            compose_id: result.compose_id,
+            deployment_id: result.deployment_id,
             ..Default::default()
         })
     }
@@ -338,26 +316,79 @@ impl AiService for AiController {
     async fn analyze_logs<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let organization_id = request.organization_id.unwrap_or(0);
-        let dto: AnalyzeLogsDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let context = match dto.context {
-            AiLogContextDto::Build => AiLogContext::Build,
-            AiLogContextDto::Runtime => AiLogContext::Runtime,
+        request: ServiceRequest<'_, AiAnalyzeLogsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiAnalyzeLogsResponse> + Send + use<'a>> {
+        let organization_id = auth.organization_id;
+        let context = match request.context {
+            ::buffa::EnumValue::Known(AiLogContext::Build) => AppAiLogContext::Build,
+            ::buffa::EnumValue::Known(AiLogContext::Runtime) => AppAiLogContext::Runtime,
+            _ => return Err(ConnectError::invalid_argument("unsupported log context")),
         };
         let analysis = self
             .service
-            .analyze_logs(dto.ai_setting_id, organization_id, context, dto.logs)
+            .analyze_logs(
+                request.ai_setting_id,
+                organization_id,
+                context,
+                request.logs.to_owned(),
+            )
             .await
             .map_err(map_error)?;
-        let payload = serde_json::to_string(&analysis).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: 0,
-            kind: "ai_log_analysis".into(),
-            payload,
+        Response::ok(AiAnalyzeLogsResponse {
+            analysis,
             ..Default::default()
         })
+    }
+}
+
+/// Wire `AiGenerationOutput` view → service DTO for the review mutation.
+///
+/// The service inner suggestion types (`AiComposeSuggestion` et al.) are not
+/// re-exported from `services::platform::ai`, so the DTO is reconstructed via
+/// its `Deserialize` impl from JSON built field-by-field off the zero-copy view.
+fn output_view_to_dto(
+    view: &crate::api::connect::generated::openoxide::api::v1::__buffa::view::AiGenerationOutputView<'_>,
+) -> AppAiGenerationOutput {
+    let value = serde_json::json!({
+        "suggestions": view
+            .suggestions
+            .iter()
+            .map(|s| serde_json::json!({
+                "id": s.id,
+                "name": s.name,
+                "short_description": s.short_description,
+                "description": s.description,
+                "docker_compose": s.docker_compose,
+                "env_variables": s
+                    .env_variables
+                    .iter()
+                    .map(|e| serde_json::json!({ "name": e.name, "value": e.value }))
+                    .collect::<Vec<_>>(),
+                "domains": s
+                    .domains
+                    .iter()
+                    .map(|d| serde_json::json!({
+                        "host": d.host,
+                        "port": d.port,
+                        "service_name": d.service_name,
+                    }))
+                    .collect::<Vec<_>>(),
+                "config_files": s
+                    .config_files
+                    .iter()
+                    .map(|f| serde_json::json!({
+                        "file_path": f.file_path,
+                        "content": f.content,
+                    }))
+                    .collect::<Vec<_>>(),
+            }))
+            .collect::<Vec<_>>(),
+    });
+    match serde_json::from_value::<AppAiGenerationOutput>(value) {
+        Ok(output) => output,
+        Err(error) => {
+            tracing::error!(error = %error, "failed to decode AI review output");
+            AppAiGenerationOutput { suggestions: vec![] }
+        }
     }
 }

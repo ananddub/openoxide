@@ -29,8 +29,7 @@ export function InlineProfileEditor({
 	const [lastName, setLastName] = useState(initialLastName);
 	const [avatarValue, setAvatarValue] = useState(initialAvatar);
 
-	// Re-seed from the live profile every time the card opens, so a collapse
-	// (Cancel) discards unsaved edits.
+	// Re-seed from the live profile every time the card opens, so a collapse (Cancel) discards unsaved edits.
 	useEffect(() => {
 		if (open) {
 			setFirstName(initialFirstName);

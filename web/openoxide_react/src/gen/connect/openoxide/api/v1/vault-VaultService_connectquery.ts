@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/vault.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {VaultService} from './vault_pb';
+import { VaultService } from "./vault_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.VaultService.ListProviders

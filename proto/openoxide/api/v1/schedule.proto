@@ -2,14 +2,345 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
+// Sole schedule owner service; absorbs the former ScheduleOperationsService.
 service ScheduleService {
-  rpc ListSchedules(ResourceQuery) returns (ResourceListResponse);
-  rpc GetSchedule(ResourceRequest) returns (ResourceResponse);
-  rpc CreateSchedule(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateSchedule(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteSchedule(ResourceRequest) returns (Empty);
-  rpc RunSchedule(ResourceRequest) returns (OperationResult);
-  rpc PauseSchedule(ResourceRequest) returns (OperationResult);
-  rpc ResumeSchedule(ResourceRequest) returns (OperationResult);
+  rpc ListSchedules(ScheduleListSchedulesRequest) returns (ScheduleListSchedulesResponse);
+  rpc GetSchedule(ScheduleGetScheduleRequest) returns (ScheduleGetScheduleResponse);
+  rpc CreateSchedule(ScheduleCreateScheduleRequest) returns (ScheduleCreateScheduleResponse);
+  rpc UpdateSchedule(ScheduleUpdateScheduleRequest) returns (ScheduleUpdateScheduleResponse);
+  rpc DeleteSchedule(ScheduleDeleteScheduleRequest) returns (Empty);
+  rpc RunSchedule(ScheduleRunScheduleRequest) returns (ScheduleRunScheduleResponse);
+  rpc PauseSchedule(SchedulePauseScheduleRequest) returns (SchedulePauseScheduleResponse);
+  rpc ResumeSchedule(ScheduleResumeScheduleRequest) returns (ScheduleResumeScheduleResponse);
+  rpc ListApplicationSchedules(ScheduleListApplicationSchedulesRequest) returns (ScheduleListApplicationSchedulesResponse);
+  rpc ListComposeSchedules(ScheduleListComposeSchedulesRequest) returns (ScheduleListComposeSchedulesResponse);
+  rpc ListDatabaseSchedules(ScheduleListDatabaseSchedulesRequest) returns (ScheduleListDatabaseSchedulesResponse);
+  rpc ListServerSchedules(ScheduleListServerSchedulesRequest) returns (ScheduleListServerSchedulesResponse);
+  rpc ListOrganizationSchedules(ScheduleListOrganizationSchedulesRequest) returns (ScheduleListOrganizationSchedulesResponse);
+  rpc TriggerSchedule(ScheduleTriggerScheduleRequest) returns (ScheduleTriggerScheduleResponse);
+  rpc GetRuntimePolicy(ScheduleGetRuntimePolicyRequest) returns (ScheduleGetRuntimePolicyResponse);
+  rpc UpdateRuntimePolicy(ScheduleUpdateRuntimePolicyRequest) returns (ScheduleUpdateRuntimePolicyResponse);
+  rpc ListExecutions(ScheduleListExecutionsRequest) returns (ScheduleListExecutionsResponse);
+  rpc GetLogs(ScheduleGetLogsRequest) returns (ScheduleGetLogsResponse);
+  rpc GetExecutionLogs(ScheduleGetExecutionLogsRequest) returns (ScheduleGetExecutionLogsResponse);
+}
+
+enum ScheduleShellType {
+  SCHEDULE_SHELL_TYPE_UNSPECIFIED = 0;
+  SCHEDULE_SHELL_TYPE_BASH = 1;
+  SCHEDULE_SHELL_TYPE_SH = 2;
+}
+
+// `DATABASE` is a legacy stored value kept for rows predating the APPLICATION/COMPOSE/SERVER split.
+enum ScheduleType {
+  SCHEDULE_TYPE_UNSPECIFIED = 0;
+  SCHEDULE_TYPE_APPLICATION = 1;
+  SCHEDULE_TYPE_COMPOSE = 2;
+  SCHEDULE_TYPE_DATABASE = 3;
+  SCHEDULE_TYPE_SERVER = 4;
+  SCHEDULE_TYPE_DOKPANEL_SERVER = 5;
+}
+
+enum ScheduleAction {
+  SCHEDULE_ACTION_UNSPECIFIED = 0;
+  SCHEDULE_ACTION_EXEC = 1;
+  SCHEDULE_ACTION_DEPLOY = 2;
+  SCHEDULE_ACTION_REDEPLOY = 3;
+  SCHEDULE_ACTION_REBUILD = 4;
+  SCHEDULE_ACTION_RELOAD = 5;
+  SCHEDULE_ACTION_START = 6;
+  SCHEDULE_ACTION_STOP = 7;
+}
+
+enum ScheduleTriggerKind {
+  SCHEDULE_TRIGGER_KIND_UNSPECIFIED = 0;
+  SCHEDULE_TRIGGER_KIND_CRON = 1;
+  SCHEDULE_TRIGGER_KIND_MANUAL = 2;
+  SCHEDULE_TRIGGER_KIND_MISSED = 3;
+  SCHEDULE_TRIGGER_KIND_RETRY = 4;
+}
+
+enum ScheduleExecutionStatus {
+  SCHEDULE_EXECUTION_STATUS_UNSPECIFIED = 0;
+  SCHEDULE_EXECUTION_STATUS_RUNNING = 1;
+  SCHEDULE_EXECUTION_STATUS_SUCCEEDED = 2;
+  SCHEDULE_EXECUTION_STATUS_FAILED = 3;
+  SCHEDULE_EXECUTION_STATUS_SKIPPED = 4;
+}
+
+enum ScheduleMissedRunPolicy {
+  SCHEDULE_MISSED_RUN_POLICY_UNSPECIFIED = 0;
+  SCHEDULE_MISSED_RUN_POLICY_SKIP = 1;
+  SCHEDULE_MISSED_RUN_POLICY_RUN_ONCE = 2;
+}
+
+enum ScheduleConcurrencyPolicy {
+  SCHEDULE_CONCURRENCY_POLICY_UNSPECIFIED = 0;
+  SCHEDULE_CONCURRENCY_POLICY_SKIP = 1;
+  SCHEDULE_CONCURRENCY_POLICY_QUEUE = 2;
+  SCHEDULE_CONCURRENCY_POLICY_ALLOW = 3;
+}
+
+// kind "schedule": a cron-driven automation row.
+message Schedule {
+  int64 id = 1;
+  string name = 2;
+  optional string description = 3;
+  string cron_expression = 4;
+  // Generated slug identifying the schedule's service row.
+  string app_name = 5;
+  optional string service_name = 6;
+  ScheduleShellType shell_type = 7;
+  ScheduleType schedule_type = 8;
+  ScheduleAction schedule_action = 9;
+  string command = 10;
+  optional string script = 11;
+  optional string timezone = 12;
+  bool enabled = 13;
+  optional int64 service_id = 14;
+  // Typed linkage mirrors derived from (schedule_type, service_id); exactly one is set.
+  optional int64 application_id = 15;
+  optional int64 compose_id = 16;
+  optional int64 database_id = 17;
+  optional int64 server_id = 18;
+  optional int64 organization_id = 19;
+  int64 created_at = 20;
+  int64 updated_at = 21;
+}
+
+// Outcome of running a schedule right now.
+message ScheduleRun {
+  Schedule schedule = 1;
+  // Action actually performed (echo of schedule_action, free-form).
+  string action = 2;
+  optional int64 deployment_id = 3;
+  string message = 4;
+  optional string stdout = 5;
+  optional string stderr = 6;
+}
+
+// kind "schedule_execution": one recorded run of a schedule.
+message ScheduleExecution {
+  int64 id = 1;
+  int64 schedule_id = 2;
+  optional int64 organization_id = 3;
+  ScheduleTriggerKind trigger_kind = 4;
+  ScheduleExecutionStatus status = 5;
+  int64 attempt = 6;
+  int64 scheduled_at = 7;
+  int64 started_at = 8;
+  optional int64 finished_at = 9;
+  optional string message = 10;
+  optional string stdout = 11;
+  optional string stderr = 12;
+}
+
+// kind "schedule_runtime_policy": per-schedule runner tuning.
+message ScheduleRuntimePolicy {
+  int64 schedule_id = 1;
+  int64 retry_count = 2;
+  int64 retry_delay_seconds = 3;
+  ScheduleMissedRunPolicy missed_run_policy = 4;
+  ScheduleConcurrencyPolicy concurrency_policy = 5;
+  int64 lease_seconds = 6;
+  bool notify_on_success = 7;
+  bool notify_on_failure = 8;
+  optional int64 last_scheduled_at = 9;
+  int64 updated_at = 10;
+}
+
+// kind "schedule_log" / "schedule_execution_log": raw file-log contents.
+message ScheduleLog {
+  string content = 1;
+}
+
+message ScheduleListSchedulesRequest {}
+
+message ScheduleListSchedulesResponse {
+  repeated Schedule schedules = 1;
+}
+
+message ScheduleGetScheduleRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleGetScheduleResponse {
+  Schedule schedule = 1;
+}
+
+// Absent fields fall back to server defaults: shell_type BASH, schedule_type APPLICATION, schedule_action EXEC, enabled true.
+message ScheduleCreateScheduleRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional string description = 2 [(buf.validate.field).string.max_len = 1000];
+  string cron_expression = 3 [(buf.validate.field).string.min_len = 1];
+  optional string app_name = 4 [(buf.validate.field).string.max_len = 255];
+  optional string service_name = 5 [(buf.validate.field).string.max_len = 255];
+  optional ScheduleShellType shell_type = 6 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional ScheduleType schedule_type = 7 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional ScheduleAction schedule_action = 8 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  string command = 9 [(buf.validate.field).string.min_len = 1];
+  optional string script = 10 [(buf.validate.field).string.max_len = 1048576];
+  optional string timezone = 11;
+  optional bool enabled = 12;
+  optional int64 application_id = 13 [(buf.validate.field).int64.gt = 0];
+  optional int64 compose_id = 14 [(buf.validate.field).int64.gt = 0];
+  optional int64 server_id = 15 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 16 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleCreateScheduleResponse {
+  Schedule schedule = 1;
+}
+
+// An absent field keeps its stored value.
+message ScheduleUpdateScheduleRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string name = 2 [(buf.validate.field).string.max_len = 255];
+  optional string description = 3 [(buf.validate.field).string.max_len = 1000];
+  optional string cron_expression = 4;
+  optional string app_name = 5 [(buf.validate.field).string.max_len = 255];
+  optional string service_name = 6 [(buf.validate.field).string.max_len = 255];
+  optional ScheduleShellType shell_type = 7 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional ScheduleType schedule_type = 8 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional ScheduleAction schedule_action = 9 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional string command = 10;
+  optional string script = 11 [(buf.validate.field).string.max_len = 1048576];
+  optional string timezone = 12;
+  optional bool enabled = 13;
+  optional int64 application_id = 14 [(buf.validate.field).int64.gt = 0];
+  optional int64 compose_id = 15 [(buf.validate.field).int64.gt = 0];
+  optional int64 server_id = 16 [(buf.validate.field).int64.gt = 0];
+  optional int64 organization_id = 17 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleUpdateScheduleResponse {
+  Schedule schedule = 1;
+}
+
+message ScheduleDeleteScheduleRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleRunScheduleRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleRunScheduleResponse {
+  ScheduleRun result = 1;
+}
+
+message SchedulePauseScheduleRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message SchedulePauseScheduleResponse {
+  Schedule schedule = 1;
+}
+
+message ScheduleResumeScheduleRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleResumeScheduleResponse {
+  Schedule schedule = 1;
+}
+
+message ScheduleListApplicationSchedulesRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleListApplicationSchedulesResponse {
+  repeated Schedule schedules = 1;
+}
+
+message ScheduleListComposeSchedulesRequest {
+  int64 compose_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleListComposeSchedulesResponse {
+  repeated Schedule schedules = 1;
+}
+
+message ScheduleListDatabaseSchedulesRequest {
+  int64 database_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleListDatabaseSchedulesResponse {
+  repeated Schedule schedules = 1;
+}
+
+message ScheduleListServerSchedulesRequest {
+  int64 server_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleListServerSchedulesResponse {
+  repeated Schedule schedules = 1;
+}
+
+message ScheduleListOrganizationSchedulesRequest {
+  int64 organization_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleListOrganizationSchedulesResponse {
+  repeated Schedule schedules = 1;
+}
+
+message ScheduleTriggerScheduleRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleTriggerScheduleResponse {
+  ScheduleRun result = 1;
+}
+
+message ScheduleGetRuntimePolicyRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleGetRuntimePolicyResponse {
+  ScheduleRuntimePolicy policy = 1;
+}
+
+message ScheduleUpdateRuntimePolicyRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 retry_count = 2 [(buf.validate.field).int64 = {gte: 0, lte: 10}];
+  int64 retry_delay_seconds = 3 [(buf.validate.field).int64 = {gte: 1, lte: 86400}];
+  ScheduleMissedRunPolicy missed_run_policy = 4 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  ScheduleConcurrencyPolicy concurrency_policy = 5 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  int64 lease_seconds = 6 [(buf.validate.field).int64 = {gte: 30, lte: 86400}];
+  bool notify_on_success = 7;
+  bool notify_on_failure = 8;
+}
+
+message ScheduleUpdateRuntimePolicyResponse {
+  ScheduleRuntimePolicy policy = 1;
+}
+
+message ScheduleListExecutionsRequest {
+  // Owner schedule id (former envelope `organization_id` slot).
+  int64 schedule_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleListExecutionsResponse {
+  repeated ScheduleExecution executions = 1;
+}
+
+message ScheduleGetLogsRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleGetLogsResponse {
+  ScheduleLog log = 1;
+}
+
+message ScheduleGetExecutionLogsRequest {
+  int64 schedule_id = 1 [(buf.validate.field).int64.gt = 0];
+  // Execution row whose log file is read (former envelope `organization_id` slot).
+  int64 execution_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message ScheduleGetExecutionLogsResponse {
+  ScheduleLog log = 1;
 }

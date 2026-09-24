@@ -2,13 +2,12 @@ import type {NotificationPayload} from '#/api/live';
 import type {ProviderId} from './notification-providers';
 
 export type TriggerGroup =
-	'Deployments' | 'Backups' | 'Platform' | 'Schedules';
+	| 'Deployments'
+	| 'Backups'
+	| 'Platform'
+	| 'Schedules';
 
-/**
- * The ten events a channel can fire on. `key` is the payload column the
- * backend persists; `event` is the `trigger_name` the delivery-attempt
- * history stores for the same event (APP_DEPLOY for on_app_deploy, …).
- */
+/** The ten events a channel can fire on. `key` is the payload column the backend persists; `event` is the `trigger_name` the delivery-attempt history stores for the same event (APP_DEPLOY for on_app_deploy, …). */
 export const TRIGGERS: {
 	key: keyof NotificationPayload;
 	label: string;

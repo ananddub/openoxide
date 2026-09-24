@@ -14,10 +14,7 @@ export const Route = createFileRoute('/_app/Deployments/queue')({
 	component: ActiveQueuePage,
 });
 
-/**
- * Active Queue — its own page (no tab switch): the same SectionHeader
- * grammar as the rest of the rail, the live builds table below.
- */
+/** Active Queue — its own page (no tab switch): the same SectionHeader grammar as the rest of the rail, the live builds table below. */
 function ActiveQueuePage() {
 	const dp = useDeployments();
 
@@ -28,7 +25,7 @@ function ActiveQueuePage() {
 				description="Builds and deploys streaming right now across every project."
 				action={
 					<>
-						<span className="select-none text-xs text-muted-foreground">
+						<span className="text-xs text-muted-foreground select-none">
 							{dp.isLoading
 								? 'Loading...'
 								: `${dp.activeQueue.length} active`}
@@ -39,10 +36,7 @@ function ActiveQueuePage() {
 							disabled={dp.refreshing}
 							className="h-8 gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
 							<RefreshCw
-								className={cn(
-									'size-3.5',
-									dp.refreshing && 'animate-spin',
-								)}
+								className={cn('size-3.5', dp.refreshing && 'animate-spin')}
 							/>
 							Refresh
 						</Button>

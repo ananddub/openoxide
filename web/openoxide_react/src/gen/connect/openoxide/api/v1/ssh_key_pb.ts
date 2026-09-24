@@ -2,93 +2,472 @@
 // @generated from file openoxide/api/v1/ssh_key.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	EmptySchema,
-	OperationResultSchema,
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceRequestSchema,
-	ResourceResponseSchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/ssh_key.proto.
  */
-export const file_openoxide_api_v1_ssh_key: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'Ch5vcGVub3hpZGUvYXBpL3YxL3NzaF9rZXkucHJvdG8SEG9wZW5veGlkZS5hcGkudjEypQUKDVNzaEtleVNlcnZpY2USUwoITGlzdEtleXMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlEk8KBkdldEtleRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElIKCUNyZWF0ZUtleRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlElQKC0dlbmVyYXRlS2V5EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVQoMR2VuZXJhdGVQYWlyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUgoJVXBkYXRlS2V5EiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUAoITWFya1VzZWQSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0EkcKCURlbGV0ZUtleRIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z',
-		[file_openoxide_api_v1_common],
-	);
+export const file_openoxide_api_v1_ssh_key: GenFile = /*@__PURE__*/
+  fileDesc("Ch5vcGVub3hpZGUvYXBpL3YxL3NzaF9rZXkucHJvdG8SEG9wZW5veGlkZS5hcGkudjEi9wEKBlNzaEtleRIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEhgKC2Rlc2NyaXB0aW9uGAMgASgJSACIAQESEgoKcHVibGljX2tleRgEIAEoCRIYCgtwcml2YXRlX2tleRgFIAEoCUgBiAEBEhcKD2hhc19wcml2YXRlX2tleRgGIAEoCBIZCgxsYXN0X3VzZWRfYXQYByABKANIAogBARISCgpjcmVhdGVkX2F0GAggASgDEhIKCnVwZGF0ZWRfYXQYCSABKANCDgoMX2Rlc2NyaXB0aW9uQg4KDF9wcml2YXRlX2tleUIPCg1fbGFzdF91c2VkX2F0IhcKFVNzaEtleUxpc3RLZXlzUmVxdWVzdCJAChZTc2hLZXlMaXN0S2V5c1Jlc3BvbnNlEiYKBGtleXMYASADKAsyGC5vcGVub3hpZGUuYXBpLnYxLlNzaEtleSIqChNTc2hLZXlHZXRLZXlSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIj0KFFNzaEtleUdldEtleVJlc3BvbnNlEiUKA2tleRgBIAEoCzIYLm9wZW5veGlkZS5hcGkudjEuU3NoS2V5IqcBChZTc2hLZXlDcmVhdGVLZXlSZXF1ZXN0EhgKBG5hbWUYASABKAlCCrpIB3IFEAEY/wESIgoLZGVzY3JpcHRpb24YAiABKAlCCLpIBXIDGIAISACIAQESHwoKcHVibGljX2tleRgDIAEoCUILukgIcgYQARiAgEASHgoLcHJpdmF0ZV9rZXkYBCABKAlCCbpIBnIEGICAQEIOCgxfZGVzY3JpcHRpb24iQAoXU3NoS2V5Q3JlYXRlS2V5UmVzcG9uc2USJQoDa2V5GAEgASgLMhgub3Blbm94aWRlLmFwaS52MS5Tc2hLZXkipAEKGFNzaEtleUdlbmVyYXRlS2V5UmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEiIKC2Rlc2NyaXB0aW9uGAIgASgJQgi6SAVyAxiACEgAiAEBEjoKCGtleV90eXBlGAMgASgOMhwub3Blbm94aWRlLmFwaS52MS5Tc2hLZXlUeXBlQgq6SAeCAQQQASAAQg4KDF9kZXNjcmlwdGlvbiJCChlTc2hLZXlHZW5lcmF0ZUtleVJlc3BvbnNlEiUKA2tleRgBIAEoCzIYLm9wZW5veGlkZS5hcGkudjEuU3NoS2V5ImkKGVNzaEtleUdlbmVyYXRlUGFpclJlcXVlc3QSPwoIa2V5X3R5cGUYASABKA4yHC5vcGVub3hpZGUuYXBpLnYxLlNzaEtleVR5cGVCCrpIB4IBBBABIABIAIgBAUILCglfa2V5X3R5cGUiRQoaU3NoS2V5R2VuZXJhdGVQYWlyUmVzcG9uc2USEwoLcHJpdmF0ZV9rZXkYASABKAkSEgoKcHVibGljX2tleRgCIAEoCSLvAQoWU3NoS2V5VXBkYXRlS2V5UmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIbCgRuYW1lGAIgASgJQgi6SAVyAxj/AUgAiAEBEiIKC2Rlc2NyaXB0aW9uGAMgASgJQgi6SAVyAxiACEgBiAEBEiIKCnB1YmxpY19rZXkYBCABKAlCCbpIBnIEGICAQEgCiAEBEiMKC3ByaXZhdGVfa2V5GAUgASgJQgm6SAZyBBiAgEBIA4gBAUIHCgVfbmFtZUIOCgxfZGVzY3JpcHRpb25CDQoLX3B1YmxpY19rZXlCDgoMX3ByaXZhdGVfa2V5IkAKF1NzaEtleVVwZGF0ZUtleVJlc3BvbnNlEiUKA2tleRgBIAEoCzIYLm9wZW5veGlkZS5hcGkudjEuU3NoS2V5IiwKFVNzaEtleU1hcmtVc2VkUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACItChZTc2hLZXlEZWxldGVLZXlSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAKloKClNzaEtleVR5cGUSHAoYU1NIX0tFWV9UWVBFX1VOU1BFQ0lGSUVEEAASGAoUU1NIX0tFWV9UWVBFX0VEMjU1MTkQARIUChBTU0hfS0VZX1RZUEVfUlNBEAIy/AUKDVNzaEtleVNlcnZpY2USXQoITGlzdEtleXMSJy5vcGVub3hpZGUuYXBpLnYxLlNzaEtleUxpc3RLZXlzUmVxdWVzdBooLm9wZW5veGlkZS5hcGkudjEuU3NoS2V5TGlzdEtleXNSZXNwb25zZRJXCgZHZXRLZXkSJS5vcGVub3hpZGUuYXBpLnYxLlNzaEtleUdldEtleVJlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLlNzaEtleUdldEtleVJlc3BvbnNlEmAKCUNyZWF0ZUtleRIoLm9wZW5veGlkZS5hcGkudjEuU3NoS2V5Q3JlYXRlS2V5UmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuU3NoS2V5Q3JlYXRlS2V5UmVzcG9uc2USZgoLR2VuZXJhdGVLZXkSKi5vcGVub3hpZGUuYXBpLnYxLlNzaEtleUdlbmVyYXRlS2V5UmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuU3NoS2V5R2VuZXJhdGVLZXlSZXNwb25zZRJpCgxHZW5lcmF0ZVBhaXISKy5vcGVub3hpZGUuYXBpLnYxLlNzaEtleUdlbmVyYXRlUGFpclJlcXVlc3QaLC5vcGVub3hpZGUuYXBpLnYxLlNzaEtleUdlbmVyYXRlUGFpclJlc3BvbnNlEmAKCVVwZGF0ZUtleRIoLm9wZW5veGlkZS5hcGkudjEuU3NoS2V5VXBkYXRlS2V5UmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuU3NoS2V5VXBkYXRlS2V5UmVzcG9uc2USTAoITWFya1VzZWQSJy5vcGVub3hpZGUuYXBpLnYxLlNzaEtleU1hcmtVc2VkUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSTgoJRGVsZXRlS2V5Eigub3Blbm94aWRlLmFwaS52MS5Tc2hLZXlEZWxldGVLZXlSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+
+/**
+ * @generated from message openoxide.api.v1.SshKey
+ */
+export type SshKey = Message<"openoxide.api.v1.SshKey"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: optional string description = 3;
+   */
+  description?: string | undefined;
+
+  /**
+   * OpenSSH public key line.
+   *
+   * @generated from field: string public_key = 4;
+   */
+  publicKey: string;
+
+  /**
+   * OpenSSH/PEM private key material; present when a key pair is stored.
+   *
+   * @generated from field: optional string private_key = 5;
+   */
+  privateKey?: string | undefined;
+
+  /**
+   * @generated from field: bool has_private_key = 6;
+   */
+  hasPrivateKey: boolean;
+
+  /**
+   * @generated from field: optional int64 last_used_at = 7;
+   */
+  lastUsedAt?: bigint | undefined;
+
+  /**
+   * @generated from field: int64 created_at = 8;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 9;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKey.
+ * Use `create(SshKeySchema)` to create a new message.
+ */
+export const SshKeySchema: GenMessage<SshKey> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 0);
+
+/**
+ * @generated from message openoxide.api.v1.SshKeyListKeysRequest
+ */
+export type SshKeyListKeysRequest = Message<"openoxide.api.v1.SshKeyListKeysRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyListKeysRequest.
+ * Use `create(SshKeyListKeysRequestSchema)` to create a new message.
+ */
+export const SshKeyListKeysRequestSchema: GenMessage<SshKeyListKeysRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 1);
+
+/**
+ * @generated from message openoxide.api.v1.SshKeyListKeysResponse
+ */
+export type SshKeyListKeysResponse = Message<"openoxide.api.v1.SshKeyListKeysResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.SshKey keys = 1;
+   */
+  keys: SshKey[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyListKeysResponse.
+ * Use `create(SshKeyListKeysResponseSchema)` to create a new message.
+ */
+export const SshKeyListKeysResponseSchema: GenMessage<SshKeyListKeysResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 2);
+
+/**
+ * @generated from message openoxide.api.v1.SshKeyGetKeyRequest
+ */
+export type SshKeyGetKeyRequest = Message<"openoxide.api.v1.SshKeyGetKeyRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyGetKeyRequest.
+ * Use `create(SshKeyGetKeyRequestSchema)` to create a new message.
+ */
+export const SshKeyGetKeyRequestSchema: GenMessage<SshKeyGetKeyRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 3);
+
+/**
+ * @generated from message openoxide.api.v1.SshKeyGetKeyResponse
+ */
+export type SshKeyGetKeyResponse = Message<"openoxide.api.v1.SshKeyGetKeyResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.SshKey key = 1;
+   */
+  key?: SshKey | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyGetKeyResponse.
+ * Use `create(SshKeyGetKeyResponseSchema)` to create a new message.
+ */
+export const SshKeyGetKeyResponseSchema: GenMessage<SshKeyGetKeyResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 4);
+
+/**
+ * @generated from message openoxide.api.v1.SshKeyCreateKeyRequest
+ */
+export type SshKeyCreateKeyRequest = Message<"openoxide.api.v1.SshKeyCreateKeyRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: optional string description = 2;
+   */
+  description?: string | undefined;
+
+  /**
+   * OpenSSH public key line.
+   *
+   * @generated from field: string public_key = 3;
+   */
+  publicKey: string;
+
+  /**
+   * Optional OpenSSH/PEM private key material; empty means no private key.
+   *
+   * @generated from field: string private_key = 4;
+   */
+  privateKey: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyCreateKeyRequest.
+ * Use `create(SshKeyCreateKeyRequestSchema)` to create a new message.
+ */
+export const SshKeyCreateKeyRequestSchema: GenMessage<SshKeyCreateKeyRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 5);
+
+/**
+ * @generated from message openoxide.api.v1.SshKeyCreateKeyResponse
+ */
+export type SshKeyCreateKeyResponse = Message<"openoxide.api.v1.SshKeyCreateKeyResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.SshKey key = 1;
+   */
+  key?: SshKey | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyCreateKeyResponse.
+ * Use `create(SshKeyCreateKeyResponseSchema)` to create a new message.
+ */
+export const SshKeyCreateKeyResponseSchema: GenMessage<SshKeyCreateKeyResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 6);
+
+/**
+ * @generated from message openoxide.api.v1.SshKeyGenerateKeyRequest
+ */
+export type SshKeyGenerateKeyRequest = Message<"openoxide.api.v1.SshKeyGenerateKeyRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: optional string description = 2;
+   */
+  description?: string | undefined;
+
+  /**
+   * @generated from field: openoxide.api.v1.SshKeyType key_type = 3;
+   */
+  keyType: SshKeyType;
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyGenerateKeyRequest.
+ * Use `create(SshKeyGenerateKeyRequestSchema)` to create a new message.
+ */
+export const SshKeyGenerateKeyRequestSchema: GenMessage<SshKeyGenerateKeyRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 7);
+
+/**
+ * @generated from message openoxide.api.v1.SshKeyGenerateKeyResponse
+ */
+export type SshKeyGenerateKeyResponse = Message<"openoxide.api.v1.SshKeyGenerateKeyResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.SshKey key = 1;
+   */
+  key?: SshKey | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyGenerateKeyResponse.
+ * Use `create(SshKeyGenerateKeyResponseSchema)` to create a new message.
+ */
+export const SshKeyGenerateKeyResponseSchema: GenMessage<SshKeyGenerateKeyResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 8);
+
+/**
+ * Omit `key_type` to use the server default (ed25519).
+ *
+ * @generated from message openoxide.api.v1.SshKeyGeneratePairRequest
+ */
+export type SshKeyGeneratePairRequest = Message<"openoxide.api.v1.SshKeyGeneratePairRequest"> & {
+  /**
+   * @generated from field: optional openoxide.api.v1.SshKeyType key_type = 1;
+   */
+  keyType?: SshKeyType | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyGeneratePairRequest.
+ * Use `create(SshKeyGeneratePairRequestSchema)` to create a new message.
+ */
+export const SshKeyGeneratePairRequestSchema: GenMessage<SshKeyGeneratePairRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 9);
+
+/**
+ * @generated from message openoxide.api.v1.SshKeyGeneratePairResponse
+ */
+export type SshKeyGeneratePairResponse = Message<"openoxide.api.v1.SshKeyGeneratePairResponse"> & {
+  /**
+   * Freshly generated OpenSSH/PEM private key material.
+   *
+   * @generated from field: string private_key = 1;
+   */
+  privateKey: string;
+
+  /**
+   * Matching OpenSSH public key line.
+   *
+   * @generated from field: string public_key = 2;
+   */
+  publicKey: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyGeneratePairResponse.
+ * Use `create(SshKeyGeneratePairResponseSchema)` to create a new message.
+ */
+export const SshKeyGeneratePairResponseSchema: GenMessage<SshKeyGeneratePairResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 10);
+
+/**
+ * @generated from message openoxide.api.v1.SshKeyUpdateKeyRequest
+ */
+export type SshKeyUpdateKeyRequest = Message<"openoxide.api.v1.SshKeyUpdateKeyRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional string name = 2;
+   */
+  name?: string | undefined;
+
+  /**
+   * @generated from field: optional string description = 3;
+   */
+  description?: string | undefined;
+
+  /**
+   * @generated from field: optional string public_key = 4;
+   */
+  publicKey?: string | undefined;
+
+  /**
+   * OpenSSH/PEM private key material.
+   *
+   * @generated from field: optional string private_key = 5;
+   */
+  privateKey?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyUpdateKeyRequest.
+ * Use `create(SshKeyUpdateKeyRequestSchema)` to create a new message.
+ */
+export const SshKeyUpdateKeyRequestSchema: GenMessage<SshKeyUpdateKeyRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 11);
+
+/**
+ * @generated from message openoxide.api.v1.SshKeyUpdateKeyResponse
+ */
+export type SshKeyUpdateKeyResponse = Message<"openoxide.api.v1.SshKeyUpdateKeyResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.SshKey key = 1;
+   */
+  key?: SshKey | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyUpdateKeyResponse.
+ * Use `create(SshKeyUpdateKeyResponseSchema)` to create a new message.
+ */
+export const SshKeyUpdateKeyResponseSchema: GenMessage<SshKeyUpdateKeyResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 12);
+
+/**
+ * @generated from message openoxide.api.v1.SshKeyMarkUsedRequest
+ */
+export type SshKeyMarkUsedRequest = Message<"openoxide.api.v1.SshKeyMarkUsedRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyMarkUsedRequest.
+ * Use `create(SshKeyMarkUsedRequestSchema)` to create a new message.
+ */
+export const SshKeyMarkUsedRequestSchema: GenMessage<SshKeyMarkUsedRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 13);
+
+/**
+ * @generated from message openoxide.api.v1.SshKeyDeleteKeyRequest
+ */
+export type SshKeyDeleteKeyRequest = Message<"openoxide.api.v1.SshKeyDeleteKeyRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.SshKeyDeleteKeyRequest.
+ * Use `create(SshKeyDeleteKeyRequestSchema)` to create a new message.
+ */
+export const SshKeyDeleteKeyRequestSchema: GenMessage<SshKeyDeleteKeyRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_ssh_key, 14);
+
+/**
+ * Key algorithm selector for generation; the service only accepts these two.
+ *
+ * @generated from enum openoxide.api.v1.SshKeyType
+ */
+export enum SshKeyType {
+  /**
+   * @generated from enum value: SSH_KEY_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: SSH_KEY_TYPE_ED25519 = 1;
+   */
+  ED25519 = 1,
+
+  /**
+   * @generated from enum value: SSH_KEY_TYPE_RSA = 2;
+   */
+  RSA = 2,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.SshKeyType.
+ */
+export const SshKeyTypeSchema: GenEnum<SshKeyType> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_ssh_key, 0);
 
 /**
  * @generated from service openoxide.api.v1.SshKeyService
  */
 export const SshKeyService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.SshKeyService.ListKeys
-	 */
-	listKeys: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.SshKeyService.GetKey
-	 */
-	getKey: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.SshKeyService.CreateKey
-	 */
-	createKey: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.SshKeyService.GenerateKey
-	 */
-	generateKey: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.SshKeyService.GeneratePair
-	 */
-	generatePair: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.SshKeyService.UpdateKey
-	 */
-	updateKey: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.SshKeyService.MarkUsed
-	 */
-	markUsed: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.SshKeyService.DeleteKey
-	 */
-	deleteKey: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_ssh_key, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.SshKeyService.ListKeys
+   */
+  listKeys: {
+    methodKind: "unary";
+    input: typeof SshKeyListKeysRequestSchema;
+    output: typeof SshKeyListKeysResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.SshKeyService.GetKey
+   */
+  getKey: {
+    methodKind: "unary";
+    input: typeof SshKeyGetKeyRequestSchema;
+    output: typeof SshKeyGetKeyResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.SshKeyService.CreateKey
+   */
+  createKey: {
+    methodKind: "unary";
+    input: typeof SshKeyCreateKeyRequestSchema;
+    output: typeof SshKeyCreateKeyResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.SshKeyService.GenerateKey
+   */
+  generateKey: {
+    methodKind: "unary";
+    input: typeof SshKeyGenerateKeyRequestSchema;
+    output: typeof SshKeyGenerateKeyResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.SshKeyService.GeneratePair
+   */
+  generatePair: {
+    methodKind: "unary";
+    input: typeof SshKeyGeneratePairRequestSchema;
+    output: typeof SshKeyGeneratePairResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.SshKeyService.UpdateKey
+   */
+  updateKey: {
+    methodKind: "unary";
+    input: typeof SshKeyUpdateKeyRequestSchema;
+    output: typeof SshKeyUpdateKeyResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.SshKeyService.MarkUsed
+   */
+  markUsed: {
+    methodKind: "unary";
+    input: typeof SshKeyMarkUsedRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.SshKeyService.DeleteKey
+   */
+  deleteKey: {
+    methodKind: "unary";
+    input: typeof SshKeyDeleteKeyRequestSchema;
+    output: typeof EmptySchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_ssh_key, 0);
+

@@ -2,13 +2,145 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
 service ServerControllerService {
-  rpc TestDirectConnection(ResourceRequest) returns (OperationResult);
-  rpc TestConnection(ResourceRequest) returns (OperationResult);
-  rpc Audit(ResourceRequest) returns (OperationResult);
-  rpc Setup(ResourceRequest) returns (OperationResult);
-  rpc StreamSetupLogs(StreamQuery) returns (stream ResourceResponse);
-  rpc ListSessions(ResourceQuery) returns (ResourceListResponse);
-  rpc DeleteSession(ResourceRequest) returns (Empty);
+  rpc TestDirectConnection(ServerControllerTestDirectConnectionRequest) returns (ServerControllerTestDirectConnectionResponse);
+  rpc TestConnection(ServerControllerTestConnectionRequest) returns (ServerControllerTestConnectionResponse);
+  rpc Audit(ServerControllerAuditRequest) returns (ServerControllerAuditResponse);
+  rpc Setup(ServerControllerSetupRequest) returns (ServerControllerSetupResponse);
+  rpc StreamSetupLogs(ServerControllerStreamSetupLogsRequest) returns (stream ServerControllerStreamSetupLogsResponse);
+  rpc ListSessions(ServerControllerListSessionsRequest) returns (ServerControllerListSessionsResponse);
+  rpc DeleteSession(ServerControllerDeleteSessionRequest) returns (Empty);
+}
+
+// Closed set: `SetupStep` match arms in the setup outcome mapper.
+enum ServerSetupStep {
+  SERVER_SETUP_STEP_UNSPECIFIED = 0;
+  SERVER_SETUP_STEP_DEPENDENCIES = 1;
+  SERVER_SETUP_STEP_BUILD_TOOLS = 2;
+  SERVER_SETUP_STEP_DIRECTORIES = 3;
+  SERVER_SETUP_STEP_SWARM = 4;
+  SERVER_SETUP_STEP_NETWORK = 5;
+  SERVER_SETUP_STEP_TRAEFIK_CONFIG = 6;
+  SERVER_SETUP_STEP_TRAEFIK = 7;
+  SERVER_SETUP_STEP_AGENT = 8;
+}
+
+message ServerToolState {
+  bool installed = 1;
+  optional string version = 2;
+}
+
+message ServerPortAvailability {
+  uint32 port = 1;
+  bool available = 2;
+}
+
+message ServerAudit {
+  string os_id = 1;
+  string architecture = 2;
+  ServerToolState docker = 3;
+  ServerToolState git = 4;
+  ServerToolState rclone = 5;
+  ServerToolState rsync = 6;
+  ServerToolState nixpacks = 7;
+  ServerToolState railpack = 8;
+  ServerToolState buildpacks = 9;
+  bool swarm_active = 10;
+  bool network_exists = 11;
+  bool base_directory_exists = 12;
+  bool docker_group_member = 13;
+  repeated ServerPortAvailability ports = 14;
+}
+
+message ServerSetupOutcome {
+  repeated ServerSetupStep completed = 1;
+  ServerAudit audit = 2;
+}
+
+message ServerConnectionInfo {
+  bool connected = 1;
+  uint64 reused_sessions = 2;
+  uint64 max_pool_size = 3;
+  uint64 connections = 4;
+  uint64 active_channels = 5;
+  uint64 max_channels_per_session = 6;
+}
+
+// Probes an unsaved endpoint before a server row exists.
+message ServerControllerTestDirectConnectionRequest {
+  string ip_address = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional uint32 port = 2 [(buf.validate.field).uint32.lte = 65535];
+  string username = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  int64 ssh_key_id = 4 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerControllerTestDirectConnectionResponse {
+  ServerConnectionInfo connection = 1;
+}
+
+message ServerControllerTestConnectionRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  // SSH host-key SHA-256 fingerprint pin; empty disables pinning.
+  optional string host_key_fingerprint = 2 [(buf.validate.field).string.max_len = 255];
+  // Sudo credential document; only sent for privileged setup steps.
+  optional string sudo_password = 3;
+  optional uint32 pool_size = 4;
+}
+
+message ServerControllerTestConnectionResponse {
+  ServerConnectionInfo connection = 1;
+}
+
+message ServerControllerAuditRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string host_key_fingerprint = 2 [(buf.validate.field).string.max_len = 255];
+  optional string sudo_password = 3;
+  optional uint32 pool_size = 4;
+}
+
+message ServerControllerAuditResponse {
+  ServerAudit audit = 1;
+}
+
+message ServerControllerSetupRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  bool install_dependencies = 2;
+  // Swarm advertise address override; server's private/public IP when unset.
+  optional string advertise_addr = 3 [(buf.validate.field).string.max_len = 255];
+  optional string acme_email = 4 [(buf.validate.field).string.max_len = 255];
+  optional string host_key_fingerprint = 5 [(buf.validate.field).string.max_len = 255];
+  optional string sudo_password = 6;
+  optional uint32 pool_size = 7;
+}
+
+message ServerControllerSetupResponse {
+  ServerSetupOutcome outcome = 1;
+}
+
+message ServerControllerStreamSetupLogsRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  bool install_dependencies = 2;
+  optional string advertise_addr = 3 [(buf.validate.field).string.max_len = 255];
+  optional string acme_email = 4 [(buf.validate.field).string.max_len = 255];
+  optional string host_key_fingerprint = 5 [(buf.validate.field).string.max_len = 255];
+  optional string sudo_password = 6;
+  optional uint32 pool_size = 7;
+}
+
+// One completion event is emitted when the streamed setup finishes.
+message ServerControllerStreamSetupLogsResponse {
+  int64 server_id = 1;
+  ServerSetupOutcome outcome = 2;
+}
+
+message ServerControllerListSessionsRequest {}
+
+message ServerControllerListSessionsResponse {
+  repeated ServerConnectionInfo sessions = 1;
+}
+
+message ServerControllerDeleteSessionRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
 }

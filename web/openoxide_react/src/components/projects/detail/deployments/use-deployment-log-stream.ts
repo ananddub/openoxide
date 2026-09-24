@@ -1,15 +1,11 @@
 import {useEffect, useState} from 'react';
 import {createServiceClient} from '#/api/live/query';
 import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
-import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
+import {extractLogLines} from '#/utils/log-lines';
 
 const deploymentClient = createServiceClient(DeploymentService);
 
-/**
- * Streams live build logs for a deployment over ConnectRPC while
- * `deploymentId` is set. An optional `fallback` text seeds the buffer
- * (and covers a failed stream) for historical deployments.
- */
+/** Streams live build logs for a deployment over ConnectRPC while `deploymentId` is set. An optional `fallback` text seeds the buffer (and covers a failed stream) for historical deployments. */
 export function useDeploymentLogStream(
 	deploymentId: number | null,
 	fallback?: string,

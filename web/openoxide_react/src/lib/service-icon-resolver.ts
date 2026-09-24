@@ -11,9 +11,7 @@ export type IconResult = {
 	brand?: string;
 };
 
-// Real glyph data pulled from tree-shaken simple-icons modules — the
-// previous hand-written paths here were approximations and rendered as
-// wrong/garbage logos for redis/mongo/nginx/node.
+// Real glyph data pulled from tree-shaken simple-icons modules — the previous hand-written paths here were approximations and rendered as wrong/garbage logos for redis/mongo/nginx/node.
 import {
 	siDocker,
 	siRedis,
@@ -82,8 +80,7 @@ const ALIASES: Record<string, string> = {
 	nodejs: 'nodedotjs',
 };
 
-// Brands whose real artwork ships as React components in
-// #/components/icons/db — no path here, just color for the tile tint.
+// Brands whose real artwork ships as React components in #/components/icons/db — no path here, just color for the tile tint.
 const BRAND_ICONS: Record<string, IconResult> = {
 	mysql: {brand: 'mysql', color: '#4479A1'},
 	mariadb: {brand: 'mariadb', color: '#7b8cde'},
@@ -105,9 +102,7 @@ export function isValidDockerImage(image?: string): boolean {
 	return true;
 }
 
-// App nodes often carry a git repo URL or a buildpack name instead of a
-// Docker image — those must render the Git mark, not a Docker whale (or a
-// broken CDN lookup for the repo's last path segment).
+// App nodes often carry a git repo URL or a buildpack name instead of a Docker image — those must render the Git mark, not a Docker whale (or a broken CDN lookup for the repo's last path segment).
 const GIT_HOSTS = [
 	'github.com',
 	'gitlab.com',

@@ -114,8 +114,7 @@ export function TraefikRequestsView({
 	const handleToggle = async (enable: boolean) => {
 		setIsToggling(true);
 		try {
-			// The ToggleRequests RPC takes only the enable flag; the request
-			// log stream itself is per-server.
+			// The ToggleRequests RPC takes only the enable flag; the request log stream itself is per-server.
 			await toggleMutation.mutateAsync({enabled: enable});
 			toast.success(
 				enable

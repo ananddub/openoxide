@@ -24,7 +24,7 @@ import {
 	useRemoteServerTestConnection,
 } from '#/api/live';
 import {serverControllerClient} from '#/api/live/servers/shared';
-import {extractLogLines} from '#/hooks/deployments/use-deployment-logs';
+import {ServerSetupStep} from '#/gen/connect/openoxide/api/v1/server_controller_pb';
 import {privateNetworkApi} from '#/components/remote-servers/private-network/api';
 import {remoteHostFromTunnel} from '#/components/remote-servers/private-network/panel-parts';
 import type {ConnectionMode} from '#/components/remote-servers/private-network/types';
@@ -69,15 +69,11 @@ const PHASE_LABEL: Record<Phase, string> = {
 	setup: 'Running setup…',
 };
 
-/** Create response carries the new row as id (or JSON payload) — cover both. */
-function createdServerId(response: unknown): number {
-	const rec = (response ?? {}) as {id?: number | bigint; payload?: string};
-	if (rec.id != null && Number(rec.id) > 0) return Number(rec.id);
-	try {
-		return Number(JSON.parse(rec.payload ?? '{}').id) || 0;
-	} catch {
-		return 0;
-	}
+/** Create response carries the new typed row; 0 means "not created". */
+function createdServerId(response: {
+	server?: {id: bigint} | undefined;
+}): number {
+	return Number(response.server?.id ?? 0n);
 }
 
 export function CreateServerModal({
@@ -95,7 +91,8 @@ export function CreateServerModal({
 
 	const [stepIdx, setStepIdx] = useState(0);
 	const [runSetup, setRunSetup] = useState(true);
-	const [networkMode, setNetworkMode] = useState<ConnectionMode>('DIRECT_SSH');
+	const [networkMode, setNetworkMode] =
+		useState<ConnectionMode>('DIRECT_SSH');
 	const [phase, setPhase] = useState<Phase>('idle');
 	const [setupLogs, setSetupLogs] = useState<string[]>([]);
 
@@ -148,15 +145,12 @@ export function CreateServerModal({
 				// Saved server: test through its stored connection config.
 				await testDirectMutation.mutateAsync(editingServer.id);
 			} else {
-				// Create wizard: TestDirectConnection verifies raw
-				// credentials server-side without persisting anything.
+				// Create wizard: TestDirectConnection verifies raw credentials server-side without persisting anything.
 				await serverControllerClient.testDirectConnection({
-					payload: JSON.stringify({
-						ip_address: ipAddress,
-						port: parseInt(port) || 22,
-						username,
-						ssh_key_id: parseInt(sshKeyId),
-					}),
+					ipAddress,
+					port: parseInt(port) || 22,
+					username,
+					sshKeyId: BigInt(sshKeyId),
 				});
 			}
 			setTestResult('success');
@@ -169,25 +163,32 @@ export function CreateServerModal({
 		}
 	};
 
-	const streamSetup = async (serverId: number) => {
+	const streamSetup = async (serverId: number): Promise<string | null> => {
 		setPhase('setup');
-		const call = serverControllerClient.streamSetupLogs({
-			id: BigInt(serverId),
-			filter: JSON.stringify({
-				host_key_fingerprint: '',
-				install_dependencies: true,
-			}),
-		});
-		let failedMessage = '';
-		for await (const event of call) {
-			const lines = extractLogLines(event.payload);
-			if (lines.length > 0) {
-				failedMessage ||=
-					lines.find(line => line.includes('Setup Server failed')) || '';
-				setSetupLogs(prev => [...prev, ...lines]);
+		setSetupLogs([
+			'Connecting to server and running setup… this can take a few minutes.',
+		]);
+		try {
+			const call = serverControllerClient.streamSetupLogs({
+				id: BigInt(serverId),
+				installDependencies: true,
+				hostKeyFingerprint: '',
+			});
+			for await (const event of call) {
+				const lines = (event.outcome?.completed ?? []).map(
+					step => `Setup step completed: ${ServerSetupStep[step]}`,
+				);
+				if (lines.length > 0) {
+					setSetupLogs(prev => [...prev, ...lines]);
+				}
 			}
+			setSetupLogs(prev => [...prev, 'Setup completed successfully.']);
+			return null;
+		} catch (err: unknown) {
+			const message = formatApiError(err);
+			setSetupLogs(prev => [...prev, `Setup failed: ${message}`]);
+			return message;
 		}
-		if (failedMessage) throw new Error(failedMessage);
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -211,9 +212,7 @@ export function CreateServerModal({
 				return;
 			}
 
-			// Create → optional network → optional setup. Each post-create
-			// phase runs against the new server id; failures still surface
-			// the created server in the list.
+			// Create → optional network → optional setup. Each post-create phase runs against the new server id; failures still surface the created server in the list.
 			setPhase('creating');
 			const created = await createMutation.mutateAsync(payload);
 			const serverId = createdServerId(created);
@@ -237,19 +236,31 @@ export function CreateServerModal({
 			}
 
 			if (runSetup && serverId) {
-				await streamSetup(serverId);
+				const setupError = await streamSetup(serverId);
+				if (setupError) {
+					// Keep the modal open so the log (with the error) stays visible.
+					setPhase('idle');
+					onSuccess();
+					toast.error(
+						'Server saved, but setup failed — see the setup log, or run setup again from the server row menu.',
+					);
+					return;
+				}
 			} else {
 				setPhase('idle');
 			}
 
-			toast.success('Remote Server added successfully');
+			toast.success(
+				runSetup && serverId
+					? 'Remote Server added and setup completed'
+					: 'Remote Server added successfully',
+			);
 			onSuccess();
 			onClose();
 		} catch (err: unknown) {
 			setPhase('idle');
 			toast.error(formatApiError(err));
-			// The server may already exist even though a later phase failed —
-			// refresh the list so it shows up.
+			// The server may already exist even though a later phase failed — refresh the list so it shows up.
 			if (phase !== 'creating') onSuccess();
 		} finally {
 			setSubmitting(false);
@@ -317,9 +328,7 @@ export function CreateServerModal({
 									/>
 									<OptionRow
 										selected={networkMode === 'MANAGED_WIREGUARD'}
-										onClick={() =>
-											setNetworkMode('MANAGED_WIREGUARD')
-										}
+										onClick={() => setNetworkMode('MANAGED_WIREGUARD')}
 										icon={<Network className="size-4" />}
 										title="Managed WireGuard"
 										subtitle="OpenOxide creates an encrypted private tunnel to the server after save."
@@ -370,9 +379,7 @@ export function CreateServerModal({
 								<TestConnectionButton
 									testing={testingConn}
 									result={testResult}
-									disabled={
-										testingConn || submitting || phase !== 'idle'
-									}
+									disabled={testingConn || submitting || phase !== 'idle'}
 									onClick={() => void handleTestConnection()}
 								/>
 							</div>
@@ -384,10 +391,7 @@ export function CreateServerModal({
 									Continue
 								</Button>
 							) : (
-								<Button
-									type="submit"
-									form={FORM_ID}
-									disabled={submitting}>
+								<Button type="submit" form={FORM_ID} disabled={submitting}>
 									{PHASE_LABEL[phase]}
 								</Button>
 							)}

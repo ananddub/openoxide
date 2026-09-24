@@ -36,13 +36,10 @@ export function CanvasEmptyState({
 	gitBuildPath?: string;
 }) {
 	return (
-		<div className="pointer-events-none absolute inset-0 z-5 flex select-none flex-col items-center justify-center gap-2 p-6 text-center">
+		<div className="pointer-events-none absolute inset-0 z-5 flex flex-col items-center justify-center gap-2 p-6 text-center select-none">
 			<svg
 				viewBox="0 0 24 24"
-				className={cn(
-					'size-8 opacity-25',
-					'fill-foreground',
-				)}>
+				className={cn('size-8 opacity-25', 'fill-foreground')}>
 				<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
 			</svg>
 			<p className="m-0 text-[13px] font-semibold text-foreground">

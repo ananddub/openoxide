@@ -45,10 +45,7 @@ const LINKS: {
 	},
 ];
 
-/**
- * Shortcut grid under the projects list — the surfaces the rail carries
- * (Remote Servers, SSH Keys) surfaced inline, Vercel onboarding-tile style.
- */
+/** Shortcut grid under the projects list — the surfaces the rail carries (Remote Servers, SSH Keys) surfaced inline, Vercel onboarding-tile style. */
 export function QuickLinksCard() {
 	return (
 		<div className={`rounded-lg border bg-card p-4 ${SHADOW}`}>

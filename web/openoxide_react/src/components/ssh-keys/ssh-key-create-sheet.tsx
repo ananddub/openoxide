@@ -22,12 +22,7 @@ interface SshKeyCreateSheetProps {
 	onOpenChange: (open: boolean) => void;
 }
 
-/**
- * New SSH Key — the same Geist sheet grammar as "New Project": right-side
- * sheet, scrollable form, single Create action in the footer. Generating a
- * pair fills the textareas in place; nothing leaves this dialog until
- * Create is pressed.
- */
+/** New SSH Key — the same Geist sheet grammar as "New Project": right-side sheet, scrollable form, single Create action in the footer. Generating a pair fills the textareas in place; nothing leaves this dialog until Create is pressed. */
 export function SshKeyCreateSheet({
 	isOpen,
 	onOpenChange,
@@ -52,17 +47,13 @@ export function SshKeyCreateSheet({
 	const handleGeneratePair = async (type: 'ed25519' | 'rsa') => {
 		setGenerating(true);
 		try {
-			const res: any = await generatePairMutation.mutateAsync({
+			const res = await generatePairMutation.mutateAsync({
 				key_type: type,
 			});
-			// ResourceResponse wraps the pair as a JSON string payload.
-			const payload =
-				typeof res?.payload === 'string'
-					? JSON.parse(res.payload)
-					: (res?.payload ?? {});
-			if (payload.private_key && payload.public_key) {
-				setPrivateKey(payload.private_key);
-				setPublicKey(payload.public_key);
+			// The typed response carries the fresh key material directly.
+			if (res.privateKey && res.publicKey) {
+				setPrivateKey(res.privateKey);
+				setPublicKey(res.publicKey);
 				if (!name) {
 					setName(
 						`Auto-${type.toUpperCase()}-${Date.now().toString().slice(-4)}`,
@@ -72,8 +63,12 @@ export function SshKeyCreateSheet({
 					`Generated ${type.toUpperCase()} key pair — press Create when ready.`,
 				);
 			}
-		} catch (err: any) {
-			toast.error(err?.message || 'Failed to generate SSH key pair');
+		} catch (err: unknown) {
+			toast.error(
+				err instanceof Error
+					? err.message
+					: 'Failed to generate SSH key pair',
+			);
 		} finally {
 			setGenerating(false);
 		}

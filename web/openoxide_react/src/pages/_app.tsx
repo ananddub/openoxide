@@ -7,7 +7,7 @@ import {
 import {SidebarProvider} from '#/components/ui/sidebar';
 import {AppSidebar} from '#/components/layouts/sidebar';
 import {TopBar} from '#/components/layouts/topbar';
-import {useTableWatch} from '#/hooks/use-table-watch';
+import {useTableWatch} from '#/hooks/table/use-table-watch';
 import {useAuthSession} from '#/stores/session-context';
 
 export const Route = createFileRoute('/_app')({
@@ -15,10 +15,7 @@ export const Route = createFileRoute('/_app')({
 	notFoundComponent: AppNotFoundPlaceholder,
 });
 
-/**
- * Unknown project/app/database sub-paths bounce back to the owning project
- * (or the projects list) instead of rendering the shell's 404.
- */
+/** Unknown project/app/database sub-paths bounce back to the owning project (or the projects list) instead of rendering the shell's 404. */
 function AppNotFoundPlaceholder() {
 	const location = useLocation();
 	const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -38,12 +35,7 @@ function AppNotFoundPlaceholder() {
 
 	return <Navigate to="/projects" replace />;
 }
-/**
- * Dashboard shell, laid out like the Vercel dashboard: the nav rail runs
- * the FULL viewport height on the left (top to bottom, no offsets), and
- * the slim top bar (workspace switcher · page title · search) sits only
- * over the content column, pinned above a single scrolling main area.
- */
+/** Dashboard shell, laid out like the Vercel dashboard: the nav rail runs the FULL viewport height on the left (top to bottom, no offsets), and the slim top bar (workspace switcher · page title · search) sits only over the content column, pinned above a single scrolling main area. */
 function AppLayout() {
 	useTableWatch();
 	const {isAuth} = useAuthSession();

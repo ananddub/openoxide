@@ -2,29 +2,325 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
 service RemoteServerService {
-  rpc ListRemoteServers(ResourceQuery) returns (ResourceListResponse);
-  rpc GetRemoteServer(ResourceRequest) returns (ResourceResponse);
-  rpc CreateRemoteServer(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateRemoteServer(ResourceRequest) returns (ResourceResponse);
-  rpc Activate(ResourceRequest) returns (OperationResult);
-  rpc Deactivate(ResourceRequest) returns (OperationResult);
-  rpc TestConnection(ResourceRequest) returns (OperationResult);
-  rpc DeleteRemoteServer(ResourceRequest) returns (Empty);
-  rpc MigrateDependencies(ResourceRequest) returns (OperationResult);
-  rpc GetMigration(ResourceRequest) returns (ResourceResponse);
-  rpc RollbackMigration(ResourceRequest) returns (OperationResult);
-  // Flags a RUNNING application_migrations row for cooperative cancellation;
-  // the runner honours it at the next phase/object boundary.
-  rpc CancelMigration(ResourceRequest) returns (OperationResult);
-  // Triggers (or resumes) a stateful single-service migration. id carries the
-  // service id, payload a JSON object {"target_server_id": "..."}. Returns
-  // the application_migrations row JSON.
-  rpc MigrateService(ResourceRequest) returns (OperationResult);
-  // Lists stateful migrations for a service (id = service id), newest first.
-  rpc ListMigrations(ResourceRequest) returns (ResourceListResponse);
-  // Lists per-object checkpoints of one stateful migration (payload = the
-  // migration id string).
-  rpc ListMigrationObjects(ResourceRequest) returns (ResourceListResponse);
+  rpc ListRemoteServers(RemoteServerListRequest) returns (RemoteServerListResponse);
+  rpc GetRemoteServer(RemoteServerGetRequest) returns (RemoteServerGetResponse);
+  rpc CreateRemoteServer(RemoteServerCreateRequest) returns (RemoteServerCreateResponse);
+  rpc UpdateRemoteServer(RemoteServerUpdateRequest) returns (RemoteServerUpdateResponse);
+  rpc Activate(RemoteServerActivateRequest) returns (RemoteServerActivateResponse);
+  rpc Deactivate(RemoteServerDeactivateRequest) returns (RemoteServerDeactivateResponse);
+  rpc TestConnection(RemoteServerTestConnectionRequest) returns (RemoteServerTestConnectionResponse);
+  rpc DeleteRemoteServer(RemoteServerDeleteRequest) returns (Empty);
+  rpc MigrateDependencies(RemoteServerMigrateDependenciesRequest) returns (RemoteServerMigrateDependenciesResponse);
+  rpc GetMigration(RemoteServerGetMigrationRequest) returns (RemoteServerGetMigrationResponse);
+  rpc RollbackMigration(RemoteServerRollbackMigrationRequest) returns (RemoteServerRollbackMigrationResponse);
+  // Flags a RUNNING application_migrations row for cooperative cancellation; the runner honours it at the next phase/object boundary.
+  rpc CancelMigration(RemoteServerCancelMigrationRequest) returns (RemoteServerCancelMigrationResponse);
+  // Triggers (or resumes) a stateful single-service migration.
+  rpc MigrateService(RemoteServerMigrateServiceRequest) returns (RemoteServerMigrateServiceResponse);
+  // Lists stateful migrations for a service, newest first.
+  rpc ListMigrations(RemoteServerListMigrationsRequest) returns (RemoteServerListMigrationsResponse);
+  // Lists per-object checkpoints of one stateful migration.
+  rpc ListMigrationObjects(RemoteServerListMigrationObjectsRequest) returns (RemoteServerListMigrationObjectsResponse);
+}
+
+// Closed set: `RemoteServerTypeDto` (DEPLOY/BUILD).
+enum RemoteServerType {
+  REMOTE_SERVER_TYPE_UNSPECIFIED = 0;
+  REMOTE_SERVER_TYPE_DEPLOY = 1;
+  REMOTE_SERVER_TYPE_BUILD = 2;
+}
+
+// Closed set: `RemoteServerStatus` / `RemoteServerStatusDto` (ACTIVE/INACTIVE).
+enum RemoteServerStatus {
+  REMOTE_SERVER_STATUS_UNSPECIFIED = 0;
+  REMOTE_SERVER_STATUS_ACTIVE = 1;
+  REMOTE_SERVER_STATUS_INACTIVE = 2;
+}
+
+// Closed set: `RemoteServerAction` enum.
+enum RemoteServerAction {
+  REMOTE_SERVER_ACTION_UNSPECIFIED = 0;
+  REMOTE_SERVER_ACTION_ACTIVATE = 1;
+  REMOTE_SERVER_ACTION_DEACTIVATE = 2;
+  REMOTE_SERVER_ACTION_TEST_CONNECTION = 3;
+}
+
+// Closed set: the only status literals written for `server_migrations` rows.
+enum RemoteServerDependencyMigrationStatus {
+  REMOTE_SERVER_DEPENDENCY_MIGRATION_STATUS_UNSPECIFIED = 0;
+  REMOTE_SERVER_DEPENDENCY_MIGRATION_STATUS_RUNNING = 1;
+  REMOTE_SERVER_DEPENDENCY_MIGRATION_STATUS_SUCCEEDED = 2;
+  REMOTE_SERVER_DEPENDENCY_MIGRATION_STATUS_FAILED = 3;
+  REMOTE_SERVER_DEPENDENCY_MIGRATION_STATUS_ROLLED_BACK = 4;
+}
+
+// Closed set: status literals written for `application_migrations` rows ("RUNNING"/"APPLYING" from the phase setter, plus the terminal updates).
+enum RemoteServerApplicationMigrationStatus {
+  REMOTE_SERVER_APPLICATION_MIGRATION_STATUS_UNSPECIFIED = 0;
+  REMOTE_SERVER_APPLICATION_MIGRATION_STATUS_RUNNING = 1;
+  REMOTE_SERVER_APPLICATION_MIGRATION_STATUS_APPLYING = 2;
+  REMOTE_SERVER_APPLICATION_MIGRATION_STATUS_SUCCEEDED = 3;
+  REMOTE_SERVER_APPLICATION_MIGRATION_STATUS_FAILED = 4;
+  REMOTE_SERVER_APPLICATION_MIGRATION_STATUS_CANCELLED = 5;
+}
+
+// Closed set: `MigrationPhase::as_str` match arms plus the terminal DONE stamp.
+enum RemoteServerMigrationPhase {
+  REMOTE_SERVER_MIGRATION_PHASE_UNSPECIFIED = 0;
+  REMOTE_SERVER_MIGRATION_PHASE_PREFLIGHT = 1;
+  REMOTE_SERVER_MIGRATION_PHASE_QUIESCE = 2;
+  REMOTE_SERVER_MIGRATION_PHASE_SYNC = 3;
+  REMOTE_SERVER_MIGRATION_PHASE_VERIFY = 4;
+  REMOTE_SERVER_MIGRATION_PHASE_APPLY = 5;
+  REMOTE_SERVER_MIGRATION_PHASE_REPOINT = 6;
+  REMOTE_SERVER_MIGRATION_PHASE_REDEPLOY = 7;
+  REMOTE_SERVER_MIGRATION_PHASE_HEALTH = 8;
+  REMOTE_SERVER_MIGRATION_PHASE_SUPERSEDED = 9;
+  REMOTE_SERVER_MIGRATION_PHASE_FAILED = 10;
+  REMOTE_SERVER_MIGRATION_PHASE_ROLLED_BACK = 11;
+  REMOTE_SERVER_MIGRATION_PHASE_CANCELLED = 12;
+  REMOTE_SERVER_MIGRATION_PHASE_DONE = 13;
+}
+
+// Closed set: `MigrationObjectKind::as_str` match arms.
+enum RemoteServerMigrationObjectKind {
+  REMOTE_SERVER_MIGRATION_OBJECT_KIND_UNSPECIFIED = 0;
+  REMOTE_SERVER_MIGRATION_OBJECT_KIND_VOLUME = 1;
+  REMOTE_SERVER_MIGRATION_OBJECT_KIND_BIND = 2;
+  REMOTE_SERVER_MIGRATION_OBJECT_KIND_DBDATA = 3;
+  REMOTE_SERVER_MIGRATION_OBJECT_KIND_DUMP = 4;
+  REMOTE_SERVER_MIGRATION_OBJECT_KIND_SRC = 5;
+  REMOTE_SERVER_MIGRATION_OBJECT_KIND_CERT = 6;
+}
+
+message RemoteServer {
+  int64 id = 1;
+  string name = 2;
+  optional string description = 3;
+  string ip_address = 4;
+  int64 port = 5;
+  string username = 6;
+  string app_name = 7;
+  RemoteServerStatus server_status = 8;
+  RemoteServerType server_type = 9;
+  // Integer-as-boolean in storage.
+  bool enable_docker_cleanup = 10;
+  optional string log_cleanup_cron = 11;
+  string command = 12;
+  // Metrics collection configuration as a JSON document.
+  string metrics_config = 13;
+  optional int64 ssh_key_id = 14;
+  int64 created_at = 15;
+  int64 updated_at = 16;
+  optional string build_memory_limit = 17;
+  optional string build_cpu_limit = 18;
+}
+
+// Result of `server_migrations` metadata moves (whole/dependency scope).
+message RemoteServerDependencyMigration {
+  // UUID migration identifier.
+  string migration_id = 1;
+  RemoteServerDependencyMigrationStatus status = 2;
+  int64 source_server_id = 3;
+  int64 target_server_id = 4;
+  int64 applications = 5;
+  int64 build_assignments = 6;
+  int64 compose_projects = 7;
+  int64 databases = 8;
+  int64 certificates = 9;
+  int64 schedules = 10;
+  int64 queued_applications = 11;
+  int64 queued_compose_projects = 12;
+  optional string error = 13;
+}
+
+// A stateful `application_migrations` row (single-service migration).
+message RemoteServerApplicationMigration {
+  // UUID primary key.
+  string id = 1;
+  int64 organization_id = 2;
+  int64 service_id = 3;
+  int64 source_server_id = 4;
+  int64 target_server_id = 5;
+  RemoteServerApplicationMigrationStatus status = 6;
+  RemoteServerMigrationPhase phase = 7;
+  // Percent complete (0-100).
+  int64 progress = 8;
+  // Cooperative cancellation flag, integer-as-boolean in storage.
+  bool cancel_requested = 9;
+  optional string error = 10;
+  string log_path = 11;
+  int64 created_at = 12;
+  int64 updated_at = 13;
+}
+
+// A per-object checkpoint of a stateful migration.
+message RemoteServerMigrationObject {
+  string migration_id = 1;
+  // Hash-derived unique key of the tracked object within the migration.
+  string obj_key = 2;
+  RemoteServerMigrationObjectKind kind = 3;
+  string source_ref = 4;
+  string dest_ref = 5;
+  // Checkpoint status as recorded by the runner (open set: e.g. "PENDING", "VERIFIED", "APPLIED", "DONE", "FAILED").
+  string status = 6;
+  int64 bytes = 7;
+  optional string error = 8;
+  int64 created_at = 9;
+  int64 updated_at = 10;
+}
+
+message RemoteServerListRequest {}
+
+message RemoteServerListResponse {
+  repeated RemoteServer servers = 1;
+}
+
+message RemoteServerGetRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message RemoteServerGetResponse {
+  RemoteServer server = 1;
+}
+
+message RemoteServerCreateRequest {
+  string name = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional string description = 2 [(buf.validate.field).string.max_len = 1000];
+  string ip_address = 3 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  // SSH port; 0 means the default 22.
+  int64 port = 4;
+  // SSH user; empty means the default "root".
+  string username = 5 [(buf.validate.field).string.max_len = 255];
+  RemoteServerType server_type = 6 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional int64 ssh_key_id = 7 [(buf.validate.field).int64.gt = 0];
+  optional string build_memory_limit = 8 [(buf.validate.field).string.max_len = 255];
+  optional string build_cpu_limit = 9 [(buf.validate.field).string.max_len = 255];
+}
+
+message RemoteServerCreateResponse {
+  RemoteServer server = 1;
+}
+
+// PATCH semantics: absent fields keep their stored values.
+message RemoteServerUpdateRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string name = 2 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional string description = 3 [(buf.validate.field).string.max_len = 1000];
+  optional string ip_address = 4 [(buf.validate.field).string.max_len = 255];
+  optional int64 port = 5;
+  optional string username = 6 [(buf.validate.field).string.max_len = 255];
+  optional RemoteServerStatus server_status = 7 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional RemoteServerType server_type = 8 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  // Integer-as-boolean in storage.
+  optional bool enable_docker_cleanup = 9;
+  optional string log_cleanup_cron = 10;
+  optional string command = 11;
+  // Metrics collection configuration as a JSON document.
+  optional string metrics_config = 12 [(buf.validate.field).string.max_len = 1048576];
+  optional int64 ssh_key_id = 13 [(buf.validate.field).int64.gt = 0];
+  optional string build_memory_limit = 14 [(buf.validate.field).string.max_len = 255];
+  optional string build_cpu_limit = 15 [(buf.validate.field).string.max_len = 255];
+}
+
+message RemoteServerUpdateResponse {
+  RemoteServer server = 1;
+}
+
+message RemoteServerActivateRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message RemoteServerActivateResponse {
+  RemoteServer server = 1;
+  RemoteServerAction action = 2;
+}
+
+message RemoteServerDeactivateRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message RemoteServerDeactivateResponse {
+  RemoteServer server = 1;
+  RemoteServerAction action = 2;
+}
+
+message RemoteServerTestConnectionRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message RemoteServerTestConnectionResponse {
+  RemoteServer server = 1;
+  RemoteServerAction action = 2;
+}
+
+message RemoteServerDeleteRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message RemoteServerMigrateDependenciesRequest {
+  // Source server id.
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 target_server_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message RemoteServerMigrateDependenciesResponse {
+  RemoteServerDependencyMigration migration = 1;
+}
+
+message RemoteServerGetMigrationRequest {
+  // Dependency-migration UUID as returned by MigrateDependencies.
+  string migration_id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message RemoteServerGetMigrationResponse {
+  RemoteServerDependencyMigration migration = 1;
+}
+
+message RemoteServerRollbackMigrationRequest {
+  string migration_id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message RemoteServerRollbackMigrationResponse {
+  RemoteServerDependencyMigration migration = 1;
+}
+
+message RemoteServerCancelMigrationRequest {
+  // Stateful application-migration UUID.
+  string migration_id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message RemoteServerCancelMigrationResponse {
+  RemoteServerApplicationMigration migration = 1;
+}
+
+message RemoteServerMigrateServiceRequest {
+  // Application/compose service id.
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  int64 target_server_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message RemoteServerMigrateServiceResponse {
+  RemoteServerApplicationMigration migration = 1;
+}
+
+message RemoteServerListMigrationsRequest {
+  // Application/compose service id.
+  int64 service_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message RemoteServerListMigrationsResponse {
+  repeated RemoteServerApplicationMigration migrations = 1;
+}
+
+message RemoteServerListMigrationObjectsRequest {
+  // Stateful application-migration UUID.
+  string migration_id = 1 [(buf.validate.field).string.min_len = 1];
+}
+
+message RemoteServerListMigrationObjectsResponse {
+  repeated RemoteServerMigrationObject objects = 1;
 }

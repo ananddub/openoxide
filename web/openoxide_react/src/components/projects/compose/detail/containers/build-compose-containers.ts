@@ -95,11 +95,7 @@ const toContainerItem = (
 	};
 };
 
-/**
- * Filters raw docker containers down to those belonging to this compose
- * project (by name prefix or compose label), dedupes by name, and maps each
- * to a presentation `ContainerItem`.
- */
+/** Filters raw docker containers down to those belonging to this compose project (by name prefix or compose label), dedupes by name, and maps each to a presentation `ContainerItem`. */
 export function buildComposeContainers(
 	compose: any,
 	rawContainers: any[],
@@ -130,12 +126,7 @@ export function buildComposeContainers(
 	);
 }
 
-/**
- * Per-service live runtime state for the architecture canvas: a service is
- * 'running' while at least one of its project containers is up, 'stopped'
- * otherwise. Services with no containers at all stay absent from the map
- * (never deployed → no dot rather than a false 'stopped').
- */
+/** Per-service live runtime state for the architecture canvas: a service is 'running' while at least one of its project containers is up, 'stopped' otherwise. Services with no containers at all stay absent from the map (never deployed → no dot rather than a false 'stopped'). */
 export function buildServiceStatusMap(
 	compose: any,
 	rawContainers: any[],

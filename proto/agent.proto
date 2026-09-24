@@ -2,20 +2,12 @@ syntax = "proto3";
 
 package agent;
 
-// Query API the panel uses to read metrics collected by an agent.
-//
-// Agents are the only durable metric store. The panel authenticates to this
-// query API and proxies results to authorized browser clients. Both sides
-// are built and deployed together from this repository, so the wire format
-// is versioned only to reject stale agents after a panel upgrade
-// (protocol_version).
+// Query API the panel uses to read metrics collected by agents (the only durable metric store, proxied to authorized browser clients); protocol_version exists only to reject stale agents after a panel upgrade.
 service AgentService {
   rpc GetAgentInfo(AgentInfoRequest) returns (AgentInfoResponse);
-  // Query historical server metrics. Host-static facts (cpu model, os, ...)
-  // ride once in `host`; points carry only the per-sample values.
+  // Query historical server metrics; host-static facts (cpu model, os, ...) ride once in `host`, points carry only per-sample values.
   rpc GetServerMetrics(GetMetricsRequest) returns (ServerMetricsResponse);
 
-  // Query historical container metrics
   rpc GetContainerMetrics(GetContainerMetricsRequest) returns (ContainerMetricsResponse);
 
   // Current Docker lifecycle state, including stopped/restarting containers.
@@ -30,16 +22,10 @@ service AgentService {
   // One-shot non-PTY command execution for deployment and maintenance tasks.
   rpc ExecTask(ExecTaskRequest) returns (stream ExecTaskOutput);
 
-  // Live per-container stats streamed over the agent's own Docker API
-  // connection, one `docker stats --format {{json .}}`-shaped JSON document
-  // per frame. Replaces the panel spawning a `docker stats` CLI process
-  // (~11 MB RSS each) per browser consumer. Empty container_ids means every
-  // running container; stream=false sends one sample per container and ends.
+  // Live per-container stats as `docker stats --format {{json .}}`-shaped JSON documents per frame, replacing the panel-spawned `docker stats` CLI process (~11 MB RSS each); empty container_ids means every running container, stream=false sends one sample per container and ends.
   rpc StreamContainerStats(StreamStatsRequest) returns (stream StatsFrame);
 
-  // Stream a host file to the agent and atomically install it at destination.
-  // The first message must carry the header; the rest are raw data chunks
-  // whose running byte count is checked against header.total_size.
+  // Stream a host file to the agent and atomically install it at destination; first message carries the header, the rest are raw chunks whose running byte count is checked against header.total_size.
   rpc UploadFile(stream FileUploadMessage) returns (FileUploadResult);
 }
 
@@ -102,8 +88,7 @@ message WatchRequest {
   int64 server_id = 1;
 }
 
-// Per-sample server metrics. Timestamps are unix seconds; host-static facts
-// live in ServerMetricsResponse.host.
+// Per-sample server metrics; timestamps are unix seconds, host-static facts live in ServerMetricsResponse.host.
 message ServerMetricPoint {
   int64 timestamp = 1;
   double cpu = 2;
@@ -200,8 +185,7 @@ message ShellOpen {
   string shell = 3;
   uint32 cols = 4;
   uint32 rows = 5;
-  // Escape to the host: the agent starts a privileged helper container
-  // (host root bind + host PID namespace) and chroots into it.
+  // Escape to the host: the agent starts a privileged helper container (host root bind + host PID namespace) and chroots into it.
   bool host = 6;
 }
 
@@ -240,8 +224,7 @@ message StreamStatsRequest {
   bool stream = 3;
 }
 
-// One newline-terminated JSON stats document, CLI-shaped so panel-side
-// parsers do not change.
+// One newline-terminated JSON stats document, CLI-shaped so panel-side parsers do not change.
 message StatsFrame {
   string json_line = 1;
 }

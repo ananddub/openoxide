@@ -2,84 +2,422 @@
 // @generated from file openoxide/api/v1/database_network.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	EmptySchema,
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceRequestSchema,
-	ResourceResponseSchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/database_network.proto.
  */
-export const file_openoxide_api_v1_database_network: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'CidvcGVub3hpZGUvYXBpL3YxL2RhdGFiYXNlX25ldHdvcmsucHJvdG8SEG9wZW5veGlkZS5hcGkudjEygQUKFkRhdGFiYXNlTmV0d29ya1NlcnZpY2USVwoMTGlzdE5ldHdvcmtzEh8ub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVF1ZXJ5GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZRJdChJMaXN0U2VydmVyTmV0d29ya3MSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlElMKCkdldE5ldHdvcmsSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJWCg1DcmVhdGVOZXR3b3JrEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVgoNVXBkYXRlTmV0d29yaxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlc3BvbnNlEksKDURlbGV0ZU5ldHdvcmsSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSXQoQTGlzdERlcGVuZGVuY2llcxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiYub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZUxpc3RSZXNwb25zZWIGcHJvdG8z',
-		[file_openoxide_api_v1_common],
-	);
+export const file_openoxide_api_v1_database_network: GenFile = /*@__PURE__*/
+  fileDesc("CidvcGVub3hpZGUvYXBpL3YxL2RhdGFiYXNlX25ldHdvcmsucHJvdG8SEG9wZW5veGlkZS5hcGkudjEi0gEKD0RhdGFiYXNlTmV0d29yaxIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEhsKE2RvY2tlcl9uZXR3b3JrX25hbWUYAyABKAkSGAoLZGVzY3JpcHRpb24YBCABKAlIAIgBARIQCghleHRlcm5hbBgFIAEoAxIWCglzZXJ2ZXJfaWQYBiABKANIAYgBARISCgpjcmVhdGVkX2F0GAcgASgDEhIKCnVwZGF0ZWRfYXQYCCABKANCDgoMX2Rlc2NyaXB0aW9uQgwKCl9zZXJ2ZXJfaWQiYAobRGF0YWJhc2VOZXR3b3JrRGVwZW5kZW5jaWVzEhQKDGFwcGxpY2F0aW9ucxgBIAEoAxIYChBjb21wb3NlX3NlcnZpY2VzGAIgASgDEhEKCWRhdGFiYXNlcxgDIAEoAyIkCiJEYXRhYmFzZU5ldHdvcmtMaXN0TmV0d29ya3NSZXF1ZXN0IloKI0RhdGFiYXNlTmV0d29ya0xpc3ROZXR3b3Jrc1Jlc3BvbnNlEjMKCG5ldHdvcmtzGAEgAygLMiEub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZU5ldHdvcmsiRgooRGF0YWJhc2VOZXR3b3JrTGlzdFNlcnZlck5ldHdvcmtzUmVxdWVzdBIaCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIAAiYAopRGF0YWJhc2VOZXR3b3JrTGlzdFNlcnZlck5ldHdvcmtzUmVzcG9uc2USMwoIbmV0d29ya3MYASADKAsyIS5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlTmV0d29yayI3CiBEYXRhYmFzZU5ldHdvcmtHZXROZXR3b3JrUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJXCiFEYXRhYmFzZU5ldHdvcmtHZXROZXR3b3JrUmVzcG9uc2USMgoHbmV0d29yaxgBIAEoCzIhLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VOZXR3b3JrIuUBCiNEYXRhYmFzZU5ldHdvcmtDcmVhdGVOZXR3b3JrUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEicKE2RvY2tlcl9uZXR3b3JrX25hbWUYAiABKAlCCrpIB3IFEAEY/wESGAoLZGVzY3JpcHRpb24YAyABKAlIAIgBARIVCghleHRlcm5hbBgEIAEoA0gBiAEBEh8KCXNlcnZlcl9pZBgFIAEoA0IHukgEIgIgAEgCiAEBQg4KDF9kZXNjcmlwdGlvbkILCglfZXh0ZXJuYWxCDAoKX3NlcnZlcl9pZCJaCiREYXRhYmFzZU5ldHdvcmtDcmVhdGVOZXR3b3JrUmVzcG9uc2USMgoHbmV0d29yaxgBIAEoCzIhLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VOZXR3b3JrIpgCCiNEYXRhYmFzZU5ldHdvcmtVcGRhdGVOZXR3b3JrUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIbCgRuYW1lGAIgASgJQgi6SAVyAxj/AUgAiAEBEioKE2RvY2tlcl9uZXR3b3JrX25hbWUYAyABKAlCCLpIBXIDGP8BSAGIAQESGAoLZGVzY3JpcHRpb24YBCABKAlIAogBARIVCghleHRlcm5hbBgFIAEoA0gDiAEBEhYKCXNlcnZlcl9pZBgGIAEoA0gEiAEBQgcKBV9uYW1lQhYKFF9kb2NrZXJfbmV0d29ya19uYW1lQg4KDF9kZXNjcmlwdGlvbkILCglfZXh0ZXJuYWxCDAoKX3NlcnZlcl9pZCJaCiREYXRhYmFzZU5ldHdvcmtVcGRhdGVOZXR3b3JrUmVzcG9uc2USMgoHbmV0d29yaxgBIAEoCzIhLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VOZXR3b3JrIjoKI0RhdGFiYXNlTmV0d29ya0RlbGV0ZU5ldHdvcmtSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIj0KJkRhdGFiYXNlTmV0d29ya0xpc3REZXBlbmRlbmNpZXNSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIm4KJ0RhdGFiYXNlTmV0d29ya0xpc3REZXBlbmRlbmNpZXNSZXNwb25zZRJDCgxkZXBlbmRlbmNpZXMYASABKAsyLS5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlTmV0d29ya0RlcGVuZGVuY2llczKHBwoWRGF0YWJhc2VOZXR3b3JrU2VydmljZRJ7CgxMaXN0TmV0d29ya3MSNC5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlTmV0d29ya0xpc3ROZXR3b3Jrc1JlcXVlc3QaNS5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlTmV0d29ya0xpc3ROZXR3b3Jrc1Jlc3BvbnNlEo0BChJMaXN0U2VydmVyTmV0d29ya3MSOi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlTmV0d29ya0xpc3RTZXJ2ZXJOZXR3b3Jrc1JlcXVlc3QaOy5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlTmV0d29ya0xpc3RTZXJ2ZXJOZXR3b3Jrc1Jlc3BvbnNlEnUKCkdldE5ldHdvcmsSMi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlTmV0d29ya0dldE5ldHdvcmtSZXF1ZXN0GjMub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZU5ldHdvcmtHZXROZXR3b3JrUmVzcG9uc2USfgoNQ3JlYXRlTmV0d29yaxI1Lm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VOZXR3b3JrQ3JlYXRlTmV0d29ya1JlcXVlc3QaNi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlTmV0d29ya0NyZWF0ZU5ldHdvcmtSZXNwb25zZRJ+Cg1VcGRhdGVOZXR3b3JrEjUub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZU5ldHdvcmtVcGRhdGVOZXR3b3JrUmVxdWVzdBo2Lm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VOZXR3b3JrVXBkYXRlTmV0d29ya1Jlc3BvbnNlEl8KDURlbGV0ZU5ldHdvcmsSNS5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlTmV0d29ya0RlbGV0ZU5ldHdvcmtSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRKHAQoQTGlzdERlcGVuZGVuY2llcxI4Lm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VOZXR3b3JrTGlzdERlcGVuZGVuY2llc1JlcXVlc3QaOS5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlTmV0d29ya0xpc3REZXBlbmRlbmNpZXNSZXNwb25zZWIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetwork
+ */
+export type DatabaseNetwork = Message<"openoxide.api.v1.DatabaseNetwork"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string docker_network_name = 3;
+   */
+  dockerNetworkName: string;
+
+  /**
+   * @generated from field: optional string description = 4;
+   */
+  description?: string | undefined;
+
+  /**
+   * Docker external-network flag stored as an integer (0/1) column.
+   *
+   * @generated from field: int64 external = 5;
+   */
+  external: bigint;
+
+  /**
+   * @generated from field: optional int64 server_id = 6;
+   */
+  serverId?: bigint | undefined;
+
+  /**
+   * @generated from field: int64 created_at = 7;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 8;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetwork.
+ * Use `create(DatabaseNetworkSchema)` to create a new message.
+ */
+export const DatabaseNetworkSchema: GenMessage<DatabaseNetwork> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 0);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkDependencies
+ */
+export type DatabaseNetworkDependencies = Message<"openoxide.api.v1.DatabaseNetworkDependencies"> & {
+  /**
+   * @generated from field: int64 applications = 1;
+   */
+  applications: bigint;
+
+  /**
+   * @generated from field: int64 compose_services = 2;
+   */
+  composeServices: bigint;
+
+  /**
+   * @generated from field: int64 databases = 3;
+   */
+  databases: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkDependencies.
+ * Use `create(DatabaseNetworkDependenciesSchema)` to create a new message.
+ */
+export const DatabaseNetworkDependenciesSchema: GenMessage<DatabaseNetworkDependencies> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 1);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkListNetworksRequest
+ */
+export type DatabaseNetworkListNetworksRequest = Message<"openoxide.api.v1.DatabaseNetworkListNetworksRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkListNetworksRequest.
+ * Use `create(DatabaseNetworkListNetworksRequestSchema)` to create a new message.
+ */
+export const DatabaseNetworkListNetworksRequestSchema: GenMessage<DatabaseNetworkListNetworksRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 2);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkListNetworksResponse
+ */
+export type DatabaseNetworkListNetworksResponse = Message<"openoxide.api.v1.DatabaseNetworkListNetworksResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.DatabaseNetwork networks = 1;
+   */
+  networks: DatabaseNetwork[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkListNetworksResponse.
+ * Use `create(DatabaseNetworkListNetworksResponseSchema)` to create a new message.
+ */
+export const DatabaseNetworkListNetworksResponseSchema: GenMessage<DatabaseNetworkListNetworksResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 3);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkListServerNetworksRequest
+ */
+export type DatabaseNetworkListServerNetworksRequest = Message<"openoxide.api.v1.DatabaseNetworkListServerNetworksRequest"> & {
+  /**
+   * @generated from field: int64 server_id = 1;
+   */
+  serverId: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkListServerNetworksRequest.
+ * Use `create(DatabaseNetworkListServerNetworksRequestSchema)` to create a new message.
+ */
+export const DatabaseNetworkListServerNetworksRequestSchema: GenMessage<DatabaseNetworkListServerNetworksRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 4);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkListServerNetworksResponse
+ */
+export type DatabaseNetworkListServerNetworksResponse = Message<"openoxide.api.v1.DatabaseNetworkListServerNetworksResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.DatabaseNetwork networks = 1;
+   */
+  networks: DatabaseNetwork[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkListServerNetworksResponse.
+ * Use `create(DatabaseNetworkListServerNetworksResponseSchema)` to create a new message.
+ */
+export const DatabaseNetworkListServerNetworksResponseSchema: GenMessage<DatabaseNetworkListServerNetworksResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 5);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkGetNetworkRequest
+ */
+export type DatabaseNetworkGetNetworkRequest = Message<"openoxide.api.v1.DatabaseNetworkGetNetworkRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkGetNetworkRequest.
+ * Use `create(DatabaseNetworkGetNetworkRequestSchema)` to create a new message.
+ */
+export const DatabaseNetworkGetNetworkRequestSchema: GenMessage<DatabaseNetworkGetNetworkRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 6);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkGetNetworkResponse
+ */
+export type DatabaseNetworkGetNetworkResponse = Message<"openoxide.api.v1.DatabaseNetworkGetNetworkResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.DatabaseNetwork network = 1;
+   */
+  network?: DatabaseNetwork | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkGetNetworkResponse.
+ * Use `create(DatabaseNetworkGetNetworkResponseSchema)` to create a new message.
+ */
+export const DatabaseNetworkGetNetworkResponseSchema: GenMessage<DatabaseNetworkGetNetworkResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 7);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkCreateNetworkRequest
+ */
+export type DatabaseNetworkCreateNetworkRequest = Message<"openoxide.api.v1.DatabaseNetworkCreateNetworkRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string docker_network_name = 2;
+   */
+  dockerNetworkName: string;
+
+  /**
+   * @generated from field: optional string description = 3;
+   */
+  description?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 external = 4;
+   */
+  external?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 server_id = 5;
+   */
+  serverId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkCreateNetworkRequest.
+ * Use `create(DatabaseNetworkCreateNetworkRequestSchema)` to create a new message.
+ */
+export const DatabaseNetworkCreateNetworkRequestSchema: GenMessage<DatabaseNetworkCreateNetworkRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 8);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkCreateNetworkResponse
+ */
+export type DatabaseNetworkCreateNetworkResponse = Message<"openoxide.api.v1.DatabaseNetworkCreateNetworkResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.DatabaseNetwork network = 1;
+   */
+  network?: DatabaseNetwork | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkCreateNetworkResponse.
+ * Use `create(DatabaseNetworkCreateNetworkResponseSchema)` to create a new message.
+ */
+export const DatabaseNetworkCreateNetworkResponseSchema: GenMessage<DatabaseNetworkCreateNetworkResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 9);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkUpdateNetworkRequest
+ */
+export type DatabaseNetworkUpdateNetworkRequest = Message<"openoxide.api.v1.DatabaseNetworkUpdateNetworkRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional string name = 2;
+   */
+  name?: string | undefined;
+
+  /**
+   * @generated from field: optional string docker_network_name = 3;
+   */
+  dockerNetworkName?: string | undefined;
+
+  /**
+   * @generated from field: optional string description = 4;
+   */
+  description?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 external = 5;
+   */
+  external?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 server_id = 6;
+   */
+  serverId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkUpdateNetworkRequest.
+ * Use `create(DatabaseNetworkUpdateNetworkRequestSchema)` to create a new message.
+ */
+export const DatabaseNetworkUpdateNetworkRequestSchema: GenMessage<DatabaseNetworkUpdateNetworkRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 10);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkUpdateNetworkResponse
+ */
+export type DatabaseNetworkUpdateNetworkResponse = Message<"openoxide.api.v1.DatabaseNetworkUpdateNetworkResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.DatabaseNetwork network = 1;
+   */
+  network?: DatabaseNetwork | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkUpdateNetworkResponse.
+ * Use `create(DatabaseNetworkUpdateNetworkResponseSchema)` to create a new message.
+ */
+export const DatabaseNetworkUpdateNetworkResponseSchema: GenMessage<DatabaseNetworkUpdateNetworkResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 11);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkDeleteNetworkRequest
+ */
+export type DatabaseNetworkDeleteNetworkRequest = Message<"openoxide.api.v1.DatabaseNetworkDeleteNetworkRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkDeleteNetworkRequest.
+ * Use `create(DatabaseNetworkDeleteNetworkRequestSchema)` to create a new message.
+ */
+export const DatabaseNetworkDeleteNetworkRequestSchema: GenMessage<DatabaseNetworkDeleteNetworkRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 12);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkListDependenciesRequest
+ */
+export type DatabaseNetworkListDependenciesRequest = Message<"openoxide.api.v1.DatabaseNetworkListDependenciesRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkListDependenciesRequest.
+ * Use `create(DatabaseNetworkListDependenciesRequestSchema)` to create a new message.
+ */
+export const DatabaseNetworkListDependenciesRequestSchema: GenMessage<DatabaseNetworkListDependenciesRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 13);
+
+/**
+ * @generated from message openoxide.api.v1.DatabaseNetworkListDependenciesResponse
+ */
+export type DatabaseNetworkListDependenciesResponse = Message<"openoxide.api.v1.DatabaseNetworkListDependenciesResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.DatabaseNetworkDependencies dependencies = 1;
+   */
+  dependencies?: DatabaseNetworkDependencies | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DatabaseNetworkListDependenciesResponse.
+ * Use `create(DatabaseNetworkListDependenciesResponseSchema)` to create a new message.
+ */
+export const DatabaseNetworkListDependenciesResponseSchema: GenMessage<DatabaseNetworkListDependenciesResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_database_network, 14);
 
 /**
  * @generated from service openoxide.api.v1.DatabaseNetworkService
  */
 export const DatabaseNetworkService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListNetworks
-	 */
-	listNetworks: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListServerNetworks
-	 */
-	listServerNetworks: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.GetNetwork
-	 */
-	getNetwork: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.CreateNetwork
-	 */
-	createNetwork: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.UpdateNetwork
-	 */
-	updateNetwork: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.DeleteNetwork
-	 */
-	deleteNetwork: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListDependencies
-	 */
-	listDependencies: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceListResponseSchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_database_network, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListNetworks
+   */
+  listNetworks: {
+    methodKind: "unary";
+    input: typeof DatabaseNetworkListNetworksRequestSchema;
+    output: typeof DatabaseNetworkListNetworksResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListServerNetworks
+   */
+  listServerNetworks: {
+    methodKind: "unary";
+    input: typeof DatabaseNetworkListServerNetworksRequestSchema;
+    output: typeof DatabaseNetworkListServerNetworksResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DatabaseNetworkService.GetNetwork
+   */
+  getNetwork: {
+    methodKind: "unary";
+    input: typeof DatabaseNetworkGetNetworkRequestSchema;
+    output: typeof DatabaseNetworkGetNetworkResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DatabaseNetworkService.CreateNetwork
+   */
+  createNetwork: {
+    methodKind: "unary";
+    input: typeof DatabaseNetworkCreateNetworkRequestSchema;
+    output: typeof DatabaseNetworkCreateNetworkResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DatabaseNetworkService.UpdateNetwork
+   */
+  updateNetwork: {
+    methodKind: "unary";
+    input: typeof DatabaseNetworkUpdateNetworkRequestSchema;
+    output: typeof DatabaseNetworkUpdateNetworkResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DatabaseNetworkService.DeleteNetwork
+   */
+  deleteNetwork: {
+    methodKind: "unary";
+    input: typeof DatabaseNetworkDeleteNetworkRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListDependencies
+   */
+  listDependencies: {
+    methodKind: "unary";
+    input: typeof DatabaseNetworkListDependenciesRequestSchema;
+    output: typeof DatabaseNetworkListDependenciesResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_database_network, 0);
+

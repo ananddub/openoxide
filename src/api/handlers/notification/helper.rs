@@ -1,57 +1,16 @@
 use connectrpc::{ConnectError, ErrorCode};
-use serde::{Deserialize, Serialize};
+use serde_json::json;
 
-use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
+use crate::api::connect::generated::openoxide::api::v1::{
+    Notification as ProtoNotification, NotificationBinding as ProtoNotificationBinding,
+    NotificationDeliveryAttempt as ProtoNotificationDeliveryAttempt,
+    NotificationProviderType as ProtoNotificationProviderType,
+    NotificationResourceType as ProtoNotificationResourceType,
+};
+use crate::flash_gen::models::NotificationDeliveryAttempts;
+use crate::flash_gen::models::NotificationResourceBindings;
 use crate::flash_gen::models::Notifications as Notification;
 use crate::services::integrations::notification::NotificationProvider;
-
-pub fn notif_to_resource(dto: NotificationResponseDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "notification".into(),
-        payload,
-        ..Default::default()
-    }
-}
-
-pub fn delivery_to_resource(dto: NotificationDeliveryAttemptDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "notification_delivery".into(),
-        payload,
-        ..Default::default()
-    }
-}
-
-pub fn binding_to_resource(dto: NotificationResourceBindingDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse {
-        id: dto.id,
-        kind: "notification_binding".into(),
-        payload,
-        ..Default::default()
-    }
-}
-
-pub fn provider_of(dto: &CreateNotificationDto) -> NotificationProvider {
-    use self::NotificationConfigDto::*;
-    match &dto.provider {
-        Slack(_) => NotificationProvider::Slack,
-        Telegram(_) => NotificationProvider::Telegram,
-        Discord(_) => NotificationProvider::Discord,
-        Email(_) => NotificationProvider::Email,
-        Resend(_) => NotificationProvider::Resend,
-        Gotify(_) => NotificationProvider::Gotify,
-        Ntfy(_) => NotificationProvider::Ntfy,
-        Mattermost(_) => NotificationProvider::Mattermost,
-        Custom(_) => NotificationProvider::Custom,
-        Lark(_) => NotificationProvider::Lark,
-        Pushover(_) => NotificationProvider::Pushover,
-        Teams(_) => NotificationProvider::Teams,
-    }
-}
 
 pub fn verify_scope(authenticated: i64, requested: i64) -> Result<(), ConnectError> {
     if authenticated == requested {
@@ -61,305 +20,146 @@ pub fn verify_scope(authenticated: i64, requested: i64) -> Result<(), ConnectErr
     }
 }
 
-// ── Notification payload DTOs ─────────────────────────────────────
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct NotificationSettingsDto {
-    pub name: String,
-    pub organization_id: i64,
-    #[serde(default)]
-    pub on_app_deploy: bool,
-    #[serde(default)]
-    pub on_app_build_error: bool,
-    #[serde(default)]
-    pub on_database_backup: bool,
-    #[serde(default)]
-    pub on_volume_backup: bool,
-    #[serde(default)]
-    pub on_panel_restart: bool,
-    #[serde(default)]
-    pub on_docker_cleanup: bool,
-    #[serde(default)]
-    pub on_server_threshold: bool,
-    #[serde(default)]
-    pub on_panel_backup: bool,
-    #[serde(default)]
-    pub on_schedule_success: bool,
-    #[serde(default)]
-    pub on_schedule_failure: bool,
+pub fn internal(error: impl std::fmt::Display) -> ConnectError {
+    ConnectError::new(ErrorCode::Internal, error.to_string())
 }
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct SlackNotificationDto {
-    pub webhook_url: String,
-    pub channel: Option<String>,
-}
-#[derive(Debug, Clone, Deserialize)]
-pub struct TelegramNotificationDto {
-    pub bot_token: String,
-    pub chat_id: String,
-    pub message_thread_id: Option<String>,
-}
-#[derive(Debug, Clone, Deserialize)]
-pub struct DiscordNotificationDto {
-    pub webhook_url: String,
-    #[serde(default)]
-    pub decoration: bool,
-}
-#[derive(Debug, Clone, Deserialize)]
-pub struct EmailNotificationDto {
-    pub smtp_server: String,
-    pub smtp_port: i64,
-    pub username: String,
-    pub password: String,
-    pub from_address: String,
-    pub to_addresses: Vec<String>,
-}
-#[derive(Debug, Clone, Deserialize)]
-pub struct ResendNotificationDto {
-    pub api_key: String,
-    pub from_address: String,
-    pub to_addresses: Vec<String>,
-}
-#[derive(Debug, Clone, Deserialize)]
-pub struct GotifyNotificationDto {
-    pub server_url: String,
-    pub app_token: String,
-    pub priority: i64,
-    #[serde(default)]
-    pub decoration: bool,
-}
-#[derive(Debug, Clone, Deserialize)]
-pub struct NtfyNotificationDto {
-    pub server_url: String,
-    pub topic: String,
-    pub access_token: Option<String>,
-    pub priority: i64,
-}
-#[derive(Debug, Clone, Deserialize)]
-pub struct MattermostNotificationDto {
-    pub webhook_url: String,
-    pub channel: Option<String>,
-    pub username: Option<String>,
-}
-#[derive(Debug, Clone, Deserialize)]
-pub struct CustomNotificationDto {
-    pub endpoint: String,
-    pub headers: Option<String>,
-}
-#[derive(Debug, Clone, Deserialize)]
-pub struct WebhookNotificationDto {
-    pub webhook_url: String,
-}
-#[derive(Debug, Clone, Deserialize)]
-pub struct PushoverNotificationDto {
-    pub user_key: String,
-    pub api_token: String,
-    pub priority: i64,
-    pub retry: Option<i64>,
-    pub expire: Option<i64>,
+// ── Provider kind mapping ─────────────────────────────────────────
+
+/// Rows carry the provider as its SCREAMING_SNAKE name; an unrecognized
+/// stored value falls back to `Custom`, matching the previous DTO behavior.
+fn provider_of_row(stored: &str) -> NotificationProvider {
+    stored.parse().unwrap_or(NotificationProvider::Custom)
 }
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(
-    tag = "notification_type",
-    content = "config",
-    rename_all = "SCREAMING_SNAKE_CASE"
-)]
-pub enum NotificationConfigDto {
-    Slack(SlackNotificationDto),
-    Telegram(TelegramNotificationDto),
-    Discord(DiscordNotificationDto),
-    Email(EmailNotificationDto),
-    Resend(ResendNotificationDto),
-    Gotify(GotifyNotificationDto),
-    Ntfy(NtfyNotificationDto),
-    Mattermost(MattermostNotificationDto),
-    Custom(CustomNotificationDto),
-    Lark(WebhookNotificationDto),
-    Pushover(PushoverNotificationDto),
-    Teams(WebhookNotificationDto),
+fn provider_to_proto(provider: NotificationProvider) -> ::buffa::EnumValue<ProtoNotificationProviderType> {
+    ::buffa::EnumValue::Known(match provider {
+        NotificationProvider::Slack => ProtoNotificationProviderType::Slack,
+        NotificationProvider::Telegram => ProtoNotificationProviderType::Telegram,
+        NotificationProvider::Discord => ProtoNotificationProviderType::Discord,
+        NotificationProvider::Email => ProtoNotificationProviderType::Email,
+        NotificationProvider::Resend => ProtoNotificationProviderType::Resend,
+        NotificationProvider::Gotify => ProtoNotificationProviderType::Gotify,
+        NotificationProvider::Ntfy => ProtoNotificationProviderType::Ntfy,
+        NotificationProvider::Mattermost => ProtoNotificationProviderType::Mattermost,
+        NotificationProvider::Pushover => ProtoNotificationProviderType::Pushover,
+        NotificationProvider::Custom => ProtoNotificationProviderType::Custom,
+        NotificationProvider::Lark => ProtoNotificationProviderType::Lark,
+        NotificationProvider::Teams => ProtoNotificationProviderType::Teams,
+    })
 }
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct CreateNotificationDto {
-    pub settings: NotificationSettingsDto,
-    pub provider: NotificationConfigDto,
-}
+// ── Row → proto mappings ──────────────────────────────────────────
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct PatchNotificationDto {
-    pub name: Option<String>,
-    pub on_app_deploy: Option<bool>,
-    pub on_app_build_error: Option<bool>,
-    pub on_database_backup: Option<bool>,
-    pub on_volume_backup: Option<bool>,
-    pub on_panel_restart: Option<bool>,
-    pub on_docker_cleanup: Option<bool>,
-    pub on_server_threshold: Option<bool>,
-    pub on_panel_backup: Option<bool>,
-    pub on_schedule_success: Option<bool>,
-    pub on_schedule_failure: Option<bool>,
-
-    pub webhook_url: Option<String>,
-    pub channel: Option<String>,
-    pub username: Option<String>,
-    pub decoration: Option<i64>,
-
-    pub bot_token: Option<String>,
-    pub chat_id: Option<String>,
-    pub message_thread_id: Option<String>,
-
-    pub smtp_server: Option<String>,
-    pub smtp_port: Option<i64>,
-    pub password: Option<String>,
-    pub from_address: Option<String>,
-    pub to_addresses: Option<Vec<String>>,
-    pub api_key: Option<String>,
-
-    pub server_url: Option<String>,
-    pub app_token: Option<String>,
-    pub priority: Option<i64>,
-    pub topic: Option<String>,
-    pub access_token: Option<String>,
-    pub endpoint: Option<String>,
-    pub headers: Option<String>,
-
-    pub user_key: Option<String>,
-    pub api_token: Option<String>,
-    pub retry: Option<i64>,
-    pub expire: Option<i64>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct NotificationResponseDto {
-    pub id: i64,
-    pub name: String,
-    pub notification_type: NotificationProvider,
-    pub on_app_deploy: bool,
-    pub on_app_build_error: bool,
-    pub on_database_backup: bool,
-    pub on_volume_backup: bool,
-    pub on_panel_restart: bool,
-    pub on_docker_cleanup: bool,
-    pub on_server_threshold: bool,
-    pub on_panel_backup: bool,
-    pub on_schedule_success: bool,
-    pub on_schedule_failure: bool,
-    pub organization_id: i64,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-impl From<Notification> for NotificationResponseDto {
-    fn from(value: Notification) -> Self {
-        let provider: NotificationProvider = value
-            .notification_type
-            .parse()
-            .unwrap_or(NotificationProvider::Custom);
-
-        Self {
-            id: value.id,
-            name: value.name,
-            notification_type: provider,
-            on_app_deploy: value.on_app_deploy != 0,
-            on_app_build_error: value.on_app_build_error != 0,
-            on_database_backup: value.on_database_backup != 0,
-            on_volume_backup: value.on_volume_backup != 0,
-            on_panel_restart: value.on_panel_restart != 0,
-            on_docker_cleanup: value.on_docker_cleanup != 0,
-            on_server_threshold: value.on_server_threshold != 0,
-            on_panel_backup: value.on_panel_backup != 0,
-            on_schedule_success: value.on_schedule_success != 0,
-            on_schedule_failure: value.on_schedule_failure != 0,
-            organization_id: value.organization_id,
-            created_at: value.created_at,
-            updated_at: value.updated_at,
-        }
+/// Notification rows never echo provider credentials; config is write-only,
+/// so nothing from `config_json` is exposed here.
+pub fn notif_to_proto(value: Notification) -> ProtoNotification {
+    let provider = provider_of_row(&value.notification_type);
+    ProtoNotification {
+        id: value.id,
+        name: value.name,
+        notification_type: provider_to_proto(provider),
+        on_app_deploy: value.on_app_deploy != 0,
+        on_app_build_error: value.on_app_build_error != 0,
+        on_database_backup: value.on_database_backup != 0,
+        on_volume_backup: value.on_volume_backup != 0,
+        on_panel_restart: value.on_panel_restart != 0,
+        on_docker_cleanup: value.on_docker_cleanup != 0,
+        on_server_threshold: value.on_server_threshold != 0,
+        on_panel_backup: value.on_panel_backup != 0,
+        on_schedule_success: value.on_schedule_success != 0,
+        on_schedule_failure: value.on_schedule_failure != 0,
+        organization_id: value.organization_id,
+        created_at: value.created_at,
+        updated_at: value.updated_at,
+        ..Default::default()
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct CreateNotificationBindingDto {
-    pub notification_id: i64,
-    pub resource_type: NotificationResourceType,
-    pub resource_id: i64,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum NotificationResourceType {
-    Server,
-    Application,
-    Compose,
-    Database,
-}
-
-impl NotificationResourceType {
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Server => "SERVER",
-            Self::Application => "APPLICATION",
-            Self::Compose => "COMPOSE",
-            Self::Database => "DATABASE",
-        }
+pub fn delivery_to_proto(value: NotificationDeliveryAttempts) -> ProtoNotificationDeliveryAttempt {
+    ProtoNotificationDeliveryAttempt {
+        id: value.id,
+        notification_id: value.notification_id,
+        organization_id: value.organization_id,
+        trigger_name: value.trigger_name,
+        correlation_id: value.correlation_id,
+        status: value.status,
+        attempt: value.attempt,
+        title: value.title,
+        body: value.body,
+        error: value.error,
+        created_at: value.created_at,
+        finished_at: value.finished_at,
+        ..Default::default()
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct NotificationDeliveryAttemptDto {
-    pub id: i64,
-    pub notification_id: i64,
-    pub organization_id: i64,
-    pub trigger_name: String,
-    pub correlation_id: String,
-    pub status: String,
-    pub attempt: i64,
-    pub title: String,
-    pub body: String,
-    pub error: Option<String>,
-    pub created_at: i64,
-    pub finished_at: Option<i64>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct NotificationResourceBindingDto {
-    pub id: i64,
-    pub notification_id: i64,
-    pub organization_id: i64,
-    pub resource_type: String,
-    pub resource_id: i64,
-    pub created_at: i64,
-}
-
-impl From<crate::flash_gen::models::NotificationDeliveryAttempts> for NotificationDeliveryAttemptDto {
-    fn from(value: crate::flash_gen::models::NotificationDeliveryAttempts) -> Self {
-        Self {
-            id: value.id,
-            notification_id: value.notification_id,
-            organization_id: value.organization_id,
-            trigger_name: value.trigger_name,
-            correlation_id: value.correlation_id,
-            status: value.status,
-            attempt: value.attempt,
-            title: value.title,
-            body: value.body,
-            error: value.error,
-            created_at: value.created_at,
-            finished_at: value.finished_at,
-        }
+pub fn binding_to_proto(value: NotificationResourceBindings) -> ProtoNotificationBinding {
+    ProtoNotificationBinding {
+        id: value.id,
+        notification_id: value.notification_id,
+        organization_id: value.organization_id,
+        resource_type: ::buffa::EnumValue::Known(match value.resource_type.as_str() {
+            "SERVER" => ProtoNotificationResourceType::Server,
+            "APPLICATION" => ProtoNotificationResourceType::Application,
+            "COMPOSE" => ProtoNotificationResourceType::Compose,
+            "DATABASE" => ProtoNotificationResourceType::Database,
+            _ => ProtoNotificationResourceType::Unspecified,
+        }),
+        resource_id: value.resource_id,
+        created_at: value.created_at,
+        ..Default::default()
     }
 }
 
-impl From<crate::flash_gen::models::NotificationResourceBindings> for NotificationResourceBindingDto {
-    fn from(value: crate::flash_gen::models::NotificationResourceBindings) -> Self {
-        Self {
-            id: value.id,
-            notification_id: value.notification_id,
-            organization_id: value.organization_id,
-            resource_type: value.resource_type,
-            resource_id: value.resource_id,
-            created_at: value.created_at,
+/// Stored spelling of the binding resource kind (SCREAMING_SNAKE, matching
+/// the string previously produced by `NotificationResourceType::as_str`).
+pub fn proto_resource_type_name(
+    value: ::buffa::EnumValue<ProtoNotificationResourceType>,
+) -> Result<String, ConnectError> {
+    Ok(match value {
+        ::buffa::EnumValue::Known(ProtoNotificationResourceType::Server) => "SERVER",
+        ::buffa::EnumValue::Known(ProtoNotificationResourceType::Application) => "APPLICATION",
+        ::buffa::EnumValue::Known(ProtoNotificationResourceType::Compose) => "COMPOSE",
+        ::buffa::EnumValue::Known(ProtoNotificationResourceType::Database) => "DATABASE",
+        _ => {
+            return Err(ConnectError::invalid_argument(
+                "resource_type must be a defined notification resource",
+            ))
         }
     }
+    .to_owned())
+}
+
+// ── PATCH config merge ────────────────────────────────────────────
+
+/// Applies the optional channel-config fields of an update request onto the
+/// stored `config_json` object in place. Absent fields keep their stored
+/// values; the provider kind itself is immutable here. The `endpoint` wire
+/// field is stored under the config key `url`, as documented in
+/// `.flash/queries/notifications.sql`.
+pub fn apply_provider_patch(
+    config_json: &mut String,
+    fields: Vec<(&'static str, serde_json::Value)>,
+    to_addresses: Vec<String>,
+) -> Result<(), ConnectError> {
+    if fields.is_empty() && to_addresses.is_empty() {
+        return Ok(());
+    }
+    let mut config: serde_json::Value = if config_json.is_empty() {
+        json!({})
+    } else {
+        serde_json::from_str(config_json).map_err(|e| internal(e.to_string()))?
+    };
+    let object = config
+        .as_object_mut()
+        .ok_or_else(|| internal("stored notification config is not a JSON object"))?;
+    for (key, value) in fields {
+        object.insert(key.to_owned(), value);
+    }
+    if !to_addresses.is_empty() {
+        object.insert("to_addresses".to_owned(), json!(to_addresses));
+    }
+    *config_json = serde_json::to_string(&config).map_err(internal)?;
+    Ok(())
 }

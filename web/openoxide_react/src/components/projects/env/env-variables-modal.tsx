@@ -1,6 +1,6 @@
 import {useProjectUpdate} from '#/api/live/projects';
 import {useEnvironmentUpdate} from '#/api/live/environments';
-import {useState, useEffect} from 'react';
+import {useState} from 'react';
 import {toast} from 'sonner';
 import {Info, Save} from 'lucide-react';
 import {Button} from '#/components/ui/button';
@@ -12,9 +12,13 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from '#/components/ui/sheet';
-import Editor from '@monaco-editor/react';
 import {formatApiError} from '#/api/utils';
-import {useTheme} from '#/hooks/use-theme';
+import {
+	EnvRowsCard,
+	parseEnv,
+	serializeEnv,
+	type EnvRow,
+} from '#/components/projects/common/env-rows-editor';
 
 interface EnvVariablesModalProps {
 	isOpen: boolean;
@@ -25,46 +29,38 @@ interface EnvVariablesModalProps {
 	onUpdated: () => void;
 }
 
-export function EnvVariablesModal({
-	isOpen,
+function EnvVariablesSheet({
 	onClose,
 	mode,
 	project,
 	environment,
 	onUpdated,
 }: EnvVariablesModalProps) {
-	const {theme} = useTheme();
-	const [projectEnv, setProjectEnv] = useState(project.env_var || '');
-	const [envVars, setEnvVars] = useState(environment?.env_var || '');
+	const source = mode === 'PROJECT' ? project : environment;
+	const original = String(source?.env_var || '');
+	const [rows, setRows] = useState<EnvRow[]>(() => parseEnv(original));
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	const isModified = serializeEnv(rows) !== serializeEnv(parseEnv(original));
 
 	const patchProjectMutation = useProjectUpdate();
 	const patchEnvironmentMutation = useEnvironmentUpdate();
 
-	useEffect(() => {
-		setProjectEnv(project.env_var || '');
-		setEnvVars(environment?.env_var || '');
-	}, [project, environment, isOpen]);
-
-	const isModified =
-		mode === 'PROJECT'
-			? projectEnv !== (project.env_var || '')
-			: envVars !== (environment?.env_var || '');
-
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsSubmitting(true);
+		const text = serializeEnv(rows);
 		try {
 			if (mode === 'PROJECT') {
 				await patchProjectMutation.mutateAsync({
 					id: project.id,
-					environment_variables: projectEnv,
+					environment_variables: text,
 				});
 				toast.success('Project global environment variables updated');
 			} else if (environment) {
 				await patchEnvironmentMutation.mutateAsync({
 					id: environment.id,
-					environment_variables: envVars,
+					environment_variables: text,
 				});
 				toast.success(
 					`Environment variables updated for ${environment.name}`,
@@ -89,95 +85,68 @@ export function EnvVariablesModal({
 			? 'Configure global variables accessible by all environments inside this project.'
 			: `Configure variables specific to the ${environment?.name || 'selected'} environment.`;
 
-	const filename =
+	const fileName =
 		mode === 'PROJECT'
 			? 'project.env'
 			: `${environment?.name?.toLowerCase() || 'env'}.env`;
 
 	return (
-		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
-			<SheetContent>
-				<SheetHeader>
-					<SheetTitle>{title}</SheetTitle>
-					<SheetDescription>{description}</SheetDescription>
-				</SheetHeader>
+		<SheetContent className="gap-0 p-0 sm:data-[side=right]:w-[640px]">
+			<SheetHeader className="px-5 pt-5 pb-4">
+				<SheetTitle>{title}</SheetTitle>
+				<SheetDescription>{description}</SheetDescription>
+			</SheetHeader>
 
-				<form
-					id="env-variables-sheet-form"
-					onSubmit={handleSubmit}
-					className="flex min-h-0 flex-1 flex-col gap-4 px-6 pt-6 pb-6">
-					{/* Info syntax tip */}
-					<div className="flex items-start gap-2.5 rounded-lg bg-muted/40 p-3">
-						<Info className="mt-0.5 size-4 shrink-0 text-primary" />
-						<div className="text-xs leading-relaxed text-muted-foreground">
-							{mode === 'PROJECT' ? (
-								<span>
-									Define global key-value environment variables. One
-									variable definition per line.
-								</span>
-							) : (
-								<span>
-									Reference project-level variables using{' '}
-									<code className="rounded border border-border/60 bg-muted/80 px-1 py-px font-mono text-[10.5px] font-medium text-foreground">
-										{'{{ project.DB_URL }}'}
-									</code>
-								</span>
-							)}
-						</div>
-					</div>
-
-					<div className="flex min-h-0 flex-1 flex-col gap-2">
-						<div className="flex items-center justify-between">
-							<span className="font-mono text-xs font-bold tracking-wider text-muted-foreground uppercase">
-								{filename}
+			<form
+				id="env-variables-sheet-form"
+				onSubmit={handleSubmit}
+				className="flex min-h-0 flex-1 flex-col px-5 pt-4 pb-5">
+				{/* Syntax tip — kept as the only note above the editor */}
+				<div className="mb-3 flex shrink-0 items-start gap-2.5 rounded-lg bg-muted/40 p-3">
+					<Info className="mt-0.5 size-4 shrink-0 text-primary" />
+					<div className="text-xs leading-relaxed text-muted-foreground">
+						{mode === 'PROJECT' ? (
+							<span>
+								Define global key-value environment variables
+								for every environment in this project.
 							</span>
-							{isModified && (
-								<span className="rounded bg-amber-500/5 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
-									Unsaved Changes
-								</span>
-							)}
-						</div>
-
-						{/* Monaco Code Editor */}
-						<div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-white p-1 shadow-inner dark:bg-[#1e1e1e]">
-							<Editor
-								height="100%"
-								language="ini"
-								theme={theme === 'dark' ? 'vs-dark' : 'light'}
-								value={mode === 'PROJECT' ? projectEnv : envVars}
-								onChange={val => {
-									if (mode === 'PROJECT') {
-										setProjectEnv(val || '');
-									} else {
-										setEnvVars(val || '');
-									}
-								}}
-								options={{
-									minimap: {enabled: false},
-									lineNumbers: 'on',
-									wordWrap: 'on',
-									fontFamily: 'monospace',
-									fontSize: 12.5,
-									automaticLayout: true,
-									scrollBeyondLastLine: false,
-									tabSize: 2,
-								}}
-							/>
-						</div>
+						) : (
+							<span>
+								Reference project-level variables using{' '}
+								<code className="rounded border border-border/60 bg-muted/80 px-1 py-px font-mono text-[10.5px] font-medium text-foreground">
+									{'{{ project.DB_URL }}'}
+								</code>
+							</span>
+						)}
 					</div>
-				</form>
+				</div>
 
-				<SheetFooter>
-					<Button
-						type="submit"
-						form="env-variables-sheet-form"
-						disabled={isSubmitting || !isModified}
-						className="h-10 gap-1.5 px-5">
-						<Save className="size-4" />
-						{isSubmitting ? 'Saving…' : 'Save'}
-					</Button>
-				</SheetFooter>
-			</SheetContent>
+				<EnvRowsCard
+					rows={rows}
+					onRowsChange={setRows}
+					fileName={fileName}
+					isModified={isModified}
+				/>
+			</form>
+
+			<SheetFooter className="px-5 py-4">
+				<Button
+					type="submit"
+					form="env-variables-sheet-form"
+					disabled={isSubmitting || !isModified}
+					className="h-8 gap-1.5 px-4 text-xs">
+					<Save className="size-3.5" />
+					{isSubmitting ? 'Saving…' : 'Save'}
+				</Button>
+			</SheetFooter>
+		</SheetContent>
+	);
+}
+
+export function EnvVariablesModal(props: EnvVariablesModalProps) {
+	return (
+		<Sheet open={props.isOpen} onOpenChange={open => !open && props.onClose()}>
+			{props.isOpen && <EnvVariablesSheet {...props} />}
 		</Sheet>
 	);
 }

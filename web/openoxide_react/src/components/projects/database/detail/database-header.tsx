@@ -85,9 +85,9 @@ export function DatabaseHeader({
 				<Link
 					to={`/projects/${id}` as any}
 					search={
-						(database as any)?.environment_id
+						((database as any)?.environment_id
 							? {env: Number((database as any).environment_id)}
-							: undefined
+							: undefined) as any
 					}
 					className="transition-colors hover:text-foreground">
 					Project Details

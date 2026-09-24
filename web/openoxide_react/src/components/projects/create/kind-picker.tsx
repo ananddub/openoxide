@@ -4,11 +4,7 @@ import {Input} from '#/components/ui/input';
 import {OptionRow} from '#/components/shared/sheet-wizard';
 import {OPTIONS, type ServiceKind} from './constants';
 
-/**
- * Service-kind chooser as a searchable list — replaces the old card grid.
- * Keeps the same `chosen` / `onPick` contract so the create page is unaware
- * of the internal search state.
- */
+/** Service-kind chooser as a searchable list — replaces the old card grid. Keeps the same `chosen` / `onPick` contract so the create page is unaware of the internal search state. */
 export function KindPicker({
 	chosen,
 	onPick,
@@ -46,11 +42,7 @@ export function KindPicker({
 						onClick={() => onPick(o.id)}
 						icon={<o.icon className="size-5" />}
 						title={o.title}
-						subtitle={
-							o.soon
-								? `${o.description} · Coming soon`
-								: o.description
-						}
+						subtitle={o.description}
 					/>
 				))}
 				{list.length === 0 && (

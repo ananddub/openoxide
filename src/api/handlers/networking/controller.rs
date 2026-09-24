@@ -1,8 +1,11 @@
-use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    NetworkingOperationsService, NetworkingOperationsServiceExt, OperationResult,
-    ResourceRequest, ResourceResponse,
+    NetworkingDiagnoseDomainsRequest, NetworkingDiagnoseDomainsResponse,
+    NetworkingDiagnoseRootNetworkRequest, NetworkingDiagnoseRootNetworkResponse,
+    NetworkingOperationsService, NetworkingOperationsServiceExt, NetworkingPurgeCdnRequest,
+    NetworkingPurgeCdnResponse, NetworkingRepairRootNetworkRequest,
+    NetworkingRepairRootNetworkResponse,
 };
 
 use super::helper::*;
@@ -14,16 +17,25 @@ impl NetworkingOperationsService for NetworkingController {
     async fn purge_cdn<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let dto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, NetworkingPurgeCdnRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<NetworkingPurgeCdnResponse> + Send + use<'a>> {
+        let provider = proto_to_cdn_provider(request.provider)?;
+        let dto = typed_dto(serde_json::json!({
+            "provider": provider,
+            "api_token": request.api_token,
+            "zone_id": request.zone_id,
+            "service_id": request.service_id,
+            "pull_zone_id": request.pull_zone_id,
+            "purge_all": request.purge_all,
+            "urls": request.urls.iter().collect::<Vec<_>>(),
+        }))?;
         let result = self.cdn.purge(dto).await.map_err(map_error)?;
-        let payload = serde_json::to_string(&result).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "purge_cdn".into(),
-            payload: Some(payload),
+        Response::ok(NetworkingPurgeCdnResponse {
+            provider: result.provider,
+            success: result.success,
+            status: u32::from(result.status),
+            request_id: result.request_id,
+            message: result.message,
             ..Default::default()
         })
     }
@@ -32,16 +44,25 @@ impl NetworkingOperationsService for NetworkingController {
     async fn diagnose_domains<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let dto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, NetworkingDiagnoseDomainsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<NetworkingDiagnoseDomainsResponse> + Send + use<'a>>
+    {
+        let port = request
+            .port
+            .map(|port| {
+                u16::try_from(port)
+                    .map_err(|_| connectrpc::ConnectError::invalid_argument("port out of range"))
+            })
+            .transpose()?;
+        let dto = typed_dto(serde_json::json!({
+            "host": request.host,
+            "port": port,
+            "https": request.https,
+            "path": request.path,
+        }))?;
         let result = self.diagnostics.diagnose(dto).await;
-        let payload = serde_json::to_string(&result).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: 0,
-            kind: "domain_diagnostic".into(),
-            payload,
+        Response::ok(NetworkingDiagnoseDomainsResponse {
+            diagnostic: ::buffa::MessageField::some(diagnostic_to_proto(&result)),
             ..Default::default()
         })
     }
@@ -50,16 +71,14 @@ impl NetworkingOperationsService for NetworkingController {
     async fn diagnose_root_network<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let dto: RootNetworkDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let result = self.root_network.diagnose(dto.server_id).await.map_err(map_error)?;
-        let payload = serde_json::to_string(&result).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: 0,
-            kind: "root_network_status".into(),
-            payload,
+        request: ServiceRequest<'_, NetworkingDiagnoseRootNetworkRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<NetworkingDiagnoseRootNetworkResponse> + Send + use<'a>,
+    > {
+        let server_id = request.server_id;
+        let result = self.root_network.diagnose(server_id).await.map_err(map_error)?;
+        Response::ok(NetworkingDiagnoseRootNetworkResponse {
+            status: ::buffa::MessageField::some(root_network_to_proto(&result)),
             ..Default::default()
         })
     }
@@ -68,16 +87,14 @@ impl NetworkingOperationsService for NetworkingController {
     async fn repair_root_network<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let dto: RootNetworkDto = serde_json::from_str(request.payload)
-            .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let result = self.root_network.repair(dto.server_id).await.map_err(map_error)?;
-        let payload = serde_json::to_string(&result).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "repair_root_network".into(),
-            payload: Some(payload),
+        request: ServiceRequest<'_, NetworkingRepairRootNetworkRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<NetworkingRepairRootNetworkResponse> + Send + use<'a>,
+    > {
+        let server_id = request.server_id;
+        let result = self.root_network.repair(server_id).await.map_err(map_error)?;
+        Response::ok(NetworkingRepairRootNetworkResponse {
+            status: ::buffa::MessageField::some(root_network_to_proto(&result)),
             ..Default::default()
         })
     }

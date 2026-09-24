@@ -15,11 +15,7 @@ export interface DerivedDbCredentials {
 	userAuthPart: string;
 }
 
-/**
- * Normalises the many field spellings a database record may arrive with and
- * derives the connection fragments shared by the internal & external
- * credentials cards.
- */
+/** Normalises the many field spellings a database record may arrive with and derives the connection fragments shared by the internal & external credentials cards. */
 export function deriveDatabaseCredentials(
 	database: any,
 ): DerivedDbCredentials {

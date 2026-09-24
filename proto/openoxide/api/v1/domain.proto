@@ -2,13 +2,124 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
+// Sole domain owner service; absorbs the former DomainOperationsService.
 service DomainService {
-  rpc ListDomains(ResourceQuery) returns (ResourceListResponse);
-  rpc GetDomain(ResourceRequest) returns (ResourceResponse);
-  rpc CreateDomain(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateDomain(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteDomain(ResourceRequest) returns (Empty);
-  rpc AttachDomain(ResourceRequest) returns (OperationResult);
-  rpc DetachDomain(ResourceRequest) returns (Empty);
+  rpc ListDomains(ListDomainsRequest) returns (ListDomainsResponse);
+  rpc GetDomain(GetDomainRequest) returns (GetDomainResponse);
+  rpc ListApplicationDomains(ListApplicationDomainsRequest) returns (ListApplicationDomainsResponse);
+  rpc ListComposeDomains(ListComposeDomainsRequest) returns (ListComposeDomainsResponse);
+  rpc CreateDomain(CreateDomainRequest) returns (CreateDomainResponse);
+  rpc UpdateDomain(UpdateDomainRequest) returns (UpdateDomainResponse);
+  rpc DeleteDomain(DeleteDomainRequest) returns (Empty);
+}
+
+enum DomainType {
+  DOMAIN_TYPE_UNSPECIFIED = 0;
+  DOMAIN_TYPE_APPLICATION = 1;
+  DOMAIN_TYPE_COMPOSE = 2;
+}
+
+enum DomainCertificateType {
+  DOMAIN_CERTIFICATE_TYPE_UNSPECIFIED = 0;
+  DOMAIN_CERTIFICATE_TYPE_LETSENCRYPT = 1;
+  DOMAIN_CERTIFICATE_TYPE_CUSTOM = 2;
+  DOMAIN_CERTIFICATE_TYPE_NONE = 3;
+}
+
+message Domain {
+  int64 id = 1;
+  string host = 2;
+  bool https = 3;
+  optional int64 port = 4;
+  optional string path = 5;
+  optional string internal_path = 6;
+  optional string custom_entrypoint = 7;
+  optional string service_name = 8;
+  optional string custom_cert_resolver = 9;
+  bool strip_path = 10;
+  // Traefik middleware names as a JSON array document, e.g. `["auth"]`.
+  string middlewares = 11;
+  DomainType domain_type = 12;
+  DomainCertificateType certificate_type = 13;
+  optional int64 service_id = 14;
+  int64 created_at = 15;
+  int64 updated_at = 16;
+}
+
+message ListDomainsRequest {}
+
+message ListDomainsResponse {
+  repeated Domain domains = 1;
+}
+
+message GetDomainRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message GetDomainResponse {
+  Domain domain = 1;
+}
+
+message ListApplicationDomainsRequest {
+  int64 application_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListApplicationDomainsResponse {
+  repeated Domain domains = 1;
+}
+
+message ListComposeDomainsRequest {
+  int64 compose_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ListComposeDomainsResponse {
+  repeated Domain domains = 1;
+}
+
+// Absent fields fall back to server defaults: path "/", middlewares "[]", domain_type derived from application_id/compose_id, certificate_type NONE.
+message CreateDomainRequest {
+  string host = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  bool https = 2;
+  optional int64 port = 3;
+  optional string path = 4;
+  optional string internal_path = 5;
+  optional string custom_entrypoint = 6;
+  optional string service_name = 7;
+  optional string custom_cert_resolver = 8;
+  bool strip_path = 9;
+  optional string middlewares = 10;
+  optional DomainType domain_type = 11 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional DomainCertificateType certificate_type = 12 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional int64 application_id = 13 [(buf.validate.field).int64.gt = 0];
+  optional int64 compose_id = 14 [(buf.validate.field).int64.gt = 0];
+}
+
+message CreateDomainResponse {
+  Domain domain = 1;
+}
+
+// domain_type is not patchable; it follows the owning service kind.
+message UpdateDomainRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  optional string host = 2 [(buf.validate.field).string.max_len = 255];
+  optional bool https = 3;
+  optional int64 port = 4;
+  optional string path = 5;
+  optional string internal_path = 6;
+  optional string custom_entrypoint = 7;
+  optional string service_name = 8;
+  optional string custom_cert_resolver = 9;
+  optional bool strip_path = 10;
+  optional string middlewares = 11;
+  optional DomainCertificateType certificate_type = 12 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+}
+
+message UpdateDomainResponse {
+  Domain domain = 1;
+}
+
+message DeleteDomainRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
 }

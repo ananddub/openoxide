@@ -26,10 +26,7 @@ type ProjectListRowProps = {
 	onDelete: (id: number) => void;
 };
 
-/**
- * Compact list-view counterpart to ProjectCard — one row per project,
- * stretched-link navigation, kebab carries the same update/delete actions.
- */
+/** Compact list-view counterpart to ProjectCard — one row per project, stretched-link navigation, kebab carries the same update/delete actions. */
 export function ProjectListRow({project, onDelete}: ProjectListRowProps) {
 	const [isUpdateOpen, setIsUpdateOpen] = useState(false);
 

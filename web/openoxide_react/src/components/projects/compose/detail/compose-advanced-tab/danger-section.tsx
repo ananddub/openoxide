@@ -118,7 +118,7 @@ export function DangerSection({
 								<Button
 									onClick={handleDelete}
 									disabled={deleting}
-									className="h-9 bg-destructive px-4 text-xs font-semibold text-destructive-foreground shadow-md hover:bg-destructive/90">
+									className="text-destructive-foreground h-9 bg-destructive px-4 text-xs font-semibold shadow-md hover:bg-destructive/90">
 									{deleting ? 'Deleting…' : 'Yes, Delete stack'}
 								</Button>
 								<Button
@@ -136,8 +136,8 @@ export function DangerSection({
 									<Trash2 className="size-3.5" /> Delete Compose Stack
 								</p>
 								<p className="mt-0.5 text-[11px] text-muted-foreground">
-									Permanently remove this compose stack and all
-									associated containers, networks and volumes.
+									Permanently remove this compose stack and all associated
+									containers, networks and volumes.
 								</p>
 							</div>
 							<Button

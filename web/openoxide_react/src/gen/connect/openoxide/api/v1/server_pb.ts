@@ -2,165 +2,1066 @@
 // @generated from file openoxide/api/v1/server.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	EmptySchema,
-	OperationResultSchema,
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceRequestSchema,
-	ResourceResponseSchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import type { ServerConnectionInfo, ServerSetupOutcome } from "./server_controller_pb";
+import { file_openoxide_api_v1_server_controller } from "./server_controller_pb";
+import type { ServerConnectionMode, ServerPrivateNetwork, ServerPrivateNetworkProvider } from "./server_private_network_pb";
+import { file_openoxide_api_v1_server_private_network } from "./server_private_network_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/server.proto.
  */
-export const file_openoxide_api_v1_server: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'Ch1vcGVub3hpZGUvYXBpL3YxL3NlcnZlci5wcm90bxIQb3Blbm94aWRlLmFwaS52MTLcCwoNU2VydmVyU2VydmljZRJWCgtMaXN0U2VydmVycxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USUgoJR2V0U2VydmVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVQoMQ3JlYXRlU2VydmVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USVQoMVXBkYXRlU2VydmVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USSgoMRGVsZXRlU2VydmVyEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElYKDlRlc3RDb25uZWN0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIS5vcGVub3hpZGUuYXBpLnYxLk9wZXJhdGlvblJlc3VsdBJTCgtTZXR1cFNlcnZlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0GiEub3Blbm94aWRlLmFwaS52MS5PcGVyYXRpb25SZXN1bHQSUwoLU3RhcnRTZXJ2ZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElIKClN0b3BTZXJ2ZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0ElUKDVJlc3RhcnRTZXJ2ZXISIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0EkoKDFJlbW92ZVNlcnZlchIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJcCg9HZXRTZXJ2ZXJFcnJvcnMSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USXAoRTGlzdFJlbW90ZVNlcnZlcnMSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlEl4KE0xpc3RQcml2YXRlTmV0d29ya3MSHy5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUXVlcnkaJi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlTGlzdFJlc3BvbnNlEl0KFENyZWF0ZVByaXZhdGVOZXR3b3JrEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USXQoUVXBkYXRlUHJpdmF0ZU5ldHdvcmsSIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBoiLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXNwb25zZRJSChREZWxldGVQcml2YXRlTmV0d29yaxIhLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z',
-		[file_openoxide_api_v1_common],
-	);
+export const file_openoxide_api_v1_server: GenFile = /*@__PURE__*/
+  fileDesc("Ch1vcGVub3hpZGUvYXBpL3YxL3NlcnZlci5wcm90bxIQb3Blbm94aWRlLmFwaS52MSKyBAoGU2VydmVyEgoKAmlkGAEgASgDEgwKBG5hbWUYAiABKAkSGAoLZGVzY3JpcHRpb24YAyABKAlIAIgBARISCgppcF9hZGRyZXNzGAQgASgJEgwKBHBvcnQYBSABKAMSEAoIdXNlcm5hbWUYBiABKAkSEAoIYXBwX25hbWUYByABKAkSNQoNc2VydmVyX3N0YXR1cxgIIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuU2VydmVyU3RhdHVzEjEKC3NlcnZlcl90eXBlGAkgASgOMhwub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJUeXBlEh0KFWVuYWJsZV9kb2NrZXJfY2xlYW51cBgKIAEoCBIdChBsb2dfY2xlYW51cF9jcm9uGAsgASgJSAGIAQESDwoHY29tbWFuZBgMIAEoCRIWCg5tZXRyaWNzX2NvbmZpZxgNIAEoCRIXCgpzc2hfa2V5X2lkGA4gASgDSAKIAQESEgoKY3JlYXRlZF9hdBgPIAEoAxISCgp1cGRhdGVkX2F0GBAgASgDEh8KEmJ1aWxkX21lbW9yeV9saW1pdBgRIAEoCUgDiAEBEhwKD2J1aWxkX2NwdV9saW1pdBgSIAEoCUgEiAEBQg4KDF9kZXNjcmlwdGlvbkITChFfbG9nX2NsZWFudXBfY3JvbkINCgtfc3NoX2tleV9pZEIVChNfYnVpbGRfbWVtb3J5X2xpbWl0QhIKEF9idWlsZF9jcHVfbGltaXQiGgoYU2VydmVyTGlzdFNlcnZlcnNSZXF1ZXN0IkYKGVNlcnZlckxpc3RTZXJ2ZXJzUmVzcG9uc2USKQoHc2VydmVycxgBIAMoCzIYLm9wZW5veGlkZS5hcGkudjEuU2VydmVyIi0KFlNlcnZlckdldFNlcnZlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiQwoXU2VydmVyR2V0U2VydmVyUmVzcG9uc2USKAoGc2VydmVyGAEgASgLMhgub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXIioQMKGVNlcnZlckNyZWF0ZVNlcnZlclJlcXVlc3QSGAoEbmFtZRgBIAEoCUIKukgHcgUQARj/ARIiCgtkZXNjcmlwdGlvbhgCIAEoCUIIukgFcgMY6AdIAIgBARIeCgppcF9hZGRyZXNzGAMgASgJQgq6SAdyBRABGP8BEgwKBHBvcnQYBCABKAMSGgoIdXNlcm5hbWUYBSABKAlCCLpIBXIDGP8BEj0KC3NlcnZlcl90eXBlGAYgASgOMhwub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJUeXBlQgq6SAeCAQQQASAAEiAKCnNzaF9rZXlfaWQYByABKANCB7pIBCICIABIAYgBARIpChJidWlsZF9tZW1vcnlfbGltaXQYCCABKAlCCLpIBXIDGP8BSAKIAQESJgoPYnVpbGRfY3B1X2xpbWl0GAkgASgJQgi6SAVyAxj/AUgDiAEBQg4KDF9kZXNjcmlwdGlvbkINCgtfc3NoX2tleV9pZEIVChNfYnVpbGRfbWVtb3J5X2xpbWl0QhIKEF9idWlsZF9jcHVfbGltaXQiRgoaU2VydmVyQ3JlYXRlU2VydmVyUmVzcG9uc2USKAoGc2VydmVyGAEgASgLMhgub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXIitAYKGVNlcnZlclVwZGF0ZVNlcnZlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASHQoEbmFtZRgCIAEoCUIKukgHcgUQARj/AUgAiAEBEiIKC2Rlc2NyaXB0aW9uGAMgASgJQgi6SAVyAxjoB0gBiAEBEiEKCmlwX2FkZHJlc3MYBCABKAlCCLpIBXIDGP8BSAKIAQESEQoEcG9ydBgFIAEoA0gDiAEBEh8KCHVzZXJuYW1lGAYgASgJQgi6SAVyAxj/AUgEiAEBEkYKDXNlcnZlcl9zdGF0dXMYByABKA4yHi5vcGVub3hpZGUuYXBpLnYxLlNlcnZlclN0YXR1c0IKukgHggEEEAEgAEgFiAEBEkIKC3NlcnZlcl90eXBlGAggASgOMhwub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJUeXBlQgq6SAeCAQQQASAASAaIAQESIgoVZW5hYmxlX2RvY2tlcl9jbGVhbnVwGAkgASgISAeIAQESHQoQbG9nX2NsZWFudXBfY3JvbhgKIAEoCUgIiAEBEhQKB2NvbW1hbmQYCyABKAlICYgBARImCg5tZXRyaWNzX2NvbmZpZxgMIAEoCUIJukgGcgQYgIBASAqIAQESIAoKc3NoX2tleV9pZBgNIAEoA0IHukgEIgIgAEgLiAEBEikKEmJ1aWxkX21lbW9yeV9saW1pdBgOIAEoCUIIukgFcgMY/wFIDIgBARImCg9idWlsZF9jcHVfbGltaXQYDyABKAlCCLpIBXIDGP8BSA2IAQFCBwoFX25hbWVCDgoMX2Rlc2NyaXB0aW9uQg0KC19pcF9hZGRyZXNzQgcKBV9wb3J0QgsKCV91c2VybmFtZUIQCg5fc2VydmVyX3N0YXR1c0IOCgxfc2VydmVyX3R5cGVCGAoWX2VuYWJsZV9kb2NrZXJfY2xlYW51cEITChFfbG9nX2NsZWFudXBfY3JvbkIKCghfY29tbWFuZEIRCg9fbWV0cmljc19jb25maWdCDQoLX3NzaF9rZXlfaWRCFQoTX2J1aWxkX21lbW9yeV9saW1pdEISChBfYnVpbGRfY3B1X2xpbWl0IkYKGlNlcnZlclVwZGF0ZVNlcnZlclJlc3BvbnNlEigKBnNlcnZlchgBIAEoCzIYLm9wZW5veGlkZS5hcGkudjEuU2VydmVyIjAKGVNlcnZlckRlbGV0ZVNlcnZlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAizAEKG1NlcnZlclRlc3RDb25uZWN0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIrChRob3N0X2tleV9maW5nZXJwcmludBgCIAEoCUIIukgFcgMY/wFIAIgBARIaCg1zdWRvX3Bhc3N3b3JkGAMgASgJSAGIAQESFgoJcG9vbF9zaXplGAQgASgNSAKIAQFCFwoVX2hvc3Rfa2V5X2ZpbmdlcnByaW50QhAKDl9zdWRvX3Bhc3N3b3JkQgwKCl9wb29sX3NpemUiWgocU2VydmVyVGVzdENvbm5lY3Rpb25SZXNwb25zZRI6Cgpjb25uZWN0aW9uGAEgASgLMiYub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJDb25uZWN0aW9uSW5mbyLTAgoYU2VydmVyU2V0dXBTZXJ2ZXJSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEhwKFGluc3RhbGxfZGVwZW5kZW5jaWVzGAIgASgIEiUKDmFkdmVydGlzZV9hZGRyGAMgASgJQgi6SAVyAxj/AUgAiAEBEiEKCmFjbWVfZW1haWwYBCABKAlCCLpIBXIDGP8BSAGIAQESKwoUaG9zdF9rZXlfZmluZ2VycHJpbnQYBSABKAlCCLpIBXIDGP8BSAKIAQESGgoNc3Vkb19wYXNzd29yZBgGIAEoCUgDiAEBEhYKCXBvb2xfc2l6ZRgHIAEoDUgEiAEBQhEKD19hZHZlcnRpc2VfYWRkckINCgtfYWNtZV9lbWFpbEIXChVfaG9zdF9rZXlfZmluZ2VycHJpbnRCEAoOX3N1ZG9fcGFzc3dvcmRCDAoKX3Bvb2xfc2l6ZSJSChlTZXJ2ZXJTZXR1cFNlcnZlclJlc3BvbnNlEjUKB291dGNvbWUYASABKAsyJC5vcGVub3hpZGUuYXBpLnYxLlNlcnZlclNldHVwT3V0Y29tZSIvChhTZXJ2ZXJTdGFydFNlcnZlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiLgoXU2VydmVyU3RvcFNlcnZlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiMQoaU2VydmVyUmVzdGFydFNlcnZlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiMAoZU2VydmVyUmVtb3ZlU2VydmVyUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACIzChxTZXJ2ZXJHZXRTZXJ2ZXJFcnJvcnNSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIi8KHVNlcnZlckdldFNlcnZlckVycm9yc1Jlc3BvbnNlEg4KBmVycm9ycxgBIAMoCSIgCh5TZXJ2ZXJMaXN0UmVtb3RlU2VydmVyc1JlcXVlc3QiTAofU2VydmVyTGlzdFJlbW90ZVNlcnZlcnNSZXNwb25zZRIpCgdzZXJ2ZXJzGAEgAygLMhgub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXIiIgogU2VydmVyTGlzdFByaXZhdGVOZXR3b3Jrc1JlcXVlc3QiXQohU2VydmVyTGlzdFByaXZhdGVOZXR3b3Jrc1Jlc3BvbnNlEjgKCG5ldHdvcmtzGAEgAygLMiYub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJQcml2YXRlTmV0d29yayLzBAohU2VydmVyQ3JlYXRlUHJpdmF0ZU5ldHdvcmtSZXF1ZXN0EhoKCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgABJLCg9jb25uZWN0aW9uX21vZGUYAiABKA4yJi5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckNvbm5lY3Rpb25Nb2RlQgq6SAeCAQQQASAAEk8KCHByb3ZpZGVyGAMgASgOMi4ub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJQcml2YXRlTmV0d29ya1Byb3ZpZGVyQgi6SAWCAQIQAUgAiAEBEiMKDHByaXZhdGVfaG9zdBgEIAEoCUIIukgFcgMY/wFIAYgBARIlCg50dW5uZWxfYWRkcmVzcxgFIAEoCUIIukgFcgMY/wFIAogBARIhCgpwdWJsaWNfa2V5GAYgASgJQgi6SAVyAxj/AUgDiAEBEh8KCGVuZHBvaW50GAcgASgJQgi6SAVyAxj/AUgEiAEBEiMKC2xpc3Rlbl9wb3J0GAggASgNQgm6SAYqBBj//wNIBYgBARIhChRwZXJzaXN0ZW50X2tlZXBhbGl2ZRgJIAEoDUgGiAEBEh8KCGRuc19uYW1lGAogASgJQgi6SAVyAxj/AUgHiAEBEhgKBnJvdXRlcxgLIAMoCUIIukgFkgECEEBCCwoJX3Byb3ZpZGVyQg8KDV9wcml2YXRlX2hvc3RCEQoPX3R1bm5lbF9hZGRyZXNzQg0KC19wdWJsaWNfa2V5QgsKCV9lbmRwb2ludEIOCgxfbGlzdGVuX3BvcnRCFwoVX3BlcnNpc3RlbnRfa2VlcGFsaXZlQgsKCV9kbnNfbmFtZSJdCiJTZXJ2ZXJDcmVhdGVQcml2YXRlTmV0d29ya1Jlc3BvbnNlEjcKB25ldHdvcmsYASABKAsyJi5vcGVub3hpZGUuYXBpLnYxLlNlcnZlclByaXZhdGVOZXR3b3JrIuwECiFTZXJ2ZXJVcGRhdGVQcml2YXRlTmV0d29ya1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASSwoPY29ubmVjdGlvbl9tb2RlGAIgASgOMiYub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJDb25uZWN0aW9uTW9kZUIKukgHggEEEAEgABJPCghwcm92aWRlchgDIAEoDjIuLm9wZW5veGlkZS5hcGkudjEuU2VydmVyUHJpdmF0ZU5ldHdvcmtQcm92aWRlckIIukgFggECEAFIAIgBARIjCgxwcml2YXRlX2hvc3QYBCABKAlCCLpIBXIDGP8BSAGIAQESJQoOdHVubmVsX2FkZHJlc3MYBSABKAlCCLpIBXIDGP8BSAKIAQESIQoKcHVibGljX2tleRgGIAEoCUIIukgFcgMY/wFIA4gBARIfCghlbmRwb2ludBgHIAEoCUIIukgFcgMY/wFIBIgBARIjCgtsaXN0ZW5fcG9ydBgIIAEoDUIJukgGKgQY//8DSAWIAQESIQoUcGVyc2lzdGVudF9rZWVwYWxpdmUYCSABKA1IBogBARIfCghkbnNfbmFtZRgKIAEoCUIIukgFcgMY/wFIB4gBARIYCgZyb3V0ZXMYCyADKAlCCLpIBZIBAhBAQgsKCV9wcm92aWRlckIPCg1fcHJpdmF0ZV9ob3N0QhEKD190dW5uZWxfYWRkcmVzc0INCgtfcHVibGljX2tleUILCglfZW5kcG9pbnRCDgoMX2xpc3Rlbl9wb3J0QhcKFV9wZXJzaXN0ZW50X2tlZXBhbGl2ZUILCglfZG5zX25hbWUiXQoiU2VydmVyVXBkYXRlUHJpdmF0ZU5ldHdvcmtSZXNwb25zZRI3CgduZXR3b3JrGAEgASgLMiYub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJQcml2YXRlTmV0d29yayI4CiFTZXJ2ZXJEZWxldGVQcml2YXRlTmV0d29ya1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAqYwoMU2VydmVyU3RhdHVzEh0KGVNFUlZFUl9TVEFUVVNfVU5TUEVDSUZJRUQQABIYChRTRVJWRVJfU1RBVFVTX0FDVElWRRABEhoKFlNFUlZFUl9TVEFUVVNfSU5BQ1RJVkUQAipYCgpTZXJ2ZXJUeXBlEhsKF1NFUlZFUl9UWVBFX1VOU1BFQ0lGSUVEEAASFgoSU0VSVkVSX1RZUEVfREVQTE9ZEAESFQoRU0VSVkVSX1RZUEVfQlVJTEQQAjKODgoNU2VydmVyU2VydmljZRJmCgtMaXN0U2VydmVycxIqLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTGlzdFNlcnZlcnNSZXF1ZXN0Gisub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJMaXN0U2VydmVyc1Jlc3BvbnNlEmAKCUdldFNlcnZlchIoLm9wZW5veGlkZS5hcGkudjEuU2VydmVyR2V0U2VydmVyUmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuU2VydmVyR2V0U2VydmVyUmVzcG9uc2USaQoMQ3JlYXRlU2VydmVyEisub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJDcmVhdGVTZXJ2ZXJSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJDcmVhdGVTZXJ2ZXJSZXNwb25zZRJpCgxVcGRhdGVTZXJ2ZXISKy5vcGVub3hpZGUuYXBpLnYxLlNlcnZlclVwZGF0ZVNlcnZlclJlcXVlc3QaLC5vcGVub3hpZGUuYXBpLnYxLlNlcnZlclVwZGF0ZVNlcnZlclJlc3BvbnNlElQKDERlbGV0ZVNlcnZlchIrLm9wZW5veGlkZS5hcGkudjEuU2VydmVyRGVsZXRlU2VydmVyUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSbwoOVGVzdENvbm5lY3Rpb24SLS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlclRlc3RDb25uZWN0aW9uUmVxdWVzdBouLm9wZW5veGlkZS5hcGkudjEuU2VydmVyVGVzdENvbm5lY3Rpb25SZXNwb25zZRJmCgtTZXR1cFNlcnZlchIqLm9wZW5veGlkZS5hcGkudjEuU2VydmVyU2V0dXBTZXJ2ZXJSZXF1ZXN0Gisub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJTZXR1cFNlcnZlclJlc3BvbnNlElIKC1N0YXJ0U2VydmVyEioub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJTdGFydFNlcnZlclJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElAKClN0b3BTZXJ2ZXISKS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlclN0b3BTZXJ2ZXJSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJWCg1SZXN0YXJ0U2VydmVyEiwub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJSZXN0YXJ0U2VydmVyUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSVAoMUmVtb3ZlU2VydmVyEisub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJSZW1vdmVTZXJ2ZXJSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJyCg9HZXRTZXJ2ZXJFcnJvcnMSLi5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckdldFNlcnZlckVycm9yc1JlcXVlc3QaLy5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckdldFNlcnZlckVycm9yc1Jlc3BvbnNlEngKEUxpc3RSZW1vdGVTZXJ2ZXJzEjAub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJMaXN0UmVtb3RlU2VydmVyc1JlcXVlc3QaMS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckxpc3RSZW1vdGVTZXJ2ZXJzUmVzcG9uc2USfgoTTGlzdFByaXZhdGVOZXR3b3JrcxIyLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTGlzdFByaXZhdGVOZXR3b3Jrc1JlcXVlc3QaMy5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckxpc3RQcml2YXRlTmV0d29ya3NSZXNwb25zZRKBAQoUQ3JlYXRlUHJpdmF0ZU5ldHdvcmsSMy5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckNyZWF0ZVByaXZhdGVOZXR3b3JrUmVxdWVzdBo0Lm9wZW5veGlkZS5hcGkudjEuU2VydmVyQ3JlYXRlUHJpdmF0ZU5ldHdvcmtSZXNwb25zZRKBAQoUVXBkYXRlUHJpdmF0ZU5ldHdvcmsSMy5vcGVub3hpZGUuYXBpLnYxLlNlcnZlclVwZGF0ZVByaXZhdGVOZXR3b3JrUmVxdWVzdBo0Lm9wZW5veGlkZS5hcGkudjEuU2VydmVyVXBkYXRlUHJpdmF0ZU5ldHdvcmtSZXNwb25zZRJkChREZWxldGVQcml2YXRlTmV0d29yaxIzLm9wZW5veGlkZS5hcGkudjEuU2VydmVyRGVsZXRlUHJpdmF0ZU5ldHdvcmtSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common, file_openoxide_api_v1_server_controller, file_openoxide_api_v1_server_private_network, file_buf_validate_validate]);
+
+/**
+ * @generated from message openoxide.api.v1.Server
+ */
+export type Server = Message<"openoxide.api.v1.Server"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: optional string description = 3;
+   */
+  description?: string | undefined;
+
+  /**
+   * @generated from field: string ip_address = 4;
+   */
+  ipAddress: string;
+
+  /**
+   * @generated from field: int64 port = 5;
+   */
+  port: bigint;
+
+  /**
+   * @generated from field: string username = 6;
+   */
+  username: string;
+
+  /**
+   * @generated from field: string app_name = 7;
+   */
+  appName: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerStatus server_status = 8;
+   */
+  serverStatus: ServerStatus;
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerType server_type = 9;
+   */
+  serverType: ServerType;
+
+  /**
+   * Integer-as-boolean in storage.
+   *
+   * @generated from field: bool enable_docker_cleanup = 10;
+   */
+  enableDockerCleanup: boolean;
+
+  /**
+   * @generated from field: optional string log_cleanup_cron = 11;
+   */
+  logCleanupCron?: string | undefined;
+
+  /**
+   * @generated from field: string command = 12;
+   */
+  command: string;
+
+  /**
+   * Metrics collection configuration as a JSON document.
+   *
+   * @generated from field: string metrics_config = 13;
+   */
+  metricsConfig: string;
+
+  /**
+   * @generated from field: optional int64 ssh_key_id = 14;
+   */
+  sshKeyId?: bigint | undefined;
+
+  /**
+   * @generated from field: int64 created_at = 15;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 16;
+   */
+  updatedAt: bigint;
+
+  /**
+   * @generated from field: optional string build_memory_limit = 17;
+   */
+  buildMemoryLimit?: string | undefined;
+
+  /**
+   * @generated from field: optional string build_cpu_limit = 18;
+   */
+  buildCpuLimit?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.Server.
+ * Use `create(ServerSchema)` to create a new message.
+ */
+export const ServerSchema: GenMessage<Server> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 0);
+
+/**
+ * @generated from message openoxide.api.v1.ServerListServersRequest
+ */
+export type ServerListServersRequest = Message<"openoxide.api.v1.ServerListServersRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerListServersRequest.
+ * Use `create(ServerListServersRequestSchema)` to create a new message.
+ */
+export const ServerListServersRequestSchema: GenMessage<ServerListServersRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 1);
+
+/**
+ * @generated from message openoxide.api.v1.ServerListServersResponse
+ */
+export type ServerListServersResponse = Message<"openoxide.api.v1.ServerListServersResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.Server servers = 1;
+   */
+  servers: Server[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerListServersResponse.
+ * Use `create(ServerListServersResponseSchema)` to create a new message.
+ */
+export const ServerListServersResponseSchema: GenMessage<ServerListServersResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 2);
+
+/**
+ * @generated from message openoxide.api.v1.ServerGetServerRequest
+ */
+export type ServerGetServerRequest = Message<"openoxide.api.v1.ServerGetServerRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerGetServerRequest.
+ * Use `create(ServerGetServerRequestSchema)` to create a new message.
+ */
+export const ServerGetServerRequestSchema: GenMessage<ServerGetServerRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 3);
+
+/**
+ * @generated from message openoxide.api.v1.ServerGetServerResponse
+ */
+export type ServerGetServerResponse = Message<"openoxide.api.v1.ServerGetServerResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Server server = 1;
+   */
+  server?: Server | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerGetServerResponse.
+ * Use `create(ServerGetServerResponseSchema)` to create a new message.
+ */
+export const ServerGetServerResponseSchema: GenMessage<ServerGetServerResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 4);
+
+/**
+ * @generated from message openoxide.api.v1.ServerCreateServerRequest
+ */
+export type ServerCreateServerRequest = Message<"openoxide.api.v1.ServerCreateServerRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: optional string description = 2;
+   */
+  description?: string | undefined;
+
+  /**
+   * @generated from field: string ip_address = 3;
+   */
+  ipAddress: string;
+
+  /**
+   * SSH port; 0 means the default 22.
+   *
+   * @generated from field: int64 port = 4;
+   */
+  port: bigint;
+
+  /**
+   * SSH user; empty means the default "root".
+   *
+   * @generated from field: string username = 5;
+   */
+  username: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerType server_type = 6;
+   */
+  serverType: ServerType;
+
+  /**
+   * @generated from field: optional int64 ssh_key_id = 7;
+   */
+  sshKeyId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string build_memory_limit = 8;
+   */
+  buildMemoryLimit?: string | undefined;
+
+  /**
+   * @generated from field: optional string build_cpu_limit = 9;
+   */
+  buildCpuLimit?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerCreateServerRequest.
+ * Use `create(ServerCreateServerRequestSchema)` to create a new message.
+ */
+export const ServerCreateServerRequestSchema: GenMessage<ServerCreateServerRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 5);
+
+/**
+ * @generated from message openoxide.api.v1.ServerCreateServerResponse
+ */
+export type ServerCreateServerResponse = Message<"openoxide.api.v1.ServerCreateServerResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Server server = 1;
+   */
+  server?: Server | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerCreateServerResponse.
+ * Use `create(ServerCreateServerResponseSchema)` to create a new message.
+ */
+export const ServerCreateServerResponseSchema: GenMessage<ServerCreateServerResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 6);
+
+/**
+ * PATCH semantics: absent fields keep their stored values.
+ *
+ * @generated from message openoxide.api.v1.ServerUpdateServerRequest
+ */
+export type ServerUpdateServerRequest = Message<"openoxide.api.v1.ServerUpdateServerRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional string name = 2;
+   */
+  name?: string | undefined;
+
+  /**
+   * @generated from field: optional string description = 3;
+   */
+  description?: string | undefined;
+
+  /**
+   * @generated from field: optional string ip_address = 4;
+   */
+  ipAddress?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 port = 5;
+   */
+  port?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string username = 6;
+   */
+  username?: string | undefined;
+
+  /**
+   * @generated from field: optional openoxide.api.v1.ServerStatus server_status = 7;
+   */
+  serverStatus?: ServerStatus | undefined;
+
+  /**
+   * @generated from field: optional openoxide.api.v1.ServerType server_type = 8;
+   */
+  serverType?: ServerType | undefined;
+
+  /**
+   * Integer-as-boolean in storage.
+   *
+   * @generated from field: optional bool enable_docker_cleanup = 9;
+   */
+  enableDockerCleanup?: boolean | undefined;
+
+  /**
+   * @generated from field: optional string log_cleanup_cron = 10;
+   */
+  logCleanupCron?: string | undefined;
+
+  /**
+   * @generated from field: optional string command = 11;
+   */
+  command?: string | undefined;
+
+  /**
+   * Metrics collection configuration as a JSON document.
+   *
+   * @generated from field: optional string metrics_config = 12;
+   */
+  metricsConfig?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 ssh_key_id = 13;
+   */
+  sshKeyId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string build_memory_limit = 14;
+   */
+  buildMemoryLimit?: string | undefined;
+
+  /**
+   * @generated from field: optional string build_cpu_limit = 15;
+   */
+  buildCpuLimit?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerUpdateServerRequest.
+ * Use `create(ServerUpdateServerRequestSchema)` to create a new message.
+ */
+export const ServerUpdateServerRequestSchema: GenMessage<ServerUpdateServerRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 7);
+
+/**
+ * @generated from message openoxide.api.v1.ServerUpdateServerResponse
+ */
+export type ServerUpdateServerResponse = Message<"openoxide.api.v1.ServerUpdateServerResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Server server = 1;
+   */
+  server?: Server | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerUpdateServerResponse.
+ * Use `create(ServerUpdateServerResponseSchema)` to create a new message.
+ */
+export const ServerUpdateServerResponseSchema: GenMessage<ServerUpdateServerResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 8);
+
+/**
+ * @generated from message openoxide.api.v1.ServerDeleteServerRequest
+ */
+export type ServerDeleteServerRequest = Message<"openoxide.api.v1.ServerDeleteServerRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerDeleteServerRequest.
+ * Use `create(ServerDeleteServerRequestSchema)` to create a new message.
+ */
+export const ServerDeleteServerRequestSchema: GenMessage<ServerDeleteServerRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 9);
+
+/**
+ * @generated from message openoxide.api.v1.ServerTestConnectionRequest
+ */
+export type ServerTestConnectionRequest = Message<"openoxide.api.v1.ServerTestConnectionRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * SSH host-key SHA-256 fingerprint pin; empty disables pinning.
+   *
+   * @generated from field: optional string host_key_fingerprint = 2;
+   */
+  hostKeyFingerprint?: string | undefined;
+
+  /**
+   * Sudo credential document; only sent for privileged steps.
+   *
+   * @generated from field: optional string sudo_password = 3;
+   */
+  sudoPassword?: string | undefined;
+
+  /**
+   * @generated from field: optional uint32 pool_size = 4;
+   */
+  poolSize?: number | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerTestConnectionRequest.
+ * Use `create(ServerTestConnectionRequestSchema)` to create a new message.
+ */
+export const ServerTestConnectionRequestSchema: GenMessage<ServerTestConnectionRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 10);
+
+/**
+ * @generated from message openoxide.api.v1.ServerTestConnectionResponse
+ */
+export type ServerTestConnectionResponse = Message<"openoxide.api.v1.ServerTestConnectionResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.ServerConnectionInfo connection = 1;
+   */
+  connection?: ServerConnectionInfo | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerTestConnectionResponse.
+ * Use `create(ServerTestConnectionResponseSchema)` to create a new message.
+ */
+export const ServerTestConnectionResponseSchema: GenMessage<ServerTestConnectionResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 11);
+
+/**
+ * @generated from message openoxide.api.v1.ServerSetupServerRequest
+ */
+export type ServerSetupServerRequest = Message<"openoxide.api.v1.ServerSetupServerRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: bool install_dependencies = 2;
+   */
+  installDependencies: boolean;
+
+  /**
+   * Swarm advertise address override; server's private/public IP when unset.
+   *
+   * @generated from field: optional string advertise_addr = 3;
+   */
+  advertiseAddr?: string | undefined;
+
+  /**
+   * @generated from field: optional string acme_email = 4;
+   */
+  acmeEmail?: string | undefined;
+
+  /**
+   * @generated from field: optional string host_key_fingerprint = 5;
+   */
+  hostKeyFingerprint?: string | undefined;
+
+  /**
+   * @generated from field: optional string sudo_password = 6;
+   */
+  sudoPassword?: string | undefined;
+
+  /**
+   * @generated from field: optional uint32 pool_size = 7;
+   */
+  poolSize?: number | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerSetupServerRequest.
+ * Use `create(ServerSetupServerRequestSchema)` to create a new message.
+ */
+export const ServerSetupServerRequestSchema: GenMessage<ServerSetupServerRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 12);
+
+/**
+ * @generated from message openoxide.api.v1.ServerSetupServerResponse
+ */
+export type ServerSetupServerResponse = Message<"openoxide.api.v1.ServerSetupServerResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.ServerSetupOutcome outcome = 1;
+   */
+  outcome?: ServerSetupOutcome | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerSetupServerResponse.
+ * Use `create(ServerSetupServerResponseSchema)` to create a new message.
+ */
+export const ServerSetupServerResponseSchema: GenMessage<ServerSetupServerResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 13);
+
+/**
+ * @generated from message openoxide.api.v1.ServerStartServerRequest
+ */
+export type ServerStartServerRequest = Message<"openoxide.api.v1.ServerStartServerRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerStartServerRequest.
+ * Use `create(ServerStartServerRequestSchema)` to create a new message.
+ */
+export const ServerStartServerRequestSchema: GenMessage<ServerStartServerRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 14);
+
+/**
+ * @generated from message openoxide.api.v1.ServerStopServerRequest
+ */
+export type ServerStopServerRequest = Message<"openoxide.api.v1.ServerStopServerRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerStopServerRequest.
+ * Use `create(ServerStopServerRequestSchema)` to create a new message.
+ */
+export const ServerStopServerRequestSchema: GenMessage<ServerStopServerRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 15);
+
+/**
+ * @generated from message openoxide.api.v1.ServerRestartServerRequest
+ */
+export type ServerRestartServerRequest = Message<"openoxide.api.v1.ServerRestartServerRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerRestartServerRequest.
+ * Use `create(ServerRestartServerRequestSchema)` to create a new message.
+ */
+export const ServerRestartServerRequestSchema: GenMessage<ServerRestartServerRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 16);
+
+/**
+ * Detaches the panel from a server without deleting the row.
+ *
+ * @generated from message openoxide.api.v1.ServerRemoveServerRequest
+ */
+export type ServerRemoveServerRequest = Message<"openoxide.api.v1.ServerRemoveServerRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerRemoveServerRequest.
+ * Use `create(ServerRemoveServerRequestSchema)` to create a new message.
+ */
+export const ServerRemoveServerRequestSchema: GenMessage<ServerRemoveServerRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 17);
+
+/**
+ * @generated from message openoxide.api.v1.ServerGetServerErrorsRequest
+ */
+export type ServerGetServerErrorsRequest = Message<"openoxide.api.v1.ServerGetServerErrorsRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerGetServerErrorsRequest.
+ * Use `create(ServerGetServerErrorsRequestSchema)` to create a new message.
+ */
+export const ServerGetServerErrorsRequestSchema: GenMessage<ServerGetServerErrorsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 18);
+
+/**
+ * @generated from message openoxide.api.v1.ServerGetServerErrorsResponse
+ */
+export type ServerGetServerErrorsResponse = Message<"openoxide.api.v1.ServerGetServerErrorsResponse"> & {
+  /**
+   * @generated from field: repeated string errors = 1;
+   */
+  errors: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerGetServerErrorsResponse.
+ * Use `create(ServerGetServerErrorsResponseSchema)` to create a new message.
+ */
+export const ServerGetServerErrorsResponseSchema: GenMessage<ServerGetServerErrorsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 19);
+
+/**
+ * @generated from message openoxide.api.v1.ServerListRemoteServersRequest
+ */
+export type ServerListRemoteServersRequest = Message<"openoxide.api.v1.ServerListRemoteServersRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerListRemoteServersRequest.
+ * Use `create(ServerListRemoteServersRequestSchema)` to create a new message.
+ */
+export const ServerListRemoteServersRequestSchema: GenMessage<ServerListRemoteServersRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 20);
+
+/**
+ * @generated from message openoxide.api.v1.ServerListRemoteServersResponse
+ */
+export type ServerListRemoteServersResponse = Message<"openoxide.api.v1.ServerListRemoteServersResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.Server servers = 1;
+   */
+  servers: Server[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerListRemoteServersResponse.
+ * Use `create(ServerListRemoteServersResponseSchema)` to create a new message.
+ */
+export const ServerListRemoteServersResponseSchema: GenMessage<ServerListRemoteServersResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 21);
+
+/**
+ * @generated from message openoxide.api.v1.ServerListPrivateNetworksRequest
+ */
+export type ServerListPrivateNetworksRequest = Message<"openoxide.api.v1.ServerListPrivateNetworksRequest"> & {
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerListPrivateNetworksRequest.
+ * Use `create(ServerListPrivateNetworksRequestSchema)` to create a new message.
+ */
+export const ServerListPrivateNetworksRequestSchema: GenMessage<ServerListPrivateNetworksRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 22);
+
+/**
+ * @generated from message openoxide.api.v1.ServerListPrivateNetworksResponse
+ */
+export type ServerListPrivateNetworksResponse = Message<"openoxide.api.v1.ServerListPrivateNetworksResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.ServerPrivateNetwork networks = 1;
+   */
+  networks: ServerPrivateNetwork[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerListPrivateNetworksResponse.
+ * Use `create(ServerListPrivateNetworksResponseSchema)` to create a new message.
+ */
+export const ServerListPrivateNetworksResponseSchema: GenMessage<ServerListPrivateNetworksResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 23);
+
+/**
+ * @generated from message openoxide.api.v1.ServerCreatePrivateNetworkRequest
+ */
+export type ServerCreatePrivateNetworkRequest = Message<"openoxide.api.v1.ServerCreatePrivateNetworkRequest"> & {
+  /**
+   * @generated from field: int64 server_id = 1;
+   */
+  serverId: bigint;
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerConnectionMode connection_mode = 2;
+   */
+  connectionMode: ServerConnectionMode;
+
+  /**
+   * @generated from field: optional openoxide.api.v1.ServerPrivateNetworkProvider provider = 3;
+   */
+  provider?: ServerPrivateNetworkProvider | undefined;
+
+  /**
+   * @generated from field: optional string private_host = 4;
+   */
+  privateHost?: string | undefined;
+
+  /**
+   * @generated from field: optional string tunnel_address = 5;
+   */
+  tunnelAddress?: string | undefined;
+
+  /**
+   * WireGuard public key (base64 key material).
+   *
+   * @generated from field: optional string public_key = 6;
+   */
+  publicKey?: string | undefined;
+
+  /**
+   * @generated from field: optional string endpoint = 7;
+   */
+  endpoint?: string | undefined;
+
+  /**
+   * @generated from field: optional uint32 listen_port = 8;
+   */
+  listenPort?: number | undefined;
+
+  /**
+   * @generated from field: optional uint32 persistent_keepalive = 9;
+   */
+  persistentKeepalive?: number | undefined;
+
+  /**
+   * @generated from field: optional string dns_name = 10;
+   */
+  dnsName?: string | undefined;
+
+  /**
+   * @generated from field: repeated string routes = 11;
+   */
+  routes: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerCreatePrivateNetworkRequest.
+ * Use `create(ServerCreatePrivateNetworkRequestSchema)` to create a new message.
+ */
+export const ServerCreatePrivateNetworkRequestSchema: GenMessage<ServerCreatePrivateNetworkRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 24);
+
+/**
+ * @generated from message openoxide.api.v1.ServerCreatePrivateNetworkResponse
+ */
+export type ServerCreatePrivateNetworkResponse = Message<"openoxide.api.v1.ServerCreatePrivateNetworkResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.ServerPrivateNetwork network = 1;
+   */
+  network?: ServerPrivateNetwork | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerCreatePrivateNetworkResponse.
+ * Use `create(ServerCreatePrivateNetworkResponseSchema)` to create a new message.
+ */
+export const ServerCreatePrivateNetworkResponseSchema: GenMessage<ServerCreatePrivateNetworkResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 25);
+
+/**
+ * @generated from message openoxide.api.v1.ServerUpdatePrivateNetworkRequest
+ */
+export type ServerUpdatePrivateNetworkRequest = Message<"openoxide.api.v1.ServerUpdatePrivateNetworkRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: openoxide.api.v1.ServerConnectionMode connection_mode = 2;
+   */
+  connectionMode: ServerConnectionMode;
+
+  /**
+   * @generated from field: optional openoxide.api.v1.ServerPrivateNetworkProvider provider = 3;
+   */
+  provider?: ServerPrivateNetworkProvider | undefined;
+
+  /**
+   * @generated from field: optional string private_host = 4;
+   */
+  privateHost?: string | undefined;
+
+  /**
+   * @generated from field: optional string tunnel_address = 5;
+   */
+  tunnelAddress?: string | undefined;
+
+  /**
+   * WireGuard public key (base64 key material).
+   *
+   * @generated from field: optional string public_key = 6;
+   */
+  publicKey?: string | undefined;
+
+  /**
+   * @generated from field: optional string endpoint = 7;
+   */
+  endpoint?: string | undefined;
+
+  /**
+   * @generated from field: optional uint32 listen_port = 8;
+   */
+  listenPort?: number | undefined;
+
+  /**
+   * @generated from field: optional uint32 persistent_keepalive = 9;
+   */
+  persistentKeepalive?: number | undefined;
+
+  /**
+   * @generated from field: optional string dns_name = 10;
+   */
+  dnsName?: string | undefined;
+
+  /**
+   * @generated from field: repeated string routes = 11;
+   */
+  routes: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerUpdatePrivateNetworkRequest.
+ * Use `create(ServerUpdatePrivateNetworkRequestSchema)` to create a new message.
+ */
+export const ServerUpdatePrivateNetworkRequestSchema: GenMessage<ServerUpdatePrivateNetworkRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 26);
+
+/**
+ * @generated from message openoxide.api.v1.ServerUpdatePrivateNetworkResponse
+ */
+export type ServerUpdatePrivateNetworkResponse = Message<"openoxide.api.v1.ServerUpdatePrivateNetworkResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.ServerPrivateNetwork network = 1;
+   */
+  network?: ServerPrivateNetwork | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerUpdatePrivateNetworkResponse.
+ * Use `create(ServerUpdatePrivateNetworkResponseSchema)` to create a new message.
+ */
+export const ServerUpdatePrivateNetworkResponseSchema: GenMessage<ServerUpdatePrivateNetworkResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 27);
+
+/**
+ * @generated from message openoxide.api.v1.ServerDeletePrivateNetworkRequest
+ */
+export type ServerDeletePrivateNetworkRequest = Message<"openoxide.api.v1.ServerDeletePrivateNetworkRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ServerDeletePrivateNetworkRequest.
+ * Use `create(ServerDeletePrivateNetworkRequestSchema)` to create a new message.
+ */
+export const ServerDeletePrivateNetworkRequestSchema: GenMessage<ServerDeletePrivateNetworkRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_server, 28);
+
+/**
+ * Closed set: only ACTIVE/INACTIVE are ever written to `servers.server_status`.
+ *
+ * @generated from enum openoxide.api.v1.ServerStatus
+ */
+export enum ServerStatus {
+  /**
+   * @generated from enum value: SERVER_STATUS_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: SERVER_STATUS_ACTIVE = 1;
+   */
+  ACTIVE = 1,
+
+  /**
+   * @generated from enum value: SERVER_STATUS_INACTIVE = 2;
+   */
+  INACTIVE = 2,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.ServerStatus.
+ */
+export const ServerStatusSchema: GenEnum<ServerStatus> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_server, 0);
+
+/**
+ * Closed set: `RemoteServerTypeDto` (DEPLOY/BUILD).
+ *
+ * @generated from enum openoxide.api.v1.ServerType
+ */
+export enum ServerType {
+  /**
+   * @generated from enum value: SERVER_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: SERVER_TYPE_DEPLOY = 1;
+   */
+  DEPLOY = 1,
+
+  /**
+   * @generated from enum value: SERVER_TYPE_BUILD = 2;
+   */
+  BUILD = 2,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.ServerType.
+ */
+export const ServerTypeSchema: GenEnum<ServerType> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_server, 1);
 
 /**
  * @generated from service openoxide.api.v1.ServerService
  */
 export const ServerService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.ListServers
-	 */
-	listServers: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.GetServer
-	 */
-	getServer: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.CreateServer
-	 */
-	createServer: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.UpdateServer
-	 */
-	updateServer: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.DeleteServer
-	 */
-	deleteServer: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.TestConnection
-	 */
-	testConnection: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.SetupServer
-	 */
-	setupServer: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.StartServer
-	 */
-	startServer: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.StopServer
-	 */
-	stopServer: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.RestartServer
-	 */
-	restartServer: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.RemoveServer
-	 */
-	removeServer: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.GetServerErrors
-	 */
-	getServerErrors: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.ListRemoteServers
-	 */
-	listRemoteServers: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.ListPrivateNetworks
-	 */
-	listPrivateNetworks: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.CreatePrivateNetwork
-	 */
-	createPrivateNetwork: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.UpdatePrivateNetwork
-	 */
-	updatePrivateNetwork: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.ServerService.DeletePrivateNetwork
-	 */
-	deletePrivateNetwork: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_server, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.ListServers
+   */
+  listServers: {
+    methodKind: "unary";
+    input: typeof ServerListServersRequestSchema;
+    output: typeof ServerListServersResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.GetServer
+   */
+  getServer: {
+    methodKind: "unary";
+    input: typeof ServerGetServerRequestSchema;
+    output: typeof ServerGetServerResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.CreateServer
+   */
+  createServer: {
+    methodKind: "unary";
+    input: typeof ServerCreateServerRequestSchema;
+    output: typeof ServerCreateServerResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.UpdateServer
+   */
+  updateServer: {
+    methodKind: "unary";
+    input: typeof ServerUpdateServerRequestSchema;
+    output: typeof ServerUpdateServerResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.DeleteServer
+   */
+  deleteServer: {
+    methodKind: "unary";
+    input: typeof ServerDeleteServerRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.TestConnection
+   */
+  testConnection: {
+    methodKind: "unary";
+    input: typeof ServerTestConnectionRequestSchema;
+    output: typeof ServerTestConnectionResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.SetupServer
+   */
+  setupServer: {
+    methodKind: "unary";
+    input: typeof ServerSetupServerRequestSchema;
+    output: typeof ServerSetupServerResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.StartServer
+   */
+  startServer: {
+    methodKind: "unary";
+    input: typeof ServerStartServerRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.StopServer
+   */
+  stopServer: {
+    methodKind: "unary";
+    input: typeof ServerStopServerRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.RestartServer
+   */
+  restartServer: {
+    methodKind: "unary";
+    input: typeof ServerRestartServerRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.RemoveServer
+   */
+  removeServer: {
+    methodKind: "unary";
+    input: typeof ServerRemoveServerRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.GetServerErrors
+   */
+  getServerErrors: {
+    methodKind: "unary";
+    input: typeof ServerGetServerErrorsRequestSchema;
+    output: typeof ServerGetServerErrorsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.ListRemoteServers
+   */
+  listRemoteServers: {
+    methodKind: "unary";
+    input: typeof ServerListRemoteServersRequestSchema;
+    output: typeof ServerListRemoteServersResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.ListPrivateNetworks
+   */
+  listPrivateNetworks: {
+    methodKind: "unary";
+    input: typeof ServerListPrivateNetworksRequestSchema;
+    output: typeof ServerListPrivateNetworksResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.CreatePrivateNetwork
+   */
+  createPrivateNetwork: {
+    methodKind: "unary";
+    input: typeof ServerCreatePrivateNetworkRequestSchema;
+    output: typeof ServerCreatePrivateNetworkResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.UpdatePrivateNetwork
+   */
+  updatePrivateNetwork: {
+    methodKind: "unary";
+    input: typeof ServerUpdatePrivateNetworkRequestSchema;
+    output: typeof ServerUpdatePrivateNetworkResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.ServerService.DeletePrivateNetwork
+   */
+  deletePrivateNetwork: {
+    methodKind: "unary";
+    input: typeof ServerDeletePrivateNetworkRequestSchema;
+    output: typeof EmptySchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_server, 0);
+

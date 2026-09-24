@@ -119,7 +119,7 @@ export function TraefikHeader({
 								{selectedServer?.name || 'Local Server'}
 							</SelectValue>
 						</SelectTrigger>
-						<SelectContent className="border- w-[190px] bg-card p-1 text-xs shadow-md">
+						<SelectContent className="w-[190px] border-border bg-card p-1 text-xs shadow-md">
 							{availableServers.map(srv => (
 								<SelectItem
 									key={srv.id}

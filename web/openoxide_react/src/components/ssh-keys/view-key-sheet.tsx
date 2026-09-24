@@ -29,8 +29,7 @@ export function ViewKeySheet({
 }: ViewKeySheetProps) {
 	const [copiedPublic, setCopiedPublic] = useState(false);
 
-	// Live SSH keys query; the table-watch stream (ssh_keys table) keeps it
-	// fresh, so no zustand slice involved.
+	// Live SSH keys query; the table-watch stream (ssh_keys table) keeps it fresh, so no zustand slice involved.
 	const {data: sshKeyItems = []} = useSshKeyItems();
 	const fullKeyDetails = sshKeyItems.find(
 		(k: any) => String(k.id) === String(sshKey?.id),

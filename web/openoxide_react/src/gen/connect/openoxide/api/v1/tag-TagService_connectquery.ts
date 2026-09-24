@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/tag.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {TagService} from './tag_pb';
+import { TagService } from "./tag_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.TagService.ListTags

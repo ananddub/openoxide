@@ -1,7 +1,8 @@
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    IncomingWebhookRequest, OperationResult, IncomingWebhookService, IncomingWebhookServiceExt,
+    IncomingWebhookRequest, IncomingWebhookResponse, IncomingWebhookService,
+    IncomingWebhookServiceExt,
 };
 use crate::services::integrations::git::webhooks::{DispatchOutcome, WebhookEvent, parse_event};
 
@@ -14,8 +15,8 @@ impl IncomingWebhookService for WebhookController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, IncomingWebhookRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let provider = parse_provider(&request.provider)?;
+    ) -> ServiceResult<impl connectrpc::Encodable<IncomingWebhookResponse> + Send + use<'a>> {
+        let provider = parse_provider(request.provider)?;
         let provider_id = request.provider_id;
 
         // Determine event name from the provider + payload metadata.
@@ -65,11 +66,9 @@ impl IncomingWebhookService for WebhookController {
             }
         };
 
-        let payload = serde_json::to_string(&outcome).unwrap_or_default();
-        Response::ok(OperationResult {
+        Response::ok(IncomingWebhookResponse {
             success: true,
-            operation: "handle_webhook".into(),
-            payload: Some(payload),
+            outcome: ::buffa::MessageField::some(outcome_to_proto(outcome)),
             ..Default::default()
         })
     }

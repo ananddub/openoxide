@@ -12,13 +12,36 @@ import type {AdvancedTabProps} from './types';
 
 import {formatApiError} from '#/api/utils';
 
-// Mirrors the plan presets used when creating a service, so the same
-// Micro/Small/Medium/Large language carries into the app editor.
+// Mirrors the plan presets used when creating a service, so the same Micro/Small/Medium/Large language carries into the app editor.
 const PRESETS = [
-	{id: 'micro', label: 'Micro', cpu: '0.25', mem: '256m', desc: 'Light workloads and background jobs.'},
-	{id: 'small', label: 'Small', cpu: '0.5', mem: '512m', desc: 'Most applications. Recommended.'},
-	{id: 'medium', label: 'Medium', cpu: '1', mem: '1024m', desc: 'Busy APIs and moderate traffic.'},
-	{id: 'large', label: 'Large', cpu: '2', mem: '2048m', desc: 'Heavy compute and high traffic.'},
+	{
+		id: 'micro',
+		label: 'Micro',
+		cpu: '0.25',
+		mem: '256m',
+		desc: 'Light workloads and background jobs.',
+	},
+	{
+		id: 'small',
+		label: 'Small',
+		cpu: '0.5',
+		mem: '512m',
+		desc: 'Most applications. Recommended.',
+	},
+	{
+		id: 'medium',
+		label: 'Medium',
+		cpu: '1',
+		mem: '1024m',
+		desc: 'Busy APIs and moderate traffic.',
+	},
+	{
+		id: 'large',
+		label: 'Large',
+		cpu: '2',
+		mem: '2048m',
+		desc: 'Heavy compute and high traffic.',
+	},
 ];
 
 function derivePlan(memLimit: string, cpuLimit: string): string {
@@ -132,7 +155,7 @@ export function ResourceSection({app, onUpdated}: AdvancedTabProps) {
 						desc="Set your own reservations and limits."
 					/>
 					{plan === 'custom' && (
-						<div className="animate-in fade-in-0 slide-in-from-top-2 rounded-xl border border-border/50 bg-muted/20 p-4 duration-200">
+						<div className="animate-in rounded-xl border border-border/50 bg-muted/20 p-4 duration-200 fade-in-0 slide-in-from-top-2">
 							<FieldGrid>
 								<Field label="Memory reservation">
 									<Input
@@ -203,7 +226,7 @@ export function ResourceSection({app, onUpdated}: AdvancedTabProps) {
 							max="10"
 							value={replicas}
 							onChange={e => setReplicas(e.target.value)}
-							className="h-8 w-12 border-0 bg-transparent p-0 text-center text-sm font-medium tabular-nums focus-visible:ring-0 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+							className="h-8 w-12 [appearance:textfield] border-0 bg-transparent p-0 text-center text-sm font-medium tabular-nums focus-visible:ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 						/>
 						<button
 							type="button"
@@ -264,9 +287,7 @@ function PlanCard({
 					'flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
 					selected ? 'border-primary' : 'border-muted-foreground/40',
 				)}>
-				{selected && (
-					<span className="size-2.5 rounded-full bg-primary" />
-				)}
+				{selected && <span className="size-2.5 rounded-full bg-primary" />}
 			</span>
 		</button>
 	);

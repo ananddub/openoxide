@@ -2,15 +2,174 @@ syntax = "proto3";
 package openoxide.api.v1;
 
 import "openoxide/api/v1/common.proto";
+import "buf/validate/validate.proto";
 
 service ServerPrivateNetworkService {
-  rpc GetNetwork(ResourceRequest) returns (ResourceResponse);
-  rpc UpdateNetwork(ResourceRequest) returns (ResourceResponse);
-  rpc DeleteNetwork(ResourceRequest) returns (Empty);
-  rpc Setup(ResourceRequest) returns (OperationResult);
-  rpc Health(ResourceRequest) returns (OperationResult);
-  rpc Repair(ResourceRequest) returns (OperationResult);
-  rpc ReSetup(ResourceRequest) returns (OperationResult);
-  rpc RotateKeys(ResourceRequest) returns (OperationResult);
-  rpc Teardown(ResourceRequest) returns (OperationResult);
+  rpc GetNetwork(ServerPrivateNetworkGetRequest) returns (ServerPrivateNetworkGetResponse);
+  rpc UpdateNetwork(ServerPrivateNetworkUpdateRequest) returns (ServerPrivateNetworkUpdateResponse);
+  rpc DeleteNetwork(ServerPrivateNetworkDeleteRequest) returns (Empty);
+  rpc Setup(ServerPrivateNetworkSetupRequest) returns (ServerPrivateNetworkSetupResponse);
+  rpc Health(ServerPrivateNetworkHealthRequest) returns (ServerPrivateNetworkHealthResponse);
+  rpc Repair(ServerPrivateNetworkRepairRequest) returns (ServerPrivateNetworkRepairResponse);
+  rpc ReSetup(ServerPrivateNetworkReSetupRequest) returns (ServerPrivateNetworkReSetupResponse);
+  rpc RotateKeys(ServerPrivateNetworkRotateKeysRequest) returns (ServerPrivateNetworkRotateKeysResponse);
+  rpc Teardown(ServerPrivateNetworkTeardownRequest) returns (Empty);
+}
+
+// Closed set: `string_enum!` PrivateNetworkConnectionMode.
+enum ServerConnectionMode {
+  SERVER_CONNECTION_MODE_UNSPECIFIED = 0;
+  SERVER_CONNECTION_MODE_DIRECT_SSH = 1;
+  SERVER_CONNECTION_MODE_MANAGED_WIREGUARD = 2;
+  SERVER_CONNECTION_MODE_EXTERNAL_PRIVATE_NETWORK = 3;
+}
+
+// Closed set: `string_enum!` PrivateNetworkProvider.
+enum ServerPrivateNetworkProvider {
+  SERVER_PRIVATE_NETWORK_PROVIDER_UNSPECIFIED = 0;
+  SERVER_PRIVATE_NETWORK_PROVIDER_WIREGUARD = 1;
+  SERVER_PRIVATE_NETWORK_PROVIDER_TAILSCALE = 2;
+  SERVER_PRIVATE_NETWORK_PROVIDER_ZEROTIER = 3;
+  SERVER_PRIVATE_NETWORK_PROVIDER_NETBIRD = 4;
+  SERVER_PRIVATE_NETWORK_PROVIDER_CUSTOM = 5;
+}
+
+// Closed set: `string_enum!` PrivateNetworkStatus.
+enum ServerPrivateNetworkStatus {
+  SERVER_PRIVATE_NETWORK_STATUS_UNSPECIFIED = 0;
+  SERVER_PRIVATE_NETWORK_STATUS_DISABLED = 1;
+  SERVER_PRIVATE_NETWORK_STATUS_CONFIGURING = 2;
+  SERVER_PRIVATE_NETWORK_STATUS_ACTIVE = 3;
+  SERVER_PRIVATE_NETWORK_STATUS_FAILED = 4;
+}
+
+// Closed set: `string_enum!` PrivateNetworkHealthStatus.
+enum ServerPrivateNetworkHealthStatus {
+  SERVER_PRIVATE_NETWORK_HEALTH_STATUS_UNSPECIFIED = 0;
+  SERVER_PRIVATE_NETWORK_HEALTH_STATUS_UNKNOWN = 1;
+  SERVER_PRIVATE_NETWORK_HEALTH_STATUS_HEALTHY = 2;
+  SERVER_PRIVATE_NETWORK_HEALTH_STATUS_DEGRADED = 3;
+  SERVER_PRIVATE_NETWORK_HEALTH_STATUS_UNREACHABLE = 4;
+  SERVER_PRIVATE_NETWORK_HEALTH_STATUS_CONFIG_DRIFT = 5;
+}
+
+// Closed set: `string_enum!` PrivateNetworkRotationState.
+enum ServerPrivateNetworkRotationState {
+  SERVER_PRIVATE_NETWORK_ROTATION_STATE_UNSPECIFIED = 0;
+  SERVER_PRIVATE_NETWORK_ROTATION_STATE_IDLE = 1;
+  SERVER_PRIVATE_NETWORK_ROTATION_STATE_ROTATING = 2;
+  SERVER_PRIVATE_NETWORK_ROTATION_STATE_ROLLING_BACK = 3;
+  SERVER_PRIVATE_NETWORK_ROTATION_STATE_FAILED = 4;
+}
+
+message ServerPrivateNetwork {
+  int64 server_id = 1;
+  ServerConnectionMode connection_mode = 2;
+  optional ServerPrivateNetworkProvider provider = 3;
+  // Routable private address the panel connects to when the tunnel is active.
+  optional string private_host = 4;
+  // Tunnel interface address in CIDR notation.
+  optional string tunnel_address = 5;
+  // WireGuard public key (base64 key material); private keys never leave the panel.
+  optional string public_key = 6;
+  optional string endpoint = 7;
+  optional uint32 listen_port = 8;
+  optional uint32 persistent_keepalive = 9;
+  ServerPrivateNetworkStatus status = 10;
+  optional int64 last_handshake_at = 11;
+  int64 config_version = 12;
+  optional string dns_name = 13;
+  // Extra CIDR routes pushed through the tunnel.
+  repeated string routes = 14;
+  ServerPrivateNetworkHealthStatus health_status = 15;
+  optional string health_error = 16;
+  optional int64 last_health_check_at = 17;
+  int64 consecutive_failures = 18;
+  ServerPrivateNetworkRotationState rotation_state = 19;
+  int64 updated_at = 20;
+}
+
+message ServerPrivateNetworkHealth {
+  ServerPrivateNetworkHealthStatus status = 1;
+  bool interface_exists = 2;
+  bool private_ssh_reachable = 3;
+  optional int64 latest_handshake_at = 4;
+  int64 checked_at = 5;
+  optional string error = 6;
+}
+
+message ServerPrivateNetworkGetRequest {
+  // Server id; the network is keyed by its owning server.
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+// `network` is absent when the server has no private-network configuration.
+message ServerPrivateNetworkGetResponse {
+  ServerPrivateNetwork network = 1;
+}
+
+message ServerPrivateNetworkUpdateRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  ServerConnectionMode connection_mode = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional ServerPrivateNetworkProvider provider = 3 [(buf.validate.field).enum = {defined_only: true}];
+  optional string private_host = 4 [(buf.validate.field).string.max_len = 255];
+  optional string tunnel_address = 5 [(buf.validate.field).string.max_len = 255];
+  optional string public_key = 6 [(buf.validate.field).string.max_len = 255];
+  optional string endpoint = 7 [(buf.validate.field).string.max_len = 255];
+  optional uint32 listen_port = 8 [(buf.validate.field).uint32.lte = 65535];
+  optional uint32 persistent_keepalive = 9;
+  optional string dns_name = 10 [(buf.validate.field).string.max_len = 255];
+  repeated string routes = 11 [(buf.validate.field).repeated.max_items = 64];
+}
+
+message ServerPrivateNetworkUpdateResponse {
+  ServerPrivateNetwork network = 1;
+}
+
+message ServerPrivateNetworkDeleteRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerPrivateNetworkSetupRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerPrivateNetworkSetupResponse {
+  ServerPrivateNetwork network = 1;
+}
+
+message ServerPrivateNetworkHealthRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerPrivateNetworkHealthResponse {
+  ServerPrivateNetworkHealth health = 1;
+}
+
+message ServerPrivateNetworkRepairRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerPrivateNetworkRepairResponse {
+  ServerPrivateNetwork network = 1;
+}
+
+message ServerPrivateNetworkReSetupRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerPrivateNetworkReSetupResponse {
+  ServerPrivateNetwork network = 1;
+}
+
+message ServerPrivateNetworkRotateKeysRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message ServerPrivateNetworkRotateKeysResponse {
+  ServerPrivateNetwork network = 1;
+}
+
+message ServerPrivateNetworkTeardownRequest {
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
 }

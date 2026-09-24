@@ -111,9 +111,7 @@ export function DomainDialog({
 			stripPath: Boolean(editingDomain?.strip_path),
 			middlewares,
 		});
-		// Initialize only when opening or switching the edited domain. Parent list
-		// refreshes must never overwrite values while the user is typing.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// Initialize only when opening or switching the edited domain. Parent list refreshes must never overwrite values while the user is typing. eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isOpen, editingId]);
 
 	const patch = <K extends keyof DomainFormState>(

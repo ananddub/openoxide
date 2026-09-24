@@ -1,8 +1,4 @@
-// ---------------------------------------------------------------------------
-// Source-setting mutations (legacy REST: PATCH /applications/{id}/source/*).
-// Each hook takes the application id plus the provider-specific fields the
-// legacy REST body carried (snake_case in, camelCase to the proto).
-// ---------------------------------------------------------------------------
+// --------------------------------------------------------------------------- Source-setting mutations (legacy REST: PATCH /applications/{id}/source/*). Each hook takes the application id plus the provider-specific fields the legacy REST body carried (snake_case in, camelCase to the proto). ---------------------------------------------------------------------------
 
 import {applicationClient, big, inputMutation} from './shared';
 

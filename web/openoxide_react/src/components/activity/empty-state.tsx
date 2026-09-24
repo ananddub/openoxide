@@ -1,11 +1,7 @@
 import {Link} from '@tanstack/react-router';
 import {Plus, SearchX, GitBranch} from 'lucide-react';
 
-/**
- * Openship-style empty state: soft card-stack illustration (theme tokens,
- * so it tracks dark/light), medium-weight title, relaxed copy, and action
- * buttons. Filtered variant stays quiet — icon + message + clear action.
- */
+/** Openship-style empty state: soft card-stack illustration (theme tokens, so it tracks dark/light), medium-weight title, relaxed copy, and action buttons. Filtered variant stays quiet — icon + message + clear action. */
 
 export function EmptyState({
 	hasFilters,

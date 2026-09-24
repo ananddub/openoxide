@@ -2,7 +2,7 @@ import {useState, useEffect, useMemo} from 'react';
 import {useNavigate} from '@tanstack/react-router';
 import {toast} from 'sonner';
 import {formatApiError, serverHostLabel} from '#/api/utils';
-import {globalServerConnStore} from '#/hooks/use-server-connection-store';
+import {globalServerConnStore} from '#/stores/server-connection-store';
 import {useRemoteServerTestConnection} from '#/api/live';
 import type {
 	RemoteServerResponse,

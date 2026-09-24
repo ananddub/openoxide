@@ -11,7 +11,6 @@ export const OPTIONS: {
 	title: string;
 	description: string;
 	icon: typeof Box;
-	soon?: boolean;
 }[] = [
 	{
 		id: 'application',
@@ -36,7 +35,6 @@ export const OPTIONS: {
 		title: 'Template',
 		description: 'Ready-made app blueprints — one-click deploy.',
 		icon: LayoutTemplate,
-		soon: true,
 	},
 ];
 
@@ -108,10 +106,11 @@ export const TYPE_INFO: Record<
 		],
 	},
 	template: {
-		heading: 'Templates',
+		heading: 'About Templates',
 		steps: [
-			'Template gallery is coming soon.',
-			'You can deploy the same apps today via Compose Stack.',
+			'Opens the template gallery — pick an app and install it as a Compose Stack.',
+			'Environment variables from the template are pre-filled; review them before deploying.',
+			'Attach domains and mounts afterwards from the compose page tabs.',
 		],
 	},
 };

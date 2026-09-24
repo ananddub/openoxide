@@ -1,7 +1,4 @@
-/**
- * Maps a normalized database kind + id to the sparse resource-id payload the
- * volume-backup create RPC expects (only the matching engine id is set).
- */
+/** Maps a normalized database kind + id to the sparse resource-id payload the volume-backup create RPC expects (only the matching engine id is set). */
 export function buildDatabaseResource(
 	normalizedKind: string,
 	databaseId?: number,

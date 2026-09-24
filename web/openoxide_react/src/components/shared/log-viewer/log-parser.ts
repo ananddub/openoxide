@@ -12,8 +12,7 @@ export function getLogLevel(line: string): LogLevel {
 		/\bexception\b/.test(lower) ||
 		lower.includes('stderr')
 	) {
-		// Don't flag as ERROR if the match is just a JSON key with an empty value
-		// e.g. "Error": "" — check the value isn't empty
+		// Don't flag as ERROR if the match is just a JSON key with an empty value e.g. "Error": "" — check the value isn't empty
 		const errorKeyEmpty = /"[Ee]rror"\s*:\s*""/.test(line);
 		if (!errorKeyEmpty) return 'ERROR';
 	}

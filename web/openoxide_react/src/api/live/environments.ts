@@ -21,8 +21,7 @@ export type EnvironmentPayload = {
 
 const environmentClient = createServiceClient(EnvironmentService);
 
-// `environmentVariables` maps to `env_var`, the field name the legacy
-// environments payload exposed by the Environment proto message.
+// `environmentVariables` maps to `env_var`, the field name the legacy environments payload exposed by the Environment proto message.
 function toEnvironmentPayload(
 	environment: Environment,
 ): EnvironmentPayload {

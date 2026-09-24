@@ -22,13 +22,7 @@ type Props = {
 	collapsed: boolean;
 };
 
-/**
- * Vercel-style top-of-rail team switcher: one pill split in two — the left
- * half (avatar + workspace name) switches workspace, the right half (plan
- * chip + chevrons) opens the menu. The popover lists every organization
- * with role chips, workspace management (create / rename / leave / delete),
- * and a signed-in footer with logout.
- */
+/** Vercel-style top-of-rail team switcher: one pill split in two — the left half (avatar + workspace name) switches workspace, the right half (plan chip + chevrons) opens the menu. The popover lists every organization with role chips, workspace management (create / rename / leave / delete), and a signed-in footer with logout. */
 export function AccountSwitcher({collapsed}: Props) {
 	const ctl = useAccountSwitcher();
 	const {
@@ -63,9 +57,7 @@ export function AccountSwitcher({collapsed}: Props) {
 									type="button"
 									className={cn(
 										'flex h-full min-w-0 flex-1 items-center text-start transition-colors',
-										collapsed
-											? 'justify-center px-0'
-											: 'gap-2.5 px-1.5',
+										collapsed ? 'justify-center px-0' : 'gap-2.5 px-1.5',
 									)}
 									aria-haspopup="dialog"
 									title={collapsed ? activeOrg?.name : undefined}>

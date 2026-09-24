@@ -32,10 +32,7 @@ interface SshKeyCardProps {
 	onDelete: (key: SshKeyResponse) => void;
 }
 
-/**
- * Vercel-style key card — the grid counterpart of SshKeyRow: flat hairline
- * card, icon tile + name up top, fingerprint meta line, actions kebab.
- */
+/** Vercel-style key card — the grid counterpart of SshKeyRow: flat hairline card, icon tile + name up top, fingerprint meta line, actions kebab. */
 export function SshKeyCard({
 	item,
 	index,

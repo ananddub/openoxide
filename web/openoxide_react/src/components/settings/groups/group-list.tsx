@@ -101,7 +101,7 @@ function Actions({
 }) {
 	if (!canManage) return null;
 	return (
-		<div className="flex shrink-0 items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+		<div className="flex shrink-0 items-center gap-1.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
 			<Button
 				variant="ghost"
 				size="icon"

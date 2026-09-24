@@ -1,10 +1,7 @@
 import {RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 
-/**
- * Dialog form footer with a left "Test Connection" button and a right
- * Create/Update submit button (DNS & Vault provider forms layout).
- */
+/** Dialog form footer with a left "Test Connection" button and a right Create/Update submit button (DNS & Vault provider forms layout). */
 export function TestSaveFooter({
 	isTesting,
 	isSubmitting,

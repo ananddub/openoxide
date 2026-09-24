@@ -8,7 +8,7 @@ import {
 import {Button} from '#/components/ui/button';
 import {AlertTriangle, Trash2, RefreshCw} from 'lucide-react';
 import {serverHostLabel} from '#/api/utils';
-import {useDeleteServer} from '#/hooks/remote-servers/use-remote-servers';
+import {useDeleteServer} from '#/hooks/servers/use-remote-servers';
 import type {RemoteServerResponse} from '#/types/api-helpers';
 
 interface DeleteServerModalProps {

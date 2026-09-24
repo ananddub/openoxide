@@ -1,6 +1,6 @@
 use connectrpc::{ConnectError, ErrorCode};
 
-use crate::api::connect::generated::openoxide::api::v1::ResourceResponse;
+use crate::api::connect::generated::openoxide::api::v1::Tag as TagProto;
 
 use serde::{Deserialize, Serialize};
 
@@ -14,17 +14,18 @@ pub fn map_db_error(err: sqlx::Error) -> ConnectError {
     }
 }
 
-pub fn tag_to_resource(tag_dto: TagDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&tag_dto).unwrap_or_default();
-    ResourceResponse {
+pub fn tag_to_proto(tag_dto: TagDto) -> TagProto {
+    TagProto {
         id: tag_dto.id,
-        kind: "tag".into(),
-        payload,
+        name: tag_dto.name,
+        color: tag_dto.color,
+        organization_id: tag_dto.organization_id,
+        created_at: tag_dto.created_at,
         ..Default::default()
     }
 }
 
-// ── Helper DTOs for ResourceRequest payloads ────────────
+// ── Helper DTOs ─────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TagDto {
@@ -45,9 +46,4 @@ impl From<crate::flash_gen::models::Tags> for TagDto {
             created_at: t.created_at,
         }
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AttachProjectTagDto {
-    pub tag_id: i64,
 }

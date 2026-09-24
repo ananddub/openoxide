@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react';
 import {toast} from 'sonner';
 import {useSettingsGet, useSettingsUpdate} from '#/api/live';
-import {usePermissions} from '#/hooks/use-permissions';
+import {usePermissions} from '#/hooks/permissions/use-permissions';
 
 export type CertType = 'None' | 'Letsencrypt' | 'Custom';
 
@@ -44,8 +44,7 @@ export function useHostSettingsForm() {
 	const [form, setForm] = useState<SettingsForm>(EMPTY_FORM);
 	const [dirty, setDirty] = useState(false);
 
-	// Seed the form once settings land (and on realtime refreshes while the
-	// form is untouched, so external edits don't get silently overwritten).
+	// Seed the form once settings land (and on realtime refreshes while the form is untouched, so external edits don't get silently overwritten).
 	useEffect(() => {
 		const s = settingsQuery.data;
 		if (!s || dirty) return;

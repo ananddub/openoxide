@@ -1,5 +1,5 @@
 import {createServiceClient, useConnectMutation} from '../query';
-import {OverviewOperationsService} from '#/gen/connect/openoxide/api/v1/overview_operations_pb';
+import {OverviewService} from '#/gen/connect/openoxide/api/v1/overview_pb';
 import {
 	DatabaseService,
 	DatabaseKind,
@@ -7,9 +7,7 @@ import {
 import {DatabaseNetworkService} from '#/gen/connect/openoxide/api/v1/database_network_pb';
 
 export const databaseClient = createServiceClient(DatabaseService);
-export const overviewClient = createServiceClient(
-	OverviewOperationsService,
-);
+export const overviewClient = createServiceClient(OverviewService);
 export const databaseNetworkClient = createServiceClient(
 	DatabaseNetworkService,
 );
@@ -18,10 +16,7 @@ export const databaseNetworkClient = createServiceClient(
 export const big = (value: number | bigint | undefined) =>
 	value !== undefined ? BigInt(value) : undefined;
 
-/**
- * Builds a `{kind, id}`-driven mutation hook (deploy/stop/delete style RPCs)
- * with the given cache invalidation set; defaults to the `databases` prefix.
- */
+/** Builds a `{kind, id}`-driven mutation hook (deploy/stop/delete style RPCs) with the given cache invalidation set; defaults to the `databases` prefix. */
 export const kindIdMutation = (
 	call: (kind: DatabaseKind, id: bigint) => Promise<unknown>,
 	invalidate: string[][] = [['databases']],

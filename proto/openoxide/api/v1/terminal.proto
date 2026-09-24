@@ -4,16 +4,9 @@ package openoxide.api.v1;
 import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
-// Interactive terminal over the panel's ConnectRPC API. Browsers cannot
-// stream request bodies over the Connect protocol, so the session is split
-// in two legs: a server-streaming RPC that carries all terminal output for
-// the session lifetime, and a unary RPC that feeds input, resize and stop
-// commands addressed by the session id returned in the first `started`
-// event.
+// Interactive terminal over the panel's ConnectRPC API. Browsers cannot stream request bodies over the Connect protocol, so the session is split in two legs: a server-streaming RPC carries all terminal output for the session lifetime, and a unary RPC feeds input, resize and stop commands addressed by the session id returned in the first `started` event.
 service TerminalService {
-  // Opens a Docker or SSH PTY session and streams its output. The first
-  // event is always `started` carrying the `session_id`; the stream ends
-  // after `exit` or `error`.
+  // Opens a Docker or SSH PTY session and streams its output. The first event is always `started` carrying the `session_id`; the stream ends after `exit` or `error`.
   rpc OpenTerminal(OpenTerminalRequest) returns (stream TerminalEvent);
   // Sends a command (input / resize / stop) to an open terminal session.
   rpc ExecutionCommand(ExecutionCommandRequest) returns (Empty);
@@ -33,16 +26,14 @@ enum TerminalOutputStream {
 
 message OpenTerminalRequest {
   TerminalKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
-  // Required for TERMINAL_KIND_REMOTE_SERVER; optional for
-  // TERMINAL_KIND_DOCKER (falls back to the local Agent).
+  // Required for TERMINAL_KIND_REMOTE_SERVER; optional for TERMINAL_KIND_DOCKER (falls back to the local Agent).
   optional int64 server_id = 2 [(buf.validate.field).int64.gt = 0];
   // Container name for TERMINAL_KIND_DOCKER.
   optional string container = 3 [(buf.validate.field).string.max_len = 255];
   optional string shell = 4 [(buf.validate.field).string.max_len = 255];
   optional uint32 cols = 5 [(buf.validate.field).uint32 = {gte: 1, lte: 1000}];
   optional uint32 rows = 6 [(buf.validate.field).uint32 = {gte: 1, lte: 1000}];
-  // TERMINAL_KIND_DOCKER only: escape through the Agent to the host itself
-  // (privileged helper container + chroot) instead of a workload container.
+  // TERMINAL_KIND_DOCKER only: escape through the Agent to the host itself (privileged helper container + chroot) instead of a workload container.
   bool host = 7;
 }
 

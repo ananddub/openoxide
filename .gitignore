@@ -37,3 +37,4 @@ qwen-code*.md
 
 # TLS dev certificates (mkcert)
 certs/
+AGENTS.md

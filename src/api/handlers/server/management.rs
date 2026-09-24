@@ -1,8 +1,18 @@
+use buffa::MessageView;
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    OperationResult, ResourceListResponse, ResourceQuery, ResourceRequest, ResourceResponse,
-    ServerManagementService, ServerManagementServiceExt,
+    ServerActionResult, ServerBackup, ServerCleanupExecution, ServerCleanupPolicy as CleanupPolicyProto,
+    ServerCleanupStatus, ServerManagement as ServerManagementProto, ServerManagementConfigureGpuRequest,
+    ServerManagementConfigureGpuResponse, ServerManagementGetRequest, ServerManagementGetResponse,
+    ServerManagementListCleanupHistoryRequest, ServerManagementListCleanupHistoryResponse,
+    ServerManagementRepairAuditRequest, ServerManagementRepairAuditResponse,
+    ServerManagementRunCleanupRequest, ServerManagementRunCleanupResponse,
+    ServerManagementService, ServerManagementServiceExt, ServerManagementUpdateRequest,
+    ServerManagementUpdateResponse, ServerManagementUpgradeRequest,
+    ServerManagementUpgradeResponse, ServerManagementBackupRequest,
+    ServerManagementBackupResponse, ServerManagementDiagnosticsRequest,
+    ServerManagementDiagnosticsResponse,
 };
 
 use super::init::ServerManagementController;
@@ -33,17 +43,67 @@ fn map_db_error(err: sqlx::Error) -> ConnectError {
     }
 }
 
-fn management_to_resource(
-    server_id: i64,
-    management: &impl serde::Serialize,
-) -> ResourceResponse {
-    let payload = serde_json::to_string(management).unwrap_or_default();
-    ResourceResponse {
-        id: server_id,
-        kind: "server_management".into(),
-        payload,
-        ..Default::default()
+fn cleanup_status_to_proto(status: &str) -> ServerCleanupStatus {
+    match status {
+        "SUCCEEDED" => ServerCleanupStatus::Succeeded,
+        "FAILED" => ServerCleanupStatus::Failed,
+        _ => ServerCleanupStatus::Unspecified,
     }
+}
+
+// The management/lifecycle/cleanup DTO structs live in private service modules
+// and cannot be named from the handler, so map them via expression macros that
+// only rely on their public field access.
+macro_rules! management_to_proto {
+    ($dto:expr) => {{
+        let dto = $dto;
+        ServerManagementProto {
+            server_id: dto.server_id,
+            maintenance_mode: dto.maintenance_mode,
+            maintenance_message: dto.maintenance_message,
+            labels: dto.labels.into_iter().collect(),
+            cleanup_policy: ::buffa::MessageField::some(CleanupPolicyProto {
+                containers: dto.cleanup_policy.containers,
+                images: dto.cleanup_policy.images,
+                networks: dto.cleanup_policy.networks,
+                volumes: dto.cleanup_policy.volumes,
+                packages: dto.cleanup_policy.packages,
+                ..Default::default()
+            }),
+            gpu_enabled: dto.gpu_enabled,
+            updated_at: dto.updated_at,
+            ..Default::default()
+        }
+    }};
+}
+
+macro_rules! action_result_to_proto {
+    ($dto:expr) => {{
+        let dto = $dto;
+        ServerActionResult {
+            success: dto.success,
+            stdout: dto.stdout,
+            stderr: dto.stderr,
+            ..Default::default()
+        }
+    }};
+}
+
+macro_rules! execution_to_proto {
+    ($dto:expr) => {{
+        let dto = $dto;
+        ServerCleanupExecution {
+            id: dto.id,
+            server_id: dto.server_id,
+            status: ::buffa::EnumValue::Known(cleanup_status_to_proto(&dto.status)),
+            policy: dto.policy,
+            stdout: dto.stdout,
+            stderr: dto.stderr,
+            started_at: dto.started_at,
+            finished_at: dto.finished_at,
+            ..Default::default()
+        }
+    }};
 }
 
 #[auto_grpc::service(connect = true, auth = true)]
@@ -52,38 +112,79 @@ impl ServerManagementService for ServerManagementController {
     async fn get_management<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, ServerManagementGetRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ServerManagementGetResponse> + Send + use<'a>>
+    {
         let management = self.management.get(request.id).await.map_err(map_db_error)?;
-        Response::ok(management_to_resource(request.id, &management))
+        Response::ok(ServerManagementGetResponse {
+            management: ::buffa::MessageField::some(management_to_proto!(management)),
+            ..Default::default()
+        })
     }
 
     #[permission(Server, CanCreate)]
     async fn update_management<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
+        request: ServiceRequest<'_, ServerManagementUpdateRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ServerManagementUpdateResponse> + Send + use<'a>,
+    > {
+        // The management service consumes a JSON document; build it from the
+        // typed request instead of forwarding a raw envelope payload.
+        let policy = request
+            .cleanup_policy
+            .as_option()
+            .map(|view| view.to_owned_message())
+            .transpose()
+            .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?
+            .unwrap_or_default();
+        let payload = serde_json::json!({
+            "maintenance_mode": request.maintenance_mode,
+            "maintenance_message": request.maintenance_message,
+            "labels": request
+                .labels
+                .iter()
+                .map(|(key, value)| {
+                    (key.to_string(), serde_json::Value::String(value.to_string()))
+                })
+                .collect::<serde_json::Map<String, serde_json::Value>>(),
+            "cleanup_policy": {
+                "containers": policy.containers,
+                "images": policy.images,
+                "networks": policy.networks,
+                "volumes": policy.volumes,
+                "packages": policy.packages,
+            },
+            "gpu_enabled": request.gpu_enabled,
+        })
+        .to_string();
         let management = self
             .management
-            .update(request.id, request.payload)
+            .update(request.id, &payload)
             .await
             .map_err(map_db_error)?;
-        Response::ok(management_to_resource(request.id, &management))
+        Response::ok(ServerManagementUpdateResponse {
+            management: ::buffa::MessageField::some(management_to_proto!(management)),
+            ..Default::default()
+        })
     }
 
     #[permission(Server, CanCreate)]
     async fn repair_audit<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let result = self.lifecycle.auto_repair(request.id).await.map_err(map_db_error)?;
-        let payload = serde_json::to_string(&result).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "repair_audit".into(),
-            payload: Some(payload),
+        request: ServiceRequest<'_, ServerManagementRepairAuditRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ServerManagementRepairAuditResponse> + Send + use<'a>,
+    > {
+        let result = self
+            .lifecycle
+            .auto_repair(request.id)
+            .await
+            .map_err(map_db_error)?;
+        Response::ok(ServerManagementRepairAuditResponse {
+            result: ::buffa::MessageField::some(action_result_to_proto!(result)),
             ..Default::default()
         })
     }
@@ -92,14 +193,17 @@ impl ServerManagementService for ServerManagementController {
     async fn configure_gpu<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let result = self.lifecycle.configure_gpu(request.id).await.map_err(map_db_error)?;
-        let payload = serde_json::to_string(&result).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "configure_gpu".into(),
-            payload: Some(payload),
+        request: ServiceRequest<'_, ServerManagementConfigureGpuRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ServerManagementConfigureGpuResponse> + Send + use<'a>,
+    > {
+        let result = self
+            .lifecycle
+            .configure_gpu(request.id)
+            .await
+            .map_err(map_db_error)?;
+        Response::ok(ServerManagementConfigureGpuResponse {
+            result: ::buffa::MessageField::some(action_result_to_proto!(result)),
             ..Default::default()
         })
     }
@@ -108,14 +212,12 @@ impl ServerManagementService for ServerManagementController {
     async fn run_cleanup<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
+        request: ServiceRequest<'_, ServerManagementRunCleanupRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ServerManagementRunCleanupResponse> + Send + use<'a>>
+    {
         let result = self.cleanup.run(request.id).await.map_err(map_db_error)?;
-        let payload = serde_json::to_string(&result).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "run_cleanup".into(),
-            payload: Some(payload),
+        Response::ok(ServerManagementRunCleanupResponse {
+            result: ::buffa::MessageField::some(action_result_to_proto!(result)),
             ..Default::default()
         })
     }
@@ -124,31 +226,38 @@ impl ServerManagementService for ServerManagementController {
     async fn list_cleanup_history<'a>(
         &'a self,
         ctx: RequestContext,
-        _query: ServiceRequest<'_, ResourceQuery>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        // Original handler used Path(server_id) via /servers/{server_id}/management.
-        // In ConnectRPC the server_id comes through ResourceQuery; however
-        // the proto ResourceQuery does not carry an `id` field.  The original
-        // live-query just returned all history for the server embedded in the
-        // path.  We read server_id from the organisation_id field as a
-        // placeholder — the caller should send the server_id in the query
-        // filter or the service should be updated.  For now, return empty.
-        let items: Vec<ResourceResponse> = vec![];
-        Response::ok(ResourceListResponse { items, ..Default::default() })
+        request: ServiceRequest<'_, ServerManagementListCleanupHistoryRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ServerManagementListCleanupHistoryResponse> + Send + use<'a>,
+    > {
+        let executions = self
+            .cleanup
+            .history(request.server_id)
+            .await
+            .map_err(map_db_error)?
+            .into_iter()
+            .map(|dto| execution_to_proto!(dto))
+            .collect();
+        Response::ok(ServerManagementListCleanupHistoryResponse {
+            executions,
+            ..Default::default()
+        })
     }
 
     #[permission(Server, CanCreate)]
     async fn upgrade<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let result = self.lifecycle.upgrade(request.id).await.map_err(map_db_error)?;
-        let payload = serde_json::to_string(&result).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "upgrade".into(),
-            payload: Some(payload),
+        request: ServiceRequest<'_, ServerManagementUpgradeRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ServerManagementUpgradeResponse> + Send + use<'a>>
+    {
+        let result = self
+            .lifecycle
+            .upgrade(request.id)
+            .await
+            .map_err(map_db_error)?;
+        Response::ok(ServerManagementUpgradeResponse {
+            result: ::buffa::MessageField::some(action_result_to_proto!(result)),
             ..Default::default()
         })
     }
@@ -157,14 +266,20 @@ impl ServerManagementService for ServerManagementController {
     async fn backup<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let result = self.lifecycle.backup(request.id).await.map_err(map_db_error)?;
-        let payload = serde_json::to_string(&result).unwrap_or_default();
-        Response::ok(OperationResult {
-            success: true,
-            operation: "server_backup".into(),
-            payload: Some(payload),
+        request: ServiceRequest<'_, ServerManagementBackupRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ServerManagementBackupResponse> + Send + use<'a>>
+    {
+        let backup = self
+            .lifecycle
+            .backup(request.id)
+            .await
+            .map_err(map_db_error)?;
+        Response::ok(ServerManagementBackupResponse {
+            backup: ::buffa::MessageField::some(ServerBackup {
+                remote_path: backup.remote_path,
+                created_at: backup.created_at,
+                ..Default::default()
+            }),
             ..Default::default()
         })
     }
@@ -173,14 +288,17 @@ impl ServerManagementService for ServerManagementController {
     async fn diagnostics<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let result = self.lifecycle.diagnostics(request.id).await.map_err(map_db_error)?;
-        let payload = serde_json::to_string(&result).unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: request.id,
-            kind: "server_diagnostics".into(),
-            payload,
+        request: ServiceRequest<'_, ServerManagementDiagnosticsRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ServerManagementDiagnosticsResponse> + Send + use<'a>,
+    > {
+        let result = self
+            .lifecycle
+            .diagnostics(request.id)
+            .await
+            .map_err(map_db_error)?;
+        Response::ok(ServerManagementDiagnosticsResponse {
+            result: ::buffa::MessageField::some(action_result_to_proto!(result)),
             ..Default::default()
         })
     }

@@ -13,11 +13,7 @@ import {
 import {formatApiError} from '#/api/utils';
 import {type ServiceKind, DB_KINDS} from './constants';
 
-/**
- * State + submit orchestration for the create-service page: picks the service
- * kind, gathers name/server/db fields, and routes to the matching create
- * mutation, then navigates to the new resource's detail page.
- */
+/** State + submit orchestration for the create-service page: picks the service kind, gathers name/server/db fields, and routes to the matching create mutation, then navigates to the new resource's detail page. */
 export function useCreateService(args: {
 	projectId: number;
 	envParam?: number;
@@ -40,6 +36,9 @@ export function useCreateService(args: {
 	const [dbUser, setDbUser] = useState('');
 	const [dbPassword, setDbPassword] = useState('');
 	const [dockerImage, setDockerImage] = useState('postgres:17');
+	// Templates open as a gallery side panel on the current page — never a
+	// navigation to /templates.
+	const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
 
 	const {data: project} = useProjectGet(BigInt(projectId));
 	const {data: rawEnvs} = useEnvironmentListByProject(BigInt(projectId));
@@ -87,9 +86,7 @@ export function useCreateService(args: {
 
 	const pick = (kind: ServiceKind) => {
 		if (kind === 'template') {
-			toast.info(
-				'Template gallery is coming soon — try Compose Stack meanwhile.',
-			);
+			setTemplateGalleryOpen(true);
 			return;
 		}
 		setChosen(kind);
@@ -185,5 +182,7 @@ export function useCreateService(args: {
 		selectedEnvId,
 		pick,
 		handleSubmit,
+		templateGalleryOpen,
+		setTemplateGalleryOpen,
 	};
 }

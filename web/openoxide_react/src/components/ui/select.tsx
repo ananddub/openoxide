@@ -6,16 +6,12 @@ import {ChevronDownIcon, CheckIcon, ChevronUpIcon} from 'lucide-react';
 
 const SelectPrimitiveRoot = SelectPrimitive.Root;
 
-/**
- * Wraps Base UI's Select.Root and auto-derives the `items` value→label map
- * from the rendered `<SelectItem>` descendants. Base UI's `<Select.Value>`
- * otherwise prints the raw value (a numeric id), which is the "shows 3
- * instead of the name" bug. Callers that pass their own `items` win.
- */
-function Select<
-	Value,
-	Multiple extends boolean | undefined = false,
->({children, items, ...props}: SelectPrimitive.Root.Props<Value, Multiple>) {
+/** Wraps Base UI's Select.Root and auto-derives the `items` value→label map from the rendered `<SelectItem>` descendants. Base UI's `<Select.Value>` otherwise prints the raw value (a numeric id), which is the "shows 3 instead of the name" bug. Callers that pass their own `items` win. */
+function Select<Value, Multiple extends boolean | undefined = false>({
+	children,
+	items,
+	...props
+}: SelectPrimitive.Root.Props<Value, Multiple>) {
 	type Items = SelectPrimitive.Root.Props<Value, Multiple>['items'];
 	const derivedItems = React.useMemo<Items>(() => {
 		if (items !== undefined) return items;

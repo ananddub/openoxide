@@ -49,12 +49,7 @@ export const Route = createFileRoute('/_app/destinations')({
 
 const VIEW_STORAGE_KEY = 'destinations-view';
 
-/**
- * S3 Destinations — the SSH Keys / Projects-page grammar: a section title
- * (with the New button on its right), then a toolbar (search + provider
- * filter + grid/list toggle) and cards or one bordered list card below;
- * create/edit opens a Geist sheet, delete a quiet AlertDialog. No side rail.
- */
+/** S3 Destinations — the SSH Keys / Projects-page grammar: a section title (with the New button on its right), then a toolbar (search + provider filter + grid/list toggle) and cards or one bordered list card below; create/edit opens a Geist sheet, delete a quiet AlertDialog. No side rail. */
 function DestinationsPage() {
 	const [search, setSearch] = useState('');
 	const [providerFilter, setProviderFilter] =
@@ -295,7 +290,7 @@ function DestinationsPage() {
 							Cancel
 						</AlertDialogCancel>
 						<AlertDialogAction
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							className="text-destructive-foreground bg-destructive hover:bg-destructive/90"
 							onClick={e => {
 								e.preventDefault();
 								void confirmDelete();

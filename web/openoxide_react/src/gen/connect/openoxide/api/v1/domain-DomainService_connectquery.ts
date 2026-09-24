@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/domain.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {DomainService} from './domain_pb';
+import { DomainService } from "./domain_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.DomainService.ListDomains
@@ -13,6 +13,16 @@ export const listDomains = DomainService.method.listDomains;
  * @generated from rpc openoxide.api.v1.DomainService.GetDomain
  */
 export const getDomain = DomainService.method.getDomain;
+
+/**
+ * @generated from rpc openoxide.api.v1.DomainService.ListApplicationDomains
+ */
+export const listApplicationDomains = DomainService.method.listApplicationDomains;
+
+/**
+ * @generated from rpc openoxide.api.v1.DomainService.ListComposeDomains
+ */
+export const listComposeDomains = DomainService.method.listComposeDomains;
 
 /**
  * @generated from rpc openoxide.api.v1.DomainService.CreateDomain
@@ -28,13 +38,3 @@ export const updateDomain = DomainService.method.updateDomain;
  * @generated from rpc openoxide.api.v1.DomainService.DeleteDomain
  */
 export const deleteDomain = DomainService.method.deleteDomain;
-
-/**
- * @generated from rpc openoxide.api.v1.DomainService.AttachDomain
- */
-export const attachDomain = DomainService.method.attachDomain;
-
-/**
- * @generated from rpc openoxide.api.v1.DomainService.DetachDomain
- */
-export const detachDomain = DomainService.method.detachDomain;

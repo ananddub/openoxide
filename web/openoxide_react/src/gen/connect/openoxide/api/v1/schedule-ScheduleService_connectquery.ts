@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/schedule.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {ScheduleService} from './schedule_pb';
+import { ScheduleService } from "./schedule_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.ScheduleService.ListSchedules
@@ -43,3 +43,58 @@ export const pauseSchedule = ScheduleService.method.pauseSchedule;
  * @generated from rpc openoxide.api.v1.ScheduleService.ResumeSchedule
  */
 export const resumeSchedule = ScheduleService.method.resumeSchedule;
+
+/**
+ * @generated from rpc openoxide.api.v1.ScheduleService.ListApplicationSchedules
+ */
+export const listApplicationSchedules = ScheduleService.method.listApplicationSchedules;
+
+/**
+ * @generated from rpc openoxide.api.v1.ScheduleService.ListComposeSchedules
+ */
+export const listComposeSchedules = ScheduleService.method.listComposeSchedules;
+
+/**
+ * @generated from rpc openoxide.api.v1.ScheduleService.ListDatabaseSchedules
+ */
+export const listDatabaseSchedules = ScheduleService.method.listDatabaseSchedules;
+
+/**
+ * @generated from rpc openoxide.api.v1.ScheduleService.ListServerSchedules
+ */
+export const listServerSchedules = ScheduleService.method.listServerSchedules;
+
+/**
+ * @generated from rpc openoxide.api.v1.ScheduleService.ListOrganizationSchedules
+ */
+export const listOrganizationSchedules = ScheduleService.method.listOrganizationSchedules;
+
+/**
+ * @generated from rpc openoxide.api.v1.ScheduleService.TriggerSchedule
+ */
+export const triggerSchedule = ScheduleService.method.triggerSchedule;
+
+/**
+ * @generated from rpc openoxide.api.v1.ScheduleService.GetRuntimePolicy
+ */
+export const getRuntimePolicy = ScheduleService.method.getRuntimePolicy;
+
+/**
+ * @generated from rpc openoxide.api.v1.ScheduleService.UpdateRuntimePolicy
+ */
+export const updateRuntimePolicy = ScheduleService.method.updateRuntimePolicy;
+
+/**
+ * @generated from rpc openoxide.api.v1.ScheduleService.ListExecutions
+ */
+export const listExecutions = ScheduleService.method.listExecutions;
+
+/**
+ * @generated from rpc openoxide.api.v1.ScheduleService.GetLogs
+ */
+export const getLogs = ScheduleService.method.getLogs;
+
+/**
+ * @generated from rpc openoxide.api.v1.ScheduleService.GetExecutionLogs
+ */
+export const getExecutionLogs = ScheduleService.method.getExecutionLogs;

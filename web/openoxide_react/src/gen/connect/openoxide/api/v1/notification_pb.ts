@@ -2,77 +2,1623 @@
 // @generated from file openoxide/api/v1/notification.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type {GenFile, GenService} from '@bufbuild/protobuf/codegenv2';
-import {fileDesc, serviceDesc} from '@bufbuild/protobuf/codegenv2';
-import type {
-	EmptySchema,
-	OperationResultSchema,
-	ResourceListResponseSchema,
-	ResourceQuerySchema,
-	ResourceRequestSchema,
-	ResourceResponseSchema,
-} from './common_pb';
-import {file_openoxide_api_v1_common} from './common_pb';
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { EmptySchema } from "./common_pb";
+import { file_openoxide_api_v1_common } from "./common_pb";
+import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file openoxide/api/v1/notification.proto.
  */
-export const file_openoxide_api_v1_notification: GenFile /*@__PURE__*/ =
-	fileDesc(
-		'CiNvcGVub3hpZGUvYXBpL3YxL25vdGlmaWNhdGlvbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MTKzBAoTTm90aWZpY2F0aW9uU2VydmljZRJcChFMaXN0Tm90aWZpY2F0aW9ucxIfLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VRdWVyeRomLm9wZW5veGlkZS5hcGkudjEuUmVzb3VyY2VMaXN0UmVzcG9uc2USWAoPR2V0Tm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWwoSQ3JlYXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USWwoSVXBkYXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVzcG9uc2USUAoSRGVsZXRlTm90aWZpY2F0aW9uEiEub3Blbm94aWRlLmFwaS52MS5SZXNvdXJjZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElgKEFRlc3ROb3RpZmljYXRpb24SIS5vcGVub3hpZGUuYXBpLnYxLlJlc291cmNlUmVxdWVzdBohLm9wZW5veGlkZS5hcGkudjEuT3BlcmF0aW9uUmVzdWx0YgZwcm90bzM',
-		[file_openoxide_api_v1_common],
-	);
+export const file_openoxide_api_v1_notification: GenFile = /*@__PURE__*/
+  fileDesc("CiNvcGVub3hpZGUvYXBpL3YxL25vdGlmaWNhdGlvbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MSK+AwoMTm90aWZpY2F0aW9uEgoKAmlkGAEgASgDEgwKBG5hbWUYAiABKAkSRQoRbm90aWZpY2F0aW9uX3R5cGUYAyABKA4yKi5vcGVub3hpZGUuYXBpLnYxLk5vdGlmaWNhdGlvblByb3ZpZGVyVHlwZRIVCg1vbl9hcHBfZGVwbG95GAQgASgIEhoKEm9uX2FwcF9idWlsZF9lcnJvchgFIAEoCBIaChJvbl9kYXRhYmFzZV9iYWNrdXAYBiABKAgSGAoQb25fdm9sdW1lX2JhY2t1cBgHIAEoCBIYChBvbl9wYW5lbF9yZXN0YXJ0GAggASgIEhkKEW9uX2RvY2tlcl9jbGVhbnVwGAkgASgIEhsKE29uX3NlcnZlcl90aHJlc2hvbGQYCiABKAgSFwoPb25fcGFuZWxfYmFja3VwGAsgASgIEhsKE29uX3NjaGVkdWxlX3N1Y2Nlc3MYDCABKAgSGwoTb25fc2NoZWR1bGVfZmFpbHVyZRgNIAEoCBIXCg9vcmdhbml6YXRpb25faWQYDiABKAMSEgoKY3JlYXRlZF9hdBgPIAEoAxISCgp1cGRhdGVkX2F0GBAgASgDIqMCChtOb3RpZmljYXRpb25EZWxpdmVyeUF0dGVtcHQSCgoCaWQYASABKAMSFwoPbm90aWZpY2F0aW9uX2lkGAIgASgDEhcKD29yZ2FuaXphdGlvbl9pZBgDIAEoAxIUCgx0cmlnZ2VyX25hbWUYBCABKAkSFgoOY29ycmVsYXRpb25faWQYBSABKAkSDgoGc3RhdHVzGAYgASgJEg8KB2F0dGVtcHQYByABKAMSDQoFdGl0bGUYCCABKAkSDAoEYm9keRgJIAEoCRISCgVlcnJvchgKIAEoCUgAiAEBEhIKCmNyZWF0ZWRfYXQYCyABKAMSGAoLZmluaXNoZWRfYXQYDCABKANIAYgBAUIICgZfZXJyb3JCDgoMX2ZpbmlzaGVkX2F0Ir8BChNOb3RpZmljYXRpb25CaW5kaW5nEgoKAmlkGAEgASgDEhcKD25vdGlmaWNhdGlvbl9pZBgCIAEoAxIXCg9vcmdhbml6YXRpb25faWQYAyABKAMSQQoNcmVzb3VyY2VfdHlwZRgEIAEoDjIqLm9wZW5veGlkZS5hcGkudjEuTm90aWZpY2F0aW9uUmVzb3VyY2VUeXBlEhMKC3Jlc291cmNlX2lkGAUgASgDEhIKCmNyZWF0ZWRfYXQYBiABKAMiWQoXTm90aWZpY2F0aW9uU2xhY2tDb25maWcSHAoLd2ViaG9va191cmwYASABKAlCB7pIBHICEAESFAoHY2hhbm5lbBgCIAEoCUgAiAEBQgoKCF9jaGFubmVsIogBChpOb3RpZmljYXRpb25UZWxlZ3JhbUNvbmZpZxIaCglib3RfdG9rZW4YASABKAlCB7pIBHICEAESGAoHY2hhdF9pZBgCIAEoCUIHukgEcgIQARIeChFtZXNzYWdlX3RocmVhZF9pZBgDIAEoCUgAiAEBQhQKEl9tZXNzYWdlX3RocmVhZF9pZCJNChlOb3RpZmljYXRpb25EaXNjb3JkQ29uZmlnEhwKC3dlYmhvb2tfdXJsGAEgASgJQge6SARyAhABEhIKCmRlY29yYXRpb24YAiABKAgitgEKF05vdGlmaWNhdGlvbkVtYWlsQ29uZmlnEhwKC3NtdHBfc2VydmVyGAEgASgJQge6SARyAhABEhEKCXNtdHBfcG9ydBgCIAEoAxIZCgh1c2VybmFtZRgDIAEoCUIHukgEcgIQARIQCghwYXNzd29yZBgEIAEoCRIdCgxmcm9tX2FkZHJlc3MYBSABKAlCB7pIBHICEAESHgoMdG9fYWRkcmVzc2VzGAYgAygJQgi6SAWSAQIIASJzChhOb3RpZmljYXRpb25SZXNlbmRDb25maWcSGAoHYXBpX2tleRgBIAEoCUIHukgEcgIQARIdCgxmcm9tX2FkZHJlc3MYAiABKAlCB7pIBHICEAESHgoMdG9fYWRkcmVzc2VzGAMgAygJQgi6SAWSAQIIASJ5ChhOb3RpZmljYXRpb25Hb3RpZnlDb25maWcSGwoKc2VydmVyX3VybBgBIAEoCUIHukgEcgIQARIaCglhcHBfdG9rZW4YAiABKAlCB7pIBHICEAESEAoIcHJpb3JpdHkYAyABKAMSEgoKZGVjb3JhdGlvbhgEIAEoCCKLAQoWTm90aWZpY2F0aW9uTnRmeUNvbmZpZxIbCgpzZXJ2ZXJfdXJsGAEgASgJQge6SARyAhABEhYKBXRvcGljGAIgASgJQge6SARyAhABEhkKDGFjY2Vzc190b2tlbhgDIAEoCUgAiAEBEhAKCHByaW9yaXR5GAQgASgDQg8KDV9hY2Nlc3NfdG9rZW4iggEKHE5vdGlmaWNhdGlvbk1hdHRlcm1vc3RDb25maWcSHAoLd2ViaG9va191cmwYASABKAlCB7pIBHICEAESFAoHY2hhbm5lbBgCIAEoCUgAiAEBEhUKCHVzZXJuYW1lGAMgASgJSAGIAQFCCgoIX2NoYW5uZWxCCwoJX3VzZXJuYW1lIlcKGE5vdGlmaWNhdGlvbkN1c3RvbUNvbmZpZxIZCghlbmRwb2ludBgBIAEoCUIHukgEcgIQARIUCgdoZWFkZXJzGAIgASgJSACIAQFCCgoIX2hlYWRlcnMiPAocTm90aWZpY2F0aW9uV2ViaG9va1VybENvbmZpZxIcCgt3ZWJob29rX3VybBgBIAEoCUIHukgEcgIQASKjAQoaTm90aWZpY2F0aW9uUHVzaG92ZXJDb25maWcSGQoIdXNlcl9rZXkYASABKAlCB7pIBHICEAESGgoJYXBpX3Rva2VuGAIgASgJQge6SARyAhABEhAKCHByaW9yaXR5GAMgASgDEhIKBXJldHJ5GAQgASgDSACIAQESEwoGZXhwaXJlGAUgASgDSAGIAQFCCAoGX3JldHJ5QgkKB19leHBpcmUiVQoYTGlzdE5vdGlmaWNhdGlvbnNSZXF1ZXN0EiUKD29yZ2FuaXphdGlvbl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQhIKEF9vcmdhbml6YXRpb25faWQiUgoZTGlzdE5vdGlmaWNhdGlvbnNSZXNwb25zZRI1Cg1ub3RpZmljYXRpb25zGAEgAygLMh4ub3Blbm94aWRlLmFwaS52MS5Ob3RpZmljYXRpb24iaAoWR2V0Tm90aWZpY2F0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIlCg9vcmdhbml6YXRpb25faWQYAiABKANCB7pIBCICIABIAIgBAUISChBfb3JnYW5pemF0aW9uX2lkIk8KF0dldE5vdGlmaWNhdGlvblJlc3BvbnNlEjQKDG5vdGlmaWNhdGlvbhgBIAEoCzIeLm9wZW5veGlkZS5hcGkudjEuTm90aWZpY2F0aW9uIugIChlDcmVhdGVOb3RpZmljYXRpb25SZXF1ZXN0EhgKBG5hbWUYASABKAlCCrpIB3IFEAEY/wESIAoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAAEhUKDW9uX2FwcF9kZXBsb3kYAyABKAgSGgoSb25fYXBwX2J1aWxkX2Vycm9yGAQgASgIEhoKEm9uX2RhdGFiYXNlX2JhY2t1cBgFIAEoCBIYChBvbl92b2x1bWVfYmFja3VwGAYgASgIEhgKEG9uX3BhbmVsX3Jlc3RhcnQYByABKAgSGQoRb25fZG9ja2VyX2NsZWFudXAYCCABKAgSGwoTb25fc2VydmVyX3RocmVzaG9sZBgJIAEoCBIXCg9vbl9wYW5lbF9iYWNrdXAYCiABKAgSGwoTb25fc2NoZWR1bGVfc3VjY2VzcxgLIAEoCBIbChNvbl9zY2hlZHVsZV9mYWlsdXJlGAwgASgIEjoKBXNsYWNrGA0gASgLMikub3Blbm94aWRlLmFwaS52MS5Ob3RpZmljYXRpb25TbGFja0NvbmZpZ0gAEkAKCHRlbGVncmFtGA4gASgLMiwub3Blbm94aWRlLmFwaS52MS5Ob3RpZmljYXRpb25UZWxlZ3JhbUNvbmZpZ0gAEj4KB2Rpc2NvcmQYDyABKAsyKy5vcGVub3hpZGUuYXBpLnYxLk5vdGlmaWNhdGlvbkRpc2NvcmRDb25maWdIABI6CgVlbWFpbBgQIAEoCzIpLm9wZW5veGlkZS5hcGkudjEuTm90aWZpY2F0aW9uRW1haWxDb25maWdIABI8CgZyZXNlbmQYESABKAsyKi5vcGVub3hpZGUuYXBpLnYxLk5vdGlmaWNhdGlvblJlc2VuZENvbmZpZ0gAEjwKBmdvdGlmeRgSIAEoCzIqLm9wZW5veGlkZS5hcGkudjEuTm90aWZpY2F0aW9uR290aWZ5Q29uZmlnSAASOAoEbnRmeRgTIAEoCzIoLm9wZW5veGlkZS5hcGkudjEuTm90aWZpY2F0aW9uTnRmeUNvbmZpZ0gAEkQKCm1hdHRlcm1vc3QYFCABKAsyLi5vcGVub3hpZGUuYXBpLnYxLk5vdGlmaWNhdGlvbk1hdHRlcm1vc3RDb25maWdIABI8CgZjdXN0b20YFSABKAsyKi5vcGVub3hpZGUuYXBpLnYxLk5vdGlmaWNhdGlvbkN1c3RvbUNvbmZpZ0gAEj4KBGxhcmsYFiABKAsyLi5vcGVub3hpZGUuYXBpLnYxLk5vdGlmaWNhdGlvbldlYmhvb2tVcmxDb25maWdIABJACghwdXNob3ZlchgXIAEoCzIsLm9wZW5veGlkZS5hcGkudjEuTm90aWZpY2F0aW9uUHVzaG92ZXJDb25maWdIABI/CgV0ZWFtcxgYIAEoCzIuLm9wZW5veGlkZS5hcGkudjEuTm90aWZpY2F0aW9uV2ViaG9va1VybENvbmZpZ0gAQgoKCHByb3ZpZGVyIlIKGkNyZWF0ZU5vdGlmaWNhdGlvblJlc3BvbnNlEjQKDG5vdGlmaWNhdGlvbhgBIAEoCzIeLm9wZW5veGlkZS5hcGkudjEuTm90aWZpY2F0aW9uIqUMChlVcGRhdGVOb3RpZmljYXRpb25SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEiUKD29yZ2FuaXphdGlvbl9pZBgCIAEoA0IHukgEIgIgAEgAiAEBEhsKBG5hbWUYAyABKAlCCLpIBXIDGP8BSAGIAQESGgoNb25fYXBwX2RlcGxveRgEIAEoCEgCiAEBEh8KEm9uX2FwcF9idWlsZF9lcnJvchgFIAEoCEgDiAEBEh8KEm9uX2RhdGFiYXNlX2JhY2t1cBgGIAEoCEgEiAEBEh0KEG9uX3ZvbHVtZV9iYWNrdXAYByABKAhIBYgBARIdChBvbl9wYW5lbF9yZXN0YXJ0GAggASgISAaIAQESHgoRb25fZG9ja2VyX2NsZWFudXAYCSABKAhIB4gBARIgChNvbl9zZXJ2ZXJfdGhyZXNob2xkGAogASgISAiIAQESHAoPb25fcGFuZWxfYmFja3VwGAsgASgISAmIAQESIAoTb25fc2NoZWR1bGVfc3VjY2VzcxgMIAEoCEgKiAEBEiAKE29uX3NjaGVkdWxlX2ZhaWx1cmUYDSABKAhIC4gBARIYCgt3ZWJob29rX3VybBgOIAEoCUgMiAEBEhQKB2NoYW5uZWwYDyABKAlIDYgBARIVCgh1c2VybmFtZRgQIAEoCUgOiAEBEhcKCmRlY29yYXRpb24YESABKANID4gBARIWCglib3RfdG9rZW4YEiABKAlIEIgBARIUCgdjaGF0X2lkGBMgASgJSBGIAQESHgoRbWVzc2FnZV90aHJlYWRfaWQYFCABKAlIEogBARIYCgtzbXRwX3NlcnZlchgVIAEoCUgTiAEBEhYKCXNtdHBfcG9ydBgWIAEoA0gUiAEBEhUKCHBhc3N3b3JkGBcgASgJSBWIAQESGQoMZnJvbV9hZGRyZXNzGBggASgJSBaIAQESFAoMdG9fYWRkcmVzc2VzGBkgAygJEhQKB2FwaV9rZXkYGiABKAlIF4gBARIXCgpzZXJ2ZXJfdXJsGBsgASgJSBiIAQESFgoJYXBwX3Rva2VuGBwgASgJSBmIAQESFQoIcHJpb3JpdHkYHSABKANIGogBARISCgV0b3BpYxgeIAEoCUgbiAEBEhkKDGFjY2Vzc190b2tlbhgfIAEoCUgciAEBEhUKCGVuZHBvaW50GCAgASgJSB2IAQESFAoHaGVhZGVycxghIAEoCUgeiAEBEhUKCHVzZXJfa2V5GCIgASgJSB+IAQESFgoJYXBpX3Rva2VuGCMgASgJSCCIAQESEgoFcmV0cnkYJCABKANIIYgBARITCgZleHBpcmUYJSABKANIIogBAUISChBfb3JnYW5pemF0aW9uX2lkQgcKBV9uYW1lQhAKDl9vbl9hcHBfZGVwbG95QhUKE19vbl9hcHBfYnVpbGRfZXJyb3JCFQoTX29uX2RhdGFiYXNlX2JhY2t1cEITChFfb25fdm9sdW1lX2JhY2t1cEITChFfb25fcGFuZWxfcmVzdGFydEIUChJfb25fZG9ja2VyX2NsZWFudXBCFgoUX29uX3NlcnZlcl90aHJlc2hvbGRCEgoQX29uX3BhbmVsX2JhY2t1cEIWChRfb25fc2NoZWR1bGVfc3VjY2Vzc0IWChRfb25fc2NoZWR1bGVfZmFpbHVyZUIOCgxfd2ViaG9va191cmxCCgoIX2NoYW5uZWxCCwoJX3VzZXJuYW1lQg0KC19kZWNvcmF0aW9uQgwKCl9ib3RfdG9rZW5CCgoIX2NoYXRfaWRCFAoSX21lc3NhZ2VfdGhyZWFkX2lkQg4KDF9zbXRwX3NlcnZlckIMCgpfc210cF9wb3J0QgsKCV9wYXNzd29yZEIPCg1fZnJvbV9hZGRyZXNzQgoKCF9hcGlfa2V5Qg0KC19zZXJ2ZXJfdXJsQgwKCl9hcHBfdG9rZW5CCwoJX3ByaW9yaXR5QggKBl90b3BpY0IPCg1fYWNjZXNzX3Rva2VuQgsKCV9lbmRwb2ludEIKCghfaGVhZGVyc0ILCglfdXNlcl9rZXlCDAoKX2FwaV90b2tlbkIICgZfcmV0cnlCCQoHX2V4cGlyZSJSChpVcGRhdGVOb3RpZmljYXRpb25SZXNwb25zZRI0Cgxub3RpZmljYXRpb24YASABKAsyHi5vcGVub3hpZGUuYXBpLnYxLk5vdGlmaWNhdGlvbiKXCQoaUmVwbGFjZU5vdGlmaWNhdGlvblJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASJQoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAASAGIAQESGAoEbmFtZRgDIAEoCUIKukgHcgUQARj/ARIVCg1vbl9hcHBfZGVwbG95GAQgASgIEhoKEm9uX2FwcF9idWlsZF9lcnJvchgFIAEoCBIaChJvbl9kYXRhYmFzZV9iYWNrdXAYBiABKAgSGAoQb25fdm9sdW1lX2JhY2t1cBgHIAEoCBIYChBvbl9wYW5lbF9yZXN0YXJ0GAggASgIEhkKEW9uX2RvY2tlcl9jbGVhbnVwGAkgASgIEhsKE29uX3NlcnZlcl90aHJlc2hvbGQYCiABKAgSFwoPb25fcGFuZWxfYmFja3VwGAsgASgIEhsKE29uX3NjaGVkdWxlX3N1Y2Nlc3MYDCABKAgSGwoTb25fc2NoZWR1bGVfZmFpbHVyZRgNIAEoCBI6CgVzbGFjaxgOIAEoCzIpLm9wZW5veGlkZS5hcGkudjEuTm90aWZpY2F0aW9uU2xhY2tDb25maWdIABJACgh0ZWxlZ3JhbRgPIAEoCzIsLm9wZW5veGlkZS5hcGkudjEuTm90aWZpY2F0aW9uVGVsZWdyYW1Db25maWdIABI+CgdkaXNjb3JkGBAgASgLMisub3Blbm94aWRlLmFwaS52MS5Ob3RpZmljYXRpb25EaXNjb3JkQ29uZmlnSAASOgoFZW1haWwYESABKAsyKS5vcGVub3hpZGUuYXBpLnYxLk5vdGlmaWNhdGlvbkVtYWlsQ29uZmlnSAASPAoGcmVzZW5kGBIgASgLMioub3Blbm94aWRlLmFwaS52MS5Ob3RpZmljYXRpb25SZXNlbmRDb25maWdIABI8CgZnb3RpZnkYEyABKAsyKi5vcGVub3hpZGUuYXBpLnYxLk5vdGlmaWNhdGlvbkdvdGlmeUNvbmZpZ0gAEjgKBG50ZnkYFCABKAsyKC5vcGVub3hpZGUuYXBpLnYxLk5vdGlmaWNhdGlvbk50ZnlDb25maWdIABJECgptYXR0ZXJtb3N0GBUgASgLMi4ub3Blbm94aWRlLmFwaS52MS5Ob3RpZmljYXRpb25NYXR0ZXJtb3N0Q29uZmlnSAASPAoGY3VzdG9tGBYgASgLMioub3Blbm94aWRlLmFwaS52MS5Ob3RpZmljYXRpb25DdXN0b21Db25maWdIABI+CgRsYXJrGBcgASgLMi4ub3Blbm94aWRlLmFwaS52MS5Ob3RpZmljYXRpb25XZWJob29rVXJsQ29uZmlnSAASQAoIcHVzaG92ZXIYGCABKAsyLC5vcGVub3hpZGUuYXBpLnYxLk5vdGlmaWNhdGlvblB1c2hvdmVyQ29uZmlnSAASPwoFdGVhbXMYGSABKAsyLi5vcGVub3hpZGUuYXBpLnYxLk5vdGlmaWNhdGlvbldlYmhvb2tVcmxDb25maWdIAEIKCghwcm92aWRlckISChBfb3JnYW5pemF0aW9uX2lkIlMKG1JlcGxhY2VOb3RpZmljYXRpb25SZXNwb25zZRI0Cgxub3RpZmljYXRpb24YASABKAsyHi5vcGVub3hpZGUuYXBpLnYxLk5vdGlmaWNhdGlvbiJrChlEZWxldGVOb3RpZmljYXRpb25SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEiUKD29yZ2FuaXphdGlvbl9pZBgCIAEoA0IHukgEIgIgAEgAiAEBQhIKEF9vcmdhbml6YXRpb25faWQiaQoXVGVzdE5vdGlmaWNhdGlvblJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASJQoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCI8ChhUZXN0Tm90aWZpY2F0aW9uUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJImMKJkxpc3ROb3RpZmljYXRpb25EZWxpdmVyeUhpc3RvcnlSZXF1ZXN0EiUKD29yZ2FuaXphdGlvbl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQhIKEF9vcmdhbml6YXRpb25faWQiagonTGlzdE5vdGlmaWNhdGlvbkRlbGl2ZXJ5SGlzdG9yeVJlc3BvbnNlEj8KCGF0dGVtcHRzGAEgAygLMi0ub3Blbm94aWRlLmFwaS52MS5Ob3RpZmljYXRpb25EZWxpdmVyeUF0dGVtcHQi7AEKIENyZWF0ZU5vdGlmaWNhdGlvbkJpbmRpbmdSZXF1ZXN0EiAKD25vdGlmaWNhdGlvbl9pZBgBIAEoA0IHukgEIgIgABJNCg1yZXNvdXJjZV90eXBlGAIgASgOMioub3Blbm94aWRlLmFwaS52MS5Ob3RpZmljYXRpb25SZXNvdXJjZVR5cGVCCrpIB4IBBBABIAASHAoLcmVzb3VyY2VfaWQYAyABKANCB7pIBCICIAASJQoPb3JnYW5pemF0aW9uX2lkGAQgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCIvCiFDcmVhdGVOb3RpZmljYXRpb25CaW5kaW5nUmVzcG9uc2USCgoCaWQYASABKAMiXAofTGlzdE5vdGlmaWNhdGlvbkJpbmRpbmdzUmVxdWVzdBIlCg9vcmdhbml6YXRpb25faWQYASABKANCB7pIBCICIABIAIgBAUISChBfb3JnYW5pemF0aW9uX2lkIlsKIExpc3ROb3RpZmljYXRpb25CaW5kaW5nc1Jlc3BvbnNlEjcKCGJpbmRpbmdzGAEgAygLMiUub3Blbm94aWRlLmFwaS52MS5Ob3RpZmljYXRpb25CaW5kaW5nInIKIERlbGV0ZU5vdGlmaWNhdGlvbkJpbmRpbmdSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEiUKD29yZ2FuaXphdGlvbl9pZBgCIAEoA0IHukgEIgIgAEgAiAEBQhIKEF9vcmdhbml6YXRpb25faWQqnAQKGE5vdGlmaWNhdGlvblByb3ZpZGVyVHlwZRIqCiZOT1RJRklDQVRJT05fUFJPVklERVJfVFlQRV9VTlNQRUNJRklFRBAAEiQKIE5PVElGSUNBVElPTl9QUk9WSURFUl9UWVBFX1NMQUNLEAESJwojTk9USUZJQ0FUSU9OX1BST1ZJREVSX1RZUEVfVEVMRUdSQU0QAhImCiJOT1RJRklDQVRJT05fUFJPVklERVJfVFlQRV9ESVNDT1JEEAMSJAogTk9USUZJQ0FUSU9OX1BST1ZJREVSX1RZUEVfRU1BSUwQBBIlCiFOT1RJRklDQVRJT05fUFJPVklERVJfVFlQRV9SRVNFTkQQBRIlCiFOT1RJRklDQVRJT05fUFJPVklERVJfVFlQRV9HT1RJRlkQBhIjCh9OT1RJRklDQVRJT05fUFJPVklERVJfVFlQRV9OVEZZEAcSKQolTk9USUZJQ0FUSU9OX1BST1ZJREVSX1RZUEVfTUFUVEVSTU9TVBAIEicKI05PVElGSUNBVElPTl9QUk9WSURFUl9UWVBFX1BVU0hPVkVSEAkSJQohTk9USUZJQ0FUSU9OX1BST1ZJREVSX1RZUEVfQ1VTVE9NEAoSIwofTk9USUZJQ0FUSU9OX1BST1ZJREVSX1RZUEVfTEFSSxALEiQKIE5PVElGSUNBVElPTl9QUk9WSURFUl9UWVBFX1RFQU1TEAwq6gEKGE5vdGlmaWNhdGlvblJlc291cmNlVHlwZRIqCiZOT1RJRklDQVRJT05fUkVTT1VSQ0VfVFlQRV9VTlNQRUNJRklFRBAAEiUKIU5PVElGSUNBVElPTl9SRVNPVVJDRV9UWVBFX1NFUlZFUhABEioKJk5PVElGSUNBVElPTl9SRVNPVVJDRV9UWVBFX0FQUExJQ0FUSU9OEAISJgoiTk9USUZJQ0FUSU9OX1JFU09VUkNFX1RZUEVfQ09NUE9TRRADEicKI05PVElGSUNBVElPTl9SRVNPVVJDRV9UWVBFX0RBVEFCQVNFEAQy5AkKE05vdGlmaWNhdGlvblNlcnZpY2USbAoRTGlzdE5vdGlmaWNhdGlvbnMSKi5vcGVub3hpZGUuYXBpLnYxLkxpc3ROb3RpZmljYXRpb25zUmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuTGlzdE5vdGlmaWNhdGlvbnNSZXNwb25zZRJmCg9HZXROb3RpZmljYXRpb24SKC5vcGVub3hpZGUuYXBpLnYxLkdldE5vdGlmaWNhdGlvblJlcXVlc3QaKS5vcGVub3hpZGUuYXBpLnYxLkdldE5vdGlmaWNhdGlvblJlc3BvbnNlEm8KEkNyZWF0ZU5vdGlmaWNhdGlvbhIrLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlTm90aWZpY2F0aW9uUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlTm90aWZpY2F0aW9uUmVzcG9uc2USbwoSVXBkYXRlTm90aWZpY2F0aW9uEisub3Blbm94aWRlLmFwaS52MS5VcGRhdGVOb3RpZmljYXRpb25SZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5VcGRhdGVOb3RpZmljYXRpb25SZXNwb25zZRJyChNSZXBsYWNlTm90aWZpY2F0aW9uEiwub3Blbm94aWRlLmFwaS52MS5SZXBsYWNlTm90aWZpY2F0aW9uUmVxdWVzdBotLm9wZW5veGlkZS5hcGkudjEuUmVwbGFjZU5vdGlmaWNhdGlvblJlc3BvbnNlEloKEkRlbGV0ZU5vdGlmaWNhdGlvbhIrLm9wZW5veGlkZS5hcGkudjEuRGVsZXRlTm90aWZpY2F0aW9uUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSaQoQVGVzdE5vdGlmaWNhdGlvbhIpLm9wZW5veGlkZS5hcGkudjEuVGVzdE5vdGlmaWNhdGlvblJlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLlRlc3ROb3RpZmljYXRpb25SZXNwb25zZRKKAQoTTGlzdERlbGl2ZXJ5SGlzdG9yeRI4Lm9wZW5veGlkZS5hcGkudjEuTGlzdE5vdGlmaWNhdGlvbkRlbGl2ZXJ5SGlzdG9yeVJlcXVlc3QaOS5vcGVub3hpZGUuYXBpLnYxLkxpc3ROb3RpZmljYXRpb25EZWxpdmVyeUhpc3RvcnlSZXNwb25zZRJ4Cg1DcmVhdGVCaW5kaW5nEjIub3Blbm94aWRlLmFwaS52MS5DcmVhdGVOb3RpZmljYXRpb25CaW5kaW5nUmVxdWVzdBozLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlTm90aWZpY2F0aW9uQmluZGluZ1Jlc3BvbnNlEnUKDExpc3RCaW5kaW5ncxIxLm9wZW5veGlkZS5hcGkudjEuTGlzdE5vdGlmaWNhdGlvbkJpbmRpbmdzUmVxdWVzdBoyLm9wZW5veGlkZS5hcGkudjEuTGlzdE5vdGlmaWNhdGlvbkJpbmRpbmdzUmVzcG9uc2USXAoNRGVsZXRlQmluZGluZxIyLm9wZW5veGlkZS5hcGkudjEuRGVsZXRlTm90aWZpY2F0aW9uQmluZGluZ1JlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5YgZwcm90bzM", [file_openoxide_api_v1_common, file_buf_validate_validate]);
 
 /**
+ * Notification rows never echo provider credentials; config is write-only.
+ *
+ * @generated from message openoxide.api.v1.Notification
+ */
+export type Notification = Message<"openoxide.api.v1.Notification"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: openoxide.api.v1.NotificationProviderType notification_type = 3;
+   */
+  notificationType: NotificationProviderType;
+
+  /**
+   * @generated from field: bool on_app_deploy = 4;
+   */
+  onAppDeploy: boolean;
+
+  /**
+   * @generated from field: bool on_app_build_error = 5;
+   */
+  onAppBuildError: boolean;
+
+  /**
+   * @generated from field: bool on_database_backup = 6;
+   */
+  onDatabaseBackup: boolean;
+
+  /**
+   * @generated from field: bool on_volume_backup = 7;
+   */
+  onVolumeBackup: boolean;
+
+  /**
+   * @generated from field: bool on_panel_restart = 8;
+   */
+  onPanelRestart: boolean;
+
+  /**
+   * @generated from field: bool on_docker_cleanup = 9;
+   */
+  onDockerCleanup: boolean;
+
+  /**
+   * @generated from field: bool on_server_threshold = 10;
+   */
+  onServerThreshold: boolean;
+
+  /**
+   * @generated from field: bool on_panel_backup = 11;
+   */
+  onPanelBackup: boolean;
+
+  /**
+   * @generated from field: bool on_schedule_success = 12;
+   */
+  onScheduleSuccess: boolean;
+
+  /**
+   * @generated from field: bool on_schedule_failure = 13;
+   */
+  onScheduleFailure: boolean;
+
+  /**
+   * @generated from field: int64 organization_id = 14;
+   */
+  organizationId: bigint;
+
+  /**
+   * @generated from field: int64 created_at = 15;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: int64 updated_at = 16;
+   */
+  updatedAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.Notification.
+ * Use `create(NotificationSchema)` to create a new message.
+ */
+export const NotificationSchema: GenMessage<Notification> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 0);
+
+/**
+ * @generated from message openoxide.api.v1.NotificationDeliveryAttempt
+ */
+export type NotificationDeliveryAttempt = Message<"openoxide.api.v1.NotificationDeliveryAttempt"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: int64 notification_id = 2;
+   */
+  notificationId: bigint;
+
+  /**
+   * @generated from field: int64 organization_id = 3;
+   */
+  organizationId: bigint;
+
+  /**
+   * @generated from field: string trigger_name = 4;
+   */
+  triggerName: string;
+
+  /**
+   * @generated from field: string correlation_id = 5;
+   */
+  correlationId: string;
+
+  /**
+   * Delivery lifecycle status as recorded by the dispatcher (free-form string).
+   *
+   * @generated from field: string status = 6;
+   */
+  status: string;
+
+  /**
+   * @generated from field: int64 attempt = 7;
+   */
+  attempt: bigint;
+
+  /**
+   * @generated from field: string title = 8;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string body = 9;
+   */
+  body: string;
+
+  /**
+   * @generated from field: optional string error = 10;
+   */
+  error?: string | undefined;
+
+  /**
+   * @generated from field: int64 created_at = 11;
+   */
+  createdAt: bigint;
+
+  /**
+   * @generated from field: optional int64 finished_at = 12;
+   */
+  finishedAt?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.NotificationDeliveryAttempt.
+ * Use `create(NotificationDeliveryAttemptSchema)` to create a new message.
+ */
+export const NotificationDeliveryAttemptSchema: GenMessage<NotificationDeliveryAttempt> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 1);
+
+/**
+ * @generated from message openoxide.api.v1.NotificationBinding
+ */
+export type NotificationBinding = Message<"openoxide.api.v1.NotificationBinding"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: int64 notification_id = 2;
+   */
+  notificationId: bigint;
+
+  /**
+   * @generated from field: int64 organization_id = 3;
+   */
+  organizationId: bigint;
+
+  /**
+   * @generated from field: openoxide.api.v1.NotificationResourceType resource_type = 4;
+   */
+  resourceType: NotificationResourceType;
+
+  /**
+   * @generated from field: int64 resource_id = 5;
+   */
+  resourceId: bigint;
+
+  /**
+   * @generated from field: int64 created_at = 6;
+   */
+  createdAt: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.NotificationBinding.
+ * Use `create(NotificationBindingSchema)` to create a new message.
+ */
+export const NotificationBindingSchema: GenMessage<NotificationBinding> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 2);
+
+/**
+ * @generated from message openoxide.api.v1.NotificationSlackConfig
+ */
+export type NotificationSlackConfig = Message<"openoxide.api.v1.NotificationSlackConfig"> & {
+  /**
+   * Opaque Slack incoming-webhook URL embedding its secret token.
+   *
+   * @generated from field: string webhook_url = 1;
+   */
+  webhookUrl: string;
+
+  /**
+   * @generated from field: optional string channel = 2;
+   */
+  channel?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.NotificationSlackConfig.
+ * Use `create(NotificationSlackConfigSchema)` to create a new message.
+ */
+export const NotificationSlackConfigSchema: GenMessage<NotificationSlackConfig> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 3);
+
+/**
+ * @generated from message openoxide.api.v1.NotificationTelegramConfig
+ */
+export type NotificationTelegramConfig = Message<"openoxide.api.v1.NotificationTelegramConfig"> & {
+  /**
+   * Opaque Telegram bot token (secret).
+   *
+   * @generated from field: string bot_token = 1;
+   */
+  botToken: string;
+
+  /**
+   * @generated from field: string chat_id = 2;
+   */
+  chatId: string;
+
+  /**
+   * @generated from field: optional string message_thread_id = 3;
+   */
+  messageThreadId?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.NotificationTelegramConfig.
+ * Use `create(NotificationTelegramConfigSchema)` to create a new message.
+ */
+export const NotificationTelegramConfigSchema: GenMessage<NotificationTelegramConfig> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 4);
+
+/**
+ * @generated from message openoxide.api.v1.NotificationDiscordConfig
+ */
+export type NotificationDiscordConfig = Message<"openoxide.api.v1.NotificationDiscordConfig"> & {
+  /**
+   * Opaque Discord webhook URL embedding its secret token.
+   *
+   * @generated from field: string webhook_url = 1;
+   */
+  webhookUrl: string;
+
+  /**
+   * @generated from field: bool decoration = 2;
+   */
+  decoration: boolean;
+};
+
+/**
+ * Describes the message openoxide.api.v1.NotificationDiscordConfig.
+ * Use `create(NotificationDiscordConfigSchema)` to create a new message.
+ */
+export const NotificationDiscordConfigSchema: GenMessage<NotificationDiscordConfig> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 5);
+
+/**
+ * @generated from message openoxide.api.v1.NotificationEmailConfig
+ */
+export type NotificationEmailConfig = Message<"openoxide.api.v1.NotificationEmailConfig"> & {
+  /**
+   * @generated from field: string smtp_server = 1;
+   */
+  smtpServer: string;
+
+  /**
+   * @generated from field: int64 smtp_port = 2;
+   */
+  smtpPort: bigint;
+
+  /**
+   * @generated from field: string username = 3;
+   */
+  username: string;
+
+  /**
+   * SMTP account password (secret).
+   *
+   * @generated from field: string password = 4;
+   */
+  password: string;
+
+  /**
+   * @generated from field: string from_address = 5;
+   */
+  fromAddress: string;
+
+  /**
+   * @generated from field: repeated string to_addresses = 6;
+   */
+  toAddresses: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.NotificationEmailConfig.
+ * Use `create(NotificationEmailConfigSchema)` to create a new message.
+ */
+export const NotificationEmailConfigSchema: GenMessage<NotificationEmailConfig> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 6);
+
+/**
+ * @generated from message openoxide.api.v1.NotificationResendConfig
+ */
+export type NotificationResendConfig = Message<"openoxide.api.v1.NotificationResendConfig"> & {
+  /**
+   * Resend API key (secret).
+   *
+   * @generated from field: string api_key = 1;
+   */
+  apiKey: string;
+
+  /**
+   * @generated from field: string from_address = 2;
+   */
+  fromAddress: string;
+
+  /**
+   * @generated from field: repeated string to_addresses = 3;
+   */
+  toAddresses: string[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.NotificationResendConfig.
+ * Use `create(NotificationResendConfigSchema)` to create a new message.
+ */
+export const NotificationResendConfigSchema: GenMessage<NotificationResendConfig> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 7);
+
+/**
+ * @generated from message openoxide.api.v1.NotificationGotifyConfig
+ */
+export type NotificationGotifyConfig = Message<"openoxide.api.v1.NotificationGotifyConfig"> & {
+  /**
+   * @generated from field: string server_url = 1;
+   */
+  serverUrl: string;
+
+  /**
+   * Gotify application token (secret).
+   *
+   * @generated from field: string app_token = 2;
+   */
+  appToken: string;
+
+  /**
+   * @generated from field: int64 priority = 3;
+   */
+  priority: bigint;
+
+  /**
+   * @generated from field: bool decoration = 4;
+   */
+  decoration: boolean;
+};
+
+/**
+ * Describes the message openoxide.api.v1.NotificationGotifyConfig.
+ * Use `create(NotificationGotifyConfigSchema)` to create a new message.
+ */
+export const NotificationGotifyConfigSchema: GenMessage<NotificationGotifyConfig> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 8);
+
+/**
+ * @generated from message openoxide.api.v1.NotificationNtfyConfig
+ */
+export type NotificationNtfyConfig = Message<"openoxide.api.v1.NotificationNtfyConfig"> & {
+  /**
+   * @generated from field: string server_url = 1;
+   */
+  serverUrl: string;
+
+  /**
+   * @generated from field: string topic = 2;
+   */
+  topic: string;
+
+  /**
+   * Optional ntfy access token (secret).
+   *
+   * @generated from field: optional string access_token = 3;
+   */
+  accessToken?: string | undefined;
+
+  /**
+   * @generated from field: int64 priority = 4;
+   */
+  priority: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.NotificationNtfyConfig.
+ * Use `create(NotificationNtfyConfigSchema)` to create a new message.
+ */
+export const NotificationNtfyConfigSchema: GenMessage<NotificationNtfyConfig> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 9);
+
+/**
+ * @generated from message openoxide.api.v1.NotificationMattermostConfig
+ */
+export type NotificationMattermostConfig = Message<"openoxide.api.v1.NotificationMattermostConfig"> & {
+  /**
+   * Opaque Mattermost webhook URL embedding its secret token.
+   *
+   * @generated from field: string webhook_url = 1;
+   */
+  webhookUrl: string;
+
+  /**
+   * @generated from field: optional string channel = 2;
+   */
+  channel?: string | undefined;
+
+  /**
+   * @generated from field: optional string username = 3;
+   */
+  username?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.NotificationMattermostConfig.
+ * Use `create(NotificationMattermostConfigSchema)` to create a new message.
+ */
+export const NotificationMattermostConfigSchema: GenMessage<NotificationMattermostConfig> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 10);
+
+/**
+ * @generated from message openoxide.api.v1.NotificationCustomConfig
+ */
+export type NotificationCustomConfig = Message<"openoxide.api.v1.NotificationCustomConfig"> & {
+  /**
+   * @generated from field: string endpoint = 1;
+   */
+  endpoint: string;
+
+  /**
+   * Extra HTTP headers as a JSON object document.
+   *
+   * @generated from field: optional string headers = 2;
+   */
+  headers?: string | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.NotificationCustomConfig.
+ * Use `create(NotificationCustomConfigSchema)` to create a new message.
+ */
+export const NotificationCustomConfigSchema: GenMessage<NotificationCustomConfig> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 11);
+
+/**
+ * Shared by the LARK and TEAMS webhook-url providers.
+ *
+ * @generated from message openoxide.api.v1.NotificationWebhookUrlConfig
+ */
+export type NotificationWebhookUrlConfig = Message<"openoxide.api.v1.NotificationWebhookUrlConfig"> & {
+  /**
+   * Opaque provider webhook URL embedding its secret token.
+   *
+   * @generated from field: string webhook_url = 1;
+   */
+  webhookUrl: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.NotificationWebhookUrlConfig.
+ * Use `create(NotificationWebhookUrlConfigSchema)` to create a new message.
+ */
+export const NotificationWebhookUrlConfigSchema: GenMessage<NotificationWebhookUrlConfig> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 12);
+
+/**
+ * @generated from message openoxide.api.v1.NotificationPushoverConfig
+ */
+export type NotificationPushoverConfig = Message<"openoxide.api.v1.NotificationPushoverConfig"> & {
+  /**
+   * Pushover user key (secret).
+   *
+   * @generated from field: string user_key = 1;
+   */
+  userKey: string;
+
+  /**
+   * Pushover application API token (secret).
+   *
+   * @generated from field: string api_token = 2;
+   */
+  apiToken: string;
+
+  /**
+   * @generated from field: int64 priority = 3;
+   */
+  priority: bigint;
+
+  /**
+   * @generated from field: optional int64 retry = 4;
+   */
+  retry?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 expire = 5;
+   */
+  expire?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.NotificationPushoverConfig.
+ * Use `create(NotificationPushoverConfigSchema)` to create a new message.
+ */
+export const NotificationPushoverConfigSchema: GenMessage<NotificationPushoverConfig> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 13);
+
+/**
+ * @generated from message openoxide.api.v1.ListNotificationsRequest
+ */
+export type ListNotificationsRequest = Message<"openoxide.api.v1.ListNotificationsRequest"> & {
+  /**
+   * @generated from field: optional int64 organization_id = 1;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListNotificationsRequest.
+ * Use `create(ListNotificationsRequestSchema)` to create a new message.
+ */
+export const ListNotificationsRequestSchema: GenMessage<ListNotificationsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 14);
+
+/**
+ * @generated from message openoxide.api.v1.ListNotificationsResponse
+ */
+export type ListNotificationsResponse = Message<"openoxide.api.v1.ListNotificationsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.Notification notifications = 1;
+   */
+  notifications: Notification[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListNotificationsResponse.
+ * Use `create(ListNotificationsResponseSchema)` to create a new message.
+ */
+export const ListNotificationsResponseSchema: GenMessage<ListNotificationsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 15);
+
+/**
+ * @generated from message openoxide.api.v1.GetNotificationRequest
+ */
+export type GetNotificationRequest = Message<"openoxide.api.v1.GetNotificationRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetNotificationRequest.
+ * Use `create(GetNotificationRequestSchema)` to create a new message.
+ */
+export const GetNotificationRequestSchema: GenMessage<GetNotificationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 16);
+
+/**
+ * @generated from message openoxide.api.v1.GetNotificationResponse
+ */
+export type GetNotificationResponse = Message<"openoxide.api.v1.GetNotificationResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Notification notification = 1;
+   */
+  notification?: Notification | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.GetNotificationResponse.
+ * Use `create(GetNotificationResponseSchema)` to create a new message.
+ */
+export const GetNotificationResponseSchema: GenMessage<GetNotificationResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 17);
+
+/**
+ * @generated from message openoxide.api.v1.CreateNotificationRequest
+ */
+export type CreateNotificationRequest = Message<"openoxide.api.v1.CreateNotificationRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: int64 organization_id = 2;
+   */
+  organizationId: bigint;
+
+  /**
+   * @generated from field: bool on_app_deploy = 3;
+   */
+  onAppDeploy: boolean;
+
+  /**
+   * @generated from field: bool on_app_build_error = 4;
+   */
+  onAppBuildError: boolean;
+
+  /**
+   * @generated from field: bool on_database_backup = 5;
+   */
+  onDatabaseBackup: boolean;
+
+  /**
+   * @generated from field: bool on_volume_backup = 6;
+   */
+  onVolumeBackup: boolean;
+
+  /**
+   * @generated from field: bool on_panel_restart = 7;
+   */
+  onPanelRestart: boolean;
+
+  /**
+   * @generated from field: bool on_docker_cleanup = 8;
+   */
+  onDockerCleanup: boolean;
+
+  /**
+   * @generated from field: bool on_server_threshold = 9;
+   */
+  onServerThreshold: boolean;
+
+  /**
+   * @generated from field: bool on_panel_backup = 10;
+   */
+  onPanelBackup: boolean;
+
+  /**
+   * @generated from field: bool on_schedule_success = 11;
+   */
+  onScheduleSuccess: boolean;
+
+  /**
+   * @generated from field: bool on_schedule_failure = 12;
+   */
+  onScheduleFailure: boolean;
+
+  /**
+   * Exactly one provider config must be set; it also fixes the stored notification_type.
+   *
+   * @generated from oneof openoxide.api.v1.CreateNotificationRequest.provider
+   */
+  provider: {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationSlackConfig slack = 13;
+     */
+    value: NotificationSlackConfig;
+    case: "slack";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationTelegramConfig telegram = 14;
+     */
+    value: NotificationTelegramConfig;
+    case: "telegram";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationDiscordConfig discord = 15;
+     */
+    value: NotificationDiscordConfig;
+    case: "discord";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationEmailConfig email = 16;
+     */
+    value: NotificationEmailConfig;
+    case: "email";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationResendConfig resend = 17;
+     */
+    value: NotificationResendConfig;
+    case: "resend";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationGotifyConfig gotify = 18;
+     */
+    value: NotificationGotifyConfig;
+    case: "gotify";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationNtfyConfig ntfy = 19;
+     */
+    value: NotificationNtfyConfig;
+    case: "ntfy";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationMattermostConfig mattermost = 20;
+     */
+    value: NotificationMattermostConfig;
+    case: "mattermost";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationCustomConfig custom = 21;
+     */
+    value: NotificationCustomConfig;
+    case: "custom";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationWebhookUrlConfig lark = 22;
+     */
+    value: NotificationWebhookUrlConfig;
+    case: "lark";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationPushoverConfig pushover = 23;
+     */
+    value: NotificationPushoverConfig;
+    case: "pushover";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationWebhookUrlConfig teams = 24;
+     */
+    value: NotificationWebhookUrlConfig;
+    case: "teams";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateNotificationRequest.
+ * Use `create(CreateNotificationRequestSchema)` to create a new message.
+ */
+export const CreateNotificationRequestSchema: GenMessage<CreateNotificationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 18);
+
+/**
+ * @generated from message openoxide.api.v1.CreateNotificationResponse
+ */
+export type CreateNotificationResponse = Message<"openoxide.api.v1.CreateNotificationResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Notification notification = 1;
+   */
+  notification?: Notification | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateNotificationResponse.
+ * Use `create(CreateNotificationResponseSchema)` to create a new message.
+ */
+export const CreateNotificationResponseSchema: GenMessage<CreateNotificationResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 19);
+
+/**
+ * PATCH semantics: absent fields keep their stored values. Provider config fields update the stored channel config in place; the provider kind itself is immutable here (use ReplaceNotification to change it).
+ *
+ * @generated from message openoxide.api.v1.UpdateNotificationRequest
+ */
+export type UpdateNotificationRequest = Message<"openoxide.api.v1.UpdateNotificationRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string name = 3;
+   */
+  name?: string | undefined;
+
+  /**
+   * @generated from field: optional bool on_app_deploy = 4;
+   */
+  onAppDeploy?: boolean | undefined;
+
+  /**
+   * @generated from field: optional bool on_app_build_error = 5;
+   */
+  onAppBuildError?: boolean | undefined;
+
+  /**
+   * @generated from field: optional bool on_database_backup = 6;
+   */
+  onDatabaseBackup?: boolean | undefined;
+
+  /**
+   * @generated from field: optional bool on_volume_backup = 7;
+   */
+  onVolumeBackup?: boolean | undefined;
+
+  /**
+   * @generated from field: optional bool on_panel_restart = 8;
+   */
+  onPanelRestart?: boolean | undefined;
+
+  /**
+   * @generated from field: optional bool on_docker_cleanup = 9;
+   */
+  onDockerCleanup?: boolean | undefined;
+
+  /**
+   * @generated from field: optional bool on_server_threshold = 10;
+   */
+  onServerThreshold?: boolean | undefined;
+
+  /**
+   * @generated from field: optional bool on_panel_backup = 11;
+   */
+  onPanelBackup?: boolean | undefined;
+
+  /**
+   * @generated from field: optional bool on_schedule_success = 12;
+   */
+  onScheduleSuccess?: boolean | undefined;
+
+  /**
+   * @generated from field: optional bool on_schedule_failure = 13;
+   */
+  onScheduleFailure?: boolean | undefined;
+
+  /**
+   * @generated from field: optional string webhook_url = 14;
+   */
+  webhookUrl?: string | undefined;
+
+  /**
+   * @generated from field: optional string channel = 15;
+   */
+  channel?: string | undefined;
+
+  /**
+   * @generated from field: optional string username = 16;
+   */
+  username?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 decoration = 17;
+   */
+  decoration?: bigint | undefined;
+
+  /**
+   * Opaque Telegram bot token (secret).
+   *
+   * @generated from field: optional string bot_token = 18;
+   */
+  botToken?: string | undefined;
+
+  /**
+   * @generated from field: optional string chat_id = 19;
+   */
+  chatId?: string | undefined;
+
+  /**
+   * @generated from field: optional string message_thread_id = 20;
+   */
+  messageThreadId?: string | undefined;
+
+  /**
+   * @generated from field: optional string smtp_server = 21;
+   */
+  smtpServer?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 smtp_port = 22;
+   */
+  smtpPort?: bigint | undefined;
+
+  /**
+   * SMTP account password (secret).
+   *
+   * @generated from field: optional string password = 23;
+   */
+  password?: string | undefined;
+
+  /**
+   * @generated from field: optional string from_address = 24;
+   */
+  fromAddress?: string | undefined;
+
+  /**
+   * Present-and-nonempty replaces the stored recipient list.
+   *
+   * @generated from field: repeated string to_addresses = 25;
+   */
+  toAddresses: string[];
+
+  /**
+   * Resend API key (secret).
+   *
+   * @generated from field: optional string api_key = 26;
+   */
+  apiKey?: string | undefined;
+
+  /**
+   * @generated from field: optional string server_url = 27;
+   */
+  serverUrl?: string | undefined;
+
+  /**
+   * Gotify application token (secret).
+   *
+   * @generated from field: optional string app_token = 28;
+   */
+  appToken?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 priority = 29;
+   */
+  priority?: bigint | undefined;
+
+  /**
+   * @generated from field: optional string topic = 30;
+   */
+  topic?: string | undefined;
+
+  /**
+   * Optional ntfy access token (secret).
+   *
+   * @generated from field: optional string access_token = 31;
+   */
+  accessToken?: string | undefined;
+
+  /**
+   * @generated from field: optional string endpoint = 32;
+   */
+  endpoint?: string | undefined;
+
+  /**
+   * Extra HTTP headers as a JSON object document.
+   *
+   * @generated from field: optional string headers = 33;
+   */
+  headers?: string | undefined;
+
+  /**
+   * Pushover user key (secret).
+   *
+   * @generated from field: optional string user_key = 34;
+   */
+  userKey?: string | undefined;
+
+  /**
+   * Pushover application API token (secret).
+   *
+   * @generated from field: optional string api_token = 35;
+   */
+  apiToken?: string | undefined;
+
+  /**
+   * @generated from field: optional int64 retry = 36;
+   */
+  retry?: bigint | undefined;
+
+  /**
+   * @generated from field: optional int64 expire = 37;
+   */
+  expire?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateNotificationRequest.
+ * Use `create(UpdateNotificationRequestSchema)` to create a new message.
+ */
+export const UpdateNotificationRequestSchema: GenMessage<UpdateNotificationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 20);
+
+/**
+ * @generated from message openoxide.api.v1.UpdateNotificationResponse
+ */
+export type UpdateNotificationResponse = Message<"openoxide.api.v1.UpdateNotificationResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Notification notification = 1;
+   */
+  notification?: Notification | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.UpdateNotificationResponse.
+ * Use `create(UpdateNotificationResponseSchema)` to create a new message.
+ */
+export const UpdateNotificationResponseSchema: GenMessage<UpdateNotificationResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 21);
+
+/**
+ * Full replacement of the notification, including its provider kind.
+ *
+ * @generated from message openoxide.api.v1.ReplaceNotificationRequest
+ */
+export type ReplaceNotificationRequest = Message<"openoxide.api.v1.ReplaceNotificationRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+
+  /**
+   * @generated from field: string name = 3;
+   */
+  name: string;
+
+  /**
+   * @generated from field: bool on_app_deploy = 4;
+   */
+  onAppDeploy: boolean;
+
+  /**
+   * @generated from field: bool on_app_build_error = 5;
+   */
+  onAppBuildError: boolean;
+
+  /**
+   * @generated from field: bool on_database_backup = 6;
+   */
+  onDatabaseBackup: boolean;
+
+  /**
+   * @generated from field: bool on_volume_backup = 7;
+   */
+  onVolumeBackup: boolean;
+
+  /**
+   * @generated from field: bool on_panel_restart = 8;
+   */
+  onPanelRestart: boolean;
+
+  /**
+   * @generated from field: bool on_docker_cleanup = 9;
+   */
+  onDockerCleanup: boolean;
+
+  /**
+   * @generated from field: bool on_server_threshold = 10;
+   */
+  onServerThreshold: boolean;
+
+  /**
+   * @generated from field: bool on_panel_backup = 11;
+   */
+  onPanelBackup: boolean;
+
+  /**
+   * @generated from field: bool on_schedule_success = 12;
+   */
+  onScheduleSuccess: boolean;
+
+  /**
+   * @generated from field: bool on_schedule_failure = 13;
+   */
+  onScheduleFailure: boolean;
+
+  /**
+   * @generated from oneof openoxide.api.v1.ReplaceNotificationRequest.provider
+   */
+  provider: {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationSlackConfig slack = 14;
+     */
+    value: NotificationSlackConfig;
+    case: "slack";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationTelegramConfig telegram = 15;
+     */
+    value: NotificationTelegramConfig;
+    case: "telegram";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationDiscordConfig discord = 16;
+     */
+    value: NotificationDiscordConfig;
+    case: "discord";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationEmailConfig email = 17;
+     */
+    value: NotificationEmailConfig;
+    case: "email";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationResendConfig resend = 18;
+     */
+    value: NotificationResendConfig;
+    case: "resend";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationGotifyConfig gotify = 19;
+     */
+    value: NotificationGotifyConfig;
+    case: "gotify";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationNtfyConfig ntfy = 20;
+     */
+    value: NotificationNtfyConfig;
+    case: "ntfy";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationMattermostConfig mattermost = 21;
+     */
+    value: NotificationMattermostConfig;
+    case: "mattermost";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationCustomConfig custom = 22;
+     */
+    value: NotificationCustomConfig;
+    case: "custom";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationWebhookUrlConfig lark = 23;
+     */
+    value: NotificationWebhookUrlConfig;
+    case: "lark";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationPushoverConfig pushover = 24;
+     */
+    value: NotificationPushoverConfig;
+    case: "pushover";
+  } | {
+    /**
+     * @generated from field: openoxide.api.v1.NotificationWebhookUrlConfig teams = 25;
+     */
+    value: NotificationWebhookUrlConfig;
+    case: "teams";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message openoxide.api.v1.ReplaceNotificationRequest.
+ * Use `create(ReplaceNotificationRequestSchema)` to create a new message.
+ */
+export const ReplaceNotificationRequestSchema: GenMessage<ReplaceNotificationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 22);
+
+/**
+ * @generated from message openoxide.api.v1.ReplaceNotificationResponse
+ */
+export type ReplaceNotificationResponse = Message<"openoxide.api.v1.ReplaceNotificationResponse"> & {
+  /**
+   * @generated from field: openoxide.api.v1.Notification notification = 1;
+   */
+  notification?: Notification | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ReplaceNotificationResponse.
+ * Use `create(ReplaceNotificationResponseSchema)` to create a new message.
+ */
+export const ReplaceNotificationResponseSchema: GenMessage<ReplaceNotificationResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 23);
+
+/**
+ * @generated from message openoxide.api.v1.DeleteNotificationRequest
+ */
+export type DeleteNotificationRequest = Message<"openoxide.api.v1.DeleteNotificationRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DeleteNotificationRequest.
+ * Use `create(DeleteNotificationRequestSchema)` to create a new message.
+ */
+export const DeleteNotificationRequestSchema: GenMessage<DeleteNotificationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 24);
+
+/**
+ * @generated from message openoxide.api.v1.TestNotificationRequest
+ */
+export type TestNotificationRequest = Message<"openoxide.api.v1.TestNotificationRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.TestNotificationRequest.
+ * Use `create(TestNotificationRequestSchema)` to create a new message.
+ */
+export const TestNotificationRequestSchema: GenMessage<TestNotificationRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 25);
+
+/**
+ * @generated from message openoxide.api.v1.TestNotificationResponse
+ */
+export type TestNotificationResponse = Message<"openoxide.api.v1.TestNotificationResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * @generated from field: string message = 2;
+   */
+  message: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.TestNotificationResponse.
+ * Use `create(TestNotificationResponseSchema)` to create a new message.
+ */
+export const TestNotificationResponseSchema: GenMessage<TestNotificationResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 26);
+
+/**
+ * @generated from message openoxide.api.v1.ListNotificationDeliveryHistoryRequest
+ */
+export type ListNotificationDeliveryHistoryRequest = Message<"openoxide.api.v1.ListNotificationDeliveryHistoryRequest"> & {
+  /**
+   * @generated from field: optional int64 organization_id = 1;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListNotificationDeliveryHistoryRequest.
+ * Use `create(ListNotificationDeliveryHistoryRequestSchema)` to create a new message.
+ */
+export const ListNotificationDeliveryHistoryRequestSchema: GenMessage<ListNotificationDeliveryHistoryRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 27);
+
+/**
+ * @generated from message openoxide.api.v1.ListNotificationDeliveryHistoryResponse
+ */
+export type ListNotificationDeliveryHistoryResponse = Message<"openoxide.api.v1.ListNotificationDeliveryHistoryResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.NotificationDeliveryAttempt attempts = 1;
+   */
+  attempts: NotificationDeliveryAttempt[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListNotificationDeliveryHistoryResponse.
+ * Use `create(ListNotificationDeliveryHistoryResponseSchema)` to create a new message.
+ */
+export const ListNotificationDeliveryHistoryResponseSchema: GenMessage<ListNotificationDeliveryHistoryResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 28);
+
+/**
+ * @generated from message openoxide.api.v1.CreateNotificationBindingRequest
+ */
+export type CreateNotificationBindingRequest = Message<"openoxide.api.v1.CreateNotificationBindingRequest"> & {
+  /**
+   * @generated from field: int64 notification_id = 1;
+   */
+  notificationId: bigint;
+
+  /**
+   * @generated from field: openoxide.api.v1.NotificationResourceType resource_type = 2;
+   */
+  resourceType: NotificationResourceType;
+
+  /**
+   * @generated from field: int64 resource_id = 3;
+   */
+  resourceId: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 4;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateNotificationBindingRequest.
+ * Use `create(CreateNotificationBindingRequestSchema)` to create a new message.
+ */
+export const CreateNotificationBindingRequestSchema: GenMessage<CreateNotificationBindingRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 29);
+
+/**
+ * @generated from message openoxide.api.v1.CreateNotificationBindingResponse
+ */
+export type CreateNotificationBindingResponse = Message<"openoxide.api.v1.CreateNotificationBindingResponse"> & {
+  /**
+   * The create path only returns the new binding id; the row is re-read via ListBindings.
+   *
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message openoxide.api.v1.CreateNotificationBindingResponse.
+ * Use `create(CreateNotificationBindingResponseSchema)` to create a new message.
+ */
+export const CreateNotificationBindingResponseSchema: GenMessage<CreateNotificationBindingResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 30);
+
+/**
+ * @generated from message openoxide.api.v1.ListNotificationBindingsRequest
+ */
+export type ListNotificationBindingsRequest = Message<"openoxide.api.v1.ListNotificationBindingsRequest"> & {
+  /**
+   * @generated from field: optional int64 organization_id = 1;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListNotificationBindingsRequest.
+ * Use `create(ListNotificationBindingsRequestSchema)` to create a new message.
+ */
+export const ListNotificationBindingsRequestSchema: GenMessage<ListNotificationBindingsRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 31);
+
+/**
+ * @generated from message openoxide.api.v1.ListNotificationBindingsResponse
+ */
+export type ListNotificationBindingsResponse = Message<"openoxide.api.v1.ListNotificationBindingsResponse"> & {
+  /**
+   * @generated from field: repeated openoxide.api.v1.NotificationBinding bindings = 1;
+   */
+  bindings: NotificationBinding[];
+};
+
+/**
+ * Describes the message openoxide.api.v1.ListNotificationBindingsResponse.
+ * Use `create(ListNotificationBindingsResponseSchema)` to create a new message.
+ */
+export const ListNotificationBindingsResponseSchema: GenMessage<ListNotificationBindingsResponse> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 32);
+
+/**
+ * @generated from message openoxide.api.v1.DeleteNotificationBindingRequest
+ */
+export type DeleteNotificationBindingRequest = Message<"openoxide.api.v1.DeleteNotificationBindingRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: optional int64 organization_id = 2;
+   */
+  organizationId?: bigint | undefined;
+};
+
+/**
+ * Describes the message openoxide.api.v1.DeleteNotificationBindingRequest.
+ * Use `create(DeleteNotificationBindingRequestSchema)` to create a new message.
+ */
+export const DeleteNotificationBindingRequestSchema: GenMessage<DeleteNotificationBindingRequest> = /*@__PURE__*/
+  messageDesc(file_openoxide_api_v1_notification, 33);
+
+/**
+ * @generated from enum openoxide.api.v1.NotificationProviderType
+ */
+export enum NotificationProviderType {
+  /**
+   * @generated from enum value: NOTIFICATION_PROVIDER_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: NOTIFICATION_PROVIDER_TYPE_SLACK = 1;
+   */
+  SLACK = 1,
+
+  /**
+   * @generated from enum value: NOTIFICATION_PROVIDER_TYPE_TELEGRAM = 2;
+   */
+  TELEGRAM = 2,
+
+  /**
+   * @generated from enum value: NOTIFICATION_PROVIDER_TYPE_DISCORD = 3;
+   */
+  DISCORD = 3,
+
+  /**
+   * @generated from enum value: NOTIFICATION_PROVIDER_TYPE_EMAIL = 4;
+   */
+  EMAIL = 4,
+
+  /**
+   * @generated from enum value: NOTIFICATION_PROVIDER_TYPE_RESEND = 5;
+   */
+  RESEND = 5,
+
+  /**
+   * @generated from enum value: NOTIFICATION_PROVIDER_TYPE_GOTIFY = 6;
+   */
+  GOTIFY = 6,
+
+  /**
+   * @generated from enum value: NOTIFICATION_PROVIDER_TYPE_NTFY = 7;
+   */
+  NTFY = 7,
+
+  /**
+   * @generated from enum value: NOTIFICATION_PROVIDER_TYPE_MATTERMOST = 8;
+   */
+  MATTERMOST = 8,
+
+  /**
+   * @generated from enum value: NOTIFICATION_PROVIDER_TYPE_PUSHOVER = 9;
+   */
+  PUSHOVER = 9,
+
+  /**
+   * @generated from enum value: NOTIFICATION_PROVIDER_TYPE_CUSTOM = 10;
+   */
+  CUSTOM = 10,
+
+  /**
+   * @generated from enum value: NOTIFICATION_PROVIDER_TYPE_LARK = 11;
+   */
+  LARK = 11,
+
+  /**
+   * @generated from enum value: NOTIFICATION_PROVIDER_TYPE_TEAMS = 12;
+   */
+  TEAMS = 12,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.NotificationProviderType.
+ */
+export const NotificationProviderTypeSchema: GenEnum<NotificationProviderType> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_notification, 0);
+
+/**
+ * @generated from enum openoxide.api.v1.NotificationResourceType
+ */
+export enum NotificationResourceType {
+  /**
+   * @generated from enum value: NOTIFICATION_RESOURCE_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: NOTIFICATION_RESOURCE_TYPE_SERVER = 1;
+   */
+  SERVER = 1,
+
+  /**
+   * @generated from enum value: NOTIFICATION_RESOURCE_TYPE_APPLICATION = 2;
+   */
+  APPLICATION = 2,
+
+  /**
+   * @generated from enum value: NOTIFICATION_RESOURCE_TYPE_COMPOSE = 3;
+   */
+  COMPOSE = 3,
+
+  /**
+   * @generated from enum value: NOTIFICATION_RESOURCE_TYPE_DATABASE = 4;
+   */
+  DATABASE = 4,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.NotificationResourceType.
+ */
+export const NotificationResourceTypeSchema: GenEnum<NotificationResourceType> = /*@__PURE__*/
+  enumDesc(file_openoxide_api_v1_notification, 1);
+
+/**
+ * Sole notification owner service; absorbs the former NotificationOperationsService (delivery history and resource bindings included).
+ *
  * @generated from service openoxide.api.v1.NotificationService
  */
 export const NotificationService: GenService<{
-	/**
-	 * @generated from rpc openoxide.api.v1.NotificationService.ListNotifications
-	 */
-	listNotifications: {
-		methodKind: 'unary';
-		input: typeof ResourceQuerySchema;
-		output: typeof ResourceListResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.NotificationService.GetNotification
-	 */
-	getNotification: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.NotificationService.CreateNotification
-	 */
-	createNotification: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.NotificationService.UpdateNotification
-	 */
-	updateNotification: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof ResourceResponseSchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.NotificationService.DeleteNotification
-	 */
-	deleteNotification: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof EmptySchema;
-	};
-	/**
-	 * @generated from rpc openoxide.api.v1.NotificationService.TestNotification
-	 */
-	testNotification: {
-		methodKind: 'unary';
-		input: typeof ResourceRequestSchema;
-		output: typeof OperationResultSchema;
-	};
-}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_notification, 0);
+  /**
+   * @generated from rpc openoxide.api.v1.NotificationService.ListNotifications
+   */
+  listNotifications: {
+    methodKind: "unary";
+    input: typeof ListNotificationsRequestSchema;
+    output: typeof ListNotificationsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.NotificationService.GetNotification
+   */
+  getNotification: {
+    methodKind: "unary";
+    input: typeof GetNotificationRequestSchema;
+    output: typeof GetNotificationResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.NotificationService.CreateNotification
+   */
+  createNotification: {
+    methodKind: "unary";
+    input: typeof CreateNotificationRequestSchema;
+    output: typeof CreateNotificationResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.NotificationService.UpdateNotification
+   */
+  updateNotification: {
+    methodKind: "unary";
+    input: typeof UpdateNotificationRequestSchema;
+    output: typeof UpdateNotificationResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.NotificationService.ReplaceNotification
+   */
+  replaceNotification: {
+    methodKind: "unary";
+    input: typeof ReplaceNotificationRequestSchema;
+    output: typeof ReplaceNotificationResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.NotificationService.DeleteNotification
+   */
+  deleteNotification: {
+    methodKind: "unary";
+    input: typeof DeleteNotificationRequestSchema;
+    output: typeof EmptySchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.NotificationService.TestNotification
+   */
+  testNotification: {
+    methodKind: "unary";
+    input: typeof TestNotificationRequestSchema;
+    output: typeof TestNotificationResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.NotificationService.ListDeliveryHistory
+   */
+  listDeliveryHistory: {
+    methodKind: "unary";
+    input: typeof ListNotificationDeliveryHistoryRequestSchema;
+    output: typeof ListNotificationDeliveryHistoryResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.NotificationService.CreateBinding
+   */
+  createBinding: {
+    methodKind: "unary";
+    input: typeof CreateNotificationBindingRequestSchema;
+    output: typeof CreateNotificationBindingResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.NotificationService.ListBindings
+   */
+  listBindings: {
+    methodKind: "unary";
+    input: typeof ListNotificationBindingsRequestSchema;
+    output: typeof ListNotificationBindingsResponseSchema;
+  },
+  /**
+   * @generated from rpc openoxide.api.v1.NotificationService.DeleteBinding
+   */
+  deleteBinding: {
+    methodKind: "unary";
+    input: typeof DeleteNotificationBindingRequestSchema;
+    output: typeof EmptySchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_openoxide_api_v1_notification, 0);
+

@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/server_private_network.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {ServerPrivateNetworkService} from './server_private_network_pb';
+import { ServerPrivateNetworkService } from "./server_private_network_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.GetNetwork
@@ -12,14 +12,12 @@ export const getNetwork = ServerPrivateNetworkService.method.getNetwork;
 /**
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.UpdateNetwork
  */
-export const updateNetwork =
-	ServerPrivateNetworkService.method.updateNetwork;
+export const updateNetwork = ServerPrivateNetworkService.method.updateNetwork;
 
 /**
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.DeleteNetwork
  */
-export const deleteNetwork =
-	ServerPrivateNetworkService.method.deleteNetwork;
+export const deleteNetwork = ServerPrivateNetworkService.method.deleteNetwork;
 
 /**
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.Setup

@@ -1,7 +1,9 @@
 use connectrpc::{ConnectError, ErrorCode};
 use serde::Serialize;
 
-use crate::api::connect::generated::openoxide::api::v1::{Compose, ResourceResponse};
+use crate::api::connect::generated::openoxide::api::v1::{
+    Compose, ComposeMount, ComposeMountType, ComposePatch, ComposePatchType,
+};
 use crate::flash_gen::models::{Mounts, Patches};
 use crate::services::compute::compose::crud::ComposeResponseDto;
 
@@ -67,14 +69,66 @@ pub fn compose_to_proto(dto: &ComposeResponseDto) -> Compose {
     }
 }
 
-pub fn mount_to_resource(dto: ComposeMountResponseDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse { id: dto.id, kind: "compose_mount".into(), payload, ..Default::default() }
+// ── Enum coercion helpers ───────────────────────────────────────────
+
+/// proto mount type → the SCREAMING spec string the service layer parses
+/// (`crate::utils::builder::spec::MountType::from_str`).
+pub fn compose_mount_type_to_spec_str(
+    value: buffa::EnumValue<ComposeMountType>,
+) -> String {
+    let s = match value {
+        buffa::EnumValue::Known(ComposeMountType::Bind) => "BIND",
+        buffa::EnumValue::Known(ComposeMountType::File) => "FILE",
+        _ => "VOLUME",
+    };
+    s.to_string()
 }
 
-pub fn patch_to_resource(dto: ComposePatchResponseDto) -> ResourceResponse {
-    let payload = serde_json::to_string(&dto).unwrap_or_default();
-    ResourceResponse { id: dto.id, kind: "compose_patch".into(), payload, ..Default::default() }
+fn compose_mount_type_str_to_proto(s: &str) -> buffa::EnumValue<ComposeMountType> {
+    (match s {
+        "BIND" => ComposeMountType::Bind,
+        "FILE" => ComposeMountType::File,
+        _ => ComposeMountType::Volume,
+    })
+    .into()
+}
+
+fn compose_patch_type_str_to_proto(s: &str) -> buffa::EnumValue<ComposePatchType> {
+    (match s {
+        "DELETE" => ComposePatchType::Delete,
+        _ => ComposePatchType::Update,
+    })
+    .into()
+}
+
+pub fn mount_to_proto(dto: ComposeMountResponseDto) -> ComposeMount {
+    ComposeMount {
+        id: dto.id,
+        mount_type: compose_mount_type_str_to_proto(&dto.mount_type),
+        host_path: dto.host_path,
+        volume_name: dto.volume_name,
+        file_path: dto.file_path,
+        content: dto.content,
+        mount_path: dto.mount_path,
+        compose_id: dto.compose_id,
+        created_at: dto.created_at,
+        updated_at: dto.updated_at,
+        ..Default::default()
+    }
+}
+
+pub fn patch_to_proto(dto: ComposePatchResponseDto) -> ComposePatch {
+    ComposePatch {
+        id: dto.id,
+        patch_type: compose_patch_type_str_to_proto(&dto.patch_type),
+        file_path: dto.file_path,
+        enabled: dto.enabled,
+        content: dto.content,
+        compose_id: dto.compose_id,
+        created_at: dto.created_at,
+        updated_at: dto.updated_at,
+        ..Default::default()
+    }
 }
 
 // ── JSON payload contract (moved from the retired api::dto layer) ──────

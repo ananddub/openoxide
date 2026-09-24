@@ -1,10 +1,12 @@
-import type {Compose} from '#/gen/connect/openoxide/api/v1/compose_pb';
+import {
+	ComposeMountType,
+	ComposePatchType,
+	type Compose,
+	type ComposeMount,
+	type ComposePatch,
+} from '#/gen/connect/openoxide/api/v1/compose_pb';
 
-/**
- * Org-wide compose list item (all-optional fields) derived from the
- * overview services stream — keyed under the `composes` prefix so
- * SERVICE_COMPOSE table changes invalidate it.
- */
+/** Org-wide compose list item (all-optional fields) derived from the overview services stream — keyed under the `composes` prefix so SERVICE_COMPOSE table changes invalidate it. */
 export type ComposeItemPayload = {
 	id: number;
 	name?: string;
@@ -60,8 +62,7 @@ export function toComposePayload(compose: Compose): ComposePayload {
 		server_id: compose.serverId,
 		status: compose.status,
 		compose_status: compose.status,
-		// DB stores 'CUSTOM' for custom-git; the source card's provider id is
-		// 'GIT' (same collapse the application payload mapper does).
+		// DB stores 'CUSTOM' for custom-git; the source card's provider id is 'GIT' (same collapse the application payload mapper does).
 		source_type:
 			compose.sourceType === 'CUSTOM' ||
 			compose.sourceType === 'CUSTOM_GIT'
@@ -112,3 +113,40 @@ export type ComposePatchPayload = {
 	content: string;
 	compose_id: number;
 };
+
+// Proto enums arrive as numbers. The mount/patch cards compare against the uppercase wire names ('VOLUME', 'BIND', 'FILE'), so reverse-map to those exact strings (same idiom as the applications payload mappers). UNSPECIFIED collapses to '' so the cards' own fallbacks still apply.
+const enumName = (
+	enumObject: Record<string | number, string | number>,
+	value: string | number,
+): string => {
+	const name = enumObject[value];
+	return typeof name === 'string' && name !== 'UNSPECIFIED' ? name : '';
+};
+
+export function toComposeMountPayload(
+	mount: ComposeMount,
+): ComposeMountPayload {
+	return {
+		id: Number(mount.id),
+		mount_type: enumName(ComposeMountType, mount.mountType),
+		host_path: mount.hostPath,
+		volume_name: mount.volumeName,
+		file_path: mount.filePath,
+		content: mount.content,
+		mount_path: mount.mountPath,
+		compose_id: Number(mount.composeId),
+	};
+}
+
+export function toComposePatchPayload(
+	patch: ComposePatch,
+): ComposePatchPayload {
+	return {
+		id: Number(patch.id),
+		patch_type: enumName(ComposePatchType, patch.patchType),
+		file_path: patch.filePath,
+		enabled: patch.enabled,
+		content: patch.content,
+		compose_id: Number(patch.composeId),
+	};
+}

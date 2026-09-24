@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/monitoring.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import {MonitoringService} from './monitoring_pb';
+import { MonitoringService } from "./monitoring_pb";
 
 /**
  * @generated from rpc openoxide.api.v1.MonitoringService.GetOverview
@@ -17,5 +17,79 @@ export const getMetrics = MonitoringService.method.getMetrics;
 /**
  * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerState
  */
-export const getContainerState =
-	MonitoringService.method.getContainerState;
+export const getContainerState = MonitoringService.method.getContainerState;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.GetLocalMetrics
+ */
+export const getLocalMetrics = MonitoringService.method.getLocalMetrics;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.GetServerMetrics
+ */
+export const getServerMetrics = MonitoringService.method.getServerMetrics;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerMetrics
+ */
+export const getContainerMetrics = MonitoringService.method.getContainerMetrics;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerStates
+ */
+export const getContainerStates = MonitoringService.method.getContainerStates;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.CreateAgentToken
+ */
+export const createAgentToken = MonitoringService.method.createAgentToken;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.GetAgentStatus
+ */
+export const getAgentStatus = MonitoringService.method.getAgentStatus;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.StartAgent
+ */
+export const startAgent = MonitoringService.method.startAgent;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.StopAgent
+ */
+export const stopAgent = MonitoringService.method.stopAgent;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.RestartAgent
+ */
+export const restartAgent = MonitoringService.method.restartAgent;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.ReinstallAgent
+ */
+export const reinstallAgent = MonitoringService.method.reinstallAgent;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.ExportServerMetrics
+ */
+export const exportServerMetrics = MonitoringService.method.exportServerMetrics;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.GetPrometheusMetrics
+ */
+export const getPrometheusMetrics = MonitoringService.method.getPrometheusMetrics;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.CreateMaintenanceWindow
+ */
+export const createMaintenanceWindow = MonitoringService.method.createMaintenanceWindow;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.ListMaintenanceWindows
+ */
+export const listMaintenanceWindows = MonitoringService.method.listMaintenanceWindows;
+
+/**
+ * @generated from rpc openoxide.api.v1.MonitoringService.DeleteMaintenanceWindow
+ */
+export const deleteMaintenanceWindow = MonitoringService.method.deleteMaintenanceWindow;

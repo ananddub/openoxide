@@ -2,7 +2,7 @@ import {useEffect, useMemo, useState} from 'react';
 import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import {useProjectListByOrganization} from '#/api/live';
-import type {Schedule} from '#/hooks/use-schedules';
+import type {Schedule} from '#/hooks/schedules/use-schedules';
 import {collectProjectApplications} from './schedule-applications';
 
 export interface ScheduleDialogProps {
@@ -40,8 +40,7 @@ export function useScheduleDialog(props: ScheduleDialogProps) {
 	const [targetId, setTargetId] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	// Live projects query keyed ['projects','list',org] — table-watch
-	// invalidates it while the schedules page is mounted.
+	// Live projects query keyed ['projects','list',org] — table-watch invalidates it while the schedules page is mounted.
 	const projectsQuery = useProjectListByOrganization(
 		BigInt(activeOrgId ?? 1),
 	);

@@ -11,7 +11,7 @@ import {toast} from 'sonner';
 import {formatApiError} from '#/api/utils';
 import type {DeploymentResponse} from '#/types/api-helpers';
 import {useDeploymentLogs} from './use-deployment-logs';
-import {filterAndSortDeployments} from './deployments-filter-sort';
+import {filterAndSortDeployments} from '#/utils/deployment-filter-sort';
 import {FINAL_STATES} from '#/components/projects/detail/deployments/build-status';
 
 export type Deployment = DeploymentResponse;
@@ -50,8 +50,7 @@ export function useDeployments() {
 		refetch,
 	} = useDeploymentItems();
 
-	// Live query is the single source of truth; the table-watch stream
-	// (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
+	// Live query is the single source of truth; the table-watch stream (DEPLOYMENTS table) invalidates ['deployments'] while mounted.
 	const deployments = React.useMemo(() => {
 		if (Array.isArray(apiDeployments)) {
 			return apiDeployments as unknown as Deployment[];

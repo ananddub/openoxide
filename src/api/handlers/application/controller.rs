@@ -2,19 +2,36 @@
 use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    Application as ApplicationProto, ApplicationDependencies,
+    Application as ApplicationProto, ApplicationCreateMiddlewareRequest,
+    ApplicationCreateMiddlewareResponse, ApplicationCreateMountRequest,
+    ApplicationCreateMountResponse, ApplicationCreatePatchRequest, ApplicationCreatePatchResponse,
+    ApplicationCreatePortRequest, ApplicationCreatePortResponse, ApplicationCreateRedirectRequest,
+    ApplicationCreateRedirectResponse, ApplicationCreateSecurityRequest,
+    ApplicationCreateSecurityResponse, ApplicationDeleteMiddlewareRequest,
+    ApplicationDeleteMountRequest, ApplicationDeletePatchRequest, ApplicationDeletePortRequest,
+    ApplicationDeleteRedirectRequest, ApplicationDeleteSecurityRequest,
+    ApplicationGetSecurityRequest, ApplicationGetSecurityResponse, ApplicationListMiddlewaresRequest,
+    ApplicationListMiddlewaresResponse, ApplicationListMountsRequest, ApplicationListMountsResponse,
+    ApplicationListPatchesRequest, ApplicationListPatchesResponse, ApplicationListPortsRequest,
+    ApplicationListPortsResponse, ApplicationListRedirectsRequest, ApplicationListRedirectsResponse,
+    ApplicationUpdateMiddlewareRequest, ApplicationUpdateMiddlewareResponse,
+    ApplicationUpdateMountRequest, ApplicationUpdateMountResponse, ApplicationUpdateNetworksRequest,
+    ApplicationUpdateNetworksResponse, ApplicationUpdatePatchRequest,
+    ApplicationUpdatePatchResponse, ApplicationUpdatePortRequest, ApplicationUpdatePortResponse,
+    ApplicationUpdateRedirectRequest, ApplicationUpdateRedirectResponse,
+    ApplicationUpdateSecurityRequest, ApplicationUpdateSecurityResponse, ApplicationDependencies,
     ApplicationExport, ApplicationMiddlewares, ApplicationMounts, ApplicationNetworks,
     ApplicationOperation, ApplicationOperationRequest, ApplicationPatches, ApplicationPorts,
-    ApplicationRedirects, ApplicationSecurity, ApplicationService, ApplicationServiceExt, ApplicationWebhookToken, CreateApplicationRequest,
-    DeleteApplicationRequest, DeleteRollbackRequest, Empty, ExportApplicationRequest,
-    GetApplicationRequest, ImportApplicationRequest, ListApplicationsRequest,
-    ListApplicationsResponse, ListRollbacksRequest, ListRollbacksResponse, MoveApplicationRequest,
-    OperationResult, ResourceListRequest, ResourceListResponse, ResourceRequest, ResourceResponse,
+    ApplicationRedirects, ApplicationSecurity, ApplicationService, ApplicationServiceExt,
+    ApplicationWebhookToken, CreateApplicationRequest, DeleteApplicationRequest,
+    DeleteRollbackRequest, Empty, ExportApplicationRequest, GetApplicationRequest,
+    ImportApplicationRequest, ListApplicationsRequest, ListApplicationsResponse,
+    ListRollbacksRequest, ListRollbacksResponse, MoveApplicationRequest, ResourceListRequest,
     Rollback, RollbackTrigger, SetBitbucketSourceRequest, SetCustomGitSourceRequest,
-    SetDockerSourceRequest, SetDropSourceRequest, SetGiteaSourceRequest,
-    SetGithubSourceRequest, SetGitlabSourceRequest, TriggerRollbackRequest,
-    UpdateApplicationRequest, UpdateBuildConfigRequest, UpdatePreviewConfigRequest,
-    UpdateResourceConfigRequest, UploadSourceRequest,
+    SetDockerSourceRequest, SetDropSourceRequest, SetGiteaSourceRequest, SetGithubSourceRequest,
+    SetGitlabSourceRequest, TriggerRollbackRequest, UpdateApplicationRequest,
+    UpdateBuildConfigRequest, UpdatePreviewConfigRequest, UpdateResourceConfigRequest,
+    UploadSourceRequest,
 };
 use crate::flash_gen::models::{
     ApplicationMiddlewares as ApplicationMiddlewaresModel, Mounts,
@@ -24,6 +41,37 @@ use crate::services::compute::application::ApplicationOperation as AppApplicatio
 
 use super::helper::*;
 use super::init::ApplicationController;
+
+/// Builds the middleware upsert DTO from already-converted owned pieces,
+/// folding empty collections to `None` so the service validation paths
+/// (which `unwrap_or_default()`) behave identically to the JSON envelope.
+fn build_middleware_dto(
+    name: String,
+    middleware_type: crate::services::compute::application::middleware::ApplicationMiddlewareType,
+    enabled: bool,
+    headers: Vec<(String, String)>,
+    average: Option<i64>,
+    burst: Option<i64>,
+    source_ranges: Vec<String>,
+) -> crate::services::compute::application::middleware::UpsertApplicationMiddlewareDto {
+    use crate::services::compute::application::middleware::{
+        MiddlewareHeaderDto, UpsertApplicationMiddlewareDto,
+    };
+    UpsertApplicationMiddlewareDto {
+        name,
+        middleware_type,
+        enabled,
+        headers: (!headers.is_empty()).then(|| {
+            headers
+                .into_iter()
+                .map(|(name, value)| MiddlewareHeaderDto { name, value })
+                .collect()
+        }),
+        average,
+        burst,
+        source_ranges: (!source_ranges.is_empty()).then_some(source_ranges),
+    }
+}
 
 /// Mirrors `middleware.rs response()`: parses the stored middleware config
 /// JSON into the response DTO. Kept local because the service's converter is
@@ -915,24 +963,29 @@ impl ApplicationService for ApplicationController {
         })
     }
 
-    // ── Ports (ResourceRequest envelope) ───────────────────────────────
-    // ResourceRequest.id = application_id for list/create,
-    // ResourceRequest.id = resource_id, .organization_id = application_id for update/delete
+    // ── Ports ──────────────────────────────────────────────────────────
 
     #[permission(Application, CanRead)]
     async fn list_ports<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let application_id = request.id;
-        let items = self.ports.list(application_id).await.map_err(map_db_error)?;
-        let items = items
+        request: ServiceRequest<'_, ApplicationListPortsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListPortsResponse> + Send + use<'a>> {
+        let items = self
+            .ports
+            .list(request.application_id)
+            .await
+            .map_err(map_db_error)?;
+        let ports = items
             .into_iter()
-            .map(port_to_resource)
+            .map(|p| {
+                port_to_proto(
+                    crate::services::compute::application::port::ApplicationPortResponseDto::from(p),
+                )
+            })
             .collect();
-        Response::ok(ResourceListResponse {
-            items,
+        Response::ok(ApplicationListPortsResponse {
+            ports,
             ..Default::default()
         })
     }
@@ -941,70 +994,89 @@ impl ApplicationService for ApplicationController {
     async fn create_port<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let application_id = request.id;
-        let dto: crate::services::compute::application::port::UpsertApplicationPortDto =
-            serde_json::from_str(request.payload)
-                .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ApplicationCreatePortRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreatePortResponse> + Send + use<'a>> {
+        let dto = crate::services::compute::application::port::UpsertApplicationPortDto {
+            published_port: request.published_port,
+            target_port: request.target_port,
+            protocol: protocol_from_proto(request.protocol),
+            publish_mode: publish_mode_from_proto(request.publish_mode),
+        };
         let item = self
             .ports
-            .create(application_id, dto)
+            .create(request.application_id, dto)
             .await
             .map_err(map_db_error)?;
-        Response::ok(port_to_resource(item))
+        Response::ok(ApplicationCreatePortResponse {
+            port: ::buffa::MessageField::some(port_to_proto(
+                crate::services::compute::application::port::ApplicationPortResponseDto::from(item),
+            )),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanUpdate)]
     async fn update_port<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let resource_id = request.id;
-        let application_id = request.organization_id.unwrap_or(0);
-        let dto: crate::services::compute::application::port::UpsertApplicationPortDto =
-            serde_json::from_str(request.payload)
-                .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ApplicationUpdatePortRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdatePortResponse> + Send + use<'a>> {
+        let dto = crate::services::compute::application::port::UpsertApplicationPortDto {
+            published_port: request.published_port,
+            target_port: request.target_port,
+            protocol: protocol_from_proto(request.protocol),
+            publish_mode: publish_mode_from_proto(request.publish_mode),
+        };
         let item = self
             .ports
-            .update(application_id, resource_id, dto)
+            .update(request.application_id, request.id, dto)
             .await
             .map_err(map_db_error)?;
-        Response::ok(port_to_resource(item))
+        Response::ok(ApplicationUpdatePortResponse {
+            port: ::buffa::MessageField::some(port_to_proto(
+                crate::services::compute::application::port::ApplicationPortResponseDto::from(item),
+            )),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanDelete)]
     async fn delete_port<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
+        request: ServiceRequest<'_, ApplicationDeletePortRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        let resource_id = request.id;
-        let application_id = request.organization_id.unwrap_or(0);
         self.ports
-            .delete(application_id, resource_id)
+            .delete(request.application_id, request.id)
             .await
             .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 
-    // ── Mounts (ResourceRequest envelope) ──────────────────────────────
+    // ── Mounts ─────────────────────────────────────────────────────────
 
     #[permission(Application, CanRead)]
     async fn list_mounts<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let application_id = request.id;
-        let items = self.mounts.list(application_id).await.map_err(map_db_error)?;
-        let items = items
+        request: ServiceRequest<'_, ApplicationListMountsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListMountsResponse> + Send + use<'a>> {
+        let items = self
+            .mounts
+            .list(request.application_id)
+            .await
+            .map_err(map_db_error)?;
+        let mounts = items
             .into_iter()
-            .map(mount_to_resource)
+            .map(normalize_mount_row)
+            .map(|m| {
+                mount_to_proto(
+                    crate::services::compute::application::mount::ApplicationMountResponseDto::from(m),
+                )
+            })
             .collect();
-        Response::ok(ResourceListResponse {
-            items,
+        Response::ok(ApplicationListMountsResponse {
+            mounts,
             ..Default::default()
         })
     }
@@ -1013,70 +1085,92 @@ impl ApplicationService for ApplicationController {
     async fn create_mount<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let application_id = request.id;
-        let dto: crate::services::compute::application::mount::UpsertApplicationMountDto =
-            serde_json::from_str(request.payload)
-                .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ApplicationCreateMountRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreateMountResponse> + Send + use<'a>> {
+        let dto = crate::services::compute::application::mount::UpsertApplicationMountDto {
+            mount_type: mount_type_from_proto(request.mount_type),
+            host_path: request.host_path.map(str::to_owned),
+            volume_name: request.volume_name.map(str::to_owned),
+            file_path: request.file_path.map(str::to_owned),
+            content: request.content.map(str::to_owned),
+            mount_path: request.mount_path.to_owned(),
+        };
         let item = self
             .mounts
-            .create(application_id, dto)
+            .create(request.application_id, dto)
             .await
             .map_err(map_db_error)?;
-        Response::ok(mount_to_resource(item))
+        Response::ok(ApplicationCreateMountResponse {
+            mount: ::buffa::MessageField::some(mount_to_proto(
+                crate::services::compute::application::mount::ApplicationMountResponseDto::from(item),
+            )),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanUpdate)]
     async fn update_mount<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let resource_id = request.id;
-        let application_id = request.organization_id.unwrap_or(0);
-        let dto: crate::services::compute::application::mount::UpsertApplicationMountDto =
-            serde_json::from_str(request.payload)
-                .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ApplicationUpdateMountRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdateMountResponse> + Send + use<'a>> {
+        let dto = crate::services::compute::application::mount::UpsertApplicationMountDto {
+            mount_type: mount_type_from_proto(request.mount_type),
+            host_path: request.host_path.map(str::to_owned),
+            volume_name: request.volume_name.map(str::to_owned),
+            file_path: request.file_path.map(str::to_owned),
+            content: request.content.map(str::to_owned),
+            mount_path: request.mount_path.to_owned(),
+        };
         let item = self
             .mounts
-            .update(application_id, resource_id, dto)
+            .update(request.application_id, request.id, dto)
             .await
             .map_err(map_db_error)?;
-        Response::ok(mount_to_resource(item))
+        Response::ok(ApplicationUpdateMountResponse {
+            mount: ::buffa::MessageField::some(mount_to_proto(
+                crate::services::compute::application::mount::ApplicationMountResponseDto::from(item),
+            )),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanDelete)]
     async fn delete_mount<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
+        request: ServiceRequest<'_, ApplicationDeleteMountRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        let resource_id = request.id;
-        let application_id = request.organization_id.unwrap_or(0);
         self.mounts
-            .delete(application_id, resource_id)
+            .delete(request.application_id, request.id)
             .await
             .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 
-    // ── Patches (ResourceRequest envelope) ─────────────────────────────
+    // ── Patches ────────────────────────────────────────────────────────
 
     #[permission(Application, CanRead)]
     async fn list_patches<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let application_id = request.id;
-        let items = self.patches.list(application_id).await.map_err(map_db_error)?;
-        let items = items
+        request: ServiceRequest<'_, ApplicationListPatchesRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListPatchesResponse> + Send + use<'a>> {
+        let items = self
+            .patches
+            .list(request.application_id)
+            .await
+            .map_err(map_db_error)?;
+        let patches = items
             .into_iter()
-            .map(patch_to_resource)
+            .map(|p| {
+                patch_to_proto(
+                    crate::services::compute::application::patch::ApplicationPatchResponseDto::from(p),
+                )
+            })
             .collect();
-        Response::ok(ResourceListResponse {
-            items,
+        Response::ok(ApplicationListPatchesResponse {
+            patches,
             ..Default::default()
         })
     }
@@ -1085,70 +1179,83 @@ impl ApplicationService for ApplicationController {
     async fn create_patch<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let application_id = request.id;
-        let dto: crate::services::compute::application::patch::UpsertApplicationPatchDto =
-            serde_json::from_str(request.payload)
-                .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ApplicationCreatePatchRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreatePatchResponse> + Send + use<'a>> {
+        let dto = crate::services::compute::application::patch::UpsertApplicationPatchDto {
+            patch_type: patch_type_from_proto(request.patch_type),
+            file_path: request.file_path.to_owned(),
+            enabled: request.enabled,
+            content: request.content.to_owned(),
+        };
         let item = self
             .patches
-            .create(application_id, dto)
+            .create(request.application_id, dto)
             .await
             .map_err(map_db_error)?;
-        Response::ok(patch_to_resource(item))
+        Response::ok(ApplicationCreatePatchResponse {
+            patch: ::buffa::MessageField::some(patch_to_proto(
+                crate::services::compute::application::patch::ApplicationPatchResponseDto::from(item),
+            )),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanUpdate)]
     async fn update_patch<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let resource_id = request.id;
-        let application_id = request.organization_id.unwrap_or(0);
-        let dto: crate::services::compute::application::patch::UpsertApplicationPatchDto =
-            serde_json::from_str(request.payload)
-                .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ApplicationUpdatePatchRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdatePatchResponse> + Send + use<'a>> {
+        let dto = crate::services::compute::application::patch::UpsertApplicationPatchDto {
+            patch_type: patch_type_from_proto(request.patch_type),
+            file_path: request.file_path.to_owned(),
+            enabled: request.enabled,
+            content: request.content.to_owned(),
+        };
         let item = self
             .patches
-            .update(application_id, resource_id, dto)
+            .update(request.application_id, request.id, dto)
             .await
             .map_err(map_db_error)?;
-        Response::ok(patch_to_resource(item))
+        Response::ok(ApplicationUpdatePatchResponse {
+            patch: ::buffa::MessageField::some(patch_to_proto(
+                crate::services::compute::application::patch::ApplicationPatchResponseDto::from(item),
+            )),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanDelete)]
     async fn delete_patch<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
+        request: ServiceRequest<'_, ApplicationDeletePatchRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        let resource_id = request.id;
-        let application_id = request.organization_id.unwrap_or(0);
         self.patches
-            .delete(application_id, resource_id)
+            .delete(request.application_id, request.id)
             .await
             .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 
-    // ── Middlewares (ResourceRequest envelope) ─────────────────────────
+    // ── Middlewares ────────────────────────────────────────────────────
 
     #[permission(Application, CanRead)]
     async fn list_middlewares<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let application_id = request.id;
-        let items = self.middles.list(application_id).await.map_err(map_db_error)?;
-        let items = items
-            .into_iter()
-            .map(middleware_to_resource)
-            .collect();
-        Response::ok(ResourceListResponse {
-            items,
+        request: ServiceRequest<'_, ApplicationListMiddlewaresRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ApplicationListMiddlewaresResponse> + Send + use<'a>,
+    > {
+        let items = self
+            .middles
+            .list(request.application_id)
+            .await
+            .map_err(map_db_error)?;
+        let middlewares = items.into_iter().map(middleware_to_proto).collect();
+        Response::ok(ApplicationListMiddlewaresResponse {
+            middlewares,
             ..Default::default()
         })
     }
@@ -1157,74 +1264,104 @@ impl ApplicationService for ApplicationController {
     async fn create_middleware<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let application_id = request.id;
-        let dto: crate::services::compute::application::middleware::UpsertApplicationMiddlewareDto =
-            serde_json::from_str(request.payload)
-                .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ApplicationCreateMiddlewareRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ApplicationCreateMiddlewareResponse> + Send + use<'a>,
+    > {
+        let dto = build_middleware_dto(
+            request.name.to_owned(),
+            middleware_type_from_proto(request.middleware_type),
+            request.enabled,
+            request
+                .headers
+                .iter()
+                .map(|h| (h.name.to_owned(), h.value.to_owned()))
+                .collect(),
+            request.average,
+            request.burst,
+            request.source_ranges.iter().map(|s| s.to_string()).collect(),
+        );
         let item = self
             .middles
-            .create(application_id, dto)
+            .create(request.application_id, dto)
             .await
             .map_err(map_db_error)?;
-        Response::ok(middleware_to_resource(item))
+        Response::ok(ApplicationCreateMiddlewareResponse {
+            middleware: ::buffa::MessageField::some(middleware_to_proto(item)),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanUpdate)]
     async fn update_middleware<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let resource_id = request.id;
-        let application_id = request.organization_id.unwrap_or(0);
-        let dto: crate::services::compute::application::middleware::UpsertApplicationMiddlewareDto =
-            serde_json::from_str(request.payload)
-                .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ApplicationUpdateMiddlewareRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ApplicationUpdateMiddlewareResponse> + Send + use<'a>,
+    > {
+        let dto = build_middleware_dto(
+            request.name.to_owned(),
+            middleware_type_from_proto(request.middleware_type),
+            request.enabled,
+            request
+                .headers
+                .iter()
+                .map(|h| (h.name.to_owned(), h.value.to_owned()))
+                .collect(),
+            request.average,
+            request.burst,
+            request.source_ranges.iter().map(|s| s.to_string()).collect(),
+        );
         let item = self
             .middles
-            .update(application_id, resource_id, dto)
+            .update(request.application_id, request.id, dto)
             .await
             .map_err(map_db_error)?;
-        Response::ok(middleware_to_resource(item))
+        Response::ok(ApplicationUpdateMiddlewareResponse {
+            middleware: ::buffa::MessageField::some(middleware_to_proto(item)),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanDelete)]
     async fn delete_middleware<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
+        request: ServiceRequest<'_, ApplicationDeleteMiddlewareRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        let resource_id = request.id;
-        let application_id = request.organization_id.unwrap_or(0);
         self.middles
-            .delete(application_id, resource_id)
+            .delete(request.application_id, request.id)
             .await
             .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 
-    // ── Redirects (ResourceRequest envelope) ───────────────────────────
+    // ── Redirects ──────────────────────────────────────────────────────
 
     #[permission(Application, CanRead)]
     async fn list_redirects<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceListResponse> + Send + use<'a>> {
-        let application_id = request.id;
+        request: ServiceRequest<'_, ApplicationListRedirectsRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ApplicationListRedirectsResponse> + Send + use<'a>,
+    > {
         let items = self
             .redirects
-            .list(application_id)
+            .list(request.application_id)
             .await
             .map_err(map_db_error)?;
-        let items = items
+        let redirects = items
             .into_iter()
-            .map(redirect_to_resource)
+            .map(|r| {
+                redirect_to_proto(
+                    crate::services::compute::application::redirect::ApplicationRedirectResponseDto::from(r),
+                )
+            })
             .collect();
-        Response::ok(ResourceListResponse {
-            items,
+        Response::ok(ApplicationListRedirectsResponse {
+            redirects,
             ..Default::default()
         })
     }
@@ -1233,79 +1370,93 @@ impl ApplicationService for ApplicationController {
     async fn create_redirect<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let application_id = request.id;
-        let dto: crate::services::compute::application::redirect::UpsertApplicationRedirectDto =
-            serde_json::from_str(request.payload)
-                .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ApplicationCreateRedirectRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ApplicationCreateRedirectResponse> + Send + use<'a>,
+    > {
+        let dto = crate::services::compute::application::redirect::UpsertApplicationRedirectDto {
+            regex: request.regex.to_owned(),
+            replacement: request.replacement.to_owned(),
+            permanent: i64::from(request.permanent),
+            unique_config_key: request.unique_config_key,
+        };
         let item = self
             .redirects
-            .create(application_id, dto)
+            .create(request.application_id, dto)
             .await
             .map_err(map_db_error)?;
-        Response::ok(redirect_to_resource(item))
+        Response::ok(ApplicationCreateRedirectResponse {
+            redirect: ::buffa::MessageField::some(redirect_to_proto(
+                crate::services::compute::application::redirect::ApplicationRedirectResponseDto::from(item),
+            )),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanUpdate)]
     async fn update_redirect<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let resource_id = request.id;
-        let application_id = request.organization_id.unwrap_or(0);
-        let dto: crate::services::compute::application::redirect::UpsertApplicationRedirectDto =
-            serde_json::from_str(request.payload)
-                .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ApplicationUpdateRedirectRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ApplicationUpdateRedirectResponse> + Send + use<'a>,
+    > {
+        let dto = crate::services::compute::application::redirect::UpsertApplicationRedirectDto {
+            regex: request.regex.to_owned(),
+            replacement: request.replacement.to_owned(),
+            permanent: i64::from(request.permanent),
+            unique_config_key: request.unique_config_key,
+        };
         let item = self
             .redirects
-            .update(application_id, resource_id, dto)
+            .update(request.application_id, request.id, dto)
             .await
             .map_err(map_db_error)?;
-        Response::ok(redirect_to_resource(item))
+        Response::ok(ApplicationUpdateRedirectResponse {
+            redirect: ::buffa::MessageField::some(redirect_to_proto(
+                crate::services::compute::application::redirect::ApplicationRedirectResponseDto::from(item),
+            )),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanDelete)]
     async fn delete_redirect<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
+        request: ServiceRequest<'_, ApplicationDeleteRedirectRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        let resource_id = request.id;
-        let application_id = request.organization_id.unwrap_or(0);
         self.redirects
-            .delete(application_id, resource_id)
+            .delete(request.application_id, request.id)
             .await
             .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 
-    // ── Security (ResourceRequest envelope) ────────────────────────────
+    // ── Security ───────────────────────────────────────────────────────
 
     #[permission(Application, CanRead)]
     async fn get_security<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let application_id = request.id;
+        request: ServiceRequest<'_, ApplicationGetSecurityRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationGetSecurityResponse> + Send + use<'a>>
+    {
         let items = self
             .securities
-            .list(application_id)
+            .list(request.application_id)
             .await
             .map_err(map_db_error)?;
-        let payload = serde_json::to_string(
-            &items
-                .into_iter()
-                .map(crate::services::compute::application::security::ApplicationSecurityResponseDto::from)
-                .collect::<Vec<_>>(),
-        )
-        .unwrap_or_default();
-        Response::ok(ResourceResponse {
-            id: application_id,
-            kind: "application_security".into(),
-            payload,
+        let security = items
+            .into_iter()
+            .map(|s| {
+                security_to_proto(
+                    crate::services::compute::application::security::ApplicationSecurityResponseDto::from(s),
+                )
+            })
+            .collect();
+        Response::ok(ApplicationGetSecurityResponse {
+            security,
             ..Default::default()
         })
     }
@@ -1314,72 +1465,85 @@ impl ApplicationService for ApplicationController {
     async fn create_security<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let application_id = request.id;
-        let dto: crate::services::compute::application::security::UpsertApplicationSecurityDto =
-            serde_json::from_str(request.payload)
-                .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ApplicationCreateSecurityRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ApplicationCreateSecurityResponse> + Send + use<'a>,
+    > {
+        let dto = crate::services::compute::application::security::UpsertApplicationSecurityDto {
+            username: request.username.to_owned(),
+            password: request.password.to_owned(),
+        };
         let item = self
             .securities
-            .create(application_id, dto)
+            .create(request.application_id, dto)
             .await
             .map_err(map_db_error)?;
-        Response::ok(security_to_resource(item))
+        Response::ok(ApplicationCreateSecurityResponse {
+            security: ::buffa::MessageField::some(security_to_proto(
+                crate::services::compute::application::security::ApplicationSecurityResponseDto::from(item),
+            )),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanUpdate)]
     async fn update_security<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ResourceResponse> + Send + use<'a>> {
-        let resource_id = request.id;
-        let application_id = request.organization_id.unwrap_or(0);
-        let dto: crate::services::compute::application::security::UpsertApplicationSecurityDto =
-            serde_json::from_str(request.payload)
-                .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ApplicationUpdateSecurityRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ApplicationUpdateSecurityResponse> + Send + use<'a>,
+    > {
+        let dto = crate::services::compute::application::security::UpsertApplicationSecurityDto {
+            username: request.username.to_owned(),
+            password: request.password.to_owned(),
+        };
         let item = self
             .securities
-            .update(application_id, resource_id, dto)
+            .update(request.application_id, request.id, dto)
             .await
             .map_err(map_db_error)?;
-        Response::ok(security_to_resource(item))
+        Response::ok(ApplicationUpdateSecurityResponse {
+            security: ::buffa::MessageField::some(security_to_proto(
+                crate::services::compute::application::security::ApplicationSecurityResponseDto::from(item),
+            )),
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanDelete)]
     async fn delete_security<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
+        request: ServiceRequest<'_, ApplicationDeleteSecurityRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        let resource_id = request.id;
-        let application_id = request.organization_id.unwrap_or(0);
         self.securities
-            .delete(application_id, resource_id)
+            .delete(request.application_id, request.id)
             .await
             .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 
-    // ── Networks (ResourceRequest envelope) ────────────────────────────
+    // ── Networks ───────────────────────────────────────────────────────
 
     #[permission(Application, CanUpdate)]
     async fn update_networks<'a>(
         &'a self,
         _ctx: RequestContext,
-        request: ServiceRequest<'_, ResourceRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<OperationResult> + Send + use<'a>> {
-        let application_id = request.id;
-        let dto: crate::services::compute::application::network::UpdateApplicationNetworksDto =
-            serde_json::from_str(request.payload)
-                .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        request: ServiceRequest<'_, ApplicationUpdateNetworksRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ApplicationUpdateNetworksResponse> + Send + use<'a>,
+    > {
+        let dto = crate::services::compute::application::network::UpdateApplicationNetworksDto {
+            network_ids: request.network_ids.iter().map(|id| *id).collect(),
+            detach_rustploy_network: request.detach_rustploy_network,
+        };
         let (_detach, _networks) = self
             .networks
-            .update(application_id, dto)
+            .update(request.application_id, dto)
             .await
             .map_err(map_db_error)?;
-        Response::ok(OperationResult {
+        Response::ok(ApplicationUpdateNetworksResponse {
             success: true,
             operation: "update_networks".into(),
             ..Default::default()
