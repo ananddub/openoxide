@@ -1,9 +1,0 @@
-syntax = "proto3";
-package openoxide.api.v1;
-
-import "openoxide/api/v1/common.proto";
-service OverviewOperationsService {
-  rpc ListOrganizationServices(ResourceQuery) returns (ResourceListResponse);
-  rpc ListOrganizationDomains(ResourceQuery) returns (ResourceListResponse);
-  rpc ListOrganizationBackups(ResourceQuery) returns (ResourceListResponse);
-}
