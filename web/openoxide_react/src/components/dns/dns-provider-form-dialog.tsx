@@ -1,17 +1,24 @@
 import React, {useEffect, useState} from 'react';
 import {Input} from '#/components/ui/input';
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
+import {
 	Sheet,
 	SheetContent,
 	SheetDescription,
 	SheetHeader,
 	SheetTitle,
 } from '#/components/ui/sheet';
-import {FieldLabel} from '#/components/shared/field-label';
 import {ProviderTypeSelect} from '#/components/shared/provider-type-select';
+import {WizardField} from '#/components/shared/sheet-wizard';
 import {TestSaveFooter} from '#/components/shared/test-save-footer';
 import {
-	credentialKind,
+	dnsProviderFields,
 	dnsProviderOptions,
 	type DnsProviderItem,
 	type DnsProviderType,
@@ -30,32 +37,56 @@ export function DnsProviderFormDialog({
 }) {
 	const [formName, setFormName] = useState('');
 	const [formType, setFormType] = useState<DnsProviderType>('CLOUDFLARE');
-	const [formToken, setFormToken] = useState('');
-	const [formAccessKey, setFormAccessKey] = useState('');
+	const [values, setValues] = useState<Record<string, string>>({});
+
+	// Seeds every field of `type` from stored credentials (edit) or defaults.
+	const seedValues = (type: DnsProviderType) => {
+		const seeded: Record<string, string> = {};
+		let stored: Record<string, unknown> = {};
+		try {
+			stored = JSON.parse(provider?.credentials_json || '{}');
+		} catch {
+			stored = {};
+		}
+		for (const field of dnsProviderFields(type)) {
+			// Stored masked secrets round-trip as-is: sending them back tells the
+			// backend to keep the existing value.
+			seeded[field.key] =
+				typeof stored[field.key] === 'string'
+					? (stored[field.key] as string)
+					: (field.defaultValue ?? '');
+		}
+		return seeded;
+	};
 
 	useEffect(() => {
 		if (!open) return;
 		setFormName(provider?.name ?? '');
-		setFormType(
-			((provider?.provider_type || 'CLOUDFLARE').toUpperCase() ??
-				'CLOUDFLARE') as DnsProviderType,
-		);
-		setFormToken('');
-		try {
-			const creds = JSON.parse(provider?.credentials_json || '{}');
-			setFormAccessKey(creds.accessKeyId || creds.apiKey || '');
-		} catch {
-			setFormAccessKey('');
-		}
+		const type =
+			((
+				provider?.provider_type || 'CLOUDFLARE'
+			).toUpperCase() as DnsProviderType) ?? 'CLOUDFLARE';
+		setFormType(type);
+		setValues(seedValues(type));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open, provider]);
+
+	const changeType = (type: DnsProviderType) => {
+		setFormType(type);
+		// Switching provider must seed the new field set, otherwise defaults
+		// (e.g. the OVH endpoint) never enter `values` and the save guard fails.
+		setValues(prev => ({...seedValues(type), ...prev}));
+	};
+
+	const setValue = (key: string, value: string) =>
+		setValues(prev => ({...prev, [key]: value}));
 
 	const {save, test, isSubmitting, isTesting} = useDnsProviderFormActions(
 		() => ({
 			provider,
 			name: formName,
 			type: formType,
-			accessKey: formAccessKey,
-			token: formToken,
+			values,
 		}),
 	);
 
@@ -81,55 +112,70 @@ export function DnsProviderFormDialog({
 					onSubmit={handleSaveProvider}
 					className="flex min-h-0 flex-1 flex-col">
 					<div className="flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto px-6 py-5">
-						<div className="space-y-1">
-							<FieldLabel>Provider Name</FieldLabel>
+						<WizardField label="Provider Name">
 							<Input
 								placeholder="e.g. Cloudflare Production"
 								value={formName}
 								onChange={e => setFormName(e.target.value)}
-								className="h-10 bg-muted/20 text-xs"
 							/>
-						</div>
+						</WizardField>
 
 						<ProviderTypeSelect
 							value={formType}
-							onChange={v => setFormType(v as DnsProviderType)}
+							onChange={v => changeType(v as DnsProviderType)}
 							disabled={!!provider}
 							options={dnsProviderOptions}
 						/>
 
-						{credentialKind(formType) !== 'token' && (
-							<div className="space-y-1">
-								<FieldLabel>
-									{formType === 'GODADDY'
-										? 'API Key'
-										: 'AWS Access Key ID'}
-								</FieldLabel>
-								<Input
-									value={formAccessKey}
-									onChange={e => setFormAccessKey(e.target.value)}
-									className="h-10 bg-muted/20 font-mono text-xs"
-								/>
-							</div>
-						)}
-						<div className="space-y-1">
-							<FieldLabel>
-								{formType === 'GODADDY'
-									? 'API Secret'
-									: 'API Token / Secret Key'}
-							</FieldLabel>
-							<Input
-								type="password"
-								placeholder={
-									provider
-										? 'Leave blank to keep existing token'
-										: 'API Token with Zone:DNS Edit permissions'
-								}
-								value={formToken}
-								onChange={e => setFormToken(e.target.value)}
-								className="h-10 bg-muted/20 font-mono text-xs"
-							/>
-						</div>
+						{dnsProviderFields(formType).map(field => (
+							<WizardField
+								key={field.key}
+								label={field.label}
+								hint={field.hint}>
+								{field.select ? (
+									<Select
+										value={values[field.key] || field.select[0].value}
+										onValueChange={v => setValue(field.key, v ?? '')}>
+										<SelectTrigger>
+											<SelectValue>
+												{
+													(
+														field.select.find(
+															o => o.value === values[field.key],
+														) ?? field.select[0]
+													).label
+												}
+											</SelectValue>
+										</SelectTrigger>
+										<SelectContent className="w-[var(--anchor-width)]">
+											{field.select.map(option => (
+												<SelectItem
+													key={option.value}
+													value={option.value}>
+													{option.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								) : (
+									<Input
+										type={field.secret ? 'password' : 'text'}
+										placeholder={
+											field.secret && provider
+												? 'Leave unchanged to keep existing value'
+												: undefined
+										}
+										value={values[field.key] ?? ''}
+										onChange={e => setValue(field.key, e.target.value)}
+										className={
+											field.secret
+												? 'font-mono'
+												: undefined
+										}
+									/>
+								)}
+							</WizardField>
+						))}
 					</div>
 
 					<TestSaveFooter

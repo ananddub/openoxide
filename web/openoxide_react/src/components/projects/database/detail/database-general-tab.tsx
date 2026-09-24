@@ -2,7 +2,8 @@ import {useMemo, useState} from 'react';
 import type {DatabaseResponse} from '#/types/api-helpers';
 import {TerminalCard} from '#/components/shared/terminal-card';
 import {EnvironmentSheet} from '#/components/projects/common/environment-sheet';
-import {SettingsCollapse} from '#/components/shared/settings-collapse';
+import {SettingsSheet} from '#/components/shared/settings-sheet';
+import {SheetGroup} from '#/components/shared/field';
 import {
 	ArchitecturePreviewCard,
 	statusToneFor,
@@ -99,23 +100,42 @@ export function DatabaseGeneralTab({
 				errorDetail={(database as any)?.last_error}
 				sections={
 					<>
-						{/* Internal Credentials — embedded strip */}
-						<SettingsCollapse title="Internal Credentials">
-							<DatabaseInternalCredentialsCard
-								database={database}
-								onUpdated={onUpdated}
-								embedded
-							/>
-						</SettingsCollapse>
+						{/* Credentials — one strip, one right sheet holding both access paths. */}
+						<SettingsSheet
+							title="Credentials"
+							description="How apps and the internet reach this database."
+							meta={
+								<span className="flex items-center gap-1.5">
+									<span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
+										:{dbInternalPort(kind)}
+									</span>
+									<span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
+										{database?.external_port
+											? `:${database.external_port}`
+											: 'Private only'}
+									</span>
+								</span>
+							}>
+							<SheetGroup
+								title="Internal"
+								description="Credentials apps on the private network use to connect.">
+								<DatabaseInternalCredentialsCard
+									database={database}
+									onUpdated={onUpdated}
+									embedded
+								/>
+							</SheetGroup>
 
-						{/* External Port & Internet Access Credentials — embedded strip */}
-						<SettingsCollapse title="External Credentials">
-							<DatabaseExternalCredentialsCard
-								database={database}
-								onUpdated={onUpdated}
-								embedded
-							/>
-						</SettingsCollapse>
+							<SheetGroup
+								title="External"
+								description="Optionally expose the database on a public port.">
+								<DatabaseExternalCredentialsCard
+									database={database}
+									onUpdated={onUpdated}
+									embedded
+								/>
+							</SheetGroup>
+						</SettingsSheet>
 
 						<BuildLogsSection
 							entityId={Number(database?.id ?? 0)}

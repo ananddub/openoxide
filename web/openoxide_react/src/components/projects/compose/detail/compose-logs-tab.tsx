@@ -155,6 +155,7 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 
 			{/* Stream Viewer Component (< 200 lines) */}
 			<DeploymentViewer
+				aiContext={logMode === 'build' ? 'BUILD' : 'RUNTIME'}
 				logs={streamedLogs}
 				isLoading={isLoading}
 				isLive={isLive}

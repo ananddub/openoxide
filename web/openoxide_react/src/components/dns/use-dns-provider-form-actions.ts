@@ -10,6 +10,7 @@ import {toast} from 'sonner';
 import {useOrganizations} from '#/stores/session-context';
 import {
 	buildDnsCredentials,
+	dnsProviderFields,
 	type DnsProviderItem,
 } from './dns-provider-catalog';
 
@@ -17,8 +18,7 @@ export interface DnsFormValues {
 	provider: DnsProviderItem | null;
 	name: string;
 	type: string;
-	accessKey: string;
-	token: string;
+	values: Record<string, string>;
 }
 
 /** Create/update and connection-test actions for the DNS provider form. Reads current values lazily so the dialog only owns form state. */
@@ -31,22 +31,29 @@ export function useDnsProviderFormActions(getValues: () => DnsFormValues) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isTesting, setIsTesting] = useState(false);
 
+	const missingFields = (v: DnsFormValues) =>
+		dnsProviderFields(v.type).filter(f => !(v.values[f.key] ?? '').trim());
+
 	const save = async (): Promise<boolean> => {
 		const v = getValues();
-		if (!v.name.trim() || (!v.provider && !v.token.trim())) {
+		if (!v.name.trim()) {
 			toast.error('Please fill in all required fields');
+			return false;
+		}
+		if (!v.provider && missingFields(v).length > 0) {
+			toast.error('Please fill in all credential fields');
 			return false;
 		}
 
 		setIsSubmitting(true);
 		try {
 			if (v.provider) {
+				// Masked secrets round-trip untouched; the backend keeps the
+				// stored value for any field sent back as the mask.
 				await updateMutation.mutateAsync({
 					id: v.provider.id,
 					name: v.name.trim(),
-					credentials_json: v.token.trim()
-						? buildDnsCredentials(v.type, v.accessKey, v.token)
-						: undefined,
+					credentials_json: buildDnsCredentials(v.type, v.values),
 				});
 				toast.success(`DNS Provider "${v.name}" updated`);
 			} else {
@@ -54,11 +61,7 @@ export function useDnsProviderFormActions(getValues: () => DnsFormValues) {
 					organization_id: Number(activeOrg?.id || 1),
 					name: v.name.trim(),
 					provider_type: v.type,
-					credentials_json: buildDnsCredentials(
-						v.type,
-						v.accessKey,
-						v.token,
-					),
+					credentials_json: buildDnsCredentials(v.type, v.values),
 				});
 				toast.success(`DNS Provider "${v.name}" created successfully`);
 			}
@@ -77,23 +80,35 @@ export function useDnsProviderFormActions(getValues: () => DnsFormValues) {
 	}) => {
 		if (result?.success) {
 			toast.success(
-				result.message || 'DNS API token verified successfully!',
+				result.message || 'DNS API credentials verified successfully!',
 			);
 		} else {
-			toast.error(result?.message || 'DNS API token verification failed');
+			toast.error(
+				result?.message || 'DNS API credential verification failed',
+			);
 		}
 	};
 
 	const test = async () => {
 		const v = getValues();
-		if (!v.provider && !v.token.trim()) {
-			toast.error('Please enter an API Token to test connection');
+		if (!v.provider && missingFields(v).length > 0) {
+			toast.error('Please fill in all credential fields to test');
 			return;
 		}
 
 		setIsTesting(true);
 		try {
-			if (v.provider) {
+			// While editing, only test the live form when a real (unmasked)
+			// secret is present; masked values would fail at the provider.
+			const editedSecret = v.provider
+				? dnsProviderFields(v.type).some(
+						f =>
+							f.secret &&
+							(v.values[f.key] ?? '').trim() &&
+							!(v.values[f.key] ?? '').includes('********'),
+					)
+				: false;
+			if (v.provider && !editedSecret) {
 				reportResult(await testMutation.mutateAsync({id: v.provider.id}));
 			} else {
 				// Call Rust backend proxy to bypass browser CORS & run official API test
@@ -101,11 +116,7 @@ export function useDnsProviderFormActions(getValues: () => DnsFormValues) {
 					await testConnectionMutation.mutateAsync({
 						name: v.name.trim() || 'Test',
 						provider_type: v.type,
-						credentials_json: buildDnsCredentials(
-							v.type,
-							v.accessKey,
-							v.token,
-						),
+						credentials_json: buildDnsCredentials(v.type, v.values),
 					}),
 				);
 			}

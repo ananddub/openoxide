@@ -1,10 +1,23 @@
-import {Box, Layers2, Database, LayoutTemplate} from 'lucide-react';
+import {
+	Box,
+	Layers2,
+	Database,
+	LayoutTemplate,
+	Sparkles,
+} from 'lucide-react';
 
 export type ServiceKind =
 	| 'application'
 	| 'compose'
 	| 'database'
 	| 'template';
+
+export const AI_ASSISTANT_OPTION = {
+	title: 'AI Assistant',
+	description:
+		'Prompt likho — AI deployable compose stacks design karega.',
+	icon: Sparkles,
+};
 
 export const OPTIONS: {
 	id: ServiceKind;

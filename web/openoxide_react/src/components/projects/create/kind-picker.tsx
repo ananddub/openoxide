@@ -30,7 +30,7 @@ export function KindPicker({
 					value={query}
 					onChange={e => setQuery(e.target.value)}
 					placeholder="Search services…"
-					className="bg-background pl-9"
+					className="pl-9"
 				/>
 			</div>
 

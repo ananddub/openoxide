@@ -265,6 +265,7 @@ impl ServerSetup {
     pub async fn ensure_traefik(&self) -> ExecResult<()> {
         let docker = DockerCli::from_executor(self.executor.clone());
         let name = self.config.traefik_name.as_str();
+        let mut started = false;
         if docker.container(name).inspect().await.is_ok() {
             // Existing installations may have been created on the legacy
             // network. Connecting is idempotent enough for setup: Docker
@@ -275,46 +276,56 @@ impl ServerSetup {
                 .connect(self.config.network_name.as_str(), name)
                 .run()
                 .await;
-            docker.container(name).start().run().await?;
-            return Ok(());
+            match docker.container(name).start().run().await {
+                Ok(_) => started = true,
+                // A container left behind from a deleted network can never
+                // start — its endpoint references a dead network id. Remove it
+                // so the fresh-create path below rebuilds it.
+                Err(_) => {
+                    let _ = docker.container(name).remove().force().run().await;
+                }
+            }
         }
-        if docker.services().inspect(name).await.is_ok() {
-            docker.services().remove(name).run().await?;
+        if !started {
+            if docker.services().inspect(name).await.is_ok() {
+                docker.services().remove(name).run().await?;
+            }
+            let image = format!("traefik:v{}", self.config.traefik_version);
+            docker.images().pull(&image).pull().await?;
+
+            let static_mount = Mount::bind_ro(
+                format!("{}/traefik.yml", self.config.paths.traefik),
+                "/etc/traefik/traefik.yml",
+            );
+            let dynamic_mount = Mount::bind(
+                &self.config.paths.traefik_dynamic,
+                "/etc/openoxide/traefik/dynamic",
+            );
+            let docker_socket_mount =
+                Mount::bind_ro("/var/run/docker.sock", "/var/run/docker.sock");
+
+            let p_http = Port::tcp(self.config.http_port, self.config.http_port);
+            let p_https = Port::tcp(self.config.https_port, self.config.https_port);
+            let p_http3 = Port::udp(self.config.http3_port, self.config.http3_port);
+            let p_dashboard = Port::tcp(self.config.dashboard_port, 8080);
+
+            docker
+                .containers()
+                .create(&image)
+                .detach()
+                .name(name)
+                .restart(RestartPolicy::Always)
+                .network(self.config.network_name.as_str())
+                .mount(static_mount)
+                .mount(dynamic_mount)
+                .mount(docker_socket_mount)
+                .publish(p_http)
+                .publish(p_https)
+                .publish(p_http3)
+                .publish(p_dashboard)
+                .run()
+                .await?;
         }
-        let image = format!("traefik:v{}", self.config.traefik_version);
-        docker.images().pull(&image).pull().await?;
-
-        let static_mount = Mount::bind_ro(
-            format!("{}/traefik.yml", self.config.paths.traefik),
-            "/etc/traefik/traefik.yml",
-        );
-        let dynamic_mount = Mount::bind(
-            &self.config.paths.traefik_dynamic,
-            "/etc/openoxide/traefik/dynamic",
-        );
-        let docker_socket_mount = Mount::bind_ro("/var/run/docker.sock", "/var/run/docker.sock");
-
-        let p_http = Port::tcp(self.config.http_port, self.config.http_port);
-        let p_https = Port::tcp(self.config.https_port, self.config.https_port);
-        let p_http3 = Port::udp(self.config.http3_port, self.config.http3_port);
-        let p_dashboard = Port::tcp(self.config.dashboard_port, 8080);
-
-        docker
-            .containers()
-            .create(&image)
-            .detach()
-            .name(name)
-            .restart(RestartPolicy::Always)
-            .network(self.config.network_name.as_str())
-            .mount(static_mount)
-            .mount(dynamic_mount)
-            .mount(docker_socket_mount)
-            .publish(p_http)
-            .publish(p_https)
-            .publish(p_http3)
-            .publish(p_dashboard)
-            .run()
-            .await?;
         Ok(())
     }
 
@@ -346,8 +357,12 @@ impl ServerSetup {
                 return Ok(());
             }
             if self.config.agent_server_id.is_none() {
-                docker.container(name).start().run().await?;
-                return Ok(());
+                if docker.container(name).start().run().await.is_ok() {
+                    return Ok(());
+                }
+                // A container left behind from a deleted network can never
+                // start — remove it so the fresh-create path below rebuilds.
+                let _ = docker.container(name).remove().force().run().await;
             }
             let _ = docker.container(name).stop().run().await;
             let _ = docker.container(name).remove().force().run().await;
@@ -754,6 +769,39 @@ impl ServerSetup {
 
     fn append_traefik_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         let name = self.config.traefik_name.as_str();
+        steps.extend(sh!(
+            info!("Checking Traefik container");
+            if docker
+                .containers()
+                .inspect_cmd(name)
+                .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+                .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
+            {
+                info!("Starting existing Traefik container");
+                if !docker.container(name).start() {
+                    // A leftover container can reference a deleted network by
+                    // id, so `docker start` can never succeed — drop it and
+                    // let the guarded create block below rebuild it.
+                    info!("Existing Traefik container could not start — recreating it");
+                    docker.container(name).remove().force();
+                }
+            }
+        ));
+        self.append_traefik_create_if_absent(steps, docker);
+    }
+
+    fn append_traefik_create_if_absent(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
+        let mut create = Vec::new();
+        self.append_traefik_create_block(&mut create, docker);
+        steps.push(guarded_by_absent_container(
+            docker,
+            self.config.traefik_name.as_str(),
+            create,
+        ));
+    }
+
+    fn append_traefik_create_block(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
+        let name = self.config.traefik_name.as_str();
         let image = format!("traefik:v{}", self.config.traefik_version);
         let static_mount = Mount::bind_ro(
             format!("{}/traefik.yml", self.config.paths.traefik),
@@ -765,49 +813,37 @@ impl ServerSetup {
         );
         let docker_socket_mount = Mount::bind_ro("/var/run/docker.sock", "/var/run/docker.sock");
         steps.extend(sh!(
-            info!("Checking Traefik container");
             if docker
-                .containers()
+                .services()
                 .inspect_cmd(name)
                 .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
                 .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
             {
-                info!("Starting existing Traefik container");
-                docker.container(name).start();
-            } else {
-                if docker
-                    .services()
-                    .inspect_cmd(name)
-                    .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
-                    .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
-                {
-                    info!("Removing existing Traefik service");
-                    docker.services().remove(name);
-                }
-                info!("Pulling Traefik image");
-                docker.images().pull(image.as_str());
-                info!("Creating Traefik container");
-                docker
-                    .containers()
-                    .create(image.as_str())
-                    .detach()
-                    .name(name)
-                    .restart(RestartPolicy::Always)
-                    .network(self.config.network_name.as_str())
-                    .mount(static_mount)
-                    .mount(dynamic_mount)
-                    .mount(docker_socket_mount)
-                    .publish(Port::tcp(self.config.http_port, self.config.http_port))
-                    .publish(Port::tcp(self.config.https_port, self.config.https_port))
-                    .publish(Port::udp(self.config.http3_port, self.config.http3_port))
-                    .publish(Port::tcp(self.config.dashboard_port, 8080));
+                info!("Removing existing Traefik service");
+                docker.services().remove(name);
             }
+            info!("Pulling Traefik image");
+            docker.images().pull(image.as_str());
+            info!("Creating Traefik container");
+            docker
+                .containers()
+                .create(image.as_str())
+                .detach()
+                .name(name)
+                .restart(RestartPolicy::Always)
+                .network(self.config.network_name.as_str())
+                .mount(static_mount)
+                .mount(dynamic_mount)
+                .mount(docker_socket_mount)
+                .publish(Port::tcp(self.config.http_port, self.config.http_port))
+                .publish(Port::tcp(self.config.https_port, self.config.https_port))
+                .publish(Port::udp(self.config.http3_port, self.config.http3_port))
+                .publish(Port::tcp(self.config.dashboard_port, 8080));
         ));
     }
 
     fn append_agent_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         let name = AGENT_CONTAINER_NAME;
-        let image = agent_image();
 
         steps.extend(sh!(
             info!("Checking OpenOxide agent container");
@@ -818,49 +854,81 @@ impl ServerSetup {
                 .stderr(crate::utils::exec::script::dsl::OutputTarget::Null)
             {
                 info!("Starting existing OpenOxide agent container");
-                docker.container(name).start();
-            } else {
-                let _openoxide_arch = capture_stdout! {
-                    cmd("uname", "-m");
-                };
-                if cmd("test", _openoxide_arch, "=", "aarch64") {
-                    echo("Skipping OpenOxide agent on ARM64; image has no arm64 manifest")
-                        .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
-                } else if cmd("test", _openoxide_arch, "=", "arm64") {
-                    echo("Skipping OpenOxide agent on ARM64; image has no arm64 manifest")
-                        .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
-                } else {
-                    info!("Pulling OpenOxide agent image");
-                    docker.images().pull(image);
-                    info!("Creating OpenOxide agent container");
-                    docker
-                        .containers()
-                        .create(image)
-                        .detach()
-                        .name(name)
-                        .restart(RestartPolicy::Always)
-                        .network(self.config.network_name.as_str())
-                        .mount(Mount::bind("/var/run/docker.sock", "/var/run/docker.sock"))
-                        .mount(Mount::bind_ro("/sys/fs/cgroup", "/sys/fs/cgroup"))
-                        .mount(Mount::bind(self.config.paths.agent.as_str(), "/app/workspace"))
-                        .mount(Mount::bind(
-                            self.config.paths.traefik.as_str(),
-                            "/etc/openoxide/traefik",
-                        ))
-                        .env("SERVER_ID", self.config.agent_server_id.unwrap_or(0).to_string())
-                        .env("OPENOXIDE_SERVER_URL", self.config.agent_panel_url.clone().unwrap_or_default())
-                        .env("METRICS_TOKEN", self.config.agent_token.clone().unwrap_or_default())
-                        .env("MONITOR_DATABASE_URL", "memory://metrics")
-                        .env("REFRESH_RATE", "2")
-                        .env("RETENTION_DAYS", self.config.agent_retention_days.to_string())
-                        .publish(Port::tcp(50051, 50051));
+                if !docker.container(name).start() {
+                    // Same stale-network case as Traefik: rebuild from scratch.
+                    info!("Existing OpenOxide agent container could not start — recreating it");
+                    docker.container(name).remove().force();
                 }
+            }
+        ));
+        let mut create = Vec::new();
+        self.append_agent_create_block(&mut create, docker);
+        steps.push(guarded_by_absent_container(
+            docker,
+            AGENT_CONTAINER_NAME,
+            create,
+        ));
+    }
+
+    fn append_agent_create_block(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
+        let name = AGENT_CONTAINER_NAME;
+        let image = agent_image();
+        steps.extend(sh!(
+            let _openoxide_arch = capture_stdout! {
+                cmd("uname", "-m");
+            };
+            if cmd("test", _openoxide_arch, "=", "aarch64") {
+                echo("Skipping OpenOxide agent on ARM64; image has no arm64 manifest")
+                    .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
+            } else if cmd("test", _openoxide_arch, "=", "arm64") {
+                echo("Skipping OpenOxide agent on ARM64; image has no arm64 manifest")
+                    .stderr(crate::utils::exec::script::dsl::OutputTarget::StandardError);
+            } else {
+                info!("Pulling OpenOxide agent image");
+                docker.images().pull(image);
+                info!("Creating OpenOxide agent container");
+                docker
+                    .containers()
+                    .create(image)
+                    .detach()
+                    .name(name)
+                    .restart(RestartPolicy::Always)
+                    .network(self.config.network_name.as_str())
+                    .mount(Mount::bind("/var/run/docker.sock", "/var/run/docker.sock"))
+                    .mount(Mount::bind_ro("/sys/fs/cgroup", "/sys/fs/cgroup"))
+                    .mount(Mount::bind(self.config.paths.agent.as_str(), "/app/workspace"))
+                    .mount(Mount::bind(
+                        self.config.paths.traefik.as_str(),
+                        "/etc/openoxide/traefik",
+                    ))
+                    .env("SERVER_ID", self.config.agent_server_id.unwrap_or(0).to_string())
+                    .env("OPENOXIDE_SERVER_URL", self.config.agent_panel_url.clone().unwrap_or_default())
+                    .env("METRICS_TOKEN", self.config.agent_token.clone().unwrap_or_default())
+                    .env("MONITOR_DATABASE_URL", "memory://metrics")
+                    .env("REFRESH_RATE", "2")
+                    .env("RETENTION_DAYS", self.config.agent_retention_days.to_string())
+                    .publish(Port::tcp(50051, 50051));
             }
         ));
     }
 }
 
 pub(crate) const AGENT_CONTAINER_NAME: &str = "openoxide-agent";
+
+/// `if ! docker container inspect NAME ...; then <body>; fi`
+fn guarded_by_absent_container(docker: &DockerCli, name: &str, body: Vec<ShellIR>) -> ShellIR {
+    use crate::utils::exec::script::dsl::{IntoShellIRGeneric, ShellIRWrapper};
+
+    let inspect = ShellIRWrapper(docker.containers().inspect_cmd(name))
+        .into_shell_ir()
+        .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
+        .stderr(crate::utils::exec::script::dsl::OutputTarget::Null);
+    ShellIR::If {
+        cond: Box::new(ShellIR::Raw(format!("! {}", inspect.to_bash()))),
+        then_branch: body,
+        else_branch: None,
+    }
+}
 
 pub(crate) fn agent_image() -> &'static str {
     "dubeyanand/openoxide-agent:latest"

@@ -1,5 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import {Loader} from 'lucide-react';
+import {AnalyzeLogsButton} from '#/components/ai/analyze-logs-button';
 import {
 	lineTone,
 	splitTimestamp,
@@ -40,6 +41,14 @@ export function DeploymentInlineLogs({
 
 	return (
 		<div className="flex flex-col border-t border-border">
+			<div className="flex shrink-0 items-center gap-2.5 border-b border-border bg-card px-4 py-2">
+				<span className="text-[13px] text-muted-foreground">
+					{lines.length} line{lines.length === 1 ? '' : 's'}
+				</span>
+				<div className="ml-auto">
+					<AnalyzeLogsButton lines={lines} context="BUILD" />
+				</div>
+			</div>
 			<div ref={scrollRef} style={{height}} className={LOG_SURFACE_CLS}>
 				{lines.length === 0 ? (
 					<p className="flex items-center gap-2 py-2 font-mono text-[12.5px] text-muted-foreground">

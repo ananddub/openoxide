@@ -1,14 +1,15 @@
 import {useState, useEffect} from 'react';
-import {Save, Info} from 'lucide-react';
-import {Button} from '#/components/ui/button';
-import {RadioGroup, RadioGroupItem} from '#/components/ui/radio-group';
+import {Check, Info} from 'lucide-react';
 import {toast} from 'sonner';
+import {Button} from '#/components/ui/button';
 import {
 	useApplicationUpdate,
 	useApplicationUpdateBuildConfig,
 } from '#/api/live';
 import {ApplicationBuildType} from '#/gen/connect/openoxide/api/v1/application_pb';
 import {cn, formatApiError} from '#/api/utils';
+import {SheetGroup, SheetNote} from '#/components/shared/field';
+import {SettingsSheet} from '#/components/shared/settings-sheet';
 import {
 	BUILD_TYPES,
 	RAILPACK_VERSIONS,
@@ -20,6 +21,7 @@ import {RailpackVersionField} from './build-settings-card/railpack-version-field
 interface BuildSettingsCardProps {
 	app: any;
 	onUpdated: () => void;
+	/** Kept for call-site compatibility; the card always renders its own sheet. */
 	embedded?: boolean;
 }
 
@@ -33,10 +35,10 @@ function fieldsFromApp(app: any): BuildFields {
 	};
 }
 
+/** One compact sheet: build-type chips on top, the selected type's options right below — same grammar as the Source & Provider sheet. */
 export function BuildSettingsCard({
 	app,
 	onUpdated,
-	embedded,
 }: BuildSettingsCardProps) {
 	const [buildType, setBuildType] = useState<string>(
 		app.build_type || 'NIXPACKS',
@@ -111,87 +113,88 @@ export function BuildSettingsCard({
 		}
 	};
 
-	return (
-		<section
-			className={cn(
-				'flex flex-col gap-4',
-				!embedded && 'rounded-xl bg-card p-5',
-			)}>
-			{!embedded && (
-				<div>
-					<h3 className="text-sm font-bold text-foreground">Build Type</h3>
-					<p className="mt-1 text-xs text-muted-foreground">
-						Select the way of building your code
-					</p>
-				</div>
-			)}
+	const typeLabel =
+		BUILD_TYPES.find(bt => bt.id === buildType)?.label ?? buildType;
 
-			{/* Resource alert block */}
-			<div className="flex gap-3 rounded-xl bg-amber-500/5 p-4 text-xs leading-relaxed text-muted-foreground">
-				<Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-				<div>
+	return (
+		<SettingsSheet
+			title="Build Configuration"
+			description="The builder that turns your code into an image, and its options."
+			meta={
+				<span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+					{typeLabel}
+				</span>
+			}
+			footer={
+				<Button
+					onClick={() => void handleSaveBuildType()}
+					disabled={savingBuild}
+					className="h-8 gap-1.5 px-4 text-xs">
+					{savingBuild ? 'Saving…' : 'Save changes'}
+				</Button>
+			}>
+			<SheetGroup
+				title="Build type"
+				description="Pick the builder that turns your repository into an image.">
+				{/* Compact builder picker — chip grid, not radio rows. */}
+				<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+					{BUILD_TYPES.map(bt => {
+						const selected = buildType === bt.id;
+						return (
+							<button
+								key={bt.id}
+								type="button"
+								onClick={() => setBuildType(bt.id)}
+								aria-pressed={selected}
+								className={cn(
+									'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors',
+									selected
+										? 'border-primary/50 bg-primary/[0.08] text-foreground'
+										: 'border-border/60 text-muted-foreground hover:bg-muted/30 hover:text-foreground',
+								)}>
+								<span className="truncate">{bt.label}</span>
+								{bt.isNew && (
+									<span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[9px] leading-none font-semibold text-primary">
+										New
+									</span>
+								)}
+								{selected && (
+									<Check className="ml-auto size-3.5 shrink-0 text-primary" />
+								)}
+							</button>
+						);
+					})}
+				</div>
+
+				<SheetNote icon={<Info className="size-4" />}>
 					Builders can consume significant memory and CPU resources
 					(recommended: 4+ GB RAM and 2+ CPU cores).
-				</div>
-			</div>
+				</SheetNote>
+			</SheetGroup>
 
-			{/* Radio list in vertical layout */}
-			<RadioGroup
-				value={buildType}
-				onValueChange={val => setBuildType(val)}
-				className="mt-2 flex flex-col gap-1">
-				{BUILD_TYPES.map(bt => (
-					<label
-						key={bt.id}
-						className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors select-none hover:bg-muted/20">
-						<RadioGroupItem value={bt.id} />
-						<span
-							className={`flex items-center gap-2 text-xs transition-colors ${
-								buildType === bt.id
-									? 'font-semibold text-foreground'
-									: 'font-medium text-muted-foreground hover:text-foreground'
-							}`}>
-							{bt.label}
-							{bt.isNew && (
-								<span className="rounded bg-[#3b82f6] px-1.5 py-0.5 text-[9px] leading-none font-semibold text-white select-none">
-									New
-								</span>
-							)}
-						</span>
-					</label>
-				))}
-			</RadioGroup>
-
-			{/* Dynamic Form Sections */}
-			<div className="flex flex-col gap-4 border-t  pt-4">
-				<BuildTypeFields
-					buildType={buildType}
-					fields={fields}
-					isStaticSpa={isStaticSpa}
-					onStaticSpaChange={setIsStaticSpa}
-					onPatch={onPatch}
-				/>
-
-				{buildType === 'RAILPACK' && (
-					<RailpackVersionField
-						version={railpackVersion}
-						isManual={isManualRailpack}
-						versions={RAILPACK_VERSIONS}
-						onVersionChange={setRailpackVersion}
-						onManualChange={setIsManualRailpack}
+			<SheetGroup
+				title="Builder options"
+				description="Settings for the selected builder — leave blank for defaults.">
+				<div className="flex flex-col gap-5">
+					<BuildTypeFields
+						buildType={buildType}
+						fields={fields}
+						isStaticSpa={isStaticSpa}
+						onStaticSpaChange={setIsStaticSpa}
+						onPatch={onPatch}
 					/>
-				)}
-			</div>
 
-			<div className="mt-2 flex justify-end border-t  pt-4">
-				<Button
-					onClick={handleSaveBuildType}
-					disabled={savingBuild}
-					className="flex h-9 items-center gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/95">
-					<Save className="h-3.5 w-3.5" />{' '}
-					{savingBuild ? 'Saving...' : 'Save Build Settings'}
-				</Button>
-			</div>
-		</section>
+					{buildType === 'RAILPACK' && (
+						<RailpackVersionField
+							version={railpackVersion}
+							isManual={isManualRailpack}
+							versions={RAILPACK_VERSIONS}
+							onVersionChange={setRailpackVersion}
+							onManualChange={setIsManualRailpack}
+						/>
+					)}
+				</div>
+			</SheetGroup>
+		</SettingsSheet>
 	);
 }

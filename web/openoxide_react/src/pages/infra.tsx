@@ -29,9 +29,11 @@ type InfraTab = {
 	component: ComponentType;
 	/** Section header title + description shown above the panel. */
 	title: string;
-	description: string;
+	description?: string;
 	/** Workbench tabs fill the viewport instead of scrolling the page. */
 	fixedHeight?: boolean;
+	/** Panel paints its own `SectionHeader` because its primary action needs panel state. */
+	ownsHeader?: boolean;
 };
 
 export const Route = createFileRoute('/_app/infra')({
@@ -66,8 +68,7 @@ const INFRA_TABS: InfraTab[] = [
 		label: 'Swarm',
 		component: SwarmPanel,
 		title: 'Docker Swarm',
-		description:
-			'Cluster status, nodes, and join tokens across your engines.',
+		ownsHeader: true,
 	},
 	{
 		id: 'requests',
@@ -115,10 +116,12 @@ function InfraPage() {
 	return (
 		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 			<Titlebar breadcrumbs={crumbs} />
-			<SectionHeader
-				title={active.title}
-				description={active.description}
-			/>
+			{!active.ownsHeader && (
+				<SectionHeader
+					title={active.title}
+					description={active.description}
+				/>
+			)}
 			<div className="min-w-0">
 				<Active />
 			</div>

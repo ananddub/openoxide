@@ -1,6 +1,6 @@
 use super::super::{
-    DnsRecordDto, DnsService, DnsServiceError, DnsTestResultDto, DnsZoneDto,
-    UpsertDnsRecordDto, extract_credential_field,
+    DnsRecordDto, DnsService, DnsServiceError, DnsTestResultDto, DnsZoneDto, UpsertDnsRecordDto,
+    extract_credential_field,
 };
 
 impl DnsService {

@@ -3,6 +3,7 @@ import {createPortal} from 'react-dom';
 import Editor, {type EditorProps} from '@monaco-editor/react';
 import {FileCode, Maximize2, Minimize2} from 'lucide-react';
 import {useTheme} from '#/hooks/ui/use-theme';
+import {cn} from '#/api/utils';
 
 /** Read-only Monaco preview of a template file — same maximize overlay as the compose YAML editor. */
 export function TemplateFilePreview({
@@ -10,11 +11,14 @@ export function TemplateFilePreview({
 	language,
 	data,
 	isLoading,
+	fill,
 }: {
 	filename: string;
 	language: string;
 	data?: string;
 	isLoading?: boolean;
+	/** Grow to the parent's remaining height instead of a fixed 288px well. */
+	fill?: boolean;
 }) {
 	const {theme} = useTheme();
 	const [maximized, setMaximized] = useState(false);
@@ -63,11 +67,11 @@ export function TemplateFilePreview({
 		</div>
 	);
 
-	const body = (fill: boolean) =>
+	const body = (expand: boolean) =>
 		isLoading && !data ? (
 			<div
 				className={
-					fill ? 'flex h-full items-center justify-center' : 'h-72'
+					expand ? 'flex h-full items-center justify-center' : 'h-72'
 				}>
 				<span className="font-mono text-xs text-muted-foreground">
 					Loading…
@@ -75,7 +79,7 @@ export function TemplateFilePreview({
 			</div>
 		) : (
 			<Editor
-				height={fill ? '100%' : '288px'}
+				height={expand ? '100%' : '288px'}
 				language={language}
 				theme={theme === 'dark' ? 'vs-dark' : 'light'}
 				value={data ?? ''}
@@ -96,9 +100,15 @@ export function TemplateFilePreview({
 	}
 
 	return (
-		<div className="overflow-hidden rounded-lg border border-border bg-card">
+		<div
+			className={cn(
+				'flex flex-col overflow-hidden rounded-lg border border-border bg-card',
+				fill && 'min-h-0 grow',
+			)}>
 			{chrome}
-			{body(false)}
+			<div className={cn(!fill && 'shrink-0', fill && 'min-h-0 flex-1')}>
+				{body(!!fill)}
+			</div>
 		</div>
 	);
 }

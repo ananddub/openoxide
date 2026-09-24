@@ -1,7 +1,6 @@
 import {useMemo, useState} from 'react';
-import {Plus, RefreshCw, Search, Server} from 'lucide-react';
+import {Plus, Search, Server, ShieldAlert} from 'lucide-react';
 import {toast} from 'sonner';
-import {cn} from '#/api/utils';
 import {Button} from '#/components/ui/button';
 import {
 	Select,
@@ -11,11 +10,15 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import {
+	GridSkeleton,
 	ListCard,
 	ListEmpty,
 	ListSkeleton,
 	Toolbar,
 	ToolbarSearch,
+	useListView,
+	ViewGrid,
+	ViewToggle,
 } from '#/components/settings/list-card';
 import type {RemoteServerResponse} from '#/types/api-helpers';
 import {
@@ -25,6 +28,7 @@ import {
 	type TaggedSwarmNode,
 } from './swarm-node-shared';
 import {SwarmNodeRow} from './swarm-node-row';
+import {SwarmNodeCard} from './swarm-node-card';
 
 export type {TaggedSwarmNode} from './swarm-node-shared';
 
@@ -34,8 +38,6 @@ interface SwarmNodesListProps {
 	servers: RemoteServerResponse[];
 	selectedServerId: string;
 	onSelectServer: (id: string) => void;
-	isRefreshing: boolean;
-	onRefresh: () => void;
 	isSwarmActive: boolean;
 	onOpenTokens: () => void;
 	onPromote: (nodeId: string, node?: TaggedSwarmNode) => void;
@@ -52,21 +54,18 @@ function engineLabel(
 	servers: RemoteServerResponse[],
 	selectedServerId: string,
 ) {
-	if (selectedServerId === 'all') return 'All Engines';
 	if (selectedServerId === 'local') return 'Local Engine';
 	const srv = servers.find(s => String(s.id) === selectedServerId);
 	return srv ? srv.name : 'Select Engine';
 }
 
-/** Nodes surface — house toolbar (search + filters left, actions right) over ONE bordered list card. */
+/** Nodes surface — house toolbar (search + role/engine filters + view toggle) over grid cards or ONE bordered list card. */
 export function SwarmNodesList({
 	nodes,
 	isLoading,
 	servers,
 	selectedServerId,
 	onSelectServer,
-	isRefreshing,
-	onRefresh,
 	isSwarmActive,
 	onOpenTokens,
 	onPromote,
@@ -77,6 +76,7 @@ export function SwarmNodesList({
 	const [copiedId, setCopiedId] = useState<string | null>(null);
 	const [search, setSearch] = useState('');
 	const [roleFilter, setRoleFilter] = useState<RoleFilter>('All');
+	const [view, setView] = useListView('swarm-nodes-view');
 
 	const handleCopyId = (id: string) => {
 		navigator.clipboard.writeText(id);
@@ -102,51 +102,33 @@ export function SwarmNodesList({
 	}, [nodes, search, roleFilter]);
 
 	// Docker refuses to demote a swarm's last manager, so disable that action up front.
-	const managersPerCluster = useMemo(() => {
-		const counts = new Map<string, number>();
-		for (const n of nodes) {
-			if (!nodeRole(n).isManager) continue;
-			const key = String(n._serverId ?? 'local');
-			counts.set(key, (counts.get(key) ?? 0) + 1);
-		}
-		return counts;
-	}, [nodes]);
+	const managerCount = useMemo(
+		() => nodes.filter(n => nodeRole(n).isManager).length,
+		[nodes],
+	);
 
 	const hasFilters = search !== '' || roleFilter !== 'All';
 
+	const nodeProps = (node: TaggedSwarmNode) => ({
+		node,
+		isLastManager: nodeRole(node).isManager && managerCount <= 1,
+		copiedId,
+		onCopyId: handleCopyId,
+		onPromote,
+		onDemote,
+		onSetAvailability,
+		onRemoveNode,
+	});
+
 	return (
-		<div className="flex flex-col gap-3">
+		<div className="flex w-full flex-col gap-3">
 			<Toolbar
-				action={
-					<>
-						<Button
-							variant="outline"
-							onClick={onRefresh}
-							disabled={isRefreshing}
-							className="h-9 gap-1.5">
-							<RefreshCw
-								className={cn(
-									'size-3.5',
-									isRefreshing && 'animate-spin',
-								)}
-							/>
-							Refresh
-						</Button>
-						{isSwarmActive && (
-							<Button
-								onClick={onOpenTokens}
-								className="h-9 gap-1.5">
-								<Plus className="size-3.5" />
-								New Node
-							</Button>
-						)}
-					</>
-				}>
+				action={<ViewToggle view={view} onChange={setView} />}>
 				<ToolbarSearch
 					placeholder="Search by hostname or node ID…"
 					value={search}
 					onChange={setSearch}
-					className="sm:max-w-xs"
+					className="min-w-[220px] flex-1 sm:max-w-none"
 				/>
 				<Select
 					value={roleFilter}
@@ -174,9 +156,6 @@ export function SwarmNodesList({
 						</SelectValue>
 					</SelectTrigger>
 					<SelectContent className="bg-card">
-						<SelectItem value="all">
-							All Clusters &amp; Remote Servers
-						</SelectItem>
 						<SelectItem value="local">
 							Local Engine (Docker)
 						</SelectItem>
@@ -190,12 +169,24 @@ export function SwarmNodesList({
 			</Toolbar>
 
 			{isLoading ? (
-				<ListSkeleton rows={3} />
+				view === 'grid' ? (
+					<GridSkeleton cards={3} />
+				) : (
+					<ListSkeleton rows={3} />
+				)
 			) : !nodes || nodes.length === 0 ? (
 				<ListEmpty
-					icon={Server}
-					title="No Swarm nodes discovered"
-					description="Make sure Docker Swarm is initialized on this host engine."
+					icon={isSwarmActive ? Server : ShieldAlert}
+					title={
+						isSwarmActive
+							? 'No Swarm nodes discovered'
+							: 'Docker Swarm is inactive'
+					}
+					description={
+						isSwarmActive
+							? 'This engine reports no cluster members yet. Add a node to get started.'
+							: 'This host engine runs standalone. Initialize Docker Swarm or join an existing manager node.'
+					}
 					action={
 						isSwarmActive ? (
 							<Button
@@ -224,27 +215,17 @@ export function SwarmNodesList({
 						</Button>
 					}
 				/>
+			) : view === 'grid' ? (
+				<ViewGrid>
+					{filtered.map(node => (
+						<SwarmNodeCard key={node.id} {...nodeProps(node)} />
+					))}
+				</ViewGrid>
 			) : (
 				<ListCard>
-					{filtered.map(node => {
-						const clusterKey = String(node._serverId ?? 'local');
-						return (
-							<SwarmNodeRow
-								key={node.id}
-								node={node}
-								isLastManager={
-									nodeRole(node).isManager &&
-									(managersPerCluster.get(clusterKey) ?? 0) <= 1
-								}
-								copiedId={copiedId}
-								onCopyId={handleCopyId}
-								onPromote={onPromote}
-								onDemote={onDemote}
-								onSetAvailability={onSetAvailability}
-								onRemoveNode={onRemoveNode}
-							/>
-						);
-					})}
+					{filtered.map(node => (
+						<SwarmNodeRow key={node.id} {...nodeProps(node)} />
+					))}
 				</ListCard>
 			)}
 

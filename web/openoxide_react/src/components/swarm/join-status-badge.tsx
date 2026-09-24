@@ -1,7 +1,8 @@
 import {Badge} from '#/components/ui/badge';
-import {RefreshCw, CheckCircle2} from 'lucide-react';
+import {cn} from '#/api/utils';
+import {CheckCircle2, RefreshCw} from 'lucide-react';
 
-/** Status pill for the selected remote server's cluster membership. */
+/** Cluster-membership pill for the engine picked in the New Node sheet. */
 export function JoinStatusBadge({
 	isChecking,
 	isConnected,
@@ -13,24 +14,28 @@ export function JoinStatusBadge({
 		return (
 			<Badge
 				variant="outline"
-				className="gap-1 px-1.5 py-0 text-[10px] text-muted-foreground">
-				<RefreshCw className="h-3 w-3 animate-spin" /> Checking…
+				className="shrink-0 gap-1.5 px-1.5 py-0 text-[10px] font-medium text-muted-foreground">
+				<RefreshCw className="size-3 animate-spin" />
+				Checking…
 			</Badge>
 		);
 	}
-	if (isConnected) {
-		return (
-			<Badge variant="secondary" className="gap-1 px-1.5 py-0 text-[10px]">
-				<CheckCircle2 className="h-3 w-3 text-emerald-500" /> Already in
-				this cluster
-			</Badge>
-		);
-	}
+
 	return (
 		<Badge
 			variant="outline"
-			className="gap-1 px-1.5 py-0 text-[10px] text-muted-foreground">
-			Not in this cluster
+			className={cn(
+				'shrink-0 gap-1.5 px-1.5 py-0 text-[10px] font-medium',
+				isConnected
+					? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
+					: 'text-muted-foreground',
+			)}>
+			{isConnected ? (
+				<CheckCircle2 className="size-3" />
+			) : (
+				<span className="size-1.5 rounded-full bg-muted-foreground/50" />
+			)}
+			{isConnected ? 'In this cluster' : 'Ready to join'}
 		</Badge>
 	);
 }

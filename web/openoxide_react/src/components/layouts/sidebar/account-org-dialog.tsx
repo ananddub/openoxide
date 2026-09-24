@@ -39,7 +39,7 @@ export function AccountOrgDialog({ctl}: {ctl: AccountSwitcherController}) {
 					</DialogDescription>
 				</DialogHeader>
 				<div className="space-y-2 py-2">
-					<label className="text-[13px] font-medium text-foreground">
+					<label className="text-xs font-semibold text-foreground">
 						Name
 					</label>
 					<Input
@@ -50,7 +50,6 @@ export function AccountOrgDialog({ctl}: {ctl: AccountSwitcherController}) {
 							if (event.key === 'Enter') void submitForm();
 						}}
 						placeholder="Acme Platform"
-						className="h-10 text-xs"
 					/>
 				</div>
 				<DialogFooter className="gap-2 sm:justify-between">

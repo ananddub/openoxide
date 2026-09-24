@@ -81,7 +81,7 @@ export function LogViewerToolbar({
 						placeholder="Search logs…"
 						value={searchQuery}
 						onChange={e => onSearchChange(e.target.value)}
-						className="h-7 rounded-md bg-background pr-7 pl-8 text-xs"
+						className="h-7 rounded-md pr-7 pl-8 text-xs"
 					/>
 					{searchQuery && (
 						<button

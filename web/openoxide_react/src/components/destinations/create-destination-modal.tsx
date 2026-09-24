@@ -138,7 +138,6 @@ export function CreateDestinationModal({
 										onChange={e => f.setName(e.target.value)}
 										placeholder="Nightly backups bucket"
 										autoFocus
-										className="bg-background"
 									/>
 								</WizardField>
 								<WizardField label="Bucket" required>
@@ -146,7 +145,7 @@ export function CreateDestinationModal({
 										value={f.bucket}
 										onChange={e => f.setBucket(e.target.value)}
 										placeholder="my-bucket-name"
-										className="bg-background font-mono"
+										className="font-mono"
 									/>
 								</WizardField>
 								<WizardField
@@ -169,7 +168,7 @@ export function CreateDestinationModal({
 										value={f.region}
 										onChange={e => f.setRegion(e.target.value)}
 										placeholder="us-east-1"
-										className="bg-background font-mono"
+										className="font-mono"
 									/>
 								</WizardField>
 								<WizardField
@@ -181,7 +180,7 @@ export function CreateDestinationModal({
 										value={f.endpoint}
 										onChange={e => f.setEndpoint(e.target.value)}
 										placeholder="https://s3.amazonaws.com"
-										className="bg-background font-mono"
+										className="font-mono"
 									/>
 								</WizardField>
 							</div>
@@ -197,7 +196,7 @@ export function CreateDestinationModal({
 										onChange={e => f.setAccessKey(e.target.value)}
 										placeholder="AKIAIOSFODNN7EXAMPLE"
 										autoFocus
-										className="bg-background font-mono"
+										className="font-mono"
 									/>
 								</WizardField>
 								<WizardField label="Secret Access Key" required>
@@ -207,7 +206,7 @@ export function CreateDestinationModal({
 											value={f.secretKey}
 											onChange={e => f.setSecretKey(e.target.value)}
 											placeholder="Secret Access Key"
-											className="bg-background pr-10 font-mono"
+											className="pr-10 font-mono"
 										/>
 										<button
 											type="button"

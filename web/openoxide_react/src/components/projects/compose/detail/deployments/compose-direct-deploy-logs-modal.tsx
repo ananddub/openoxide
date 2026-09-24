@@ -132,6 +132,7 @@ export function ComposeDirectDeployLogsModal({
 						heightClass="h-full"
 						loadingText="Connecting to deployment logs..."
 						emptyText="No deployment logs recorded."
+						aiContext="BUILD"
 					/>
 				</div>
 			</div>

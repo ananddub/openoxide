@@ -101,7 +101,6 @@ export function TeamDialogs({ctl}: {ctl: Ctl}) {
 									onChange={e => setInputEmail(e.target.value)}
 									required
 									autoFocus
-									className="bg-background"
 								/>
 							</WizardField>
 
@@ -112,7 +111,7 @@ export function TeamDialogs({ctl}: {ctl: Ctl}) {
 								<Select
 									value={selectedRole}
 									onValueChange={v => setSelectedRole(v ?? 'developer')}>
-									<SelectTrigger className="bg-background">
+									<SelectTrigger>
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent className="bg-card">

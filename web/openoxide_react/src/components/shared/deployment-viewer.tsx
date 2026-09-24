@@ -1,6 +1,8 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {Download, Loader, Radio, RefreshCw, Search} from 'lucide-react';
 import {cn} from '#/api/utils';
+import {AnalyzeLogsButton} from '#/components/ai/analyze-logs-button';
+import type {AiLogAnalysisKind} from '#/api/live/ai';
 import {
 	lineTone,
 	splitTimestamp,
@@ -22,6 +24,8 @@ export interface DeploymentViewerProps {
 	/** Kept for call-site compatibility; the minimal viewer ignores it. */
 	isDeployment?: boolean;
 	borderless?: boolean;
+	/** When set, shows an AI analyze button in the toolbar for this log corpus. */
+	aiContext?: AiLogAnalysisKind;
 }
 
 const ICON_BTN =
@@ -39,6 +43,7 @@ export function DeploymentViewer({
 	onToggleLive,
 	isLive = true,
 	borderless = false,
+	aiContext,
 }: DeploymentViewerProps) {
 	const [query, setQuery] = useState('');
 	const searchRef = useRef<HTMLInputElement>(null);
@@ -104,6 +109,10 @@ export function DeploymentViewer({
 						Ctrl+F
 					</kbd>
 				</div>
+
+				{aiContext && (
+					<AnalyzeLogsButton lines={lines} context={aiContext} />
+				)}
 
 				{onToggleLive && (
 					<button

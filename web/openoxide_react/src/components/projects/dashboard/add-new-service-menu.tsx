@@ -8,11 +8,13 @@ import {
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
 import {
+	AI_ASSISTANT_OPTION,
 	OPTIONS,
 	type ServiceKind,
 } from '#/components/projects/create/constants';
 import {CreateServiceSheet} from '#/components/projects/create/create-service-sheet';
 import {TemplateGallerySheet} from '#/components/templates/template-gallery-sheet';
+import {AiAssistantSheet} from '#/components/ai/assistant/ai-assistant-sheet';
 
 // ─── Vercel-style "Add New" dropdown: opens a right side-panel per type ──────
 
@@ -31,6 +33,7 @@ export function AddNewServiceMenu({
 	// Bumped on every open: remounts the sheet with fresh form state.
 	const [session, setSession] = useState(0);
 	const [galleryOpen, setGalleryOpen] = useState(false);
+	const [aiOpen, setAiOpen] = useState(false);
 	const disabled = !envId;
 
 	// Auto-open only for a fresh session (an explicit "Add New" click) — never right after a close, which would fight the exit animation and leave the modal overlay trapping the page.
@@ -93,6 +96,19 @@ export function AddNewServiceMenu({
 								</span>
 							</DropdownMenuItem>
 						))}
+						<DropdownMenuItem
+							onClick={() => setAiOpen(true)}
+							className="flex-col items-start gap-0.5 rounded-lg px-2.5 py-2">
+							<span className="flex items-center gap-1.5">
+								<AI_ASSISTANT_OPTION.icon className="size-4 text-muted-foreground" />
+								<span className="text-[13px] font-medium text-foreground">
+									{AI_ASSISTANT_OPTION.title}
+								</span>
+							</span>
+							<span className="ps-[22px] text-[11px] leading-snug text-muted-foreground">
+								{AI_ASSISTANT_OPTION.description}
+							</span>
+						</DropdownMenuItem>
 					</div>
 				</DropdownMenuContent>
 			</DropdownMenu>
@@ -112,6 +128,13 @@ export function AddNewServiceMenu({
 			<TemplateGallerySheet
 				open={galleryOpen}
 				onClose={() => setGalleryOpen(false)}
+			/>
+
+			<AiAssistantSheet
+				open={aiOpen}
+				projectId={projectId}
+				envId={envId}
+				onClose={() => setAiOpen(false)}
 			/>
 		</>
 	);

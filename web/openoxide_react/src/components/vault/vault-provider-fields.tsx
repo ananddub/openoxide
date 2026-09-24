@@ -1,5 +1,5 @@
 import {Input} from '#/components/ui/input';
-import {FieldLabel} from '#/components/shared/field-label';
+import {WizardField} from '#/components/shared/sheet-wizard';
 import {type VaultProviderType} from './vault-provider-catalog';
 
 // [field name, label, placeholder] triples per provider type.
@@ -69,24 +69,22 @@ export function HashicorpFields({
 	return (
 		<>
 			<div className="grid grid-cols-2 gap-3">
-				<div className="space-y-1">
-					<FieldLabel>KV Mount</FieldLabel>
+				<WizardField label="KV Mount">
 					<Input
 						placeholder="secret"
 						value={mount}
 						onChange={e => onMountChange(e.target.value)}
-						className="h-10 bg-muted/20 font-mono text-xs"
+						className="font-mono"
 					/>
-				</div>
-				<div className="space-y-1">
-					<FieldLabel>Namespace (optional)</FieldLabel>
+				</WizardField>
+				<WizardField label="Namespace" optional>
 					<Input
 						placeholder="admin"
 						value={namespace}
 						onChange={e => onNamespaceChange(e.target.value)}
-						className="h-10 bg-muted/20 font-mono text-xs"
+						className="font-mono"
 					/>
-				</div>
+				</WizardField>
 			</div>
 			<div className="rounded-lg bg-muted/30 p-2.5 text-[11px] text-muted-foreground">
 				Reference format:{' '}
@@ -120,18 +118,33 @@ export function VaultTypeFields({
 	return (
 		<div className="grid gap-3">
 			{definitions.map(
-				([name, label, placeholder]: [string, string, string]) => (
-					<div key={name} className="space-y-1">
-						<FieldLabel>{label}</FieldLabel>
-						<Input
-							type={isSecretField(name) ? 'password' : 'text'}
-							placeholder={placeholder}
-							value={field(name)}
-							onChange={e => setField(name, e.target.value)}
-							className="h-10 bg-muted/20 font-mono text-xs"
-						/>
-					</div>
-				),
+				([name, label, placeholder]: [string, string, string]) => {
+					const optional = label.endsWith(' (optional)');
+					return (
+						<WizardField
+							key={name}
+							label={
+								optional
+									? label.slice(0, -11)
+									: label
+							}
+							optional={optional}>
+							<Input
+								type={
+									isSecretField(name)
+										? 'password'
+										: 'text'
+								}
+								placeholder={placeholder}
+								value={field(name)}
+								onChange={e =>
+									setField(name, e.target.value)
+								}
+								className="font-mono"
+							/>
+						</WizardField>
+					);
+				},
 			)}
 		</div>
 	);

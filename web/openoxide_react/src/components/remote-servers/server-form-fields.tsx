@@ -6,6 +6,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
+import {WizardField} from '#/components/shared/sheet-wizard';
 
 import type {SshKeyResponse} from '#/types/api-helpers';
 
@@ -42,91 +43,80 @@ export function ServerFormFields({
 }: ServerFormFieldsProps) {
 	return (
 		<>
-			<div className="flex flex-col gap-1.5">
-				<label className="text-[13px] font-medium text-foreground">
-					Server Name <span className="text-primary">*</span>
-				</label>
+			<WizardField label="Server Name" htmlFor="server-name" required>
 				<Input
+					id="server-name"
 					value={name}
 					onChange={e => setName(e.target.value)}
 					placeholder="e.g. EU Worker Node 1"
-					className="border- h-10 rounded-md bg-background px-3 text-xs"
 				/>
-			</div>
+			</WizardField>
 
-			<div className="flex flex-col gap-1.5">
-				<label className="text-[13px] font-medium text-foreground">
-					IP Address / Hostname <span className="text-primary">*</span>
-				</label>
+			<WizardField
+				label="IP Address / Hostname"
+				htmlFor="server-ip"
+				required>
 				<Input
+					id="server-ip"
 					value={ipAddress}
 					onChange={e => setIpAddress(e.target.value)}
 					placeholder="192.168.1.100 or node.yourdomain.com"
-					className="border- h-10 rounded-md bg-background px-3 font-mono text-xs"
+					className="font-mono"
 				/>
-			</div>
+			</WizardField>
 
-			<div className="flex flex-col gap-1.5">
-				<label className="text-[13px] font-medium text-foreground">
-					SSH Port
-				</label>
+			<WizardField label="SSH Port" htmlFor="server-port">
 				<Input
+					id="server-port"
 					value={port}
 					onChange={e => setPort(e.target.value)}
 					placeholder="22"
-					className="border- h-10 rounded-md bg-background px-3 font-mono text-xs"
+					className="font-mono"
 				/>
-			</div>
+			</WizardField>
 
-			<div className="flex flex-col gap-1.5">
-				<label className="text-[13px] font-medium text-foreground">
-					Username <span className="text-primary">*</span>
-				</label>
+			<WizardField label="Username" htmlFor="server-user" required>
 				<Input
+					id="server-user"
 					value={username}
 					onChange={e => setUsername(e.target.value)}
 					placeholder="root"
-					className="border- h-10 rounded-md bg-background px-3 font-mono text-xs"
+					className="font-mono"
 				/>
-			</div>
+			</WizardField>
 
-			<div className="flex flex-col gap-1.5">
-				<label className="text-[13px] font-medium text-foreground">
-					SSH Key Credential
-				</label>
+			<WizardField label="SSH Key Credential" htmlFor="server-ssh-key">
 				<Select
 					value={sshKeyId}
 					onValueChange={val => val && setSshKeyId(val)}>
-					<SelectTrigger className="border- flex !h-10 w-full items-center justify-between rounded-md bg-background px-3 font-sans text-xs">
+					<SelectTrigger id="server-ssh-key">
 						<SelectValue placeholder="Select SSH Key">
-							{sshKeys?.find(k => Number(k.id) === Number(sshKeyId))
-								?.name || 'Select SSH Key'}
+							{sshKeys?.find(
+								k => Number(k.id) === Number(sshKeyId),
+							)?.name || 'Select SSH Key'}
 						</SelectValue>
 					</SelectTrigger>
 					<SelectContent>
 						{sshKeys?.map(key => (
-							<SelectItem
-								key={key.id}
-								value={String(key.id)}
-								className="font-sans text-xs">
+							<SelectItem key={key.id} value={String(key.id)}>
 								{key.name}
 							</SelectItem>
 						))}
 					</SelectContent>
 				</Select>
-			</div>
+			</WizardField>
 
-			<div className="flex flex-col gap-1.5">
-				<label className="text-[13px] font-medium text-foreground">
-					Description (Optional)
-				</label>
+			<WizardField
+				label="Description"
+				htmlFor="server-description"
+				optional>
 				<Input
+					id="server-description"
 					value={description}
 					onChange={e => setDescription(e.target.value)}
 					placeholder="Production worker node in Hetzner"
-					className="border- h-10 rounded-md bg-background px-3 text-xs"
 				/>
-			</div>
+			</WizardField>
 		</>
 	);
 }

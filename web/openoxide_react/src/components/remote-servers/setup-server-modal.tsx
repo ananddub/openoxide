@@ -1,26 +1,84 @@
 import {useState} from 'react';
+import type {LucideIcon} from 'lucide-react';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-} from '#/components/ui/dialog';
+	CheckCircle2,
+	Cpu,
+	Plug,
+	RefreshCw,
+	Terminal,
+} from 'lucide-react';
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
+import {Label} from '#/components/ui/label';
 import {serverHostLabel} from '#/api/utils';
-import {
-	Terminal,
-	ShieldCheck,
-	Cpu,
-	RefreshCw,
-	CheckCircle2,
-	Plug,
-} from 'lucide-react';
-import {LogViewer} from '#/components/shared/log-viewer';
-import {SetupActionRow} from './setup-action-row';
+import {SetupLogsSurface} from './setup-logs-surface';
 import {useServerSetup} from './use-server-setup';
 import type {RemoteServerResponse} from '#/types/api-helpers';
+
+/** One row in the shared ListCard-style stack: tile, text, right-aligned action. */
+function ActionRow({
+	icon: Icon,
+	title,
+	description,
+	note,
+	busy,
+	busyLabel,
+	idleLabel,
+	primary,
+	disabled,
+	onClick,
+}: {
+	icon: LucideIcon;
+	title: string;
+	description: string;
+	note?: string;
+	busy: boolean;
+	busyLabel: string;
+	idleLabel: string;
+	primary?: boolean;
+	disabled?: boolean;
+	onClick: () => void;
+}) {
+	return (
+		<div className="flex items-center gap-3.5 px-4 py-3">
+			<span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-foreground/[0.05]">
+				<Icon className="size-4 text-muted-foreground" />
+			</span>
+			<div className="min-w-0 flex-1">
+				<p className="truncate text-sm font-medium text-foreground">
+					{title}
+				</p>
+				<p className="truncate text-xs text-muted-foreground">
+					{description}
+				</p>
+				{note && (
+					<p className="truncate text-xs text-amber-600 dark:text-amber-500">
+						{note}
+					</p>
+				)}
+			</div>
+			<Button
+				variant={primary ? 'default' : 'outline'}
+				onClick={onClick}
+				disabled={busy || disabled}
+				className="h-8 shrink-0 gap-1.5 text-xs font-semibold">
+				{busy ? (
+					<RefreshCw className="size-3.5 animate-spin" />
+				) : (
+					<Icon className="size-3.5" />
+				)}
+				{busy ? busyLabel : idleLabel}
+			</Button>
+		</div>
+	);
+}
 
 interface SetupServerModalProps {
 	isOpen: boolean;
@@ -34,12 +92,15 @@ export function SetupServerModal({
 	onClose,
 }: SetupServerModalProps) {
 	const [advertiseAddr, setAdvertiseAddr] = useState('');
+	const [sudoPassword, setSudoPassword] = useState('');
 	const {
 		testingConn,
 		testConnection,
 		auditing,
 		audit,
 		settingUp,
+		setupState,
+		connOk,
 		setupLogs,
 		setup,
 		auditResult,
@@ -48,119 +109,127 @@ export function SetupServerModal({
 	if (!server) return null;
 
 	return (
-		<Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-			<DialogContent className="border- w-full rounded-xl bg-card p-6 shadow-md sm:max-w-xl md:max-w-2xl">
-				<DialogHeader className="border-b  pb-3">
-					<DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-						<Terminal className="h-5 w-5 text-primary" />
-						Setup & Audit: {server.name}
-					</DialogTitle>
-					<DialogDescription className="text-xs text-muted-foreground">
-						Test SSH connectivity and audit host specs (
+		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
+			<SheetContent className="sm:data-[side=right]:w-[720px]">
+				<SheetHeader>
+					<SheetTitle>Setup &amp; Audit: {server.name}</SheetTitle>
+					<SheetDescription className="text-xs">
 						{server.username || 'root'}@
-						{serverHostLabel(server.ip_address)})
-					</DialogDescription>
-				</DialogHeader>
+						{serverHostLabel(server.ip_address)}
+					</SheetDescription>
+				</SheetHeader>
 
-				<div className="flex flex-col gap-4 py-3">
-					<SetupActionRow
-						icon={ShieldCheck}
-						title="SSH Connection Test"
-						description={`Verify port ${server.port || 22} reachability`}
-						busy={testingConn}
-						busyLabel="Testing..."
-						idleLabel="Test Connection"
-						idleIcon={Plug}
-						onClick={() => void testConnection()}
-					/>
+				<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-6">
+					<div className="w-full shrink-0 divide-y overflow-hidden rounded-xl border bg-card">
+						<ActionRow
+							icon={Plug}
+							title="SSH Connection Test"
+							description={`Verify port ${server.port || 22} reachability`}
+							busy={testingConn}
+							busyLabel="Testing…"
+							idleLabel="Test Connection"
+							onClick={() => void testConnection()}
+						/>
+						<ActionRow
+							icon={Cpu}
+							title="System Specs Audit"
+							description="Check Docker engine, OS, CPU, and RAM"
+							busy={auditing}
+							busyLabel="Auditing…"
+							idleLabel="Run Audit"
+							onClick={() => void audit()}
+						/>
+						<ActionRow
+							icon={Terminal}
+							title="Setup Server"
+							description="Install Docker, Swarm, Traefik, and the agent"
+							note={
+								connOk === false
+									? 'SSH test failed — fix access and re-test before running setup.'
+									: undefined
+							}
+							busy={settingUp}
+							busyLabel="Setting up…"
+							idleLabel={
+								setupState === 'failed'
+									? 'Retry Setup'
+									: 'Run Setup'
+							}
+							primary
+							disabled={connOk === false}
+							onClick={() =>
+								void setup(advertiseAddr, sudoPassword)
+							}
+						/>
+					</div>
 
-					<SetupActionRow
-						icon={Cpu}
-						title="System Specs Audit"
-						description="Check Docker engine, OS, CPU, and RAM"
-						busy={auditing}
-						busyLabel="Auditing..."
-						idleLabel="Run Audit"
-						idleIcon={Cpu}
-						onClick={() => void audit()}
-					/>
-
-					<div className="flex flex-col gap-2.5 rounded-xl bg-primary/10 p-3.5">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-2.5">
-								<Terminal className="h-5 w-5 text-primary" />
-								<div>
-									<h4 className="text-xs font-bold text-foreground">
-										Setup Server
-									</h4>
-									<p className="text-[11px] text-muted-foreground">
-										Install dependencies, Docker, Swarm, Traefik, and the
-										OpenOxide Agent
-									</p>
-								</div>
-							</div>
-							<Button
-								size="sm"
-								onClick={() => void setup(advertiseAddr)}
-								disabled={settingUp}
-								className="h-8 gap-1.5 text-xs font-semibold">
-								{settingUp ? (
-									<RefreshCw className="h-3.5 w-3.5 animate-spin" />
-								) : (
-									<Terminal className="h-3.5 w-3.5" />
-								)}
-								{settingUp ? 'Setting up...' : 'Run Setup'}
-							</Button>
-						</div>
-						<div className="flex flex-col gap-1">
-							<label className="text-[11px] font-semibold text-foreground">
-								Advertise Address (optional)
-							</label>
+					<div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2">
+						<div className="flex flex-col gap-1.5">
+							<Label className="text-xs font-semibold">
+								Advertise address
+							</Label>
 							<Input
 								value={advertiseAddr}
 								onChange={e => setAdvertiseAddr(e.target.value)}
 								disabled={settingUp}
-								placeholder="e.g. 100.x.x.x — Tailscale/Netbird/VPN IP"
-								className="border- h-8 rounded-md bg-background px-3 text-xs"
+								placeholder="100.x.x.x (VPN IP, optional)"
 							/>
-							<p className="text-[10px] text-muted-foreground">
-								Used by Docker Swarm to advertise this node. Leave blank to
-								auto-detect (prefers Tailscale/WireGuard/VPN interfaces);
-								set this if nodes should talk over a specific VPN mesh.
-							</p>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<Label className="text-xs font-semibold">
+								Sudo password
+							</Label>
+							<Input
+								type="password"
+								value={sudoPassword}
+								onChange={e => setSudoPassword(e.target.value)}
+								disabled={settingUp}
+								placeholder="If sudo is required"
+							/>
 						</div>
 					</div>
+					<p className="shrink-0 text-[11px] text-muted-foreground">
+						Advertise address auto-detects VPN interfaces when left
+						blank; sudo password is only needed when the SSH user
+						isn&rsquo;t root or lacks passwordless sudo.
+					</p>
 
 					{(settingUp || setupLogs.length > 0) && (
-						<LogViewer
+						<SetupLogsSurface
 							logs={setupLogs}
-							isLoading={settingUp}
-							loadingText="Running server setup..."
-							emptyText="Waiting for setup output..."
-							heightClass="h-[220px]"
 							isLive={settingUp}
-							showFilter={false}
+							state={setupState}
+							className="min-h-[60vh] w-full shrink grow-0 rounded-lg"
 						/>
 					)}
 
 					{auditResult && (
-						<div className="flex flex-col gap-2 rounded-xl bg-emerald-500/10 p-3.5 font-mono text-xs text-foreground">
-							<div className="flex items-center gap-1.5 font-sans font-bold text-emerald-500">
-								<CheckCircle2 className="h-4 w-4" /> Audit Outcome
+						<div className="shrink-0 rounded-xl border bg-card p-4">
+							<div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+								<CheckCircle2 className="size-3.5 text-emerald-500" />
+								Audit outcome
 							</div>
-							<div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
+							<div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px] text-muted-foreground">
 								<span>
 									Docker:{' '}
-									{auditResult.docker_installed ? 'Installed' : 'Missing'}
+									{auditResult.docker_installed
+										? 'Installed'
+										: 'Missing'}
 								</span>
-								<span>Arch: {String(auditResult.arch || 'x86_64')}</span>
-								<span>OS: {String(auditResult.os || 'Linux')}</span>
-								<span>CPU Cores: {String(auditResult.cpus || 1)}</span>
+								<span>
+									Arch: {String(auditResult.arch || 'x86_64')}
+								</span>
+								<span>
+									OS: {String(auditResult.os || 'Linux')}
+								</span>
+								<span>
+									CPU cores: {String(auditResult.cpus || 1)}
+								</span>
 							</div>
 						</div>
 					)}
 				</div>
-			</DialogContent>
-		</Dialog>
+			</SheetContent>
+		</Sheet>
 	);
 }

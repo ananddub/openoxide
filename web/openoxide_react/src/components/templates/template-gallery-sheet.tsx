@@ -100,7 +100,7 @@ export function TemplateGallerySheet({
 						{selected ? (
 							<div
 								key={selected.id}
-								className="flex min-h-0 flex-1 animate-in flex-col gap-4 overflow-y-auto duration-200 ease-out fade-in-0 slide-in-from-right-4">
+								className="flex min-h-0 flex-1 animate-in flex-col gap-4 duration-200 ease-out fade-in-0 slide-in-from-right-4">
 								<div className="flex shrink-0 items-center gap-3">
 									<TemplateLogo
 										template={selected}
@@ -141,7 +141,9 @@ export function TemplateGallerySheet({
 									</div>
 								)}
 
-								<Tabs defaultValue="compose" className="shrink-0">
+								<Tabs
+									defaultValue="compose"
+									className="flex min-h-0 flex-1 flex-col">
 									<TabsList>
 										<TabsTrigger value="compose">
 											docker-compose.yml
@@ -150,16 +152,22 @@ export function TemplateGallerySheet({
 											template.toml
 										</TabsTrigger>
 									</TabsList>
-									<TabsContent value="compose">
+									<TabsContent
+										value="compose"
+										className="flex min-h-0 flex-col">
 										<TemplateFilePreview
+											fill
 											filename="docker-compose.yml"
 											language="yaml"
 											data={compose.data}
 											isLoading={compose.isLoading}
 										/>
 									</TabsContent>
-									<TabsContent value="toml">
+									<TabsContent
+										value="toml"
+										className="flex min-h-0 flex-col">
 										<TemplateFilePreview
+											fill
 											filename="template.toml"
 											language="ini"
 											data={toml.data}

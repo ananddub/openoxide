@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use auto_di::resolve;
-use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, ServerControllerAuditRequest, ServerControllerAuditResponse,
@@ -14,8 +16,9 @@ use crate::api::connect::generated::openoxide::api::v1::{
 };
 use crate::core::config::Config;
 use crate::services::infrastructure::server::RemoteServerStatus;
-use crate::utils::exec::{RemoteExecutor, SshAuth, SshHostKey};
-use crate::utils::setup::{ServerSetup, SetupConfig};
+use crate::utils::exec::{ExecError, RemoteExecutor, SshAuth, SshHostKey};
+use crate::utils::setup::{ServerSetup, SetupConfig, SetupOutcome};
+use futures::StreamExt;
 
 use super::helper::*;
 use super::init::ServerController;
@@ -167,9 +170,9 @@ impl ServerControllerService for ServerController {
             .server_type
             .eq_ignore_ascii_case("BUILD");
         config.agent_server_id = Some(id);
-        let panel_config = resolve::<Config>().await.map_err(|_| {
-            ConnectError::new(ErrorCode::Internal, "configuration unavailable")
-        })?;
+        let panel_config = resolve::<Config>()
+            .await
+            .map_err(|_| ConnectError::new(ErrorCode::Internal, "configuration unavailable"))?;
         config.agent_panel_url = Some(
             std::env::var("OPENOXIDE_SERVER_URL")
                 .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
@@ -213,9 +216,9 @@ impl ServerControllerService for ServerController {
             impl connectrpc::Encodable<ServerControllerStreamSetupLogsResponse> + Send + use<>,
         >,
     > {
-        // Run the setup to completion and emit a single completion event,
-        // then close the stream. True incremental log streaming can be
-        // layered on later without changing the proto contract.
+        // Live streaming: forward each setup log line as its own event, then
+        // emit one final event carrying `outcome` (or end the stream with the
+        // setup error).
         let id = request.id;
         let host_key = request.host_key_fingerprint.map(str::to_owned);
 
@@ -238,9 +241,9 @@ impl ServerControllerService for ServerController {
             .server_type
             .eq_ignore_ascii_case("BUILD");
         config.agent_server_id = Some(id);
-        let panel_config = resolve::<Config>().await.map_err(|_| {
-            ConnectError::new(ErrorCode::Internal, "configuration unavailable")
-        })?;
+        let panel_config = resolve::<Config>()
+            .await
+            .map_err(|_| ConnectError::new(ErrorCode::Internal, "configuration unavailable"))?;
         config.agent_panel_url = Some(
             std::env::var("OPENOXIDE_SERVER_URL")
                 .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
@@ -258,30 +261,59 @@ impl ServerControllerService for ServerController {
 
         let install_dependencies = request.install_dependencies;
         let service = Arc::clone(&self.service);
-        let result = ServerSetup::new_remote(executor, config)
-            .setup_all_oneshot(install_dependencies)
-            .await;
 
-        match result {
-            Ok(outcome) => {
-                if let Err(error) = service.set_status(id, RemoteServerStatus::Active).await {
-                    tracing::warn!(server_id = id, %error, "failed to mark server active after streamed setup");
+        enum SetupEvent {
+            Line(String),
+            Done(Result<SetupOutcome, ExecError>),
+        }
+
+        let (line_tx, mut line_rx) = tokio::sync::mpsc::channel::<String>(256);
+        let (event_tx, event_rx) = tokio::sync::mpsc::channel::<SetupEvent>(64);
+
+        let line_event_tx = event_tx.clone();
+        tokio::spawn(async move {
+            while let Some(line) = line_rx.recv().await {
+                if line_event_tx.send(SetupEvent::Line(line)).await.is_err() {
+                    break;
                 }
-                if let Err(error) = service.touch_test_connection(id).await {
-                    tracing::warn!(server_id = id, %error, "failed to update connection timestamp after streamed setup");
+            }
+        });
+
+        tokio::spawn(async move {
+            let result = ServerSetup::new_remote(executor, config)
+                .setup_all_oneshot_stream(install_dependencies, line_tx)
+                .await;
+            match &result {
+                Ok(_) => {
+                    if let Err(error) = service.set_status(id, RemoteServerStatus::Active).await {
+                        tracing::warn!(server_id = id, %error, "failed to mark server active after streamed setup");
+                    }
+                    if let Err(error) = service.touch_test_connection(id).await {
+                        tracing::warn!(server_id = id, %error, "failed to update connection timestamp after streamed setup");
+                    }
                 }
-                let item = ServerControllerStreamSetupLogsResponse {
+                Err(error) => {
+                    tracing::error!(error = %error, server_id = id, "streamed server setup failed");
+                }
+            }
+            let _ = event_tx.send(SetupEvent::Done(result)).await;
+        });
+
+        let stream =
+            tokio_stream::wrappers::ReceiverStream::new(event_rx).map(move |event| match event {
+                SetupEvent::Line(line) => Ok(ServerControllerStreamSetupLogsResponse {
+                    server_id: id,
+                    lines: vec![line],
+                    ..Default::default()
+                }),
+                SetupEvent::Done(Ok(outcome)) => Ok(ServerControllerStreamSetupLogsResponse {
                     server_id: id,
                     outcome: ::buffa::MessageField::some(outcome_to_proto(outcome)),
                     ..Default::default()
-                };
-                Response::stream_ok(futures::stream::once(async move { Ok(item) }))
-            }
-            Err(error) => {
-                tracing::error!(error = %error, server_id = id, "streamed server setup failed");
-                Err(map_exec_error(error))
-            }
-        }
+                }),
+                SetupEvent::Done(Err(error)) => Err(map_exec_error(error)),
+            });
+        Response::stream_ok(stream)
     }
 
     #[permission(Server, CanRead)]

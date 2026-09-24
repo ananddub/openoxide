@@ -2,8 +2,8 @@
 
 -- name: AiGenerationsCreate :one
 INSERT INTO ai_generations
-               (ai_setting_id, organization_id, created_by, prompt, output_json)
-               VALUES (?, ?, ?, ?, ?)
+               (ai_setting_id, organization_id, created_by, prompt, output_json, status)
+               VALUES (?, ?, ?, ?, ?, 'GENERATED')
                RETURNING id AS id, ai_setting_id, organization_id, created_by,
                          prompt, output_json, status, service_id, created_at, updated_at;
 

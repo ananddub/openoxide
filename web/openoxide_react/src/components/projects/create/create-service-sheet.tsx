@@ -424,7 +424,7 @@ export function CreateServiceSheet({
 										placeholder="Search servers…"
 										value={serverQuery}
 										onChange={e => setServerQuery(e.target.value)}
-										className="bg-background pl-9"
+										className="pl-9"
 									/>
 								</div>
 								<div className="flex max-h-[min(55vh,480px)] flex-col gap-2 overflow-y-auto pr-0.5">
@@ -477,25 +477,23 @@ export function CreateServiceSheet({
 								{plan === 'custom' && (
 									<div className="mt-1 grid animate-in grid-cols-2 gap-3 duration-200 fade-in-0 slide-in-from-top-2">
 										<div className="flex flex-col gap-1.5">
-											<span className="text-[13px] font-medium text-foreground">
+											<span className="text-xs font-semibold text-foreground">
 												vCPU
 											</span>
 											<Input
 												placeholder="0.5"
 												value={customCpu}
 												onChange={e => setCustomCpu(e.target.value)}
-												className="bg-background"
 											/>
 										</div>
 										<div className="flex flex-col gap-1.5">
-											<span className="text-[13px] font-medium text-foreground">
+											<span className="text-xs font-semibold text-foreground">
 												Memory
 											</span>
 											<Input
 												placeholder="512m"
 												value={customMem}
 												onChange={e => setCustomMem(e.target.value)}
-												className="bg-background"
 											/>
 										</div>
 									</div>

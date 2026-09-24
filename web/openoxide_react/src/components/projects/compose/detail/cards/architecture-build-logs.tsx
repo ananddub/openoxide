@@ -22,6 +22,7 @@ import {
 	CollapsibleTrigger,
 	CollapsibleContent,
 } from '#/components/ui/collapsible';
+import {AnalyzeLogsButton} from '#/components/ai/analyze-logs-button';
 import {
 	lineTone,
 	splitTimestamp,
@@ -257,6 +258,7 @@ export function BuildLogsSection({entityId, kind}: BuildLogsSectionProps) {
 									Ctrl+F
 								</kbd>
 							</div>
+							<AnalyzeLogsButton lines={lines} context="BUILD" />
 						</div>
 
 						{/* Theme-aware log surface — bordered, no inset */}

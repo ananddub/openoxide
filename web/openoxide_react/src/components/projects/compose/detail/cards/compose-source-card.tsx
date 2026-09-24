@@ -1,3 +1,4 @@
+import {Check} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {cn} from '#/api/utils';
@@ -61,14 +62,14 @@ export function ComposeSourceCard({
 				<Button
 					onClick={onSave}
 					disabled={savingSource}
-					className="h-9 gap-1.5 px-4 text-sm">
-					{savingSource ? 'Saving…' : 'Save Source Settings'}
+					className="h-8 gap-1.5 px-4 text-xs">
+					{savingSource ? 'Saving…' : 'Save changes'}
 				</Button>
 			}>
-			<SheetGroup
-				title="Provider"
-				description="Choose where this stack pulls its compose file from.">
-				<div className="flex flex-col gap-2">
+			<SheetGroup title="Source">
+				{/* Compact provider picker — six heavy radio rows read as
+				    clutter; a 3-up chip grid stays scannable. */}
+				<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
 					{COMPOSE_SOURCE_PROVIDERS.map(p => {
 						const selected = provider === p.id;
 						return (
@@ -78,30 +79,16 @@ export function ComposeSourceCard({
 								onClick={() => onPatch({provider: p.id})}
 								aria-pressed={selected}
 								className={cn(
-									'flex w-full cursor-pointer items-center gap-3 rounded-xl border px-4 py-3.5 text-start transition-all duration-150',
+									'flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors',
 									selected
-										? 'border-primary/40 bg-primary/10'
-										: 'border-border/50 hover:border-border hover:bg-muted/30',
+										? 'border-primary/50 bg-primary/[0.08] text-foreground'
+										: 'border-border/60 text-muted-foreground hover:bg-muted/30 hover:text-foreground',
 								)}>
 								<span className="shrink-0">{p.icon}</span>
-								<span
-									className={cn(
-										'truncate text-sm font-medium',
-										selected ? 'text-foreground' : 'text-muted-foreground',
-									)}>
-									{p.label}
-								</span>
-								<span
-									className={cn(
-										'ml-auto flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
-										selected
-											? 'border-primary'
-											: 'border-muted-foreground/40',
-									)}>
-									{selected && (
-										<span className="size-2.5 rounded-full bg-primary" />
-									)}
-								</span>
+								<span className="truncate">{p.label}</span>
+								{selected && (
+									<Check className="ml-auto size-3.5 shrink-0 text-primary" />
+								)}
 							</button>
 						);
 					})}

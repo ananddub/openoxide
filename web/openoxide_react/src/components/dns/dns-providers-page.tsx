@@ -16,7 +16,14 @@ import {
 	Toolbar,
 	ToolbarSearch,
 } from '#/components/settings/list-card';
-import {ConfirmDeleteDialog} from '#/components/settings/confirm-delete-dialog';
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from '#/components/ui/sheet';
 import {useDnsList, useDnsProviderDelete} from '#/api/live';
 import type {SshKeysView} from '#/components/ssh-keys/ssh-keys-list';
 import {
@@ -212,24 +219,37 @@ export function DnsProvidersPage() {
 				/>
 			)}
 
-			<ConfirmDeleteDialog
-				open={!!deleteTarget}
-				onOpenChange={open => !open && setDeleteTarget(null)}
-				title="Delete DNS provider"
-				description={
-					<span>
-						<span className="font-medium text-foreground">
-							{deleteTarget?.name}
-						</span>{' '}
-						will stop serving zones — wildcard certificate renewals for
-						domains that rely on it fail until it is repointed. This cannot
-						be undone.
-					</span>
-				}
-				confirmLabel="Delete provider"
-				busy={deleteMutation.isPending}
-				onConfirm={() => void handleDeleteProvider()}
-			/>
+			{deleteTarget && (
+				<Sheet
+					open
+					onOpenChange={open => {
+						if (!open) setDeleteTarget(null);
+					}}>
+					<SheetContent className="sm:data-[side=right]:w-[420px]">
+						<SheetHeader>
+							<SheetTitle>Delete DNS provider</SheetTitle>
+							<SheetDescription>
+								<span className="font-medium text-foreground">
+									{deleteTarget.name}
+								</span>{' '}
+								will stop serving zones — wildcard certificate
+								renewals for domains that rely on it fail until it is
+								repointed. This cannot be undone.
+							</SheetDescription>
+						</SheetHeader>
+						<SheetFooter>
+							<Button
+								variant="destructive"
+								disabled={deleteMutation.isPending}
+								onClick={() => void handleDeleteProvider()}>
+								{deleteMutation.isPending
+									? 'Deleting…'
+									: 'Delete provider'}
+							</Button>
+						</SheetFooter>
+					</SheetContent>
+				</Sheet>
+			)}
 		</div>
 	);
 }

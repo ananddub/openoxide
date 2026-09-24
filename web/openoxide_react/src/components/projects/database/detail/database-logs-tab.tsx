@@ -99,6 +99,7 @@ export function DatabaseLogsTab({database}: DatabaseLogsTabProps) {
 				emptyText={`No runtime log output received for database '${appName}'.`}
 				onDownload={handleDownload}
 				onReload={() => setRefetchTrigger(prev => prev + 1)}
+				aiContext="RUNTIME"
 			/>
 		</div>
 	);

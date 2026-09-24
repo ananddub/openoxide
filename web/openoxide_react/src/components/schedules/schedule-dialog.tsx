@@ -65,7 +65,6 @@ export function ScheduleDialog(props: ScheduleDialogProps) {
 								onChange={e => form.setName(e.target.value)}
 								required
 								autoFocus
-								className="bg-background"
 							/>
 						</WizardField>
 
@@ -74,7 +73,6 @@ export function ScheduleDialog(props: ScheduleDialogProps) {
 								placeholder="What this task does"
 								value={form.description}
 								onChange={e => form.setDescription(e.target.value)}
-								className="bg-background"
 							/>
 						</WizardField>
 
@@ -86,7 +84,7 @@ export function ScheduleDialog(props: ScheduleDialogProps) {
 								value={form.cronExpression}
 								onChange={e => form.setCronExpression(e.target.value)}
 								required
-								className="bg-background font-mono"
+								className="font-mono"
 							/>
 							<div className="flex flex-wrap gap-1 pt-1">
 								{CRON_PRESETS.map(preset => (
@@ -111,7 +109,7 @@ export function ScheduleDialog(props: ScheduleDialogProps) {
 							<Select
 								value={form.shellType}
 								onValueChange={val => val && form.setShellType(val)}>
-								<SelectTrigger className="bg-background">
+								<SelectTrigger>
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent className="bg-card">
@@ -128,7 +126,7 @@ export function ScheduleDialog(props: ScheduleDialogProps) {
 								onChange={e => form.setCommand(e.target.value)}
 								required
 								rows={4}
-								className="min-h-32 resize-y rounded-lg bg-background font-mono text-xs"
+								className="min-h-32 resize-y rounded-lg font-mono text-xs"
 							/>
 						</WizardField>
 					</div>

@@ -93,7 +93,6 @@ export function TagEditDialog({
 								onChange={e => setTagName(e.target.value)}
 								required
 								autoFocus
-								className="bg-background"
 							/>
 						</WizardField>
 

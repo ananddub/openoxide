@@ -209,7 +209,6 @@ export function GroupEditorSheet({
 										setDraft({...draft, name: event.target.value})
 									}
 									placeholder="Deploy Operators"
-									className="bg-background"
 								/>
 							</WizardField>
 
@@ -242,7 +241,7 @@ export function GroupEditorSheet({
 										value={query}
 										onChange={event => setQuery(event.target.value)}
 										placeholder="Filter — app, read, deploy"
-										className="h-9 rounded-lg bg-background pl-9 text-sm transition-colors duration-150 hover:border-foreground/25"
+										className="h-9 rounded-lg pl-9 text-sm transition-colors duration-150 hover:border-foreground/25"
 									/>
 								</div>
 							)}

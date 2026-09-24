@@ -1,9 +1,11 @@
+import type {ReactNode} from 'react';
+
 export function Field({
 	label,
 	children,
 }: {
 	label: string;
-	children: React.ReactNode;
+	children: ReactNode;
 }) {
 	return (
 		<div className="flex flex-col gap-1.5">

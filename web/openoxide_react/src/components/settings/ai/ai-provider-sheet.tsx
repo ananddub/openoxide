@@ -161,7 +161,7 @@ export function AiProviderSheet({
 										value={form.api_url}
 										onChange={e => set('api_url', e.target.value)}
 										placeholder="https://api.openai.com/v1"
-										className="bg-background font-mono"
+										className="font-mono"
 									/>
 								</WizardField>
 
@@ -178,7 +178,7 @@ export function AiProviderSheet({
 										value={form.api_key}
 										onChange={e => set('api_key', e.target.value)}
 										placeholder="sk-..."
-										className="bg-background font-mono"
+										className="font-mono"
 									/>
 								</WizardField>
 							</div>
@@ -209,7 +209,7 @@ export function AiProviderSheet({
 										value={form.model}
 										onChange={e => set('model', e.target.value)}
 										placeholder="e.g. gpt-4o, claude-3-5-sonnet, llama3.2"
-										className="bg-background font-mono"
+										className="font-mono"
 									/>
 								</WizardField>
 
@@ -218,7 +218,7 @@ export function AiProviderSheet({
 										<Select
 											value={form.model}
 											onValueChange={v => v && set('model', v)}>
-											<SelectTrigger className="bg-background font-mono">
+											<SelectTrigger className="font-mono">
 												<SelectValue placeholder="Choose a model" />
 											</SelectTrigger>
 											<SelectContent className="bg-card">
@@ -239,7 +239,7 @@ export function AiProviderSheet({
 						{step === 'review' && (
 							<div className="flex flex-col gap-5">
 								<div className="flex items-center gap-3.5 rounded-xl border border-border/60 bg-muted/20 px-4 py-3.5">
-									<span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background text-foreground">
+									<span className="flex size-10 shrink-0 items-center justify-center rounded-lg text-foreground">
 										<AiProviderIcon
 											name={currentProviderName}
 											className="size-5"
@@ -269,7 +269,6 @@ export function AiProviderSheet({
 										value={form.name}
 										onChange={e => set('name', e.target.value)}
 										placeholder="e.g. OpenAI Production"
-										className="bg-background"
 									/>
 								</WizardField>
 

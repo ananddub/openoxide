@@ -106,6 +106,7 @@ export function LogsTab({app}: LogsTabProps) {
 			)}
 
 			<DeploymentViewer
+				aiContext="RUNTIME"
 				logs={streamedLogs}
 				isLoading={isLoading}
 				isLive={isLive}

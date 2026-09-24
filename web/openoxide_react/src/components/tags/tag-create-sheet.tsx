@@ -91,7 +91,6 @@ export function TagCreateSheet({
 								onChange={e => setTagName(e.target.value)}
 								required
 								autoFocus
-								className="bg-background"
 							/>
 						</WizardField>
 

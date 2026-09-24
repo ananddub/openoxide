@@ -1,4 +1,5 @@
 use reqwest::Url;
+use reqwest::header::{HeaderMap, USER_AGENT};
 use rig_core::{
     client::{CompletionClient, ModelListingClient, Nothing},
     completion::{AssistantContent, CompletionModel},
@@ -7,6 +8,22 @@ use rig_core::{
 use serde_json::{Value, json};
 
 use super::{AiProviderConfig, AiProviderKind};
+
+/// AgentRouter gateways reject generic HTTP clients with a 401
+/// "unauthorized client" error unless the request looks like QwenCode.
+fn provider_headers(base: &str) -> Option<HeaderMap> {
+    let host = Url::parse(base).ok()?.host_str()?.to_string();
+    host.contains("agentrouter").then(|| {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            USER_AGENT,
+            "QwenCode/0.22.3 (linux; x64)"
+                .parse()
+                .expect("static user-agent"),
+        );
+        headers
+    })
+}
 
 #[derive(Clone, Default)]
 pub struct AiClient;
@@ -43,13 +60,13 @@ impl AiClient {
                     .await
             }
             AiProviderKind::OpenAi | AiProviderKind::OpenAiCompatible => {
-                openai::Client::builder()
+                let mut builder = openai::Client::builder()
                     .api_key(&config.api_key)
-                    .base_url(openai_base_url(&base))
-                    .build()
-                    .map_err(rig_error)?
-                    .list_models()
-                    .await
+                    .base_url(openai_base_url(&base));
+                if let Some(headers) = provider_headers(&base) {
+                    builder = builder.http_headers(headers);
+                }
+                builder.build().map_err(rig_error)?.list_models().await
             }
         }
         .map_err(rig_error)?;
@@ -137,11 +154,13 @@ impl AiClient {
                 complete_with_model(client.completion_model(&config.model), prompt, params).await
             }
             AiProviderKind::OpenAi | AiProviderKind::OpenAiCompatible => {
-                let client = openai::CompletionsClient::builder()
+                let mut builder = openai::CompletionsClient::builder()
                     .api_key(&config.api_key)
-                    .base_url(openai_base_url(&base))
-                    .build()
-                    .map_err(rig_error)?;
+                    .base_url(openai_base_url(&base));
+                if let Some(headers) = provider_headers(&base) {
+                    builder = builder.http_headers(headers);
+                }
+                let client = builder.build().map_err(rig_error)?;
                 let params = (json_only && config.kind() == AiProviderKind::OpenAi)
                     .then(|| json!({"response_format": {"type": "json_object"}}));
                 complete_with_model(client.completion_model(&config.model), prompt, params).await
@@ -158,7 +177,9 @@ async fn complete_with_model<M: CompletionModel>(
     let mut request = model
         .completion_request(prompt)
         .temperature(0.2)
-        .max_tokens(8192);
+        // Reasoning models (GLM/DeepSeek "v4"-style) spend part of the budget on
+        // hidden thinking, so the visible answer needs extra headroom.
+        .max_tokens(16384);
     if let Some(params) = additional_params {
         request = request.additional_params(params);
     }

@@ -1,8 +1,8 @@
 import {useEffect, useState} from 'react';
-import {BellRing, Loader2, Save} from 'lucide-react';
+import {BellRing, Check, Loader2, Save} from 'lucide-react';
+import {cn} from '#/api/utils';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
-import {Switch} from '#/components/ui/switch';
 import {
 	Sheet,
 	SheetContent,
@@ -179,7 +179,7 @@ export function NotificationChannelSheet({
 							)}
 
 							{step === 'events' && (
-								<div className="flex flex-col gap-1.5">
+								<div className="flex flex-col gap-6">
 									<div className="flex items-center justify-between gap-3">
 										<p className="text-[13px] font-medium text-foreground">
 											{selectedTriggers.length} of {TRIGGERS.length}{' '}
@@ -199,39 +199,48 @@ export function NotificationChannelSheet({
 										</button>
 									</div>
 
-									<div className="w-full overflow-hidden rounded-xl border bg-card">
-										{TRIGGER_GROUPS.map(group => (
-											<div key={group}>
-												<p className="border-b bg-muted/40 px-4 py-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-													{group}
-												</p>
-												<div className="divide-y">
-													{TRIGGERS.filter(t => t.group === group).map(
-														t => (
-															<label
+									{TRIGGER_GROUPS.map(group => (
+										<div key={group} className="flex flex-col gap-2">
+											<p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+												{group}
+											</p>
+											<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+												{TRIGGERS.filter(t => t.group === group).map(
+													t => {
+														const selected =
+															draft.triggers[t.key] === true;
+														return (
+															<button
 																key={t.key}
-																className="flex cursor-pointer items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-accent/30">
-																<span className="truncate text-sm font-medium text-foreground">
+																type="button"
+																onClick={() =>
+																	patch({
+																		triggers: {
+																			...draft.triggers,
+																			[t.key]: !selected,
+																		},
+																	})
+																}
+																aria-pressed={selected}
+																className={cn(
+																	'flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm font-medium transition-all duration-150',
+																	selected
+																		? 'border-primary/50 bg-primary/[0.08] text-foreground'
+																		: 'border-border/60 text-muted-foreground hover:bg-muted/30',
+																)}>
+																<span className="truncate">
 																	{t.label}
 																</span>
-																<Switch
-																	checked={draft.triggers[t.key] === true}
-																	onCheckedChange={v =>
-																		patch({
-																			triggers: {
-																				...draft.triggers,
-																				[t.key]: v,
-																			},
-																		})
-																	}
-																/>
-															</label>
-														),
-													)}
-												</div>
+																{selected && (
+																	<Check className="ml-auto size-3.5 shrink-0 text-primary" />
+																)}
+															</button>
+														);
+													},
+												)}
 											</div>
-										))}
-									</div>
+										</div>
+									))}
 								</div>
 							)}
 
@@ -267,7 +276,6 @@ export function NotificationChannelSheet({
 											value={draft.name}
 											onChange={e => patch({name: e.target.value})}
 											autoFocus
-											className="bg-background"
 										/>
 									</WizardField>
 								</div>

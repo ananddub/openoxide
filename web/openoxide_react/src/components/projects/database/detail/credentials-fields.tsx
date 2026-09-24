@@ -2,21 +2,14 @@ import {useState} from 'react';
 import {Eye, EyeOff} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
+import {Field} from '#/components/shared/field';
 
 /** Read-only display field — Geist muted surface, mono value.
  *  Theme-aware so it never renders as a black slab in the light theme. */
 const READONLY_CLS =
 	'h-9 border-input bg-muted/40 font-mono text-xs text-foreground read-only:cursor-default';
 
-function FieldLabel({children}: {children: React.ReactNode}) {
-	return (
-		<label className="text-xs font-semibold text-muted-foreground">
-			{children}
-		</label>
-	);
-}
-
-/** Read-only labelled input. */
+/** Read-only labelled input — house `Field` grammar (label + control). */
 export function ReadonlyField({
 	label,
 	value,
@@ -27,10 +20,9 @@ export function ReadonlyField({
 	className?: string;
 }) {
 	return (
-		<div className={`flex flex-col gap-1.5 ${className}`}>
-			<FieldLabel>{label}</FieldLabel>
+		<Field label={label} className={className}>
 			<Input readOnly value={value} className={READONLY_CLS} />
-		</div>
+		</Field>
 	);
 }
 
@@ -46,8 +38,7 @@ export function SecretField({
 }) {
 	const [show, setShow] = useState(false);
 	return (
-		<div className={`flex flex-col gap-1.5 ${className}`}>
-			<FieldLabel>{label}</FieldLabel>
+		<Field label={label} className={className}>
 			<div className="flex items-center gap-2">
 				<Input
 					readOnly
@@ -68,8 +59,8 @@ export function SecretField({
 					)}
 				</Button>
 			</div>
-		</div>
+		</Field>
 	);
 }
 
-export {FieldLabel, Input, Button};
+export {Input, Button};

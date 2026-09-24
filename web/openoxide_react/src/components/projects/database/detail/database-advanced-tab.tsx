@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {Trash2, AlertTriangle, RefreshCw} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {SettingsCollapse} from '#/components/shared/settings-collapse';
+import {SettingsSheet} from '#/components/shared/settings-sheet';
 import {toast} from 'sonner';
 import {useDatabaseRedeploy, parseDatabaseKind} from '#/api/live';
 import {formatApiError} from '#/api/utils';
@@ -95,7 +95,7 @@ export function DatabaseAdvancedTab({
 				/>
 				<DatabaseSwarmSettings database={database} onUpdated={onUpdated} />
 
-				<SettingsCollapse
+				<SettingsSheet
 					title="Danger Zone"
 					description="Rebuild or permanently delete this database"
 					icon={<AlertTriangle className="size-4 text-destructive" />}>
@@ -104,8 +104,8 @@ export function DatabaseAdvancedTab({
 						<div className="flex flex-col justify-between gap-3 rounded-xl bg-muted/10 p-4 sm:flex-row sm:items-center">
 							<div>
 								<p className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-									<RefreshCw className="size-3.5 text-amber-500" /> Rebuild
-									Database
+									<RefreshCw className="size-3.5 text-muted-foreground" />{' '}
+									Rebuild Database
 								</p>
 								<p className="mt-0.5 text-[11px] text-muted-foreground">
 									Forces container re-creation and applies updated
@@ -116,7 +116,7 @@ export function DatabaseAdvancedTab({
 								variant="outline"
 								onClick={handleRebuild}
 								disabled={rebuilding}
-								className="h-9 shrink-0 border-amber-500/30 px-4 text-xs font-semibold text-amber-500 hover:bg-amber-500/10">
+								className="h-9 shrink-0 px-4 text-xs font-semibold">
 								{rebuilding ? 'Rebuilding...' : 'Rebuild Database'}
 							</Button>
 						</div>
@@ -142,7 +142,7 @@ export function DatabaseAdvancedTab({
 							</Button>
 						</div>
 					</div>
-				</SettingsCollapse>
+				</SettingsSheet>
 			</div>
 
 			{/* Delete Confirmation Popup Dialog */}

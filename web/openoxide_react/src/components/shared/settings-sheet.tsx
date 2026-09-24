@@ -31,7 +31,7 @@ interface SettingsSheetProps {
 	children: ReactNode;
 }
 
-/** Geist settings strip whose body lives in a right-side sheet instead of collapsing inline. The row looks like `SettingsCollapse`; clicking it slides open a panel holding the form (title + description + children), with an optional sticky footer for the Save action. */
+/** Geist settings strip whose body lives in a right-side sheet instead of collapsing inline. Clicking the row slides open a panel holding the form (title + description + children), with an optional sticky footer for the Save action. */
 export function SettingsSheet({
 	title,
 	description,

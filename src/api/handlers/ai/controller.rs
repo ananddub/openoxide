@@ -28,7 +28,7 @@ impl AiService for AiController {
         ctx: RequestContext,
         request: ServiceRequest<'_, AiListSettingsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AiListSettingsResponse> + Send + use<'a>> {
-        let organization_id = request.organization_id.unwrap_or(0);
+        let organization_id = auth.organization_id;
         let items = self
             .service
             .list_settings(organization_id)
@@ -47,7 +47,7 @@ impl AiService for AiController {
         ctx: RequestContext,
         request: ServiceRequest<'_, AiGetSettingsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AiGetSettingsResponse> + Send + use<'a>> {
-        let organization_id = request.organization_id.unwrap_or(0);
+        let organization_id = auth.organization_id;
         let setting = self
             .service
             .get_setting(request.id, organization_id)
@@ -65,7 +65,7 @@ impl AiService for AiController {
         ctx: RequestContext,
         request: ServiceRequest<'_, AiCreateSettingsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AiCreateSettingsResponse> + Send + use<'a>> {
-        let organization_id = request.organization_id.unwrap_or(0);
+        let organization_id = auth.organization_id;
         let input = AiSettingInput {
             name: request.name.to_owned(),
             api_url: request.api_url.to_owned(),
@@ -90,7 +90,7 @@ impl AiService for AiController {
         ctx: RequestContext,
         request: ServiceRequest<'_, AiUpdateSettingsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AiUpdateSettingsResponse> + Send + use<'a>> {
-        let organization_id = request.organization_id.unwrap_or(0);
+        let organization_id = auth.organization_id;
         let input = AiSettingUpdate {
             name: request.name.map(str::to_owned),
             api_url: request.api_url.map(str::to_owned),
@@ -115,7 +115,7 @@ impl AiService for AiController {
         ctx: RequestContext,
         request: ServiceRequest<'_, AiDeleteSettingsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        let organization_id = request.organization_id.unwrap_or(0);
+        let organization_id = auth.organization_id;
         let deleted = self
             .service
             .delete_setting(request.id, organization_id)
@@ -134,7 +134,7 @@ impl AiService for AiController {
         ctx: RequestContext,
         request: ServiceRequest<'_, AiListModelsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AiListModelsResponse> + Send + use<'a>> {
-        let organization_id = request.organization_id.unwrap_or(0);
+        let organization_id = auth.organization_id;
         let models = self
             .service
             .discover_setting_models(request.setting_id, organization_id)
@@ -152,7 +152,7 @@ impl AiService for AiController {
         ctx: RequestContext,
         request: ServiceRequest<'_, AiTestSettingsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AiTestSettingsResponse> + Send + use<'a>> {
-        let organization_id = request.organization_id.unwrap_or(0);
+        let organization_id = auth.organization_id;
         self.service
             .test_setting(request.id, organization_id)
             .await
@@ -208,7 +208,7 @@ impl AiService for AiController {
         ctx: RequestContext,
         request: ServiceRequest<'_, AiListGenerationsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AiListGenerationsResponse> + Send + use<'a>> {
-        let organization_id = request.organization_id.unwrap_or(0);
+        let organization_id = auth.organization_id;
         let limit = request.limit.unwrap_or(50);
         let items = self
             .service
@@ -228,7 +228,7 @@ impl AiService for AiController {
         ctx: RequestContext,
         request: ServiceRequest<'_, AiGetGenerationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AiGetGenerationResponse> + Send + use<'a>> {
-        let organization_id = request.organization_id.unwrap_or(0);
+        let organization_id = auth.organization_id;
         let generation = self
             .service
             .get_generation(request.id, organization_id)
@@ -270,7 +270,7 @@ impl AiService for AiController {
         ctx: RequestContext,
         request: ServiceRequest<'_, AiReviewGenerationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AiReviewGenerationResponse> + Send + use<'a>> {
-        let organization_id = request.organization_id.unwrap_or(0);
+        let organization_id = auth.organization_id;
         let output_view = request.output.as_option().ok_or_else(|| {
             ConnectError::invalid_argument("review generation requires an output")
         })?;
@@ -292,7 +292,7 @@ impl AiService for AiController {
         ctx: RequestContext,
         request: ServiceRequest<'_, AiDeployGenerationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AiDeployGenerationResponse> + Send + use<'a>> {
-        let organization_id = request.organization_id.unwrap_or(0);
+        let organization_id = auth.organization_id;
         let input = AiDeployInput {
             suggestion_id: request.suggestion_id.to_owned(),
             environment_id: request.environment_id,

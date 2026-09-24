@@ -1,6 +1,6 @@
 use super::super::{
-    DnsRecordDto, DnsService, DnsServiceError, DnsTestResultDto, DnsZoneDto,
-    UpsertDnsRecordDto, extract_credential_field,
+    DnsRecordDto, DnsService, DnsServiceError, DnsTestResultDto, DnsZoneDto, UpsertDnsRecordDto,
+    extract_credential_field,
 };
 
 const DO_API: &str = "https://api.digitalocean.com/v2";
@@ -142,11 +142,17 @@ impl DnsService {
         if !status.is_success() {
             return Err(DnsServiceError::ProviderError(format!(
                 "DigitalOcean create record failed: HTTP {status} {}",
-                created.get("message").and_then(|v| v.as_str()).unwrap_or_default()
+                created
+                    .get("message")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or_default()
             )));
         }
         Ok(DnsRecordDto {
-            id: created["id"].as_i64().map(|v| v.to_string()).unwrap_or_default(),
+            id: created["id"]
+                .as_i64()
+                .map(|v| v.to_string())
+                .unwrap_or_default(),
             zone_id: body.zone_id.clone(),
             record_type: body.record_type.clone(),
             name,

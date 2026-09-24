@@ -1,7 +1,6 @@
 import {useMemo, useState} from 'react';
 import {TerminalCard} from '#/components/shared/terminal-card';
 import {EnvironmentSheet} from '#/components/projects/common/environment-sheet';
-import {SettingsCollapse} from '#/components/shared/settings-collapse';
 import {
 	ArchitecturePreviewCard,
 	statusToneFor,
@@ -83,31 +82,22 @@ export function GeneralTab({
 					id: Number(app?.application_id ?? app?.id ?? 0),
 					type: 'application',
 				}}
-				git={{
-					entity: app,
-					kind: 'app',
-					onUpdated,
-				}}
 				errorDetail={app?.last_error}
 				sections={
 					<>
-						{/* Source Settings — embedded strip */}
-						<SettingsCollapse title="Source & Provider Configuration">
-							<SourceSettingsCard
-								app={app}
-								onUpdated={onUpdated}
-								embedded
-							/>
-						</SettingsCollapse>
+						{/* Source Settings — own strip + right sheet */}
+						<SourceSettingsCard
+							app={app}
+							onUpdated={onUpdated}
+							embedded
+						/>
 
-						{/* Build Type — embedded strip */}
-						<SettingsCollapse title="Build Configuration">
-							<BuildSettingsCard
-								app={app}
-								onUpdated={onUpdated}
-								embedded
-							/>
-						</SettingsCollapse>
+						{/* Build Type — own strip + right sheet */}
+						<BuildSettingsCard
+							app={app}
+							onUpdated={onUpdated}
+							embedded
+						/>
 
 						<BuildLogsSection
 							entityId={Number(app?.application_id ?? app?.id ?? 0)}

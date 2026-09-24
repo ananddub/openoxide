@@ -25,7 +25,7 @@ import type {ComposeService} from '#/components/projects/compose/visualizer/comp
 import {useRemoteComposeFile} from '../compose-architecture-tab/use-remote-compose-file';
 import {useComposeServiceStatus} from '../containers/use-compose-service-status';
 import {UsageRingsStrip} from './architecture-usage-rings';
-import {ArchitectureGitSection} from './architecture-git-section';
+
 import type {MonitoringEntityType} from '#/hooks/monitoring/use-container-monitoring';
 
 export type StatusTone = 'ok' | 'busy' | 'off' | 'bad';
@@ -180,8 +180,6 @@ interface ArchitecturePreviewCardProps {
 	footer?: ReactNode;
 	/** Live docker-stats ring row (CPU/mem/disk) shown above the footer. */
 	monitor?: {id: number; type: MonitoringEntityType};
-	/** Collapsible Git-integration strip (app/compose detail pages). */
-	git?: {entity: any; kind: 'compose' | 'app'; onUpdated?: () => void};
 	/** Shown in a hover card when the status tone is an error. */
 	errorDetail?: string;
 	/** Extra collapsible strips embedded at the bottom of the card
@@ -202,7 +200,6 @@ export function ArchitecturePreviewCard({
 	actions,
 	footer,
 	monitor,
-	git,
 	errorDetail,
 	sections,
 	onOpen,
@@ -342,15 +339,6 @@ export function ArchitecturePreviewCard({
 					)}
 				</div>
 			</div>
-
-			{/* Git integration — Geist-collapse style expandable strip */}
-			{git && (
-				<ArchitectureGitSection
-					entity={git.entity}
-					kind={git.kind}
-					onUpdated={git.onUpdated}
-				/>
-			)}
 
 			{/* Extra embedded strips (source config / credentials) */}
 			{sections}

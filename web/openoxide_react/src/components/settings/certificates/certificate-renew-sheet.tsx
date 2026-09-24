@@ -99,7 +99,7 @@ export function CertificateRenewSheet({
 				<div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-6">
 					<WizardField label="New certificate chain" required>
 						<Textarea
-							className="min-h-32 resize-y rounded-lg bg-background font-mono text-xs"
+							className="min-h-32 resize-y rounded-lg font-mono text-xs"
 							value={certificateData}
 							onChange={event => setCertificateData(event.target.value)}
 							placeholder="-----BEGIN CERTIFICATE-----"
@@ -108,7 +108,7 @@ export function CertificateRenewSheet({
 
 					<WizardField label="New private key" required>
 						<Textarea
-							className="min-h-32 resize-y rounded-lg bg-background font-mono text-xs"
+							className="min-h-32 resize-y rounded-lg font-mono text-xs"
 							value={privateKey}
 							onChange={event => setPrivateKey(event.target.value)}
 							placeholder="-----BEGIN PRIVATE KEY-----"

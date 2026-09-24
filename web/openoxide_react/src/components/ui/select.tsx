@@ -82,7 +82,7 @@ function SelectTrigger({
 			render={
 				<button
 					className={cn(
-						"flex h-10 w-full items-center justify-between gap-2 overflow-hidden rounded-md border border-input bg-card px-3 py-2 text-sm whitespace-nowrap shadow-[0_1px_1px_rgba(0,0,0,0.02)] transition-colors duration-150 outline-none select-none focus-visible:border-foreground/40 focus-visible:shadow-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground data-[size=lg]:h-12 data-[size=sm]:h-8 data-[size=sm]:rounded-md *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+						"flex h-9 w-full items-center justify-between gap-2 overflow-hidden rounded-md border border-input bg-card px-3 py-2 text-xs whitespace-nowrap shadow-[0_1px_1px_rgba(0,0,0,0.02)] transition-colors duration-150 outline-none select-none focus-visible:border-foreground/40 focus-visible:shadow-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground data-[size=lg]:h-12 data-[size=sm]:h-8 data-[size=sm]:rounded-md *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 						className,
 					)}>
 					{children}

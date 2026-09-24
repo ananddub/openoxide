@@ -62,7 +62,7 @@ RUN bun --version
 # Install deps first (only manifests — layer caches unless lockfile changes)
 COPY web/openoxide_react/package.json web/openoxide_react/bun.lock* web/openoxide_react/
 RUN --mount=type=cache,target=/root/.bun/install/cache \
-    cd web/openoxide_react && bun install --ignore-scripts
+    cd web/openoxide_react && bun install --frozen-lockfile --ignore-scripts
 
 # Full SPA source (index.html, src/, vite config) — after deps so the
 # dependency layer stays cached. node_modules/dist are dockerignored.

@@ -1,5 +1,5 @@
 import type {ReactNode} from 'react';
-import {Check} from 'lucide-react';
+import {Check, Loader, X} from 'lucide-react';
 import {Label} from '#/components/ui/label';
 import {cn} from '#/api/utils';
 
@@ -60,6 +60,100 @@ export function StepBody({children}: {children: ReactNode}) {
 	);
 }
 
+/** Vertical timeline of wizard steps — nodes with connector lines; the
+ *  active node carries the step's content directly beneath its label.
+ *  `nodeState` re-skins the active node for live work (spinner / verdict). */
+export function StepTimeline({
+	steps,
+	idx,
+	nodeState,
+	children,
+}: {
+	steps: WizardStep[];
+	idx: number;
+	nodeState?: 'running' | 'success' | 'failed';
+	children: ReactNode;
+}) {
+	return (
+		<div className="flex flex-col">
+			{steps.map((s, i) => {
+				const done = i < idx;
+				const active = i === idx;
+				const lastRow = i === steps.length - 1;
+				return (
+					<div key={s.id} className="flex gap-3">
+						<div className="flex w-5 shrink-0 flex-col items-center">
+							<span
+								className={cn(
+									'flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold transition-colors duration-200',
+									done &&
+										'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+									active &&
+										nodeState === 'success' &&
+										'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+									active &&
+										nodeState === 'failed' &&
+										'bg-red-500/15 text-red-600 dark:text-red-400',
+									active &&
+										!nodeState &&
+										'bg-primary text-primary-foreground ring-4 ring-primary/15',
+									active &&
+										nodeState === 'running' &&
+										'bg-primary text-primary-foreground ring-4 ring-primary/15',
+									!done &&
+									!active &&
+										'border text-muted-foreground/50',
+								)}>
+								{done ? (
+									<Check className="size-3" />
+								) : active && nodeState === 'running' ? (
+									<Loader className="size-3 animate-spin" />
+								) : active && nodeState === 'success' ? (
+									<Check className="size-3" />
+								) : active && nodeState === 'failed' ? (
+									<X className="size-3" />
+								) : (
+									i + 1
+								)}
+							</span>
+							{!lastRow && (
+								<span
+									className={cn(
+										'w-px grow',
+										done
+											? 'bg-emerald-500/40'
+											: 'bg-border',
+									)}
+								/>
+							)}
+						</div>
+						<div
+							className={cn(
+								'min-w-0 flex-1',
+								!lastRow && 'pb-5',
+							)}>
+							<p
+								className={cn(
+									'text-sm leading-5',
+									active
+										? 'font-medium text-foreground'
+										: done
+											? 'text-emerald-600 dark:text-emerald-400'
+											: 'text-muted-foreground/70',
+								)}>
+								{s.label}
+							</p>
+							{active && (
+								<div className="pt-3">{children}</div>
+							)}
+						</div>
+					</div>
+				);
+			})}
+		</div>
+	);
+}
+
 export function OptionRow({
 	selected,
 	onClick,
@@ -113,6 +207,7 @@ export function OptionRow({
 
 export function WizardField({
 	label,
+	htmlFor,
 	hint,
 	required,
 	optional,
@@ -120,6 +215,7 @@ export function WizardField({
 	children,
 }: {
 	label: string;
+	htmlFor?: string;
 	hint?: ReactNode;
 	required?: boolean;
 	optional?: boolean;
@@ -129,7 +225,9 @@ export function WizardField({
 	return (
 		<div className="flex flex-col gap-1.5">
 			<div className="flex items-center justify-between gap-3">
-				<Label className="text-[13px] font-medium text-foreground">
+				<Label
+					htmlFor={htmlFor}
+					className="text-xs font-semibold text-foreground">
 					{label}
 					{required && <span className="text-primary"> *</span>}
 					{optional && (

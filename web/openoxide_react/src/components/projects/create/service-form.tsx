@@ -70,7 +70,6 @@ export function ServiceForm({
 						placeholder={namePlaceholder}
 						value={name}
 						onChange={e => setName(e.target.value)}
-						className="bg-background"
 					/>
 				</Field>
 				{!hideServer && (
@@ -78,7 +77,7 @@ export function ServiceForm({
 						<Select
 							value={serverId}
 							onValueChange={v => v && setServerId(v)}>
-							<SelectTrigger className="w-full bg-background">
+							<SelectTrigger className="w-full">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
@@ -105,7 +104,6 @@ export function ServiceForm({
 					placeholder="What is this service for?"
 					value={description}
 					onChange={e => setDescription(e.target.value)}
-					className="bg-background"
 				/>
 			</Field>
 
@@ -116,7 +114,7 @@ export function ServiceForm({
 					<Select
 						value={composeType}
 						onValueChange={v => v && setComposeType(v)}>
-						<SelectTrigger className="w-full max-w-xs bg-background">
+						<SelectTrigger className="w-full max-w-xs">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>

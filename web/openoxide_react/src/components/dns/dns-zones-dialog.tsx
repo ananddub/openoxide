@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Loader2} from 'lucide-react';
+import {ChevronLeft} from 'lucide-react';
 import {
 	useDnsRecordCreate,
 	useDnsRecordDelete,
@@ -7,24 +7,60 @@ import {
 	useDnsZoneList,
 } from '#/api/live';
 import {formatApiError} from '#/api/utils';
+import {Button} from '#/components/ui/button';
+import {Input} from '#/components/ui/input';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 import {
 	Sheet,
 	SheetContent,
 	SheetDescription,
+	SheetFooter,
 	SheetHeader,
 	SheetTitle,
 } from '#/components/ui/sheet';
 import {toast} from 'sonner';
 import {DnsZoneRow, type DnsRecord} from './dns-zone-row';
-import {
-	DnsRecordDraftDialog,
-	type RecordDraft,
-} from './dns-record-draft-dialog';
 
 type Props = {
 	provider: {id: number; name: string};
 	onClose: () => void;
 };
+
+type SupportedRecordType = 'A' | 'AAAA' | 'CNAME' | 'TXT' | 'MX';
+
+const supportedRecordTypes: SupportedRecordType[] = [
+	'A',
+	'AAAA',
+	'CNAME',
+	'TXT',
+	'MX',
+];
+
+const contentPlaceholders: Record<SupportedRecordType, string> = {
+	A: '203.0.113.10',
+	AAAA: '2001:db8::1',
+	CNAME: 'target.example.com',
+	TXT: 'v=spf1 -all',
+	MX: '10 mail.example.com',
+};
+
+type RecordDraft = {
+	zoneId: string;
+	zoneName: string;
+	recordId?: string;
+	recordType: SupportedRecordType;
+	name: string;
+	content: string;
+	ttl: string;
+};
+
+const fieldLabel = 'text-xs font-medium text-muted-foreground';
 
 /** Zones + records management sheet for one DNS provider. */
 export function DnsZonesDialog({provider, onClose}: Props) {
@@ -46,16 +82,26 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 	const startCreate = (zoneId: string, zoneName: string) =>
 		setDraft({
 			zoneId,
+			zoneName,
 			recordType: 'A',
 			name: zoneName,
 			content: '',
 			ttl: '',
 		});
-	const startEdit = (record: DnsRecord, zoneId: string) =>
+	const startEdit = (
+		record: DnsRecord,
+		zoneId: string,
+		zoneName: string,
+	) =>
 		setDraft({
 			zoneId,
+			zoneName,
 			recordId: record.id,
-			recordType: record.record_type === 'CNAME' ? 'CNAME' : 'A',
+			recordType: (supportedRecordTypes as string[]).includes(
+				record.record_type,
+			)
+				? (record.record_type as SupportedRecordType)
+				: 'A',
 			name: record.name,
 			content: record.content,
 			ttl: record.ttl ? String(record.ttl) : '',
@@ -80,7 +126,7 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 		}
 	};
 	const deleteRecord = async (record: DnsRecord) => {
-		if (!expanded || !confirm('Delete this DNS record?')) return;
+		if (!expanded) return;
 		try {
 			await remove.mutateAsync({
 				provider_id: provider.id,
@@ -103,56 +149,227 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 				setDraft(null);
 				onClose();
 			}}>
-			<SheetContent>
-				<SheetHeader>
-					<SheetTitle className="pr-8">
-						Domains for {provider.name}
-					</SheetTitle>
-					<SheetDescription>
-						Zones available to this provider. Expand a zone to inspect and
-						manage A/CNAME records.
-					</SheetDescription>
-				</SheetHeader>
-				<div className="flex flex-1 flex-col gap-2 overflow-y-auto px-6 py-5">
-					{zonesQuery.isLoading && (
-						<div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
-							<Loader2 className="size-4 animate-spin" /> Loading zones...
-						</div>
-					)}
-					{zonesQuery.isError && (
-						<p className="text-sm text-destructive">
-							{formatApiError(zonesQuery.error)}
-						</p>
-					)}
-					{!zonesQuery.isLoading && !zones.length && (
-						<p className="py-8 text-center text-sm text-muted-foreground">
-							No zones found for this provider.
-						</p>
-					)}
-					{zones.map(zone => (
-						<DnsZoneRow
-							key={zone.id}
-							zone={zone}
-							expanded={expanded === zone.id}
-							isLoading={recordsQuery.isLoading}
-							records={expanded === zone.id ? records : []}
-							onToggle={() =>
-								setExpanded(expanded === zone.id ? null : zone.id)
-							}
-							onEdit={record => startEdit(record, zone.id)}
-							onDelete={record => deleteRecord(record)}
-							onCreate={() => startCreate(zone.id, zone.name)}
-						/>
-					))}
-				</div>
-				<DnsRecordDraftDialog
-					draft={draft}
-					saving={upsert.isPending}
-					onChange={setDraft}
-					onClose={() => setDraft(null)}
-					onSave={save}
-				/>
+			<SheetContent className="sm:data-[side=right]:w-[560px]">
+				{draft ? (
+					<RecordFormView
+						draft={draft}
+						saving={upsert.isPending}
+						onChange={setDraft}
+						onBack={() => setDraft(null)}
+						onSave={save}
+					/>
+				) : (
+					<ZonesListView
+						providerName={provider.name}
+						isLoading={zonesQuery.isLoading}
+						isError={zonesQuery.isError}
+						error={zonesQuery.error}
+						zones={zones}
+						records={records}
+						expanded={expanded}
+						recordsLoading={recordsQuery.isLoading}
+						onToggle={zoneId =>
+							setExpanded(expanded === zoneId ? null : zoneId)
+						}
+						onEdit={startEdit}
+						onDelete={deleteRecord}
+						onCreate={startCreate}
+					/>
+				)}
 			</SheetContent>
 		</Sheet>
+	);
+}
+
+function ZonesListView({
+	providerName,
+	isLoading,
+	isError,
+	error,
+	zones,
+	records,
+	expanded,
+	recordsLoading,
+	onToggle,
+	onEdit,
+	onDelete,
+	onCreate,
+}: {
+	providerName: string;
+	isLoading: boolean;
+	isError: boolean;
+	error: unknown;
+	zones: Array<{id: string; name: string}>;
+	records: DnsRecord[];
+	expanded: string | null;
+	recordsLoading: boolean;
+	onToggle: (zoneId: string) => void;
+	onEdit: (record: DnsRecord, zoneId: string, zoneName: string) => void;
+	onDelete: (record: DnsRecord) => void;
+	onCreate: (zoneId: string, zoneName: string) => void;
+}) {
+	return (
+		<div
+			key="list"
+			className="flex min-h-0 flex-1 animate-in flex-col duration-200 ease-out fade-in-0 slide-in-from-right-4">
+			<SheetHeader>
+				<SheetTitle className="truncate pr-8">
+					Domains — {providerName}
+				</SheetTitle>
+				<SheetDescription>
+					Expand a zone to view and manage its DNS records.
+				</SheetDescription>
+			</SheetHeader>
+			<div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-4">
+				{isLoading && (
+					<div className="overflow-hidden rounded-xl border bg-card">
+						{[1, 2, 3].map(i => (
+							<div
+								key={i}
+								className="flex items-center gap-3 border-b border-border/60 px-4 py-3 last:border-b-0">
+								<div className="size-8 shrink-0 animate-pulse rounded-lg bg-muted/60" />
+								<div className="flex-1 space-y-2">
+									<div className="h-3.5 w-40 animate-pulse rounded bg-muted/60" />
+									<div className="h-3 w-24 animate-pulse rounded bg-muted/60" />
+								</div>
+							</div>
+						))}
+					</div>
+				)}
+				{isError && (
+					<p className="text-sm text-destructive">
+						{formatApiError(error)}
+					</p>
+				)}
+				{!isLoading && !zones.length && (
+					<p className="py-10 text-center text-sm text-muted-foreground">
+						No zones found for this provider.
+					</p>
+				)}
+				{!!zones.length && (
+					<div className="divide-y overflow-hidden rounded-xl border bg-card">
+						{zones.map(zone => (
+							<DnsZoneRow
+								key={zone.id}
+								zone={zone}
+								expanded={expanded === zone.id}
+								isLoading={recordsLoading}
+								records={expanded === zone.id ? records : []}
+								onToggle={() => onToggle(zone.id)}
+								onEdit={record =>
+									onEdit(record, zone.id, zone.name)
+								}
+								onDelete={onDelete}
+								onCreate={() => onCreate(zone.id, zone.name)}
+							/>
+						))}
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
+function RecordFormView({
+	draft,
+	saving,
+	onChange,
+	onBack,
+	onSave,
+}: {
+	draft: RecordDraft;
+	saving: boolean;
+	onChange: (draft: RecordDraft) => void;
+	onBack: () => void;
+	onSave: () => void;
+}) {
+	return (
+		<div
+			key="form"
+			className="flex min-h-0 flex-1 animate-in flex-col duration-200 ease-out fade-in-0 slide-in-from-right-4">
+			<SheetHeader>
+				<SheetTitle className="truncate pr-8">
+					{draft.recordId ? 'Edit Record' : 'New Record'}
+				</SheetTitle>
+				<SheetDescription>
+					DNS record for {draft.zoneName}.
+				</SheetDescription>
+			</SheetHeader>
+			<div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-5 py-4">
+				<div className="grid gap-1.5">
+					<span className={fieldLabel}>Record type</span>
+					<Select
+						value={draft.recordType}
+						onValueChange={value =>
+							onChange({
+								...draft,
+								recordType: value as SupportedRecordType,
+							})
+						}>
+						<SelectTrigger>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{supportedRecordTypes.map(type => (
+								<SelectItem key={type} value={type}>
+									{type}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="grid gap-1.5">
+					<span className={fieldLabel}>Name</span>
+					<Input
+						placeholder="app.example.com"
+						value={draft.name}
+						onChange={event =>
+							onChange({...draft, name: event.target.value})
+						}
+					/>
+				</div>
+				<div className="grid gap-1.5">
+					<span className={fieldLabel}>Value</span>
+					<Input
+						placeholder={contentPlaceholders[draft.recordType]}
+						value={draft.content}
+						onChange={event =>
+							onChange({...draft, content: event.target.value})
+						}
+					/>
+				</div>
+				<div className="grid gap-1.5">
+					<span className={fieldLabel}>TTL (optional)</span>
+					<Input
+						type="number"
+						placeholder="3600"
+						value={draft.ttl}
+						onChange={event =>
+							onChange({...draft, ttl: event.target.value})
+						}
+					/>
+				</div>
+				<p className="text-[11px] leading-relaxed text-muted-foreground">
+					MX and TXT values are stored exactly as you type them —
+					put the MX priority first, e.g. “10 mail.example.com”.
+				</p>
+			</div>
+			<SheetFooter>
+				<Button
+					variant="ghost"
+					onClick={onBack}
+					className="mr-auto gap-1 text-muted-foreground">
+					<ChevronLeft className="size-4" />
+					Back to zones
+				</Button>
+				<Button onClick={onSave} disabled={saving}>
+					{saving
+						? 'Saving…'
+						: draft.recordId
+							? 'Update Record'
+							: 'Save Record'}
+				</Button>
+			</SheetFooter>
+		</div>
 	);
 }

@@ -19,7 +19,7 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 import {AlertBlock} from '#/components/shared/alert-block';
-import {FormRow} from '#/components/shared/form-row';
+import {Field} from '#/components/shared/field';
 import {toast} from 'sonner';
 
 interface AddInvitationModalProps {
@@ -110,7 +110,7 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 					id="add-invitation-form"
 					onSubmit={handleSubmit}
 					className="grid w-full gap-4 px-6 py-6">
-					<FormRow label="Mode">
+					<Field label="Mode">
 						<Select
 							value={mode}
 							onValueChange={v =>
@@ -128,9 +128,9 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 								</SelectItem>
 							</SelectContent>
 						</Select>
-					</FormRow>
+					</Field>
 
-					<FormRow label="Email">
+					<Field label="Email">
 						<Input
 							type="email"
 							placeholder="user@example.com"
@@ -138,9 +138,9 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 							onChange={e => setEmail(e.target.value)}
 							required
 						/>
-					</FormRow>
+					</Field>
 
-					<FormRow label="Role">
+					<Field label="Role">
 						<Select value={role} onValueChange={v => v && setRole(v)}>
 							<SelectTrigger>
 								<SelectValue />
@@ -150,11 +150,11 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 								<SelectItem value="member">Member</SelectItem>
 							</SelectContent>
 						</Select>
-					</FormRow>
+					</Field>
 
 					{mode === 'credentials' && (
 						<>
-							<FormRow label="Password">
+							<Field label="Password">
 								<Input
 									type="password"
 									placeholder="••••••••"
@@ -162,8 +162,8 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 									onChange={e => setPassword(e.target.value)}
 									required
 								/>
-							</FormRow>
-							<FormRow label="Confirm Password">
+							</Field>
+							<Field label="Confirm Password">
 								<Input
 									type="password"
 									placeholder="••••••••"
@@ -171,7 +171,7 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 									onChange={e => setConfirmPassword(e.target.value)}
 									required
 								/>
-							</FormRow>
+							</Field>
 						</>
 					)}
 				</form>

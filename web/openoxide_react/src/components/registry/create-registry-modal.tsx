@@ -194,7 +194,6 @@ export function CreateRegistryModal({
 										value={name}
 										onChange={e => setName(e.target.value)}
 										autoFocus
-										className="bg-background"
 									/>
 								</WizardField>
 								<WizardField
@@ -217,7 +216,7 @@ export function CreateRegistryModal({
 										placeholder="aws_account_id.dkr.ecr.us-west-2.amazonaws.com"
 										value={registryUrl}
 										onChange={e => setRegistryUrl(e.target.value)}
-										className="bg-background font-mono"
+										className="font-mono"
 									/>
 								</WizardField>
 							</div>
@@ -233,7 +232,6 @@ export function CreateRegistryModal({
 										value={username}
 										onChange={e => setUsername(e.target.value)}
 										autoFocus
-										className="bg-background"
 									/>
 								</WizardField>
 								<WizardField
@@ -252,7 +250,7 @@ export function CreateRegistryModal({
 										}
 										value={password}
 										onChange={e => setPassword(e.target.value)}
-										className="bg-background font-mono"
+										className="font-mono"
 									/>
 								</WizardField>
 								<button

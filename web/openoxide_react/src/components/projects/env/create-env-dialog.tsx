@@ -71,7 +71,7 @@ export function CreateEnvDialog({
 						onSubmit={handleSubmit}
 						className="flex flex-col gap-4">
 						<div className="flex flex-col gap-1.5">
-							<label className="text-[13px] font-medium text-foreground">
+							<label className="text-xs font-semibold text-foreground">
 								Name *
 							</label>
 							<Input
@@ -79,19 +79,17 @@ export function CreateEnvDialog({
 								value={name}
 								onChange={e => setName(e.target.value)}
 								required
-								className="bg-background"
 							/>
 						</div>
 
 						<div className="flex flex-col gap-1.5">
-							<label className="text-[13px] font-medium text-foreground">
+							<label className="text-xs font-semibold text-foreground">
 								Description
 							</label>
 							<Input
 								placeholder="Brief details"
 								value={description}
 								onChange={e => setDescription(e.target.value)}
-								className="bg-background"
 							/>
 						</div>
 					</form>

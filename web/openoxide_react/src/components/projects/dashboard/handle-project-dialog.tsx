@@ -77,7 +77,6 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 							onChange={e => setName(e.target.value)}
 							disabled={isSubmitting}
 							required
-							className="border- h-9 bg-card text-xs"
 						/>
 					</div>
 
@@ -94,7 +93,6 @@ export const HandleProjectDialog: React.FC<HandleProjectDialogProps> = ({
 							value={description}
 							onChange={e => setDescription(e.target.value)}
 							disabled={isSubmitting}
-							className="border- min-h-[96px] bg-card text-xs placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
 						/>
 					</div>
 

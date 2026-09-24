@@ -19,7 +19,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import {Field} from '#/components/projects/create/field';
+import {Field} from '#/components/shared/field';
 import {
 	parseTemplateEnv,
 	templateFileUrl,
@@ -137,7 +137,7 @@ export function TemplateDeployDialog({
 								setProjectId(value);
 								setEnvironmentId('');
 							}}>
-							<SelectTrigger className="w-full bg-background">
+							<SelectTrigger className="w-full">
 								<SelectValue placeholder="Select a project" />
 							</SelectTrigger>
 							<SelectContent>
@@ -159,7 +159,7 @@ export function TemplateDeployDialog({
 							onValueChange={value => {
 								if (value) setEnvironmentId(value);
 							}}>
-							<SelectTrigger className="w-full bg-background">
+							<SelectTrigger className="w-full">
 								<SelectValue placeholder="Select an environment" />
 							</SelectTrigger>
 							<SelectContent>
@@ -181,7 +181,7 @@ export function TemplateDeployDialog({
 							onValueChange={value => {
 								if (value) setServerId(value);
 							}}>
-							<SelectTrigger className="w-full bg-background">
+							<SelectTrigger className="w-full">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
@@ -205,7 +205,6 @@ export function TemplateDeployDialog({
 							value={name}
 							onChange={e => setName(e.target.value)}
 							placeholder={template?.id}
-							className="bg-background"
 						/>
 					</Field>
 				</div>

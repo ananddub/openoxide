@@ -150,7 +150,6 @@ export function DbDetailFields({
 						placeholder="app_db"
 						value={dbName}
 						onChange={e => setDbName(e.target.value)}
-						className="bg-background"
 					/>
 				</Field>
 			)}
@@ -160,7 +159,6 @@ export function DbDetailFields({
 						placeholder="admin"
 						value={dbUser}
 						onChange={e => setDbUser(e.target.value)}
-						className="bg-background"
 					/>
 				</Field>
 			)}
@@ -171,7 +169,6 @@ export function DbDetailFields({
 						placeholder="••••••••"
 						value={dbPassword}
 						onChange={e => setDbPassword(e.target.value)}
-						className="bg-background"
 					/>
 				</Field>
 			)}
@@ -184,7 +181,7 @@ export function DbDetailFields({
 						placeholder={dockerImage}
 						value={dockerImage}
 						onChange={e => setDockerImage(e.target.value)}
-						className={cn('bg-background font-mono', KindIcon && 'pl-9')}
+						className={cn('font-mono', KindIcon && 'pl-9')}
 					/>
 				</div>
 			</Field>

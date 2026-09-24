@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "query_file_checksums": {
-    "db/queries/ai_generations.sql": "bad9ec8927b6371a5b9c3252abca9d5318447b0176baa15fa88bc3c0d45d8fae",
+    "db/queries/ai_generations.sql": "e05debe9e14b9361b37ee363cfa6d3df70d57995d59c31a68ceef87bc9fcfd91",
     "db/queries/ai_settings.sql": "77c80e2d77f0d512ac7f75ca41658e3043d7529818d0c7470d6d03de8a9cfb0b",
     "db/queries/alert_rule.sql": "c5037c3ce0c98143ab0c8c5b49fa3615c7b7aba4897319ed5b0e60638695325f",
     "db/queries/app_subresources_extra.sql": "12d6a325b87b41c3a9de92ceafcc68277d4de78763b59175be1f93153a7e9d8f",
@@ -72,6 +72,7 @@
     "db/queries/ssh_keys.sql": "c88583aa719e24e0f2fd7a5d838e7822bcdb0ffa984237e131c40a79a0293d0b",
     "db/queries/ssh_keys_registries.sql": "fc557cedfb248e1b57a27c19fa075b4c4c3f9814b785d0e42c7c8a3c086a663c",
     "db/queries/tags.sql": "019628957aff73ce9a4ffa2a7dafdccc8091664c7bbece79290231a852232679",
+    "db/queries/traffic_stats.sql": "a2561afdc3baa7f69dec5a7818c2ea2105e371eaf0bf4f48d909f976d1c58dd0",
     "db/queries/two_factor.sql": "31ad7216136683ef91de35033a35cbd35a05a4dee7eff5caf90a9b1465800d8d",
     "db/queries/user_policy.sql": "e864b0a9d2293fc88d6639fe8100c49fbb4cf4b7c864fdb0cae6636bbed3049c",
     "db/queries/users.sql": "6b0b127a73f86ade1ab098ea5727e9fe1ded57b1163d95baf874599fed389ac1",
@@ -89,8 +90,8 @@
       "ai_settings"
     ],
     "db/queries/alert_rule.sql": [
-      "alert_events",
-      "alert_rules"
+      "alert_rules",
+      "alert_events"
     ],
     "db/queries/app_subresources_extra.sql": [
       "services"
@@ -111,9 +112,9 @@
       "backup_executions"
     ],
     "db/queries/backups.sql": [
-      "destinations",
       "backups",
-      "volume_backups"
+      "volume_backups",
+      "destinations"
     ],
     "db/queries/certificate_renewals.sql": [
       "certificate_renewals"
@@ -122,16 +123,16 @@
       "certificates"
     ],
     "db/queries/compose_extra.sql": [
-      "deployments",
-      "services",
       "mounts",
-      "patches"
+      "patches",
+      "deployments",
+      "services"
     ],
     "db/queries/database_extra.sql": [
+      "service_database",
       "deployments",
       "service_compose",
-      "services",
-      "service_database"
+      "services"
     ],
     "db/queries/database_networks.sql": [
       "database_networks"
@@ -200,9 +201,9 @@
       "mounts"
     ],
     "db/queries/network.sql": [
-      "redirects",
       "ports",
-      "security"
+      "security",
+      "redirects"
     ],
     "db/queries/notification_delivery.sql": [
       "notification_delivery_attempts",
@@ -221,17 +222,17 @@
       "organization_members"
     ],
     "db/queries/organizations.sql": [
-      "o",
       "organization_members",
       "om",
       "organization_invites",
-      "organization"
+      "organization",
+      "o"
     ],
     "db/queries/overview.sql": [
-      "services",
       "domains",
       "backups",
-      "volume_backups"
+      "volume_backups",
+      "services"
     ],
     "db/queries/password_reset_tokens.sql": [
       "password_reset_tokens",
@@ -242,11 +243,11 @@
       "patches"
     ],
     "db/queries/permission_groups.sql": [
-      "groups",
-      "policy",
       "group_policy",
       "organization_members",
-      "user_policy"
+      "user_policy",
+      "groups",
+      "policy"
     ],
     "db/queries/personal_access_tokens.sql": [
       "personal_access_tokens"
@@ -319,11 +320,11 @@
       "server_private_networks"
     ],
     "db/queries/servers.sql": [
+      "schedules",
       "servers",
       "services",
       "service_application",
-      "certificates",
-      "schedules"
+      "certificates"
     ],
     "db/queries/service_application.sql": [
       "service_application",
@@ -362,6 +363,9 @@
       "tags",
       "project_tags"
     ],
+    "db/queries/traffic_stats.sql": [
+      "traffic_stats"
+    ],
     "db/queries/two_factor.sql": [
       "two_factor"
     ],
@@ -384,6 +388,6 @@
     ]
   },
   "generated_file_checksums": {},
-  "last_generation": "2026-09-21T10:50:52.330455358+05:30",
+  "last_generation": "2026-09-25T01:18:23.822851428+05:30",
   "OutDir": "src/flash_gen"
 }

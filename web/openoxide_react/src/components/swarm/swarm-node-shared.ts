@@ -2,7 +2,6 @@ import type {SwarmNode} from '#/types/api-helpers';
 
 export type TaggedSwarmNode = SwarmNode & {
 	_serverId?: number;
-	_serverName?: string;
 };
 
 export const ROLE_FILTERS = ['All', 'Managers', 'Workers'] as const;

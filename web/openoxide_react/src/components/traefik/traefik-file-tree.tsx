@@ -118,7 +118,7 @@ export function TraefikFileTree({
 				value={searchFilter}
 				onChange={e => setSearchFilter(e.target.value)}
 				placeholder="Filter files..."
-				className="h-8 border-border/50 bg-background font-mono text-xs"
+				className="h-8 border-border/50 font-mono text-xs"
 			/>
 
 			{isAddingFile && (
@@ -130,7 +130,7 @@ export function TraefikFileTree({
 						onChange={e => setNewFileName(e.target.value)}
 						placeholder="custom-rules.yml"
 						autoFocus
-						className="h-7 flex-1 border-border/50 bg-background font-mono text-xs"
+						className="h-7 flex-1 border-border/50 font-mono text-xs"
 					/>
 					<Button
 						type="submit"

@@ -59,7 +59,7 @@ export function GitProviderEditSheet({
 				value={form[key] || ''}
 				placeholder={placeholder}
 				onChange={e => onChangeField(key, e.target.value)}
-				className="bg-background font-mono"
+				className="font-mono"
 			/>
 		</WizardField>
 	);

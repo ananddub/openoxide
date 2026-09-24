@@ -98,7 +98,7 @@ function VaultSecretsBody({
 				{secretsQuery.isPending ? (
 					<div className="flex flex-col gap-2">
 						{[1, 2, 3, 4].map(i => (
-							<Skeleton key={i} className="h-10 w-full rounded-lg" />
+							<Skeleton key={i} className="h-9 w-full rounded-lg" />
 						))}
 					</div>
 				) : secretsQuery.isError ? (

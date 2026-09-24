@@ -19,7 +19,7 @@ export function ViewKeyPrivateBlock({privateKey}: {privateKey?: string}) {
 	return (
 		<div className="flex flex-col gap-1.5">
 			<div className="flex items-center justify-between">
-				<label className="text-[13px] font-medium text-foreground">
+				<label className="text-xs font-semibold text-foreground">
 					Private Key
 				</label>
 				<div className="flex items-center gap-1.5">

@@ -46,7 +46,6 @@ export function CertificateFormFields({
 							onChange('certificate_path', slug(event.target.value));
 					}}
 					placeholder="Production wildcard"
-					className="bg-background"
 				/>
 			</WizardField>
 
@@ -61,7 +60,7 @@ export function CertificateFormFields({
 					}
 					placeholder="production-wildcard"
 					disabled={editing}
-					className="bg-background font-mono"
+					className="font-mono"
 				/>
 			</WizardField>
 
@@ -70,7 +69,7 @@ export function CertificateFormFields({
 					value={form.server_id}
 					onValueChange={value => value && onChange('server_id', value)}
 					disabled={editing}>
-					<SelectTrigger className="bg-background">
+					<SelectTrigger>
 						<SelectValue placeholder="Select target server" />
 					</SelectTrigger>
 					<SelectContent className="bg-card">
@@ -88,7 +87,7 @@ export function CertificateFormFields({
 
 			<WizardField label="Certificate chain" required>
 				<Textarea
-					className="min-h-40 resize-y rounded-lg bg-background font-mono text-xs"
+					className="min-h-40 resize-y rounded-lg font-mono text-xs"
 					value={form.certificate_data}
 					onChange={event =>
 						onChange('certificate_data', event.target.value)
@@ -106,7 +105,7 @@ export function CertificateFormFields({
 						: 'Must match the certificate chain above.'
 				}>
 				<Textarea
-					className="min-h-40 resize-y rounded-lg bg-background font-mono text-xs"
+					className="min-h-40 resize-y rounded-lg font-mono text-xs"
 					value={form.private_key}
 					onChange={event => onChange('private_key', event.target.value)}
 					placeholder="-----BEGIN PRIVATE KEY-----"

@@ -76,7 +76,7 @@ export const TagManager = () => {
 								placeholder="Search tags by name..."
 								value={searchQuery}
 								onChange={e => setSearchQuery(e.target.value)}
-								className="h-9 bg-muted/20 pl-9 text-xs"
+								className="pl-9"
 							/>
 						</div>
 					)}

@@ -5,6 +5,7 @@ import {Input} from '#/components/ui/input';
 import {toast} from 'sonner';
 import {useDatabaseUpdate, useRemoteServerList} from '#/api/live';
 import {cn, formatApiError} from '#/api/utils';
+import {Field} from '#/components/shared/field';
 import {
 	deriveDatabaseCredentials,
 	buildConnectionString,
@@ -14,7 +15,7 @@ import {ReadonlyField, SecretField} from './credentials-fields';
 interface DatabaseExternalCredentialsCardProps {
 	database: any;
 	onUpdated?: () => void;
-	/** Inside a SettingsCollapse — no own shell/title. */
+	/** Inside a SettingsSheet — no own shell/title. */
 	embedded?: boolean;
 }
 
@@ -103,51 +104,47 @@ export function DatabaseExternalCredentialsCard({
 				</div>
 			)}
 
-			<div className="flex flex-col gap-5 border-t  pt-4">
-				<div className="flex w-full flex-col gap-1.5">
-					<label className="text-xs font-semibold text-muted-foreground">
-						External Port (Internet)
-					</label>
+			{/* Port + its Save live on one line — house Field grammar, no
+			    floating button row, no extra hairline rules. */}
+			<Field label="External Port (Internet)">
+				<div className="flex items-center gap-2">
 					<Input
 						type="number"
 						value={extPortInput}
 						onChange={e => setExtPortInput(e.target.value)}
 						placeholder={db.internalPort.toString()}
-						className="h-9 w-full font-mono text-xs"
+						className="h-9 min-w-0 flex-1 font-mono text-xs"
 					/>
-				</div>
-
-				{externalPort ? (
-					<div className="flex flex-col gap-4 border-t  pt-4">
-						<ReadonlyField
-							label="External Host"
-							value={serverIp}
-							className="w-full"
-						/>
-						<SecretField
-							label="External Connection URL"
-							value={externalConnStr}
-							className="w-full"
-						/>
-					</div>
-				) : null}
-
-				<div className="flex justify-end border-t  pt-2">
 					<Button
 						variant="default"
 						size="sm"
 						disabled={isSavingPort}
 						onClick={handleSavePort}
-						className="h-9 cursor-pointer gap-1.5 bg-primary px-6 text-xs font-semibold text-primary-foreground">
+						className="h-9 shrink-0 cursor-pointer gap-1.5 bg-primary px-4 text-xs font-semibold text-primary-foreground">
 						{isSavingPort ? (
 							<RefreshCw className="size-3.5 animate-spin" />
 						) : (
 							<Check className="size-3.5" />
-						)}{' '}
+						)}
 						Save
 					</Button>
 				</div>
-			</div>
+			</Field>
+
+			{externalPort ? (
+				<div className="flex flex-col gap-4">
+					<ReadonlyField
+						label="External Host"
+						value={serverIp}
+						className="w-full"
+					/>
+					<SecretField
+						label="External Connection URL"
+						value={externalConnStr}
+						className="w-full"
+					/>
+				</div>
+			) : null}
 		</div>
 	);
 }

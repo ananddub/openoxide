@@ -13,32 +13,8 @@ export interface SwarmOverview {
 	activeServerId: number | undefined;
 }
 
-// Backend SSH connect timeout is 15s per server — fine for one server, but "All Clusters" awaits every server together, so one unreachable box (bad key, dead host) drags the whole page down to its worst case. Bound each server's contribution so a single broken one can't block the rest.
-export const PER_SERVER_TIMEOUT_MS = 4000;
-
-export function withTimeout<T>(
-	promise: Promise<T>,
-	ms: number,
-	fallback: T,
-): Promise<T> {
-	return new Promise<T>(resolve => {
-		const timer = setTimeout(() => resolve(fallback), ms);
-		promise.then(
-			value => {
-				clearTimeout(timer);
-				resolve(value);
-			},
-			() => {
-				clearTimeout(timer);
-				resolve(fallback);
-			},
-		);
-	});
-}
-
 export async function fetchServerSwarm(
 	serverId: number | undefined,
-	serverLabel: string,
 ): Promise<ServerSwarmResult> {
 	try {
 		const info = (await swarmInfo(serverId ?? null)) as SwarmInfo | null;
@@ -57,49 +33,10 @@ export async function fetchServerSwarm(
 		const nodes = (rawNodes || []).map(n => ({
 			...n,
 			_serverId: serverId,
-			_serverName: serverLabel,
 		})) as unknown as TaggedSwarmNode[];
 		return {info, nodes};
 	} catch {
-		// A single unreachable server shouldn't fail the whole "All Clusters" view.
+		// An unreachable engine reads as "no swarm here" instead of failing the page.
 		return {info: null, nodes: []};
 	}
-}
-
-/** Aggregate every server's swarm (local + remote) into one overview. */
-export async function fetchAllClustersSwarm(
-	servers: {id: number; name: string}[] | any[],
-): Promise<SwarmOverview> {
-	const targets: {id: number | undefined; label: string}[] = [
-		{id: undefined, label: 'Local Server'},
-		...servers.map(s => ({id: s.id, label: s.name})),
-	];
-	const results = await Promise.all(
-		targets.map(t =>
-			withTimeout(fetchServerSwarm(t.id, t.label), PER_SERVER_TIMEOUT_MS, {
-				info: null,
-				nodes: [],
-			}),
-		),
-	);
-	// Prefer an actual manager as the cluster reference — only managers can issue join tokens or list nodes, so picking a worker here would make every later action fail the same way `/swarm/nodes` just did.
-	const managerIdx = results.findIndex(r => r.info?.control_available);
-	const activeIdx =
-		managerIdx >= 0 ? managerIdx : results.findIndex(r => r.info !== null);
-
-	const allNodesMap = new Map<string, TaggedSwarmNode>();
-	for (const r of results) {
-		for (const n of r.nodes) {
-			if (n.id && !allNodesMap.has(n.id)) allNodesMap.set(n.id, n);
-		}
-	}
-
-	return {
-		info:
-			activeIdx >= 0
-				? results[activeIdx].info
-				: (results[0]?.info ?? null),
-		nodes: Array.from(allNodesMap.values()),
-		activeServerId: activeIdx >= 0 ? targets[activeIdx].id : undefined,
-	};
 }

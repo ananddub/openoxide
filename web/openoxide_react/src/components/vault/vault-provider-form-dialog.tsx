@@ -162,7 +162,6 @@ export function VaultProviderFormDialog({
 											placeholder="prod-vault"
 											value={formName}
 											onChange={e => setFormName(e.target.value)}
-											className="bg-background"
 										/>
 									</WizardField>
 
@@ -213,7 +212,7 @@ export function VaultProviderFormDialog({
 												placeholder="https://vault.example.com:8200"
 												value={formUrl}
 												onChange={e => setFormUrl(e.target.value)}
-												className="bg-background font-mono"
+												className="font-mono"
 											/>
 										</WizardField>
 									)}
@@ -266,7 +265,7 @@ export function VaultProviderFormDialog({
 							{step === 'review' && (
 								<div className="flex flex-col gap-5">
 									<div className="flex items-center gap-3.5 rounded-xl border border-border/60 bg-muted/20 px-4 py-3.5">
-										<span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background">
+										<span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border/60">
 											<VaultProviderIcon
 												type={formType}
 												className="size-5 shrink-0"

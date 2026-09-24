@@ -7,18 +7,26 @@ import {
 } from '#/api/live';
 import {serverControllerClient} from '#/api/live/servers/shared';
 import {ServerSetupStep} from '#/gen/connect/openoxide/api/v1/server_controller_pb';
+import {stampLogs} from './setup-logs-surface';
 import type {RemoteServerResponse} from '#/types/api-helpers';
 
-/** Test / audit / streamed-setup actions behind the Setup & Audit dialog. */
+/** Test / audit / streamed-setup actions behind the Setup & Audit panel. */
 export function useServerSetup(server: RemoteServerResponse | null) {
 	const [testingConn, setTestingConn] = useState(false);
 	const [auditing, setAuditing] = useState(false);
-	const [settingUp, setSettingUp] = useState(false);
+	const [setupState, setSetupState] = useState<
+		'idle' | 'running' | 'success' | 'failed'
+	>('idle');
+	// Last explicit SSH-test verdict — gates Run Setup so a failed host
+	// isn't pushed into a minutes-long setup that can only stream errors.
+	const [connOk, setConnOk] = useState<boolean | null>(null);
 	const [setupLogs, setSetupLogs] = useState<string[]>([]);
 	const [auditResult, setAuditResult] = useState<Record<
 		string,
 		unknown
 	> | null>(null);
+
+	const settingUp = setupState === 'running';
 
 	const testConnMutation = useRemoteServerTestConnection();
 	const auditMutation = useRemoteServerAudit();
@@ -28,10 +36,12 @@ export function useServerSetup(server: RemoteServerResponse | null) {
 		setTestingConn(true);
 		try {
 			await testConnMutation.mutateAsync(server.id);
+			setConnOk(true);
 			toast.success(
 				`SSH Connection to ${server.name} verified successfully!`,
 			);
 		} catch (err: unknown) {
+			setConnOk(false);
 			toast.error(formatApiError(err));
 		} finally {
 			setTestingConn(false);
@@ -52,37 +62,46 @@ export function useServerSetup(server: RemoteServerResponse | null) {
 		}
 	};
 
-	const setup = async (advertiseAddr: string) => {
+	const setup = async (advertiseAddr: string, sudoPassword?: string) => {
 		if (!server?.id) return;
-		setSettingUp(true);
-		setSetupLogs([
-			`Running setup on ${server.name}… this can take a few minutes.`,
-		]);
+		setSetupState('running');
+		setSetupLogs(
+			stampLogs([
+				`Running setup on ${server.name}… this can take a few minutes.`,
+			]),
+		);
 		try {
 			const call = serverControllerClient.streamSetupLogs({
 				id: BigInt(server.id),
 				installDependencies: true,
 				hostKeyFingerprint: '',
 				advertiseAddr: advertiseAddr.trim() || undefined,
+				sudoPassword: sudoPassword?.trim() || undefined,
 			});
 
 			for await (const event of call) {
-				const lines = (event.outcome?.completed ?? []).map(
+				const lines = [...(event.lines ?? [])];
+				const stepLines = (event.outcome?.completed ?? []).map(
 					step => `Setup step completed: ${ServerSetupStep[step]}`,
 				);
-				if (lines.length > 0) {
-					setSetupLogs(prev => [...prev, ...lines]);
+				const batch = [...lines, ...stepLines];
+				if (batch.length > 0) {
+					setSetupLogs(prev => [...prev, ...stampLogs(batch)]);
 				}
 			}
 
-			setSetupLogs(prev => [...prev, 'Setup completed successfully.']);
+			setSetupLogs(prev =>
+				[...prev, ...stampLogs(['Setup completed successfully.'])],
+			);
+			setSetupState('success');
 			toast.success(`Server ${server.name} setup completed successfully!`);
 		} catch (err: unknown) {
 			const message = formatApiError(err);
-			setSetupLogs(prev => [...prev, `Setup failed: ${message}`]);
+			setSetupLogs(prev =>
+				[...prev, ...stampLogs([`Setup failed: ${message}`])],
+			);
+			setSetupState('failed');
 			toast.error(`Setup failed: ${message}`);
-		} finally {
-			setSettingUp(false);
 		}
 	};
 
@@ -92,6 +111,8 @@ export function useServerSetup(server: RemoteServerResponse | null) {
 		auditing,
 		audit,
 		settingUp,
+		setupState,
+		connOk,
 		setupLogs,
 		setup,
 		auditResult,

@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {Save} from 'lucide-react';
+import {Check} from 'lucide-react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
 import {
@@ -11,13 +11,12 @@ import {
 	useApplicationSetGitlabSource,
 } from '#/api/live';
 import {cn, formatApiError} from '#/api/utils';
+import {SheetGroup} from '#/components/shared/field';
+import {SettingsSheet} from '#/components/shared/settings-sheet';
+import {APP_SOURCE_PROVIDERS} from '#/components/projects/detail/provider-tabs';
 import {DropSourceForm} from './drop-source-form';
 import {DockerSourceForm} from './source-settings-card/docker-source-form';
 import {GitSourceForm} from './source-settings-card/git-source-form';
-import {
-	APP_SOURCE_PROVIDERS,
-	ProviderTabs,
-} from '#/components/projects/detail/provider-tabs';
 import {RepoSourceForm} from './source-settings-card/repo-source-form';
 import {
 	sourceFormFromApp,
@@ -27,13 +26,37 @@ import {
 interface SourceSettingsCardProps {
 	app: any;
 	onUpdated: () => void;
+	/** Kept for call-site compatibility; the card always renders its own sheet. */
 	embedded?: boolean;
 }
 
+/** Titled config group per provider family. */
+function groupFor(provider: string): {title: string; description: string} {
+	if (provider === 'DOCKER')
+		return {
+			title: 'Docker image',
+			description: 'Deploy a prebuilt image, optionally from a private registry.',
+		};
+	if (provider === 'GIT')
+		return {
+			title: 'Git repository',
+			description: 'Deploy from any Git host by clone URL.',
+		};
+	if (provider === 'DROP')
+		return {
+			title: 'Deploy drop',
+			description: 'Upload a build artifact instead of connecting a repository.',
+		};
+	return {
+		title: 'Repository',
+		description: 'Pick the repository, branch and build path.',
+	};
+}
+
+/** One compact sheet: provider chips on top, the selected provider's config right below — same grammar as the compose Source & Provider sheet. */
 export function SourceSettingsCard({
 	app,
 	onUpdated,
-	embedded,
 }: SourceSettingsCardProps) {
 	const [provider, setProvider] = useState(app.source_type || 'GIT');
 	const [form, setForm] = useState<SourceForm>(() =>
@@ -125,60 +148,88 @@ export function SourceSettingsCard({
 			}
 			toast.success('Source configuration saved');
 			onUpdated();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			toast.error(formatApiError(err));
 		} finally {
 			setSavingSource(false);
 		}
 	};
 
+	const group = groupFor(provider);
+	const providerLabel = APP_SOURCE_PROVIDERS.find(
+		p => p.id === provider,
+	)?.label;
+
 	return (
-		<section
-			className={cn(
-				'flex flex-col gap-4',
-				!embedded && 'rounded-xl bg-card p-5',
-			)}>
-			{!embedded && (
-				<div>
-					<h3 className="text-sm font-bold text-foreground">
-						Provider Source
-					</h3>
-					<p className="mt-1 text-xs text-muted-foreground">
-						Select and configure the repository source code of your
-						application
-					</p>
+		<SettingsSheet
+			title="Source & Provider Configuration"
+			description="Where this application pulls its code or image from."
+			meta={
+				providerLabel && (
+					<span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+						{providerLabel}
+					</span>
+				)
+			}
+			/* Form-heavy sheet — roomier than the default 560px rail. */
+			contentClassName="sm:data-[side=right]:w-[820px]"
+			footer={
+				provider === 'DROP' ? undefined : (
+					<Button
+						onClick={() => void handleSaveSource()}
+						disabled={savingSource}
+						className="h-8 gap-1.5 px-4 text-xs">
+						{savingSource ? 'Saving…' : 'Save changes'}
+					</Button>
+				)
+			}>
+			<SheetGroup title="Source">
+				{/* Compact provider picker — a chip grid, not radio rows.
+				    Drop is disabled until the artifact pipeline is ready. */}
+				<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+					{APP_SOURCE_PROVIDERS.map(p => {
+						const selected = provider === p.id;
+						const disabled = p.id === 'DROP';
+						return (
+							<button
+								key={p.id}
+								type="button"
+								onClick={() => !disabled && setProvider(p.id)}
+								aria-pressed={selected}
+								disabled={disabled}
+								title={
+									disabled ? 'Deploy drop is coming soon' : undefined
+								}
+								className={cn(
+									'flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors',
+									selected
+										? 'border-primary/50 bg-primary/[0.08] text-foreground'
+										: 'border-border/60 text-muted-foreground hover:bg-muted/30 hover:text-foreground',
+									disabled &&
+										'cursor-not-allowed border-border/40 opacity-50 hover:bg-transparent',
+								)}>
+								<span className="shrink-0">{p.icon}</span>
+								<span className="truncate">{p.label}</span>
+								{selected && (
+									<Check className="ml-auto size-3.5 shrink-0 text-primary" />
+								)}
+							</button>
+						);
+					})}
 				</div>
-			)}
+			</SheetGroup>
 
-			<ProviderTabs
-				value={provider}
-				onChange={setProvider}
-				providers={APP_SOURCE_PROVIDERS}
-			/>
-
-			{provider === 'DROP' ? (
-				<DropSourceForm app={app} onUpdated={onUpdated} />
-			) : (
-				<>
-					{provider === 'DOCKER' ? (
-						<DockerSourceForm form={form} onPatch={onPatch} />
-					) : provider === 'GIT' ? (
-						<GitSourceForm form={form} onPatch={onPatch} />
-					) : (
-						<RepoSourceForm form={form} onPatch={onPatch} />
-					)}
-
-					<div className="mt-2 flex justify-end">
-						<Button
-							onClick={handleSaveSource}
-							disabled={savingSource}
-							className="flex h-9 items-center gap-1.5 rounded-lg bg-primary text-xs font-semibold text-primary-foreground hover:bg-primary/95">
-							<Save className="h-3.5 w-3.5" />{' '}
-							{savingSource ? 'Saving...' : 'Save Source'}
-						</Button>
-					</div>
-				</>
-			)}
-		</section>
+			<SheetGroup title={group.title} description={group.description}>
+				{provider === 'DROP' ? (
+					<DropSourceForm app={app} onUpdated={onUpdated} />
+				) : provider === 'DOCKER' ? (
+					<DockerSourceForm form={form} onPatch={onPatch} />
+				) : provider === 'GIT' ? (
+					<GitSourceForm form={form} onPatch={onPatch} />
+				) : (
+					<RepoSourceForm form={form} onPatch={onPatch} />
+				)}
+			</SheetGroup>
+		</SettingsSheet>
 	);
 }

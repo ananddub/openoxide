@@ -79,7 +79,7 @@ export function BackupFormFields(p: BackupFormFieldsProps) {
 						<Select
 							value={p.serviceName}
 							onValueChange={v => v && p.onServiceName(v)}>
-							<SelectTrigger className="border- h-9 w-full bg-muted/20 text-xs font-semibold">
+							<SelectTrigger className="font-semibold">
 								<SelectValue placeholder="Select service" />
 							</SelectTrigger>
 							<SelectContent className="border- bg-card">

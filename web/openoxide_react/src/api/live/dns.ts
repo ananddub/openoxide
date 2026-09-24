@@ -55,6 +55,12 @@ function dnsProviderTypeToWire(providerType: DnsProviderType): string {
 			return 'DIGITALOCEAN';
 		case DnsProviderType.GODADDY:
 			return 'GODADDY';
+		case DnsProviderType.PORKBUN:
+			return 'PORKBUN';
+		case DnsProviderType.INFOMANIAK:
+			return 'INFOMANIAK';
+		case DnsProviderType.OVH:
+			return 'OVH';
 		default:
 			return '';
 	}
@@ -77,6 +83,12 @@ function dnsProviderTypeFromWire(
 			return DnsProviderType.DIGITALOCEAN;
 		case 'GODADDY':
 			return DnsProviderType.GODADDY;
+		case 'PORKBUN':
+			return DnsProviderType.PORKBUN;
+		case 'INFOMANIAK':
+			return DnsProviderType.INFOMANIAK;
+		case 'OVH':
+			return DnsProviderType.OVH;
 		default:
 			return DnsProviderType.UNSPECIFIED;
 	}

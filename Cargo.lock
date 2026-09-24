@@ -3447,6 +3447,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "sh_macros",
+ "sha1 0.10.7",
  "sha2 0.10.9",
  "sqlite_realtime",
  "sqlx",

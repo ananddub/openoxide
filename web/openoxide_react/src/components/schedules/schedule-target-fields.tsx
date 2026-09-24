@@ -20,7 +20,7 @@ export function ScheduleTargetFields({
 				<Select
 					value={form.targetType}
 					onValueChange={form.handleTargetTypeChange}>
-					<SelectTrigger className="bg-background">
+					<SelectTrigger>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent className="bg-card">
@@ -35,7 +35,7 @@ export function ScheduleTargetFields({
 					<Select
 						value={form.targetId}
 						onValueChange={val => form.setTargetId(val ?? '')}>
-						<SelectTrigger className="bg-background">
+						<SelectTrigger>
 							<SelectValue placeholder="Select server">
 								{form.selectedServerName || 'Select server'}
 							</SelectValue>
@@ -52,7 +52,7 @@ export function ScheduleTargetFields({
 					<Select
 						value={form.targetId}
 						onValueChange={val => form.setTargetId(val ?? '')}>
-						<SelectTrigger className="bg-background">
+						<SelectTrigger>
 							<SelectValue placeholder="Select application">
 								{form.selectedAppName || 'Select application'}
 							</SelectValue>

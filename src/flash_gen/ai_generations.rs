@@ -31,7 +31,7 @@ impl Queries {
         params: &AiGenerationsCreateParams,
     ) -> Result<AiGenerations, sqlx::Error> {
         sqlx::query_as::<_, AiGenerations>(
-            "INSERT INTO ai_generations (ai_setting_id, organization_id, created_by, prompt, output_json) VALUES (?, ?, ?, ?, ?) RETURNING id AS id, ai_setting_id, organization_id, created_by, prompt, output_json, status, service_id, created_at, updated_at;"
+            "INSERT INTO ai_generations (ai_setting_id, organization_id, created_by, prompt, output_json, status) VALUES (?, ?, ?, ?, ?, 'GENERATED') RETURNING id AS id, ai_setting_id, organization_id, created_by, prompt, output_json, status, service_id, created_at, updated_at;"
         )
         .bind(&params.ai_setting_id)
         .bind(&params.organization_id)

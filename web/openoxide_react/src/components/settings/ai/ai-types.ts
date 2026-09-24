@@ -68,4 +68,34 @@ export const AI_PRESETS: AiPreset[] = [
 		defaultModel: 'openai/gpt-4o-mini',
 		description: 'Universal unified LLM gateway',
 	},
+	{
+		name: 'Cohere',
+		url: 'https://api.cohere.ai/compatibility/v1',
+		defaultModel: 'command-a-07-2025',
+		description: 'Command R+ and North models',
+	},
+	{
+		name: 'Perplexity',
+		url: 'https://api.perplexity.ai',
+		defaultModel: 'sonar',
+		description: 'Search-grounded answers (sonar, sonar-pro)',
+	},
+	{
+		name: 'DeepInfra',
+		url: 'https://api.deepinfra.com/v1/openai',
+		defaultModel: 'deepseek-ai/DeepSeek-V3',
+		description: 'OpenAI-compatible hosted open models',
+	},
+	{
+		name: 'Z.AI',
+		url: 'https://api.z.ai/api/paas/v4',
+		defaultModel: 'glm-4.7',
+		description: 'Zhipu GLM coding and chat models',
+	},
+	{
+		name: 'MiniMax',
+		url: 'https://api.minimax.io/v1',
+		defaultModel: 'MiniMax-M2.7',
+		description: 'MiniMax agentic coding models',
+	},
 ];

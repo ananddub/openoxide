@@ -119,6 +119,7 @@ export function ComposeDirectContainerLogsModal({
 						heightClass="h-full"
 						loadingText={`Connecting to '${activeService}' container logs...`}
 						emptyText={`No log output received for '${activeService}'.`}
+						aiContext="RUNTIME"
 					/>
 				</div>
 			</div>

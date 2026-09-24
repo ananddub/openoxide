@@ -6,7 +6,9 @@ use aws_credential_types::Credentials;
 use aws_sdk_route53::{Client as Route53Client, types::RrType};
 
 impl DnsService {
-    pub(in crate::services::networking::dns) fn route53_client(credentials_json: &str) -> Result<Route53Client, DnsServiceError> {
+    pub(in crate::services::networking::dns) fn route53_client(
+        credentials_json: &str,
+    ) -> Result<Route53Client, DnsServiceError> {
         let access_key = extract_credential_field(credentials_json, "accessKeyId");
         let secret_key = extract_credential_field(credentials_json, "secretAccessKey");
         if access_key.is_empty() || secret_key.is_empty() {

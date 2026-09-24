@@ -10,8 +10,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use thiserror::Error;
 
-mod providers;
 mod dispatch;
+mod providers;
 mod validation;
 
 string_enum! {
@@ -24,6 +24,9 @@ string_enum! {
         Hetzner => "HETZNER",
         DigitalOcean => "DIGITALOCEAN",
         Godaddy => "GODADDY",
+        Porkbun => "PORKBUN",
+        Infomaniak => "INFOMANIAK",
+        Ovh => "OVH",
     }
 }
 
@@ -38,7 +41,8 @@ impl Serialize for DnsProviderType {
 impl<'de> Deserialize<'de> for DnsProviderType {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let raw = String::deserialize(deserializer)?;
-        Self::from_str(&raw).ok_or_else(|| serde::de::Error::custom(format!("unknown DNS provider type '{raw}'")))
+        Self::from_str(&raw)
+            .ok_or_else(|| serde::de::Error::custom(format!("unknown DNS provider type '{raw}'")))
     }
 }
 
@@ -197,11 +201,10 @@ impl DnsService {
             existing.provider_type = ptype.as_str().to_string();
         }
         if let Some(creds) = body.credentials_json {
-            if !creds.contains(DNS_SECRET_MASK) {
-                let provider_type = Self::parse_provider_type(&existing.provider_type)?;
-                Self::validate_provider_config(provider_type, &creds)?;
-                existing.credentials_json = creds;
-            }
+            let merged = merge_masked_credentials(&existing.credentials_json, &creds)?;
+            let provider_type = Self::parse_provider_type(&existing.provider_type)?;
+            Self::validate_provider_config(provider_type, &merged)?;
+            existing.credentials_json = merged;
         }
         existing.updated_at = chrono::Utc::now().timestamp();
 
@@ -273,10 +276,54 @@ fn extract_credential_field(json_str: &str, field_name: &str) -> String {
         .to_string()
 }
 
+// The edit form sends back masked secrets as-is; keep the stored value for
+// every field that still carries the mask.
+fn merge_masked_credentials(
+    existing_json: &str,
+    incoming_json: &str,
+) -> Result<String, DnsServiceError> {
+    let Ok(mut incoming) = serde_json::from_str::<serde_json::Value>(incoming_json) else {
+        return Ok(incoming_json.to_string());
+    };
+    let (Some(obj), Ok(existing)) = (
+        incoming.as_object_mut(),
+        serde_json::from_str::<serde_json::Value>(existing_json),
+    ) else {
+        return Ok(incoming_json.to_string());
+    };
+    for (key, value) in obj.iter_mut() {
+        if value.as_str() == Some(DNS_SECRET_MASK) {
+            match existing
+                .get(key)
+                .filter(|v| v.as_str() != Some(DNS_SECRET_MASK))
+            {
+                Some(stored) => *value = stored.clone(),
+                None => {
+                    return Err(DnsServiceError::ProviderError(format!(
+                        "DNS credentials field '{key}' must be re-entered"
+                    )));
+                }
+            }
+        }
+    }
+    Ok(serde_json::to_string(&incoming).unwrap_or_else(|_| incoming_json.to_string()))
+}
+
 fn mask_credentials(json_str: &str) -> String {
     if let Ok(mut val) = serde_json::from_str::<serde_json::Value>(json_str) {
         if let Some(obj) = val.as_object_mut() {
-            for key in ["apiToken", "secretAccessKey", "apiKey", "authKey"] {
+            // Access-key ids and the OVH endpoint are not secrets and stay
+            // visible so edit forms can prefill them.
+            for key in [
+                "apiToken",
+                "secretAccessKey",
+                "apiKey",
+                "authKey",
+                "apiSecret",
+                "secretApiKey",
+                "applicationSecret",
+                "consumerKey",
+            ] {
                 if obj.contains_key(key) {
                     obj.insert(
                         key.to_string(),

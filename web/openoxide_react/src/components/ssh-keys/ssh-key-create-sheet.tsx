@@ -124,7 +124,7 @@ export function SshKeyCreateSheet({
 					<div className="flex flex-col gap-1.5">
 						<Label
 							htmlFor="ssh-key-name"
-							className="text-[13px] font-medium text-foreground">
+							className="text-xs font-semibold text-foreground">
 							Name
 						</Label>
 						<Input
@@ -135,7 +135,6 @@ export function SshKeyCreateSheet({
 							disabled={submitting}
 							required
 							autoFocus
-							className="bg-background"
 						/>
 					</div>
 
@@ -143,7 +142,7 @@ export function SshKeyCreateSheet({
 					<div className="flex flex-col gap-1.5">
 						<Label
 							htmlFor="ssh-key-description"
-							className="text-[13px] font-medium text-foreground">
+							className="text-xs font-semibold text-foreground">
 							Description
 						</Label>
 						<Input
@@ -152,7 +151,6 @@ export function SshKeyCreateSheet({
 							value={description}
 							onChange={e => setDescription(e.target.value)}
 							disabled={submitting}
-							className="bg-background"
 						/>
 					</div>
 
@@ -182,7 +180,7 @@ export function SshKeyCreateSheet({
 					<div className="flex flex-col gap-1.5">
 						<Label
 							htmlFor="ssh-key-private"
-							className="text-[13px] font-medium text-foreground">
+							className="text-xs font-semibold text-foreground">
 							Private Key (PEM / OpenSSH)
 						</Label>
 						<Textarea
@@ -201,7 +199,7 @@ export function SshKeyCreateSheet({
 					<div className="flex flex-col gap-1.5">
 						<Label
 							htmlFor="ssh-key-public"
-							className="text-[13px] font-medium text-foreground">
+							className="text-xs font-semibold text-foreground">
 							Public Key (Optional)
 						</Label>
 						<Textarea

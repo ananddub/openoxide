@@ -76,36 +76,3 @@ export const COMPOSE_SOURCE_PROVIDERS: {
 		icon: <Code2 className="h-4 w-4 text-primary" />,
 	},
 ];
-
-/** Underline tab strip for picking a source provider. */
-export function ProviderTabs({
-	value,
-	onChange,
-	providers,
-}: {
-	value: string;
-	onChange: (id: string) => void;
-	providers: {id: string; label: string; icon: IconJsx}[];
-}) {
-	return (
-		<div className="relative -mb-[1px] flex w-full [scrollbar-width:none] flex-nowrap gap-0 overflow-x-auto border-b pb-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-			{providers.map(p => {
-				const isActive = value === p.id;
-				return (
-					<button
-						key={p.id}
-						type="button"
-						onClick={() => onChange(p.id)}
-						className={`-mb-[1px] flex shrink-0 cursor-pointer items-center gap-1 border-b-2 px-2.5 pt-2 pb-2 text-xs font-bold whitespace-nowrap transition-all ${
-							isActive
-								? 'border-foreground font-bold text-foreground'
-								: ' text-muted-foreground hover:text-foreground'
-						}`}>
-						{p.icon}
-						{p.label}
-					</button>
-				);
-			})}
-		</div>
-	);
-}

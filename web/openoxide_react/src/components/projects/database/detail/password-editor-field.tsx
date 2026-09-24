@@ -1,14 +1,17 @@
 import {useState} from 'react';
 import {Eye, EyeOff, Pencil, Check, X, RefreshCw} from 'lucide-react';
-import {FieldLabel, Input, Button} from './credentials-fields';
+import {Field} from '#/components/shared/field';
+import {Input, Button} from './credentials-fields';
 
 /** Read-only password display that flips into an editable row with a reveal toggle, save and cancel control. */
 export function PasswordEditorField({
 	currentPassword,
 	onSave,
+	className = '',
 }: {
 	currentPassword: string;
 	onSave: (next: string) => Promise<void>;
+	className?: string;
 }) {
 	const [show, setShow] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
@@ -31,8 +34,7 @@ export function PasswordEditorField({
 	};
 
 	return (
-		<div className="flex flex-col gap-1.5">
-			<FieldLabel>Password</FieldLabel>
+		<Field label="Password" className={className}>
 			<div className="flex items-center gap-2">
 				{isEditing ? (
 					<>
@@ -41,7 +43,7 @@ export function PasswordEditorField({
 							value={value}
 							onChange={e => setValue(e.target.value)}
 							placeholder="Enter new password"
-							className="h-9  bg-background font-mono text-xs"
+							className="h-9  font-mono text-xs"
 						/>
 						<Button
 							variant="outline"
@@ -111,7 +113,7 @@ export function PasswordEditorField({
 						</Button>
 					</>
 				)}
-			</div>
-		</div>
+				</div>
+		</Field>
 	);
 }

@@ -36,6 +36,9 @@ pub fn provider_type_to_proto(value: DnsProviderType) -> ProtoDnsProviderType {
         DnsProviderType::Hetzner => ProtoDnsProviderType::Hetzner,
         DnsProviderType::DigitalOcean => ProtoDnsProviderType::Digitalocean,
         DnsProviderType::Godaddy => ProtoDnsProviderType::Godaddy,
+        DnsProviderType::Porkbun => ProtoDnsProviderType::Porkbun,
+        DnsProviderType::Infomaniak => ProtoDnsProviderType::Infomaniak,
+        DnsProviderType::Ovh => ProtoDnsProviderType::Ovh,
     }
 }
 
@@ -43,14 +46,23 @@ pub fn proto_to_provider_type(
     value: ::buffa::EnumValue<ProtoDnsProviderType>,
 ) -> Result<DnsProviderType, ConnectError> {
     match value {
-        ::buffa::EnumValue::Known(ProtoDnsProviderType::Cloudflare) => Ok(DnsProviderType::Cloudflare),
+        ::buffa::EnumValue::Known(ProtoDnsProviderType::Cloudflare) => {
+            Ok(DnsProviderType::Cloudflare)
+        }
         ::buffa::EnumValue::Known(ProtoDnsProviderType::Route53) => Ok(DnsProviderType::Route53),
         ::buffa::EnumValue::Known(ProtoDnsProviderType::Hetzner) => Ok(DnsProviderType::Hetzner),
         ::buffa::EnumValue::Known(ProtoDnsProviderType::Digitalocean) => {
             Ok(DnsProviderType::DigitalOcean)
         }
         ::buffa::EnumValue::Known(ProtoDnsProviderType::Godaddy) => Ok(DnsProviderType::Godaddy),
-        _ => Err(ConnectError::invalid_argument("unsupported DNS provider type")),
+        ::buffa::EnumValue::Known(ProtoDnsProviderType::Porkbun) => Ok(DnsProviderType::Porkbun),
+        ::buffa::EnumValue::Known(ProtoDnsProviderType::Infomaniak) => {
+            Ok(DnsProviderType::Infomaniak)
+        }
+        ::buffa::EnumValue::Known(ProtoDnsProviderType::Ovh) => Ok(DnsProviderType::Ovh),
+        _ => Err(ConnectError::invalid_argument(
+            "unsupported DNS provider type",
+        )),
     }
 }
 

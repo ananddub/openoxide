@@ -1,5 +1,12 @@
 import {useState, useEffect} from 'react';
-import {FastForward, Network, Server, SkipForward} from 'lucide-react';
+import {
+	CheckCircle2,
+	Loader,
+	Network,
+	ShieldCheck,
+	Terminal,
+	XCircle,
+} from 'lucide-react';
 import {
 	Sheet,
 	SheetContent,
@@ -9,11 +16,18 @@ import {
 	SheetTitle,
 } from '#/components/ui/sheet';
 import {Button} from '#/components/ui/button';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 import {ServerFormFields} from '#/components/remote-servers/server-form-fields';
 import {
 	OptionRow,
-	StepBody,
-	StepCheckpoints,
+	StepTimeline,
+	WizardField,
 	type WizardStep,
 } from '#/components/shared/sheet-wizard';
 import {toast} from 'sonner';
@@ -26,13 +40,21 @@ import {
 import {serverControllerClient} from '#/api/live/servers/shared';
 import {ServerSetupStep} from '#/gen/connect/openoxide/api/v1/server_controller_pb';
 import {privateNetworkApi} from '#/components/remote-servers/private-network/api';
-import {remoteHostFromTunnel} from '#/components/remote-servers/private-network/panel-parts';
-import type {ConnectionMode} from '#/components/remote-servers/private-network/types';
+import {
+	EXTERNAL_PROVIDERS,
+	remoteHostFromTunnel,
+} from '#/components/remote-servers/private-network/panel-parts';
+import type {
+	ConnectionMode,
+	PrivateNetworkProvider,
+} from '#/components/remote-servers/private-network/types';
 import type {
 	RemoteServerResponse,
 	SshKeyResponse,
 } from '#/types/api-helpers';
 import {useServerForm} from './use-server-form';
+import {SetupLogsSurface, stampLogs} from './setup-logs-surface';
+import {Input} from '#/components/ui/input';
 import {
 	TestConnectionButton,
 	type TestResult,
@@ -48,25 +70,34 @@ interface CreateServerModalProps {
 
 const FORM_ID = 'create-remote-server-form';
 
+/** Temporary build stamp — proves which bundle the browser actually loaded. */
+const WIZARD_BUILD = 'netq-3';
+
 const STEPS: WizardStep[] = [
 	{id: 'credentials', label: 'Credentials'},
-	{id: 'setup', label: 'Setup'},
 	{id: 'network', label: 'Network'},
+];
+
+/** Full journey, always visible — provisioning sits mid-flow and Ready ends it. */
+const TIMELINE: WizardStep[] = [
+	...STEPS,
+	{id: 'provision', label: 'Provision'},
+	{id: 'ready', label: 'Ready'},
 ];
 
 const STEP_DESCRIPTIONS = [
 	'Host address and SSH credentials for the remote deployment node.',
-	'Run the one-time server setup (install Docker and dependencies) right after the server is saved.',
-	'Choose how OpenOxide reaches this server — plain SSH or a managed WireGuard tunnel.',
+	'How should OpenOxide reach this server? Pick a connection method.',
 ];
 
-type Phase = 'idle' | 'creating' | 'network' | 'setup';
+type Phase = 'idle' | 'creating' | 'network' | 'setup' | 'done';
 
 const PHASE_LABEL: Record<Phase, string> = {
 	idle: 'Save',
 	creating: 'Saving…',
 	network: 'Configuring network…',
-	setup: 'Running setup…',
+	setup: 'Provisioning…',
+	done: 'Done',
 };
 
 /** Create response carries the new typed row; 0 means "not created". */
@@ -90,11 +121,21 @@ export function CreateServerModal({
 	const [testResult, setTestResult] = useState<TestResult>('idle');
 
 	const [stepIdx, setStepIdx] = useState(0);
-	const [runSetup, setRunSetup] = useState(true);
-	const [networkMode, setNetworkMode] =
-		useState<ConnectionMode>('DIRECT_SSH');
+	const [sudoPassword, setSudoPassword] = useState('');
+	// No default — the Network step is a real question that must be answered.
+	const [networkMode, setNetworkMode] = useState<ConnectionMode | null>(
+		null,
+	);
+	const [wgPort, setWgPort] = useState('51820');
+	const [wgKeepalive, setWgKeepalive] = useState('25');
+	const [vpnProvider, setVpnProvider] =
+		useState<PrivateNetworkProvider>('TAILSCALE');
+	const [vpnHost, setVpnHost] = useState('');
 	const [phase, setPhase] = useState<Phase>('idle');
 	const [setupLogs, setSetupLogs] = useState<string[]>([]);
+	const [setupState, setSetupState] = useState<
+		'idle' | 'running' | 'success' | 'failed'
+	>('idle');
 
 	const createMutation = useRemoteServerCreate();
 	const patchMutation = useRemoteServerUpdate();
@@ -107,15 +148,40 @@ export function CreateServerModal({
 	useEffect(() => {
 		if (!isOpen) return;
 		setStepIdx(0);
-		setRunSetup(true);
-		setNetworkMode('DIRECT_SSH');
+		setNetworkMode(null);
+		setWgPort('51820');
+		setWgKeepalive('25');
+		setVpnProvider('TAILSCALE');
+		setVpnHost('');
 		setPhase('idle');
 		setSetupLogs([]);
+		setSetupState('idle');
 	}, [isOpen]);
 
 	const last = stepIdx === STEPS.length - 1;
 	const credentialsReady = Boolean(name && ipAddress && username);
-	const canContinue = stepIdx === 0 ? credentialsReady : true;
+	// A VPN mesh is useless without the address to reach it at.
+	const networkReady =
+		!!networkMode &&
+		(networkMode !== 'EXTERNAL_PRIVATE_NETWORK' || !!vpnHost.trim());
+	// A failed SSH test halts the wizard — no point saving/setting up a host
+	// we just proved we can't reach.
+	const canContinue =
+		testResult !== 'failed' &&
+		(stepIdx === 0 ? credentialsReady : networkReady);
+	// Saving walks the timeline forward: Provision (live logs) in the middle, Ready at the end.
+	const readyView = phase === 'done' && setupState !== 'failed';
+	const provisionView = phase !== 'idle' && !readyView;
+	const activeIdx =
+		phase === 'idle' ? stepIdx : readyView ? TIMELINE.length - 1 : 2;
+	const timelineNodeState =
+		phase === 'idle'
+			? undefined
+			: readyView
+				? ('success' as const)
+				: setupState === 'failed'
+					? ('failed' as const)
+					: ('running' as const);
 
 	const buildPayload = () => ({
 		name,
@@ -165,34 +231,59 @@ export function CreateServerModal({
 
 	const streamSetup = async (serverId: number): Promise<string | null> => {
 		setPhase('setup');
-		setSetupLogs([
-			'Connecting to server and running setup… this can take a few minutes.',
-		]);
+		setSetupState('running');
+		setSetupLogs(
+			stampLogs([
+				'Connecting to server and running setup… this can take a few minutes.',
+			]),
+		);
 		try {
 			const call = serverControllerClient.streamSetupLogs({
 				id: BigInt(serverId),
 				installDependencies: true,
 				hostKeyFingerprint: '',
+				sudoPassword: sudoPassword.trim() || undefined,
 			});
 			for await (const event of call) {
-				const lines = (event.outcome?.completed ?? []).map(
+				const lines = [...(event.lines ?? [])];
+				const stepLines = (event.outcome?.completed ?? []).map(
 					step => `Setup step completed: ${ServerSetupStep[step]}`,
 				);
-				if (lines.length > 0) {
-					setSetupLogs(prev => [...prev, ...lines]);
+				const batch = [...lines, ...stepLines];
+				if (batch.length > 0) {
+					setSetupLogs(prev => [...prev, ...stampLogs(batch)]);
 				}
 			}
-			setSetupLogs(prev => [...prev, 'Setup completed successfully.']);
+			setSetupLogs(prev => [
+				...prev,
+				...stampLogs(['Setup completed successfully.']),
+			]);
+			setSetupState('success');
 			return null;
 		} catch (err: unknown) {
 			const message = formatApiError(err);
-			setSetupLogs(prev => [...prev, `Setup failed: ${message}`]);
+			setSetupLogs(prev => [
+				...prev,
+				...stampLogs([`Setup failed: ${message}`]),
+			]);
+			setSetupState('failed');
 			return message;
 		}
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (phase === 'done') {
+			// Setup finished — the wizard only closes when the user clicks Continue.
+			setPhase('idle');
+			onClose();
+			return;
+		}
+		if (!editingServer && phase === 'idle' && stepIdx < STEPS.length - 1) {
+			// Enter in a field advances the wizard — it must never jump straight to provisioning.
+			if (canContinue) setStepIdx(i => i + 1);
+			return;
+		}
 		if (!credentialsReady) {
 			toast.error('Server Name, IP Address, and Username are required');
 			return;
@@ -212,13 +303,22 @@ export function CreateServerModal({
 				return;
 			}
 
-			// Create → optional network → optional setup. Each post-create phase runs against the new server id; failures still surface the created server in the list.
+			// Create → optional network → always provision. Each post-create phase runs against the new server id; failures still surface the created server in the list.
+			if (!networkReady) {
+				toast.error(
+					networkMode === 'EXTERNAL_PRIVATE_NETWORK'
+						? 'Enter the private address of your VPN mesh'
+						: 'Pick how OpenOxide should reach this server',
+				);
+				return;
+			}
 			setPhase('creating');
 			const created = await createMutation.mutateAsync(payload);
 			const serverId = createdServerId(created);
 
 			if (networkMode === 'MANAGED_WIREGUARD' && serverId) {
 				setPhase('network');
+				const listenPort = parseInt(wgPort) || 51820;
 				const tunnelAddress = `10.77.${(serverId % 250) + 1}.0/24`;
 				await privateNetworkApi.update(serverId, {
 					connection_mode: 'MANAGED_WIREGUARD',
@@ -226,35 +326,48 @@ export function CreateServerModal({
 					private_host: remoteHostFromTunnel(tunnelAddress),
 					tunnel_address: tunnelAddress,
 					public_key: null,
-					endpoint: `${ipAddress}:51820`,
-					listen_port: 51820,
-					persistent_keepalive: 25,
+					endpoint: `${ipAddress}:${listenPort}`,
+					listen_port: listenPort,
+					persistent_keepalive: parseInt(wgKeepalive) || 25,
 					dns_name: null,
 					routes: [],
 				});
 				await privateNetworkApi.setup(serverId);
 			}
 
-			if (runSetup && serverId) {
-				const setupError = await streamSetup(serverId);
-				if (setupError) {
-					// Keep the modal open so the log (with the error) stays visible.
-					setPhase('idle');
-					onSuccess();
-					toast.error(
-						'Server saved, but setup failed — see the setup log, or run setup again from the server row menu.',
-					);
-					return;
-				}
-			} else {
-				setPhase('idle');
+			if (networkMode === 'EXTERNAL_PRIVATE_NETWORK' && serverId) {
+				// Mesh already exists — just point OpenOxide at the private address.
+				setPhase('network');
+				await privateNetworkApi.update(serverId, {
+					connection_mode: 'EXTERNAL_PRIVATE_NETWORK',
+					provider: vpnProvider,
+					private_host: vpnHost.trim(),
+					tunnel_address: null,
+					public_key: null,
+					endpoint: null,
+					listen_port: null,
+					persistent_keepalive: null,
+					dns_name: null,
+					routes: [],
+				});
 			}
 
-			toast.success(
-				runSetup && serverId
-					? 'Remote Server added and setup completed'
-					: 'Remote Server added successfully',
-			);
+			if (serverId) {
+				// Provisioning finished (ok or failed) — stay open showing the log;
+				// the wizard only closes when the user clicks Continue.
+				const setupError = await streamSetup(serverId);
+				setPhase('done');
+				onSuccess();
+				toast[setupError ? 'error' : 'success'](
+					setupError
+						? 'Server saved, but setup failed — see the setup log, or run setup again from the server row menu.'
+						: 'Remote Server added and setup completed',
+				);
+				return;
+			}
+
+			setPhase('idle');
+			toast.success('Remote Server added successfully');
 			onSuccess();
 			onClose();
 		} catch (err: unknown) {
@@ -269,83 +382,219 @@ export function CreateServerModal({
 
 	return (
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
-			<SheetContent>
+			<SheetContent className="sm:data-[side=right]:w-[680px]">
 				<SheetHeader>
 					<SheetTitle>
 						{editingServer ? 'Edit Remote Server' : 'New Remote Server'}
+						<span className="ml-2 align-middle font-mono text-[10px] text-muted-foreground/60">
+							{WIZARD_BUILD}
+						</span>
 					</SheetTitle>
 					<SheetDescription>
 						{editingServer
 							? 'Configure host IP address, SSH port, and credentials for remote deployment node'
-							: STEP_DESCRIPTIONS[stepIdx]}
+							: phase !== 'idle'
+								? 'Provisioning runs right inside the timeline — watch it work.'
+								: STEP_DESCRIPTIONS[stepIdx]}
 					</SheetDescription>
-					{!editingServer && (
-						<StepCheckpoints steps={STEPS} idx={stepIdx} />
-					)}
 				</SheetHeader>
 
 				<form
 					id={FORM_ID}
 					onSubmit={handleSubmit}
 					className="flex min-h-0 flex-1 flex-col">
-					<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-6">
+					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-6">
 						{editingServer ? (
-							<ServerFormFields {...form} sshKeys={sshKeys} />
-						) : stepIdx === 0 ? (
-							<StepBody key="credentials">
-								<div className="flex flex-col gap-4">
-									<ServerFormFields {...form} sshKeys={sshKeys} />
-								</div>
-							</StepBody>
-						) : stepIdx === 1 ? (
-							<StepBody key="setup">
-								<div className="flex flex-col gap-2">
-									<OptionRow
-										selected={runSetup}
-										onClick={() => setRunSetup(true)}
-										icon={<FastForward className="size-4" />}
-										title="Run setup after save"
-										subtitle="Installs Docker and required dependencies on the server."
-									/>
-									<OptionRow
-										selected={!runSetup}
-										onClick={() => setRunSetup(false)}
-										icon={<SkipForward className="size-4" />}
-										title="Skip for now"
-										subtitle="Save credentials only — run setup later from the server row menu."
-									/>
-								</div>
-							</StepBody>
-						) : (
-							<StepBody key="network">
-								<div className="flex flex-col gap-2">
-									<OptionRow
-										selected={networkMode === 'DIRECT_SSH'}
-										onClick={() => setNetworkMode('DIRECT_SSH')}
-										icon={<Server className="size-4" />}
-										title="Direct SSH"
-										subtitle="Reach the server over its public IP via SSH (default)."
-									/>
-									<OptionRow
-										selected={networkMode === 'MANAGED_WIREGUARD'}
-										onClick={() => setNetworkMode('MANAGED_WIREGUARD')}
-										icon={<Network className="size-4" />}
-										title="Managed WireGuard"
-										subtitle="OpenOxide creates an encrypted private tunnel to the server after save."
-									/>
-								</div>
-							</StepBody>
-						)}
-
-						{setupLogs.length > 0 && (
-							<div className="mt-2 overflow-hidden rounded-lg border bg-background">
-								<div className="border-b px-3 py-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-									Setup log
-								</div>
-								<pre className="max-h-56 overflow-y-auto p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-muted-foreground">
-									{setupLogs.join('\n')}
-								</pre>
+							<div className="flex flex-col gap-4">
+								<ServerFormFields {...form} sshKeys={sshKeys} />
 							</div>
+						) : (
+							<StepTimeline
+								steps={TIMELINE}
+								idx={activeIdx}
+								nodeState={timelineNodeState}>
+								<div
+									key={
+										readyView
+											? 'ready'
+											: provisionView
+												? 'provision'
+												: stepIdx
+									}
+									className="animate-in duration-200 ease-out fade-in-0 slide-in-from-right-4">
+									{provisionView || readyView ? (
+										<div className="flex flex-col gap-3">
+											<p className="flex items-center gap-2 text-xs text-muted-foreground">
+												{readyView ? (
+													<>
+														<CheckCircle2 className="size-3.5 text-emerald-500" />
+														Setup completed — the server is ready.
+													</>
+												) : phase === 'creating' ? (
+													<>
+														<Loader className="size-3.5 animate-spin text-primary" />
+														Saving the server…
+													</>
+												) : phase === 'network' ? (
+													<>
+														<Loader className="size-3.5 animate-spin text-primary" />
+														Configuring the tunnel…
+													</>
+												) : setupState === 'failed' ? (
+													<>
+														<XCircle className="size-3.5 text-red-500" />
+														Setup failed — re-run from the server row menu.
+													</>
+												) : (
+													<>
+														<Loader className="size-3.5 animate-spin text-primary" />
+														Running setup on{' '}
+														<span className="font-medium text-foreground">
+															{name || ipAddress}
+														</span>
+														… this can take a few minutes.
+													</>
+												)}
+											</p>
+											{setupLogs.length > 0 && (
+												<SetupLogsSurface
+													logs={setupLogs}
+													isLive={phase === 'setup'}
+													state={setupState}
+													className="h-[48vh] w-full rounded-lg border border-border"
+												/>
+											)}
+										</div>
+									) : stepIdx === 0 ? (
+										<div className="flex flex-col gap-4">
+											<ServerFormFields {...form} sshKeys={sshKeys} />
+											<WizardField
+												label="Sudo Password"
+												htmlFor="server-sudo"
+												optional
+												hint="Used during setup. Required unless the user is root or has passwordless sudo.">
+												<Input
+													id="server-sudo"
+													type="password"
+													value={sudoPassword}
+													onChange={e => setSudoPassword(e.target.value)}
+													disabled={submitting}
+													placeholder="Only needed when your SSH user runs commands via sudo"
+												/>
+											</WizardField>
+											{testResult === 'failed' && (
+												<p className="text-xs text-amber-600 dark:text-amber-500">
+													SSH test failed — fix the details above and
+													re-test before continuing.
+												</p>
+											)}
+										</div>
+									) : (
+										<div className="flex flex-col gap-2">
+											<OptionRow
+												selected={networkMode === 'DIRECT_SSH'}
+												onClick={() => setNetworkMode('DIRECT_SSH')}
+												icon={<Terminal className="size-4.5" />}
+												title="Direct SSH"
+												subtitle="Reach the server over its public IP."
+											/>
+											<OptionRow
+												selected={networkMode === 'MANAGED_WIREGUARD'}
+												onClick={() => setNetworkMode('MANAGED_WIREGUARD')}
+												icon={<ShieldCheck className="size-4.5" />}
+												title="Managed WireGuard tunnel"
+												subtitle="OpenOxide builds an encrypted private tunnel after save."
+											/>
+											<OptionRow
+												selected={
+													networkMode === 'EXTERNAL_PRIVATE_NETWORK'
+												}
+												onClick={() =>
+													setNetworkMode('EXTERNAL_PRIVATE_NETWORK')
+												}
+												icon={<Network className="size-4.5" />}
+												title="Existing VPN mesh"
+												subtitle="Route via Tailscale, NetBird, ZeroTier — you run the mesh, we use it."
+											/>
+											{networkMode === 'MANAGED_WIREGUARD' && (
+												<div className="mt-1 grid animate-in grid-cols-2 gap-3 duration-200 ease-out fade-in-0 slide-in-from-right-4">
+													<WizardField label="Tunnel Port">
+														<Input
+															value={wgPort}
+															onChange={e => setWgPort(e.target.value)}
+															disabled={submitting}
+															placeholder="51820"
+															className="font-mono"
+														/>
+													</WizardField>
+													<WizardField label="Keepalive (sec)">
+														<Input
+															value={wgKeepalive}
+															onChange={e =>
+																setWgKeepalive(e.target.value)
+															}
+															disabled={submitting}
+															placeholder="25"
+															className="font-mono"
+														/>
+													</WizardField>
+													<p className="col-span-2 text-[13px] leading-relaxed text-muted-foreground">
+														Full network management (routes, DNS, re-keys)
+														stays in server row → Network.
+													</p>
+												</div>
+											)}
+											{networkMode === 'EXTERNAL_PRIVATE_NETWORK' && (
+												<div className="mt-1 grid animate-in grid-cols-2 gap-3 duration-200 ease-out fade-in-0 slide-in-from-right-4">
+													<WizardField label="Provider">
+														<Select
+															value={vpnProvider}
+															onValueChange={val =>
+																val &&
+																setVpnProvider(
+																	val as PrivateNetworkProvider,
+																)
+															}>
+															<SelectTrigger>
+																<SelectValue>
+																	{
+																		EXTERNAL_PROVIDERS.find(
+																			p => p.value === vpnProvider,
+																		)?.label
+																	}
+																</SelectValue>
+															</SelectTrigger>
+															<SelectContent>
+																{EXTERNAL_PROVIDERS.map(p => (
+																	<SelectItem
+																		key={p.value}
+																		value={p.value}
+																		className="text-xs">
+																		{p.label}
+																	</SelectItem>
+																))}
+															</SelectContent>
+														</Select>
+													</WizardField>
+													<WizardField label="Private Address">
+														<Input
+															value={vpnHost}
+															onChange={e => setVpnHost(e.target.value)}
+															disabled={submitting}
+															placeholder="100.64.0.5 or mesh hostname"
+															className="font-mono"
+														/>
+													</WizardField>
+													<p className="col-span-2 text-[13px] leading-relaxed text-muted-foreground">
+														Install and connect the mesh on the node first
+														— OpenOxide will SSH via this after save.
+													</p>
+												</div>
+											)}
+										</div>
+									)}
+								</div>
+							</StepTimeline>
 						)}
 					</div>
 
@@ -360,8 +609,7 @@ export function CreateServerModal({
 							<Button
 								type="submit"
 								form={FORM_ID}
-								disabled={submitting || testingConn}
-								className="h-9 px-6 text-xs font-semibold shadow-md">
+								disabled={submitting || testingConn}>
 								{submitting ? 'Saving...' : 'Save Changes'}
 							</Button>
 						</SheetFooter>
@@ -391,8 +639,17 @@ export function CreateServerModal({
 									Continue
 								</Button>
 							) : (
-								<Button type="submit" form={FORM_ID} disabled={submitting}>
-									{PHASE_LABEL[phase]}
+								<Button
+									type="submit"
+									form={FORM_ID}
+									disabled={
+										submitting ||
+										(phase === 'idle' &&
+											(testResult === 'failed' || !networkReady))
+									}>
+									{phase === 'done' && setupState === 'failed'
+										? 'Close'
+										: PHASE_LABEL[phase]}
 								</Button>
 							)}
 						</SheetFooter>

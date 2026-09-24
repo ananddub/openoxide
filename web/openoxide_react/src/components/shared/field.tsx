@@ -18,10 +18,10 @@ export function Field({
 	children: ReactNode;
 }) {
 	return (
-		<div className={cn('flex flex-col gap-2', className)}>
+		<div className={cn('flex flex-col gap-1.5', className)}>
 			<label
 				htmlFor={htmlFor}
-				className="text-sm leading-none font-medium text-foreground">
+				className="text-xs leading-none font-semibold text-foreground">
 				{label}
 			</label>
 			{children}

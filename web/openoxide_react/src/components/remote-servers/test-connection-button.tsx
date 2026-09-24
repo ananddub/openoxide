@@ -61,12 +61,11 @@ export function TestConnectionButton({
 		<Button
 			type="button"
 			variant="outline"
-			size="sm"
 			onClick={onClick}
 			disabled={disabled}
 			title={state.title}
-			className={`h-9 gap-1.5 rounded-lg px-3 text-xs transition-all ${state.cls}`}>
-			<Icon className={`size-3.5 ${state.iconCls}`} />
+			className={state.cls}>
+			<Icon className={state.iconCls} />
 			{state.label}
 		</Button>
 	);

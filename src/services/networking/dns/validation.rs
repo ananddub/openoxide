@@ -15,7 +15,10 @@ impl DnsService {
             | DnsProviderType::Route53
             | DnsProviderType::Hetzner
             | DnsProviderType::DigitalOcean
-            | DnsProviderType::Godaddy => Ok(()),
+            | DnsProviderType::Godaddy
+            | DnsProviderType::Porkbun
+            | DnsProviderType::Infomaniak
+            | DnsProviderType::Ovh => Ok(()),
         }
     }
 
@@ -35,6 +38,9 @@ impl DnsService {
             | DnsProviderType::DigitalOcean => &["apiToken"][..],
             DnsProviderType::Route53 => &["accessKeyId", "secretAccessKey"][..],
             DnsProviderType::Godaddy => &["apiKey", "apiSecret"][..],
+            DnsProviderType::Porkbun => &["apiKey", "secretApiKey"][..],
+            DnsProviderType::Infomaniak => &["apiToken"][..],
+            DnsProviderType::Ovh => &["applicationKey", "applicationSecret", "consumerKey"][..],
         };
         for field in required {
             if config[*field]

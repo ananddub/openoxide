@@ -6,7 +6,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '#/components/ui/select';
-import {FieldLabel} from './field-label';
+import {WizardField} from '#/components/shared/sheet-wizard';
 
 export interface ProviderOption {
 	value: string;
@@ -30,13 +30,12 @@ export function ProviderTypeSelect({
 }) {
 	const current = options.find(o => o.value === value);
 	return (
-		<div className="space-y-1">
-			<FieldLabel>{label}</FieldLabel>
+		<WizardField label={label}>
 			<Select
 				value={value}
 				onValueChange={(v: any) => onChange(v)}
 				disabled={disabled}>
-				<SelectTrigger className="h-10 w-full bg-muted/20 text-xs">
+				<SelectTrigger>
 					<SelectValue>
 						<div className="flex items-center gap-2">
 							{current?.icon}
@@ -55,6 +54,6 @@ export function ProviderTypeSelect({
 					))}
 				</SelectContent>
 			</Select>
-		</div>
+		</WizardField>
 	);
 }

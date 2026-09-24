@@ -11,7 +11,7 @@ import {PasswordEditorField} from './password-editor-field';
 interface DatabaseInternalCredentialsCardProps {
 	database: any;
 	onUpdated?: () => void;
-	/** Inside a SettingsCollapse — no own shell/title. */
+	/** Inside a SettingsSheet — no own shell/title. */
 	embedded?: boolean;
 }
 
@@ -62,21 +62,12 @@ export function DatabaseInternalCredentialsCard({
 				</h3>
 			)}
 
-			<div
-				className={cn(
-					'grid grid-cols-1 gap-4 pt-4 md:grid-cols-2 md:gap-6',
-					embedded ? '' : 'border-t',
-				)}>
+			<div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
 				<ReadonlyField label="User" value={db.dbUser} />
 
 				{!db.isRedis && !db.isLibsql && (
 					<ReadonlyField label="Database Name" value={db.dbName} />
 				)}
-
-				<PasswordEditorField
-					currentPassword={db.currentPassword}
-					onSave={handleSavePassword}
-				/>
 
 				<ReadonlyField
 					label="Internal Port (Container)"
@@ -84,6 +75,12 @@ export function DatabaseInternalCredentialsCard({
 				/>
 
 				<ReadonlyField label="Internal Host" value={host} />
+
+				<PasswordEditorField
+					currentPassword={db.currentPassword}
+					onSave={handleSavePassword}
+					className="md:col-span-2"
+				/>
 
 				<SecretField
 					label="Internal Connection URL"

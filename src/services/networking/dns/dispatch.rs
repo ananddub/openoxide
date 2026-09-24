@@ -20,11 +20,21 @@ impl DnsService {
             DnsProviderType::Route53 => self.test_route53(&provider.credentials_json).await,
             DnsProviderType::Hetzner => self.test_hetzner_token(&provider.credentials_json).await,
             DnsProviderType::DigitalOcean => {
-                self.test_digitalocean_token(&provider.credentials_json).await
+                self.test_digitalocean_token(&provider.credentials_json)
+                    .await
             }
             DnsProviderType::Godaddy => {
-                self.test_godaddy_credentials(&provider.credentials_json).await
+                self.test_godaddy_credentials(&provider.credentials_json)
+                    .await
             }
+            DnsProviderType::Porkbun => {
+                self.test_porkbun_credentials(&provider.credentials_json)
+                    .await
+            }
+            DnsProviderType::Infomaniak => {
+                self.test_infomaniak_token(&provider.credentials_json).await
+            }
+            DnsProviderType::Ovh => self.test_ovh_credentials(&provider.credentials_json).await,
         }
     }
 
@@ -39,6 +49,9 @@ impl DnsService {
             DnsProviderType::Hetzner => self.test_hetzner_token(credentials_json).await,
             DnsProviderType::DigitalOcean => self.test_digitalocean_token(credentials_json).await,
             DnsProviderType::Godaddy => self.test_godaddy_credentials(credentials_json).await,
+            DnsProviderType::Porkbun => self.test_porkbun_credentials(credentials_json).await,
+            DnsProviderType::Infomaniak => self.test_infomaniak_token(credentials_json).await,
+            DnsProviderType::Ovh => self.test_ovh_credentials(credentials_json).await,
         }
     }
 
@@ -58,11 +71,15 @@ impl DnsService {
             DnsProviderType::Route53 => self.list_route53_zones(&provider.credentials_json).await,
             DnsProviderType::Hetzner => self.list_hetzner_zones(&provider.credentials_json).await,
             DnsProviderType::DigitalOcean => {
-                self.list_digitalocean_zones(&provider.credentials_json).await
+                self.list_digitalocean_zones(&provider.credentials_json)
+                    .await
             }
-            DnsProviderType::Godaddy => {
-                self.list_godaddy_zones(&provider.credentials_json).await
+            DnsProviderType::Godaddy => self.list_godaddy_zones(&provider.credentials_json).await,
+            DnsProviderType::Porkbun => self.list_porkbun_zones(&provider.credentials_json).await,
+            DnsProviderType::Infomaniak => {
+                self.list_infomaniak_zones(&provider.credentials_json).await
             }
+            DnsProviderType::Ovh => self.list_ovh_zones(&provider.credentials_json).await,
         }
     }
 
@@ -95,6 +112,18 @@ impl DnsService {
             }
             DnsProviderType::Godaddy => {
                 self.list_godaddy_records(&provider.credentials_json, zone_id)
+                    .await
+            }
+            DnsProviderType::Porkbun => {
+                self.list_porkbun_records(&provider.credentials_json, zone_id)
+                    .await
+            }
+            DnsProviderType::Infomaniak => {
+                self.list_infomaniak_records(&provider.credentials_json, zone_id)
+                    .await
+            }
+            DnsProviderType::Ovh => {
+                self.list_ovh_records(&provider.credentials_json, zone_id)
                     .await
             }
         }
@@ -131,6 +160,18 @@ impl DnsService {
                 self.upsert_godaddy_record(&provider.credentials_json, &body)
                     .await
             }
+            DnsProviderType::Porkbun => {
+                self.upsert_porkbun_record(&provider.credentials_json, &body)
+                    .await
+            }
+            DnsProviderType::Infomaniak => {
+                self.upsert_infomaniak_record(&provider.credentials_json, &body)
+                    .await
+            }
+            DnsProviderType::Ovh => {
+                self.upsert_ovh_record(&provider.credentials_json, &body)
+                    .await
+            }
         }
     }
 
@@ -164,6 +205,18 @@ impl DnsService {
             }
             DnsProviderType::Godaddy => {
                 self.delete_godaddy_record(&provider.credentials_json, zone_id, record_id)
+                    .await
+            }
+            DnsProviderType::Porkbun => {
+                self.delete_porkbun_record(&provider.credentials_json, zone_id, record_id)
+                    .await
+            }
+            DnsProviderType::Infomaniak => {
+                self.delete_infomaniak_record(&provider.credentials_json, zone_id, record_id)
+                    .await
+            }
+            DnsProviderType::Ovh => {
+                self.delete_ovh_record(&provider.credentials_json, zone_id, record_id)
                     .await
             }
         }

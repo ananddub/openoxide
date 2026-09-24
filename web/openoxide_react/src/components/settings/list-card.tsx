@@ -2,6 +2,8 @@ import {
 	type ComponentType,
 	type ReactNode,
 	type Ref,
+	useLayoutEffect,
+	useRef,
 	useState,
 } from 'react';
 import {LayoutGrid, List, Search} from 'lucide-react';
@@ -20,7 +22,7 @@ import {Skeleton} from '#/components/ui/skeleton';
  * Nothing here draws its own frame — the page shell owns the padding.
  */
 
-/** Toolbar above a list: search/filters left, primary action right. */
+/** Toolbar above a list: search/filters left, primary action right. Sticks under the `SectionHeader` (whose height the header publishes as `--section-header-h` on their shared parent), so the search row stays reachable while the list scrolls. */
 export function Toolbar({
 	children,
 	action,
@@ -29,18 +31,22 @@ export function Toolbar({
 	action?: ReactNode;
 }) {
 	return (
-		<div className="flex w-full animate-in flex-col items-stretch gap-3 duration-200 fade-in sm:flex-row sm:items-center">
-			<div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+		<div
+			style={{top: 'calc(var(--section-header-h, 0px))'}}
+			className="sticky z-20 flex w-full animate-in flex-col items-stretch gap-3 bg-background/95 duration-200 fade-in backdrop-blur-sm sm:flex-row sm:items-center">
+			<div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 py-2">
 				{children}
 			</div>
 			{action && (
-				<div className="flex shrink-0 items-center gap-2">{action}</div>
+				<div className="flex shrink-0 items-center gap-2 py-2">
+					{action}
+				</div>
 			)}
 		</div>
 	);
 }
 
-/** Section heading with a full-bleed rule under it: title (+ inline extras like a status pill) and one quiet note below, actions on the right. The `-mx-4`/`px-4` pair lets the rule touch the page edges while the text stays aligned with the content column. */
+/** Section heading with a full-bleed rule under it: title (+ inline extras like a status pill) and one quiet note below, actions on the right. The `-mx-4`/`px-4` pair lets the rule touch the page edges while the text stays aligned with the content column. Sticky: it pins at the top of the page scroller and publishes its height to the sibling `Toolbar` so the two form one pinned header block. */
 export function SectionHeader({
 	title,
 	description,
@@ -52,8 +58,29 @@ export function SectionHeader({
 	action?: ReactNode;
 	children?: ReactNode;
 }) {
+	const ref = useRef<HTMLDivElement>(null);
+	useLayoutEffect(() => {
+		const el = ref.current;
+		const parent = el?.parentElement;
+		if (!el || !parent) return;
+		const write = () =>
+			parent.style.setProperty(
+				'--section-header-h',
+				`${el.offsetHeight}px`,
+			);
+		write();
+		const ro = new ResizeObserver(write);
+		ro.observe(el);
+		return () => {
+			ro.disconnect();
+			parent.style.removeProperty('--section-header-h');
+		};
+	}, []);
+
 	return (
-		<div className="-mx-4 flex items-end justify-between gap-4 border-b border-border px-4 pb-4">
+		<div
+			ref={ref}
+			className="-mx-4 sticky top-0 z-20 flex items-end justify-between gap-4 border-b border-border bg-background/95 px-4 pb-4 backdrop-blur-sm">
 			<div className="min-w-0">
 				<div className="flex min-w-0 items-center gap-2.5">
 					<h3 className="text-2xl font-semibold tracking-[-0.02em] text-foreground">
@@ -68,7 +95,9 @@ export function SectionHeader({
 				)}
 			</div>
 			{action && (
-				<div className="flex shrink-0 items-center gap-2">{action}</div>
+				<div className="flex shrink-0 items-center gap-2">
+					{action}
+				</div>
 			)}
 		</div>
 	);

@@ -133,6 +133,9 @@ message ServerControllerStreamSetupLogsRequest {
 message ServerControllerStreamSetupLogsResponse {
   int64 server_id = 1;
   ServerSetupOutcome outcome = 2;
+  // Live log lines streamed while the setup runs; the final event carries
+  // `outcome` instead.
+  repeated string lines = 3;
 }
 
 message ServerControllerListSessionsRequest {}

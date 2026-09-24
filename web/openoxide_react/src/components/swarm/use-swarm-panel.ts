@@ -15,7 +15,6 @@ import {formatApiError} from '#/api/utils';
 import type {RemoteServerResponse, SwarmTokens} from '#/types/api-helpers';
 import type {TaggedSwarmNode} from '#/components/swarm/swarm-nodes-list';
 import {
-	fetchAllClustersSwarm,
 	fetchServerSwarm,
 	type SwarmOverview,
 } from '#/components/swarm/swarm-fetch';
@@ -23,7 +22,8 @@ import {useSwarmNodeActions} from '#/components/swarm/use-swarm-node-actions';
 
 /** State, queries and node/cluster handlers for the Swarm tab. */
 export function useSwarmPanel() {
-	const [selectedServerId, setSelectedServerId] = useState<string>('all');
+	const [selectedServerId, setSelectedServerId] =
+		useState<string>('local');
 	const [isTokensOpen, setIsTokensOpen] = useState(false);
 	const queryClient = useQueryClient();
 
@@ -32,7 +32,6 @@ export function useSwarmPanel() {
 	const servers = Array.isArray(serversData)
 		? (serversData as unknown as RemoteServerResponse[])
 		: [];
-	const serverIdsKey = servers.map(s => s.id).join(',');
 
 	const promoteMutation = useSwarmNodePromote();
 	const demoteMutation = useSwarmNodeDemote();
@@ -41,23 +40,13 @@ export function useSwarmPanel() {
 	const leaveMutation = useSwarmLeave();
 	const joinMutation = useSwarmJoin();
 
-	// Cached for 15s so revisiting the page (or switching tabs back) shows the last-known cluster state instantly instead of re-running an SSH round trip per server before anything paints.
+	// Cached for 15s so revisiting the page (or switching tabs back) shows the last-known cluster state instantly instead of re-running an SSH round trip before anything paints.
 	const swarmQuery = useQuery({
-		queryKey: ['swarm-overview', selectedServerId, serverIdsKey],
+		queryKey: ['swarm-overview', selectedServerId],
 		queryFn: async (): Promise<SwarmOverview> => {
-			if (selectedServerId === 'all')
-				return fetchAllClustersSwarm(servers);
-
-			const sId =
-				selectedServerId === 'local'
-					? undefined
-					: parseInt(selectedServerId, 10);
-			const sName =
-				selectedServerId === 'local'
-					? 'Local Server'
-					: servers.find(s => String(s.id) === selectedServerId)?.name ||
-						'Server';
-			const res = await fetchServerSwarm(sId, sName);
+			const isLocal = selectedServerId === 'local';
+			const sId = isLocal ? undefined : parseInt(selectedServerId, 10);
+			const res = await fetchServerSwarm(sId);
 			return {
 				info: res.info,
 				nodes: res.nodes,
@@ -74,7 +63,7 @@ export function useSwarmPanel() {
 	const isLoading = swarmQuery.isLoading;
 	const isRefreshing = swarmQuery.isFetching;
 
-	// Tokens are only needed once the "New Node" panel is opened — fetching them on every page load was one of three parallel SSH round trips per server that nobody was looking at yet.
+	// Tokens are only needed once the "New Node" sheet is opened — fetching them on every page load would be an SSH round trip nobody is looking at yet.
 	const tokensQuery = useQuery({
 		queryKey: ['swarm-tokens', activeServerId],
 		queryFn: async (): Promise<SwarmTokens | null> => {
@@ -95,7 +84,6 @@ export function useSwarmPanel() {
 		node?: TaggedSwarmNode,
 	): number | undefined => {
 		if (node && node._serverId !== undefined) return node._serverId;
-		if (selectedServerId === 'all') return activeServerId;
 		if (selectedServerId === 'local') return undefined;
 		return parseInt(selectedServerId, 10);
 	};
@@ -108,16 +96,6 @@ export function useSwarmPanel() {
 		getServerIdNumber,
 		refreshAll,
 	});
-
-	const handleLeaveSwarm = async () => {
-		try {
-			await leaveMutation.mutateAsync({server_id: getServerIdNumber()});
-			toast.success('Left Swarm cluster successfully');
-			refreshAll();
-		} catch (err: unknown) {
-			toast.error(formatApiError(err));
-		}
-	};
 
 	const isSwarmActive =
 		nodes.length > 0 ||
@@ -180,7 +158,6 @@ export function useSwarmPanel() {
 		tokensQuery,
 		refreshAll,
 		...nodeActions,
-		handleLeaveSwarm,
 		handleLeaveRemoteSwarm,
 		handleJoinServer,
 	};

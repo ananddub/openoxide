@@ -1,6 +1,6 @@
 use super::super::{
-    DnsRecordDto, DnsService, DnsServiceError, DnsTestResultDto, DnsZoneDto,
-    UpsertDnsRecordDto, extract_credential_field,
+    DnsRecordDto, DnsService, DnsServiceError, DnsTestResultDto, DnsZoneDto, UpsertDnsRecordDto,
+    extract_credential_field,
 };
 
 /// Hetzner DNS (unified Hetzner Cloud Console API since May 2026 — the old
@@ -117,7 +117,11 @@ impl DnsService {
                 records.push(DnsRecordDto {
                     // The rrset is the unit of identity; the value selects
                     // the entry within it.
-                    id: format!("{}|{}", rrset["id"].as_str().unwrap_or_default(), entry["value"].as_str().unwrap_or_default()),
+                    id: format!(
+                        "{}|{}",
+                        rrset["id"].as_str().unwrap_or_default(),
+                        entry["value"].as_str().unwrap_or_default()
+                    ),
                     zone_id: zone_id.to_string(),
                     record_type: record_type.clone(),
                     name: name.clone(),

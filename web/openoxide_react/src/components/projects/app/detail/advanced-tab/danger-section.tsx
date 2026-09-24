@@ -3,7 +3,7 @@ import {useNavigate} from '@tanstack/react-router';
 import {AlertTriangle, Trash2} from 'lucide-react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
-import {SettingsCollapse} from '#/components/shared/settings-collapse';
+import {SettingsSheet} from '#/components/shared/settings-sheet';
 import {
 	useApplicationClearHistory,
 	useApplicationCleanupQueue,
@@ -53,7 +53,7 @@ export function DangerSection({app}: {app: any}) {
 	};
 
 	return (
-		<SettingsCollapse
+		<SettingsSheet
 			title="Danger Zone"
 			description="Deployment queue actions and permanent deletion"
 			icon={<AlertTriangle className="size-4 text-destructive" />}>
@@ -143,6 +143,6 @@ export function DangerSection({app}: {app: any}) {
 					)}
 				</div>
 			</div>
-		</SettingsCollapse>
+		</SettingsSheet>
 	);
 }

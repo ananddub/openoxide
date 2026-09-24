@@ -1,6 +1,6 @@
 use super::super::{
-    DnsRecordDto, DnsService, DnsServiceError, DnsTestResultDto, DnsZoneDto,
-    UpsertDnsRecordDto, extract_credential_field,
+    DnsRecordDto, DnsService, DnsServiceError, DnsTestResultDto, DnsZoneDto, UpsertDnsRecordDto,
+    extract_credential_field,
 };
 
 const GODADDY_API: &str = "https://api.godaddy.com/v1";
@@ -179,9 +179,10 @@ impl DnsService {
         record_id: &str,
     ) -> Result<bool, DnsServiceError> {
         // record_id is the composite "name|type|data" built above.
-        let Some((name, record_type, data)) = record_id.split_once('|').and_then(
-            |(name, rest)| rest.split_once('|').map(|(t, d)| (name, t, d)),
-        ) else {
+        let Some((name, record_type, data)) = record_id
+            .split_once('|')
+            .and_then(|(name, rest)| rest.split_once('|').map(|(t, d)| (name, t, d)))
+        else {
             return Err(DnsServiceError::ProviderError(
                 "GoDaddy record id must be the composite name|type|data".into(),
             ));
@@ -198,9 +199,18 @@ impl DnsService {
             .collect();
         let url = format!("{GODADDY_API}/domains/{zone_id}/records/{record_type}/{name}");
         let res = if remaining.is_empty() {
-            self.client.delete(&url).header("Authorization", sso).send().await?
+            self.client
+                .delete(&url)
+                .header("Authorization", sso)
+                .send()
+                .await?
         } else {
-            self.client.put(&url).header("Authorization", sso.clone()).json(&remaining).send().await?
+            self.client
+                .put(&url)
+                .header("Authorization", sso.clone())
+                .json(&remaining)
+                .send()
+                .await?
         };
         let status = res.status();
         if status.is_success() {
