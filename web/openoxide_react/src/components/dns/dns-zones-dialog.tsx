@@ -18,22 +18,14 @@ import {
 	SheetTitle,
 } from '#/components/ui/sheet';
 import {Switch} from '#/components/ui/switch';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
 import {toast} from 'sonner';
 import {DnsZoneRow, type DnsRecord} from './dns-zone-row';
+import {RecordTypeSelect} from './record-type-select';
 
 type Props = {
 	provider: {id: number; name: string; provider_type?: string};
 	onClose: () => void;
 };
-
-const supportedRecordTypes = ['A', 'AAAA', 'CNAME', 'TXT', 'MX'];
 
 const contentPlaceholders: Record<string, string> = {
 	A: '203.0.113.10',
@@ -41,6 +33,17 @@ const contentPlaceholders: Record<string, string> = {
 	CNAME: 'target.example.com',
 	TXT: 'v=spf1 -all',
 	MX: '10 mail.example.com',
+	NS: 'ns1.example.com',
+	SRV: '10 60 5060 sip.example.com',
+	CAA: '0 issue "letsencrypt.org"',
+};
+
+const contentHints: Record<string, string> = {
+	TXT: 'Text is stored exactly as you type it — quote parts you want preserved.',
+	MX: 'Put the mail priority first, e.g. “10 mail.example.com”.',
+	SRV: 'Four space-separated parts: priority weight port target, e.g. “10 60 5060 sip.example.com”.',
+	CAA: 'Flags, tag and quoted value, e.g. ‘0 issue "letsencrypt.org"’ or ‘0 issuewild ";"’.',
+	NS: 'A name-server hostname such as “ns1.example.com”. Careful — wrong NS data can delegate your zone away.',
 };
 
 /** Cloudflare-only: these record types can route through its proxy. */
@@ -97,11 +100,7 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 			zoneId,
 			zoneName,
 			recordId: record.id,
-			recordType: (supportedRecordTypes as string[]).includes(
-				record.record_type,
-			)
-				? record.record_type
-				: 'A',
+			recordType: record.record_type,
 			name: record.name,
 			content: record.content,
 			ttl: record.ttl ? String(record.ttl) : '',
@@ -290,6 +289,9 @@ function RecordFormView({
 	onSave: () => void;
 }) {
 	const showProxy = supportsProxy && proxyableTypes.has(draft.recordType);
+	const hint =
+		contentHints[draft.recordType] ??
+		'Values are sent to the provider exactly as typed.';
 	return (
 		<div
 			key="form"
@@ -305,22 +307,10 @@ function RecordFormView({
 			<div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-5 py-4">
 				<div className="grid gap-1.5">
 					<span className={fieldLabel}>Record type</span>
-					<Select
+					<RecordTypeSelect
 						value={draft.recordType}
-						onValueChange={(type: string) =>
-							onChange({...draft, recordType: type})
-						}>
-						<SelectTrigger>
-							<SelectValue>{draft.recordType}</SelectValue>
-						</SelectTrigger>
-						<SelectContent>
-							{supportedRecordTypes.map(type => (
-								<SelectItem key={type} value={type}>
-									{type}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+						onChange={type => onChange({...draft, recordType: type})}
+					/>
 				</div>
 				<div className="grid gap-1.5">
 					<span className={fieldLabel}>Name</span>
@@ -342,7 +332,7 @@ function RecordFormView({
 						}
 					/>
 					<p className="text-[11px] leading-relaxed text-muted-foreground">
-						Values are sent to the provider exactly as typed.
+						{hint}
 					</p>
 				</div>
 				<div className="grid gap-1.5">
