@@ -503,6 +503,7 @@ const bridgeProviders: Record<string, BridgeProvider> = {
 				secret: true,
 				hint: 'Generate a token in Hostinger hPanel under Advanced → API tokens.',
 			},
+			ZONE_FIELD,
 		],
 	},
 	AUTODNS: {

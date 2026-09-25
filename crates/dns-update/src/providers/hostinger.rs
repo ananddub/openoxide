@@ -459,25 +459,16 @@ fn parse_caa(content: &str) -> crate::Result<DnsRecord> {
     }
 }
 
-#[derive(Deserialize, Debug)]
-struct ZoneListResponse {
-    #[serde(default)]
-    data: Vec<ZoneListEntry>,
-    #[serde(default)]
-    pagination: Option<ZonePagination>,
-}
-
-#[derive(Deserialize, Debug)]
-struct ZoneListEntry {
-    zone: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct ZonePagination {
-    #[serde(rename = "currentPage", default)]
-    current_page: u32,
-    #[serde(rename = "totalPages", default)]
-    total_pages: u32,
+impl HostingerProvider {
+    pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
+        // The official Hostinger DNS API exposes only per-domain endpoints
+        // (GET/PUT/DELETE /api/dns/v1/zones/{domain}); there is no zone-list
+        // route, so callers must supply the domain themselves.
+        Err(crate::Error::Unsupported(
+            "Hostinger has no zone-list API — set the 'zone' credential to the domain you manage"
+                .to_string(),
+        ))
+    }
 }
 
 fn hostinger_type_from_str(value: &str) -> Option<DnsRecordType> {
@@ -496,38 +487,6 @@ fn hostinger_type_from_str(value: &str) -> Option<DnsRecordType> {
 }
 
 impl HostingerProvider {
-    pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        let mut zones = Vec::new();
-        let mut page = 1u32;
-        loop {
-            let response: ZoneListResponse = self
-                .client
-                .get(format!(
-                    "{}/api/dns/v1/zones?page={}&per-page=50",
-                    self.endpoint, page
-                ))
-                .send_with_retry(3)
-                .await?;
-            let len = response.data.len();
-            for entry in response.data {
-                zones.push(crate::ZoneInfo {
-                    id: entry.zone.clone(),
-                    name: entry.zone,
-                    status: None,
-                });
-            }
-            let done = match &response.pagination {
-                Some(p) => page >= p.total_pages || p.total_pages == 0,
-                None => true,
-            };
-            if done || len == 0 {
-                break;
-            }
-            page += 1;
-        }
-        Ok(zones)
-    }
-
     pub(crate) async fn list_zone_records(
         &self,
         zone: &str,
