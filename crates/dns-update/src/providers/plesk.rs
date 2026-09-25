@@ -47,6 +47,8 @@ struct PleskRecord {
     value: String,
     #[serde(default)]
     opt: String,
+    #[serde(default)]
+    ttl: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -456,22 +458,51 @@ fn decode_record(expected_type: DnsRecordType, record: &PleskRecord) -> crate::R
 
 impl PleskProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        let domains = self
-            .client
-            .get(format!("{}/api/v2/domains", self.endpoint))
-            .send_with_retry::<Vec<serde_json::Value>>(3)
-            .await?;
-        Ok(domains
-            .into_iter()
-            .filter_map(|domain| {
-                let name = domain.get("name")?.as_str()?.to_string();
-                Some(crate::ZoneInfo {
-                    id: name.clone(),
-                    name,
+        // Plesk REST API v3: GET /api/v3/domains returns {"resources": [{id, name, ...}],
+        // "paging": {"total-items": ..., "total-pages": ..., "current-page": ...}}.
+        let mut out = Vec::new();
+        let mut page = 1u64;
+        loop {
+            let response = self
+                .client
+                .get(format!(
+                    "{}/api/v3/domains?page={}&limit=100",
+                    self.endpoint, page
+                ))
+                .send_with_retry::<serde_json::Value>(3)
+                .await?;
+            let batch = response
+                .get("resources")
+                .and_then(|r| r.as_array())
+                .cloned()
+                .unwrap_or_default();
+            for domain in batch.iter() {
+                let Some(name) = domain.get("name").and_then(|n| n.as_str()) else {
+                    continue;
+                };
+                if name.is_empty() {
+                    continue;
+                }
+                let id = domain
+                    .get("id")
+                    .and_then(|v| v.as_i64().map(|i| i.to_string()))
+                    .unwrap_or_else(|| name.to_string());
+                out.push(crate::ZoneInfo {
+                    id,
+                    name: name.to_string(),
                     status: None,
-                })
-            })
-            .collect())
+                });
+            }
+            let total_pages = response
+                .get("paging")
+                .and_then(|p| p.get("total-pages"))
+                .and_then(|v| v.as_u64())
+                .unwrap_or(1);
+            if batch.is_empty() || page >= total_pages {
+                return Ok(out);
+            }
+            page += 1;
+        }
     }
 
     pub(crate) async fn list_zone_records(
@@ -497,7 +528,7 @@ impl PleskProvider {
                 name: relative_record_name(&record.host, domain),
                 record_type: record.record_type.to_ascii_uppercase(),
                 content: typed.to_string(),
-                ttl: 0,
+                ttl: record.ttl.unwrap_or(0),
                 record: typed,
             });
         }

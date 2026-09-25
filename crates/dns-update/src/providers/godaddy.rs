@@ -45,6 +45,14 @@ pub struct GodaddyRecord {
     pub service: Option<String>,
 }
 
+#[derive(Deserialize, Debug)]
+struct GodaddyDomain {
+    #[serde(default)]
+    domain: String,
+    #[serde(default)]
+    status: Option<String>,
+}
+
 const DEFAULT_API_ENDPOINT: &str = "https://api.godaddy.com";
 
 impl GodaddyProvider {
@@ -459,15 +467,72 @@ fn parse_caa(content: &str) -> crate::Result<CAARecord> {
 
 impl GodaddyProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
-        ))
+        // GET /v1/domains returns the full domain list (no pagination).
+        let domains = self
+            .client
+            .get(format!("{}/v1/domains", self.endpoint))
+            .send_with_retry::<Vec<GodaddyDomain>>(3)
+            .await?;
+        Ok(domains
+            .into_iter()
+            .filter(|d| !d.domain.is_empty())
+            .map(|d| crate::ZoneInfo {
+                id: d.domain.clone(),
+                name: d.domain,
+                status: d.status.filter(|s| !s.is_empty()),
+            })
+            .collect())
     }
 
-    #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing records".to_string(),
-        ))
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        let zone = zone.trim_end_matches('.');
+        let listed = self
+            .client
+            .get(format!("{}/v1/domains/{}/records", self.endpoint, zone))
+            .send_with_retry::<Vec<GodaddyRecord>>(3)
+            .await?;
+        let mut out = Vec::new();
+        for record in listed {
+            let Some(record_type) = record.record_type.as_deref().and_then(record_type_from_str)
+            else {
+                continue;
+            };
+            let Ok(parsed) = parse_record(record_type, &record) else {
+                continue;
+            };
+            let raw_name = record.name.clone().unwrap_or_default();
+            let name = if raw_name.is_empty() || raw_name == "@" {
+                "@".to_string()
+            } else {
+                strip_trailing_dot(&raw_name).to_string()
+            };
+            let content = parsed.to_string();
+            out.push(crate::ZoneRecord {
+                id: format!("{}|{}|{}", name, record_type.as_str(), content),
+                name,
+                record_type: record_type.as_str().to_string(),
+                ttl: record.ttl,
+                content,
+                record: parsed,
+            });
+        }
+        Ok(out)
     }
+}
+
+fn record_type_from_str(value: &str) -> Option<DnsRecordType> {
+    Some(match value.to_ascii_uppercase().as_str() {
+        "A" => DnsRecordType::A,
+        "AAAA" => DnsRecordType::AAAA,
+        "CNAME" => DnsRecordType::CNAME,
+        "NS" => DnsRecordType::NS,
+        "MX" => DnsRecordType::MX,
+        "TXT" => DnsRecordType::TXT,
+        "SRV" => DnsRecordType::SRV,
+        "CAA" => DnsRecordType::CAA,
+        _ => return None,
+    })
 }

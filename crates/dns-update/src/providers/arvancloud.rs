@@ -68,12 +68,31 @@ pub struct ArvanListedRecord {
     #[serde(rename = "type")]
     pub record_type: String,
     pub value: Value,
+    #[serde(default)]
+    pub ttl: Option<u32>,
     #[serde(default = "default_true")]
     pub can_delete: bool,
 }
 
 fn default_true() -> bool {
     true
+}
+
+#[derive(Deserialize, Debug)]
+struct ArvanDomain {
+    #[serde(default)]
+    id: String,
+    #[serde(default)]
+    domain: String,
+    #[serde(default)]
+    status: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct ArvanDomainPage {
+    data: Vec<ArvanDomain>,
+    #[serde(default)]
+    meta: Option<ArvanMeta>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -721,15 +740,97 @@ impl TryFrom<DnsRecord> for ArvanRecordContent {
 
 impl ArvanCloudProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
-        ))
+        // GET /cdn/4.0/domains returns a paginated list of the account's domains
+        // (Laravel-style `{ data: [...], meta: { last_page } }`), each carrying an
+        // `id`, `domain` and `status`. https://docs.arvancloud.ir/en/cdn/domain/
+        let mut zones = Vec::new();
+        let mut page: u32 = 1;
+        loop {
+            let url = format!(
+                "{endpoint}/cdn/4.0/domains?page={page}&per_page={per_page}",
+                endpoint = self.endpoint,
+                per_page = PAGE_SIZE,
+            );
+            let response: ArvanDomainPage = self.client.get(url).send().await?;
+            let last_page = response.meta.as_ref().map(|m| m.last_page).unwrap_or(0);
+            for domain in response.data {
+                if domain.domain.is_empty() {
+                    continue;
+                }
+                let id = if domain.id.is_empty() {
+                    domain.domain.clone()
+                } else {
+                    domain.id
+                };
+                zones.push(crate::ZoneInfo {
+                    id,
+                    name: domain.domain,
+                    status: domain.status,
+                });
+            }
+            if last_page == 0 || page >= last_page {
+                break;
+            }
+            page += 1;
+        }
+        Ok(zones)
     }
 
-    #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing records".to_string(),
-        ))
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        let mut out = Vec::new();
+        let mut page: u32 = 1;
+        loop {
+            let url = format!(
+                "{endpoint}/cdn/4.0/domains/{zone}/dns-records?page={page}&per_page={per_page}",
+                endpoint = self.endpoint,
+                per_page = PAGE_SIZE,
+            );
+            let response: ArvanPagedResponse = self.client.get(url).send().await?;
+            let last_page = response.meta.as_ref().map(|m| m.last_page).unwrap_or(0);
+            for record in response.data {
+                let Some(record_type) = arvan_record_type_from_str(&record.record_type) else {
+                    continue;
+                };
+                let Some(parsed) = listed_to_dns_record(record_type, &record.value) else {
+                    continue;
+                };
+                let name = if record.name.is_empty() || record.name == "@" {
+                    "@".to_string()
+                } else {
+                    record.name.clone()
+                };
+                out.push(crate::ZoneRecord {
+                    id: record.id,
+                    name,
+                    record_type: record_type.as_str().to_string(),
+                    content: parsed.to_string(),
+                    ttl: record.ttl.unwrap_or(0),
+                    record: parsed,
+                });
+            }
+            if last_page == 0 || page >= last_page {
+                break;
+            }
+            page += 1;
+        }
+        Ok(out)
+    }
+}
+
+fn arvan_record_type_from_str(value: &str) -> Option<DnsRecordType> {
+    match value.to_ascii_lowercase().as_str() {
+        "a" => Some(DnsRecordType::A),
+        "aaaa" => Some(DnsRecordType::AAAA),
+        "cname" => Some(DnsRecordType::CNAME),
+        "ns" => Some(DnsRecordType::NS),
+        "mx" => Some(DnsRecordType::MX),
+        "txt" => Some(DnsRecordType::TXT),
+        "srv" => Some(DnsRecordType::SRV),
+        "tlsa" => Some(DnsRecordType::TLSA),
+        "caa" => Some(DnsRecordType::CAA),
+        _ => None,
     }
 }

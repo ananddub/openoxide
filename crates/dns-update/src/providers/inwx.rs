@@ -86,6 +86,8 @@ struct NameserverRecord {
     content: String,
     #[serde(default)]
     prio: Option<u16>,
+    #[serde(default)]
+    ttl: Option<u32>,
 }
 
 impl InwxProvider {
@@ -640,15 +642,132 @@ fn parse_caa(content: &str) -> crate::Result<DnsRecord> {
 
 impl InwxProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
-        ))
+        // domainObject.list returns resData.data = [{ domain, type, state, ... }].
+        // https://domainrobot.com/wiki/index.php?title=Api26DomainObjectList
+        self.ensure_logged_in().await?;
+        let mut zones = Vec::new();
+        let limit = 100i64;
+        let mut offset = 0i64;
+        loop {
+            let resp = self
+                .call(
+                    "domainObject.list",
+                    json!({ "type": "domain", "offset": offset, "limit": limit }),
+                )
+                .await?;
+            let data = resp
+                .res_data
+                .as_ref()
+                .and_then(|d| d.get("data"))
+                .and_then(|d| d.as_array())
+                .cloned()
+                .unwrap_or_default();
+            let count = data.len();
+            for entry in data {
+                let Some(name) = entry.get("domain").and_then(|d| d.as_str()) else {
+                    continue;
+                };
+                let status = entry
+                    .get("state")
+                    .and_then(|s| s.as_str())
+                    .map(str::to_string);
+                zones.push(crate::ZoneInfo {
+                    id: name.to_string(),
+                    name: name.to_string(),
+                    status,
+                });
+            }
+            if (count as i64) < limit {
+                break;
+            }
+            offset += limit;
+        }
+        Ok(zones)
     }
 
-    #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing records".to_string(),
-        ))
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        // nameserver.info without name/type returns every record in the zone.
+        self.ensure_logged_in().await?;
+        let (origin, records) = self.list_all_records(zone).await?;
+        let mut out = Vec::with_capacity(records.len());
+        for record in records {
+            let Some(record_type) = inwx_record_type_from_str(&record.record_type) else {
+                continue;
+            };
+            let Ok(parsed) = parse_record(record_type, &record.content, record.prio) else {
+                continue;
+            };
+            let name = strip_origin_from_name(&record.name, &origin, Some("@"));
+            let name = if name.is_empty() {
+                "@".to_string()
+            } else {
+                name
+            };
+            out.push(crate::ZoneRecord {
+                id: record.id,
+                name,
+                record_type: record_type.as_str().to_string(),
+                content: parsed.to_string(),
+                ttl: record.ttl.unwrap_or(0),
+                record: parsed,
+            });
+        }
+        Ok(out)
+    }
+
+    async fn list_all_records(
+        &self,
+        origin: &str,
+    ) -> crate::Result<(String, Vec<NameserverRecord>)> {
+        let mut candidate = origin;
+        let mut first_failure = None;
+        loop {
+            let resp = self
+                .call_raw("nameserver.info", json!({ "domain": candidate }))
+                .await?;
+            if resp.code / 1000 == 1 {
+                let info: NameserverInfoResData = serde_json::from_value(
+                    resp.res_data.unwrap_or_else(|| json!({ "record": [] })),
+                )
+                .map_err(|err| {
+                    Error::Api(format!("Failed to parse INWX nameserver.info: {err}"))
+                })?;
+                return Ok((candidate.to_string(), info.record));
+            }
+            if first_failure.is_none() {
+                first_failure = Some(format!(
+                    "code={} message={}",
+                    resp.code,
+                    resp.msg.unwrap_or_default()
+                ));
+            }
+            match candidate.split_once('.') {
+                Some((_, rest)) if rest.contains('.') => candidate = rest,
+                _ => {
+                    return Err(Error::Api(format!(
+                        "No INWX nameserver domain found for {origin}: {}",
+                        first_failure.unwrap_or_default()
+                    )));
+                }
+            }
+        }
+    }
+}
+
+fn inwx_record_type_from_str(value: &str) -> Option<DnsRecordType> {
+    match value.to_ascii_uppercase().as_str() {
+        "A" => Some(DnsRecordType::A),
+        "AAAA" => Some(DnsRecordType::AAAA),
+        "CNAME" => Some(DnsRecordType::CNAME),
+        "NS" => Some(DnsRecordType::NS),
+        "MX" => Some(DnsRecordType::MX),
+        "TXT" => Some(DnsRecordType::TXT),
+        "SRV" => Some(DnsRecordType::SRV),
+        "TLSA" => Some(DnsRecordType::TLSA),
+        "CAA" => Some(DnsRecordType::CAA),
+        _ => None,
     }
 }

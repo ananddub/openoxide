@@ -639,18 +639,34 @@ fn decode_to_dns_record(record_type: DnsRecordType, fields: &[String]) -> crate:
 
 impl CpanelProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
+        // UAPI Zone::list returns objects: {"id": 1, "zone": "example.com.", "owner": ...}
         let zones = self
             .client
-            .get(format!("{}/execute/DNS/list_zones", self.endpoint))
-            .send_with_retry::<ApiResponse<Vec<String>>>(3)
+            .get(format!("{}/execute/Zone/list", self.endpoint))
+            .send_with_retry::<ApiResponse<Vec<serde_json::Value>>>(3)
             .await
             .and_then(|r| r.unwrap_response("list zones"))?;
         Ok(zones
             .into_iter()
-            .map(|zone| crate::ZoneInfo {
-                id: zone.clone(),
-                name: zone,
-                status: None,
+            .filter_map(|zone| {
+                let name = zone
+                    .get("zone")?
+                    .as_str()?
+                    .trim_end_matches('.')
+                    .to_string();
+                if name.is_empty() {
+                    return None;
+                }
+                let id = zone
+                    .get("id")
+                    .and_then(|v| v.as_i64())
+                    .map(|i| i.to_string())
+                    .unwrap_or_else(|| name.clone());
+                Some(crate::ZoneInfo {
+                    id,
+                    name,
+                    status: None,
+                })
             })
             .collect())
     }

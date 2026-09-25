@@ -80,7 +80,7 @@ struct ListedRecord {
     host: String,
     #[serde(default)]
     data: String,
-    #[serde(rename = "record_ttl", default)]
+    #[serde(rename = "ttl", alias = "record_ttl", default)]
     ttl: Option<u32>,
 }
 
@@ -447,6 +447,8 @@ struct ListDomainsResponse {
 
 #[derive(Deserialize, Debug)]
 struct DomainListEntry {
+    // Actual API returns {"response":{"domains":[{"domainname":...}]}}.
+    #[serde(rename = "domainname")]
     domain: String,
 }
 

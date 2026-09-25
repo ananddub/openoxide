@@ -548,19 +548,18 @@ fn parse_caa_content(content: &str) -> crate::Result<CAARecord> {
 #[derive(Deserialize, Debug)]
 struct DomainListResponse {
     #[serde(default)]
-    domains: Vec<DomainWrapper>,
+    domains: Vec<DomainContent>,
 }
 
-#[derive(Deserialize, Debug)]
-struct DomainWrapper {
-    #[serde(default)]
-    content: DomainContent,
-}
-
+// TransIP v6 GET /domains returns flat domain objects:
+// { "domains": [ { "name": "example.com", "status": "registered", ... } ] }
+// See https://api.transip.nl/rest/docs.html
 #[derive(Deserialize, Default, Debug)]
 struct DomainContent {
-    #[serde(default, rename = "domainName")]
-    domain_name: String,
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    status: Option<String>,
 }
 
 impl TransipProvider {
@@ -576,11 +575,11 @@ impl TransipProvider {
         Ok(response
             .domains
             .into_iter()
-            .filter(|entry| !entry.content.domain_name.is_empty())
+            .filter(|entry| !entry.name.is_empty())
             .map(|entry| crate::ZoneInfo {
-                id: entry.content.domain_name.clone(),
-                name: entry.content.domain_name,
-                status: None,
+                id: entry.name.clone(),
+                name: entry.name,
+                status: entry.status,
             })
             .collect())
     }

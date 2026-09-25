@@ -297,16 +297,23 @@ fn check_record_types(expected: DnsRecordType, records: &[DnsRecord]) -> crate::
 }
 
 impl PebbleProvider {
+    // pebble-challtestsrv's management API only has per-host set/add/clear endpoints
+    // (see letsencrypt/challtestsrv main.go) — there is no zone or record listing.
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
         Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
+            "Pebble is a local test DNS mock with no zone-list API — set the 'zone' credential to the domain you manage"
+                .to_string(),
         ))
     }
 
     #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
         Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing records".to_string(),
+            "Pebble is a local test DNS mock with no record-list API — set the 'zone' credential to the domain you manage"
+                .to_string(),
         ))
     }
 }

@@ -677,8 +677,10 @@ impl VolcengineProvider {
                     status,
                 });
             }
+            // ListZones reports the page total as `Total` (ListRecords uses `TotalCount`).
             let total = result
-                .get("TotalCount")
+                .get("Total")
+                .or_else(|| result.get("TotalCount"))
                 .and_then(Value::as_u64)
                 .unwrap_or(0);
             if (page_number * 100) >= total || count < 100 {

@@ -136,13 +136,18 @@ impl DdnssProvider {
 
 impl DdnssProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
+        // ddnss.de is a dynamic-DNS service with no zone-query API.
         Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
+            "Ddnss has no zone-list API — set the 'zone' credential to the domain you manage"
+                .to_string(),
         ))
     }
 
     #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
         Err(crate::Error::Unsupported(
             "this DNS provider does not support listing records".to_string(),
         ))

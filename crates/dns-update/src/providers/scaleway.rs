@@ -82,6 +82,8 @@ struct ListRecordsResponse {
 #[derive(Deserialize, Debug)]
 struct ListedRecord {
     #[serde(default)]
+    id: String,
+    #[serde(default)]
     name: String,
     #[serde(rename = "type")]
     record_type: String,
@@ -448,8 +450,9 @@ impl ScalewayProvider {
         let mut out = Vec::new();
         let mut page: u32 = 1;
         loop {
+            // Official SDK (scaleway-sdk-go api/domain/v2beta1) uses `page` and `page_size`.
             let url = format!(
-                "{}/dns-zones?page={}&per_page={}",
+                "{}/dns-zones?page={}&page_size={}",
                 self.endpoint, page, ZONE_PAGE_SIZE
             );
             let response: ListZonesResponse = self.client.get(url).send_with_retry(3).await?;
@@ -483,7 +486,7 @@ impl ScalewayProvider {
         let mut page: u32 = 1;
         loop {
             let url = format!(
-                "{}/dns-zones/{}/records?page={}&per_page={}",
+                "{}/dns-zones/{}/records?page={}&page_size={}",
                 self.endpoint, zone, page, ZONE_PAGE_SIZE
             );
             let response: ListRecordsResponse = self.client.get(url).send_with_retry(3).await?;
@@ -501,8 +504,13 @@ impl ScalewayProvider {
                     record.name.clone()
                 };
                 let content = typed.to_string();
+                let id = if record.id.is_empty() {
+                    format!("{}|{}|{}", name, record.record_type, content)
+                } else {
+                    record.id.clone()
+                };
                 out.push(crate::ZoneRecord {
-                    id: format!("{}|{}|{}", name, record.record_type, content),
+                    id,
                     name,
                     record_type: record.record_type.to_ascii_uppercase(),
                     content,

@@ -550,16 +550,23 @@ impl From<DnsSecError> for Error {
 }
 
 impl Rfc2136Provider {
+    // RFC 2136 (DNS UPDATE) has no zone-list API — it only performs updates against
+    // a server and zone the operator already knows.
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
         Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
+            "RFC2136 has no zone-list API — set the 'zone' credential to the domain you manage"
+                .to_string(),
         ))
     }
 
     #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
         Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing records".to_string(),
+            "RFC2136 has no record-list API (AXFR is not implemented) — set the 'zone' credential to the domain you manage"
+                .to_string(),
         ))
     }
 }

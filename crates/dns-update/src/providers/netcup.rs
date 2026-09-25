@@ -76,13 +76,25 @@ struct InfoDomainsParam<'a> {
 #[derive(Deserialize, Debug)]
 struct InfoDomainsResponse {
     #[serde(default)]
-    domains: Vec<DomainEntry>,
+    domains: Vec<serde_json::Value>,
 }
 
-#[derive(Deserialize, Debug)]
-struct DomainEntry {
-    #[serde(default)]
-    name: String,
+/// Extract the zone name from an `infoDomains` entry. The CCP API may return a
+/// flat `name` field or a list of key/value `properties` objects.
+fn domain_name_from_entry(entry: &serde_json::Value) -> Option<String> {
+    if let Some(name) = entry.get("name").and_then(|n| n.as_str())
+        && !name.is_empty()
+    {
+        return Some(name.to_string());
+    }
+    entry.get("properties")?.as_array()?.iter().find_map(|p| {
+        let key = p.get("name")?.as_str()?;
+        if key == "domainname" {
+            p.get("value")?.as_str().map(|s| s.to_string())
+        } else {
+            None
+        }
+    })
 }
 
 #[derive(Serialize, Debug)]
@@ -681,11 +693,11 @@ impl NetcupProvider {
             .map_err(|e| Error::Serialize(format!("Failed to parse Netcup domain list: {e}")))?;
         Ok(parsed
             .domains
-            .into_iter()
-            .filter(|d| !d.name.is_empty())
-            .map(|d| crate::ZoneInfo {
-                id: d.name.clone(),
-                name: d.name,
+            .iter()
+            .filter_map(domain_name_from_entry)
+            .map(|name| crate::ZoneInfo {
+                id: name.clone(),
+                name,
                 status: None,
             })
             .collect())

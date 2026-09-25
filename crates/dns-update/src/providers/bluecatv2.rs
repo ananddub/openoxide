@@ -844,14 +844,17 @@ impl BluecatV2Provider {
             self.config.config_name, self.config.view_name
         );
         let mut out = Vec::new();
-        let mut page = 1u32;
+        let mut page = 0u32;
+        let mut offset = 0u32;
         loop {
+            page += 1;
             let size = BLUECAT_PAGE_SIZE.to_string();
-            let page_str = page.to_string();
+            let offset_str = offset.to_string();
+            // RESTful v2 API pages collections with offset/limit query parameters
             let query = serde_urlencoded::to_string([
                 ("filter", filter.as_str()),
-                ("page", page_str.as_str()),
-                ("size", size.as_str()),
+                ("offset", offset_str.as_str()),
+                ("limit", size.as_str()),
             ])
             .map_err(|err| Error::Serialize(err.to_string()))?;
             let url = format!("{}/api/v2/zones?{}", self.endpoint, query);
@@ -871,7 +874,7 @@ impl BluecatV2Provider {
             if count < BLUECAT_PAGE_SIZE as usize || page >= BLUECAT_MAX_PAGES {
                 break;
             }
-            page += 1;
+            offset += BLUECAT_PAGE_SIZE;
         }
         Ok(out)
     }
@@ -890,14 +893,17 @@ impl BluecatV2Provider {
                 continue;
             };
             let filter = format!("recordType:eq('{}')", rtype);
-            let mut page = 1u32;
+            let mut page = 0u32;
+            let mut offset = 0u32;
             loop {
+                page += 1;
                 let size = BLUECAT_PAGE_SIZE.to_string();
-                let page_str = page.to_string();
+                let offset_str = offset.to_string();
+                // RESTful v2 API pages collections with offset/limit query parameters
                 let query = serde_urlencoded::to_string([
                     ("filter", filter.as_str()),
-                    ("page", page_str.as_str()),
-                    ("size", size.as_str()),
+                    ("offset", offset_str.as_str()),
+                    ("limit", size.as_str()),
                 ])
                 .map_err(|err| Error::Serialize(err.to_string()))?;
                 let url = format!(
@@ -930,7 +936,7 @@ impl BluecatV2Provider {
                 if count < BLUECAT_PAGE_SIZE as usize || page >= BLUECAT_MAX_PAGES {
                     break;
                 }
-                page += 1;
+                offset += BLUECAT_PAGE_SIZE;
             }
         }
 

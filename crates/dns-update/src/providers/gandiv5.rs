@@ -440,10 +440,12 @@ impl GandiV5Provider {
                 .await?;
             let len = batch.len();
             for rrset in batch {
+                // LiveDNS may return the apex as "@", as an empty name, or as the
+                // full zone FQDN ("example.com."), so normalize against the domain.
                 let name = if rrset.rrset_name.is_empty() {
                     "@".to_string()
                 } else {
-                    rrset.rrset_name.clone()
+                    strip_origin_from_name(&rrset.rrset_name, &domain, Some("@"))
                 };
                 let Some(record_type) = livedns_type_from_str(&rrset.rrset_type) else {
                     continue;

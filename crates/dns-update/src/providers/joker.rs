@@ -703,18 +703,17 @@ fn unquote_txt_tokens(tokens: &[String]) -> String {
 
 impl JokerProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        let parsed = self.dmapi_call("domain-list", &[]).await?;
+        // DMAPI `dns-zone-list`: zones managed and served by Joker.com, one per line.
+        let parsed = self.dmapi_call("dns-zone-list", &[]).await?;
         let mut out = Vec::new();
         for line in parsed.body.lines() {
-            if let Some(name) = line.trim().strip_prefix("Domain-Name:") {
-                let name = name.trim().to_string();
-                if !name.is_empty() {
-                    out.push(crate::ZoneInfo {
-                        id: name.clone(),
-                        name,
-                        status: None,
-                    });
-                }
+            let name = line.trim().to_string();
+            if !name.is_empty() {
+                out.push(crate::ZoneInfo {
+                    id: name.clone(),
+                    name,
+                    status: None,
+                });
             }
         }
         Ok(out)

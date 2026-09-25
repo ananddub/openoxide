@@ -733,11 +733,31 @@ fn parse_caa_rdata(entry: &str) -> Result<DnsRecord> {
     }
 }
 
+#[derive(Deserialize, Default)]
+struct ZoneListMetadata {
+    #[serde(default, rename = "lastPage")]
+    last_page: bool,
+}
+
+#[derive(Deserialize)]
+struct ZoneListResponse {
+    #[serde(default)]
+    metadata: ZoneListMetadata,
+    #[serde(default)]
+    zones: Vec<ZoneSummary>,
+}
+
 #[derive(Deserialize)]
 struct ZoneSummary {
-    name: String,
-    #[serde(default)]
+    zone: String,
+    #[serde(default, rename = "activationState")]
     status: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct RecordSetListResponse {
+    #[serde(default)]
+    recordsets: Vec<ZoneRecordEntry>,
 }
 
 #[derive(Deserialize)]
@@ -765,49 +785,28 @@ fn edgedns_record_type_from_str(value: &str) -> Option<DnsRecordType> {
     }
 }
 
-fn edgedns_next_link(headers: &reqwest::header::HeaderMap) -> Option<String> {
-    let value = headers.get(reqwest::header::LINK)?.to_str().ok()?;
-    for part in value.split(',') {
-        let (url, params) = part.trim().split_once(';')?;
-        let url = url.trim().trim_start_matches('<').trim_end_matches('>');
-        if params.contains("rel=\"next\"") || params.contains("rel=next") {
-            return Some(url.to_string());
-        }
-    }
-    None
-}
-
 impl EdgeDnsProvider {
-    async fn fetch_page<T: serde::de::DeserializeOwned>(
-        &self,
-        url: &str,
-    ) -> crate::Result<(Vec<T>, Option<String>)> {
-        let (text, headers) = self.send_full("GET", url, None).await?;
-        let parsed: Vec<T> = if text.trim().is_empty() {
-            Vec::new()
-        } else {
-            serde_json::from_str(&text)
-                .map_err(|e| Error::Parse(format!("edgedns page parse: {e}")))?
-        };
-        Ok((parsed, edgedns_next_link(&headers)))
-    }
-
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        let mut url = format!("{}/zones", self.base_url());
+        // Akamai Edge DNS GET /zones returns {"metadata":{...,"lastPage":bool},"zones":[{"zone":...}]}
         let mut out = Vec::new();
+        let mut page = 1u32;
         loop {
-            let (page, next) = self.fetch_page::<ZoneSummary>(&url).await?;
-            for zone in page {
+            let url = format!("{}/zones?page={}&pageSize=100", self.base_url(), page);
+            let text = self.send("GET", &url, None).await?;
+            let parsed: ZoneListResponse = serde_json::from_str(&text)
+                .map_err(|e| Error::Parse(format!("edgedns zones parse: {e}")))?;
+            let empty_page = parsed.zones.is_empty();
+            for zone in parsed.zones {
                 out.push(crate::ZoneInfo {
-                    id: zone.name.clone(),
-                    name: zone.name,
+                    id: zone.zone.clone(),
+                    name: zone.zone,
                     status: zone.status,
                 });
             }
-            match next {
-                Some(next) => url = next,
-                None => break,
+            if empty_page || parsed.metadata.last_page || page > 100 {
+                break;
             }
+            page += 1;
         }
         Ok(out)
     }
@@ -820,39 +819,37 @@ impl EdgeDnsProvider {
         if zone_name.is_empty() {
             return Err(Error::Api("edgedns: zone is required".to_string()));
         }
-        let mut url = format!(
-            "{}/zones/{}/records",
+        // Akamai Edge DNS GET /zones/{zone}/recordsets returns
+        // {"metadata":{...},"recordsets":[{"name":...,"type":...,"ttl":...,"rdata":[...]}]}
+        let url = format!(
+            "{}/zones/{}/recordsets",
             self.base_url(),
             url_encode(&zone_name)
         );
+        let text = self.send("GET", &url, None).await?;
+        let parsed: RecordSetListResponse = serde_json::from_str(&text)
+            .map_err(|e| Error::Parse(format!("edgedns recordsets parse: {e}")))?;
         let mut out = Vec::new();
-        loop {
-            let (page, next) = self.fetch_page::<ZoneRecordEntry>(&url).await?;
-            for entry in page {
-                let Some(record_type) = edgedns_record_type_from_str(&entry.record_type) else {
+        for entry in parsed.recordsets {
+            let Some(record_type) = edgedns_record_type_from_str(&entry.record_type) else {
+                continue;
+            };
+            let relative =
+                strip_origin_from_name(&entry.name.to_ascii_lowercase(), &zone_name, Some("@"));
+            for rdata in entry.rdata {
+                let Ok(record) = rdata_to_record(record_type, &rdata) else {
                     continue;
                 };
-                let relative =
-                    strip_origin_from_name(&entry.name.to_ascii_lowercase(), &zone_name, Some("@"));
-                for rdata in entry.rdata {
-                    let Ok(record) = rdata_to_record(record_type, &rdata) else {
-                        continue;
-                    };
-                    let content = record.to_string();
-                    let raw_type = entry.record_type.clone();
-                    out.push(crate::ZoneRecord {
-                        id: format!("{relative}|{raw_type}|{content}"),
-                        name: relative.clone(),
-                        record_type: raw_type.to_ascii_uppercase(),
-                        content,
-                        ttl: entry.ttl,
-                        record,
-                    });
-                }
-            }
-            match next {
-                Some(next) => url = next,
-                None => break,
+                let content = record.to_string();
+                let raw_type = entry.record_type.clone();
+                out.push(crate::ZoneRecord {
+                    id: format!("{relative}|{raw_type}|{content}"),
+                    name: relative.clone(),
+                    record_type: raw_type.to_ascii_uppercase(),
+                    content,
+                    ttl: entry.ttl,
+                    record,
+                });
             }
         }
         Ok(out)

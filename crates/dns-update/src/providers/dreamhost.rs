@@ -39,18 +39,6 @@ struct ListResponse {
     data: Vec<DreamhostRecord>,
 }
 
-#[derive(Deserialize, Debug)]
-struct ZoneListResponse {
-    result: String,
-    #[serde(default)]
-    data: Vec<DreamhostZone>,
-}
-
-#[derive(Deserialize, Debug)]
-struct DreamhostZone {
-    zone: String,
-}
-
 #[derive(Deserialize, Debug, Clone)]
 struct DreamhostRecord {
     record: String,
@@ -384,29 +372,12 @@ fn data_is(data: &serde_json::Value, expected: &str) -> bool {
 
 impl DreamhostProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        let qs = self.build_query(&[("cmd", "dns-list_zones")]);
-        let body = self
-            .client
-            .get(format!("{}/?{qs}", self.endpoint))
-            .send_raw()
-            .await?;
-        let parsed: ZoneListResponse = serde_json::from_str(&body).map_err(|err| {
-            Error::Serialize(format!(
-                "Failed to parse Dreamhost zone list response: {err}"
-            ))
-        })?;
-        if parsed.result != "success" {
-            return Err(Error::Api("Dreamhost list zones failed".to_string()));
-        }
-        Ok(parsed
-            .data
-            .into_iter()
-            .map(|z| crate::ZoneInfo {
-                id: z.zone.clone(),
-                name: z.zone,
-                status: None,
-            })
-            .collect())
+        // DreamHost's DNS API only exposes dns-list_records/add_record/remove_record;
+        // there is no zone-list command.
+        Err(crate::Error::Unsupported(
+            "Dreamhost has no zone-list API — set the 'zone' credential to the domain you manage"
+                .to_string(),
+        ))
     }
 
     pub(crate) async fn list_zone_records(

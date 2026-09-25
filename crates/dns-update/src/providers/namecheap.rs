@@ -64,8 +64,16 @@ struct CommandResponse {
     get_hosts: Option<GetHostsResult>,
     #[serde(rename = "DomainDNSSetHostsResult", default)]
     set_hosts: Option<SetHostsResult>,
-    #[serde(rename = "DomainListResult", default)]
+    #[serde(rename = "DomainGetListResult", default)]
     list_domains: Option<DomainListResult>,
+    #[serde(rename = "Paging", default)]
+    paging: Option<DomainListPaging>,
+}
+
+#[derive(Deserialize, Debug, Default)]
+struct DomainListPaging {
+    #[serde(rename = "TotalItems", default)]
+    total_items: u32,
 }
 
 #[derive(Deserialize, Debug, Default)]
@@ -76,12 +84,10 @@ struct DomainListResult {
 
 #[derive(Deserialize, Debug, Default)]
 struct DomainItem {
-    #[serde(rename = "ID", default)]
+    #[serde(rename = "@ID", default)]
     id: String,
-    #[serde(rename = "Name", default)]
+    #[serde(rename = "@Name", default)]
     name: String,
-    #[serde(rename = "Status", default)]
-    status: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -645,39 +651,48 @@ fn unquote_caa_value(value: &str) -> String {
 
 impl NamecheapProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        let mut params = self.base_params("namecheap.domains.getList");
-        params.push(("Page".to_string(), "1".to_string()));
-        params.push(("PageSize".to_string(), "100".to_string()));
-        let query =
-            serde_urlencoded::to_string(&params).map_err(|e| Error::Serialize(e.to_string()))?;
-        let url = format!("{}?{}", self.endpoint, query);
-        let body = self.client.get(url).send_raw().await?;
-        let response: ApiResponse =
-            from_str(&body).map_err(|e| Error::Parse(format!("Invalid Namecheap XML: {e}")))?;
-        check_api(&response)?;
-        Ok(response
-            .command_response
-            .list_domains
-            .map(|r| {
-                r.domains
-                    .into_iter()
-                    .filter(|d| !d.name.is_empty())
-                    .map(|d| crate::ZoneInfo {
-                        id: if d.id.is_empty() {
-                            d.name.clone()
-                        } else {
-                            d.id
-                        },
-                        name: d.name,
-                        status: if d.status.is_empty() {
-                            None
-                        } else {
-                            Some(d.status)
-                        },
-                    })
-                    .collect()
-            })
-            .unwrap_or_default())
+        let mut out = Vec::new();
+        let mut page = 1u32;
+        loop {
+            let mut params = self.base_params("namecheap.domains.getList");
+            params.push(("Page".to_string(), page.to_string()));
+            params.push(("PageSize".to_string(), "100".to_string()));
+            let query = serde_urlencoded::to_string(&params)
+                .map_err(|e| Error::Serialize(e.to_string()))?;
+            let url = format!("{}?{}", self.endpoint, query);
+            let body = self.client.get(url).send_raw().await?;
+            let response: ApiResponse =
+                from_str(&body).map_err(|e| Error::Parse(format!("Invalid Namecheap XML: {e}")))?;
+            check_api(&response)?;
+            let batch = response
+                .command_response
+                .list_domains
+                .map(|r| r.domains)
+                .unwrap_or_default();
+            let total_items = response
+                .command_response
+                .paging
+                .map(|p| p.total_items)
+                .unwrap_or(0);
+            for d in batch {
+                if d.name.is_empty() {
+                    continue;
+                }
+                out.push(crate::ZoneInfo {
+                    id: if d.id.is_empty() {
+                        d.name.clone()
+                    } else {
+                        d.id
+                    },
+                    name: d.name,
+                    status: None,
+                });
+            }
+            if total_items == 0 || out.len() as u32 >= total_items {
+                return Ok(out);
+            }
+            page += 1;
+        }
     }
 
     pub(crate) async fn list_zone_records(

@@ -437,17 +437,102 @@ impl TryFrom<RecordData> for DnsRecord {
     }
 }
 
+#[derive(Deserialize, Debug)]
+struct ListDomainsResponse {
+    #[serde(default)]
+    domains: Vec<ListedDomain>,
+    #[serde(default)]
+    links: ListLinks,
+}
+
+#[derive(Deserialize, Debug)]
+struct ListedDomain {
+    name: String,
+    #[serde(default)]
+    state: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct PagedRawRecords {
+    #[serde(default)]
+    domain_records: Vec<serde_json::Value>,
+    #[serde(default)]
+    links: ListLinks,
+}
+
 impl DigitalOceanProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
-        ))
+        let mut out = Vec::new();
+        let mut page: u32 = 1;
+        loop {
+            let url = format!(
+                "{}/v2/domains?per_page={LIST_PAGE_SIZE}&page={page}",
+                self.endpoint
+            );
+            let response: ListDomainsResponse = self.client.get(url).send_with_retry(3).await?;
+            let returned = response.domains.len() as u32;
+            for domain in response.domains {
+                out.push(crate::ZoneInfo {
+                    id: domain.name.clone(),
+                    name: domain.name,
+                    status: domain.state,
+                });
+            }
+            if response.links.pages.next.is_none() || returned < LIST_PAGE_SIZE {
+                break;
+            }
+            page += 1;
+        }
+        Ok(out)
     }
 
-    #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing records".to_string(),
-        ))
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        let domain = zone.trim_end_matches('.');
+        let mut out = Vec::new();
+        let mut page: u32 = 1;
+        loop {
+            let url = format!(
+                "{}/v2/domains/{domain}/records?per_page={LIST_PAGE_SIZE}&page={page}",
+                self.endpoint
+            );
+            let response: PagedRawRecords = self.client.get(url).send_with_retry(3).await?;
+            let returned = response.domain_records.len() as u32;
+            for raw in response.domain_records {
+                let id = raw.get("id").map(|v| v.to_string()).unwrap_or_default();
+                let name = raw
+                    .get("name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or_default()
+                    .to_string();
+                let record_type = raw
+                    .get("type")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or_default()
+                    .to_ascii_uppercase();
+                let ttl = raw.get("ttl").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+                let Ok(data) = serde_json::from_value::<RecordData>(raw) else {
+                    continue;
+                };
+                let Ok(record) = DnsRecord::try_from(data) else {
+                    continue;
+                };
+                out.push(crate::ZoneRecord {
+                    id,
+                    name,
+                    record_type,
+                    content: record.to_string(),
+                    ttl,
+                    record,
+                });
+            }
+            if response.links.pages.next.is_none() || returned < LIST_PAGE_SIZE {
+                break;
+            }
+            page += 1;
+        }
+        Ok(out)
     }
 }

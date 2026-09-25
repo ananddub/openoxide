@@ -34,6 +34,9 @@ struct ListedRecord {
     #[serde(rename = "type")]
     record_type: String,
     content: String,
+    // get_domains returns "ttl" per record (seconds).
+    #[serde(default)]
+    ttl: u32,
 }
 
 #[derive(Deserialize, Debug)]
@@ -426,7 +429,7 @@ impl Ipv64Provider {
                     name,
                     record_type: r.record_type.to_ascii_uppercase(),
                     content: record.to_string(),
-                    ttl: 0,
+                    ttl: r.ttl,
                     record,
                 });
             }

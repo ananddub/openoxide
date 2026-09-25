@@ -44,6 +44,24 @@ struct GetRecordsResponse {
     total: usize,
 }
 
+// Spaceship External API: GET /v1/domains?take=&skip= returns
+// { "items": [ { "name": "...", "lifecycleStatus": "registered", ... } ], "total": N }
+// https://docs.spaceship.dev/
+#[derive(Deserialize, Debug)]
+struct DomainListResponse {
+    #[serde(default)]
+    items: Vec<DomainItem>,
+    #[serde(default)]
+    total: usize,
+}
+
+#[derive(Deserialize, Debug)]
+struct DomainItem {
+    name: String,
+    #[serde(rename = "lifecycleStatus", default)]
+    lifecycle_status: Option<String>,
+}
+
 #[derive(Serialize, Debug)]
 struct SpaceshipDeleteRecord {
     #[serde(rename = "type")]
@@ -809,10 +827,32 @@ fn port_as_u64(v: &Value) -> Option<u64> {
 
 impl SpaceshipProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly"
-                .to_string(),
-        ))
+        // Zone listing is available through the same X-Api-Key/X-Api-Secret creds:
+        // GET {endpoint}/domains with take/skip pagination (https://docs.spaceship.dev/).
+        const PAGE_SIZE: usize = 100;
+        let mut skip = 0usize;
+        let mut zones = Vec::new();
+        loop {
+            let response = self
+                .client
+                .get(format!(
+                    "{}/domains?take={}&skip={}",
+                    self.endpoint, PAGE_SIZE, skip
+                ))
+                .send_with_retry::<DomainListResponse>(3)
+                .await?;
+            let received = response.items.len();
+            zones.extend(response.items.into_iter().map(|d| crate::ZoneInfo {
+                id: d.name.clone(),
+                name: d.name,
+                status: d.lifecycle_status,
+            }));
+            if received < PAGE_SIZE || zones.len() >= response.total {
+                break;
+            }
+            skip += PAGE_SIZE;
+        }
+        Ok(zones)
     }
 
     pub(crate) async fn list_zone_records(

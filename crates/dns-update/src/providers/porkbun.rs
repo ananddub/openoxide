@@ -70,11 +70,32 @@ struct RetrieveResponse {
 #[derive(Deserialize, Debug, Clone)]
 struct ListedRecord {
     id: String,
+    #[serde(default)]
+    name: String,
     #[serde(rename = "type")]
     record_type: String,
     content: String,
     #[serde(default, deserialize_with = "deserialize_opt_u16_from_string")]
     prio: Option<u16>,
+    #[serde(default, deserialize_with = "deserialize_ttl_from_string")]
+    ttl: u32,
+}
+
+fn deserialize_ttl_from_string<'de, D>(deserializer: D) -> Result<u32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Either {
+        Str(String),
+        Num(u32),
+    }
+    Ok(match Option::<Either>::deserialize(deserializer)? {
+        None => 600,
+        Some(Either::Num(n)) => n,
+        Some(Either::Str(s)) => s.parse::<u32>().unwrap_or(600),
+    })
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
@@ -588,16 +609,136 @@ impl From<DnsRecord> for RecordData {
 }
 
 impl PorkBunProvider {
+    /// Lists the domains on the account via POST /domain/listAll ("list all
+    /// domains"), per https://porkbun.com/api/json/v3/documentation.
+    /// On Porkbun a DNS zone is the domain itself.
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
-        ))
+        let mut out = Vec::new();
+        let mut start: u32 = 0;
+        loop {
+            let response: ListDomainsResponse = self
+                .client
+                .post(format!("{}/domain/listAll", self.endpoint))
+                .with_body(ListDomainsParams {
+                    auth: self.auth(),
+                    start,
+                })?
+                .send_with_retry(3)
+                .await?;
+            if response.status != "SUCCESS" {
+                return Err(Error::Api(response.message.unwrap_or(response.status)));
+            }
+            let received = response.domains.len();
+            for domain in response.domains {
+                if domain.domain.is_empty() {
+                    continue;
+                }
+                out.push(crate::ZoneInfo {
+                    id: domain.domain.clone(),
+                    name: domain.domain,
+                    status: domain.status,
+                });
+            }
+            // Results come in chunks of up to 1000 domains.
+            if received == 0 {
+                break;
+            }
+            start += received as u32;
+        }
+        Ok(out)
     }
 
-    #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing records".to_string(),
-        ))
+    /// Lists every editable record of the zone via POST /dns/retrieve/{domain}
+    /// (the documented "Retrieve all DNS records" endpoint).
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        let zone = zone.trim_end_matches('.');
+        let response: RetrieveResponse = self
+            .client
+            .post(format!("{}/dns/retrieve/{}", self.endpoint, zone))
+            .with_body(self.auth())?
+            .send_with_retry(3)
+            .await?;
+        if response.status != "SUCCESS" {
+            return Err(Error::Api(response.status_message()));
+        }
+        let mut out = Vec::new();
+        for listed in response.records {
+            let Some(record_type) = record_type_from_str(&listed.record_type) else {
+                continue;
+            };
+            let Ok(record) = listed_to_dns_record(listed.clone(), record_type) else {
+                continue;
+            };
+            let name = porkbun_relative_name(&listed.name, zone);
+            let content = record.to_string();
+            out.push(crate::ZoneRecord {
+                id: if listed.id.is_empty() {
+                    format!("{name}|{}|{content}", listed.record_type)
+                } else {
+                    listed.id.clone()
+                },
+                name,
+                record_type: record_type.as_str().to_string(),
+                content,
+                ttl: listed.ttl,
+                record,
+            });
+        }
+        Ok(out)
     }
+}
+
+fn porkbun_relative_name(name: &str, zone: &str) -> String {
+    let name = name.trim_end_matches('.');
+    if name.eq_ignore_ascii_case(zone) || name.is_empty() {
+        return "@".to_string();
+    }
+    let suffix = format!(".{zone}");
+    if name.len() > suffix.len() && name[name.len() - suffix.len()..].eq_ignore_ascii_case(&suffix)
+    {
+        return name[..name.len() - suffix.len()].to_string();
+    }
+    name.to_string()
+}
+
+fn record_type_from_str(value: &str) -> Option<DnsRecordType> {
+    Some(match value.to_ascii_uppercase().as_str() {
+        "A" => DnsRecordType::A,
+        "AAAA" => DnsRecordType::AAAA,
+        "CNAME" => DnsRecordType::CNAME,
+        "NS" => DnsRecordType::NS,
+        "MX" => DnsRecordType::MX,
+        "TXT" => DnsRecordType::TXT,
+        "SRV" => DnsRecordType::SRV,
+        "TLSA" => DnsRecordType::TLSA,
+        "CAA" => DnsRecordType::CAA,
+        _ => return None,
+    })
+}
+
+#[derive(Serialize, Debug)]
+struct ListDomainsParams<'a> {
+    #[serde(flatten)]
+    auth: AuthParams<'a>,
+    start: u32,
+}
+
+#[derive(Deserialize, Debug)]
+struct ListDomainsResponse {
+    status: String,
+    #[serde(default)]
+    message: Option<String>,
+    #[serde(default)]
+    domains: Vec<DomainEntry>,
+}
+
+#[derive(Deserialize, Debug)]
+struct DomainEntry {
+    #[serde(default)]
+    domain: String,
+    #[serde(default)]
+    status: Option<String>,
 }

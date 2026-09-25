@@ -60,6 +60,8 @@ struct ExistingRecord {
     target: String,
     #[serde(default)]
     priority: Option<u16>,
+    #[serde(default)]
+    ttl: Option<u32>,
 }
 
 #[derive(Serialize, Debug)]
@@ -640,15 +642,58 @@ fn parse_caa(target: &str) -> crate::Result<CAARecord> {
 
 impl InfomaniakProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
+        // Infomaniak's DNS Manager API is keyed by numeric zone/domain ids; there is
+        // no endpoint that lists zone names from a single API token (both the Ansible
+        // and acme.sh integrations require the zone to be supplied). Docs:
+        // https://developer.infomaniak.com/docs/api/get/2/zones/%7Bzone%7D/records
         Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
+            "Infomaniak has no zone-list API — set the 'zone' credential to the domain you manage"
+                .to_string(),
         ))
     }
 
-    #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing records".to_string(),
-        ))
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        // GET /2/zones/{zone}/records returns every record in the zone.
+        let (_domain, records) = self.fetch_zone_records(zone).await?;
+        let mut out = Vec::with_capacity(records.len());
+        for record in records {
+            let Some(record_type) = infomaniak_record_type(&record.record_type) else {
+                continue;
+            };
+            let Ok(parsed) = decode_existing(&record, record_type) else {
+                continue;
+            };
+            let name = match record.source.as_str() {
+                "" | "@" => "@".to_string(),
+                other => other.to_string(),
+            };
+            out.push(crate::ZoneRecord {
+                id: record.id.to_string(),
+                name,
+                record_type: record_type.as_str().to_string(),
+                content: parsed.to_string(),
+                ttl: record.ttl.unwrap_or(0),
+                record: parsed,
+            });
+        }
+        Ok(out)
+    }
+}
+
+fn infomaniak_record_type(value: &str) -> Option<DnsRecordType> {
+    match value.to_ascii_uppercase().as_str() {
+        "A" => Some(DnsRecordType::A),
+        "AAAA" => Some(DnsRecordType::AAAA),
+        "CNAME" => Some(DnsRecordType::CNAME),
+        "NS" => Some(DnsRecordType::NS),
+        "MX" => Some(DnsRecordType::MX),
+        "TXT" => Some(DnsRecordType::TXT),
+        "SRV" => Some(DnsRecordType::SRV),
+        "TLSA" => Some(DnsRecordType::TLSA),
+        "CAA" => Some(DnsRecordType::CAA),
+        _ => None,
     }
 }

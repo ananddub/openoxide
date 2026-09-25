@@ -161,14 +161,19 @@ fn full_domain(name: &str) -> crate::Result<String> {
 }
 
 impl FreeMyIpProvider {
+    // FreeMyIP is single-domain dynamic DNS under freemyip.com; it exposes no zone-list API.
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
         Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
+            "FreeMyIP has no zone-list API — set the 'zone' credential to the domain you manage"
+                .to_string(),
         ))
     }
 
     #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
         Err(crate::Error::Unsupported(
             "this DNS provider does not support listing records".to_string(),
         ))

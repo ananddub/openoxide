@@ -80,7 +80,7 @@ struct ListedRecord {
 #[derive(Deserialize, Debug)]
 struct ListedRecordPage {
     data: Vec<ListedRecord>,
-    #[serde(default, rename = "totalPagesCount")]
+    #[serde(default, rename = "totalPages")]
     total_pages_count: Option<i64>,
 }
 
@@ -100,7 +100,7 @@ struct DomainSummary {
 #[derive(Deserialize, Debug)]
 struct DomainListPage {
     data: Vec<DomainSummary>,
-    #[serde(default, rename = "totalPagesCount")]
+    #[serde(default, rename = "totalPages")]
     total_pages_count: Option<i64>,
 }
 

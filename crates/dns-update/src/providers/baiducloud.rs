@@ -67,8 +67,11 @@ struct ListZonesResponse {
 
 #[derive(Deserialize, Debug)]
 struct BaiduZone {
-    #[serde(default, rename = "zoneName")]
+    // ListZone returns the domain in the zone object's `name` field (bce-sdk-go services/dns Zone).
+    #[serde(default, rename = "name")]
     zone_name: String,
+    #[serde(default)]
+    status: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -690,8 +693,9 @@ impl BaiduCloudProvider {
                 params.push(("marker".to_string(), m.clone()));
             }
             let query = build_query(&params);
+            // ListZone is GET /v1/dns/zone (bce-sdk-go services/dns ListZone), not /v1/dns.
             let text = self
-                .send_signed_raw(Method::GET, "/v1/dns", &query, None)
+                .send_signed_raw(Method::GET, "/v1/dns/zone", &query, None)
                 .await?;
             let resp: ListZonesResponse = if text.is_empty() {
                 ListZonesResponse {
@@ -753,7 +757,7 @@ impl BaiduCloudProvider {
                 crate::ZoneInfo {
                     id: name.clone(),
                     name,
-                    status: None,
+                    status: z.status,
                 }
             })
             .collect())

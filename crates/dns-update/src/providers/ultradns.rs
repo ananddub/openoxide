@@ -683,7 +683,7 @@ fn is_path_safe(byte: u8) -> bool {
 
 #[derive(Deserialize, Debug)]
 struct PaginationInfo {
-    #[serde(default, rename = "totalResults")]
+    #[serde(default, rename = "totalCount")]
     total_results: Option<u64>,
 }
 
@@ -691,27 +691,29 @@ struct PaginationInfo {
 struct ZonesListResponse {
     #[serde(default)]
     zones: Vec<ZoneEntry>,
-    #[serde(default)]
+    #[serde(default, rename = "resultInfo")]
     pagination: Option<PaginationInfo>,
+}
+
+#[derive(Deserialize, Debug, Default)]
+struct ZoneProperties {
+    #[serde(default)]
+    name: String,
+    #[serde(default, rename = "type")]
+    zone_type: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
 struct ZoneEntry {
-    #[serde(default, rename = "zoneName")]
-    zone_name: Option<String>,
     #[serde(default)]
-    name: Option<String>,
-    #[serde(default)]
-    id: Option<String>,
-    #[serde(default)]
-    status: Option<String>,
+    properties: ZoneProperties,
 }
 
 #[derive(Deserialize, Debug)]
 struct ZoneRrsetsResponse {
     #[serde(default, rename = "rrSets")]
     rrsets: Vec<ZoneRrset>,
-    #[serde(default)]
+    #[serde(default, rename = "resultInfo")]
     pagination: Option<PaginationInfo>,
 }
 
@@ -756,7 +758,7 @@ impl UltraDnsProvider {
         let mut offset = 0u64;
         loop {
             let url = format!(
-                "{}/v2/zones?limit={ULTRADNS_PAGE_SIZE}&offset={offset}",
+                "{}/v3/zones?limit={ULTRADNS_PAGE_SIZE}&offset={offset}",
                 self.endpoint
             );
             let response: ZonesListResponse = self
@@ -764,18 +766,14 @@ impl UltraDnsProvider {
                 .await?;
             let count = response.zones.len() as u64;
             for entry in response.zones {
-                let name = entry
-                    .name
-                    .or(entry.zone_name)
-                    .map(|name| name.trim_end_matches('.').to_string())
-                    .unwrap_or_default();
+                let name = entry.properties.name.trim_end_matches('.').to_string();
                 if name.is_empty() {
                     continue;
                 }
                 out.push(crate::ZoneInfo {
-                    id: entry.id.unwrap_or_else(|| name.clone()),
+                    id: name.clone(),
                     name,
-                    status: entry.status,
+                    status: entry.properties.zone_type,
                 });
             }
             let total = response

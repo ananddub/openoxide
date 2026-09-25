@@ -461,17 +461,132 @@ impl TryFrom<DnsContent> for DnsRecord {
     }
 }
 
+const ZONE_PAGE_SIZE: u32 = 100;
+
+#[derive(Deserialize, Debug)]
+struct ListedZone {
+    id: String,
+    name: String,
+    #[serde(default)]
+    status: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct ZoneRecordEntry {
+    id: String,
+    name: String,
+    #[serde(rename = "type")]
+    record_type: String,
+    #[serde(default)]
+    ttl: u32,
+    #[serde(flatten)]
+    content: DnsContent,
+}
+
+#[derive(Deserialize, Debug, Default)]
+struct ResultInfo {
+    #[serde(default)]
+    page: u32,
+    #[serde(default)]
+    total_pages: u32,
+}
+
+#[derive(Deserialize, Debug)]
+struct PagedApiResult<T> {
+    errors: Vec<ApiError>,
+    success: bool,
+    result: Vec<T>,
+    #[serde(default)]
+    result_info: ResultInfo,
+}
+
+impl<T> PagedApiResult<T> {
+    fn unwrap_paged(self, action_name: &str) -> crate::Result<(Vec<T>, u32)> {
+        if self.success {
+            Ok((
+                self.result,
+                self.result_info.total_pages.max(self.result_info.page),
+            ))
+        } else {
+            Err(Error::Api(format!(
+                "Failed to {action_name}: {:?}",
+                self.errors
+            )))
+        }
+    }
+}
+
 impl CloudflareProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
-        ))
+        let mut out = Vec::new();
+        let mut page: u32 = 1;
+        loop {
+            let url = format!(
+                "{}/zones?page={}&per_page={ZONE_PAGE_SIZE}",
+                self.endpoint, page
+            );
+            let response: PagedApiResult<ListedZone> =
+                self.client.get(url).send_with_retry(3).await?;
+            let (zones, total_pages) = response.unwrap_paged("list zones")?;
+            for zone in zones {
+                out.push(crate::ZoneInfo {
+                    id: zone.id,
+                    name: zone.name,
+                    status: zone.status,
+                });
+            }
+            if page >= total_pages {
+                break;
+            }
+            page += 1;
+        }
+        Ok(out)
     }
 
-    #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing records".to_string(),
-        ))
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        let zone_name = zone.trim_end_matches('.');
+        let zone_id = self.obtain_zone_id(zone_name).await?;
+        let mut out = Vec::new();
+        let mut page: u32 = 1;
+        loop {
+            let url = format!(
+                "{}/zones/{zone_id}/dns_records?page={}&per_page={ZONE_PAGE_SIZE}",
+                self.endpoint, page
+            );
+            let response: PagedApiResult<serde_json::Value> =
+                self.client.get(url).send_with_retry(3).await?;
+            let (items, total_pages) = response.unwrap_paged("list DNS records")?;
+            for item in items {
+                let Ok(entry) = serde_json::from_value::<ZoneRecordEntry>(item) else {
+                    continue;
+                };
+                let Ok(record) = DnsRecord::try_from(entry.content) else {
+                    continue;
+                };
+                let name = if entry.name == zone_name {
+                    "@".to_string()
+                } else if let Some(rest) = entry.name.strip_suffix(&format!(".{zone_name}")) {
+                    rest.to_string()
+                } else {
+                    entry.name
+                };
+                out.push(crate::ZoneRecord {
+                    id: entry.id,
+                    name,
+                    record_type: entry.record_type.to_ascii_uppercase(),
+                    content: record.to_string(),
+                    ttl: entry.ttl,
+                    record,
+                });
+            }
+            if page >= total_pages {
+                break;
+            }
+            page += 1;
+        }
+        Ok(out)
     }
 }

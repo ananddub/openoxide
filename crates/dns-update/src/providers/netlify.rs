@@ -409,9 +409,11 @@ fn listed_to_record(record_type: DnsRecordType, r: &ListedRecord) -> crate::Resu
 
 impl NetlifyProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
+        // getDnsZones per the official Netlify OpenAPI: GET /api/v1/dns_zones
+        // (requires an account/personal access token, not a deploy token).
         let zones = self
             .client
-            .get(format!("{}/dns-zones", self.endpoint))
+            .get(format!("{}/dns_zones", self.endpoint))
             .send::<Vec<DnsZoneEntry>>()
             .await?;
         Ok(zones

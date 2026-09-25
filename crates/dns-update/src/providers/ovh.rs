@@ -61,6 +61,18 @@ struct OvhRecordBody {
     target: String,
 }
 
+#[derive(Deserialize, Debug)]
+struct OvhRecordDetail {
+    id: u64,
+    #[serde(rename = "fieldType")]
+    field_type: String,
+    #[serde(rename = "subDomain")]
+    sub_domain: Option<String>,
+    target: String,
+    #[serde(default)]
+    ttl: Option<u32>,
+}
+
 #[derive(Debug)]
 pub enum OvhEndpoint {
     OvhEu,
@@ -637,15 +649,80 @@ fn strip_caa_quotes(s: &str) -> String {
 
 impl OvhProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
-        ))
+        // GET /domain/zone returns the list of zone names (strings) the account
+        // can manage. https://docs.ovh.com/us/en/api/
+        let url = format!("{}/domain/zone", self.endpoint);
+        let body = self
+            .send_authenticated_request(Method::GET, &url, "")
+            .await?;
+        let names: Vec<String> = serde_json::from_str(&body)
+            .map_err(|e| Error::Api(format!("Failed to parse zone list: {}", e)))?;
+        Ok(names
+            .into_iter()
+            .map(|name| crate::ZoneInfo {
+                id: name.clone(),
+                name,
+                status: None,
+            })
+            .collect())
     }
 
-    #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing records".to_string(),
-        ))
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        // GET /domain/zone/{zone}/record returns record ids; each id is then read
+        // individually to obtain subDomain/ttl. https://docs.ovh.com/us/en/api/
+        let zone = zone.trim_end_matches('.');
+        let ids_url = format!("{}/domain/zone/{}/record", self.endpoint, zone);
+        let body = self
+            .send_authenticated_request(Method::GET, &ids_url, "")
+            .await?;
+        let ids: Vec<u64> = serde_json::from_str(&body)
+            .map_err(|e| Error::Api(format!("Failed to parse record list: {}", e)))?;
+        let mut records = Vec::new();
+        for id in ids {
+            let url = format!("{}/domain/zone/{}/record/{}", self.endpoint, zone, id);
+            let Ok(body) = self.send_authenticated_request(Method::GET, &url, "").await else {
+                continue;
+            };
+            let Ok(detail) = serde_json::from_str::<OvhRecordDetail>(&body) else {
+                continue;
+            };
+            let Some(record_type) = ovh_record_type_from_str(&detail.field_type) else {
+                continue;
+            };
+            let Ok(record) = parse_ovh_target(record_type, &detail.target) else {
+                continue;
+            };
+            let name = match detail.sub_domain.as_deref() {
+                Some(s) if !s.is_empty() => s.to_string(),
+                _ => "@".to_string(),
+            };
+            records.push(crate::ZoneRecord {
+                id: detail.id.to_string(),
+                name,
+                record_type: record_type.as_str().to_string(),
+                content: record.to_string(),
+                ttl: detail.ttl.unwrap_or(0),
+                record,
+            });
+        }
+        Ok(records)
+    }
+}
+
+fn ovh_record_type_from_str(value: &str) -> Option<DnsRecordType> {
+    match value.to_ascii_uppercase().as_str() {
+        "A" => Some(DnsRecordType::A),
+        "AAAA" => Some(DnsRecordType::AAAA),
+        "CNAME" => Some(DnsRecordType::CNAME),
+        "NS" => Some(DnsRecordType::NS),
+        "MX" => Some(DnsRecordType::MX),
+        "TXT" => Some(DnsRecordType::TXT),
+        "SRV" => Some(DnsRecordType::SRV),
+        "TLSA" => Some(DnsRecordType::TLSA),
+        "CAA" => Some(DnsRecordType::CAA),
+        _ => None,
     }
 }

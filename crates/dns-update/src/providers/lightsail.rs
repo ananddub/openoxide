@@ -83,6 +83,24 @@ struct GetDomainsRequest<'a> {
     page_token: Option<&'a str>,
 }
 
+#[derive(Serialize, Debug)]
+struct GetRegionsRequest {
+    #[serde(rename = "includeAvailabilityZones")]
+    include_availability_zones: bool,
+}
+
+#[derive(Deserialize, Debug)]
+struct GetRegionsResponse {
+    #[serde(default)]
+    regions: Vec<LightsailRegion>,
+}
+
+#[derive(Deserialize, Debug)]
+struct LightsailRegion {
+    #[serde(default)]
+    name: String,
+}
+
 #[derive(Deserialize, Debug)]
 struct GetDomainsResponse {
     #[serde(default)]
@@ -145,19 +163,19 @@ impl LightsailProvider {
         self
     }
 
-    fn default_host(&self) -> String {
-        format!("lightsail.{}.amazonaws.com", self.region)
+    fn region_host(&self, region: &str) -> String {
+        format!("lightsail.{}.amazonaws.com", region)
     }
 
-    fn base_url(&self) -> String {
+    fn region_base_url(&self, region: &str) -> String {
         match &self.endpoint {
             Some(ep) => ep.clone(),
-            None => format!("https://{}", self.default_host()),
+            None => format!("https://{}", self.region_host(region)),
         }
     }
 
-    fn signing_host(&self) -> String {
-        let url = format!("{}/", self.base_url());
+    fn signing_host(&self, region: &str) -> String {
+        let url = format!("{}/", self.region_base_url(region));
         if let Ok(parsed) = url.parse::<reqwest::Url>()
             && let Some(host) = parsed.host_str()
         {
@@ -166,14 +184,21 @@ impl LightsailProvider {
                 None => host.to_string(),
             };
         }
-        self.default_host()
+        self.region_host(region)
     }
 
     async fn invoke<T>(&self, operation: &str, body: &impl Serialize) -> Result<T>
     where
         T: serde::de::DeserializeOwned,
     {
-        let response_text = self.invoke_raw(operation, body).await?;
+        self.invoke_in(&self.region.clone(), operation, body).await
+    }
+
+    async fn invoke_in<T>(&self, region: &str, operation: &str, body: &impl Serialize) -> Result<T>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        let response_text = self.invoke_raw_in(region, operation, body).await?;
         if response_text.is_empty() {
             serde_json::from_str("{}")
                 .map_err(|e| Error::Serialize(format!("lightsail decode empty: {e}")))
@@ -183,12 +208,17 @@ impl LightsailProvider {
         }
     }
 
-    async fn invoke_raw(&self, operation: &str, body: &impl Serialize) -> Result<String> {
+    async fn invoke_raw_in(
+        &self,
+        region: &str,
+        operation: &str,
+        body: &impl Serialize,
+    ) -> Result<String> {
         let payload = serde_json::to_string(body)
             .map_err(|e| Error::Serialize(format!("lightsail serialize: {e}")))?;
         let target = format!("{}.{}", LIGHTSAIL_TARGET_PREFIX, operation);
-        let url = format!("{}/", self.base_url());
-        let headers = self.sign("POST", "/", &target, &payload)?;
+        let url = format!("{}/", self.region_base_url(region));
+        let headers = self.sign(region, "POST", "/", &target, &payload)?;
 
         let response = self
             .client
@@ -214,12 +244,19 @@ impl LightsailProvider {
         }
     }
 
-    fn sign(&self, method: &str, path: &str, target: &str, payload: &str) -> Result<HeaderMap> {
+    fn sign(
+        &self,
+        region: &str,
+        method: &str,
+        path: &str,
+        target: &str,
+        payload: &str,
+    ) -> Result<HeaderMap> {
         let now = Utc::now();
         let amz_date = now.format("%Y%m%dT%H%M%SZ").to_string();
         let date_stamp = now.format("%Y%m%d").to_string();
         let payload_hash = hex::encode(sha256_digest(payload.as_bytes()));
-        let host = self.signing_host();
+        let host = self.signing_host(region);
 
         let mut canonical_headers = format!(
             "content-type:{}\nhost:{}\nx-amz-date:{}\nx-amz-target:{}\n",
@@ -239,7 +276,7 @@ impl LightsailProvider {
         let algorithm = "AWS4-HMAC-SHA256";
         let credential_scope = format!(
             "{}/{}/{}/aws4_request",
-            date_stamp, self.region, LIGHTSAIL_SERVICE
+            date_stamp, region, LIGHTSAIL_SERVICE
         );
         let string_to_sign = format!(
             "{}\n{}\n{}\n{}",
@@ -253,7 +290,7 @@ impl LightsailProvider {
             format!("AWS4{}", self.secret_access_key).as_bytes(),
             date_stamp.as_bytes(),
         );
-        let k_region = hmac_sha256(&k_date, self.region.as_bytes());
+        let k_region = hmac_sha256(&k_date, region.as_bytes());
         let k_service = hmac_sha256(&k_region, LIGHTSAIL_SERVICE.as_bytes());
         let k_signing = hmac_sha256(&k_service, b"aws4_request");
         let signature = hex::encode(hmac_sha256(&k_signing, string_to_sign.as_bytes()));
@@ -294,51 +331,129 @@ impl LightsailProvider {
         Ok(headers)
     }
 
-    async fn resolve_domain(&self, fqdn: &str) -> Result<String> {
-        if let Some(domain) = &self.configured_domain {
-            return Ok(domain.trim_end_matches('.').to_ascii_lowercase());
+    async fn list_regions(&self) -> Result<Vec<String>> {
+        let request = GetRegionsRequest {
+            include_availability_zones: false,
+        };
+        let response: GetRegionsResponse = self.invoke("GetRegions", &request).await?;
+        Ok(response
+            .regions
+            .into_iter()
+            .map(|region| region.name)
+            .filter(|name| !name.is_empty())
+            .collect())
+    }
+
+    /// Finds the region owning a domain: probes the configured region first,
+    /// then falls back to every other Lightsail region (domains are
+    /// region-scoped resources).
+    async fn locate_domain(&self, domain_name: &str) -> Result<String> {
+        let request = GetDomainRequest { domain_name };
+        match self
+            .invoke_in::<GetDomainResponse>(&self.region, "GetDomain", &request)
+            .await
+        {
+            Ok(_) => return Ok(self.region.clone()),
+            Err(Error::Unauthorized) => return Err(Error::Unauthorized),
+            Err(_) => {}
         }
-        let target = fqdn.trim_end_matches('.').to_ascii_lowercase();
-        let mut best: Option<String> = None;
-        let mut page_token: Option<String> = None;
-        loop {
-            let request = GetDomainsRequest {
-                page_token: page_token.as_deref(),
-            };
-            let response: GetDomainsResponse = self.invoke("GetDomains", &request).await?;
-            for domain in response.domains {
-                let candidate = domain.name.trim_end_matches('.').to_ascii_lowercase();
-                if (target == candidate || target.ends_with(&format!(".{}", candidate)))
-                    && best
-                        .as_ref()
-                        .map(|current| current.len() < candidate.len())
-                        .unwrap_or(true)
-                {
-                    best = Some(candidate);
+
+        let mut first_error = None;
+        for region in self.list_regions().await? {
+            if region == self.region {
+                continue;
+            }
+            match self
+                .invoke_in::<GetDomainResponse>(&region, "GetDomain", &request)
+                .await
+            {
+                Ok(_) => return Ok(region),
+                Err(Error::Unauthorized) => return Err(Error::Unauthorized),
+                Err(err) => {
+                    if first_error.is_none() {
+                        first_error = Some(err);
+                    }
                 }
             }
-            match response.next_page_token {
-                Some(token) if !token.is_empty() => page_token = Some(token),
-                _ => break,
+        }
+        match first_error {
+            Some(err) => Err(err),
+            None => Err(Error::NotFound),
+        }
+    }
+
+    async fn resolve_domain(&self, fqdn: &str) -> Result<(String, String)> {
+        if let Some(domain) = &self.configured_domain {
+            return Ok((
+                self.region.clone(),
+                domain.trim_end_matches('.').to_ascii_lowercase(),
+            ));
+        }
+        let target = fqdn.trim_end_matches('.').to_ascii_lowercase();
+        let mut best: Option<(String, String)> = None;
+        let configured = self.region.clone();
+        let mut regions = vec![configured.clone()];
+        match self.list_regions().await {
+            Ok(list) => {
+                for region in list {
+                    if region != configured && !regions.contains(&region) {
+                        regions.push(region);
+                    }
+                }
+            }
+            Err(err) => {
+                if matches!(err, Error::Unauthorized) {
+                    return Err(err);
+                }
+            }
+        }
+        for region in regions {
+            let mut page_token: Option<String> = None;
+            loop {
+                let request = GetDomainsRequest {
+                    page_token: page_token.as_deref(),
+                };
+                let response: GetDomainsResponse =
+                    self.invoke_in(&region, "GetDomains", &request).await?;
+                for domain in response.domains {
+                    let candidate = domain.name.trim_end_matches('.').to_ascii_lowercase();
+                    if (target == candidate || target.ends_with(&format!(".{}", candidate)))
+                        && best
+                            .as_ref()
+                            .map(|(_, current)| current.len() < candidate.len())
+                            .unwrap_or(true)
+                    {
+                        best = Some((region.clone(), candidate));
+                    }
+                }
+                match response.next_page_token {
+                    Some(token) if !token.is_empty() => page_token = Some(token),
+                    _ => break,
+                }
             }
         }
         best.ok_or_else(|| Error::Api(format!("No Lightsail domain found for {fqdn}")))
     }
 
-    async fn fetch_domain_entries(&self, domain_name: &str) -> Result<Vec<LightsailDomainEntry>> {
+    async fn fetch_domain_entries(
+        &self,
+        region: &str,
+        domain_name: &str,
+    ) -> Result<Vec<LightsailDomainEntry>> {
         let response: GetDomainResponse = self
-            .invoke("GetDomain", &GetDomainRequest { domain_name })
+            .invoke_in(region, "GetDomain", &GetDomainRequest { domain_name })
             .await?;
         Ok(response.domain.domain_entries)
     }
 
     async fn find_entries(
         &self,
+        region: &str,
         domain_name: &str,
         record_name: &str,
         record_type: &str,
     ) -> Result<Vec<LightsailDomainEntry>> {
-        let entries = self.fetch_domain_entries(domain_name).await?;
+        let entries = self.fetch_domain_entries(region, domain_name).await?;
         let needle = record_name.trim_end_matches('.').to_ascii_lowercase();
         let mut matches = Vec::new();
         for entry in entries {
@@ -352,6 +467,7 @@ impl LightsailProvider {
 
     async fn create_entry(
         &self,
+        region: &str,
         domain_name: &str,
         entry_name: &str,
         record_type: &str,
@@ -367,11 +483,18 @@ impl LightsailProvider {
             domain_name,
             domain_entry: payload,
         };
-        let _ = self.invoke_raw("CreateDomainEntry", &request).await?;
+        let _ = self
+            .invoke_raw_in(region, "CreateDomainEntry", &request)
+            .await?;
         Ok(())
     }
 
-    async fn delete_entry(&self, domain_name: &str, entry: &LightsailDomainEntry) -> Result<()> {
+    async fn delete_entry(
+        &self,
+        region: &str,
+        domain_name: &str,
+        entry: &LightsailDomainEntry,
+    ) -> Result<()> {
         let payload = LightsailDomainEntryPayload {
             id: entry.id.as_deref(),
             name: &entry.name,
@@ -382,15 +505,19 @@ impl LightsailProvider {
             domain_name,
             domain_entry: payload,
         };
-        let _ = self.invoke_raw("DeleteDomainEntry", &request).await?;
+        let _ = self
+            .invoke_raw_in(region, "DeleteDomainEntry", &request)
+            .await?;
         Ok(())
     }
 
-    async fn resolve_zone(&self, name: &str, origin: &str) -> Result<String> {
+    async fn resolve_zone(&self, name: &str, origin: &str) -> Result<(String, String)> {
         if self.configured_domain.is_some() || origin.is_empty() {
             self.resolve_domain(name).await
         } else {
-            Ok(origin.to_ascii_lowercase())
+            let domain_name = origin.to_ascii_lowercase();
+            let region = self.locate_domain(&domain_name).await?;
+            Ok((region, domain_name))
         }
     }
 
@@ -407,7 +534,7 @@ impl LightsailProvider {
 
         let name = name.into_name().to_ascii_lowercase();
         let origin = origin.into_name().to_ascii_lowercase();
-        let domain_name = self.resolve_zone(&name, &origin).await?;
+        let (region, domain_name) = self.resolve_zone(&name, &origin).await?;
         let entry_name = full_record_name(&name, &domain_name);
 
         let mut desired: Vec<String> = Vec::new();
@@ -419,7 +546,7 @@ impl LightsailProvider {
         }
 
         let existing = self
-            .find_entries(&domain_name, &entry_name, type_str)
+            .find_entries(&region, &domain_name, &entry_name, type_str)
             .await?;
 
         let mut remaining: Vec<LightsailDomainEntry> = existing;
@@ -433,10 +560,10 @@ impl LightsailProvider {
         }
 
         for entry in remaining {
-            self.delete_entry(&domain_name, &entry).await?;
+            self.delete_entry(&region, &domain_name, &entry).await?;
         }
         for target in to_add {
-            self.create_entry(&domain_name, &entry_name, type_str, &target)
+            self.create_entry(&region, &domain_name, &entry_name, type_str, &target)
                 .await?;
         }
         Ok(())
@@ -458,7 +585,7 @@ impl LightsailProvider {
 
         let name = name.into_name().to_ascii_lowercase();
         let origin = origin.into_name().to_ascii_lowercase();
-        let domain_name = self.resolve_zone(&name, &origin).await?;
+        let (region, domain_name) = self.resolve_zone(&name, &origin).await?;
         let entry_name = full_record_name(&name, &domain_name);
 
         let mut desired: Vec<String> = Vec::new();
@@ -470,7 +597,7 @@ impl LightsailProvider {
         }
 
         let existing = self
-            .find_entries(&domain_name, &entry_name, type_str)
+            .find_entries(&region, &domain_name, &entry_name, type_str)
             .await?;
 
         let mut queued: Vec<String> = Vec::new();
@@ -485,7 +612,7 @@ impl LightsailProvider {
         }
 
         for target in queued {
-            self.create_entry(&domain_name, &entry_name, type_str, &target)
+            self.create_entry(&region, &domain_name, &entry_name, type_str, &target)
                 .await?;
         }
         Ok(())
@@ -506,7 +633,7 @@ impl LightsailProvider {
 
         let name = name.into_name().to_ascii_lowercase();
         let origin = origin.into_name().to_ascii_lowercase();
-        let domain_name = self.resolve_zone(&name, &origin).await?;
+        let (region, domain_name) = self.resolve_zone(&name, &origin).await?;
         let entry_name = full_record_name(&name, &domain_name);
 
         let mut to_remove: Vec<String> = Vec::new();
@@ -518,12 +645,12 @@ impl LightsailProvider {
         }
 
         let existing = self
-            .find_entries(&domain_name, &entry_name, type_str)
+            .find_entries(&region, &domain_name, &entry_name, type_str)
             .await?;
 
         for entry in existing {
             if to_remove.contains(&entry.target) {
-                self.delete_entry(&domain_name, &entry).await?;
+                self.delete_entry(&region, &domain_name, &entry).await?;
             }
         }
         Ok(())
@@ -539,11 +666,11 @@ impl LightsailProvider {
 
         let name = name.into_name().to_ascii_lowercase();
         let origin = origin.into_name().to_ascii_lowercase();
-        let domain_name = self.resolve_zone(&name, &origin).await?;
+        let (region, domain_name) = self.resolve_zone(&name, &origin).await?;
         let entry_name = full_record_name(&name, &domain_name);
 
         let entries = self
-            .find_entries(&domain_name, &entry_name, type_str)
+            .find_entries(&region, &domain_name, &entry_name, type_str)
             .await?;
 
         let mut out = Vec::with_capacity(entries.len());
@@ -721,24 +848,48 @@ fn ensure_dot(value: &str) -> String {
 
 impl LightsailProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        let mut out = Vec::new();
-        let mut page_token: Option<String> = None;
-        loop {
-            let request = GetDomainsRequest {
-                page_token: page_token.as_deref(),
-            };
-            let response: GetDomainsResponse = self.invoke("GetDomains", &request).await?;
-            for domain in response.domains {
-                let name = domain.name.trim_end_matches('.').to_ascii_lowercase();
-                out.push(crate::ZoneInfo {
-                    id: domain.arn.unwrap_or_else(|| name.clone()),
-                    name,
-                    status: domain.status,
-                });
+        // Lightsail domains are region-scoped: GetDomains only returns the
+        // domains of the regional endpoint it is called against, so walk every
+        // Lightsail region (configured region first) to list them all.
+        let configured = self.region.clone();
+        let mut regions = vec![configured.clone()];
+        match self.list_regions().await {
+            Ok(list) => {
+                for region in list {
+                    if region != configured && !regions.contains(&region) {
+                        regions.push(region);
+                    }
+                }
             }
-            match response.next_page_token {
-                Some(token) if !token.is_empty() => page_token = Some(token),
-                _ => break,
+            Err(err) => {
+                if matches!(err, Error::Unauthorized) {
+                    return Err(err);
+                }
+            }
+        }
+
+        let mut out = Vec::new();
+        for region in regions {
+            let mut page_token: Option<String> = None;
+            loop {
+                let request = GetDomainsRequest {
+                    page_token: page_token.as_deref(),
+                };
+                let response: GetDomainsResponse =
+                    self.invoke_in(&region, "GetDomains", &request).await?;
+                for domain in response.domains {
+                    let name = domain.name.trim_end_matches('.').to_ascii_lowercase();
+                    let id = domain.arn.unwrap_or_else(|| format!("{}@{}", name, region));
+                    out.push(crate::ZoneInfo {
+                        id,
+                        name,
+                        status: domain.status,
+                    });
+                }
+                match response.next_page_token {
+                    Some(token) if !token.is_empty() => page_token = Some(token),
+                    _ => break,
+                }
             }
         }
         Ok(out)
@@ -749,7 +900,8 @@ impl LightsailProvider {
         zone: &str,
     ) -> crate::Result<Vec<crate::ZoneRecord>> {
         let domain_name = zone.trim_end_matches('.').to_ascii_lowercase();
-        let entries = self.fetch_domain_entries(&domain_name).await?;
+        let region = self.locate_domain(&domain_name).await?;
+        let entries = self.fetch_domain_entries(&region, &domain_name).await?;
 
         let mut out = Vec::new();
         for entry in entries {

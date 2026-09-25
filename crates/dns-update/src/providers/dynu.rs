@@ -38,10 +38,14 @@ pub struct DynuProvider {
 #[derive(Deserialize, Debug)]
 struct RootDomain {
     id: i64,
-    #[serde(rename = "domainName")]
+    // GET /v2/dns/getroot/{hostname} returns "domainName";
+    // GET /v2/dns (domain list) returns "name" per the official swagger.
+    #[serde(rename = "domainName", alias = "name")]
     domain_name: String,
     #[serde(rename = "statusCode", default)]
     status_code: u16,
+    #[serde(default)]
+    state: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -664,13 +668,17 @@ impl DynuProvider {
             if response.domains.is_empty() {
                 break;
             }
-            offset += response.domains.len() as i64;
+            let received = response.domains.len();
+            offset += received as i64;
             zones.extend(response.domains.into_iter().map(|d| crate::ZoneInfo {
                 id: d.id.to_string(),
                 name: d.domain_name,
-                status: None,
+                status: d.state,
             }));
-            if response.total_records <= 0 || offset >= response.total_records {
+            if received < PAGE_LIMIT as usize {
+                break;
+            }
+            if response.total_records > 0 && offset >= response.total_records {
                 break;
             }
         }
@@ -702,7 +710,8 @@ impl DynuProvider {
             if response.dns_records.is_empty() {
                 break;
             }
-            offset += response.dns_records.len() as i64;
+            let received = response.dns_records.len();
+            offset += received as i64;
             for listed in response.dns_records {
                 let id = listed.id.to_string();
                 let name = strip_origin_from_name(&listed.hostname, &root.domain_name, Some("@"));
@@ -723,7 +732,10 @@ impl DynuProvider {
                     record,
                 });
             }
-            if response.total_records <= 0 || offset >= response.total_records {
+            if received < PAGE_LIMIT as usize {
+                break;
+            }
+            if response.total_records > 0 && offset >= response.total_records {
                 break;
             }
         }

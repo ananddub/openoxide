@@ -177,17 +177,13 @@ fn evaluate_body(body: &str, hostname: &str) -> crate::Result<()> {
 }
 
 impl HurricaneProvider {
+    // /nic/update is the update-DNS protocol only; HE's REST DNS API (dns.api.he.net)
+    // requires an account-level API key this provider never holds (per-domain update
+    // passwords here), so there is no zone-list endpoint available to us.
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        let mut domains: Vec<&String> = self.credentials.keys().collect();
-        domains.sort();
-        Ok(domains
-            .into_iter()
-            .map(|domain| crate::ZoneInfo {
-                id: domain.clone(),
-                name: domain.clone(),
-                status: None,
-            })
-            .collect())
+        Err(Error::Unsupported(
+            "Hurricane Electric /nic/update has no zone-list API — set the 'zone' credential to the domain you manage".to_string(),
+        ))
     }
 
     #[expect(unused_variables)]

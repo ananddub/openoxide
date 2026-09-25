@@ -506,17 +506,166 @@ fn parse_caa(value: &str) -> crate::Result<DnsRecord> {
     }
 }
 
+const LIST_PAGE_SIZE: u32 = 100;
+
+#[derive(Deserialize, Debug)]
+struct ZoneListResponse {
+    #[serde(default)]
+    zones: Vec<ListedZone>,
+    #[serde(default)]
+    meta: ListMeta,
+}
+
+#[derive(Deserialize, Debug)]
+struct ListedZone {
+    id: i64,
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    status: Option<String>,
+}
+
+#[derive(Deserialize, Debug, Default)]
+struct ListMeta {
+    #[serde(default)]
+    pagination: Pagination,
+}
+
+#[derive(Deserialize, Debug, Default)]
+struct Pagination {
+    #[serde(default)]
+    page: u32,
+    #[serde(default)]
+    per_page: u32,
+    #[serde(default)]
+    total_results: u32,
+}
+
+impl Pagination {
+    fn total_pages(&self) -> u32 {
+        let per = self.per_page.max(1);
+        let pages = (self.total_results + per - 1) / per;
+        pages.max(self.page).max(1)
+    }
+}
+
+#[derive(Deserialize, Debug)]
+struct ZoneRRSetListResponse {
+    #[serde(default)]
+    rrsets: Vec<ZoneRRSetEntry>,
+    #[serde(default)]
+    meta: ListMeta,
+}
+
+#[derive(Deserialize, Debug)]
+struct ZoneRRSetEntry {
+    #[serde(default)]
+    id: String,
+    #[serde(default)]
+    name: String,
+    #[serde(rename = "type", default)]
+    record_type: String,
+    #[serde(default)]
+    ttl: Option<u32>,
+    #[serde(default)]
+    records: Vec<ZoneRRSetRecordEntry>,
+}
+
+#[derive(Deserialize, Debug)]
+struct ZoneRRSetRecordEntry {
+    #[serde(default)]
+    value: String,
+}
+
+fn hetzner_type_from_str(value: &str) -> Option<DnsRecordType> {
+    match value.to_ascii_uppercase().as_str() {
+        "A" => Some(DnsRecordType::A),
+        "AAAA" => Some(DnsRecordType::AAAA),
+        "CNAME" => Some(DnsRecordType::CNAME),
+        "NS" => Some(DnsRecordType::NS),
+        "MX" => Some(DnsRecordType::MX),
+        "TXT" => Some(DnsRecordType::TXT),
+        "SRV" => Some(DnsRecordType::SRV),
+        "TLSA" => Some(DnsRecordType::TLSA),
+        "CAA" => Some(DnsRecordType::CAA),
+        _ => None,
+    }
+}
+
 impl HetznerProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
-        ))
+        let mut out = Vec::new();
+        let mut page: u32 = 1;
+        loop {
+            let url = format!(
+                "{}/zones?page={}&per_page={LIST_PAGE_SIZE}",
+                self.endpoint, page
+            );
+            let response: ZoneListResponse = self.client.get(url).send_with_retry(RETRIES).await?;
+            let total_pages = response.meta.pagination.total_pages();
+            for zone in response.zones {
+                out.push(crate::ZoneInfo {
+                    id: zone.id.to_string(),
+                    name: zone.name,
+                    status: zone.status,
+                });
+            }
+            if page >= total_pages {
+                break;
+            }
+            page += 1;
+        }
+        Ok(out)
     }
 
-    #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing records".to_string(),
-        ))
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        let domain = zone.trim_end_matches('.');
+        let mut out = Vec::new();
+        let mut page: u32 = 1;
+        loop {
+            let url = format!(
+                "{}/zones/{domain}/rrsets?page={}&per_page={LIST_PAGE_SIZE}",
+                self.endpoint, page
+            );
+            let response: ZoneRRSetListResponse =
+                self.client.get(url).send_with_retry(RETRIES).await?;
+            let total_pages = response.meta.pagination.total_pages();
+            for rrset in response.rrsets {
+                let Some(record_type) = hetzner_type_from_str(&rrset.record_type) else {
+                    continue;
+                };
+                for entry in rrset.records {
+                    let Ok(record) = parse_value(record_type, &entry.value) else {
+                        continue;
+                    };
+                    let name = if rrset.name.is_empty() {
+                        "@".to_string()
+                    } else {
+                        rrset.name.clone()
+                    };
+                    let id = if rrset.id.is_empty() {
+                        format!("{name}/{}", record_type.as_str())
+                    } else {
+                        rrset.id.clone()
+                    };
+                    out.push(crate::ZoneRecord {
+                        id,
+                        name,
+                        record_type: record_type.as_str().to_string(),
+                        content: record.to_string(),
+                        ttl: rrset.ttl.unwrap_or(0),
+                        record,
+                    });
+                }
+            }
+            if page >= total_pages {
+                break;
+            }
+            page += 1;
+        }
+        Ok(out)
     }
 }

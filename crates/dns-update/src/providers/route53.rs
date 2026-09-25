@@ -1063,16 +1063,180 @@ mod tests {
 }
 
 impl Route53Provider {
+    /// Implements ListHostedZones (GET /2013-04-01/hostedzone), the official
+    /// Route 53 XML API: https://docs.aws.amazon.com/Route53/latest/APIReference/api-ListHostedZones.html
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
-        ))
+        let mut zones: Vec<HostedZone> = Vec::new();
+        let mut marker: Option<String> = None;
+        loop {
+            let mut url = format!(
+                "{}/{}/hostedzone",
+                self.endpoint.as_ref(),
+                ROUTE53_API_VERSION
+            );
+            let mut query_parts: Vec<(&str, String)> = vec![("maxitems", "100".to_string())];
+            if let Some(m) = &marker {
+                query_parts.push(("marker", m.clone()));
+            }
+            let q = serde_urlencoded::to_string(&query_parts)
+                .map_err(|e| Error::Serialize(e.to_string()))?;
+            url.push('?');
+            url.push_str(&q);
+
+            let response = self.send_signed_request("GET", &url, None).await?;
+            let body = response
+                .text()
+                .await
+                .map_err(|e| Error::Api(format!("Failed to read response: {}", e)))?;
+            let list_response: ListHostedZonesResponse =
+                from_str(&body).map_err(|e| Error::Api(format!("XML parsing error: {}", e)))?;
+            zones.extend(list_response.hosted_zones.hosted_zones);
+            if !list_response.is_truncated {
+                break;
+            }
+            marker = list_response.next_marker;
+            if marker.is_none() {
+                break;
+            }
+        }
+        let private_zone_only = self.config.private_zone_only.unwrap_or(false);
+        Ok(zones
+            .into_iter()
+            .filter(|z| !private_zone_only || z.config.private_zone)
+            .map(|z| crate::ZoneInfo {
+                id: z.id.trim_start_matches("/hostedzone/").to_string(),
+                name: z.name.trim_end_matches('.').to_string(),
+                status: None,
+            })
+            .collect())
     }
 
-    #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing records".to_string(),
-        ))
+    /// Implements ListResourceRecordSets (GET /2013-04-01/hostedzone/{id}/rrset)
+    /// for a whole zone: https://docs.aws.amazon.com/Route53/latest/APIReference/api-ListResourceRecordSets.html
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        let hosted_zone_id = self.resolve_zone_id(zone).await?;
+        let zone_name = zone.trim_end_matches('.');
+        let rrsets = self.list_all_record_sets(&hosted_zone_id).await?;
+        let mut out = Vec::new();
+        for rrset in rrsets {
+            let Some(record_type) = record_type_from_str(&rrset.type_) else {
+                continue;
+            };
+            let name = relative_name(&rrset.name, zone_name);
+            let ttl = rrset.ttl.max(0) as u32;
+            for r in rrset.resource_records.resource_records {
+                let Ok(record) = parse_value(record_type, &r.value) else {
+                    continue;
+                };
+                let content = record.to_string();
+                out.push(crate::ZoneRecord {
+                    id: format!("{hosted_zone_id}|{name}|{}|{content}", record_type.as_str()),
+                    name: name.clone(),
+                    record_type: record_type.as_str().to_string(),
+                    content,
+                    ttl,
+                    record,
+                });
+            }
+        }
+        Ok(out)
     }
+
+    async fn list_all_record_sets(
+        &self,
+        hosted_zone_id: &str,
+    ) -> crate::Result<Vec<ResourceRecordSet>> {
+        let mut out: Vec<ResourceRecordSet> = Vec::new();
+        let mut next_name: Option<String> = None;
+        let mut next_type: Option<String> = None;
+        let mut next_identifier: Option<String> = None;
+        loop {
+            let mut query_parts: Vec<(&str, String)> = Vec::new();
+            if let Some(n) = &next_name {
+                query_parts.push(("name", n.clone()));
+            }
+            if let Some(t) = &next_type {
+                query_parts.push(("type", t.clone()));
+            }
+            if let Some(i) = &next_identifier {
+                query_parts.push(("identifier", i.clone()));
+            }
+            let mut url = format!(
+                "{}/{}/hostedzone/{}/rrset",
+                self.endpoint.as_ref(),
+                ROUTE53_API_VERSION,
+                hosted_zone_id.trim_start_matches("/hostedzone/")
+            );
+            if !query_parts.is_empty() {
+                let q = serde_urlencoded::to_string(&query_parts)
+                    .map_err(|e| Error::Serialize(e.to_string()))?;
+                url.push('?');
+                url.push_str(&q);
+            }
+            let response = self.send_signed_request("GET", &url, None).await?;
+            let body = response
+                .text()
+                .await
+                .map_err(|e| Error::Api(format!("Failed to read response: {}", e)))?;
+            let list_response: ListResourceRecordSetsResponse =
+                from_str(&body).map_err(|e| Error::Api(format!("XML parsing error: {}", e)))?;
+            out.extend(list_response.resource_record_sets.resource_record_sets);
+            if !list_response.is_truncated {
+                break;
+            }
+            next_name = list_response.next_record_name;
+            next_type = list_response.next_record_type;
+            next_identifier = list_response.next_record_identifier;
+            if next_name.is_none() && next_type.is_none() {
+                break;
+            }
+        }
+        Ok(out)
+    }
+}
+
+fn relative_name(fqdn: &str, zone: &str) -> String {
+    let fqdn = strip_trailing_dot(fqdn);
+    let zone = strip_trailing_dot(zone);
+    if fqdn.eq_ignore_ascii_case(zone) {
+        return "@".to_string();
+    }
+    let suffix = format!(".{zone}");
+    if fqdn.len() > suffix.len() && fqdn[fqdn.len() - suffix.len()..].eq_ignore_ascii_case(&suffix)
+    {
+        return fqdn[..fqdn.len() - suffix.len()].to_string();
+    }
+    fqdn.to_string()
+}
+
+fn record_type_from_str(value: &str) -> Option<DnsRecordType> {
+    Some(match value.to_ascii_uppercase().as_str() {
+        "A" => DnsRecordType::A,
+        "AAAA" => DnsRecordType::AAAA,
+        "CNAME" => DnsRecordType::CNAME,
+        "NS" => DnsRecordType::NS,
+        "MX" => DnsRecordType::MX,
+        "TXT" => DnsRecordType::TXT,
+        "SRV" => DnsRecordType::SRV,
+        "TLSA" => DnsRecordType::TLSA,
+        "CAA" => DnsRecordType::CAA,
+        _ => return None,
+    })
+}
+
+#[derive(Debug, Deserialize)]
+struct ListHostedZonesResponse {
+    #[serde(rename = "HostedZones")]
+    hosted_zones: HostedZones,
+    #[serde(rename = "IsTruncated")]
+    is_truncated: bool,
+    #[serde(rename = "Marker")]
+    marker: Option<String>,
+    #[serde(rename = "NextMarker")]
+    next_marker: Option<String>,
+    #[serde(rename = "MaxItems")]
+    max_items: String,
 }

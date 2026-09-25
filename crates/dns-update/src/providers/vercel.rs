@@ -542,7 +542,7 @@ impl VercelProvider {
         let mut out = Vec::new();
         let mut until: Option<u64> = None;
         loop {
-            let mut url = format!("{}/v4/domains?limit={LIST_PAGE_LIMIT}", self.endpoint);
+            let mut url = format!("{}/v5/domains?limit={LIST_PAGE_LIMIT}", self.endpoint);
             if let Some(cursor) = until {
                 url.push_str("&until=");
                 url.push_str(&cursor.to_string());

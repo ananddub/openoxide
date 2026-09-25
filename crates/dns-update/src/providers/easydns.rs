@@ -467,8 +467,11 @@ fn parse_caa(rdata: &str) -> crate::Result<CAARecord> {
 
 impl EasyDnsProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
+        // The legacy EasyDNS REST API only exposes per-zone record endpoints
+        // (GET /zones/records/all/{domain}; see https://github.com/easydns/lexicon),
+        // there is no public zone-list endpoint.
         Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly"
+            "EasyDNS has no zone-list API — set the 'zone' credential to the domain you manage"
                 .to_string(),
         ))
     }

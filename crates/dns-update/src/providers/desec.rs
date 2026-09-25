@@ -521,8 +521,6 @@ impl From<DnsRecord> for DesecDnsRecordRepresentation {
 struct DesecDomainListing {
     domain: String,
     #[serde(default)]
-    created: Option<String>,
-    #[serde(default)]
     status: Option<String>,
 }
 
@@ -530,8 +528,6 @@ struct DesecDomainListing {
 struct DesecRrsetListing {
     #[serde(default)]
     id: Option<String>,
-    #[serde(default)]
-    created: Option<String>,
     #[serde(default)]
     subname: Option<String>,
     #[serde(rename = "type")]
@@ -566,41 +562,19 @@ fn record_type_from_str(value: &str) -> Option<DnsRecordType> {
 
 impl DesecProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
+        // deSEC uses cursor pagination delivered via the `Link: <...>; rel="next"`
+        // response header. See https://desec.readthedocs.io/en/latest/dns/domains.html
         let mut zones = Vec::new();
-        let mut cursor: Option<String> = None;
-        let mut first_seen: Option<String> = None;
-        loop {
-            let url = match &cursor {
-                Some(cursor) => format!(
-                    "{}/domains/?limit=100&cursor={}",
-                    self.endpoint,
-                    urlencode(cursor)
-                ),
-                None => format!("{}/domains/?limit=100", self.endpoint),
-            };
-            let body = self.client.get(url).send_raw().await?;
+        let mut url = Some(format!("{}/domains/?limit=1000", self.endpoint));
+        while let Some(next) = url {
+            let (body, headers) = self.client.get(next).send_raw_with_headers().await?;
             let page: Vec<DesecDomainListing> = parse_desec_list(&body)?;
-            let Some(first) = page.first() else {
-                break;
-            };
-            let first_key = first
-                .created
-                .clone()
-                .unwrap_or_else(|| first.domain.clone());
-            if first_seen.as_deref() == Some(first_key.as_str()) {
-                break;
-            }
-            first_seen = Some(first_key);
-            let next = page.last().and_then(|d| d.created.clone());
             zones.extend(page.into_iter().map(|d| crate::ZoneInfo {
                 id: d.domain.clone(),
                 name: d.domain,
                 status: d.status,
             }));
-            match next {
-                Some(next) => cursor = Some(next),
-                None => break,
-            }
+            url = next_page_url(&headers);
         }
         Ok(zones)
     }
@@ -609,31 +583,17 @@ impl DesecProvider {
         &self,
         zone: &str,
     ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        // deSEC uses cursor pagination delivered via the `Link: <...>; rel="next"`
+        // response header. See https://desec.readthedocs.io/en/latest/dns/rrsets.html
         let domain = self.resolve_domain(zone).await?;
         let mut records = Vec::new();
-        let mut cursor: Option<String> = None;
-        let mut first_seen: Option<String> = None;
-        loop {
-            let url = match &cursor {
-                Some(cursor) => format!(
-                    "{}/domains/{}/rrsets/?limit=100&cursor={}",
-                    self.endpoint,
-                    domain,
-                    urlencode(cursor)
-                ),
-                None => format!("{}/domains/{}/rrsets/?limit=100", self.endpoint, domain),
-            };
-            let body = self.client.get(url).send_raw().await?;
+        let mut url = Some(format!(
+            "{}/domains/{}/rrsets/?limit=1000",
+            self.endpoint, domain
+        ));
+        while let Some(next) = url {
+            let (body, headers) = self.client.get(next).send_raw_with_headers().await?;
             let page: Vec<DesecRrsetListing> = parse_desec_list(&body)?;
-            let Some(first) = page.first() else {
-                break;
-            };
-            let first_key = first.created.clone().unwrap_or(first.record_type.clone());
-            if first_seen.as_deref() == Some(first_key.as_str()) {
-                break;
-            }
-            first_seen = Some(first_key);
-            let next = page.last().and_then(|r| r.created.clone());
             for entry in page {
                 let Some(record_type) = record_type_from_str(&entry.record_type) else {
                     continue;
@@ -661,24 +621,29 @@ impl DesecProvider {
                     });
                 }
             }
-            match next {
-                Some(next) => cursor = Some(next),
-                None => break,
-            }
+            url = next_page_url(&headers);
         }
         Ok(records)
     }
 }
 
-fn urlencode(value: &str) -> String {
-    let mut out = String::with_capacity(value.len());
-    for byte in value.as_bytes() {
-        let c = *byte as char;
-        if c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | '~') {
-            out.push(c);
-        } else {
-            out.push_str(&format!("%{:02X}", byte));
+/// Extract the URL of the next page from an HTTP `Link` header's `rel="next"`
+/// segment. deSEC returns an opaque cursor URL here; absence means the last page.
+fn next_page_url(headers: &reqwest::header::HeaderMap) -> Option<String> {
+    let link = headers.get(reqwest::header::LINK)?.to_str().ok()?;
+    for part in link.split(',') {
+        let mut segments = part.split(';');
+        let target = segments.next()?.trim();
+        let is_next = segments.any(|s| {
+            let s = s.trim();
+            s.eq_ignore_ascii_case("rel=\"next\"") || s.eq_ignore_ascii_case("rel=next")
+        });
+        if is_next {
+            let url = target.trim_start_matches('<').trim_end_matches('>');
+            if !url.is_empty() {
+                return Some(url.to_string());
+            }
         }
     }
-    out
+    None
 }

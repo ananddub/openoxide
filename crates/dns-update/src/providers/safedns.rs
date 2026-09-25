@@ -462,9 +462,13 @@ impl TryFrom<DnsRecord> for SafeDnsRecordContent {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct SafeDnsZone {
+    #[serde(default)]
     pub id: i64,
     #[serde(default)]
     pub domain: String,
+    // The official SafeDNS OpenAPI documents the zone object as `name`, not `domain`.
+    #[serde(default)]
+    pub name: String,
     #[serde(default)]
     pub status: Option<String>,
 }
@@ -502,12 +506,21 @@ impl SafeDnsProvider {
             let response: ListZonesResponse = self.client.get(url).send_with_retry(3).await?;
             let total_pages = response.meta.pagination.total_pages;
             for zone in response.data {
-                if zone.domain.is_empty() {
+                let domain = if zone.domain.is_empty() {
+                    zone.name.clone()
+                } else {
+                    zone.domain.clone()
+                };
+                if domain.is_empty() {
                     continue;
                 }
                 out.push(crate::ZoneInfo {
-                    id: zone.id.to_string(),
-                    name: zone.domain,
+                    id: if zone.id == 0 {
+                        domain.clone()
+                    } else {
+                        zone.id.to_string()
+                    },
+                    name: domain,
                     status: zone.status,
                 });
             }
@@ -523,6 +536,7 @@ impl SafeDnsProvider {
         &self,
         zone: &str,
     ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        let zone_name = zone.trim_end_matches('.');
         let mut out = Vec::new();
         let mut page: u32 = 1;
         loop {
@@ -540,11 +554,8 @@ impl SafeDnsProvider {
                 else {
                     continue;
                 };
-                let name = if record.name.is_empty() {
-                    "@".to_string()
-                } else {
-                    record.name.clone()
-                };
+                // SafeDNS returns record names fully-qualified; store them relative to the zone.
+                let name = safedns_relative_name(&record.name, zone_name);
                 out.push(crate::ZoneRecord {
                     id: record.id.to_string(),
                     name,
@@ -561,4 +572,22 @@ impl SafeDnsProvider {
         }
         Ok(out)
     }
+}
+
+fn safedns_relative_name(name: &str, zone: &str) -> String {
+    let name = name.trim_end_matches('.');
+    if name.is_empty() || name.eq_ignore_ascii_case(zone) {
+        return "@".to_string();
+    }
+    let suffix = format!(".{zone}");
+    if name.len() > suffix.len() && name[name.len() - suffix.len()..].eq_ignore_ascii_case(&suffix)
+    {
+        let short = &name[..name.len() - suffix.len()];
+        return if short.is_empty() {
+            "@".to_string()
+        } else {
+            short.to_string()
+        };
+    }
+    name.to_string()
 }

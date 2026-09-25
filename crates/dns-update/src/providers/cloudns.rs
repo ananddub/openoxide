@@ -688,7 +688,10 @@ impl ClouDnsProvider {
         loop {
             let body = self
                 .get_form(
-                    "dns-list-zones.php",
+                    // ClouDNS zone listing endpoint. Returns an object keyed by
+                    // zone id with `name`/`id`/`status` per zone.
+                    // https://www.cloudns.net/wiki/article/50/
+                    "list-zones.json",
                     vec![
                         ("page", page.to_string()),
                         ("rows-per-page", "100".to_string()),

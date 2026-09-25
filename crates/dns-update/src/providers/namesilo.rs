@@ -489,8 +489,15 @@ impl NameSiloProvider {
             let Some(record_type) = record_type_from_str(&raw.record_type) else {
                 continue;
             };
-            let Ok(record) = parse_record(record_type, &raw) else {
-                continue;
+            // parse_record rejects NS (not writable via dnsAddRecord), but
+            // dnsListRecords does return NS entries; decode them for display.
+            let record = if matches!(record_type, DnsRecordType::NS) {
+                DnsRecord::NS(strip_trailing_dot(&raw.value).to_string())
+            } else {
+                let Ok(record) = parse_record(record_type, &raw) else {
+                    continue;
+                };
+                record
             };
             let host = raw.host.trim_end_matches('.').to_ascii_lowercase();
             let name = if host.is_empty() {

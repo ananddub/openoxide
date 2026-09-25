@@ -67,6 +67,20 @@ pub struct ExistingDnsRecord {
     pub priority: Option<u16>,
 }
 
+#[derive(Deserialize, Debug, Clone)]
+struct RecordWithTtl {
+    #[serde(flatten)]
+    record: ExistingDnsRecord,
+    #[serde(default)]
+    ttl: Option<u32>,
+}
+
+#[derive(Deserialize, Debug)]
+struct TtlRecordList {
+    #[serde(default)]
+    records: Vec<RecordWithTtl>,
+}
+
 #[derive(Serialize, Debug, Clone)]
 pub struct CreateDnsRecord<'a> {
     #[serde(rename = "type")]
@@ -488,10 +502,12 @@ impl SimplyComProvider {
                 "{endpoint}/my/products/{object}/dns/records/",
                 endpoint = self.endpoint
             ))
-            .send_with_retry::<RecordList>(3)
+            .send_with_retry::<TtlRecordList>(3)
             .await?;
         let mut out = Vec::new();
-        for record in response.records {
+        for listed in response.records {
+            let record = listed.record;
+            let ttl = listed.ttl.unwrap_or(0);
             let Ok(typed) = DnsRecord::try_from(record.clone()) else {
                 continue;
             };
@@ -504,7 +520,7 @@ impl SimplyComProvider {
                 },
                 record_type: record.record_type.to_ascii_uppercase(),
                 content: typed.to_string(),
-                ttl: 0,
+                ttl,
                 record: typed,
             });
         }

@@ -97,18 +97,6 @@ struct Zone {
     id: String,
 }
 
-#[derive(Debug, Deserialize)]
-struct ZoneDetails {
-    #[serde(default)]
-    records: Option<ZoneRecords>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ZoneRecords {
-    #[serde(default)]
-    items: Vec<OciRecord>,
-}
-
 impl OracleCloudProvider {
     pub(crate) fn new(config: OracleCloudConfig) -> Result<Self> {
         if config.tenancy_ocid.is_empty() {
@@ -779,8 +767,9 @@ impl OracleCloudProvider {
         let mut out = Vec::new();
         let mut next_page: Option<String> = None;
         loop {
+            // GetZone does not return records; use ListRecords (GET /zones/{zoneIdOrName}/records).
             let mut url = format!(
-                "{}/20180115/zones/{}?compartmentId={}&limit={}",
+                "{}/20180115/zones/{}/records?compartmentId={}&limit={}",
                 self.endpoint,
                 urlencode(&zone_id),
                 urlencode(&self.config.compartment_ocid),
@@ -797,31 +786,26 @@ impl OracleCloudProvider {
             if !status.is_success() {
                 return Err(map_error(status, &body));
             }
-            let details: ZoneDetails = serde_json::from_str(&body)
-                .map_err(|e| Error::Serialize(format!("Failed to parse zone details: {}", e)))?;
-            if let Some(records) = details.records {
-                for item in records.items {
-                    let Some(record_type) = record_type_from_str(&item.rtype) else {
-                        continue;
-                    };
-                    let Ok(record) = parse_rdata(record_type, &item.rdata) else {
-                        continue;
-                    };
-                    let name = strip_origin_from_name(
-                        strip_trailing_dot(&item.domain),
-                        zone_name,
-                        Some("@"),
-                    );
-                    let content = record.to_string();
-                    out.push(crate::ZoneRecord {
-                        id: format!("{}|{}|{}", item.domain, item.rtype, item.rdata),
-                        name,
-                        record_type: record_type.as_str().to_string(),
-                        ttl: item.ttl,
-                        content,
-                        record,
-                    });
-                }
+            let collection: RecordCollection = serde_json::from_str(&body)
+                .map_err(|e| Error::Serialize(format!("Failed to parse zone records: {}", e)))?;
+            for item in collection.items {
+                let Some(record_type) = record_type_from_str(&item.rtype) else {
+                    continue;
+                };
+                let Ok(record) = parse_rdata(record_type, &item.rdata) else {
+                    continue;
+                };
+                let name =
+                    strip_origin_from_name(strip_trailing_dot(&item.domain), zone_name, Some("@"));
+                let content = record.to_string();
+                out.push(crate::ZoneRecord {
+                    id: format!("{}|{}|{}", item.domain, item.rtype, item.rdata),
+                    name,
+                    record_type: record_type.as_str().to_string(),
+                    ttl: item.ttl,
+                    content,
+                    record,
+                });
             }
             next_page = headers
                 .get("opc-next-page")

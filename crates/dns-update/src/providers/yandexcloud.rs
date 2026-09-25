@@ -854,7 +854,7 @@ impl YandexCloudProvider {
             let qs = serde_urlencoded::to_string(&query)
                 .map_err(|e| Error::Api(format!("Failed to encode records query: {}", e)))?;
             let url = format!(
-                "{}/dns/v1/zones/{}:list?{}",
+                "{}/dns/v1/zones/{}:listRecordSets?{}",
                 self.endpoints.dns_base_url, zone.id, qs
             );
             let value: Value = self
@@ -864,7 +864,7 @@ impl YandexCloudProvider {
                 .send_with_retry(3)
                 .await?;
             let record_sets = value
-                .get("dnsResourceRecordSets")
+                .get("recordSets")
                 .and_then(Value::as_array)
                 .cloned()
                 .unwrap_or_default();

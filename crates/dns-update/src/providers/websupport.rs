@@ -561,7 +561,7 @@ fn parse_caa(raw: &str) -> crate::Result<CAARecord> {
 
 impl WebSupportProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        const SERVICES_PATH: &str = "/v1/user/self/services";
+        const SERVICES_PATH: &str = "/v1/user/self/service";
         let mut out = Vec::new();
         let mut page: u32 = 1;
         loop {

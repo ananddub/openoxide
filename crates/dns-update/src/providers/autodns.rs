@@ -484,15 +484,89 @@ fn build_resource_record(name: &str, record: &DnsRecord, ttl: u32) -> ResourceRe
 
 impl AutodnsProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing zones; set the zone name explicitly".to_string(),
-        ))
+        // DomainRobot lists zones via POST /zone/_search with a `view` of
+        // {limit, offset}. See the official swagger:
+        // https://raw.githubusercontent.com/internetx/internetx-swagger-files/master/src/domainrobot.json
+        let mut zones = Vec::new();
+        let limit = 250usize;
+        let mut offset = 0usize;
+        loop {
+            let body = format!("{{\"view\":{{\"limit\":{limit},\"offset\":{offset}}}}}");
+            let resp = self
+                .client
+                .post(format!("{}/zone/_search", self.endpoint))
+                .with_raw_body(body)
+                .send_raw()
+                .await?;
+            let parsed: DataZoneResponse = serde_json::from_str(&resp)
+                .map_err(|e| Error::Serialize(format!("invalid zone search response: {e}")))?;
+            let count = parsed.data.len();
+            for zone in parsed.data {
+                if !zone.origin.is_empty() {
+                    zones.push(crate::ZoneInfo {
+                        id: zone.origin.clone(),
+                        name: zone.origin,
+                        status: None,
+                    });
+                }
+            }
+            if count < limit {
+                break;
+            }
+            offset += limit;
+        }
+        Ok(zones)
     }
 
-    #[expect(unused_variables)]
-    pub(crate) async fn list_zone_records(&self, zone: &str) -> crate::Result<Vec<crate::ZoneRecord>> {
-        Err(crate::Error::Unsupported(
-            "this DNS provider does not support listing records".to_string(),
-        ))
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        // A single zone is fetched via GET /zone/{name}, returning data[0] with
+        // `resourceRecords`. Same swagger as list_zone_infos.
+        let resp = self
+            .client
+            .get(format!("{}/zone/{}", self.endpoint, zone))
+            .send_raw()
+            .await?;
+        let parsed: DataZoneResponse = serde_json::from_str(&resp)
+            .map_err(|e| Error::Serialize(format!("invalid zone response: {e}")))?;
+        let mut records = Vec::new();
+        for zone_obj in parsed.data {
+            for rr in zone_obj.resource_records {
+                let Some(record_type) = autodns_record_type(&rr.record_type) else {
+                    continue;
+                };
+                let Ok(record) = resource_record_to_dns_record(&rr, record_type) else {
+                    continue;
+                };
+                let name = strip_origin_from_name(&rr.name, zone, Some("@"));
+                let type_str = record_type.as_str().to_string();
+                records.push(crate::ZoneRecord {
+                    id: format!("{}|{}|{}", name, type_str, rr.value),
+                    name,
+                    record_type: type_str,
+                    content: record.to_string(),
+                    ttl: rr.ttl,
+                    record,
+                });
+            }
+        }
+        Ok(records)
+    }
+}
+
+fn autodns_record_type(value: &str) -> Option<DnsRecordType> {
+    match value.to_ascii_uppercase().as_str() {
+        "A" => Some(DnsRecordType::A),
+        "AAAA" => Some(DnsRecordType::AAAA),
+        "CNAME" => Some(DnsRecordType::CNAME),
+        "NS" => Some(DnsRecordType::NS),
+        "MX" => Some(DnsRecordType::MX),
+        "TXT" => Some(DnsRecordType::TXT),
+        "SRV" => Some(DnsRecordType::SRV),
+        "TLSA" => Some(DnsRecordType::TLSA),
+        "CAA" => Some(DnsRecordType::CAA),
+        _ => None,
     }
 }
