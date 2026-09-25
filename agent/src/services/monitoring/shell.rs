@@ -1,6 +1,6 @@
 use crate::api::proto::{
-    shell_message, ExecTaskOutput, ExecTaskOutputKind, ExecTaskRequest, ShellError, ShellExit,
-    ShellInput, ShellMessage, ShellOpen, ShellOutput,
+    ExecTaskOutput, ExecTaskOutputKind, ExecTaskRequest, ShellError, ShellExit, ShellInput,
+    ShellMessage, ShellOpen, ShellOutput, shell_message,
 };
 use crate::docker::api::DockerApi;
 use std::pin::Pin;
@@ -278,12 +278,17 @@ impl ShellService {
             .inspect(std::env::var("HOSTNAME").unwrap_or_default())
             .await
             .map(|info| info.image)
-            .map_err(|error| Status::internal(format!("could not inspect agent container: {error}")))?;
+            .map_err(|error| {
+                Status::internal(format!("could not inspect agent container: {error}"))
+            })?;
         let helper = format!("openoxide-host-shell-{}", uuid::Uuid::new_v4());
         // Reap helpers orphaned by an Agent restart (their pump tasks died
         // with the process, so nothing else will remove them). Helpers of
         // sessions that are live in *this* process are tracked and skipped.
-        let active = ACTIVE_HOST_HELPERS.lock().map(|active| active.clone()).unwrap_or_default();
+        let active = ACTIVE_HOST_HELPERS
+            .lock()
+            .map(|active| active.clone())
+            .unwrap_or_default();
         if let Ok(containers) = docker.containers().ps().all().api().list().await {
             for container in containers
                 .iter()

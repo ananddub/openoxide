@@ -12,6 +12,7 @@ import {
 } from '#/components/ui/select';
 import {
 	ListEmpty,
+	ListRegion,
 	SectionHeader,
 	Toolbar,
 	ToolbarSearch,
@@ -121,7 +122,7 @@ export function DnsProvidersPage() {
 	);
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+		<div className="mx-auto flex h-full w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 			<SectionHeader
 				title="DNS Providers"
 				description="Provider credentials used to read zones and issue Let's Encrypt wildcard certificates."
@@ -186,25 +187,27 @@ export function DnsProvidersPage() {
 				/>
 			</Toolbar>
 
-			{providersQuery.isLoading || providers.length > 0 ? (
-				<DnsProvidersList
-					providers={filtered}
-					isLoading={providersQuery.isLoading}
-					hasFilters={hasFilters}
-					view={view}
-					onClearFilters={clearFilters}
-					onDomains={setZonesProvider}
-					onEdit={handleOpenEdit}
-					onDelete={setDeleteTarget}
-				/>
-			) : (
-				<ListEmpty
-					icon={Globe}
-					title="No DNS Providers Connected"
-					description="Add a DNS provider to read its zones and issue Let's Encrypt wildcard certificates for your applications."
-					action={createButton}
-				/>
-			)}
+			<ListRegion>
+				{providersQuery.isLoading || providers.length > 0 ? (
+					<DnsProvidersList
+						providers={filtered}
+						isLoading={providersQuery.isLoading}
+						hasFilters={hasFilters}
+						view={view}
+						onClearFilters={clearFilters}
+						onDomains={setZonesProvider}
+						onEdit={handleOpenEdit}
+						onDelete={setDeleteTarget}
+					/>
+				) : (
+					<ListEmpty
+						icon={Globe}
+						title="No DNS Providers Connected"
+						description="Add a DNS provider to read its zones and issue Let's Encrypt wildcard certificates for your applications."
+						action={createButton}
+					/>
+				)}
+			</ListRegion>
 
 			<DnsProviderFormDialog
 				open={isFormOpen}

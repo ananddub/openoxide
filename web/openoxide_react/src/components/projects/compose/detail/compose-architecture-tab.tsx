@@ -134,6 +134,8 @@ export function ComposeArchitectureTab({
 
 			<ComposeVisualizer
 				composeFile={fetchedComposeFile || compose?.compose_file || ''}
+				monitorId={Number(compose?.id ?? 0)}
+				monitorType="compose"
 				serviceStatus={serviceStatus}
 				stackName={compose?.name || compose?.app_name}
 				gitBuildPath={gitBuildPath}

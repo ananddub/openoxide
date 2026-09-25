@@ -34,10 +34,28 @@ SELECT id AS id,
        is_system != 0 AS is_system,
        organization_id AS organization_id,
        created_at AS created_at,
-       updated_at AS updated_at
+       updated_at AS updated_at,
+       is_active != 0 AS is_active
 FROM groups
 WHERE organization_id IS NULL OR organization_id = ?
 ORDER BY is_system DESC, name;
+
+-- Enable/disable a custom group (per-role switch); system groups are not
+-- toggleable.
+
+-- name: PermissionGroupsSetGroupActive :many
+UPDATE groups
+SET is_active = ?, updated_at = unixepoch()
+WHERE id = ? AND organization_id = ? AND is_system = 0
+RETURNING id;
+
+-- Current per-user policy overrides (effect is 'GRANT' or 'DENY').
+
+-- name: PermissionGroupsListUserPolicies :many
+SELECT up.policy_id AS policy_id, up.effect AS effect
+FROM user_policy up
+WHERE up.user_id = ? AND up.org_id = ?
+ORDER BY effect, policy_id;
 
 -- Actions granted to a group through group_policy.
 

@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import type {ReactNode} from 'react';
 import {
 	Check,
@@ -6,12 +6,17 @@ import {
 	Edit2,
 	Eye,
 	Globe,
+	Loader2,
 	MoreHorizontal,
 	RefreshCw,
+	ShieldCheck,
+	ShieldQuestion,
+	ShieldX,
 	Trash2,
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {ListRow, RowTile} from '#/components/settings/list-card';
+import {useValidateDomainDns} from '#/api/live';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -76,6 +81,77 @@ export function DomainChips({domain}: {domain: any}) {
 	);
 }
 
+type DnsState = {
+	status: 'idle' | 'checking' | 'valid' | 'invalid';
+	message?: string;
+};
+
+/** Per-domain "Validate DNS" state shared by the list row and the grid card. Auto-checks once when the domain renders. */
+function useDomainDns(domain: any) {
+	const validation = useValidateDomainDns();
+	const [checkedHost, setCheckedHost] = useState('');
+	const host = String(domain.host || domain.domain || '').trim();
+	const result =
+		checkedHost && checkedHost === host ? validation.data : undefined;
+	const state: DnsState = validation.isPending
+		? {status: 'checking'}
+		: validation.isError
+			? {status: 'invalid', message: validation.error.message}
+			: result
+				? result.isValid
+					? {status: 'valid'}
+					: {
+							status: 'invalid',
+							message:
+								result.error ??
+								`Resolves to ${result.resolvedIps.join(', ') || 'nothing'} — expected ${result.expectedIps.join(', ')}`,
+						}
+				: {status: 'idle'};
+	const check = () => {
+		if (!host) return;
+		setCheckedHost(host);
+		validation.mutate({host});
+	};
+	const autoRan = useRef(false);
+	useEffect(() => {
+		if (autoRan.current || !host) return;
+		autoRan.current = true;
+		setCheckedHost(host);
+		validation.mutate({host});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [host]);
+	return {state, check};
+}
+
+export function DnsResultChip({state}: {state: DnsState}) {
+	if (state.status === 'idle') return null;
+	if (state.status === 'checking')
+		return (
+			<Chip mono>
+				<span className="inline-flex items-center gap-1">
+					<Loader2 className="size-3 animate-spin" /> checking…
+				</span>
+			</Chip>
+		);
+	const valid = state.status === 'valid';
+	return (
+		<span
+			title={state.message}
+			className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
+				valid
+					? 'bg-emerald-500/10 text-emerald-600'
+					: 'bg-amber-500/10 text-amber-600'
+			}`}>
+			{valid ? (
+				<ShieldCheck className="size-3" />
+			) : (
+				<ShieldX className="size-3" />
+			)}
+			{valid ? 'DNS Valid' : 'DNS Invalid'}
+		</span>
+	);
+}
+
 interface DomainItemProps {
 	domain: any;
 	deleting: boolean;
@@ -93,6 +169,7 @@ export function DomainRow({
 	onDelete,
 }: DomainItemProps) {
 	const url = buildDomainUrl(domain);
+	const {state, check} = useDomainDns(domain);
 	return (
 		<ListRow
 			icon={
@@ -110,7 +187,29 @@ export function DomainRow({
 				</a>
 			}
 			subtitle={<span className="font-mono">{domainRoute(domain)}</span>}
-			badges={<DomainChips domain={domain} />}>
+			badges={
+				<>
+					<DnsResultChip state={state} />
+					<DomainChips domain={domain} />
+				</>
+			}>
+			<Button
+				variant="ghost"
+				size="icon"
+				title="Validate DNS"
+				onClick={check}
+				disabled={state.status === 'checking'}
+				className="size-8 text-muted-foreground hover:text-foreground">
+				{state.status === 'checking' ? (
+					<Loader2 className="size-4 animate-spin" />
+				) : state.status === 'valid' ? (
+					<ShieldCheck className="size-4 text-emerald-500" />
+				) : state.status === 'invalid' ? (
+					<ShieldX className="size-4 text-amber-500" />
+				) : (
+					<ShieldQuestion className="size-4" />
+				)}
+			</Button>
 			<Button
 				variant="ghost"
 				size="icon"
@@ -154,6 +253,7 @@ export function DomainCard({
 }: DomainItemProps) {
 	const url = buildDomainUrl(domain);
 	const [copied, setCopied] = useState(false);
+	const {state, check} = useDomainDns(domain);
 
 	const copyUrl = () => {
 		navigator.clipboard.writeText(url);
@@ -182,55 +282,76 @@ export function DomainCard({
 					</div>
 				</div>
 
-				<DropdownMenu>
-					<DropdownMenuTrigger
-						render={
-							<Button
-								variant="ghost"
-								size="icon"
-								aria-label={`Domain ${domain.host || domain.domain} actions`}
-								className="size-7 rounded-md text-muted-foreground hover:bg-muted/80 hover:text-foreground focus-visible:ring-0">
-								<MoreHorizontal className="size-4" />
-							</Button>
-						}
-					/>
-					<DropdownMenuContent align="end" className="w-44">
-						<DropdownMenuItem
-							className="cursor-pointer gap-2"
-							onClick={onPreview}>
-							<Eye className="size-3.5" /> Preview
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							className="cursor-pointer gap-2"
-							onClick={copyUrl}>
-							{copied ? (
-								<Check className="size-3.5 text-emerald-500" />
-							) : (
-								<Copy className="size-3.5" />
-							)}
-							{copied ? 'Copied!' : 'Copy URL'}
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							className="cursor-pointer gap-2"
-							onClick={onEdit}>
-							<Edit2 className="size-3.5" /> Edit route
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-							onClick={onDelete}>
-							{deleting ? (
-								<RefreshCw className="size-3.5 animate-spin" />
-							) : (
-								<Trash2 className="size-3.5" />
-							)}
-							Delete domain
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
+				<div className="flex shrink-0 items-center gap-0.5">
+					<Button
+						variant="ghost"
+						size="icon"
+						title="Validate DNS"
+						aria-label={`Validate DNS for ${domain.host || domain.domain}`}
+						onClick={check}
+						disabled={state.status === 'checking'}
+						className="size-7 rounded-md text-muted-foreground hover:bg-muted/80 hover:text-foreground">
+						{state.status === 'checking' ? (
+							<Loader2 className="size-4 animate-spin" />
+						) : state.status === 'valid' ? (
+							<ShieldCheck className="size-4 text-emerald-500" />
+						) : state.status === 'invalid' ? (
+							<ShieldX className="size-4 text-amber-500" />
+						) : (
+							<ShieldQuestion className="size-4" />
+						)}
+					</Button>
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							render={
+								<Button
+									variant="ghost"
+									size="icon"
+									aria-label={`Domain ${domain.host || domain.domain} actions`}
+									className="size-7 rounded-md text-muted-foreground hover:bg-muted/80 hover:text-foreground focus-visible:ring-0">
+									<MoreHorizontal className="size-4" />
+								</Button>
+							}
+						/>
+						<DropdownMenuContent align="end" className="w-44">
+							<DropdownMenuItem
+								className="cursor-pointer gap-2"
+								onClick={onPreview}>
+								<Eye className="size-3.5" /> Preview
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								className="cursor-pointer gap-2"
+								onClick={copyUrl}>
+								{copied ? (
+									<Check className="size-3.5 text-emerald-500" />
+								) : (
+									<Copy className="size-3.5" />
+								)}
+								{copied ? 'Copied!' : 'Copy URL'}
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								className="cursor-pointer gap-2"
+								onClick={onEdit}>
+								<Edit2 className="size-3.5" /> Edit route
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+								onClick={onDelete}>
+								{deleting ? (
+									<RefreshCw className="size-3.5 animate-spin" />
+								) : (
+									<Trash2 className="size-3.5" />
+								)}
+								Delete domain
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
 			</div>
 
 			<div className="flex flex-wrap items-center gap-1.5">
+				<DnsResultChip state={state} />
 				<DomainChips domain={domain} />
 			</div>
 		</div>

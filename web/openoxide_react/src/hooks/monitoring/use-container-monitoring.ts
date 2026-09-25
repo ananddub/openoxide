@@ -1,4 +1,4 @@
-import {useState, useEffect, useCallback} from 'react';
+import {useState, useEffect, useCallback, useRef} from 'react';
 import {createServiceClient} from '#/api/live/query';
 import {DeploymentService} from '#/gen/connect/openoxide/api/v1/deployment_pb';
 import {
@@ -25,6 +25,7 @@ export function useContainerMonitoring(
 	const [hasError, setHasError] = useState(false);
 	const [rawStats, setRawStats] = useState<unknown>(null);
 	const [refetchTrigger, setRefetchTrigger] = useState(0);
+	const lastKeyRef = useRef<string | null>(null);
 
 	const triggerRefresh = useCallback(() => {
 		setRefetchTrigger(prev => prev + 1);
@@ -41,7 +42,14 @@ export function useContainerMonitoring(
 
 		setIsLoading(true);
 		setHasError(false);
-		setRawStats(null);
+		// Keep the last snapshot while a refresh is in flight — clearing it
+		// here made every consumer blink once per refetch. Only a genuinely
+		// different target resets the value.
+		const key = `${entityType}:${id}`;
+		if (lastKeyRef.current !== key) {
+			lastKeyRef.current = key;
+			setRawStats(null);
+		}
 
 		const streamStats = async () => {
 			const request = {id: BigInt(id)};

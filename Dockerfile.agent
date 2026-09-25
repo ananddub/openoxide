@@ -65,10 +65,7 @@ COPY --from=builder /usr/src/openoxide/target/x86_64-unknown-linux-musl/release/
 
 WORKDIR /app
 RUN mkdir -p /app/data /app/workspace
-ENV MONITOR_DATABASE_URL="memory://metrics" \
-    GRPC_PORT=50051 \
-    REFRESH_RATE=2 \
-    RETENTION_DAYS=7 \
+ENV GRPC_PORT=50051 \
     RUST_LOG=agent=info
 
 EXPOSE 50051

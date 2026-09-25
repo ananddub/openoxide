@@ -44,7 +44,7 @@ export function HostConfigCard() {
 		return (
 			<p className="rounded-xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground">
 				Host configuration is managed by the organization owner
-				(requires org:write).
+				(requires org:update).
 			</p>
 		);
 	}

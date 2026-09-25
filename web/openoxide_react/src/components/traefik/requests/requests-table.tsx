@@ -46,9 +46,10 @@ export function RequestsTable({
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-card">
-			<div className="flex-1 overflow-auto">
+			{/* Table's own container div is the scroller — sticky heads pin for real */}
+			<div className="min-h-0 flex-1 [&>div]:h-full [&>div]:overflow-y-auto">
 				<Table>
-					<TableHeader className="sticky top-0 z-10 bg-muted/40 backdrop-blur-md">
+					<TableHeader className="sticky top-0 z-10 bg-muted-solid">
 						<TableRow className="border-b  hover:bg-transparent">
 							{visibleColumns.method && (
 								<TableHead className="px-3.5 py-3 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">

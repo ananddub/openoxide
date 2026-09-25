@@ -25,7 +25,7 @@
     "db/queries/environments.sql": "88dbd51e31985aeb68b24dbac3cc227efefcbd3935a0cab7019fa139d6a8c912",
     "db/queries/git_providers.sql": "2075cb3e50951be648d54bf9789d1874d5b0c89c37418d7d7f6f2ff59a894178",
     "db/queries/group_policy.sql": "38ad1258e3246a48ef25ccb64480eac4c145547b1e1335851709e52f4e951dd0",
-    "db/queries/groups.sql": "742efa308c444186d1306c943aa1a7aec322561202d4c2b15956082870f656a2",
+    "db/queries/groups.sql": "2cfc07cf983e02a9c6ed14f064561c2d1c058d3a8c988bf5bea1a4f8c7191361",
     "db/queries/health_report.sql": "64ffe643957ceb404a7a22910230e6f81ba891e1e6c0ca1b192bf72a246b67c3",
     "db/queries/jwt_tokens.sql": "b2f194d83a051e588e3b744f86d5d94bf4364b298bb7eba45f2dfb292907ee9f",
     "db/queries/migration_objects.sql": "7d10ca64bccde2799f9ae4641e9bda5c8a0503eff5ac18b36ff558f15b9d6fb8",
@@ -43,7 +43,7 @@
     "db/queries/overview.sql": "bad39b564fbcc29c5531f54dc1a8af22d244d00cec7168303e1bab1005681e52",
     "db/queries/password_reset_tokens.sql": "c148b69e54f49831d6fdda4f0a427dfd7a2f42ed3f56de1444cfc44d4b5a7778",
     "db/queries/patches.sql": "984505fd2d0b8847a948cafeec95efe5bdf826f4afc1f8fef6769778ae5fe88b",
-    "db/queries/permission_groups.sql": "c4c51fc23693bc975265b2b3433b62a3e523155c9a09cb2c5ed8e044316b4090",
+    "db/queries/permission_groups.sql": "9176a4630fb3199adad171c7fb5e06f543892949f16494567f4169341908f1b0",
     "db/queries/personal_access_tokens.sql": "205ae8cccda564daf179c9a78ebf87b15dd2ec6a2777402841ee8d0499e9a903",
     "db/queries/policy.sql": "5eb2d81771d60ff81ca37ba1720238d2d49db25343d37cc91fd689aae07118ed",
     "db/queries/ports.sql": "108daaea393b0a0e52f8d7c90e3e6ebc37a29aa63dd619e780f8b5b2b4727fcc",
@@ -80,7 +80,7 @@
     "db/queries/volume_backups.sql": "ba6db61cbd7f12712935ef92564c191730e2ecbcc82a1b9a7d27644e65b16fe5",
     "db/queries/webhooks.sql": "8b558208369473c96da535bbcee515a536e6acac6b9d6f28f5799cfd48bcb5b4"
   },
-  "schema_checksum": "bf0c745b6e8a624a2297ed4b42958f3e1533aa2e551107f0c44a812279c09fdd",
+  "schema_checksum": "a13633e1f7712b7d2380a141b71b02709e410a4c08ca10d8c5c372c6bcac3388",
   "config_checksum": "06aebe7a65bec39e0aee3e0ee685f75f724047187a2c4db63ffd6eb4bf4eadb2",
   "query_table_deps": {
     "db/queries/ai_generations.sql": [
@@ -112,9 +112,9 @@
       "backup_executions"
     ],
     "db/queries/backups.sql": [
+      "volume_backups",
       "destinations",
-      "backups",
-      "volume_backups"
+      "backups"
     ],
     "db/queries/certificate_renewals.sql": [
       "certificate_renewals"
@@ -123,24 +123,24 @@
       "certificates"
     ],
     "db/queries/compose_extra.sql": [
-      "patches",
       "deployments",
       "services",
-      "mounts"
+      "mounts",
+      "patches"
     ],
     "db/queries/database_extra.sql": [
-      "services",
       "service_database",
       "deployments",
-      "service_compose"
+      "service_compose",
+      "services"
     ],
     "db/queries/database_networks.sql": [
       "database_networks"
     ],
     "db/queries/deployments.sql": [
+      "preview_deployments",
       "deployments",
-      "services",
-      "preview_deployments"
+      "services"
     ],
     "db/queries/destinations.sql": [
       "destinations"
@@ -189,8 +189,8 @@
       "ai_settings"
     ],
     "db/queries/monitoring_agents.sql": [
-      "services",
-      "monitoring_agents"
+      "monitoring_agents",
+      "services"
     ],
     "db/queries/monitoring_lifecycle.sql": [
       "monitoring_policy",
@@ -229,10 +229,10 @@
       "organization_invites"
     ],
     "db/queries/overview.sql": [
+      "services",
       "domains",
       "backups",
-      "volume_backups",
-      "services"
+      "volume_backups"
     ],
     "db/queries/password_reset_tokens.sql": [
       "password_reset_tokens",
@@ -245,9 +245,9 @@
     "db/queries/permission_groups.sql": [
       "groups",
       "policy",
+      "user_policy",
       "group_policy",
-      "organization_members",
-      "user_policy"
+      "organization_members"
     ],
     "db/queries/personal_access_tokens.sql": [
       "personal_access_tokens"
@@ -264,10 +264,10 @@
       "deployments"
     ],
     "db/queries/preview_env_extra.sql": [
-      "services",
-      "service_git",
       "service_application",
-      "domains"
+      "domains",
+      "services",
+      "service_git"
     ],
     "db/queries/project_tags.sql": [
       "project_tags"
@@ -310,8 +310,8 @@
       "server_cleanup_executions"
     ],
     "db/queries/server_management.sql": [
-      "server_management",
-      "server_cleanup_executions"
+      "server_cleanup_executions",
+      "server_management"
     ],
     "db/queries/server_migrations.sql": [
       "server_migrations"
@@ -320,20 +320,20 @@
       "server_private_networks"
     ],
     "db/queries/servers.sql": [
-      "servers",
       "services",
       "service_application",
       "certificates",
-      "schedules"
+      "schedules",
+      "servers"
     ],
     "db/queries/service_application.sql": [
       "service_application",
       "services"
     ],
     "db/queries/service_compose.sql": [
+      "service_compose",
       "services",
-      "service_git",
-      "service_compose"
+      "service_git"
     ],
     "db/queries/service_database.sql": [
       "service_database",
@@ -360,8 +360,8 @@
       "registries"
     ],
     "db/queries/tags.sql": [
-      "project_tags",
-      "tags"
+      "tags",
+      "project_tags"
     ],
     "db/queries/traffic_stats.sql": [
       "traffic_stats"
@@ -388,6 +388,6 @@
     ]
   },
   "generated_file_checksums": {},
-  "last_generation": "2026-09-25T10:27:11.973530387+05:30",
+  "last_generation": "2026-09-25T13:33:30.180296539+05:30",
   "OutDir": "src/flash_gen"
 }

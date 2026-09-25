@@ -26,9 +26,10 @@ pub(super) async fn forward_event(event: RealtimeRawEvent) {
     };
     let organization_id = match operation {
         DbChangeOperation::Delete | DbChangeOperation::Unknown => None,
+        _ if !super::org_index::is_org_scoped(&event.table) => None,
         _ => lookup_organization_id(pool, &event.table, event.rowid).await,
     };
-    tracing::info!(
+    tracing::debug!(
         table = %event.table,
         rowid = event.rowid,
         organization_id = ?organization_id,

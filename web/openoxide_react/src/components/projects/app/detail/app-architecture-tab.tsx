@@ -105,6 +105,8 @@ export function AppArchitectureTab({
 
 			<ComposeVisualizer
 				customServices={appService}
+				monitorId={Number(app?.application_id ?? app?.id ?? 0)}
+				monitorType="application"
 				domains={domains as any}
 				backups={appBackups as any}
 				schedules={schedules as any}

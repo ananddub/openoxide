@@ -316,6 +316,7 @@ pub struct Groups {
     pub updated_at: i64,
     pub is_system: i64,
     pub organization_id: Option<i64>,
+    pub is_active: i64,
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]

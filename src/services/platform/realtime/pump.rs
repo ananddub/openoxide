@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::db::reactive::{event_bus, DbChangeSet};
+use crate::db::reactive::{DbChangeSet, event_bus};
 
 use super::registry::TableRegistry;
 use super::service::SubscriptionLedger;
@@ -48,8 +48,8 @@ impl ChangePump {
 
     fn dispatch(&self, change_set: DbChangeSet) {
         let batches = self.route(&change_set);
-        tracing::info!(
-            tables = ?change_set.changes.iter().map(|c| c.table.as_str()).collect::<Vec<_>>(),
+        tracing::debug!(
+            table = %change_set.changes[0].table,
             batches = batches.len(),
             "change pump dispatched"
         );
@@ -78,12 +78,12 @@ impl ChangePump {
         for (organization_id, tables) in per_org {
             if let Some(batch) = self
                 .batcher
-                .batch(organization_id, tables, &self.registry.all())
+                .batch(organization_id, tables, self.registry.all())
             {
                 batches.push(batch);
             }
         }
-        if let Some(global) = self.batcher.batch(0, global_tables, &self.registry.all()) {
+        if let Some(global) = self.batcher.batch(0, global_tables, self.registry.all()) {
             batches.push(global);
         }
         batches
@@ -93,4 +93,3 @@ impl ChangePump {
 /// Queue capacity per subscriber. Enough to absorb a coalescing window of
 /// bursts without dropping; overflow still self-heals via client reconnect.
 pub const SUBSCRIBER_QUEUE: usize = 64;
-

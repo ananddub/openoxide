@@ -13,6 +13,7 @@ import {
 	GridSkeleton,
 	ListCard,
 	ListEmpty,
+	ListRegion,
 	ListSkeleton,
 	Toolbar,
 	ToolbarSearch,
@@ -121,7 +122,7 @@ export function SwarmNodesList({
 	});
 
 	return (
-		<div className="flex w-full flex-col gap-3">
+		<div className="flex h-full min-h-0 w-full flex-col gap-3">
 			<Toolbar
 				action={<ViewToggle view={view} onChange={setView} />}>
 				<ToolbarSearch
@@ -168,72 +169,74 @@ export function SwarmNodesList({
 				</Select>
 			</Toolbar>
 
-			{isLoading ? (
-				view === 'grid' ? (
-					<GridSkeleton cards={3} />
-				) : (
-					<ListSkeleton rows={3} />
-				)
-			) : !nodes || nodes.length === 0 ? (
-				<ListEmpty
-					icon={isSwarmActive ? Server : ShieldAlert}
-					title={
-						isSwarmActive
-							? 'No Swarm nodes discovered'
-							: 'Docker Swarm is inactive'
-					}
-					description={
-						isSwarmActive
-							? 'This engine reports no cluster members yet. Add a node to get started.'
-							: 'This host engine runs standalone. Initialize Docker Swarm or join an existing manager node.'
-					}
-					action={
-						isSwarmActive ? (
+			<ListRegion>
+				{isLoading ? (
+					view === 'grid' ? (
+						<GridSkeleton cards={3} />
+					) : (
+						<ListSkeleton rows={3} />
+					)
+				) : !nodes || nodes.length === 0 ? (
+					<ListEmpty
+						icon={isSwarmActive ? Server : ShieldAlert}
+						title={
+							isSwarmActive
+								? 'No Swarm nodes discovered'
+								: 'Docker Swarm is inactive'
+						}
+						description={
+							isSwarmActive
+								? 'This engine reports no cluster members yet. Add a node to get started.'
+								: 'This host engine runs standalone. Initialize Docker Swarm or join an existing manager node.'
+						}
+						action={
+							isSwarmActive ? (
+								<Button
+									onClick={onOpenTokens}
+									className="h-9 gap-1.5 text-xs font-semibold">
+									<Plus className="size-3.5" />
+									New Node
+								</Button>
+							) : undefined
+						}
+					/>
+				) : filtered.length === 0 ? (
+					<ListEmpty
+						icon={Search}
+						title="No matching nodes"
+						description="No nodes match your current search or role filter."
+						action={
 							<Button
-								onClick={onOpenTokens}
-								className="h-9 gap-1.5 text-xs font-semibold">
-								<Plus className="size-3.5" />
-								New Node
+								variant="ghost"
+								onClick={() => {
+									setSearch('');
+									setRoleFilter('All');
+								}}
+								className="text-xs font-semibold text-primary">
+								Clear filters
 							</Button>
-						) : undefined
-					}
-				/>
-			) : filtered.length === 0 ? (
-				<ListEmpty
-					icon={Search}
-					title="No matching nodes"
-					description="No nodes match your current search or role filter."
-					action={
-						<Button
-							variant="ghost"
-							onClick={() => {
-								setSearch('');
-								setRoleFilter('All');
-							}}
-							className="text-xs font-semibold text-primary">
-							Clear filters
-						</Button>
-					}
-				/>
-			) : view === 'grid' ? (
-				<ViewGrid>
-					{filtered.map(node => (
-						<SwarmNodeCard key={node.id} {...nodeProps(node)} />
-					))}
-				</ViewGrid>
-			) : (
-				<ListCard>
-					{filtered.map(node => (
-						<SwarmNodeRow key={node.id} {...nodeProps(node)} />
-					))}
-				</ListCard>
-			)}
+						}
+					/>
+				) : view === 'grid' ? (
+					<ViewGrid>
+						{filtered.map(node => (
+							<SwarmNodeCard key={node.id} {...nodeProps(node)} />
+						))}
+					</ViewGrid>
+				) : (
+					<ListCard>
+						{filtered.map(node => (
+							<SwarmNodeRow key={node.id} {...nodeProps(node)} />
+						))}
+					</ListCard>
+				)}
 
-			{hasFilters && filtered.length > 0 && (
-				<p className="px-1 text-xs text-muted-foreground">
-					Showing {filtered.length} of {nodes.length} nodes
-				</p>
-			)}
+				{hasFilters && filtered.length > 0 && (
+					<p className="px-1 text-xs text-muted-foreground">
+						Showing {filtered.length} of {nodes.length} nodes
+					</p>
+				)}
+			</ListRegion>
 		</div>
 	);
 }

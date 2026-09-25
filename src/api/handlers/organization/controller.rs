@@ -75,7 +75,7 @@ impl OrganizationService for OrganizationController {
         Response::ok(org_to_proto(org))
     }
 
-    #[permission(Organization, CanWrite)]
+    #[permission(Organization, CanUpdate)]
     async fn update_organization<'a>(
         &'a self,
         ctx: RequestContext,
@@ -93,7 +93,7 @@ impl OrganizationService for OrganizationController {
         Response::ok(org_to_proto(org))
     }
 
-    #[permission(Organization, CanWrite)]
+    #[permission(Organization, CanUpdate)]
     async fn delete_organization<'a>(
         &'a self,
         ctx: RequestContext,

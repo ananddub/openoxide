@@ -64,9 +64,11 @@ export function MembersCard({ctl, view}: {ctl: Ctl; view: ListView}) {
 		profileName: userProfile?.name,
 		profileAvatar: userProfile?.avatar,
 		canEditRole: canManageMember(member),
+		canEditPermissions: canManageMember(member),
 		canRemove:
 			can('member:delete') && member.role.toLowerCase() !== 'owner',
 		onEditRole: () => setEditingRoleUser(member),
+		onEditPermissions: () => ctl.setOverridesTarget(member),
 		onDelete: () => setDeleteTarget(member),
 	});
 

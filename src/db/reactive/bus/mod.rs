@@ -21,8 +21,9 @@ impl DbEventBus {
 
     pub fn publish(&self, changes: Vec<DbChangeEvent>) {
         if !changes.is_empty() {
-            tracing::info!(
-                tables = ?changes.iter().map(|c| c.table.as_str()).collect::<Vec<_>>(),
+            tracing::debug!(
+                count = changes.len(),
+                table = %changes[0].table,
                 "sqlite realtime change committed"
             );
             let _ = self.sender.send(DbChangeSet { changes });
@@ -43,19 +44,4 @@ pub fn set_pool(pool: sqlx::SqlitePool) {
 /// that early are dropped — subscribers can't exist yet).
 pub fn db_pool() -> Option<&'static sqlx::SqlitePool> {
     DB_POOL.get()
-}
-
-pub(crate) async fn publish_when_visible(changes: Vec<DbChangeEvent>) {
-    if let Some(pool) = DB_POOL.get()
-        && let Ok(mut connection) = pool.acquire().await
-    {
-        if sqlx::query("BEGIN IMMEDIATE")
-            .execute(&mut *connection)
-            .await
-            .is_ok()
-        {
-            let _ = sqlx::query("ROLLBACK").execute(&mut *connection).await;
-        }
-    }
-    event_bus().publish(changes);
 }

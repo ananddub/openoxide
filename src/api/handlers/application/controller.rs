@@ -502,7 +502,7 @@ impl ApplicationService for ApplicationController {
 
     // ── Deploy operations ──────────────────────────────────────────────
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn deploy<'a>(
         &'a self,
         ctx: RequestContext,
@@ -516,7 +516,7 @@ impl ApplicationService for ApplicationController {
         Response::ok(operation_result(result))
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn redeploy<'a>(
         &'a self,
         ctx: RequestContext,
@@ -530,7 +530,7 @@ impl ApplicationService for ApplicationController {
         Response::ok(operation_result(result))
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn rebuild<'a>(
         &'a self,
         ctx: RequestContext,
@@ -544,7 +544,7 @@ impl ApplicationService for ApplicationController {
         Response::ok(operation_result(result))
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn reload<'a>(
         &'a self,
         ctx: RequestContext,
@@ -558,7 +558,7 @@ impl ApplicationService for ApplicationController {
         Response::ok(operation_result(result))
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn start<'a>(
         &'a self,
         ctx: RequestContext,
@@ -572,7 +572,7 @@ impl ApplicationService for ApplicationController {
         Response::ok(operation_result(result))
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn stop<'a>(
         &'a self,
         ctx: RequestContext,
@@ -594,7 +594,7 @@ impl ApplicationService for ApplicationController {
         })
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn cancel<'a>(
         &'a self,
         ctx: RequestContext,
@@ -653,7 +653,7 @@ impl ApplicationService for ApplicationController {
         Response::ok(Empty::default())
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn cleanup_deployment_queue<'a>(
         &'a self,
         ctx: RequestContext,
@@ -666,7 +666,7 @@ impl ApplicationService for ApplicationController {
         Response::ok(Empty::default())
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn force_kill_deployment<'a>(
         &'a self,
         ctx: RequestContext,
@@ -709,7 +709,7 @@ impl ApplicationService for ApplicationController {
         })
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn trigger_rollback<'a>(
         &'a self,
         ctx: RequestContext,

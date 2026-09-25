@@ -5,6 +5,7 @@ import {
 	GridSkeleton,
 	ListCard,
 	ListEmpty,
+	ListRegion,
 	ListSkeleton,
 	Toolbar,
 	ToolbarSearch,
@@ -121,7 +122,7 @@ export function SchedulesList({
 		);
 
 	return (
-		<div className="flex w-full flex-col gap-4">
+		<div className="flex h-full min-h-0 w-full flex-col gap-4">
 			<Toolbar
 				action={
 					<>
@@ -157,15 +158,17 @@ export function SchedulesList({
 					className="min-w-[200px] flex-1 sm:max-w-none"
 				/>
 			</Toolbar>
-			{isLoading ? (
-				view === 'grid' ? (
-					<GridSkeleton />
+			<ListRegion>
+				{isLoading ? (
+					view === 'grid' ? (
+						<GridSkeleton />
+					) : (
+						<ListSkeleton />
+					)
 				) : (
-					<ListSkeleton />
-				)
-			) : (
-				body
-			)}
+					body
+				)}
+			</ListRegion>
 		</div>
 	);
 }

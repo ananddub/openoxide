@@ -71,7 +71,7 @@ impl SubscriptionLedger {
     /// Pushes a full-table resync batch to every subscriber, one per unique
     /// organization. Used when the pump falls behind the broadcast channel
     /// and missed change-sets can no longer be recovered.
-    pub(super) fn resync(&self, tables: Vec<WatchedTable>) {
+    pub(super) fn resync(&self, tables: &[WatchedTable]) {
         let organizations: std::collections::HashSet<i64> = self
             .entries
             .iter()
@@ -80,7 +80,7 @@ impl SubscriptionLedger {
         for organization_id in organizations {
             self.deliver(TableChangeBatch {
                 organization_id,
-                tables: tables.clone(),
+                tables: tables.to_vec(),
             });
         }
     }
@@ -105,14 +105,17 @@ impl RealtimeService {
 
     /// Registers a watch stream for an organization and returns the receive
     /// half plus the initial resync batch covering the subscribe gap.
-    pub fn watch(&self, organization_id: i64) -> (mpsc::Receiver<TableChangeBatch>, TableChangeBatch) {
+    pub fn watch(
+        &self,
+        organization_id: i64,
+    ) -> (mpsc::Receiver<TableChangeBatch>, TableChangeBatch) {
         let (sender, receiver) = mpsc::channel(SUBSCRIBER_QUEUE);
         self.ledger.insert(organization_id, sender);
         // Resync snapshot: everything may have changed between the client's
         // initial fetch and this stream opening.
         let resync = TableChangeBatch {
             organization_id,
-            tables: self.registry.all(),
+            tables: self.registry.all().to_vec(),
         };
         (receiver, resync)
     }

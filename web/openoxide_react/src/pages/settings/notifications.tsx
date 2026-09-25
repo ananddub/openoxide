@@ -1,4 +1,8 @@
-import {createFileRoute, Navigate} from '@tanstack/react-router';
+import {
+	createFileRoute,
+	Navigate,
+	useSearch,
+} from '@tanstack/react-router';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {BellRing, History, Plus, Search} from 'lucide-react';
 import {Button} from '#/components/ui/button';
@@ -23,6 +27,7 @@ import {
 	GridSkeleton,
 	ListCard,
 	ListEmpty,
+	ListRegion,
 	ListSkeleton,
 	SectionHeader,
 	Toolbar,
@@ -72,6 +77,11 @@ export function NotificationsPage() {
 	const testMutation = useNotificationTest();
 
 	const [view, setView] = useState<ViewId>('channels');
+	// Deep link from the bell's "View all deliveries": ?tab=notifications&view=deliveries
+	const {view: viewParam} = useSearch({from: '/_app/settings'});
+	useEffect(() => {
+		if (viewParam) setView(viewParam);
+	}, [viewParam]);
 	const [layout, setLayout] = useListView('settings-notifications-view');
 	const [search, setSearch] = useState('');
 	const [providerFilter, setProviderFilter] = useState('All');
@@ -209,7 +219,12 @@ export function NotificationsPage() {
 	};
 
 	return (
-		<div className="flex w-full animate-in flex-col gap-5 duration-200 fade-in">
+		<div
+			className={
+				view === 'channels'
+					? 'flex h-full w-full animate-in flex-col gap-5 duration-200 fade-in'
+					: 'flex w-full animate-in flex-col gap-5 duration-200 fade-in'
+			}>
 			<SectionHeader
 				title="Notifications"
 				description="Channels that receive this organization's alerts, and the deliveries the backend actually sent."
@@ -310,58 +325,61 @@ export function NotificationsPage() {
 				/>
 			</Toolbar>
 
+			{/* Channels: fixed card area with inner scroll. Deliveries (alert history): scrolls with the page, title included. */}
 			{view === 'channels' ? (
-				isLoading ? (
-					layout === 'grid' ? (
-						<GridSkeleton />
+				<ListRegion>
+					{isLoading ? (
+						layout === 'grid' ? (
+							<GridSkeleton />
+						) : (
+							<ListSkeleton />
+						)
+					) : channels.length === 0 ? (
+						<NotificationChannelsEmpty onCreate={openCreate} />
+					) : visibleChannels.length === 0 && filtering ? (
+						<ListEmpty
+							icon={Search}
+							title="No channels match"
+							description="Clear the search and provider filter to see every channel again."
+							action={
+								<Button
+									variant="outline"
+									onClick={clearFilters}
+									className="h-9 gap-1.5">
+									Clear filters
+								</Button>
+							}
+						/>
+					) : layout === 'grid' ? (
+						<ViewGrid>
+							{visibleChannels.map(n => (
+								<NotificationChannelCard
+									key={n.id}
+									channel={n}
+									last={lastDelivery.get(n.id)}
+									testing={testingId === n.id}
+									onTest={n => void test(n)}
+									onEdit={openEdit}
+									onDelete={setDeleting}
+								/>
+							))}
+						</ViewGrid>
 					) : (
-						<ListSkeleton />
-					)
-				) : channels.length === 0 ? (
-					<NotificationChannelsEmpty onCreate={openCreate} />
-				) : visibleChannels.length === 0 && filtering ? (
-					<ListEmpty
-						icon={Search}
-						title="No channels match"
-						description="Clear the search and provider filter to see every channel again."
-						action={
-							<Button
-								variant="outline"
-								onClick={clearFilters}
-								className="h-9 gap-1.5">
-								Clear filters
-							</Button>
-						}
-					/>
-				) : layout === 'grid' ? (
-					<ViewGrid>
-						{visibleChannels.map(n => (
-							<NotificationChannelCard
-								key={n.id}
-								channel={n}
-								last={lastDelivery.get(n.id)}
-								testing={testingId === n.id}
-								onTest={n => void test(n)}
-								onEdit={openEdit}
-								onDelete={setDeleting}
-							/>
-						))}
-					</ViewGrid>
-				) : (
-					<ListCard>
-						{visibleChannels.map(n => (
-							<NotificationChannelRow
-								key={n.id}
-								channel={n}
-								last={lastDelivery.get(n.id)}
-								testing={testingId === n.id}
-								onTest={n => void test(n)}
-								onEdit={openEdit}
-								onDelete={setDeleting}
-							/>
-						))}
-					</ListCard>
-				)
+						<ListCard>
+							{visibleChannels.map(n => (
+								<NotificationChannelRow
+									key={n.id}
+									channel={n}
+									last={lastDelivery.get(n.id)}
+									testing={testingId === n.id}
+									onTest={n => void test(n)}
+									onEdit={openEdit}
+									onDelete={setDeleting}
+								/>
+							))}
+						</ListCard>
+					)}
+				</ListRegion>
 			) : (
 				<NotificationDeliveriesList
 					rows={visibleDeliveries}

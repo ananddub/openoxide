@@ -4,6 +4,18 @@
 use super::models::*;
 use super::db::Queries;
 
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
+pub struct PermissionGroupsListUserPoliciesRow {
+    pub policy_id: Option<i64>,
+    pub effect: Option<String>,
+}
+
+pub struct PermissionGroupsSetGroupActiveParams {
+    pub is_active: i64,
+    pub id: i64,
+    pub organization_id: i64,
+}
+
 pub struct PermissionGroupsUpdateGroupNameParams {
     pub name: String,
     pub id: i64,
@@ -83,9 +95,39 @@ impl Queries {
         organization_id: i64,
     ) -> Result<Vec<Groups>, sqlx::Error> {
         sqlx::query_as::<_, Groups>(
-            "SELECT id AS id, name AS name, is_system != 0 AS is_system, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM groups WHERE organization_id IS NULL OR organization_id = ? ORDER BY is_system DESC, name;"
+            "SELECT id AS id, name AS name, is_system != 0 AS is_system, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at, is_active != 0 AS is_active FROM groups WHERE organization_id IS NULL OR organization_id = ? ORDER BY is_system DESC, name;"
         )
         .bind(organization_id)
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// PermissionGroupsSetGroupActive
+    pub async fn permission_groups_set_group_active(
+        &self,
+        params: &PermissionGroupsSetGroupActiveParams,
+    ) -> Result<Vec<i64>, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "UPDATE groups SET is_active = ?, updated_at = unixepoch() WHERE id = ? AND organization_id = ? AND is_system = 0 RETURNING id;"
+        )
+        .bind(&params.is_active)
+        .bind(&params.id)
+        .bind(&params.organization_id)
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    /// PermissionGroupsListUserPolicies
+    pub async fn permission_groups_list_user_policies(
+        &self,
+        user_id: i64,
+        org_id: i64,
+    ) -> Result<Vec<PermissionGroupsListUserPoliciesRow>, sqlx::Error> {
+        sqlx::query_as::<_, PermissionGroupsListUserPoliciesRow>(
+            "SELECT up.policy_id AS policy_id, up.effect AS effect FROM user_policy up WHERE up.user_id = ? AND up.org_id = ? ORDER BY effect, policy_id;"
+        )
+        .bind(user_id)
+        .bind(org_id)
         .fetch_all(&self.pool)
         .await
     }

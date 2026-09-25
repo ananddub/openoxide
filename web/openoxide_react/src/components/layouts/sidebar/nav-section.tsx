@@ -3,6 +3,9 @@ import {ChevronRight} from 'lucide-react';
 import {
 	SIDEBAR_CENTER_X,
 	SIDEBAR_COLLAPSE,
+	SIDEBAR_ICON_CELL,
+	SIDEBAR_LABEL,
+	SIDEBAR_ROW,
 	SidebarGroup,
 	SidebarMenu,
 	SidebarMenuItem,
@@ -33,8 +36,8 @@ export function NavSection({
 	if (!visibleItems.length) return null;
 
 	return (
-		<SidebarGroup className="px-2 py-1">
-			<SidebarMenu className="gap-px">
+		<SidebarGroup className="gap-1 px-2 py-1">
+			<SidebarMenu className="gap-1">
 				{visibleItems.map(item => {
 					if ('isSingle' in item && item.isSingle === false) return null;
 					const single = item as SingleNavItem;
@@ -57,7 +60,6 @@ export function NavSection({
 						<SidebarMenuItem key={single.to}>
 							<Link
 								to={basePath as '/'}
-								data-nav-active={active || undefined}
 								search={
 									query
 										? (Object.fromEntries(
@@ -67,34 +69,28 @@ export function NavSection({
 								}
 								title={collapsed ? single.title : undefined}
 								className={cn(
-									'relative flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] outline-none transition-[padding,gap,color,background-color]',
+									SIDEBAR_ROW,
 									SIDEBAR_COLLAPSE,
-									// Padding centers the icon — justify-center would teleport it a frame early.
-									collapsed && cn(SIDEBAR_CENTER_X, 'gap-0'),
-									// The fill is one shared pill that slides between rows
-									// (NavActivePill) — each row carries its text state only.
+									collapsed && SIDEBAR_CENTER_X,
 									active
-										? 'font-medium text-foreground'
-										: 'font-normal text-muted-foreground hover:bg-sidebar-accent hover:text-foreground',
+										? 'bg-sidebar-accent text-foreground'
+										: 'text-muted-foreground',
 								)}>
-								<single.icon
-									className="size-4 shrink-0"
-									strokeWidth={1.7}
-								/>
+								<span className={SIDEBAR_ICON_CELL}>
+									<single.icon className="size-4" strokeWidth={1.7} />
+								</span>
 								<span
 									className={cn(
-										'min-w-0 flex-1 truncate transition-opacity duration-200 ease-out motion-reduce:transition-none',
+										SIDEBAR_LABEL,
 										collapsed && 'opacity-0',
 									)}>
 									{single.title}
 								</span>
-								{/* This route swaps the rail to its own context rows —
-								    signal it before the click. */}
+								{/* Marks a route that swaps the rail to its own context rows. */}
 								{!collapsed && single.railContext && (
-									<ChevronRight
-										className="size-3.5 shrink-0 opacity-50"
-										strokeWidth={2}
-									/>
+									<span className="mr-1.5 grid size-6 shrink-0 place-content-center opacity-50">
+										<ChevronRight className="size-4" strokeWidth={2} />
+									</span>
 								)}
 							</Link>
 						</SidebarMenuItem>

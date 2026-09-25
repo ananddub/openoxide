@@ -79,6 +79,8 @@ export function useUsersManagement() {
 
 	const [editingRoleUser, setEditingRoleUser] =
 		useState<MemberItem | null>(null);
+	const [overridesTarget, setOverridesTarget] =
+		useState<MemberItem | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<MemberItem | null>(
 		null,
 	);
@@ -235,6 +237,8 @@ export function useUsersManagement() {
 		isSubmitting,
 		editingRoleUser,
 		setEditingRoleUser,
+		overridesTarget,
+		setOverridesTarget,
 		deleteTarget,
 		setDeleteTarget,
 		isDeleting,

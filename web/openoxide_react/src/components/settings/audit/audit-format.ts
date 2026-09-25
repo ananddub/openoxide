@@ -108,8 +108,17 @@ export function parseMeta(e: AuditLogPayload): Record<string, unknown> {
 	}
 }
 
+/** Audit rows reach the web layer from different writers — epoch seconds, milliseconds or microseconds depending on the path. Normalize before formatting. */
+export function toSec(ts: number): number {
+	const n = Number(ts);
+	if (!Number.isFinite(n) || n <= 0) return 0;
+	if (n >= 1e14) return Math.floor(n / 1_000_000); // µs
+	if (n >= 1e11) return Math.floor(n / 1_000); // ms
+	return n;
+}
+
 export function timeAgo(sec: number): string {
-	const diff = Math.floor(Date.now() / 1000 - sec);
+	const diff = Math.floor(Date.now() / 1000 - toSec(sec));
 	if (diff < 0) return 'just now';
 	if (diff < 60) return `${diff}s ago`;
 	const min = Math.floor(diff / 60);
@@ -120,18 +129,23 @@ export function timeAgo(sec: number): string {
 }
 
 export function clockTime(sec: number): string {
-	return new Date(sec * 1000).toLocaleTimeString([], {
+	const s = toSec(sec);
+	if (!s) return '—';
+	return new Date(s * 1000).toLocaleTimeString([], {
 		hour: '2-digit',
 		minute: '2-digit',
+		hour12: true,
 	});
 }
 
 export function absoluteTime(sec: number): string {
-	return new Date(sec * 1000).toLocaleString();
+	const s = toSec(sec);
+	if (!s) return 'Unknown time';
+	return new Date(s * 1000).toLocaleString();
 }
 
 export function dayKey(sec: number): string {
-	const d = new Date(sec * 1000);
+	const d = new Date(toSec(sec) * 1000);
 	return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
@@ -139,7 +153,7 @@ export function dayLabel(sec: number): string {
 	const now = new Date();
 	const startOf = (x: Date) =>
 		new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-	const d = new Date(sec * 1000);
+	const d = new Date(toSec(sec) * 1000);
 	const diffDays = Math.round((startOf(now) - startOf(d)) / 86400000);
 	if (diffDays <= 0) return 'Today';
 	if (diffDays === 1) return 'Yesterday';

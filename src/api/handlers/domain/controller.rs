@@ -2,10 +2,10 @@ use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     CreateDomainRequest, CreateDomainResponse, DeleteDomainRequest, DomainService,
-    DomainServiceExt, Empty, GetDomainRequest, GetDomainResponse,
-    ListApplicationDomainsRequest, ListApplicationDomainsResponse, ListComposeDomainsRequest,
-    ListComposeDomainsResponse, ListDomainsRequest, ListDomainsResponse, UpdateDomainRequest,
-    UpdateDomainResponse,
+    DomainServiceExt, Empty, GetDomainRequest, GetDomainResponse, ListApplicationDomainsRequest,
+    ListApplicationDomainsResponse, ListComposeDomainsRequest, ListComposeDomainsResponse,
+    ListDomainsRequest, ListDomainsResponse, UpdateDomainRequest, UpdateDomainResponse,
+    ValidateDomainDnsRequest, ValidateDomainDnsResponse,
 };
 use crate::core::cache::CacheKey;
 use crate::services::networking::domain::{CreateDomainDto, PatchDomainDto};
@@ -21,7 +21,11 @@ impl DomainService for DomainController {
         ctx: RequestContext,
         _request: ServiceRequest<'_, ListDomainsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListDomainsResponse> + Send + use<'a>> {
-        let items = self.service.list_all(auth.organization_id).await.map_err(map_error)?;
+        let items = self
+            .service
+            .list_all(auth.organization_id)
+            .await
+            .map_err(map_error)?;
         let domains = items.into_iter().map(domain_to_proto).collect();
         Response::ok(ListDomainsResponse {
             domains,
@@ -70,7 +74,8 @@ impl DomainService for DomainController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ListComposeDomainsRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ListComposeDomainsResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ListComposeDomainsResponse> + Send + use<'a>>
+    {
         let items = self
             .service
             .list_by_compose(request.compose_id)
@@ -93,7 +98,10 @@ impl DomainService for DomainController {
             host: request.host.to_owned(),
             https: request.https,
             port: request.port,
-            path: request.path.map(str::to_owned).unwrap_or_else(|| "/".into()),
+            path: request
+                .path
+                .map(str::to_owned)
+                .unwrap_or_else(|| "/".into()),
             internal_path: request
                 .internal_path
                 .map(str::to_owned)
@@ -155,9 +163,7 @@ impl DomainService for DomainController {
             custom_cert_resolver: request.custom_cert_resolver.map(str::to_owned),
             strip_path: request.strip_path,
             middlewares: request.middlewares.map(str::to_owned),
-            certificate_type: request
-                .certificate_type
-                .map(proto_to_certificate_type),
+            certificate_type: request.certificate_type.map(proto_to_certificate_type),
         };
         let updated = self
             .service
@@ -183,5 +189,25 @@ impl DomainService for DomainController {
             .map_err(map_error)?;
         self.cache.invalidate_all().await;
         Response::ok(Empty::default())
+    }
+
+    #[permission(Application, CanRead)]
+    async fn validate_domain_dns<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, ValidateDomainDnsRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<ValidateDomainDnsResponse> + Send + use<'a>> {
+        let result = self
+            .service
+            .validate_dns(&request.host, request.server_id, auth.organization_id)
+            .await
+            .map_err(map_error)?;
+        Response::ok(ValidateDomainDnsResponse {
+            is_valid: result.is_valid,
+            resolved_ips: result.resolved_ips,
+            expected_ips: result.expected_ips,
+            error: result.error,
+            ..Default::default()
+        })
     }
 }

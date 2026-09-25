@@ -28,10 +28,18 @@ export type PermissionGroupPayload = {
 	id: bigint;
 	name: string;
 	is_system: boolean;
+	/** Disabled groups grant nothing to their members until re-enabled. */
+	is_active: boolean;
 	organization_id: bigint | null;
 	actions: string[];
 	created_at: bigint;
 	updated_at: bigint;
+};
+
+/** One per-user policy override; the effect forces allow or deny regardless of the role. */
+export type UserPolicyOverridePayload = {
+	policy_id: number;
+	effect: 'GRANT' | 'DENY';
 };
 
 /** Legacy member shape the former zustand `members` slice carried. */

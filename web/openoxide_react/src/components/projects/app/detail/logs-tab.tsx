@@ -106,6 +106,7 @@ export function LogsTab({app}: LogsTabProps) {
 			)}
 
 			<DeploymentViewer
+				heightClass="h-[calc(100dvh_-_310px)] min-h-[360px]"
 				aiContext="RUNTIME"
 				logs={streamedLogs}
 				isLoading={isLoading}

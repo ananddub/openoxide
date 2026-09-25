@@ -20,6 +20,8 @@ service PermissionService {
   // Effective actions for the calling user inside the active organization (auth-only: every member may inspect their own grants to gate the UI).
   rpc GetMyPermissions(GetMyPermissionsRequest) returns (GetMyPermissionsResponse);
   rpc AssignMemberGroup(PermissionAssignMemberGroupRequest) returns (Empty);
+  rpc SetGroupActive(PermissionSetGroupActiveRequest) returns (Empty);
+  rpc ListUserPolicies(PermissionListUserPoliciesRequest) returns (PermissionListUserPoliciesResponse);
   rpc ListMembers(PermissionListMembersRequest) returns (PermissionListMembersResponse);
   rpc AddMember(PermissionAddMemberRequest) returns (Empty);
   rpc UpdateMemberRole(PermissionUpdateMemberRoleRequest) returns (Empty);
@@ -57,6 +59,8 @@ message PermissionGroup {
   repeated string actions = 5;
   int64 created_at = 6;
   int64 updated_at = 7;
+  // Disabled groups grant nothing to their members until re-enabled.
+  bool is_active = 8;
 }
 
 // Catalog entry of an addressable policy.
@@ -190,6 +194,21 @@ message PermissionAssignMemberGroupRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];
   // New permission group; 0 detaches the member from every group (role-only access).
   int64 group_id = 2;
+}
+
+message PermissionSetGroupActiveRequest {
+  // Permission group id to enable or disable.
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+  bool is_active = 2;
+}
+
+message PermissionListUserPoliciesRequest {
+  // User id whose policy overrides to read.
+  int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message PermissionListUserPoliciesResponse {
+  repeated PermissionUserPolicyEntry policies = 1;
 }
 
 message PermissionListMembersRequest {}

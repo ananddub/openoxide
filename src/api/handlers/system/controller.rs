@@ -67,7 +67,7 @@ impl SystemService for SystemController {
         })
     }
 
-    #[permission(Organization, CanWrite)]
+    #[permission(Organization, CanUpdate)]
     async fn test_config<'a>(
         &'a self,
         ctx: RequestContext,

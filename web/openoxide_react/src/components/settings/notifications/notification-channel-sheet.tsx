@@ -34,9 +34,9 @@ const CREATE_STEPS: WizardStep[] = [
 	{id: 'review', label: 'Review'},
 ];
 
-/** Editing cannot repoint the channel at another provider: the backend
- * patch carries name + trigger flags only. */
+/** Editing keeps the provider fixed but exposes its connection fields — blanks mean "keep what is stored", the patch only carries re-typed values. */
 const EDIT_STEPS: WizardStep[] = [
+	{id: 'connection', label: 'Connection'},
 	{id: 'events', label: 'Events'},
 	{id: 'review', label: 'Review'},
 ];
@@ -47,6 +47,13 @@ const STEP_DESC: Record<string, string> = {
 	events: 'Pick the events that fire a message to this channel.',
 	review:
 		'Name the channel — that is all that is stored besides the events.',
+};
+
+const STEP_DESC_EDIT: Record<string, string> = {
+	...STEP_DESC,
+	connection:
+		'Optional — fill only what you want to change. Blank fields keep their current values.',
+	review: 'Rename the channel or leave it as is.',
 };
 
 /** Add / edit a notification channel as a checkpoint wizard. */
@@ -101,7 +108,7 @@ export function NotificationChannelSheet({
 		);
 	const canContinue =
 		step === 'connection'
-			? connectionReady
+			? editing || connectionReady
 			: step === 'events'
 				? selectedTriggers.length > 0
 				: true;
@@ -122,7 +129,9 @@ export function NotificationChannelSheet({
 					<SheetTitle>
 						{editing ? 'Edit channel' : 'New notification channel'}
 					</SheetTitle>
-					<SheetDescription>{STEP_DESC[step]}</SheetDescription>
+					<SheetDescription>
+						{(editing ? STEP_DESC_EDIT : STEP_DESC)[step]}
+					</SheetDescription>
 					<StepCheckpoints steps={steps} idx={stepIdx} />
 				</SheetHeader>
 
@@ -205,39 +214,34 @@ export function NotificationChannelSheet({
 												{group}
 											</p>
 											<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-												{TRIGGERS.filter(t => t.group === group).map(
-													t => {
-														const selected =
-															draft.triggers[t.key] === true;
-														return (
-															<button
-																key={t.key}
-																type="button"
-																onClick={() =>
-																	patch({
-																		triggers: {
-																			...draft.triggers,
-																			[t.key]: !selected,
-																		},
-																	})
-																}
-																aria-pressed={selected}
-																className={cn(
-																	'flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm font-medium transition-all duration-150',
-																	selected
-																		? 'border-primary/50 bg-primary/[0.08] text-foreground'
-																		: 'border-border/60 text-muted-foreground hover:bg-muted/30',
-																)}>
-																<span className="truncate">
-																	{t.label}
-																</span>
-																{selected && (
-																	<Check className="ml-auto size-3.5 shrink-0 text-primary" />
-																)}
-															</button>
-														);
-													},
-												)}
+												{TRIGGERS.filter(t => t.group === group).map(t => {
+													const selected = draft.triggers[t.key] === true;
+													return (
+														<button
+															key={t.key}
+															type="button"
+															onClick={() =>
+																patch({
+																	triggers: {
+																		...draft.triggers,
+																		[t.key]: !selected,
+																	},
+																})
+															}
+															aria-pressed={selected}
+															className={cn(
+																'flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm font-medium transition-all duration-150',
+																selected
+																	? 'border-primary/50 bg-primary/[0.08] text-foreground'
+																	: 'border-border/60 text-muted-foreground hover:bg-muted/30',
+															)}>
+															<span className="truncate">{t.label}</span>
+															{selected && (
+																<Check className="ml-auto size-3.5 shrink-0 text-primary" />
+															)}
+														</button>
+													);
+												})}
 											</div>
 										</div>
 									))}

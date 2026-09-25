@@ -21,6 +21,9 @@ import {cn} from '#/api/utils';
 import {
 	SIDEBAR_CENTER_X,
 	SIDEBAR_COLLAPSE,
+	SIDEBAR_ICON_CELL,
+	SIDEBAR_LABEL,
+	SIDEBAR_ROW,
 	SidebarGroup,
 	SidebarMenu,
 	SidebarMenuItem,
@@ -146,9 +149,7 @@ function resolveContext(
 	return null;
 }
 
-/** Vercel-style context header — "<   Observability": a plain thin <
- * chevron (no boxed button look), title CENTERED. Whole header is the
- * back control; chevron-only when collapsed. */
+/** Context header — the whole bar is the back control: chevron cell + centered title. */
 function ContextHeader({
 	label,
 	collapsed,
@@ -165,18 +166,19 @@ function ContextHeader({
 			title={collapsed ? 'Back' : undefined}
 			aria-label={`Back — ${label}`}
 			className={cn(
-				'flex h-8 w-full cursor-pointer items-center gap-2 rounded-md px-1 outline-none transition-[padding,gap,background-color] hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring/40',
+				SIDEBAR_ROW,
 				SIDEBAR_COLLAPSE,
-				collapsed && cn(SIDEBAR_CENTER_X, 'gap-0'),
-				)}>
-			<ChevronLeft
-				className="size-4 shrink-0 text-muted-foreground"
-				strokeWidth={2}
-			/>
+				'focus-visible:ring-2 focus-visible:ring-ring/40',
+				collapsed && SIDEBAR_CENTER_X,
+			)}>
+			<span className={SIDEBAR_ICON_CELL}>
+				<ChevronLeft className="size-4 text-muted-foreground" strokeWidth={2} />
+			</span>
 			<span
 				className={cn(
-					'min-w-0 flex-1 truncate pr-4 text-center text-sm font-semibold text-foreground transition-opacity duration-200 ease-out motion-reduce:transition-none',
-					collapsed && 'opacity-0',
+					SIDEBAR_LABEL,
+					'text-center text-sm font-semibold text-foreground',
+					collapsed ? 'opacity-0' : 'pr-9',
 				)}>
 				{label}
 			</span>
@@ -203,22 +205,20 @@ function ContextRow({
 			<button
 				type="button"
 				onClick={onClick}
-				data-nav-active={active || undefined}
 				title={collapsed ? label : undefined}
 				className={cn(
-					'relative flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] outline-none transition-[padding,gap,color,background-color]',
+					SIDEBAR_ROW,
 					SIDEBAR_COLLAPSE,
-					collapsed && cn(SIDEBAR_CENTER_X, 'gap-0'),
+					collapsed && SIDEBAR_CENTER_X,
 					active
-						? 'font-medium text-foreground'
-						: 'font-normal text-muted-foreground hover:bg-sidebar-accent hover:text-foreground',
+						? 'bg-sidebar-accent text-foreground'
+						: 'text-muted-foreground',
 				)}>
-				<Icon className="size-4 shrink-0" strokeWidth={1.7} />
+				<span className={SIDEBAR_ICON_CELL}>
+					<Icon className="size-4" strokeWidth={1.7} />
+				</span>
 				<span
-					className={cn(
-						'min-w-0 flex-1 truncate transition-opacity duration-200 ease-out motion-reduce:transition-none',
-						collapsed && 'opacity-0',
-					)}>
+					className={cn(SIDEBAR_LABEL, collapsed && 'opacity-0')}>
 					{label}
 				</span>
 			</button>
@@ -242,13 +242,13 @@ function SettingsContextNav({collapsed}: {collapsed: boolean}) {
 	);
 
 	return (
-		<SidebarGroup className="px-2 py-1">
+		<SidebarGroup className="gap-1 px-2 py-1">
 			<ContextHeader
 				label="Settings"
 				collapsed={collapsed}
 				onBack={() => void navigate({to: '/'})}
 			/>
-			<SidebarMenu className="gap-px">
+			<SidebarMenu className="gap-1">
 				{tabs.map(tab => {
 					const active = (currentTab ?? 'account') === tab.id;
 					return (
@@ -290,13 +290,13 @@ function InfraContextNav({collapsed}: {collapsed: boolean}) {
 			: undefined;
 
 	return (
-		<SidebarGroup className="px-2 py-1">
+		<SidebarGroup className="gap-1 px-2 py-1">
 			<ContextHeader
 				label="Web Server"
 				collapsed={collapsed}
 				onBack={() => void navigate({to: '/'})}
 			/>
-			<SidebarMenu className="gap-px">
+			<SidebarMenu className="gap-1">
 				{INFRA_NAV.map(item => {
 					const active = (currentTab ?? 'web-server') === item.id;
 					return (
@@ -345,13 +345,13 @@ function DeploymentsContextNav({collapsed}: {collapsed: boolean}) {
 	const path = location.pathname.replace(/\/+$/, '') || '/';
 
 	return (
-		<SidebarGroup className="px-2 py-1">
+		<SidebarGroup className="gap-1 px-2 py-1">
 			<ContextHeader
 				label="Deployments"
 				collapsed={collapsed}
 				onBack={() => void navigate({to: '/'})}
 			/>
-			<SidebarMenu className="gap-px">
+			<SidebarMenu className="gap-1">
 				{DEPLOYMENTS_NAV.map(item => (
 					<ContextRow
 						key={item.id}
@@ -388,7 +388,7 @@ function ServiceContextNav({
 	}
 
 	return (
-		<SidebarGroup className="px-2 py-1">
+		<SidebarGroup className="gap-1 px-2 py-1">
 			<ContextHeader
 				label={label}
 				collapsed={collapsed}
@@ -399,7 +399,7 @@ function ServiceContextNav({
 					})
 				}
 			/>
-			<SidebarMenu className="gap-px">
+			<SidebarMenu className="gap-1">
 				{tabs.map(tab => {
 					const Icon = TAB_ICONS[tab] ?? Wrench;
 					return (

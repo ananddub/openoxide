@@ -38,3 +38,8 @@ export const updateDomain = DomainService.method.updateDomain;
  * @generated from rpc openoxide.api.v1.DomainService.DeleteDomain
  */
 export const deleteDomain = DomainService.method.deleteDomain;
+
+/**
+ * @generated from rpc openoxide.api.v1.DomainService.ValidateDomainDns
+ */
+export const validateDomainDns = DomainService.method.validateDomainDns;

@@ -1,15 +1,13 @@
-use std::ffi::{c_char, c_int, c_void, CStr};
 use std::collections::HashMap;
+use std::ffi::{CStr, c_char, c_int, c_void};
 use std::os::unix::io::RawFd;
 use std::sync::Arc;
 use tokio::io::unix::AsyncFd;
 use tokio::sync::broadcast;
 
-use crate::c_ffi::sqlite3_realtime_attach_if_needed;
-
 use crate::c_ffi::{
-    sqlite3_realtime_cleanup, sqlite3_realtime_drain, sqlite3_realtime_init, RealtimeOp,
-    RealtimeRawEvent,
+    RealtimeOp, RealtimeRawEvent, sqlite3_realtime_cleanup, sqlite3_realtime_drain,
+    sqlite3_realtime_init,
 };
 
 struct DrainContext {
@@ -20,8 +18,9 @@ struct DrainContext {
 /// re-attaches reuse the existing reactor instead of spawning a duplicate.
 /// Weak refs: when the last pool-side holder drops (connection replaced),
 /// the stale entry disappears automatically.
-static HANDLES: std::sync::LazyLock<std::sync::Mutex<HashMap<usize, std::sync::Weak<RealtimeHandle>>>> =
-    std::sync::LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
+static HANDLES: std::sync::LazyLock<
+    std::sync::Mutex<HashMap<usize, std::sync::Weak<RealtimeHandle>>>,
+> = std::sync::LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
 
 fn register_handle(ptr: usize, handle: &Arc<RealtimeHandle>) {
     HANDLES

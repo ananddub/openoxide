@@ -1,6 +1,7 @@
 use auto_di::singleton;
 use std::sync::Arc;
 
+use crate::services::identity::permission::types::{PolicyAction, ResourceType};
 use crate::{
     db::queries::FlashQueries,
     flash_gen::{
@@ -10,7 +11,6 @@ use crate::{
         user_policy::{UserPolicyDeleteParams, UserPolicyUpsertParams},
     },
 };
-use crate::services::identity::permission::types::{PolicyAction, ResourceType};
 
 pub struct PermissionService {
     queries: Arc<FlashQueries>,
@@ -27,9 +27,7 @@ impl PermissionService {
     /// alone must not grant cross-organization power — otherwise every
     /// invited member would wildcard into their inviter's workspace.
     pub async fn is_platform_owner(&self, user_id: i64) -> Result<bool, sqlx::Error> {
-        self.queries
-            .users_is_platform_owner(user_id as i32)
-            .await
+        self.queries.users_is_platform_owner(user_id as i32).await
     }
 
     /// The caller's effective role and granted actions inside one
@@ -45,7 +43,11 @@ impl PermissionService {
         if self.is_platform_owner(user_id).await? {
             return Ok(("OWNER".into(), vec!["*".into()]));
         }
-        let member_role = match self.queries.organization_members_role(user_id, org_id).await {
+        let member_role = match self
+            .queries
+            .organization_members_role(user_id, org_id)
+            .await
+        {
             Ok(role) => role,
             Err(sqlx::Error::RowNotFound) => None,
             Err(error) => return Err(error),

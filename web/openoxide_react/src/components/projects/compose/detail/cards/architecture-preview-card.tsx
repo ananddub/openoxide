@@ -307,6 +307,8 @@ export function ArchitecturePreviewCard({
 					<div className="pointer-events-none h-full w-full">
 						<ComposeVisualizer
 							readOnly
+							monitorId={monitor?.id}
+							monitorType={monitor?.type}
 							wrapperClassName="h-full min-h-0 rounded-none border-0 bg-transparent"
 							serviceStatus={serviceStatus}
 							customServices={customServices}

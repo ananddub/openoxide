@@ -1,6 +1,6 @@
 use proc_macro2::Span;
 use quote::{format_ident, quote};
-use syn::{Attribute, Expr, Ident, ItemImpl, Stmt};
+use syn::{Attribute, Ident, ItemImpl, Stmt};
 
 struct PermissionAttr {
     resource: Ident,

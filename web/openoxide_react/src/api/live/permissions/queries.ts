@@ -1,6 +1,7 @@
 import {useConnectQuery} from '../query';
 import {permissionClient} from './shared';
 import {
+	PermissionPolicyEffect,
 	PermissionUserRole,
 	type PermissionGroup,
 	type PermissionInvite,
@@ -13,6 +14,7 @@ import type {
 	OrganizationMemberPayload,
 	PermissionGroupPayload,
 	PermissionPolicyPayload,
+	UserPolicyOverridePayload,
 } from './types';
 
 /** Membership role enum → legacy payload string (null when unset). */
@@ -66,6 +68,7 @@ function toGroupPayload(group: PermissionGroup): PermissionGroupPayload {
 		id: group.id,
 		name: group.name,
 		is_system: group.isSystem,
+		is_active: group.isActive,
 		organization_id: group.organizationId ?? null,
 		actions: group.actions,
 		created_at: group.createdAt,
@@ -135,5 +138,23 @@ export function usePolicyList() {
 				action: policy.action,
 			}));
 		},
+	);
+}
+
+/** One member's per-user policy overrides (GRANT/DENY rows on top of the role). */
+export function useUserPolicies(userId: number | bigint | undefined) {
+	return useConnectQuery<UserPolicyOverridePayload[]>(
+		['permission-user-policies', String(userId ?? 0)],
+		async () => {
+			const response = await permissionClient.listUserPolicies({
+				id: BigInt(userId ?? 0),
+			});
+			return response.policies.map(entry => ({
+				policy_id: Number(entry.policyId),
+				effect:
+					entry.effect === PermissionPolicyEffect.GRANT ? 'GRANT' : 'DENY',
+			}));
+		},
+		{enabled: userId !== undefined && userId !== null && userId !== 0},
 	);
 }

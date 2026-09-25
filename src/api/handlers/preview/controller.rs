@@ -45,7 +45,7 @@ impl PreviewDeploymentService for PreviewDeploymentController {
         })
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn create_preview<'a>(
         &'a self,
         ctx: RequestContext,
@@ -63,7 +63,7 @@ impl PreviewDeploymentService for PreviewDeploymentController {
         })
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn redeploy_preview<'a>(
         &'a self,
         ctx: RequestContext,

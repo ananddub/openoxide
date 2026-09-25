@@ -13,6 +13,7 @@ service DomainService {
   rpc CreateDomain(CreateDomainRequest) returns (CreateDomainResponse);
   rpc UpdateDomain(UpdateDomainRequest) returns (UpdateDomainResponse);
   rpc DeleteDomain(DeleteDomainRequest) returns (Empty);
+  rpc ValidateDomainDns(ValidateDomainDnsRequest) returns (ValidateDomainDnsResponse);
 }
 
 enum DomainType {
@@ -122,4 +123,20 @@ message UpdateDomainResponse {
 
 message DeleteDomainRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+// Resolves the host's A/AAAA records (CNAME chains are followed by the resolver) and compares them with the target server's IP. server_id absent means the panel's own machine.
+message ValidateDomainDnsRequest {
+  string host = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 255];
+  optional int64 server_id = 2 [(buf.validate.field).int64.gt = 0];
+}
+
+message ValidateDomainDnsResponse {
+  bool is_valid = 1;
+  // Public IPs the host currently resolves to.
+  repeated string resolved_ips = 2;
+  // IPs the host is expected to point at; empty when the server has none configured.
+  repeated string expected_ips = 3;
+  // Human-readable failure reason; absent when is_valid.
+  optional string error = 4;
 }

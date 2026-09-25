@@ -112,15 +112,10 @@ services:
       # -1 is the local-Agent sentinel; the panel maps it to its actual local
       # server row, so dev databases do not need a hard-coded id.
       SERVER_ID: "-1"
-      MONITOR_DATABASE_URL: "memory://metrics"
       GRPC_PORT: "50051"
-      REFRESH_RATE: "2"
-      RETENTION_DAYS: "7"
       OPENOXIDE_SERVER_URL: "http://openoxide:4000"
       METRICS_TOKEN: "${METRICS_TOKEN:-change_me_metrics_token}"
       RUST_LOG: "agent=info"
-      COLLECTION_MODE: "auto"
-      ROLLUP_SAMPLES: "1"
 
   # The dashboard is embedded in the panel binary (rust-embed) and served
   # over the panel's h2-only HTTPS listener on :4000 — no standalone web

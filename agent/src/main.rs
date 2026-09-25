@@ -20,9 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!(
         server_id = config.server_id,
-        refresh_rate = config.refresh_rate,
         grpc_port = config.grpc_port,
-        panel = %config.panel_url,
         "starting openoxide agent"
     );
 

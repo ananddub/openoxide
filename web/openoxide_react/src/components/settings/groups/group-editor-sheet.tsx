@@ -31,15 +31,7 @@ const titleCase = (word: string) =>
 	word ? word[0].toUpperCase() + word.slice(1).replace(/_/g, ' ') : word;
 
 /** Column order a reader expects; anything new lands at the end, alphabetically. */
-const OP_ORDER = [
-	'read',
-	'create',
-	'update',
-	'delete',
-	'deploy',
-	'write',
-	'monitor',
-];
+const OP_ORDER = ['read', 'create', 'update', 'delete'];
 
 const opRank = (op: string) => {
 	const i = OP_ORDER.indexOf(op);

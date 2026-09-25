@@ -1,66 +1,49 @@
-use std::collections::HashMap;
+use sqlx::Row;
+use std::collections::HashSet;
 use std::sync::{OnceLock, RwLock};
-use sqlx::sqlite::{PreupdateHookResult, SqliteOperation};
-use sqlx::{Decode, Row};
 
-/// Resolves the `organization_id` column index for each table so the
-/// hook can route changes to an organization without issuing any schema
-/// reads on the hot path.
-pub struct OrgColumnIndex {
-    columns: RwLock<HashMap<String, Option<i32>>>,
+/// Names of tables that carry an `organization_id` column, computed once at
+/// startup. Lets the CDC bridge skip the per-event row lookup for tables
+/// that can never be org-scoped.
+static ORG_TABLES: OnceLock<RwLock<HashSet<String>>> = OnceLock::new();
+
+pub(super) async fn refresh(pool: &sqlx::SqlitePool) {
+    let tables = match sqlx::query("SELECT name FROM sqlite_master WHERE type = 'table'")
+        .fetch_all(pool)
+        .await
+    {
+        Ok(tables) => tables,
+        Err(_) => return,
+    };
+    let mut org_tables = HashSet::new();
+    for table in tables {
+        let Ok(name) = table.try_get::<String, _>(0) else {
+            continue;
+        };
+        let info = sqlx::query(sqlx::AssertSqlSafe(format!(
+            "PRAGMA table_info(\"{name}\")"
+        )))
+        .fetch_all(pool)
+        .await;
+        if info.is_ok_and(|info| {
+            info.iter().any(|column| {
+                column
+                    .try_get::<String, _>(1)
+                    .is_ok_and(|column| column == "organization_id")
+            })
+        }) {
+            org_tables.insert(name);
+        }
+    }
+    let slot = ORG_TABLES.get_or_init(|| RwLock::new(HashSet::new()));
+    if let Ok(mut current) = slot.write() {
+        *current = org_tables;
+    }
 }
 
-impl OrgColumnIndex {
-    pub fn global() -> &'static Self {
-        static INDEX: OnceLock<OrgColumnIndex> = OnceLock::new();
-        INDEX.get_or_init(|| Self {
-            columns: RwLock::new(HashMap::new()),
-        })
-    }
-
-    pub async fn refresh(pool: &sqlx::SqlitePool) {
-        let tables = sqlx::query("SELECT name FROM sqlite_master WHERE type = 'table'")
-            .fetch_all(pool)
-            .await;
-        let Ok(tables) = tables else {
-            return;
-        };
-        let mut columns = HashMap::new();
-        for table in tables {
-            let Ok(name) = table.try_get::<String, _>(0) else {
-                continue;
-            };
-            let info = sqlx::query(sqlx::AssertSqlSafe(format!(
-                "PRAGMA table_info(\"{name}\")"
-            )))
-            .fetch_all(pool)
-            .await;
-            let Ok(info) = info else {
-                continue;
-            };
-            let index = info
-                .iter()
-                .enumerate()
-                .find_map(|(index, column)| {
-                    column
-                        .try_get::<String, _>(1)
-                        .is_ok_and(|column| column == "organization_id")
-                        .then_some(index as i32)
-                });
-            columns.insert(name, index);
-        }
-        if let Ok(mut self_columns) = Self::global().columns.write() {
-            *self_columns = columns;
-        }
-    }
-
-    pub fn organization_id(&self, result: &PreupdateHookResult<'_>) -> Option<i64> {
-        let index = *self.columns.read().ok()?.get(result.table)?;
-        let index = index?;
-        let value = match result.operation {
-            SqliteOperation::Delete => result.get_old_column_value(index),
-            _ => result.get_new_column_value(index),
-        };
-        Option::<i64>::decode(value.ok()?).ok().flatten()
-    }
+pub(super) fn is_org_scoped(table: &str) -> bool {
+    ORG_TABLES
+        .get()
+        .and_then(|tables| tables.read().ok())
+        .is_some_and(|tables| tables.contains(table))
 }

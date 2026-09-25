@@ -37,7 +37,7 @@ export function isIpAddress(value: string): boolean {
 /** Host-configuration form: load, dirty-tracking, validate and save. */
 export function useHostSettingsForm() {
 	const {can} = usePermissions();
-	const canManage = can('org:write');
+	const canManage = can('org:update');
 	const settingsQuery = useSettingsGet({enabled: canManage});
 	const updateMutation = useSettingsUpdate();
 

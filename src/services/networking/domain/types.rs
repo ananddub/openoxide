@@ -100,3 +100,12 @@ impl From<Domains> for DomainRecord {
         }
     }
 }
+
+/// Result of a live DNS check for a domain host.
+#[derive(Debug, Clone)]
+pub struct DnsValidation {
+    pub is_valid: bool,
+    pub resolved_ips: Vec<String>,
+    pub expected_ips: Vec<String>,
+    pub error: Option<String>,
+}

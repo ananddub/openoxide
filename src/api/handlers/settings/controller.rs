@@ -11,7 +11,7 @@ use super::init::SettingsController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl SettingsService for SettingsController {
-    #[permission(Organization, CanWrite)]
+    #[permission(Organization, CanUpdate)]
     async fn get_settings<'a>(
         &'a self,
         ctx: RequestContext,
@@ -25,7 +25,7 @@ impl SettingsService for SettingsController {
         })
     }
 
-    #[permission(Organization, CanWrite)]
+    #[permission(Organization, CanUpdate)]
     async fn update_settings<'a>(
         &'a self,
         ctx: RequestContext,

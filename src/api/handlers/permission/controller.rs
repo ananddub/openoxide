@@ -10,9 +10,10 @@ use crate::api::connect::generated::openoxide::api::v1::{
     PermissionGetGroupResponse, PermissionListGroupsRequest, PermissionListGroupsResponse,
     PermissionListInvitesRequest, PermissionListInvitesResponse, PermissionListMembersRequest,
     PermissionListMembersResponse, PermissionListPoliciesRequest, PermissionListPoliciesResponse,
+    PermissionListUserPoliciesRequest, PermissionListUserPoliciesResponse,
     PermissionRemoveMemberRequest, PermissionReplaceUserPoliciesRequest, PermissionService,
-    PermissionServiceExt, PermissionUpdateGroupRequest, PermissionUpdateMemberRoleRequest,
-    UpdatePermissionRequest,
+    PermissionServiceExt, PermissionSetGroupActiveRequest, PermissionUpdateGroupRequest,
+    PermissionUpdateMemberRoleRequest, PermissionUserPolicyEntry, UpdatePermissionRequest,
 };
 use crate::services::identity::permission::PermissionGroupError;
 use crate::services::identity::permission::group_service::{
@@ -425,5 +426,49 @@ impl PermissionService for PermissionGroupController {
             .await
             .map_err(map_error)?;
         Response::ok(Empty::default())
+    }
+
+    #[permission(Groups, CanUpdate)]
+    async fn set_group_active<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, PermissionSetGroupActiveRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        self.service
+            .set_group_active(
+                auth.user_id(),
+                auth.organization_id,
+                request.id,
+                request.is_active,
+            )
+            .await
+            .map_err(map_error)?;
+        Response::ok(Empty::default())
+    }
+
+    #[permission(Members, CanRead)]
+    async fn list_user_policies<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, PermissionListUserPoliciesRequest>,
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<PermissionListUserPoliciesResponse> + Send + use<'a>,
+    > {
+        let policies = self
+            .service
+            .list_user_policies(auth.user_id(), auth.organization_id, request.id)
+            .await
+            .map_err(map_error)?;
+        Response::ok(PermissionListUserPoliciesResponse {
+            policies: policies
+                .into_iter()
+                .map(|entry| PermissionUserPolicyEntry {
+                    policy_id: entry.policy_id,
+                    effect: policy_effect_str_to_proto(&entry.effect),
+                    ..Default::default()
+                })
+                .collect(),
+            ..Default::default()
+        })
     }
 }

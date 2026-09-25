@@ -48,7 +48,7 @@ impl FileTransferService {
             _ => {
                 return Err(tonic::Status::invalid_argument(
                     "upload must start with a header message",
-                ))
+                ));
             }
         };
         // Same rule as the gRPC query handlers: -1 marks the local Agent,
@@ -95,15 +95,14 @@ impl FileTransferService {
             .await
             .map_err(|_| tonic::Status::deadline_exceeded("upload timed out"))?
             {
-                let chunk = chunk.map_err(|e| {
-                    tonic::Status::invalid_argument(format!("read upload: {e}"))
-                })?;
+                let chunk = chunk
+                    .map_err(|e| tonic::Status::invalid_argument(format!("read upload: {e}")))?;
                 let data = match chunk.message {
                     Some(proto::file_upload_message::Message::Data(data)) => data,
                     _ => {
                         return Err(tonic::Status::invalid_argument(
                             "upload metadata must not change mid-stream",
-                        ))
+                        ));
                     }
                 };
                 let next = written

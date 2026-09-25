@@ -9,6 +9,7 @@ import {CertificateList} from '#/components/settings/certificates/certificate-li
 import {
 	GridSkeleton,
 	ListEmpty,
+	ListRegion,
 	ListSkeleton,
 	SectionHeader,
 	Toolbar,
@@ -95,7 +96,7 @@ export function CertificatesPage() {
 	};
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-5 px-4 pt-4 pb-6 duration-200 fade-in">
+		<div className="mx-auto flex h-full w-full max-w-[1920px] animate-in flex-col gap-5 px-4 pt-4 pb-6 duration-200 fade-in">
 			<SectionHeader
 				title="Certificates"
 				description="Install a PEM chain so Traefik serves HTTPS with your own certificate, on local or remote servers. Certificate and key are validated to match before they are written."
@@ -116,51 +117,53 @@ export function CertificatesPage() {
 				/>
 			</Toolbar>
 
-			{itemsQuery.isLoading ? (
-				view === 'grid' ? (
-					<GridSkeleton />
-				) : (
-					<ListSkeleton />
-				)
-			) : items.length === 0 ? (
-				<ListEmpty
-					icon={ShieldCheck}
-					title="No custom certificates"
-					description="Add a PEM certificate chain and its private key to serve HTTPS for your own domains through Traefik."
-					action={
-						<Button
-							onClick={create}
-							className="h-9 gap-1.5 text-xs font-semibold">
-							<Plus className="size-3.5" /> New certificate
-						</Button>
-					}
-				/>
-			) : filtered.length === 0 ? (
-				<ListEmpty
-					icon={Search}
-					title="No certificates match your search"
-					description="Try a different name, certificate path or target server."
-					action={
-						q !== '' && (
+			<ListRegion>
+				{itemsQuery.isLoading ? (
+					view === 'grid' ? (
+						<GridSkeleton />
+					) : (
+						<ListSkeleton />
+					)
+				) : items.length === 0 ? (
+					<ListEmpty
+						icon={ShieldCheck}
+						title="No custom certificates"
+						description="Add a PEM certificate chain and its private key to serve HTTPS for your own domains through Traefik."
+						action={
 							<Button
-								variant="ghost"
-								onClick={() => setSearch('')}
-								className="text-xs font-semibold text-primary">
-								Clear Search
+								onClick={create}
+								className="h-9 gap-1.5 text-xs font-semibold">
+								<Plus className="size-3.5" /> New certificate
 							</Button>
-						)
-					}
-				/>
-			) : (
-				<CertificateList
-					items={filtered}
-					servers={servers}
-					view={view}
-					onEdit={edit}
-					onHistory={history}
-					onDelete={setDeleting}
-				/>
-			)}
+						}
+					/>
+				) : filtered.length === 0 ? (
+					<ListEmpty
+						icon={Search}
+						title="No certificates match your search"
+						description="Try a different name, certificate path or target server."
+						action={
+							q !== '' && (
+								<Button
+									variant="ghost"
+									onClick={() => setSearch('')}
+									className="text-xs font-semibold text-primary">
+									Clear Search
+								</Button>
+							)
+						}
+					/>
+				) : (
+					<CertificateList
+						items={filtered}
+						servers={servers}
+						view={view}
+						onEdit={edit}
+						onHistory={history}
+						onDelete={setDeleting}
+					/>
+				)}
+			</ListRegion>
 
 			<CertificateSheet
 				certificate={selected}

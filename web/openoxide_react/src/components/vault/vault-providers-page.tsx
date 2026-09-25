@@ -15,6 +15,7 @@ import {
 	Toolbar,
 	ToolbarSearch,
 	ListEmpty,
+	ListRegion,
 } from '#/components/settings/list-card';
 import {ConfirmDeleteDialog} from '#/components/settings/confirm-delete-dialog';
 import {
@@ -141,7 +142,7 @@ export function VaultProvidersPage() {
 	);
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+		<div className="mx-auto flex h-full w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 			<SectionHeader
 				title="Vault Providers"
 				description="Connect an external secret store and reference its values as environment variables."
@@ -205,29 +206,31 @@ export function VaultProvidersPage() {
 				/>
 			</Toolbar>
 
-			{providersQuery.isLoading || providers.length > 0 ? (
-				<VaultProvidersList
-					providers={filtered}
-					isLoading={providersQuery.isLoading}
-					hasFilters={hasFilters}
-					view={view}
-					copiedId={copiedId}
-					testingId={testingId}
-					onClearFilters={clearFilters}
-					onSecrets={setSecretsProvider}
-					onTest={provider => void handleTest(provider)}
-					onCopy={handleCopySyntax}
-					onEdit={handleOpenEdit}
-					onDelete={setDeleteTarget}
-				/>
-			) : (
-				<ListEmpty
-					icon={KeyRound}
-					title="No Vault Providers Connected"
-					description="Connect HashiCorp Vault, Doppler, Infisical, AWS, Azure or Scaleway and reference secrets as environment variables."
-					action={createButton}
-				/>
-			)}
+			<ListRegion>
+				{providersQuery.isLoading || providers.length > 0 ? (
+					<VaultProvidersList
+						providers={filtered}
+						isLoading={providersQuery.isLoading}
+						hasFilters={hasFilters}
+						view={view}
+						copiedId={copiedId}
+						testingId={testingId}
+						onClearFilters={clearFilters}
+						onSecrets={setSecretsProvider}
+						onTest={provider => void handleTest(provider)}
+						onCopy={handleCopySyntax}
+						onEdit={handleOpenEdit}
+						onDelete={setDeleteTarget}
+					/>
+				) : (
+					<ListEmpty
+						icon={KeyRound}
+						title="No Vault Providers Connected"
+						description="Connect HashiCorp Vault, Doppler, Infisical, AWS, Azure or Scaleway and reference secrets as environment variables."
+						action={createButton}
+					/>
+				)}
+			</ListRegion>
 
 			<VaultProviderFormDialog
 				open={isFormOpen}

@@ -349,7 +349,7 @@ impl Queries {
         params: &GroupsGetUserFinalPermissionsParams,
     ) -> Result<Vec<String>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, String>(
-            "WITH user_permissions AS ( SELECT p.action, up.effect FROM user_policy up JOIN policy p ON p.id = up.policy_id WHERE up.user_id = ? AND up.org_id = ? ) SELECT DISTINCT action FROM ( SELECT p.action FROM group_policy gp JOIN policy p ON p.id = gp.policy_id JOIN organization_members om ON om.group_id = gp.group_id WHERE om.user_id = ? AND om.organization_id = ? UNION ALL SELECT action FROM user_permissions WHERE effect = 'GRANT' ) perms WHERE action NOT IN (SELECT action FROM user_permissions WHERE effect = 'DENY');"
+            "WITH user_permissions AS ( SELECT p.action, up.effect FROM user_policy up JOIN policy p ON p.id = up.policy_id WHERE up.user_id = ? AND up.org_id = ? ) SELECT DISTINCT action FROM ( SELECT p.action FROM group_policy gp JOIN policy p ON p.id = gp.policy_id JOIN organization_members om ON om.group_id = gp.group_id JOIN groups g ON g.id = om.group_id AND g.is_active = 1 WHERE om.user_id = ? AND om.organization_id = ? UNION ALL SELECT action FROM user_permissions WHERE effect = 'GRANT' ) perms WHERE action NOT IN (SELECT action FROM user_permissions WHERE effect = 'DENY');"
         )
         .bind(&params.user_id)
         .bind(&params.org_id)

@@ -62,6 +62,8 @@ export function CanvasInner({
 	onDeleteSchedule,
 	onEditBackup,
 	onDeleteBackup,
+	monitorId,
+	monitorType,
 }: CanvasInnerProps) {
 	const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
 	const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -117,6 +119,10 @@ export function CanvasInner({
 				onOpenTerminal,
 				onViewLogs,
 				readOnly,
+				// Stack-level docker stats are one container's line — only
+				// honest on a single-service canvas.
+				monitorId: services.length === 1 ? monitorId : undefined,
+				monitorType: services.length === 1 ? monitorType : undefined,
 			},
 		);
 		setNodes(n);
@@ -129,6 +135,8 @@ export function CanvasInner({
 		onAddBackup,
 		onOpenTerminal,
 		onViewLogs,
+		monitorId,
+		monitorType,
 		setNodes,
 		setEdges,
 	]);

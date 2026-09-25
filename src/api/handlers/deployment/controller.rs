@@ -354,7 +354,7 @@ impl DeploymentService for DeploymentController {
         Response::stream_ok(log_line_stream(receiver))
     }
 
-    #[permission(Deployment, CanDeploy)]
+    #[permission(Deployment, CanUpdate)]
     async fn cancel_deployment<'a>(
         &'a self,
         _ctx: RequestContext,

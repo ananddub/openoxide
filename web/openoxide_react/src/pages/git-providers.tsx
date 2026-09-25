@@ -18,6 +18,7 @@ import {ConfirmDeleteDialog} from '#/components/settings/confirm-delete-dialog';
 import {
 	GridSkeleton,
 	ListEmpty,
+	ListRegion,
 	ListSkeleton,
 	SectionHeader,
 	Toolbar,
@@ -80,7 +81,7 @@ export function GitProvidersPage() {
 	const hasFilters = q !== '' || typeFilter !== 'All';
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-5 px-4 pt-4 pb-6 duration-200 fade-in">
+		<div className="mx-auto flex h-full w-full max-w-[1920px] animate-in flex-col gap-5 px-4 pt-4 pb-6 duration-200 fade-in">
 			<SectionHeader
 				title="Git Providers"
 				description="Connect GitHub, GitLab, Bitbucket or Gitea once and every project reuses the authorization for repository deployments and webhooks."
@@ -122,47 +123,49 @@ export function GitProvidersPage() {
 				/>
 			</Toolbar>
 
-			{isLoading ? (
-				view === 'grid' ? (
-					<GridSkeleton />
+			<ListRegion>
+				{isLoading ? (
+					view === 'grid' ? (
+						<GridSkeleton />
+					) : (
+						<ListSkeleton />
+					)
+				) : filteredProviders.length === 0 ? (
+					hasFilters && providers.length > 0 ? (
+						<ListEmpty
+							icon={Search}
+							title="No providers match your search"
+							description="Try a different name, host or provider type."
+							action={
+								<Button
+									variant="ghost"
+									onClick={() => {
+										setSearch('');
+										setTypeFilter('All');
+									}}
+									className="text-xs font-semibold text-primary">
+									Clear All Filters
+								</Button>
+							}
+						/>
+					) : (
+						<ListEmpty
+							icon={GitBranch}
+							title="No Git providers yet"
+							description="Connect GitHub, GitLab, Bitbucket or Gitea once and every project reuses the authorization for repository deployments and webhooks."
+						/>
+					)
 				) : (
-					<ListSkeleton />
-				)
-			) : filteredProviders.length === 0 ? (
-				hasFilters && providers.length > 0 ? (
-					<ListEmpty
-						icon={Search}
-						title="No providers match your search"
-						description="Try a different name, host or provider type."
-						action={
-							<Button
-								variant="ghost"
-								onClick={() => {
-									setSearch('');
-									setTypeFilter('All');
-								}}
-								className="text-xs font-semibold text-primary">
-								Clear All Filters
-							</Button>
-						}
+					<GitProviderList
+						providers={filteredProviders}
+						view={view}
+						onAuthorize={handleAuthorize}
+						onTest={handleTest}
+						onEdit={openEdit}
+						onDelete={setDeletingId}
 					/>
-				) : (
-					<ListEmpty
-						icon={GitBranch}
-						title="No Git providers yet"
-						description="Connect GitHub, GitLab, Bitbucket or Gitea once and every project reuses the authorization for repository deployments and webhooks."
-					/>
-				)
-			) : (
-				<GitProviderList
-					providers={filteredProviders}
-					view={view}
-					onAuthorize={handleAuthorize}
-					onTest={handleTest}
-					onEdit={openEdit}
-					onDelete={setDeletingId}
-				/>
-			)}
+				)}
+			</ListRegion>
 
 			<ConfirmDeleteDialog
 				open={deletingId !== null}

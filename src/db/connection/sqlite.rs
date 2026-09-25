@@ -68,16 +68,9 @@ pub async fn connect(config: Arc<Config>) -> SqlitePool {
         let _ = sqlx::query(idx).execute(&pool).await;
     }
 
-    // Attach the realtime CDC engine to the (single) physical connection.
-    // The hooks and the event-forwarding bridge (handle → DbEventBus) are
-    // wired in after_connect above (register_realtime_handle), so the pool
-    // only needs to resolve the CURRENT connection's handle for live
-    // query streams.
-    let realtime_pool = crate::db::reactive::RealtimePool::new(pool.clone())
-        .await
-        .expect("Failed to attach realtime CDC engine to SQLite connection");
-    crate::db::reactive::set_realtime(realtime_pool);
-
+    // The CDC hooks and the event-forwarding bridge (handle → DbEventBus)
+    // are wired in after_connect above (register_realtime_handle) — that is
+    // the entire realtime surface; nothing else holds a pool wrapper.
     tracing::info!("Database connection established in WAL mode with realtime CDC attached.");
     pool
 }

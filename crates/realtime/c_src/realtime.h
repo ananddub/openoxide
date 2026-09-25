@@ -72,35 +72,6 @@ int sqlite3_realtime_cleanup(sqlite3 *db);
 */
 int sqlite3_realtime_attach_if_needed(sqlite3 *db, int *pOutEventFd, int *pAlreadyAttached);
 
-/*
-** Query dependency analyzer callback signature.
-** Called once for each table discovered in the query plan.
-*/
-typedef void (*sqlite3_realtime_table_callback)(
-    const char *zTable,    /* Table name (unquoted, without schema prefix) */
-    void *pUser            /* User context pointer */
-);
-
-/*
-** Analyze an arbitrary SQL query using SQLite's EXPLAIN QUERY PLAN engine.
-** Invokes xCallback once for each dependent table discovered by the optimizer.
-**
-** For a JOIN query like "SELECT * FROM users u JOIN orders o ON ...",
-** xCallback will be called twice: once with "users" and once with "orders".
-**
-** Handles quoted identifiers ("order details"), schema prefixes (main.users),
-** and skips non-table entries (SUBQUERY, CONSTANT, TEMP B-TREE).
-**
-** Returns SQLITE_OK on success, SQLITE_MISUSE if arguments are NULL,
-** or the error code from sqlite3_prepare_v2 if the SQL is invalid.
-*/
-int sqlite3_realtime_analyze_query(
-    sqlite3 *db,
-    const char *zSql,
-    sqlite3_realtime_table_callback xCallback,
-    void *pUser
-);
-
 #ifdef __cplusplus
 }
 #endif

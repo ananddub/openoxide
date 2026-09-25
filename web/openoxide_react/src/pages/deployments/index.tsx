@@ -3,6 +3,7 @@ import {Rocket, SearchX, Trash2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {
 	ListEmpty,
+	ListRegion,
 	ListSkeleton,
 	SectionHeader,
 } from '#/components/settings/list-card';
@@ -27,7 +28,7 @@ function DeploymentsPage() {
 	);
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+		<div className="mx-auto flex h-full w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 			<SectionHeader
 				title="Logs & History"
 				description="Every build and deploy stream across your projects."
@@ -42,7 +43,7 @@ function DeploymentsPage() {
 				}
 			/>
 
-			<div className="flex flex-col gap-4">
+			<div className="flex min-h-0 flex-1 flex-col gap-4">
 				<DeploymentsFilters
 					searchQuery={dp.searchQuery}
 					setSearchQuery={dp.setSearchQuery}
@@ -56,40 +57,42 @@ function DeploymentsPage() {
 					setSortDir={dp.setSortDir}
 				/>
 
-				{dp.isLoading ? (
-					<ListSkeleton rows={6} />
-				) : historyEmpty ? (
-					hasFilters ? (
-						<ListEmpty
-							icon={SearchX}
-							title="No matching deployments"
-							description="Nothing matches the current filters. Try a different search or clear the filters to see everything."
-							action={
-								<Button
-									variant="ghost"
-									onClick={dp.clearFilters}
-									className="text-xs font-semibold text-primary">
-									Clear All Filters
-								</Button>
-							}
-						/>
-					) : (
-						<ListEmpty
-							icon={Rocket}
-							title="No deployments yet"
-							description="Deploy your first app or database and its build history will appear here."
-							action={
-								<Link to="/projects" search={{create: 1} as never}>
-									<Button className="h-9 gap-1.5 text-xs font-semibold">
-										New Project
+				<ListRegion>
+					{dp.isLoading ? (
+						<ListSkeleton rows={6} />
+					) : historyEmpty ? (
+						hasFilters ? (
+							<ListEmpty
+								icon={SearchX}
+								title="No matching deployments"
+								description="Nothing matches the current filters. Try a different search or clear the filters to see everything."
+								action={
+									<Button
+										variant="ghost"
+										onClick={dp.clearFilters}
+										className="text-xs font-semibold text-primary">
+										Clear All Filters
 									</Button>
-								</Link>
-							}
-						/>
-					)
-				) : (
-					<DeploymentActivityList deployments={dp.filteredAndSorted} />
-				)}
+								}
+							/>
+						) : (
+							<ListEmpty
+								icon={Rocket}
+								title="No deployments yet"
+								description="Deploy your first app or database and its build history will appear here."
+								action={
+									<Link to="/projects" search={{create: 1} as never}>
+										<Button className="h-9 gap-1.5 text-xs font-semibold">
+											New Project
+										</Button>
+									</Link>
+								}
+							/>
+						)
+					) : (
+						<DeploymentActivityList deployments={dp.filteredAndSorted} />
+					)}
+				</ListRegion>
 			</div>
 		</div>
 	);

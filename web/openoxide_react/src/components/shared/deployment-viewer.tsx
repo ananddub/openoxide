@@ -16,6 +16,7 @@ export interface DeploymentViewerProps {
 	isLoading?: boolean;
 	loadingText?: string;
 	emptyText?: string;
+	/** Log surface height; the default fills the viewport under the page chrome instead of clipping to a fixed strip. */
 	heightClass?: string;
 	onDownload?: () => void;
 	onReload?: () => void;
@@ -37,7 +38,7 @@ export function DeploymentViewer({
 	isLoading = false,
 	loadingText = 'Connecting to deployment log stream...',
 	emptyText = 'No deployment logs received.',
-	heightClass = 'h-[440px]',
+	heightClass = 'h-[calc(100dvh_-_260px)] min-h-[360px]',
 	onDownload,
 	onReload,
 	onToggleLive,

@@ -8,6 +8,9 @@ export type ComposeServiceNodeData = ComposeService & {
 	onOpenTerminal?: (service: ComposeService) => void;
 	onViewLogs?: (service: ComposeService) => void;
 	readOnly?: boolean;
+	/** Live docker-stats target for this node (single-service stacks only). */
+	monitorId?: number;
+	monitorType?: 'application' | 'database' | 'compose';
 };
 
 export {DockerServiceIcon as ServiceIcon} from '../../common/docker-service-icon';

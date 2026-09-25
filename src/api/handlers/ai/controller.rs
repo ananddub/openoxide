@@ -59,7 +59,7 @@ impl AiService for AiController {
         })
     }
 
-    #[permission(Organization, CanWrite)]
+    #[permission(Organization, CanUpdate)]
     async fn create_settings<'a>(
         &'a self,
         ctx: RequestContext,
@@ -84,7 +84,7 @@ impl AiService for AiController {
         })
     }
 
-    #[permission(Organization, CanWrite)]
+    #[permission(Organization, CanUpdate)]
     async fn update_settings<'a>(
         &'a self,
         ctx: RequestContext,
@@ -109,7 +109,7 @@ impl AiService for AiController {
         })
     }
 
-    #[permission(Organization, CanWrite)]
+    #[permission(Organization, CanUpdate)]
     async fn delete_settings<'a>(
         &'a self,
         ctx: RequestContext,
@@ -286,7 +286,7 @@ impl AiService for AiController {
         })
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn deploy_generation<'a>(
         &'a self,
         ctx: RequestContext,

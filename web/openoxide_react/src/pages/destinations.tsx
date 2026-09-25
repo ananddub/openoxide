@@ -6,11 +6,9 @@ import {
 	LayoutGrid,
 	List,
 	Plus,
-	Search,
 } from 'lucide-react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
-import {Input} from '#/components/ui/input';
 import {
 	Select,
 	SelectContent,
@@ -29,7 +27,12 @@ import {
 	AlertDialogTitle,
 } from '#/components/ui/alert-dialog';
 import {DestinationsList} from '#/components/destinations/destinations-list';
-import {SectionHeader} from '#/components/settings/list-card';
+import {
+	ListRegion,
+	SectionHeader,
+	Toolbar,
+	ToolbarSearch,
+} from '#/components/settings/list-card';
 import type {SshKeysView} from '#/components/ssh-keys/ssh-keys-list';
 import {CreateDestinationModal} from '#/components/destinations/create-destination-modal';
 import {
@@ -137,7 +140,7 @@ function DestinationsPage() {
 	};
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+		<div className="mx-auto flex h-full w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 			<SectionHeader
 				title="S3 Destinations"
 				description="S3-compatible buckets used for application backups and volume snapshots."
@@ -151,104 +154,99 @@ function DestinationsPage() {
 				}
 			/>
 
-			{/* Search + provider filter + grid/list toggle */}
-			<div className="flex w-full animate-in flex-col items-stretch gap-3 duration-200 fade-in sm:flex-row sm:items-center">
-				<div className="relative w-full sm:grow">
-					<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/70" />
-					<Input
-						ref={searchRef}
-						placeholder="Search Destinations"
-						value={search}
-						onChange={e => setSearch(e.target.value)}
-						className="h-9 rounded-lg pr-11 pl-9 text-sm transition-colors duration-150 hover:border-foreground/25"
-					/>
-					<kbd
-						aria-hidden
-						className="pointer-events-none absolute top-1/2 right-3 flex size-5 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-foreground/[0.04] font-mono text-[11px] text-muted-foreground select-none">
-						/
-					</kbd>
-				</div>
+			{/* Search + provider filter + view toggle — sticks with the title */}
+			<Toolbar
+				action={
+					<>
+						<Select
+							value={providerFilter}
+							onValueChange={v => setProviderFilter(v as ProviderFilter)}>
+							<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
+								<SelectValue>
+									{providerFilter === 'All'
+										? 'All Providers'
+										: providerFilter}
+								</SelectValue>
+							</SelectTrigger>
+							<SelectContent className="bg-card">
+								{PROVIDER_FILTERS.map(f => (
+									<SelectItem key={f} value={f}>
+										{f === 'All' ? 'All Providers' : f}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 
-				<div className="flex shrink-0 items-center gap-2">
-					<Select
-						value={providerFilter}
-						onValueChange={v => setProviderFilter(v as ProviderFilter)}>
-						<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
-							<SelectValue>
-								{providerFilter === 'All'
-									? 'All Providers'
-									: providerFilter}
-							</SelectValue>
-						</SelectTrigger>
-						<SelectContent className="bg-card">
-							{PROVIDER_FILTERS.map(f => (
-								<SelectItem key={f} value={f}>
-									{f === 'All' ? 'All Providers' : f}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-
-					{/* Grid / list toggle */}
-					<div className="flex items-center rounded-lg border bg-card p-1">
-						<button
-							type="button"
-							aria-label="Grid view"
-							title="Grid view"
-							onClick={() => handleViewChange('grid')}
-							className={cn(
-								'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
-								view === 'grid' && 'bg-accent text-foreground',
-							)}>
-							<LayoutGrid className="size-3.5" />
-						</button>
-						<button
-							type="button"
-							aria-label="List view"
-							title="List view"
-							onClick={() => handleViewChange('list')}
-							className={cn(
-								'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
-								view === 'list' && 'bg-accent text-foreground',
-							)}>
-							<List className="size-3.5" />
-						</button>
-					</div>
-				</div>
-			</div>
-
-			{/* Content: grid cards or compact list */}
-			{!destinationsQuery.isLoading && destinations.length === 0 ? (
-				<div className="flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center">
-					<HardDrive className="mb-4 size-10 text-muted-foreground/40" />
-					<h3 className="mb-2 text-xl font-semibold tracking-[-0.01em] text-foreground">
-						No S3 destinations yet
-					</h3>
-					<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
-						Connect an S3-compatible bucket — AWS, R2, MinIO, Spaces — to
-						enable backups and volume snapshots.
-					</p>
-					<Button
-						onClick={() => setIsCreateOpen(true)}
-						className="mt-4 h-9 gap-1.5 text-xs font-semibold">
-						<Plus className="size-3.5" />
-						New Destination
-					</Button>
-				</div>
-			) : (
-				<DestinationsList
-					destinations={filtered}
-					isLoading={destinationsQuery.isLoading}
-					hasFilters={hasFilters}
-					view={view}
-					onClearFilters={clearFilters}
-					onEdit={item => {
-						setEditingDestination(item);
-						setIsEditOpen(true);
-					}}
-					onDelete={setDeleteTarget}
+						{/* Grid / list toggle */}
+						<div className="flex items-center rounded-lg border bg-card p-1">
+							<button
+								type="button"
+								aria-label="Grid view"
+								title="Grid view"
+								onClick={() => handleViewChange('grid')}
+								className={cn(
+									'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
+									view === 'grid' && 'bg-accent text-foreground',
+								)}>
+								<LayoutGrid className="size-3.5" />
+							</button>
+							<button
+								type="button"
+								aria-label="List view"
+								title="List view"
+								onClick={() => handleViewChange('list')}
+								className={cn(
+									'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
+									view === 'list' && 'bg-accent text-foreground',
+								)}>
+								<List className="size-3.5" />
+							</button>
+						</div>
+					</>
+				}>
+				<ToolbarSearch
+					inputRef={searchRef}
+					value={search}
+					onChange={setSearch}
+					placeholder="Search Destinations"
+					className="sm:max-w-none"
 				/>
-			)}
+			</Toolbar>
+
+			<ListRegion>
+				{/* Content: grid cards or compact list */}
+				{!destinationsQuery.isLoading && destinations.length === 0 ? (
+					<div className="flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center">
+						<HardDrive className="mb-4 size-10 text-muted-foreground/40" />
+						<h3 className="mb-2 text-xl font-semibold tracking-[-0.01em] text-foreground">
+							No S3 destinations yet
+						</h3>
+						<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
+							Connect an S3-compatible bucket — AWS, R2, MinIO, Spaces — to
+							enable backups and volume snapshots.
+						</p>
+						<Button
+							onClick={() => setIsCreateOpen(true)}
+							className="mt-4 h-9 gap-1.5 text-xs font-semibold">
+							<Plus className="size-3.5" />
+							New Destination
+						</Button>
+					</div>
+				) : (
+					<DestinationsList
+						destinations={filtered}
+						isLoading={destinationsQuery.isLoading}
+						hasFilters={hasFilters}
+						view={view}
+						onClearFilters={clearFilters}
+						onEdit={item => {
+							setEditingDestination(item);
+							setIsEditOpen(true);
+						}}
+						onDelete={setDeleteTarget}
+					/>
+				)}
+			</ListRegion>
 
 			{/* Create — Geist sheet (same sheet handles edit) */}
 			<CreateDestinationModal

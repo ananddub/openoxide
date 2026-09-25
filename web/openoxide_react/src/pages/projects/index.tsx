@@ -14,7 +14,10 @@ import {
 	type ProjectsView,
 } from '#/components/projects/dashboard/projects-toolbar';
 import {EmptyState} from '#/components/projects/dashboard/empty-state';
-import {SectionHeader} from '#/components/settings/list-card';
+import {
+	ListRegion,
+	SectionHeader,
+} from '#/components/settings/list-card';
 import {HandleProjectDialog} from '#/components/projects/dashboard/handle-project-dialog';
 import {useProjectsList} from '#/hooks/projects/list/use-projects-list';
 import {
@@ -86,7 +89,7 @@ function ProjectsPage() {
 	};
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+		<div className="mx-auto flex h-full w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 			<SectionHeader
 				title="Projects"
 				description="Every application, database and service you manage, grouped by project."
@@ -113,64 +116,66 @@ function ProjectsPage() {
 				onViewChange={handleViewChange}
 			/>
 
-			{/* Content: grid cards or compact list */}
-			{isLoadingProjects ? (
-				<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-					{[1, 2, 3, 4].map(i => (
-						<div
-							key={i}
-							className="h-32 animate-pulse rounded-lg border bg-card"
-						/>
-					))}
-				</div>
-			) : filteredAndSortedProjects.length > 0 ? (
-				view === 'grid' ? (
+			<ListRegion>
+				{/* Content: grid cards or compact list */}
+				{isLoadingProjects ? (
 					<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-						{filteredAndSortedProjects.map(project => (
-							<ProjectCard
-								key={String(project.id)}
-								project={project as unknown as any}
-								onDelete={id => setDeletingId(id)}
+						{[1, 2, 3, 4].map(i => (
+							<div
+								key={i}
+								className="h-32 animate-pulse rounded-lg border bg-card"
 							/>
 						))}
+					</div>
+				) : filteredAndSortedProjects.length > 0 ? (
+					view === 'grid' ? (
+						<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+							{filteredAndSortedProjects.map(project => (
+								<ProjectCard
+									key={String(project.id)}
+									project={project as unknown as any}
+									onDelete={id => setDeletingId(id)}
+								/>
+							))}
+						</div>
+					) : (
+						<div className="w-full divide-y overflow-hidden rounded-xl border bg-card">
+							{filteredAndSortedProjects.map(project => (
+								<ProjectListRow
+									key={String(project.id)}
+									project={project as unknown as any}
+									onDelete={id => setDeletingId(id)}
+								/>
+							))}
+						</div>
+					)
+				) : projects && projects.length > 0 ? (
+					/* Filter Empty State */
+					<div className="my-auto flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center">
+						<Search className="mb-4 size-10 text-muted-foreground/40" />
+						<h3 className="mb-2 text-xl font-semibold tracking-[-0.01em] text-foreground">
+							No matching projects found
+						</h3>
+						<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
+							Try adjusting your search keywords or clearing selected tags.
+						</p>
+						<Button
+							variant="ghost"
+							onClick={() => {
+								setSearchQuery('');
+								setSelectedTags([]);
+							}}
+							className="mt-4 text-xs font-semibold text-primary">
+							Clear All Filters
+						</Button>
 					</div>
 				) : (
-					<div className="w-full divide-y overflow-hidden rounded-xl border bg-card">
-						{filteredAndSortedProjects.map(project => (
-							<ProjectListRow
-								key={String(project.id)}
-								project={project as unknown as any}
-								onDelete={id => setDeletingId(id)}
-							/>
-						))}
-					</div>
-				)
-			) : projects && projects.length > 0 ? (
-				/* Filter Empty State */
-				<div className="my-auto flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center">
-					<Search className="mb-4 size-10 text-muted-foreground/40" />
-					<h3 className="mb-2 text-xl font-semibold tracking-[-0.01em] text-foreground">
-						No matching projects found
-					</h3>
-					<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
-						Try adjusting your search keywords or clearing selected tags.
-					</p>
-					<Button
-						variant="ghost"
-						onClick={() => {
-							setSearchQuery('');
-							setSelectedTags([]);
-						}}
-						className="mt-4 text-xs font-semibold text-primary">
-						Clear All Filters
-					</Button>
-				</div>
-			) : (
-				<EmptyState
-					onCreateClick={() => setIsCreateOpen(true)}
-					disabled={!activeOrg}
-				/>
-			)}
+					<EmptyState
+						onCreateClick={() => setIsCreateOpen(true)}
+						disabled={!activeOrg}
+					/>
+				)}
+			</ListRegion>
 
 			{/* Create Project Modal */}
 			<HandleProjectDialog

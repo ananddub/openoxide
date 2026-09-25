@@ -1,4 +1,9 @@
-import {MoreHorizontal, Trash2, UserCog} from 'lucide-react';
+import {
+	MoreHorizontal,
+	SlidersHorizontal,
+	Trash2,
+	UserCog,
+} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {
 	DropdownMenu,
@@ -16,8 +21,10 @@ type MemberProps = {
 	profileName?: string;
 	profileAvatar?: string;
 	canEditRole: boolean;
+	canEditPermissions: boolean;
 	canRemove: boolean;
 	onEditRole: () => void;
+	onEditPermissions: () => void;
 	onDelete: () => void;
 };
 
@@ -95,17 +102,21 @@ function Chips({
 function Menu({
 	role,
 	canEditRole,
+	canEditPermissions,
 	canRemove,
 	onEditRole,
+	onEditPermissions,
 	onDelete,
 }: {
 	role: string;
 	canEditRole: boolean;
+	canEditPermissions: boolean;
 	canRemove: boolean;
 	onEditRole: () => void;
+	onEditPermissions: () => void;
 	onDelete: () => void;
 }) {
-	if (!(canEditRole || canRemove)) return null;
+	if (!(canEditRole || canEditPermissions || canRemove)) return null;
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger
@@ -127,6 +138,13 @@ function Menu({
 						<UserCog className="size-3.5" /> Change role
 					</DropdownMenuItem>
 				)}
+				{canEditPermissions && role !== 'owner' && (
+					<DropdownMenuItem
+						onClick={onEditPermissions}
+						className="cursor-pointer gap-2 text-xs">
+						<SlidersHorizontal className="size-3.5" /> Permission overrides
+					</DropdownMenuItem>
+				)}
 				{canRemove && (
 					<DropdownMenuItem
 						onClick={onDelete}
@@ -143,7 +161,9 @@ function Menu({
 export function MemberRow(props: MemberProps) {
 	const {member, self} = props;
 	const {displayName, displayAvatar, role} = memberView(props);
-	const canAct = (props.canEditRole || props.canRemove) && !self;
+	const canAct =
+		(props.canEditRole || props.canEditPermissions || props.canRemove) &&
+		!self;
 
 	return (
 		<ListRow
@@ -161,8 +181,10 @@ export function MemberRow(props: MemberProps) {
 				<Menu
 					role={role}
 					canEditRole={props.canEditRole}
+					canEditPermissions={props.canEditPermissions}
 					canRemove={props.canRemove}
 					onEditRole={props.onEditRole}
+					onEditPermissions={props.onEditPermissions}
 					onDelete={props.onDelete}
 				/>
 			)}
@@ -174,7 +196,9 @@ export function MemberRow(props: MemberProps) {
 export function MemberCard(props: MemberProps) {
 	const {member, self} = props;
 	const {displayName, displayAvatar, role} = memberView(props);
-	const canAct = (props.canEditRole || props.canRemove) && !self;
+	const canAct =
+		(props.canEditRole || props.canEditPermissions || props.canRemove) &&
+		!self;
 
 	return (
 		<ViewCard>
@@ -202,8 +226,10 @@ export function MemberCard(props: MemberProps) {
 						<Menu
 							role={role}
 							canEditRole={props.canEditRole}
+							canEditPermissions={props.canEditPermissions}
 							canRemove={props.canRemove}
 							onEditRole={props.onEditRole}
+							onEditPermissions={props.onEditPermissions}
 							onDelete={props.onDelete}
 						/>
 					</div>

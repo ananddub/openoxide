@@ -1,13 +1,8 @@
 import {useState, useEffect, useMemo} from 'react';
-import {useNavigate} from '@tanstack/react-router';
-import {toast} from 'sonner';
-import {formatApiError, serverHostLabel} from '#/api/utils';
+import {serverHostLabel} from '#/api/utils';
+import {ListRegion} from '#/components/settings/list-card';
 import {globalServerConnStore} from '#/stores/server-connection-store';
-import {useRemoteServerTestConnection} from '#/api/live';
-import type {
-	RemoteServerResponse,
-	SshKeyResponse,
-} from '#/types/api-helpers';
+import type {RemoteServerResponse} from '#/types/api-helpers';
 import {
 	ServerFilterEmpty,
 	ServerListEmpty,
@@ -20,15 +15,9 @@ import {ServerRow, ServerCard} from './server-row';
 
 interface RemoteServersListProps {
 	servers: RemoteServerResponse[];
-	sshKeys?: SshKeyResponse[];
 	isLoading: boolean;
 	onAddServer: () => void;
-	onEditServer: (server: RemoteServerResponse) => void;
-	onDeleteServer: (server: RemoteServerResponse) => void;
-	onSetupServer: (server: RemoteServerResponse) => void;
-	onToggleStatus: (server: RemoteServerResponse) => void;
-	onOpenTerminal?: (server: RemoteServerResponse) => void;
-	onMigrateServer?: (server: RemoteServerResponse) => void;
+	onOpenSettings: (server: RemoteServerResponse) => void;
 }
 
 const VIEW_STORAGE_KEY = 'remote-servers-view';
@@ -37,14 +26,8 @@ export function RemoteServersList({
 	servers,
 	isLoading,
 	onAddServer,
-	onEditServer,
-	onDeleteServer,
-	onSetupServer,
-	onToggleStatus,
-	onOpenTerminal,
-	onMigrateServer,
+	onOpenSettings,
 }: RemoteServersListProps) {
-	const navigate = useNavigate();
 	const [storeVersion, setStoreVersion] = useState(0);
 	const [search, setSearch] = useState('');
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
@@ -54,7 +37,6 @@ export function RemoteServersList({
 			? 'list'
 			: 'grid';
 	});
-	const testConnMutation = useRemoteServerTestConnection();
 
 	const handleViewChange = (next: ServersView) => {
 		setView(next);
@@ -92,39 +74,11 @@ export function RemoteServersList({
 		setStatusFilter('All');
 	};
 
-	const handleTestConnection = async (server: RemoteServerResponse) => {
-		globalServerConnStore.setStatus(server.id, 'testing');
-		try {
-			await testConnMutation.mutateAsync(server.id);
-			globalServerConnStore.setStatus(server.id, 'success');
-			toast.success(`SSH connection verified for "${server.name}"`);
-		} catch (err: unknown) {
-			globalServerConnStore.setStatus(server.id, 'failed');
-			toast.error(formatApiError(err));
-		}
-	};
-
-	const actions = {
-		onTest: handleTestConnection,
-		onSetup: onSetupServer,
-		onToggleStatus,
-		onEdit: onEditServer,
-		onDelete: onDeleteServer,
-		onOpenTerminal,
-		onMigrate: onMigrateServer,
-		onNetwork: (s: RemoteServerResponse) =>
-			void navigate({
-				to: '/remote-servers/$id',
-				params: {id: String(s.id)},
-				search: {tab: 'network'},
-			}),
-	};
-
 	/* ── Loading ─ */
 	if (isLoading) return <ServerListSkeleton />;
 
 	return (
-		<div className="flex min-w-0 flex-col gap-3">
+		<div className="flex h-full min-h-0 w-full flex-col gap-3">
 			<ServersToolbar
 				search={search}
 				status={statusFilter}
@@ -134,42 +88,44 @@ export function RemoteServersList({
 				onViewChange={handleViewChange}
 			/>
 
-			{servers.length === 0 ? (
-				<ServerListEmpty onAdd={onAddServer} />
-			) : filtered.length === 0 ? (
-				<ServerFilterEmpty onClear={clearFilters} />
-			) : view === 'grid' ? (
-				/* ── Grid cards ── */
-				<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-					{filtered.map(item => (
-						<ServerCard
-							key={item.id}
-							item={item}
-							connStatus={globalServerConnStore.getStatus(item.id)}
-							actions={actions}
-						/>
-					))}
-				</div>
-			) : (
-				/* ── Rows — one bordered card, divided rows (openship) ── */
-				<div className="divide-y divide-border/60 overflow-hidden rounded-xl border bg-card">
-					{filtered.map(item => (
-						<ServerRow
-							key={item.id}
-							item={item}
-							connStatus={globalServerConnStore.getStatus(item.id)}
-							actions={actions}
-						/>
-					))}
-				</div>
-			)}
+			<ListRegion>
+				{servers.length === 0 ? (
+					<ServerListEmpty onAdd={onAddServer} />
+				) : filtered.length === 0 ? (
+					<ServerFilterEmpty onClear={clearFilters} />
+				) : view === 'grid' ? (
+					/* ── Grid cards ── */
+					<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+						{filtered.map(item => (
+							<ServerCard
+								key={item.id}
+								item={item}
+								connStatus={globalServerConnStore.getStatus(item.id)}
+								onOpen={onOpenSettings}
+							/>
+						))}
+					</div>
+				) : (
+					/* ── Rows — one bordered card, divided rows (openship) ── */
+					<div className="max-h-full divide-y divide-border/60 overflow-y-auto rounded-xl border bg-card">
+						{filtered.map(item => (
+							<ServerRow
+								key={item.id}
+								item={item}
+								connStatus={globalServerConnStore.getStatus(item.id)}
+								onOpen={onOpenSettings}
+							/>
+						))}
+					</div>
+				)}
 
-			{/* Result count */}
-			{hasFilters && filtered.length > 0 && (
-				<p className="px-1 text-xs text-muted-foreground">
-					Showing {filtered.length} of {servers.length} servers
-				</p>
-			)}
+				{/* Result count */}
+				{hasFilters && filtered.length > 0 && (
+					<p className="px-1 text-xs text-muted-foreground">
+						Showing {filtered.length} of {servers.length} servers
+					</p>
+				)}
+			</ListRegion>
 		</div>
 	);
 }

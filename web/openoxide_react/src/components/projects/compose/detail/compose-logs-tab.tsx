@@ -155,6 +155,7 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 
 			{/* Stream Viewer Component (< 200 lines) */}
 			<DeploymentViewer
+				heightClass="h-[calc(100dvh_-_310px)] min-h-[360px]"
 				aiContext={logMode === 'build' ? 'BUILD' : 'RUNTIME'}
 				logs={streamedLogs}
 				isLoading={isLoading}

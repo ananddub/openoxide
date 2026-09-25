@@ -11,6 +11,7 @@
 /.zcode
 /.skills
 /.cargo
+/.tmp-ssheet
 /.agents
 *-*-*.txt
 

@@ -1,5 +1,6 @@
 import {Pencil, ShieldCheck, Trash2} from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {Switch} from '#/components/ui/switch';
 import {
 	ListCard,
 	type ListView,
@@ -13,6 +14,10 @@ type Props = {
 	groups: PermissionGroupPayload[];
 	view: ListView;
 	canManage: boolean;
+	/** May flip the enable/disable switch (group:update). */
+	canToggle: boolean;
+	togglingId: bigint | null;
+	onToggleActive: (group: PermissionGroupPayload, next: boolean) => void;
 	onEdit: (group: PermissionGroupPayload) => void;
 	onDelete: (group: PermissionGroupPayload) => void;
 };
@@ -33,6 +38,38 @@ function SystemChip() {
 		<span className="shrink-0 rounded-md bg-foreground/[0.05] px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
 			System
 		</span>
+	);
+}
+
+function DisabledChip() {
+	return (
+		<span className="shrink-0 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
+			Disabled
+		</span>
+	);
+}
+
+/** Enable/disable handle; system groups are always on and show nothing. */
+function ActiveSwitch({
+	group,
+	canToggle,
+	togglingId,
+	onToggleActive,
+}: {
+	group: PermissionGroupPayload;
+	canToggle: boolean;
+	togglingId: bigint | null;
+	onToggleActive: (group: PermissionGroupPayload, next: boolean) => void;
+}) {
+	if (group.is_system || !canToggle) return null;
+	return (
+		<Switch
+			size="sm"
+			aria-label={`${group.is_active ? 'Disable' : 'Enable'} ${group.name}`}
+			checked={group.is_active}
+			disabled={togglingId === group.id}
+			onCheckedChange={next => onToggleActive(group, next)}
+		/>
 	);
 }
 
@@ -75,6 +112,7 @@ function Identity({
 					{group.name}
 				</span>
 				{group.is_system && <SystemChip />}
+				{!group.is_active && <DisabledChip />}
 				<span className="text-xs text-muted-foreground">
 					{group.actions.length} actions
 				</span>
@@ -129,9 +167,18 @@ export function GroupList({
 	groups,
 	view,
 	canManage,
+	canToggle,
+	togglingId,
+	onToggleActive,
 	onEdit,
 	onDelete,
 }: Props) {
+	const switchProps = (group: PermissionGroupPayload) => ({
+		group,
+		canToggle,
+		togglingId,
+		onToggleActive,
+	});
 	const shared = (group: PermissionGroupPayload) => ({
 		group,
 		canManage,
@@ -144,7 +191,11 @@ export function GroupList({
 			<ViewGrid>
 				{groups.map(group => (
 					<ViewCard key={String(group.id)}>
-						<div className="flex min-w-0 items-start gap-3">
+						<div
+							className={
+								'flex min-w-0 items-start gap-3' +
+								(group.is_active ? '' : ' opacity-60')
+							}>
 							<GroupTile />
 							<Identity group={group} />
 						</div>
@@ -152,7 +203,10 @@ export function GroupList({
 							<div className="min-w-0">
 								<ActionChips actions={group.actions} limit={5} />
 							</div>
-							<Actions {...shared(group)} />
+							<div className="flex shrink-0 items-center gap-1.5">
+								<ActiveSwitch {...switchProps(group)} />
+								<Actions {...shared(group)} />
+							</div>
 						</div>
 					</ViewCard>
 				))}
@@ -164,8 +218,15 @@ export function GroupList({
 		<ListCard>
 			{groups.map(group => (
 				<div key={String(group.id)} className={rowCls}>
-					<GroupTile />
-					<Identity group={group} withChips />
+					<div
+						className={
+							'flex min-w-0 flex-1 items-start gap-3.5' +
+							(group.is_active ? '' : ' opacity-60')
+						}>
+						<GroupTile />
+						<Identity group={group} withChips />
+					</div>
+					<ActiveSwitch {...switchProps(group)} />
 					<Actions {...shared(group)} />
 				</div>
 			))}

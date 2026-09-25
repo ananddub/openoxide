@@ -113,7 +113,7 @@ function nullable(value: string | null | undefined): string | undefined {
 	return value === null ? undefined : value;
 }
 
-/** Persist instance settings (backend gate: org:write). */
+/** Persist instance settings (backend gate: org:update). */
 export function useSettingsUpdate() {
 	return useConnectMutation(
 		(input: SettingsUpdatePayload) =>

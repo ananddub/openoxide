@@ -1,8 +1,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
-import {Database, LayoutGrid, List, Plus, Search} from 'lucide-react';
+import {Database, LayoutGrid, List, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {Input} from '#/components/ui/input';
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -16,7 +15,12 @@ import {
 import {RegistriesList} from '#/components/registry/registries-list';
 import type {SshKeysView} from '#/components/ssh-keys/ssh-keys-list';
 import {CreateRegistryModal} from '#/components/registry/create-registry-modal';
-import {SectionHeader} from '#/components/settings/list-card';
+import {
+	ListRegion,
+	SectionHeader,
+	Toolbar,
+	ToolbarSearch,
+} from '#/components/settings/list-card';
 import {useRegistryDelete, useRegistryList} from '#/api/live';
 import {toast} from 'sonner';
 import {formatApiError, cn} from '#/api/utils';
@@ -111,7 +115,7 @@ function RegistryPage() {
 	};
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+		<div className="mx-auto flex h-full w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 			<SectionHeader
 				title="Registries"
 				description="Container registries for pulling and pushing images with stored credentials."
@@ -125,26 +129,9 @@ function RegistryPage() {
 				}
 			/>
 
-			{/* Search + grid/list toggle */}
-			<div className="flex w-full animate-in flex-col items-stretch gap-3 duration-200 fade-in sm:flex-row sm:items-center">
-				<div className="relative w-full sm:grow">
-					<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/70" />
-					<Input
-						ref={searchRef}
-						placeholder="Search Registries"
-						value={search}
-						onChange={e => setSearch(e.target.value)}
-						className="h-9 rounded-lg pr-11 pl-9 text-sm transition-colors duration-150 hover:border-foreground/25"
-					/>
-					<kbd
-						aria-hidden
-						className="pointer-events-none absolute top-1/2 right-3 flex size-5 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-foreground/[0.04] font-mono text-[11px] text-muted-foreground select-none">
-						/
-					</kbd>
-				</div>
-
-				<div className="flex shrink-0 items-center gap-2">
-					{/* Grid / list toggle */}
+			{/* Search + grid/list toggle — sticks with the title */}
+			<Toolbar
+				action={
 					<div className="flex items-center rounded-lg border bg-card p-1">
 						<button
 							type="button"
@@ -169,38 +156,47 @@ function RegistryPage() {
 							<List className="size-3.5" />
 						</button>
 					</div>
-				</div>
-			</div>
-
-			{/* Content: grid cards or compact list */}
-			{!isLoading && registries.length === 0 ? (
-				<div className="flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center">
-					<Database className="mb-4 size-10 text-muted-foreground/40" />
-					<h3 className="mb-2 text-xl font-semibold tracking-[-0.01em] text-foreground">
-						No registries yet
-					</h3>
-					<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
-						Add a Docker registry to pull or push container images with
-						stored credentials.
-					</p>
-					<Button
-						onClick={() => setIsCreateOpen(true)}
-						className="mt-4 h-9 gap-1.5 text-xs font-semibold">
-						<Plus className="size-3.5" />
-						New Registry
-					</Button>
-				</div>
-			) : (
-				<RegistriesList
-					registries={filtered}
-					isLoading={isLoading}
-					hasFilters={hasFilters}
-					view={view}
-					onClearFilters={clearFilters}
-					onEdit={handleOpenEdit}
-					onDelete={id => setDeletingId(id)}
+				}>
+				<ToolbarSearch
+					inputRef={searchRef}
+					value={search}
+					onChange={setSearch}
+					placeholder="Search Registries"
+					className="sm:max-w-none"
 				/>
-			)}
+			</Toolbar>
+
+			<ListRegion>
+				{/* Content: grid cards or compact list */}
+				{!isLoading && registries.length === 0 ? (
+					<div className="flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center">
+						<Database className="mb-4 size-10 text-muted-foreground/40" />
+						<h3 className="mb-2 text-xl font-semibold tracking-[-0.01em] text-foreground">
+							No registries yet
+						</h3>
+						<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
+							Add a Docker registry to pull or push container images with
+							stored credentials.
+						</p>
+						<Button
+							onClick={() => setIsCreateOpen(true)}
+							className="mt-4 h-9 gap-1.5 text-xs font-semibold">
+							<Plus className="size-3.5" />
+							New Registry
+						</Button>
+					</div>
+				) : (
+					<RegistriesList
+						registries={filtered}
+						isLoading={isLoading}
+						hasFilters={hasFilters}
+						view={view}
+						onClearFilters={clearFilters}
+						onEdit={handleOpenEdit}
+						onDelete={id => setDeletingId(id)}
+					/>
+				)}
+			</ListRegion>
 
 			{/* Create — Geist sheet (same sheet handles edit) */}
 			<CreateRegistryModal

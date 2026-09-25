@@ -1,18 +1,12 @@
 mod bus;
 mod cdc_bridge;
 mod org_index;
-mod scope;
 pub mod types;
 
-pub use bus::{event_bus, set_pool, DbEventBus};
-pub use org_index::OrgColumnIndex;
-pub use scope::request_scope;
-pub use sqlite_realtime::RealtimePool;
+pub use bus::{DbEventBus, event_bus, set_pool};
 pub use types::{DbChangeEvent, DbChangeOperation, DbChangeSet};
 
-use std::sync::{Arc, LazyLock, Mutex, OnceLock};
-
-static REALTIME_POOL: OnceLock<sqlite_realtime::RealtimePool> = OnceLock::new();
+use std::sync::{Arc, LazyLock, Mutex};
 
 /// Strong holder for the CDC handle of the pool's current physical
 /// connection. `after_connect` attaches one per connection; without a
@@ -22,18 +16,6 @@ static REALTIME_POOL: OnceLock<sqlite_realtime::RealtimePool> = OnceLock::new();
 static LIVE_HANDLE: LazyLock<Mutex<Option<Arc<sqlite_realtime::RealtimeHandle>>>> =
     LazyLock::new(|| Mutex::new(None));
 
-/// Global handle to the realtime CDC pool for live query streams.
-pub fn set_realtime(pool: sqlite_realtime::RealtimePool) {
-    let _ = REALTIME_POOL.set(pool);
-}
-
-/// Panics only if called before database startup, which is a wiring bug.
-pub fn realtime() -> &'static sqlite_realtime::RealtimePool {
-    REALTIME_POOL
-        .get()
-        .expect("realtime pool accessed before database startup")
-}
-
 /// Releases the current CDC handle (aborting its reactor and releasing its
 /// SQLite hooks) BEFORE a replacement connection attaches. Dropping after
 /// the new attach would be fatal: the allocator can hand the freed
@@ -41,22 +23,19 @@ pub fn realtime() -> &'static sqlite_realtime::RealtimePool {
 /// the C context by that pointer — it would release the NEW connection's
 /// context and capture would die silently again.
 pub fn release_realtime_handle() {
-    let slot = LIVE_HANDLE
+    let previous = LIVE_HANDLE
         .lock()
         .expect("live handle slot poisoned")
         .take();
-    let pooled = REALTIME_POOL.get().and_then(|pool| pool.take_handle());
-    if slot.is_some() || pooled.is_some() {
-        tracing::info!("realtime: releasing previous CDC handle(s)");
+    if previous.is_some() {
+        tracing::info!("realtime: releasing previous CDC handle");
     }
-    drop(slot);
-    drop(pooled);
+    drop(previous);
 }
 
 /// Registers a CDC handle for a (possibly replacement) pooled connection:
-/// keeps it strongly alive for the connection's lifetime, spawns the
-/// event-forwarding task (deduped via the handle's internal OnceLock), and
-/// moves the global pool's live-query handle to it.
+/// keeps it strongly alive for the connection's lifetime and spawns the
+/// event-forwarding task (deduped via the handle's internal OnceLock).
 pub fn register_realtime_handle(handle: Arc<sqlite_realtime::RealtimeHandle>) {
     tracing::info!(
         db_ptr = handle.db_ptr(),
@@ -66,15 +45,11 @@ pub fn register_realtime_handle(handle: Arc<sqlite_realtime::RealtimeHandle>) {
     handle.spawn_event_forwarder(|event| async move {
         cdc_bridge::forward_event(event).await;
     });
-    *LIVE_HANDLE
-        .lock()
-        .expect("live handle slot poisoned") = Some(Arc::clone(&handle));
-    if let Some(pool) = REALTIME_POOL.get() {
-        pool.set_handle(handle);
-    }
+    *LIVE_HANDLE.lock().expect("live handle slot poisoned") = Some(handle);
 }
 
-/// Re-discovers which tables carry an `organization_id` column.
+/// Re-discovers which tables carry an `organization_id` column so the CDC
+/// bridge can skip the per-event lookup for org-less tables.
 pub(crate) async fn refresh_org_columns(pool: &sqlx::SqlitePool) {
-    OrgColumnIndex::refresh(pool).await;
+    org_index::refresh(pool).await;
 }

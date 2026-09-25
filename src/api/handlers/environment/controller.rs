@@ -33,7 +33,7 @@ impl EnvironmentService for EnvironmentController {
         Response::ok(ListEnvironmentsResponse { environments, ..Default::default() })
     }
 
-    #[permission(Environment, CanWrite)]
+    #[permission(Environment, CanUpdate)]
     async fn create_environment<'a>(
         &'a self,
         ctx: RequestContext,
@@ -47,7 +47,7 @@ impl EnvironmentService for EnvironmentController {
         Response::ok(env_to_proto(env))
     }
 
-    #[permission(Environment, CanWrite)]
+    #[permission(Environment, CanUpdate)]
     async fn update_environment<'a>(
         &'a self,
         ctx: RequestContext,
@@ -58,7 +58,7 @@ impl EnvironmentService for EnvironmentController {
         Response::ok(env_to_proto(env))
     }
 
-    #[permission(Environment, CanWrite)]
+    #[permission(Environment, CanUpdate)]
     async fn set_default_environment<'a>(
         &'a self,
         ctx: RequestContext,
@@ -68,7 +68,7 @@ impl EnvironmentService for EnvironmentController {
         Response::ok(env_to_proto(env))
     }
 
-    #[permission(Environment, CanWrite)]
+    #[permission(Environment, CanUpdate)]
     async fn delete_environment<'a>(
         &'a self,
         ctx: RequestContext,

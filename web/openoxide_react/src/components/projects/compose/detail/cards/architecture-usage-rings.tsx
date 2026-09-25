@@ -1,3 +1,4 @@
+import {useEffect} from 'react';
 import {ArrowDown, ArrowUp, ArrowDownUp, Gauge} from 'lucide-react';
 import {cn} from '#/api/utils';
 import {
@@ -11,7 +12,8 @@ function toneFor(percent: number) {
 	return 'text-emerald-500';
 }
 
-function UsageRing({
+/** Circular docker-stats gauge: % ring with tone thresholds + label/sub line. */
+export function UsageRing({
 	label,
 	percent,
 	sub,
@@ -74,14 +76,18 @@ interface UsageRingsProps {
 	entityType: MonitoringEntityType;
 }
 
-/** Live docker-stats gauges for the architecture card: one-shot snapshot (CPU / memory / disk rings + net I/O) laid out as an aligned 2×2 block. */
+/** Live docker-stats gauges for the architecture card (CPU / memory / disk rings + net I/O) as an aligned 2×2 block. Same cadence as the project service cards: refreshed every 15s while mounted. */
 export function UsageRingsStrip({id, entityType}: UsageRingsProps) {
-	const {metrics, hasError} = useContainerMonitoring(
+	const {metrics, hasError, triggerRefresh} = useContainerMonitoring(
 		id,
 		entityType,
 		id > 0,
 		false,
 	);
+	useEffect(() => {
+		const timer = setInterval(triggerRefresh, 15_000);
+		return () => clearInterval(timer);
+	}, [triggerRefresh]);
 
 	// Container stopped/unreachable — keep the card clean.
 	if (hasError && !metrics) return null;

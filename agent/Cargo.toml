@@ -4,7 +4,7 @@ version = "0.4.0"
 edition = "2024"
 
 [dependencies]
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["rt", "macros", "time", "net", "io-util", "sync", "fs", "process", "signal"] }
 tokio-stream = "0.1.18"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -25,13 +25,13 @@ prost = "0.13.5"
 tokio-util = "0.7"
 auto-di = "0.6.0"
 auto_grpc = { path = "../crates/auto/grpc" }
-inventory = "0.3"
 futures = "0.3"
+async-stream = "0.3"
 os = { path = "../crates/os" }
 sh_macros = { path = "../crates/sh_macros" }
 
 hyper = { version = "1", features = ["client", "http1"] }
-hyper-util = { version = "0.1", features = ["client", "client-legacy", "http1", "tokio"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
 http-body-util = "0.1"
 bytes = "1"
 uuid = { version = "1.2.2", features = ["v4"] }

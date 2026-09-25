@@ -102,23 +102,25 @@ export function DeploymentActivityList({
 	}, [membersData]);
 
 	return (
-		<div className="w-full overflow-hidden rounded-xl border bg-card">
-			<Table>
-				<TableHeader>
-					<TableRow className="border-b hover:bg-transparent">
-						<TableHead className={HEAD_CLS}>Deployment</TableHead>
-						<TableHead className={HEAD_CLS}>Status</TableHead>
-						<TableHead className={cn(HEAD_CLS, 'hidden md:table-cell')}>
-							Duration
-						</TableHead>
-						<TableHead className={cn(HEAD_CLS, 'hidden sm:table-cell')}>
-							When
-						</TableHead>
-						<TableHead className={cn(HEAD_CLS, 'w-10')} />
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					{deployments.map(d => {
+		<div className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border bg-card">
+			{/* Table's own container div is the scroller — sticky heads pin for real */}
+			<div className="min-h-0 flex-1 [&>div]:h-full [&>div]:overflow-y-auto">
+				<Table>
+					<TableHeader className="sticky top-0 z-10 bg-muted-solid">
+						<TableRow className="border-b hover:bg-transparent">
+							<TableHead className={HEAD_CLS}>Deployment</TableHead>
+							<TableHead className={HEAD_CLS}>Status</TableHead>
+							<TableHead className={cn(HEAD_CLS, 'hidden md:table-cell')}>
+								Duration
+							</TableHead>
+							<TableHead className={cn(HEAD_CLS, 'hidden sm:table-cell')}>
+								When
+							</TableHead>
+							<TableHead className={cn(HEAD_CLS, 'w-10')} />
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{deployments.map(d => {
 						const kind = deploymentType(d);
 						const Icon =
 							KIND_ICON[kind as keyof typeof KIND_ICON] ?? Rocket;
@@ -207,9 +209,10 @@ export function DeploymentActivityList({
 								)}
 							</Fragment>
 						);
-					})}
-				</TableBody>
-			</Table>
+						})}
+					</TableBody>
+				</Table>
+			</div>
 		</div>
 	);
 }

@@ -1,6 +1,9 @@
 import {useConnectMutation} from '../query';
 import {permissionClient} from './shared';
-import {PermissionUserRole} from '#/gen/connect/openoxide/api/v1/permission_pb';
+import {
+	PermissionPolicyEffect,
+	PermissionUserRole,
+} from '#/gen/connect/openoxide/api/v1/permission_pb';
 
 /** Legacy role strings ("owner", "OWNER", "developer", "viewer", ...) → the membership enum. The server only stores OWNER/ADMIN/MEMBER; "developer"/"viewer" are UI shorthand for MEMBER plus a permission group. */
 function parseRole(value: unknown): PermissionUserRole {
@@ -137,5 +140,44 @@ export function useMemberGroupAssign() {
 				groupId: BigInt(input.group_id),
 			}),
 		{invalidate: [['permission-members']]},
+	);
+}
+
+/** Enable or disable a permission group; a disabled group grants nothing while its members keep the assignment. */
+export function usePermissionGroupSetActive() {
+	return useConnectMutation(
+		(input: {id: number | bigint; is_active: boolean}) =>
+			permissionClient.setGroupActive({
+				id: BigInt(input.id),
+				isActive: input.is_active,
+			}),
+		{invalidate: [['permission-groups']]},
+	);
+}
+
+/** Full replacement of one member's per-user policy overrides (GRANT/DENY rows on top of the role). */
+export function useUserPoliciesReplace() {
+	return useConnectMutation(
+		(input: {
+			user_id: number | bigint;
+			policies: {policy_id: number; effect: 'GRANT' | 'DENY'}[];
+		}) =>
+			permissionClient.replaceUserPolicies({
+				id: BigInt(input.user_id),
+				policies: input.policies.map(p => ({
+					policyId: BigInt(p.policy_id),
+					effect:
+						p.effect === 'GRANT'
+							? PermissionPolicyEffect.GRANT
+							: PermissionPolicyEffect.DENY,
+				})),
+			}),
+		{
+			invalidate: [
+				['permission-user-policies'],
+				['permission-members'],
+				['my-permissions'],
+			],
+		},
 	);
 }

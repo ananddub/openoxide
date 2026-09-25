@@ -3,9 +3,7 @@ use std::{convert::Infallible, sync::Arc};
 use bytes::Bytes;
 use connectrpc::{ConnectRpcBody, ConnectRpcService};
 use http_body_util::{BodyExt, Full, combinators::UnsyncBoxBody};
-use hyper::{
-    HeaderMap, Request, Response, body::Incoming, server::conn::http2,
-};
+use hyper::{HeaderMap, Request, Response, body::Incoming, server::conn::http2};
 use hyper_util::{
     rt::{TokioExecutor, TokioIo},
     service::TowerToHyperService,
@@ -142,10 +140,11 @@ async fn dispatch(
 
     let mut response = if method == "OPTIONS" {
         preflight()
-    } else if uri.path().starts_with("/openoxide.api.") || uri.path().starts_with("/grpc.reflection.")
+    } else if uri.path().starts_with("/openoxide.api.")
+        || uri.path().starts_with("/grpc.reflection.")
     {
         let mut service = connect.as_ref().clone();
-        let outcome = crate::db::reactive::request_scope(service.call(request)).await;
+        let outcome = service.call(request).await;
         outcome
             .map(|response| response.map(box_connect_body))
             .unwrap_or_else(|error| match error {})
@@ -207,8 +206,8 @@ async fn dispatch(
 
 fn apply_cors_headers(headers: &mut HeaderMap) {
     use hyper::header::{
-        ACCESS_CONTROL_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_METHODS,
-        ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue,
+        ACCESS_CONTROL_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_METHODS, ACCESS_CONTROL_ALLOW_ORIGIN,
+        HeaderValue,
     };
 
     headers.insert(ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));

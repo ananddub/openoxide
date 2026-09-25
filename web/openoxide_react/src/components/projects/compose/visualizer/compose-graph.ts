@@ -17,6 +17,8 @@ export type ServiceActionHandlers = {
 	onOpenTerminal?: (s: ComposeService) => void;
 	onViewLogs?: (s: ComposeService) => void;
 	readOnly?: boolean;
+	monitorId?: number;
+	monitorType?: 'application' | 'database' | 'compose';
 };
 
 // ─── Build ReactFlow Elements ─────────────────────────────────────────────────

@@ -14,7 +14,7 @@ use super::init::AlertRuleController;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl AlertRuleService for AlertRuleController {
-    #[permission(Alert, CanMonitor)]
+    #[permission(Alert, CanRead)]
     async fn list_rules<'a>(
         &'a self,
         ctx: RequestContext,
@@ -43,7 +43,7 @@ impl AlertRuleService for AlertRuleController {
         })
     }
 
-    #[permission(Alert, CanMonitor)]
+    #[permission(Alert, CanRead)]
     async fn get_rule<'a>(
         &'a self,
         ctx: RequestContext,
@@ -63,7 +63,7 @@ impl AlertRuleService for AlertRuleController {
         })
     }
 
-    #[permission(Alert, CanWrite)]
+    #[permission(Alert, CanUpdate)]
     async fn create_rule<'a>(
         &'a self,
         ctx: RequestContext,
@@ -106,7 +106,7 @@ impl AlertRuleService for AlertRuleController {
         })
     }
 
-    #[permission(Alert, CanWrite)]
+    #[permission(Alert, CanUpdate)]
     async fn update_rule<'a>(
         &'a self,
         ctx: RequestContext,
@@ -153,7 +153,7 @@ impl AlertRuleService for AlertRuleController {
         })
     }
 
-    #[permission(Alert, CanWrite)]
+    #[permission(Alert, CanUpdate)]
     async fn delete_rule<'a>(
         &'a self,
         ctx: RequestContext,
@@ -173,7 +173,7 @@ impl AlertRuleService for AlertRuleController {
         }
     }
 
-    #[permission(Alert, CanWrite)]
+    #[permission(Alert, CanUpdate)]
     async fn test_rule<'a>(
         &'a self,
         ctx: RequestContext,

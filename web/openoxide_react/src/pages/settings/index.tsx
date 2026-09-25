@@ -28,8 +28,12 @@ export const Route = createFileRoute('/_app/settings')({
 	component: SettingsPage,
 	validateSearch: (
 		search: Record<string, unknown>,
-	): {tab?: SettingsTabId} => ({
+	): {tab?: SettingsTabId; view?: 'channels' | 'deliveries'} => ({
 		tab: isSettingsTab(search.tab) ? search.tab : undefined,
+		view:
+			search.view === 'deliveries' || search.view === 'channels'
+				? search.view
+				: undefined,
 	}),
 });
 
@@ -44,7 +48,7 @@ function SettingsPage() {
 	const Active = active.component;
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+		<div className="mx-auto flex h-full w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 			<Titlebar
 				breadcrumbs={[
 					{label: 'Settings', to: '/settings', icon: Settings},
@@ -52,7 +56,7 @@ function SettingsPage() {
 				]}
 			/>
 
-			<div className="min-w-0">
+			<div className="min-h-0 flex-1 overflow-y-auto">
 				<Active />
 			</div>
 		</div>

@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
-use std::sync::Arc;
 
 /// Type-safe Container Identifier.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -227,24 +226,4 @@ impl ContainerStats {
             }
         })
     }
-}
-
-/// Direct cgroup v2 metrics for one container.
-#[derive(Debug, Default, Clone)]
-pub struct CgroupSample {
-    pub cpu_usage_usec: u64,
-    pub memory_usage: u64,
-    pub memory_cache: u64,
-    pub memory_limit: u64,
-    pub io_read_bytes: u64,
-    pub io_write_bytes: u64,
-}
-
-/// Container stream sample event with type-safe IDs.
-#[derive(Clone, Debug)]
-pub struct ContainerSample {
-    pub container_id: ContainerId,
-    pub name: ContainerName,
-    pub stats: Arc<ContainerStats>,
-    pub labels: HashMap<String, String>,
 }

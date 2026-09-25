@@ -204,8 +204,8 @@ States are:
 
 ## Application and compose attribution
 
-Container metrics can include `application_id` or `compose_id`. In stream mode,
-the agent reads these Docker labels when present:
+Container metrics can include `application_id` or `compose_id`. The panel
+derives these from Docker labels when it reads agent container data:
 
 ```text
 com.openoxide.application-id=<application database id>
@@ -215,109 +215,13 @@ com.openoxide.compose-id=<compose project database id>
 An unattributed container sends zero for both IDs. It is still stored and shown
 as a server/container metric, but resource-specific alert rules ignore it.
 
-Important current behavior: cgroup collection identifies containers through
-cgroup data and does not currently enrich every row with Docker labels. Use
-stream mode when label-based resource attribution and network metrics are
-required. Deployment definitions must also apply the corresponding OpenOxide
-label for attribution to work.
+## Data model: nothing stored
 
-## Collection modes
-
-### `auto`
-
-Recommended default. Uses cgroup v2 when available and falls back to Docker
-stats streaming otherwise.
-
-### `cgroup`
-
-Reads container CPU, memory, and block I/O directly from `/sys/fs/cgroup`.
-
-Pros:
-
-- Very low overhead.
-- Scales to thousands of containers.
-- Avoids one long-lived Docker stats connection per container.
-
-Limitations:
-
-- No container network counters.
-- Resource-label attribution is limited because collection is cgroup-driven.
-
-Measured reference performance:
-
-| Containers | Collection time |
-|---:|---:|
-| 13 | 0.6 ms |
-| 500 | 18 ms |
-| 2,000 | 69 ms |
-| 20,000 | 704 ms |
-
-### `stream`
-
-Opens Docker Engine `GET /containers/{id}/stats?stream=true` streams.
-
-Pros:
-
-- Faster, near-live updates.
-- Network counters are available.
-- Docker labels can be attached to samples for application/compose attribution.
-
-Limitations:
-
-- One stream and additional Docker daemon work per monitored container.
-- Not recommended for hosts with thousands of containers.
-
-## Local and panel storage
-
-### Agent SQLite
-
-`MONITOR_DATABASE_URL` controls the agent store. In Docker it should point to a
-persistent volume:
-
-```env
-MONITOR_DATABASE_URL=sqlite:///app/data/monitor.db
-```
-
-The retention task periodically removes samples older than `RETENTION_DAYS`.
-The default is seven days.
-
-### Panel SQLite
-
-The panel stores no raw host or container metrics. It stores monitoring agent
-identity/token metadata and alert configuration/history only.
-
-## Rollups for dense hosts
-
-`ROLLUP_SAMPLES=1` stores every sample. A higher value buffers samples and emits
-an average plus a peak row for each window.
-
-For example, with a 60-second refresh interval:
-
-```env
-REFRESH_RATE=60
-ROLLUP_SAMPLES=5
-```
-
-produces a five-minute window. The average represents sustained load and the
-peak preserves short spikes that an average would hide.
-
-At very high container counts this prevents SQLite growth from becoming the
-system bottleneck.
-
-## Filtering containers
-
-An empty include list monitors all containers. Exclusions always win.
-
-```env
-INCLUDE_CONTAINERS=prod-*,database
-EXCLUDE_CONTAINERS=*buildkit*,*_test
-```
-
-Patterns are exact unless they contain `*`:
-
-- `api` matches only `api`
-- `api-*` matches names beginning with `api-`
-- `*api*` matches names containing `api`
+The agent is a stateless query responder. Every metric the panel receives is
+sampled live at request time from sysinfo and the Docker Engine API, over
+reused keep-alive connections. The agent keeps no local database, no history,
+and no buffers between requests; its only persistent state is open shell and
+watch sessions.
 
 ## Alert processing
 
@@ -359,26 +263,20 @@ network/VPN is still recommended for remote hosts.
 
 | Variable | Default | Description |
 |---|---|---|
-| `SERVER_ID` | `1` | Exact existing `servers.id` represented by this agent. Explicitly set it in every real deployment. |
-| `MONITOR_DATABASE_URL` | `sqlite://monitor.db` | Agent-local SQLite URL. Use a persistent volume in Docker. |
+| `SERVER_ID` | `1` | Exact existing `servers.id` represented by this agent (`-1` for the local agent). Explicitly set it in every real deployment. |
 | `GRPC_PORT` | `50051` | Authenticated metric/log gRPC port. |
-| `REFRESH_RATE` | `60` | Seconds between polling and push cycles. Must be greater than zero. |
-| `RETENTION_DAYS` | `7` | Agent-local raw history retention. |
-| `OPENOXIDE_SERVER_URL` | `http://127.0.0.1:4000` | Reachable base URL of the OpenOxide panel. |
 | `METRICS_TOKEN` | none | Required agent secret. Must match a per-server or panel migration token. |
+| `DOCKER_SOCKET` | `/var/run/docker.sock` | Docker Engine Unix socket. |
+| `MAX_UPLOAD_BYTES` | `1073741824` | Largest accepted `UploadFile` payload. |
+| `UPLOAD_TIMEOUT_SECONDS` | `300` | Per-chunk idle timeout for uploads. |
+| `UPLOAD_ROOTS` | `/tmp,/etc/openoxide,/app/workspace` | Absolute comma-separated directories `UploadFile` may write to. |
 | `AGENT_TLS_CERT` | none | PEM server certificate path. Must be configured together with `AGENT_TLS_KEY`. |
 | `AGENT_TLS_KEY` | none | PEM private-key path for the gRPC server certificate. |
-| `DOCKER_SOCKET` | `/var/run/docker.sock` | Docker Engine Unix socket. |
-| `COLLECTION_MODE` | `auto` | `auto`, `cgroup`, or `stream`. |
-| `INCLUDE_CONTAINERS` | empty | Comma-separated include patterns. Empty includes all. |
-| `EXCLUDE_CONTAINERS` | empty | Comma-separated exclusion patterns. |
-| `ROLLUP_SAMPLES` | `1` | Samples per average/peak rollup window. |
 | `RUST_LOG` | `agent=info` | Rust tracing filter. |
 
 Invalid critical configuration causes startup to fail with a clear message.
-The agent requires a non-empty metrics token, a positive server ID, a valid
-HTTP/HTTPS panel URL, a positive refresh/retention value, and a SQLite database
-URL.
+The agent requires a non-empty metrics token, a valid `SERVER_ID` (positive or
+`-1`), positive upload limits, and absolute upload roots.
 
 ## Docker deployment
 
@@ -397,26 +295,15 @@ Example compose service:
 services:
   openoxide-agent:
     image: dubeyanand/openoxide-agent:latest
-      container_name: openoxide-agent
+    container_name: openoxide-agent
     restart: unless-stopped
     network_mode: host
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
-      - monitor_data:/app/data
     environment:
       SERVER_ID: "5"
-      OPENOXIDE_SERVER_URL: "http://127.0.0.1:4000"
       METRICS_TOKEN: "replace-with-a-random-secret"
-      MONITOR_DATABASE_URL: "sqlite:///app/data/monitor.db"
       GRPC_PORT: "50051"
-      REFRESH_RATE: "60"
-      RETENTION_DAYS: "7"
-      COLLECTION_MODE: "auto"
-      ROLLUP_SAMPLES: "1"
-
-volumes:
-  monitor_data:
 ```
 
 `network_mode: host` means `127.0.0.1` refers to the host network, allowing the
@@ -459,20 +346,14 @@ cargo run -p agent
 Healthy startup resembles:
 
 ```text
-starting openoxide agent server_id=5 refresh_rate=60 grpc_port=50051
-metric store initialized url="sqlite:///app/data/monitor.db"
+starting openoxide agent server_id=5 grpc_port=50051
 gRPC query server listening addr=0.0.0.0:50051
-collecting container metrics mode="cgroup" filter=all containers
 ```
 
 Clean shutdown messages indicate normal Docker stop/restart behavior:
 
 ```text
 shutdown signal received, stopping tasks
-retention sweeper stopped
-container collector stopped
-host metric collector stopped
-all tasks stopped cleanly
 ```
 
 ## Troubleshooting
@@ -553,29 +434,25 @@ reconcile `_sqlx_migrations` only when every migration object already exists.
 
 ```text
 agent/src/
-├── main.rs             startup, task lifecycle, graceful shutdown
-├── config.rs           environment parsing and validation
-├── context.rs          shared task dependencies
-├── filter.rs           include/exclude pattern matching
-├── rollup.rs           average and peak aggregation
-├── collector/
-│   ├── system.rs       host telemetry
-│   └── cgroup.rs       scalable cgroup-v2 container collector
-├── docker/
-│   ├── api.rs          Docker Engine Unix-socket HTTP client
-│   ├── cgroup.rs       cgroup file parsing
-│   ├── json_lines.rs   streaming JSON framing
-│   ├── stats.rs        CPU/memory/network/block calculations
-│   ├── stream.rs       container discovery and live stats streams
-│   └── types.rs        typed Docker payloads and identifiers
-├── grpc.rs             authenticated metric/log gRPC service
-├── logs.rs             Docker stdout/stderr demultiplexing
-├── store.rs            agent SQLite schema and queries
-└── tasks/
-    ├── host.rs         host collection and local persistence
-    ├── container.rs    container collection and local persistence
-    ├── retention.rs    expired local history cleanup
-    └── grpc.rs         authenticated gRPC server startup
+├── main.rs                 startup and graceful shutdown
+├── lib.rs                  crate surface
+├── core/
+│   ├── config.rs           environment parsing and validation
+│   ├── context.rs          shared task dependencies
+│   ├── error.rs            agent error types
+│   └── middleware.rs       x-metrics-token authentication
+├── api/                    generated tonic stubs + AgentService
+├── app/grpc.rs             gRPC server startup (optional TLS)
+├── services/
+│   ├── monitoring/         metrics, stats streams, lifecycle watch,
+│   │                       and shell/exec handlers (all live-sampled)
+│   └── file_transfer.rs    streaming UploadFile with SHA-256 verify
+└── utils/
+    ├── docker/
+    │   ├── transport/api.rs          keep-alive Docker Engine client
+    │   ├── transport/json_lines.rs   streaming JSON framing
+    │   └── query/types.rs            typed Docker payloads
+    └── telemetry/collector/system    sysinfo host sampler
 ```
 
 ## Production checklist
@@ -586,11 +463,7 @@ agent/src/
 - Store secrets outside source-controlled compose files.
 - Use HTTPS for panel ingestion across untrusted networks.
 - Keep gRPC private or protect it with TLS/VPN/firewall rules.
-- Persist `/app/data` on a Docker volume.
-- Mount the Docker socket and cgroup filesystem read-only.
-- Select `cgroup` for density or `stream` for richer live data.
-- Configure include/exclude filters on busy hosts.
-- Choose a rollup window appropriate for container count and retention.
-- Confirm successful host and container pushes in logs.
+- Mount the Docker socket.
+- Confirm successful queries in logs.
 - Verify the panel agent status becomes `ONLINE`.
 - Test alert and notification delivery before relying on it operationally.

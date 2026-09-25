@@ -1,8 +1,10 @@
-import {useRef} from 'react';
 import {useLocation} from '@tanstack/react-router';
 import {
 	SIDEBAR_CENTER_X,
 	SIDEBAR_COLLAPSE,
+	SIDEBAR_ICON_CELL,
+	SIDEBAR_LABEL,
+	SIDEBAR_ROW,
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
@@ -27,7 +29,6 @@ import {useProfile} from '#/api/live';
 import {getAvatarInitials, isSolidColorAvatar} from '#/lib/avatar-utils';
 import {cn} from '#/api/utils';
 import {MENU} from './enum';
-import {NavActivePill} from './nav-active-pill';
 import {PageContextNav} from './page-context-nav';
 import {NavSection} from './nav-section';
 import {AccountSwitcher} from './account-switcher';
@@ -58,7 +59,6 @@ export function AppSidebar() {
 			: undefined;
 	const {state, isMobile} = useSidebar();
 	const collapsed = state === 'collapsed' && !isMobile;
-	const navRef = useRef<HTMLElement | null>(null);
 	const {theme, toggleTheme} = useTheme();
 	const {user: authUser, logout} = useAuthSession();
 	const {data: profile} = useProfile();
@@ -74,47 +74,46 @@ export function AppSidebar() {
 	return (
 		<>
 			<Sidebar collapsible="icon" variant="sidebar">
-				{/* Workspace band: an h-12 box with a bottom hairline — the exact
-     same construction as the topbar (h-12 + border-b). Both are border-box,
-     so their lines land on the same row and read as one continuous,
-     full-width hairline across the sidebar and the main area. */}
-				<div className="h-12 shrink-0 border-b border-sidebar-border px-2">
+				{/* Workspace band: the topbar's h-12 + border-b construction, so the two hairlines read as one. */}
+				<div
+					className={cn(
+						'h-12 shrink-0 border-b border-sidebar-border transition-[padding]',
+						SIDEBAR_COLLAPSE,
+						collapsed ? 'px-0' : 'px-2',
+					)}>
 					<AccountSwitcher collapsed={collapsed} />
 				</div>
 
 				{/* ── Nav sections ───────────────────────────────────── */}
 				<SidebarContent className="relative min-h-0 flex-1 overflow-hidden px-0">
-					<nav ref={navRef} className="relative h-full overflow-y-auto pt-4 pb-6">
-						<NavActivePill navRef={navRef} />
-						{/* ── Search trigger ────────────────────────────────
-						    Same row grammar as the nav items; opens the global
-						    command palette (Ctrl/Cmd+K). */}
-						<SidebarGroup className="px-2 py-1">
-							<SidebarMenu className="gap-px">
+					<nav className="relative h-full overflow-y-auto pt-4 pb-6">
+						{/* Search trigger — one row of the shared nav grammar; opens the global command palette. */}
+						<SidebarGroup className="gap-1 px-2 py-1">
+							<SidebarMenu className="gap-1">
 								<SidebarMenuItem>
 									<button
 										type="button"
 										onClick={triggerSearch}
 										title={collapsed ? 'Search (Ctrl+K)' : undefined}
 										className={cn(
-											'relative flex w-full items-center gap-2 rounded-lg border border-foreground/15 bg-muted/40 px-2 py-1.5 text-[13px] outline-none transition-[padding,gap,color,background-color]',
+											SIDEBAR_ROW,
 											SIDEBAR_COLLAPSE,
-											collapsed && cn(SIDEBAR_CENTER_X, 'gap-0'),
-											'font-normal text-muted-foreground hover:bg-sidebar-accent hover:text-foreground',
+											'rounded-lg border border-foreground/15 bg-muted',
+											collapsed && SIDEBAR_CENTER_X,
+											'text-muted-foreground',
 										)}>
-										<Search
-											className="size-4 shrink-0"
-											strokeWidth={1.7}
-										/>
+										<span className={SIDEBAR_ICON_CELL}>
+											<Search className="size-4" strokeWidth={1.7} />
+										</span>
 										<span
 											className={cn(
-												'flex-1 truncate text-start transition-opacity duration-200 ease-out motion-reduce:transition-none',
+												SIDEBAR_LABEL,
 												collapsed && 'opacity-0',
 											)}>
 											Search
 										</span>
 										{!collapsed && (
-											<kbd className="rounded border border-border/60 bg-sidebar-accent/50 px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
+											<kbd className="mr-2 rounded border border-border/60 bg-sidebar-accent/50 px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
 												⌘K
 											</kbd>
 										)}
@@ -138,21 +137,21 @@ export function AppSidebar() {
 										currentTab={currentTab}
 										collapsed={collapsed}
 									/>
-									<SidebarSeparator className="mx-3 my-2 ml-4" />
+									<SidebarSeparator className="my-1" />
 									<NavSection
 										items={MENU.infrastructure}
 										currentPath={location.pathname}
 										currentTab={currentTab}
 										collapsed={collapsed}
 									/>
-									<SidebarSeparator className="mx-3 my-2 ml-4" />
+									<SidebarSeparator className="my-1" />
 									<NavSection
 										items={MENU.resources}
 										currentPath={location.pathname}
 										currentTab={currentTab}
 										collapsed={collapsed}
 									/>
-									<SidebarSeparator className="mx-3 my-2 ml-4" />
+									<SidebarSeparator className="my-1" />
 									<NavSection
 										items={MENU.system}
 										currentPath={location.pathname}
@@ -163,16 +162,16 @@ export function AppSidebar() {
 							)}
 						</div>
 					</nav>
-					{/* Scroll fade: ramps from the rail surface color. */}
-					<div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-sidebar to-transparent" />
+					{/* Scroll fade stays inside the nav's own pb-6 gutter so it can never veil a row's fill. */}
+					<div className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-sidebar to-transparent" />
 				</SidebarContent>
 
 				{/* ── Controls (foot): account menu on the user row, alerts + theme right. ── */}
 				<SidebarFooter className="mt-auto gap-0 border-t border-sidebar-border p-0">
 					<div
 						className={cn(
-							'flex items-center gap-2',
-							collapsed ? 'flex-col px-2 py-2' : 'px-3 py-2.5',
+							'flex items-center gap-2 px-2 py-2',
+							collapsed && 'flex-col px-0',
 						)}>
 						<DropdownMenu>
 							<DropdownMenuTrigger
@@ -182,28 +181,33 @@ export function AppSidebar() {
 										aria-label="Account options"
 										title={displayName}
 										className={cn(
-											'-mx-1 flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 text-start transition-colors hover:bg-sidebar-accent',
-											collapsed && 'mx-0 px-0',
+											SIDEBAR_ROW,
+											SIDEBAR_COLLAPSE,
+											'min-w-0',
+											collapsed ? SIDEBAR_CENTER_X : 'flex-1',
 										)}>
-										{isSolidColorAvatar(avatarValue) ? (
-											<span
-												className="size-6 shrink-0 rounded-full ring-1 ring-border/50 ring-inset"
-												style={{backgroundColor: avatarValue}}
-											/>
-										) : avatarValue ? (
-											<img
-												src={avatarValue}
-												alt={displayName}
-												className="size-6 shrink-0 rounded-full bg-muted object-cover"
-											/>
-										) : (
-											<span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-foreground/[0.06] text-[10px] font-semibold text-foreground uppercase">
-												{initials}
-											</span>
-										)}
+										<span className={SIDEBAR_ICON_CELL}>
+											{isSolidColorAvatar(avatarValue) ? (
+												<span
+													className="size-6 rounded-full ring-1 ring-border/50 ring-inset"
+													style={{backgroundColor: avatarValue}}
+												/>
+											) : avatarValue ? (
+												<img
+													src={avatarValue}
+													alt={displayName}
+													className="size-6 rounded-full bg-muted object-cover"
+												/>
+											) : (
+												<span className="flex size-6 items-center justify-center rounded-full bg-foreground/[0.06] text-[10px] font-semibold text-foreground uppercase">
+													{initials}
+												</span>
+											)}
+										</span>
 										<span
 											className={cn(
-												'min-w-0 flex-1 truncate text-[13px] leading-tight font-medium text-foreground transition-opacity duration-200 ease-out motion-reduce:transition-none',
+												SIDEBAR_LABEL,
+												'text-foreground',
 												collapsed && 'opacity-0',
 											)}>
 											{displayName}

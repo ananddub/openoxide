@@ -1,6 +1,4 @@
-use sysinfo::{
-    CpuRefreshKind, Disks, MemoryRefreshKind, Networks, RefreshKind, System,
-};
+use sysinfo::{CpuRefreshKind, Disks, MemoryRefreshKind, Networks, RefreshKind, System};
 use tracing::debug;
 
 use super::{bytes_to_gb, bytes_to_mb};

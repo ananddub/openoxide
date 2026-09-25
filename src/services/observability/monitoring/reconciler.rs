@@ -20,11 +20,8 @@ impl MonitoringReconciler {
         server_id: i64,
         states: &[ContainerStatePoint],
     ) -> Result<(), String> {
-        crate::db::reactive::request_scope(async {
-            self.update_server(server_id, "ACTIVE").await?;
-            self.reconcile_server_resources(server_id, states).await
-        })
-        .await
+        self.update_server(server_id, "ACTIVE").await?;
+        self.reconcile_server_resources(server_id, states).await
     }
 
     pub async fn mark_offline(&self, server_id: i64) -> Result<(), String> {

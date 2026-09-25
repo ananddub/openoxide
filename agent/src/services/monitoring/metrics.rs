@@ -9,37 +9,45 @@ use crate::api::proto::{
 use crate::docker::api::DockerApi;
 use crate::docker::json_lines::JsonAccumulator;
 use crate::docker::types::ContainerSummary;
-use crate::telemetry::collector::system::{ServerMetric, SystemCollector};
 use crate::telemetry::collector::bytes_to_mb;
+use crate::telemetry::collector::system::{ServerMetric, SystemCollector};
 
 /// Every metric is sampled live at request time — the agent stores no
-/// history. Server vitals come from one sysinfo sample; container vitals
-/// come straight from Docker's one-shot stats API (the same multiplexed
-/// request `docker stats --no-stream` makes).
+/// history. Server vitals come from live sysinfo samples (two when the panel
+/// asks for a trend); container vitals come straight from Docker's one-shot
+/// stats API (the same multiplexed request `docker stats --no-stream` makes).
 pub struct MetricsService;
 
 impl MetricsService {
     pub async fn server(
         collector: &Mutex<SystemCollector>,
-        _request: GetMetricsRequest,
+        request: GetMetricsRequest,
     ) -> Result<Response<ServerMetricsResponse>, Status> {
-        let row = {
+        let first = {
             let mut collector = collector.lock().await;
             collector.sample().await
         };
-
-        let host = Some(HostInfo {
-            cpu_model: row.cpu_model.clone(),
-            cpu_cores: row.cpu_cores,
-            cpu_physical_cores: row.cpu_physical_cores,
-            cpu_speed: row.cpu_speed,
-            os: row.os.clone(),
-            distro: row.distro.clone(),
-            kernel: row.kernel.clone(),
-            arch: row.arch.clone(),
-        });
-        let metrics = vec![server_point(&row)];
-        Ok(Response::new(ServerMetricsResponse { host, metrics }))
+        // History is never stored; when the panel asks for a trend it gets a
+        // second live sample a moment later, which is the minimum that makes
+        // a sparkline drawable.
+        let mut metrics = vec![server_point(&first)];
+        if request.limit > 1 {
+            let host = host_info(&first);
+            tokio::time::sleep(std::time::Duration::from_millis(1200)).await;
+            let second = {
+                let mut collector = collector.lock().await;
+                collector.sample().await
+            };
+            metrics.push(server_point(&second));
+            return Ok(Response::new(ServerMetricsResponse {
+                host: Some(host),
+                metrics,
+            }));
+        }
+        Ok(Response::new(ServerMetricsResponse {
+            host: Some(host_info(&first)),
+            metrics,
+        }))
     }
 
     pub async fn containers(
@@ -63,61 +71,83 @@ impl MetricsService {
             return Ok(Response::new(ContainerMetricsResponse { metrics: vec![] }));
         }
 
-        // One multiplexed one-shot stats call for every matched container.
-        let mut chunks = docker
-            .get_stream(&format!(
-                "/containers/{}/stats?stream=false",
-                matched
-                    .iter()
-                    .map(|summary| summary.id.to_string())
-                    .collect::<Vec<_>>()
-                    .join("/")
-            ))
-            .await
-            .map_err(|error| Status::internal(format!("docker stats: {error}")))?;
+        // One one-shot stats call per matched container, in parallel —
+        // exactly what `docker stats --no-stream` does (joined-id
+        // multiplexing was removed from Docker 29).
+        let samples: Vec<Option<super::hub::RawStats>> =
+            futures::future::join_all(matched.iter().map(|summary| {
+                let docker = docker.clone();
+                let id = summary.id.to_string();
+                async move {
+                    let mut chunks = docker
+                        .get_stream(&format!("/containers/{id}/stats?stream=false"))
+                        .await
+                        .ok()?;
+                    let mut accumulator = JsonAccumulator::new();
+                    while let Some(chunk) = chunks.next().await {
+                        let Ok(chunk) = chunk else { break };
+                        if let Some(doc) = accumulator
+                            .push::<super::hub::RawStats>(&chunk)
+                            .into_iter()
+                            .next()
+                        {
+                            return Some(doc);
+                        }
+                    }
+                    None
+                }
+            }))
+            .await;
 
         let now = chrono::Utc::now().timestamp();
-        let mut accumulator = JsonAccumulator::new();
         let mut metrics = Vec::new();
-        while let Some(chunk) = chunks.next().await {
-            let Ok(chunk) = chunk else { break };
-            for doc in accumulator.push::<super::stats::RawStats>(&chunk) {
-                let summary = matched.iter().find(|summary| {
-                    doc.id == summary.id.to_string() || doc.id.starts_with(summary.id.short())
-                });
-                let (application_id, compose_id) = summary
-                    .map(|summary| {
-                        (
-                            label_id(summary, "com.openoxide.application-id"),
-                            label_id(summary, "com.openoxide.compose-id"),
-                        )
-                    })
-                    .unwrap_or((0, 0));
-                let name = summary
-                    .map(|summary| summary.display_name())
-                    .map(|name| name.as_str().to_string())
-                    .unwrap_or_else(|| doc.name.trim_start_matches('/').to_string());
-                let (rx, tx_bytes) = doc.stats.network_bytes();
-                let (read, write) = doc.stats.block_io_bytes();
-                metrics.push(ContainerMetricPoint {
-                    id: 0,
-                    timestamp: now,
-                    container_id: doc.id,
-                    name,
-                    cpu_perc: doc.stats.cpu_percent(),
-                    mem_perc: doc.stats.memory.used_percent(),
-                    mem_used_mb: bytes_to_mb(doc.stats.memory.used_bytes() as f64),
-                    mem_total_mb: bytes_to_mb(doc.stats.memory.limit as f64),
-                    net_in_mb: bytes_to_mb(rx as f64),
-                    net_out_mb: bytes_to_mb(tx_bytes as f64),
-                    block_read_mb: bytes_to_mb(read as f64),
-                    block_write_mb: bytes_to_mb(write as f64),
-                    application_id,
-                    compose_id,
-                });
-            }
+        for (summary, doc) in matched.iter().zip(samples) {
+            let Some(doc) = doc else { continue };
+            let (application_id, compose_id) = (
+                label_id(summary, "com.openoxide.application-id"),
+                label_id(summary, "com.openoxide.compose-id"),
+            );
+            let name = {
+                let from_summary = summary.display_name().to_string();
+                if from_summary.is_empty() {
+                    doc.name.trim_start_matches('/').to_string()
+                } else {
+                    from_summary
+                }
+            };
+            let (rx, tx_bytes) = doc.stats.network_bytes();
+            let (read, write) = doc.stats.block_io_bytes();
+            metrics.push(ContainerMetricPoint {
+                id: 0,
+                timestamp: now,
+                container_id: doc.id,
+                name,
+                cpu_perc: doc.stats.cpu_percent(),
+                mem_perc: doc.stats.memory.used_percent(),
+                mem_used_mb: bytes_to_mb(doc.stats.memory.used_bytes() as f64),
+                mem_total_mb: bytes_to_mb(doc.stats.memory.limit as f64),
+                net_in_mb: bytes_to_mb(rx as f64),
+                net_out_mb: bytes_to_mb(tx_bytes as f64),
+                block_read_mb: bytes_to_mb(read as f64),
+                block_write_mb: bytes_to_mb(write as f64),
+                application_id,
+                compose_id,
+            });
         }
         Ok(Response::new(ContainerMetricsResponse { metrics }))
+    }
+}
+
+fn host_info(row: &ServerMetric) -> HostInfo {
+    HostInfo {
+        cpu_model: row.cpu_model.clone(),
+        cpu_cores: row.cpu_cores,
+        cpu_physical_cores: row.cpu_physical_cores,
+        cpu_speed: row.cpu_speed,
+        os: row.os.clone(),
+        distro: row.distro.clone(),
+        kernel: row.kernel.clone(),
+        arch: row.arch.clone(),
     }
 }
 

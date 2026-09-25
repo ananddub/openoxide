@@ -43,11 +43,6 @@ define_operations! {
     CanCreate => "create",
     CanUpdate => "update",
     CanDelete => "delete",
-    CanDeploy => "deploy",
-    CanMonitor => "monitor",
-    CanWrite => "write",
-    CanCancel => "cancel",
-    CanRestore => "restore",
 }
 
 string_enum! {

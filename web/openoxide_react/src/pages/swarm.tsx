@@ -33,7 +33,7 @@ export function SwarmPanel() {
 	};
 
 	return (
-		<div className="flex w-full flex-col gap-6">
+		<div className="flex h-full w-full flex-col gap-6">
 			<SectionHeader
 				title="Docker Swarm"
 				description="Cluster nodes, roles, and join tokens across your engines."

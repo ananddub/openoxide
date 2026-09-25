@@ -75,7 +75,7 @@ impl TraefikService for TraefikController {
         })
     }
 
-    #[permission(Traefik, CanWrite)]
+    #[permission(Traefik, CanUpdate)]
     async fn update_file_content<'a>(
         &'a self,
         ctx: RequestContext,
@@ -121,7 +121,7 @@ impl TraefikService for TraefikController {
         })
     }
 
-    #[permission(Traefik, CanWrite)]
+    #[permission(Traefik, CanUpdate)]
     async fn toggle_requests<'a>(
         &'a self,
         ctx: RequestContext,
@@ -201,7 +201,7 @@ impl TraefikService for TraefikController {
         })
     }
 
-    #[permission(Traefik, CanWrite)]
+    #[permission(Traefik, CanUpdate)]
     async fn update_version<'a>(
         &'a self,
         ctx: RequestContext,
@@ -221,7 +221,7 @@ impl TraefikService for TraefikController {
         })
     }
 
-    #[permission(Traefik, CanWrite)]
+    #[permission(Traefik, CanUpdate)]
     async fn render_middleware<'a>(
         &'a self,
         ctx: RequestContext,

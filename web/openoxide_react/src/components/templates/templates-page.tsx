@@ -7,7 +7,10 @@ import {
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
-import {SectionHeader} from '#/components/settings/list-card';
+import {
+	ListRegion,
+	SectionHeader,
+} from '#/components/settings/list-card';
 import {TemplateCard} from './template-card';
 import {TemplateListItem} from './template-list-item';
 import {TemplateDetailDialog} from './template-detail-dialog';
@@ -81,7 +84,7 @@ export function TemplatesPage() {
 	const shown = filtered.slice(0, visible);
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+		<div className="mx-auto flex h-full w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 			<SectionHeader
 				title="Templates"
 				description="Ready-made application blueprints — browse the registry and deploy any of them as a compose stack in one click."
@@ -133,75 +136,77 @@ export function TemplatesPage() {
 				</div>
 			</div>
 
-			{isLoading ? (
-				<div className="min-h-[200px] animate-pulse rounded-xl border bg-card" />
-			) : templatesQuery.isError ? (
-				<div className="flex flex-col items-center justify-center gap-3 rounded-xl border bg-card p-12 text-center">
-					<TemplateIcon className="size-10 text-muted-foreground/40" />
-					<h3 className="text-xl font-semibold tracking-[-0.01em] text-foreground">
-						Template registry unreachable
-					</h3>
-					<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
-						Could not load the template catalog. Check your network
-						connection and try again.
-					</p>
-					<Button
-						variant="outline"
-						onClick={() => templatesQuery.refetch()}
-						className="mt-2 text-xs font-semibold">
-						Retry
-					</Button>
-				</div>
-			) : filtered.length === 0 ? (
-				<div className="flex flex-col items-center justify-center gap-3 rounded-xl border bg-card p-12 text-center">
-					<Search className="size-10 text-muted-foreground/40" />
-					<h3 className="text-xl font-semibold tracking-[-0.01em] text-foreground">
-						No matching templates found
-					</h3>
-					<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
-						No templates match &ldquo;{search}&rdquo;
-					</p>
-					{search.trim() && (
+			<ListRegion>
+				{isLoading ? (
+					<div className="min-h-[200px] animate-pulse rounded-xl border bg-card" />
+				) : templatesQuery.isError ? (
+					<div className="flex flex-col items-center justify-center gap-3 rounded-xl border bg-card p-12 text-center">
+						<TemplateIcon className="size-10 text-muted-foreground/40" />
+						<h3 className="text-xl font-semibold tracking-[-0.01em] text-foreground">
+							Template registry unreachable
+						</h3>
+						<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
+							Could not load the template catalog. Check your network
+							connection and try again.
+						</p>
 						<Button
-							variant="ghost"
-							onClick={() => setSearch('')}
-							className="mt-4 text-xs font-semibold text-primary">
-							Clear Search
+							variant="outline"
+							onClick={() => templatesQuery.refetch()}
+							className="mt-2 text-xs font-semibold">
+							Retry
 						</Button>
-					)}
-				</div>
-			) : view === 'grid' ? (
-				<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-					{shown.map(template => (
-						<TemplateCard
-							key={template.id}
-							template={template}
-							onOpen={setSelected}
-						/>
-					))}
-				</div>
-			) : (
-				<div className="w-full divide-y overflow-hidden rounded-xl border bg-card">
-					{shown.map(template => (
-						<TemplateListItem
-							key={template.id}
-							template={template}
-							onOpen={setSelected}
-						/>
-					))}
-				</div>
-			)}
+					</div>
+				) : filtered.length === 0 ? (
+					<div className="flex flex-col items-center justify-center gap-3 rounded-xl border bg-card p-12 text-center">
+						<Search className="size-10 text-muted-foreground/40" />
+						<h3 className="text-xl font-semibold tracking-[-0.01em] text-foreground">
+							No matching templates found
+						</h3>
+						<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
+							No templates match &ldquo;{search}&rdquo;
+						</p>
+						{search.trim() && (
+							<Button
+								variant="ghost"
+								onClick={() => setSearch('')}
+								className="mt-4 text-xs font-semibold text-primary">
+								Clear Search
+							</Button>
+						)}
+					</div>
+				) : view === 'grid' ? (
+					<div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+						{shown.map(template => (
+							<TemplateCard
+								key={template.id}
+								template={template}
+								onOpen={setSelected}
+							/>
+						))}
+					</div>
+				) : (
+					<div className="w-full divide-y overflow-hidden rounded-xl border bg-card">
+						{shown.map(template => (
+							<TemplateListItem
+								key={template.id}
+								template={template}
+								onOpen={setSelected}
+							/>
+						))}
+					</div>
+				)}
 
-			{shown.length < filtered.length && (
-				<div className="flex justify-center">
-					<Button
-						variant="outline"
-						onClick={() => setVisible(v => v + PAGE_SIZE)}
-						className="h-9 gap-1.5 text-xs font-semibold">
-						Show more ({filtered.length - shown.length} left)
-					</Button>
-				</div>
-			)}
+				{shown.length < filtered.length && (
+					<div className="flex justify-center">
+						<Button
+							variant="outline"
+							onClick={() => setVisible(v => v + PAGE_SIZE)}
+							className="h-9 gap-1.5 text-xs font-semibold">
+							Show more ({filtered.length - shown.length} left)
+						</Button>
+					</div>
+				)}
+			</ListRegion>
 
 			<TemplateDetailDialog
 				template={selected}

@@ -28,9 +28,15 @@ const SIDEBAR_WIDTH = '15rem';
 const SIDEBAR_WIDTH_MOBILE = '18rem';
 const SIDEBAR_WIDTH_ICON = '4.375rem';
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
-/** Centers a 1rem icon in the collapsed rail and squeezes the trailing label to zero, so the icon glides into place with the width instead of teleporting one frame before it moves. */
-const SIDEBAR_CENTER_X =
-	'pl-[calc((var(--sidebar-width-icon)_-_1rem)/2)] pr-[calc((var(--sidebar-width-icon)_-_1rem)/2)]';
+/** Vercel's row geometry: a fixed 36px square carries the icon, so the glyph stays put when the rail collapses and only the label squeezes away. */
+const SIDEBAR_ICON_CELL = 'grid size-9 shrink-0 place-content-center';
+/** One row grammar for every rail entry — global nav, context tabs, search. Hover and selected share one fill. */
+const SIDEBAR_ROW =
+	'relative flex h-9 w-full cursor-pointer items-center rounded-md text-[13px] font-medium text-start outline-none transition-[padding,color,background-color] hover:bg-sidebar-accent hover:text-foreground';
+const SIDEBAR_LABEL =
+	'min-w-0 flex-1 truncate transition-opacity duration-200 ease-out motion-reduce:transition-none';
+/** Collapsed rail: (70px − the 36px icon cell) / 2 of left padding lands the cell dead centre. */
+const SIDEBAR_CENTER_X = 'pl-[calc((var(--sidebar-width-icon)_-_2.25rem)/2)]';
 /** One curve for the whole rail — the width, the row padding, the label fades and the active pill must land together. */
 const SIDEBAR_COLLAPSE =
 	'duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none';
@@ -748,6 +754,9 @@ function SidebarMenuSubButton({
 export {
 	SIDEBAR_CENTER_X,
 	SIDEBAR_COLLAPSE,
+	SIDEBAR_ICON_CELL,
+	SIDEBAR_LABEL,
+	SIDEBAR_ROW,
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,

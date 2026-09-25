@@ -154,7 +154,7 @@ impl BackupService for BackupController {
         Response::ok(Empty::default())
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn run_backup<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -164,7 +164,7 @@ impl BackupService for BackupController {
         Response::ok(Empty::default())
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn restore_backup<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -197,7 +197,7 @@ impl BackupService for BackupController {
 
     // ── Panel/compose operations ──────────────────────────────────────
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn run_compose_backup<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -219,7 +219,7 @@ impl BackupService for BackupController {
         })
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn run_panel_backup<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -238,7 +238,7 @@ impl BackupService for BackupController {
         })
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn stage_restore<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -260,7 +260,7 @@ impl BackupService for BackupController {
         })
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn get_restore_status<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -279,7 +279,7 @@ impl BackupService for BackupController {
         })
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn rollback_restore<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -414,7 +414,7 @@ impl BackupService for BackupController {
         Response::ok(BackupListExecutionsResponse { executions, ..Default::default() })
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn retry_execution<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -571,7 +571,7 @@ impl BackupService for BackupController {
         Response::ok(Empty::default())
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn run_database_backup<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -718,7 +718,7 @@ impl BackupService for BackupController {
         Response::ok(Empty::default())
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn run_volume_backup<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -728,7 +728,7 @@ impl BackupService for BackupController {
         Response::ok(Empty::default())
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn restore_database<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -738,7 +738,7 @@ impl BackupService for BackupController {
         Response::ok(Empty::default())
     }
 
-    #[permission(Application, CanDeploy)]
+    #[permission(Application, CanUpdate)]
     async fn restore_volume<'a>(
         &'a self,
         _ctx: RequestContext,

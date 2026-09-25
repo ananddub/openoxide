@@ -1,5 +1,9 @@
+import {useEffect, useState} from 'react';
+import {Globe, Loader2, ShieldCheck, ShieldX} from 'lucide-react';
 import {Input} from '#/components/ui/input';
 import {Switch} from '#/components/ui/switch';
+import {Button} from '#/components/ui/button';
+import {useValidateDomainDns} from '#/api/live';
 import {
 	Select,
 	SelectContent,
@@ -50,6 +54,7 @@ export function DomainTargetFields({state, services, onChange}: Props) {
 					placeholder="app.example.com"
 					autoFocus
 				/>
+				<DnsValidationRow host={state.host} />
 			</WizardField>
 
 			{services.length > 0 && (
@@ -238,5 +243,67 @@ function SwitchRow({
 			</span>
 			<Switch checked={checked} onCheckedChange={onChange} />
 		</label>
+	);
+}
+
+/** Dokploy-style "Validate DNS" check against the host being typed. */
+function DnsValidationRow({host}: {host: string}) {
+	const validation = useValidateDomainDns();
+	const [validatedHost, setValidatedHost] = useState('');
+	const trimmed = host.trim();
+	const result = validatedHost === trimmed ? validation.data : undefined;
+	// Auto-validate (Dokploy style) once the host looks complete and typing settled.
+	useEffect(() => {
+		if (!trimmed || (validatedHost === trimmed && !validation.isError))
+			return;
+		if (trimmed !== 'localhost' && !trimmed.includes('.')) return;
+		const timer = setTimeout(() => {
+			setValidatedHost(trimmed);
+			validation.mutate({host: trimmed});
+		}, 900);
+		return () => clearTimeout(timer);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [trimmed]);
+	return (
+		<div className="mt-2 flex flex-col items-start gap-2">
+			<Button
+				type="button"
+				variant="outline"
+				size="sm"
+				className="h-8 gap-1.5 text-xs"
+				disabled={!trimmed || validation.isPending}
+				onClick={() => {
+					setValidatedHost(trimmed);
+					validation.mutate({host: trimmed});
+				}}>
+				{validation.isPending ? (
+					<Loader2 className="size-3.5 animate-spin" />
+				) : (
+					<Globe className="size-3.5" />
+				)}
+				Validate DNS
+			</Button>
+			{validation.isError && (
+				<p className="text-[13px] text-amber-600">
+					{validation.error.message || 'DNS check failed'}
+				</p>
+			)}
+			{result?.isValid && (
+				<p className="flex flex-wrap items-center gap-1.5 text-[13px] font-medium text-green-600">
+					<ShieldCheck className="size-3.5" />
+					DNS Valid
+					<span className="font-mono text-[11px] text-muted-foreground">
+						{result.resolvedIps.join(', ')}
+					</span>
+				</p>
+			)}
+			{result && !result.isValid && (
+				<p className="flex flex-wrap items-center gap-1.5 text-[13px] leading-relaxed text-amber-600">
+					<ShieldX className="size-3.5" />
+					{result.error ??
+						`Resolves to ${result.resolvedIps.join(', ') || 'nothing'} — expected ${result.expectedIps.join(', ')}`}
+				</p>
+			)}
+		</div>
 	);
 }

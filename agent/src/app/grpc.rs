@@ -11,11 +11,7 @@ use crate::context::MonitorContext;
 pub struct GrpcServerTask;
 
 impl GrpcServerTask {
-    pub async fn run(
-        ctx: MonitorContext,
-        container: Container,
-        shutdown: CancellationToken,
-    ) {
+    pub async fn run(ctx: MonitorContext, container: Container, shutdown: CancellationToken) {
         let addr: SocketAddr = match format!("0.0.0.0:{}", ctx.config.grpc_port).parse() {
             Ok(addr) => addr,
             Err(error) => {

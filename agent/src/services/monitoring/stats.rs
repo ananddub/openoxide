@@ -1,156 +1,88 @@
 use std::pin::Pin;
 
-use serde::Deserialize;
 use serde_json::json;
-use tokio::sync::mpsc;
-use tokio_stream::{Stream, StreamExt};
+use tokio_stream::Stream;
 use tonic::{Response, Status};
 
+use super::hub::{RawStats, StatsHub};
 use crate::api::proto::{StatsFrame, StreamStatsRequest};
-use crate::docker::api::DockerApi;
-use crate::docker::json_lines::JsonAccumulator;
-use crate::docker::types::{ContainerStats, ContainerSummary};
 
-pub type StatsStream =
-    Pin<Box<dyn Stream<Item = Result<StatsFrame, Status>> + Send + 'static>>;
+pub type StatsStream = Pin<Box<dyn Stream<Item = Result<StatsFrame, Status>> + Send + 'static>>;
 
-/// Streams live container stats over the agent's own Docker API connection.
-/// The panel used to spawn `docker stats --format {{json .}}` CLI processes
-/// (~11 MB RSS each, one per browser consumer); this service emits the exact
-/// same JSON document shape from the in-process API stream instead.
+/// Streams live container stats from the agent's single shared stats feed:
+/// every listener receives the same multiplexed documents, whatever the
+/// number of panel consumers. The emitted JSON shape matches
+/// `docker stats --format {{json .}}` exactly.
 pub struct StatsService;
-
-/// Raw stats document: CLI-relevant extras (`name`, `id`, pids) layered over
-/// the metric fields `ContainerStats` already models. Shared with the
-/// one-shot container metrics sampling in `metrics.rs`.
-#[derive(Debug, Deserialize)]
-pub(crate) struct RawStats {
-    #[serde(default)]
-    pub(crate) name: String,
-    #[serde(default)]
-    pub(crate) id: String,
-    #[serde(rename = "pids_stats", default)]
-    pids: PidsStats,
-    #[serde(flatten)]
-    pub(crate) stats: ContainerStats,
-}
-
-#[derive(Debug, Default, Deserialize)]
-struct PidsStats {
-    #[serde(default)]
-    current: u64,
-}
 
 impl StatsService {
     pub async fn stream(
-        docker: DockerApi,
+        hub: StatsHub,
         request: StreamStatsRequest,
     ) -> Result<Response<StatsStream>, Status> {
-        let ids = if request.container_ids.is_empty() {
-            docker
-                .get_json::<Vec<ContainerSummary>>("/containers/json")
-                .await
-                .map_err(|error| Status::internal(format!("docker container list: {error}")))?
-                .into_iter()
-                .map(|container| container.id.to_string())
-                .collect()
-        } else {
-            request.container_ids
-        };
-
-        // Docker's stats endpoint accepts multiple containers in one request
-        // (`/containers/{id1}/{id2}/.../stats`), so the whole fan-out is one
-        // connection, one stream and one pump task. Each document carries its
-        // own `id`/`name`, so consumers can still tell containers apart.
-        let (tx, rx) = mpsc::channel::<String>(64);
-        if ids.is_empty() {
-            drop(tx); // no containers: the stream closes immediately
-        } else {
-            tokio::spawn(async move {
-                pump(docker, ids, request.stream, tx).await;
-            });
-        }
-
-        Ok(Response::new(Box::pin(
-            tokio_stream::wrappers::ReceiverStream::new(rx)
-                .map(|json_line| Ok(StatsFrame { json_line })),
-        )))
-    }
-}
-
-async fn pump(docker: DockerApi, ids: Vec<String>, stream: bool, tx: mpsc::Sender<String>) {
-    let suffix = if stream { "true" } else { "false" };
-    // Docker's stats API never carries the writable-layer size (`size_rw` is
-    // absent on this daemon, and `?size=1` is ignored on the stats endpoint —
-    // the CLI gets it from inspect). One inspect round at stream open is
-    // cheap and the values drift slowly; failed lookups just report 0.
-    let sizes: Vec<(String, u64)> = futures::future::join_all(ids.iter().map(|id| {
-        let docker = docker.clone();
-        async move {
-            let size_rw = docker
-                .get_json::<serde_json::Value>(&format!("/containers/{id}/json?size=1"))
-                .await
-                .ok()
-                .and_then(|doc| doc.get("SizeRw").and_then(|v| v.as_u64()))
-                .unwrap_or(0);
-            (id.clone(), size_rw)
-        }
-    }))
-    .await
-    .into_iter()
-    .collect();
-    let mut chunks = match docker
-        .get_stream(&format!(
-            "/containers/{}/stats?stream={suffix}",
-            ids.join("/")
-        ))
-        .await
-    {
-        Ok(chunks) => chunks,
-        Err(error) => {
-            tracing::warn!(count = ids.len(), %error, "could not open container stats stream");
-            return;
-        }
-    };
-
-    // With `stream=false` Docker emits one sample per container and closes;
-    // we still stop ourselves once every requested id has been seen so the
-    // `--no-stream` contract holds even if the daemon keeps the connection.
-    let mut pending: Vec<&str> = sizes.iter().map(|(id, _)| id.as_str()).collect();
-    let mut accumulator = JsonAccumulator::new();
-    while let Some(Ok(chunk)) = chunks.next().await {
-        for doc in accumulator.push::<RawStats>(&chunk) {
-            let size_rw = find_size(&sizes, &doc.id);
-            if tx.send(to_cli_line(&doc, size_rw)).await.is_err() {
-                return; // panel consumer went away
-            }
-            if !stream {
-                let short = doc.id.get(..12).unwrap_or(&doc.id);
-                pending.retain(|id| {
-                    *id != doc.id
-                        && *id != short
-                        && !doc.id.starts_with(id)
-                });
-                if pending.is_empty() {
-                    return;
+        let mut rx = hub.subscribe().await;
+        let ids = request.container_ids;
+        let stream = async_stream::stream! {
+            if request.stream {
+                while let Ok(doc) = rx.recv().await {
+                    if !ids.is_empty() && !id_matches(&ids, &doc.id) {
+                        continue;
+                    }
+                    let size_rw = hub.size_rw(&doc.id).await;
+                    yield Ok(StatsFrame {
+                        json_line: to_cli_line(&doc, size_rw),
+                    });
+                }
+            } else if ids.is_empty() {
+                // One-shot, all containers: the hub cycles every running
+                // container once per second, so stop when a repeat arrives.
+                let mut seen: Vec<String> = Vec::new();
+                while let Ok(doc) = rx.recv().await {
+                    if seen.iter().any(|id| doc_id_matches(id, &doc.id)) {
+                        break;
+                    }
+                    seen.push(doc.id.clone());
+                    let size_rw = hub.size_rw(&doc.id).await;
+                    yield Ok(StatsFrame {
+                        json_line: to_cli_line(&doc, size_rw),
+                    });
+                }
+            } else {
+                // One-shot, named containers: one sample each.
+                let mut wanted = ids;
+                while !wanted.is_empty() {
+                    match rx.recv().await {
+                        Ok(doc) => {
+                            let matched = doc_id_matches_at(&wanted, &doc.id);
+                            wanted.retain(|id| !doc_id_matches(id, &doc.id));
+                            if matched {
+                                let size_rw = hub.size_rw(&doc.id).await;
+                                yield Ok(StatsFrame {
+                                    json_line: to_cli_line(&doc, size_rw),
+                                });
+                            }
+                        }
+                        Err(_) => break, // feed ended
+                    }
                 }
             }
-        }
+        };
+        Ok(Response::new(Box::pin(stream)))
     }
 }
 
-/// Stats documents carry the full 64-char id while the request may name
+/// Stats documents carry the full 64-char id while requests may name
 /// containers by their 12-char short id, so match by prefix either way.
-fn find_size(sizes: &[(String, u64)], doc_id: &str) -> u64 {
-    sizes
-        .iter()
-        .find(|(id, _)| {
-            doc_id == id
-                || doc_id.starts_with(id.as_str())
-                || id.starts_with(doc_id.get(..12).unwrap_or(doc_id))
-        })
-        .map(|(_, size)| *size)
-        .unwrap_or(0)
+fn id_matches(ids: &[String], doc_id: &str) -> bool {
+    doc_id_matches_at(ids, doc_id)
+}
+
+fn doc_id_matches_at(ids: &[String], doc_id: &str) -> bool {
+    ids.iter().any(|id| doc_id_matches(id, doc_id))
+}
+
+fn doc_id_matches(id: &str, doc_id: &str) -> bool {
+    doc_id == id || doc_id.starts_with(id) || id.starts_with(doc_id.get(..12).unwrap_or(doc_id))
 }
 
 /// Renders one API stats document as the JSON object produced by
@@ -251,8 +183,8 @@ mod tests {
             r#"{ "cpu_stats": {}, "precpu_stats": {}, "memory_stats": {}, "networks": {}, "blkio_stats": {} }"#,
         )
         .expect("valid stats json");
-        let value: serde_json::Value = serde_json::from_str(&to_cli_line(&doc, 0))
-            .expect("valid JSON line");
+        let value: serde_json::Value =
+            serde_json::from_str(&to_cli_line(&doc, 0)).expect("valid JSON line");
         assert_eq!(value["PIDs"], "0");
         assert_eq!(value["Name"], "");
         assert_eq!(value["CPUPerc"], "0.00%");

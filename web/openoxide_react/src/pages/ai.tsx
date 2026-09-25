@@ -17,6 +17,7 @@ import {ConfirmDeleteDialog} from '#/components/settings/confirm-delete-dialog';
 import {
 	GridSkeleton,
 	ListEmpty,
+	ListRegion,
 	ListSkeleton,
 	SectionHeader,
 	Toolbar,
@@ -98,7 +99,7 @@ export function AiSettingsPage() {
 	};
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-5 px-4 pt-4 pb-6 duration-200 fade-in">
+		<div className="mx-auto flex h-full w-full max-w-[1920px] animate-in flex-col gap-5 px-4 pt-4 pb-6 duration-200 fade-in">
 			<SectionHeader
 				title="AI Providers"
 				description="Model credentials used for log diagnosis and stack generation."
@@ -148,52 +149,54 @@ export function AiSettingsPage() {
 				/>
 			</Toolbar>
 
-			{itemsQuery.isLoading ? (
-				view === 'grid' ? (
-					<GridSkeleton />
-				) : (
-					<ListSkeleton />
-				)
-			) : items.length === 0 ? (
-				<ListEmpty
-					icon={Bot}
-					title="No AI providers yet"
-					description="Connect an OpenAI, Anthropic, Gemini or local Ollama provider for log diagnosis and stack generation."
-					action={
-						<Button
-							onClick={create}
-							className="h-9 gap-1.5 text-xs font-semibold">
-							<Plus className="size-3.5" /> New provider
-						</Button>
-					}
-				/>
-			) : filtered.length === 0 ? (
-				<ListEmpty
-					icon={Search}
-					title="No providers match your filters"
-					description="Try a different name, provider or model — or clear the filters."
-					action={
-						hasFilters && (
+			<ListRegion>
+				{itemsQuery.isLoading ? (
+					view === 'grid' ? (
+						<GridSkeleton />
+					) : (
+						<ListSkeleton />
+					)
+				) : items.length === 0 ? (
+					<ListEmpty
+						icon={Bot}
+						title="No AI providers yet"
+						description="Connect an OpenAI, Anthropic, Gemini or local Ollama provider for log diagnosis and stack generation."
+						action={
 							<Button
-								variant="ghost"
-								onClick={() => {
-									setSearch('');
-									setStatus('All');
-								}}
-								className="text-xs font-semibold text-primary">
-								Clear All Filters
+								onClick={create}
+								className="h-9 gap-1.5 text-xs font-semibold">
+								<Plus className="size-3.5" /> New provider
 							</Button>
-						)
-					}
-				/>
-			) : (
-				<AiSettingsList
-					items={filtered}
-					view={view}
-					onEdit={edit}
-					onDelete={setDeleting}
-				/>
-			)}
+						}
+					/>
+				) : filtered.length === 0 ? (
+					<ListEmpty
+						icon={Search}
+						title="No providers match your filters"
+						description="Try a different name, provider or model — or clear the filters."
+						action={
+							hasFilters && (
+								<Button
+									variant="ghost"
+									onClick={() => {
+										setSearch('');
+										setStatus('All');
+									}}
+									className="text-xs font-semibold text-primary">
+									Clear All Filters
+								</Button>
+							)
+						}
+					/>
+				) : (
+					<AiSettingsList
+						items={filtered}
+						view={view}
+						onEdit={edit}
+						onDelete={setDeleting}
+					/>
+				)}
+			</ListRegion>
 
 			<ConfirmDeleteDialog
 				open={deleting !== null}

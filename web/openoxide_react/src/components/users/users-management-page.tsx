@@ -28,7 +28,7 @@ export function UsersManagementPage() {
 	const [view, setView] = useListView('settings-team-view');
 
 	return (
-		<div className="flex w-full animate-in flex-col gap-5 duration-200 fade-in">
+		<div className="flex h-full w-full animate-in flex-col gap-5 duration-200 fade-in">
 			<SectionHeader
 				title="Team"
 				description="People, roles and pending invitations for this organization."
@@ -73,8 +73,16 @@ export function UsersManagementPage() {
 				/>
 			</Toolbar>
 
-			<MembersCard ctl={ctl} view={view} />
-			<InvitationsCard ctl={ctl} />
+			{/* Members own the remaining height and scroll in their own card;
+			    pending invitations ride below at natural height. */}
+			<div className="flex min-h-0 flex-1 flex-col gap-5">
+				<div className="min-h-0 flex-1 overflow-y-auto">
+					<MembersCard ctl={ctl} view={view} />
+				</div>
+				<div className="shrink-0">
+					<InvitationsCard ctl={ctl} />
+				</div>
+			</div>
 			<TeamDialogs ctl={ctl} />
 		</div>
 	);

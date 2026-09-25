@@ -102,6 +102,8 @@ export function DatabaseArchitectureTab({
 
 			<ComposeVisualizer
 				customServices={dbServices}
+				monitorId={dbId}
+				monitorType="database"
 				backups={supportsVolumeBackup ? (dbBackups as any) : []}
 				onAddBackup={supportsVolumeBackup ? handleAddBackup : undefined}
 				onOpenTerminal={handleOpenTerminal}

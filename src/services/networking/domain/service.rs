@@ -12,7 +12,7 @@ use crate::utils::builder::compose::labels::build_compose_service_labels;
 use crate::utils::docker::DockerCli;
 use crate::utils::traefik::types::CertificateType;
 
-use super::types::{CreateDomainDto, DomainRecord, PatchDomainDto};
+use super::types::{CreateDomainDto, DnsValidation, DomainRecord, PatchDomainDto};
 
 #[derive(Clone)]
 pub struct DomainService {
@@ -22,10 +22,7 @@ pub struct DomainService {
 
 #[singleton]
 impl DomainService {
-    fn new(
-        queries: Arc<FlashQueries>,
-        application_spec: Arc<ApplicationSpecAdapter>,
-    ) -> Self {
+    fn new(queries: Arc<FlashQueries>, application_spec: Arc<ApplicationSpecAdapter>) -> Self {
         Self {
             queries,
             application_spec,
@@ -44,7 +41,10 @@ impl DomainService {
         &self,
         application_id: i64,
     ) -> sqlx::Result<Vec<DomainRecord>> {
-        let rows = self.queries.domains_list_by_application(application_id).await?;
+        let rows = self
+            .queries
+            .domains_list_by_application(application_id)
+            .await?;
         Ok(rows.into_iter().map(DomainRecord::from).collect())
     }
 
@@ -56,6 +56,65 @@ impl DomainService {
     pub async fn list_all(&self, organization_id: i64) -> sqlx::Result<Vec<DomainRecord>> {
         let rows = self.queries.domains_list_all(organization_id).await?;
         Ok(rows.into_iter().map(DomainRecord::from).collect())
+    }
+
+    /// Live DNS check: resolve the host's A/AAAA records (CNAME chains are
+    /// followed by the system resolver) and compare them with the target
+    /// server's IP. No `server_id` means the panel's own machine.
+    pub async fn validate_dns(
+        &self,
+        host: &str,
+        server_id: Option<i64>,
+        organization_id: i64,
+    ) -> sqlx::Result<DnsValidation> {
+        let host = normalize_host(host)?;
+        let expected_ips = match server_id {
+            Some(id) => {
+                let server = self.queries.get_server_by_i_d(id).await?;
+                if server.organization_id != organization_id {
+                    return Err(sqlx::Error::RowNotFound);
+                }
+                vec![server.ip_address]
+            }
+            None => local_ip_addresses(),
+        }
+        .into_iter()
+        .map(|ip| ip.trim().to_owned())
+        .filter(|ip| !ip.is_empty())
+        .collect::<Vec<_>>();
+
+        let mut resolved_ips = match tokio::net::lookup_host((host.as_str(), 0)).await {
+            Ok(addrs) => addrs.map(|addr| addr.ip().to_string()).collect::<Vec<_>>(),
+            Err(_) => Vec::new(),
+        };
+        resolved_ips.sort();
+        resolved_ips.dedup();
+
+        let (is_valid, error) = if resolved_ips.is_empty() {
+            (
+                false,
+                Some(format!("{host} does not resolve to any IP address yet")),
+            )
+        } else if expected_ips.is_empty() || resolved_ips.iter().any(|ip| expected_ips.contains(ip))
+        {
+            (true, None)
+        } else {
+            (
+                false,
+                Some(format!(
+                    "{host} resolves to {} but should point to {}",
+                    resolved_ips.join(", "),
+                    expected_ips.join(", ")
+                )),
+            )
+        };
+
+        Ok(DnsValidation {
+            is_valid,
+            resolved_ips,
+            expected_ips,
+            error,
+        })
     }
 
     pub async fn create(
@@ -90,24 +149,22 @@ impl DomainService {
 
         let domain = self
             .queries
-            .domains_create_and_return(
-                &crate::flash_gen::domains::DomainsCreateAndReturnParams {
-                    host: input.host,
-                    https,
-                    port: port.unwrap_or(3000),
-                    path: input.path,
-                    internal_path: input.internal_path,
-                    custom_entrypoint: input.custom_entrypoint.unwrap_or_default(),
-                    service_name: input.service_name.unwrap_or_default(),
-                    custom_cert_resolver: input.custom_cert_resolver.unwrap_or_default(),
-                    strip_path,
-                    middlewares: input.middlewares,
-                    domain_type: domain_type.to_string(),
-                    certificate_type,
-                    service_id: service_id.unwrap_or(0),
-                    organization_id,
-                },
-            )
+            .domains_create_and_return(&crate::flash_gen::domains::DomainsCreateAndReturnParams {
+                host: input.host,
+                https,
+                port: port.unwrap_or(3000),
+                path: input.path,
+                internal_path: input.internal_path,
+                custom_entrypoint: input.custom_entrypoint.unwrap_or_default(),
+                service_name: input.service_name.unwrap_or_default(),
+                custom_cert_resolver: input.custom_cert_resolver.unwrap_or_default(),
+                strip_path,
+                middlewares: input.middlewares,
+                domain_type: domain_type.to_string(),
+                certificate_type,
+                service_id: service_id.unwrap_or(0),
+                organization_id,
+            })
             .await
             .map(DomainRecord::from)?;
 
@@ -159,23 +216,21 @@ impl DomainService {
 
         let domain = self
             .queries
-            .domains_update_and_return(
-                &crate::flash_gen::domains::DomainsUpdateAndReturnParams {
-                    host,
-                    https,
-                    port: port.unwrap_or(3000),
-                    path: path.unwrap_or_else(|| "/".into()),
-                    internal_path: internal_path.unwrap_or_else(|| "/".into()),
-                    custom_entrypoint: custom_entrypoint.unwrap_or_default(),
-                    service_name: service_name.unwrap_or_default(),
-                    custom_cert_resolver: custom_cert_resolver.unwrap_or_default(),
-                    strip_path,
-                    middlewares,
-                    certificate_type,
-                    id,
-                    organization_id,
-                },
-            )
+            .domains_update_and_return(&crate::flash_gen::domains::DomainsUpdateAndReturnParams {
+                host,
+                https,
+                port: port.unwrap_or(3000),
+                path: path.unwrap_or_else(|| "/".into()),
+                internal_path: internal_path.unwrap_or_else(|| "/".into()),
+                custom_entrypoint: custom_entrypoint.unwrap_or_default(),
+                service_name: service_name.unwrap_or_default(),
+                custom_cert_resolver: custom_cert_resolver.unwrap_or_default(),
+                strip_path,
+                middlewares,
+                certificate_type,
+                id,
+                organization_id,
+            })
             .await
             .map(DomainRecord::from)?;
 
@@ -416,22 +471,12 @@ impl DomainService {
                 // A wiped server workspace must not brick domain updates:
                 // RAW stacks keep their compose content in the database, so
                 // re-materialize the file when it is gone.
-                let raw_present = os
-                    .file(&compose_file_path)
-                    .exists()
-                    .run()
-                    .await
-                    .is_ok();
+                let raw_present = os.file(&compose_file_path).exists().run().await.is_ok();
                 if !raw_present {
-                    if let crate::utils::builder::compose::spec::ComposeSource::Raw {
-                        content,
-                    } = &spec.source
+                    if let crate::utils::builder::compose::spec::ComposeSource::Raw { content } =
+                        &spec.source
                     {
-                        let _ = os
-                            .file(&compose_file_path)
-                            .write(content)
-                            .execute()
-                            .await;
+                        let _ = os.file(&compose_file_path).write(content).execute().await;
                     }
                 }
 
@@ -439,7 +484,8 @@ impl DomainService {
                     if output.status.success() {
                         if let Ok(updated_yaml) =
                             crate::utils::builder::compose::labels::inject_compose_yaml_labels(
-                                &output.stdout, &spec,
+                                &output.stdout,
+                                &spec,
                             )
                         {
                             let _ = os
@@ -544,6 +590,25 @@ fn validate_owner(application_id: Option<i64>, compose_id: Option<i64>) -> sqlx:
         ));
     }
     Ok(())
+}
+
+/// The machine's own IPs: loopback plus the outbound address each UDP
+/// "connect" probe selects (no packets are actually sent).
+fn local_ip_addresses() -> Vec<String> {
+    let mut ips = vec!["127.0.0.1".to_string(), "::1".to_string()];
+    for (bind, probe) in [
+        ("0.0.0.0:0", "8.8.8.8:80"),
+        ("[::]:0", "[2001:4860:4860::8888]:53"),
+    ] {
+        if let Ok(socket) = std::net::UdpSocket::bind(bind) {
+            if socket.connect(probe).is_ok() {
+                if let Ok(addr) = socket.local_addr() {
+                    ips.push(addr.ip().to_string());
+                }
+            }
+        }
+    }
+    ips
 }
 
 fn normalize_host(value: &str) -> sqlx::Result<String> {

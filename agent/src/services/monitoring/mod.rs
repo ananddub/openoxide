@@ -3,11 +3,9 @@ use std::sync::Arc;
 use auto_di::singleton;
 use tokio::sync::Mutex;
 
-use crate::{
-    docker::api::DockerApi,
-    telemetry::collector::system::SystemCollector,
-};
+use crate::{docker::api::DockerApi, telemetry::collector::system::SystemCollector};
 
+pub mod hub;
 pub mod lifecycle;
 pub mod metrics;
 pub mod shell;
@@ -18,19 +16,29 @@ pub mod stats;
 /// metrics, lifecycle and shell dependencies stay in one owned service.
 /// Host metrics are sampled live through the retained `SystemCollector`
 /// (sysinfo needs two CPU refreshes over time, so it is stateful); container
-/// metrics are read straight from the Docker API on every request.
+/// data comes from the shared hubs: one stats feed and one events feed serve
+/// every listener, so the agent holds one Docker connection per feed no
+/// matter how many panel consumers watch.
 #[derive(Clone)]
 pub struct MonitoringService {
     pub docker: Arc<DockerApi>,
     pub system: Arc<Mutex<SystemCollector>>,
+    pub stats_hub: Arc<hub::StatsHub>,
+    pub events_hub: Arc<hub::EventsHub>,
 }
 
 #[singleton]
 impl MonitoringService {
-    pub fn new(docker: Arc<DockerApi>) -> Self {
+    pub fn new(
+        docker: Arc<DockerApi>,
+        stats_hub: Arc<hub::StatsHub>,
+        events_hub: Arc<hub::EventsHub>,
+    ) -> Self {
         Self {
             docker,
             system: Arc::new(Mutex::new(SystemCollector::new())),
+            stats_hub,
+            events_hub,
         }
     }
 
@@ -58,7 +66,8 @@ impl MonitoringService {
         &self,
         request: crate::api::proto::WatchRequest,
     ) -> Result<tonic::Response<lifecycle::LifecycleStream>, tonic::Status> {
-        lifecycle::LifecycleService::watch((*self.docker).clone(), request).await
+        lifecycle::LifecycleService::watch(self.docker.clone(), (*self.events_hub).clone(), request)
+            .await
     }
 
     pub async fn shell(
@@ -73,6 +82,6 @@ impl MonitoringService {
         &self,
         request: crate::api::proto::StreamStatsRequest,
     ) -> Result<tonic::Response<stats::StatsStream>, tonic::Status> {
-        stats::StatsService::stream((*self.docker).clone(), request).await
+        stats::StatsService::stream((*self.stats_hub).clone(), request).await
     }
 }

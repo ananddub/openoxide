@@ -65,7 +65,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Monitoring, CanMonitor)]
+    #[permission(Monitoring, CanRead)]
     async fn get_server_metrics<'a>(
         &'a self,
         ctx: RequestContext,
@@ -87,7 +87,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Monitoring, CanMonitor)]
+    #[permission(Monitoring, CanRead)]
     async fn get_container_metrics<'a>(
         &'a self,
         ctx: RequestContext,
@@ -111,7 +111,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Monitoring, CanMonitor)]
+    #[permission(Monitoring, CanRead)]
     async fn get_container_states<'a>(
         &'a self,
         ctx: RequestContext,
@@ -136,7 +136,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Alert, CanWrite)]
+    #[permission(Alert, CanUpdate)]
     async fn create_agent_token<'a>(
         &'a self,
         ctx: RequestContext,
@@ -176,7 +176,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Monitoring, CanMonitor)]
+    #[permission(Monitoring, CanRead)]
     async fn get_agent_status<'a>(
         &'a self,
         ctx: RequestContext,
@@ -203,7 +203,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Alert, CanWrite)]
+    #[permission(Alert, CanUpdate)]
     async fn start_agent<'a>(
         &'a self,
         ctx: RequestContext,
@@ -219,7 +219,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Alert, CanWrite)]
+    #[permission(Alert, CanUpdate)]
     async fn stop_agent<'a>(
         &'a self,
         ctx: RequestContext,
@@ -235,7 +235,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Alert, CanWrite)]
+    #[permission(Alert, CanUpdate)]
     async fn restart_agent<'a>(
         &'a self,
         ctx: RequestContext,
@@ -251,7 +251,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Alert, CanWrite)]
+    #[permission(Alert, CanUpdate)]
     async fn reinstall_agent<'a>(
         &'a self,
         ctx: RequestContext,
@@ -268,7 +268,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Monitoring, CanMonitor)]
+    #[permission(Monitoring, CanRead)]
     async fn export_server_metrics<'a>(
         &'a self,
         ctx: RequestContext,
@@ -306,7 +306,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Monitoring, CanMonitor)]
+    #[permission(Monitoring, CanRead)]
     async fn get_prometheus_metrics<'a>(
         &'a self,
         ctx: RequestContext,
@@ -334,7 +334,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Alert, CanWrite)]
+    #[permission(Alert, CanUpdate)]
     async fn create_maintenance_window<'a>(
         &'a self,
         ctx: RequestContext,
@@ -365,7 +365,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Monitoring, CanMonitor)]
+    #[permission(Monitoring, CanRead)]
     async fn list_maintenance_windows<'a>(
         &'a self,
         ctx: RequestContext,
@@ -387,7 +387,7 @@ impl MonitoringService for MonitoringController {
         })
     }
 
-    #[permission(Alert, CanWrite)]
+    #[permission(Alert, CanUpdate)]
     async fn delete_maintenance_window<'a>(
         &'a self,
         ctx: RequestContext,

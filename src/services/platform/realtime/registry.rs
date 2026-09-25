@@ -8,6 +8,7 @@ use crate::api::connect::generated::openoxide::api::v1::WatchedTable;
 /// downgraded to "all tables" notifications instead of being dropped.
 pub struct TableRegistry {
     by_name: HashMap<&'static str, WatchedTable>,
+    all: Vec<WatchedTable>,
 }
 
 impl TableRegistry {
@@ -17,8 +18,14 @@ impl TableRegistry {
             ("ai_settings", WatchedTable::AiSettings),
             ("alert_events", WatchedTable::AlertEvents),
             ("alert_rules", WatchedTable::AlertRules),
-            ("application_middlewares", WatchedTable::ApplicationMiddlewares),
-            ("application_migrations", WatchedTable::ApplicationMigrations),
+            (
+                "application_middlewares",
+                WatchedTable::ApplicationMiddlewares,
+            ),
+            (
+                "application_migrations",
+                WatchedTable::ApplicationMigrations,
+            ),
             ("audit_logs", WatchedTable::AuditLogs),
             ("background_policies", WatchedTable::BackgroundPolicies),
             ("backup_executions", WatchedTable::BackupExecutions),
@@ -96,9 +103,9 @@ impl TableRegistry {
             ("vault_providers", WatchedTable::VaultProviders),
             ("volume_backups", WatchedTable::VolumeBackups),
         ];
-        Self {
-            by_name: entries.into_iter().collect(),
-        }
+        let by_name: HashMap<&'static str, WatchedTable> = entries.into_iter().collect();
+        let all = by_name.values().copied().collect();
+        Self { by_name, all }
     }
 
     /// Resolves a table name to its wire enum, or `None` when the table is
@@ -107,8 +114,9 @@ impl TableRegistry {
         self.by_name.get(table).copied()
     }
 
-    /// Every watchable table — used for resync events.
-    pub fn all(&self) -> Vec<WatchedTable> {
-        self.by_name.values().copied().collect()
+    /// Every watchable table — used for resync events. Precomputed so
+    /// dispatch never re-materialises the list.
+    pub fn all(&self) -> &[WatchedTable] {
+        &self.all
     }
 }

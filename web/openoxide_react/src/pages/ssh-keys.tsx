@@ -1,9 +1,13 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
-import {FileKey2, LayoutGrid, List, Plus, Search} from 'lucide-react';
+import {FileKey2, LayoutGrid, List, Plus} from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {Input} from '#/components/ui/input';
-import {SectionHeader} from '#/components/settings/list-card';
+import {
+	ListRegion,
+	SectionHeader,
+	Toolbar,
+	ToolbarSearch,
+} from '#/components/settings/list-card';
 import {
 	Select,
 	SelectContent,
@@ -122,7 +126,7 @@ function SshKeysPage() {
 	);
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+		<div className="mx-auto flex h-full w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
 			<SectionHeader
 				title="SSH Keys"
 				description="Key pairs to authenticate with remote servers and Git repositories."
@@ -136,72 +140,66 @@ function SshKeysPage() {
 				}
 			/>
 
-			{/* Search + type filter + New SSH Key */}
-			<div className="flex w-full animate-in flex-col items-stretch gap-3 duration-200 fade-in sm:flex-row sm:items-center">
-				<div className="relative w-full sm:grow">
-					<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground/70" />
-					<Input
-						ref={searchRef}
-						placeholder="Search SSH Keys"
-						value={search}
-						onChange={e => setSearch(e.target.value)}
-						className="h-9 rounded-lg pr-11 pl-9 text-sm transition-colors duration-150 hover:border-foreground/25"
-					/>
-					<kbd
-						aria-hidden
-						className="pointer-events-none absolute top-1/2 right-3 flex size-5 -translate-y-1/2 items-center justify-center rounded-md border border-border bg-foreground/[0.04] font-mono text-[11px] text-muted-foreground select-none">
-						/
-					</kbd>
-				</div>
+			{/* Search + type filter + view toggle — sticks with the title */}
+			<Toolbar
+				action={
+					<>
+						<Select
+							value={typeFilter}
+							onValueChange={v => setTypeFilter(v as KeyTypeFilter)}>
+							<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
+								<SelectValue>
+									{typeFilter === 'All' ? 'All Types' : typeFilter}
+								</SelectValue>
+							</SelectTrigger>
+							<SelectContent className="bg-card">
+								{KEY_TYPES.map(t => (
+									<SelectItem key={t} value={t}>
+										{t === 'All' ? 'All Types' : t}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 
-				<div className="flex shrink-0 items-center gap-2">
-					<Select
-						value={typeFilter}
-						onValueChange={v => setTypeFilter(v as KeyTypeFilter)}>
-						<SelectTrigger className="h-9 w-auto rounded-lg bg-card">
-							<SelectValue>
-								{typeFilter === 'All' ? 'All Types' : typeFilter}
-							</SelectValue>
-						</SelectTrigger>
-						<SelectContent className="bg-card">
-							{KEY_TYPES.map(t => (
-								<SelectItem key={t} value={t}>
-									{t === 'All' ? 'All Types' : t}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+						{/* Grid / list toggle */}
+						<div className="flex items-center rounded-lg border bg-card p-1">
+							<button
+								type="button"
+								aria-label="Grid view"
+								title="Grid view"
+								onClick={() => handleViewChange('grid')}
+								className={cn(
+									'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
+									view === 'grid' && 'bg-accent text-foreground',
+								)}>
+								<LayoutGrid className="size-3.5" />
+							</button>
+							<button
+								type="button"
+								aria-label="List view"
+								title="List view"
+								onClick={() => handleViewChange('list')}
+								className={cn(
+									'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
+									view === 'list' && 'bg-accent text-foreground',
+								)}>
+								<List className="size-3.5" />
+							</button>
+						</div>
+					</>
+				}>
+				<ToolbarSearch
+					inputRef={searchRef}
+					value={search}
+					onChange={setSearch}
+					placeholder="Search SSH Keys"
+					className="sm:max-w-none"
+				/>
+			</Toolbar>
 
-					{/* Grid / list toggle */}
-					<div className="flex items-center rounded-lg border bg-card p-1">
-						<button
-							type="button"
-							aria-label="Grid view"
-							title="Grid view"
-							onClick={() => handleViewChange('grid')}
-							className={cn(
-								'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
-								view === 'grid' && 'bg-accent text-foreground',
-							)}>
-							<LayoutGrid className="size-3.5" />
-						</button>
-						<button
-							type="button"
-							aria-label="List view"
-							title="List view"
-							onClick={() => handleViewChange('list')}
-							className={cn(
-								'flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
-								view === 'list' && 'bg-accent text-foreground',
-							)}>
-							<List className="size-3.5" />
-						</button>
-					</div>
-				</div>
-			</div>
-
-			{/* Content: grid cards or compact list */}
-			{!sshKeysQuery.isLoading && keys.length === 0 ? (
+			{/* Content: grid cards or compact list — the page's only scroll area */}
+			<ListRegion>
+				{!sshKeysQuery.isLoading && keys.length === 0 ? (
 				<div className="flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center">
 					<FileKey2 className="mb-4 size-10 text-muted-foreground/40" />
 					<h3 className="mb-2 text-xl font-semibold tracking-[-0.01em] text-foreground">
@@ -219,16 +217,17 @@ function SshKeysPage() {
 					</Button>
 				</div>
 			) : (
-				<SshKeysList
-					keys={filtered}
-					isLoading={sshKeysQuery.isLoading}
-					hasFilters={hasFilters}
-					view={view}
-					onClearFilters={clearFilters}
-					onViewKey={handleViewKey}
-					onDeleteKey={setKeyForDelete}
-				/>
-			)}
+					<SshKeysList
+						keys={filtered}
+						isLoading={sshKeysQuery.isLoading}
+						hasFilters={hasFilters}
+						view={view}
+						onClearFilters={clearFilters}
+						onViewKey={handleViewKey}
+						onDeleteKey={setKeyForDelete}
+					/>
+				)}
+			</ListRegion>
 
 			{/* Create SSH Key — Geist sheet, same as New Project */}
 			<SshKeyCreateSheet

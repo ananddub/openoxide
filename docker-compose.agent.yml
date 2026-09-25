@@ -38,26 +38,12 @@ services:
       # -1 is the local-Agent sentinel. The panel maps it to its actual local
       # server row, so development databases do not need a hard-coded id.
       SERVER_ID: "${OPENOXIDE_LOCAL_SERVER_ID:--1}"
-      MONITOR_DATABASE_URL: "memory://metrics"
       GRPC_PORT: "50051"
-      REFRESH_RATE: "2"
-      RETENTION_DAYS: "7"
       OPENOXIDE_SERVER_URL: "http://openoxide:4000"
       METRICS_TOKEN: "${METRICS_TOKEN:-change_me_metrics_token}"
       # AGENT_TLS_CERT: "/etc/openoxide/agent-tls/server.crt"
       # AGENT_TLS_KEY: "/etc/openoxide/agent-tls/server.key"
       RUST_LOG: "agent=info"
-      # cgroup (default) reads /sys/fs/cgroup directly and scales to thousands
-      # of containers. Set to "stream" for per-second freshness and network I/O
-      # on hosts with only a handful of containers.
-      COLLECTION_MODE: "auto"
-      # Narrow what gets collected on a busy host. Patterns are exact unless
-      # they use *, so "*buildkit*" is needed to match "openoxide_buildkit".
-      # INCLUDE_CONTAINERS: "prod-*"
-      # EXCLUDE_CONTAINERS: "*buildkit*"
-      # Samples per stored row. 1 stores everything; raise it on dense hosts to
-      # store only an average + peak per window (300 = 5 min at a 60s cadence).
-      ROLLUP_SAMPLES: "1"
 
 volumes:
   agent_workspace:

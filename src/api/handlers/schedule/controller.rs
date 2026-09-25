@@ -150,7 +150,7 @@ impl ScheduleService for ScheduleController {
         Response::ok(Empty::default())
     }
 
-    #[permission(Schedule, CanDeploy)]
+    #[permission(Schedule, CanUpdate)]
     async fn run_schedule<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -164,7 +164,7 @@ impl ScheduleService for ScheduleController {
         })
     }
 
-    #[permission(Schedule, CanDeploy)]
+    #[permission(Schedule, CanUpdate)]
     async fn pause_schedule<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -184,7 +184,7 @@ impl ScheduleService for ScheduleController {
         })
     }
 
-    #[permission(Schedule, CanDeploy)]
+    #[permission(Schedule, CanUpdate)]
     async fn resume_schedule<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -298,7 +298,7 @@ impl ScheduleService for ScheduleController {
         })
     }
 
-    #[permission(Schedule, CanDeploy)]
+    #[permission(Schedule, CanUpdate)]
     async fn trigger_schedule<'a>(
         &'a self,
         _ctx: RequestContext,
@@ -328,7 +328,7 @@ impl ScheduleService for ScheduleController {
         })
     }
 
-    #[permission(Schedule, CanDeploy)]
+    #[permission(Schedule, CanUpdate)]
     async fn update_runtime_policy<'a>(
         &'a self,
         _ctx: RequestContext,

@@ -1,6 +1,15 @@
+import {useEffect} from 'react';
 import {type NodeProps, type Node} from '@xyflow/react';
-import {SlidersHorizontal, HardDrive, Globe, Zap} from 'lucide-react';
+import {
+	SlidersHorizontal,
+	HardDrive,
+	Globe,
+	Zap,
+	Cpu,
+	MemoryStick,
+} from 'lucide-react';
 import {cn} from '#/api/utils';
+import {useContainerMonitoring} from '#/hooks/monitoring/use-container-monitoring';
 import {deriveServiceStatus, type ServiceStatus} from './compose-parse';
 import {
 	ServiceIcon,
@@ -9,6 +18,45 @@ import {
 } from './compose-node-parts';
 
 export type {ComposeServiceNodeData} from './compose-node-parts';
+
+/** Live CPU/RAM for the node — same mono badge grammar as the project service cards, refreshed every 15s. Hidden until stats arrive. */
+function NodeUsageBadge({
+	id,
+	type,
+}: {
+	id: number;
+	type: 'application' | 'database' | 'compose';
+}) {
+	const {metrics, triggerRefresh} = useContainerMonitoring(
+		id,
+		type,
+		true,
+		false,
+	);
+	useEffect(() => {
+		const timer = setInterval(triggerRefresh, 15_000);
+		return () => clearInterval(timer);
+	}, [triggerRefresh]);
+	if (!metrics) return null;
+	return (
+		<div className="mt-2 flex min-w-0 items-center gap-2.5 border-t border-border/60 pt-2 font-mono text-[10px] text-muted-foreground">
+			<span
+				className="flex shrink-0 items-center gap-1"
+				title="Live CPU usage">
+				<Cpu className="size-3 shrink-0" />
+				{metrics.cpuPercent.toFixed(1)}%
+			</span>
+			<span
+				className="flex min-w-0 items-center gap-1"
+				title={`Memory ${metrics.memUsage} of ${metrics.memLimit}`}>
+				<MemoryStick className="size-3 shrink-0" />
+				<span className="truncate">
+					{metrics.memUsage} / {metrics.memLimit}
+				</span>
+			</span>
+		</div>
+	);
+}
 
 const STATUS_DOT: Record<ServiceStatus, {cls: string; label: string}> = {
 	running: {cls: 'bg-emerald-500', label: 'Running'},
@@ -109,6 +157,14 @@ export function ComposeServiceNode({
 						</span>
 					</div>
 				))}
+
+				{/* Live CPU / RAM */}
+				{!!data.monitorId && !!data.monitorType && (
+					<NodeUsageBadge
+						id={data.monitorId}
+						type={data.monitorType}
+					/>
+				)}
 			</div>
 
 			<NodeHandles />

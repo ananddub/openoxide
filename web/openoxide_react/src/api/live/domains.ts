@@ -246,6 +246,34 @@ export function useDomainDelete() {
 	);
 }
 
+export type DnsValidationResult = {
+	isValid: boolean;
+	resolvedIps: string[];
+	expectedIps: string[];
+	error?: string;
+};
+
+/** Resolve a domain's DNS and compare against the server it should point to (Dokploy-style "Validate DNS"). */
+export function useValidateDomainDns() {
+	return useConnectMutation(
+		(input: {
+			host: string;
+			serverId?: number | bigint | string;
+		}): Promise<DnsValidationResult> => {
+			const serverId = optionalBigInt(input.serverId);
+			return domainClient
+				.validateDomainDns({host: input.host, serverId})
+				.then(r => ({
+					isValid: r.isValid,
+					resolvedIps: r.resolvedIps,
+					expectedIps: r.expectedIps,
+					error: r.error,
+				}));
+		},
+		{invalidate: []},
+	);
+}
+
 /** Legacy domain item shape the former zustand `domains` slice carried (`domain` alias for `host`, numeric ids, uppercased certificate_type). */
 export type DomainItemPayload = {
 	id: number;

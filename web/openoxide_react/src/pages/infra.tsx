@@ -113,8 +113,14 @@ function InfraPage() {
 		);
 	}
 
+	// Swarm draws the fixed-header + inner-`ListRegion` grammar, so it needs a
+	// real height chain from the shell down; other scrollable tabs keep their
+	// natural page height.
+	const fullHeightChain = active.id === 'swarm';
+
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+		<div
+			className={`mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in${fullHeightChain ? ' h-full' : ''}`}>
 			<Titlebar breadcrumbs={crumbs} />
 			{!active.ownsHeader && (
 				<SectionHeader
@@ -122,7 +128,12 @@ function InfraPage() {
 					description={active.description}
 				/>
 			)}
-			<div className="min-w-0">
+			<div
+				className={
+					fullHeightChain
+						? 'flex min-h-0 flex-1 flex-col'
+						: 'min-w-0'
+				}>
 				<Active />
 			</div>
 		</div>

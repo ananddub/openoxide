@@ -136,7 +136,7 @@ impl DatabaseService for DatabaseController {
         Response::ok(Empty::default())
     }
 
-    #[permission(Database, CanDeploy)]
+    #[permission(Database, CanUpdate)]
     async fn deploy<'a>(
         &'a self,
         ctx: RequestContext,
@@ -147,7 +147,7 @@ impl DatabaseService for DatabaseController {
         Response::ok(result)
     }
 
-    #[permission(Database, CanDeploy)]
+    #[permission(Database, CanUpdate)]
     async fn redeploy<'a>(
         &'a self,
         ctx: RequestContext,
@@ -158,7 +158,7 @@ impl DatabaseService for DatabaseController {
         Response::ok(result)
     }
 
-    #[permission(Database, CanDeploy)]
+    #[permission(Database, CanUpdate)]
     async fn reload<'a>(
         &'a self,
         ctx: RequestContext,
@@ -169,7 +169,7 @@ impl DatabaseService for DatabaseController {
         Response::ok(result)
     }
 
-    #[permission(Database, CanDeploy)]
+    #[permission(Database, CanUpdate)]
     async fn start<'a>(
         &'a self,
         ctx: RequestContext,
@@ -180,7 +180,7 @@ impl DatabaseService for DatabaseController {
         Response::ok(result)
     }
 
-    #[permission(Database, CanDeploy)]
+    #[permission(Database, CanUpdate)]
     async fn stop<'a>(
         &'a self,
         ctx: RequestContext,
@@ -191,7 +191,7 @@ impl DatabaseService for DatabaseController {
         Response::ok(result)
     }
 
-    #[permission(Database, CanDeploy)]
+    #[permission(Database, CanUpdate)]
     async fn cancel<'a>(
         &'a self,
         ctx: RequestContext,

@@ -8,13 +8,17 @@ import {formatApiError} from '#/api/utils';
 import type {ProviderMeta} from './notification-providers';
 import type {DraftState} from './notification-triggers';
 
-/** Validate required provider fields and coerce numbers/address lists. */
-function buildConfig(draft: DraftState, provider: ProviderMeta | null) {
+/** Validate required provider fields and coerce numbers/address lists. In edit mode nothing is required — blank fields are left out so the stored value survives the patch. */
+function buildConfig(
+	draft: DraftState,
+	provider: ProviderMeta | null,
+	optional = false,
+) {
 	const config: Record<string, unknown> = {};
 	for (const f of provider?.fields ?? []) {
 		const raw = (draft.config[f.key] ?? '').trim();
 		if (!raw) {
-			if (!f.optional) {
+			if (!f.optional && !optional) {
 				toast.error(`${f.label} is required`);
 				return null;
 			}
@@ -58,11 +62,15 @@ export function useNotificationSave({
 		}
 		try {
 			if (editing) {
-				// Config edits need the provider fields re-supplied; the patch covers name + triggers, which is what the edit dialog exposes.
+				// The patch carries name + triggers, plus any provider fields the
+				// user actually re-typed (blanks keep their stored values).
+				const config = buildConfig(draft, provider, true);
+				if (!config) return;
 				await updateMutation.mutateAsync({
 					id: editing.id,
 					name: draft.name.trim(),
 					...draft.triggers,
+					...config,
 				});
 				toast.success('Channel updated');
 			} else {

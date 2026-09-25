@@ -17,7 +17,7 @@ use crate::flash_gen::{
     },
     permission_groups::{
         PermissionGroupsAssignGroupParams, PermissionGroupsInsertUserPolicyParams,
-        PermissionGroupsUpdateGroupNameParams,
+        PermissionGroupsSetGroupActiveParams, PermissionGroupsUpdateGroupNameParams,
     },
     users::UsersCreateParams,
 };
@@ -40,6 +40,7 @@ pub struct PermissionGroupDto {
     pub id: i64,
     pub name: String,
     pub is_system: bool,
+    pub is_active: bool,
     pub organization_id: Option<i64>,
     pub actions: Vec<String>,
     pub created_at: i64,
@@ -54,6 +55,12 @@ pub struct PermissionPolicyDto {
 
 #[derive(Debug, Deserialize)]
 pub struct UserPolicyEntryDto {
+    pub policy_id: i64,
+    pub effect: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UserPolicyOverrideDto {
     pub policy_id: i64,
     pub effect: String,
 }
@@ -367,6 +374,7 @@ impl PermissionGroupService {
                 id: group.id,
                 name: group.name,
                 is_system: group.is_system != 0,
+                is_active: group.is_active != 0,
                 organization_id: group.organization_id,
                 created_at: group.created_at,
                 updated_at: group.updated_at,
@@ -686,6 +694,61 @@ impl PermissionGroupService {
         Ok(())
     }
 
+    pub async fn set_group_active(
+        &self,
+        actor_id: i64,
+        organization_id: i64,
+        group_id: i64,
+        is_active: bool,
+    ) -> Result<(), PermissionGroupError> {
+        if !self.actor_is_privileged(actor_id, organization_id).await? {
+            return Err(PermissionGroupError::Escalation(
+                "only organization admins can enable or disable groups".into(),
+            ));
+        }
+        let touched = self
+            .queries
+            .permission_groups_set_group_active(&PermissionGroupsSetGroupActiveParams {
+                is_active: i64::from(is_active),
+                id: group_id,
+                organization_id,
+            })
+            .await?;
+        if touched.is_empty() {
+            return Err(PermissionGroupError::NotFound);
+        }
+        self.audit(
+            actor_id,
+            organization_id,
+            "PERMISSION_GROUP_ACTIVE",
+            "permission_group",
+            Some(group_id.to_string()),
+            Some(serde_json::json!({"is_active": is_active}).to_string()),
+        )
+        .await;
+        Ok(())
+    }
+
+    pub async fn list_user_policies(
+        &self,
+        actor_id: i64,
+        organization_id: i64,
+        user_id: i64,
+    ) -> Result<Vec<UserPolicyOverrideDto>, PermissionGroupError> {
+        self.ensure_manageable_target(actor_id, user_id, organization_id)
+            .await?;
+        Ok(self
+            .queries
+            .permission_groups_list_user_policies(user_id, organization_id)
+            .await?
+            .into_iter()
+            .map(|row| UserPolicyOverrideDto {
+                policy_id: row.policy_id.unwrap_or_default(),
+                effect: row.effect.unwrap_or_else(|| "DENY".into()),
+            })
+            .collect())
+    }
+
     pub async fn assign_group(
         &self,
         actor_id: i64,
@@ -937,7 +1000,7 @@ mod tests {
 
     #[test]
     fn member_can_delegate_a_subset_of_own_permissions() {
-        let owned = ["app:read", "app:deploy", "server:read"]
+        let owned = ["app:read", "app:update", "server:read"]
             .into_iter()
             .map(str::to_owned)
             .collect::<HashSet<_>>();

@@ -88,6 +88,14 @@ pub fn proto_to_policy_effect(
     }
 }
 
+/// Map a stored `GRANT`/`DENY` string back to the proto effect enum.
+pub fn policy_effect_str_to_proto(value: &str) -> ::buffa::EnumValue<ProtoPermissionPolicyEffect> {
+    match value.to_ascii_uppercase().as_str() {
+        "GRANT" => ::buffa::EnumValue::Known(ProtoPermissionPolicyEffect::Grant),
+        _ => ::buffa::EnumValue::Known(ProtoPermissionPolicyEffect::Deny),
+    }
+}
+
 // ── Response builders ─────────────────────────────────────────────
 
 pub fn group_to_proto(dto: PermissionGroupDto) -> PermissionGroupProto {
@@ -95,6 +103,7 @@ pub fn group_to_proto(dto: PermissionGroupDto) -> PermissionGroupProto {
         id: dto.id,
         name: dto.name,
         is_system: dto.is_system,
+        is_active: dto.is_active,
         organization_id: dto.organization_id,
         actions: dto.actions,
         created_at: dto.created_at,

@@ -72,6 +72,16 @@ export const getMyPermissions = PermissionService.method.getMyPermissions;
 export const assignMemberGroup = PermissionService.method.assignMemberGroup;
 
 /**
+ * @generated from rpc openoxide.api.v1.PermissionService.SetGroupActive
+ */
+export const setGroupActive = PermissionService.method.setGroupActive;
+
+/**
+ * @generated from rpc openoxide.api.v1.PermissionService.ListUserPolicies
+ */
+export const listUserPolicies = PermissionService.method.listUserPolicies;
+
+/**
  * @generated from rpc openoxide.api.v1.PermissionService.ListMembers
  */
 export const listMembers = PermissionService.method.listMembers;

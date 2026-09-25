@@ -18,6 +18,7 @@ import {
 } from '#/components/ui/sheet';
 import {ConfirmDeleteDialog} from '#/components/settings/confirm-delete-dialog';
 import {OptionRow, WizardField} from '#/components/shared/sheet-wizard';
+import {PermissionOverridesSheet} from './permission-overrides-sheet';
 import {
 	ROLES,
 	ROLE_DESC,
@@ -63,6 +64,8 @@ export function TeamDialogs({ctl}: {ctl: Ctl}) {
 		setDeleteTarget,
 		isDeleting,
 		confirmDeleteUser,
+		overridesTarget,
+		setOverridesTarget,
 	} = ctl;
 
 	return (
@@ -238,6 +241,11 @@ export function TeamDialogs({ctl}: {ctl: Ctl}) {
 				confirmLabel={isDeleting ? 'Removing…' : 'Remove member'}
 				busy={isDeleting}
 				onConfirm={confirmDeleteUser}
+			/>
+
+			<PermissionOverridesSheet
+				member={overridesTarget}
+				onClose={() => setOverridesTarget(null)}
 			/>
 		</>
 	);
