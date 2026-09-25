@@ -35,6 +35,10 @@ impl DnsService {
                 self.test_infomaniak_token(&provider.credentials_json).await
             }
             DnsProviderType::Ovh => self.test_ovh_credentials(&provider.credentials_json).await,
+            other => {
+                self.bridge_test_credentials(other, &provider.credentials_json)
+                    .await
+            }
         }
     }
 
@@ -52,6 +56,7 @@ impl DnsService {
             DnsProviderType::Porkbun => self.test_porkbun_credentials(credentials_json).await,
             DnsProviderType::Infomaniak => self.test_infomaniak_token(credentials_json).await,
             DnsProviderType::Ovh => self.test_ovh_credentials(credentials_json).await,
+            other => self.bridge_test_credentials(other, credentials_json).await,
         }
     }
 
@@ -80,6 +85,10 @@ impl DnsService {
                 self.list_infomaniak_zones(&provider.credentials_json).await
             }
             DnsProviderType::Ovh => self.list_ovh_zones(&provider.credentials_json).await,
+            other => {
+                self.bridge_list_zones(other, &provider.credentials_json)
+                    .await
+            }
         }
     }
 
@@ -124,6 +133,10 @@ impl DnsService {
             }
             DnsProviderType::Ovh => {
                 self.list_ovh_records(&provider.credentials_json, zone_id)
+                    .await
+            }
+            other => {
+                self.bridge_list_records(other, &provider.credentials_json, zone_id)
                     .await
             }
         }
@@ -172,6 +185,10 @@ impl DnsService {
                 self.upsert_ovh_record(&provider.credentials_json, &body)
                     .await
             }
+            other => {
+                self.bridge_upsert_record(other, &provider.credentials_json, &body)
+                    .await
+            }
         }
     }
 
@@ -217,6 +234,10 @@ impl DnsService {
             }
             DnsProviderType::Ovh => {
                 self.delete_ovh_record(&provider.credentials_json, zone_id, record_id)
+                    .await
+            }
+            other => {
+                self.bridge_delete_record(other, &provider.credentials_json, zone_id, record_id)
                     .await
             }
         }

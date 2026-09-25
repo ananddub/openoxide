@@ -11,6 +11,7 @@ members = [
     "crates/sh_macros",
     "crates/os",
     "crates/realtime",
+    "crates/dns-update",
     "agent",
 ]
 
@@ -24,6 +25,7 @@ auto_grpc = { path = "crates/auto/grpc", default-features = false, features = ["
 sh_macros = { path = "crates/sh_macros" }
 os = { path = "crates/os" }
 sqlite_realtime = { path = "crates/realtime" }
+dns-update = { path = "crates/dns-update", default-features = false, features = ["ring"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 urlencoding = "2.1"

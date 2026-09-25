@@ -10,16 +10,8 @@ impl DnsService {
     pub(super) fn ensure_supported_provider(
         provider_type: DnsProviderType,
     ) -> Result<(), DnsServiceError> {
-        match provider_type {
-            DnsProviderType::Cloudflare
-            | DnsProviderType::Route53
-            | DnsProviderType::Hetzner
-            | DnsProviderType::DigitalOcean
-            | DnsProviderType::Godaddy
-            | DnsProviderType::Porkbun
-            | DnsProviderType::Infomaniak
-            | DnsProviderType::Ovh => Ok(()),
-        }
+        let _ = provider_type;
+        Ok(())
     }
 
     pub(super) fn validate_provider_config(
@@ -41,6 +33,8 @@ impl DnsService {
             DnsProviderType::Porkbun => &["apiKey", "secretApiKey"][..],
             DnsProviderType::Infomaniak => &["apiToken"][..],
             DnsProviderType::Ovh => &["applicationKey", "applicationSecret", "consumerKey"][..],
+            // dns-update bridge providers validate their fields when the updater is built.
+            _ => &[],
         };
         for field in required {
             if config[*field]

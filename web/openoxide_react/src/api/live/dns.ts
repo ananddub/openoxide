@@ -44,26 +44,7 @@ const dnsClient = createServiceClient(DnsService);
 
 /** Wire string the UI catalogs compare against (e.g. 'CLOUDFLARE'). */
 function dnsProviderTypeToWire(providerType: DnsProviderType): string {
-	switch (providerType) {
-		case DnsProviderType.CLOUDFLARE:
-			return 'CLOUDFLARE';
-		case DnsProviderType.ROUTE53:
-			return 'ROUTE53';
-		case DnsProviderType.HETZNER:
-			return 'HETZNER';
-		case DnsProviderType.DIGITALOCEAN:
-			return 'DIGITALOCEAN';
-		case DnsProviderType.GODADDY:
-			return 'GODADDY';
-		case DnsProviderType.PORKBUN:
-			return 'PORKBUN';
-		case DnsProviderType.INFOMANIAK:
-			return 'INFOMANIAK';
-		case DnsProviderType.OVH:
-			return 'OVH';
-		default:
-			return '';
-	}
+	return DnsProviderType[providerType] ?? '';
 }
 
 /** Accepts catalog labels case-insensitively ('cloudflare', 'ROUTE53', ...)
@@ -72,26 +53,11 @@ function dnsProviderTypeFromWire(
 	providerType: string | DnsProviderType | undefined,
 ): DnsProviderType {
 	if (typeof providerType === 'number') return providerType;
-	switch (providerType?.toUpperCase()) {
-		case 'CLOUDFLARE':
-			return DnsProviderType.CLOUDFLARE;
-		case 'ROUTE53':
-			return DnsProviderType.ROUTE53;
-		case 'HETZNER':
-			return DnsProviderType.HETZNER;
-		case 'DIGITALOCEAN':
-			return DnsProviderType.DIGITALOCEAN;
-		case 'GODADDY':
-			return DnsProviderType.GODADDY;
-		case 'PORKBUN':
-			return DnsProviderType.PORKBUN;
-		case 'INFOMANIAK':
-			return DnsProviderType.INFOMANIAK;
-		case 'OVH':
-			return DnsProviderType.OVH;
-		default:
-			return DnsProviderType.UNSPECIFIED;
-	}
+	return (
+		DnsProviderType[
+			providerType?.toUpperCase() as keyof typeof DnsProviderType
+		] ?? DnsProviderType.UNSPECIFIED
+	);
 }
 
 function toDnsProviderPayload(provider: DnsProvider): DnsProviderPayload {

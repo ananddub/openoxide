@@ -1,0 +1,328 @@
+#![doc = include_str!("../README.md")]
+/*
+ * Copyright Stalwart Labs LLC See the COPYING
+ * file at the top-level directory of this distribution.
+ *
+ * Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+ * https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+ * <LICENSE-MIT or https://opensource.org/licenses/MIT>, at your
+ * option. This file may not be copied, modified, or distributed
+ * except according to those terms.
+ */
+
+#[cfg(any(feature = "ring", feature = "aws-lc-rs"))]
+use providers::oraclecloud::OracleCloudProvider;
+#[cfg(any(feature = "ring", feature = "aws-lc-rs"))]
+use providers::ovh::OvhProvider;
+#[cfg(any(feature = "ring", feature = "aws-lc-rs"))]
+use providers::volcengine::VolcengineProvider;
+#[cfg(any(feature = "ring", feature = "aws-lc-rs"))]
+use providers::yandexcloud::YandexCloudProvider;
+
+#[cfg(any(feature = "ring", feature = "aws-lc-rs"))]
+use providers::transip::TransipProvider;
+
+#[cfg(feature = "test_provider")]
+use providers::{in_memory::InMemoryProvider, pebble::PebbleProvider};
+
+pub use hickory_proto::dnssec;
+use providers::{
+    alidns::AlidnsProvider, bluecatv2::BluecatV2Provider, bunny::BunnyProvider,
+    cloudflare::CloudflareProvider, cloudns::ClouDnsProvider, constellix::ConstellixProvider,
+    ddnss::DdnssProvider, desec::DesecProvider, digitalocean::DigitalOceanProvider,
+    dnsimple::DNSimpleProvider, dnsmadeeasy::DnsMadeEasyProvider, dreamhost::DreamhostProvider,
+    duckdns::DuckDnsProvider, dynu::DynuProvider, easydns::EasyDnsProvider,
+    exoscale::ExoscaleProvider, freemyip::FreeMyIpProvider, gandiv5::GandiV5Provider,
+    gcore::GcoreProvider, glesys::GlesysProvider, godaddy::GodaddyProvider,
+    hetzner::HetznerProvider, hostingde::HostingDeProvider, infomaniak::InfomaniakProvider,
+    ionos::IonosProvider, ipv64::Ipv64Provider, joker::JokerProvider, linode::LinodeProvider,
+    luadns::LuaDnsProvider, mythicbeasts::MythicBeastsProvider, namecheap::NamecheapProvider,
+    namedotcom::NameDotComProvider, namesilo::NameSiloProvider, netcup::NetcupProvider,
+    netlify::NetlifyProvider, nifcloud::NifcloudProvider, ns1::Ns1Provider,
+    porkbun::PorkBunProvider, rfc2136::Rfc2136Provider, route53::Route53Provider,
+    scaleway::ScalewayProvider, spaceship::SpaceshipProvider, tencentcloud::TencentCloudProvider,
+    vercel::VercelProvider, vultr::VultrProvider, websupport::WebSupportProvider,
+};
+
+use providers::{
+    arvancloud::ArvanCloudProvider, autodns::AutodnsProvider, azuredns::AzureDnsProvider,
+    baiducloud::BaiduCloudProvider, cpanel::CpanelProvider, domeneshop::DomeneshopProvider,
+    edgedns::EdgeDnsProvider, hostinger::HostingerProvider, huaweicloud::HuaweiCloudProvider,
+    hurricane::HurricaneProvider, ibmcloud::IbmCloudProvider, infoblox::InfobloxProvider,
+    inwx::InwxProvider, lightsail::LightsailProvider, plesk::PleskProvider,
+    safedns::SafeDnsProvider, simplycom::SimplyComProvider, ultradns::UltraDnsProvider,
+};
+use std::{
+    borrow::Cow,
+    net::{Ipv4Addr, Ipv6Addr},
+};
+
+pub mod bind;
+pub mod crypto;
+pub mod http;
+pub mod jwt;
+pub mod providers;
+pub mod tests;
+pub mod update;
+pub mod utils;
+
+#[derive(Debug)]
+pub enum Error {
+    Protocol(String),
+    Parse(String),
+    Client(String),
+    Response(String),
+    Api(String),
+    Serialize(String),
+    Unauthorized,
+    NotFound,
+    BadRequest,
+    Unsupported(String),
+}
+
+/// A DNS record type.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum DnsRecordType {
+    A,
+    AAAA,
+    CNAME,
+    NS,
+    MX,
+    TXT,
+    SRV,
+    TLSA,
+    CAA,
+}
+
+/// A named DNS record, which consists of a name and a DNS record.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct NamedDnsRecord {
+    pub name: String,
+    pub record: DnsRecord,
+}
+
+/// A DNS zone (domain) accessible through a provider.
+#[derive(Clone, Debug)]
+pub struct ZoneInfo {
+    pub id: String,
+    pub name: String,
+    pub status: Option<String>,
+}
+
+/// A DNS record as stored by a provider, suitable for panel display and round-tripping.
+#[derive(Clone, Debug)]
+pub struct ZoneRecord {
+    /// Provider-assigned record identifier.
+    pub id: String,
+    /// Record name relative to the zone ("www", "@" for apex).
+    pub name: String,
+    /// Record type string ("A", "TXT", ...).
+    pub record_type: String,
+    /// Human-readable value.
+    pub content: String,
+    pub ttl: u32,
+    /// Typed value for round-tripping into set/remove operations.
+    pub record: DnsRecord,
+}
+
+/// A DNS record type with a value.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum DnsRecord {
+    A(Ipv4Addr),
+    AAAA(Ipv6Addr),
+    CNAME(String),
+    NS(String),
+    MX(MXRecord),
+    TXT(String),
+    SRV(SRVRecord),
+    TLSA(TLSARecord),
+    CAA(CAARecord),
+}
+
+// An MX record, which consists of an exchange string and a priority.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct MXRecord {
+    pub exchange: String,
+    pub priority: u16,
+}
+
+// A SRV record, which consists of a target string, priority, weight, and port.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct SRVRecord {
+    pub target: String,
+    pub priority: u16,
+    pub weight: u16,
+    pub port: u16,
+}
+
+// A TLSA record, which consists of a certificate usage, selector, matching type, and certificate data.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct TLSARecord {
+    pub cert_usage: TlsaCertUsage,
+    pub selector: TlsaSelector,
+    pub matching: TlsaMatching,
+    pub cert_data: Vec<u8>,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+pub enum TlsaCertUsage {
+    PkixTa,
+    PkixEe,
+    DaneTa,
+    DaneEe,
+    Private,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+pub enum TlsaSelector {
+    Full,
+    Spki,
+    Private,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+pub enum TlsaMatching {
+    Raw,
+    Sha256,
+    Sha512,
+    Private,
+}
+
+// A CAA record, which can be either an Issue, IssueWild, or Iodef record.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum CAARecord {
+    Issue {
+        issuer_critical: bool,
+        name: Option<String>,
+        options: Vec<KeyValue>,
+    },
+    IssueWild {
+        issuer_critical: bool,
+        name: Option<String>,
+        options: Vec<KeyValue>,
+    },
+    Iodef {
+        issuer_critical: bool,
+        url: String,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct KeyValue {
+    pub key: String,
+    pub value: String,
+}
+
+/// A TSIG algorithm.
+pub enum TsigAlgorithm {
+    HmacMd5,
+    Gss,
+    HmacSha1,
+    HmacSha224,
+    HmacSha256,
+    HmacSha256_128,
+    HmacSha384,
+    HmacSha384_192,
+    HmacSha512,
+    HmacSha512_256,
+}
+
+/// A DNSSEC algorithm.
+pub enum Algorithm {
+    RSASHA256,
+    RSASHA512,
+    ECDSAP256SHA256,
+    ECDSAP384SHA384,
+    ED25519,
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
+
+#[derive(Clone)]
+#[non_exhaustive]
+pub enum DnsUpdater {
+    Rfc2136(Rfc2136Provider),
+    Cloudflare(CloudflareProvider),
+    DigitalOcean(DigitalOceanProvider),
+    Desec(DesecProvider),
+    Constellix(ConstellixProvider),
+    DnsMadeEasy(DnsMadeEasyProvider),
+    Exoscale(ExoscaleProvider),
+    Nifcloud(NifcloudProvider),
+    #[cfg(any(feature = "ring", feature = "aws-lc-rs"))]
+    Ovh(OvhProvider),
+    #[cfg(any(feature = "ring", feature = "aws-lc-rs"))]
+    OracleCloud(OracleCloudProvider),
+    Bunny(BunnyProvider),
+    Linode(LinodeProvider),
+    Porkbun(PorkBunProvider),
+    Spaceship(SpaceshipProvider),
+    WebSupport(WebSupportProvider),
+    DNSimple(DNSimpleProvider),
+    GandiV5(GandiV5Provider),
+    Godaddy(GodaddyProvider),
+    Hetzner(HetznerProvider),
+    NameDotCom(NameDotComProvider),
+    NameSilo(NameSiloProvider),
+    DuckDns(DuckDnsProvider),
+    FreeMyIp(FreeMyIpProvider),
+    Ipv64(Ipv64Provider),
+    Ddnss(DdnssProvider),
+    Dynu(DynuProvider),
+    Plesk(PleskProvider),
+    Cpanel(CpanelProvider),
+    GoogleCloudDns(providers::google_cloud_dns::GoogleCloudDnsProvider),
+    Ionos(IonosProvider),
+    HostingDe(HostingDeProvider),
+    Infomaniak(InfomaniakProvider),
+    Netcup(NetcupProvider),
+    Netlify(NetlifyProvider),
+    HuaweiCloud(HuaweiCloudProvider),
+    BaiduCloud(BaiduCloudProvider),
+    AzureDns(AzureDnsProvider),
+    IbmCloud(IbmCloudProvider),
+    Hurricane(HurricaneProvider),
+    Hostinger(HostingerProvider),
+    Autodns(AutodnsProvider),
+    Lightsail(LightsailProvider),
+    EdgeDns(EdgeDnsProvider),
+    #[cfg(feature = "test_provider")]
+    Pebble(PebbleProvider),
+    #[cfg(feature = "test_provider")]
+    InMemory(InMemoryProvider),
+    Route53(Route53Provider),
+    Scaleway(ScalewayProvider),
+    Gcore(GcoreProvider),
+    Vercel(VercelProvider),
+    Vultr(VultrProvider),
+    BluecatV2(BluecatV2Provider),
+    EasyDns(EasyDnsProvider),
+    Joker(JokerProvider),
+    MythicBeasts(MythicBeastsProvider),
+    Namecheap(NamecheapProvider),
+    #[cfg(any(feature = "ring", feature = "aws-lc-rs"))]
+    Transip(TransipProvider),
+    Ns1(Ns1Provider),
+    LuaDns(LuaDnsProvider),
+    ClouDns(ClouDnsProvider),
+    Glesys(GlesysProvider),
+    Dreamhost(DreamhostProvider),
+    Alidns(AlidnsProvider),
+    TencentCloud(TencentCloudProvider),
+    #[cfg(any(feature = "ring", feature = "aws-lc-rs"))]
+    Volcengine(VolcengineProvider),
+    #[cfg(any(feature = "ring", feature = "aws-lc-rs"))]
+    YandexCloud(YandexCloudProvider),
+    Domeneshop(DomeneshopProvider),
+    Safedns(SafeDnsProvider),
+    SimplyCom(SimplyComProvider),
+    ArvanCloud(ArvanCloudProvider),
+    Inwx(InwxProvider),
+    UltraDns(UltraDnsProvider),
+    Infoblox(InfobloxProvider),
+}
+
+pub trait IntoFqdn<'x> {
+    fn into_fqdn(self) -> Cow<'x, str>;
+    fn into_name(self) -> Cow<'x, str>;
+}

@@ -10,13 +10,6 @@ import {formatApiError} from '#/api/utils';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
-import {
 	Sheet,
 	SheetContent,
 	SheetDescription,
@@ -26,21 +19,16 @@ import {
 } from '#/components/ui/sheet';
 import {toast} from 'sonner';
 import {DnsZoneRow, type DnsRecord} from './dns-zone-row';
+import {
+	RecordTypeSelect,
+	isSupportedRecordType,
+	type SupportedRecordType,
+} from './record-type-select';
 
 type Props = {
 	provider: {id: number; name: string};
 	onClose: () => void;
 };
-
-type SupportedRecordType = 'A' | 'AAAA' | 'CNAME' | 'TXT' | 'MX';
-
-const supportedRecordTypes: SupportedRecordType[] = [
-	'A',
-	'AAAA',
-	'CNAME',
-	'TXT',
-	'MX',
-];
 
 const contentPlaceholders: Record<SupportedRecordType, string> = {
 	A: '203.0.113.10',
@@ -97,10 +85,8 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 			zoneId,
 			zoneName,
 			recordId: record.id,
-			recordType: (supportedRecordTypes as string[]).includes(
-				record.record_type,
-			)
-				? (record.record_type as SupportedRecordType)
+			recordType: isSupportedRecordType(record.record_type)
+				? record.record_type
 				: 'A',
 			name: record.name,
 			content: record.content,
@@ -298,25 +284,12 @@ function RecordFormView({
 			<div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-5 py-4">
 				<div className="grid gap-1.5">
 					<span className={fieldLabel}>Record type</span>
-					<Select
+					<RecordTypeSelect
 						value={draft.recordType}
-						onValueChange={value =>
-							onChange({
-								...draft,
-								recordType: value as SupportedRecordType,
-							})
-						}>
-						<SelectTrigger>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							{supportedRecordTypes.map(type => (
-								<SelectItem key={type} value={type}>
-									{type}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
+						onChange={type =>
+							onChange({...draft, recordType: type})
+						}
+					/>
 				</div>
 				<div className="grid gap-1.5">
 					<span className={fieldLabel}>Name</span>

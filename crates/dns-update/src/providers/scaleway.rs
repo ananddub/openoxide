@@ -1,0 +1,537 @@
+/*
+ * Copyright Stalwart Labs LLC See the COPYING
+ * file at the top-level directory of this distribution.
+ *
+ * Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+ * https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+ * <LICENSE-MIT or https://opensource.org/licenses/MIT>, at your
+ * option. This file may not be copied, modified, or distributed
+ * except according to those terms.
+ */
+
+use crate::utils::parse_tlsa;
+use crate::utils::split_caa_value;
+use crate::utils::strip_trailing_dot;
+use crate::utils::unquote_txt;
+use crate::{
+    CAARecord, DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord,
+    http::{HttpClient, HttpClientBuilder},
+    utils::strip_origin_from_name,
+};
+use serde::{Deserialize, Serialize};
+use std::{borrow::Cow, time::Duration};
+
+const DEFAULT_API_ENDPOINT: &str = "https://api.scaleway.com/domain/v2beta1";
+
+#[derive(Clone)]
+pub struct ScalewayProvider {
+    client: HttpClient,
+    endpoint: Cow<'static, str>,
+}
+
+#[derive(Serialize, Debug)]
+struct ZoneRecordsRequest {
+    return_all_records: bool,
+    disallow_new_zone_creation: bool,
+    changes: Vec<RecordChange>,
+}
+
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "snake_case")]
+enum RecordChange {
+    Add {
+        records: Vec<RecordEntry>,
+    },
+    Set {
+        id_fields: RecordIdentifier,
+        records: Vec<RecordEntry>,
+    },
+    Delete {
+        id_fields: RecordIdentifier,
+    },
+}
+
+#[derive(Serialize, Debug)]
+struct RecordEntry {
+    name: String,
+    #[serde(rename = "type")]
+    record_type: &'static str,
+    data: String,
+    ttl: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    priority: Option<u16>,
+}
+
+#[derive(Serialize, Debug)]
+struct RecordIdentifier {
+    name: String,
+    #[serde(rename = "type")]
+    record_type: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    data: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct ListRecordsResponse {
+    #[serde(default)]
+    records: Vec<ListedRecord>,
+    #[serde(default)]
+    total_count: u32,
+}
+
+#[derive(Deserialize, Debug)]
+struct ListedRecord {
+    #[serde(default)]
+    name: String,
+    #[serde(rename = "type")]
+    record_type: String,
+    data: String,
+    #[serde(default)]
+    priority: u16,
+    #[serde(default)]
+    ttl: u32,
+}
+
+#[derive(Deserialize, Debug)]
+struct ListZonesResponse {
+    #[serde(default)]
+    dns_zones: Vec<ZoneSummary>,
+    #[serde(default)]
+    total_count: u32,
+}
+
+#[derive(Deserialize, Debug)]
+struct ZoneSummary {
+    #[serde(default)]
+    domain: String,
+    #[serde(default)]
+    status: Option<String>,
+}
+
+impl ScalewayProvider {
+    pub(crate) fn new(api_token: impl AsRef<str>, timeout: Option<Duration>) -> Self {
+        let client = HttpClientBuilder::default()
+            .with_header("X-Auth-Token", api_token.as_ref())
+            .with_timeout(timeout)
+            .build();
+        Self {
+            client,
+            endpoint: Cow::Borrowed(DEFAULT_API_ENDPOINT),
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn with_endpoint(self, endpoint: impl Into<Cow<'static, str>>) -> Self {
+        Self {
+            endpoint: endpoint.into(),
+            ..self
+        }
+    }
+
+    pub(crate) async fn set_rrset(
+        &self,
+        name: impl IntoFqdn<'_>,
+        record_type: DnsRecordType,
+        ttl: u32,
+        records: Vec<DnsRecord>,
+        origin: impl IntoFqdn<'_>,
+    ) -> crate::Result<()> {
+        check_record_types(record_type, &records)?;
+        let zone = origin.into_name().into_owned();
+        let fqdn = name.into_name().into_owned();
+        let short = strip_origin_from_name(&fqdn, &zone, Some("@"));
+        let rtype = record_type.as_str();
+
+        let change = if records.is_empty() {
+            RecordChange::Delete {
+                id_fields: RecordIdentifier {
+                    name: short,
+                    record_type: rtype,
+                    data: None,
+                },
+            }
+        } else {
+            let entries = records
+                .into_iter()
+                .map(|r| build_entry(short.clone(), r, ttl))
+                .collect::<crate::Result<Vec<_>>>()?;
+            RecordChange::Set {
+                id_fields: RecordIdentifier {
+                    name: short,
+                    record_type: rtype,
+                    data: None,
+                },
+                records: entries,
+            }
+        };
+
+        self.patch_zone(
+            &zone,
+            ZoneRecordsRequest {
+                return_all_records: false,
+                disallow_new_zone_creation: true,
+                changes: vec![change],
+            },
+        )
+        .await
+    }
+
+    pub(crate) async fn add_to_rrset(
+        &self,
+        name: impl IntoFqdn<'_>,
+        record_type: DnsRecordType,
+        ttl: u32,
+        records: Vec<DnsRecord>,
+        origin: impl IntoFqdn<'_>,
+    ) -> crate::Result<()> {
+        check_record_types(record_type, &records)?;
+        if records.is_empty() {
+            return Ok(());
+        }
+        let zone = origin.into_name().into_owned();
+        let fqdn = name.into_name().into_owned();
+        let short = strip_origin_from_name(&fqdn, &zone, Some("@"));
+
+        let entries = records
+            .into_iter()
+            .map(|r| build_entry(short.clone(), r, ttl))
+            .collect::<crate::Result<Vec<_>>>()?;
+
+        self.patch_zone(
+            &zone,
+            ZoneRecordsRequest {
+                return_all_records: false,
+                disallow_new_zone_creation: true,
+                changes: vec![RecordChange::Add { records: entries }],
+            },
+        )
+        .await
+    }
+
+    pub(crate) async fn remove_from_rrset(
+        &self,
+        name: impl IntoFqdn<'_>,
+        record_type: DnsRecordType,
+        records: Vec<DnsRecord>,
+        origin: impl IntoFqdn<'_>,
+    ) -> crate::Result<()> {
+        check_record_types(record_type, &records)?;
+        if records.is_empty() {
+            return Ok(());
+        }
+        let zone = origin.into_name().into_owned();
+        let fqdn = name.into_name().into_owned();
+        let short = strip_origin_from_name(&fqdn, &zone, Some("@"));
+        let rtype = record_type.as_str();
+
+        let changes = records
+            .into_iter()
+            .map(|r| {
+                let entry = build_entry(short.clone(), r, 0)?;
+                Ok(RecordChange::Delete {
+                    id_fields: RecordIdentifier {
+                        name: short.clone(),
+                        record_type: rtype,
+                        data: Some(entry.data),
+                    },
+                })
+            })
+            .collect::<crate::Result<Vec<_>>>()?;
+
+        self.patch_zone(
+            &zone,
+            ZoneRecordsRequest {
+                return_all_records: false,
+                disallow_new_zone_creation: true,
+                changes,
+            },
+        )
+        .await
+    }
+
+    pub(crate) async fn list_rrset(
+        &self,
+        name: impl IntoFqdn<'_>,
+        record_type: DnsRecordType,
+        origin: impl IntoFqdn<'_>,
+    ) -> crate::Result<Vec<DnsRecord>> {
+        let zone = origin.into_name().into_owned();
+        let fqdn = name.into_name().into_owned();
+        let short = strip_origin_from_name(&fqdn, &zone, Some("@"));
+        let rtype = record_type.as_str();
+
+        let query = serde_urlencoded::to_string([("name", short.as_str()), ("type", rtype)])
+            .map_err(|err| Error::Serialize(format!("Failed to encode query: {err}")))?;
+        let url = format!("{}/dns-zones/{}/records?{}", self.endpoint, zone, query);
+
+        let response: ListRecordsResponse = self.client.get(url).send().await?;
+        let mut out = Vec::new();
+        for record in response.records {
+            if record.record_type != rtype {
+                continue;
+            }
+            out.push(parse_listed_record(record_type, &record)?);
+        }
+        Ok(out)
+    }
+
+    async fn patch_zone(&self, zone: &str, body: ZoneRecordsRequest) -> crate::Result<()> {
+        self.client
+            .patch(format!("{}/dns-zones/{}/records", self.endpoint, zone))
+            .with_body(body)?
+            .send_with_retry::<serde_json::Value>(3)
+            .await
+            .map(|_| ())
+    }
+}
+
+fn check_record_types(expected: DnsRecordType, records: &[DnsRecord]) -> crate::Result<()> {
+    for r in records {
+        if r.as_type() != expected {
+            return Err(Error::Api(format!(
+                "RRSet record type mismatch: expected {}, got {}",
+                expected.as_str(),
+                r.as_type().as_str(),
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn build_entry(name: String, record: DnsRecord, ttl: u32) -> crate::Result<RecordEntry> {
+    let record_type = record.as_type().as_str();
+    let priority = match &record {
+        DnsRecord::MX(mx) => Some(mx.priority),
+        DnsRecord::SRV(srv) => Some(srv.priority),
+        _ => None,
+    };
+    let data = match record {
+        DnsRecord::A(addr) => addr.to_string(),
+        DnsRecord::AAAA(addr) => addr.to_string(),
+        DnsRecord::CNAME(content) => content.into_fqdn().into_owned(),
+        DnsRecord::NS(content) => content.into_fqdn().into_owned(),
+        DnsRecord::MX(mx) => format!("{} {}", mx.priority, mx.exchange.into_fqdn()),
+        DnsRecord::TXT(content) => format!("\"{}\"", content.replace('"', "\\\"")),
+        DnsRecord::SRV(srv) => format!("{} {} {}", srv.weight, srv.port, srv.target.into_fqdn()),
+        DnsRecord::TLSA(tlsa) => tlsa.to_string(),
+        DnsRecord::CAA(caa) => caa.to_string(),
+    };
+    Ok(RecordEntry {
+        name,
+        record_type,
+        data,
+        ttl,
+        priority,
+    })
+}
+
+fn parse_listed_record(expected: DnsRecordType, record: &ListedRecord) -> crate::Result<DnsRecord> {
+    Ok(match expected {
+        DnsRecordType::A => DnsRecord::A(
+            record
+                .data
+                .parse()
+                .map_err(|e| Error::Parse(format!("invalid A data: {e}")))?,
+        ),
+        DnsRecordType::AAAA => DnsRecord::AAAA(
+            record
+                .data
+                .parse()
+                .map_err(|e| Error::Parse(format!("invalid AAAA data: {e}")))?,
+        ),
+        DnsRecordType::CNAME => DnsRecord::CNAME(strip_trailing_dot(&record.data).to_string()),
+        DnsRecordType::NS => DnsRecord::NS(strip_trailing_dot(&record.data).to_string()),
+        DnsRecordType::MX => DnsRecord::MX(parse_mx(&record.data, record.priority)?),
+        DnsRecordType::TXT => DnsRecord::TXT(unquote_txt(&record.data)),
+        DnsRecordType::SRV => DnsRecord::SRV(parse_srv(&record.data, record.priority)?),
+        DnsRecordType::TLSA => parse_tlsa(&record.data)?,
+        DnsRecordType::CAA => DnsRecord::CAA(parse_caa(&record.data)?),
+    })
+}
+
+fn parse_mx(data: &str, fallback_priority: u16) -> crate::Result<MXRecord> {
+    let parts: Vec<&str> = data.split_whitespace().collect();
+    match parts.as_slice() {
+        [prio, exchange] => Ok(MXRecord {
+            priority: prio
+                .parse()
+                .map_err(|e| Error::Parse(format!("invalid MX priority: {e}")))?,
+            exchange: strip_trailing_dot(exchange).to_string(),
+        }),
+        [exchange] => Ok(MXRecord {
+            priority: fallback_priority,
+            exchange: strip_trailing_dot(exchange).to_string(),
+        }),
+        _ => Err(Error::Parse(format!("invalid MX data: {data}"))),
+    }
+}
+
+fn parse_srv(data: &str, priority: u16) -> crate::Result<SRVRecord> {
+    let parts: Vec<&str> = data.split_whitespace().collect();
+    match parts.as_slice() {
+        [weight, port, target] => Ok(SRVRecord {
+            priority,
+            weight: weight
+                .parse()
+                .map_err(|e| Error::Parse(format!("invalid SRV weight: {e}")))?,
+            port: port
+                .parse()
+                .map_err(|e| Error::Parse(format!("invalid SRV port: {e}")))?,
+            target: strip_trailing_dot(target).to_string(),
+        }),
+        [p, weight, port, target] => Ok(SRVRecord {
+            priority: p
+                .parse()
+                .map_err(|e| Error::Parse(format!("invalid SRV priority: {e}")))?,
+            weight: weight
+                .parse()
+                .map_err(|e| Error::Parse(format!("invalid SRV weight: {e}")))?,
+            port: port
+                .parse()
+                .map_err(|e| Error::Parse(format!("invalid SRV port: {e}")))?,
+            target: strip_trailing_dot(target).to_string(),
+        }),
+        _ => Err(Error::Parse(format!("invalid SRV data: {data}"))),
+    }
+}
+
+fn parse_caa(data: &str) -> crate::Result<CAARecord> {
+    let mut iter = data.splitn(3, char::is_whitespace);
+    let flags_str = iter
+        .next()
+        .ok_or_else(|| Error::Parse(format!("invalid CAA data: {data}")))?;
+    let tag = iter
+        .next()
+        .ok_or_else(|| Error::Parse(format!("invalid CAA data: {data}")))?;
+    let value_raw = iter
+        .next()
+        .ok_or_else(|| Error::Parse(format!("invalid CAA data: {data}")))?
+        .trim();
+    let flags: u8 = flags_str
+        .parse()
+        .map_err(|e| Error::Parse(format!("invalid CAA flags: {e}")))?;
+    let issuer_critical = flags & 0x80 != 0;
+    let value = value_raw
+        .strip_prefix('"')
+        .and_then(|s| s.strip_suffix('"'))
+        .unwrap_or(value_raw);
+
+    match tag {
+        "issue" => {
+            let (name, options) = split_caa_value(value);
+            Ok(CAARecord::Issue {
+                issuer_critical,
+                name,
+                options,
+            })
+        }
+        "issuewild" => {
+            let (name, options) = split_caa_value(value);
+            Ok(CAARecord::IssueWild {
+                issuer_critical,
+                name,
+                options,
+            })
+        }
+        "iodef" => Ok(CAARecord::Iodef {
+            issuer_critical,
+            url: value.to_string(),
+        }),
+        other => Err(Error::Parse(format!("unknown CAA tag: {other}"))),
+    }
+}
+
+const ZONE_PAGE_SIZE: u32 = 100;
+
+impl ScalewayProvider {
+    pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
+        let mut out = Vec::new();
+        let mut page: u32 = 1;
+        loop {
+            let url = format!(
+                "{}/dns-zones?page={}&per_page={}",
+                self.endpoint, page, ZONE_PAGE_SIZE
+            );
+            let response: ListZonesResponse = self.client.get(url).send_with_retry(3).await?;
+            let received = response.dns_zones.len() as u32;
+            for zone in response.dns_zones {
+                if zone.domain.is_empty() {
+                    continue;
+                }
+                out.push(crate::ZoneInfo {
+                    id: zone.domain.clone(),
+                    name: zone.domain,
+                    status: zone.status,
+                });
+            }
+            if received == 0
+                || (response.total_count > 0 && out.len() as u32 >= response.total_count)
+            {
+                break;
+            }
+            page += 1;
+        }
+        Ok(out)
+    }
+
+    pub(crate) async fn list_zone_records(
+        &self,
+        zone: &str,
+    ) -> crate::Result<Vec<crate::ZoneRecord>> {
+        let zone = zone.trim_end_matches('.');
+        let mut out = Vec::new();
+        let mut page: u32 = 1;
+        loop {
+            let url = format!(
+                "{}/dns-zones/{}/records?page={}&per_page={}",
+                self.endpoint, zone, page, ZONE_PAGE_SIZE
+            );
+            let response: ListRecordsResponse = self.client.get(url).send_with_retry(3).await?;
+            let received = response.records.len() as u32;
+            for record in response.records {
+                let Some(record_type) = zone_record_type(&record.record_type) else {
+                    continue;
+                };
+                let Ok(typed) = parse_listed_record(record_type, &record) else {
+                    continue;
+                };
+                let name = if record.name.is_empty() {
+                    "@".to_string()
+                } else {
+                    record.name.clone()
+                };
+                let content = typed.to_string();
+                out.push(crate::ZoneRecord {
+                    id: format!("{}|{}|{}", name, record.record_type, content),
+                    name,
+                    record_type: record.record_type.to_ascii_uppercase(),
+                    content,
+                    ttl: record.ttl,
+                    record: typed,
+                });
+            }
+            if received == 0
+                || (response.total_count > 0 && out.len() as u32 >= response.total_count)
+            {
+                break;
+            }
+            page += 1;
+        }
+        Ok(out)
+    }
+}
+
+fn zone_record_type(record_type: &str) -> Option<DnsRecordType> {
+    match record_type.to_ascii_uppercase().as_str() {
+        "A" => Some(DnsRecordType::A),
+        "AAAA" => Some(DnsRecordType::AAAA),
+        "CNAME" => Some(DnsRecordType::CNAME),
+        "NS" => Some(DnsRecordType::NS),
+        "MX" => Some(DnsRecordType::MX),
+        "TXT" => Some(DnsRecordType::TXT),
+        "SRV" => Some(DnsRecordType::SRV),
+        "TLSA" => Some(DnsRecordType::TLSA),
+        "CAA" => Some(DnsRecordType::CAA),
+        _ => None,
+    }
+}
