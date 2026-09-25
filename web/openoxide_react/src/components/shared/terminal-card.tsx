@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useMemo, useState} from 'react';
 import {Plus} from 'lucide-react';
 import {cn} from '#/api/utils';
 import {Dialog, DialogContent} from '#/components/ui/dialog';
@@ -34,7 +34,6 @@ export function TerminalCard({
 	const [shell, setShell] = useState<'sh' | 'bash'>('bash');
 	const [selectedService, setSelectedService] = useState('');
 	const [hostMode, setHostMode] = useState(hostModeDefault);
-	const [expanded, setExpanded] = useState(false);
 
 	const {shells, activeId, setActiveId, setStatus, addShell, closeShell} =
 		useShellTabs();
@@ -78,16 +77,6 @@ export function TerminalCard({
 			? `Host root shell via the Agent on ${targetContainer}.`
 			: `Container shell for ${targetContainer}.`;
 
-	// Esc leaves fullscreen (bound only while expanded).
-	useEffect(() => {
-		if (!expanded) return;
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === 'Escape') setExpanded(false);
-		};
-		window.addEventListener('keydown', onKey);
-		return () => window.removeEventListener('keydown', onKey);
-	}, [expanded]);
-
 	const body = (
 		<>
 			<TerminalHeader
@@ -102,8 +91,6 @@ export function TerminalCard({
 				onSelectService={setSelectedService}
 				shell={shell}
 				onShellChange={setShell}
-				expanded={expanded}
-				onToggleExpanded={() => setExpanded(v => !v)}
 				onClose={onClose}
 			/>
 
@@ -118,7 +105,7 @@ export function TerminalCard({
 			<div
 				className={cn(
 					'relative min-h-0 flex-1',
-					!asModal && !expanded && 'h-[60vh] min-h-[480px]',
+					!asModal && 'h-[60vh] min-h-[480px]',
 				)}>
 				{shells.length === 0 && (
 					<div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
@@ -161,14 +148,8 @@ export function TerminalCard({
 			<Dialog open onOpenChange={open => !open && onClose?.()}>
 				<DialogContent
 					showCloseButton={false}
-					className="w-[92vw] max-w-5xl gap-0 overflow-hidden p-0! sm:max-w-5xl">
-					<div
-						className={cn(
-							'flex w-full flex-col overflow-hidden bg-card',
-							expanded
-								? 'h-[calc(100dvh-4rem)]'
-								: 'h-[70vh] max-h-[calc(100dvh-4rem)]',
-						)}>
+					className="w-[92vw] max-w-5xl gap-0 overflow-hidden rounded-xl border-border/60 bg-card p-0! ring-1 ring-black/[0.04] sm:max-w-5xl dark:ring-white/[0.06]">
+					<div className="flex h-[70vh] max-h-[calc(100dvh-4rem)] w-full flex-col overflow-hidden bg-card">
 						{body}
 					</div>
 				</DialogContent>
@@ -177,18 +158,8 @@ export function TerminalCard({
 	}
 
 	return (
-		<div
-			className={cn(
-				expanded
-					? 'fixed inset-0 z-50 flex bg-background/95 p-4 backdrop-blur-sm'
-					: '',
-				className,
-			)}>
-			<div
-				className={cn(
-					'flex flex-col overflow-hidden rounded-xl bg-card ring-1 ring-border/50',
-					expanded ? 'h-full w-full' : 'w-full',
-				)}>
+		<div className={className}>
+			<div className="flex w-full flex-col overflow-hidden rounded-xl bg-card ring-1 ring-border/50">
 				{body}
 			</div>
 		</div>

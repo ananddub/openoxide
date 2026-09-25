@@ -1,36 +1,35 @@
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 
-use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
-
+use super::helper::*;
+use super::init::ComposeController;
 use crate::api::connect::generated::openoxide::api::v1::{
     Compose, ComposeCreateMountRequest, ComposeCreateMountResponse, ComposeCreatePatchRequest,
-    ComposeCreatePatchResponse, ComposeDependencies, ComposeExport, ComposeMountRequest,
-    ComposeOperation, ComposeOperationRequest, ComposePatchRequest, ComposeListMountsRequest,
+    ComposeCreatePatchResponse, ComposeDependencies, ComposeExport, ComposeListMountsRequest,
     ComposeListMountsResponse, ComposeListPatchesRequest, ComposeListPatchesResponse,
-    ComposePatchType, ComposePreview,
-    ComposeService, ComposeServiceExt, ComposeUpdateMountRequest, ComposeUpdateMountResponse,
-    ComposeUpdatePatchRequest, ComposeUpdatePatchResponse, ComposeWebhookToken,
-    CreateComposeRequest, DeleteComposeRequest, Empty, ExportComposeRequest, GetComposeRequest,
-    ImportComposeRequest, InstallTemplateRequest, ListComposesRequest, ListComposesResponse,
-    MoveComposeRequest, PreviewComposeRequest, ServiceMutationRequest, SetComposeSourceRequest,
-    SetRawSourceRequest, UpdateComposeRequest, UpdateComposeResourcesRequest, UploadComposeRequest,
+    ComposeMountRequest, ComposeOperation, ComposeOperationRequest, ComposePatchRequest,
+    ComposePatchType, ComposePreview, ComposeService, ComposeServiceExt, ComposeUpdateMountRequest,
+    ComposeUpdateMountResponse, ComposeUpdatePatchRequest, ComposeUpdatePatchResponse,
+    ComposeWebhookToken, CreateComposeRequest, DeleteComposeRequest, Empty, ExportComposeRequest,
+    GetComposeRequest, ImportComposeRequest, InstallTemplateRequest, ListComposesRequest,
+    ListComposesResponse, MoveComposeRequest, PreviewComposeRequest, ServiceMutationRequest,
+    SetComposeSourceRequest, SetRawSourceRequest, UpdateComposeRequest,
+    UpdateComposeResourcesRequest, UploadComposeRequest,
 };
 use crate::services::compute::compose::crud::{
     ComposeOperationResponseDto, ComposeResponseDto, CreateComposeDto, PatchComposeDto,
 };
-use crate::services::compute::compose::queries::ComposeDependencyCounts;
 use crate::services::compute::compose::management::{
     ComposePreviewDto, ImportComposeDto, InstallComposeTemplateDto, UpsertComposePatchDto,
     UpsertComposeResourceDto,
 };
+use crate::services::compute::compose::queries::ComposeDependencyCounts;
 use crate::services::compute::compose::source::{
     PatchComposeBitbucketSourceDto, PatchComposeCustomGitSourceDto, PatchComposeGiteaSourceDto,
     PatchComposeGithubSourceDto, PatchComposeGitlabSourceDto, PatchComposeRawSourceDto,
 };
-use crate::services::compute::compose::{
-    ComposeOperation as AppComposeOperation, ComposeType,
-};
-use super::helper::*;
-use super::init::ComposeController;
+use crate::services::compute::compose::{ComposeOperation as AppComposeOperation, ComposeType};
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl ComposeService for ComposeController {
@@ -40,7 +39,11 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, GetComposeRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
-        let item = self.service.get_by_id(request.id).await.map_err(map_error)?;
+        let item = self
+            .service
+            .get_by_id(request.id)
+            .await
+            .map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
     }
 
@@ -50,9 +53,20 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ListComposesRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListComposesResponse> + Send + use<'a>> {
-        let items = self.service.list_by_environment(request.environment_id).await.map_err(map_error)?;
-        let composes = items.into_iter().map(ComposeResponseDto::from).map(|c| compose_to_proto(&c)).collect();
-        Response::ok(ListComposesResponse { composes, ..Default::default() })
+        let items = self
+            .service
+            .list_by_environment(request.environment_id)
+            .await
+            .map_err(map_error)?;
+        let composes = items
+            .into_iter()
+            .map(ComposeResponseDto::from)
+            .map(|c| compose_to_proto(&c))
+            .collect();
+        Response::ok(ListComposesResponse {
+            composes,
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanCreate)]
@@ -95,9 +109,16 @@ impl ComposeService for ComposeController {
                 "compose_file": request.compose_file,
                 "server_id": request.server_id,
                 "command": request.command,
-            }).to_string(),
-        ).map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let item = self.service.patch(request.id, dto).await.map_err(map_error)?;
+                "randomize": request.randomize.map(i64::from),
+            })
+            .to_string(),
+        )
+        .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
+        let item = self
+            .service
+            .patch(request.id, dto)
+            .await
+            .map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
     }
 
@@ -120,11 +141,18 @@ impl ComposeService for ComposeController {
         let dto = PatchComposeGithubSourceDto {
             repository: request.repository.to_owned(),
             owner: request.owner.to_owned(),
-            branch: request.branch.map(str::to_owned).unwrap_or_else(|| "main".into()),
+            branch: request
+                .branch
+                .map(str::to_owned)
+                .unwrap_or_else(|| "main".into()),
             github_provider_id: request.provider_id,
             auto_deploy: None,
         };
-        let item = self.service.set_github_source(request.id, dto).await.map_err(map_error)?;
+        let item = self
+            .service
+            .set_github_source(request.id, dto)
+            .await
+            .map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
     }
 
@@ -138,12 +166,19 @@ impl ComposeService for ComposeController {
             gitlab_project_id: None,
             gitlab_repository: request.repository.to_owned(),
             gitlab_owner: request.owner.to_owned(),
-            gitlab_branch: request.branch.map(str::to_owned).unwrap_or_else(|| "main".into()),
+            gitlab_branch: request
+                .branch
+                .map(str::to_owned)
+                .unwrap_or_else(|| "main".into()),
             gitlab_path_namespace: None,
             gitlab_provider_id: request.provider_id,
             gitlab_build_path: request.build_path.map(str::to_owned),
         };
-        let item = self.service.set_gitlab_source(request.id, dto).await.map_err(map_error)?;
+        let item = self
+            .service
+            .set_gitlab_source(request.id, dto)
+            .await
+            .map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
     }
 
@@ -157,11 +192,18 @@ impl ComposeService for ComposeController {
             bitbucket_repository: request.repository.to_owned(),
             bitbucket_repository_slug: None,
             bitbucket_owner: request.owner.to_owned(),
-            bitbucket_branch: request.branch.map(str::to_owned).unwrap_or_else(|| "main".into()),
+            bitbucket_branch: request
+                .branch
+                .map(str::to_owned)
+                .unwrap_or_else(|| "main".into()),
             bitbucket_provider_id: request.provider_id,
             bitbucket_build_path: request.build_path.map(str::to_owned),
         };
-        let item = self.service.set_bitbucket_source(request.id, dto).await.map_err(map_error)?;
+        let item = self
+            .service
+            .set_bitbucket_source(request.id, dto)
+            .await
+            .map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
     }
 
@@ -174,11 +216,18 @@ impl ComposeService for ComposeController {
         let dto = PatchComposeGiteaSourceDto {
             gitea_repository: request.repository.to_owned(),
             gitea_owner: request.owner.to_owned(),
-            gitea_branch: request.branch.map(str::to_owned).unwrap_or_else(|| "main".into()),
+            gitea_branch: request
+                .branch
+                .map(str::to_owned)
+                .unwrap_or_else(|| "main".into()),
             gitea_provider_id: request.provider_id,
             gitea_build_path: request.build_path.map(str::to_owned),
         };
-        let item = self.service.set_gitea_source(request.id, dto).await.map_err(map_error)?;
+        let item = self
+            .service
+            .set_gitea_source(request.id, dto)
+            .await
+            .map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
     }
 
@@ -190,11 +239,18 @@ impl ComposeService for ComposeController {
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
         let dto = PatchComposeCustomGitSourceDto {
             custom_git_url: request.repository.to_owned(),
-            custom_git_branch: request.branch.map(str::to_owned).unwrap_or_else(|| "main".into()),
+            custom_git_branch: request
+                .branch
+                .map(str::to_owned)
+                .unwrap_or_else(|| "main".into()),
             custom_git_ssh_key_id: request.ssh_key_id,
             custom_git_build_path: request.build_path.map(str::to_owned),
         };
-        let item = self.service.set_custom_git_source(request.id, dto).await.map_err(map_error)?;
+        let item = self
+            .service
+            .set_custom_git_source(request.id, dto)
+            .await
+            .map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
     }
 
@@ -207,7 +263,11 @@ impl ComposeService for ComposeController {
         let dto = PatchComposeRawSourceDto {
             compose_file: request.content.to_owned(),
         };
-        let item = self.service.set_raw_source(request.id, dto).await.map_err(map_error)?;
+        let item = self
+            .service
+            .set_raw_source(request.id, dto)
+            .await
+            .map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
     }
 
@@ -232,7 +292,11 @@ impl ComposeService for ComposeController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
-        let result = self.service.run_operation(request.id, AppComposeOperation::Deploy, auth.user_id()).await.map_err(map_error)?;
+        let result = self
+            .service
+            .run_operation(request.id, AppComposeOperation::Deploy, auth.user_id())
+            .await
+            .map_err(map_error)?;
         let dto = ComposeOperationResponseDto::from(result);
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&dto.compose)),
@@ -247,7 +311,11 @@ impl ComposeService for ComposeController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
-        let result = self.service.run_operation(request.id, AppComposeOperation::Redeploy, auth.user_id()).await.map_err(map_error)?;
+        let result = self
+            .service
+            .run_operation(request.id, AppComposeOperation::Redeploy, auth.user_id())
+            .await
+            .map_err(map_error)?;
         let dto = ComposeOperationResponseDto::from(result);
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&dto.compose)),
@@ -262,7 +330,11 @@ impl ComposeService for ComposeController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
-        let result = self.service.run_operation(request.id, AppComposeOperation::Reload, auth.user_id()).await.map_err(map_error)?;
+        let result = self
+            .service
+            .run_operation(request.id, AppComposeOperation::Reload, auth.user_id())
+            .await
+            .map_err(map_error)?;
         let dto = ComposeOperationResponseDto::from(result);
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&dto.compose)),
@@ -277,7 +349,11 @@ impl ComposeService for ComposeController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
-        let result = self.service.run_operation(request.id, AppComposeOperation::Start, auth.user_id()).await.map_err(map_error)?;
+        let result = self
+            .service
+            .run_operation(request.id, AppComposeOperation::Start, auth.user_id())
+            .await
+            .map_err(map_error)?;
         let dto = ComposeOperationResponseDto::from(result);
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&dto.compose)),
@@ -292,8 +368,15 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
-        self.service.stop_operation(request.id).await.map_err(map_error)?;
-        let compose = self.service.get_by_id(request.id).await.map_err(map_error)?;
+        self.service
+            .stop_operation(request.id)
+            .await
+            .map_err(map_error)?;
+        let compose = self
+            .service
+            .get_by_id(request.id)
+            .await
+            .map_err(map_error)?;
         let compose_dto = ComposeResponseDto::from(compose);
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&compose_dto)),
@@ -308,7 +391,10 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.cancel_operation(request.id).await.map_err(map_error)?;
+        self.service
+            .cancel_operation(request.id)
+            .await
+            .map_err(map_error)?;
         Response::ok(Empty::default())
     }
 
@@ -318,7 +404,8 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, MoveComposeRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
-        let item = self.management
+        let item = self
+            .management
             .move_to_environment(request.id, request.target_environment_id)
             .await
             .map_err(map_error)?;
@@ -331,8 +418,15 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeWebhookToken> + Send + use<'a>> {
-        let token = self.management.rotate_webhook_token(request.id).await.map_err(map_error)?;
-        Response::ok(ComposeWebhookToken { token, ..Default::default() })
+        let token = self
+            .management
+            .rotate_webhook_token(request.id)
+            .await
+            .map_err(map_error)?;
+        Response::ok(ComposeWebhookToken {
+            token,
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanRead)]
@@ -341,27 +435,71 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeDependencies> + Send + use<'a>> {
-        let deps = self.service.dependencies(request.id).await.map_err(map_error)?;
+        let deps = self
+            .service
+            .dependencies(request.id)
+            .await
+            .map_err(map_error)?;
         let ComposeDependencyCounts {
-            active_deployments, deployments, domains, mounts, patches,
-            schedules, backups, enabled_backups, preview_deployments,
-            middleware, ports, redirects, security_rules, ..
+            active_deployments,
+            deployments,
+            domains,
+            mounts,
+            patches,
+            schedules,
+            backups,
+            enabled_backups,
+            preview_deployments,
+            middleware,
+            ports,
+            redirects,
+            security_rules,
+            ..
         } = deps;
         let mut items = Vec::new();
-        if active_deployments > 0 { items.push(format!("active_deployments: {active_deployments}")); }
-        if deployments > 0 { items.push(format!("deployments: {deployments}")); }
-        if domains > 0 { items.push(format!("domains: {domains}")); }
-        if mounts > 0 { items.push(format!("mounts: {mounts}")); }
-        if patches > 0 { items.push(format!("patches: {patches}")); }
-        if schedules > 0 { items.push(format!("schedules: {schedules}")); }
-        if backups > 0 { items.push(format!("backups: {backups}")); }
-        if enabled_backups > 0 { items.push(format!("enabled_backups: {enabled_backups}")); }
-        if preview_deployments > 0 { items.push(format!("preview_deployments: {preview_deployments}")); }
-        if middleware > 0 { items.push(format!("middleware: {middleware}")); }
-        if ports > 0 { items.push(format!("ports: {ports}")); }
-        if redirects > 0 { items.push(format!("redirects: {redirects}")); }
-        if security_rules > 0 { items.push(format!("security_rules: {security_rules}")); }
-        Response::ok(ComposeDependencies { items, ..Default::default() })
+        if active_deployments > 0 {
+            items.push(format!("active_deployments: {active_deployments}"));
+        }
+        if deployments > 0 {
+            items.push(format!("deployments: {deployments}"));
+        }
+        if domains > 0 {
+            items.push(format!("domains: {domains}"));
+        }
+        if mounts > 0 {
+            items.push(format!("mounts: {mounts}"));
+        }
+        if patches > 0 {
+            items.push(format!("patches: {patches}"));
+        }
+        if schedules > 0 {
+            items.push(format!("schedules: {schedules}"));
+        }
+        if backups > 0 {
+            items.push(format!("backups: {backups}"));
+        }
+        if enabled_backups > 0 {
+            items.push(format!("enabled_backups: {enabled_backups}"));
+        }
+        if preview_deployments > 0 {
+            items.push(format!("preview_deployments: {preview_deployments}"));
+        }
+        if middleware > 0 {
+            items.push(format!("middleware: {middleware}"));
+        }
+        if ports > 0 {
+            items.push(format!("ports: {ports}"));
+        }
+        if redirects > 0 {
+            items.push(format!("redirects: {redirects}"));
+        }
+        if security_rules > 0 {
+            items.push(format!("security_rules: {security_rules}"));
+        }
+        Response::ok(ComposeDependencies {
+            items,
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanRead)]
@@ -393,14 +531,21 @@ impl ComposeService for ComposeController {
         request: ServiceRequest<'_, InstallTemplateRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
         let dto = InstallComposeTemplateDto {
-            name: request.name.map(str::to_owned).unwrap_or_else(|| "compose".into()),
+            name: request
+                .name
+                .map(str::to_owned)
+                .unwrap_or_else(|| "compose".into()),
             description: None,
             environment_id: request.environment_id,
             server_id: request.server_id,
             compose_file: request.template.to_owned(),
             env_var: request.env_var.map(str::to_owned),
         };
-        let item = self.management.install_template(dto).await.map_err(map_error)?;
+        let item = self
+            .management
+            .install_template(dto)
+            .await
+            .map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
     }
 
@@ -410,10 +555,17 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ExportComposeRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeExport> + Send + use<'a>> {
-        let bundle = self.transfer.export(request.id, request.include_secrets).await.map_err(map_error)?;
+        let bundle = self
+            .transfer
+            .export(request.id, request.include_secrets)
+            .await
+            .map_err(map_error)?;
         let archive = serde_json::to_string_pretty(&bundle)
             .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
-        Response::ok(ComposeExport { archive, ..Default::default() })
+        Response::ok(ComposeExport {
+            archive,
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanCreate)]
@@ -439,7 +591,11 @@ impl ComposeService for ComposeController {
         request: ServiceRequest<'_, ServiceMutationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         let service_name = request.services.first().cloned().unwrap_or_default();
-        let _ = self.management.remove_service(request.id, &service_name).await.map_err(map_error)?;
+        let _ = self
+            .management
+            .remove_service(request.id, &service_name)
+            .await
+            .map_err(map_error)?;
         Response::ok(Empty::default())
     }
 
@@ -455,10 +611,15 @@ impl ComposeService for ComposeController {
             "memory_limit": request.memory_limit,
             "cpu_limit": request.cpu_limit,
             "replicas": request.replicas,
-        }).to_string();
+        })
+        .to_string();
         let dto: UpsertComposeResourceDto = serde_json::from_str(&payload_json)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let item = self.management.upsert_resource(request.id, dto).await.map_err(map_error)?;
+        let item = self
+            .management
+            .upsert_resource(request.id, dto)
+            .await
+            .map_err(map_error)?;
         Response::ok(compose_to_proto(&ComposeResponseDto::from(item)))
     }
 
@@ -468,7 +629,10 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.management.clear_history(request.id).await.map_err(map_error)?;
+        self.management
+            .clear_history(request.id)
+            .await
+            .map_err(map_error)?;
         Response::ok(Empty::default())
     }
 
@@ -478,7 +642,10 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.management.cleanup_queue(request.id).await.map_err(map_error)?;
+        self.management
+            .cleanup_queue(request.id)
+            .await
+            .map_err(map_error)?;
         Response::ok(Empty::default())
     }
 
@@ -488,7 +655,10 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.management.force_kill(request.id).await.map_err(map_error)?;
+        self.management
+            .force_kill(request.id)
+            .await
+            .map_err(map_error)?;
         Response::ok(Empty::default())
     }
 
@@ -498,13 +668,20 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeListMountsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeListMountsResponse> + Send + use<'a>> {
-        let items = self.mounts.list(request.compose_id).await.map_err(map_error)?;
+        let items = self
+            .mounts
+            .list(request.compose_id)
+            .await
+            .map_err(map_error)?;
         let mounts = items
             .into_iter()
             .map(ComposeMountResponseDto::from)
             .map(mount_to_proto)
             .collect();
-        Response::ok(ComposeListMountsResponse { mounts, ..Default::default() })
+        Response::ok(ComposeListMountsResponse {
+            mounts,
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanCreate)]
@@ -512,7 +689,8 @@ impl ComposeService for ComposeController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeCreateMountRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ComposeCreateMountResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ComposeCreateMountResponse> + Send + use<'a>>
+    {
         let input = mount_request_from_create(&request);
         let item = self
             .mounts
@@ -530,7 +708,8 @@ impl ComposeService for ComposeController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeUpdateMountRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ComposeUpdateMountResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ComposeUpdateMountResponse> + Send + use<'a>>
+    {
         let input = mount_request_from_update(&request);
         let item = self
             .mounts
@@ -549,8 +728,14 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeMountRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        let id = request.id.ok_or_else(|| ConnectError::invalid_argument("mount id is required"))?;
-        let deleted = self.mounts.delete(request.compose_id, id).await.map_err(map_error)?;
+        let id = request
+            .id
+            .ok_or_else(|| ConnectError::invalid_argument("mount id is required"))?;
+        let deleted = self
+            .mounts
+            .delete(request.compose_id, id)
+            .await
+            .map_err(map_error)?;
         if deleted {
             Response::ok(Empty::default())
         } else {
@@ -563,14 +748,22 @@ impl ComposeService for ComposeController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeListPatchesRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ComposeListPatchesResponse> + Send + use<'a>> {
-        let items = self.patches.list(request.compose_id).await.map_err(map_error)?;
+    ) -> ServiceResult<impl connectrpc::Encodable<ComposeListPatchesResponse> + Send + use<'a>>
+    {
+        let items = self
+            .patches
+            .list(request.compose_id)
+            .await
+            .map_err(map_error)?;
         let patches = items
             .into_iter()
             .map(ComposePatchResponseDto::from)
             .map(patch_to_proto)
             .collect();
-        Response::ok(ComposeListPatchesResponse { patches, ..Default::default() })
+        Response::ok(ComposeListPatchesResponse {
+            patches,
+            ..Default::default()
+        })
     }
 
     #[permission(Application, CanCreate)]
@@ -578,9 +771,14 @@ impl ComposeService for ComposeController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeCreatePatchRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ComposeCreatePatchResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ComposeCreatePatchResponse> + Send + use<'a>>
+    {
         let dto = patch_dto_from_request(&request)?;
-        let item = self.patches.create(request.compose_id, dto).await.map_err(map_error)?;
+        let item = self
+            .patches
+            .create(request.compose_id, dto)
+            .await
+            .map_err(map_error)?;
         Response::ok(ComposeCreatePatchResponse {
             patch: ::buffa::MessageField::some(patch_to_proto(ComposePatchResponseDto::from(item))),
             ..Default::default()
@@ -592,7 +790,8 @@ impl ComposeService for ComposeController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeUpdatePatchRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ComposeUpdatePatchResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ComposeUpdatePatchResponse> + Send + use<'a>>
+    {
         let dto = patch_dto_from_request(&request)?;
         let item = self
             .patches
@@ -611,8 +810,14 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposePatchRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        let id = request.id.ok_or_else(|| ConnectError::invalid_argument("patch id is required"))?;
-        let deleted = self.patches.delete(request.compose_id, id).await.map_err(map_error)?;
+        let id = request
+            .id
+            .ok_or_else(|| ConnectError::invalid_argument("patch id is required"))?;
+        let deleted = self
+            .patches
+            .delete(request.compose_id, id)
+            .await
+            .map_err(map_error)?;
         if deleted {
             Response::ok(Empty::default())
         } else {

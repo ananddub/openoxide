@@ -50,11 +50,15 @@ export function TeamDialogs({ctl}: {ctl: Ctl}) {
 		setInputEmail,
 		selectedRole,
 		setSelectedRole,
+		selectedGroupId,
+		setSelectedGroupId,
+		groups,
 		isSubmitting,
 		handleCreateOrInvite,
 		editingRoleUser,
 		setEditingRoleUser,
 		handleUpdateRole,
+		handleAssignGroup,
 		deleteTarget,
 		setDeleteTarget,
 		isDeleting,
@@ -110,7 +114,7 @@ export function TeamDialogs({ctl}: {ctl: Ctl}) {
 								hint={ROLE_DESC[selectedRole]}>
 								<Select
 									value={selectedRole}
-									onValueChange={v => setSelectedRole(v ?? 'developer')}>
+									onValueChange={v => setSelectedRole(v ?? 'member')}>
 									<SelectTrigger>
 										<SelectValue />
 									</SelectTrigger>
@@ -118,6 +122,25 @@ export function TeamDialogs({ctl}: {ctl: Ctl}) {
 										{ROLES.filter(r => r !== 'owner').map(r => (
 											<SelectItem key={r} value={r} className="capitalize">
 												{r}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</WizardField>
+
+							<WizardField
+								label="Permission group"
+								hint="Grants this member fine-grained actions (e.g. deploy, manage domains).">
+								<Select
+									value={selectedGroupId}
+									onValueChange={v => setSelectedGroupId(v ?? '')}>
+									<SelectTrigger>
+										<SelectValue placeholder="None (role only)" />
+									</SelectTrigger>
+									<SelectContent className="bg-card">
+										{groups.map(g => (
+											<SelectItem key={String(g.id)} value={String(g.id)}>
+												{g.name}
 											</SelectItem>
 										))}
 									</SelectContent>
@@ -148,14 +171,18 @@ export function TeamDialogs({ctl}: {ctl: Ctl}) {
 				onOpenChange={() => setEditingRoleUser(null)}>
 				<SheetContent>
 					<SheetHeader>
-						<SheetTitle>Change role</SheetTitle>
+						<SheetTitle>Role &amp; permission group</SheetTitle>
 						<SheetDescription className="font-mono">
 							{editingRoleUser?.email}
 						</SheetDescription>
 					</SheetHeader>
 					<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-6 py-6">
+						<p className="text-xs font-medium text-muted-foreground">
+							Role
+						</p>
 						{ROLES.filter(r => r !== 'owner').map(r => {
-							const current = editingRoleUser?.role.toLowerCase() === r;
+							const current =
+								(editingRoleUser?.role ?? '').toLowerCase() === r;
 							return (
 								<OptionRow
 									key={r}
@@ -163,6 +190,33 @@ export function TeamDialogs({ctl}: {ctl: Ctl}) {
 									onClick={() => void handleUpdateRole(r)}
 									title={r[0].toUpperCase() + r.slice(1)}
 									subtitle={current ? 'Current role' : ROLE_DESC[r]}
+								/>
+							);
+						})}
+
+						<p className="mt-3 text-xs font-medium text-muted-foreground">
+							Permission group
+						</p>
+						<OptionRow
+							selected={!editingRoleUser?.group_id}
+							onClick={() => void handleAssignGroup('')}
+							title="None"
+							subtitle="Access comes from the role only"
+						/>
+						{groups.map(g => {
+							const current =
+								BigInt(editingRoleUser?.group_id ?? 0) === g.id;
+							return (
+								<OptionRow
+									key={String(g.id)}
+									selected={current}
+									onClick={() => void handleAssignGroup(String(g.id))}
+									title={g.name}
+									subtitle={
+										current
+											? 'Current group'
+											: `${g.actions.length} actions granted`
+									}
 								/>
 							);
 						})}

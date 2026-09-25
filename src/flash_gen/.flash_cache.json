@@ -37,8 +37,8 @@
     "db/queries/notification_delivery.sql": "c575a14f11c6bb43ffe32f4f4828b5c9a79cef8787cf583f4163110bffa892cc",
     "db/queries/notifications.sql": "73413500f240a0faf3a2e51ca10e8cfe3c995898ff763c145e290000721f1e30",
     "db/queries/organization.sql": "26849ccfb4b81d4f0f6ce20a07c83f704c4d913e22d577e912b34188e76c6f84",
-    "db/queries/organization_invites.sql": "f670937d14a2128f3a7f7dd949124e7ac89c586f5eb6df6f7ca852bd12861010",
-    "db/queries/organization_members.sql": "d3da229fd1dfd56b56238d7edd08805b017ed5b19c55d5f77badfc30165c1279",
+    "db/queries/organization_invites.sql": "69b1e24fa750d7493dc212a5dd3ed8a20666921777d818a0c5a4b8f2eb321219",
+    "db/queries/organization_members.sql": "1ef45f367742f968a56245df5c7962a3362e0b8155bc25fe9ad2cfa8a8d0a659",
     "db/queries/organizations.sql": "7d3d77f53fe4d24e2827767d7e76ada5d68d30a7cf9b65d59cdab6c2fcc976e5",
     "db/queries/overview.sql": "bad39b564fbcc29c5531f54dc1a8af22d244d00cec7168303e1bab1005681e52",
     "db/queries/password_reset_tokens.sql": "c148b69e54f49831d6fdda4f0a427dfd7a2f42ed3f56de1444cfc44d4b5a7778",
@@ -90,8 +90,8 @@
       "ai_settings"
     ],
     "db/queries/alert_rule.sql": [
-      "alert_rules",
-      "alert_events"
+      "alert_events",
+      "alert_rules"
     ],
     "db/queries/app_subresources_extra.sql": [
       "services"
@@ -112,9 +112,9 @@
       "backup_executions"
     ],
     "db/queries/backups.sql": [
+      "destinations",
       "backups",
-      "volume_backups",
-      "destinations"
+      "volume_backups"
     ],
     "db/queries/certificate_renewals.sql": [
       "certificate_renewals"
@@ -123,16 +123,16 @@
       "certificates"
     ],
     "db/queries/compose_extra.sql": [
-      "mounts",
       "patches",
       "deployments",
-      "services"
+      "services",
+      "mounts"
     ],
     "db/queries/database_extra.sql": [
+      "services",
       "service_database",
       "deployments",
-      "service_compose",
-      "services"
+      "service_compose"
     ],
     "db/queries/database_networks.sql": [
       "database_networks"
@@ -189,8 +189,8 @@
       "ai_settings"
     ],
     "db/queries/monitoring_agents.sql": [
-      "monitoring_agents",
-      "services"
+      "services",
+      "monitoring_agents"
     ],
     "db/queries/monitoring_lifecycle.sql": [
       "monitoring_policy",
@@ -201,9 +201,9 @@
       "mounts"
     ],
     "db/queries/network.sql": [
+      "redirects",
       "ports",
-      "security",
-      "redirects"
+      "security"
     ],
     "db/queries/notification_delivery.sql": [
       "notification_delivery_attempts",
@@ -222,11 +222,11 @@
       "organization_members"
     ],
     "db/queries/organizations.sql": [
+      "organization",
+      "o",
       "organization_members",
       "om",
-      "organization_invites",
-      "organization",
-      "o"
+      "organization_invites"
     ],
     "db/queries/overview.sql": [
       "domains",
@@ -243,11 +243,11 @@
       "patches"
     ],
     "db/queries/permission_groups.sql": [
+      "groups",
+      "policy",
       "group_policy",
       "organization_members",
-      "user_policy",
-      "groups",
-      "policy"
+      "user_policy"
     ],
     "db/queries/personal_access_tokens.sql": [
       "personal_access_tokens"
@@ -273,11 +273,11 @@
       "project_tags"
     ],
     "db/queries/projects.sql": [
-      "project_tags",
       "projects",
       "environments",
       "tags",
-      "t"
+      "t",
+      "project_tags"
     ],
     "db/queries/registries.sql": [
       "registries",
@@ -320,20 +320,20 @@
       "server_private_networks"
     ],
     "db/queries/servers.sql": [
-      "schedules",
       "servers",
       "services",
       "service_application",
-      "certificates"
+      "certificates",
+      "schedules"
     ],
     "db/queries/service_application.sql": [
       "service_application",
       "services"
     ],
     "db/queries/service_compose.sql": [
-      "service_compose",
       "services",
-      "service_git"
+      "service_git",
+      "service_compose"
     ],
     "db/queries/service_database.sql": [
       "service_database",
@@ -360,8 +360,8 @@
       "registries"
     ],
     "db/queries/tags.sql": [
-      "tags",
-      "project_tags"
+      "project_tags",
+      "tags"
     ],
     "db/queries/traffic_stats.sql": [
       "traffic_stats"
@@ -388,6 +388,6 @@
     ]
   },
   "generated_file_checksums": {},
-  "last_generation": "2026-09-25T01:18:23.822851428+05:30",
+  "last_generation": "2026-09-25T10:27:11.973530387+05:30",
   "OutDir": "src/flash_gen"
 }

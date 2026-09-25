@@ -178,8 +178,8 @@ async fn complete_with_model<M: CompletionModel>(
         .completion_request(prompt)
         .temperature(0.2)
         // Reasoning models (GLM/DeepSeek "v4"-style) spend part of the budget on
-        // hidden thinking, so the visible answer needs extra headroom.
-        .max_tokens(16384);
+        // hidden thinking; a 3-variant compose JSON can exceed 16k visible tokens alone.
+        .max_tokens(32768);
     if let Some(params) = additional_params {
         request = request.additional_params(params);
     }

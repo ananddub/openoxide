@@ -6,10 +6,10 @@ use crate::api::connect::generated::openoxide::api::v1::{
     PermissionPolicyEffect as ProtoPermissionPolicyEffect,
     PermissionUserRole as ProtoPermissionUserRole,
 };
+use crate::services::identity::permission::PermissionGroupError;
 use crate::services::identity::permission::group_service::{
     PermissionGroupDto, PermissionPolicyDto,
 };
-use crate::services::identity::permission::PermissionGroupError;
 
 pub fn map_error(err: PermissionGroupError) -> ConnectError {
     match &err {
@@ -21,7 +21,10 @@ pub fn map_error(err: PermissionGroupError) -> ConnectError {
         PermissionGroupError::Database(e) => {
             if let sqlx::Error::Database(db_err) = e {
                 if db_err.is_unique_violation() {
-                    return ConnectError::new(ErrorCode::AlreadyExists, "group name already exists");
+                    return ConnectError::new(
+                        ErrorCode::AlreadyExists,
+                        "group name already exists",
+                    );
                 }
             }
             tracing::error!(error = %err, "permission group operation failed");
@@ -66,7 +69,9 @@ pub fn proto_to_user_role(
         ::buffa::EnumValue::Known(ProtoPermissionUserRole::Owner) => Ok("OWNER".into()),
         ::buffa::EnumValue::Known(ProtoPermissionUserRole::Admin) => Ok("ADMIN".into()),
         ::buffa::EnumValue::Known(ProtoPermissionUserRole::Member) => Ok("MEMBER".into()),
-        _ => Err(ConnectError::invalid_argument("role must be ADMIN or MEMBER")),
+        _ => Err(ConnectError::invalid_argument(
+            "role must be ADMIN or MEMBER",
+        )),
     }
 }
 
@@ -77,7 +82,9 @@ pub fn proto_to_policy_effect(
     match value {
         ::buffa::EnumValue::Known(ProtoPermissionPolicyEffect::Grant) => Ok("GRANT".into()),
         ::buffa::EnumValue::Known(ProtoPermissionPolicyEffect::Deny) => Ok("DENY".into()),
-        _ => Err(ConnectError::invalid_argument("effect must be GRANT or DENY")),
+        _ => Err(ConnectError::invalid_argument(
+            "effect must be GRANT or DENY",
+        )),
     }
 }
 
@@ -104,7 +111,9 @@ pub fn policy_to_proto(dto: PermissionPolicyDto) -> PermissionPolicyProto {
     }
 }
 
-pub fn member_to_proto(row: crate::flash_gen::organization_members::OrganizationMembersListWithUserForOrganizationRow) -> PermissionMemberProto {
+pub fn member_to_proto(
+    row: crate::flash_gen::organization_members::OrganizationMembersListWithUserForOrganizationRow,
+) -> PermissionMemberProto {
     PermissionMemberProto {
         id: row.id,
         user_id: row.user_id.unwrap_or_default(),
@@ -114,11 +123,15 @@ pub fn member_to_proto(row: crate::flash_gen::organization_members::Organization
         role: user_role_str_to_opt(row.role.as_ref()),
         created_at: row.created_at.unwrap_or_default(),
         updated_at: row.updated_at.unwrap_or_default(),
+        group_id: row.group_id.unwrap_or_default(),
+        group_name: row.group_name.filter(|n| !n.is_empty()),
         ..Default::default()
     }
 }
 
-pub fn invite_to_proto(invite: crate::flash_gen::models::OrganizationInvites) -> PermissionInviteProto {
+pub fn invite_to_proto(
+    invite: crate::flash_gen::models::OrganizationInvites,
+) -> PermissionInviteProto {
     PermissionInviteProto {
         id: invite.id,
         email: invite.email,

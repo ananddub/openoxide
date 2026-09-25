@@ -76,6 +76,10 @@ message PermissionMember {
   optional PermissionUserRole role = 6;
   int64 created_at = 7;
   int64 updated_at = 8;
+  // Permission group granting this member's fine-grained actions; 0 when none.
+  int64 group_id = 9;
+  // Display name of `group_id`, absent when no group is assigned.
+  optional string group_name = 10;
 }
 
 // Pending organization invitation.
@@ -184,7 +188,8 @@ message GetMyPermissionsResponse {
 message PermissionAssignMemberGroupRequest {
   // User id of the member whose group assignment changes.
   int64 id = 1 [(buf.validate.field).int64.gt = 0];
-  int64 group_id = 2 [(buf.validate.field).int64.gt = 0];
+  // New permission group; 0 detaches the member from every group (role-only access).
+  int64 group_id = 2;
 }
 
 message PermissionListMembersRequest {}
@@ -197,6 +202,8 @@ message PermissionAddMemberRequest {
   string email = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 320];
   optional string password = 2 [(buf.validate.field).string.max_len = 1024];
   PermissionUserRole role = 3 [(buf.validate.field).enum = {defined_only: true, not_in: [0, 1]}];
+  // Permission group for the new membership; access comes from the role only when absent.
+  optional int64 group_id = 4 [(buf.validate.field).int64.gt = 0];
 }
 
 message PermissionUpdateMemberRoleRequest {
@@ -219,7 +226,8 @@ message PermissionListInvitesResponse {
 message PermissionCreateInviteRequest {
   string email = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 320];
   PermissionUserRole role = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0, 1]}];
-  int64 group_id = 3 [(buf.validate.field).int64.gt = 0];
+  // Permission group carried into the membership on accept; 0 means role-only access.
+  int64 group_id = 3;
 }
 
 message PermissionCreateInviteResponse {

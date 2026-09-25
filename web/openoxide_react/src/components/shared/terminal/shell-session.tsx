@@ -92,10 +92,11 @@ export function ShellSession({
 		host.innerHTML = '';
 		const term = new Xterm({
 			cursorBlink: true,
-			lineHeight: 1.35,
-			fontSize: 13,
+			lineHeight: 1.4,
+			fontSize: 12.5,
+			// xterm only resolves literal family names — CSS vars never reach it.
 			fontFamily:
-				'var(--font-mono, ui-monospace), Menlo, Monaco, Consolas, monospace',
+				"'Geist Mono', ui-monospace, 'SF Mono', Menlo, Monaco, monospace",
 			theme: xtermTheme,
 		});
 		const fitAddon = new FitAddon();

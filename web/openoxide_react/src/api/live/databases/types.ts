@@ -23,6 +23,7 @@ export type DatabasePayload = {
 	id: bigint;
 	kind: string;
 	name: string;
+	app_name?: string;
 	description?: string;
 	docker_image: string;
 	database_name?: string;
@@ -51,6 +52,7 @@ export function toDatabasePayload(database: Database): DatabasePayload {
 		id: database.id,
 		kind: (DatabaseKind[database.kind] ?? '').toLowerCase(),
 		name: database.name,
+		app_name: database.appName,
 		description: database.description,
 		docker_image: database.dockerImage,
 		database_name: database.databaseName,

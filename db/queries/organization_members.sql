@@ -10,10 +10,10 @@ SELECT role FROM organization_members WHERE user_id=? AND organization_id=?;
 SELECT id AS id, role AS role, user_id AS user_id, organization_id AS organization_id, created_at AS created_at, updated_at AS updated_at FROM organization_members WHERE organization_id = ? ORDER BY created_at ASC, id ASC;
 
 -- name: OrganizationMembersListWithUserForOrganization :many
-SELECT om.id AS id, om.role AS role, om.user_id AS user_id, om.organization_id AS organization_id, om.created_at AS created_at, om.updated_at AS updated_at, u.email AS email, u.avatar AS avatar FROM organization_members om JOIN users u ON u.id = om.user_id WHERE om.organization_id = ? ORDER BY om.created_at ASC, om.id ASC;
+SELECT om.id AS id, om.role AS role, om.user_id AS user_id, om.organization_id AS organization_id, om.created_at AS created_at, om.updated_at AS updated_at, om.group_id AS group_id, u.email AS email, u.avatar AS avatar, COALESCE(g.name, '') AS group_name FROM organization_members om JOIN users u ON u.id = om.user_id LEFT JOIN groups g ON g.id = om.group_id WHERE om.organization_id = ? ORDER BY om.created_at ASC, om.id ASC;
 
 -- name: OrganizationMembersUpdateRole :exec
-UPDATE organization_members SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND organization_id = ?;
+UPDATE organization_members SET role = ?, updated_at = unixepoch() WHERE user_id = ? AND organization_id = ?;
 
 -- name: OrganizationMembersRemoveMember :exec
 DELETE FROM organization_members WHERE user_id = ? AND organization_id = ?;
@@ -41,3 +41,6 @@ INSERT INTO organization_members (role, user_id, organization_id, group_id) VALU
 
 -- name: OrganizationMembersAddMemberWithGroup :exec
 INSERT INTO organization_members (role, user_id, organization_id, group_id) VALUES (?, ?, ?, ?);
+
+-- name: OrganizationMembersClearGroup :many
+UPDATE organization_members SET group_id = NULL, updated_at = unixepoch() WHERE user_id = ? AND organization_id = ? RETURNING id;

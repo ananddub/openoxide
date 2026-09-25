@@ -8,6 +8,7 @@ import {
 	UserMinus,
 } from 'lucide-react';
 import {cn} from '#/api/utils';
+import {SIDEBAR_COLLAPSE} from '#/components/ui/sidebar';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -48,7 +49,6 @@ export function AccountSwitcher({collapsed}: Props) {
 					<div
 						className={cn(
 							'flex h-full w-full items-stretch overflow-hidden rounded-md transition-colors hover:bg-sidebar-accent',
-							collapsed && 'justify-center',
 						)}>
 						{/* Left half: avatar + workspace name (the identity) */}
 						<DropdownMenuTrigger
@@ -56,8 +56,9 @@ export function AccountSwitcher({collapsed}: Props) {
 								<button
 									type="button"
 									className={cn(
-										'flex h-full min-w-0 flex-1 items-center text-start transition-colors',
-										collapsed ? 'justify-center px-0' : 'gap-2.5 px-1.5',
+									'flex h-full min-w-0 flex-1 items-center gap-2.5 px-1.5 text-start transition-[padding,gap,color]',
+									SIDEBAR_COLLAPSE,
+									collapsed && 'gap-0 px-0 pl-[calc((var(--sidebar-width-icon)_-_2.5rem)/2)]',
 									)}
 									aria-haspopup="dialog"
 									title={collapsed ? activeOrg?.name : undefined}>
@@ -66,11 +67,13 @@ export function AccountSwitcher({collapsed}: Props) {
 											<Building2 className="size-3.5" />
 										)}
 									</div>
-									{!collapsed && (
-										<span className="min-w-0 flex-1 truncate text-[13px] leading-tight font-medium text-foreground">
-											{activeOrg?.name || 'Workspace'}
-										</span>
-									)}
+								<span
+									className={cn(
+										'min-w-0 flex-1 truncate text-[13px] leading-tight font-medium text-foreground transition-opacity duration-200 ease-out motion-reduce:transition-none',
+										collapsed && 'opacity-0',
+									)}>
+									{activeOrg?.name || 'Workspace'}
+								</span>
 								</button>
 							}
 						/>{' '}

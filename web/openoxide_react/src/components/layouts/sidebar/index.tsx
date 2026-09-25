@@ -1,5 +1,8 @@
+import {useRef} from 'react';
 import {useLocation} from '@tanstack/react-router';
 import {
+	SIDEBAR_CENTER_X,
+	SIDEBAR_COLLAPSE,
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
@@ -10,22 +13,12 @@ import {
 	SidebarSeparator,
 	useSidebar,
 } from '#/components/ui/sidebar';
-import {useNavigate} from '@tanstack/react-router';
-import {
-	LogOut,
-	Moon,
-	PanelLeftClose,
-	PanelLeftOpen,
-	Search,
-	Settings,
-	Sun,
-} from 'lucide-react';
+import {Moon, Search, Sun} from 'lucide-react';
 import {toast} from 'sonner';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
 import {useTheme} from '#/hooks/ui/use-theme';
@@ -34,6 +27,7 @@ import {useProfile} from '#/api/live';
 import {getAvatarInitials, isSolidColorAvatar} from '#/lib/avatar-utils';
 import {cn} from '#/api/utils';
 import {MENU} from './enum';
+import {NavActivePill} from './nav-active-pill';
 import {PageContextNav} from './page-context-nav';
 import {NavSection} from './nav-section';
 import {AccountSwitcher} from './account-switcher';
@@ -62,9 +56,9 @@ export function AppSidebar() {
 		typeof location.search === 'object' && location.search
 			? (location.search as Record<string, string>).tab
 			: undefined;
-	const navigate = useNavigate();
-	const {state, isMobile, toggleSidebar} = useSidebar();
+	const {state, isMobile} = useSidebar();
 	const collapsed = state === 'collapsed' && !isMobile;
+	const navRef = useRef<HTMLElement | null>(null);
 	const {theme, toggleTheme} = useTheme();
 	const {user: authUser, logout} = useAuthSession();
 	const {data: profile} = useProfile();
@@ -90,7 +84,8 @@ export function AppSidebar() {
 
 				{/* ── Nav sections ───────────────────────────────────── */}
 				<SidebarContent className="relative min-h-0 flex-1 overflow-hidden px-0">
-					<nav className="h-full overflow-y-auto pt-4 pb-6">
+					<nav ref={navRef} className="relative h-full overflow-y-auto pt-4 pb-6">
+						<NavActivePill navRef={navRef} />
 						{/* ── Search trigger ────────────────────────────────
 						    Same row grammar as the nav items; opens the global
 						    command palette (Ctrl/Cmd+K). */}
@@ -102,19 +97,22 @@ export function AppSidebar() {
 										onClick={triggerSearch}
 										title={collapsed ? 'Search (Ctrl+K)' : undefined}
 										className={cn(
-											'relative flex w-full items-center rounded-md px-2 py-1.5 text-[13px] transition-colors outline-none',
-											collapsed ? 'justify-center' : 'gap-2',
+											'relative flex w-full items-center gap-2 rounded-lg border border-foreground/15 bg-muted/40 px-2 py-1.5 text-[13px] outline-none transition-[padding,gap,color,background-color]',
+											SIDEBAR_COLLAPSE,
+											collapsed && cn(SIDEBAR_CENTER_X, 'gap-0'),
 											'font-normal text-muted-foreground hover:bg-sidebar-accent hover:text-foreground',
 										)}>
 										<Search
 											className="size-4 shrink-0"
 											strokeWidth={1.7}
 										/>
-										{!collapsed && (
-											<span className="flex-1 truncate text-start">
-												Search
-											</span>
-										)}
+										<span
+											className={cn(
+												'flex-1 truncate text-start transition-opacity duration-200 ease-out motion-reduce:transition-none',
+												collapsed && 'opacity-0',
+											)}>
+											Search
+										</span>
 										{!collapsed && (
 											<kbd className="rounded border border-border/60 bg-sidebar-accent/50 px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
 												⌘K
@@ -125,39 +123,45 @@ export function AppSidebar() {
 							</SidebarMenu>
 						</SidebarGroup>
 						{/* ── Service/settings context swaps the rail; otherwise
-						    the global menu (project pages keep it too). ── */}
-						<PageContextNav collapsed={collapsed} />
-						{!contextActive && (
-							<>
-								<NavSection
-									items={MENU.main}
-									currentPath={location.pathname}
-									currentTab={currentTab}
-									collapsed={collapsed}
-								/>
-								<SidebarSeparator className="mx-3 my-2 ml-4" />
-								<NavSection
-									items={MENU.infrastructure}
-									currentPath={location.pathname}
-									currentTab={currentTab}
-									collapsed={collapsed}
-								/>
-								<SidebarSeparator className="mx-3 my-2 ml-4" />
-								<NavSection
-									items={MENU.resources}
-									currentPath={location.pathname}
-									currentTab={currentTab}
-									collapsed={collapsed}
-								/>
-								<SidebarSeparator className="mx-3 my-2 ml-4" />
-								<NavSection
-									items={MENU.system}
-									currentPath={location.pathname}
-									currentTab={currentTab}
-									collapsed={collapsed}
-								/>
-							</>
-						)}
+						    the global menu (project pages keep it too). The key
+						    remounts on swap so the rail cross-fades. ── */}
+						<div
+							key={contextActive ? 'context' : 'global'}
+							className="animate-in duration-200 ease-out fade-in-0">
+							{contextActive ? (
+								<PageContextNav collapsed={collapsed} />
+							) : (
+								<>
+									<NavSection
+										items={MENU.main}
+										currentPath={location.pathname}
+										currentTab={currentTab}
+										collapsed={collapsed}
+									/>
+									<SidebarSeparator className="mx-3 my-2 ml-4" />
+									<NavSection
+										items={MENU.infrastructure}
+										currentPath={location.pathname}
+										currentTab={currentTab}
+										collapsed={collapsed}
+									/>
+									<SidebarSeparator className="mx-3 my-2 ml-4" />
+									<NavSection
+										items={MENU.resources}
+										currentPath={location.pathname}
+										currentTab={currentTab}
+										collapsed={collapsed}
+									/>
+									<SidebarSeparator className="mx-3 my-2 ml-4" />
+									<NavSection
+										items={MENU.system}
+										currentPath={location.pathname}
+										currentTab={currentTab}
+										collapsed={collapsed}
+									/>
+								</>
+							)}
+						</div>
 					</nav>
 					{/* Scroll fade: ramps from the rail surface color. */}
 					<div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-sidebar to-transparent" />
@@ -197,41 +201,28 @@ export function AppSidebar() {
 												{initials}
 											</span>
 										)}
-										{!collapsed && (
-											<span className="min-w-0 flex-1 truncate text-[13px] leading-tight font-medium text-foreground">
-												{displayName}
-											</span>
-										)}
+										<span
+											className={cn(
+												'min-w-0 flex-1 truncate text-[13px] leading-tight font-medium text-foreground transition-opacity duration-200 ease-out motion-reduce:transition-none',
+												collapsed && 'opacity-0',
+											)}>
+											{displayName}
+										</span>
 									</button>
 								}
 							/>
 							<DropdownMenuContent
 								side="top"
 								align={collapsed ? 'start' : 'end'}
-								className="min-w-44 rounded-lg">
+								className="min-w-44 rounded-xl p-1.5">
 								<DropdownMenuItem
-									className="text-[13px]"
-									onClick={toggleSidebar}>
-									{collapsed ? (
-										<PanelLeftOpen className="size-4" />
-									) : (
-										<PanelLeftClose className="size-4" />
-									)}
-									Collapse sidebar
-								</DropdownMenuItem>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem
-									className="text-[13px]"
-									onClick={() => void navigate({to: '/settings'})}>
-									<Settings className="size-4" /> Settings
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									className="text-[13px]"
+									variant="destructive"
+									className="cursor-pointer gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium"
 									onClick={() => {
 										logout();
 										toast.success('Signed out');
 									}}>
-									<LogOut className="size-4" /> Log out
+									Log out
 								</DropdownMenuItem>
 							</DropdownMenuContent>
 						</DropdownMenu>

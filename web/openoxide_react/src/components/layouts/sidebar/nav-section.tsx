@@ -1,6 +1,8 @@
 import {Link} from '@tanstack/react-router';
 import {ChevronRight} from 'lucide-react';
 import {
+	SIDEBAR_CENTER_X,
+	SIDEBAR_COLLAPSE,
 	SidebarGroup,
 	SidebarMenu,
 	SidebarMenuItem,
@@ -55,6 +57,7 @@ export function NavSection({
 						<SidebarMenuItem key={single.to}>
 							<Link
 								to={basePath as '/'}
+								data-nav-active={active || undefined}
 								search={
 									query
 										? (Object.fromEntries(
@@ -64,21 +67,27 @@ export function NavSection({
 								}
 								title={collapsed ? single.title : undefined}
 								className={cn(
-									'relative flex items-center rounded-md px-2 py-1.5 text-[13px] transition-colors outline-none',
-									collapsed ? 'justify-center' : 'gap-2',
-									// Geist: selected = Color 1 fill + gray-1000 text;
-									// hover = one step lighter. No left-edge bar.
+									'relative flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] outline-none transition-[padding,gap,color,background-color]',
+									SIDEBAR_COLLAPSE,
+									// Padding centers the icon — justify-center would teleport it a frame early.
+									collapsed && cn(SIDEBAR_CENTER_X, 'gap-0'),
+									// The fill is one shared pill that slides between rows
+									// (NavActivePill) — each row carries its text state only.
 									active
-										? 'bg-sidebar-active font-medium text-foreground'
+										? 'font-medium text-foreground'
 										: 'font-normal text-muted-foreground hover:bg-sidebar-accent hover:text-foreground',
 								)}>
 								<single.icon
 									className="size-4 shrink-0"
 									strokeWidth={1.7}
 								/>
-								{!collapsed && (
-									<span className="flex-1 truncate">{single.title}</span>
-								)}
+								<span
+									className={cn(
+										'min-w-0 flex-1 truncate transition-opacity duration-200 ease-out motion-reduce:transition-none',
+										collapsed && 'opacity-0',
+									)}>
+									{single.title}
+								</span>
 								{/* This route swaps the rail to its own context rows —
 								    signal it before the click. */}
 								{!collapsed && single.railContext && (

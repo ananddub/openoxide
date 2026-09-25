@@ -1,5 +1,6 @@
 import type {ComposeAdvancedTabProps} from './compose-advanced-tab/types';
 import {CommandSection} from './compose-advanced-tab/command-section';
+import {RandomizeSection} from './compose-advanced-tab/randomize-section';
 import {VolumesSection} from './compose-advanced-tab/volumes-section';
 import {DangerSection} from './compose-advanced-tab/danger-section';
 import {SectionHeader} from '#/components/settings/list-card';
@@ -18,6 +19,7 @@ export function ComposeAdvancedTab({
 			/>
 			<div className="overflow-hidden rounded-xl border border-border bg-card">
 				<CommandSection compose={compose} onUpdated={onUpdated} />
+				<RandomizeSection compose={compose} onUpdated={onUpdated} />
 				<VolumesSection compose={compose} />
 				<DangerSection compose={compose} projectId={projectId} />
 			</div>

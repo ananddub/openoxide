@@ -25,4 +25,4 @@ SELECT id AS id, email AS email, role AS role, status AS status, token AS token,
 UPDATE organization_invites SET status = ? WHERE id = ? AND status = 'PENDING';
 
 -- name: OrganizationInvitesPurgeExpired :exec
-UPDATE organization_invites SET status = 'REJECTED' WHERE status = 'PENDING' AND expired_at <= CURRENT_TIMESTAMP;
+UPDATE organization_invites SET status = 'REJECTED' WHERE status = 'PENDING' AND expired_at <= unixepoch();

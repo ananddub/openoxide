@@ -160,7 +160,7 @@ impl Queries {
         &self,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE organization_invites SET status = 'REJECTED' WHERE status = 'PENDING' AND expired_at <= CURRENT_TIMESTAMP;"
+            "UPDATE organization_invites SET status = 'REJECTED' WHERE status = 'PENDING' AND expired_at <= unixepoch();"
         )
         .execute(&self.pool)
         .await?;

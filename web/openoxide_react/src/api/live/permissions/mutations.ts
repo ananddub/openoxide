@@ -2,7 +2,7 @@ import {useConnectMutation} from '../query';
 import {permissionClient} from './shared';
 import {PermissionUserRole} from '#/gen/connect/openoxide/api/v1/permission_pb';
 
-/** Legacy role strings ("owner", "OWNER", "developer", "viewer", ...) → the membership enum; only OWNER/ADMIN/MEMBER exist server-side, so any other value (or an absent role) maps to UNSPECIFIED. */
+/** Legacy role strings ("owner", "OWNER", "developer", "viewer", ...) → the membership enum. The server only stores OWNER/ADMIN/MEMBER; "developer"/"viewer" are UI shorthand for MEMBER plus a permission group. */
 function parseRole(value: unknown): PermissionUserRole {
 	switch (String(value ?? '').toUpperCase()) {
 		case 'OWNER':
@@ -10,19 +10,22 @@ function parseRole(value: unknown): PermissionUserRole {
 		case 'ADMIN':
 			return PermissionUserRole.ADMIN;
 		case 'MEMBER':
+		case 'DEVELOPER':
+		case 'VIEWER':
 			return PermissionUserRole.MEMBER;
 		default:
 			return PermissionUserRole.UNSPECIFIED;
 	}
 }
 
-/** Add a member to the active organization (email/role/password fields). */
+/** Add a member to the active organization (email/role/password/group fields). */
 export function useMemberAdd() {
 	return useConnectMutation(
 		(input: {
 			email?: string;
 			role?: string;
 			password?: string;
+			group_id?: number | bigint;
 			[key: string]: unknown;
 		}) =>
 			permissionClient.addMember({
@@ -32,6 +35,10 @@ export function useMemberAdd() {
 						? input.password
 						: undefined,
 				role: parseRole(input.role),
+				groupId:
+					input.group_id === undefined || input.group_id === null
+						? undefined
+						: BigInt(input.group_id),
 			}),
 		{invalidate: [['permission-members']]},
 	);
@@ -58,7 +65,7 @@ export function useMemberRemove() {
 	);
 }
 
-/** Create an invitation (email/role/group_id fields); resolves to the opaque invite token the email link carries. */
+/** Create an invitation (email/role/group_id fields); resolves to the opaque invite token the email link carries. group_id 0 means the invitee joins with role-only access. */
 export function useInviteCreate() {
 	return useConnectMutation(
 		(input: {
@@ -70,10 +77,7 @@ export function useInviteCreate() {
 			permissionClient.createInvite({
 				email: String(input.email ?? ''),
 				role: parseRole(input.role),
-				groupId:
-					input.group_id === undefined || input.group_id === null
-						? 0n
-						: BigInt(input.group_id),
+				groupId: BigInt(input.group_id ?? 0),
 			}),
 		{invalidate: [['permission-invites']]},
 	);
@@ -124,12 +128,12 @@ export function usePermissionGroupDelete() {
 	);
 }
 
-/** Attach a permission group to an organization member. */
+/** Attach a permission group to an organization member. `user_id` — the backend keys memberships by user id, not row id. */
 export function useMemberGroupAssign() {
 	return useConnectMutation(
-		(input: {member_id: number | bigint; group_id: number | bigint}) =>
+		(input: {user_id: number | bigint; group_id: number | bigint}) =>
 			permissionClient.assignMemberGroup({
-				id: BigInt(input.member_id),
+				id: BigInt(input.user_id),
 				groupId: BigInt(input.group_id),
 			}),
 		{invalidate: [['permission-members']]},

@@ -15,6 +15,8 @@ import {
 import {TooltipProvider} from '#/components/ui/tooltip';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {Toaster} from '#/components/ui/sonner';
+import '@fontsource/geist-mono/400.css';
+import '@fontsource/geist-mono/500.css';
 import '#/styles/index.css';
 
 const authClient = createServiceClient(AuthService);

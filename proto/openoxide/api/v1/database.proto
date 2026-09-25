@@ -63,6 +63,8 @@ message Database {
   optional int64 server_id = 20;
   int64 created_at = 21;
   int64 updated_at = 22;
+  // Real container/service handle (`postgres-test-1ed127`); `name` is the human label. Log streams and exec target this, never `name`, so same-labeled DBs don't collide.
+  optional string app_name = 23;
 }
 message GetDatabaseRequest {
   DatabaseKind kind = 1;

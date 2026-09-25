@@ -22,8 +22,10 @@ pub struct OrganizationMembersListWithUserForOrganizationRow {
     pub organization_id: Option<i64>,
     pub created_at: Option<i64>,
     pub updated_at: Option<i64>,
+    pub group_id: Option<i64>,
     pub email: Option<String>,
     pub avatar: String,
+    pub group_name: Option<String>,
 }
 
 pub type OrganizationMembersGetAllRow = OrganizationMembersListForOrganizationRow;
@@ -112,7 +114,7 @@ impl Queries {
         organization_id: i64,
     ) -> Result<Vec<OrganizationMembersListWithUserForOrganizationRow>, sqlx::Error> {
         sqlx::query_as::<_, OrganizationMembersListWithUserForOrganizationRow>(
-            "SELECT om.id AS id, om.role AS role, om.user_id AS user_id, om.organization_id AS organization_id, om.created_at AS created_at, om.updated_at AS updated_at, u.email AS email, u.avatar AS avatar FROM organization_members om JOIN users u ON u.id = om.user_id WHERE om.organization_id = ? ORDER BY om.created_at ASC, om.id ASC;"
+            "SELECT om.id AS id, om.role AS role, om.user_id AS user_id, om.organization_id AS organization_id, om.created_at AS created_at, om.updated_at AS updated_at, om.group_id AS group_id, u.email AS email, u.avatar AS avatar, COALESCE(g.name, '') AS group_name FROM organization_members om JOIN users u ON u.id = om.user_id LEFT JOIN groups g ON g.id = om.group_id WHERE om.organization_id = ? ORDER BY om.created_at ASC, om.id ASC;"
         )
         .bind(organization_id)
         .fetch_all(&self.pool)
@@ -125,7 +127,7 @@ impl Queries {
         params: &OrganizationMembersUpdateRoleParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "UPDATE organization_members SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND organization_id = ?;"
+            "UPDATE organization_members SET role = ?, updated_at = unixepoch() WHERE user_id = ? AND organization_id = ?;"
         )
         .bind(&params.role)
         .bind(&params.user_id)
@@ -274,6 +276,21 @@ impl Queries {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+
+    /// OrganizationMembersClearGroup
+    pub async fn organization_members_clear_group(
+        &self,
+        user_id: i64,
+        organization_id: i64,
+    ) -> Result<Vec<i64>, sqlx::Error> {
+        sqlx::query_scalar::<sqlx::Sqlite, i64>(
+            "UPDATE organization_members SET group_id = NULL, updated_at = unixepoch() WHERE user_id = ? AND organization_id = ? RETURNING id;"
+        )
+        .bind(user_id)
+        .bind(organization_id)
+        .fetch_all(&self.pool)
+        .await
     }
 
 }

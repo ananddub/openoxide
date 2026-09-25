@@ -41,6 +41,8 @@ function toMemberPayload(
 		role: roleName(member.role),
 		created_at: member.createdAt,
 		updated_at: member.updatedAt,
+		group_id: member.groupId,
+		group_name: member.groupName ?? null,
 	};
 }
 

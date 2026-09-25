@@ -1,4 +1,3 @@
-
 use connectrpc::{ConnectError, ErrorCode};
 
 use crate::api::connect::generated::openoxide::api::v1::{
@@ -22,7 +21,9 @@ pub fn kind_to_proto(kind: DatabaseKind) -> ProtoDatabaseKind {
     }
 }
 
-pub fn proto_to_kind(value: ::buffa::EnumValue<ProtoDatabaseKind>) -> Result<DatabaseKind, ConnectError> {
+pub fn proto_to_kind(
+    value: ::buffa::EnumValue<ProtoDatabaseKind>,
+) -> Result<DatabaseKind, ConnectError> {
     match value {
         ::buffa::EnumValue::Known(ProtoDatabaseKind::Postgres) => Ok(DatabaseKind::Postgres),
         ::buffa::EnumValue::Known(ProtoDatabaseKind::Mysql) => Ok(DatabaseKind::Mysql),
@@ -34,11 +35,14 @@ pub fn proto_to_kind(value: ::buffa::EnumValue<ProtoDatabaseKind>) -> Result<Dat
     }
 }
 
-pub fn record_to_proto(record: crate::services::compute::database::DatabaseRecord) -> DatabaseProto {
+pub fn record_to_proto(
+    record: crate::services::compute::database::DatabaseRecord,
+) -> DatabaseProto {
     DatabaseProto {
         kind: ::buffa::EnumValue::Known(kind_to_proto(record.kind)),
         id: record.id,
         name: record.name,
+        app_name: Some(record.app_name),
         description: record.description,
         docker_image: record.docker_image,
         database_name: record.database_name,

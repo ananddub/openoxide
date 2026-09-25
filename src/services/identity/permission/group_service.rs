@@ -25,7 +25,9 @@ use crate::flash_gen::{
 use super::{PermissionService, UserRole};
 use crate::services::identity::auth::{hash_password, notification_configs_for_user};
 use crate::services::integrations::notification::senders::send_resend_to;
-use crate::services::integrations::notification::{email::send_email_to, message::NotificationMessage};
+use crate::services::integrations::notification::{
+    email::send_email_to, message::NotificationMessage,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct SavePermissionGroupDto {
@@ -66,6 +68,9 @@ pub struct AddOrganizationMemberDto {
     pub email: String,
     pub password: Option<String>,
     pub role: String,
+    /// Permission group for the new membership; access comes from the role
+    /// only when the caller does not pick one.
+    pub group_id: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -257,9 +262,11 @@ impl PermissionGroupService {
         organization_id: i64,
         invite_id: i64,
     ) -> Result<(), PermissionGroupError> {
-        let invite = self.queries.organization_invites_get_by_id(invite_id).await?;
-        if invite.organization_id != organization_id
-            || invite.status.as_deref() != Some("PENDING")
+        let invite = self
+            .queries
+            .organization_invites_get_by_id(invite_id)
+            .await?;
+        if invite.organization_id != organization_id || invite.status.as_deref() != Some("PENDING")
         {
             return Err(PermissionGroupError::NotFound);
         }
@@ -308,14 +315,28 @@ impl PermissionGroupService {
                 "user is already an organization member".into(),
             ));
         }
-        self.queries
-            .organization_members_add_member_with_group(&OrganizationMembersAddMemberWithGroupParams {
-                role: invite.role.clone().unwrap_or_else(|| "MEMBER".into()),
-                user_id,
-                organization_id: invite.organization_id,
-                group_id: invite.group_id,
-            })
-            .await?;
+        if invite.group_id == 0 {
+            self.queries
+                .organization_members_add_member_in_transaction(
+                    &OrganizationMembersUpdateRoleParams {
+                        role: invite.role.clone().unwrap_or_else(|| "MEMBER".into()),
+                        user_id,
+                        organization_id: invite.organization_id,
+                    },
+                )
+                .await?;
+        } else {
+            self.queries
+                .organization_members_add_member_with_group(
+                    &OrganizationMembersAddMemberWithGroupParams {
+                        role: invite.role.clone().unwrap_or_else(|| "MEMBER".into()),
+                        user_id,
+                        organization_id: invite.organization_id,
+                        group_id: invite.group_id,
+                    },
+                )
+                .await?;
+        }
         self.queries
             .organization_invites_set_status("ACCEPTED", invite.id)
             .await?;
@@ -420,24 +441,46 @@ impl PermissionGroupService {
             Err(error) => return Err(error.into()),
         };
 
-        if self
-            .member_role(user_id, organization_id)
-            .await?
-            .is_some()
-        {
+        if self.member_role(user_id, organization_id).await?.is_some() {
             return Err(PermissionGroupError::Invalid(
                 "user is already a member of this organization".into(),
             ));
         }
 
-        self.queries
-            .organization_members_add_member_with_group(&OrganizationMembersAddMemberWithGroupParams {
-                role,
-                user_id,
-                organization_id,
-                group_id: 1,
-            })
-            .await?;
+        match body.group_id {
+            Some(group_id) => {
+                let hit = self
+                    .queries
+                    .permission_groups_valid_group_scope(group_id, organization_id)
+                    .await?;
+                if hit == 0 {
+                    return Err(PermissionGroupError::Invalid(
+                        "permission group not found for this organization".into(),
+                    ));
+                }
+                self.queries
+                    .organization_members_add_member_with_group(
+                        &OrganizationMembersAddMemberWithGroupParams {
+                            role,
+                            user_id,
+                            organization_id,
+                            group_id,
+                        },
+                    )
+                    .await?;
+            }
+            None => {
+                self.queries
+                    .organization_members_add_member_in_transaction(
+                        &OrganizationMembersUpdateRoleParams {
+                            role,
+                            user_id,
+                            organization_id,
+                        },
+                    )
+                    .await?;
+            }
+        }
         Ok(())
     }
 
@@ -464,11 +507,7 @@ impl PermissionGroupService {
                 "you cannot demote yourself".into(),
             ));
         }
-        if self
-            .member_role(user_id, organization_id)
-            .await?
-            .is_none()
-        {
+        if self.member_role(user_id, organization_id).await?.is_none() {
             return Err(PermissionGroupError::NotFound);
         }
         self.queries
@@ -506,11 +545,7 @@ impl PermissionGroupService {
                 "you cannot remove yourself".into(),
             ));
         }
-        if self
-            .member_role(user_id, organization_id)
-            .await?
-            .is_none()
-        {
+        if self.member_role(user_id, organization_id).await?.is_none() {
             return Err(PermissionGroupError::NotFound);
         }
         self.queries
@@ -597,7 +632,10 @@ impl PermissionGroupService {
             .await?;
         for policy_id in &policy_ids {
             self.queries
-                .permission_groups_add_policy_to_group(&group_id.to_string(), &policy_id.to_string())
+                .permission_groups_add_policy_to_group(
+                    &group_id.to_string(),
+                    &policy_id.to_string(),
+                )
                 .await?;
         }
         self.audit(
@@ -657,6 +695,25 @@ impl PermissionGroupService {
     ) -> Result<(), PermissionGroupError> {
         self.ensure_manageable_target(actor_id, user_id, organization_id)
             .await?;
+        if group_id == 0 {
+            let cleared = self
+                .queries
+                .organization_members_clear_group(user_id, organization_id)
+                .await?;
+            if cleared.is_empty() {
+                return Err(PermissionGroupError::NotFound);
+            }
+            self.audit(
+                actor_id,
+                organization_id,
+                "PERMISSION_GROUP_ASSIGNED",
+                "organization_member",
+                Some(user_id.to_string()),
+                Some(serde_json::json!({"group_id": 0}).to_string()),
+            )
+            .await;
+            return Ok(());
+        }
         let actions = self.queries.group_actions(group_id).await?;
         self.ensure_subset(actor_id, organization_id, &actions)
             .await?;

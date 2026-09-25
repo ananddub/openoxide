@@ -66,6 +66,8 @@ pub struct ComposeRecord {
     pub command: String,
     pub compose_path: String,
     pub service_networks: String,
+    pub randomize: bool,
+    pub suffix: Option<String>,
     pub environment_id: i64,
     pub server_id: Option<i64>,
     pub created_at: i64,
@@ -110,8 +112,12 @@ pub struct ComposeOperationResult {
     pub operation: ComposeOperation,
 }
 
-impl From<(crate::flash_gen::models::Services, crate::flash_gen::models::ServiceCompose, Option<crate::flash_gen::models::ServiceGit>)>
-    for ComposeRecord
+impl
+    From<(
+        crate::flash_gen::models::Services,
+        crate::flash_gen::models::ServiceCompose,
+        Option<crate::flash_gen::models::ServiceGit>,
+    )> for ComposeRecord
 {
     fn from(
         (service, ext, git): (
@@ -171,10 +177,14 @@ impl From<(crate::flash_gen::models::Services, crate::flash_gen::models::Service
                         .or_else(|| g.custom_git_build_path.clone()),
                 )
             }),
-            custom_git_ssh_key_id: git.and_then(|g| g.custom_git_ssh_key_id).filter(|v| *v != 0),
+            custom_git_ssh_key_id: git
+                .and_then(|g| g.custom_git_ssh_key_id)
+                .filter(|v| *v != 0),
             command: service.command.unwrap_or_default(),
             compose_path: ext.compose_path,
             service_networks: ext.service_networks,
+            randomize: ext.randomize != 0,
+            suffix: normalize(Some(ext.suffix)),
             environment_id: service.environment_id,
             server_id: service.server_id,
             created_at: service.created_at,

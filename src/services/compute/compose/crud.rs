@@ -154,7 +154,10 @@ impl ComposeService {
             .as_deref()
             .or(current.description.as_deref());
         let env_var = input.env_var.as_deref().or(current.env_var.as_deref());
-        let compose_file = input.compose_file.as_deref().unwrap_or(&current.compose_file);
+        let compose_file = input
+            .compose_file
+            .as_deref()
+            .unwrap_or(&current.compose_file);
         let compose_type = match input.compose_type {
             Some(value) => value.as_str(),
             None => ComposeType::from_str(&ext.compose_type)
@@ -171,6 +174,9 @@ impl ComposeService {
             .unwrap_or_else(|| current.service_networks.clone());
 
         let suffix = match (input.suffix, input.randomize) {
+            // Turning randomization off drops the stale suffix so services
+            // redeploy under their literal compose names.
+            (_, Some(0)) => Some(String::new()),
             (Some(value), _) if !value.trim().is_empty() => Some(value),
             (_, Some(1)) if ext.suffix.trim().is_empty() => Some(generate_random_suffix()),
             (value, _) => value,
@@ -181,13 +187,11 @@ impl ComposeService {
             .update_service_env_var(env_var.unwrap_or_default(), id)
             .await?;
         self.queries
-            .update_service_command(
-                &UpdateServiceCommandParams {
-                    command: command.unwrap_or_default().to_string(),
-                    args: String::new(),
-                    id,
-                },
-            )
+            .update_service_command(&UpdateServiceCommandParams {
+                command: command.unwrap_or_default().to_string(),
+                args: String::new(),
+                id,
+            })
             .await?;
         // update_service_server binds a non-Option i64; skip the write when
         // the resolved server is None so the NULL round-trips.
@@ -333,6 +337,8 @@ pub struct ComposeResponseDto {
     pub compose_path: String,
     pub service_networks: Vec<ComposeServiceNetworkDto>,
     pub services: Vec<String>,
+    pub randomize: bool,
+    pub suffix: Option<String>,
     pub environment_id: i64,
     pub server_id: Option<i64>,
     pub created_at: i64,
@@ -434,6 +440,8 @@ impl From<ComposeRecord> for ComposeResponseDto {
             compose_path: value.compose_path,
             service_networks: parse_service_networks(&value.service_networks),
             services,
+            randomize: value.randomize,
+            suffix: value.suffix,
             environment_id: value.environment_id,
             server_id: value.server_id,
             created_at: value.created_at,

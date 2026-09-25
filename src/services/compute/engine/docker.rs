@@ -35,48 +35,52 @@ fn find_best_matching_container<'a>(
     let target_hyphen = target_lower.replace('_', "-");
     let target_underscore = target_lower.replace('-', "_");
 
+    // Rank candidates by specificity instead of taking the first loose hit:
+    // swarm task names (`{service}.N.{task}`) were beating their own service
+    // match on iteration order, letting a compose container sharing the
+    // display-name prefix (`test-76e37f1d_…`) steal a database's log stream.
+    let rank = |name: &str| -> Option<u8> {
+        let base = name.split('.').next().unwrap_or(name);
+        let db_anchored = base.contains(&format!("{target_lower}_db"))
+            || base.contains(&format!("{target_hyphen}_db"))
+            || base.contains(&format!("{target_lower}-db"))
+            || base.contains(&format!("{target_hyphen}-db"));
+        if base == target_lower || base == target_hyphen || base == target_underscore {
+            Some(0)
+        } else if db_anchored {
+            Some(1)
+        } else if base.starts_with(&format!("{target_lower}_"))
+            || base.starts_with(&format!("{target_hyphen}_"))
+            || base.starts_with(&format!("{target_lower}-"))
+            || base.starts_with(&format!("{target_hyphen}-"))
+        {
+            Some(2)
+        } else if base.ends_with(&format!("-{target_lower}-1"))
+            || base.ends_with(&format!("_{target_lower}_1"))
+            || base.ends_with(&format!("-{target_lower}"))
+            || base.ends_with(&format!("_{target_lower}"))
+        {
+            Some(3)
+        } else if base.contains(&format!("-{target_lower}-"))
+            || base.contains(&format!("-{target_hyphen}-"))
+            || base.contains(&format!("_{target_lower}_"))
+        {
+            Some(4)
+        } else if base.contains(&target_lower) || base.contains(&target_hyphen) {
+            Some(5)
+        } else {
+            None
+        }
+    };
+
     containers
         .iter()
-        .find(|c| {
-            let name = c.names.trim_start_matches('/').to_lowercase();
-            name == target_lower
-                || name == target_hyphen
-                || name == target_underscore
-                || name.starts_with(&format!("{target_lower}_db"))
-                || name.starts_with(&format!("{target_hyphen}_db"))
-                || name.starts_with(&format!("{target_lower}-db"))
-                || name.starts_with(&format!("{target_hyphen}-db"))
-                || name.starts_with(&format!("{target_lower}_"))
-                || name.starts_with(&format!("{target_hyphen}_"))
-                || name.starts_with(&format!("{target_lower}-"))
-                || name.starts_with(&format!("{target_hyphen}-"))
-                || name.ends_with(&format!("-{target_lower}-1"))
-                || name.ends_with(&format!("_{target_lower}_1"))
-                || name.ends_with(&format!("-{target_lower}"))
-                || name.ends_with(&format!("_{target_lower}"))
-                || name.ends_with(&format!("{target_lower}_db"))
-                || name.ends_with(&format!("{target_lower}_db_1"))
-                || name.ends_with(&format!("{target_lower}-db"))
-                || name.ends_with(&format!("{target_lower}-db-1"))
+        .filter_map(|container| {
+            let name = container.names.trim_start_matches('/');
+            rank(name).map(|rank| (rank, container))
         })
-        .or_else(|| {
-            containers.iter().find(|c| {
-                let name = c.names.trim_start_matches('/').to_lowercase();
-                name.contains(&format!("{target_lower}_db"))
-                    || name.contains(&format!("{target_hyphen}_db"))
-                    || name.contains(&format!("{target_lower}-db"))
-                    || name.contains(&format!("{target_hyphen}-db"))
-                    || name.contains(&format!("-{target_lower}-"))
-                    || name.contains(&format!("-{target_hyphen}-"))
-                    || name.contains(&format!("_{target_lower}_"))
-            })
-        })
-        .or_else(|| {
-            containers.iter().find(|c| {
-                let name = c.names.trim_start_matches('/').to_lowercase();
-                name.contains(&target_lower) || name.contains(&target_hyphen)
-            })
-        })
+        .min_by_key(|(rank, _)| *rank)
+        .map(|(_, container)| container)
 }
 
 impl DeploymentService {
@@ -479,9 +483,8 @@ impl DeploymentService {
             Some(sid) => Some(sid),
             None => {
                 let mut found_sid: Option<i64> = None;
-                let db_queries = [
-                    "SELECT server_id FROM services WHERE app_name = ? OR name = ? LIMIT 1",
-                ];
+                let db_queries =
+                    ["SELECT server_id FROM services WHERE app_name = ? OR name = ? LIMIT 1"];
                 for q in db_queries {
                     if let Ok(Some(row)) = sqlx::query_as::<_, (Option<i64>,)>(q)
                         .bind(&target)
@@ -640,9 +643,11 @@ async fn agent_stats_stream(
     use auto_di::resolve;
     use tokio_stream::StreamExt;
 
-    let monitoring = resolve::<crate::services::observability::monitoring::service::MonitoringService>()
-        .await
-        .map_err(|error| sqlx::Error::Protocol(format!("monitoring Agent unavailable: {error}")))?;
+    let monitoring = resolve::<
+        crate::services::observability::monitoring::service::MonitoringService,
+    >()
+    .await
+    .map_err(|error| sqlx::Error::Protocol(format!("monitoring Agent unavailable: {error}")))?;
     let mut frames = monitoring
         .stream_container_stats(server_id, targets, stream)
         .await

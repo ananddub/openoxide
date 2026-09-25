@@ -76,6 +76,9 @@ message Compose {
   optional string last_error = 28;
   optional string build_path = 29;
   optional int64 custom_git_ssh_key_id = 30;
+  // Name-randomization state: when true, deploy renames every service to `{name}-{suffix}`.
+  bool randomize = 31;
+  optional string suffix = 32;
 }
 message GetComposeRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];
@@ -103,6 +106,8 @@ message UpdateComposeRequest {
   optional int64 server_id = 5;
   repeated string network_ids = 6;
   optional string command = 7;
+  // Toggle service-name randomization. false clears the stored suffix so services keep their literal names.
+  optional bool randomize = 8;
 }
 message DeleteComposeRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];

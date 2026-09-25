@@ -8,6 +8,9 @@ export type OrganizationMemberPayload = {
 	role: string | null;
 	created_at: bigint;
 	updated_at: bigint;
+	/** Permission group granting fine-grained actions; 0 when none. */
+	group_id: bigint;
+	group_name: string | null;
 };
 
 export type OrganizationInvitePayload = {
@@ -41,6 +44,8 @@ export type MemberItem = {
 	avatar?: string;
 	banned?: boolean;
 	created_at?: number;
+	group_id?: bigint;
+	group_name?: string | null;
 };
 
 /** Legacy invite shape the former zustand `invites` slice carried. */

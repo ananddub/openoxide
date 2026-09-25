@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import {cn} from '#/api/utils';
 import {
+	SIDEBAR_CENTER_X,
+	SIDEBAR_COLLAPSE,
 	SidebarGroup,
 	SidebarMenu,
 	SidebarMenuItem,
@@ -162,16 +164,22 @@ function ContextHeader({
 			onClick={onBack}
 			title={collapsed ? 'Back' : undefined}
 			aria-label={`Back — ${label}`}
-			className="flex h-8 w-full cursor-pointer items-center rounded-md px-1 transition-colors outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring/40">
+			className={cn(
+				'flex h-8 w-full cursor-pointer items-center gap-2 rounded-md px-1 outline-none transition-[padding,gap,background-color] hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring/40',
+				SIDEBAR_COLLAPSE,
+				collapsed && cn(SIDEBAR_CENTER_X, 'gap-0'),
+				)}>
 			<ChevronLeft
 				className="size-4 shrink-0 text-muted-foreground"
 				strokeWidth={2}
 			/>
-			{!collapsed && (
-				<span className="min-w-0 flex-1 truncate pr-4 text-center text-sm font-semibold text-foreground">
-					{label}
-				</span>
-			)}
+			<span
+				className={cn(
+					'min-w-0 flex-1 truncate pr-4 text-center text-sm font-semibold text-foreground transition-opacity duration-200 ease-out motion-reduce:transition-none',
+					collapsed && 'opacity-0',
+				)}>
+				{label}
+			</span>
 		</button>
 	);
 }
@@ -195,16 +203,24 @@ function ContextRow({
 			<button
 				type="button"
 				onClick={onClick}
+				data-nav-active={active || undefined}
 				title={collapsed ? label : undefined}
 				className={cn(
-					'relative flex w-full cursor-pointer items-center rounded-md px-2 py-1.5 text-left text-sm transition-colors outline-none',
-					collapsed ? 'justify-center' : 'gap-2',
+					'relative flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] outline-none transition-[padding,gap,color,background-color]',
+					SIDEBAR_COLLAPSE,
+					collapsed && cn(SIDEBAR_CENTER_X, 'gap-0'),
 					active
-						? 'bg-sidebar-active font-medium text-foreground'
+						? 'font-medium text-foreground'
 						: 'font-normal text-muted-foreground hover:bg-sidebar-accent hover:text-foreground',
 				)}>
 				<Icon className="size-4 shrink-0" strokeWidth={1.7} />
-				{!collapsed && <span className="flex-1 truncate">{label}</span>}
+				<span
+					className={cn(
+						'min-w-0 flex-1 truncate transition-opacity duration-200 ease-out motion-reduce:transition-none',
+						collapsed && 'opacity-0',
+					)}>
+					{label}
+				</span>
 			</button>
 		</SidebarMenuItem>
 	);

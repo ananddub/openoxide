@@ -49,6 +49,8 @@ export type ComposePayload = {
 	custom_git_ssh_key_id?: bigint;
 	last_error?: string;
 	compose_file?: string;
+	randomize: boolean;
+	suffix?: string;
 	created_at: bigint;
 	updated_at: bigint;
 };
@@ -89,6 +91,8 @@ export function toComposePayload(compose: Compose): ComposePayload {
 		custom_git_ssh_key_id: compose.customGitSshKeyId,
 		last_error: compose.lastError,
 		compose_file: compose.composeFile,
+		randomize: compose.randomize ?? false,
+		suffix: compose.suffix,
 		created_at: compose.createdAt,
 		updated_at: compose.updatedAt,
 	};

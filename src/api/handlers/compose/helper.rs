@@ -65,6 +65,8 @@ pub fn compose_to_proto(dto: &ComposeResponseDto) -> Compose {
         compose_path: Some(dto.compose_path.clone()),
         compose_type: Some(dto.compose_type.clone()),
         last_error: dto.last_error.clone(),
+        randomize: dto.randomize,
+        suffix: dto.suffix.clone(),
         ..Default::default()
     }
 }
@@ -73,9 +75,7 @@ pub fn compose_to_proto(dto: &ComposeResponseDto) -> Compose {
 
 /// proto mount type → the SCREAMING spec string the service layer parses
 /// (`crate::utils::builder::spec::MountType::from_str`).
-pub fn compose_mount_type_to_spec_str(
-    value: buffa::EnumValue<ComposeMountType>,
-) -> String {
+pub fn compose_mount_type_to_spec_str(value: buffa::EnumValue<ComposeMountType>) -> String {
     let s = match value {
         buffa::EnumValue::Known(ComposeMountType::Bind) => "BIND",
         buffa::EnumValue::Known(ComposeMountType::File) => "FILE",

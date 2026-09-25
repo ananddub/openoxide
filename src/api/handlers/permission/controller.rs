@@ -1,24 +1,24 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    CreatePermissionRequest, CreatePermissionResponse, DeletePermissionRequest,
-    Empty, GetMyPermissionsRequest, GetMyPermissionsResponse, GetPermissionRequest,
-    GetPermissionResponse, ListPermissionsRequest, ListPermissionsResponse,
-    PermissionAcceptInviteRequest, PermissionAddMemberRequest, PermissionAssignMemberGroupRequest,
-    PermissionCancelInviteRequest, PermissionCreateGroupRequest, PermissionCreateGroupResponse,
-    PermissionCreateInviteRequest, PermissionCreateInviteResponse, PermissionDeleteGroupRequest,
-    PermissionGetGroupRequest, PermissionGetGroupResponse, PermissionListGroupsRequest,
-    PermissionListGroupsResponse, PermissionListInvitesRequest, PermissionListInvitesResponse,
-    PermissionListMembersRequest, PermissionListMembersResponse, PermissionListPoliciesRequest,
-    PermissionListPoliciesResponse, PermissionRemoveMemberRequest,
-    PermissionReplaceUserPoliciesRequest, PermissionService, PermissionServiceExt,
-    PermissionUpdateGroupRequest, PermissionUpdateMemberRoleRequest, UpdatePermissionRequest,
+    CreatePermissionRequest, CreatePermissionResponse, DeletePermissionRequest, Empty,
+    GetMyPermissionsRequest, GetMyPermissionsResponse, GetPermissionRequest, GetPermissionResponse,
+    ListPermissionsRequest, ListPermissionsResponse, PermissionAcceptInviteRequest,
+    PermissionAddMemberRequest, PermissionAssignMemberGroupRequest, PermissionCancelInviteRequest,
+    PermissionCreateGroupRequest, PermissionCreateGroupResponse, PermissionCreateInviteRequest,
+    PermissionCreateInviteResponse, PermissionDeleteGroupRequest, PermissionGetGroupRequest,
+    PermissionGetGroupResponse, PermissionListGroupsRequest, PermissionListGroupsResponse,
+    PermissionListInvitesRequest, PermissionListInvitesResponse, PermissionListMembersRequest,
+    PermissionListMembersResponse, PermissionListPoliciesRequest, PermissionListPoliciesResponse,
+    PermissionRemoveMemberRequest, PermissionReplaceUserPoliciesRequest, PermissionService,
+    PermissionServiceExt, PermissionUpdateGroupRequest, PermissionUpdateMemberRoleRequest,
+    UpdatePermissionRequest,
 };
+use crate::services::identity::permission::PermissionGroupError;
 use crate::services::identity::permission::group_service::{
     AddOrganizationMemberDto, CreateOrganizationInviteDto, ReplaceUserPoliciesDto,
     SavePermissionGroupDto, UserPolicyEntryDto,
 };
-use crate::services::identity::permission::PermissionGroupError;
 
 use super::helper::*;
 use super::init::PermissionGroupController;
@@ -33,9 +33,16 @@ impl PermissionService for PermissionGroupController {
         ctx: RequestContext,
         _request: ServiceRequest<'_, ListPermissionsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListPermissionsResponse> + Send + use<'a>> {
-        let groups = self.service.list_groups(auth.organization_id).await.map_err(map_error)?;
+        let groups = self
+            .service
+            .list_groups(auth.organization_id)
+            .await
+            .map_err(map_error)?;
         let groups = groups.into_iter().map(group_to_proto).collect();
-        Response::ok(ListPermissionsResponse { groups, ..Default::default() })
+        Response::ok(ListPermissionsResponse {
+            groups,
+            ..Default::default()
+        })
     }
 
     #[permission(Groups, CanRead)]
@@ -44,7 +51,11 @@ impl PermissionService for PermissionGroupController {
         ctx: RequestContext,
         request: ServiceRequest<'_, GetPermissionRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<GetPermissionResponse> + Send + use<'a>> {
-        let groups = self.service.list_groups(auth.organization_id).await.map_err(map_error)?;
+        let groups = self
+            .service
+            .list_groups(auth.organization_id)
+            .await
+            .map_err(map_error)?;
         let group = groups
             .into_iter()
             .find(|g| g.id == request.id)
@@ -70,7 +81,10 @@ impl PermissionService for PermissionGroupController {
             .create_group(auth.user_id(), auth.organization_id, dto)
             .await
             .map_err(map_error)?;
-        Response::ok(CreatePermissionResponse { id, ..Default::default() })
+        Response::ok(CreatePermissionResponse {
+            id,
+            ..Default::default()
+        })
     }
 
     #[permission(Groups, CanUpdate)]
@@ -112,7 +126,11 @@ impl PermissionService for PermissionGroupController {
         _request: ServiceRequest<'_, PermissionListGroupsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<PermissionListGroupsResponse> + Send + use<'a>>
     {
-        let groups = self.service.list_groups(auth.organization_id).await.map_err(map_error)?;
+        let groups = self
+            .service
+            .list_groups(auth.organization_id)
+            .await
+            .map_err(map_error)?;
         let groups = groups.into_iter().map(group_to_proto).collect();
         Response::ok(PermissionListGroupsResponse {
             groups,
@@ -125,8 +143,13 @@ impl PermissionService for PermissionGroupController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, PermissionGetGroupRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<PermissionGetGroupResponse> + Send + use<'a>> {
-        let groups = self.service.list_groups(auth.organization_id).await.map_err(map_error)?;
+    ) -> ServiceResult<impl connectrpc::Encodable<PermissionGetGroupResponse> + Send + use<'a>>
+    {
+        let groups = self
+            .service
+            .list_groups(auth.organization_id)
+            .await
+            .map_err(map_error)?;
         let group = groups
             .into_iter()
             .find(|g| g.id == request.id)
@@ -153,7 +176,10 @@ impl PermissionService for PermissionGroupController {
             .create_group(auth.user_id(), auth.organization_id, dto)
             .await
             .map_err(map_error)?;
-        Response::ok(PermissionCreateGroupResponse { id, ..Default::default() })
+        Response::ok(PermissionCreateGroupResponse {
+            id,
+            ..Default::default()
+        })
     }
 
     #[permission(Groups, CanUpdate)]
@@ -232,7 +258,12 @@ impl PermissionService for PermissionGroupController {
         request: ServiceRequest<'_, PermissionAssignMemberGroupRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         self.service
-            .assign_group(auth.user_id(), auth.organization_id, request.id, request.group_id)
+            .assign_group(
+                auth.user_id(),
+                auth.organization_id,
+                request.id,
+                request.group_id,
+            )
             .await
             .map_err(map_error)?;
         Response::ok(Empty::default())
@@ -245,7 +276,11 @@ impl PermissionService for PermissionGroupController {
         _request: ServiceRequest<'_, PermissionListMembersRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<PermissionListMembersResponse> + Send + use<'a>>
     {
-        let members = self.service.list_members(auth.organization_id).await.map_err(map_error)?;
+        let members = self
+            .service
+            .list_members(auth.organization_id)
+            .await
+            .map_err(map_error)?;
         let members = members.into_iter().map(member_to_proto).collect();
         Response::ok(PermissionListMembersResponse {
             members,
@@ -263,6 +298,7 @@ impl PermissionService for PermissionGroupController {
             email: request.email.to_owned(),
             password: request.password.map(str::to_owned),
             role: proto_to_user_role(request.role)?,
+            group_id: request.group_id,
         };
         self.service
             .add_member(auth.user_id(), auth.organization_id, dto)
@@ -307,7 +343,11 @@ impl PermissionService for PermissionGroupController {
         _request: ServiceRequest<'_, PermissionListInvitesRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<PermissionListInvitesResponse> + Send + use<'a>>
     {
-        let invites = self.service.list_invites(auth.organization_id).await.map_err(map_error)?;
+        let invites = self
+            .service
+            .list_invites(auth.organization_id)
+            .await
+            .map_err(map_error)?;
         let invites = invites.into_iter().map(invite_to_proto).collect();
         Response::ok(PermissionListInvitesResponse {
             invites,

@@ -73,6 +73,11 @@ function Chips({
 					{role}
 				</span>
 			)}
+			{member.group_name && (
+				<span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+					{member.group_name}
+				</span>
+			)}
 			{self && (
 				<span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
 					you
