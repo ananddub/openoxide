@@ -108,18 +108,24 @@ impl DnsService {
             body.zone_id
         );
 
-        if !matches!(body.record_type.as_str(), "A" | "CNAME") {
+        if !matches!(
+            body.record_type.as_str(),
+            "A" | "AAAA" | "CNAME" | "NS" | "MX" | "TXT" | "SRV" | "CAA"
+        ) {
             return Err(DnsServiceError::ProviderError(
-                "Only A and CNAME records are supported".into(),
+                "Unsupported record type for Cloudflare".into(),
             ));
         }
 
-        let payload = serde_json::json!({
+        let mut payload = serde_json::json!({
             "type": body.record_type,
             "name": body.name,
             "content": body.content,
             "ttl": body.ttl.unwrap_or(1),
         });
+        if body.proxied.is_some() && matches!(body.record_type.as_str(), "A" | "AAAA" | "CNAME") {
+            payload["proxied"] = serde_json::json!(body.proxied.unwrap_or(false));
+        }
 
         let lookup = self
             .client
@@ -155,7 +161,7 @@ impl DnsService {
             name: body.name.clone(),
             content: body.content.clone(),
             ttl: body.ttl,
-            proxied: body.proxied,
+            proxied: created["proxied"].as_bool().or(body.proxied),
         })
     }
 

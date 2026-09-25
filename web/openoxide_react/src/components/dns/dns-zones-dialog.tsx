@@ -17,20 +17,25 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from '#/components/ui/sheet';
+import {Switch} from '#/components/ui/switch';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '#/components/ui/select';
 import {toast} from 'sonner';
 import {DnsZoneRow, type DnsRecord} from './dns-zone-row';
-import {
-	RecordTypeSelect,
-	isSupportedRecordType,
-	type SupportedRecordType,
-} from './record-type-select';
 
 type Props = {
-	provider: {id: number; name: string};
+	provider: {id: number; name: string; provider_type?: string};
 	onClose: () => void;
 };
 
-const contentPlaceholders: Record<SupportedRecordType, string> = {
+const supportedRecordTypes = ['A', 'AAAA', 'CNAME', 'TXT', 'MX'];
+
+const contentPlaceholders: Record<string, string> = {
 	A: '203.0.113.10',
 	AAAA: '2001:db8::1',
 	CNAME: 'target.example.com',
@@ -38,14 +43,18 @@ const contentPlaceholders: Record<SupportedRecordType, string> = {
 	MX: '10 mail.example.com',
 };
 
+/** Cloudflare-only: these record types can route through its proxy. */
+const proxyableTypes = new Set(['A', 'AAAA', 'CNAME']);
+
 type RecordDraft = {
 	zoneId: string;
 	zoneName: string;
 	recordId?: string;
-	recordType: SupportedRecordType;
+	recordType: string;
 	name: string;
 	content: string;
 	ttl: string;
+	proxied: boolean;
 };
 
 const fieldLabel = 'text-xs font-medium text-muted-foreground';
@@ -66,6 +75,8 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 		name: string;
 	}>;
 	const records = (recordsQuery.data || []) as DnsRecord[];
+	const supportsProxy =
+		provider.provider_type?.toUpperCase() === 'CLOUDFLARE';
 
 	const startCreate = (zoneId: string, zoneName: string) =>
 		setDraft({
@@ -75,6 +86,7 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 			name: zoneName,
 			content: '',
 			ttl: '',
+			proxied: false,
 		});
 	const startEdit = (
 		record: DnsRecord,
@@ -85,12 +97,15 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 			zoneId,
 			zoneName,
 			recordId: record.id,
-			recordType: isSupportedRecordType(record.record_type)
+			recordType: (supportedRecordTypes as string[]).includes(
+				record.record_type,
+			)
 				? record.record_type
 				: 'A',
 			name: record.name,
 			content: record.content,
 			ttl: record.ttl ? String(record.ttl) : '',
+			proxied: !!record.proxied,
 		});
 	const save = async () => {
 		if (!draft?.name.trim() || !draft.content.trim())
@@ -103,6 +118,10 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 				name: draft.name.trim(),
 				content: draft.content.trim(),
 				ttl: draft.ttl ? Number(draft.ttl) : undefined,
+				proxied:
+					supportsProxy && proxyableTypes.has(draft.recordType)
+						? draft.proxied
+						: undefined,
 			});
 			toast.success(draft.recordId ? 'Record updated' : 'Record created');
 			setDraft(null);
@@ -140,6 +159,7 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 					<RecordFormView
 						draft={draft}
 						saving={upsert.isPending}
+						supportsProxy={supportsProxy}
 						onChange={setDraft}
 						onBack={() => setDraft(null)}
 						onSave={save}
@@ -242,9 +262,7 @@ function ZonesListView({
 								isLoading={recordsLoading}
 								records={expanded === zone.id ? records : []}
 								onToggle={() => onToggle(zone.id)}
-								onEdit={record =>
-									onEdit(record, zone.id, zone.name)
-								}
+								onEdit={record => onEdit(record, zone.id, zone.name)}
 								onDelete={onDelete}
 								onCreate={() => onCreate(zone.id, zone.name)}
 							/>
@@ -259,16 +277,19 @@ function ZonesListView({
 function RecordFormView({
 	draft,
 	saving,
+	supportsProxy,
 	onChange,
 	onBack,
 	onSave,
 }: {
 	draft: RecordDraft;
 	saving: boolean;
+	supportsProxy: boolean;
 	onChange: (draft: RecordDraft) => void;
 	onBack: () => void;
 	onSave: () => void;
 }) {
+	const showProxy = supportsProxy && proxyableTypes.has(draft.recordType);
 	return (
 		<div
 			key="form"
@@ -284,12 +305,22 @@ function RecordFormView({
 			<div className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-5 py-4">
 				<div className="grid gap-1.5">
 					<span className={fieldLabel}>Record type</span>
-					<RecordTypeSelect
+					<Select
 						value={draft.recordType}
-						onChange={type =>
+						onValueChange={(type: string) =>
 							onChange({...draft, recordType: type})
-						}
-					/>
+						}>
+						<SelectTrigger>
+							<SelectValue>{draft.recordType}</SelectValue>
+						</SelectTrigger>
+						<SelectContent>
+							{supportedRecordTypes.map(type => (
+								<SelectItem key={type} value={type}>
+									{type}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 				</div>
 				<div className="grid gap-1.5">
 					<span className={fieldLabel}>Name</span>
@@ -310,6 +341,9 @@ function RecordFormView({
 							onChange({...draft, content: event.target.value})
 						}
 					/>
+					<p className="text-[11px] leading-relaxed text-muted-foreground">
+						Values are sent to the provider exactly as typed.
+					</p>
 				</div>
 				<div className="grid gap-1.5">
 					<span className={fieldLabel}>TTL (optional)</span>
@@ -322,10 +356,23 @@ function RecordFormView({
 						}
 					/>
 				</div>
-				<p className="text-[11px] leading-relaxed text-muted-foreground">
-					MX and TXT values are stored exactly as you type them —
-					put the MX priority first, e.g. “10 mail.example.com”.
-				</p>
+				{showProxy && (
+					<div className="flex items-center justify-between rounded-lg border bg-muted/20 px-3 py-2.5">
+						<div className="flex flex-col gap-0.5 pr-3">
+							<span className="text-xs font-medium text-foreground">
+								Proxy through Cloudflare
+							</span>
+							<span className="text-[11px] leading-relaxed text-muted-foreground">
+								Hides the origin IP and enables Cloudflare CDN, caching and
+								DDoS protection for this record.
+							</span>
+						</div>
+						<Switch
+							checked={draft.proxied}
+							onCheckedChange={proxied => onChange({...draft, proxied})}
+						/>
+					</div>
+				)}
 			</div>
 			<SheetFooter>
 				<Button

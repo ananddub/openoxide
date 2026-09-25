@@ -1,4 +1,3 @@
-import {Globe} from 'lucide-react';
 import {
 	CloudflareIcon,
 	AwsIcon,
@@ -9,6 +8,7 @@ import {
 	InfomaniakIcon,
 	OvhIcon,
 } from '#/components/icons/provider-icons';
+import {DnsProviderMark} from '#/components/icons/dns-brand-marks';
 import type {ProviderOption} from '#/components/shared/provider-type-select';
 
 export interface DnsProviderItem {
@@ -1003,6 +1003,13 @@ export const dnsProviderOptions: ProviderOption[] = [
 	...Object.entries(bridgeProviders).map(([value, p]) => ({
 		value,
 		label: p.label,
+		icon: (
+			<DnsProviderMark
+				value={value}
+				label={p.label}
+				className={smallIcon}
+			/>
+		),
 	})),
 ];
 
@@ -1031,7 +1038,13 @@ export function DnsProviderIcon({
 		case 'OVH':
 			return <OvhIcon className={className} />;
 		default:
-			return <Globe className={`${className} text-muted-foreground`} />;
+			return (
+				<DnsProviderMark
+					value={type}
+					label={getDnsProviderLabel(type)}
+					className={className}
+				/>
+			);
 	}
 }
 

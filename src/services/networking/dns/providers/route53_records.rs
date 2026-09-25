@@ -7,10 +7,16 @@ impl DnsService {
     fn route53_record(body: &UpsertDnsRecordDto) -> Result<ResourceRecordSet, DnsServiceError> {
         let kind = match body.record_type.as_str() {
             "A" => RrType::A,
+            "AAAA" => RrType::Aaaa,
             "CNAME" => RrType::Cname,
+            "NS" => RrType::Ns,
+            "MX" => RrType::Mx,
+            "TXT" => RrType::Txt,
+            "SRV" => RrType::Srv,
+            "CAA" => RrType::Caa,
             _ => {
                 return Err(DnsServiceError::ProviderError(
-                    "Only A and CNAME records are supported".into(),
+                    "Unsupported record type for Route53".into(),
                 ));
             }
         };

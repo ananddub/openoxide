@@ -235,9 +235,9 @@ export function DnsProvidersPage() {
 								<span className="font-medium text-foreground">
 									{deleteTarget.name}
 								</span>{' '}
-								will stop serving zones — wildcard certificate
-								renewals for domains that rely on it fail until it is
-								repointed. This cannot be undone.
+								will stop serving zones — wildcard certificate renewals for
+								domains that rely on it fail until it is repointed. This
+								cannot be undone.
 							</SheetDescription>
 						</SheetHeader>
 						<SheetFooter>

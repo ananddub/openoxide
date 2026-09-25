@@ -167,11 +167,7 @@ export function DnsProviderFormDialog({
 										}
 										value={values[field.key] ?? ''}
 										onChange={e => setValue(field.key, e.target.value)}
-										className={
-											field.secret
-												? 'font-mono'
-												: undefined
-										}
+										className={field.secret ? 'font-mono' : undefined}
 									/>
 								)}
 							</WizardField>

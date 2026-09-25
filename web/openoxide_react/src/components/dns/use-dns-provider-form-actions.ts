@@ -34,8 +34,7 @@ export function useDnsProviderFormActions(getValues: () => DnsFormValues) {
 	const missingFields = (v: DnsFormValues) =>
 		dnsProviderFields(v.type).filter(
 			f =>
-				!f.label.includes('(optional)') &&
-				!(v.values[f.key] ?? '').trim(),
+				!f.label.includes('(optional)') && !(v.values[f.key] ?? '').trim(),
 		);
 
 	const save = async (): Promise<boolean> => {

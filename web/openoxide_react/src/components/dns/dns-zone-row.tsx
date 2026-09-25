@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {
 	ChevronRight,
+	Cloud,
 	Globe,
 	Loader2,
 	Pencil,
@@ -16,6 +17,7 @@ export type DnsRecord = {
 	name: string;
 	content: string;
 	ttl?: number;
+	proxied?: boolean;
 };
 
 /** One zone in the domains sheet; expands to its record rows. */
@@ -96,6 +98,13 @@ export function DnsZoneRow({
 										{record.ttl}s
 									</span>
 								) : null}
+								{record.proxied && (
+									<span
+										title="Proxied by Cloudflare"
+										className="shrink-0 text-amber-500">
+										<Cloud className="size-3.5" />
+									</span>
+								)}
 								<div className="flex shrink-0 items-center gap-0.5">
 									{confirmId === record.id ? (
 										<>
@@ -146,7 +155,7 @@ export function DnsZoneRow({
 						variant="ghost"
 						size="sm"
 						onClick={onCreate}
-						className="-ml-2 mt-1 h-7 text-xs font-semibold text-primary">
+						className="mt-1 -ml-2 h-7 text-xs font-semibold text-primary">
 						<Plus className="mr-1 size-3.5" /> New Record
 					</Button>
 				</div>
