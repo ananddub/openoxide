@@ -1,18 +1,5 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {
-	AtSign,
-	Check,
-	ChevronDown,
-	FileText,
-	Link2,
-	Mail,
-	Network,
-	Route,
-	Search,
-	Server,
-	ShieldCheck,
-	Waypoints,
-} from 'lucide-react';
+import {Check, ChevronDown, Search} from 'lucide-react';
 import {cn} from '#/api/utils';
 import {Input} from '#/components/ui/input';
 import {
@@ -26,35 +13,19 @@ import {
  * the bare codes (A, AAAA, CNAME) are unfindable by anything but memory.
  */
 export const recordTypes = [
-	{id: 'A', hint: 'IPv4 address', icon: Server},
-	{id: 'AAAA', hint: 'IPv6 address', icon: Network},
-	{id: 'CNAME', hint: 'Alias to another name', icon: Link2},
-	{
-		id: 'TXT',
-		hint: 'Free-form text — SPF, DKIM, verification',
-		icon: FileText,
-	},
-	{id: 'MX', hint: 'Mail server for this zone', icon: Mail},
-	{id: 'NS', hint: 'Name server delegation', icon: Route},
-	{
-		id: 'SRV',
-		hint: 'Service endpoint — priority weight port target',
-		icon: Waypoints,
-	},
-	{
-		id: 'CAA',
-		hint: 'Certificate authority policy',
-		icon: ShieldCheck,
-	},
+	{id: 'A', hint: 'IPv4 address'},
+	{id: 'AAAA', hint: 'IPv6 address'},
+	{id: 'CNAME', hint: 'Alias to another name'},
+	{id: 'TXT', hint: 'Free-form text — SPF, DKIM, verification'},
+	{id: 'MX', hint: 'Mail server for this zone'},
+	{id: 'NS', hint: 'Name server delegation'},
+	{id: 'SRV', hint: 'Service endpoint — priority weight port target'},
+	{id: 'CAA', hint: 'Certificate authority policy'},
 ] as const;
 
 export type SupportedRecordType = (typeof recordTypes)[number]['id'];
 
-type RecordType = {
-	id: string;
-	hint: string;
-	icon: (typeof recordTypes)[number]['icon'];
-};
+type RecordType = {id: string; hint: string};
 
 export function isSupportedRecordType(
 	value: string,
@@ -62,7 +33,7 @@ export function isSupportedRecordType(
 	return recordTypes.some(type => type.id === value);
 }
 
-/** Record type picker — glyph on every option, filter box on top of the list. */
+/** Record type picker — code + plain-language hint, filter box on top. */
 export function RecordTypeSelect({
 	value,
 	onChange,
@@ -77,12 +48,7 @@ export function RecordTypeSelect({
 	 * SOA…); show it verbatim instead of rewriting it to A on edit. */
 	const current: RecordType = recordTypes.find(
 		type => type.id === value,
-	) ?? {
-		id: value,
-		hint: 'Imported from the provider',
-		icon: AtSign,
-	};
-	const CurrentIcon = current.icon;
+	) ?? {id: value, hint: 'Imported from the provider'};
 
 	const filtered: readonly RecordType[] = useMemo(() => {
 		const q = query.trim().toLowerCase();
@@ -113,10 +79,6 @@ export function RecordTypeSelect({
 			<PopoverTrigger
 				type="button"
 				className="flex h-9 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-card px-3 text-xs shadow-[0_1px_1px_rgba(0,0,0,0.02)] transition-colors duration-150 outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring/30">
-				<CurrentIcon
-					className="size-4 shrink-0 text-muted-foreground"
-					strokeWidth={1.7}
-				/>
 				<span className="shrink-0 font-medium">{current.id}</span>
 				<span className="min-w-0 truncate text-muted-foreground">
 					{current.hint}
@@ -152,9 +114,6 @@ export function RecordTypeSelect({
 									'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors outline-none hover:bg-accent focus-visible:bg-accent',
 									type.id === current.id && 'bg-accent',
 								)}>
-								<span className="flex size-7 shrink-0 items-center justify-center rounded-md border border-border/60 bg-card text-muted-foreground">
-									<type.icon className="size-4" strokeWidth={1.7} />
-								</span>
 								<span className="flex min-w-0 flex-1 flex-col">
 									<span className="font-medium text-foreground">
 										{type.id}
