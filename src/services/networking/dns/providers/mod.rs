@@ -1,10 +1,4 @@
 pub(crate) mod cloudflare;
 pub(crate) mod cloudflare_response;
-pub(crate) mod digitalocean;
-pub(crate) mod godaddy;
-pub(crate) mod hetzner;
-pub(crate) mod infomaniak;
-pub(crate) mod ovh;
-pub(crate) mod porkbun;
 pub(crate) mod route53;
 pub(crate) mod route53_records;

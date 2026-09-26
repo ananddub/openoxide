@@ -4,7 +4,7 @@ use super::{
 };
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use dns_update::providers::{
-    azuredns::AzureEnvironment, joker::JokerAuth, oraclecloud::OracleCloudConfig,
+    azuredns::AzureEnvironment, joker::JokerAuth, oraclecloud::OracleCloudConfig, ovh::OvhEndpoint,
 };
 use dns_update::{
     CAARecord, DnsRecord, DnsRecordType, DnsUpdater, MXRecord, SRVRecord, TsigAlgorithm,
@@ -185,6 +185,30 @@ fn build_updater(
             DnsUpdater::new_hurricane(credentials, None)?
         }
         DnsProviderType::Hostinger => DnsUpdater::new_hostinger(required(&c, "apiToken")?, None)?,
+        DnsProviderType::Hetzner => DnsUpdater::new_hetzner(required(&c, "apiToken")?, None)?,
+        DnsProviderType::DigitalOcean => {
+            DnsUpdater::new_digitalocean(required(&c, "apiToken")?, None)?
+        }
+        DnsProviderType::Infomaniak => DnsUpdater::new_infomaniak(required(&c, "apiToken")?, None)?,
+        DnsProviderType::Godaddy => {
+            DnsUpdater::new_godaddy(required(&c, "apiKey")?, required(&c, "apiSecret")?, None)?
+        }
+        DnsProviderType::Porkbun => {
+            DnsUpdater::new_porkbun(required(&c, "apiKey")?, required(&c, "secretApiKey")?, None)?
+        }
+        DnsProviderType::Ovh => {
+            let endpoint = cred_opt(&c, "endpoint").unwrap_or_else(|| "ovh-eu".to_string());
+            let endpoint: OvhEndpoint = endpoint
+                .parse()
+                .map_err(|_| err(format!("OVH: unknown endpoint '{endpoint}'")))?;
+            DnsUpdater::new_ovh(
+                required(&c, "applicationKey")?,
+                required(&c, "applicationSecret")?,
+                required(&c, "consumerKey")?,
+                endpoint,
+                None,
+            )?
+        }
         DnsProviderType::Autodns => DnsUpdater::new_autodns(
             required(&c, "username")?,
             required(&c, "password")?,
