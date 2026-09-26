@@ -679,3 +679,39 @@ impl DnsService {
         Ok(true)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bridge_builds_migrated_providers() {
+        // Credential keys must match what the native providers stored in the DB.
+        for (provider_type, credentials) in [
+            (DnsProviderType::Hetzner, r#"{"apiToken":"t"}"#),
+            (DnsProviderType::DigitalOcean, r#"{"apiToken":"t"}"#),
+            (DnsProviderType::Infomaniak, r#"{"apiToken":"t"}"#),
+            (DnsProviderType::Godaddy, r#"{"apiKey":"k","apiSecret":"s"}"#),
+            (DnsProviderType::Porkbun, r#"{"apiKey":"k","secretApiKey":"s"}"#),
+            (DnsProviderType::Ovh, r#"{"applicationKey":"k","applicationSecret":"s","consumerKey":"c"}"#),
+            (DnsProviderType::Ovh, r#"{"applicationKey":"k","applicationSecret":"s","consumerKey":"c","endpoint":"soyoustart-ca"}"#),
+        ] {
+            assert!(
+                build_updater(provider_type, credentials).is_ok(),
+                "{provider_type:?} should build from {credentials}"
+            );
+        }
+    }
+
+    #[test]
+    fn bridge_rejects_bad_provider_credentials() {
+        assert!(build_updater(DnsProviderType::Hetzner, r#"{}"#).is_err());
+        assert!(
+            build_updater(
+                DnsProviderType::Ovh,
+                r#"{"applicationKey":"k","applicationSecret":"s","consumerKey":"c","endpoint":"nope"}"#
+            )
+            .is_err()
+        );
+    }
+}
