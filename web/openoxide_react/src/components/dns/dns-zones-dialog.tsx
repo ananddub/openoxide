@@ -6,7 +6,7 @@ import {
 	useDnsRecordList,
 	useDnsZoneList,
 } from '#/api/live';
-import {formatApiError} from '#/api/utils';
+import {cn, formatApiError} from '#/api/utils';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
@@ -40,10 +40,70 @@ const contentPlaceholders: Record<string, string> = {
 
 const contentHints: Record<string, string> = {
 	TXT: 'Text is stored exactly as you type it — quote parts you want preserved.',
-	MX: 'Put the mail priority first, e.g. “10 mail.example.com”.',
-	SRV: 'Four space-separated parts: priority weight port target, e.g. “10 60 5060 sip.example.com”.',
-	CAA: 'Flags, tag and quoted value, e.g. ‘0 issue "letsencrypt.org"’ or ‘0 issuewild ";"’.',
 	NS: 'A name-server hostname such as “ns1.example.com”. Careful — wrong NS data can delegate your zone away.',
+};
+
+/** Types whose value is a tuple of several parts — edited as separate fields. */
+type StructuredField = {
+	key: string;
+	label: string;
+	placeholder: string;
+	numeric?: boolean;
+};
+const structuredFields: Record<string, StructuredField[]> = {
+	MX: [
+		{key: 'priority', label: 'Priority', placeholder: '10', numeric: true},
+		{
+			key: 'exchange',
+			label: 'Mail server',
+			placeholder: 'mail.example.com',
+		},
+	],
+	SRV: [
+		{key: 'priority', label: 'Priority', placeholder: '10', numeric: true},
+		{key: 'weight', label: 'Weight', placeholder: '60', numeric: true},
+		{key: 'port', label: 'Port', placeholder: '5060', numeric: true},
+		{key: 'target', label: 'Target', placeholder: 'sip.example.com'},
+	],
+	CAA: [
+		{key: 'flag', label: 'Flag', placeholder: '0', numeric: true},
+		{key: 'tag', label: 'Tag', placeholder: 'issue'},
+		{key: 'value', label: 'Value', placeholder: '"letsencrypt.org"'},
+	],
+};
+
+type Parts = Record<string, string>;
+
+/** Split a stored value back into its named parts; null when it doesn't fit.
+ * Partial values are padded so the form stays structured while typing. */
+const parseParts = (type: string, content: string): Parts | null => {
+	const fields = structuredFields[type];
+	if (!fields) return null;
+	const raw = content.trim();
+	if (!raw)
+		return Object.fromEntries(fields.map(f => [f.key, ''])) as Parts;
+	let parts: (string | undefined)[] | null;
+	if (type === 'CAA') {
+		// The value may contain spaces inside quotes — split on the first two only.
+		const match = raw.match(/^(\d+)(?:\s+(\S+)(?:\s+([\s\S]+))?)?$/);
+		parts = match ? match.slice(1) : null;
+	} else {
+		const pieces = raw.split(/\s+/);
+		parts = pieces.length <= fields.length ? pieces : null;
+		if (parts) while (parts.length < fields.length) parts.push('');
+	}
+	if (!parts) return null;
+	return Object.fromEntries(
+		fields.map((f, i) => [f.key, parts[i] ?? '']),
+	) as Parts;
+};
+
+const buildContent = (type: string, parts: Parts): string => {
+	const values = structuredFields[type].map(f =>
+		(parts[f.key] ?? '').trim(),
+	);
+	while (values.length && !values[values.length - 1]) values.pop();
+	return values.join(' ');
 };
 
 /** Cloudflare-only: these record types can route through its proxy. */
@@ -109,6 +169,12 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 	const save = async () => {
 		if (!draft?.name.trim() || !draft.content.trim())
 			return toast.error('Record name and content are required');
+		const fields = structuredFields[draft.recordType];
+		if (fields) {
+			const parts = parseParts(draft.recordType, draft.content);
+			if (!parts || fields.some(f => !(parts[f.key] ?? '').trim()))
+				return toast.error(`Fill in every ${draft.recordType} field`);
+		}
 		try {
 			await upsert.mutateAsync({
 				provider_id: provider.id,
@@ -292,6 +358,10 @@ function RecordFormView({
 	const hint =
 		contentHints[draft.recordType] ??
 		'Values are sent to the provider exactly as typed.';
+	const fields = structuredFields[draft.recordType];
+	const parts = fields
+		? parseParts(draft.recordType, draft.content)
+		: null;
 	return (
 		<div
 			key="form"
@@ -309,7 +379,9 @@ function RecordFormView({
 					<span className={fieldLabel}>Record type</span>
 					<RecordTypeSelect
 						value={draft.recordType}
-						onChange={type => onChange({...draft, recordType: type})}
+						onChange={type =>
+							onChange({...draft, recordType: type, content: ''})
+						}
 					/>
 				</div>
 				<div className="grid gap-1.5">
@@ -322,19 +394,55 @@ function RecordFormView({
 						}
 					/>
 				</div>
-				<div className="grid gap-1.5">
-					<span className={fieldLabel}>Value</span>
-					<Input
-						placeholder={contentPlaceholders[draft.recordType]}
-						value={draft.content}
-						onChange={event =>
-							onChange({...draft, content: event.target.value})
-						}
-					/>
-					<p className="text-[11px] leading-relaxed text-muted-foreground">
-						{hint}
-					</p>
-				</div>
+				{fields && parts ? (
+					<div className="grid gap-1.5">
+						<span className={fieldLabel}>Value</span>
+						<div className="flex flex-wrap gap-2">
+							{fields.map(field => (
+								<div
+									key={field.key}
+									className={cn(
+										'grid gap-1',
+										field.numeric
+											? 'w-[104px] shrink-0'
+											: 'min-w-[190px] flex-1',
+									)}>
+									<Input
+										type={field.numeric ? 'number' : 'text'}
+										placeholder={field.placeholder}
+										value={parts[field.key] ?? ''}
+										onChange={event =>
+											onChange({
+												...draft,
+												content: buildContent(draft.recordType, {
+													...parts,
+													[field.key]: event.target.value,
+												}),
+											})
+										}
+									/>
+									<span className={fieldLabel}>{field.label}</span>
+								</div>
+							))}
+						</div>
+					</div>
+				) : (
+					<div className="grid gap-1.5">
+						<span className={fieldLabel}>Value</span>
+						<Input
+							placeholder={contentPlaceholders[draft.recordType]}
+							value={draft.content}
+							onChange={event =>
+								onChange({...draft, content: event.target.value})
+							}
+						/>
+						<p className="text-[11px] leading-relaxed text-muted-foreground">
+							{fields
+								? `Stored value isn’t in the usual ${draft.recordType} format — edit it as raw text.`
+								: hint}
+						</p>
+					</div>
+				)}
 				<div className="grid gap-1.5">
 					<span className={fieldLabel}>TTL (optional)</span>
 					<Input
