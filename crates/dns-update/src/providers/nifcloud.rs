@@ -9,6 +9,7 @@
  * except according to those terms.
  */
 
+use crate::utils::same_value;
 use crate::utils::unquote_txt;
 use crate::{
     DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord,
@@ -259,7 +260,7 @@ impl NifcloudProvider {
                 .iter()
                 .map(|r| r.value.clone())
                 .collect();
-            if prev.ttl == ttl && values_equal(&current_values, &desired) {
+            if prev.ttl == ttl && same_values(&current_values, &desired) {
                 return Ok(());
             }
             changes.push(Change {
@@ -348,7 +349,7 @@ impl NifcloudProvider {
                 .collect();
             let mut combined = current_values.clone();
             for value in &new_values {
-                if !combined.iter().any(|v| v == value) {
+                if !combined.iter().any(|v| same_value(v, value)) {
                     combined.push(value.clone());
                 }
             }
@@ -437,7 +438,7 @@ impl NifcloudProvider {
             .collect();
         let remaining: Vec<String> = current_values
             .iter()
-            .filter(|v| !to_remove.iter().any(|r| r == *v))
+            .filter(|v| !to_remove.iter().any(|r| same_value(v.as_str(), r)))
             .cloned()
             .collect();
         if remaining.len() == current_values.len() {
@@ -663,6 +664,15 @@ fn values_equal(a: &[String], b: &[String]) -> bool {
     a_sorted.sort();
     b_sorted.sort();
     a_sorted == b_sorted
+}
+
+/// The zone listing and the wire encoder are not exact inverses (a target keeps its trailing dot
+/// on the way in but loses it on the way out, a TXT is stored quoted), so compare the value lists
+/// semantically.
+fn same_values(a: &[String], b: &[String]) -> bool {
+    a.len() == b.len()
+        && a.iter().all(|x| b.iter().any(|y| same_value(x, y)))
+        && b.iter().all(|y| a.iter().any(|x| same_value(x, y)))
 }
 
 fn check_record_types(expected: DnsRecordType, records: &[DnsRecord]) -> crate::Result<()> {

@@ -56,7 +56,9 @@ export function UsageRing({
 					/>
 				</svg>
 				<span className="absolute inset-0 flex items-center justify-center font-mono text-[11px] font-bold text-foreground">
-					{ready ? `${Math.round(pct)}%` : '—'}
+					{ready
+						? `${pct >= 10 ? Math.round(pct) : pct.toFixed(1)}%`
+						: '—'}
 				</span>
 			</div>
 			<div className="flex min-w-0 flex-col">

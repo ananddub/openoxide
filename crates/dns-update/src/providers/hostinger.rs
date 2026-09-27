@@ -9,6 +9,7 @@
  * except according to those terms.
  */
 
+use crate::utils::same_value;
 use crate::utils::split_caa_value;
 use crate::utils::strip_trailing_dot;
 use crate::utils::unquote_txt;
@@ -187,7 +188,11 @@ impl HostingerProvider {
             Some(rrset) => {
                 let before = rrset.records.len();
                 for content in &to_add {
-                    if !rrset.records.iter().any(|r| &r.content == content) {
+                    if !rrset
+                        .records
+                        .iter()
+                        .any(|r| same_value(&r.content, content))
+                    {
                         rrset.records.push(RecordValue {
                             content: content.clone(),
                             is_disabled: false,
@@ -261,7 +266,7 @@ impl HostingerProvider {
         let filtered: Vec<RecordValue> = rrset
             .records
             .into_iter()
-            .filter(|r| !to_remove.iter().any(|c| c == &r.content))
+            .filter(|r| !to_remove.iter().any(|c| same_value(&r.content, c)))
             .collect();
 
         if filtered.len() == before {
@@ -519,5 +524,21 @@ impl HostingerProvider {
             }
         }
         Ok(out)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::same_value;
+
+    #[test]
+    fn stored_values_match_the_form_the_zone_read_returns() {
+        // Hostinger quotes TXT on save and keeps the trailing dot on targets, while
+        // the zone read hands back the stripped form the caller started from.
+        assert!(same_value("\"v=spf1 -all\"", "v=spf1 -all"));
+        assert!(same_value("cname.vercel-dns.com.", "cname.vercel-dns.com"));
+        assert!(same_value("10 mx1.hostinger.com.", "10 mx1.hostinger.com"));
+        assert!(same_value("192.0.2.1", "192.0.2.1"));
+        assert!(!same_value("\"panel-verify-A\"", "panel-verify-B"));
     }
 }

@@ -11,6 +11,7 @@
 
 use crate::utils::build_caa;
 use crate::utils::decode_hex;
+use crate::utils::same_value;
 use crate::utils::strip_origin_from_name;
 use crate::{
     DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord, TLSARecord, TlsaCertUsage,
@@ -157,7 +158,7 @@ impl Ns1Provider {
         };
         let before = merged.len();
         for answer in incoming {
-            if !merged.contains(&answer) {
+            if !merged.iter().any(|existing| same_answer(existing, &answer)) {
                 merged.push(answer);
             }
         }
@@ -194,7 +195,7 @@ impl Ns1Provider {
         let remaining: Vec<Answer> = existing
             .answers
             .into_iter()
-            .filter(|answer| !to_remove.contains(answer))
+            .filter(|answer| !to_remove.iter().any(|gone| same_answer(answer, gone)))
             .collect();
 
         if remaining.is_empty() {
@@ -306,6 +307,17 @@ fn check_record_types(expected: DnsRecordType, records: &[DnsRecord]) -> crate::
         }
     }
     Ok(())
+}
+
+/// NS1 splits an rdata into its own array of fields and may keep a target's trailing dot, so the
+/// listed and the encoded answer rarely match byte for byte.
+fn same_answer(listed: &Answer, desired: &Answer) -> bool {
+    listed.answer.len() == desired.answer.len()
+        && listed
+            .answer
+            .iter()
+            .zip(desired.answer.iter())
+            .all(|(a, b)| same_value(a, b))
 }
 
 fn records_to_answers(records: Vec<DnsRecord>) -> crate::Result<Vec<Answer>> {

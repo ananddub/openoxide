@@ -9,14 +9,15 @@
  * except according to those terms.
  */
 
+use crate::utils::same_value;
 use crate::utils::split_caa_value;
 use crate::utils::strip_trailing_dot;
 use crate::utils::unquote_txt;
 use crate::utils::{parse_mx, parse_srv, parse_tlsa};
+use crate::utils::{strip_origin_from_name, txt_chunks_to_text};
 use crate::{
     CAARecord, DnsRecord, DnsRecordType, Error, IntoFqdn,
     http::{HttpClient, HttpClientBuilder},
-    utils::strip_origin_from_name,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -239,7 +240,7 @@ impl DesecProvider {
 
         let before = current.len();
         for content in to_add {
-            if !current.iter().any(|r| r == &content) {
+            if !current.iter().any(|r| same_value(r, &content)) {
                 current.push(content);
             }
         }
@@ -312,7 +313,7 @@ impl DesecProvider {
         let filtered: Vec<String> = existing
             .records
             .into_iter()
-            .filter(|content| !to_remove.iter().any(|r| r == content))
+            .filter(|content| !to_remove.iter().any(|r| same_value(content, r)))
             .collect();
 
         if filtered.len() == original_len {
@@ -491,10 +492,14 @@ impl From<DnsRecord> for DesecDnsRecordRepresentation {
                 record_type: "MX".to_string(),
                 content: format!("{} {}", mx.priority, mx.exchange.into_fqdn().into_owned()),
             },
-            DnsRecord::TXT(content) => DesecDnsRecordRepresentation {
-                record_type: "TXT".to_string(),
-                content: format!("\"{content}\""),
-            },
+            DnsRecord::TXT(content) => {
+                let mut quoted = String::with_capacity(content.len() + 4);
+                txt_chunks_to_text(&mut quoted, &content, " ");
+                DesecDnsRecordRepresentation {
+                    record_type: "TXT".to_string(),
+                    content: quoted,
+                }
+            }
             DnsRecord::SRV(srv) => DesecDnsRecordRepresentation {
                 record_type: "SRV".to_string(),
                 content: format!(

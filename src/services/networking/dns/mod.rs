@@ -167,6 +167,26 @@ pub struct UpsertDnsRecordDto {
     pub proxied: Option<bool>,
 }
 
+/// One row the UI wants changed. Every provider keys rows differently — a Cloudflare
+/// record id, a Route53 `type:name` pair, an rrset id or just name+type+value — so the
+/// whole identity travels with the request and each path uses the strongest hint it
+/// understands. Matching on a bare name is never enough: one name holds several types
+/// and one type holds several values.
+#[derive(Debug, Clone, Default)]
+pub struct DnsRecordTargetDto {
+    pub zone_id: String,
+    pub id: String,
+    pub name: String,
+    pub record_type: String,
+    pub content: String,
+}
+
+#[derive(Debug)]
+pub struct UpdateDnsRecordDto {
+    pub target: DnsRecordTargetDto,
+    pub next: UpsertDnsRecordDto,
+}
+
 pub const DNS_SECRET_MASK: &str = "********";
 
 #[derive(Debug, Error)]

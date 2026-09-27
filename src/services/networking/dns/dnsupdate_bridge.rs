@@ -1,13 +1,13 @@
 use super::{
-    DnsProviderType, DnsRecordDto, DnsService, DnsServiceError, DnsTestResultDto, DnsZoneDto,
-    UpsertDnsRecordDto,
+    DnsProviderType, DnsRecordDto, DnsRecordTargetDto, DnsService, DnsServiceError,
+    DnsTestResultDto, DnsZoneDto, UpdateDnsRecordDto, UpsertDnsRecordDto,
 };
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use dns_update::providers::{
     azuredns::AzureEnvironment, joker::JokerAuth, oraclecloud::OracleCloudConfig, ovh::OvhEndpoint,
 };
 use dns_update::{
-    CAARecord, DnsRecord, DnsRecordType, DnsUpdater, MXRecord, SRVRecord, TsigAlgorithm,
+    CAARecord, DnsRecord, DnsRecordType, DnsUpdater, MXRecord, SRVRecord, TsigAlgorithm, ZoneRecord,
 };
 use serde_json::{Map, Value};
 use std::collections::HashMap;
@@ -635,12 +635,16 @@ impl DnsService {
         let record = parse_record(record_type, &body.content)?;
         let ttl = body.ttl.filter(|t| *t > 0).unwrap_or(3600);
         let name = to_fqdn(&body.name, &body.zone_id);
+        // Append, never replace: an rrset already holds sibling values (a second A record,
+        // another MX preference) and overwriting the set would silently retire them.
         updater
-            .set_rrset(name, record_type, ttl, vec![record], body.zone_id.as_str())
+            .add_to_rrset(name, record_type, ttl, vec![record], body.zone_id.as_str())
             .await
             .map_err(|e| err(e.to_string()))?;
         Ok(DnsRecordDto {
-            id: format!("{}|{}|{}", body.name, body.record_type, body.content),
+            // No provider id comes back from a create; the panel refetches the list, and
+            // inventing one here would point the next delete at a row that never existed.
+            id: String::new(),
             zone_id: body.zone_id.clone(),
             record_type: body.record_type.clone(),
             name: body.name.clone(),
@@ -650,34 +654,181 @@ impl DnsService {
         })
     }
 
+    pub(super) async fn bridge_update_record(
+        &self,
+        provider_type: DnsProviderType,
+        credentials_json: &str,
+        body: &UpdateDnsRecordDto,
+    ) -> Result<DnsRecordDto, DnsServiceError> {
+        let updater = build_updater(provider_type, credentials_json)?;
+        let zone = body.target.zone_id.trim().to_string();
+        let rows = updater
+            .list_zone_records(&zone)
+            .await
+            .map_err(|e| err(e.to_string()))?;
+        let old = pick_bridge_row(&rows, &body.target, &zone)?;
+
+        let next_type = parse_record_type(&body.next.record_type)?;
+        let next_record = parse_record(next_type, &body.next.content)?;
+        let old_type = parse_record_type(&old.record_type)?;
+        let ttl = body
+            .next
+            .ttl
+            .filter(|t| *t > 0)
+            .or_else(|| (old.ttl > 0).then_some(old.ttl))
+            .unwrap_or(3600);
+
+        updater
+            .remove_from_rrset(to_fqdn(&old.name, &zone), old_type, vec![old.record], &zone)
+            .await
+            .map_err(|e| err(e.to_string()))?;
+        updater
+            .add_to_rrset(
+                to_fqdn(&body.next.name, &zone),
+                next_type,
+                ttl,
+                vec![next_record],
+                &zone,
+            )
+            .await
+            .map_err(|e| err(e.to_string()))?;
+
+        // The row now carries a fresh provider id; without it the next delete would aim at
+        // a record that no longer exists.
+        let after = updater
+            .list_zone_records(&zone)
+            .await
+            .map_err(|e| err(e.to_string()))?;
+        let untouched = old.content == body.next.content
+            && old.record_type.eq_ignore_ascii_case(&body.next.record_type)
+            && to_fqdn(&old.name, &zone) == to_fqdn(&body.next.name, &zone);
+        if !untouched && still_listed(&after, &old.name, &old.record_type, &old.content, &zone) {
+            return Err(err(format!(
+                "the provider still lists {} '{}' after the update — the old value was not replaced",
+                old.record_type, old.name
+            )));
+        }
+        let id = after
+            .into_iter()
+            .find(|row| {
+                row.content == body.next.content && row.record_type == body.next.record_type
+            })
+            .map(|row| row.id)
+            .unwrap_or_default();
+        Ok(DnsRecordDto {
+            id,
+            zone_id: zone.clone(),
+            record_type: body.next.record_type.clone(),
+            name: body.next.name.clone(),
+            content: body.next.content.clone(),
+            ttl: Some(ttl),
+            proxied: None,
+        })
+    }
+
     pub(super) async fn bridge_delete_record(
         &self,
         provider_type: DnsProviderType,
         credentials_json: &str,
-        zone_id: &str,
-        record_id: &str,
+        target: &DnsRecordTargetDto,
     ) -> Result<bool, DnsServiceError> {
         let updater = build_updater(provider_type, credentials_json)?;
-        let records = updater
-            .list_zone_records(zone_id)
+        let zone = target.zone_id.trim().to_string();
+        let rows = updater
+            .list_zone_records(&zone)
             .await
             .map_err(|e| err(e.to_string()))?;
-        let target = records
-            .into_iter()
-            .find(|r| r.id == record_id)
-            .ok_or_else(|| err(format!("DNS record '{record_id}' not found in zone")))?;
-        let record_type = parse_record_type(&target.record_type)?;
+        let row = pick_bridge_row(&rows, target, &zone)?;
+        let record_type = parse_record_type(&row.record_type)?;
+        let (name, listed_type, content) = (
+            row.name.clone(),
+            row.record_type.clone(),
+            row.content.clone(),
+        );
         updater
-            .remove_from_rrset(
-                to_fqdn(&target.name, zone_id),
-                record_type,
-                vec![target.record],
-                zone_id,
-            )
+            .remove_from_rrset(to_fqdn(&name, &zone), record_type, vec![row.record], &zone)
             .await
             .map_err(|e| err(e.to_string()))?;
+        let after = updater
+            .list_zone_records(&zone)
+            .await
+            .map_err(|e| err(e.to_string()))?;
+        if still_listed(&after, &name, &listed_type, &content, &zone) {
+            return Err(err(format!(
+                "the provider still lists {listed_type} '{name}' after the delete — the record was not removed"
+            )));
+        }
         Ok(true)
     }
+}
+
+/// A provider that answers 200 to a write has not necessarily changed anything: some of
+/// them store a value in a different form than the one they list it back in, and the row
+/// the caller matched then survives every delete. Reading the zone back is the only check
+/// that holds across all of them.
+fn still_listed(
+    rows: &[ZoneRecord],
+    name: &str,
+    record_type: &str,
+    content: &str,
+    zone: &str,
+) -> bool {
+    rows.iter().any(|row| {
+        row.content == content
+            && row.record_type.eq_ignore_ascii_case(record_type)
+            && (row.name == name || to_fqdn(&row.name, zone) == to_fqdn(name, zone))
+    })
+}
+
+/// Delete and update need one row, and every provider hands back a different key for it.
+/// Prefer the id the list call returned; fall back to the full name+type+value triple,
+/// because one name holds several types and one type holds several values.
+fn pick_bridge_row(
+    rows: &[ZoneRecord],
+    target: &DnsRecordTargetDto,
+    zone: &str,
+) -> Result<ZoneRecord, DnsServiceError> {
+    let matched = |predicate: &dyn Fn(&ZoneRecord) -> bool| -> Vec<&ZoneRecord> {
+        rows.iter().filter(|row| predicate(row)).collect()
+    };
+    // An id the provider no longer recognises is a stale row, not a wrong row — the
+    // name+type+value triple still identifies what the user clicked.
+    if !target.id.is_empty() {
+        let by_id = matched(&|row| row.id == target.id);
+        match by_id.as_slice() {
+            [] => {}
+            [one] => return Ok((*one).clone()),
+            [several @ ..] => {
+                return Err(err(format!(
+                    "{} records share id '{}' — refresh the record list",
+                    several.len(),
+                    target.id
+                )));
+            }
+        }
+    }
+    let by_tuple = matched(&|row| bridge_row_matches(row, target, zone));
+    match by_tuple.as_slice() {
+        [] => Err(err(format!(
+            "record '{}' is no longer listed by this provider — refresh the record list",
+            target.name
+        ))),
+        [one] => Ok((*one).clone()),
+        [several @ ..] => Err(err(format!(
+            "{} records match '{}' — delete them one at a time",
+            several.len(),
+            target.name
+        ))),
+    }
+}
+
+fn bridge_row_matches(row: &ZoneRecord, target: &DnsRecordTargetDto, zone: &str) -> bool {
+    let same_name =
+        row.name == target.name.trim() || to_fqdn(&row.name, zone) == to_fqdn(&target.name, zone);
+    same_name
+        && (target.record_type.is_empty()
+            || row.record_type.eq_ignore_ascii_case(&target.record_type))
+        && (target.content.is_empty() || row.content == target.content)
 }
 
 #[cfg(test)]
@@ -691,10 +842,22 @@ mod tests {
             (DnsProviderType::Hetzner, r#"{"apiToken":"t"}"#),
             (DnsProviderType::DigitalOcean, r#"{"apiToken":"t"}"#),
             (DnsProviderType::Infomaniak, r#"{"apiToken":"t"}"#),
-            (DnsProviderType::Godaddy, r#"{"apiKey":"k","apiSecret":"s"}"#),
-            (DnsProviderType::Porkbun, r#"{"apiKey":"k","secretApiKey":"s"}"#),
-            (DnsProviderType::Ovh, r#"{"applicationKey":"k","applicationSecret":"s","consumerKey":"c"}"#),
-            (DnsProviderType::Ovh, r#"{"applicationKey":"k","applicationSecret":"s","consumerKey":"c","endpoint":"soyoustart-ca"}"#),
+            (
+                DnsProviderType::Godaddy,
+                r#"{"apiKey":"k","apiSecret":"s"}"#,
+            ),
+            (
+                DnsProviderType::Porkbun,
+                r#"{"apiKey":"k","secretApiKey":"s"}"#,
+            ),
+            (
+                DnsProviderType::Ovh,
+                r#"{"applicationKey":"k","applicationSecret":"s","consumerKey":"c"}"#,
+            ),
+            (
+                DnsProviderType::Ovh,
+                r#"{"applicationKey":"k","applicationSecret":"s","consumerKey":"c","endpoint":"soyoustart-ca"}"#,
+            ),
         ] {
             assert!(
                 build_updater(provider_type, credentials).is_ok(),
@@ -712,6 +875,118 @@ mod tests {
                 r#"{"applicationKey":"k","applicationSecret":"s","consumerKey":"c","endpoint":"nope"}"#
             )
             .is_err()
+        );
+    }
+
+    fn row(id: &str, name: &str, record_type: &str, content: &str) -> ZoneRecord {
+        ZoneRecord {
+            id: id.to_string(),
+            name: name.to_string(),
+            record_type: record_type.to_string(),
+            content: content.to_string(),
+            ttl: 3600,
+            record: DnsRecord::TXT(content.to_string()),
+        }
+    }
+
+    fn listed_zone() -> Vec<ZoneRecord> {
+        vec![
+            row("1", "www", "A", "192.0.2.1"),
+            row("2", "www", "A", "192.0.2.2"),
+            row("3", "www", "TXT", "hello"),
+        ]
+    }
+
+    /// The panel used to forward the record name as the provider's record id, which made
+    /// every delete miss. A bare name is ambiguous and must never resolve to one row.
+    #[test]
+    fn bridge_never_resolves_a_bare_name() {
+        let rows = listed_zone();
+        let by_name = DnsRecordTargetDto {
+            zone_id: "example.com".into(),
+            name: "www".into(),
+            ..Default::default()
+        };
+        assert!(pick_bridge_row(&rows, &by_name, "example.com").is_err());
+    }
+
+    #[test]
+    fn bridge_resolves_a_row_by_value_or_id() {
+        let rows = listed_zone();
+        let by_name = DnsRecordTargetDto {
+            zone_id: "example.com".into(),
+            name: "www".into(),
+            ..Default::default()
+        };
+        let by_value = DnsRecordTargetDto {
+            record_type: "A".into(),
+            content: "192.0.2.2".into(),
+            ..by_name.clone()
+        };
+        assert_eq!(
+            pick_bridge_row(&rows, &by_value, "example.com").unwrap().id,
+            "2"
+        );
+        let by_id = DnsRecordTargetDto {
+            id: "3".into(),
+            ..by_name.clone()
+        };
+        assert_eq!(
+            pick_bridge_row(&rows, &by_id, "example.com")
+                .unwrap()
+                .record_type,
+            "TXT"
+        );
+    }
+
+    /// Rows come back relative to the zone while the form may carry the full name.
+    #[test]
+    fn bridge_matches_relative_and_absolute_names() {
+        let rows = listed_zone();
+        let absolute = DnsRecordTargetDto {
+            zone_id: "example.com".into(),
+            name: "www.example.com".into(),
+            record_type: "A".into(),
+            content: "192.0.2.1".into(),
+            id: String::new(),
+        };
+        assert_eq!(
+            pick_bridge_row(&rows, &absolute, "example.com").unwrap().id,
+            "1"
+        );
+    }
+
+    #[test]
+    fn bridge_rejects_a_row_that_is_gone() {
+        let rows = listed_zone();
+        let gone = DnsRecordTargetDto {
+            zone_id: "example.com".into(),
+            name: "ftp".into(),
+            record_type: "A".into(),
+            content: "192.0.2.9".into(),
+            id: String::new(),
+        };
+        let error = pick_bridge_row(&rows, &gone, "example.com")
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("no longer listed"), "{error}");
+    }
+
+    /// A row edited elsewhere keeps its name and value but loses its id. The stale id must
+    /// not block the delete.
+    #[test]
+    fn bridge_falls_back_from_a_stale_id() {
+        let rows = listed_zone();
+        let stale_id = DnsRecordTargetDto {
+            zone_id: "example.com".into(),
+            id: "does-not-exist".into(),
+            name: "www".into(),
+            record_type: "TXT".into(),
+            content: "hello".into(),
+        };
+        assert_eq!(
+            pick_bridge_row(&rows, &stale_id, "example.com").unwrap().id,
+            "3"
         );
     }
 }

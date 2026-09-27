@@ -345,6 +345,25 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_list_rrset_txt_keeps_multi_byte_characters() {
+        let mut server = mockito::Server::new_async().await;
+        let _zones = mock_zone_lookup(&mut server);
+        let _list = mock_list_records(
+            &mut server,
+            r#"[
+                {"id":81,"name":"_acme.example.com.","type":"TXT","content":"\"naïve ✅\"","ttl":60,"zone_id":1}
+            ]"#,
+        );
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .list_rrset("_acme.example.com", DnsRecordType::TXT, "example.com")
+            .await
+            .expect("list_rrset failed");
+        assert_eq!(result, vec![DnsRecord::TXT("naïve ✅".to_string())]);
+    }
+
+    #[tokio::test]
     async fn test_zone_match_case_insensitive() {
         let mut server = mockito::Server::new_async().await;
         let _zones = mock_zone_lookup(&mut server);

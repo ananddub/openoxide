@@ -13,6 +13,7 @@
 
 use crate::crypto::{hmac_sha256, sha256_digest};
 use crate::http::{HttpClient, HttpClientBuilder};
+use crate::utils::same_value;
 use crate::utils::split_caa_value;
 use crate::utils::unquote_txt;
 use crate::utils::{strip_origin_from_name, txt_chunks_to_text};
@@ -131,7 +132,7 @@ impl VolcengineProvider {
         let mut pool = existing;
         let mut to_add: Vec<String> = Vec::new();
         for value in desired {
-            if let Some(idx) = pool.iter().position(|r| r.value == value) {
+            if let Some(idx) = pool.iter().position(|r| same_value(&r.value, &value)) {
                 pool.swap_remove(idx);
             } else if !to_add.contains(&value) {
                 to_add.push(value);
@@ -169,7 +170,7 @@ impl VolcengineProvider {
 
         let mut queued: Vec<String> = Vec::new();
         for value in desired {
-            if existing.iter().any(|r| r.value == value) {
+            if existing.iter().any(|r| same_value(&r.value, &value)) {
                 continue;
             }
             if queued.contains(&value) {
@@ -201,7 +202,7 @@ impl VolcengineProvider {
         let existing = self.list_records(zone.id, &host, type_str).await?;
 
         for value in to_remove {
-            if let Some(entry) = existing.iter().find(|r| r.value == value) {
+            if let Some(entry) = existing.iter().find(|r| same_value(&r.value, &value)) {
                 self.delete_record(&entry.record_id).await?;
             }
         }

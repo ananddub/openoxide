@@ -142,7 +142,10 @@ impl GcoreProvider {
 
         let before = current.len();
         for content in to_add {
-            if !current.iter().any(|c| contents_equal(c, &content)) {
+            if !current
+                    .iter()
+                    .any(|c| contents_equal(record_type, c, &content))
+                {
                 current.push(content);
             }
         }
@@ -187,7 +190,7 @@ impl GcoreProvider {
             .resource_records
             .into_iter()
             .map(|r| r.content)
-            .filter(|content| !to_remove.iter().any(|r| contents_equal(r, content)))
+            .filter(|content| !to_remove.iter().any(|r| contents_equal(record_type, r, content)))
             .collect();
 
         if filtered.len() == original_len {
@@ -364,16 +367,29 @@ fn record_to_content(record: DnsRecord) -> Vec<Value> {
     }
 }
 
-fn contents_equal(a: &[Value], b: &[Value]) -> bool {
+fn contents_equal(record_type: DnsRecordType, a: &[Value], b: &[Value]) -> bool {
     if a.len() != b.len() {
         return false;
     }
-    a.iter().zip(b.iter()).all(|(x, y)| values_equal(x, y))
+    a.iter()
+        .zip(b.iter())
+        .all(|(x, y)| values_equal(record_type, x, y))
 }
 
-fn values_equal(a: &Value, b: &Value) -> bool {
+/// Gcore keeps the trailing dot on host targets and the read path strips it, so host-like
+/// values are compared dot-free; TXT and addresses keep their exact form.
+fn values_equal(record_type: DnsRecordType, a: &Value, b: &Value) -> bool {
     match (a, b) {
-        (Value::String(x), Value::String(y)) => x == y,
+        (Value::String(x), Value::String(y)) => {
+            if matches!(
+                record_type,
+                DnsRecordType::CNAME | DnsRecordType::NS | DnsRecordType::MX | DnsRecordType::SRV
+            ) {
+                strip_trailing_dot(x) == strip_trailing_dot(y)
+            } else {
+                x == y
+            }
+        }
         (Value::Number(x), Value::Number(y)) => match (x.as_i64(), y.as_i64()) {
             (Some(xi), Some(yi)) => xi == yi,
             _ => match (x.as_u64(), y.as_u64()) {

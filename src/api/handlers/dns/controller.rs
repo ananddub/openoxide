@@ -3,13 +3,16 @@ use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
 use crate::api::connect::generated::openoxide::api::v1::{
     CreateDnsProviderRequest, CreateDnsProviderResponse, CreateDnsRecordRequest,
     CreateDnsRecordResponse, DeleteDnsProviderRequest, DeleteDnsRecordRequest, DnsService,
-    DnsServiceExt, Empty, GetDnsProviderRequest, GetDnsProviderResponse,
-    ListDnsProvidersRequest, ListDnsProvidersResponse, ListDnsRecordsRequest,
-    ListDnsRecordsResponse, ListDnsZonesRequest, ListDnsZonesResponse, TestDnsConnectionRequest,
-    TestDnsConnectionResponse, TestDnsProviderRequest, TestDnsProviderResponse,
-    UpdateDnsProviderRequest, UpdateDnsProviderResponse,
+    DnsServiceExt, Empty, GetDnsProviderRequest, GetDnsProviderResponse, ListDnsProvidersRequest,
+    ListDnsProvidersResponse, ListDnsRecordsRequest, ListDnsRecordsResponse, ListDnsZonesRequest,
+    ListDnsZonesResponse, TestDnsConnectionRequest, TestDnsConnectionResponse,
+    TestDnsProviderRequest, TestDnsProviderResponse, UpdateDnsProviderRequest,
+    UpdateDnsProviderResponse, UpdateDnsRecordRequest, UpdateDnsRecordResponse,
 };
-use crate::services::networking::dns::{CreateDnsProviderDto, UpdateDnsProviderDto, UpsertDnsRecordDto};
+use crate::services::networking::dns::{
+    CreateDnsProviderDto, DnsRecordTargetDto, UpdateDnsProviderDto, UpdateDnsRecordDto,
+    UpsertDnsRecordDto,
+};
 
 use super::helper::*;
 use super::init::DnsController;
@@ -23,7 +26,11 @@ impl DnsService for DnsController {
         _request: ServiceRequest<'_, ListDnsProvidersRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListDnsProvidersResponse> + Send + use<'a>> {
         let org_id = auth.organization_id;
-        let items = self.service.list_providers(org_id).await.map_err(map_dns_error)?;
+        let items = self
+            .service
+            .list_providers(org_id)
+            .await
+            .map_err(map_dns_error)?;
         let providers = items.into_iter().map(provider_to_proto).collect();
         Response::ok(ListDnsProvidersResponse {
             providers,
@@ -81,7 +88,10 @@ impl DnsService for DnsController {
         let org_id = auth.organization_id;
         let dto = UpdateDnsProviderDto {
             name: request.name.map(str::to_owned),
-            provider_type: request.provider_type.map(proto_to_provider_type).transpose()?,
+            provider_type: request
+                .provider_type
+                .map(proto_to_provider_type)
+                .transpose()?,
             credentials_json: request.credentials_json.map(str::to_owned),
         };
         let provider = self
@@ -213,6 +223,43 @@ impl DnsService for DnsController {
         })
     }
 
+    #[permission(Server, CanUpdate)]
+    async fn update_record<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, UpdateDnsRecordRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<UpdateDnsRecordResponse> + Send + use<'a>> {
+        let org_id = auth.organization_id;
+        let target = DnsRecordTargetDto {
+            zone_id: request.zone_id.to_owned(),
+            id: opt_str(&request.id),
+            name: request.old_name.to_owned(),
+            record_type: opt_str(&request.old_record_type),
+            content: opt_str(&request.old_content),
+        };
+        let next = UpsertDnsRecordDto {
+            zone_id: request.zone_id.to_owned(),
+            record_type: request.record_type.to_owned(),
+            name: request.name.to_owned(),
+            content: request.content.to_owned(),
+            ttl: request.ttl,
+            proxied: request.proxied,
+        };
+        let record = self
+            .service
+            .update_record(
+                request.provider_id,
+                org_id,
+                UpdateDnsRecordDto { target, next },
+            )
+            .await
+            .map_err(map_dns_error)?;
+        Response::ok(UpdateDnsRecordResponse {
+            record: ::buffa::MessageField::some(record_to_proto(record)),
+            ..Default::default()
+        })
+    }
+
     #[permission(Server, CanDelete)]
     async fn delete_record<'a>(
         &'a self,
@@ -220,12 +267,26 @@ impl DnsService for DnsController {
         request: ServiceRequest<'_, DeleteDnsRecordRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         let org_id = auth.organization_id;
-        let zone_id = request.zone_id.to_owned();
-        let name = request.name.to_owned();
+        let target = DnsRecordTargetDto {
+            zone_id: request.zone_id.to_owned(),
+            id: opt_str(&request.id),
+            name: request.name.to_owned(),
+            record_type: opt_str(&request.record_type),
+            content: opt_str(&request.content),
+        };
         self.service
-            .delete_record(request.provider_id, org_id, &zone_id, &name)
+            .delete_record(request.provider_id, org_id, target)
             .await
             .map_err(map_dns_error)?;
         Response::ok(Empty::default())
+    }
+}
+
+/// Optional proto strings arrive as `Option<BytesStr>`; an absent one means the caller
+/// could not narrow the match, which the service reads as an empty field.
+fn opt_str(value: &Option<impl AsRef<str>>) -> String {
+    match value {
+        Some(value) => value.as_ref().to_string(),
+        None => String::new(),
     }
 }

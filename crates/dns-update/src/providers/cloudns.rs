@@ -10,6 +10,7 @@
  */
 
 use crate::utils::build_caa;
+use crate::utils::same_value;
 use crate::{
     DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord,
     http::{HttpClient, HttpClientBuilder, HttpRequest},
@@ -486,16 +487,16 @@ fn normalize_record(record: DnsRecord) -> DnsRecord {
 
 fn record_matches(existing: &ClouDnsRecord, desired: &DnsRecord) -> bool {
     match desired {
-        DnsRecord::A(addr) => existing.record == addr.to_string(),
-        DnsRecord::AAAA(addr) => existing.record == addr.to_string(),
-        DnsRecord::CNAME(s) | DnsRecord::NS(s) => existing.record == *s,
-        DnsRecord::TXT(s) => existing.record == *s,
+        DnsRecord::A(addr) => same_value(&existing.record, &addr.to_string()),
+        DnsRecord::AAAA(addr) => same_value(&existing.record, &addr.to_string()),
+        DnsRecord::CNAME(s) | DnsRecord::NS(s) => same_value(&existing.record, s),
+        DnsRecord::TXT(s) => same_value(&existing.record, s),
         DnsRecord::MX(mx) => {
-            existing.record == mx.exchange
+            same_value(&existing.record, &mx.exchange)
                 && existing.priority.as_deref() == Some(mx.priority.to_string().as_str())
         }
         DnsRecord::SRV(srv) => {
-            existing.record == srv.target
+            same_value(&existing.record, &srv.target)
                 && existing.priority.as_deref() == Some(srv.priority.to_string().as_str())
                 && existing.weight.as_deref() == Some(srv.weight.to_string().as_str())
                 && existing.port.as_deref() == Some(srv.port.to_string().as_str())

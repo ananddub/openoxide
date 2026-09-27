@@ -401,6 +401,51 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn remove_from_rrset_matches_a_txt_the_api_quoted() {
+        let mut server = mockito::Server::new_async().await;
+
+        // Hostinger stores the TXT quoted; the zone read and the caller's value are
+        // both unquoted, so a raw string compare would silently delete nothing.
+        let zone_get = server
+            .mock("GET", "/api/dns/v1/zones/example.com")
+            .with_status(200)
+            .with_body(
+                json!([
+                    {
+                        "name": "_dmarc",
+                        "type": "TXT",
+                        "ttl": 3600,
+                        "records": [{ "content": "\"v=DMARC1; p=none\"" }]
+                    }
+                ])
+                .to_string(),
+            )
+            .create();
+
+        let delete_mock = server
+            .mock("DELETE", "/api/dns/v1/zones/example.com")
+            .match_body(mockito::Matcher::Json(json!({
+                "filters": [{ "name": "_dmarc", "type": "TXT" }]
+            })))
+            .with_status(204)
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+
+        provider
+            .remove_from_rrset(
+                "_dmarc.example.com",
+                DnsRecordType::TXT,
+                vec![DnsRecord::TXT("v=DMARC1; p=none".to_string())],
+                "example.com",
+            )
+            .await
+            .unwrap();
+        zone_get.assert();
+        delete_mock.assert();
+    }
+
+    #[tokio::test]
     async fn remove_from_rrset_absent_value_noop() {
         let mut server = mockito::Server::new_async().await;
 

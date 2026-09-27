@@ -415,6 +415,45 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn remove_from_rrset_matches_a_cname_the_api_dotted() {
+        let mut server = mockito::Server::new_async().await;
+
+        let search_mock = server
+            .mock("POST", "/zone/example.com/_search")
+            .with_status(200)
+            .with_body(
+                r#"{"data":[{"origin":"example.com","resourceRecords":[
+                    {"name":"www.example.com.","ttl":3600,"type":"CNAME","value":"target.example.com."}
+                ]}]}"#,
+            )
+            .create();
+        let stream_mock = server
+            .mock("POST", "/zone/example.com/_stream")
+            .match_body(mockito::Matcher::Json(json!({
+                "rems": [
+                    {"name": "www.example.com.", "ttl": 3600, "type": "CNAME", "value": "target.example.com."}
+                ],
+            })))
+            .with_status(200)
+            .with_body("{}")
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .remove_from_rrset(
+                "www.example.com",
+                DnsRecordType::CNAME,
+                vec![DnsRecord::CNAME("target.example.com".to_string())],
+                "example.com",
+            )
+            .await;
+
+        assert!(result.is_ok(), "{result:?}");
+        search_mock.assert();
+        stream_mock.assert();
+    }
+
+    #[tokio::test]
     async fn remove_from_rrset_empty_short_circuits() {
         let mut server = mockito::Server::new_async().await;
 

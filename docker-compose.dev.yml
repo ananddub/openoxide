@@ -91,6 +91,9 @@ services:
     pull_policy: never
     container_name: openoxide-agent
     restart: unless-stopped
+    # The agent shells out to the docker CLI, whose plugin grandchildren re-parent
+    # to PID 1 when the shell exits. init gives the container a zombie reaper.
+    init: true
 
     networks:
       - openoxide-network

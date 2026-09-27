@@ -9,7 +9,7 @@
  * except according to those terms.
  */
 
-use crate::utils::split_caa_value;
+use crate::utils::{same_value, split_caa_value};
 use crate::{
     CAARecord, DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord,
     http::{HttpClient, HttpClientBuilder},
@@ -162,7 +162,10 @@ impl VercelProvider {
         let mut to_add: Vec<VercelContent> = Vec::new();
 
         for content in desired {
-            if let Some(idx) = existing_pool.iter().position(|(_, c)| *c == content) {
+            if let Some(idx) = existing_pool
+                .iter()
+                .position(|(_, c)| same_content(c, &content))
+            {
                 existing_pool.swap_remove(idx);
             } else {
                 to_add.push(content);
@@ -201,7 +204,7 @@ impl VercelProvider {
             .collect();
 
         for content in desired {
-            if effective.contains(&content) {
+            if effective.iter().any(|c| same_content(c, &content)) {
                 continue;
             }
             self.create_record(&domain, &subdomain, record_type, ttl, &content)
@@ -235,7 +238,10 @@ impl VercelProvider {
             .collect();
 
         for content in to_remove {
-            if let Some((id, _)) = existing_pairs.iter().find(|(_, c)| *c == content) {
+            if let Some((id, _)) = existing_pairs
+                .iter()
+                .find(|(_, c)| same_content(c, &content))
+            {
                 self.delete_record(&domain, id).await?;
             }
         }
@@ -404,6 +410,31 @@ fn vercel_content_from_record(record: &DnsRecord) -> crate::Result<VercelContent
         }
         DnsRecord::CAA(caa) => VercelContent::Value(caa.to_string()),
     })
+}
+
+/// The listing renders a value differently than the create payload encodes it (a target may
+/// keep or lose its trailing dot), so match the two semantically.
+fn same_content(listed: &VercelContent, desired: &VercelContent) -> bool {
+    match (listed, desired) {
+        (VercelContent::Value(a), VercelContent::Value(b)) => same_value(a, b),
+        (
+            VercelContent::Mx {
+                value: a,
+                priority: pa,
+            },
+            VercelContent::Mx {
+                value: b,
+                priority: pb,
+            },
+        ) => pa == pb && same_value(a, b),
+        (VercelContent::Srv(a), VercelContent::Srv(b)) => {
+            a.priority == b.priority
+                && a.weight == b.weight
+                && a.port == b.port
+                && same_value(&a.target, &b.target)
+        }
+        _ => false,
+    }
 }
 
 fn listed_to_content(record: &ListedRecord, record_type: DnsRecordType) -> Option<VercelContent> {

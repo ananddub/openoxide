@@ -13,6 +13,9 @@ services:
     pull_policy: always
     container_name: openoxide-agent
     restart: unless-stopped
+    # The agent shells out to the docker CLI, whose plugin grandchildren re-parent
+    # to PID 1 when the shell exits. init gives the container a zombie reaper.
+    init: true
     # Local panel and agent share a private Docker network. The panel reaches
     # this service at openoxide-agent:50051.
     networks:

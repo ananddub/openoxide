@@ -11,6 +11,7 @@
 
 use crate::http::{HttpClient, HttpClientBuilder};
 use crate::jwt::{ServiceAccount, create_jwt, exchange_jwt_for_token};
+use crate::utils::same_value;
 use crate::utils::split_caa_value;
 use crate::utils::txt_chunks_to_text;
 use crate::utils::{
@@ -264,7 +265,7 @@ impl GoogleCloudDnsProvider {
 
         let mut union = existing_rrdatas.clone();
         for entry in &new_rrdatas {
-            if !union.iter().any(|e| e == entry) {
+            if !union.iter().any(|e| same_value(e, entry)) {
                 union.push(entry.clone());
             }
         }
@@ -331,7 +332,7 @@ impl GoogleCloudDnsProvider {
 
         let filtered: Vec<String> = existing_rrdatas
             .iter()
-            .filter(|e| !to_remove.iter().any(|r| r == *e))
+            .filter(|e| !to_remove.iter().any(|r| same_value(e.as_str(), r)))
             .cloned()
             .collect();
 
@@ -614,7 +615,7 @@ fn rrset_matches(current: &Value, desired: &GoogleRrset) -> bool {
         && current_rrdatas
             .iter()
             .zip(desired.rrdatas.iter())
-            .all(|(a, b)| *a == b.as_str())
+            .all(|(a, b)| same_value(a, b))
 }
 
 fn parse_rrdata(record_type: DnsRecordType, text: &str) -> Result<DnsRecord> {

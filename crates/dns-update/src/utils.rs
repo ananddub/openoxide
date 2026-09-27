@@ -414,6 +414,25 @@ pub(crate) fn unquote_txt(content: &str) -> String {
     out
 }
 
+/// Some providers rewrite a value on save — a TXT comes back RFC-quoted, a host target keeps
+/// its trailing dot — while the zone read returns the unquoted, dot-stripped form. Comparing
+/// the raw strings then misses the very row the user clicked, and a delete silently removes
+/// nothing.
+pub(crate) fn normalize_value(value: &str) -> String {
+    // Only an rdata that opens with a quote is a quoted string: a value with a stray quote in
+    // the middle is taken literally, so it can never match a different value.
+    let text = if value.trim_start().starts_with('"') {
+        unquote_txt(value)
+    } else {
+        value.to_string()
+    };
+    strip_trailing_dot(&text).to_string()
+}
+
+pub(crate) fn same_value(a: &str, b: &str) -> bool {
+    normalize_value(a) == normalize_value(b)
+}
+
 pub(crate) fn build_caa(flags: u8, tag: &str, value: &str) -> crate::Result<CAARecord> {
     let issuer_critical = flags & 0x80 != 0;
     match tag {

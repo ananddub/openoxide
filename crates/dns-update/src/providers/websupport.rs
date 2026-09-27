@@ -9,6 +9,7 @@
  * except according to those terms.
  */
 
+use crate::utils::same_value;
 use crate::utils::split_caa_value;
 use crate::{
     CAARecord, DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord,
@@ -179,7 +180,12 @@ impl WebSupportProvider {
         let mut to_add: Vec<RecordContent> = Vec::new();
 
         for content in desired {
-            if let Some(idx) = existing_pool.iter().position(|r| r.content == content) {
+            if let Some(idx) = existing_pool.iter().position(|r| {
+                same_value(&r.content.content, &content.content)
+                    && r.content.priority == content.priority
+                    && r.content.port == content.port
+                    && r.content.weight == content.weight
+            }) {
                 existing_pool.swap_remove(idx);
             } else {
                 to_add.push(content);
@@ -217,7 +223,12 @@ impl WebSupportProvider {
         let existing = self.list_at(service_id, &subdomain, record_type).await?;
 
         for content in desired {
-            if existing.iter().any(|r| r.content == content) {
+            if existing.iter().any(|r| {
+                same_value(&r.content.content, &content.content)
+                    && r.content.priority == content.priority
+                    && r.content.port == content.port
+                    && r.content.weight == content.weight
+            }) {
                 continue;
             }
             let body = content_to_create(record_type, &subdomain, ttl, content);
@@ -246,7 +257,12 @@ impl WebSupportProvider {
         let existing = self.list_at(service_id, &subdomain, record_type).await?;
 
         for content in to_remove {
-            if let Some(entry) = existing.iter().find(|r| r.content == content) {
+            if let Some(entry) = existing.iter().find(|r| {
+                same_value(&r.content.content, &content.content)
+                    && r.content.priority == content.priority
+                    && r.content.port == content.port
+                    && r.content.weight == content.weight
+            }) {
                 self.delete_record(service_id, entry.id).await?;
             }
         }

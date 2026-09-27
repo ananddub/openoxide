@@ -311,6 +311,42 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn remove_from_rrset_matches_a_cname_the_api_dotted() {
+        let mut server = mockito::Server::new_async().await;
+        let _domains = mock_describe_domains(&mut server);
+        let _list = mock_list_records(
+            &mut server,
+            "www",
+            "CNAME",
+            r#"{"DomainRecords":{"Record":[
+                {"RecordId":"dot","RR":"www","Type":"CNAME","Value":"target.example.com.","TTL":60}
+            ]}}"#,
+        );
+        let delete_dot = server
+            .mock("GET", mockito::Matcher::Any)
+            .match_query(mockito::Matcher::AllOf(vec![
+                mockito::Matcher::UrlEncoded("Action".into(), "DeleteDomainRecord".into()),
+                mockito::Matcher::UrlEncoded("RecordId".into(), "dot".into()),
+            ]))
+            .with_status(200)
+            .with_body(r#"{"RecordId":"dot","RequestId":"r"}"#)
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .remove_from_rrset(
+                "www.example.com",
+                DnsRecordType::CNAME,
+                vec![DnsRecord::CNAME("target.example.com".to_string())],
+                "example.com",
+            )
+            .await;
+
+        assert!(result.is_ok(), "remove_from_rrset failed: {result:?}");
+        delete_dot.assert();
+    }
+
+    #[tokio::test]
     async fn remove_from_rrset_empty_is_noop() {
         let mut server = mockito::Server::new_async().await;
         let unused = server

@@ -9,6 +9,7 @@
  * except according to those terms.
  */
 
+use crate::utils::same_value;
 use crate::utils::split_caa_value;
 use crate::utils::unquote_txt;
 use crate::{
@@ -162,7 +163,7 @@ impl ExoscaleProvider {
             if let Some(idx) = existing
                 .iter()
                 .enumerate()
-                .position(|(i, r)| !to_keep[i] && r.record == desired)
+                .position(|(i, r)| !to_keep[i] && same_record(&r.record, &desired))
             {
                 to_keep[idx] = true;
             } else {
@@ -200,7 +201,7 @@ impl ExoscaleProvider {
         let zone_id = self.obtain_zone_id(&domain).await?;
         let existing = self.list_at(&zone_id, &subdomain, record_type).await?;
         for desired in records {
-            if existing.iter().any(|r| r.record == desired) {
+            if existing.iter().any(|r| same_record(&r.record, &desired)) {
                 continue;
             }
             self.post_record(&zone_id, &subdomain, &desired, ttl)
@@ -230,7 +231,7 @@ impl ExoscaleProvider {
             if let Some(idx) = existing
                 .iter()
                 .enumerate()
-                .position(|(i, r)| !deleted[i] && r.record == desired)
+                .position(|(i, r)| !deleted[i] && same_record(&r.record, &desired))
             {
                 deleted[idx] = true;
                 self.delete_record(&zone_id, &existing[idx].id).await?;
@@ -328,6 +329,13 @@ impl ExoscaleProvider {
 
 pub(crate) fn signing_string(method: &str, path: &str, body: &str, expires: i64) -> String {
     format!("{} {}\n{}\n\n\n{}", method, path, body, expires)
+}
+
+/// Exoscale can hand back a value in another wire form than the one we send — a target that
+/// keeps its trailing dot, a TXT that stays quoted — so the rendered rdata is compared with
+/// `same_value` while the record type still has to match exactly.
+fn same_record(listed: &DnsRecord, desired: &DnsRecord) -> bool {
+    listed.as_type() == desired.as_type() && same_value(&listed.to_string(), &desired.to_string())
 }
 
 fn check_record_types(expected: DnsRecordType, records: &[DnsRecord]) -> crate::Result<()> {

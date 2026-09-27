@@ -29,13 +29,9 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 		return extractServicesFromYaml(compose?.compose_file);
 	}, [compose?.compose_file]);
 
-	const servicesList = useMemo(() => {
-		if (availableServices.length > 0) return availableServices;
-		return ['app'];
-	}, [availableServices]);
-
-	const activeService =
-		selectedContainer.trim() || servicesList[0] || 'app';
+	// Empty means the whole stack: the backend tails every container carrying
+	// the project's labels, so no invented default service name is needed.
+	const activeService = selectedContainer.trim();
 
 	// ConnectRPC log streams. Container mode tails the compose project's service logs; build mode streams the latest deployment's build log (the old REST build endpoint never worked).
 	const {data: allDeployments = []} = useDeploymentItems();
@@ -80,7 +76,7 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 				const call = deploymentClient.streamComposeLogs(
 					{
 						composeId: compose?.id ? BigInt(compose.id) : undefined,
-						service: activeService,
+						service: activeService || undefined,
 						serverId: compose?.server_id
 							? BigInt(compose.server_id)
 							: undefined,
@@ -150,7 +146,7 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 				setLogMode={setLogMode}
 				activeService={activeService}
 				setSelectedContainer={setSelectedContainer}
-				availableServices={servicesList}
+				availableServices={availableServices}
 			/>
 
 			{/* Stream Viewer Component (< 200 lines) */}
@@ -167,12 +163,16 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 				loadingText={
 					logMode === 'build'
 						? 'Connecting to build log stream...'
-						: `Connecting to '${activeService}' log stream...`
+						: activeService
+							? `Connecting to '${activeService}' log stream...`
+							: 'Connecting to stack log stream...'
 				}
 				emptyText={
 					logMode === 'build'
 						? 'No deployment build logs found for this compose stack.'
-						: `No runtime log output received for compose service '${activeService}'.`
+						: activeService
+							? `No runtime log output received for compose service '${activeService}'.`
+							: 'No runtime log output received for this stack.'
 				}
 				onDownload={handleDownload}
 				onReload={() => setRefetchTrigger(prev => prev + 1)}

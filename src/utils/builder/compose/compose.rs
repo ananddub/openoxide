@@ -12,6 +12,7 @@ use crate::utils::{
     },
     exec::{CommandExecutor, ExecResult},
 };
+use os::exec::IntoCommand;
 use os::pipeline;
 use tokio_util::sync::CancellationToken;
 
@@ -183,8 +184,15 @@ impl ComposeBuilder {
             .retry(3)
             .cancel_with(cancel.clone());
 
-        let os = crate::utils::os::OsCli::new(&self.ctx.executor);
-        let config_cmd = os.file(&spec.rendered_stack_file).write(config_builder);
+        // `file().write()` dumps its argument's text into the file, so the config
+        // command must actually run first and its stdout be written back.
+        let config_output = config_builder
+            .execute_cancelled(&self.ctx.executor, cancel)
+            .await?;
+        let rendered = strip_project_name(&config_output.stdout);
+        self.ctx
+            .write_file_cancelled(&spec.rendered_stack_file, rendered.as_bytes(), cancel)
+            .await?;
 
         let stacks = self.ctx.docker.stacks();
         let deploy_cmd = stacks
@@ -197,7 +205,6 @@ impl ComposeBuilder {
 
         let pipeline = pipeline! {
             build_cmd;
-            config_cmd;
             deploy_cmd;
         };
 
@@ -322,5 +329,40 @@ impl ComposeBuilder {
                 }
             }
         }
+    }
+}
+
+/// `docker compose config` prefixes its output with a top-level `name:` key,
+/// which `docker stack deploy` rejects ("(root) Additional property name is not
+/// allowed"). The stack name is already the deploy argument, so drop it. Nested
+/// `name:` keys are indented and therefore survive.
+fn strip_project_name(config: &str) -> String {
+    config
+        .lines()
+        .filter(|line| !line.starts_with("name:"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::strip_project_name;
+
+    #[test]
+    fn only_the_top_level_project_name_is_dropped() {
+        let config = [
+            "name: my-stack",
+            "services:",
+            "  db:",
+            "    image: postgres",
+            "networks:",
+            "  default:",
+            "    name: my-stack_default",
+        ]
+        .join("\n");
+        let rendered = strip_project_name(&config);
+        assert!(!rendered.starts_with("name:"));
+        assert!(rendered.contains("services:"));
+        assert!(rendered.contains("    name: my-stack_default"));
     }
 }

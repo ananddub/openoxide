@@ -107,53 +107,18 @@ impl DnsService {
             "https://api.cloudflare.com/client/v4/zones/{}/dns_records",
             body.zone_id
         );
+        let payload = cloudflare_payload(body)?;
 
-        if !matches!(
-            body.record_type.as_str(),
-            "A" | "AAAA" | "CNAME" | "NS" | "MX" | "TXT" | "SRV" | "CAA"
-        ) {
-            return Err(DnsServiceError::ProviderError(
-                "Unsupported record type for Cloudflare".into(),
-            ));
-        }
-
-        let mut payload = serde_json::json!({
-            "type": body.record_type,
-            "name": body.name,
-            "content": body.content,
-            "ttl": body.ttl.unwrap_or(1),
-        });
-        if body.proxied.is_some() && matches!(body.record_type.as_str(), "A" | "AAAA" | "CNAME") {
-            payload["proxied"] = serde_json::json!(body.proxied.unwrap_or(false));
-        }
-
-        let lookup = self
+        // Create always POSTs. Searching for a name+type match and PUTting to it would
+        // overwrite an unrelated value instead of adding a second one.
+        let res = self
             .client
-            .get(&url)
-            .query(&[
-                ("type", body.record_type.as_str()),
-                ("name", body.name.as_str()),
-            ])
-            .header("Authorization", format!("Bearer {}", token))
-            .send()
-            .await?;
-        let existing: Vec<serde_json::Value> =
-            self.cloudflare_result(lookup, "find DNS record").await?;
-        let (request, operation) =
-            if let Some(record_id) = existing.first().and_then(|r| r["id"].as_str()) {
-                (
-                    self.client.put(format!("{url}/{record_id}")),
-                    "update DNS record",
-                )
-            } else {
-                (self.client.post(&url), "create DNS record")
-            };
-        let res = request
+            .post(&url)
             .header("Authorization", format!("Bearer {}", token))
             .json(&payload)
             .send()
             .await?;
-        let created: serde_json::Value = self.cloudflare_result(res, operation).await?;
+        let created: serde_json::Value = self.cloudflare_result(res, "create DNS record").await?;
         Ok(DnsRecordDto {
             id: created["id"].as_str().unwrap_or_default().to_string(),
             zone_id: body.zone_id.clone(),
@@ -162,6 +127,38 @@ impl DnsService {
             content: body.content.clone(),
             ttl: body.ttl,
             proxied: created["proxied"].as_bool().or(body.proxied),
+        })
+    }
+
+    pub(in crate::services::networking::dns) async fn update_cloudflare_record(
+        &self,
+        credentials_json: &str,
+        record_id: &str,
+        body: &UpsertDnsRecordDto,
+    ) -> Result<DnsRecordDto, DnsServiceError> {
+        let token = extract_credential_field(credentials_json, "apiToken");
+        let url = format!(
+            "https://api.cloudflare.com/client/v4/zones/{}/dns_records/{}",
+            body.zone_id, record_id
+        );
+        let payload = cloudflare_payload(body)?;
+
+        let res = self
+            .client
+            .put(&url)
+            .header("Authorization", format!("Bearer {}", token))
+            .json(&payload)
+            .send()
+            .await?;
+        let updated: serde_json::Value = self.cloudflare_result(res, "update DNS record").await?;
+        Ok(DnsRecordDto {
+            id: updated["id"].as_str().unwrap_or(record_id).to_string(),
+            zone_id: body.zone_id.clone(),
+            record_type: body.record_type.clone(),
+            name: body.name.clone(),
+            content: body.content.clone(),
+            ttl: updated["ttl"].as_u64().map(|v| v as u32).or(body.ttl),
+            proxied: updated["proxied"].as_bool().or(body.proxied),
         })
     }
 
@@ -183,8 +180,28 @@ impl DnsService {
             .header("Authorization", format!("Bearer {}", token))
             .send()
             .await?;
-
         let _: serde_json::Value = self.cloudflare_result(res, "delete DNS record").await?;
         Ok(true)
     }
+}
+
+fn cloudflare_payload(body: &UpsertDnsRecordDto) -> Result<serde_json::Value, DnsServiceError> {
+    if !matches!(
+        body.record_type.as_str(),
+        "A" | "AAAA" | "CNAME" | "NS" | "MX" | "TXT" | "SRV" | "CAA"
+    ) {
+        return Err(DnsServiceError::ProviderError(
+            "Unsupported record type for Cloudflare".into(),
+        ));
+    }
+    let mut payload = serde_json::json!({
+        "type": body.record_type,
+        "name": body.name,
+        "content": body.content,
+        "ttl": body.ttl.unwrap_or(1),
+    });
+    if body.proxied.is_some() && matches!(body.record_type.as_str(), "A" | "AAAA" | "CNAME") {
+        payload["proxied"] = serde_json::json!(body.proxied.unwrap_or(false));
+    }
+    Ok(payload)
 }

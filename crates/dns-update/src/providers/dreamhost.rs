@@ -9,6 +9,7 @@
  * except according to those terms.
  */
 
+use crate::utils::same_value;
 use crate::{
     DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord,
     http::{HttpClient, HttpClientBuilder},
@@ -173,7 +174,10 @@ impl DreamhostProvider {
         let mut to_add: Vec<String> = Vec::new();
 
         for value in desired {
-            if let Some(idx) = existing_pool.iter().position(|r| r.value == value) {
+            if let Some(idx) = existing_pool
+                .iter()
+                .position(|r| same_value(&r.value, &value))
+            {
                 existing_pool.swap_remove(idx);
             } else {
                 to_add.push(value);
@@ -207,7 +211,7 @@ impl DreamhostProvider {
         let existing = self.list_filtered(&fqdn, rr_type).await?;
 
         for value in desired {
-            if existing.iter().any(|r| r.value == value) {
+            if existing.iter().any(|r| same_value(&r.value, &value)) {
                 continue;
             }
             self.add_record(&fqdn, rr_type, &value).await?;
@@ -232,7 +236,7 @@ impl DreamhostProvider {
         let existing = self.list_filtered(&fqdn, rr_type).await?;
 
         for value in to_remove {
-            if existing.iter().any(|r| r.value == value) {
+            if existing.iter().any(|r| same_value(&r.value, &value)) {
                 self.remove_record(&fqdn, rr_type, &value).await?;
             }
         }

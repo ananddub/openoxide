@@ -679,7 +679,9 @@ fn parse_txt_rdata(entry: &str) -> String {
             _ => {}
         }
     }
-    if out.is_empty() {
+    // An empty TXT rdata is a real value: only fall back to the raw string when EdgeDNS
+    // handed us unquoted text, otherwise the quotes become part of the record.
+    if out.is_empty() && !trimmed.starts_with('"') {
         trimmed.to_string()
     } else {
         out

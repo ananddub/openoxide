@@ -509,8 +509,7 @@ fn encode_record(record: &DnsRecord, hostname: &str) -> crate::Result<NetcupReco
         DnsRecord::SRV(srv) => (
             "SRV",
             format!(
-                "{} {} {} {}",
-                srv.priority,
+                "{} {} {}",
                 srv.weight,
                 srv.port,
                 (&srv.target).into_fqdn().into_owned(),

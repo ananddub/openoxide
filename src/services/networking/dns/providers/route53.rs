@@ -100,23 +100,21 @@ impl DnsService {
             for record in response.resource_record_sets() {
                 let name = record.name().trim_end_matches('.').to_string();
                 let kind = record.r#type().as_str().to_string();
-                if record.resource_records().is_empty() {
-                    continue;
+                let ttl = record.ttl().map(|v| v as u32);
+                // One row per value. Route53 stores an rrset as a group, but the panel
+                // deletes and edits single values, so a collapsed row could not be
+                // pointed at unambiguously.
+                for value in record.resource_records() {
+                    out.push(DnsRecordDto {
+                        id: format!("{kind}:{name}:{}", value.value()),
+                        zone_id: zone_id.into(),
+                        record_type: kind.clone(),
+                        name: name.clone(),
+                        content: plain_value(&kind, value.value()),
+                        ttl,
+                        proxied: None,
+                    });
                 }
-                out.push(DnsRecordDto {
-                    id: format!("{kind}:{name}"),
-                    zone_id: zone_id.into(),
-                    record_type: kind,
-                    name,
-                    content: record
-                        .resource_records()
-                        .iter()
-                        .map(|v| v.value())
-                        .collect::<Vec<_>>()
-                        .join(", "),
-                    ttl: record.ttl().map(|v| v as u32),
-                    proxied: None,
-                });
             }
             next_name = response.next_record_name().map(str::to_string);
             next_type = response.next_record_type().cloned();
@@ -125,5 +123,49 @@ impl DnsService {
             }
         }
         Ok(out)
+    }
+}
+
+/// Route53 returns TXT and CAA values wrapped in double quotes; the panel shows and
+/// accepts the bare string, so the quotes are stripped on the way out and re-added by
+/// `api_value` on the way in.
+pub(in crate::services::networking::dns) fn plain_value(kind: &str, value: &str) -> String {
+    if matches!(kind, "TXT" | "CAA") {
+        let trimmed = value.trim();
+        if trimmed.len() >= 2 && trimmed.starts_with('"') && trimmed.ends_with('"') {
+            return trimmed[1..trimmed.len() - 1].replace("\\\"", "\"");
+        }
+    }
+    value.to_string()
+}
+
+/// Inverse of `plain_value` — Route53 rejects an unquoted TXT/CAA value.
+pub(in crate::services::networking::dns) fn api_value(kind: &str, value: &str) -> String {
+    let trimmed = value.trim();
+    if matches!(kind, "TXT" | "CAA")
+        && !(trimmed.len() >= 2 && trimmed.starts_with('"') && trimmed.ends_with('"'))
+    {
+        return format!("\"{}\"", trimmed.replace('\\', "\\\\").replace('"', "\\\""));
+    }
+    trimmed.to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{api_value, plain_value};
+
+    /// The list call quotes TXT and CAA; the form shows and accepts the bare string, so
+    /// a row read back has to encode to exactly what Route53 already stores.
+    #[test]
+    fn route53_value_quotes_round_trip() {
+        for kind in ["TXT", "CAA"] {
+            let stored = "\"v=spf1 -all\"";
+            assert_eq!(plain_value(kind, &stored), "v=spf1 -all");
+            assert_eq!(api_value(kind, "v=spf1 -all"), stored);
+            assert_eq!(api_value(kind, &stored), stored);
+        }
+        assert_eq!(plain_value("A", "192.0.2.1"), "192.0.2.1");
+        assert_eq!(api_value("A", "192.0.2.1"), "192.0.2.1");
+        assert_eq!(api_value("TXT", r#"a"b"#), r#""a\"b""#);
     }
 }

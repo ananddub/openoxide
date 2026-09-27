@@ -555,6 +555,34 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn list_rrset_keeps_an_empty_txt_empty() {
+        let mut server = mockito::Server::new_async().await;
+        let mock = server
+            .mock(
+                "GET",
+                "/config-dns/v2/zones/example.com/names/_acme-challenge.example.com/types/TXT",
+            )
+            .with_status(200)
+            .with_body(
+                r#"{"name":"_acme-challenge.example.com","type":"TXT","ttl":60,"rdata":["\"\""]}"#,
+            )
+            .create_async()
+            .await;
+
+        let provider = provider_with_endpoint(&server.url());
+        let result = provider
+            .list_rrset(
+                "_acme-challenge.example.com",
+                DnsRecordType::TXT,
+                "example.com",
+            )
+            .await
+            .unwrap();
+        assert_eq!(result, vec![DnsRecord::TXT(String::new())]);
+        mock.assert_async().await;
+    }
+
+    #[tokio::test]
     async fn set_rrset_txt_chunks_long_value() {
         let mut server = mockito::Server::new_async().await;
         let long_value = "a".repeat(300);

@@ -281,7 +281,9 @@ fn build_payload(
 }
 
 fn same_rdata(a: &GodaddyRecord, b: &GodaddyRecord) -> bool {
-    a.data == b.data
+    // GoDaddy keeps the trailing dot on host targets while the read path strips it, so
+    // comparing the raw strings makes every listed CNAME/NS/MX/SRV value miss its own row.
+    strip_trailing_dot(&a.data) == strip_trailing_dot(&b.data)
         && a.priority.unwrap_or(0) == b.priority.unwrap_or(0)
         && a.port.unwrap_or(0) == b.port.unwrap_or(0)
         && a.weight.unwrap_or(0) == b.weight.unwrap_or(0)

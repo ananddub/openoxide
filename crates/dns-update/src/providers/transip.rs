@@ -11,6 +11,7 @@
 
 #![cfg(any(feature = "ring", feature = "aws-lc-rs"))]
 
+use crate::utils::same_value;
 use crate::utils::split_caa_value;
 use crate::utils::strip_trailing_dot;
 use crate::utils::{
@@ -213,7 +214,7 @@ impl TransipProvider {
         for entry in desired {
             if let Some(idx) = existing_pool
                 .iter()
-                .position(|e| e.content == entry.content && e.expire == entry.expire)
+                .position(|e| same_value(&e.content, &entry.content) && e.expire == entry.expire)
             {
                 existing_pool.swap_remove(idx);
             } else {
@@ -258,7 +259,7 @@ impl TransipProvider {
 
         for record in records {
             let content = render_value(record)?;
-            if existing.iter().any(|e| e.content == content) {
+            if existing.iter().any(|e| same_value(&e.content, &content)) {
                 continue;
             }
             let entry = DnsEntry {
@@ -303,7 +304,7 @@ impl TransipProvider {
         }
 
         for entry in existing {
-            if targets.iter().any(|t| t == &entry.content) {
+            if targets.iter().any(|t| same_value(&entry.content, t)) {
                 self.delete_entry(&token, &domain, &entry).await?;
             }
         }

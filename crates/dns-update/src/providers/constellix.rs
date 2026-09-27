@@ -10,6 +10,7 @@
  */
 
 use crate::utils::build_caa;
+use crate::utils::same_value;
 use crate::utils::unquote_txt;
 use crate::{
     DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord,
@@ -213,7 +214,7 @@ impl ConstellixProvider {
             Some(current) => {
                 let mut merged = current.round_robin.clone();
                 for entry in to_add {
-                    if !merged.contains(&entry) {
+                    if !merged.iter().any(|existing| same_entry(existing, &entry)) {
                         merged.push(entry);
                     }
                 }
@@ -291,7 +292,7 @@ impl ConstellixProvider {
         let mut remaining: Vec<RoundRobinValue> = existing
             .round_robin
             .iter()
-            .filter(|entry| !to_remove.contains(entry))
+            .filter(|entry| !to_remove.iter().any(|gone| same_entry(entry, gone)))
             .cloned()
             .collect();
 
@@ -435,6 +436,28 @@ fn render_txt_value(text: &str) -> String {
     let mut out = String::with_capacity(text.len() + 2);
     txt_chunks_to_text(&mut out, text, " ");
     out
+}
+
+/// The round-robin entry the API lists and the one we encode differ in quoting and in the
+/// target's trailing dot, so compare the string fields semantically and the numbers strictly.
+fn same_entry(listed: &RoundRobinValue, desired: &RoundRobinValue) -> bool {
+    fn same_text(a: &Option<String>, b: &Option<String>) -> bool {
+        match (a, b) {
+            (Some(a), Some(b)) => same_value(a, b),
+            (None, None) => true,
+            _ => false,
+        }
+    }
+
+    same_text(&listed.value, &desired.value)
+        && same_text(&listed.host, &desired.host)
+        && same_text(&listed.caa_type, &desired.caa_type)
+        && same_text(&listed.tag, &desired.tag)
+        && listed.priority == desired.priority
+        && listed.level == desired.level
+        && listed.weight == desired.weight
+        && listed.port == desired.port
+        && listed.flags == desired.flags
 }
 
 fn record_to_round_robin_entries(record: &DnsRecord) -> crate::Result<Vec<RoundRobinValue>> {

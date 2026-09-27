@@ -9,6 +9,7 @@
  * except according to those terms.
  */
 
+use crate::utils::same_value;
 use crate::utils::split_caa_value;
 use std::time::Duration;
 
@@ -171,7 +172,7 @@ impl AlidnsProvider {
         for d in &desired {
             if let Some(idx) = existing
                 .iter()
-                .position(|c| c.value == d.value && c.priority == d.priority)
+                .position(|c| same_value(&c.value, &d.value) && c.priority == d.priority)
             {
                 existing.swap_remove(idx);
             } else {
@@ -212,7 +213,7 @@ impl AlidnsProvider {
         for d in &desired {
             if existing
                 .iter()
-                .any(|c| c.value == d.value && c.priority == d.priority)
+                .any(|c| same_value(&c.value, &d.value) && c.priority == d.priority)
             {
                 continue;
             }
@@ -244,7 +245,7 @@ impl AlidnsProvider {
         for d in &to_remove {
             if let Some(entry) = existing
                 .iter()
-                .find(|c| c.value == d.value && c.priority == d.priority)
+                .find(|c| same_value(&c.value, &d.value) && c.priority == d.priority)
             {
                 self.delete_domain_record(&entry.record_id).await?;
             }

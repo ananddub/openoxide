@@ -66,6 +66,7 @@ export function useContainerMonitoring(
 							: deploymentClient.streamApplicationStats(request, {
 									signal: controller.signal,
 								});
+				let frames = 0;
 				for await (const event of call) {
 					if (!isMounted) return;
 					setIsLoading(false);
@@ -77,9 +78,16 @@ export function useContainerMonitoring(
 						.split('\n')
 						.map(line => line.trim())
 						.find(Boolean);
-					if (firstLine) setRawStats(firstLine);
-					// Live mode keeps consuming; one-shot mode stops after the first snapshot.
-					if (!isLive) break;
+					if (firstLine) {
+						frames += 1;
+						// Docker's first stream frame is the average since the
+						// container started — near-zero CPU on long-lived
+						// containers. Skip it in every mode; the second frame
+						// onward are real ~1s deltas.
+						if (frames >= 2) setRawStats(firstLine);
+					}
+					// Live mode keeps consuming; one-shot mode stops after the first usable snapshot.
+					if (!isLive && frames >= 2) break;
 				}
 			} catch (err: unknown) {
 				const isAbort = (err as {name?: string})?.name === 'AbortError';

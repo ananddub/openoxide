@@ -10,6 +10,7 @@
  */
 
 use crate::utils::parse_tlsa;
+use crate::utils::same_value;
 use crate::utils::split_caa_value;
 use crate::{
     CAARecord, DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord,
@@ -122,7 +123,10 @@ impl DNSimpleProvider {
         let mut existing_pool = existing;
 
         for content in desired {
-            if let Some(idx) = existing_pool.iter().position(|r| r.content == content) {
+            if let Some(idx) = existing_pool.iter().position(|r| {
+                same_value(&r.content.content, &content.content)
+                    && r.content.priority == content.priority
+            }) {
                 existing_pool.swap_remove(idx);
             } else {
                 to_add.push(content);
@@ -157,7 +161,10 @@ impl DNSimpleProvider {
         let existing = self.list_at(&zone, &subdomain, record_type).await?;
 
         for content in desired {
-            if existing.iter().any(|r| r.content == content) {
+            if existing.iter().any(|r| {
+                same_value(&r.content.content, &content.content)
+                    && r.content.priority == content.priority
+            }) {
                 continue;
             }
             self.create_record(&zone, &subdomain, record_type, ttl, content)
@@ -183,7 +190,10 @@ impl DNSimpleProvider {
         let existing = self.list_at(&zone, &subdomain, record_type).await?;
 
         for content in to_remove {
-            if let Some(entry) = existing.iter().find(|r| r.content == content) {
+            if let Some(entry) = existing.iter().find(|r| {
+                same_value(&r.content.content, &content.content)
+                    && r.content.priority == content.priority
+            }) {
                 self.delete_record(&zone, entry.id).await?;
             }
         }

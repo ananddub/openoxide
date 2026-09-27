@@ -394,6 +394,9 @@ impl ServerSetup {
             .create(image)
             .detach()
             .name(name)
+            // Docker CLI children spawn plugin grandchildren that re-parent to PID 1
+            // when the shell exits; without an init reaper they linger as zombies.
+            .init()
             .restart(RestartPolicy::Always)
             .network(self.config.network_name.as_str())
             .mount(docker_socket_mount)
@@ -892,6 +895,9 @@ impl ServerSetup {
                     .create(image)
                     .detach()
                     .name(name)
+                    // Docker CLI children spawn plugin grandchildren that re-parent to PID 1
+                    // when the shell exits; without an init reaper they linger as zombies.
+                    .init()
                     .restart(RestartPolicy::Always)
                     .network(self.config.network_name.as_str())
                     .mount(Mount::bind("/var/run/docker.sock", "/var/run/docker.sock"))

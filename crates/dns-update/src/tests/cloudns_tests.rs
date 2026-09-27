@@ -326,6 +326,40 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_remove_from_rrset_matches_a_cname_the_api_dotted() {
+        let mut server = mockito::Server::new_async().await;
+        let lookup = server
+            .mock("GET", mockito::Matcher::Regex("^/records.json".into()))
+            .with_status(200)
+            .with_body(
+                r#"{
+                    "7": {"id": "7", "type": "CNAME", "host": "www", "record": "target.example.com."}
+                }"#,
+            )
+            .create();
+        let delete = server
+            .mock("POST", "/delete-record.json")
+            .match_body(mockito::Matcher::UrlEncoded("record-id".into(), "7".into()))
+            .with_status(200)
+            .with_body(r#"{"status":"Success","statusDescription":"removed"}"#)
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .remove_from_rrset(
+                "www.example.com",
+                DnsRecordType::CNAME,
+                vec![DnsRecord::CNAME("target.example.com".to_string())],
+                "example.com",
+            )
+            .await;
+
+        assert!(result.is_ok(), "remove_from_rrset failed: {result:?}");
+        lookup.assert();
+        delete.assert();
+    }
+
+    #[tokio::test]
     async fn test_remove_from_rrset_empty_is_noop() {
         let server = mockito::Server::new_async().await;
         let provider = setup_provider(server.url().as_str());

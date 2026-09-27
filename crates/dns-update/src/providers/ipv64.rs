@@ -9,6 +9,7 @@
  * except according to those terms.
  */
 
+use crate::utils::same_value;
 use crate::{
     DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord,
     http::{HttpClient, HttpClientBuilder},
@@ -100,7 +101,10 @@ impl Ipv64Provider {
         let mut existing_pool = existing;
         let mut to_add: Vec<String> = Vec::new();
         for content in desired {
-            if let Some(idx) = existing_pool.iter().position(|r| r.content == content) {
+            if let Some(idx) = existing_pool
+                .iter()
+                .position(|r| same_value(&r.content, &content))
+            {
                 existing_pool.swap_remove(idx);
             } else {
                 to_add.push(content);
@@ -139,7 +143,7 @@ impl Ipv64Provider {
         let existing = filter_listed(&listed, domain.as_ref(), &prefix, record_type);
 
         for content in desired {
-            if existing.iter().any(|r| r.content == content) {
+            if existing.iter().any(|r| same_value(&r.content, &content)) {
                 continue;
             }
             self.add_record(domain.as_ref(), &prefix, record_type, &content)
@@ -173,7 +177,7 @@ impl Ipv64Provider {
                 .collect();
 
         for content in to_remove {
-            if let Some(entry) = existing.iter().find(|r| r.content == content) {
+            if let Some(entry) = existing.iter().find(|r| same_value(&r.content, &content)) {
                 self.del_record_by_id(&entry.record_id).await?;
             }
         }

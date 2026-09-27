@@ -691,11 +691,20 @@ impl AgentTransport for GrpcAgentTransport {
             Err(error) => return Err(ExecError::Agent(error.to_string())),
         };
         let mut exit_code = None;
-        while let Some(item) = stream
-            .message()
-            .await
-            .map_err(|error| ExecError::Agent(error.to_string()))?
-        {
+        loop {
+            // An idle container emits no log lines, so awaiting the stream alone would park
+            // here forever and keep the gRPC stream alive. The Agent only reaps its child
+            // once the response stream is dropped, so bail out as soon as our consumer is
+            // gone and let `stream` drop.
+            let item = tokio::select! {
+                biased;
+                _ = output.closed() => return Err(ExecError::StreamCancelled),
+                item = stream.message() => item
+                    .map_err(|error| ExecError::Agent(error.to_string()))?,
+            };
+            let Some(item) = item else {
+                break;
+            };
             match proto::ExecTaskOutputKind::try_from(item.kind).unwrap_or_default() {
                 proto::ExecTaskOutputKind::ExecTaskOutputStdout => {
                     output

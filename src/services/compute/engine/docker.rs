@@ -27,6 +27,65 @@ fn label_matches(labels: &str, key: &str, value: &str) -> bool {
         .any(|pair| pair == format!("{key}={value}"))
 }
 
+/// Swarm stacks deploy through `docker stack deploy`, so their services carry
+/// `com.docker.stack.namespace`/`com.docker.swarm.service.name` and there is no
+/// compose file on the host for `docker compose logs` to read — that command
+/// exits 0 with no output. Compose-type projects carry the
+/// `com.docker.compose.*` twins of the same labels. Matching on the labels keeps
+/// the resolution exact, which loose name matching could not (see
+/// `find_best_matching_container`).
+fn stack_container_matches(labels: &str, project: &str, service: Option<&str>) -> bool {
+    let project_hit = label_matches(labels, "com.docker.stack.namespace", project)
+        || label_matches(labels, "com.docker.compose.project", project);
+    let service_hit = match service {
+        None => true,
+        Some(service) => {
+            label_matches(
+                labels,
+                "com.docker.swarm.service.name",
+                &format!("{project}_{service}"),
+            ) || label_matches(labels, "com.docker.compose.service", service)
+        }
+    };
+    project_hit && service_hit
+}
+
+/// Container ids for every running task of `project`, optionally narrowed to one
+/// service. A service that is scaled to several replicas returns several ids.
+async fn stack_log_targets(
+    docker: &DockerCli,
+    project: &str,
+    service: Option<&str>,
+) -> Vec<String> {
+    let containers = match docker.containers().ps().all().list().await {
+        Ok(containers) => containers,
+        Err(error) => {
+            tracing::warn!(%project, %error, "docker ps failed while resolving compose log targets");
+            return Vec::new();
+        }
+    };
+    let mut running = Vec::new();
+    let mut stopped = Vec::new();
+    for container in containers {
+        if !stack_container_matches(&container.labels, project, service) {
+            continue;
+        }
+        let id = container.id.trim();
+        if id.is_empty() {
+            continue;
+        }
+        // Swarm keeps a few dead task containers per service; tailing those as
+        // well would replay retired output next to the live one. Only a stack
+        // with nothing running left falls back to its last words.
+        if container.state == "running" {
+            running.push(id.to_owned());
+        } else {
+            stopped.push(id.to_owned());
+        }
+    }
+    if running.is_empty() { stopped } else { running }
+}
+
 fn find_best_matching_container<'a>(
     containers: &'a [crate::utils::docker::ContainerSummary],
     target: &str,
@@ -589,35 +648,67 @@ impl DeploymentService {
         options: ComposeLogOptions,
     ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
         let docker = self.docker_for_server(server_id).await?;
-        let compose = docker.compose();
-        let mut builder = match options.service {
-            Some(service) => compose.logs(service),
-            None => compose.logs_all(),
-        };
-        if let Some(file) = options.file {
-            builder = builder.file(file);
+        let project = options
+            .project_name
+            .filter(|project| !project.trim().is_empty())
+            .unwrap_or_default();
+        let service = options
+            .service
+            .as_deref()
+            .map(str::trim)
+            .filter(|service| !service.is_empty());
+
+        if project.is_empty() {
+            // No compose row means the caller passed a raw container or service
+            // name, which is exactly what the service-logs path resolves.
+            return match service {
+                Some(service) => {
+                    self.stream_docker_service_logs(server_id, service.to_owned(), options.logs)
+                        .await
+                }
+                None => Err(sqlx::Error::Protocol(
+                    "compose logs need a compose id or a service name".to_string(),
+                )),
+            };
         }
-        if let Some(directory) = options.project_directory {
-            builder = builder.project_directory(directory);
+
+        let targets = stack_log_targets(&docker, &project, service).await;
+        if targets.is_empty() {
+            let label = service.unwrap_or("all services").to_owned();
+            let (sender, receiver) = mpsc::channel(128);
+            tokio::spawn(async move {
+                let _ = sender
+                    .send(DockerStreamEvent::Stderr(format!(
+                        "no running containers for compose project '{project}' service '{label}'\n"
+                    ).into_bytes()))
+                    .await;
+            });
+            return Ok(receiver);
         }
-        if let Some(project) = options.project_name {
-            builder = builder.project(project);
-        }
-        if options.logs.follow {
-            builder = builder.follow();
-        }
-        if options.logs.timestamps {
-            builder = builder.timestamps();
-        }
-        builder = builder.tail(options.logs.tail);
-        if let Some(since) = options.logs.since {
-            builder = builder.since(since);
-        }
-        if let Some(until) = options.logs.until {
-            builder = builder.until(until);
-        }
-        let command = builder.build_command_args();
-        Ok(spawn_docker_stream(docker, command))
+
+        let handle = docker.containers();
+        let commands = targets
+            .iter()
+            .map(|id| {
+                let mut builder = handle.logs(id);
+                if options.logs.follow {
+                    builder = builder.follow();
+                }
+                if options.logs.timestamps {
+                    builder = builder.timestamps();
+                }
+                builder = builder.tail(options.logs.tail);
+                if let Some(since) = options.logs.since.as_deref() {
+                    builder = builder.since(since);
+                }
+                if let Some(until) = options.logs.until.as_deref() {
+                    builder = builder.until(until);
+                }
+                builder.build_command_args()
+            })
+            .collect();
+        drop(handle);
+        Ok(spawn_docker_streams(docker, commands))
     }
 
     pub(super) async fn docker_for_server(
@@ -683,18 +774,96 @@ fn spawn_docker_stream(
     docker: DockerCli,
     command: Vec<String>,
 ) -> mpsc::Receiver<DockerStreamEvent> {
-    let (sender, receiver) = mpsc::channel(128);
-    let error_sender = sender.clone();
+    spawn_docker_streams(docker, vec![command])
+}
 
-    tokio::spawn(async move {
-        if let Err(error) = docker.run_stream(command, sender).await {
-            let _ = error_sender
-                .send(DockerStreamEvent::Stderr(
-                    format!("docker stream failed: {error}\n").into_bytes(),
-                ))
-                .await;
-        }
-    });
+/// Fans several commands into one channel: a stack service scaled to N replicas
+/// has N task containers to tail, and every one of them is cancelled the moment
+/// the browser consumer goes away.
+fn spawn_docker_streams(
+    docker: DockerCli,
+    commands: Vec<Vec<String>>,
+) -> mpsc::Receiver<DockerStreamEvent> {
+    let (sender, receiver) = mpsc::channel(128);
+
+    for command in commands {
+        let docker = docker.clone();
+        let stream_sender = sender.clone();
+        let error_sender = sender.clone();
+        tokio::spawn(async move {
+            if let Err(error) = docker.run_stream(command, stream_sender).await {
+                let _ = error_sender
+                    .send(DockerStreamEvent::Stderr(
+                        format!("docker stream failed: {error}\n").into_bytes(),
+                    ))
+                    .await;
+            }
+        });
+    }
 
     receiver
+}
+
+#[cfg(test)]
+mod tests {
+    use super::stack_container_matches;
+
+    // Verbatim shapes of the two label serialisations `docker ps` produces on this
+    // project's own host: a swarm task and a compose-managed container.
+    const SWARM_TASK: &str = "com.docker.stack.namespace=test-76e37f1d,\
+        com.docker.swarm.node.id=85gt4v1sz6yhtkzy1j09voj1z,\
+        com.docker.swarm.service.id=oh6ese3hu5xp516ivb04vr0im,\
+        com.docker.swarm.service.name=test-76e37f1d_nginx,\
+        org.opencontainers.image.title=nginx";
+    const COMPOSE_CONTAINER: &str = "com.docker.compose.config-hash=911540cc,\
+        com.docker.compose.container-number=1,\
+        com.docker.compose.image=sha256:5c82cc81,\
+        com.docker.compose.project=das-openoxide,\
+        com.docker.compose.service=openoxide";
+
+    #[test]
+    fn swarm_task_resolves_by_stack_namespace_and_service_name() {
+        assert!(stack_container_matches(SWARM_TASK, "test-76e37f1d", None));
+        assert!(stack_container_matches(
+            SWARM_TASK,
+            "test-76e37f1d",
+            Some("nginx")
+        ));
+        assert!(!stack_container_matches(
+            SWARM_TASK,
+            "test-76e37f1d",
+            Some("db")
+        ));
+    }
+
+    #[test]
+    fn compose_container_resolves_by_project_and_service() {
+        assert!(stack_container_matches(
+            COMPOSE_CONTAINER,
+            "das-openoxide",
+            None
+        ));
+        assert!(stack_container_matches(
+            COMPOSE_CONTAINER,
+            "das-openoxide",
+            Some("openoxide")
+        ));
+        assert!(!stack_container_matches(
+            COMPOSE_CONTAINER,
+            "das-openoxide",
+            Some("traefik")
+        ));
+    }
+
+    #[test]
+    fn a_longer_project_name_does_not_match_its_prefix() {
+        // `docker stack deploy` names stacks `<name>-<8 hex>`, so prefix matching
+        // would hand one stack's logs to an unrelated row.
+        assert!(!stack_container_matches(SWARM_TASK, "test", None));
+        assert!(!stack_container_matches(
+            SWARM_TASK,
+            "test-76e37f1d-extra",
+            None
+        ));
+    }
 }

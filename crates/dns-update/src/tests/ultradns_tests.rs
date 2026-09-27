@@ -253,6 +253,38 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn remove_from_rrset_matches_a_txt_the_api_quotes() {
+        let mut server = mockito::Server::new_async().await;
+        let get = server
+            .mock("GET", "/v3/zones/example.com./rrsets/TXT/_dmarc.example.com.")
+            .with_status(200)
+            .with_body(
+                r#"{"zoneName":"example.com.","rrSets":[{"ownerName":"_dmarc.example.com.","rrtype":"TXT (16)","ttl":3600,"rdata":["\"v=DMARC1; p=none\""]}]}"#,
+            )
+            .create();
+        let delete = server
+            .mock(
+                "DELETE",
+                "/v3/zones/example.com./rrsets/TXT/_dmarc.example.com.",
+            )
+            .with_status(204)
+            .create();
+
+        let provider = setup(server.url().as_str());
+        let result = provider
+            .remove_from_rrset(
+                "_dmarc.example.com",
+                DnsRecordType::TXT,
+                vec![DnsRecord::TXT("v=DMARC1; p=none".to_string())],
+                "example.com",
+            )
+            .await;
+        assert!(result.is_ok(), "{result:?}");
+        get.assert();
+        delete.assert();
+    }
+
+    #[tokio::test]
     async fn remove_from_rrset_deletes_when_empty_remains() {
         let mut server = mockito::Server::new_async().await;
         let get = server

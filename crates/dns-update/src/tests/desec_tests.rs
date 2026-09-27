@@ -29,6 +29,10 @@ mod tests {
         assert_eq!(desec_record.content, "\"test\"");
         assert_eq!(desec_record.record_type, "TXT");
 
+        let record = DnsRecord::TXT("quote \" and \\ backslash".to_string());
+        let desec_record: DesecDnsRecordRepresentation = record.into();
+        assert_eq!(desec_record.content, "\"quote \\\" and \\\\ backslash\"");
+
         let record = DnsRecord::MX(MXRecord {
             exchange: "mail.example.com".to_string(),
             priority: 10,

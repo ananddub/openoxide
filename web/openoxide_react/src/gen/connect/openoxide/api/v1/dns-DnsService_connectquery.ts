@@ -55,6 +55,11 @@ export const listRecords = DnsService.method.listRecords;
 export const createRecord = DnsService.method.createRecord;
 
 /**
+ * @generated from rpc openoxide.api.v1.DnsService.UpdateRecord
+ */
+export const updateRecord = DnsService.method.updateRecord;
+
+/**
  * @generated from rpc openoxide.api.v1.DnsService.DeleteRecord
  */
 export const deleteRecord = DnsService.method.deleteRecord;

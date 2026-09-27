@@ -337,8 +337,18 @@ fn build_contents(
 
 fn record_matches(existing: &ExistingDnsRecord, desired: &SimplyComRecordContent) -> bool {
     existing.record_type == desired.record_type
-        && existing.data == desired.data
+        && host_data_equal(&existing.record_type, &existing.data, &desired.data)
         && (desired.priority.is_none() || existing.priority == desired.priority)
+}
+
+/// Simply.com stores host targets with their trailing dot and hands them back that way,
+/// while the write path strips it; comparing the two raw forms misses every listed row.
+fn host_data_equal(record_type: &str, stored: &str, wanted: &str) -> bool {
+    if matches!(record_type, "CNAME" | "NS" | "MX") {
+        strip_trailing_dot(stored) == strip_trailing_dot(wanted)
+    } else {
+        stored == wanted
+    }
 }
 
 fn parse_simplycom_srv(data: &str, priority: u16) -> crate::Result<DnsRecord> {

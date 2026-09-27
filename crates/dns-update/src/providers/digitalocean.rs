@@ -10,6 +10,7 @@
  */
 
 use crate::utils::build_caa;
+use crate::utils::same_value;
 use crate::{
     DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord,
     http::{HttpClient, HttpClientBuilder},
@@ -151,7 +152,10 @@ impl DigitalOceanProvider {
         let mut to_add: Vec<RecordData> = Vec::new();
 
         for data in desired {
-            if let Some(idx) = existing_pool.iter().position(|r| r.data == data) {
+            if let Some(idx) = existing_pool
+                .iter()
+                .position(|r| same_record_data(&r.data, &data))
+            {
                 existing_pool.swap_remove(idx);
             } else {
                 to_add.push(data);
@@ -188,7 +192,7 @@ impl DigitalOceanProvider {
             .await?;
 
         for data in desired {
-            if existing.iter().any(|r| r.data == data) {
+            if existing.iter().any(|r| same_record_data(&r.data, &data)) {
                 continue;
             }
             self.create_record(&domain, &subdomain, ttl, data).await?;
@@ -216,7 +220,7 @@ impl DigitalOceanProvider {
             .await?;
 
         for data in to_remove {
-            if let Some(entry) = existing.iter().find(|r| r.data == data) {
+            if let Some(entry) = existing.iter().find(|r| same_record_data(&r.data, &data)) {
                 self.delete_record(&domain, entry.id).await?;
             }
         }
@@ -306,6 +310,56 @@ fn reject_unsupported(record_type: DnsRecordType) -> crate::Result<()> {
         ));
     }
     Ok(())
+}
+
+/// The record value may come back from the API in a different wire form than the one we
+/// re-encode (a target that keeps its trailing dot, a TXT that stays quoted), so compare the
+/// value with `same_value` while every other field must still match exactly.
+fn same_record_data(listed: &RecordData, desired: &RecordData) -> bool {
+    match (listed, desired) {
+        (RecordData::A { data: a }, RecordData::A { data: b }) => a == b,
+        (RecordData::AAAA { data: a }, RecordData::AAAA { data: b }) => a == b,
+        (RecordData::CNAME { data: a }, RecordData::CNAME { data: b })
+        | (RecordData::NS { data: a }, RecordData::NS { data: b })
+        | (RecordData::TXT { data: a }, RecordData::TXT { data: b }) => same_value(a, b),
+        (
+            RecordData::MX {
+                data: a,
+                priority: pa,
+            },
+            RecordData::MX {
+                data: b,
+                priority: pb,
+            },
+        ) => pa == pb && same_value(a, b),
+        (
+            RecordData::SRV {
+                data: a,
+                priority: pa,
+                port: ra,
+                weight: wa,
+            },
+            RecordData::SRV {
+                data: b,
+                priority: pb,
+                port: rb,
+                weight: wb,
+            },
+        ) => pa == pb && ra == rb && wa == wb && same_value(a, b),
+        (
+            RecordData::CAA {
+                data: a,
+                flags: fa,
+                tag: ta,
+            },
+            RecordData::CAA {
+                data: b,
+                flags: fb,
+                tag: tb,
+            },
+        ) => fa == fb && ta == tb && same_value(a, b),
+        _ => false,
+    }
 }
 
 fn build_record_data(

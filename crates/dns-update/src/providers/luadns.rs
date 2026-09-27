@@ -11,6 +11,7 @@
 
 use crate::utils::split_caa_value;
 use crate::utils::strip_trailing_dot;
+use crate::utils::unquote_txt;
 use crate::utils::{parse_mx, parse_srv, parse_tlsa};
 use crate::{
     CAARecord, DnsRecord, DnsRecordType, Error, IntoFqdn,
@@ -373,32 +374,7 @@ fn parse_content(record_type: DnsRecordType, content: &str) -> crate::Result<Dns
 }
 
 fn parse_txt(value: &str) -> String {
-    let trimmed = value.trim();
-    let mut out = String::with_capacity(trimmed.len());
-    let mut bytes = trimmed.bytes().peekable();
-    while let Some(&b) = bytes.peek() {
-        if b != b'"' {
-            bytes.next();
-            continue;
-        }
-        bytes.next();
-        loop {
-            match bytes.next() {
-                Some(b'"') => break,
-                Some(b'\\') => {
-                    if let Some(next) = bytes.next() {
-                        out.push(next as char);
-                    }
-                }
-                Some(other) => out.push(other as char),
-                None => break,
-            }
-        }
-    }
-    if out.is_empty() && !trimmed.is_empty() && !trimmed.starts_with('"') {
-        return trimmed.to_string();
-    }
-    out
+    unquote_txt(value)
 }
 
 fn parse_caa(value: &str) -> crate::Result<DnsRecord> {

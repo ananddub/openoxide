@@ -9,6 +9,7 @@
  * except according to those terms.
  */
 
+use crate::utils::same_value;
 use crate::utils::split_caa_value;
 use crate::utils::strip_origin_from_name;
 use crate::utils::strip_trailing_dot;
@@ -201,7 +202,7 @@ impl HuaweiCloudProvider {
             Some(rs) => {
                 let mut merged = rs.records.clone();
                 for v in new_values {
-                    if !merged.contains(&v) {
+                    if !merged.iter().any(|x| same_value(x, &v)) {
                         merged.push(v);
                     }
                 }
@@ -241,7 +242,7 @@ impl HuaweiCloudProvider {
         let remaining: Vec<String> = rs
             .records
             .iter()
-            .filter(|v| !to_remove.contains(v))
+            .filter(|v| !to_remove.iter().any(|r| same_value(v, r)))
             .cloned()
             .collect();
 

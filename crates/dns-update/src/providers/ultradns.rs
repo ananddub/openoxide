@@ -9,6 +9,7 @@
  * except according to those terms.
  */
 
+use crate::utils::same_value;
 use crate::utils::split_caa_value;
 use crate::utils::strip_trailing_dot;
 use crate::utils::{parse_mx, parse_srv, parse_tlsa};
@@ -161,7 +162,7 @@ impl UltraDnsProvider {
             };
         let before = merged.len();
         for value in desired {
-            if !merged.contains(&value) {
+            if !merged.iter().any(|existing| same_value(existing, &value)) {
                 merged.push(value);
             }
         }
@@ -195,7 +196,7 @@ impl UltraDnsProvider {
 
         let remaining: Vec<String> = existing_rdata
             .into_iter()
-            .filter(|value| !to_remove.contains(value))
+            .filter(|value| !to_remove.iter().any(|wanted| same_value(value, wanted)))
             .collect();
 
         if remaining.is_empty() {

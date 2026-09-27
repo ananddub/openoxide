@@ -9,6 +9,7 @@
  * except according to those terms.
  */
 
+use crate::utils::same_value;
 use crate::utils::split_caa_value;
 use crate::utils::strip_trailing_dot;
 use crate::utils::unquote_txt;
@@ -120,7 +121,7 @@ impl GandiV5Provider {
         };
         let mut changed = false;
         for value in new_values {
-            if !current.iter().any(|existing| existing == &value) {
+            if !current.iter().any(|existing| same_value(existing, &value)) {
                 current.push(value);
                 changed = true;
             }
@@ -155,7 +156,7 @@ impl GandiV5Provider {
         let remaining: Vec<String> = rrset
             .rrset_values
             .into_iter()
-            .filter(|v| !to_remove.iter().any(|r| r == v))
+            .filter(|v| !to_remove.iter().any(|r| same_value(v, r)))
             .collect();
 
         if remaining.is_empty() {

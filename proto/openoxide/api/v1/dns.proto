@@ -15,6 +15,7 @@ service DnsService {
   rpc ListZones(ListDnsZonesRequest) returns (ListDnsZonesResponse);
   rpc ListRecords(ListDnsRecordsRequest) returns (ListDnsRecordsResponse);
   rpc CreateRecord(CreateDnsRecordRequest) returns (CreateDnsRecordResponse);
+  rpc UpdateRecord(UpdateDnsRecordRequest) returns (UpdateDnsRecordResponse);
   rpc DeleteRecord(DeleteDnsRecordRequest) returns (Empty);
 }
 
@@ -213,5 +214,33 @@ message CreateDnsRecordResponse {
 message DeleteDnsRecordRequest {
   int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
   string zone_id = 2 [(buf.validate.field).string.min_len = 1];
+  // Record name relative to the zone ("www", "@" for apex). Providers whose API
+  // has no record id identify a row by name + type + value, so it always goes back.
   string name = 3 [(buf.validate.field).string.min_len = 1];
+  // The id ListRecords returned. Preferred when the provider has one.
+  optional string id = 4;
+  // Narrow the match to the clicked row: a name can hold several types, and a
+  // type can hold several values.
+  optional string record_type = 5;
+  optional string content = 6;
+}
+
+// Edit one row in place. The old_* fields identify the row as ListRecords
+// returned it; without them a rename would leave the original record behind.
+message UpdateDnsRecordRequest {
+  int64 provider_id = 1 [(buf.validate.field).int64.gt = 0];
+  string zone_id = 2 [(buf.validate.field).string.min_len = 1];
+  optional string id = 3;
+  string old_name = 4 [(buf.validate.field).string.min_len = 1];
+  optional string old_record_type = 5;
+  optional string old_content = 6;
+  string record_type = 7 [(buf.validate.field).string.min_len = 1];
+  string name = 8 [(buf.validate.field).string.min_len = 1];
+  string content = 9 [(buf.validate.field).string.min_len = 1];
+  optional uint32 ttl = 10;
+  optional bool proxied = 11;
+}
+
+message UpdateDnsRecordResponse {
+  DnsRecord record = 1;
 }

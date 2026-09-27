@@ -4,6 +4,7 @@ import {
 	useDnsRecordCreate,
 	useDnsRecordDelete,
 	useDnsRecordList,
+	useDnsRecordUpdate,
 	useDnsZoneList,
 } from '#/api/live';
 import {cn, formatApiError} from '#/api/utils';
@@ -112,7 +113,9 @@ const proxyableTypes = new Set(['A', 'AAAA', 'CNAME']);
 type RecordDraft = {
 	zoneId: string;
 	zoneName: string;
-	recordId?: string;
+	/** The row this draft was opened from, kept aside from the edited fields so the
+	 * server can still find it after a rename or a type change. */
+	editing?: {id: string; name: string; recordType: string; content: string};
 	recordType: string;
 	name: string;
 	content: string;
@@ -132,6 +135,7 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 		expanded || '',
 	);
 	const upsert = useDnsRecordCreate();
+	const edit = useDnsRecordUpdate();
 	const remove = useDnsRecordDelete();
 	const zones = (zonesQuery.data || []) as Array<{
 		id: string;
@@ -159,7 +163,12 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 		setDraft({
 			zoneId,
 			zoneName,
-			recordId: record.id,
+			editing: {
+				id: record.id,
+				name: record.name,
+				recordType: record.record_type,
+				content: record.content,
+			},
 			recordType: record.record_type,
 			name: record.name,
 			content: record.content,
@@ -175,20 +184,33 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 			if (!parts || fields.some(f => !(parts[f.key] ?? '').trim()))
 				return toast.error(`Fill in every ${draft.recordType} field`);
 		}
+		const payload = {
+			provider_id: provider.id,
+			zone_id: draft.zoneId,
+			record_type: draft.recordType,
+			name: draft.name.trim(),
+			content: draft.content.trim(),
+			ttl: draft.ttl ? Number(draft.ttl) : undefined,
+			proxied:
+				supportsProxy && proxyableTypes.has(draft.recordType)
+					? draft.proxied
+					: undefined,
+		};
 		try {
-			await upsert.mutateAsync({
-				provider_id: provider.id,
-				zone_id: draft.zoneId,
-				record_type: draft.recordType,
-				name: draft.name.trim(),
-				content: draft.content.trim(),
-				ttl: draft.ttl ? Number(draft.ttl) : undefined,
-				proxied:
-					supportsProxy && proxyableTypes.has(draft.recordType)
-						? draft.proxied
-						: undefined,
-			});
-			toast.success(draft.recordId ? 'Record updated' : 'Record created');
+			if (draft.editing) {
+				await edit.mutateAsync({
+					...payload,
+					target: {
+						id: draft.editing.id || undefined,
+						name: draft.editing.name,
+						record_type: draft.editing.recordType,
+						content: draft.editing.content,
+					},
+				});
+			} else {
+				await upsert.mutateAsync(payload);
+			}
+			toast.success(draft.editing ? 'Record updated' : 'Record created');
 			setDraft(null);
 			await recordsQuery.refetch();
 		} catch (error) {
@@ -202,6 +224,9 @@ export function DnsZonesDialog({provider, onClose}: Props) {
 				provider_id: provider.id,
 				zone_id: expanded,
 				name: record.name,
+				id: record.id || undefined,
+				record_type: record.record_type,
+				content: record.content,
 			});
 			toast.success('Record deleted');
 			await recordsQuery.refetch();
@@ -368,7 +393,7 @@ function RecordFormView({
 			className="flex min-h-0 flex-1 animate-in flex-col duration-200 ease-out fade-in-0 slide-in-from-right-4">
 			<SheetHeader>
 				<SheetTitle className="truncate pr-8">
-					{draft.recordId ? 'Edit Record' : 'New Record'}
+					{draft.editing ? 'Edit Record' : 'New Record'}
 				</SheetTitle>
 				<SheetDescription>
 					DNS record for {draft.zoneName}.
@@ -483,7 +508,7 @@ function RecordFormView({
 				<Button onClick={onSave} disabled={saving}>
 					{saving
 						? 'Saving…'
-						: draft.recordId
+						: draft.editing
 							? 'Update Record'
 							: 'Save Record'}
 				</Button>

@@ -9,6 +9,7 @@
  * except according to those terms.
  */
 
+use crate::utils::same_value;
 use crate::utils::split_caa_value;
 use crate::{
     CAARecord, DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord, TLSARecord,
@@ -282,7 +283,7 @@ impl AutodnsProvider {
 }
 
 fn records_equal(a: &ResourceRecord, b: &ResourceRecord) -> bool {
-    a.record_type == b.record_type && a.value == b.value && a.pref == b.pref
+    a.record_type == b.record_type && same_value(&a.value, &b.value) && a.pref == b.pref
 }
 
 fn check_record_types(expected: DnsRecordType, records: &[DnsRecord]) -> crate::Result<()> {

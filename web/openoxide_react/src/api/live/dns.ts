@@ -232,19 +232,63 @@ export function useDnsRecordCreate() {
 	);
 }
 
-/** Delete a DNS record on a provider, targeted by zone + record name. */
+/** Delete one DNS record. Providers key rows differently, so the full identity of the
+ * clicked row goes along: the id from the list call when present, otherwise the
+ * name + type + value triple. */
 export function useDnsRecordDelete() {
 	return useConnectMutation(
 		(input: {
 			provider_id: number | bigint;
 			zone_id: string;
 			name: string;
+			id?: string;
+			record_type?: string;
+			content?: string;
 			organization_id?: number | bigint;
 		}) =>
 			dnsClient.deleteRecord({
 				providerId: BigInt(input.provider_id),
 				zoneId: input.zone_id,
 				name: input.name,
+				id: input.id,
+				recordType: input.record_type,
+				content: input.content,
+			}),
+		{invalidate: [['dns']]},
+	);
+}
+
+/** Edit an existing DNS record in place, including a rename or a type change. */
+export function useDnsRecordUpdate() {
+	return useConnectMutation(
+		(input: {
+			provider_id: number | bigint;
+			zone_id: string;
+			target: {
+				id?: string;
+				name: string;
+				record_type?: string;
+				content?: string;
+			};
+			record_type: string;
+			name: string;
+			content: string;
+			ttl?: number;
+			proxied?: boolean;
+			organization_id?: number | bigint;
+		}) =>
+			dnsClient.updateRecord({
+				providerId: BigInt(input.provider_id),
+				zoneId: input.zone_id,
+				id: input.target.id,
+				oldName: input.target.name,
+				oldRecordType: input.target.record_type,
+				oldContent: input.target.content,
+				recordType: input.record_type,
+				name: input.name,
+				content: input.content,
+				ttl: input.ttl,
+				proxied: input.proxied,
 			}),
 		{invalidate: [['dns']]},
 	);
