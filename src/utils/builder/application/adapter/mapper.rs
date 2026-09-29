@@ -177,7 +177,13 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
             args: app
                 .args
                 .as_deref()
-                .and_then(|v| serde_json::from_str(v).ok())
+                .map(str::trim)
+                .filter(|v| !v.is_empty())
+                .map(|v| {
+                    // Stored as a JSON array by newer UIs, or a plain
+                    // shell string ("--port 3000") by the general form.
+                    serde_json::from_str::<Vec<String>>(v).unwrap_or_else(|_| shell_words(v))
+                })
                 .unwrap_or_default(),
             replicas: u32::try_from(app.replicas.max(1)).unwrap_or(1),
             networks,
@@ -334,7 +340,7 @@ fn source(a: &ApplicationGetSpecRowRow) -> Result<SourceSpec, AdapterError> {
             Ok(SourceSpec::Git {
                 url: provider.repository_url(),
                 branch: branch_val(branch),
-                submodules: false,
+                submodules: a.enable_submodules.unwrap_or(0) != 0,
                 protocol,
                 auth,
             })
@@ -366,7 +372,11 @@ fn build(a: &ApplicationGetSpecRowRow) -> Result<Option<BuildStrategy>, AdapterE
         BuildType::Paketo => BuildStrategy::Paketo,
         BuildType::Heroku => BuildStrategy::Heroku,
         BuildType::Railpack => BuildStrategy::Railpack {
-            version: "0.15.4".into(),
+            version: a
+                .railpack_version
+                .clone()
+                .filter(|v| !v.trim().is_empty())
+                .unwrap_or_else(|| "0.15.4".into()),
         },
         BuildType::Static => BuildStrategy::Static {
             publish_directory: a

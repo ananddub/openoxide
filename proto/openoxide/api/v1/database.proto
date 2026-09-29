@@ -110,6 +110,9 @@ message UpdateDatabaseRequest {
   optional int64 replicas = 15;
   optional int64 server_id = 16;
   repeated string network_ids = 17;
+  optional int64 detach_rustploy_network = 18;
+  optional string memory_reservation = 19;
+  optional string cpu_reservation = 20;
 }
 message DeleteDatabaseRequest {
   DatabaseKind kind = 1 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];

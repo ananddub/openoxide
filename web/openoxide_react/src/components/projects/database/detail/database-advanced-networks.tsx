@@ -54,6 +54,7 @@ export function DatabaseAdvancedNetworks({database, onUpdated}: any) {
 				kind: parseDatabaseKind(database?.kind || 'postgres'),
 				id: Number(database.id),
 				network_ids: selected,
+				detach_rustploy_network: detached ? 1 : 0,
 			});
 			toast.success('Database networks updated');
 			onUpdated();

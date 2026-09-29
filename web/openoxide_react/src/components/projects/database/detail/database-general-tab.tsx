@@ -45,6 +45,7 @@ export function DatabaseGeneralTab({
 }: DatabaseGeneralTabProps) {
 	const [showTerminal, setShowTerminal] = useState(false);
 	const [showEnv, setShowEnv] = useState(false);
+	const [showCreds, setShowCreds] = useState(false);
 	const kind = (kindProp || database?.kind || 'postgres').toLowerCase();
 	const archServices = useMemo(
 		() => buildDbArchService(database, kind),
@@ -99,49 +100,10 @@ export function DatabaseGeneralTab({
 				}}
 				errorDetail={(database as any)?.last_error}
 				sections={
-					<>
-						{/* Credentials — one strip, one right sheet holding both access paths. */}
-						<SettingsSheet
-							title="Credentials"
-							description="How apps and the internet reach this database."
-							meta={
-								<span className="flex items-center gap-1.5">
-									<span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
-										:{dbInternalPort(kind)}
-									</span>
-									<span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
-										{database?.external_port
-											? `:${database.external_port}`
-											: 'Private only'}
-									</span>
-								</span>
-							}>
-							<SheetGroup
-								title="Internal"
-								description="Credentials apps on the private network use to connect.">
-								<DatabaseInternalCredentialsCard
-									database={database}
-									onUpdated={onUpdated}
-									embedded
-								/>
-							</SheetGroup>
-
-							<SheetGroup
-								title="External"
-								description="Optionally expose the database on a public port.">
-								<DatabaseExternalCredentialsCard
-									database={database}
-									onUpdated={onUpdated}
-									embedded
-								/>
-							</SheetGroup>
-						</SettingsSheet>
-
-						<BuildLogsSection
-							entityId={Number(database?.id ?? 0)}
-							kind="database"
-						/>
-					</>
+					<BuildLogsSection
+						entityId={Number(database?.id ?? 0)}
+						kind="database"
+					/>
 				}
 				actions={
 					<DatabaseHeaderActions
@@ -149,9 +111,37 @@ export function DatabaseGeneralTab({
 						onAction={onAction}
 						onOpenTerminal={() => setShowTerminal(true)}
 						onOpenEnv={handleUpdate ? () => setShowEnv(true) : undefined}
+						onOpenCredentials={() => setShowCreds(true)}
 					/>
 				}
 			/>
+
+			{/* Credentials — opened from the header icon, no inline strip */}
+			<SettingsSheet
+				title="Credentials"
+				description="How apps and the internet reach this database."
+				open={showCreds}
+				onOpenChange={setShowCreds}>
+				<SheetGroup
+					title="Internal"
+					description="Credentials apps on the private network use to connect.">
+					<DatabaseInternalCredentialsCard
+						database={database}
+						onUpdated={onUpdated}
+						embedded
+					/>
+				</SheetGroup>
+
+				<SheetGroup
+					title="External"
+					description="Optionally expose the database on a public port.">
+					<DatabaseExternalCredentialsCard
+						database={database}
+						onUpdated={onUpdated}
+						embedded
+					/>
+				</SheetGroup>
+			</SettingsSheet>
 
 			{/* Environment variables — opened from the key icon */}
 			{handleUpdate && database && (

@@ -35,6 +35,18 @@ impl ServerControllerService for ServerController {
     > {
         let port = u16::try_from(request.port.unwrap_or(22))
             .map_err(|_| ConnectError::invalid_argument("SSH port must be between 0 and 65535"))?;
+        // Local is the panel's own host — it is reached over the local Docker
+        // socket, never SSH. Testing an SSH connection to it always fails, so
+        // reject loopback addresses with a clear message.
+        let host = request.ip_address.trim().to_ascii_lowercase();
+        if matches!(
+            host.as_str(),
+            "" | "127.0.0.1" | "localhost" | "0.0.0.0" | "::1" | "openoxide-agent" | "openoxide-monitor"
+        ) {
+            return Err(ConnectError::invalid_argument(
+                "the local server is managed automatically and needs no SSH connection; use a remote server's reachable IP or hostname",
+            ));
+        }
         let key_id = request.ssh_key_id;
         let key = match self.queries.ssh_keys_get_by_id(key_id).await {
             Ok(key) => key,
@@ -186,6 +198,32 @@ impl ServerControllerService for ServerController {
             .map_err(map_db_error)?;
         if let Some(email) = request.acme_email {
             config.acme_email = email.to_owned();
+        }
+        // Per-server isolated mTLS: generate (once) this server's own CA +
+        // agent cert/key and hand them to setup for distribution to the host.
+        if let Ok(store) = resolve::<crate::utils::mtls::MtlsCaStore>().await {
+            let sans = {
+                let mut s = vec![
+                    "openoxide-agent".to_string(),
+                    "localhost".to_string(),
+                    "127.0.0.1".to_string(),
+                ];
+                if let Ok(server) = self.service.get_by_id(id).await {
+                    let ip = server.ip_address.trim().to_string();
+                    if !ip.is_empty() && !s.contains(&ip) {
+                        s.push(ip);
+                    }
+                }
+                s
+            };
+            match store.load_or_create(id, &sans).await {
+                Ok(m) => {
+                    config.agent_mtls_ca_cert = Some(m.ca_cert);
+                    config.agent_mtls_cert = Some(m.agent_cert);
+                    config.agent_mtls_key = Some(m.agent_key);
+                }
+                Err(error) => tracing::warn!(server_id = id, %error, "per-server mTLS unavailable; agent stays token-only"),
+            }
         }
         let outcome = ServerSetup::new_remote(executor, config)
             .setup_all_oneshot(request.install_dependencies)

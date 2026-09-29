@@ -409,6 +409,7 @@ services:
             suffix: String::new(),
             isolated_deployment: false,
             isolated_deployments_volume: false,
+            command: None,
         }
     }
 }

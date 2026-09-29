@@ -301,7 +301,15 @@ impl ApplicationService {
 
         let app_name = app.app_name.clone();
         let server_id = app.server_id;
-        let _db_ref = self.db.clone();
+
+        // Read exact volume names before the mount rows cascade-delete.
+        let mounts = self
+            .queries
+            .mount_fetch_for_application(id)
+            .await
+            .unwrap_or_default();
+        let volume_names =
+            crate::services::compute::cleanup::volume_names_from_mounts(&mounts);
 
         tokio::spawn(async move {
             let Ok(executor) =
@@ -310,31 +318,14 @@ impl ApplicationService {
                 tracing::warn!(application = %app_name, "could not resolve Agent for application cleanup");
                 return;
             };
-            let docker_cli = crate::utils::docker::DockerCli::from_executor(executor);
-
-            let candidates = [
-                app_name.clone(),
-                format!("{}_app", app_name),
-                format!("{}-app", app_name),
-            ];
-
-            for candidate in &candidates {
-                let _ = tokio::time::timeout(
-                    std::time::Duration::from_secs(4),
-                    docker_cli.container(candidate).stop().run(),
-                )
-                .await;
-                let _ = tokio::time::timeout(
-                    std::time::Duration::from_secs(4),
-                    docker_cli
-                        .container(candidate)
-                        .remove()
-                        .force()
-                        .volumes()
-                        .run(),
-                )
-                .await;
-            }
+            let docker = crate::utils::docker::DockerCli::from_executor(executor);
+            crate::services::compute::cleanup::cleanup_service_resources(
+                &docker,
+                &app_name,
+                crate::services::compute::cleanup::CleanupRuntime::Stack,
+                &volume_names,
+            )
+            .await;
         });
 
         // service_application / service_git rows cascade via FK.

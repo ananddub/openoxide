@@ -128,7 +128,7 @@ pub async fn build_postgres_stack(
 
     let mut ports = Vec::new();
     if let Some(port) = db.external_port {
-        ports.push(format!("{}:5432", port));
+        ports.push(serde_json::Value::String(format!("{}:5432", port)));
     }
     let (service_networks, mut networks) =
         crate::utils::builder::database::builder::resolve_database_networks(

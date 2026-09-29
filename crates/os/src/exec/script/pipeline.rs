@@ -310,4 +310,23 @@ impl ScriptPipeline {
             .run_with_stdin_cancelled("sh", &[] as &[&str], script, cancel)
             .await
     }
+
+    /// Executes the pipeline while streaming stdout/stderr line-by-line to
+    /// `sender`, with cancellation. The compiled script is passed as a
+    /// `sh -c` argument (rather than piped over stdin) so the streaming
+    /// executor path can be reused unchanged. Cancellation drops the sender,
+    /// which the executor observes to kill the child.
+    pub async fn execute_stream_cancelled(
+        &self,
+        executor: &CommandExecutor,
+        sender: tokio::sync::mpsc::Sender<crate::exec::ExecStreamEvent>,
+        cancel: &CancellationToken,
+    ) -> ExecResult<crate::exec::ExecExitStatus> {
+        let script = self.compile();
+        let run = executor.run_stream("sh", ["-c", script.as_str()], sender);
+        tokio::select! {
+            result = run => result,
+            _ = cancel.cancelled() => Err(crate::exec::ExecError::StreamCancelled),
+        }
+    }
 }

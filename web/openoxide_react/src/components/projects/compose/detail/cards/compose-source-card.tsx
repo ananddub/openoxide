@@ -20,8 +20,9 @@ interface ComposeSourceCardProps {
 	onPatch: (patch: Partial<ComposeSourceState>) => void;
 	savingSource: boolean;
 	onSave: () => void;
-	/** Kept for call-site compatibility; the card always renders its own sheet. */
-	embedded?: boolean;
+	/** Header-icon trigger: the caller owns visibility, no strip is painted. */
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
 /** Titled config group per provider family. */
@@ -48,6 +49,8 @@ export function ComposeSourceCard({
 	onPatch,
 	savingSource,
 	onSave,
+	open,
+	onOpenChange,
 }: ComposeSourceCardProps) {
 	const {provider} = source;
 	const group = groupFor(provider);
@@ -56,6 +59,8 @@ export function ComposeSourceCard({
 		<SettingsSheet
 			title="Source & Provider Configuration"
 			description="Where this compose stack pulls its definition from."
+			open={open}
+			onOpenChange={onOpenChange}
 			/* Editor-heavy form — roomier than the default 560px rail. */
 			contentClassName="sm:data-[side=right]:w-[820px]"
 			footer={
@@ -95,18 +100,24 @@ export function ComposeSourceCard({
 				</div>
 			</SheetGroup>
 
-			<SheetGroup title={group.title} description={group.description}>
+			<SheetGroup
+				title={group.title}
+				description={group.description}
+				className={provider === 'RAW' ? 'min-h-0 flex-1' : undefined}>
 				{provider === 'RAW' ? (
-					<div className="flex flex-col gap-5">
+					<div className="flex min-h-0 flex-1 flex-col gap-5">
 						<ComposeYamlEditor
 							value={source.composeFile}
 							onChange={v => onPatch({composeFile: v})}
-							height="260px"
+							/* Takes the sheet's remaining height — editing a stack needs no scrolling. */
+							height="100%"
+							className="min-h-[280px] flex-1"
 							fileName="docker-compose.yml"
 						/>
 						<Field
 							label="Command override"
-							hint="Optional — replaces the default deploy command.">
+							hint="Optional — replaces the default deploy command."
+							className="shrink-0">
 							<Input
 								value={source.command}
 								onChange={e => onPatch({command: e.target.value})}

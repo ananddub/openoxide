@@ -79,6 +79,10 @@ message Compose {
   // Name-randomization state: when true, deploy renames every service to `{name}-{suffix}`.
   bool randomize = 31;
   optional string suffix = 32;
+  // Resolved environment (.env-style KEY=VALUE lines), including any secrets a
+  // template generated at install time, so the GUI env editor can display and
+  // edit them.
+  optional string env_var = 33;
 }
 message GetComposeRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];
@@ -108,6 +112,7 @@ message UpdateComposeRequest {
   optional string command = 7;
   // Toggle service-name randomization. false clears the stored suffix so services keep their literal names.
   optional bool randomize = 8;
+  optional string env_var = 9;
 }
 message DeleteComposeRequest {
   int64 id = 1 [(buf.validate.field).int64.gt = 0];

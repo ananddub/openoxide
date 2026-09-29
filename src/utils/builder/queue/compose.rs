@@ -75,6 +75,15 @@ impl BuilderQueue {
                     .stop(&spec)
                     .await
                     .map_err(|e| BuilderError::Execution(e.to_string())),
+                ComposeOperation::Start => builder
+                    .start(&spec, &cancel)
+                    .await
+                    .map_err(|e| BuilderError::Execution(e.to_string())),
+                ComposeOperation::Reload => builder
+                    .reload(&spec, &cancel)
+                    .await
+                    .map_err(|e| BuilderError::Execution(e.to_string())),
+                // Deploy / Redeploy: full build + up.
                 _ => builder
                     .deploy(&spec, &cancel)
                     .await

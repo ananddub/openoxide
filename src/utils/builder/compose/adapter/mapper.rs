@@ -68,6 +68,10 @@ impl TryFrom<ComposeRowWithRelations> for ComposeSpec {
             suffix: compose.suffix.clone().unwrap_or_default(),
             isolated_deployment: compose.isolated_deployment.unwrap_or(0) != 0,
             isolated_deployments_volume: compose.isolated_deployments_volume.unwrap_or(0) != 0,
+            command: {
+                let command = compose.command.trim();
+                (!command.is_empty()).then(|| command.to_owned())
+            },
         })
     }
 }

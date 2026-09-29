@@ -1,4 +1,4 @@
-import {useState, useRef, useEffect, useMemo} from 'react';
+import {useState, useMemo} from 'react';
 import {DeploymentViewer} from '#/components/shared/deployment-viewer';
 import {
 	Select,
@@ -24,7 +24,6 @@ interface LogsTabProps {
 export function LogsTab({app}: LogsTabProps) {
 	const [isLive, setIsLive] = useState(true);
 	const [selectedTarget, setSelectedTarget] = useState('');
-	const scrollRef = useRef<HTMLDivElement>(null);
 
 	const availableTargets = useMemo(() => {
 		const list: string[] = [];
@@ -66,12 +65,6 @@ export function LogsTab({app}: LogsTabProps) {
 		[activeTarget, isLive],
 		'Container log stream ended.',
 	);
-
-	useEffect(() => {
-		if (isLive && scrollRef.current) {
-			scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-		}
-	}, [streamedLogs, isLive]);
 
 	const handleDownload = () =>
 		downloadLogs(streamedLogs, `${activeTarget || 'logs'}.txt`);

@@ -151,6 +151,19 @@ export function DatabaseAdvancedCustomCommand({
 					<Plus className="size-4" /> Add argument
 				</Button>
 			</SheetGroup>
+
+			<SheetGroup
+				title="Environment variables"
+				description="KEY=VALUE pairs, one per line, injected at runtime.">
+				<textarea
+					value={envVar}
+					onChange={e => setEnvVar(e.target.value)}
+					rows={6}
+					spellCheck={false}
+					placeholder={'KEY=value\nANOTHER_KEY=value'}
+					className="w-full resize-y rounded-lg border border-border/60 bg-background px-3 py-2 font-mono text-[13px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+				/>
+			</SheetGroup>
 		</SettingsSheet>
 	);
 }

@@ -102,6 +102,50 @@ impl BuilderContext {
             }
         }
     }
+
+    // ── Streaming command execution ─────────────────────────────────────
+
+    /// Runs a pipeline, emitting its stdout/stderr as `Message` lines in
+    /// realtime instead of one dump at the end.
+    pub async fn run_pipeline_streamed(
+        &self,
+        pipeline: &os::exec::script::ScriptPipeline,
+        cancel: &CancellationToken,
+    ) -> ExecResult<()> {
+        use crate::utils::exec::ExecStreamEvent;
+
+        let (tx, mut rx) = mpsc::channel::<ExecStreamEvent>(256);
+
+        let drain = async {
+            let mut buffer: Vec<u8> = Vec::new();
+            while let Some(event) = rx.recv().await {
+                let bytes = match event {
+                    ExecStreamEvent::Stdout(bytes) | ExecStreamEvent::Stderr(bytes) => bytes,
+                };
+                buffer.extend_from_slice(&bytes);
+                while let Some(newline) = buffer.iter().position(|byte| *byte == b'\n') {
+                    let line: Vec<u8> = buffer.drain(..=newline).collect();
+                    let text = String::from_utf8_lossy(&line);
+                    let text = text.trim_end_matches(['\n', '\r']);
+                    if !text.is_empty() {
+                        self.emit(BuilderEvent::Message(text.to_owned())).await;
+                    }
+                }
+            }
+            // Flush a trailing partial line.
+            if !buffer.is_empty() {
+                let text = String::from_utf8_lossy(&buffer);
+                let text = text.trim_end_matches(['\n', '\r']);
+                if !text.is_empty() {
+                    self.emit(BuilderEvent::Message(text.to_owned())).await;
+                }
+            }
+        };
+
+        let run = pipeline.execute_stream_cancelled(&self.executor, tx, cancel);
+        let (status, ()) = tokio::join!(run, drain);
+        status.map(|_| ())
+    }
 }
 
 // ── Shared Validation Helpers ───────────────────────────────────────────────

@@ -51,6 +51,7 @@ export type ComposePayload = {
 	compose_file?: string;
 	randomize: boolean;
 	suffix?: string;
+	env_var?: string;
 	created_at: bigint;
 	updated_at: bigint;
 };
@@ -93,6 +94,7 @@ export function toComposePayload(compose: Compose): ComposePayload {
 		compose_file: compose.composeFile,
 		randomize: compose.randomize ?? false,
 		suffix: compose.suffix,
+		env_var: compose.envVar,
 		created_at: compose.createdAt,
 		updated_at: compose.updatedAt,
 	};

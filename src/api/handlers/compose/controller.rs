@@ -110,6 +110,7 @@ impl ComposeService for ComposeController {
                 "server_id": request.server_id,
                 "command": request.command,
                 "randomize": request.randomize.map(i64::from),
+                "env_var": request.env_var,
             })
             .to_string(),
         )

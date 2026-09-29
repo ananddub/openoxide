@@ -20,15 +20,63 @@ use crate::{
 pub struct MonitoringLifecycleService {
     queries: Arc<FlashQueries>,
     agent_auth: Arc<MonitoringAgentAuth>,
+    mtls: Arc<crate::utils::mtls::MtlsCaStore>,
 }
 
 #[singleton]
 impl MonitoringLifecycleService {
-    fn new(queries: Arc<FlashQueries>, agent_auth: Arc<MonitoringAgentAuth>) -> Self {
+    fn new(
+        queries: Arc<FlashQueries>,
+        agent_auth: Arc<MonitoringAgentAuth>,
+        mtls: Arc<crate::utils::mtls::MtlsCaStore>,
+    ) -> Self {
         Self {
             queries,
             agent_auth,
+            mtls,
         }
+    }
+
+    /// Loads (creating on first use) this server's isolated mTLS material and
+    /// stamps it onto a setup config so `ensure_agent` distributes the agent's
+    /// CA + cert/key to the remote host.
+    async fn apply_agent_mtls(&self, server_id: i64, config: &mut SetupConfig) {
+        let sans = self.agent_sans(server_id).await;
+        match self.mtls.load_or_create(server_id, &sans).await {
+            Ok(material) => {
+                config.agent_mtls_ca_cert = Some(material.ca_cert);
+                config.agent_mtls_cert = Some(material.agent_cert);
+                config.agent_mtls_key = Some(material.agent_key);
+            }
+            Err(error) => tracing::warn!(
+                server_id,
+                %error,
+                "per-server mTLS unavailable; agent stays on token-only auth"
+            ),
+        }
+    }
+
+    /// SANs the agent server cert must cover so the panel's TLS check passes:
+    /// the server's own address plus the in-network agent name.
+    async fn agent_sans(&self, server_id: i64) -> Vec<String> {
+        let ip: Option<String> = sqlx::query_scalar("SELECT ip_address FROM servers WHERE id = ?")
+            .bind(server_id)
+            .fetch_optional(&self.queries.pool)
+            .await
+            .ok()
+            .flatten();
+        let mut sans = vec![
+            "openoxide-agent".to_string(),
+            "localhost".to_string(),
+            "127.0.0.1".to_string(),
+        ];
+        if let Some(ip) = ip {
+            let ip = ip.trim();
+            if !ip.is_empty() && !sans.iter().any(|s| s == ip) {
+                sans.push(ip.to_string());
+            }
+        }
+        sans
     }
 
     pub async fn policy(&self, organization_id: i64) -> sqlx::Result<MonitoringPolicyDto> {
@@ -59,6 +107,22 @@ impl MonitoringLifecycleService {
             })
             .await
             .map(Into::into)
+    }
+
+    /// Restarts the agent out-of-band (local Docker socket / remote SSH), which
+    /// works even when the gRPC link is down — e.g. right after rotating the
+    /// agent's mTLS certs, when the old in-memory cert no longer verifies.
+    pub async fn restart_agent_out_of_band(&self, server_id: i64) -> sqlx::Result<MonitoringActionDto> {
+        let docker = self.out_of_band_docker(server_id).await?;
+        docker
+            .stop_agent_container()
+            .await
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        docker
+            .start_agent_container()
+            .await
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        Ok(action("restart", "monitoring agent restarted"))
     }
 
     pub async fn restart_agent(&self, server_id: i64) -> sqlx::Result<MonitoringActionDto> {
@@ -214,6 +278,7 @@ impl MonitoringLifecycleService {
                     .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
                     .unwrap_or_else(|_| "http://127.0.0.1:4000".into()),
             );
+            self.apply_agent_mtls(server_id, &mut config).await;
             ServerSetup::new_remote(executor, config)
                 .ensure_agent()
                 .await
@@ -236,6 +301,55 @@ impl MonitoringLifecycleService {
         )
         .execute(&self.queries.pool)
         .await?;
+
+        // Consolidate duplicate local server rows (e.g. one Online + one
+        // Offline "Localhost (Main server)"). Keep the lowest id, move any
+        // resources that reference the extras onto it, then delete the extras.
+        let local_ids: Vec<i64> = sqlx::query_scalar(
+            "SELECT id FROM servers WHERE (ip_address IN ('127.0.0.1','localhost','openoxide-agent') OR app_name='localhost') ORDER BY id",
+        )
+        .fetch_all(&self.queries.pool)
+        .await?;
+        if local_ids.len() > 1 {
+            let keep = local_ids[0];
+            let extras = &local_ids[1..];
+            for &extra in extras {
+                // Move server-scoped resources onto the surviving row.
+                for stmt in [
+                    "UPDATE services SET server_id=? WHERE server_id=?",
+                    "UPDATE service_application SET build_server_id=? WHERE build_server_id=?",
+                    "UPDATE certificates SET server_id=? WHERE server_id=?",
+                    "UPDATE schedules SET server_id=? WHERE server_id=?",
+                    "UPDATE deployments SET server_id=? WHERE server_id=?",
+                    "UPDATE database_networks SET server_id=? WHERE server_id=?",
+                ] {
+                    sqlx::query(stmt)
+                        .bind(keep)
+                        .bind(extra)
+                        .execute(&self.queries.pool)
+                        .await?;
+                }
+                // PK-on-server_id tables can't be re-pointed; drop the extra's
+                // rows so the surviving row keeps its own.
+                for stmt in [
+                    "DELETE FROM server_management WHERE server_id=?",
+                    "DELETE FROM monitoring_agents WHERE server_id=?",
+                    "DELETE FROM server_private_networks WHERE server_id=?",
+                    "DELETE FROM server_cleanup_executions WHERE server_id=?",
+                    "DELETE FROM servers WHERE id=?",
+                ] {
+                    sqlx::query(stmt)
+                        .bind(extra)
+                        .execute(&self.queries.pool)
+                        .await?;
+                }
+            }
+            tracing::info!(
+                keep,
+                removed = extras.len(),
+                "consolidated duplicate local server rows"
+            );
+        }
         let configured_id = std::env::var("OPENOXIDE_LOCAL_SERVER_ID")
             .or_else(|_| std::env::var("MONITORING_SERVER_ID"))
             .ok()
@@ -422,6 +536,7 @@ impl MonitoringLifecycleService {
                 .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
                 .unwrap_or_else(|_| "http://127.0.0.1:4000".into()),
         );
+        self.apply_agent_mtls(server_id, &mut config).await;
         ServerSetup::new_remote(executor, config)
             .ensure_agent()
             .await

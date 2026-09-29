@@ -40,6 +40,69 @@ impl ApplicationBuilder {
         self
     }
 
+    /// Scale the app's swarm services back up (no build) — Dokploy `start`.
+    pub async fn start(&self, spec: &ApplicationSpec, cancel: &CancellationToken) -> ExecResult<()> {
+        self.ctx.emit(BuilderEvent::Message(format!("starting {}", spec.stack_name))).await;
+        self.scale_services(spec, spec.replicas.max(1), cancel).await;
+        self.ctx.emit(BuilderEvent::Deployed).await;
+        Ok(())
+    }
+
+    /// Scale the app's swarm services to zero — Dokploy `stop`.
+    pub async fn stop(&self, spec: &ApplicationSpec, cancel: &CancellationToken) -> ExecResult<()> {
+        self.ctx.emit(BuilderEvent::Message(format!("stopping {}", spec.stack_name))).await;
+        self.scale_services(spec, 0, cancel).await;
+        self.ctx.emit(BuilderEvent::Cancelled).await;
+        Ok(())
+    }
+
+    /// Recreate the app's swarm tasks from the existing image — Dokploy `reload`.
+    pub async fn reload(&self, spec: &ApplicationSpec, cancel: &CancellationToken) -> ExecResult<()> {
+        self.ctx.emit(BuilderEvent::Message(format!("reloading {}", spec.stack_name))).await;
+        for name in self.app_services(spec).await {
+            let _ = self
+                .ctx
+                .docker
+                .services()
+                .update(&name)
+                .force()
+                .cancel_with(cancel.clone())
+                .run()
+                .await;
+        }
+        self.ctx.emit(BuilderEvent::Deployed).await;
+        Ok(())
+    }
+
+    /// Swarm service names belonging to this app (`{stack}` / `{stack}_*`).
+    async fn app_services(&self, spec: &ApplicationSpec) -> Vec<String> {
+        self.ctx
+            .docker
+            .services()
+            .list()
+            .filter(crate::utils::docker::query::ServiceFilter::name(
+                spec.stack_name.clone(),
+            ))
+            .run_json()
+            .await
+            .map(|services| services.into_iter().map(|s| s.name).collect())
+            .unwrap_or_default()
+    }
+
+    async fn scale_services(&self, spec: &ApplicationSpec, replicas: u32, cancel: &CancellationToken) {
+        for name in self.app_services(spec).await {
+            let _ = self
+                .ctx
+                .docker
+                .services()
+                .update(&name)
+                .replicas(replicas)
+                .cancel_with(cancel.clone())
+                .run()
+                .await;
+        }
+    }
+
     pub async fn deploy(
         &self,
         spec: &ApplicationSpec,

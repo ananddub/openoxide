@@ -63,6 +63,7 @@ SELECT
     c.compose_type AS compose_type,
     c.compose_file AS compose_file,
     s.env_var AS env_var,
+    s.command AS command,
     c.service_networks AS service_networks,
     c.randomize AS randomize,
     c.suffix AS suffix,

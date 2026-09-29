@@ -41,6 +41,8 @@ export function GeneralTab({
 }: GeneralTabProps) {
 	const [showTerminal, setShowTerminal] = useState(false);
 	const [showEnv, setShowEnv] = useState(false);
+	const [showSourceCfg, setShowSourceCfg] = useState(false);
+	const [showBuildCfg, setShowBuildCfg] = useState(false);
 	const archServices = useMemo(() => buildAppArchService(app), [app]);
 	const archBackups = useMemo(
 		() => filterAppArchBackups(backups, app),
@@ -84,26 +86,10 @@ export function GeneralTab({
 				}}
 				errorDetail={app?.last_error}
 				sections={
-					<>
-						{/* Source Settings — own strip + right sheet */}
-						<SourceSettingsCard
-							app={app}
-							onUpdated={onUpdated}
-							embedded
-						/>
-
-						{/* Build Type — own strip + right sheet */}
-						<BuildSettingsCard
-							app={app}
-							onUpdated={onUpdated}
-							embedded
-						/>
-
-						<BuildLogsSection
-							entityId={Number(app?.application_id ?? app?.id ?? 0)}
-							kind="app"
-						/>
-					</>
+					<BuildLogsSection
+						entityId={Number(app?.application_id ?? app?.id ?? 0)}
+						kind="app"
+					/>
 				}
 				actions={
 					<AppHeaderActions
@@ -111,8 +97,24 @@ export function GeneralTab({
 						handleAction={handleAction}
 						onOpenTerminal={() => setShowTerminal(true)}
 						onOpenEnv={() => setShowEnv(true)}
+						onOpenSource={() => setShowSourceCfg(true)}
+						onOpenBuild={() => setShowBuildCfg(true)}
 					/>
 				}
+			/>
+
+			{/* Configuration sheets — opened from the header icons, no inline strips */}
+			<SourceSettingsCard
+				app={app}
+				onUpdated={onUpdated}
+				open={showSourceCfg}
+				onOpenChange={setShowSourceCfg}
+			/>
+			<BuildSettingsCard
+				app={app}
+				onUpdated={onUpdated}
+				open={showBuildCfg}
+				onOpenChange={setShowBuildCfg}
 			/>
 
 			{/* Environment variables — opened from the key icon */}

@@ -87,7 +87,7 @@ pub async fn build_mariadb_stack(
 
     let mut ports = Vec::new();
     if let Some(port) = db.external_port {
-        ports.push(format!("{}:3306", port));
+        ports.push(serde_json::Value::String(format!("{}:3306", port)));
     }
     let (service_networks, mut networks) =
         crate::utils::builder::database::builder::resolve_database_networks(

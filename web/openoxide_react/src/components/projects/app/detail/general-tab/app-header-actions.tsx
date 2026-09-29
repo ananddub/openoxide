@@ -7,6 +7,8 @@ import {
 	Ban,
 	Terminal,
 	KeyRound,
+	GitBranch,
+	Wrench,
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {IconTooltip} from '#/components/shared/icon-tooltip';
@@ -20,6 +22,9 @@ interface AppHeaderActionsProps {
 	handleAction: (action: any) => Promise<void>;
 	onOpenTerminal?: () => void;
 	onOpenEnv?: () => void;
+	/** Source & Build config sheets, opened from the card header. */
+	onOpenSource?: () => void;
+	onOpenBuild?: () => void;
 }
 
 /** Icon-only Deploy / Reload / Rebuild / Start-Stop / Terminal buttons. */
@@ -28,6 +33,8 @@ export function AppHeaderActions({
 	handleAction,
 	onOpenTerminal,
 	onOpenEnv,
+	onOpenSource,
+	onOpenBuild,
 }: AppHeaderActionsProps) {
 	const [busy, setBusy] = useState<string | null>(null);
 
@@ -74,19 +81,6 @@ export function AppHeaderActions({
 					)}
 				</Button>
 			</IconTooltip>
-			<IconTooltip label="Reload">
-				<Button
-					variant="ghost"
-					size="icon"
-					aria-label="Reload"
-					disabled={disabled || isBusyStatus}
-					onClick={() => void run('reload')}
-					className={iconBtn}>
-					<RefreshCw
-						className={`size-4 ${busy === 'reload' ? 'animate-spin' : ''}`}
-					/>
-				</Button>
-			</IconTooltip>
 			<IconTooltip label="Rebuild">
 				<Button
 					variant="ghost"
@@ -109,7 +103,7 @@ export function AppHeaderActions({
 						size="icon"
 						aria-label="Stopping"
 						disabled
-						className="size-8 text-destructive">
+						className="size-8 text-red-500 dark:text-red-400">
 						<RefreshCw className="size-4 animate-spin" />
 					</Button>
 				</IconTooltip>
@@ -120,7 +114,7 @@ export function AppHeaderActions({
 						size="icon"
 						aria-label="Cancelling"
 						disabled
-						className="size-8 text-destructive">
+						className="size-8 text-red-500 dark:text-red-400">
 						<RefreshCw className="size-4 animate-spin" />
 					</Button>
 				</IconTooltip>
@@ -132,7 +126,7 @@ export function AppHeaderActions({
 						aria-label="Cancel build"
 						disabled={disabled}
 						onClick={() => void run('cancel')}
-						className="size-8 text-destructive hover:text-destructive">
+						className="size-8 text-red-500 transition-colors hover:bg-red-500/10 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-400/15 dark:hover:text-red-300">
 						<Ban className="size-4" />
 					</Button>
 				</IconTooltip>
@@ -144,7 +138,7 @@ export function AppHeaderActions({
 						aria-label="Stop"
 						disabled={disabled}
 						onClick={() => void run('stop')}
-						className="size-8 text-muted-foreground hover:text-destructive">
+						className="size-8 text-red-500 transition-colors hover:bg-red-500/10 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-400/15 dark:hover:text-red-300">
 						{busy === 'stop' ? (
 							<RefreshCw className="size-4 animate-spin" />
 						) : (
@@ -191,6 +185,30 @@ export function AppHeaderActions({
 						onClick={onOpenEnv}
 						className={iconBtn}>
 						<KeyRound className="size-4" />
+					</Button>
+				</IconTooltip>
+			)}
+			{onOpenSource && (
+				<IconTooltip label="Source configuration">
+					<Button
+						variant="ghost"
+						size="icon"
+						aria-label="Source configuration"
+						onClick={onOpenSource}
+						className={iconBtn}>
+						<GitBranch className="size-4" />
+					</Button>
+				</IconTooltip>
+			)}
+			{onOpenBuild && (
+				<IconTooltip label="Build configuration">
+					<Button
+						variant="ghost"
+						size="icon"
+						aria-label="Build configuration"
+						onClick={onOpenBuild}
+						className={iconBtn}>
+						<Wrench className="size-4" />
 					</Button>
 				</IconTooltip>
 			)}

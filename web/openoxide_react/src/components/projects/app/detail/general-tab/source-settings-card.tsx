@@ -26,8 +26,9 @@ import {
 interface SourceSettingsCardProps {
 	app: any;
 	onUpdated: () => void;
-	/** Kept for call-site compatibility; the card always renders its own sheet. */
-	embedded?: boolean;
+	/** Header-icon trigger: the caller owns visibility, no strip is painted. */
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
 /** Titled config group per provider family. */
@@ -35,7 +36,8 @@ function groupFor(provider: string): {title: string; description: string} {
 	if (provider === 'DOCKER')
 		return {
 			title: 'Docker image',
-			description: 'Deploy a prebuilt image, optionally from a private registry.',
+			description:
+				'Deploy a prebuilt image, optionally from a private registry.',
 		};
 	if (provider === 'GIT')
 		return {
@@ -45,7 +47,8 @@ function groupFor(provider: string): {title: string; description: string} {
 	if (provider === 'DROP')
 		return {
 			title: 'Deploy drop',
-			description: 'Upload a build artifact instead of connecting a repository.',
+			description:
+				'Upload a build artifact instead of connecting a repository.',
 		};
 	return {
 		title: 'Repository',
@@ -57,6 +60,8 @@ function groupFor(provider: string): {title: string; description: string} {
 export function SourceSettingsCard({
 	app,
 	onUpdated,
+	open,
+	onOpenChange,
 }: SourceSettingsCardProps) {
 	const [provider, setProvider] = useState(app.source_type || 'GIT');
 	const [form, setForm] = useState<SourceForm>(() =>
@@ -156,21 +161,13 @@ export function SourceSettingsCard({
 	};
 
 	const group = groupFor(provider);
-	const providerLabel = APP_SOURCE_PROVIDERS.find(
-		p => p.id === provider,
-	)?.label;
 
 	return (
 		<SettingsSheet
 			title="Source & Provider Configuration"
 			description="Where this application pulls its code or image from."
-			meta={
-				providerLabel && (
-					<span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-						{providerLabel}
-					</span>
-				)
-			}
+			open={open}
+			onOpenChange={onOpenChange}
 			/* Form-heavy sheet — roomier than the default 560px rail. */
 			contentClassName="sm:data-[side=right]:w-[820px]"
 			footer={
@@ -197,9 +194,7 @@ export function SourceSettingsCard({
 								onClick={() => !disabled && setProvider(p.id)}
 								aria-pressed={selected}
 								disabled={disabled}
-								title={
-									disabled ? 'Deploy drop is coming soon' : undefined
-								}
+								title={disabled ? 'Deploy drop is coming soon' : undefined}
 								className={cn(
 									'flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors',
 									selected

@@ -58,9 +58,12 @@ export const useDatabaseUpdate = dbInputMutation(
 		env_var?: string;
 		memory_limit?: string;
 		cpu_limit?: string;
+		memory_reservation?: string;
+		cpu_reservation?: string;
 		replicas?: number | bigint;
 		server_id?: number | bigint;
 		network_ids?: string[];
+		detach_rustploy_network?: number | bigint;
 	}) =>
 		databaseClient.updateDatabase({
 			kind: input.kind,
@@ -77,9 +80,12 @@ export const useDatabaseUpdate = dbInputMutation(
 			envVar: input.env_var,
 			memoryLimit: input.memory_limit,
 			cpuLimit: input.cpu_limit,
+			memoryReservation: input.memory_reservation,
+			cpuReservation: input.cpu_reservation,
 			replicas: big(input.replicas),
 			serverId: big(input.server_id),
 			networkIds: input.network_ids ?? [],
+			detachRustployNetwork: big(input.detach_rustploy_network),
 		}),
 );
 

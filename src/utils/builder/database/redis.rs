@@ -123,7 +123,7 @@ pub async fn build_redis_stack(
 
     let mut ports = Vec::new();
     if let Some(port) = db.external_port {
-        ports.push(format!("{}:6379", port));
+        ports.push(serde_json::Value::String(format!("{}:6379", port)));
     }
     let (service_networks, mut networks) =
         crate::utils::builder::database::builder::resolve_database_networks(

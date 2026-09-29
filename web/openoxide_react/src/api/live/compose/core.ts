@@ -32,6 +32,7 @@ export const useComposeUpdate = inputMutation(
 		network_ids?: string[];
 		command?: string;
 		randomize?: boolean;
+		env_var?: string;
 	}) =>
 		composeClient.updateCompose({
 			id: BigInt(input.id),
@@ -42,6 +43,7 @@ export const useComposeUpdate = inputMutation(
 			networkIds: input.network_ids ?? [],
 			command: input.command,
 			randomize: input.randomize,
+			envVar: input.env_var,
 		}),
 );
 

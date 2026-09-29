@@ -47,6 +47,8 @@ services:
       # recompile, no image build. (A direct bind mount of the repo's
       # dist dir is denied by Docker Desktop file sharing on this setup.)
       - openoxide_web_dist:/app/web-dist
+      # Shared panel↔agent mTLS material (panel generates it here on startup).
+      - openoxide_mtls:/app/data/mtls
 
     environment:
       PORT: "4000"
@@ -54,6 +56,12 @@ services:
       DATABASE_URL: "sqlite:///app/data/db.sqlite3"
       MALLOC_ARENA_MAX: "2"
       RUST_BACKTRACE: "1"
+      # ── panel↔agent mTLS ──
+      # Panel generates per-server material under OPENOXIDE_MTLS_DIR/server-{id}/
+      # and reads each server's own panel-client identity from there. The local
+      # agent's own set is also mirrored at the dir root for its read-only mount.
+      OPENOXIDE_MTLS_DIR: "/app/data/mtls"
+      AGENT_TLS_DOMAIN: "openoxide-agent"
 
       # ── Secrets — dev defaults, override via .env ──────────────────────────
       SECRET_KEY: "${SECRET_KEY:-change_me_in_production}"
@@ -104,12 +112,17 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # cgroup mode reads container metrics from here.
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      # Host root (read-only) so disk stats report the real host filesystem
+      # (`/host`) instead of the container's overlay.
+      - /:/host:ro
       # Persistent task workspace for repositories, compose files and backup
       # staging. Remote agents use their own host-local volume.
       - agent_workspace:/app/workspace
       # Traefik static/dynamic configuration and certificates. The agent owns
       # host-side route updates, so this mount must remain read-write.
       - /etc/openoxide/traefik:/etc/openoxide/traefik
+      # Shared panel↔agent mTLS material (read-only for the agent).
+      - openoxide_mtls:/etc/openoxide/mtls:ro
 
     environment:
       # -1 is the local-Agent sentinel; the panel maps it to its actual local
@@ -119,6 +132,10 @@ services:
       OPENOXIDE_SERVER_URL: "http://openoxide:4000"
       METRICS_TOKEN: "${METRICS_TOKEN:-change_me_metrics_token}"
       RUST_LOG: "agent=info"
+      # ── mTLS: server identity + panel client-CA (paths in the mtls volume) ──
+      AGENT_TLS_CERT: "/etc/openoxide/mtls/agent.crt"
+      AGENT_TLS_KEY: "/etc/openoxide/mtls/agent.key"
+      AGENT_TLS_CLIENT_CA: "/etc/openoxide/mtls/ca.crt"
 
   # The dashboard is embedded in the panel binary (rust-embed) and served
   # over the panel's h2-only HTTPS listener on :4000 — no standalone web
@@ -129,6 +146,7 @@ volumes:
   openoxide_logs:
   agent_workspace:
   openoxide_web_dist:
+  openoxide_mtls:
 
 networks:
   openoxide-network:

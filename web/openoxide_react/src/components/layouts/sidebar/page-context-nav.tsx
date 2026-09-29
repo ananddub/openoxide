@@ -4,7 +4,6 @@ import {
 	Archive,
 	ChevronLeft,
 	Clock,
-	Container,
 	Forward,
 	GalleryVerticalEnd,
 	Globe,
@@ -39,7 +38,6 @@ const TAB_ICONS: Record<string, LucideIcon> = {
 	Architecture: Network,
 	Domains: Globe,
 	Deployments: Rocket,
-	Containers: Container,
 	Schedules: Clock,
 	Backups: Archive,
 	'Volume Backups': HardDrive,
@@ -51,7 +49,6 @@ const TAB_ICONS: Record<string, LucideIcon> = {
 const COMPOSE_TABS = [
 	'General',
 	'Architecture',
-	'Containers',
 	'Domains',
 	'Deployments',
 	'Schedules',

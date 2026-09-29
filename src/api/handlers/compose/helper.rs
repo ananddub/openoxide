@@ -67,6 +67,10 @@ pub fn compose_to_proto(dto: &ComposeResponseDto) -> Compose {
         last_error: dto.last_error.clone(),
         randomize: dto.randomize,
         suffix: dto.suffix.clone(),
+        // Surface the resolved environment (including template-generated
+        // secrets) so the GUI env editor can display and edit it instead of
+        // showing a blank box.
+        env_var: dto.env_var.clone(),
         ..Default::default()
     }
 }

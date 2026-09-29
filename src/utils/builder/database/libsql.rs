@@ -106,13 +106,13 @@ pub async fn build_libsql_stack(
 
     let mut ports = Vec::new();
     if let Some(port) = db.external_port {
-        ports.push(format!("{}:8080", port));
+        ports.push(serde_json::Value::String(format!("{}:8080", port)));
     }
     if let Some(port) = engine.opt_int("external_grpc_port") {
-        ports.push(format!("{}:5001", port));
+        ports.push(serde_json::Value::String(format!("{}:5001", port)));
     }
     if let Some(port) = engine.opt_int("external_admin_port") {
-        ports.push(format!("{}:5000", port));
+        ports.push(serde_json::Value::String(format!("{}:5000", port)));
     }
     let (service_networks, mut networks) =
         crate::utils::builder::database::builder::resolve_database_networks(

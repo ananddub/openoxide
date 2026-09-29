@@ -19,5 +19,11 @@ CREATE TABLE servers (
     build_memory_limit TEXT,
     build_cpu_limit TEXT,
     host_key_fingerprint TEXT NOT NULL DEFAULT '',
-    host_key_openssh TEXT NOT NULL DEFAULT ''
+    host_key_openssh TEXT NOT NULL DEFAULT '',
+    mtls_ca_cert BLOB,
+    mtls_ca_key BLOB,
+    mtls_panel_cert BLOB,
+    mtls_panel_key BLOB,
+    mtls_agent_cert BLOB,
+    mtls_agent_key BLOB
 );

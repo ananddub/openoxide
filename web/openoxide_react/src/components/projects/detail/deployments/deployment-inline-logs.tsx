@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react';
+import {useRef, useState} from 'react';
 import {Loader} from 'lucide-react';
 import {AnalyzeLogsButton} from '#/components/ai/analyze-logs-button';
 import {
@@ -8,6 +8,7 @@ import {
 	LOG_SURFACE_CLS,
 	LOG_TS_CLS,
 } from '#/components/shared/log-tone';
+import {useLogTail} from '#/components/shared/use-log-tail';
 import {isBuildActive} from './build-status';
 import {useDeploymentLogStream} from './use-deployment-log-stream';
 
@@ -31,13 +32,10 @@ export function DeploymentInlineLogs({
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const dragRef = useRef<{y: number; h: number} | null>(null);
 
-	useEffect(() => {
-		if (isLive && scrollRef.current) {
-			scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-		}
-	}, [logs.length, isLive]);
-
 	const lines = (logs ?? []).map(stripAnsi).filter(l => l.trim() !== '');
+
+	// Opens at the newest line and follows the stream; scrolling up releases the pin.
+	useLogTail(scrollRef, lines.length, isLive);
 
 	return (
 		<div className="flex flex-col border-t border-border">

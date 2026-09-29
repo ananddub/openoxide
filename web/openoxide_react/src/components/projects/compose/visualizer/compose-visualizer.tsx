@@ -51,7 +51,7 @@ export function ComposeVisualizer({
 		<div
 			className={cn(
 				'overflow-hidden rounded-[14px] border border-border bg-background',
-				wrapperClassName ?? 'h-[calc(100vh-320px)] min-h-[410px]',
+				wrapperClassName ?? 'h-[calc(100dvh_-_240px)] min-h-[420px]',
 			)}>
 			<ReactFlowProvider>
 				<CanvasInner services={services} {...rest} />

@@ -108,9 +108,9 @@ impl DatabaseService for DatabaseController {
             command: request.command.as_deref().map(String::from),
             args: Some(request.args.iter().map(|s| (*s).to_owned()).collect()),
             env_var: request.env_var.as_deref().map(String::from),
-            memory_reservation: None,
+            memory_reservation: request.memory_reservation.as_deref().map(String::from),
             memory_limit: request.memory_limit.as_deref().map(String::from),
-            cpu_reservation: None,
+            cpu_reservation: request.cpu_reservation.as_deref().map(String::from),
             cpu_limit: request.cpu_limit.as_deref().map(String::from),
             replicas: request.replicas,
             server_id: request.server_id,
@@ -119,7 +119,7 @@ impl DatabaseService for DatabaseController {
             sqld_primary_url: None,
             enable_namespaces: None,
             network_ids: Some(request.network_ids.iter().map(|s| (*s).to_owned()).collect()),
-            detach_rustploy_network: None,
+            detach_rustploy_network: request.detach_rustploy_network,
         };
         let record = self.service.patch(kind, request.id, dto).await.map_err(map_db_error)?;
         Response::ok(record_to_proto(record))

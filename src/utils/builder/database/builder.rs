@@ -47,7 +47,7 @@ pub struct StackService {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ulimits: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub ports: Vec<String>,
+    pub ports: Vec<serde_json::Value>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -258,15 +258,21 @@ pub async fn apply_database_swarm_settings(
                 if let (Some(target), Some(published)) = (target, published) {
                     let protocol = string_field(port, "Protocol", "protocol", "tcp");
                     let mode = string_field(port, "PublishMode", "publish_mode", "ingress");
-                    if mode != "ingress" {
-                        return Err(ExecError::CommandFailed {
-                            code: None,
-                            stderr: "Database endpoint port publish mode 'host' is not supported by the current stack port adapter".to_string(),
-                        });
+                    if mode == "ingress" {
+                        service
+                            .ports
+                            .push(serde_json::Value::String(format!(
+                                "{published}:{target}/{protocol}"
+                            )));
+                    } else {
+                        // Long syntax for host (or other) publish modes.
+                        service.ports.push(serde_json::json!({
+                            "target": target,
+                            "published": published,
+                            "protocol": protocol,
+                            "mode": mode,
+                        }));
                     }
-                    service
-                        .ports
-                        .push(format!("{published}:{target}/{protocol}"));
                 }
             }
         }
@@ -902,6 +908,40 @@ impl DatabaseBuilder {
                 .run()
                 .await;
         }
+        Ok(())
+    }
+
+    /// Recreate the database's swarm tasks from the existing image (no
+    /// redeploy) — Dokploy `reload`.
+    pub async fn reload(&self, app_name: &str, cancel: &CancellationToken) -> ExecResult<()> {
+        self.ctx
+            .emit(BuilderEvent::Message(format!("reloading {app_name}")))
+            .await;
+        if let Ok(services) = self
+            .ctx
+            .docker
+            .services()
+            .list()
+            .filter(crate::utils::docker::query::ServiceFilter::name(format!(
+                "{}_",
+                app_name
+            )))
+            .run_json()
+            .await
+        {
+            for s in services {
+                let _ = self
+                    .ctx
+                    .docker
+                    .services()
+                    .update(&s.name)
+                    .force()
+                    .cancel_with(cancel.clone())
+                    .run()
+                    .await;
+            }
+        }
+        self.ctx.emit(BuilderEvent::Deployed).await;
         Ok(())
     }
 

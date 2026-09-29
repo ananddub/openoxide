@@ -54,14 +54,17 @@ export function FieldGrid({
 export function SheetGroup({
 	title,
 	description,
+	className,
 	children,
 }: {
 	title: ReactNode;
 	description?: ReactNode;
+	/** Let an editor-heavy group claim the sheet's leftover height (`flex-1 min-h-0`). */
+	className?: string;
 	children: ReactNode;
 }) {
 	return (
-		<section className="flex flex-col gap-5">
+		<section className={cn('flex flex-col gap-5', className)}>
 			<div className="flex flex-col gap-1 border-b border-border pb-3">
 				<h4 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 					{title}

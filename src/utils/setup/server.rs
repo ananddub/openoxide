@@ -1,17 +1,17 @@
 use super::{ServerAudit, SetupConfig, validation};
 use crate::utils::{
-    builder::packs::{nixpacks::NixpacksCli, paketo::PackCli, railpack::RailpackCli},
     docker::{
         DockerCli,
         core::{Mount, Port},
         handles::containers::RestartPolicy,
     },
     exec::{
-        CommandExecutor, ExecResult, ExecStreamEvent, detect_advertise_addr,
+        CommandExecutor, ExecResult, ExecStreamEvent,
         script::{ScriptPipeline, ShellIR, sh},
     },
     os::OsCli,
 };
+use crate::utils::os::file::FileMode;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SetupStep {
@@ -100,114 +100,6 @@ impl ServerSetup {
         Ok(())
     }
 
-    pub async fn install_dependencies(&self) -> ExecResult<()> {
-        let os = OsCli::new(&self.executor);
-        for (index, package) in [
-            "curl",
-            "wget",
-            "git",
-            "git-lfs",
-            "jq",
-            "openssl",
-            "unzip",
-            "tar",
-            "ca-certificates",
-            "bash",
-        ]
-        .into_iter()
-        .enumerate()
-        {
-            os.package(package)
-                .install()
-                .update(index == 0)
-                .no_cache(true)
-                .run()
-                .await?;
-        }
-
-        if os.has_command("docker").run().await.is_err() {
-            os.shell_installer("https://get.docker.com").run().await?;
-        }
-        if os.has_command("systemctl").run().await.is_ok() {
-            os.service("docker").enable().run().await?;
-            os.service("docker").start().run().await?;
-        }
-        Ok(())
-    }
-    pub async fn setup_directories(&self) -> ExecResult<()> {
-        let os = OsCli::new(&self.executor);
-        for path in self.config.paths.all() {
-            os.dir(path).create().parents(true).run().await?;
-        }
-        os.file(&self.config.paths.ssh)
-            .chmod(crate::utils::os::file::FileMode::OwnerReadWriteExecute)
-            .run()
-            .await?;
-        let acme = format!("{}/acme.json", self.config.paths.traefik_dynamic);
-        if os.file(&acme).exists().run().await.is_err() {
-            os.file(&acme).write("").execute().await?;
-        }
-        os.file(&acme)
-            .chmod(crate::utils::os::file::FileMode::OwnerReadWrite)
-            .run()
-            .await?;
-        Ok(())
-    }
-    pub async fn install_build_tools(&self) -> ExecResult<()> {
-        let os = OsCli::new(&self.executor);
-        if os.has_command("rclone").run().await.is_err() {
-            os.shell_installer("https://rclone.org/install.sh")
-                .shell("bash")
-                .run()
-                .await?;
-        }
-
-        NixpacksCli::new(&self.executor)
-            .if_not_exist_install()
-            .await?;
-        RailpackCli::new(&self.executor)
-            .if_not_exist_install()
-            .await?;
-        PackCli::new(&self.executor).if_not_exist_install().await?;
-        Ok(())
-    }
-    pub async fn ensure_swarm(&self) -> ExecResult<()> {
-        let docker = DockerCli::from_executor(self.executor.clone());
-        if docker.swarm().inspect().await.is_ok() {
-            return Ok(());
-        }
-        let advertise = match &self.config.advertise_addr {
-            Some(value) => value.clone(),
-            None => detect_advertise_addr(&self.executor).await,
-        };
-        docker
-            .swarm()
-            .init()
-            .advertise_addr(&advertise)
-            .listen_addr("0.0.0.0:2377")
-            .run()
-            .await?;
-        Ok(())
-    }
-    pub async fn ensure_network(&self) -> ExecResult<()> {
-        let docker = DockerCli::from_executor(self.executor.clone());
-        if docker
-            .networks()
-            .inspect(&self.config.network_name)
-            .await
-            .is_ok()
-        {
-            return Ok(());
-        }
-        docker
-            .networks()
-            .create(&self.config.network_name)
-            .driver(crate::utils::docker::NetworkDriver::Overlay)
-            .attachable()
-            .run()
-            .await?;
-        Ok(())
-    }
     pub async fn write_traefik_config(&self) -> ExecResult<()> {
         let static_path = format!("{}/traefik.yml", self.config.paths.traefik);
         let middleware_path = format!("{}/middlewares.yml", self.config.paths.traefik_dynamic);
@@ -235,8 +127,7 @@ impl ServerSetup {
         if os.dir(path).exists().run().await.is_ok() {
             os.dir(path).delete().run().await?;
         }
-        // The dynamic config directory may not exist yet on a fresh host;
-        // tee cannot create parents.
+
         if let Some(parent) = std::path::Path::new(path).parent() {
             let _ = os
                 .dir(parent.to_string_lossy().as_ref())
@@ -244,9 +135,7 @@ impl ServerSetup {
                 .run()
                 .await;
         }
-        // A file that exists but is empty or holds a YAML `null` scalar is a
-        // broken install (Traefik refuses to start without a valid static
-        // config). Repair it even when `overwrite` is false.
+
         if !overwrite && os.file(path).exists().run().await.is_ok() {
             if is_valid_yaml_file(&os, path).await {
                 return Ok(());
@@ -267,10 +156,7 @@ impl ServerSetup {
         let name = self.config.traefik_name.as_str();
         let mut started = false;
         if docker.container(name).inspect().await.is_ok() {
-            // Existing installations may have been created on the legacy
-            // network. Connecting is idempotent enough for setup: Docker
-            // returns an error when the endpoint already exists, which we can
-            // safely ignore while still repairing old deployments.
+
             let _ = docker
                 .networks()
                 .connect(self.config.network_name.as_str(), name)
@@ -278,9 +164,7 @@ impl ServerSetup {
                 .await;
             match docker.container(name).start().run().await {
                 Ok(_) => started = true,
-                // A container left behind from a deleted network can never
-                // start — its endpoint references a dead network id. Remove it
-                // so the fresh-create path below rebuilds it.
+
                 Err(_) => {
                     let _ = docker.container(name).remove().force().run().await;
                 }
@@ -329,13 +213,52 @@ impl ServerSetup {
         Ok(())
     }
 
+    async fn write_agent_mtls(
+        &self,
+        dir: &str,
+        ca: &str,
+        cert: &str,
+        key: &str,
+    ) -> ExecResult<bool> {
+        let os = OsCli::new(&self.executor);
+        os.dir(dir).create().parents(true).run().await?;
+        let mut changed = false;
+        for (name, contents, mode) in [
+            ("ca.crt", ca, FileMode::OwnerReadWriteGroupReadWorldRead),
+            ("agent.crt", cert, FileMode::OwnerReadWriteGroupReadWorldRead),
+            ("agent.key", key, FileMode::OwnerReadWrite),
+        ] {
+            let path = format!("{dir}/{name}");
+            let current = os.file(&path).read().execute().await.ok();
+            let same = current
+                .as_ref()
+                .map(|o| o.stdout_trimmed() == contents.trim())
+                .unwrap_or(false);
+            if !same {
+                changed = true;
+                os.file(&path).write(contents).execute().await?;
+                os.file(&path).chmod(mode).run().await?;
+            }
+        }
+        Ok(changed)
+    }
+
     pub async fn ensure_agent(&self) -> ExecResult<()> {
         let docker = DockerCli::from_executor(self.executor.clone());
         let name = AGENT_CONTAINER_NAME;
-        // Older releases used a different container name but published the
-        // same host gRPC port. Remove it before recreating the Agent, otherwise
-        // Docker leaves the new container in Created state with a 50051 bind
-        // conflict and every retry only reports the stale name conflict.
+
+        let mtls_dir = format!("{}/mtls", self.config.paths.agent);
+        let (mtls_ready, mtls_changed) = if let (Some(ca), Some(cert), Some(key)) = (
+            self.config.agent_mtls_ca_cert.as_deref(),
+            self.config.agent_mtls_cert.as_deref(),
+            self.config.agent_mtls_key.as_deref(),
+        ) {
+            let changed = self.write_agent_mtls(&mtls_dir, ca, cert, key).await?;
+            (true, changed)
+        } else {
+            (false, false)
+        };
+
         if self.config.agent_server_id.is_some()
             && docker
                 .container("openoxide-monitor")
@@ -352,16 +275,15 @@ impl ServerSetup {
         }
         if let Ok(existing) = docker.container(name).inspect().await {
             if existing.state.running && self.config.agent_server_id.is_some() {
-                // A healthy Agent already owns gRPC port 50051. Reusing it
-                // makes setup idempotent and avoids a bind race on reinstall.
-                return Ok(());
-            }
-            if self.config.agent_server_id.is_none() {
+
+                if !mtls_changed {
+                    return Ok(());
+                }
+                tracing::info!("agent mTLS certs rotated; recreating agent to load them");
+            } else if self.config.agent_server_id.is_none() {
                 if docker.container(name).start().run().await.is_ok() {
                     return Ok(());
                 }
-                // A container left behind from a deleted network can never
-                // start — remove it so the fresh-create path below rebuilds.
                 let _ = docker.container(name).remove().force().run().await;
             }
             let _ = docker.container(name).stop().run().await;
@@ -394,8 +316,6 @@ impl ServerSetup {
             .create(image)
             .detach()
             .name(name)
-            // Docker CLI children spawn plugin grandchildren that re-parent to PID 1
-            // when the shell exits; without an init reaper they linger as zombies.
             .init()
             .restart(RestartPolicy::Always)
             .network(self.config.network_name.as_str())
@@ -404,6 +324,13 @@ impl ServerSetup {
             .mount(workspace_mount)
             .mount(traefik_mount)
             .publish(p_grpc);
+        if mtls_ready {
+            create = create
+                .mount(Mount::bind_ro(&mtls_dir, "/etc/openoxide/mtls"))
+                .env("AGENT_TLS_CERT", "/etc/openoxide/mtls/agent.crt")
+                .env("AGENT_TLS_KEY", "/etc/openoxide/mtls/agent.key")
+                .env("AGENT_TLS_CLIENT_CA", "/etc/openoxide/mtls/ca.crt");
+        }
         if let (Some(server_id), Some(panel_url), Some(token)) = (
             self.config.agent_server_id,
             self.config.agent_panel_url.as_deref(),
@@ -421,41 +348,9 @@ impl ServerSetup {
                 );
         }
         create.run().await?;
-        // Docker create leaves the container in `Created`; lifecycle/gRPC
-        // monitoring must be running immediately after setup.
+
         docker.container(name).start().run().await?;
         Ok(())
-    }
-
-    pub async fn setup_all(&self, install_dependencies: bool) -> ExecResult<SetupOutcome> {
-        self.preflight().await?;
-        let mut completed = Vec::new();
-        if install_dependencies {
-            self.install_dependencies().await?;
-            completed.push(SetupStep::Dependencies);
-            if self.config.build_server {
-                self.install_build_tools().await?;
-                completed.push(SetupStep::BuildTools);
-            }
-        }
-        self.setup_directories().await?;
-        completed.push(SetupStep::Directories);
-        if self.config.build_server {
-            let audit = self.audit().await?;
-            return Ok(SetupOutcome { completed, audit });
-        }
-        self.ensure_swarm().await?;
-        completed.push(SetupStep::Swarm);
-        self.ensure_network().await?;
-        completed.push(SetupStep::Network);
-        self.write_traefik_config().await?;
-        completed.push(SetupStep::TraefikConfig);
-        self.ensure_traefik().await?;
-        completed.push(SetupStep::Traefik);
-        self.ensure_agent().await?;
-        completed.push(SetupStep::Agent);
-        let audit = self.audit().await?;
-        Ok(SetupOutcome { completed, audit })
     }
 
     pub fn oneshot_script(&self, install_dependencies: bool) -> ScriptPipeline {
@@ -560,29 +455,6 @@ impl ServerSetup {
     }
 
     fn append_dependency_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
-        steps.extend(sh!(info!("Installing base dependencies");));
-        for (index, package) in [
-            "curl",
-            "wget",
-            "git",
-            "git-lfs",
-            "jq",
-            "openssl",
-            "unzip",
-            "tar",
-            "ca-certificates",
-            "bash",
-        ]
-        .into_iter()
-        .enumerate()
-        {
-            steps.extend(sh!(
-                os.package(package)
-                    .install()
-                    .update(index == 0)
-                    .no_cache(true);
-            ));
-        }
 
         steps.extend(sh!(
             info!("Checking Docker installation");
@@ -599,34 +471,8 @@ impl ServerSetup {
         ));
     }
 
-    fn append_build_tool_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
-        steps.extend(sh!(
-            info!("Checking build tools");
-            if !os.has_command("rclone") {
-                info!("Installing rclone");
-                os.shell_installer("https://rclone.org/install.sh")
-                    .shell("bash");
-            }
-            if !os.has_command("nixpacks") {
-                info!("Installing nixpacks");
-                os.shell_installer("https://nixpacks.com/install.sh")
-                    .shell("bash")
-                    .env("NIXPACKS_VERSION", "1.41.0");
-                cmd("nixpacks", "--version");
-            }
-            if !os.has_command("railpack") {
-                info!("Installing railpack");
-                os.shell_installer("https://railpack.com/install.sh")
-                    .shell("bash")
-                    .env("RAILPACK_VERSION", "0.15.4");
-                cmd("railpack", "--version");
-            }
-            if !os.has_command("pack") {
-                info!("Installing pack CLI");
-                os.pack_installer("0.39.1");
-                cmd("pack", "--version");
-            }
-        ));
+    fn append_build_tool_steps(&self, _steps: &mut Vec<ShellIR>, _os: &OsCli<'_>) {
+
     }
 
     fn append_directory_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
@@ -782,9 +628,7 @@ impl ServerSetup {
             {
                 info!("Starting existing Traefik container");
                 if !docker.container(name).start() {
-                    // A leftover container can reference a deleted network by
-                    // id, so `docker start` can never succeed — drop it and
-                    // let the guarded create block below rebuild it.
+
                     info!("Existing Traefik container could not start — recreating it");
                     docker.container(name).remove().force();
                 }
@@ -858,7 +702,7 @@ impl ServerSetup {
             {
                 info!("Starting existing OpenOxide agent container");
                 if !docker.container(name).start() {
-                    // Same stale-network case as Traefik: rebuild from scratch.
+
                     info!("Existing OpenOxide agent container could not start — recreating it");
                     docker.container(name).remove().force();
                 }
@@ -876,6 +720,64 @@ impl ServerSetup {
     fn append_agent_create_block(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
         let name = AGENT_CONTAINER_NAME;
         let image = agent_image();
+
+        let mtls_dir = format!("{}/mtls", self.config.paths.agent);
+        let mtls = match (
+            self.config.agent_mtls_ca_cert.as_deref(),
+            self.config.agent_mtls_cert.as_deref(),
+            self.config.agent_mtls_key.as_deref(),
+        ) {
+            (Some(ca), Some(cert), Some(key)) => {
+                let os = OsCli::new(&self.executor);
+                steps.extend(sh!(
+                    info!("Writing agent mTLS material");
+                    os.dir(mtls_dir.as_str()).create().parents(true);
+                ));
+                for (fname, contents, mode) in [
+                    ("ca.crt", ca, FileMode::OwnerReadWriteGroupReadWorldRead),
+                    ("agent.crt", cert, FileMode::OwnerReadWriteGroupReadWorldRead),
+                    ("agent.key", key, FileMode::OwnerReadWrite),
+                ] {
+                    let path = format!("{mtls_dir}/{fname}");
+                    steps.extend(sh!(
+                        os.file(path.as_str()).write(contents);
+                        os.file(path.as_str()).chmod(mode);
+                    ));
+                }
+                true
+            }
+            _ => false,
+        };
+        let containers = docker.containers();
+        let mut create_cmd = containers
+            .create(image)
+            .detach()
+            .name(name)
+
+            .init()
+            .restart(RestartPolicy::Always)
+            .network(self.config.network_name.as_str())
+            .mount(Mount::bind("/var/run/docker.sock", "/var/run/docker.sock"))
+            .mount(Mount::bind_ro("/sys/fs/cgroup", "/sys/fs/cgroup"))
+            .mount(Mount::bind(self.config.paths.agent.as_str(), "/app/workspace"))
+            .mount(Mount::bind(
+                self.config.paths.traefik.as_str(),
+                "/etc/openoxide/traefik",
+            ))
+            .env("SERVER_ID", self.config.agent_server_id.unwrap_or(0).to_string())
+            .env("OPENOXIDE_SERVER_URL", self.config.agent_panel_url.clone().unwrap_or_default())
+            .env("METRICS_TOKEN", self.config.agent_token.clone().unwrap_or_default())
+            .env("MONITOR_DATABASE_URL", "memory://metrics")
+            .env("REFRESH_RATE", "2")
+            .env("RETENTION_DAYS", self.config.agent_retention_days.to_string());
+        if mtls {
+            create_cmd = create_cmd
+                .mount(Mount::bind_ro(mtls_dir.as_str(), "/etc/openoxide/mtls"))
+                .env("AGENT_TLS_CERT", "/etc/openoxide/mtls/agent.crt")
+                .env("AGENT_TLS_KEY", "/etc/openoxide/mtls/agent.key")
+                .env("AGENT_TLS_CLIENT_CA", "/etc/openoxide/mtls/ca.crt");
+        }
+        let create_cmd = create_cmd.publish(Port::tcp(50051, 50051));
         steps.extend(sh!(
             let _openoxide_arch = capture_stdout! {
                 cmd("uname", "-m");
@@ -890,30 +792,7 @@ impl ServerSetup {
                 info!("Pulling OpenOxide agent image");
                 docker.images().pull(image);
                 info!("Creating OpenOxide agent container");
-                docker
-                    .containers()
-                    .create(image)
-                    .detach()
-                    .name(name)
-                    // Docker CLI children spawn plugin grandchildren that re-parent to PID 1
-                    // when the shell exits; without an init reaper they linger as zombies.
-                    .init()
-                    .restart(RestartPolicy::Always)
-                    .network(self.config.network_name.as_str())
-                    .mount(Mount::bind("/var/run/docker.sock", "/var/run/docker.sock"))
-                    .mount(Mount::bind_ro("/sys/fs/cgroup", "/sys/fs/cgroup"))
-                    .mount(Mount::bind(self.config.paths.agent.as_str(), "/app/workspace"))
-                    .mount(Mount::bind(
-                        self.config.paths.traefik.as_str(),
-                        "/etc/openoxide/traefik",
-                    ))
-                    .env("SERVER_ID", self.config.agent_server_id.unwrap_or(0).to_string())
-                    .env("OPENOXIDE_SERVER_URL", self.config.agent_panel_url.clone().unwrap_or_default())
-                    .env("METRICS_TOKEN", self.config.agent_token.clone().unwrap_or_default())
-                    .env("MONITOR_DATABASE_URL", "memory://metrics")
-                    .env("REFRESH_RATE", "2")
-                    .env("RETENTION_DAYS", self.config.agent_retention_days.to_string())
-                    .publish(Port::tcp(50051, 50051));
+                create_cmd;
             }
         ));
     }
@@ -921,7 +800,6 @@ impl ServerSetup {
 
 pub(crate) const AGENT_CONTAINER_NAME: &str = "openoxide-agent";
 
-/// `if ! docker container inspect NAME ...; then <body>; fi`
 fn guarded_by_absent_container(docker: &DockerCli, name: &str, body: Vec<ShellIR>) -> ShellIR {
     use crate::utils::exec::script::dsl::{IntoShellIRGeneric, ShellIRWrapper};
 
@@ -966,10 +844,6 @@ fn setup_steps(install_dependencies: bool, build_server: bool) -> Vec<SetupStep>
     completed
 }
 
-/// A setup-written Traefik YAML file is only trustworthy when it parses to a
-/// non-null mapping. An earlier bug (and accidental UI edits) could leave the
-/// literal scalar `null` or an empty file on disk, which makes Traefik refuse
-/// to start — treat those as missing so the config is rewritten.
 async fn is_valid_yaml_file(os: &crate::utils::os::OsCli<'_>, path: &str) -> bool {
     let Ok(output) = os.file(path).read().execute().await else {
         return false;
@@ -989,13 +863,41 @@ mod tests {
     use super::*;
 
     #[test]
+    fn oneshot_script_distributes_mtls_when_material_present() {
+        let mut config = SetupConfig::default();
+        config.agent_server_id = Some(7);
+        config.agent_panel_url = Some("http://panel:4000".into());
+        config.agent_token = Some("tok".into());
+        config.agent_mtls_ca_cert = Some("CA-PEM".into());
+        config.agent_mtls_cert = Some("AGENT-PEM".into());
+        config.agent_mtls_key = Some("KEY-PEM".into());
+        let script = ServerSetup::new_local(config).compile_oneshot_script(false);
+
+        assert!(script.contains("/mtls"));
+        assert!(script.contains("ca.crt"));
+        assert!(script.contains("agent.key"));
+        assert!(script.contains("AGENT_TLS_CERT"));
+        assert!(script.contains("AGENT_TLS_CLIENT_CA"));
+        assert!(script.contains("/etc/openoxide/mtls"));
+    }
+
+    #[test]
+    fn oneshot_script_skips_mtls_when_material_absent() {
+        let mut config = SetupConfig::default();
+        config.agent_server_id = Some(7);
+        let script = ServerSetup::new_local(config).compile_oneshot_script(false);
+        assert!(!script.contains("AGENT_TLS_CERT"));
+    }
+
+    #[test]
     fn oneshot_setup_script_contains_expected_steps() {
         let setup = ServerSetup::new_local(SetupConfig::default());
         let script = setup.compile_oneshot_script(true);
 
         assert!(script.starts_with("set -e\n"));
-        assert!(script.contains("apt-get 'install' '-y' 'jq'"));
-        assert!(script.contains("apt-get 'install' '-y' 'bash'"));
+
+        assert!(!script.contains("apt-get 'install' '-y' 'jq'"));
+        assert!(!script.contains("apt-get 'install' '-y' 'bash'"));
         assert!(script.contains("echo '[INFO] Checking Docker installation'"));
         assert!(script.contains("echo '[INFO] Checking Traefik container'"));
         assert!(script.contains("Removing directory created at Traefik config file path"));
@@ -1022,7 +924,6 @@ mod tests {
         assert!(script.contains("uname '-m'"));
         assert!(script.contains("Skipping OpenOxide agent on ARM64; image has no arm64 manifest"));
         assert!(script.contains("Checking OpenOxide agent container"));
-        assert!(script.contains("Removing legacy OpenOxide monitor container"));
         assert!(script.contains("--name openoxide-agent"));
     }
 
@@ -1089,8 +990,9 @@ mod tests {
         println!("\n===== GENERATED BUILD SERVER SETUP =====\n{script}");
 
         assert!(script.contains("https://get.docker.com"));
-        assert!(script.contains("https://nixpacks.com/install.sh"));
-        assert!(script.contains("_openoxide_pack_url="));
+
+        assert!(!script.contains("https://nixpacks.com/install.sh"));
+        assert!(!script.contains("_openoxide_pack_url="));
         assert!(!script.contains("docker swarm init"));
         assert!(!script.contains("docker network create --driver overlay"));
         assert!(!script.contains("traefik:v"));

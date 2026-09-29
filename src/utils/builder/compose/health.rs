@@ -86,20 +86,32 @@ impl ComposeBuilder {
                         }
                     };
 
-                    if rows
-                        .iter()
-                        .any(|row| row.state.to_lowercase().contains("exit"))
-                    {
+                    // Fail fast on a container that crashed or went unhealthy.
+                    // A clean exit (code 0) is a legitimate one-shot job.
+                    if let Some(bad) = rows.iter().find(|row| {
+                        let state = row.state.to_lowercase();
+                        state.contains("dead")
+                            || row.health.eq_ignore_ascii_case("unhealthy")
+                            || (state.contains("exit") && row.exit_code != 0)
+                    }) {
                         return Err(ExecError::CommandFailed {
                             code: None,
-                            stderr: format!("container exited: {:?}", rows),
+                            stderr: format!(
+                                "container {} failed: state={} health={} exit_code={}",
+                                bad.service, bad.state, bad.health, bad.exit_code
+                            ),
                         });
                     }
 
+                    // Healthy when every container is either running (with any
+                    // healthcheck passed, not "starting") or cleanly exited.
                     !rows.is_empty()
-                        && rows
-                            .iter()
-                            .any(|row| row.state.to_lowercase().contains("running"))
+                        && rows.iter().all(|row| {
+                            let state = row.state.to_lowercase();
+                            (state == "running"
+                                && !row.health.eq_ignore_ascii_case("starting"))
+                                || (state.contains("exit") && row.exit_code == 0)
+                        })
                 }
             };
 

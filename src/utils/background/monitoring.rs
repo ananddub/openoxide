@@ -27,7 +27,12 @@ pub fn start(
     });
     start_agent_updates(Arc::clone(&monitoring), lifecycle);
     tokio::spawn(async move {
-        let mut watched = std::collections::HashSet::new();
+        // `watched` mirrors the set of servers that currently have a live
+        // watcher task. It is reconciled against the discovered server list on
+        // every tick so that a removed server's entry is dropped (letting its
+        // watcher exit and its cached channel be pruned) and a re-added server
+        // gets a fresh watcher.
+        let mut watched: std::collections::HashSet<i64> = std::collections::HashSet::new();
         let mut ticker = tokio::time::interval(std::time::Duration::from_secs(10));
         ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         loop {
@@ -39,6 +44,17 @@ pub fn start(
                     continue;
                 }
             };
+            let live: std::collections::HashSet<i64> = server_ids.iter().copied().collect();
+
+            // Drop watchers for servers that no longer exist: forget them here
+            // so they can be re-watched if re-added, prune the cached gRPC
+            // channel, and signal the running watcher to stop.
+            let removed: Vec<i64> = watched.difference(&live).copied().collect();
+            for server_id in removed {
+                watched.remove(&server_id);
+                monitoring.forget_agent(server_id);
+            }
+
             for server_id in server_ids {
                 if !watched.insert(server_id) {
                     continue;
@@ -98,6 +114,14 @@ async fn watch_server(
     reconciler: Arc<MonitoringReconciler>,
 ) {
     loop {
+        // Stop only if the server row is actually gone. `server_ids()` excludes
+        // the local server, so it must not be used here — otherwise the local
+        // watcher would immediately think it was removed and exit.
+        if !server_exists(server_id).await {
+            tracing::info!(server_id, "server removed; stopping lifecycle watcher");
+            monitoring.forget_agent(server_id);
+            return;
+        }
         match tokio::time::timeout(
             std::time::Duration::from_secs(10),
             monitoring.watch_container_states(server_id),
@@ -137,7 +161,13 @@ async fn watch_server(
                 tracing::warn!(server_id, %error, "lifecycle stream connection timed out")
             }
         }
-        if server_ssh_is_reachable(server_id).await {
+        if agent_is_reachable(&monitoring, server_id).await {
+            tracing::debug!(
+                server_id,
+                "lifecycle stream dropped but agent still answers metrics; keeping server active"
+            );
+            reconciler.update_server_active(server_id).await;
+        } else if server_ssh_is_reachable(server_id).await {
             tracing::debug!(
                 server_id,
                 "monitoring agent unavailable but SSH server is reachable; keeping server active"
@@ -147,6 +177,35 @@ async fn watch_server(
         }
         tokio::time::sleep(std::time::Duration::from_secs(3)).await;
     }
+}
+
+/// True when the server row still exists (checked directly, so the local
+/// server — which `server_ids()` excludes — is not treated as removed).
+async fn server_exists(server_id: i64) -> bool {
+    let Ok(queries) = resolve::<crate::db::queries::FlashQueries>().await else {
+        return true; // transient: don't tear down a healthy watcher
+    };
+    sqlx::query_scalar::<_, i64>("SELECT id FROM servers WHERE id=?")
+        .bind(server_id)
+        .fetch_optional(&queries.pool)
+        .await
+        .map(|row| row.is_some())
+        .unwrap_or(true)
+}
+
+/// True when the agent still answers a metrics query — the surest sign the
+/// host is up, even if the lifecycle stream dropped and SSH is unavailable
+/// (as it always is for the local server).
+async fn agent_is_reachable(
+    monitoring: &Arc<MonitoringService>,
+    server_id: i64,
+) -> bool {
+    tokio::time::timeout(
+        std::time::Duration::from_secs(8),
+        monitoring.server_history(server_id, 1),
+    )
+    .await
+    .is_ok_and(|result| result.is_ok())
 }
 
 async fn server_ssh_is_reachable(server_id: i64) -> bool {

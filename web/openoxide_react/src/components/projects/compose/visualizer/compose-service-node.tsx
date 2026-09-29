@@ -4,7 +4,6 @@ import {
 	SlidersHorizontal,
 	HardDrive,
 	Globe,
-	Zap,
 	Cpu,
 	MemoryStick,
 } from 'lucide-react';
@@ -23,15 +22,18 @@ export type {ComposeServiceNodeData} from './compose-node-parts';
 function NodeUsageBadge({
 	id,
 	type,
+	serviceName,
 }: {
 	id: number;
 	type: 'application' | 'database' | 'compose';
+	serviceName?: string;
 }) {
 	const {metrics, triggerRefresh} = useContainerMonitoring(
 		id,
 		type,
 		true,
 		false,
+		serviceName,
 	);
 	useEffect(() => {
 		const timer = setInterval(triggerRefresh, 15_000);
@@ -108,11 +110,6 @@ export function ComposeServiceNode({
 							{shortImg}
 						</p>
 					</div>
-					{!data.readOnly && (
-						<div className="flex shrink-0 items-center gap-[3px] rounded-md border border-sky-500/25 bg-sky-500/10 px-[7px] py-[3px] text-[10px] font-bold text-sky-600 dark:text-sky-400">
-							<Zap size={10} /> Actions
-						</div>
-					)}
 				</div>
 
 				{/* depends_on badge row */}
@@ -163,6 +160,9 @@ export function ComposeServiceNode({
 					<NodeUsageBadge
 						id={data.monitorId}
 						type={data.monitorType}
+						serviceName={
+							data.monitorType === 'compose' ? data.name : undefined
+						}
 					/>
 				)}
 			</div>

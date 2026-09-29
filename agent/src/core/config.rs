@@ -22,6 +22,9 @@ pub struct Config {
     pub upload_roots: Vec<String>,
     pub tls_cert: Option<String>,
     pub tls_key: Option<String>,
+    /// CA that signs the panel's client cert; when set the agent requires and
+    /// verifies a client certificate (mTLS).
+    pub tls_client_ca: Option<String>,
 }
 
 impl Config {
@@ -45,6 +48,9 @@ impl Config {
                 .ok()
                 .filter(|v| !v.trim().is_empty()),
             tls_key: env::var("AGENT_TLS_KEY")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
+            tls_client_ca: env::var("AGENT_TLS_CLIENT_CA")
                 .ok()
                 .filter(|v| !v.trim().is_empty()),
         };

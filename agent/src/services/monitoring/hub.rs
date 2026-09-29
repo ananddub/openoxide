@@ -105,13 +105,7 @@ impl StatsHub {
         let shared_sizes = self.sizes.clone();
         let docker = self.docker.clone();
         tokio::spawn(async move {
-            pump_stats(&docker, &shared_tx, &shared_sizes).await;
-            // The pump never touches the state lock, so clearing here cannot
-            // race with a start; the generation gate protects a replacement.
-            let mut state = shared_state.lock().await;
-            if state.generation == generation {
-                state.tx = None;
-            }
+            pump_stats(&docker, &shared_tx, &shared_sizes, &shared_state, generation).await;
         });
         rx
     }
@@ -159,89 +153,145 @@ impl EventsHub {
     }
 }
 
+/// How often the pump reconciles its live feed set against the containers
+/// Docker actually reports running. Container churn (deploys, restarts) is
+/// picked up here without the whole pump being torn down.
+const RECONCILE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(5);
+
+/// Opens one container's `/stats` feed into the broadcast; returns when it ends.
+fn spawn_container_feed(
+    docker: DockerApi,
+    tx: broadcast::Sender<Arc<RawStats>>,
+    id: String,
+) -> tokio::task::JoinHandle<()> {
+    let path = format!("/containers/{id}/stats?stream=true");
+    tokio::spawn(async move {
+        let mut chunks = match docker.get_stream(&path).await {
+            Ok(chunks) => chunks,
+            Err(error) => {
+                tracing::debug!(%error, "stats hub: could not open container feed");
+                return;
+            }
+        };
+        let mut accumulator = JsonAccumulator::new();
+        while let Some(chunk) = chunks.next().await {
+            match chunk {
+                Ok(chunk) => {
+                    for doc in accumulator.push::<RawStats>(&chunk) {
+                        let _ = tx.send(Arc::new(doc));
+                    }
+                }
+                Err(error) => {
+                    tracing::debug!(%error, "stats hub: container feed error");
+                    return;
+                }
+            }
+        }
+        // Dropping `chunks` releases the dedicated Docker connection.
+    })
+}
+
+/// Inspects a container's writable-layer size (stats API omits `size_rw`).
+async fn inspect_size_rw(docker: &DockerApi, id: &str) -> u64 {
+    docker
+        .get_json::<serde_json::Value>(&format!("/containers/{id}/json?size=1"))
+        .await
+        .ok()
+        .and_then(|doc| doc.get("SizeRw").and_then(|v| v.as_u64()))
+        .unwrap_or(0)
+}
+
 async fn pump_stats(
     docker: &DockerApi,
     tx: &broadcast::Sender<Arc<RawStats>>,
     sizes: &Arc<Mutex<std::collections::HashMap<String, u64>>>,
+    state: &Arc<Mutex<HubState<Arc<RawStats>>>>,
+    generation: u64,
 ) {
-    let ids: Vec<String> = match docker
-        .get_json::<Vec<ContainerSummary>>("/containers/json")
-        .await
-    {
-        Ok(containers) => containers
-            .into_iter()
-            .map(|container| container.id.to_string())
-            .collect(),
-        Err(error) => {
-            tracing::warn!(%error, "stats hub: could not list containers");
-            return;
-        }
-    };
-    if ids.is_empty() {
-        return;
-    }
-    // One inspect round at stream open fills the SizeRw map; values drift
-    // slowly and failed lookups just report 0.
-    let inspected: Vec<(String, u64)> = futures::future::join_all(ids.iter().map(|id| {
-        let docker = docker.clone();
-        async move {
-            let size_rw = docker
-                .get_json::<serde_json::Value>(&format!("/containers/{id}/json?size=1"))
-                .await
-                .ok()
-                .and_then(|doc| doc.get("SizeRw").and_then(|v| v.as_u64()))
-                .unwrap_or(0);
-            (id.clone(), size_rw)
-        }
-    }))
-    .await
-    .into_iter()
-    .collect();
-    *sizes.lock().await = inspected.into_iter().collect();
-    // One `/stats?stream=true` feed per running container — joined-id
-    // multiplexing was removed from Docker 29. The feeds fan into this one
-    // broadcast, so listener count never adds Docker connections.
-    let feeds: Vec<tokio::task::JoinHandle<()>> = ids
-        .iter()
-        .map(|id| {
-            let docker = docker.clone();
-            let tx = tx.clone();
-            let path = format!("/containers/{id}/stats?stream=true");
-            tokio::spawn(async move {
-                let mut chunks = match docker.get_stream(&path).await {
-                    Ok(chunks) => chunks,
-                    Err(error) => {
-                        tracing::debug!(%error, "stats hub: could not open container feed");
-                        return;
-                    }
-                };
-                let mut accumulator = JsonAccumulator::new();
-                while let Some(chunk) = chunks.next().await {
-                    match chunk {
-                        Ok(chunk) => {
-                            for doc in accumulator.push::<RawStats>(&chunk) {
-                                let _ = tx.send(Arc::new(doc));
-                            }
-                        }
-                        Err(error) => {
-                            tracing::debug!(%error, "stats hub: container feed error");
-                            return;
-                        }
-                    }
-                }
-            })
-        })
-        .collect();
-    // Tear every feed down once the last listener is gone.
+    // One `/stats?stream=true` feed per running container, fanned into this
+    // broadcast. The feed set is reconciled against the live container list
+    // each tick, so churn never leaks a feed and new containers are picked up.
+    let mut feeds: std::collections::HashMap<String, tokio::task::JoinHandle<()>> =
+        std::collections::HashMap::new();
+
     loop {
-        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-        if tx.receiver_count() == 0 || feeds.iter().all(|feed| feed.is_finished()) {
-            break;
+        // Exit when the last listener leaves. Checked under the subscriber's
+        // lock so a concurrent subscriber can't attach to an exiting pump.
+        if tx.receiver_count() == 0 {
+            let mut guard = state.lock().await;
+            if tx.receiver_count() == 0 {
+                if guard.generation == generation {
+                    guard.tx = None;
+                }
+                drop(guard);
+                break;
+            }
         }
+
+        let live_ids: Vec<String> = match docker
+            .get_json::<Vec<ContainerSummary>>("/containers/json")
+            .await
+        {
+            Ok(containers) => containers
+                .into_iter()
+                .map(|container| container.id.to_string())
+                .collect(),
+            Err(error) => {
+                tracing::debug!(%error, "stats hub: could not list containers");
+                tokio::time::sleep(RECONCILE_INTERVAL).await;
+                continue;
+            }
+        };
+        let live: std::collections::HashSet<&str> =
+            live_ids.iter().map(String::as_str).collect();
+
+        // Reap feeds for gone/finished containers, releasing their connections.
+        feeds.retain(|id, handle| {
+            let keep = live.contains(id.as_str()) && !handle.is_finished();
+            if !keep {
+                handle.abort();
+            }
+            keep
+        });
+
+        // Open feeds for new containers, inspecting each one's size once.
+        let new_ids: Vec<String> = live_ids
+            .iter()
+            .filter(|id| !feeds.contains_key(id.as_str()))
+            .cloned()
+            .collect();
+        if !new_ids.is_empty() {
+            let inspected: Vec<(String, u64)> =
+                futures::future::join_all(new_ids.iter().map(|id| {
+                    let docker = docker.clone();
+                    async move { (id.clone(), inspect_size_rw(&docker, id).await) }
+                }))
+                .await;
+            {
+                let mut sizes = sizes.lock().await;
+                for (id, size) in inspected {
+                    sizes.insert(id, size);
+                }
+            }
+            for id in new_ids {
+                let handle = spawn_container_feed(docker.clone(), tx.clone(), id.clone());
+                feeds.insert(id, handle);
+            }
+        }
+
+        // Bound the size cache to the live set.
+        {
+            let mut sizes = sizes.lock().await;
+            sizes.retain(|id, _| live.contains(id.as_str()));
+        }
+
+        tokio::time::sleep(RECONCILE_INTERVAL).await;
     }
-    for feed in feeds {
-        feed.abort();
+
+    for (_, handle) in feeds {
+        handle.abort();
     }
+    sizes.lock().await.clear();
 }
 
 async fn pump_events(docker: &DockerApi, tx: &broadcast::Sender<Bytes>) {

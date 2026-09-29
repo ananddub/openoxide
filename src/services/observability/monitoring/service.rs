@@ -158,6 +158,14 @@ impl MonitoringService {
         }
     }
 
+    /// Drops any cached gRPC channel (and stale repair marker) for a server so
+    /// a removed server stops occupying memory and a re-added one reconnects
+    /// with a fresh lazy channel. Cheap and idempotent.
+    pub fn forget_agent(&self, server_id: i64) {
+        self.channels.remove(&server_id);
+        self.repairs.remove(&server_id);
+    }
+
     fn trigger_agent_repair(self: &Arc<Self>, server_id: i64, reason: &str) -> String {
         self.channels.remove(&server_id);
         let started = self.repairs.insert(server_id);
@@ -226,10 +234,11 @@ impl MonitoringService {
             }
             other => other,
         };
-        let tls_ca = std::env::var("AGENT_TLS_CA_CERT")
-            .ok()
-            .filter(|v| !v.trim().is_empty());
-        let use_tls = tls_ca.is_some();
+        let mtls_base = std::env::var("OPENOXIDE_MTLS_DIR")
+            .unwrap_or_else(|_| "/app/data/mtls".to_string());
+        let server_dir = std::path::Path::new(&mtls_base).join(format!("server-{server_id}"));
+        let ca_file = server_dir.join("ca.crt");
+        let use_tls = ca_file.exists();
         let scheme = if use_tls { "https" } else { "http" };
         let mut endpoint =
             tonic::transport::Endpoint::from_shared(format!("{scheme}://{host}:50051"))
@@ -238,16 +247,26 @@ impl MonitoringService {
         if is_local {
             tracing::debug!(server_id, host, "using local Agent endpoint");
         }
-        if let Some(ca_path) = tls_ca {
-            let ca =
-                std::fs::read(ca_path).map_err(|error| format!("read agent TLS CA: {error}"))?;
+        if use_tls {
+            let ca = std::fs::read(&ca_file)
+                .map_err(|error| format!("read server {server_id} TLS CA: {error}"))?;
             let domain = std::env::var("AGENT_TLS_DOMAIN").unwrap_or_else(|_| host.to_owned());
+            let mut tls = ClientTlsConfig::new()
+                .ca_certificate(Certificate::from_pem(ca))
+                .domain_name(domain);
+            // mTLS: present this server's own panel-client identity. Each
+            // server has an isolated CA, so its cert is only valid against it.
+            let cert_file = server_dir.join("panel-client.crt");
+            let key_file = server_dir.join("panel-client.key");
+            if cert_file.exists() && key_file.exists() {
+                let cert = std::fs::read(&cert_file)
+                    .map_err(|error| format!("read server {server_id} panel cert: {error}"))?;
+                let key = std::fs::read(&key_file)
+                    .map_err(|error| format!("read server {server_id} panel key: {error}"))?;
+                tls = tls.identity(tonic::transport::Identity::from_pem(cert, key));
+            }
             endpoint = endpoint
-                .tls_config(
-                    ClientTlsConfig::new()
-                        .ca_certificate(Certificate::from_pem(ca))
-                        .domain_name(domain),
-                )
+                .tls_config(tls)
                 .map_err(|error| format!("configure agent TLS: {error}"))?;
         }
         let channel = endpoint.connect_lazy();

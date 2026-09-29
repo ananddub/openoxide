@@ -1,4 +1,4 @@
-import {useEffect, useRef} from 'react';
+import {useRef} from 'react';
 import {Loader} from 'lucide-react';
 import {
 	lineTone,
@@ -7,6 +7,7 @@ import {
 	splitTimestamp,
 	stripAnsi,
 } from '#/components/shared/log-tone';
+import {useLogTail} from '#/components/shared/use-log-tail';
 
 /** Prefix a batch with its arrival time so the log reads like the deploy log. */
 export function stampLogs(lines: string[]): string[] {
@@ -27,14 +28,10 @@ export function SetupLogsSurface({
 	className?: string;
 }) {
 	const scrollRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		if (isLive && scrollRef.current) {
-			scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-		}
-	}, [logs.length, isLive]);
-
 	const lines = logs.map(stripAnsi).filter(l => l.trim() !== '');
+
+	// Opens at the newest line and follows the stream; scrolling up releases the pin.
+	useLogTail(scrollRef, lines.length, isLive);
 
 	return (
 		<div ref={scrollRef} className={`${LOG_SURFACE_CLS} ${className}`}>

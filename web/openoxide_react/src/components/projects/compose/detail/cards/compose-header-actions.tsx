@@ -8,6 +8,7 @@ import {
 	Ban,
 	Terminal,
 	KeyRound,
+	GitBranch,
 	X,
 } from 'lucide-react';
 import {
@@ -30,6 +31,8 @@ interface ComposeHeaderActionsProps {
 	onUpdated?: () => void;
 	onOpenTerminal?: () => void;
 	onOpenEnv?: () => void;
+	/** Source & Provider sheet, opened from the card header. */
+	onOpenSource?: () => void;
 }
 
 /** Icon-only Deploy / Reload / Rebuild / Start-Stop / Terminal buttons. */
@@ -38,6 +41,7 @@ export function ComposeHeaderActions({
 	onUpdated,
 	onOpenTerminal,
 	onOpenEnv,
+	onOpenSource,
 }: ComposeHeaderActionsProps) {
 	const [activeLoading, setActiveLoading] =
 		useState<ComposeActionType | null>(null);
@@ -119,19 +123,6 @@ export function ComposeHeaderActions({
 					)}
 				</Button>
 			</IconTooltip>
-			<IconTooltip label="Reload">
-				<Button
-					variant="ghost"
-					size="icon"
-					aria-label="Reload"
-					disabled={disabled}
-					onClick={() => executeAction('reload')}
-					className="size-8 text-muted-foreground hover:text-foreground">
-					<RefreshCw
-						className={`size-4 ${activeLoading === 'reload' ? 'animate-spin' : ''}`}
-					/>
-				</Button>
-			</IconTooltip>
 			<IconTooltip label="Rebuild">
 				<Button
 					variant="ghost"
@@ -155,7 +146,7 @@ export function ComposeHeaderActions({
 						size="icon"
 						aria-label={st === 'CANCELLING' ? 'Cancelling' : 'Stopping'}
 						disabled
-						className="size-8 text-destructive">
+						className="size-8 text-red-500 dark:text-red-400">
 						<RefreshCw className="size-4 animate-spin" />
 					</Button>
 				</IconTooltip>
@@ -166,7 +157,7 @@ export function ComposeHeaderActions({
 						size="icon"
 						aria-label="Cancel build"
 						onClick={() => executeAction('cancel')}
-						className="size-8 text-destructive hover:text-destructive">
+						className="size-8 text-red-500 transition-colors hover:bg-red-500/10 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-400/15 dark:hover:text-red-300">
 						<X className="size-4" />
 					</Button>
 				</IconTooltip>
@@ -178,7 +169,7 @@ export function ComposeHeaderActions({
 						aria-label="Stop"
 						disabled={disabled}
 						onClick={() => executeAction('stop')}
-						className="size-8 text-muted-foreground hover:text-destructive">
+						className="size-8 text-red-500 transition-colors hover:bg-red-500/10 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-400/15 dark:hover:text-red-300">
 						<Ban className="size-4" />
 					</Button>
 				</IconTooltip>
@@ -221,6 +212,18 @@ export function ComposeHeaderActions({
 						onClick={onOpenEnv}
 						className="size-8 text-muted-foreground hover:text-foreground">
 						<KeyRound className="size-4" />
+					</Button>
+				</IconTooltip>
+			)}
+			{onOpenSource && (
+				<IconTooltip label="Source configuration">
+					<Button
+						variant="ghost"
+						size="icon"
+						aria-label="Source configuration"
+						onClick={onOpenSource}
+						className="size-8 text-muted-foreground hover:text-foreground">
+						<GitBranch className="size-4" />
 					</Button>
 				</IconTooltip>
 			)}

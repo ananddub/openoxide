@@ -101,16 +101,28 @@ impl SystemCollector {
             0.0
         };
 
-        let (disk_used_bytes, disk_total_bytes) =
-            self.disks.list().iter().filter(|d| !d.is_removable()).fold(
-                (0u64, 0u64),
-                |(used, total), d| {
-                    (
-                        used + (d.total_space() - d.available_space()),
-                        total + d.total_space(),
-                    )
-                },
-            );
+        // Report the host root filesystem. Summing every mount double-counts
+        // one device; match Dokploy's `df /`. When the agent runs in a
+        // container the host root is bind-mounted at `/host` (see the agent
+        // compose), so prefer that, then `/`, then the largest device.
+        let disk_for = |mount: &str| {
+            self.disks
+                .list()
+                .iter()
+                .find(|d| d.mount_point() == std::path::Path::new(mount))
+                .map(|d| (d.total_space() - d.available_space(), d.total_space()))
+        };
+        let (disk_used_bytes, disk_total_bytes) = disk_for("/host")
+            .or_else(|| disk_for("/"))
+            .or_else(|| {
+                self.disks
+                    .list()
+                    .iter()
+                    .filter(|d| !d.is_removable())
+                    .max_by_key(|d| d.total_space())
+                    .map(|d| (d.total_space() - d.available_space(), d.total_space()))
+            })
+            .unwrap_or((0, 0));
 
         let disk_percent = if disk_total_bytes > 0 {
             (disk_used_bytes as f64 / disk_total_bytes as f64) * 100.0

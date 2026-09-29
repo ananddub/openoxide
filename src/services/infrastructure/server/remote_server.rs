@@ -172,6 +172,35 @@ impl RemoteServerService {
         input: CreateRemoteServerDto,
         organization_id: i64,
     ) -> sqlx::Result<Servers> {
+        // Local is not an SSH server: it is the panel's own Docker host,
+        // managed automatically (ensure_local_registration). Adding it by hand
+        // produces a broken SSH row and duplicates, so reject local addresses.
+        let host = input.ip_address.trim().to_ascii_lowercase();
+        if matches!(
+            host.as_str(),
+            "" | "127.0.0.1" | "localhost" | "0.0.0.0" | "::1" | "openoxide-agent" | "openoxide-monitor"
+        ) {
+            return Err(sqlx::Error::Protocol(
+                "the local server is managed automatically; add a remote server by its reachable IP or hostname instead".into(),
+            ));
+        }
+        // Prevent duplicate rows for the same endpoint in this organization.
+        let duplicate: Option<(i64,)> = sqlx::query_as(
+            "SELECT id FROM servers WHERE ip_address=? AND port=? AND username=? AND organization_id=? LIMIT 1",
+        )
+        .bind(&input.ip_address)
+        .bind(input.port)
+        .bind(&input.username)
+        .bind(organization_id)
+        .fetch_optional(&self.queries.pool)
+        .await?;
+        if duplicate.is_some() {
+            return Err(sqlx::Error::Protocol(format!(
+                "a server for {}@{}:{} already exists",
+                input.username, input.ip_address, input.port
+            )));
+        }
+
         let app_name = generate_app_name(&input.name);
         let server_type = input.server_type.as_str().to_owned();
 

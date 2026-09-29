@@ -13,7 +13,6 @@ import {ComposeLogsTab} from '#/components/projects/compose/detail/compose-logs-
 import {MonitoringTab} from '#/components/projects/common/monitoring-tab';
 import {ComposeSchedulesTab} from '#/components/projects/compose/detail/compose-schedules-tab';
 import {ComposeBackupsTab} from '#/components/projects/compose/detail/compose-backups-tab';
-import {ComposeContainersTab} from '#/components/projects/compose/detail/compose-containers-tab';
 import {ComposeAdvancedTab} from '#/components/projects/compose/detail/compose-advanced-tab';
 
 export const Route = createFileRoute(
@@ -103,9 +102,6 @@ function ComposeDetailPage() {
 					onNavigateTab={setActiveTab}
 					onRefresh={refetchAll}
 				/>
-			)}
-			{activeTab === 'Containers' && (
-				<ComposeContainersTab compose={compose} onUpdated={refetchAll} />
 			)}
 			{activeTab === 'Domains' && (
 				<ComposeDomainsTab

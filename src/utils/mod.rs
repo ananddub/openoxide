@@ -5,6 +5,7 @@ pub mod builder;
 pub use os::exec;
 pub use os::{docker, git, rclone, rsync, ssh};
 pub mod jwt;
+pub mod mtls;
 pub use os::macros;
 pub mod paths;
 pub mod provider;

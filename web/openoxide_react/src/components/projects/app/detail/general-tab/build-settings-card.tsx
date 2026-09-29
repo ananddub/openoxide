@@ -21,8 +21,9 @@ import {RailpackVersionField} from './build-settings-card/railpack-version-field
 interface BuildSettingsCardProps {
 	app: any;
 	onUpdated: () => void;
-	/** Kept for call-site compatibility; the card always renders its own sheet. */
-	embedded?: boolean;
+	/** Header-icon trigger: the caller owns visibility, no strip is painted. */
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
 function fieldsFromApp(app: any): BuildFields {
@@ -39,6 +40,8 @@ function fieldsFromApp(app: any): BuildFields {
 export function BuildSettingsCard({
 	app,
 	onUpdated,
+	open,
+	onOpenChange,
 }: BuildSettingsCardProps) {
 	const [buildType, setBuildType] = useState<string>(
 		app.build_type || 'NIXPACKS',
@@ -113,18 +116,12 @@ export function BuildSettingsCard({
 		}
 	};
 
-	const typeLabel =
-		BUILD_TYPES.find(bt => bt.id === buildType)?.label ?? buildType;
-
 	return (
 		<SettingsSheet
 			title="Build Configuration"
 			description="The builder that turns your code into an image, and its options."
-			meta={
-				<span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-					{typeLabel}
-				</span>
-			}
+			open={open}
+			onOpenChange={onOpenChange}
 			footer={
 				<Button
 					onClick={() => void handleSaveBuildType()}

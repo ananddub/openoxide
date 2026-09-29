@@ -40,6 +40,13 @@ impl MonitoringReconciler {
         Ok(())
     }
 
+    /// Marks a server ACTIVE (best-effort) without touching resource statuses.
+    pub async fn update_server_active(&self, id: i64) {
+        if let Err(error) = self.update_server(id, "ACTIVE").await {
+            tracing::warn!(server_id = id, %error, "could not mark server active");
+        }
+    }
+
     async fn mark_server_resources_offline(&self, server_id: i64) -> Result<(), String> {
         sqlx::query(
             "UPDATE services SET app_status='ERROR' WHERE server_id=? AND app_status IN ('RUNNING','DONE','HEALTHY','OK','SUCCESS')",

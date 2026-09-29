@@ -30,6 +30,7 @@ import {
 	LOG_SURFACE_CLS,
 	LOG_TS_CLS,
 } from '#/components/shared/log-tone';
+import {useLogTail} from '#/components/shared/use-log-tail';
 import {cn} from '#/api/utils';
 
 const deploymentClient = createServiceClient(DeploymentService);
@@ -87,6 +88,7 @@ export function BuildLogsSection({entityId, kind}: BuildLogsSectionProps) {
 	const [logs, setLogs] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
 	const searchRef = useRef<HTMLInputElement>(null);
+	const scrollRef = useRef<HTMLDivElement>(null);
 	const {data: deployments = []} = useDeploymentItems();
 
 	const latest = useMemo(() => {
@@ -171,6 +173,9 @@ export function BuildLogsSection({entityId, kind}: BuildLogsSectionProps) {
 		if (!q) return lines;
 		return lines.filter(l => l.toLowerCase().includes(q));
 	}, [lines, query]);
+
+	// While the build runs, the strip shows the newest step, not the first.
+	useLogTail(scrollRef, visibleLines.length, isBuildActive(latest));
 
 	const duration = latest
 		? formatDuration(latest.created_at, latest.finished_at)
@@ -263,6 +268,7 @@ export function BuildLogsSection({entityId, kind}: BuildLogsSectionProps) {
 
 						{/* Theme-aware log surface — bordered, no inset */}
 						<div
+							ref={scrollRef}
 							className={cn(
 								'max-h-[420px] overflow-auto border-x border-b border-border',
 								LOG_SURFACE_CLS,

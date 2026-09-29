@@ -17,6 +17,9 @@ interface SettingsSheetProps {
 	/** Small lucide icon rendered left of the title. */
 	icon?: ReactNode;
 	defaultOpen?: boolean;
+	/** Controlled mode: the caller owns visibility — no click-through strip is
+	 * painted, so the form opens from its own trigger (a header icon button). */
+	open?: boolean;
 	/** Small content (an inline action button, ...) shown right of the title. */
 	meta?: ReactNode;
 	/** Primary action(s) pinned to the sheet footer (e.g. the Save button). */
@@ -37,6 +40,7 @@ export function SettingsSheet({
 	description,
 	icon,
 	defaultOpen = false,
+	open: openProp,
 	meta,
 	footer,
 	footerLeft,
@@ -44,49 +48,55 @@ export function SettingsSheet({
 	contentClassName,
 	children,
 }: SettingsSheetProps) {
-	const [open, setOpen] = useState(defaultOpen);
+	// When the caller owns `open` the strip is not painted: the sheet is
+	// triggered from a header icon button instead of a clickable row.
+	const controlled = openProp !== undefined;
+	const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
+	const open = controlled ? openProp : uncontrolledOpen;
 	const setSheetOpen = (next: boolean) => {
-		setOpen(next);
+		if (!controlled) setUncontrolledOpen(next);
 		onOpenChange?.(next);
 	};
 	return (
 		<>
-			<div
-				role="button"
-				tabIndex={0}
-				onClick={() => setSheetOpen(true)}
-				onKeyDown={event => {
-					if (event.key === 'Enter' || event.key === ' ') {
-						event.preventDefault();
-						setSheetOpen(true);
-					}
-				}}
-				className={cn(
-					'group flex w-full cursor-pointer items-center gap-3 border-t border-border px-5 py-3.5 text-left transition-colors first:border-t-0 hover:bg-muted/30 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
-					open && 'bg-muted/30',
-				)}>
-				{icon && <span className="shrink-0 text-primary">{icon}</span>}
-				<span className="flex min-w-0 flex-col">
-					<span className="truncate text-sm font-medium text-foreground">
-						{title}
+			{!controlled && (
+				<div
+					role="button"
+					tabIndex={0}
+					onClick={() => setSheetOpen(true)}
+					onKeyDown={event => {
+						if (event.key === 'Enter' || event.key === ' ') {
+							event.preventDefault();
+							setSheetOpen(true);
+						}
+					}}
+					className={cn(
+						'group flex w-full cursor-pointer items-center gap-3 border-t border-border px-5 py-3.5 text-left transition-colors first:border-t-0 hover:bg-muted/30 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none',
+						open && 'bg-muted/30',
+					)}>
+					{icon && <span className="shrink-0 text-primary">{icon}</span>}
+					<span className="flex min-w-0 flex-col">
+						<span className="truncate text-sm font-medium text-foreground">
+							{title}
+						</span>
+						{description && (
+							<span className="truncate text-xs text-muted-foreground">
+								{description}
+							</span>
+						)}
 					</span>
-					{description && (
-						<span className="truncate text-xs text-muted-foreground">
-							{description}
-						</span>
-					)}
-				</span>
-				<span className="ml-auto flex shrink-0 items-center gap-2">
-					{meta && (
-						<span
-							onClick={event => event.stopPropagation()}
-							onKeyDown={event => event.stopPropagation()}>
-							{meta}
-						</span>
-					)}
-					<ChevronRight className="size-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
-				</span>
-			</div>
+					<span className="ml-auto flex shrink-0 items-center gap-2">
+						{meta && (
+							<span
+								onClick={event => event.stopPropagation()}
+								onKeyDown={event => event.stopPropagation()}>
+								{meta}
+							</span>
+						)}
+						<ChevronRight className="size-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
+					</span>
+				</div>
+			)}
 
 			<Sheet open={open} onOpenChange={setSheetOpen}>
 				<SheetContent

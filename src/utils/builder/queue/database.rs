@@ -68,12 +68,25 @@ impl BuilderQueue {
             match operation {
                 DatabaseOperation::Deploy
                 | DatabaseOperation::Redeploy
-                | DatabaseOperation::Reload
                 | DatabaseOperation::Start => builder
                     .deploy(kind, database_id, &cancel)
                     .await
                     .map(|_| ())
                     .map_err(|e| BuilderError::Execution(e.to_string())),
+                DatabaseOperation::Reload => {
+                    let app_name = q
+                        .services_get_app_name(database_id)
+                        .await
+                        .map_err(|e| {
+                            BuilderError::Execution(format!(
+                                "Failed to query database app_name: {e}"
+                            ))
+                        })?;
+                    builder
+                        .reload(&app_name, &cancel)
+                        .await
+                        .map_err(|e| BuilderError::Execution(e.to_string()))
+                }
                 DatabaseOperation::Stop => {
                     let app_name = q
                         .services_get_app_name(database_id)

@@ -15,14 +15,27 @@ COPY Cargo.toml Cargo.lock ./
 COPY agent ./agent
 COPY crates ./crates
 COPY proto ./proto
-COPY src ./src
+
+# The workspace root is a package, so cargo needs its targets to exist to load
+# the manifest — but the agent never compiles them. A stub keeps this layer
+# (and the dependency cache below) alive when panel sources change; copying
+# real src/ re-linked the whole agent binary on every backend edit.
+RUN mkdir -p src && echo "fn main() {}" > src/main.rs && echo "" > src/lib.rs
 
 # Static musl build. The flag is scoped to the target triple rather than set via
 # RUSTFLAGS, which would also apply to proc-macro crates — those are host
 # dynamic libraries and cannot be built static.
-ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-C target-feature=+crt-static"
-RUN cargo build --release --target x86_64-unknown-linux-musl -p agent && \
-    strip target/x86_64-unknown-linux-musl/release/agent
+ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-C target-feature=+crt-static" \
+    CARGO_BUILD_JOBS=8 \
+    CARGO_TARGET_DIR=/usr/src/openoxide/target
+# The target dir is a cache mount, so its contents never land in this layer —
+# the binary is copied out to a plain path for stage 2 to pick up.
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/usr/src/openoxide/target \
+    cargo build --release --target x86_64-unknown-linux-musl -p agent && \
+    cp target/x86_64-unknown-linux-musl/release/agent /usr/src/openoxide/agent-binary && \
+    strip /usr/src/openoxide/agent-binary
 
 # The agent is the host-operation boundary, so tools live here instead of in
 # the Openoxide panel image.
@@ -61,7 +74,7 @@ RUN curl -fsSL https://nixpacks.com/install.sh | NIXPACKS_VERSION=${NIXPACKS_VER
     && railpack --version \
     && pack --version
 
-COPY --from=builder /usr/src/openoxide/target/x86_64-unknown-linux-musl/release/agent /agent
+COPY --from=builder /usr/src/openoxide/agent-binary /agent
 
 WORKDIR /app
 RUN mkdir -p /app/data /app/workspace

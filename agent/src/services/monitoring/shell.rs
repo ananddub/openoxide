@@ -219,16 +219,33 @@ impl ShellService {
         if let Ok(containers) = docker.containers().ps().all().api().list().await {
             let search = target.to_lowercase();
             let clean_search = search.trim_end_matches("_db").trim_end_matches("-db");
-            if let Some(found) = containers.iter().find(|container| {
-                let name = container.names.to_lowercase();
-                name.contains(&search)
-                    || name.trim_start_matches('/').starts_with(&search)
-                    || name.contains(&format!("{}_", search))
-                    || name.contains(&format!("{}.", search))
-                    || (!clean_search.is_empty()
-                        && (name.contains(clean_search)
-                            || name.trim_start_matches('/').starts_with(clean_search)))
-            }) {
+
+            // Prefer an exact compose-service match so selecting a specific
+            // service opens that service's container, not the first name
+            // substring hit. The CLI `Labels` field is a comma-separated list
+            // of `key=value` pairs.
+            let service_match = containers.iter().find(|container| {
+                container.labels.split(',').any(|pair| {
+                    pair.trim()
+                        .strip_prefix("com.docker.compose.service=")
+                        .is_some_and(|value| value.eq_ignore_ascii_case(&search))
+                })
+            });
+
+            let found = service_match.or_else(|| {
+                containers.iter().find(|container| {
+                    let name = container.names.to_lowercase();
+                    name.contains(&search)
+                        || name.trim_start_matches('/').starts_with(&search)
+                        || name.contains(&format!("{}_", search))
+                        || name.contains(&format!("{}.", search))
+                        || (!clean_search.is_empty()
+                            && (name.contains(clean_search)
+                                || name.trim_start_matches('/').starts_with(clean_search)))
+                })
+            });
+
+            if let Some(found) = found {
                 target = if found.id.is_empty() {
                     found.names.trim_start_matches('/').to_owned()
                 } else {

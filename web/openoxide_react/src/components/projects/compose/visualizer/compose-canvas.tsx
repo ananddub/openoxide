@@ -121,8 +121,8 @@ export function CanvasInner({
 				readOnly,
 				// Stack-level docker stats are one container's line — only
 				// honest on a single-service canvas.
-				monitorId: services.length === 1 ? monitorId : undefined,
-				monitorType: services.length === 1 ? monitorType : undefined,
+				monitorId,
+				monitorType,
 			},
 		);
 		setNodes(n);

@@ -10,7 +10,7 @@ const legendDot = (color: string): React.CSSProperties => ({
 });
 
 const LEGEND_ITEMS: {color: string; label: string}[] = [
-	{color: 'var(--muted-foreground)', label: 'Service (Click for Actions)'},
+	{color: 'var(--muted-foreground)', label: 'Service'},
 	{color: '#10b981', label: 'Domain (Click to Delete)'},
 	{color: '#38bdf8', label: 'Volume Backup (Click to Delete)'},
 	{color: '#c084fc', label: 'Schedule (Click to Delete)'},

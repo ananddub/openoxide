@@ -111,6 +111,7 @@ pub enum ApplicationOperation {
     Rebuild,
     Reload,
     Start,
+    Stop,
 }
 
 impl ApplicationOperation {
@@ -121,6 +122,7 @@ impl ApplicationOperation {
             Self::Rebuild => "rebuild",
             Self::Reload => "reload",
             Self::Start => "start",
+            Self::Stop => "stop",
         }
     }
 
@@ -131,6 +133,7 @@ impl ApplicationOperation {
             Self::Rebuild => "Application rebuild",
             Self::Reload => "Application reload",
             Self::Start => "Application start",
+            Self::Stop => "Application stop",
         }
     }
 }

@@ -481,7 +481,7 @@ impl DatabaseService {
     }
 
     pub async fn delete(&self, kind: DatabaseKind, id: i64) -> sqlx::Result<()> {
-        self.get_by_id(kind, id).await?;
+        let record = self.get_by_id(kind, id).await?;
         let dependencies = dependency_counts(&self.queries, id).await?;
         if dependencies.blocks_delete() {
             return Err(sqlx::Error::Protocol(format!(
@@ -489,6 +489,36 @@ impl DatabaseService {
                 dependencies.active_deployments, dependencies.enabled_backups
             )));
         }
+
+        // Read exact volume names before the mount rows cascade-delete.
+        let mounts = self
+            .queries
+            .mount_fetch_for_database(id)
+            .await
+            .unwrap_or_default();
+        let volume_names =
+            crate::services::compute::cleanup::volume_names_from_mounts(&mounts);
+
+        // Tear down the runtime in the background before removing the row.
+        let app_name = record.app_name.clone();
+        let server_id = record.server_id;
+        tokio::spawn(async move {
+            let Ok(executor) =
+                crate::services::compute::compose::remote::agent_executor_for(server_id).await
+            else {
+                tracing::warn!(database = %app_name, "database delete: could not resolve Agent for cleanup");
+                return;
+            };
+            let docker = crate::utils::docker::DockerCli::from_executor(executor);
+            crate::services::compute::cleanup::cleanup_service_resources(
+                &docker,
+                &app_name,
+                crate::services::compute::cleanup::CleanupRuntime::Stack,
+                &volume_names,
+            )
+            .await;
+        });
+
         // ON DELETE CASCADE removes the service_database row (and linked
         // deployments) alongside the services row.
         self.queries.delete_service(id).await?;

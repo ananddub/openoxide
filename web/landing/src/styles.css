@@ -1,0 +1,142 @@
+@import 'tailwindcss';
+
+/* The dashboard's own mechanism: a .dark class on <html>, set before paint. */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+	--font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-destructive: var(--destructive);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-success: var(--success);
+	--color-danger: var(--danger);
+
+	--radius-sm: calc(var(--radius) * 0.6);
+	--radius-md: calc(var(--radius) * 0.8);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) * 1.4);
+	--radius-2xl: calc(var(--radius) * 1.8);
+}
+
+/* ── Geist color system ─────────────────────────────────────────────
+ * Same scale the dashboard ships, so a screenshot dropped into this page
+ * looks like the product rather than a cousin of it. Borders are the gray
+ * alpha ladder, ink (gray 1000) carries text and the primary button.
+ * ───────────────────────────────────────────────────────────────── */
+:root {
+	--background: #ffffff;
+	--foreground: #171717;
+	--card: #ffffff;
+	--card-foreground: #171717;
+	--primary: #171717;
+	--primary-foreground: #ffffff;
+	--secondary: rgba(0, 0, 0, 0.05);
+	--secondary-foreground: #171717;
+	--muted: rgba(0, 0, 0, 0.05);
+	--muted-foreground: #666666;
+	--accent: rgba(0, 0, 0, 0.05);
+	--accent-foreground: #171717;
+	--destructive: hsl(358 70% 52%);
+	--border: rgba(0, 0, 0, 0.08);
+	--input: rgba(0, 0, 0, 0.08);
+	--ring: rgba(0, 0, 0, 0.21);
+	--radius: 0.375rem;
+	--success: hsl(131 41% 46%);
+	--danger: hsl(358 70% 52%);
+	--ga-200: rgba(0, 0, 0, 0.08);
+	--ga-500: rgba(0, 0, 0, 0.21);
+	--ga-800: rgba(0, 0, 0, 0.51);
+	--shadow-card:
+		inset 0 0 0 1px rgba(0, 0, 0, 0.08), 0 1px 1px rgba(0, 0, 0, 0.02),
+		0 2px 2px rgba(0, 0, 0, 0.04);
+	--shadow-shot:
+		0 1px 1px rgba(0, 0, 0, 0.03), 0 12px 24px -8px rgba(0, 0, 0, 0.09),
+		0 32px 48px -16px rgba(0, 0, 0, 0.1);
+}
+
+.dark {
+	--background: #000000;
+	--foreground: #ededed;
+	--card: #0a0a0a;
+	--card-foreground: #ededed;
+	--primary: #ededed;
+	--primary-foreground: #0a0a0a;
+	--secondary: rgba(255, 255, 255, 0.06);
+	--secondary-foreground: #ededed;
+	--muted: rgba(255, 255, 255, 0.06);
+	--muted-foreground: #a1a1a1;
+	--accent: rgba(255, 255, 255, 0.06);
+	--accent-foreground: #ededed;
+	--destructive: hsl(358 75% 59%);
+	--border: rgba(255, 255, 255, 0.09);
+	--input: rgba(255, 255, 255, 0.14);
+	--ring: rgba(255, 255, 255, 0.24);
+	--success: hsl(135 70% 34%);
+	--danger: hsl(358 75% 59%);
+	--ga-200: rgba(255, 255, 255, 0.09);
+	--ga-500: rgba(255, 255, 255, 0.24);
+	--ga-800: rgba(255, 255, 255, 0.47);
+	--shadow-card: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+	--shadow-shot:
+		0 1px 1px rgba(0, 0, 0, 0.4), 0 12px 24px -8px rgba(0, 0, 0, 0.6),
+		0 32px 48px -16px rgba(0, 0, 0, 0.7);
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background font-sans text-foreground antialiased;
+		font-feature-settings: 'cv11', 'ss01';
+		text-rendering: optimizeLegibility;
+	}
+	html {
+		scroll-behavior: smooth;
+	}
+	::selection {
+		background-color: #171717;
+		color: #f2f2f2;
+	}
+	.dark ::selection {
+		background-color: #f2f2f2;
+		color: #171717;
+	}
+	::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+	::-webkit-scrollbar-thumb {
+		background: var(--border);
+		border-radius: 9999px;
+	}
+}
+
+/* Anchors clear the sticky header. */
+section[id] {
+	scroll-margin-top: 96px;
+}
+
+/* Faint ink grid behind the hero, masked out before it reaches the copy. */
+.landing-grid {
+	background-image:
+		linear-gradient(to right, var(--border) 1px, transparent 1px),
+		linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+	background-size: 72px 72px;
+	mask-image: linear-gradient(to bottom, black, transparent 80%);
+}

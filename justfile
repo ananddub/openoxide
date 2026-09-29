@@ -1,5 +1,11 @@
 # ── Local dev ────────────────────────────────────────────────────────────────
 
+# CPU cap for image builds, in µs per 100 ms period (800000 = 8 cores). The
+# daemon sees every core, and an uncapped cargo build starves the desktop.
+# Pair with CARGO_BUILD_JOBS in the Dockerfiles — cpu.max throttles throughput
+# but does not shrink nproc, so cargo would still fork 32 rustc processes.
+BUILD_CPU_QUOTA := "800000"
+
 run: web-build
     cargo run --bin openoxide
 
@@ -34,19 +40,13 @@ web-check:
     cd web/openoxide_react && bunx tsc --noEmit
 
 
-build-native: web-build
-    cargo build --bin openoxide --bin agent
-
-
+# Build both dev images with the CPU capped. Compose's own `build` has no
+# resource flags, so the images are built directly and `up` runs without
+# --build (compose still matches them by tag).
 build-images:
-    docker compose -f docker-compose.dev.yml build
+    docker buildx build --resource cpu-quota={{BUILD_CPU_QUOTA}} -f Dockerfile -t dubeyanand/openoxide:dev .
+    docker buildx build --resource cpu-quota={{BUILD_CPU_QUOTA}} -f Dockerfile.agent -t dubeyanand/openoxide-agent:dev .
 
-
-todo-dev:
-    cargo run -p openoxide-todo-test
-
-todo-react:
-    cd crates/todo-test/react && bun run dev
 
 web:
     cd web/openoxide_react && bun run dev
@@ -60,8 +60,8 @@ prepare-dev:
 	@./scripts/prepare-dev.sh
 
 # Start the full stack (panel :4000, agent :50051, Traefik edge :80/443).
-up: prepare-dev
-	docker compose -f docker-compose.dev.yml up -d --build
+up: prepare-dev build-images
+	docker compose -f docker-compose.dev.yml up -d
 
 down:
 	docker compose -f docker-compose.dev.yml down
@@ -72,12 +72,8 @@ logs:
 
 # Restart the dev stack (:4000). The panel image builds the SPA and the
 # binary from source inside the Docker build, so host builds are unnecessary.
-restart: prepare-dev
-	docker compose -f docker-compose.dev.yml up -d --build --force-recreate
-
-# Native (non-docker) restart: fresh bundle + fresh binary, foreground.
-restart-native: web-build
-	cargo run --bin openoxide
+restart: prepare-dev build-images
+	docker compose -f docker-compose.dev.yml up -d --force-recreate
 
 # ── Code generation (FlashORM) ──────────────────────────────────────────────
 # Type-safe query code is generated into src/flash_gen (flash.toml ->
@@ -148,7 +144,3 @@ compose-down:
 # Tail the main OpenOxide compose logs
 compose-logs:
     docker compose logs -f
-
-# Aliases for the production stacks (unchanged behavior)
-up-prod: compose-up
-down-prod: compose-down

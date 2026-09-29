@@ -77,6 +77,13 @@ pub struct SetupConfig {
     pub agent_panel_url: Option<String>,
     pub agent_token: Option<String>,
     pub agent_retention_days: i64,
+    /// Per-server mTLS material for the agent (PEM). When set, setup writes
+    /// these to the remote host and points the agent's TLS env at them so the
+    /// panel↔agent gRPC link is mutually authenticated with this server's own
+    /// isolated CA.
+    pub agent_mtls_ca_cert: Option<String>,
+    pub agent_mtls_cert: Option<String>,
+    pub agent_mtls_key: Option<String>,
 }
 
 impl Default for SetupConfig {
@@ -97,6 +104,9 @@ impl Default for SetupConfig {
             agent_panel_url: None,
             agent_token: None,
             agent_retention_days: 7,
+            agent_mtls_ca_cert: None,
+            agent_mtls_cert: None,
+            agent_mtls_key: None,
         }
     }
 }

@@ -221,7 +221,7 @@ async fn assert_deployable(queries: &FlashQueries, server_id: Option<i64>) -> sq
     Ok(())
 }
 
-async fn scale_down_compose(
+pub(super) async fn scale_down_compose(
     db: SqlitePool,
     compose_id: i64,
     app_name: &str,
@@ -236,7 +236,7 @@ async fn scale_down_compose(
         ComposeType::DockerCompose => {
             let _ = tokio::time::timeout(
                 std::time::Duration::from_secs(6),
-                docker.compose().down().project(app_name).run(),
+                docker.compose().down().project(app_name).remove_orphans().run(),
             )
             .await;
             Ok(())

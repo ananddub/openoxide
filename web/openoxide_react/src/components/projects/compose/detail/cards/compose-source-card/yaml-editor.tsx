@@ -2,6 +2,7 @@ import {useEffect, useState} from 'react';
 import {createPortal} from 'react-dom';
 import Editor from '@monaco-editor/react';
 import {ChevronDown, Code2, Maximize2, Minimize2} from 'lucide-react';
+import {cn} from '#/api/utils';
 import {useTheme} from '#/hooks/ui/use-theme';
 
 const EDITOR_OPTIONS = {
@@ -17,11 +18,14 @@ export function ComposeYamlEditor({
 	onChange,
 	height,
 	fileName = 'docker-compose.yml',
+	className,
 }: {
 	value: string;
 	onChange: (v: string) => void;
+	/** Any CSS length; `'100%'` fills the parent instead of fixing a height. */
 	height: string;
 	fileName?: string;
+	className?: string;
 }) {
 	const {theme} = useTheme();
 	const [maximized, setMaximized] = useState(false);
@@ -67,6 +71,9 @@ export function ComposeYamlEditor({
 		/>
 	);
 
+	// '100%' hands the height to the parent flex track instead of fixing one.
+	const fills = height === '100%';
+
 	if (maximized) {
 		return createPortal(
 			<div className="fixed inset-0 z-[70] flex animate-in flex-col gap-3 bg-black/40 p-4 backdrop-blur-[2px] duration-150 fade-in-0 sm:p-10">
@@ -80,9 +87,15 @@ export function ComposeYamlEditor({
 	}
 
 	return (
-		<div className="overflow-hidden rounded-lg border border-border bg-card">
+		<div
+			className={cn(
+				'flex flex-col overflow-hidden rounded-lg border border-border bg-card',
+				className,
+			)}>
 			{chrome}
-			{editor(false)}
+			<div className={fills ? 'min-h-0 flex-1' : undefined}>
+				{editor(fills)}
+			</div>
 		</div>
 	);
 }

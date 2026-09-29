@@ -10,6 +10,7 @@ import {
 	LOG_SURFACE_CLS,
 	LOG_TS_CLS,
 } from './log-tone';
+import {useLogTail} from './use-log-tail';
 
 export interface DeploymentViewerProps {
 	logs?: string[] | null;
@@ -78,12 +79,8 @@ export function DeploymentViewer({
 		return () => window.removeEventListener('keydown', onKey);
 	}, []);
 
-	// Follow the tail while live.
-	useEffect(() => {
-		if (isLive && scrollRef.current) {
-			scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-		}
-	}, [visibleLines.length, isLive]);
+	// Opens at the newest line and follows the stream; scrolling up releases the pin.
+	useLogTail(scrollRef, visibleLines.length, isLive);
 
 	return (
 		<div

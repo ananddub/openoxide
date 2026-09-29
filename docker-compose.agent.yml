@@ -28,14 +28,19 @@ services:
       # cgroup mode reads container metrics from here. Without this mount the
       # agent falls back to the streaming collector.
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      # Host root (read-only) so disk stats report the real host filesystem
+      # (`/host`) instead of the container's overlay.
+      - /:/host:ro
       # Persistent task workspace for repositories, compose files and backup
       # staging. Remote agents use their own host-local volume.
       - agent_workspace:/app/workspace
       # Traefik static/dynamic configuration and certificates. The agent owns
       # host-side route updates, so this mount must remain read-write.
       - /etc/openoxide/traefik:/etc/openoxide/traefik
-      # Server certificate and private key signed by the CA trusted by panel.
-      # - ./agent-tls:/etc/openoxide/agent-tls:ro
+      # Server certificate, key and the client CA that verifies the panel,
+      # signed by the panel's mTLS CA and distributed to this host during
+      # server setup. Uncomment the mount and the env vars together.
+      # - ./agent-tls:/etc/openoxide/mtls:ro
     environment:
       # Must match an existing row in the panel's `servers` table.
       # -1 is the local-Agent sentinel. The panel maps it to its actual local
@@ -44,8 +49,10 @@ services:
       GRPC_PORT: "50051"
       OPENOXIDE_SERVER_URL: "http://openoxide:4000"
       METRICS_TOKEN: "${METRICS_TOKEN:-change_me_metrics_token}"
-      # AGENT_TLS_CERT: "/etc/openoxide/agent-tls/server.crt"
-      # AGENT_TLS_KEY: "/etc/openoxide/agent-tls/server.key"
+      # ── mTLS (uncomment with the agent-tls mount above) ──
+      # AGENT_TLS_CERT: "/etc/openoxide/mtls/agent.crt"
+      # AGENT_TLS_KEY: "/etc/openoxide/mtls/agent.key"
+      # AGENT_TLS_CLIENT_CA: "/etc/openoxide/mtls/ca.crt"
       RUST_LOG: "agent=info"
 
 volumes:

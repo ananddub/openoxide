@@ -1,6 +1,7 @@
 import type {ReactNode} from 'react';
 import {FolderOpen} from 'lucide-react';
 import {Titlebar} from '#/components/shared/titlebar';
+import {MonitoringCacheProvider} from '#/hooks/monitoring/monitoring-cache';
 
 /**
  * Service detail shell — minimal Vercel grammar. The crumb trail
@@ -24,21 +25,23 @@ export function ServiceLayout({
 	children: ReactNode;
 }) {
 	return (
-		<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
-			<Titlebar
-				breadcrumbs={[
-					{label: 'Projects', to: '/projects', icon: FolderOpen},
-					{
-						label: 'Project Details',
-						to: '/projects/$id',
-						params: {id},
-					},
-					{label: name},
-				]}
-			/>
+		<MonitoringCacheProvider>
+			<div className="mx-auto flex w-full max-w-[1920px] animate-in flex-col gap-6 px-4 pt-4 pb-6 duration-200 fade-in">
+				<Titlebar
+					breadcrumbs={[
+						{label: 'Projects', to: '/projects', icon: FolderOpen},
+						{
+							label: 'Project Details',
+							to: '/projects/$id',
+							params: {id},
+						},
+						{label: name},
+					]}
+				/>
 
-			{/* Full-width content */}
-			<div className="min-w-0">{children}</div>
-		</div>
+				{/* Full-width content */}
+				<div className="min-w-0">{children}</div>
+			</div>
+		</MonitoringCacheProvider>
 	);
 }

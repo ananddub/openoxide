@@ -45,9 +45,9 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/src/openoxide/target \
     cargo build --release --target x86_64-unknown-linux-musl -p openoxide || true
 
-# ── 2. Actual Source Build ─────────────────────────────────────────────────────
-COPY src/ src/
-
+# ── 2. Dashboard SPA 
+# Layer order matters: Docker invalidates every layer after a changed one, so
+# the SPA builds before `COPY src/` — a Rust-only edit reuses these layers.─────────────────────────────────────────────────────
 # Build the dashboard SPA into web/openoxide_react/dist so rust-embed
 # bakes it into the panel binary (single-binary serving, prototype
 # pattern). lefthook's prepare step needs git hooks tooling that doesn't
@@ -68,6 +68,9 @@ RUN --mount=type=cache,target=/root/.bun/install/cache \
 # dependency layer stays cached. node_modules/dist are dockerignored.
 COPY web/openoxide_react/ web/openoxide_react/
 RUN cd web/openoxide_react && bun run build
+
+# ── 3. Actual Source Build ─
+COPY src/ src/
 
 # Invalidate the dummy binary and the SQLx migration embed point. The migration
 # macro reads SQL files at compile time, so recompile this module whenever the

@@ -1,5 +1,6 @@
 mod mount;
 mod patch;
+mod template_vars;
 mod transfer;
 
 pub use mount::ComposeMountService;
@@ -90,32 +91,140 @@ impl ComposeManagementService {
                 compose_file: input.compose_file,
             })
             .await?;
-        if let Some(env_var) = input.env_var {
-            self.compose
-                .patch(
-                    created.id,
-                    PatchComposeDto {
-                        name: None,
-                        description: None,
-                        env_var: Some(env_var),
-                        compose_file: None,
-                        compose_type: None,
-                        trigger_type: None,
-                        command: None,
-                        enable_submodules: None,
-                        compose_path: None,
-                        suffix: None,
-                        randomize: None,
-                        isolated_deployment: None,
-                        isolated_deployments_volume: None,
-                        watch_paths: None,
-                        service_networks: None,
-                        server_id: None,
-                    },
-                )
-                .await
-        } else {
-            Ok(created)
+
+        let Some(template_toml) = input.env_var else {
+            return Ok(created);
+        };
+
+        // Resolve a full Dokploy template.toml (variables + env + domains).
+        // Fall back to plain generator expansion for a bare env block.
+        let server_ip = self.server_ip(input.server_id).await;
+        match template_vars::resolve_template_toml(&template_toml, server_ip.as_deref()) {
+            Some(resolved) => {
+                if !resolved.env.is_empty() {
+                    self.patch_env(created.id, resolved.env).await?;
+                }
+                self.create_template_domains(created.id, &resolved.domains).await;
+                self.create_template_mounts(created.id, &resolved.mounts).await;
+            }
+            None => {
+                let env = template_vars::expand_env_template(&template_toml);
+                self.patch_env(created.id, env).await?;
+            }
+        }
+        self.compose.get_by_id(created.id).await
+    }
+
+    async fn patch_env(&self, id: i64, env_var: String) -> sqlx::Result<ComposeRecord> {
+        self.compose
+            .patch(
+                id,
+                PatchComposeDto {
+                    name: None,
+                    description: None,
+                    env_var: Some(env_var),
+                    compose_file: None,
+                    compose_type: None,
+                    trigger_type: None,
+                    command: None,
+                    enable_submodules: None,
+                    compose_path: None,
+                    suffix: None,
+                    randomize: None,
+                    isolated_deployment: None,
+                    isolated_deployments_volume: None,
+                    watch_paths: None,
+                    service_networks: None,
+                    server_id: None,
+                },
+            )
+            .await
+    }
+
+    /// A reachable IP for sslip.io domain generation. Remote servers use their
+    /// stored IP; local deploys fall back to OPENOXIDE_SERVER_URL's host (if an
+    /// IP) or the panel's routable LAN IPv4 — never a bare random host.
+    async fn server_ip(&self, server_id: Option<i64>) -> Option<String> {
+        if let Some(server_id) = server_id {
+            if let Ok(server) = self.queries.get_server_by_i_d(server_id).await {
+                let ip = server.ip_address;
+                if !matches!(ip.as_str(), "" | "0.0.0.0" | "localhost" | "127.0.0.1") {
+                    return Some(ip);
+                }
+            }
+        }
+        // Local deploy: prefer an explicitly configured public host, then a
+        // public URL host, then a probed routable IP (internal ranges skipped).
+        env_ip("OPENOXIDE_PUBLIC_IP")
+            .or_else(|| server_url_ip("OPENOXIDE_PUBLIC_URL"))
+            .or_else(|| server_url_ip("OPENOXIDE_SERVER_URL"))
+            .or_else(routable_ipv4)
+    }
+
+    async fn create_template_domains(
+        &self,
+        compose_id: i64,
+        domains: &[template_vars::ResolvedDomain],
+    ) {
+        if domains.is_empty() {
+            return;
+        }
+        let organization_id = match self
+            .queries
+            .deployments_compose_organization_id(compose_id)
+            .await
+        {
+            Ok(org) => org,
+            Err(error) => {
+                tracing::warn!(compose_id, %error, "template domains: could not resolve organization");
+                return;
+            }
+        };
+        let mut seen: std::collections::HashSet<(String, String)> =
+            std::collections::HashSet::new();
+        for domain in domains {
+            let path = domain.path.clone().unwrap_or_else(|| "/".into());
+            // A route is unique by host+path; skip duplicates so the create
+            // never hits the "already exists" guard.
+            if !seen.insert((domain.host.clone(), path.clone())) {
+                continue;
+            }
+            let params = crate::flash_gen::domains::DomainsCreateAndReturnParams {
+                host: domain.host.clone(),
+                https: 0,
+                port: domain.port,
+                path,
+                internal_path: "/".into(),
+                custom_entrypoint: String::new(),
+                service_name: domain.service_name.clone(),
+                custom_cert_resolver: String::new(),
+                strip_path: 0,
+                middlewares: "[]".into(),
+                domain_type: "compose".into(),
+                certificate_type: "none".into(),
+                service_id: compose_id,
+                organization_id,
+            };
+            if let Err(error) = self.queries.domains_create_and_return(&params).await {
+                tracing::warn!(compose_id, host = %domain.host, %error, "template domain creation failed");
+            }
+        }
+    }
+
+    async fn create_template_mounts(
+        &self,
+        compose_id: i64,
+        mounts: &[template_vars::ResolvedMount],
+    ) {
+        for mount in mounts {
+            let params = crate::flash_gen::mount::MountCreateComposeFileParams {
+                file_path: mount.file_path.clone(),
+                content: mount.content.clone(),
+                service_id: compose_id,
+            };
+            if let Err(error) = self.queries.mount_create_compose_file(&params).await {
+                tracing::warn!(compose_id, path = %mount.file_path, %error, "template mount creation failed");
+            }
         }
     }
 
@@ -292,6 +401,45 @@ impl ComposeManagementService {
             })?;
         self.deployment_service.cancel(deployment.id).await
     }
+}
+
+/// A bare IP address held directly in the named env var.
+fn env_ip(var: &str) -> Option<String> {
+    let value = std::env::var(var).ok()?;
+    let value = value.trim();
+    value.parse::<std::net::IpAddr>().ok().map(|_| value.to_owned())
+}
+
+/// The host of a `scheme://host:port` URL env var when it is a bare IP.
+fn server_url_ip(var: &str) -> Option<String> {
+    let url = std::env::var(var).ok()?;
+    let host = url
+        .split("://")
+        .nth(1)
+        .unwrap_or(&url)
+        .split('/')
+        .next()?
+        .split(':')
+        .next()?;
+    host.parse::<std::net::IpAddr>().ok().map(|_| host.to_owned())
+}
+
+/// The panel's routable IPv4 (UDP-connect probe, no packets sent). Skips
+/// container-internal ranges (Docker bridge 172.16-31.x, 10.x, loopback,
+/// link-local) since those are never reachable from a browser.
+fn routable_ipv4() -> Option<String> {
+    let socket = std::net::UdpSocket::bind("0.0.0.0:0").ok()?;
+    socket.connect("8.8.8.8:80").ok()?;
+    let std::net::IpAddr::V4(ip) = socket.local_addr().ok()?.ip() else {
+        return None;
+    };
+    let [a, b, ..] = ip.octets();
+    let internal = ip.is_loopback()
+        || ip.is_link_local()
+        || a == 10
+        || (a == 172 && (16..=31).contains(&b))
+        || (a == 192 && b == 168);
+    (!internal).then(|| ip.to_string())
 }
 
 fn generate_suffix() -> String {

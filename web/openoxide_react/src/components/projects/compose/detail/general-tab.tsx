@@ -35,6 +35,7 @@ export function ComposeGeneralTab({
 }: GeneralTabProps) {
 	const [showTerminal, setShowTerminal] = useState(false);
 	const [showEnv, setShowEnv] = useState(false);
+	const [showSourceCfg, setShowSourceCfg] = useState(false);
 	const {source, onPatch, savingSource, handleSaveSource} =
 		useComposeSource(compose, onUpdated);
 
@@ -80,18 +81,10 @@ export function ComposeGeneralTab({
 				}}
 				errorDetail={compose?.last_error}
 				sections={
-					<>
-						<ComposeSourceCard
-							source={source}
-							onPatch={onPatch}
-							savingSource={savingSource}
-							onSave={handleSaveSource}
-						/>
-						<BuildLogsSection
-							entityId={Number(compose?.id ?? 0)}
-							kind="compose"
-						/>
-					</>
+					<BuildLogsSection
+						entityId={Number(compose?.id ?? 0)}
+						kind="compose"
+					/>
 				}
 				actions={
 					<ComposeHeaderActions
@@ -99,8 +92,19 @@ export function ComposeGeneralTab({
 						onUpdated={onUpdated}
 						onOpenTerminal={() => setShowTerminal(true)}
 						onOpenEnv={() => setShowEnv(true)}
+						onOpenSource={() => setShowSourceCfg(true)}
 					/>
 				}
+			/>
+
+			{/* Configuration sheet — opened from the header icon, no inline strip */}
+			<ComposeSourceCard
+				source={source}
+				onPatch={onPatch}
+				savingSource={savingSource}
+				onSave={handleSaveSource}
+				open={showSourceCfg}
+				onOpenChange={setShowSourceCfg}
 			/>
 
 			{/* Environment variables — opened from the key icon */}

@@ -235,7 +235,7 @@ impl ComposeService {
     }
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
-        self.get_by_id(id).await?;
+        let record = self.get_by_id(id).await?;
         let dependencies = compose_dependency_counts(&self.queries, id).await?;
         if dependencies.blocks_delete() {
             return Err(sqlx::Error::Protocol(format!(
@@ -243,6 +243,43 @@ impl ComposeService {
                 dependencies.active_deployments, dependencies.enabled_backups
             )));
         }
+
+        // Read exact volume names before the mount rows cascade-delete.
+        let mounts = self
+            .queries
+            .mount_fetch_for_compose(id)
+            .await
+            .unwrap_or_default();
+        let volume_names =
+            crate::services::compute::cleanup::volume_names_from_mounts(&mounts);
+
+        // Tear down the running resources in the background before removing the row.
+        let app_name = record.app_name.clone();
+        let compose_type = record.compose_type;
+        let server_id = record.server_id;
+        tokio::spawn(async move {
+            let Ok(executor) =
+                crate::services::compute::compose::remote::agent_executor_for(server_id).await
+            else {
+                tracing::warn!(compose = %app_name, "compose delete: could not resolve Agent for cleanup");
+                return;
+            };
+            let docker = crate::utils::docker::DockerCli::from_executor(executor);
+            let runtime = match compose_type {
+                ComposeType::Stack => crate::services::compute::cleanup::CleanupRuntime::Stack,
+                ComposeType::DockerCompose => {
+                    crate::services::compute::cleanup::CleanupRuntime::Compose
+                }
+            };
+            crate::services::compute::cleanup::cleanup_service_resources(
+                &docker,
+                &app_name,
+                runtime,
+                &volume_names,
+            )
+            .await;
+        });
+
         // ON DELETE CASCADE removes service_compose/service_git and the
         // keyed relations (domains, mounts, patches, deployments).
         self.queries.delete_service(id).await?;

@@ -158,7 +158,7 @@ function UsageRing({
 	);
 }
 
-/** Live CPU and memory rings side by side across the card. Always mounted — no stats yet renders dimmed empty rings, so nothing blinks or shifts. */
+/** Live CPU and memory rings side by side across the card. Mounted only for services that have a container to measure — a stopped one renders nothing rather than a pair of dead rings. */
 function UsageRings({
 	type,
 	id,
@@ -221,8 +221,14 @@ export function ServiceCard(props: ServiceCardProps) {
 		dbKind,
 		serverName,
 	} = props;
-	const {routeConfig, actions, statusKey, confirmDeleteService, ...flags} =
-		useServiceCard(props);
+	const {
+		routeConfig,
+		actions,
+		statusKey,
+		isStopped,
+		confirmDeleteService,
+		...flags
+	} = useServiceCard(props);
 
 	const [contextMenu, setContextMenu] = useState<{
 		x: number;
@@ -307,7 +313,8 @@ export function ServiceCard(props: ServiceCardProps) {
 								</p>
 							</div>
 						</div>
-						<UsageRings type={type} id={Number(id)} />
+						{/* Stopped service has no container to measure — no gauges. */}
+						{!isStopped && <UsageRings type={type} id={Number(id)} />}
 					</div>
 
 					<div className="pointer-events-none relative z-10 flex flex-col gap-1.5 border-t border-border pt-2">

@@ -10,7 +10,7 @@ use crate::utils::{
         spec::BuilderEvent,
         swarm::{OPENOXIDE_NETWORK, ensure_overlay_network, ensure_swarm_manager},
     },
-    exec::{CommandExecutor, ExecResult},
+    exec::{CommandExecutor, ExecError, ExecResult},
 };
 use os::exec::IntoCommand;
 use os::pipeline;
@@ -149,6 +149,89 @@ impl ComposeBuilder {
         Ok(())
     }
 
+    /// Start an already-deployed project without rebuilding — Dokploy's
+    /// `start`. Compose: `docker compose start`. Stack: scale services back up
+    /// via a no-build stack deploy from the rendered file.
+    pub async fn start(&self, spec: &ComposeSpec, cancel: &CancellationToken) -> ExecResult<()> {
+        self.ctx.emit(BuilderEvent::Message(format!("starting {}", spec.stack_name))).await;
+        match spec.runtime {
+            ComposeRuntime::Compose => {
+                self.ctx
+                    .docker
+                    .compose()
+                    .start()
+                    .project(&spec.stack_name)
+                    .env_file(&spec.env_file)
+                    .file(&spec.compose_file_path())
+                    .run()
+                    .await?;
+            }
+            ComposeRuntime::Stack => {
+                // Re-deploy from the already-rendered stack file (no build) so
+                // scaled-to-zero services come back on their existing image.
+                self.ctx
+                    .docker
+                    .stacks()
+                    .deploy(&spec.stack_name)
+                    .compose_file(&spec.rendered_stack_file)
+                    .with_registry_auth()
+                    .resolve_image(ResolveImage::Never)
+                    .cancel_with(cancel.clone())
+                    .run()
+                    .await?;
+            }
+        }
+        self.ctx.emit(BuilderEvent::Deployed).await;
+        Ok(())
+    }
+
+    /// Recreate containers from the existing image without a source rebuild —
+    /// Dokploy's `reload`. Compose: `docker compose restart`. Stack: force a
+    /// task recreate on every service.
+    pub async fn reload(&self, spec: &ComposeSpec, cancel: &CancellationToken) -> ExecResult<()> {
+        self.ctx.emit(BuilderEvent::Message(format!("reloading {}", spec.stack_name))).await;
+        match spec.runtime {
+            ComposeRuntime::Compose => {
+                self.ctx
+                    .docker
+                    .compose()
+                    .restart(std::iter::empty::<&str>())
+                    .project(&spec.stack_name)
+                    .env_file(&spec.env_file)
+                    .file(&spec.compose_file_path())
+                    .run()
+                    .await?;
+            }
+            ComposeRuntime::Stack => {
+                if let Ok(services) = self
+                    .ctx
+                    .docker
+                    .services()
+                    .list()
+                    .filter(crate::utils::docker::query::ServiceFilter::name(
+                        spec.stack_name.clone(),
+                    ))
+                    .run_json()
+                    .await
+                {
+                    for service in services {
+                        let _ = self
+                            .ctx
+                            .docker
+                            .services()
+                            .update(&service.name)
+                            .force()
+                            .cancel_with(cancel.clone())
+                            .run()
+                            .await;
+                    }
+                }
+            }
+        }
+        self.ctx.emit(BuilderEvent::Deployed).await;
+        Ok(())
+    }
+
     async fn deploy_stack(&self, spec: &ComposeSpec, cancel: &CancellationToken) -> ExecResult<()> {
         ensure_swarm_manager(&self.ctx.executor, &self.ctx.docker, cancel).await?;
         ensure_overlay_network(&self.ctx.docker, OPENOXIDE_NETWORK, cancel).await?;
@@ -167,6 +250,10 @@ impl ComposeBuilder {
                 spec.compose_file_path()
             )))
             .await;
+
+        if let Some(command) = spec.command.as_deref() {
+            return self.run_command_override(command, cancel).await;
+        }
 
         let compose = self.ctx.docker.compose();
         let build_cmd = compose
@@ -208,19 +295,7 @@ impl ComposeBuilder {
             deploy_cmd;
         };
 
-        let output = pipeline
-            .execute_cancelled(&self.ctx.executor, cancel)
-            .await?;
-        if !output.stdout.is_empty() {
-            self.ctx
-                .emit(BuilderEvent::Message(output.stdout.clone()))
-                .await;
-        }
-        if !output.stderr.is_empty() {
-            self.ctx
-                .emit(BuilderEvent::Message(output.stderr.clone()))
-                .await;
-        }
+        self.ctx.run_pipeline_streamed(&pipeline, cancel).await?;
         Ok(())
     }
 
@@ -255,6 +330,12 @@ impl ComposeBuilder {
             )))
             .await;
 
+        // Command override (Dokploy `command`): replace the default build+up
+        // invocation with the user's `docker <command>`.
+        if let Some(command) = spec.command.as_deref() {
+            return self.run_command_override(command, cancel).await;
+        }
+
         let compose = self.ctx.docker.compose();
         let build_cmd = compose
             .build()
@@ -278,24 +359,32 @@ impl ComposeBuilder {
             up_cmd;
         };
 
-        let output = pipeline
-            .execute_cancelled(&self.ctx.executor, cancel)
+        self.ctx
+            .run_pipeline_streamed(&pipeline, cancel)
             .await
             .map_err(|e| {
                 tracing::error!(error = %e, "docker compose deploy failed");
                 e
             })?;
-        if !output.stdout.is_empty() {
-            self.ctx
-                .emit(BuilderEvent::Message(output.stdout.clone()))
-                .await;
-        }
-        if !output.stderr.is_empty() {
-            self.ctx
-                .emit(BuilderEvent::Message(output.stderr.clone()))
-                .await;
-        }
         Ok(())
+    }
+
+    /// Runs a user command override (`docker <command>`) instead of the
+    /// default build+up / stack-deploy, streaming its output. Rejects shell
+    /// control characters; only `&&`-chained `docker ...` steps are allowed.
+    async fn run_command_override(
+        &self,
+        command: &str,
+        cancel: &CancellationToken,
+    ) -> ExecResult<()> {
+        let sanitized = sanitize_compose_command(command)?;
+        self.ctx
+            .emit(BuilderEvent::Message(format!("running: docker {sanitized}")))
+            .await;
+        let pipeline = pipeline! {
+            format!("docker {sanitized}");
+        };
+        self.ctx.run_pipeline_streamed(&pipeline, cancel).await
     }
 
     async fn cleanup_failed_deploy(&self, spec: &ComposeSpec) {
@@ -330,6 +419,43 @@ impl ComposeBuilder {
             }
         }
     }
+}
+
+/// Validates a compose command override, mirroring Dokploy's `sanitizeCommand`:
+/// no shell control characters, single `&` rejected, and every `&&`-chained
+/// step after the first must be a `docker ...` command.
+fn sanitize_compose_command(command: &str) -> ExecResult<String> {
+    let command = command.trim();
+    let reject = |message: &str| ExecError::CommandFailed {
+        code: None,
+        stderr: message.to_string(),
+    };
+    if command.is_empty() {
+        return Err(reject("compose command is empty"));
+    }
+    if command.contains(['|', ';', '`', '$', '>', '<', '\n', '\r']) {
+        return Err(reject(
+            "invalid characters in compose command: shell control characters are not allowed",
+        ));
+    }
+    if command.contains('&') {
+        if command.contains("&&&")
+            || command
+                .match_indices('&')
+                .any(|(i, _)| command.as_bytes().get(i + 1) != Some(&b'&') && (i == 0 || command.as_bytes()[i - 1] != b'&'))
+        {
+            return Err(reject("single '&' is not allowed; use '&&' for chaining"));
+        }
+        let chains: Vec<&str> = command.split("&&").map(str::trim).collect();
+        if chains
+            .iter()
+            .skip(1)
+            .any(|c| !(c.starts_with("docker compose ") || c.starts_with("docker-compose ") || c.starts_with("docker ")))
+        {
+            return Err(reject("chained commands must start with 'docker '"));
+        }
+    }
+    Ok(command.to_owned())
 }
 
 /// `docker compose config` prefixes its output with a top-level `name:` key,

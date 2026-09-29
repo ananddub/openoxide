@@ -21,7 +21,6 @@ import {
 } from '#/components/ui/select';
 import {Field} from '#/components/shared/field';
 import {
-	parseTemplateEnv,
 	templateFileUrl,
 	useActiveOrgId,
 	useComposeInstallTemplate,
@@ -94,7 +93,12 @@ export function TemplateDeployDialog({
 				environment_id: BigInt(environmentId),
 				name: name.trim() || undefined,
 				server_id: serverId === 'local' ? undefined : Number(serverId),
-				env_var: parseTemplateEnv(toml),
+				// Send the raw template.toml: the backend resolves both the
+				// [variables] generators (${password:N}, ${domain}) and the
+				// [config].env entries that reference them (BB_MINIO_ACCESS_KEY
+				// etc.), so `${...}` interpolation in the compose file gets real
+				// values instead of blanks.
+				env_var: toml,
 			});
 			toast.success(`${template.name} installed`);
 			onOpenChange(false);

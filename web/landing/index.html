@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0" />
+		<meta name="theme-color" content="#ffffff" />
+		<meta
+			name="description"
+			content="OpenOxide is a self-hosted control panel for applications, Compose stacks, databases, domains and certificates. Rust backend, React dashboard, one agent per host." />
+		<title>OpenOxide - the self-hosted control panel</title>
+		<link
+			rel="icon"
+			href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23171717' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2v10'/><path d='M18.36 6.64a9 9 0 1 1-12.73 0'/></svg>" />
+		<style>
+			/* Paint the right background before React boots. Must match styles.css. */
+			html.dark body {
+				background: #000000;
+				color: #ededed;
+			}
+			html:not(.dark) body {
+				background: #ffffff;
+				color: #171717;
+			}
+		</style>
+		<script>
+			// Stored theme wins, otherwise the OS preference. Default stays light.
+			(function () {
+				var stored = localStorage.getItem('theme');
+				var dark =
+					stored === 'dark' ||
+					(!stored &&
+						window.matchMedia('(prefers-color-scheme: dark)').matches);
+				if (dark) document.documentElement.classList.add('dark');
+			})();
+		</script>
+	</head>
+	<body>
+		<div id="root"></div>
+		<script type="module" src="/src/main.tsx"></script>
+	</body>
+</html>

@@ -47,6 +47,9 @@ pub struct ComposeSpec {
     pub suffix: String,
     pub isolated_deployment: bool,
     pub isolated_deployments_volume: bool,
+    /// Docker subcommand override (Dokploy `command`): replaces the default
+    /// build+up / stack-deploy invocation when set.
+    pub command: Option<String>,
 }
 
 impl ComposeSpec {

@@ -19,7 +19,7 @@ impl BuilderQueue {
         &self,
         application_id: i64,
         deployment_id: i64,
-        _operation: ApplicationOperation,
+        operation: ApplicationOperation,
     ) -> Result<(), BuilderError> {
         let spec_adapter = resolve::<ApplicationSpecAdapter>().await.map_err(|e| {
             BuilderError::Execution(format!("could not resolve ApplicationSpecAdapter: {e}"))
@@ -63,6 +63,30 @@ impl BuilderQueue {
         ));
 
         let spec_snapshot = spec.clone();
+
+        // Lifecycle ops that act on a still-present stack: stop (scale 0) and
+        // reload (recreate tasks). Start is intentionally NOT here — the app
+        // stop path removes the stack, so start must go through a full deploy.
+        if matches!(
+            operation,
+            ApplicationOperation::Stop | ApplicationOperation::Reload
+        ) {
+            let events_tx_clone = events_tx.clone();
+            let executor_clone = executor.clone();
+            let lifecycle_future = async move {
+                let builder = ApplicationBuilder::new(executor_clone)
+                    .with_state(state, app_key)
+                    .with_events(events_tx);
+                let result = match operation {
+                    ApplicationOperation::Stop => builder.stop(&spec, &cancel).await,
+                    _ => builder.reload(&spec, &cancel).await,
+                };
+                result.map_err(|e| BuilderError::Execution(e.to_string()))
+            };
+            return super::deployment_log::DEPLOYMENT_SENDER
+                .scope(events_tx_clone, lifecycle_future)
+                .await;
+        }
 
         let events_tx_clone = events_tx.clone();
         let executor_clone = executor.clone();

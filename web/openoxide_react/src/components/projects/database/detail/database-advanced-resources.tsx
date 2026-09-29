@@ -71,6 +71,12 @@ export function DatabaseAdvancedResources({
 	);
 	const [memLimit, setMemLimit] = useState(database?.memory_limit || '');
 	const [cpuLimit, setCpuLimit] = useState(database?.cpu_limit || '');
+	const [memReservation, setMemReservation] = useState(
+		database?.memory_reservation || '',
+	);
+	const [cpuReservation, setCpuReservation] = useState(
+		database?.cpu_reservation || '',
+	);
 	const [plan, setPlan] = useState('default');
 	const [saving, setSaving] = useState(false);
 
@@ -82,6 +88,8 @@ export function DatabaseAdvancedResources({
 		setReplicas(String(database?.replicas || '1'));
 		setMemLimit(nextMem);
 		setCpuLimit(nextCpu);
+		setMemReservation(database?.memory_reservation || '');
+		setCpuReservation(database?.cpu_reservation || '');
 		setPlan(derivePlan(nextMem, nextCpu));
 	}, [database]);
 
@@ -107,6 +115,8 @@ export function DatabaseAdvancedResources({
 				id: database?.id,
 				memory_limit: memLimit.trim() || undefined,
 				cpu_limit: cpuLimit.trim() || undefined,
+				memory_reservation: memReservation.trim() || undefined,
+				cpu_reservation: cpuReservation.trim() || undefined,
 				replicas: replicas ? parseInt(replicas) : 1,
 			});
 			toast.success('Resource limits updated');
@@ -166,6 +176,20 @@ export function DatabaseAdvancedResources({
 										placeholder="1.0"
 										value={cpuLimit}
 										onChange={e => setCpuLimit(e.target.value)}
+									/>
+								</Field>
+								<Field label="Memory reservation" hint="e.g. 256m">
+									<Input
+										placeholder="256m"
+										value={memReservation}
+										onChange={e => setMemReservation(e.target.value)}
+									/>
+								</Field>
+								<Field label="CPU reservation" hint="e.g. 0.5">
+									<Input
+										placeholder="0.5"
+										value={cpuReservation}
+										onChange={e => setCpuReservation(e.target.value)}
 									/>
 								</Field>
 							</FieldGrid>

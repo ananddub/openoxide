@@ -455,6 +455,7 @@ fn parse_application_operation(value: &str) -> ApplicationOperation {
         "rebuild" => ApplicationOperation::Rebuild,
         "reload" => ApplicationOperation::Reload,
         "start" => ApplicationOperation::Start,
+        "stop" => ApplicationOperation::Stop,
         _ => ApplicationOperation::Deploy,
     }
 }

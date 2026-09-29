@@ -3,6 +3,7 @@
 export type MonitoringEntityType = 'application' | 'database' | 'compose';
 
 export interface ContainerMetrics {
+	name: string;
 	cpuPercent: number;
 	memPercent: number;
 	memUsage: string;
@@ -72,6 +73,7 @@ export function parseStats(raw: unknown): ContainerMetrics | null {
 	);
 
 	return {
+		name: String(s.Name || s.name || s.Container || ''),
 		cpuPercent: num(String(s.CPUPerc || s.cpu_percent || '0')),
 		memPercent: num(String(s.MemPerc || s.memory_percent || '0')),
 		memUsage: memUsage || '0 B',

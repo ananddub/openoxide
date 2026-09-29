@@ -6,6 +6,7 @@ import {
 	Ban,
 	Terminal,
 	KeyRound,
+	Lock,
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {IconTooltip} from '#/components/shared/icon-tooltip';
@@ -16,6 +17,8 @@ interface DatabaseHeaderActionsProps {
 	onAction: (action: DatabaseActionType) => Promise<void>;
 	onOpenTerminal?: () => void;
 	onOpenEnv?: () => void;
+	/** Credentials sheet, opened from the card header. */
+	onOpenCredentials?: () => void;
 }
 
 /** Icon-only Deploy / Reload / Start-Stop / Terminal buttons. */
@@ -24,6 +27,7 @@ export function DatabaseHeaderActions({
 	onAction,
 	onOpenTerminal,
 	onOpenEnv,
+	onOpenCredentials,
 }: DatabaseHeaderActionsProps) {
 	const [busy, setBusy] = useState<string | null>(null);
 
@@ -71,19 +75,6 @@ export function DatabaseHeaderActions({
 					)}
 				</Button>
 			</IconTooltip>
-			<IconTooltip label="Reload">
-				<Button
-					variant="ghost"
-					size="icon"
-					aria-label="Reload"
-					disabled={disabled}
-					onClick={() => void run('reload')}
-					className={iconBtn}>
-					<RefreshCw
-						className={`size-4 ${busy === 'reload' ? 'animate-spin' : ''}`}
-					/>
-				</Button>
-			</IconTooltip>
 			{st === 'STOPPING' || busy === 'stop' ? (
 				<IconTooltip label="Stopping">
 					<Button
@@ -91,7 +82,7 @@ export function DatabaseHeaderActions({
 						size="icon"
 						aria-label="Stopping"
 						disabled
-						className="size-8 text-destructive">
+						className="size-8 text-red-500 dark:text-red-400">
 						<RefreshCw className="size-4 animate-spin" />
 					</Button>
 				</IconTooltip>
@@ -102,7 +93,7 @@ export function DatabaseHeaderActions({
 						size="icon"
 						aria-label="Cancelling"
 						disabled
-						className="size-8 text-destructive">
+						className="size-8 text-red-500 dark:text-red-400">
 						<RefreshCw className="size-4 animate-spin" />
 					</Button>
 				</IconTooltip>
@@ -114,7 +105,7 @@ export function DatabaseHeaderActions({
 						aria-label="Stop"
 						disabled={disabled}
 						onClick={() => void run('stop')}
-						className="size-8 text-muted-foreground hover:text-destructive">
+						className="size-8 text-red-500 transition-colors hover:bg-red-500/10 hover:text-red-600 dark:text-red-400 dark:hover:bg-red-400/15 dark:hover:text-red-300">
 						{busy === 'stop' ? (
 							<RefreshCw className="size-4 animate-spin" />
 						) : (
@@ -161,6 +152,18 @@ export function DatabaseHeaderActions({
 						onClick={onOpenEnv}
 						className={iconBtn}>
 						<KeyRound className="size-4" />
+					</Button>
+				</IconTooltip>
+			)}
+			{onOpenCredentials && (
+				<IconTooltip label="Credentials">
+					<Button
+						variant="ghost"
+						size="icon"
+						aria-label="Credentials"
+						onClick={onOpenCredentials}
+						className={iconBtn}>
+						<Lock className="size-4" />
 					</Button>
 				</IconTooltip>
 			)}
