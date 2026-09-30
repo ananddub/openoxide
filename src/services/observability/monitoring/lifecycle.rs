@@ -490,16 +490,31 @@ impl MonitoringLifecycleService {
         // outdated Agent can still bootstrap itself.
         let organization_id = match self.agent_auth.organization_id(server_id).await? {
             Some(id) => id,
-            None => sqlx::query_scalar(
-                "SELECT e.organization_id
-                 FROM environments e
-                 WHERE e.id IN (SELECT environment_id FROM services WHERE server_id = ?)
-                 LIMIT 1",
-            )
-            .bind(server_id)
-            .fetch_optional(&self.queries.pool)
-            .await?
-            .ok_or(sqlx::Error::RowNotFound)?,
+            None => {
+                // Prefer the server's own org; fall back to a linked resource's
+                // project org. A server with neither cannot be attributed.
+                let from_server: Option<i64> = sqlx::query_scalar(
+                    "SELECT organization_id FROM servers WHERE id = ?",
+                )
+                .bind(server_id)
+                .fetch_optional(&self.queries.pool)
+                .await?;
+                match from_server.filter(|id| *id > 0) {
+                    Some(id) => id,
+                    None => sqlx::query_scalar(
+                        "SELECT p.organization_id
+                         FROM services s
+                         JOIN environments e ON e.id = s.environment_id
+                         JOIN projects p ON p.id = e.project_id
+                         WHERE s.server_id = ?
+                         LIMIT 1",
+                    )
+                    .bind(server_id)
+                    .fetch_optional(&self.queries.pool)
+                    .await?
+                    .ok_or(sqlx::Error::RowNotFound)?,
+                }
+            }
         };
         let policy = self.policy(organization_id).await?;
         let token = if self.agent_auth.organization_id(server_id).await?.is_some() {

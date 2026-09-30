@@ -75,10 +75,16 @@ impl TraefikService {
             .extension()
             .map_or(false, |ext| ext == "yml" || ext == "yaml" || ext == "json");
         let is_acme = file_name == "acme.json";
+        // Certificate material lives under dynamic/certificates/<name>/ as
+        // chain.crt + privkey.key. Allow these (and .pem) so uploaded certs
+        // can be written and shown in the file tree.
+        let is_cert = full_path
+            .extension()
+            .map_or(false, |ext| ext == "crt" || ext == "key" || ext == "pem");
 
-        if !is_yml && !is_acme {
+        if !is_yml && !is_acme && !is_cert {
             return Err(
-                "Security Restriction: Only .yml, .yaml, and .json files are accessible"
+                "Security Restriction: Only .yml, .yaml, .json, .crt, .key and .pem files are accessible"
                     .to_string(),
             );
         }
@@ -100,7 +106,7 @@ impl TraefikService {
             .also("/etc/traefik")
             .max_depth(3)
             .type_file()
-            .names(["*.yml", "*.yaml", "*.json"])
+            .names(["*.yml", "*.yaml", "*.json", "*.crt", "*.key", "*.pem"])
             .output(crate::utils::os::dir::DirWalkOutput::PathSizeModifiedEpoch)
             .ignore_errors()
             .run()
@@ -134,7 +140,10 @@ impl TraefikService {
 
             let is_valid_ext = file_name.ends_with(".yml")
                 || file_name.ends_with(".yaml")
-                || file_name.ends_with(".json");
+                || file_name.ends_with(".json")
+                || file_name.ends_with(".crt")
+                || file_name.ends_with(".key")
+                || file_name.ends_with(".pem");
             if !is_valid_ext {
                 continue;
             }
@@ -155,7 +164,10 @@ impl TraefikService {
                 file_name.clone()
             };
 
-            let is_readonly = file_name == "acme.json";
+            let is_readonly = file_name == "acme.json"
+                || file_name.ends_with(".crt")
+                || file_name.ends_with(".key")
+                || file_name.ends_with(".pem");
             nodes.push(TraefikFileNodeDto {
                 name: file_name,
                 relative_path: relative,

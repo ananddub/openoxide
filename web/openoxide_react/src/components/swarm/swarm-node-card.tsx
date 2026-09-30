@@ -38,10 +38,7 @@ export function SwarmNodeCard(props: SwarmNodeCardProps) {
 							{node.hostname || 'Swarm Node'}
 						</span>
 						<p className="mt-0.5 truncate text-xs text-muted-foreground">
-							<SwarmNodeMeta
-								node={node}
-								availability={availability}
-							/>
+							<SwarmNodeMeta node={node} availability={availability} />
 						</p>
 					</div>
 				</div>

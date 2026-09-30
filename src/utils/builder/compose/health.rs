@@ -86,13 +86,15 @@ impl ComposeBuilder {
                         }
                     };
 
-                    // Fail fast on a container that crashed or went unhealthy.
-                    // A clean exit (code 0) is a legitimate one-shot job.
+                    // Fail fast only on a real crash — a dead container or a
+                    // non-zero exit. An "unhealthy" container is NOT fatal
+                    // here: slow apps (DB migrations, workers) report unhealthy
+                    // during their healthcheck start period and only turn
+                    // healthy once booted, so keep waiting until the deadline
+                    // rather than aborting the deploy prematurely.
                     if let Some(bad) = rows.iter().find(|row| {
                         let state = row.state.to_lowercase();
-                        state.contains("dead")
-                            || row.health.eq_ignore_ascii_case("unhealthy")
-                            || (state.contains("exit") && row.exit_code != 0)
+                        state.contains("dead") || (state.contains("exit") && row.exit_code != 0)
                     }) {
                         return Err(ExecError::CommandFailed {
                             code: None,

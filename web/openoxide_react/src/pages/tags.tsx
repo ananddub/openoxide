@@ -159,8 +159,8 @@ function TagsPage() {
 							No tags yet
 						</h3>
 						<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
-							Create color-coded labels to group projects, apps and databases
-							by environment or team.
+							Create color-coded labels to group projects, apps and
+							databases by environment or team.
 						</p>
 						<Button
 							onClick={() => setIsCreateOpen(true)}

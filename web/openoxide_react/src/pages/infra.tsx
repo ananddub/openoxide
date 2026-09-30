@@ -130,9 +130,7 @@ function InfraPage() {
 			)}
 			<div
 				className={
-					fullHeightChain
-						? 'flex min-h-0 flex-1 flex-col'
-						: 'min-w-0'
+					fullHeightChain ? 'flex min-h-0 flex-1 flex-col' : 'min-w-0'
 				}>
 				<Active />
 			</div>

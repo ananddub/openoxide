@@ -1,4 +1,11 @@
-import {Check, Copy, Crown, Globe, Server, ShieldAlert} from 'lucide-react';
+import {
+	Check,
+	Copy,
+	Crown,
+	Globe,
+	Server,
+	ShieldAlert,
+} from 'lucide-react';
 import {cn} from '#/api/utils';
 import {Badge} from '#/components/ui/badge';
 import {RowTile} from '#/components/settings/list-card';

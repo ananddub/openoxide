@@ -45,7 +45,7 @@ function DockerPage() {
 	const {data: rawRunning, isLoading: isRunningLoading} =
 		useDeploymentRunning();
 
-	// Transform API response into Dokploy-grade container items
+	// Transform API response into container items
 	const globalContainers: GlobalContainerItem[] = useMemo(
 		() => mapGlobalContainers(rawDockerContainers, rawRunning),
 		[rawDockerContainers, rawRunning],

@@ -2,191 +2,223 @@
 // @generated from file openoxide/api/v1/alert.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import type { CreateAlertRuleRequestSchema, CreateAlertRuleResponseSchema, DeleteAlertRuleRequestSchema, GetAlertRuleRequestSchema, GetAlertRuleResponseSchema, ListAlertRulesRequestSchema, ListAlertRulesResponseSchema, TestAlertRuleRequestSchema, TestAlertRuleResponseSchema, UpdateAlertRuleRequestSchema, UpdateAlertRuleResponseSchema } from "./alert_rule_pb";
-import { file_openoxide_api_v1_alert_rule } from "./alert_rule_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import type {
+	CreateAlertRuleRequestSchema,
+	CreateAlertRuleResponseSchema,
+	DeleteAlertRuleRequestSchema,
+	GetAlertRuleRequestSchema,
+	GetAlertRuleResponseSchema,
+	ListAlertRulesRequestSchema,
+	ListAlertRulesResponseSchema,
+	TestAlertRuleRequestSchema,
+	TestAlertRuleResponseSchema,
+	UpdateAlertRuleRequestSchema,
+	UpdateAlertRuleResponseSchema,
+} from './alert_rule_pb';
+import {file_openoxide_api_v1_alert_rule} from './alert_rule_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/alert.proto.
  */
-export const file_openoxide_api_v1_alert: GenFile = /*@__PURE__*/
-  fileDesc("ChxvcGVub3hpZGUvYXBpL3YxL2FsZXJ0LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIv8DCgpBbGVydEV2ZW50EgoKAmlkGAEgASgDEhUKDWFsZXJ0X3J1bGVfaWQYAiABKAMSFwoPb3JnYW5pemF0aW9uX2lkGAMgASgDEhIKCnRhcmdldF9rZXkYBCABKAkSMAoFc3RhdGUYBSABKA4yIS5vcGVub3hpZGUuYXBpLnYxLkFsZXJ0RXZlbnRTdGF0ZRISCgV2YWx1ZRgGIAEoAUgAiAEBEhYKCXRocmVzaG9sZBgHIAEoAUgBiAEBEg8KB21lc3NhZ2UYCCABKAkSEgoKY3JlYXRlZF9hdBgJIAEoAxIcCg9hY2tub3dsZWRnZWRfYXQYCiABKANIAogBARIcCg9hY2tub3dsZWRnZWRfYnkYCyABKANIA4gBARIbCg5zaWxlbmNlZF91bnRpbBgMIAEoA0gEiAEBEhgKC3Jlc29sdmVkX2F0GA0gASgDSAWIAQESKAobbm90aWZpY2F0aW9uX2NvcnJlbGF0aW9uX2lkGA4gASgJSAaIAQFCCAoGX3ZhbHVlQgwKCl90aHJlc2hvbGRCEgoQX2Fja25vd2xlZGdlZF9hdEISChBfYWNrbm93bGVkZ2VkX2J5QhEKD19zaWxlbmNlZF91bnRpbEIOCgxfcmVzb2x2ZWRfYXRCHgocX25vdGlmaWNhdGlvbl9jb3JyZWxhdGlvbl9pZCJTChZMaXN0QWxlcnRFdmVudHNSZXF1ZXN0EiUKD29yZ2FuaXphdGlvbl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQhIKEF9vcmdhbml6YXRpb25faWQiRwoXTGlzdEFsZXJ0RXZlbnRzUmVzcG9uc2USLAoGZXZlbnRzGAEgAygLMhwub3Blbm94aWRlLmFwaS52MS5BbGVydEV2ZW50Im4KHEFja25vd2xlZGdlQWxlcnRFdmVudFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASJQoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCKCAQoYU2lsZW5jZUFsZXJ0RXZlbnRSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEiUKD29yZ2FuaXphdGlvbl9pZBgCIAEoA0IHukgEIgIgAEgAiAEBEhYKBXVudGlsGAMgASgDQge6SAQiAiAAQhIKEF9vcmdhbml6YXRpb25faWQqkQEKD0FsZXJ0RXZlbnRTdGF0ZRIhCh1BTEVSVF9FVkVOVF9TVEFURV9VTlNQRUNJRklFRBAAEhwKGEFMRVJUX0VWRU5UX1NUQVRFX0ZJUklORxABEh4KGkFMRVJUX0VWRU5UX1NUQVRFX1JFU09MVkVEEAISHQoZQUxFUlRfRVZFTlRfU1RBVEVfTk9fREFUQRADMtsGChZBbGVydE9wZXJhdGlvbnNTZXJ2aWNlEl4KCUxpc3RSdWxlcxInLm9wZW5veGlkZS5hcGkudjEuTGlzdEFsZXJ0UnVsZXNSZXF1ZXN0Gigub3Blbm94aWRlLmFwaS52MS5MaXN0QWxlcnRSdWxlc1Jlc3BvbnNlEmEKCkxpc3RFdmVudHMSKC5vcGVub3hpZGUuYXBpLnYxLkxpc3RBbGVydEV2ZW50c1JlcXVlc3QaKS5vcGVub3hpZGUuYXBpLnYxLkxpc3RBbGVydEV2ZW50c1Jlc3BvbnNlElgKB0dldFJ1bGUSJS5vcGVub3hpZGUuYXBpLnYxLkdldEFsZXJ0UnVsZVJlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLkdldEFsZXJ0UnVsZVJlc3BvbnNlEmEKCkNyZWF0ZVJ1bGUSKC5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZUFsZXJ0UnVsZVJlcXVlc3QaKS5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZUFsZXJ0UnVsZVJlc3BvbnNlEmEKClVwZGF0ZVJ1bGUSKC5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZUFsZXJ0UnVsZVJlcXVlc3QaKS5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZUFsZXJ0UnVsZVJlc3BvbnNlEk8KCkRlbGV0ZVJ1bGUSKC5vcGVub3hpZGUuYXBpLnYxLkRlbGV0ZUFsZXJ0UnVsZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElsKCFRlc3RSdWxlEiYub3Blbm94aWRlLmFwaS52MS5UZXN0QWxlcnRSdWxlUmVxdWVzdBonLm9wZW5veGlkZS5hcGkudjEuVGVzdEFsZXJ0UnVsZVJlc3BvbnNlElsKEEFja25vd2xlZGdlRXZlbnQSLi5vcGVub3hpZGUuYXBpLnYxLkFja25vd2xlZGdlQWxlcnRFdmVudFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElMKDFNpbGVuY2VFdmVudBIqLm9wZW5veGlkZS5hcGkudjEuU2lsZW5jZUFsZXJ0RXZlbnRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common, file_openoxide_api_v1_alert_rule, file_buf_validate_validate]);
+export const file_openoxide_api_v1_alert: GenFile /*@__PURE__*/ = fileDesc(
+	'ChxvcGVub3hpZGUvYXBpL3YxL2FsZXJ0LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIv8DCgpBbGVydEV2ZW50EgoKAmlkGAEgASgDEhUKDWFsZXJ0X3J1bGVfaWQYAiABKAMSFwoPb3JnYW5pemF0aW9uX2lkGAMgASgDEhIKCnRhcmdldF9rZXkYBCABKAkSMAoFc3RhdGUYBSABKA4yIS5vcGVub3hpZGUuYXBpLnYxLkFsZXJ0RXZlbnRTdGF0ZRISCgV2YWx1ZRgGIAEoAUgAiAEBEhYKCXRocmVzaG9sZBgHIAEoAUgBiAEBEg8KB21lc3NhZ2UYCCABKAkSEgoKY3JlYXRlZF9hdBgJIAEoAxIcCg9hY2tub3dsZWRnZWRfYXQYCiABKANIAogBARIcCg9hY2tub3dsZWRnZWRfYnkYCyABKANIA4gBARIbCg5zaWxlbmNlZF91bnRpbBgMIAEoA0gEiAEBEhgKC3Jlc29sdmVkX2F0GA0gASgDSAWIAQESKAobbm90aWZpY2F0aW9uX2NvcnJlbGF0aW9uX2lkGA4gASgJSAaIAQFCCAoGX3ZhbHVlQgwKCl90aHJlc2hvbGRCEgoQX2Fja25vd2xlZGdlZF9hdEISChBfYWNrbm93bGVkZ2VkX2J5QhEKD19zaWxlbmNlZF91bnRpbEIOCgxfcmVzb2x2ZWRfYXRCHgocX25vdGlmaWNhdGlvbl9jb3JyZWxhdGlvbl9pZCJTChZMaXN0QWxlcnRFdmVudHNSZXF1ZXN0EiUKD29yZ2FuaXphdGlvbl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQhIKEF9vcmdhbml6YXRpb25faWQiRwoXTGlzdEFsZXJ0RXZlbnRzUmVzcG9uc2USLAoGZXZlbnRzGAEgAygLMhwub3Blbm94aWRlLmFwaS52MS5BbGVydEV2ZW50Im4KHEFja25vd2xlZGdlQWxlcnRFdmVudFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASJQoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCKCAQoYU2lsZW5jZUFsZXJ0RXZlbnRSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEiUKD29yZ2FuaXphdGlvbl9pZBgCIAEoA0IHukgEIgIgAEgAiAEBEhYKBXVudGlsGAMgASgDQge6SAQiAiAAQhIKEF9vcmdhbml6YXRpb25faWQqkQEKD0FsZXJ0RXZlbnRTdGF0ZRIhCh1BTEVSVF9FVkVOVF9TVEFURV9VTlNQRUNJRklFRBAAEhwKGEFMRVJUX0VWRU5UX1NUQVRFX0ZJUklORxABEh4KGkFMRVJUX0VWRU5UX1NUQVRFX1JFU09MVkVEEAISHQoZQUxFUlRfRVZFTlRfU1RBVEVfTk9fREFUQRADMtsGChZBbGVydE9wZXJhdGlvbnNTZXJ2aWNlEl4KCUxpc3RSdWxlcxInLm9wZW5veGlkZS5hcGkudjEuTGlzdEFsZXJ0UnVsZXNSZXF1ZXN0Gigub3Blbm94aWRlLmFwaS52MS5MaXN0QWxlcnRSdWxlc1Jlc3BvbnNlEmEKCkxpc3RFdmVudHMSKC5vcGVub3hpZGUuYXBpLnYxLkxpc3RBbGVydEV2ZW50c1JlcXVlc3QaKS5vcGVub3hpZGUuYXBpLnYxLkxpc3RBbGVydEV2ZW50c1Jlc3BvbnNlElgKB0dldFJ1bGUSJS5vcGVub3hpZGUuYXBpLnYxLkdldEFsZXJ0UnVsZVJlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLkdldEFsZXJ0UnVsZVJlc3BvbnNlEmEKCkNyZWF0ZVJ1bGUSKC5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZUFsZXJ0UnVsZVJlcXVlc3QaKS5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZUFsZXJ0UnVsZVJlc3BvbnNlEmEKClVwZGF0ZVJ1bGUSKC5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZUFsZXJ0UnVsZVJlcXVlc3QaKS5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZUFsZXJ0UnVsZVJlc3BvbnNlEk8KCkRlbGV0ZVJ1bGUSKC5vcGVub3hpZGUuYXBpLnYxLkRlbGV0ZUFsZXJ0UnVsZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElsKCFRlc3RSdWxlEiYub3Blbm94aWRlLmFwaS52MS5UZXN0QWxlcnRSdWxlUmVxdWVzdBonLm9wZW5veGlkZS5hcGkudjEuVGVzdEFsZXJ0UnVsZVJlc3BvbnNlElsKEEFja25vd2xlZGdlRXZlbnQSLi5vcGVub3hpZGUuYXBpLnYxLkFja25vd2xlZGdlQWxlcnRFdmVudFJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElMKDFNpbGVuY2VFdmVudBIqLm9wZW5veGlkZS5hcGkudjEuU2lsZW5jZUFsZXJ0RXZlbnRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z',
+	[
+		file_openoxide_api_v1_common,
+		file_openoxide_api_v1_alert_rule,
+		file_buf_validate_validate,
+	],
+);
 
 /**
  * @generated from message openoxide.api.v1.AlertEvent
  */
-export type AlertEvent = Message<"openoxide.api.v1.AlertEvent"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type AlertEvent = Message<'openoxide.api.v1.AlertEvent'> & {
+	/**
+	 * @generated from field: int64 id = 1;
+	 */
+	id: bigint;
 
-  /**
-   * @generated from field: int64 alert_rule_id = 2;
-   */
-  alertRuleId: bigint;
+	/**
+	 * @generated from field: int64 alert_rule_id = 2;
+	 */
+	alertRuleId: bigint;
 
-  /**
-   * @generated from field: int64 organization_id = 3;
-   */
-  organizationId: bigint;
+	/**
+	 * @generated from field: int64 organization_id = 3;
+	 */
+	organizationId: bigint;
 
-  /**
-   * Stable target identity key recorded when the rule fired.
-   *
-   * @generated from field: string target_key = 4;
-   */
-  targetKey: string;
+	/**
+	 * Stable target identity key recorded when the rule fired.
+	 *
+	 * @generated from field: string target_key = 4;
+	 */
+	targetKey: string;
 
-  /**
-   * @generated from field: openoxide.api.v1.AlertEventState state = 5;
-   */
-  state: AlertEventState;
+	/**
+	 * @generated from field: openoxide.api.v1.AlertEventState state = 5;
+	 */
+	state: AlertEventState;
 
-  /**
-   * @generated from field: optional double value = 6;
-   */
-  value?: number | undefined;
+	/**
+	 * @generated from field: optional double value = 6;
+	 */
+	value?: number | undefined;
 
-  /**
-   * @generated from field: optional double threshold = 7;
-   */
-  threshold?: number | undefined;
+	/**
+	 * @generated from field: optional double threshold = 7;
+	 */
+	threshold?: number | undefined;
 
-  /**
-   * @generated from field: string message = 8;
-   */
-  message: string;
+	/**
+	 * @generated from field: string message = 8;
+	 */
+	message: string;
 
-  /**
-   * @generated from field: int64 created_at = 9;
-   */
-  createdAt: bigint;
+	/**
+	 * @generated from field: int64 created_at = 9;
+	 */
+	createdAt: bigint;
 
-  /**
-   * @generated from field: optional int64 acknowledged_at = 10;
-   */
-  acknowledgedAt?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 acknowledged_at = 10;
+	 */
+	acknowledgedAt?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 acknowledged_by = 11;
-   */
-  acknowledgedBy?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 acknowledged_by = 11;
+	 */
+	acknowledgedBy?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 silenced_until = 12;
-   */
-  silencedUntil?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 silenced_until = 12;
+	 */
+	silencedUntil?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 resolved_at = 13;
-   */
-  resolvedAt?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 resolved_at = 13;
+	 */
+	resolvedAt?: bigint | undefined;
 
-  /**
-   * Correlation id linking the event to notification delivery attempts.
-   *
-   * @generated from field: optional string notification_correlation_id = 14;
-   */
-  notificationCorrelationId?: string | undefined;
+	/**
+	 * Correlation id linking the event to notification delivery attempts.
+	 *
+	 * @generated from field: optional string notification_correlation_id = 14;
+	 */
+	notificationCorrelationId?: string | undefined;
 };
 
 /**
  * Describes the message openoxide.api.v1.AlertEvent.
  * Use `create(AlertEventSchema)` to create a new message.
  */
-export const AlertEventSchema: GenMessage<AlertEvent> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_alert, 0);
+export const AlertEventSchema: GenMessage<AlertEvent> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_alert, 0);
 
 /**
  * @generated from message openoxide.api.v1.ListAlertEventsRequest
  */
-export type ListAlertEventsRequest = Message<"openoxide.api.v1.ListAlertEventsRequest"> & {
-  /**
-   * @generated from field: optional int64 organization_id = 1;
-   */
-  organizationId?: bigint | undefined;
-};
+export type ListAlertEventsRequest =
+	Message<'openoxide.api.v1.ListAlertEventsRequest'> & {
+		/**
+		 * @generated from field: optional int64 organization_id = 1;
+		 */
+		organizationId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListAlertEventsRequest.
  * Use `create(ListAlertEventsRequestSchema)` to create a new message.
  */
-export const ListAlertEventsRequestSchema: GenMessage<ListAlertEventsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_alert, 1);
+export const ListAlertEventsRequestSchema: GenMessage<ListAlertEventsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_alert, 1);
 
 /**
  * @generated from message openoxide.api.v1.ListAlertEventsResponse
  */
-export type ListAlertEventsResponse = Message<"openoxide.api.v1.ListAlertEventsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.AlertEvent events = 1;
-   */
-  events: AlertEvent[];
-};
+export type ListAlertEventsResponse =
+	Message<'openoxide.api.v1.ListAlertEventsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.AlertEvent events = 1;
+		 */
+		events: AlertEvent[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListAlertEventsResponse.
  * Use `create(ListAlertEventsResponseSchema)` to create a new message.
  */
-export const ListAlertEventsResponseSchema: GenMessage<ListAlertEventsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_alert, 2);
+export const ListAlertEventsResponseSchema: GenMessage<ListAlertEventsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_alert, 2);
 
 /**
  * @generated from message openoxide.api.v1.AcknowledgeAlertEventRequest
  */
-export type AcknowledgeAlertEventRequest = Message<"openoxide.api.v1.AcknowledgeAlertEventRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type AcknowledgeAlertEventRequest =
+	Message<'openoxide.api.v1.AcknowledgeAlertEventRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: optional int64 organization_id = 2;
-   */
-  organizationId?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 organization_id = 2;
+		 */
+		organizationId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.AcknowledgeAlertEventRequest.
  * Use `create(AcknowledgeAlertEventRequestSchema)` to create a new message.
  */
-export const AcknowledgeAlertEventRequestSchema: GenMessage<AcknowledgeAlertEventRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_alert, 3);
+export const AcknowledgeAlertEventRequestSchema: GenMessage<AcknowledgeAlertEventRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_alert, 3);
 
 /**
  * @generated from message openoxide.api.v1.SilenceAlertEventRequest
  */
-export type SilenceAlertEventRequest = Message<"openoxide.api.v1.SilenceAlertEventRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type SilenceAlertEventRequest =
+	Message<'openoxide.api.v1.SilenceAlertEventRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: optional int64 organization_id = 2;
-   */
-  organizationId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 organization_id = 2;
+		 */
+		organizationId?: bigint | undefined;
 
-  /**
-   * Unix seconds until which further notifications for the event are muted.
-   *
-   * @generated from field: int64 until = 3;
-   */
-  until: bigint;
-};
+		/**
+		 * Unix seconds until which further notifications for the event are muted.
+		 *
+		 * @generated from field: int64 until = 3;
+		 */
+		until: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SilenceAlertEventRequest.
  * Use `create(SilenceAlertEventRequestSchema)` to create a new message.
  */
-export const SilenceAlertEventRequestSchema: GenMessage<SilenceAlertEventRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_alert, 4);
+export const SilenceAlertEventRequestSchema: GenMessage<SilenceAlertEventRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_alert, 4);
 
 /**
  * Event lifecycle state (Rust AlertEventState).
@@ -194,32 +226,32 @@ export const SilenceAlertEventRequestSchema: GenMessage<SilenceAlertEventRequest
  * @generated from enum openoxide.api.v1.AlertEventState
  */
 export enum AlertEventState {
-  /**
-   * @generated from enum value: ALERT_EVENT_STATE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: ALERT_EVENT_STATE_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: ALERT_EVENT_STATE_FIRING = 1;
-   */
-  FIRING = 1,
+	/**
+	 * @generated from enum value: ALERT_EVENT_STATE_FIRING = 1;
+	 */
+	FIRING = 1,
 
-  /**
-   * @generated from enum value: ALERT_EVENT_STATE_RESOLVED = 2;
-   */
-  RESOLVED = 2,
+	/**
+	 * @generated from enum value: ALERT_EVENT_STATE_RESOLVED = 2;
+	 */
+	RESOLVED = 2,
 
-  /**
-   * @generated from enum value: ALERT_EVENT_STATE_NO_DATA = 3;
-   */
-  NO_DATA = 3,
+	/**
+	 * @generated from enum value: ALERT_EVENT_STATE_NO_DATA = 3;
+	 */
+	NO_DATA = 3,
 }
 
 /**
  * Describes the enum openoxide.api.v1.AlertEventState.
  */
-export const AlertEventStateSchema: GenEnum<AlertEventState> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_alert, 0);
+export const AlertEventStateSchema: GenEnum<AlertEventState> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_alert, 0);
 
 /**
  * Operations surface: rule CRUD (shared messages with AlertRuleService) plus the fired-event stream and its lifecycle actions.
@@ -227,78 +259,76 @@ export const AlertEventStateSchema: GenEnum<AlertEventState> = /*@__PURE__*/
  * @generated from service openoxide.api.v1.AlertOperationsService
  */
 export const AlertOperationsService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.AlertOperationsService.ListRules
-   */
-  listRules: {
-    methodKind: "unary";
-    input: typeof ListAlertRulesRequestSchema;
-    output: typeof ListAlertRulesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.AlertOperationsService.ListEvents
-   */
-  listEvents: {
-    methodKind: "unary";
-    input: typeof ListAlertEventsRequestSchema;
-    output: typeof ListAlertEventsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.AlertOperationsService.GetRule
-   */
-  getRule: {
-    methodKind: "unary";
-    input: typeof GetAlertRuleRequestSchema;
-    output: typeof GetAlertRuleResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.AlertOperationsService.CreateRule
-   */
-  createRule: {
-    methodKind: "unary";
-    input: typeof CreateAlertRuleRequestSchema;
-    output: typeof CreateAlertRuleResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.AlertOperationsService.UpdateRule
-   */
-  updateRule: {
-    methodKind: "unary";
-    input: typeof UpdateAlertRuleRequestSchema;
-    output: typeof UpdateAlertRuleResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.AlertOperationsService.DeleteRule
-   */
-  deleteRule: {
-    methodKind: "unary";
-    input: typeof DeleteAlertRuleRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.AlertOperationsService.TestRule
-   */
-  testRule: {
-    methodKind: "unary";
-    input: typeof TestAlertRuleRequestSchema;
-    output: typeof TestAlertRuleResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.AlertOperationsService.AcknowledgeEvent
-   */
-  acknowledgeEvent: {
-    methodKind: "unary";
-    input: typeof AcknowledgeAlertEventRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.AlertOperationsService.SilenceEvent
-   */
-  silenceEvent: {
-    methodKind: "unary";
-    input: typeof SilenceAlertEventRequestSchema;
-    output: typeof EmptySchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_alert, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.AlertOperationsService.ListRules
+	 */
+	listRules: {
+		methodKind: 'unary';
+		input: typeof ListAlertRulesRequestSchema;
+		output: typeof ListAlertRulesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.AlertOperationsService.ListEvents
+	 */
+	listEvents: {
+		methodKind: 'unary';
+		input: typeof ListAlertEventsRequestSchema;
+		output: typeof ListAlertEventsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.AlertOperationsService.GetRule
+	 */
+	getRule: {
+		methodKind: 'unary';
+		input: typeof GetAlertRuleRequestSchema;
+		output: typeof GetAlertRuleResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.AlertOperationsService.CreateRule
+	 */
+	createRule: {
+		methodKind: 'unary';
+		input: typeof CreateAlertRuleRequestSchema;
+		output: typeof CreateAlertRuleResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.AlertOperationsService.UpdateRule
+	 */
+	updateRule: {
+		methodKind: 'unary';
+		input: typeof UpdateAlertRuleRequestSchema;
+		output: typeof UpdateAlertRuleResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.AlertOperationsService.DeleteRule
+	 */
+	deleteRule: {
+		methodKind: 'unary';
+		input: typeof DeleteAlertRuleRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.AlertOperationsService.TestRule
+	 */
+	testRule: {
+		methodKind: 'unary';
+		input: typeof TestAlertRuleRequestSchema;
+		output: typeof TestAlertRuleResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.AlertOperationsService.AcknowledgeEvent
+	 */
+	acknowledgeEvent: {
+		methodKind: 'unary';
+		input: typeof AcknowledgeAlertEventRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.AlertOperationsService.SilenceEvent
+	 */
+	silenceEvent: {
+		methodKind: 'unary';
+		input: typeof SilenceAlertEventRequestSchema;
+		output: typeof EmptySchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_alert, 0);

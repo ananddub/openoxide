@@ -28,6 +28,18 @@ pub struct BuilderContext {
     pub health_timeout: Duration,
 }
 
+/// Deploy health-wait budget. Heavy stacks (e.g. authentik) run DB migrations
+/// and blueprint imports on first boot and can take minutes to report healthy,
+/// so the default is generous. Override with `DEPLOY_HEALTH_TIMEOUT_SECS`.
+fn default_health_timeout() -> Duration {
+    let secs = std::env::var("DEPLOY_HEALTH_TIMEOUT_SECS")
+        .ok()
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .filter(|v| *v > 0)
+        .unwrap_or(300);
+    Duration::from_secs(secs)
+}
+
 impl BuilderContext {
     pub fn new(executor: CommandExecutor) -> Self {
         Self {
@@ -35,10 +47,9 @@ impl BuilderContext {
             executor,
             events: None,
             state: None,
-            health_timeout: Duration::from_secs(120),
+            health_timeout: default_health_timeout(),
         }
     }
-
     pub fn with_events(mut self, events: mpsc::Sender<BuilderEvent>) -> Self {
         self.events = Some(events);
         self

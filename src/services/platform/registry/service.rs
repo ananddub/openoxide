@@ -27,7 +27,7 @@ struct RepositoryTagsResponse {
 
 /// Registry URLs reach `docker login` as CLI arguments, so they must be a
 /// bare `hostname[:port]` (or empty for Docker Hub) — never a URL with a
-/// scheme/path and never shell metacharacters. Mirrors dokploy's
+/// scheme/path and never shell metacharacters. Mirrors 's
 /// `registryUrl` refine rule.
 fn validate_registry_url(value: &str) -> sqlx::Result<()> {
     let value = value.trim();

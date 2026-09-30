@@ -22,7 +22,7 @@ import {
 	SelectValue,
 } from '#/components/ui/select';
 
-/** Dokploy parity: only the tail of the corpus goes to the model. */
+/** only the tail of the corpus goes to the model. */
 const MAX_LOG_LINES = 200;
 
 /**

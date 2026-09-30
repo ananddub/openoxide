@@ -246,13 +246,13 @@ function SwitchRow({
 	);
 }
 
-/** Dokploy-style "Validate DNS" check against the host being typed. */
+/** "Validate DNS" check against the host being typed. */
 function DnsValidationRow({host}: {host: string}) {
 	const validation = useValidateDomainDns();
 	const [validatedHost, setValidatedHost] = useState('');
 	const trimmed = host.trim();
 	const result = validatedHost === trimmed ? validation.data : undefined;
-	// Auto-validate (Dokploy style) once the host looks complete and typing settled.
+	// Auto-validate (style) once the host looks complete and typing settled.
 	useEffect(() => {
 		if (!trimmed || (validatedHost === trimmed && !validation.isError))
 			return;

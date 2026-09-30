@@ -1,4 +1,4 @@
-//! Dokploy-style `template.toml` resolution using a real TOML parser.
+//! `template.toml` resolution using a real TOML parser.
 //! Generators: `${password:N}`, `${base64:N}`, `${hex:N}`, `${uuid}`,
 //! `${domain}`, `${email}`, `${username}`, `${timestamp}`. Unknown `${...}`
 //! refs are left verbatim for downstream compose interpolation.
@@ -96,7 +96,7 @@ pub fn expand_env_template(env_block: &str) -> String {
         .join("\n")
 }
 
-/// Resolves a Dokploy `template.toml`. `server_ip` (when known) yields a
+/// Resolves a `template.toml`. `server_ip` (when known) yields a
 /// reachable `sslip.io` placeholder domain. `None` when the TOML has no env
 /// entries and no domains.
 pub fn resolve_template_toml(template_toml: &str, server_ip: Option<&str>) -> Option<ResolvedTemplate> {

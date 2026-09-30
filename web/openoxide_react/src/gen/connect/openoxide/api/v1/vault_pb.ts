@@ -2,684 +2,714 @@
 // @generated from file openoxide/api/v1/vault.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/vault.proto.
  */
-export const file_openoxide_api_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChxvcGVub3hpZGUvYXBpL3YxL3ZhdWx0LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxItsCCg1WYXVsdFByb3ZpZGVyEgoKAmlkGAEgASgDEgwKBG5hbWUYAiABKAkSOgoNcHJvdmlkZXJfdHlwZRgDIAEoDjIjLm9wZW5veGlkZS5hcGkudjEuVmF1bHRQcm92aWRlclR5cGUSDwoHYXBpX3VybBgEIAEoCRISCgphdXRoX3Rva2VuGAUgASgJEhYKCW5hbWVzcGFjZRgGIAEoCUgAiAEBEhgKC2NvbmZpZ19qc29uGAcgASgJSAGIAQESFwoPb3JnYW5pemF0aW9uX2lkGAggASgDEhIKCmNyZWF0ZWRfYXQYCSABKAMSEgoKdXBkYXRlZF9hdBgKIAEoAxI+Cgthc3NpZ25tZW50cxgLIAMoCzIpLm9wZW5veGlkZS5hcGkudjEuVmF1bHRQcm92aWRlckFzc2lnbm1lbnRCDAoKX25hbWVzcGFjZUIOCgxfY29uZmlnX2pzb24iRgoXVmF1bHRQcm92aWRlckFzc2lnbm1lbnQSEgoKcHJvamVjdF9pZBgBIAEoAxIXCg9lbnZpcm9ubWVudF9pZHMYAiADKAMiGwoZTGlzdFZhdWx0UHJvdmlkZXJzUmVxdWVzdCJQChpMaXN0VmF1bHRQcm92aWRlcnNSZXNwb25zZRIyCglwcm92aWRlcnMYASADKAsyHy5vcGVub3hpZGUuYXBpLnYxLlZhdWx0UHJvdmlkZXIiLgoXR2V0VmF1bHRQcm92aWRlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiTQoYR2V0VmF1bHRQcm92aWRlclJlc3BvbnNlEjEKCHByb3ZpZGVyGAEgASgLMh8ub3Blbm94aWRlLmFwaS52MS5WYXVsdFByb3ZpZGVyIscCChpDcmVhdGVWYXVsdFByb3ZpZGVyUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEkYKDXByb3ZpZGVyX3R5cGUYAiABKA4yIy5vcGVub3hpZGUuYXBpLnYxLlZhdWx0UHJvdmlkZXJUeXBlQgq6SAeCAQQQASAAEhgKB2FwaV91cmwYAyABKAlCB7pIBHICEAESEgoKYXV0aF90b2tlbhgEIAEoCRIWCgluYW1lc3BhY2UYBSABKAlIAIgBARIjCgtjb25maWdfanNvbhgGIAEoCUIJukgGcgQYgIBASAGIAQESPgoLYXNzaWdubWVudHMYByADKAsyKS5vcGVub3hpZGUuYXBpLnYxLlZhdWx0UHJvdmlkZXJBc3NpZ25tZW50QgwKCl9uYW1lc3BhY2VCDgoMX2NvbmZpZ19qc29uIlAKG0NyZWF0ZVZhdWx0UHJvdmlkZXJSZXNwb25zZRIxCghwcm92aWRlchgBIAEoCzIfLm9wZW5veGlkZS5hcGkudjEuVmF1bHRQcm92aWRlciLQAgoaVXBkYXRlVmF1bHRQcm92aWRlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASGwoEbmFtZRgCIAEoCUIIukgFcgMY/wFIAIgBARIUCgdhcGlfdXJsGAMgASgJSAGIAQESFwoKYXV0aF90b2tlbhgEIAEoCUgCiAEBEhYKCW5hbWVzcGFjZRgFIAEoCUgDiAEBEiMKC2NvbmZpZ19qc29uGAYgASgJQgm6SAZyBBiAgEBIBIgBARJCCgthc3NpZ25tZW50cxgHIAEoCzIoLm9wZW5veGlkZS5hcGkudjEuVmF1bHRBc3NpZ25tZW50c1VwZGF0ZUgFiAEBQgcKBV9uYW1lQgoKCF9hcGlfdXJsQg0KC19hdXRoX3Rva2VuQgwKCl9uYW1lc3BhY2VCDgoMX2NvbmZpZ19qc29uQg4KDF9hc3NpZ25tZW50cyJYChZWYXVsdEFzc2lnbm1lbnRzVXBkYXRlEj4KC2Fzc2lnbm1lbnRzGAEgAygLMikub3Blbm94aWRlLmFwaS52MS5WYXVsdFByb3ZpZGVyQXNzaWdubWVudCJQChtVcGRhdGVWYXVsdFByb3ZpZGVyUmVzcG9uc2USMQoIcHJvdmlkZXIYASABKAsyHy5vcGVub3hpZGUuYXBpLnYxLlZhdWx0UHJvdmlkZXIiMQoaRGVsZXRlVmF1bHRQcm92aWRlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiLwoYVGVzdFZhdWx0UHJvdmlkZXJSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIj0KGVRlc3RWYXVsdFByb3ZpZGVyUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJIu0BChpUZXN0VmF1bHRDb25uZWN0aW9uUmVxdWVzdBJGCg1wcm92aWRlcl90eXBlGAEgASgOMiMub3Blbm94aWRlLmFwaS52MS5WYXVsdFByb3ZpZGVyVHlwZUIKukgHggEEEAEgABIYCgdhcGlfdXJsGAIgASgJQge6SARyAhABEhIKCmF1dGhfdG9rZW4YAyABKAkSFgoJbmFtZXNwYWNlGAQgASgJSACIAQESIwoLY29uZmlnX2pzb24YBSABKAlCCbpIBnIEGICAQEgBiAEBQgwKCl9uYW1lc3BhY2VCDgoMX2NvbmZpZ19qc29uIj8KG1Rlc3RWYXVsdENvbm5lY3Rpb25SZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkiNwoXTGlzdFZhdWx0U2VjcmV0c1JlcXVlc3QSHAoLcHJvdmlkZXJfaWQYASABKANCB7pIBCICIAAiKwoYTGlzdFZhdWx0U2VjcmV0c1Jlc3BvbnNlEg8KB3NlY3JldHMYASADKAkiOwobTGlzdFZhdWx0QXNzaWdubWVudHNSZXF1ZXN0EhwKC3Byb3ZpZGVyX2lkGAEgASgDQge6SAQiAiAAIl4KHExpc3RWYXVsdEFzc2lnbm1lbnRzUmVzcG9uc2USPgoLYXNzaWdubWVudHMYASADKAsyKS5vcGVub3hpZGUuYXBpLnYxLlZhdWx0UHJvdmlkZXJBc3NpZ25tZW50In0KHVVwZGF0ZVZhdWx0QXNzaWdubWVudHNSZXF1ZXN0EhwKC3Byb3ZpZGVyX2lkGAEgASgDQge6SAQiAiAAEj4KC2Fzc2lnbm1lbnRzGAIgAygLMikub3Blbm94aWRlLmFwaS52MS5WYXVsdFByb3ZpZGVyQXNzaWdubWVudCJgCh5VcGRhdGVWYXVsdEFzc2lnbm1lbnRzUmVzcG9uc2USPgoLYXNzaWdubWVudHMYASADKAsyKS5vcGVub3hpZGUuYXBpLnYxLlZhdWx0UHJvdmlkZXJBc3NpZ25tZW50KqoCChFWYXVsdFByb3ZpZGVyVHlwZRIjCh9WQVVMVF9QUk9WSURFUl9UWVBFX1VOU1BFQ0lGSUVEEAASIQodVkFVTFRfUFJPVklERVJfVFlQRV9IQVNISUNPUlAQARIhCh1WQVVMVF9QUk9WSURFUl9UWVBFX0lORklTSUNBTBACEh8KG1ZBVUxUX1BST1ZJREVSX1RZUEVfRE9QUExFUhADEhsKF1ZBVUxUX1BST1ZJREVSX1RZUEVfQVdTEAQSKwonVkFVTFRfUFJPVklERVJfVFlQRV9BV1NfUEFSQU1FVEVSX1NUT1JFEAUSIAocVkFVTFRfUFJPVklERVJfVFlQRV9TQ0FMRVdBWRAGEh0KGVZBVUxUX1BST1ZJREVSX1RZUEVfQVpVUkUQBzK/CAoMVmF1bHRTZXJ2aWNlEmoKDUxpc3RQcm92aWRlcnMSKy5vcGVub3hpZGUuYXBpLnYxLkxpc3RWYXVsdFByb3ZpZGVyc1JlcXVlc3QaLC5vcGVub3hpZGUuYXBpLnYxLkxpc3RWYXVsdFByb3ZpZGVyc1Jlc3BvbnNlEmQKC0dldFByb3ZpZGVyEikub3Blbm94aWRlLmFwaS52MS5HZXRWYXVsdFByb3ZpZGVyUmVxdWVzdBoqLm9wZW5veGlkZS5hcGkudjEuR2V0VmF1bHRQcm92aWRlclJlc3BvbnNlEm0KDkNyZWF0ZVByb3ZpZGVyEiwub3Blbm94aWRlLmFwaS52MS5DcmVhdGVWYXVsdFByb3ZpZGVyUmVxdWVzdBotLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlVmF1bHRQcm92aWRlclJlc3BvbnNlEm0KDlVwZGF0ZVByb3ZpZGVyEiwub3Blbm94aWRlLmFwaS52MS5VcGRhdGVWYXVsdFByb3ZpZGVyUmVxdWVzdBotLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlVmF1bHRQcm92aWRlclJlc3BvbnNlElcKDkRlbGV0ZVByb3ZpZGVyEiwub3Blbm94aWRlLmFwaS52MS5EZWxldGVWYXVsdFByb3ZpZGVyUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSZwoMVGVzdFByb3ZpZGVyEioub3Blbm94aWRlLmFwaS52MS5UZXN0VmF1bHRQcm92aWRlclJlcXVlc3QaKy5vcGVub3hpZGUuYXBpLnYxLlRlc3RWYXVsdFByb3ZpZGVyUmVzcG9uc2USbQoOVGVzdENvbm5lY3Rpb24SLC5vcGVub3hpZGUuYXBpLnYxLlRlc3RWYXVsdENvbm5lY3Rpb25SZXF1ZXN0Gi0ub3Blbm94aWRlLmFwaS52MS5UZXN0VmF1bHRDb25uZWN0aW9uUmVzcG9uc2USZAoLTGlzdFNlY3JldHMSKS5vcGVub3hpZGUuYXBpLnYxLkxpc3RWYXVsdFNlY3JldHNSZXF1ZXN0Gioub3Blbm94aWRlLmFwaS52MS5MaXN0VmF1bHRTZWNyZXRzUmVzcG9uc2UScAoPTGlzdEFzc2lnbm1lbnRzEi0ub3Blbm94aWRlLmFwaS52MS5MaXN0VmF1bHRBc3NpZ25tZW50c1JlcXVlc3QaLi5vcGVub3hpZGUuYXBpLnYxLkxpc3RWYXVsdEFzc2lnbm1lbnRzUmVzcG9uc2USdgoRVXBkYXRlQXNzaWdubWVudHMSLy5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZVZhdWx0QXNzaWdubWVudHNSZXF1ZXN0GjAub3Blbm94aWRlLmFwaS52MS5VcGRhdGVWYXVsdEFzc2lnbm1lbnRzUmVzcG9uc2ViBnByb3RvMw", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_vault: GenFile /*@__PURE__*/ = fileDesc(
+	'ChxvcGVub3hpZGUvYXBpL3YxL3ZhdWx0LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxItsCCg1WYXVsdFByb3ZpZGVyEgoKAmlkGAEgASgDEgwKBG5hbWUYAiABKAkSOgoNcHJvdmlkZXJfdHlwZRgDIAEoDjIjLm9wZW5veGlkZS5hcGkudjEuVmF1bHRQcm92aWRlclR5cGUSDwoHYXBpX3VybBgEIAEoCRISCgphdXRoX3Rva2VuGAUgASgJEhYKCW5hbWVzcGFjZRgGIAEoCUgAiAEBEhgKC2NvbmZpZ19qc29uGAcgASgJSAGIAQESFwoPb3JnYW5pemF0aW9uX2lkGAggASgDEhIKCmNyZWF0ZWRfYXQYCSABKAMSEgoKdXBkYXRlZF9hdBgKIAEoAxI+Cgthc3NpZ25tZW50cxgLIAMoCzIpLm9wZW5veGlkZS5hcGkudjEuVmF1bHRQcm92aWRlckFzc2lnbm1lbnRCDAoKX25hbWVzcGFjZUIOCgxfY29uZmlnX2pzb24iRgoXVmF1bHRQcm92aWRlckFzc2lnbm1lbnQSEgoKcHJvamVjdF9pZBgBIAEoAxIXCg9lbnZpcm9ubWVudF9pZHMYAiADKAMiGwoZTGlzdFZhdWx0UHJvdmlkZXJzUmVxdWVzdCJQChpMaXN0VmF1bHRQcm92aWRlcnNSZXNwb25zZRIyCglwcm92aWRlcnMYASADKAsyHy5vcGVub3hpZGUuYXBpLnYxLlZhdWx0UHJvdmlkZXIiLgoXR2V0VmF1bHRQcm92aWRlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiTQoYR2V0VmF1bHRQcm92aWRlclJlc3BvbnNlEjEKCHByb3ZpZGVyGAEgASgLMh8ub3Blbm94aWRlLmFwaS52MS5WYXVsdFByb3ZpZGVyIscCChpDcmVhdGVWYXVsdFByb3ZpZGVyUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEkYKDXByb3ZpZGVyX3R5cGUYAiABKA4yIy5vcGVub3hpZGUuYXBpLnYxLlZhdWx0UHJvdmlkZXJUeXBlQgq6SAeCAQQQASAAEhgKB2FwaV91cmwYAyABKAlCB7pIBHICEAESEgoKYXV0aF90b2tlbhgEIAEoCRIWCgluYW1lc3BhY2UYBSABKAlIAIgBARIjCgtjb25maWdfanNvbhgGIAEoCUIJukgGcgQYgIBASAGIAQESPgoLYXNzaWdubWVudHMYByADKAsyKS5vcGVub3hpZGUuYXBpLnYxLlZhdWx0UHJvdmlkZXJBc3NpZ25tZW50QgwKCl9uYW1lc3BhY2VCDgoMX2NvbmZpZ19qc29uIlAKG0NyZWF0ZVZhdWx0UHJvdmlkZXJSZXNwb25zZRIxCghwcm92aWRlchgBIAEoCzIfLm9wZW5veGlkZS5hcGkudjEuVmF1bHRQcm92aWRlciLQAgoaVXBkYXRlVmF1bHRQcm92aWRlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASGwoEbmFtZRgCIAEoCUIIukgFcgMY/wFIAIgBARIUCgdhcGlfdXJsGAMgASgJSAGIAQESFwoKYXV0aF90b2tlbhgEIAEoCUgCiAEBEhYKCW5hbWVzcGFjZRgFIAEoCUgDiAEBEiMKC2NvbmZpZ19qc29uGAYgASgJQgm6SAZyBBiAgEBIBIgBARJCCgthc3NpZ25tZW50cxgHIAEoCzIoLm9wZW5veGlkZS5hcGkudjEuVmF1bHRBc3NpZ25tZW50c1VwZGF0ZUgFiAEBQgcKBV9uYW1lQgoKCF9hcGlfdXJsQg0KC19hdXRoX3Rva2VuQgwKCl9uYW1lc3BhY2VCDgoMX2NvbmZpZ19qc29uQg4KDF9hc3NpZ25tZW50cyJYChZWYXVsdEFzc2lnbm1lbnRzVXBkYXRlEj4KC2Fzc2lnbm1lbnRzGAEgAygLMikub3Blbm94aWRlLmFwaS52MS5WYXVsdFByb3ZpZGVyQXNzaWdubWVudCJQChtVcGRhdGVWYXVsdFByb3ZpZGVyUmVzcG9uc2USMQoIcHJvdmlkZXIYASABKAsyHy5vcGVub3hpZGUuYXBpLnYxLlZhdWx0UHJvdmlkZXIiMQoaRGVsZXRlVmF1bHRQcm92aWRlclJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiLwoYVGVzdFZhdWx0UHJvdmlkZXJSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIj0KGVRlc3RWYXVsdFByb3ZpZGVyUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJIu0BChpUZXN0VmF1bHRDb25uZWN0aW9uUmVxdWVzdBJGCg1wcm92aWRlcl90eXBlGAEgASgOMiMub3Blbm94aWRlLmFwaS52MS5WYXVsdFByb3ZpZGVyVHlwZUIKukgHggEEEAEgABIYCgdhcGlfdXJsGAIgASgJQge6SARyAhABEhIKCmF1dGhfdG9rZW4YAyABKAkSFgoJbmFtZXNwYWNlGAQgASgJSACIAQESIwoLY29uZmlnX2pzb24YBSABKAlCCbpIBnIEGICAQEgBiAEBQgwKCl9uYW1lc3BhY2VCDgoMX2NvbmZpZ19qc29uIj8KG1Rlc3RWYXVsdENvbm5lY3Rpb25SZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkiNwoXTGlzdFZhdWx0U2VjcmV0c1JlcXVlc3QSHAoLcHJvdmlkZXJfaWQYASABKANCB7pIBCICIAAiKwoYTGlzdFZhdWx0U2VjcmV0c1Jlc3BvbnNlEg8KB3NlY3JldHMYASADKAkiOwobTGlzdFZhdWx0QXNzaWdubWVudHNSZXF1ZXN0EhwKC3Byb3ZpZGVyX2lkGAEgASgDQge6SAQiAiAAIl4KHExpc3RWYXVsdEFzc2lnbm1lbnRzUmVzcG9uc2USPgoLYXNzaWdubWVudHMYASADKAsyKS5vcGVub3hpZGUuYXBpLnYxLlZhdWx0UHJvdmlkZXJBc3NpZ25tZW50In0KHVVwZGF0ZVZhdWx0QXNzaWdubWVudHNSZXF1ZXN0EhwKC3Byb3ZpZGVyX2lkGAEgASgDQge6SAQiAiAAEj4KC2Fzc2lnbm1lbnRzGAIgAygLMikub3Blbm94aWRlLmFwaS52MS5WYXVsdFByb3ZpZGVyQXNzaWdubWVudCJgCh5VcGRhdGVWYXVsdEFzc2lnbm1lbnRzUmVzcG9uc2USPgoLYXNzaWdubWVudHMYASADKAsyKS5vcGVub3hpZGUuYXBpLnYxLlZhdWx0UHJvdmlkZXJBc3NpZ25tZW50KqoCChFWYXVsdFByb3ZpZGVyVHlwZRIjCh9WQVVMVF9QUk9WSURFUl9UWVBFX1VOU1BFQ0lGSUVEEAASIQodVkFVTFRfUFJPVklERVJfVFlQRV9IQVNISUNPUlAQARIhCh1WQVVMVF9QUk9WSURFUl9UWVBFX0lORklTSUNBTBACEh8KG1ZBVUxUX1BST1ZJREVSX1RZUEVfRE9QUExFUhADEhsKF1ZBVUxUX1BST1ZJREVSX1RZUEVfQVdTEAQSKwonVkFVTFRfUFJPVklERVJfVFlQRV9BV1NfUEFSQU1FVEVSX1NUT1JFEAUSIAocVkFVTFRfUFJPVklERVJfVFlQRV9TQ0FMRVdBWRAGEh0KGVZBVUxUX1BST1ZJREVSX1RZUEVfQVpVUkUQBzK/CAoMVmF1bHRTZXJ2aWNlEmoKDUxpc3RQcm92aWRlcnMSKy5vcGVub3hpZGUuYXBpLnYxLkxpc3RWYXVsdFByb3ZpZGVyc1JlcXVlc3QaLC5vcGVub3hpZGUuYXBpLnYxLkxpc3RWYXVsdFByb3ZpZGVyc1Jlc3BvbnNlEmQKC0dldFByb3ZpZGVyEikub3Blbm94aWRlLmFwaS52MS5HZXRWYXVsdFByb3ZpZGVyUmVxdWVzdBoqLm9wZW5veGlkZS5hcGkudjEuR2V0VmF1bHRQcm92aWRlclJlc3BvbnNlEm0KDkNyZWF0ZVByb3ZpZGVyEiwub3Blbm94aWRlLmFwaS52MS5DcmVhdGVWYXVsdFByb3ZpZGVyUmVxdWVzdBotLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlVmF1bHRQcm92aWRlclJlc3BvbnNlEm0KDlVwZGF0ZVByb3ZpZGVyEiwub3Blbm94aWRlLmFwaS52MS5VcGRhdGVWYXVsdFByb3ZpZGVyUmVxdWVzdBotLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlVmF1bHRQcm92aWRlclJlc3BvbnNlElcKDkRlbGV0ZVByb3ZpZGVyEiwub3Blbm94aWRlLmFwaS52MS5EZWxldGVWYXVsdFByb3ZpZGVyUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSZwoMVGVzdFByb3ZpZGVyEioub3Blbm94aWRlLmFwaS52MS5UZXN0VmF1bHRQcm92aWRlclJlcXVlc3QaKy5vcGVub3hpZGUuYXBpLnYxLlRlc3RWYXVsdFByb3ZpZGVyUmVzcG9uc2USbQoOVGVzdENvbm5lY3Rpb24SLC5vcGVub3hpZGUuYXBpLnYxLlRlc3RWYXVsdENvbm5lY3Rpb25SZXF1ZXN0Gi0ub3Blbm94aWRlLmFwaS52MS5UZXN0VmF1bHRDb25uZWN0aW9uUmVzcG9uc2USZAoLTGlzdFNlY3JldHMSKS5vcGVub3hpZGUuYXBpLnYxLkxpc3RWYXVsdFNlY3JldHNSZXF1ZXN0Gioub3Blbm94aWRlLmFwaS52MS5MaXN0VmF1bHRTZWNyZXRzUmVzcG9uc2UScAoPTGlzdEFzc2lnbm1lbnRzEi0ub3Blbm94aWRlLmFwaS52MS5MaXN0VmF1bHRBc3NpZ25tZW50c1JlcXVlc3QaLi5vcGVub3hpZGUuYXBpLnYxLkxpc3RWYXVsdEFzc2lnbm1lbnRzUmVzcG9uc2USdgoRVXBkYXRlQXNzaWdubWVudHMSLy5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZVZhdWx0QXNzaWdubWVudHNSZXF1ZXN0GjAub3Blbm94aWRlLmFwaS52MS5VcGRhdGVWYXVsdEFzc2lnbm1lbnRzUmVzcG9uc2ViBnByb3RvMw',
+	[file_openoxide_api_v1_common, file_buf_validate_validate],
+);
 
 /**
  * @generated from message openoxide.api.v1.VaultProvider
  */
-export type VaultProvider = Message<"openoxide.api.v1.VaultProvider"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type VaultProvider = Message<'openoxide.api.v1.VaultProvider'> & {
+	/**
+	 * @generated from field: int64 id = 1;
+	 */
+	id: bigint;
 
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
+	/**
+	 * @generated from field: string name = 2;
+	 */
+	name: string;
 
-  /**
-   * @generated from field: openoxide.api.v1.VaultProviderType provider_type = 3;
-   */
-  providerType: VaultProviderType;
+	/**
+	 * @generated from field: openoxide.api.v1.VaultProviderType provider_type = 3;
+	 */
+	providerType: VaultProviderType;
 
-  /**
-   * @generated from field: string api_url = 4;
-   */
-  apiUrl: string;
+	/**
+	 * @generated from field: string api_url = 4;
+	 */
+	apiUrl: string;
 
-  /**
-   * Masked server-side once a token is stored; never the real secret.
-   *
-   * @generated from field: string auth_token = 5;
-   */
-  authToken: string;
+	/**
+	 * Masked server-side once a token is stored; never the real secret.
+	 *
+	 * @generated from field: string auth_token = 5;
+	 */
+	authToken: string;
 
-  /**
-   * @generated from field: optional string namespace = 6;
-   */
-  namespace?: string | undefined;
+	/**
+	 * @generated from field: optional string namespace = 6;
+	 */
+	namespace?: string | undefined;
 
-  /**
-   * Provider-specific settings document (also carries `_assignments`).
-   *
-   * @generated from field: optional string config_json = 7;
-   */
-  configJson?: string | undefined;
+	/**
+	 * Provider-specific settings document (also carries `_assignments`).
+	 *
+	 * @generated from field: optional string config_json = 7;
+	 */
+	configJson?: string | undefined;
 
-  /**
-   * @generated from field: int64 organization_id = 8;
-   */
-  organizationId: bigint;
+	/**
+	 * @generated from field: int64 organization_id = 8;
+	 */
+	organizationId: bigint;
 
-  /**
-   * @generated from field: int64 created_at = 9;
-   */
-  createdAt: bigint;
+	/**
+	 * @generated from field: int64 created_at = 9;
+	 */
+	createdAt: bigint;
 
-  /**
-   * @generated from field: int64 updated_at = 10;
-   */
-  updatedAt: bigint;
+	/**
+	 * @generated from field: int64 updated_at = 10;
+	 */
+	updatedAt: bigint;
 
-  /**
-   * @generated from field: repeated openoxide.api.v1.VaultProviderAssignment assignments = 11;
-   */
-  assignments: VaultProviderAssignment[];
+	/**
+	 * @generated from field: repeated openoxide.api.v1.VaultProviderAssignment assignments = 11;
+	 */
+	assignments: VaultProviderAssignment[];
 };
 
 /**
  * Describes the message openoxide.api.v1.VaultProvider.
  * Use `create(VaultProviderSchema)` to create a new message.
  */
-export const VaultProviderSchema: GenMessage<VaultProvider> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 0);
+export const VaultProviderSchema: GenMessage<VaultProvider> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 0);
 
 /**
  * @generated from message openoxide.api.v1.VaultProviderAssignment
  */
-export type VaultProviderAssignment = Message<"openoxide.api.v1.VaultProviderAssignment"> & {
-  /**
-   * @generated from field: int64 project_id = 1;
-   */
-  projectId: bigint;
+export type VaultProviderAssignment =
+	Message<'openoxide.api.v1.VaultProviderAssignment'> & {
+		/**
+		 * @generated from field: int64 project_id = 1;
+		 */
+		projectId: bigint;
 
-  /**
-   * @generated from field: repeated int64 environment_ids = 2;
-   */
-  environmentIds: bigint[];
-};
+		/**
+		 * @generated from field: repeated int64 environment_ids = 2;
+		 */
+		environmentIds: bigint[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.VaultProviderAssignment.
  * Use `create(VaultProviderAssignmentSchema)` to create a new message.
  */
-export const VaultProviderAssignmentSchema: GenMessage<VaultProviderAssignment> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 1);
+export const VaultProviderAssignmentSchema: GenMessage<VaultProviderAssignment> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 1);
 
 /**
  * @generated from message openoxide.api.v1.ListVaultProvidersRequest
  */
-export type ListVaultProvidersRequest = Message<"openoxide.api.v1.ListVaultProvidersRequest"> & {
-};
+export type ListVaultProvidersRequest =
+	Message<'openoxide.api.v1.ListVaultProvidersRequest'> & {};
 
 /**
  * Describes the message openoxide.api.v1.ListVaultProvidersRequest.
  * Use `create(ListVaultProvidersRequestSchema)` to create a new message.
  */
-export const ListVaultProvidersRequestSchema: GenMessage<ListVaultProvidersRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 2);
+export const ListVaultProvidersRequestSchema: GenMessage<ListVaultProvidersRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 2);
 
 /**
  * @generated from message openoxide.api.v1.ListVaultProvidersResponse
  */
-export type ListVaultProvidersResponse = Message<"openoxide.api.v1.ListVaultProvidersResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.VaultProvider providers = 1;
-   */
-  providers: VaultProvider[];
-};
+export type ListVaultProvidersResponse =
+	Message<'openoxide.api.v1.ListVaultProvidersResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.VaultProvider providers = 1;
+		 */
+		providers: VaultProvider[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListVaultProvidersResponse.
  * Use `create(ListVaultProvidersResponseSchema)` to create a new message.
  */
-export const ListVaultProvidersResponseSchema: GenMessage<ListVaultProvidersResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 3);
+export const ListVaultProvidersResponseSchema: GenMessage<ListVaultProvidersResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 3);
 
 /**
  * @generated from message openoxide.api.v1.GetVaultProviderRequest
  */
-export type GetVaultProviderRequest = Message<"openoxide.api.v1.GetVaultProviderRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type GetVaultProviderRequest =
+	Message<'openoxide.api.v1.GetVaultProviderRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GetVaultProviderRequest.
  * Use `create(GetVaultProviderRequestSchema)` to create a new message.
  */
-export const GetVaultProviderRequestSchema: GenMessage<GetVaultProviderRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 4);
+export const GetVaultProviderRequestSchema: GenMessage<GetVaultProviderRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 4);
 
 /**
  * @generated from message openoxide.api.v1.GetVaultProviderResponse
  */
-export type GetVaultProviderResponse = Message<"openoxide.api.v1.GetVaultProviderResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.VaultProvider provider = 1;
-   */
-  provider?: VaultProvider | undefined;
-};
+export type GetVaultProviderResponse =
+	Message<'openoxide.api.v1.GetVaultProviderResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.VaultProvider provider = 1;
+		 */
+		provider?: VaultProvider | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GetVaultProviderResponse.
  * Use `create(GetVaultProviderResponseSchema)` to create a new message.
  */
-export const GetVaultProviderResponseSchema: GenMessage<GetVaultProviderResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 5);
+export const GetVaultProviderResponseSchema: GenMessage<GetVaultProviderResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 5);
 
 /**
  * @generated from message openoxide.api.v1.CreateVaultProviderRequest
  */
-export type CreateVaultProviderRequest = Message<"openoxide.api.v1.CreateVaultProviderRequest"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
+export type CreateVaultProviderRequest =
+	Message<'openoxide.api.v1.CreateVaultProviderRequest'> & {
+		/**
+		 * @generated from field: string name = 1;
+		 */
+		name: string;
 
-  /**
-   * @generated from field: openoxide.api.v1.VaultProviderType provider_type = 2;
-   */
-  providerType: VaultProviderType;
+		/**
+		 * @generated from field: openoxide.api.v1.VaultProviderType provider_type = 2;
+		 */
+		providerType: VaultProviderType;
 
-  /**
-   * @generated from field: string api_url = 3;
-   */
-  apiUrl: string;
+		/**
+		 * @generated from field: string api_url = 3;
+		 */
+		apiUrl: string;
 
-  /**
-   * @generated from field: string auth_token = 4;
-   */
-  authToken: string;
+		/**
+		 * @generated from field: string auth_token = 4;
+		 */
+		authToken: string;
 
-  /**
-   * @generated from field: optional string namespace = 5;
-   */
-  namespace?: string | undefined;
+		/**
+		 * @generated from field: optional string namespace = 5;
+		 */
+		namespace?: string | undefined;
 
-  /**
-   * @generated from field: optional string config_json = 6;
-   */
-  configJson?: string | undefined;
+		/**
+		 * @generated from field: optional string config_json = 6;
+		 */
+		configJson?: string | undefined;
 
-  /**
-   * @generated from field: repeated openoxide.api.v1.VaultProviderAssignment assignments = 7;
-   */
-  assignments: VaultProviderAssignment[];
-};
+		/**
+		 * @generated from field: repeated openoxide.api.v1.VaultProviderAssignment assignments = 7;
+		 */
+		assignments: VaultProviderAssignment[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.CreateVaultProviderRequest.
  * Use `create(CreateVaultProviderRequestSchema)` to create a new message.
  */
-export const CreateVaultProviderRequestSchema: GenMessage<CreateVaultProviderRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 6);
+export const CreateVaultProviderRequestSchema: GenMessage<CreateVaultProviderRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 6);
 
 /**
  * @generated from message openoxide.api.v1.CreateVaultProviderResponse
  */
-export type CreateVaultProviderResponse = Message<"openoxide.api.v1.CreateVaultProviderResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.VaultProvider provider = 1;
-   */
-  provider?: VaultProvider | undefined;
-};
+export type CreateVaultProviderResponse =
+	Message<'openoxide.api.v1.CreateVaultProviderResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.VaultProvider provider = 1;
+		 */
+		provider?: VaultProvider | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.CreateVaultProviderResponse.
  * Use `create(CreateVaultProviderResponseSchema)` to create a new message.
  */
-export const CreateVaultProviderResponseSchema: GenMessage<CreateVaultProviderResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 7);
+export const CreateVaultProviderResponseSchema: GenMessage<CreateVaultProviderResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 7);
 
 /**
  * provider_type is immutable after creation; an absent auth_token keeps the stored token, a present-but-empty one clears it; `assignments` must be a full replacement list, absent means "leave unchanged".
  *
  * @generated from message openoxide.api.v1.UpdateVaultProviderRequest
  */
-export type UpdateVaultProviderRequest = Message<"openoxide.api.v1.UpdateVaultProviderRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type UpdateVaultProviderRequest =
+	Message<'openoxide.api.v1.UpdateVaultProviderRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: optional string name = 2;
-   */
-  name?: string | undefined;
+		/**
+		 * @generated from field: optional string name = 2;
+		 */
+		name?: string | undefined;
 
-  /**
-   * @generated from field: optional string api_url = 3;
-   */
-  apiUrl?: string | undefined;
+		/**
+		 * @generated from field: optional string api_url = 3;
+		 */
+		apiUrl?: string | undefined;
 
-  /**
-   * @generated from field: optional string auth_token = 4;
-   */
-  authToken?: string | undefined;
+		/**
+		 * @generated from field: optional string auth_token = 4;
+		 */
+		authToken?: string | undefined;
 
-  /**
-   * @generated from field: optional string namespace = 5;
-   */
-  namespace?: string | undefined;
+		/**
+		 * @generated from field: optional string namespace = 5;
+		 */
+		namespace?: string | undefined;
 
-  /**
-   * @generated from field: optional string config_json = 6;
-   */
-  configJson?: string | undefined;
+		/**
+		 * @generated from field: optional string config_json = 6;
+		 */
+		configJson?: string | undefined;
 
-  /**
-   * @generated from field: optional openoxide.api.v1.VaultAssignmentsUpdate assignments = 7;
-   */
-  assignments?: VaultAssignmentsUpdate | undefined;
-};
+		/**
+		 * @generated from field: optional openoxide.api.v1.VaultAssignmentsUpdate assignments = 7;
+		 */
+		assignments?: VaultAssignmentsUpdate | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateVaultProviderRequest.
  * Use `create(UpdateVaultProviderRequestSchema)` to create a new message.
  */
-export const UpdateVaultProviderRequestSchema: GenMessage<UpdateVaultProviderRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 8);
+export const UpdateVaultProviderRequestSchema: GenMessage<UpdateVaultProviderRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 8);
 
 /**
  * @generated from message openoxide.api.v1.VaultAssignmentsUpdate
  */
-export type VaultAssignmentsUpdate = Message<"openoxide.api.v1.VaultAssignmentsUpdate"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.VaultProviderAssignment assignments = 1;
-   */
-  assignments: VaultProviderAssignment[];
-};
+export type VaultAssignmentsUpdate =
+	Message<'openoxide.api.v1.VaultAssignmentsUpdate'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.VaultProviderAssignment assignments = 1;
+		 */
+		assignments: VaultProviderAssignment[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.VaultAssignmentsUpdate.
  * Use `create(VaultAssignmentsUpdateSchema)` to create a new message.
  */
-export const VaultAssignmentsUpdateSchema: GenMessage<VaultAssignmentsUpdate> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 9);
+export const VaultAssignmentsUpdateSchema: GenMessage<VaultAssignmentsUpdate> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 9);
 
 /**
  * @generated from message openoxide.api.v1.UpdateVaultProviderResponse
  */
-export type UpdateVaultProviderResponse = Message<"openoxide.api.v1.UpdateVaultProviderResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.VaultProvider provider = 1;
-   */
-  provider?: VaultProvider | undefined;
-};
+export type UpdateVaultProviderResponse =
+	Message<'openoxide.api.v1.UpdateVaultProviderResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.VaultProvider provider = 1;
+		 */
+		provider?: VaultProvider | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateVaultProviderResponse.
  * Use `create(UpdateVaultProviderResponseSchema)` to create a new message.
  */
-export const UpdateVaultProviderResponseSchema: GenMessage<UpdateVaultProviderResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 10);
+export const UpdateVaultProviderResponseSchema: GenMessage<UpdateVaultProviderResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 10);
 
 /**
  * @generated from message openoxide.api.v1.DeleteVaultProviderRequest
  */
-export type DeleteVaultProviderRequest = Message<"openoxide.api.v1.DeleteVaultProviderRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type DeleteVaultProviderRequest =
+	Message<'openoxide.api.v1.DeleteVaultProviderRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.DeleteVaultProviderRequest.
  * Use `create(DeleteVaultProviderRequestSchema)` to create a new message.
  */
-export const DeleteVaultProviderRequestSchema: GenMessage<DeleteVaultProviderRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 11);
+export const DeleteVaultProviderRequestSchema: GenMessage<DeleteVaultProviderRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 11);
 
 /**
  * @generated from message openoxide.api.v1.TestVaultProviderRequest
  */
-export type TestVaultProviderRequest = Message<"openoxide.api.v1.TestVaultProviderRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type TestVaultProviderRequest =
+	Message<'openoxide.api.v1.TestVaultProviderRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TestVaultProviderRequest.
  * Use `create(TestVaultProviderRequestSchema)` to create a new message.
  */
-export const TestVaultProviderRequestSchema: GenMessage<TestVaultProviderRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 12);
+export const TestVaultProviderRequestSchema: GenMessage<TestVaultProviderRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 12);
 
 /**
  * @generated from message openoxide.api.v1.TestVaultProviderResponse
  */
-export type TestVaultProviderResponse = Message<"openoxide.api.v1.TestVaultProviderResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+export type TestVaultProviderResponse =
+	Message<'openoxide.api.v1.TestVaultProviderResponse'> & {
+		/**
+		 * @generated from field: bool success = 1;
+		 */
+		success: boolean;
 
-  /**
-   * @generated from field: string message = 2;
-   */
-  message: string;
-};
+		/**
+		 * @generated from field: string message = 2;
+		 */
+		message: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TestVaultProviderResponse.
  * Use `create(TestVaultProviderResponseSchema)` to create a new message.
  */
-export const TestVaultProviderResponseSchema: GenMessage<TestVaultProviderResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 13);
+export const TestVaultProviderResponseSchema: GenMessage<TestVaultProviderResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 13);
 
 /**
  * Unsaved-credentials test used by the create dialog.
  *
  * @generated from message openoxide.api.v1.TestVaultConnectionRequest
  */
-export type TestVaultConnectionRequest = Message<"openoxide.api.v1.TestVaultConnectionRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.VaultProviderType provider_type = 1;
-   */
-  providerType: VaultProviderType;
+export type TestVaultConnectionRequest =
+	Message<'openoxide.api.v1.TestVaultConnectionRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.VaultProviderType provider_type = 1;
+		 */
+		providerType: VaultProviderType;
 
-  /**
-   * @generated from field: string api_url = 2;
-   */
-  apiUrl: string;
+		/**
+		 * @generated from field: string api_url = 2;
+		 */
+		apiUrl: string;
 
-  /**
-   * @generated from field: string auth_token = 3;
-   */
-  authToken: string;
+		/**
+		 * @generated from field: string auth_token = 3;
+		 */
+		authToken: string;
 
-  /**
-   * @generated from field: optional string namespace = 4;
-   */
-  namespace?: string | undefined;
+		/**
+		 * @generated from field: optional string namespace = 4;
+		 */
+		namespace?: string | undefined;
 
-  /**
-   * @generated from field: optional string config_json = 5;
-   */
-  configJson?: string | undefined;
-};
+		/**
+		 * @generated from field: optional string config_json = 5;
+		 */
+		configJson?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TestVaultConnectionRequest.
  * Use `create(TestVaultConnectionRequestSchema)` to create a new message.
  */
-export const TestVaultConnectionRequestSchema: GenMessage<TestVaultConnectionRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 14);
+export const TestVaultConnectionRequestSchema: GenMessage<TestVaultConnectionRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 14);
 
 /**
  * @generated from message openoxide.api.v1.TestVaultConnectionResponse
  */
-export type TestVaultConnectionResponse = Message<"openoxide.api.v1.TestVaultConnectionResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+export type TestVaultConnectionResponse =
+	Message<'openoxide.api.v1.TestVaultConnectionResponse'> & {
+		/**
+		 * @generated from field: bool success = 1;
+		 */
+		success: boolean;
 
-  /**
-   * @generated from field: string message = 2;
-   */
-  message: string;
-};
+		/**
+		 * @generated from field: string message = 2;
+		 */
+		message: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TestVaultConnectionResponse.
  * Use `create(TestVaultConnectionResponseSchema)` to create a new message.
  */
-export const TestVaultConnectionResponseSchema: GenMessage<TestVaultConnectionResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 15);
+export const TestVaultConnectionResponseSchema: GenMessage<TestVaultConnectionResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 15);
 
 /**
  * @generated from message openoxide.api.v1.ListVaultSecretsRequest
  */
-export type ListVaultSecretsRequest = Message<"openoxide.api.v1.ListVaultSecretsRequest"> & {
-  /**
-   * @generated from field: int64 provider_id = 1;
-   */
-  providerId: bigint;
-};
+export type ListVaultSecretsRequest =
+	Message<'openoxide.api.v1.ListVaultSecretsRequest'> & {
+		/**
+		 * @generated from field: int64 provider_id = 1;
+		 */
+		providerId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListVaultSecretsRequest.
  * Use `create(ListVaultSecretsRequestSchema)` to create a new message.
  */
-export const ListVaultSecretsRequestSchema: GenMessage<ListVaultSecretsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 16);
+export const ListVaultSecretsRequestSchema: GenMessage<ListVaultSecretsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 16);
 
 /**
  * @generated from message openoxide.api.v1.ListVaultSecretsResponse
  */
-export type ListVaultSecretsResponse = Message<"openoxide.api.v1.ListVaultSecretsResponse"> & {
-  /**
-   * @generated from field: repeated string secrets = 1;
-   */
-  secrets: string[];
-};
+export type ListVaultSecretsResponse =
+	Message<'openoxide.api.v1.ListVaultSecretsResponse'> & {
+		/**
+		 * @generated from field: repeated string secrets = 1;
+		 */
+		secrets: string[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListVaultSecretsResponse.
  * Use `create(ListVaultSecretsResponseSchema)` to create a new message.
  */
-export const ListVaultSecretsResponseSchema: GenMessage<ListVaultSecretsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 17);
+export const ListVaultSecretsResponseSchema: GenMessage<ListVaultSecretsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 17);
 
 /**
  * @generated from message openoxide.api.v1.ListVaultAssignmentsRequest
  */
-export type ListVaultAssignmentsRequest = Message<"openoxide.api.v1.ListVaultAssignmentsRequest"> & {
-  /**
-   * @generated from field: int64 provider_id = 1;
-   */
-  providerId: bigint;
-};
+export type ListVaultAssignmentsRequest =
+	Message<'openoxide.api.v1.ListVaultAssignmentsRequest'> & {
+		/**
+		 * @generated from field: int64 provider_id = 1;
+		 */
+		providerId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListVaultAssignmentsRequest.
  * Use `create(ListVaultAssignmentsRequestSchema)` to create a new message.
  */
-export const ListVaultAssignmentsRequestSchema: GenMessage<ListVaultAssignmentsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 18);
+export const ListVaultAssignmentsRequestSchema: GenMessage<ListVaultAssignmentsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 18);
 
 /**
  * @generated from message openoxide.api.v1.ListVaultAssignmentsResponse
  */
-export type ListVaultAssignmentsResponse = Message<"openoxide.api.v1.ListVaultAssignmentsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.VaultProviderAssignment assignments = 1;
-   */
-  assignments: VaultProviderAssignment[];
-};
+export type ListVaultAssignmentsResponse =
+	Message<'openoxide.api.v1.ListVaultAssignmentsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.VaultProviderAssignment assignments = 1;
+		 */
+		assignments: VaultProviderAssignment[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListVaultAssignmentsResponse.
  * Use `create(ListVaultAssignmentsResponseSchema)` to create a new message.
  */
-export const ListVaultAssignmentsResponseSchema: GenMessage<ListVaultAssignmentsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 19);
+export const ListVaultAssignmentsResponseSchema: GenMessage<ListVaultAssignmentsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 19);
 
 /**
  * Full replacement of the provider's assignment list.
  *
  * @generated from message openoxide.api.v1.UpdateVaultAssignmentsRequest
  */
-export type UpdateVaultAssignmentsRequest = Message<"openoxide.api.v1.UpdateVaultAssignmentsRequest"> & {
-  /**
-   * @generated from field: int64 provider_id = 1;
-   */
-  providerId: bigint;
+export type UpdateVaultAssignmentsRequest =
+	Message<'openoxide.api.v1.UpdateVaultAssignmentsRequest'> & {
+		/**
+		 * @generated from field: int64 provider_id = 1;
+		 */
+		providerId: bigint;
 
-  /**
-   * @generated from field: repeated openoxide.api.v1.VaultProviderAssignment assignments = 2;
-   */
-  assignments: VaultProviderAssignment[];
-};
+		/**
+		 * @generated from field: repeated openoxide.api.v1.VaultProviderAssignment assignments = 2;
+		 */
+		assignments: VaultProviderAssignment[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateVaultAssignmentsRequest.
  * Use `create(UpdateVaultAssignmentsRequestSchema)` to create a new message.
  */
-export const UpdateVaultAssignmentsRequestSchema: GenMessage<UpdateVaultAssignmentsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 20);
+export const UpdateVaultAssignmentsRequestSchema: GenMessage<UpdateVaultAssignmentsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 20);
 
 /**
  * @generated from message openoxide.api.v1.UpdateVaultAssignmentsResponse
  */
-export type UpdateVaultAssignmentsResponse = Message<"openoxide.api.v1.UpdateVaultAssignmentsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.VaultProviderAssignment assignments = 1;
-   */
-  assignments: VaultProviderAssignment[];
-};
+export type UpdateVaultAssignmentsResponse =
+	Message<'openoxide.api.v1.UpdateVaultAssignmentsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.VaultProviderAssignment assignments = 1;
+		 */
+		assignments: VaultProviderAssignment[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateVaultAssignmentsResponse.
  * Use `create(UpdateVaultAssignmentsResponseSchema)` to create a new message.
  */
-export const UpdateVaultAssignmentsResponseSchema: GenMessage<UpdateVaultAssignmentsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_vault, 21);
+export const UpdateVaultAssignmentsResponseSchema: GenMessage<UpdateVaultAssignmentsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_vault, 21);
 
 /**
  * @generated from enum openoxide.api.v1.VaultProviderType
  */
 export enum VaultProviderType {
-  /**
-   * @generated from enum value: VAULT_PROVIDER_TYPE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: VAULT_PROVIDER_TYPE_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: VAULT_PROVIDER_TYPE_HASHICORP = 1;
-   */
-  HASHICORP = 1,
+	/**
+	 * @generated from enum value: VAULT_PROVIDER_TYPE_HASHICORP = 1;
+	 */
+	HASHICORP = 1,
 
-  /**
-   * @generated from enum value: VAULT_PROVIDER_TYPE_INFISICAL = 2;
-   */
-  INFISICAL = 2,
+	/**
+	 * @generated from enum value: VAULT_PROVIDER_TYPE_INFISICAL = 2;
+	 */
+	INFISICAL = 2,
 
-  /**
-   * @generated from enum value: VAULT_PROVIDER_TYPE_DOPPLER = 3;
-   */
-  DOPPLER = 3,
+	/**
+	 * @generated from enum value: VAULT_PROVIDER_TYPE_DOPPLER = 3;
+	 */
+	DOPPLER = 3,
 
-  /**
-   * @generated from enum value: VAULT_PROVIDER_TYPE_AWS = 4;
-   */
-  AWS = 4,
+	/**
+	 * @generated from enum value: VAULT_PROVIDER_TYPE_AWS = 4;
+	 */
+	AWS = 4,
 
-  /**
-   * @generated from enum value: VAULT_PROVIDER_TYPE_AWS_PARAMETER_STORE = 5;
-   */
-  AWS_PARAMETER_STORE = 5,
+	/**
+	 * @generated from enum value: VAULT_PROVIDER_TYPE_AWS_PARAMETER_STORE = 5;
+	 */
+	AWS_PARAMETER_STORE = 5,
 
-  /**
-   * @generated from enum value: VAULT_PROVIDER_TYPE_SCALEWAY = 6;
-   */
-  SCALEWAY = 6,
+	/**
+	 * @generated from enum value: VAULT_PROVIDER_TYPE_SCALEWAY = 6;
+	 */
+	SCALEWAY = 6,
 
-  /**
-   * @generated from enum value: VAULT_PROVIDER_TYPE_AZURE = 7;
-   */
-  AZURE = 7,
+	/**
+	 * @generated from enum value: VAULT_PROVIDER_TYPE_AZURE = 7;
+	 */
+	AZURE = 7,
 }
 
 /**
  * Describes the enum openoxide.api.v1.VaultProviderType.
  */
-export const VaultProviderTypeSchema: GenEnum<VaultProviderType> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_vault, 0);
+export const VaultProviderTypeSchema: GenEnum<VaultProviderType> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_vault, 0);
 
 /**
  * @generated from service openoxide.api.v1.VaultService
  */
 export const VaultService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.VaultService.ListProviders
-   */
-  listProviders: {
-    methodKind: "unary";
-    input: typeof ListVaultProvidersRequestSchema;
-    output: typeof ListVaultProvidersResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.VaultService.GetProvider
-   */
-  getProvider: {
-    methodKind: "unary";
-    input: typeof GetVaultProviderRequestSchema;
-    output: typeof GetVaultProviderResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.VaultService.CreateProvider
-   */
-  createProvider: {
-    methodKind: "unary";
-    input: typeof CreateVaultProviderRequestSchema;
-    output: typeof CreateVaultProviderResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.VaultService.UpdateProvider
-   */
-  updateProvider: {
-    methodKind: "unary";
-    input: typeof UpdateVaultProviderRequestSchema;
-    output: typeof UpdateVaultProviderResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.VaultService.DeleteProvider
-   */
-  deleteProvider: {
-    methodKind: "unary";
-    input: typeof DeleteVaultProviderRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.VaultService.TestProvider
-   */
-  testProvider: {
-    methodKind: "unary";
-    input: typeof TestVaultProviderRequestSchema;
-    output: typeof TestVaultProviderResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.VaultService.TestConnection
-   */
-  testConnection: {
-    methodKind: "unary";
-    input: typeof TestVaultConnectionRequestSchema;
-    output: typeof TestVaultConnectionResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.VaultService.ListSecrets
-   */
-  listSecrets: {
-    methodKind: "unary";
-    input: typeof ListVaultSecretsRequestSchema;
-    output: typeof ListVaultSecretsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.VaultService.ListAssignments
-   */
-  listAssignments: {
-    methodKind: "unary";
-    input: typeof ListVaultAssignmentsRequestSchema;
-    output: typeof ListVaultAssignmentsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.VaultService.UpdateAssignments
-   */
-  updateAssignments: {
-    methodKind: "unary";
-    input: typeof UpdateVaultAssignmentsRequestSchema;
-    output: typeof UpdateVaultAssignmentsResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_vault, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.VaultService.ListProviders
+	 */
+	listProviders: {
+		methodKind: 'unary';
+		input: typeof ListVaultProvidersRequestSchema;
+		output: typeof ListVaultProvidersResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.VaultService.GetProvider
+	 */
+	getProvider: {
+		methodKind: 'unary';
+		input: typeof GetVaultProviderRequestSchema;
+		output: typeof GetVaultProviderResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.VaultService.CreateProvider
+	 */
+	createProvider: {
+		methodKind: 'unary';
+		input: typeof CreateVaultProviderRequestSchema;
+		output: typeof CreateVaultProviderResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.VaultService.UpdateProvider
+	 */
+	updateProvider: {
+		methodKind: 'unary';
+		input: typeof UpdateVaultProviderRequestSchema;
+		output: typeof UpdateVaultProviderResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.VaultService.DeleteProvider
+	 */
+	deleteProvider: {
+		methodKind: 'unary';
+		input: typeof DeleteVaultProviderRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.VaultService.TestProvider
+	 */
+	testProvider: {
+		methodKind: 'unary';
+		input: typeof TestVaultProviderRequestSchema;
+		output: typeof TestVaultProviderResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.VaultService.TestConnection
+	 */
+	testConnection: {
+		methodKind: 'unary';
+		input: typeof TestVaultConnectionRequestSchema;
+		output: typeof TestVaultConnectionResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.VaultService.ListSecrets
+	 */
+	listSecrets: {
+		methodKind: 'unary';
+		input: typeof ListVaultSecretsRequestSchema;
+		output: typeof ListVaultSecretsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.VaultService.ListAssignments
+	 */
+	listAssignments: {
+		methodKind: 'unary';
+		input: typeof ListVaultAssignmentsRequestSchema;
+		output: typeof ListVaultAssignmentsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.VaultService.UpdateAssignments
+	 */
+	updateAssignments: {
+		methodKind: 'unary';
+		input: typeof UpdateVaultAssignmentsRequestSchema;
+		output: typeof UpdateVaultAssignmentsResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_vault, 0);

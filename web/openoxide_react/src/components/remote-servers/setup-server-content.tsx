@@ -1,12 +1,6 @@
 import {useState} from 'react';
 import type {LucideIcon} from 'lucide-react';
-import {
-	CheckCircle2,
-	Cpu,
-	Plug,
-	RefreshCw,
-	Terminal,
-} from 'lucide-react';
+import {CheckCircle2, Cpu, Plug, RefreshCw, Terminal} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {Label} from '#/components/ui/label';
@@ -129,9 +123,7 @@ export function SetupServerContent({
 					}
 					busy={settingUp}
 					busyLabel="Setting up…"
-					idleLabel={
-						setupState === 'failed' ? 'Retry Setup' : 'Run Setup'
-					}
+					idleLabel={setupState === 'failed' ? 'Retry Setup' : 'Run Setup'}
 					primary
 					disabled={connOk === false}
 					onClick={() => void setup(advertiseAddr, sudoPassword)}
@@ -151,9 +143,7 @@ export function SetupServerContent({
 					/>
 				</div>
 				<div className="flex flex-col gap-1.5">
-					<Label className="text-xs font-semibold">
-						Sudo password
-					</Label>
+					<Label className="text-xs font-semibold">Sudo password</Label>
 					<Input
 						type="password"
 						value={sudoPassword}
@@ -164,9 +154,9 @@ export function SetupServerContent({
 				</div>
 			</div>
 			<p className="shrink-0 text-[11px] text-muted-foreground">
-				Advertise address auto-detects VPN interfaces when left blank;
-				sudo password is only needed when the SSH user isn&rsquo;t root
-				or lacks passwordless sudo.
+				Advertise address auto-detects VPN interfaces when left blank; sudo
+				password is only needed when the SSH user isn&rsquo;t root or lacks
+				passwordless sudo.
 			</p>
 
 			{(settingUp || setupLogs.length > 0) && (
@@ -187,9 +177,7 @@ export function SetupServerContent({
 					<div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px] text-muted-foreground">
 						<span>
 							Docker:{' '}
-							{auditResult.docker_installed
-								? 'Installed'
-								: 'Missing'}
+							{auditResult.docker_installed ? 'Installed' : 'Missing'}
 						</span>
 						<span>Arch: {String(auditResult.arch || 'x86_64')}</span>
 						<span>OS: {String(auditResult.os || 'Linux')}</span>

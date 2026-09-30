@@ -7,10 +7,7 @@ import {
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
-import {
-	ListRegion,
-	SectionHeader,
-} from '#/components/settings/list-card';
+import {ListRegion, SectionHeader} from '#/components/settings/list-card';
 import {TemplateCard} from './template-card';
 import {TemplateListItem} from './template-list-item';
 import {TemplateDetailDialog} from './template-detail-dialog';

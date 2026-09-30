@@ -14,10 +14,7 @@ import {
 	type ProjectsView,
 } from '#/components/projects/dashboard/projects-toolbar';
 import {EmptyState} from '#/components/projects/dashboard/empty-state';
-import {
-	ListRegion,
-	SectionHeader,
-} from '#/components/settings/list-card';
+import {ListRegion, SectionHeader} from '#/components/settings/list-card';
 import {HandleProjectDialog} from '#/components/projects/dashboard/handle-project-dialog';
 import {useProjectsList} from '#/hooks/projects/list/use-projects-list';
 import {

@@ -4,7 +4,7 @@ use serde_json::Value;
 
 use crate::services::integrations::vault::{VaultSecretListDto, VaultTestResultDto};
 
-/// AWS Systems Manager Parameter Store (mirrors dokploy's
+/// AWS Systems Manager Parameter Store (mirrors the standard 
 /// `aws-parameter-store` vault type). Config JSON:
 /// `{"region": "...", "accessKeyId": "...", "secretAccessKey": "...",
 ///  "endpoint": "optional", "parameterPath": "/optional/prefix"}`.

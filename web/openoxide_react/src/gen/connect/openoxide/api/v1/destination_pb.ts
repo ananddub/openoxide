@@ -2,419 +2,438 @@
 // @generated from file openoxide/api/v1/destination.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/destination.proto.
  */
-export const file_openoxide_api_v1_destination: GenFile = /*@__PURE__*/
-  fileDesc("CiJvcGVub3hpZGUvYXBpL3YxL2Rlc3RpbmF0aW9uLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxItsBCgtEZXN0aW5hdGlvbhIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhAKCHByb3ZpZGVyGAMgASgJEhIKCmFjY2Vzc19rZXkYBCABKAkSGQoRc2VjcmV0X2FjY2Vzc19rZXkYBSABKAkSDgoGYnVja2V0GAYgASgJEg4KBnJlZ2lvbhgHIAEoCRIQCghlbmRwb2ludBgIIAEoCRIXCg9vcmdhbml6YXRpb25faWQYCSABKAMSEgoKY3JlYXRlZF9hdBgKIAEoAxISCgp1cGRhdGVkX2F0GAsgASgDIhkKF0xpc3REZXN0aW5hdGlvbnNSZXF1ZXN0Ik8KGExpc3REZXN0aW5hdGlvbnNSZXNwb25zZRIzCgxkZXN0aW5hdGlvbnMYASADKAsyHS5vcGVub3hpZGUuYXBpLnYxLkRlc3RpbmF0aW9uIiwKFUdldERlc3RpbmF0aW9uUmVxdWVzdBITCgJpZBgBIAEoCUIHukgEcgIQASJMChZHZXREZXN0aW5hdGlvblJlc3BvbnNlEjIKC2Rlc3RpbmF0aW9uGAEgASgLMh0ub3Blbm94aWRlLmFwaS52MS5EZXN0aW5hdGlvbiK5AQoYQ3JlYXRlRGVzdGluYXRpb25SZXF1ZXN0EhgKBG5hbWUYASABKAlCCrpIB3IFEAEY/wESGQoIcHJvdmlkZXIYAiABKAlCB7pIBHICEAESEgoKYWNjZXNzX2tleRgDIAEoCRIZChFzZWNyZXRfYWNjZXNzX2tleRgEIAEoCRIXCgZidWNrZXQYBSABKAlCB7pIBHICEAESDgoGcmVnaW9uGAYgASgJEhAKCGVuZHBvaW50GAcgASgJIk8KGUNyZWF0ZURlc3RpbmF0aW9uUmVzcG9uc2USMgoLZGVzdGluYXRpb24YASABKAsyHS5vcGVub3hpZGUuYXBpLnYxLkRlc3RpbmF0aW9uIrsCChhVcGRhdGVEZXN0aW5hdGlvblJlcXVlc3QSEwoCaWQYASABKAlCB7pIBHICEAESGwoEbmFtZRgCIAEoCUIIukgFcgMY/wFIAIgBARIVCghwcm92aWRlchgDIAEoCUgBiAEBEhcKCmFjY2Vzc19rZXkYBCABKAlIAogBARIeChFzZWNyZXRfYWNjZXNzX2tleRgFIAEoCUgDiAEBEhMKBmJ1Y2tldBgGIAEoCUgEiAEBEhMKBnJlZ2lvbhgHIAEoCUgFiAEBEhUKCGVuZHBvaW50GAggASgJSAaIAQFCBwoFX25hbWVCCwoJX3Byb3ZpZGVyQg0KC19hY2Nlc3Nfa2V5QhQKEl9zZWNyZXRfYWNjZXNzX2tleUIJCgdfYnVja2V0QgkKB19yZWdpb25CCwoJX2VuZHBvaW50Ik8KGVVwZGF0ZURlc3RpbmF0aW9uUmVzcG9uc2USMgoLZGVzdGluYXRpb24YASABKAsyHS5vcGVub3hpZGUuYXBpLnYxLkRlc3RpbmF0aW9uIi8KGERlbGV0ZURlc3RpbmF0aW9uUmVxdWVzdBITCgJpZBgBIAEoCUIHukgEcgIQASKdAQoWVGVzdERlc3RpbmF0aW9uUmVxdWVzdBIZCghwcm92aWRlchgBIAEoCUIHukgEcgIQARISCgphY2Nlc3Nfa2V5GAIgASgJEhkKEXNlY3JldF9hY2Nlc3Nfa2V5GAMgASgJEhcKBmJ1Y2tldBgEIAEoCUIHukgEcgIQARIOCgZyZWdpb24YBSABKAkSEAoIZW5kcG9pbnQYBiABKAkiKgoXVGVzdERlc3RpbmF0aW9uUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCDKCBQoSRGVzdGluYXRpb25TZXJ2aWNlEmkKEExpc3REZXN0aW5hdGlvbnMSKS5vcGVub3hpZGUuYXBpLnYxLkxpc3REZXN0aW5hdGlvbnNSZXF1ZXN0Gioub3Blbm94aWRlLmFwaS52MS5MaXN0RGVzdGluYXRpb25zUmVzcG9uc2USYwoOR2V0RGVzdGluYXRpb24SJy5vcGVub3hpZGUuYXBpLnYxLkdldERlc3RpbmF0aW9uUmVxdWVzdBooLm9wZW5veGlkZS5hcGkudjEuR2V0RGVzdGluYXRpb25SZXNwb25zZRJsChFDcmVhdGVEZXN0aW5hdGlvbhIqLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlRGVzdGluYXRpb25SZXF1ZXN0Gisub3Blbm94aWRlLmFwaS52MS5DcmVhdGVEZXN0aW5hdGlvblJlc3BvbnNlEmwKEVVwZGF0ZURlc3RpbmF0aW9uEioub3Blbm94aWRlLmFwaS52MS5VcGRhdGVEZXN0aW5hdGlvblJlcXVlc3QaKy5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZURlc3RpbmF0aW9uUmVzcG9uc2USWAoRRGVsZXRlRGVzdGluYXRpb24SKi5vcGVub3hpZGUuYXBpLnYxLkRlbGV0ZURlc3RpbmF0aW9uUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSZgoPVGVzdERlc3RpbmF0aW9uEigub3Blbm94aWRlLmFwaS52MS5UZXN0RGVzdGluYXRpb25SZXF1ZXN0Gikub3Blbm94aWRlLmFwaS52MS5UZXN0RGVzdGluYXRpb25SZXNwb25zZWIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_destination: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'CiJvcGVub3hpZGUvYXBpL3YxL2Rlc3RpbmF0aW9uLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxItsBCgtEZXN0aW5hdGlvbhIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhAKCHByb3ZpZGVyGAMgASgJEhIKCmFjY2Vzc19rZXkYBCABKAkSGQoRc2VjcmV0X2FjY2Vzc19rZXkYBSABKAkSDgoGYnVja2V0GAYgASgJEg4KBnJlZ2lvbhgHIAEoCRIQCghlbmRwb2ludBgIIAEoCRIXCg9vcmdhbml6YXRpb25faWQYCSABKAMSEgoKY3JlYXRlZF9hdBgKIAEoAxISCgp1cGRhdGVkX2F0GAsgASgDIhkKF0xpc3REZXN0aW5hdGlvbnNSZXF1ZXN0Ik8KGExpc3REZXN0aW5hdGlvbnNSZXNwb25zZRIzCgxkZXN0aW5hdGlvbnMYASADKAsyHS5vcGVub3hpZGUuYXBpLnYxLkRlc3RpbmF0aW9uIiwKFUdldERlc3RpbmF0aW9uUmVxdWVzdBITCgJpZBgBIAEoCUIHukgEcgIQASJMChZHZXREZXN0aW5hdGlvblJlc3BvbnNlEjIKC2Rlc3RpbmF0aW9uGAEgASgLMh0ub3Blbm94aWRlLmFwaS52MS5EZXN0aW5hdGlvbiK5AQoYQ3JlYXRlRGVzdGluYXRpb25SZXF1ZXN0EhgKBG5hbWUYASABKAlCCrpIB3IFEAEY/wESGQoIcHJvdmlkZXIYAiABKAlCB7pIBHICEAESEgoKYWNjZXNzX2tleRgDIAEoCRIZChFzZWNyZXRfYWNjZXNzX2tleRgEIAEoCRIXCgZidWNrZXQYBSABKAlCB7pIBHICEAESDgoGcmVnaW9uGAYgASgJEhAKCGVuZHBvaW50GAcgASgJIk8KGUNyZWF0ZURlc3RpbmF0aW9uUmVzcG9uc2USMgoLZGVzdGluYXRpb24YASABKAsyHS5vcGVub3hpZGUuYXBpLnYxLkRlc3RpbmF0aW9uIrsCChhVcGRhdGVEZXN0aW5hdGlvblJlcXVlc3QSEwoCaWQYASABKAlCB7pIBHICEAESGwoEbmFtZRgCIAEoCUIIukgFcgMY/wFIAIgBARIVCghwcm92aWRlchgDIAEoCUgBiAEBEhcKCmFjY2Vzc19rZXkYBCABKAlIAogBARIeChFzZWNyZXRfYWNjZXNzX2tleRgFIAEoCUgDiAEBEhMKBmJ1Y2tldBgGIAEoCUgEiAEBEhMKBnJlZ2lvbhgHIAEoCUgFiAEBEhUKCGVuZHBvaW50GAggASgJSAaIAQFCBwoFX25hbWVCCwoJX3Byb3ZpZGVyQg0KC19hY2Nlc3Nfa2V5QhQKEl9zZWNyZXRfYWNjZXNzX2tleUIJCgdfYnVja2V0QgkKB19yZWdpb25CCwoJX2VuZHBvaW50Ik8KGVVwZGF0ZURlc3RpbmF0aW9uUmVzcG9uc2USMgoLZGVzdGluYXRpb24YASABKAsyHS5vcGVub3hpZGUuYXBpLnYxLkRlc3RpbmF0aW9uIi8KGERlbGV0ZURlc3RpbmF0aW9uUmVxdWVzdBITCgJpZBgBIAEoCUIHukgEcgIQASKdAQoWVGVzdERlc3RpbmF0aW9uUmVxdWVzdBIZCghwcm92aWRlchgBIAEoCUIHukgEcgIQARISCgphY2Nlc3Nfa2V5GAIgASgJEhkKEXNlY3JldF9hY2Nlc3Nfa2V5GAMgASgJEhcKBmJ1Y2tldBgEIAEoCUIHukgEcgIQARIOCgZyZWdpb24YBSABKAkSEAoIZW5kcG9pbnQYBiABKAkiKgoXVGVzdERlc3RpbmF0aW9uUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCDKCBQoSRGVzdGluYXRpb25TZXJ2aWNlEmkKEExpc3REZXN0aW5hdGlvbnMSKS5vcGVub3hpZGUuYXBpLnYxLkxpc3REZXN0aW5hdGlvbnNSZXF1ZXN0Gioub3Blbm94aWRlLmFwaS52MS5MaXN0RGVzdGluYXRpb25zUmVzcG9uc2USYwoOR2V0RGVzdGluYXRpb24SJy5vcGVub3hpZGUuYXBpLnYxLkdldERlc3RpbmF0aW9uUmVxdWVzdBooLm9wZW5veGlkZS5hcGkudjEuR2V0RGVzdGluYXRpb25SZXNwb25zZRJsChFDcmVhdGVEZXN0aW5hdGlvbhIqLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlRGVzdGluYXRpb25SZXF1ZXN0Gisub3Blbm94aWRlLmFwaS52MS5DcmVhdGVEZXN0aW5hdGlvblJlc3BvbnNlEmwKEVVwZGF0ZURlc3RpbmF0aW9uEioub3Blbm94aWRlLmFwaS52MS5VcGRhdGVEZXN0aW5hdGlvblJlcXVlc3QaKy5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZURlc3RpbmF0aW9uUmVzcG9uc2USWAoRRGVsZXRlRGVzdGluYXRpb24SKi5vcGVub3hpZGUuYXBpLnYxLkRlbGV0ZURlc3RpbmF0aW9uUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSZgoPVGVzdERlc3RpbmF0aW9uEigub3Blbm94aWRlLmFwaS52MS5UZXN0RGVzdGluYXRpb25SZXF1ZXN0Gikub3Blbm94aWRlLmFwaS52MS5UZXN0RGVzdGluYXRpb25SZXNwb25zZWIGcHJvdG8z',
+		[file_openoxide_api_v1_common, file_buf_validate_validate],
+	);
 
 /**
  * @generated from message openoxide.api.v1.Destination
  */
-export type Destination = Message<"openoxide.api.v1.Destination"> & {
-  /**
-   * UUID primary key.
-   *
-   * @generated from field: string id = 1;
-   */
-  id: string;
+export type Destination = Message<'openoxide.api.v1.Destination'> & {
+	/**
+	 * UUID primary key.
+	 *
+	 * @generated from field: string id = 1;
+	 */
+	id: string;
 
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
+	/**
+	 * @generated from field: string name = 2;
+	 */
+	name: string;
 
-  /**
-   * rclone provider label (S3, R2, BACKBLAZE, MINIO, WASABI, ...).
-   *
-   * @generated from field: string provider = 3;
-   */
-  provider: string;
+	/**
+	 * rclone provider label (S3, R2, BACKBLAZE, MINIO, WASABI, ...).
+	 *
+	 * @generated from field: string provider = 3;
+	 */
+	provider: string;
 
-  /**
-   * @generated from field: string access_key = 4;
-   */
-  accessKey: string;
+	/**
+	 * @generated from field: string access_key = 4;
+	 */
+	accessKey: string;
 
-  /**
-   * @generated from field: string secret_access_key = 5;
-   */
-  secretAccessKey: string;
+	/**
+	 * @generated from field: string secret_access_key = 5;
+	 */
+	secretAccessKey: string;
 
-  /**
-   * @generated from field: string bucket = 6;
-   */
-  bucket: string;
+	/**
+	 * @generated from field: string bucket = 6;
+	 */
+	bucket: string;
 
-  /**
-   * @generated from field: string region = 7;
-   */
-  region: string;
+	/**
+	 * @generated from field: string region = 7;
+	 */
+	region: string;
 
-  /**
-   * @generated from field: string endpoint = 8;
-   */
-  endpoint: string;
+	/**
+	 * @generated from field: string endpoint = 8;
+	 */
+	endpoint: string;
 
-  /**
-   * @generated from field: int64 organization_id = 9;
-   */
-  organizationId: bigint;
+	/**
+	 * @generated from field: int64 organization_id = 9;
+	 */
+	organizationId: bigint;
 
-  /**
-   * @generated from field: int64 created_at = 10;
-   */
-  createdAt: bigint;
+	/**
+	 * @generated from field: int64 created_at = 10;
+	 */
+	createdAt: bigint;
 
-  /**
-   * @generated from field: int64 updated_at = 11;
-   */
-  updatedAt: bigint;
+	/**
+	 * @generated from field: int64 updated_at = 11;
+	 */
+	updatedAt: bigint;
 };
 
 /**
  * Describes the message openoxide.api.v1.Destination.
  * Use `create(DestinationSchema)` to create a new message.
  */
-export const DestinationSchema: GenMessage<Destination> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_destination, 0);
+export const DestinationSchema: GenMessage<Destination> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_destination, 0);
 
 /**
  * @generated from message openoxide.api.v1.ListDestinationsRequest
  */
-export type ListDestinationsRequest = Message<"openoxide.api.v1.ListDestinationsRequest"> & {
-};
+export type ListDestinationsRequest =
+	Message<'openoxide.api.v1.ListDestinationsRequest'> & {};
 
 /**
  * Describes the message openoxide.api.v1.ListDestinationsRequest.
  * Use `create(ListDestinationsRequestSchema)` to create a new message.
  */
-export const ListDestinationsRequestSchema: GenMessage<ListDestinationsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_destination, 1);
+export const ListDestinationsRequestSchema: GenMessage<ListDestinationsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_destination, 1);
 
 /**
  * @generated from message openoxide.api.v1.ListDestinationsResponse
  */
-export type ListDestinationsResponse = Message<"openoxide.api.v1.ListDestinationsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Destination destinations = 1;
-   */
-  destinations: Destination[];
-};
+export type ListDestinationsResponse =
+	Message<'openoxide.api.v1.ListDestinationsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Destination destinations = 1;
+		 */
+		destinations: Destination[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListDestinationsResponse.
  * Use `create(ListDestinationsResponseSchema)` to create a new message.
  */
-export const ListDestinationsResponseSchema: GenMessage<ListDestinationsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_destination, 2);
+export const ListDestinationsResponseSchema: GenMessage<ListDestinationsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_destination, 2);
 
 /**
  * @generated from message openoxide.api.v1.GetDestinationRequest
  */
-export type GetDestinationRequest = Message<"openoxide.api.v1.GetDestinationRequest"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-};
+export type GetDestinationRequest =
+	Message<'openoxide.api.v1.GetDestinationRequest'> & {
+		/**
+		 * @generated from field: string id = 1;
+		 */
+		id: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GetDestinationRequest.
  * Use `create(GetDestinationRequestSchema)` to create a new message.
  */
-export const GetDestinationRequestSchema: GenMessage<GetDestinationRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_destination, 3);
+export const GetDestinationRequestSchema: GenMessage<GetDestinationRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_destination, 3);
 
 /**
  * @generated from message openoxide.api.v1.GetDestinationResponse
  */
-export type GetDestinationResponse = Message<"openoxide.api.v1.GetDestinationResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Destination destination = 1;
-   */
-  destination?: Destination | undefined;
-};
+export type GetDestinationResponse =
+	Message<'openoxide.api.v1.GetDestinationResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Destination destination = 1;
+		 */
+		destination?: Destination | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GetDestinationResponse.
  * Use `create(GetDestinationResponseSchema)` to create a new message.
  */
-export const GetDestinationResponseSchema: GenMessage<GetDestinationResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_destination, 4);
+export const GetDestinationResponseSchema: GenMessage<GetDestinationResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_destination, 4);
 
 /**
  * The authenticated organization always owns the created row.
  *
  * @generated from message openoxide.api.v1.CreateDestinationRequest
  */
-export type CreateDestinationRequest = Message<"openoxide.api.v1.CreateDestinationRequest"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
+export type CreateDestinationRequest =
+	Message<'openoxide.api.v1.CreateDestinationRequest'> & {
+		/**
+		 * @generated from field: string name = 1;
+		 */
+		name: string;
 
-  /**
-   * @generated from field: string provider = 2;
-   */
-  provider: string;
+		/**
+		 * @generated from field: string provider = 2;
+		 */
+		provider: string;
 
-  /**
-   * @generated from field: string access_key = 3;
-   */
-  accessKey: string;
+		/**
+		 * @generated from field: string access_key = 3;
+		 */
+		accessKey: string;
 
-  /**
-   * @generated from field: string secret_access_key = 4;
-   */
-  secretAccessKey: string;
+		/**
+		 * @generated from field: string secret_access_key = 4;
+		 */
+		secretAccessKey: string;
 
-  /**
-   * @generated from field: string bucket = 5;
-   */
-  bucket: string;
+		/**
+		 * @generated from field: string bucket = 5;
+		 */
+		bucket: string;
 
-  /**
-   * @generated from field: string region = 6;
-   */
-  region: string;
+		/**
+		 * @generated from field: string region = 6;
+		 */
+		region: string;
 
-  /**
-   * @generated from field: string endpoint = 7;
-   */
-  endpoint: string;
-};
+		/**
+		 * @generated from field: string endpoint = 7;
+		 */
+		endpoint: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.CreateDestinationRequest.
  * Use `create(CreateDestinationRequestSchema)` to create a new message.
  */
-export const CreateDestinationRequestSchema: GenMessage<CreateDestinationRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_destination, 5);
+export const CreateDestinationRequestSchema: GenMessage<CreateDestinationRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_destination, 5);
 
 /**
  * @generated from message openoxide.api.v1.CreateDestinationResponse
  */
-export type CreateDestinationResponse = Message<"openoxide.api.v1.CreateDestinationResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Destination destination = 1;
-   */
-  destination?: Destination | undefined;
-};
+export type CreateDestinationResponse =
+	Message<'openoxide.api.v1.CreateDestinationResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Destination destination = 1;
+		 */
+		destination?: Destination | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.CreateDestinationResponse.
  * Use `create(CreateDestinationResponseSchema)` to create a new message.
  */
-export const CreateDestinationResponseSchema: GenMessage<CreateDestinationResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_destination, 6);
+export const CreateDestinationResponseSchema: GenMessage<CreateDestinationResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_destination, 6);
 
 /**
  * @generated from message openoxide.api.v1.UpdateDestinationRequest
  */
-export type UpdateDestinationRequest = Message<"openoxide.api.v1.UpdateDestinationRequest"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
+export type UpdateDestinationRequest =
+	Message<'openoxide.api.v1.UpdateDestinationRequest'> & {
+		/**
+		 * @generated from field: string id = 1;
+		 */
+		id: string;
 
-  /**
-   * @generated from field: optional string name = 2;
-   */
-  name?: string | undefined;
+		/**
+		 * @generated from field: optional string name = 2;
+		 */
+		name?: string | undefined;
 
-  /**
-   * @generated from field: optional string provider = 3;
-   */
-  provider?: string | undefined;
+		/**
+		 * @generated from field: optional string provider = 3;
+		 */
+		provider?: string | undefined;
 
-  /**
-   * @generated from field: optional string access_key = 4;
-   */
-  accessKey?: string | undefined;
+		/**
+		 * @generated from field: optional string access_key = 4;
+		 */
+		accessKey?: string | undefined;
 
-  /**
-   * @generated from field: optional string secret_access_key = 5;
-   */
-  secretAccessKey?: string | undefined;
+		/**
+		 * @generated from field: optional string secret_access_key = 5;
+		 */
+		secretAccessKey?: string | undefined;
 
-  /**
-   * @generated from field: optional string bucket = 6;
-   */
-  bucket?: string | undefined;
+		/**
+		 * @generated from field: optional string bucket = 6;
+		 */
+		bucket?: string | undefined;
 
-  /**
-   * @generated from field: optional string region = 7;
-   */
-  region?: string | undefined;
+		/**
+		 * @generated from field: optional string region = 7;
+		 */
+		region?: string | undefined;
 
-  /**
-   * @generated from field: optional string endpoint = 8;
-   */
-  endpoint?: string | undefined;
-};
+		/**
+		 * @generated from field: optional string endpoint = 8;
+		 */
+		endpoint?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateDestinationRequest.
  * Use `create(UpdateDestinationRequestSchema)` to create a new message.
  */
-export const UpdateDestinationRequestSchema: GenMessage<UpdateDestinationRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_destination, 7);
+export const UpdateDestinationRequestSchema: GenMessage<UpdateDestinationRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_destination, 7);
 
 /**
  * @generated from message openoxide.api.v1.UpdateDestinationResponse
  */
-export type UpdateDestinationResponse = Message<"openoxide.api.v1.UpdateDestinationResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Destination destination = 1;
-   */
-  destination?: Destination | undefined;
-};
+export type UpdateDestinationResponse =
+	Message<'openoxide.api.v1.UpdateDestinationResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Destination destination = 1;
+		 */
+		destination?: Destination | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateDestinationResponse.
  * Use `create(UpdateDestinationResponseSchema)` to create a new message.
  */
-export const UpdateDestinationResponseSchema: GenMessage<UpdateDestinationResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_destination, 8);
+export const UpdateDestinationResponseSchema: GenMessage<UpdateDestinationResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_destination, 8);
 
 /**
  * @generated from message openoxide.api.v1.DeleteDestinationRequest
  */
-export type DeleteDestinationRequest = Message<"openoxide.api.v1.DeleteDestinationRequest"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-};
+export type DeleteDestinationRequest =
+	Message<'openoxide.api.v1.DeleteDestinationRequest'> & {
+		/**
+		 * @generated from field: string id = 1;
+		 */
+		id: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.DeleteDestinationRequest.
  * Use `create(DeleteDestinationRequestSchema)` to create a new message.
  */
-export const DeleteDestinationRequestSchema: GenMessage<DeleteDestinationRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_destination, 9);
+export const DeleteDestinationRequestSchema: GenMessage<DeleteDestinationRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_destination, 9);
 
 /**
  * Raw credentials test used before a destination row exists.
  *
  * @generated from message openoxide.api.v1.TestDestinationRequest
  */
-export type TestDestinationRequest = Message<"openoxide.api.v1.TestDestinationRequest"> & {
-  /**
-   * @generated from field: string provider = 1;
-   */
-  provider: string;
+export type TestDestinationRequest =
+	Message<'openoxide.api.v1.TestDestinationRequest'> & {
+		/**
+		 * @generated from field: string provider = 1;
+		 */
+		provider: string;
 
-  /**
-   * @generated from field: string access_key = 2;
-   */
-  accessKey: string;
+		/**
+		 * @generated from field: string access_key = 2;
+		 */
+		accessKey: string;
 
-  /**
-   * @generated from field: string secret_access_key = 3;
-   */
-  secretAccessKey: string;
+		/**
+		 * @generated from field: string secret_access_key = 3;
+		 */
+		secretAccessKey: string;
 
-  /**
-   * @generated from field: string bucket = 4;
-   */
-  bucket: string;
+		/**
+		 * @generated from field: string bucket = 4;
+		 */
+		bucket: string;
 
-  /**
-   * @generated from field: string region = 5;
-   */
-  region: string;
+		/**
+		 * @generated from field: string region = 5;
+		 */
+		region: string;
 
-  /**
-   * @generated from field: string endpoint = 6;
-   */
-  endpoint: string;
-};
+		/**
+		 * @generated from field: string endpoint = 6;
+		 */
+		endpoint: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TestDestinationRequest.
  * Use `create(TestDestinationRequestSchema)` to create a new message.
  */
-export const TestDestinationRequestSchema: GenMessage<TestDestinationRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_destination, 10);
+export const TestDestinationRequestSchema: GenMessage<TestDestinationRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_destination, 10);
 
 /**
  * @generated from message openoxide.api.v1.TestDestinationResponse
  */
-export type TestDestinationResponse = Message<"openoxide.api.v1.TestDestinationResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
-};
+export type TestDestinationResponse =
+	Message<'openoxide.api.v1.TestDestinationResponse'> & {
+		/**
+		 * @generated from field: bool success = 1;
+		 */
+		success: boolean;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TestDestinationResponse.
  * Use `create(TestDestinationResponseSchema)` to create a new message.
  */
-export const TestDestinationResponseSchema: GenMessage<TestDestinationResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_destination, 11);
+export const TestDestinationResponseSchema: GenMessage<TestDestinationResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_destination, 11);
 
 /**
  * @generated from service openoxide.api.v1.DestinationService
  */
 export const DestinationService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.DestinationService.ListDestinations
-   */
-  listDestinations: {
-    methodKind: "unary";
-    input: typeof ListDestinationsRequestSchema;
-    output: typeof ListDestinationsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DestinationService.GetDestination
-   */
-  getDestination: {
-    methodKind: "unary";
-    input: typeof GetDestinationRequestSchema;
-    output: typeof GetDestinationResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DestinationService.CreateDestination
-   */
-  createDestination: {
-    methodKind: "unary";
-    input: typeof CreateDestinationRequestSchema;
-    output: typeof CreateDestinationResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DestinationService.UpdateDestination
-   */
-  updateDestination: {
-    methodKind: "unary";
-    input: typeof UpdateDestinationRequestSchema;
-    output: typeof UpdateDestinationResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DestinationService.DeleteDestination
-   */
-  deleteDestination: {
-    methodKind: "unary";
-    input: typeof DeleteDestinationRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DestinationService.TestDestination
-   */
-  testDestination: {
-    methodKind: "unary";
-    input: typeof TestDestinationRequestSchema;
-    output: typeof TestDestinationResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_destination, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.DestinationService.ListDestinations
+	 */
+	listDestinations: {
+		methodKind: 'unary';
+		input: typeof ListDestinationsRequestSchema;
+		output: typeof ListDestinationsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DestinationService.GetDestination
+	 */
+	getDestination: {
+		methodKind: 'unary';
+		input: typeof GetDestinationRequestSchema;
+		output: typeof GetDestinationResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DestinationService.CreateDestination
+	 */
+	createDestination: {
+		methodKind: 'unary';
+		input: typeof CreateDestinationRequestSchema;
+		output: typeof CreateDestinationResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DestinationService.UpdateDestination
+	 */
+	updateDestination: {
+		methodKind: 'unary';
+		input: typeof UpdateDestinationRequestSchema;
+		output: typeof UpdateDestinationResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DestinationService.DeleteDestination
+	 */
+	deleteDestination: {
+		methodKind: 'unary';
+		input: typeof DeleteDestinationRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DestinationService.TestDestination
+	 */
+	testDestination: {
+		methodKind: 'unary';
+		input: typeof TestDestinationRequestSchema;
+		output: typeof TestDestinationResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_destination, 0);

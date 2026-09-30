@@ -36,7 +36,8 @@ const SIDEBAR_ROW =
 const SIDEBAR_LABEL =
 	'min-w-0 flex-1 truncate transition-opacity duration-200 ease-out motion-reduce:transition-none';
 /** Collapsed rail: (70px − the 36px icon cell) / 2 of left padding lands the cell dead centre. */
-const SIDEBAR_CENTER_X = 'pl-[calc((var(--sidebar-width-icon)_-_2.25rem)/2)]';
+const SIDEBAR_CENTER_X =
+	'pl-[calc((var(--sidebar-width-icon)_-_2.25rem)/2)]';
 /** One curve for the whole rail — the width, the row padding, the label fades and the active pill must land together. */
 const SIDEBAR_COLLAPSE =
 	'duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none';
@@ -236,7 +237,9 @@ function Sidebar({
 			<div
 				data-slot="sidebar-gap"
 				className={cn(
-					'relative w-(--sidebar-width) bg-transparent', SIDEBAR_COLLAPSE, 'transition-[width]',
+					'relative w-(--sidebar-width) bg-transparent',
+					SIDEBAR_COLLAPSE,
+					'transition-[width]',
 					'group-data-[collapsible=offcanvas]:w-0',
 					'group-data-[side=right]:rotate-180',
 					variant === 'floating' || variant === 'inset'
@@ -248,11 +251,13 @@ function Sidebar({
 				data-slot="sidebar-container"
 				data-side={side}
 				className={cn(
-					'fixed inset-y-0 top-0 z-10 hidden h-[100svh] w-(--sidebar-width)', SIDEBAR_COLLAPSE, 'transition-[left,right,width] data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:-left-(--sidebar-width) data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:-right-(--sidebar-width) md:flex',
+					'fixed inset-y-0 top-0 z-10 hidden h-[100svh] w-(--sidebar-width)',
+					SIDEBAR_COLLAPSE,
+					'transition-[left,right,width] data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:-left-(--sidebar-width) data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:-right-(--sidebar-width) md:flex',
 					// Adjust the padding for floating and inset variants.
 					variant === 'floating' || variant === 'inset'
 						? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
-						: 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l group-data-[side=left]:border-sidebar-border group-data-[side=right]:border-sidebar-border',
+						: 'group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=left]:border-sidebar-border group-data-[side=right]:border-l group-data-[side=right]:border-sidebar-border',
 					className,
 				)}
 				{...props}>
@@ -307,7 +312,9 @@ function SidebarRail({
 			onClick={toggleSidebar}
 			title="Toggle Sidebar"
 			className={cn(
-				'absolute inset-y-0 z-20 hidden w-4', SIDEBAR_COLLAPSE, 'transition-[left,right,transform] group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:inset-s-1/2 after:w-0.5 hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2',
+				'absolute inset-y-0 z-20 hidden w-4',
+				SIDEBAR_COLLAPSE,
+				'transition-[left,right,transform] group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:inset-s-1/2 after:w-0.5 hover:after:bg-sidebar-border sm:flex ltr:-translate-x-1/2 rtl:-translate-x-1/2',
 				'in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize',
 				'[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize',
 				'group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full hover:group-data-[collapsible=offcanvas]:bg-sidebar',

@@ -126,9 +126,9 @@ export function TemplateDeployDialog({
 				<SheetHeader>
 					<SheetTitle>Deploy {template?.name}</SheetTitle>
 					<SheetDescription className="text-xs">
-						Installs the template as a compose stack. Environment
-						variables from the template are pre-filled; adjust them
-						on the compose page before deploying.
+						Installs the template as a compose stack. Environment variables
+						from the template are pre-filled; adjust them on the compose
+						page before deploying.
 					</SheetDescription>
 				</SheetHeader>
 

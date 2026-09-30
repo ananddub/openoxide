@@ -40,7 +40,7 @@ impl ApplicationBuilder {
         self
     }
 
-    /// Scale the app's swarm services back up (no build) — Dokploy `start`.
+ /// Scale the app's swarm services back up (no build) `start`.
     pub async fn start(&self, spec: &ApplicationSpec, cancel: &CancellationToken) -> ExecResult<()> {
         self.ctx.emit(BuilderEvent::Message(format!("starting {}", spec.stack_name))).await;
         self.scale_services(spec, spec.replicas.max(1), cancel).await;
@@ -48,7 +48,7 @@ impl ApplicationBuilder {
         Ok(())
     }
 
-    /// Scale the app's swarm services to zero — Dokploy `stop`.
+ /// Scale the app's swarm services to zero `stop`.
     pub async fn stop(&self, spec: &ApplicationSpec, cancel: &CancellationToken) -> ExecResult<()> {
         self.ctx.emit(BuilderEvent::Message(format!("stopping {}", spec.stack_name))).await;
         self.scale_services(spec, 0, cancel).await;
@@ -56,7 +56,7 @@ impl ApplicationBuilder {
         Ok(())
     }
 
-    /// Recreate the app's swarm tasks from the existing image — Dokploy `reload`.
+ /// Recreate the app's swarm tasks from the existing image `reload`.
     pub async fn reload(&self, spec: &ApplicationSpec, cancel: &CancellationToken) -> ExecResult<()> {
         self.ctx.emit(BuilderEvent::Message(format!("reloading {}", spec.stack_name))).await;
         for name in self.app_services(spec).await {

@@ -97,9 +97,7 @@ export function TemplateDetailDialog({
 										<TabsTrigger value="compose">
 											docker-compose.yml
 										</TabsTrigger>
-										<TabsTrigger value="toml">
-											template.toml
-										</TabsTrigger>
+										<TabsTrigger value="toml">template.toml</TabsTrigger>
 									</TabsList>
 									<TabsContent value="compose">
 										<TemplateFilePreview

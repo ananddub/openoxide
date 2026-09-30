@@ -2,911 +2,957 @@
 // @generated from file openoxide/api/v1/swarm.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/swarm.proto.
  */
-export const file_openoxide_api_v1_swarm: GenFile = /*@__PURE__*/
-  fileDesc("ChxvcGVub3hpZGUvYXBpL3YxL3N3YXJtLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIoUBCglTd2FybUluZm8SDwoHbm9kZV9pZBgBIAEoCRIRCglub2RlX2FkZHIYAiABKAkSGAoQbG9jYWxfbm9kZV9zdGF0ZRgDIAEoCRIZChFjb250cm9sX2F2YWlsYWJsZRgEIAEoCBINCgVub2RlcxgFIAEoAxIQCghtYW5hZ2VycxgGIAEoAyIyCg9Td2FybUpvaW5Ub2tlbnMSDgoGd29ya2VyGAEgASgJEg8KB21hbmFnZXIYAiABKAki0wEKCVN3YXJtTm9kZRIKCgJpZBgBIAEoCRIQCghob3N0bmFtZRgCIAEoCRIOCgZzdGF0dXMYAyABKAkSFAoMYXZhaWxhYmlsaXR5GAQgASgJEi0KBHJvbGUYBSABKA4yHy5vcGVub3hpZGUuYXBpLnYxLlN3YXJtTm9kZVJvbGUSEQoJaXNfbGVhZGVyGAYgASgIEhQKDHJlYWNoYWJpbGl0eRgHIAEoCRISCgppcF9hZGRyZXNzGAggASgJEhYKDmVuZ2luZV92ZXJzaW9uGAkgASgJIi4KFVN3YXJtU2V0dGluZ3NEb2N1bWVudBIVCg1zZXR0aW5nc19qc29uGAEgASgJIj4KDFN3YXJtTmV0d29yaxIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhQKDG5ldHdvcmtfanNvbhgDIAEoCSJCChBTd2FybVNlcnZpY2VJbmZvEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSFAoMc2VydmljZV9qc29uGAMgASgJIkgKF1N3YXJtR2V0U2V0dGluZ3NSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiVQoYU3dhcm1HZXRTZXR0aW5nc1Jlc3BvbnNlEjkKCHNldHRpbmdzGAEgASgLMicub3Blbm94aWRlLmFwaS52MS5Td2FybVNldHRpbmdzRG9jdW1lbnQijgEKGlN3YXJtVXBkYXRlU2V0dGluZ3NSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEkEKCHNldHRpbmdzGAIgASgLMicub3Blbm94aWRlLmFwaS52MS5Td2FybVNldHRpbmdzRG9jdW1lbnRCBrpIA8gBAUIMCgpfc2VydmVyX2lkIlgKG1N3YXJtVXBkYXRlU2V0dGluZ3NSZXNwb25zZRI5CghzZXR0aW5ncxgBIAEoCzInLm9wZW5veGlkZS5hcGkudjEuU3dhcm1TZXR0aW5nc0RvY3VtZW50IkkKGFN3YXJtTGlzdE5ldHdvcmtzUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBAUIMCgpfc2VydmVyX2lkIk0KGVN3YXJtTGlzdE5ldHdvcmtzUmVzcG9uc2USMAoIbmV0d29ya3MYASADKAsyHi5vcGVub3hpZGUuYXBpLnYxLlN3YXJtTmV0d29yayKZAQoZU3dhcm1DcmVhdGVOZXR3b3JrUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARIYCgRuYW1lGAIgASgJQgq6SAdyBRABGP8BEiMKC2NvbmZpZ19qc29uGAMgASgJQgm6SAZyBBiAgEBIAYgBAUIMCgpfc2VydmVyX2lkQg4KDF9jb25maWdfanNvbiJNChpTd2FybUNyZWF0ZU5ldHdvcmtSZXNwb25zZRIvCgduZXR3b3JrGAEgASgLMh4ub3Blbm94aWRlLmFwaS52MS5Td2FybU5ldHdvcmsihwEKGVN3YXJtVXBkYXRlTmV0d29ya1JlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESGwoKbmV0d29ya19pZBgCIAEoCUIHukgEcgIQARIeCgtjb25maWdfanNvbhgDIAEoCUIJukgGcgQYgIBAQgwKCl9zZXJ2ZXJfaWQiTQoaU3dhcm1VcGRhdGVOZXR3b3JrUmVzcG9uc2USLwoHbmV0d29yaxgBIAEoCzIeLm9wZW5veGlkZS5hcGkudjEuU3dhcm1OZXR3b3JrImcKGVN3YXJtRGVsZXRlTmV0d29ya1JlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESGwoKbmV0d29ya19pZBgCIAEoCUIHukgEcgIQAUIMCgpfc2VydmVyX2lkIkkKGFN3YXJtTGlzdFNlcnZpY2VzUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBAUIMCgpfc2VydmVyX2lkIlEKGVN3YXJtTGlzdFNlcnZpY2VzUmVzcG9uc2USNAoIc2VydmljZXMYASADKAsyIi5vcGVub3hpZGUuYXBpLnYxLlN3YXJtU2VydmljZUluZm8iZAoWU3dhcm1HZXRTZXJ2aWNlUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARIbCgpzZXJ2aWNlX2lkGAIgASgJQge6SARyAhABQgwKCl9zZXJ2ZXJfaWQiTgoXU3dhcm1HZXRTZXJ2aWNlUmVzcG9uc2USMwoHc2VydmljZRgBIAEoCzIiLm9wZW5veGlkZS5hcGkudjEuU3dhcm1TZXJ2aWNlSW5mbyKFAQoZU3dhcm1VcGRhdGVTZXJ2aWNlUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARIbCgpzZXJ2aWNlX2lkGAIgASgJQge6SARyAhABEhwKCXNwZWNfanNvbhgDIAEoCUIJukgGcgQYgIBAQgwKCl9zZXJ2ZXJfaWQiUQoaU3dhcm1VcGRhdGVTZXJ2aWNlUmVzcG9uc2USMwoHc2VydmljZRgBIAEoCzIiLm9wZW5veGlkZS5hcGkudjEuU3dhcm1TZXJ2aWNlSW5mbyJBChBTd2FybUluZm9SZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiPgoRU3dhcm1JbmZvUmVzcG9uc2USKQoEaW5mbxgBIAEoCzIbLm9wZW5veGlkZS5hcGkudjEuU3dhcm1JbmZvIkoKGVN3YXJtR2V0Sm9pblRva2Vuc1JlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQFCDAoKX3NlcnZlcl9pZCJPChpTd2FybUdldEpvaW5Ub2tlbnNSZXNwb25zZRIxCgZ0b2tlbnMYASABKAsyIS5vcGVub3hpZGUuYXBpLnYxLlN3YXJtSm9pblRva2VucyJGChVTd2FybUxpc3ROb2Rlc1JlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQFCDAoKX3NlcnZlcl9pZCJEChZTd2FybUxpc3ROb2Rlc1Jlc3BvbnNlEioKBW5vZGVzGAEgAygLMhsub3Blbm94aWRlLmFwaS52MS5Td2FybU5vZGUiYgoXU3dhcm1Qcm9tb3RlTm9kZVJlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESGAoHbm9kZV9pZBgCIAEoCUIHukgEcgIQAUIMCgpfc2VydmVyX2lkImEKFlN3YXJtRGVtb3RlTm9kZVJlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESGAoHbm9kZV9pZBgCIAEoCUIHukgEcgIQAUIMCgpfc2VydmVyX2lkIrgBCiJTd2FybVVwZGF0ZU5vZGVBdmFpbGFiaWxpdHlSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEhgKB25vZGVfaWQYAiABKAlCB7pIBHICEAESSQoMYXZhaWxhYmlsaXR5GAMgASgOMicub3Blbm94aWRlLmFwaS52MS5Td2FybU5vZGVBdmFpbGFiaWxpdHlCCrpIB4IBBBABIABCDAoKX3NlcnZlcl9pZCJhChZTd2FybVJlbW92ZU5vZGVSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEhgKB25vZGVfaWQYAiABKAlCB7pIBHICEAFCDAoKX3NlcnZlcl9pZCJRChFTd2FybUxlYXZlUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARINCgVmb3JjZRgCIAEoCEIMCgpfc2VydmVyX2lkIqsBChBTd2FybUpvaW5SZXF1ZXN0EiEKEHRhcmdldF9zZXJ2ZXJfaWQYASABKANCB7pIBCICIAASJwoRbWFuYWdlcl9zZXJ2ZXJfaWQYAiABKANCB7pIBCICIABIAIgBARI1CgRyb2xlGAMgASgOMhsub3Blbm94aWRlLmFwaS52MS5Td2FybVJvbGVCCrpIB4IBBBABIABCFAoSX21hbmFnZXJfc2VydmVyX2lkKmkKDVN3YXJtTm9kZVJvbGUSHwobU1dBUk1fTk9ERV9ST0xFX1VOU1BFQ0lGSUVEEAASGgoWU1dBUk1fTk9ERV9ST0xFX1dPUktFUhABEhsKF1NXQVJNX05PREVfUk9MRV9NQU5BR0VSEAIqVgoJU3dhcm1Sb2xlEhoKFlNXQVJNX1JPTEVfVU5TUEVDSUZJRUQQABIVChFTV0FSTV9ST0xFX1dPUktFUhABEhYKElNXQVJNX1JPTEVfTUFOQUdFUhACKqoBChVTd2FybU5vZGVBdmFpbGFiaWxpdHkSJwojU1dBUk1fTk9ERV9BVkFJTEFCSUxJVFlfVU5TUEVDSUZJRUQQABIiCh5TV0FSTV9OT0RFX0FWQUlMQUJJTElUWV9BQ1RJVkUQARIhCh1TV0FSTV9OT0RFX0FWQUlMQUJJTElUWV9QQVVTRRACEiEKHVNXQVJNX05PREVfQVZBSUxBQklMSVRZX0RSQUlOEAMyug0KDFN3YXJtU2VydmljZRJkCgtHZXRTZXR0aW5ncxIpLm9wZW5veGlkZS5hcGkudjEuU3dhcm1HZXRTZXR0aW5nc1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLlN3YXJtR2V0U2V0dGluZ3NSZXNwb25zZRJtCg5VcGRhdGVTZXR0aW5ncxIsLm9wZW5veGlkZS5hcGkudjEuU3dhcm1VcGRhdGVTZXR0aW5nc1JlcXVlc3QaLS5vcGVub3hpZGUuYXBpLnYxLlN3YXJtVXBkYXRlU2V0dGluZ3NSZXNwb25zZRJnCgxMaXN0TmV0d29ya3MSKi5vcGVub3hpZGUuYXBpLnYxLlN3YXJtTGlzdE5ldHdvcmtzUmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuU3dhcm1MaXN0TmV0d29ya3NSZXNwb25zZRJqCg1DcmVhdGVOZXR3b3JrEisub3Blbm94aWRlLmFwaS52MS5Td2FybUNyZWF0ZU5ldHdvcmtSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5Td2FybUNyZWF0ZU5ldHdvcmtSZXNwb25zZRJqCg1VcGRhdGVOZXR3b3JrEisub3Blbm94aWRlLmFwaS52MS5Td2FybVVwZGF0ZU5ldHdvcmtSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5Td2FybVVwZGF0ZU5ldHdvcmtSZXNwb25zZRJVCg1EZWxldGVOZXR3b3JrEisub3Blbm94aWRlLmFwaS52MS5Td2FybURlbGV0ZU5ldHdvcmtSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJnCgxMaXN0U2VydmljZXMSKi5vcGVub3hpZGUuYXBpLnYxLlN3YXJtTGlzdFNlcnZpY2VzUmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuU3dhcm1MaXN0U2VydmljZXNSZXNwb25zZRJhCgpHZXRTZXJ2aWNlEigub3Blbm94aWRlLmFwaS52MS5Td2FybUdldFNlcnZpY2VSZXF1ZXN0Gikub3Blbm94aWRlLmFwaS52MS5Td2FybUdldFNlcnZpY2VSZXNwb25zZRJqCg1VcGRhdGVTZXJ2aWNlEisub3Blbm94aWRlLmFwaS52MS5Td2FybVVwZGF0ZVNlcnZpY2VSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5Td2FybVVwZGF0ZVNlcnZpY2VSZXNwb25zZRJPCgRJbmZvEiIub3Blbm94aWRlLmFwaS52MS5Td2FybUluZm9SZXF1ZXN0GiMub3Blbm94aWRlLmFwaS52MS5Td2FybUluZm9SZXNwb25zZRJqCg1HZXRKb2luVG9rZW5zEisub3Blbm94aWRlLmFwaS52MS5Td2FybUdldEpvaW5Ub2tlbnNSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5Td2FybUdldEpvaW5Ub2tlbnNSZXNwb25zZRJeCglMaXN0Tm9kZXMSJy5vcGVub3hpZGUuYXBpLnYxLlN3YXJtTGlzdE5vZGVzUmVxdWVzdBooLm9wZW5veGlkZS5hcGkudjEuU3dhcm1MaXN0Tm9kZXNSZXNwb25zZRJRCgtQcm9tb3RlTm9kZRIpLm9wZW5veGlkZS5hcGkudjEuU3dhcm1Qcm9tb3RlTm9kZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5Ek8KCkRlbW90ZU5vZGUSKC5vcGVub3hpZGUuYXBpLnYxLlN3YXJtRGVtb3RlTm9kZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EmcKFlVwZGF0ZU5vZGVBdmFpbGFiaWxpdHkSNC5vcGVub3hpZGUuYXBpLnYxLlN3YXJtVXBkYXRlTm9kZUF2YWlsYWJpbGl0eVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5Ek8KClJlbW92ZU5vZGUSKC5vcGVub3hpZGUuYXBpLnYxLlN3YXJtUmVtb3ZlTm9kZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EkUKBUxlYXZlEiMub3Blbm94aWRlLmFwaS52MS5Td2FybUxlYXZlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSQwoESm9pbhIiLm9wZW5veGlkZS5hcGkudjEuU3dhcm1Kb2luUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHliBnByb3RvMw", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_swarm: GenFile /*@__PURE__*/ = fileDesc(
+	'ChxvcGVub3hpZGUvYXBpL3YxL3N3YXJtLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIoUBCglTd2FybUluZm8SDwoHbm9kZV9pZBgBIAEoCRIRCglub2RlX2FkZHIYAiABKAkSGAoQbG9jYWxfbm9kZV9zdGF0ZRgDIAEoCRIZChFjb250cm9sX2F2YWlsYWJsZRgEIAEoCBINCgVub2RlcxgFIAEoAxIQCghtYW5hZ2VycxgGIAEoAyIyCg9Td2FybUpvaW5Ub2tlbnMSDgoGd29ya2VyGAEgASgJEg8KB21hbmFnZXIYAiABKAki0wEKCVN3YXJtTm9kZRIKCgJpZBgBIAEoCRIQCghob3N0bmFtZRgCIAEoCRIOCgZzdGF0dXMYAyABKAkSFAoMYXZhaWxhYmlsaXR5GAQgASgJEi0KBHJvbGUYBSABKA4yHy5vcGVub3hpZGUuYXBpLnYxLlN3YXJtTm9kZVJvbGUSEQoJaXNfbGVhZGVyGAYgASgIEhQKDHJlYWNoYWJpbGl0eRgHIAEoCRISCgppcF9hZGRyZXNzGAggASgJEhYKDmVuZ2luZV92ZXJzaW9uGAkgASgJIi4KFVN3YXJtU2V0dGluZ3NEb2N1bWVudBIVCg1zZXR0aW5nc19qc29uGAEgASgJIj4KDFN3YXJtTmV0d29yaxIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhQKDG5ldHdvcmtfanNvbhgDIAEoCSJCChBTd2FybVNlcnZpY2VJbmZvEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSFAoMc2VydmljZV9qc29uGAMgASgJIkgKF1N3YXJtR2V0U2V0dGluZ3NSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiVQoYU3dhcm1HZXRTZXR0aW5nc1Jlc3BvbnNlEjkKCHNldHRpbmdzGAEgASgLMicub3Blbm94aWRlLmFwaS52MS5Td2FybVNldHRpbmdzRG9jdW1lbnQijgEKGlN3YXJtVXBkYXRlU2V0dGluZ3NSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEkEKCHNldHRpbmdzGAIgASgLMicub3Blbm94aWRlLmFwaS52MS5Td2FybVNldHRpbmdzRG9jdW1lbnRCBrpIA8gBAUIMCgpfc2VydmVyX2lkIlgKG1N3YXJtVXBkYXRlU2V0dGluZ3NSZXNwb25zZRI5CghzZXR0aW5ncxgBIAEoCzInLm9wZW5veGlkZS5hcGkudjEuU3dhcm1TZXR0aW5nc0RvY3VtZW50IkkKGFN3YXJtTGlzdE5ldHdvcmtzUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBAUIMCgpfc2VydmVyX2lkIk0KGVN3YXJtTGlzdE5ldHdvcmtzUmVzcG9uc2USMAoIbmV0d29ya3MYASADKAsyHi5vcGVub3hpZGUuYXBpLnYxLlN3YXJtTmV0d29yayKZAQoZU3dhcm1DcmVhdGVOZXR3b3JrUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARIYCgRuYW1lGAIgASgJQgq6SAdyBRABGP8BEiMKC2NvbmZpZ19qc29uGAMgASgJQgm6SAZyBBiAgEBIAYgBAUIMCgpfc2VydmVyX2lkQg4KDF9jb25maWdfanNvbiJNChpTd2FybUNyZWF0ZU5ldHdvcmtSZXNwb25zZRIvCgduZXR3b3JrGAEgASgLMh4ub3Blbm94aWRlLmFwaS52MS5Td2FybU5ldHdvcmsihwEKGVN3YXJtVXBkYXRlTmV0d29ya1JlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESGwoKbmV0d29ya19pZBgCIAEoCUIHukgEcgIQARIeCgtjb25maWdfanNvbhgDIAEoCUIJukgGcgQYgIBAQgwKCl9zZXJ2ZXJfaWQiTQoaU3dhcm1VcGRhdGVOZXR3b3JrUmVzcG9uc2USLwoHbmV0d29yaxgBIAEoCzIeLm9wZW5veGlkZS5hcGkudjEuU3dhcm1OZXR3b3JrImcKGVN3YXJtRGVsZXRlTmV0d29ya1JlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESGwoKbmV0d29ya19pZBgCIAEoCUIHukgEcgIQAUIMCgpfc2VydmVyX2lkIkkKGFN3YXJtTGlzdFNlcnZpY2VzUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBAUIMCgpfc2VydmVyX2lkIlEKGVN3YXJtTGlzdFNlcnZpY2VzUmVzcG9uc2USNAoIc2VydmljZXMYASADKAsyIi5vcGVub3hpZGUuYXBpLnYxLlN3YXJtU2VydmljZUluZm8iZAoWU3dhcm1HZXRTZXJ2aWNlUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARIbCgpzZXJ2aWNlX2lkGAIgASgJQge6SARyAhABQgwKCl9zZXJ2ZXJfaWQiTgoXU3dhcm1HZXRTZXJ2aWNlUmVzcG9uc2USMwoHc2VydmljZRgBIAEoCzIiLm9wZW5veGlkZS5hcGkudjEuU3dhcm1TZXJ2aWNlSW5mbyKFAQoZU3dhcm1VcGRhdGVTZXJ2aWNlUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARIbCgpzZXJ2aWNlX2lkGAIgASgJQge6SARyAhABEhwKCXNwZWNfanNvbhgDIAEoCUIJukgGcgQYgIBAQgwKCl9zZXJ2ZXJfaWQiUQoaU3dhcm1VcGRhdGVTZXJ2aWNlUmVzcG9uc2USMwoHc2VydmljZRgBIAEoCzIiLm9wZW5veGlkZS5hcGkudjEuU3dhcm1TZXJ2aWNlSW5mbyJBChBTd2FybUluZm9SZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiPgoRU3dhcm1JbmZvUmVzcG9uc2USKQoEaW5mbxgBIAEoCzIbLm9wZW5veGlkZS5hcGkudjEuU3dhcm1JbmZvIkoKGVN3YXJtR2V0Sm9pblRva2Vuc1JlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQFCDAoKX3NlcnZlcl9pZCJPChpTd2FybUdldEpvaW5Ub2tlbnNSZXNwb25zZRIxCgZ0b2tlbnMYASABKAsyIS5vcGVub3hpZGUuYXBpLnYxLlN3YXJtSm9pblRva2VucyJGChVTd2FybUxpc3ROb2Rlc1JlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQFCDAoKX3NlcnZlcl9pZCJEChZTd2FybUxpc3ROb2Rlc1Jlc3BvbnNlEioKBW5vZGVzGAEgAygLMhsub3Blbm94aWRlLmFwaS52MS5Td2FybU5vZGUiYgoXU3dhcm1Qcm9tb3RlTm9kZVJlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESGAoHbm9kZV9pZBgCIAEoCUIHukgEcgIQAUIMCgpfc2VydmVyX2lkImEKFlN3YXJtRGVtb3RlTm9kZVJlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESGAoHbm9kZV9pZBgCIAEoCUIHukgEcgIQAUIMCgpfc2VydmVyX2lkIrgBCiJTd2FybVVwZGF0ZU5vZGVBdmFpbGFiaWxpdHlSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEhgKB25vZGVfaWQYAiABKAlCB7pIBHICEAESSQoMYXZhaWxhYmlsaXR5GAMgASgOMicub3Blbm94aWRlLmFwaS52MS5Td2FybU5vZGVBdmFpbGFiaWxpdHlCCrpIB4IBBBABIABCDAoKX3NlcnZlcl9pZCJhChZTd2FybVJlbW92ZU5vZGVSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEhgKB25vZGVfaWQYAiABKAlCB7pIBHICEAFCDAoKX3NlcnZlcl9pZCJRChFTd2FybUxlYXZlUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARINCgVmb3JjZRgCIAEoCEIMCgpfc2VydmVyX2lkIqsBChBTd2FybUpvaW5SZXF1ZXN0EiEKEHRhcmdldF9zZXJ2ZXJfaWQYASABKANCB7pIBCICIAASJwoRbWFuYWdlcl9zZXJ2ZXJfaWQYAiABKANCB7pIBCICIABIAIgBARI1CgRyb2xlGAMgASgOMhsub3Blbm94aWRlLmFwaS52MS5Td2FybVJvbGVCCrpIB4IBBBABIABCFAoSX21hbmFnZXJfc2VydmVyX2lkKmkKDVN3YXJtTm9kZVJvbGUSHwobU1dBUk1fTk9ERV9ST0xFX1VOU1BFQ0lGSUVEEAASGgoWU1dBUk1fTk9ERV9ST0xFX1dPUktFUhABEhsKF1NXQVJNX05PREVfUk9MRV9NQU5BR0VSEAIqVgoJU3dhcm1Sb2xlEhoKFlNXQVJNX1JPTEVfVU5TUEVDSUZJRUQQABIVChFTV0FSTV9ST0xFX1dPUktFUhABEhYKElNXQVJNX1JPTEVfTUFOQUdFUhACKqoBChVTd2FybU5vZGVBdmFpbGFiaWxpdHkSJwojU1dBUk1fTk9ERV9BVkFJTEFCSUxJVFlfVU5TUEVDSUZJRUQQABIiCh5TV0FSTV9OT0RFX0FWQUlMQUJJTElUWV9BQ1RJVkUQARIhCh1TV0FSTV9OT0RFX0FWQUlMQUJJTElUWV9QQVVTRRACEiEKHVNXQVJNX05PREVfQVZBSUxBQklMSVRZX0RSQUlOEAMyug0KDFN3YXJtU2VydmljZRJkCgtHZXRTZXR0aW5ncxIpLm9wZW5veGlkZS5hcGkudjEuU3dhcm1HZXRTZXR0aW5nc1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLlN3YXJtR2V0U2V0dGluZ3NSZXNwb25zZRJtCg5VcGRhdGVTZXR0aW5ncxIsLm9wZW5veGlkZS5hcGkudjEuU3dhcm1VcGRhdGVTZXR0aW5nc1JlcXVlc3QaLS5vcGVub3hpZGUuYXBpLnYxLlN3YXJtVXBkYXRlU2V0dGluZ3NSZXNwb25zZRJnCgxMaXN0TmV0d29ya3MSKi5vcGVub3hpZGUuYXBpLnYxLlN3YXJtTGlzdE5ldHdvcmtzUmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuU3dhcm1MaXN0TmV0d29ya3NSZXNwb25zZRJqCg1DcmVhdGVOZXR3b3JrEisub3Blbm94aWRlLmFwaS52MS5Td2FybUNyZWF0ZU5ldHdvcmtSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5Td2FybUNyZWF0ZU5ldHdvcmtSZXNwb25zZRJqCg1VcGRhdGVOZXR3b3JrEisub3Blbm94aWRlLmFwaS52MS5Td2FybVVwZGF0ZU5ldHdvcmtSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5Td2FybVVwZGF0ZU5ldHdvcmtSZXNwb25zZRJVCg1EZWxldGVOZXR3b3JrEisub3Blbm94aWRlLmFwaS52MS5Td2FybURlbGV0ZU5ldHdvcmtSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJnCgxMaXN0U2VydmljZXMSKi5vcGVub3hpZGUuYXBpLnYxLlN3YXJtTGlzdFNlcnZpY2VzUmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuU3dhcm1MaXN0U2VydmljZXNSZXNwb25zZRJhCgpHZXRTZXJ2aWNlEigub3Blbm94aWRlLmFwaS52MS5Td2FybUdldFNlcnZpY2VSZXF1ZXN0Gikub3Blbm94aWRlLmFwaS52MS5Td2FybUdldFNlcnZpY2VSZXNwb25zZRJqCg1VcGRhdGVTZXJ2aWNlEisub3Blbm94aWRlLmFwaS52MS5Td2FybVVwZGF0ZVNlcnZpY2VSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5Td2FybVVwZGF0ZVNlcnZpY2VSZXNwb25zZRJPCgRJbmZvEiIub3Blbm94aWRlLmFwaS52MS5Td2FybUluZm9SZXF1ZXN0GiMub3Blbm94aWRlLmFwaS52MS5Td2FybUluZm9SZXNwb25zZRJqCg1HZXRKb2luVG9rZW5zEisub3Blbm94aWRlLmFwaS52MS5Td2FybUdldEpvaW5Ub2tlbnNSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5Td2FybUdldEpvaW5Ub2tlbnNSZXNwb25zZRJeCglMaXN0Tm9kZXMSJy5vcGVub3hpZGUuYXBpLnYxLlN3YXJtTGlzdE5vZGVzUmVxdWVzdBooLm9wZW5veGlkZS5hcGkudjEuU3dhcm1MaXN0Tm9kZXNSZXNwb25zZRJRCgtQcm9tb3RlTm9kZRIpLm9wZW5veGlkZS5hcGkudjEuU3dhcm1Qcm9tb3RlTm9kZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5Ek8KCkRlbW90ZU5vZGUSKC5vcGVub3hpZGUuYXBpLnYxLlN3YXJtRGVtb3RlTm9kZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EmcKFlVwZGF0ZU5vZGVBdmFpbGFiaWxpdHkSNC5vcGVub3hpZGUuYXBpLnYxLlN3YXJtVXBkYXRlTm9kZUF2YWlsYWJpbGl0eVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5Ek8KClJlbW92ZU5vZGUSKC5vcGVub3hpZGUuYXBpLnYxLlN3YXJtUmVtb3ZlTm9kZVJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EkUKBUxlYXZlEiMub3Blbm94aWRlLmFwaS52MS5Td2FybUxlYXZlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSQwoESm9pbhIiLm9wZW5veGlkZS5hcGkudjEuU3dhcm1Kb2luUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHliBnByb3RvMw',
+	[file_openoxide_api_v1_common, file_buf_validate_validate],
+);
 
 /**
  * kind "swarm_info": `docker swarm inspect` summary for one engine.
  *
  * @generated from message openoxide.api.v1.SwarmInfo
  */
-export type SwarmInfo = Message<"openoxide.api.v1.SwarmInfo"> & {
-  /**
-   * @generated from field: string node_id = 1;
-   */
-  nodeId: string;
+export type SwarmInfo = Message<'openoxide.api.v1.SwarmInfo'> & {
+	/**
+	 * @generated from field: string node_id = 1;
+	 */
+	nodeId: string;
 
-  /**
-   * @generated from field: string node_addr = 2;
-   */
-  nodeAddr: string;
+	/**
+	 * @generated from field: string node_addr = 2;
+	 */
+	nodeAddr: string;
 
-  /**
-   * Swarm state of the local node, e.g. "active"/"inactive"/"pending".
-   *
-   * @generated from field: string local_node_state = 3;
-   */
-  localNodeState: string;
+	/**
+	 * Swarm state of the local node, e.g. "active"/"inactive"/"pending".
+	 *
+	 * @generated from field: string local_node_state = 3;
+	 */
+	localNodeState: string;
 
-  /**
-   * @generated from field: bool control_available = 4;
-   */
-  controlAvailable: boolean;
+	/**
+	 * @generated from field: bool control_available = 4;
+	 */
+	controlAvailable: boolean;
 
-  /**
-   * @generated from field: int64 nodes = 5;
-   */
-  nodes: bigint;
+	/**
+	 * @generated from field: int64 nodes = 5;
+	 */
+	nodes: bigint;
 
-  /**
-   * @generated from field: int64 managers = 6;
-   */
-  managers: bigint;
+	/**
+	 * @generated from field: int64 managers = 6;
+	 */
+	managers: bigint;
 };
 
 /**
  * Describes the message openoxide.api.v1.SwarmInfo.
  * Use `create(SwarmInfoSchema)` to create a new message.
  */
-export const SwarmInfoSchema: GenMessage<SwarmInfo> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 0);
+export const SwarmInfoSchema: GenMessage<SwarmInfo> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 0);
 
 /**
  * kind "swarm_tokens": join tokens for one cluster.
  *
  * @generated from message openoxide.api.v1.SwarmJoinTokens
  */
-export type SwarmJoinTokens = Message<"openoxide.api.v1.SwarmJoinTokens"> & {
-  /**
-   * @generated from field: string worker = 1;
-   */
-  worker: string;
+export type SwarmJoinTokens =
+	Message<'openoxide.api.v1.SwarmJoinTokens'> & {
+		/**
+		 * @generated from field: string worker = 1;
+		 */
+		worker: string;
 
-  /**
-   * @generated from field: string manager = 2;
-   */
-  manager: string;
-};
+		/**
+		 * @generated from field: string manager = 2;
+		 */
+		manager: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmJoinTokens.
  * Use `create(SwarmJoinTokensSchema)` to create a new message.
  */
-export const SwarmJoinTokensSchema: GenMessage<SwarmJoinTokens> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 1);
+export const SwarmJoinTokensSchema: GenMessage<SwarmJoinTokens> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 1);
 
 /**
  * kind "swarm_node": one `docker node inspect` summary.
  *
  * @generated from message openoxide.api.v1.SwarmNode
  */
-export type SwarmNode = Message<"openoxide.api.v1.SwarmNode"> & {
-  /**
-   * Node id as issued by Docker (not a panel row id).
-   *
-   * @generated from field: string id = 1;
-   */
-  id: string;
+export type SwarmNode = Message<'openoxide.api.v1.SwarmNode'> & {
+	/**
+	 * Node id as issued by Docker (not a panel row id).
+	 *
+	 * @generated from field: string id = 1;
+	 */
+	id: string;
 
-  /**
-   * @generated from field: string hostname = 2;
-   */
-  hostname: string;
+	/**
+	 * @generated from field: string hostname = 2;
+	 */
+	hostname: string;
 
-  /**
-   * Node status state, e.g. "ready"/"down".
-   *
-   * @generated from field: string status = 3;
-   */
-  status: string;
+	/**
+	 * Node status state, e.g. "ready"/"down".
+	 *
+	 * @generated from field: string status = 3;
+	 */
+	status: string;
 
-  /**
-   * Node availability as reported by Docker ("active"/"pause"/"drain").
-   *
-   * @generated from field: string availability = 4;
-   */
-  availability: string;
+	/**
+	 * Node availability as reported by Docker ("active"/"pause"/"drain").
+	 *
+	 * @generated from field: string availability = 4;
+	 */
+	availability: string;
 
-  /**
-   * From `Spec.Role`, the authoritative config value.
-   *
-   * @generated from field: openoxide.api.v1.SwarmNodeRole role = 5;
-   */
-  role: SwarmNodeRole;
+	/**
+	 * From `Spec.Role`, the authoritative config value.
+	 *
+	 * @generated from field: openoxide.api.v1.SwarmNodeRole role = 5;
+	 */
+	role: SwarmNodeRole;
 
-  /**
-   * @generated from field: bool is_leader = 6;
-   */
-  isLeader: boolean;
+	/**
+	 * @generated from field: bool is_leader = 6;
+	 */
+	isLeader: boolean;
 
-  /**
-   * "reachable" | "unreachable" | "" (empty for workers).
-   *
-   * @generated from field: string reachability = 7;
-   */
-  reachability: string;
+	/**
+	 * "reachable" | "unreachable" | "" (empty for workers).
+	 *
+	 * @generated from field: string reachability = 7;
+	 */
+	reachability: string;
 
-  /**
-   * @generated from field: string ip_address = 8;
-   */
-  ipAddress: string;
+	/**
+	 * @generated from field: string ip_address = 8;
+	 */
+	ipAddress: string;
 
-  /**
-   * @generated from field: string engine_version = 9;
-   */
-  engineVersion: string;
+	/**
+	 * @generated from field: string engine_version = 9;
+	 */
+	engineVersion: string;
 };
 
 /**
  * Describes the message openoxide.api.v1.SwarmNode.
  * Use `create(SwarmNodeSchema)` to create a new message.
  */
-export const SwarmNodeSchema: GenMessage<SwarmNode> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 2);
+export const SwarmNodeSchema: GenMessage<SwarmNode> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 2);
 
 /**
  * Panel-level swarm settings document (not yet served by any controller; per-service swarm templates live on DatabaseService instead).
  *
  * @generated from message openoxide.api.v1.SwarmSettingsDocument
  */
-export type SwarmSettingsDocument = Message<"openoxide.api.v1.SwarmSettingsDocument"> & {
-  /**
-   * Opaque JSON document of cluster-level swarm defaults.
-   *
-   * @generated from field: string settings_json = 1;
-   */
-  settingsJson: string;
-};
+export type SwarmSettingsDocument =
+	Message<'openoxide.api.v1.SwarmSettingsDocument'> & {
+		/**
+		 * Opaque JSON document of cluster-level swarm defaults.
+		 *
+		 * @generated from field: string settings_json = 1;
+		 */
+		settingsJson: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmSettingsDocument.
  * Use `create(SwarmSettingsDocumentSchema)` to create a new message.
  */
-export const SwarmSettingsDocumentSchema: GenMessage<SwarmSettingsDocument> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 3);
+export const SwarmSettingsDocumentSchema: GenMessage<SwarmSettingsDocument> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 3);
 
 /**
  * Opaque `docker network` record (raw CLI JSON; fields are engine-dependent).
  *
  * @generated from message openoxide.api.v1.SwarmNetwork
  */
-export type SwarmNetwork = Message<"openoxide.api.v1.SwarmNetwork"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
+export type SwarmNetwork = Message<'openoxide.api.v1.SwarmNetwork'> & {
+	/**
+	 * @generated from field: string id = 1;
+	 */
+	id: string;
 
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
+	/**
+	 * @generated from field: string name = 2;
+	 */
+	name: string;
 
-  /**
-   * @generated from field: string network_json = 3;
-   */
-  networkJson: string;
+	/**
+	 * @generated from field: string network_json = 3;
+	 */
+	networkJson: string;
 };
 
 /**
  * Describes the message openoxide.api.v1.SwarmNetwork.
  * Use `create(SwarmNetworkSchema)` to create a new message.
  */
-export const SwarmNetworkSchema: GenMessage<SwarmNetwork> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 4);
+export const SwarmNetworkSchema: GenMessage<SwarmNetwork> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 4);
 
 /**
  * Opaque `docker service` record (raw CLI JSON; fields are engine-dependent).
  *
  * @generated from message openoxide.api.v1.SwarmServiceInfo
  */
-export type SwarmServiceInfo = Message<"openoxide.api.v1.SwarmServiceInfo"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
+export type SwarmServiceInfo =
+	Message<'openoxide.api.v1.SwarmServiceInfo'> & {
+		/**
+		 * @generated from field: string id = 1;
+		 */
+		id: string;
 
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
+		/**
+		 * @generated from field: string name = 2;
+		 */
+		name: string;
 
-  /**
-   * @generated from field: string service_json = 3;
-   */
-  serviceJson: string;
-};
+		/**
+		 * @generated from field: string service_json = 3;
+		 */
+		serviceJson: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmServiceInfo.
  * Use `create(SwarmServiceInfoSchema)` to create a new message.
  */
-export const SwarmServiceInfoSchema: GenMessage<SwarmServiceInfo> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 5);
+export const SwarmServiceInfoSchema: GenMessage<SwarmServiceInfo> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 5);
 
 /**
  * @generated from message openoxide.api.v1.SwarmGetSettingsRequest
  */
-export type SwarmGetSettingsRequest = Message<"openoxide.api.v1.SwarmGetSettingsRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type SwarmGetSettingsRequest =
+	Message<'openoxide.api.v1.SwarmGetSettingsRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmGetSettingsRequest.
  * Use `create(SwarmGetSettingsRequestSchema)` to create a new message.
  */
-export const SwarmGetSettingsRequestSchema: GenMessage<SwarmGetSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 6);
+export const SwarmGetSettingsRequestSchema: GenMessage<SwarmGetSettingsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 6);
 
 /**
  * @generated from message openoxide.api.v1.SwarmGetSettingsResponse
  */
-export type SwarmGetSettingsResponse = Message<"openoxide.api.v1.SwarmGetSettingsResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.SwarmSettingsDocument settings = 1;
-   */
-  settings?: SwarmSettingsDocument | undefined;
-};
+export type SwarmGetSettingsResponse =
+	Message<'openoxide.api.v1.SwarmGetSettingsResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.SwarmSettingsDocument settings = 1;
+		 */
+		settings?: SwarmSettingsDocument | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmGetSettingsResponse.
  * Use `create(SwarmGetSettingsResponseSchema)` to create a new message.
  */
-export const SwarmGetSettingsResponseSchema: GenMessage<SwarmGetSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 7);
+export const SwarmGetSettingsResponseSchema: GenMessage<SwarmGetSettingsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 7);
 
 /**
  * @generated from message openoxide.api.v1.SwarmUpdateSettingsRequest
  */
-export type SwarmUpdateSettingsRequest = Message<"openoxide.api.v1.SwarmUpdateSettingsRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type SwarmUpdateSettingsRequest =
+	Message<'openoxide.api.v1.SwarmUpdateSettingsRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: openoxide.api.v1.SwarmSettingsDocument settings = 2;
-   */
-  settings?: SwarmSettingsDocument | undefined;
-};
+		/**
+		 * @generated from field: openoxide.api.v1.SwarmSettingsDocument settings = 2;
+		 */
+		settings?: SwarmSettingsDocument | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmUpdateSettingsRequest.
  * Use `create(SwarmUpdateSettingsRequestSchema)` to create a new message.
  */
-export const SwarmUpdateSettingsRequestSchema: GenMessage<SwarmUpdateSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 8);
+export const SwarmUpdateSettingsRequestSchema: GenMessage<SwarmUpdateSettingsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 8);
 
 /**
  * @generated from message openoxide.api.v1.SwarmUpdateSettingsResponse
  */
-export type SwarmUpdateSettingsResponse = Message<"openoxide.api.v1.SwarmUpdateSettingsResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.SwarmSettingsDocument settings = 1;
-   */
-  settings?: SwarmSettingsDocument | undefined;
-};
+export type SwarmUpdateSettingsResponse =
+	Message<'openoxide.api.v1.SwarmUpdateSettingsResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.SwarmSettingsDocument settings = 1;
+		 */
+		settings?: SwarmSettingsDocument | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmUpdateSettingsResponse.
  * Use `create(SwarmUpdateSettingsResponseSchema)` to create a new message.
  */
-export const SwarmUpdateSettingsResponseSchema: GenMessage<SwarmUpdateSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 9);
+export const SwarmUpdateSettingsResponseSchema: GenMessage<SwarmUpdateSettingsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 9);
 
 /**
  * @generated from message openoxide.api.v1.SwarmListNetworksRequest
  */
-export type SwarmListNetworksRequest = Message<"openoxide.api.v1.SwarmListNetworksRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type SwarmListNetworksRequest =
+	Message<'openoxide.api.v1.SwarmListNetworksRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmListNetworksRequest.
  * Use `create(SwarmListNetworksRequestSchema)` to create a new message.
  */
-export const SwarmListNetworksRequestSchema: GenMessage<SwarmListNetworksRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 10);
+export const SwarmListNetworksRequestSchema: GenMessage<SwarmListNetworksRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 10);
 
 /**
  * @generated from message openoxide.api.v1.SwarmListNetworksResponse
  */
-export type SwarmListNetworksResponse = Message<"openoxide.api.v1.SwarmListNetworksResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.SwarmNetwork networks = 1;
-   */
-  networks: SwarmNetwork[];
-};
+export type SwarmListNetworksResponse =
+	Message<'openoxide.api.v1.SwarmListNetworksResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.SwarmNetwork networks = 1;
+		 */
+		networks: SwarmNetwork[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmListNetworksResponse.
  * Use `create(SwarmListNetworksResponseSchema)` to create a new message.
  */
-export const SwarmListNetworksResponseSchema: GenMessage<SwarmListNetworksResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 11);
+export const SwarmListNetworksResponseSchema: GenMessage<SwarmListNetworksResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 11);
 
 /**
  * @generated from message openoxide.api.v1.SwarmCreateNetworkRequest
  */
-export type SwarmCreateNetworkRequest = Message<"openoxide.api.v1.SwarmCreateNetworkRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type SwarmCreateNetworkRequest =
+	Message<'openoxide.api.v1.SwarmCreateNetworkRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
+		/**
+		 * @generated from field: string name = 2;
+		 */
+		name: string;
 
-  /**
-   * Opaque JSON document of network options (driver, labels, ...).
-   *
-   * @generated from field: optional string config_json = 3;
-   */
-  configJson?: string | undefined;
-};
+		/**
+		 * Opaque JSON document of network options (driver, labels, ...).
+		 *
+		 * @generated from field: optional string config_json = 3;
+		 */
+		configJson?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmCreateNetworkRequest.
  * Use `create(SwarmCreateNetworkRequestSchema)` to create a new message.
  */
-export const SwarmCreateNetworkRequestSchema: GenMessage<SwarmCreateNetworkRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 12);
+export const SwarmCreateNetworkRequestSchema: GenMessage<SwarmCreateNetworkRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 12);
 
 /**
  * @generated from message openoxide.api.v1.SwarmCreateNetworkResponse
  */
-export type SwarmCreateNetworkResponse = Message<"openoxide.api.v1.SwarmCreateNetworkResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.SwarmNetwork network = 1;
-   */
-  network?: SwarmNetwork | undefined;
-};
+export type SwarmCreateNetworkResponse =
+	Message<'openoxide.api.v1.SwarmCreateNetworkResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.SwarmNetwork network = 1;
+		 */
+		network?: SwarmNetwork | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmCreateNetworkResponse.
  * Use `create(SwarmCreateNetworkResponseSchema)` to create a new message.
  */
-export const SwarmCreateNetworkResponseSchema: GenMessage<SwarmCreateNetworkResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 13);
+export const SwarmCreateNetworkResponseSchema: GenMessage<SwarmCreateNetworkResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 13);
 
 /**
  * @generated from message openoxide.api.v1.SwarmUpdateNetworkRequest
  */
-export type SwarmUpdateNetworkRequest = Message<"openoxide.api.v1.SwarmUpdateNetworkRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type SwarmUpdateNetworkRequest =
+	Message<'openoxide.api.v1.SwarmUpdateNetworkRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string network_id = 2;
-   */
-  networkId: string;
+		/**
+		 * @generated from field: string network_id = 2;
+		 */
+		networkId: string;
 
-  /**
-   * Opaque JSON document of the network fields to replace.
-   *
-   * @generated from field: string config_json = 3;
-   */
-  configJson: string;
-};
+		/**
+		 * Opaque JSON document of the network fields to replace.
+		 *
+		 * @generated from field: string config_json = 3;
+		 */
+		configJson: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmUpdateNetworkRequest.
  * Use `create(SwarmUpdateNetworkRequestSchema)` to create a new message.
  */
-export const SwarmUpdateNetworkRequestSchema: GenMessage<SwarmUpdateNetworkRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 14);
+export const SwarmUpdateNetworkRequestSchema: GenMessage<SwarmUpdateNetworkRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 14);
 
 /**
  * @generated from message openoxide.api.v1.SwarmUpdateNetworkResponse
  */
-export type SwarmUpdateNetworkResponse = Message<"openoxide.api.v1.SwarmUpdateNetworkResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.SwarmNetwork network = 1;
-   */
-  network?: SwarmNetwork | undefined;
-};
+export type SwarmUpdateNetworkResponse =
+	Message<'openoxide.api.v1.SwarmUpdateNetworkResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.SwarmNetwork network = 1;
+		 */
+		network?: SwarmNetwork | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmUpdateNetworkResponse.
  * Use `create(SwarmUpdateNetworkResponseSchema)` to create a new message.
  */
-export const SwarmUpdateNetworkResponseSchema: GenMessage<SwarmUpdateNetworkResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 15);
+export const SwarmUpdateNetworkResponseSchema: GenMessage<SwarmUpdateNetworkResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 15);
 
 /**
  * @generated from message openoxide.api.v1.SwarmDeleteNetworkRequest
  */
-export type SwarmDeleteNetworkRequest = Message<"openoxide.api.v1.SwarmDeleteNetworkRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type SwarmDeleteNetworkRequest =
+	Message<'openoxide.api.v1.SwarmDeleteNetworkRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string network_id = 2;
-   */
-  networkId: string;
-};
+		/**
+		 * @generated from field: string network_id = 2;
+		 */
+		networkId: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmDeleteNetworkRequest.
  * Use `create(SwarmDeleteNetworkRequestSchema)` to create a new message.
  */
-export const SwarmDeleteNetworkRequestSchema: GenMessage<SwarmDeleteNetworkRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 16);
+export const SwarmDeleteNetworkRequestSchema: GenMessage<SwarmDeleteNetworkRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 16);
 
 /**
  * @generated from message openoxide.api.v1.SwarmListServicesRequest
  */
-export type SwarmListServicesRequest = Message<"openoxide.api.v1.SwarmListServicesRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type SwarmListServicesRequest =
+	Message<'openoxide.api.v1.SwarmListServicesRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmListServicesRequest.
  * Use `create(SwarmListServicesRequestSchema)` to create a new message.
  */
-export const SwarmListServicesRequestSchema: GenMessage<SwarmListServicesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 17);
+export const SwarmListServicesRequestSchema: GenMessage<SwarmListServicesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 17);
 
 /**
  * @generated from message openoxide.api.v1.SwarmListServicesResponse
  */
-export type SwarmListServicesResponse = Message<"openoxide.api.v1.SwarmListServicesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.SwarmServiceInfo services = 1;
-   */
-  services: SwarmServiceInfo[];
-};
+export type SwarmListServicesResponse =
+	Message<'openoxide.api.v1.SwarmListServicesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.SwarmServiceInfo services = 1;
+		 */
+		services: SwarmServiceInfo[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmListServicesResponse.
  * Use `create(SwarmListServicesResponseSchema)` to create a new message.
  */
-export const SwarmListServicesResponseSchema: GenMessage<SwarmListServicesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 18);
+export const SwarmListServicesResponseSchema: GenMessage<SwarmListServicesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 18);
 
 /**
  * @generated from message openoxide.api.v1.SwarmGetServiceRequest
  */
-export type SwarmGetServiceRequest = Message<"openoxide.api.v1.SwarmGetServiceRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type SwarmGetServiceRequest =
+	Message<'openoxide.api.v1.SwarmGetServiceRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string service_id = 2;
-   */
-  serviceId: string;
-};
+		/**
+		 * @generated from field: string service_id = 2;
+		 */
+		serviceId: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmGetServiceRequest.
  * Use `create(SwarmGetServiceRequestSchema)` to create a new message.
  */
-export const SwarmGetServiceRequestSchema: GenMessage<SwarmGetServiceRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 19);
+export const SwarmGetServiceRequestSchema: GenMessage<SwarmGetServiceRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 19);
 
 /**
  * @generated from message openoxide.api.v1.SwarmGetServiceResponse
  */
-export type SwarmGetServiceResponse = Message<"openoxide.api.v1.SwarmGetServiceResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.SwarmServiceInfo service = 1;
-   */
-  service?: SwarmServiceInfo | undefined;
-};
+export type SwarmGetServiceResponse =
+	Message<'openoxide.api.v1.SwarmGetServiceResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.SwarmServiceInfo service = 1;
+		 */
+		service?: SwarmServiceInfo | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmGetServiceResponse.
  * Use `create(SwarmGetServiceResponseSchema)` to create a new message.
  */
-export const SwarmGetServiceResponseSchema: GenMessage<SwarmGetServiceResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 20);
+export const SwarmGetServiceResponseSchema: GenMessage<SwarmGetServiceResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 20);
 
 /**
  * @generated from message openoxide.api.v1.SwarmUpdateServiceRequest
  */
-export type SwarmUpdateServiceRequest = Message<"openoxide.api.v1.SwarmUpdateServiceRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type SwarmUpdateServiceRequest =
+	Message<'openoxide.api.v1.SwarmUpdateServiceRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string service_id = 2;
-   */
-  serviceId: string;
+		/**
+		 * @generated from field: string service_id = 2;
+		 */
+		serviceId: string;
 
-  /**
-   * Opaque JSON document of the service spec fields to replace.
-   *
-   * @generated from field: string spec_json = 3;
-   */
-  specJson: string;
-};
+		/**
+		 * Opaque JSON document of the service spec fields to replace.
+		 *
+		 * @generated from field: string spec_json = 3;
+		 */
+		specJson: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmUpdateServiceRequest.
  * Use `create(SwarmUpdateServiceRequestSchema)` to create a new message.
  */
-export const SwarmUpdateServiceRequestSchema: GenMessage<SwarmUpdateServiceRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 21);
+export const SwarmUpdateServiceRequestSchema: GenMessage<SwarmUpdateServiceRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 21);
 
 /**
  * @generated from message openoxide.api.v1.SwarmUpdateServiceResponse
  */
-export type SwarmUpdateServiceResponse = Message<"openoxide.api.v1.SwarmUpdateServiceResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.SwarmServiceInfo service = 1;
-   */
-  service?: SwarmServiceInfo | undefined;
-};
+export type SwarmUpdateServiceResponse =
+	Message<'openoxide.api.v1.SwarmUpdateServiceResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.SwarmServiceInfo service = 1;
+		 */
+		service?: SwarmServiceInfo | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmUpdateServiceResponse.
  * Use `create(SwarmUpdateServiceResponseSchema)` to create a new message.
  */
-export const SwarmUpdateServiceResponseSchema: GenMessage<SwarmUpdateServiceResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 22);
+export const SwarmUpdateServiceResponseSchema: GenMessage<SwarmUpdateServiceResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 22);
 
 /**
  * @generated from message openoxide.api.v1.SwarmInfoRequest
  */
-export type SwarmInfoRequest = Message<"openoxide.api.v1.SwarmInfoRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type SwarmInfoRequest =
+	Message<'openoxide.api.v1.SwarmInfoRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmInfoRequest.
  * Use `create(SwarmInfoRequestSchema)` to create a new message.
  */
-export const SwarmInfoRequestSchema: GenMessage<SwarmInfoRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 23);
+export const SwarmInfoRequestSchema: GenMessage<SwarmInfoRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 23);
 
 /**
  * @generated from message openoxide.api.v1.SwarmInfoResponse
  */
-export type SwarmInfoResponse = Message<"openoxide.api.v1.SwarmInfoResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.SwarmInfo info = 1;
-   */
-  info?: SwarmInfo | undefined;
-};
+export type SwarmInfoResponse =
+	Message<'openoxide.api.v1.SwarmInfoResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.SwarmInfo info = 1;
+		 */
+		info?: SwarmInfo | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmInfoResponse.
  * Use `create(SwarmInfoResponseSchema)` to create a new message.
  */
-export const SwarmInfoResponseSchema: GenMessage<SwarmInfoResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 24);
+export const SwarmInfoResponseSchema: GenMessage<SwarmInfoResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 24);
 
 /**
  * @generated from message openoxide.api.v1.SwarmGetJoinTokensRequest
  */
-export type SwarmGetJoinTokensRequest = Message<"openoxide.api.v1.SwarmGetJoinTokensRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type SwarmGetJoinTokensRequest =
+	Message<'openoxide.api.v1.SwarmGetJoinTokensRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmGetJoinTokensRequest.
  * Use `create(SwarmGetJoinTokensRequestSchema)` to create a new message.
  */
-export const SwarmGetJoinTokensRequestSchema: GenMessage<SwarmGetJoinTokensRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 25);
+export const SwarmGetJoinTokensRequestSchema: GenMessage<SwarmGetJoinTokensRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 25);
 
 /**
  * @generated from message openoxide.api.v1.SwarmGetJoinTokensResponse
  */
-export type SwarmGetJoinTokensResponse = Message<"openoxide.api.v1.SwarmGetJoinTokensResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.SwarmJoinTokens tokens = 1;
-   */
-  tokens?: SwarmJoinTokens | undefined;
-};
+export type SwarmGetJoinTokensResponse =
+	Message<'openoxide.api.v1.SwarmGetJoinTokensResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.SwarmJoinTokens tokens = 1;
+		 */
+		tokens?: SwarmJoinTokens | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmGetJoinTokensResponse.
  * Use `create(SwarmGetJoinTokensResponseSchema)` to create a new message.
  */
-export const SwarmGetJoinTokensResponseSchema: GenMessage<SwarmGetJoinTokensResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 26);
+export const SwarmGetJoinTokensResponseSchema: GenMessage<SwarmGetJoinTokensResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 26);
 
 /**
  * @generated from message openoxide.api.v1.SwarmListNodesRequest
  */
-export type SwarmListNodesRequest = Message<"openoxide.api.v1.SwarmListNodesRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type SwarmListNodesRequest =
+	Message<'openoxide.api.v1.SwarmListNodesRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmListNodesRequest.
  * Use `create(SwarmListNodesRequestSchema)` to create a new message.
  */
-export const SwarmListNodesRequestSchema: GenMessage<SwarmListNodesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 27);
+export const SwarmListNodesRequestSchema: GenMessage<SwarmListNodesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 27);
 
 /**
  * @generated from message openoxide.api.v1.SwarmListNodesResponse
  */
-export type SwarmListNodesResponse = Message<"openoxide.api.v1.SwarmListNodesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.SwarmNode nodes = 1;
-   */
-  nodes: SwarmNode[];
-};
+export type SwarmListNodesResponse =
+	Message<'openoxide.api.v1.SwarmListNodesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.SwarmNode nodes = 1;
+		 */
+		nodes: SwarmNode[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmListNodesResponse.
  * Use `create(SwarmListNodesResponseSchema)` to create a new message.
  */
-export const SwarmListNodesResponseSchema: GenMessage<SwarmListNodesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 28);
+export const SwarmListNodesResponseSchema: GenMessage<SwarmListNodesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 28);
 
 /**
  * @generated from message openoxide.api.v1.SwarmPromoteNodeRequest
  */
-export type SwarmPromoteNodeRequest = Message<"openoxide.api.v1.SwarmPromoteNodeRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type SwarmPromoteNodeRequest =
+	Message<'openoxide.api.v1.SwarmPromoteNodeRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string node_id = 2;
-   */
-  nodeId: string;
-};
+		/**
+		 * @generated from field: string node_id = 2;
+		 */
+		nodeId: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmPromoteNodeRequest.
  * Use `create(SwarmPromoteNodeRequestSchema)` to create a new message.
  */
-export const SwarmPromoteNodeRequestSchema: GenMessage<SwarmPromoteNodeRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 29);
+export const SwarmPromoteNodeRequestSchema: GenMessage<SwarmPromoteNodeRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 29);
 
 /**
  * @generated from message openoxide.api.v1.SwarmDemoteNodeRequest
  */
-export type SwarmDemoteNodeRequest = Message<"openoxide.api.v1.SwarmDemoteNodeRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type SwarmDemoteNodeRequest =
+	Message<'openoxide.api.v1.SwarmDemoteNodeRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string node_id = 2;
-   */
-  nodeId: string;
-};
+		/**
+		 * @generated from field: string node_id = 2;
+		 */
+		nodeId: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmDemoteNodeRequest.
  * Use `create(SwarmDemoteNodeRequestSchema)` to create a new message.
  */
-export const SwarmDemoteNodeRequestSchema: GenMessage<SwarmDemoteNodeRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 30);
+export const SwarmDemoteNodeRequestSchema: GenMessage<SwarmDemoteNodeRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 30);
 
 /**
  * @generated from message openoxide.api.v1.SwarmUpdateNodeAvailabilityRequest
  */
-export type SwarmUpdateNodeAvailabilityRequest = Message<"openoxide.api.v1.SwarmUpdateNodeAvailabilityRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type SwarmUpdateNodeAvailabilityRequest =
+	Message<'openoxide.api.v1.SwarmUpdateNodeAvailabilityRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string node_id = 2;
-   */
-  nodeId: string;
+		/**
+		 * @generated from field: string node_id = 2;
+		 */
+		nodeId: string;
 
-  /**
-   * @generated from field: openoxide.api.v1.SwarmNodeAvailability availability = 3;
-   */
-  availability: SwarmNodeAvailability;
-};
+		/**
+		 * @generated from field: openoxide.api.v1.SwarmNodeAvailability availability = 3;
+		 */
+		availability: SwarmNodeAvailability;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmUpdateNodeAvailabilityRequest.
  * Use `create(SwarmUpdateNodeAvailabilityRequestSchema)` to create a new message.
  */
-export const SwarmUpdateNodeAvailabilityRequestSchema: GenMessage<SwarmUpdateNodeAvailabilityRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 31);
+export const SwarmUpdateNodeAvailabilityRequestSchema: GenMessage<SwarmUpdateNodeAvailabilityRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 31);
 
 /**
  * @generated from message openoxide.api.v1.SwarmRemoveNodeRequest
  */
-export type SwarmRemoveNodeRequest = Message<"openoxide.api.v1.SwarmRemoveNodeRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type SwarmRemoveNodeRequest =
+	Message<'openoxide.api.v1.SwarmRemoveNodeRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string node_id = 2;
-   */
-  nodeId: string;
-};
+		/**
+		 * @generated from field: string node_id = 2;
+		 */
+		nodeId: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmRemoveNodeRequest.
  * Use `create(SwarmRemoveNodeRequestSchema)` to create a new message.
  */
-export const SwarmRemoveNodeRequestSchema: GenMessage<SwarmRemoveNodeRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 32);
+export const SwarmRemoveNodeRequestSchema: GenMessage<SwarmRemoveNodeRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 32);
 
 /**
  * Force is required when a manager leaves; it resets the node so it can join another cluster.
  *
  * @generated from message openoxide.api.v1.SwarmLeaveRequest
  */
-export type SwarmLeaveRequest = Message<"openoxide.api.v1.SwarmLeaveRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type SwarmLeaveRequest =
+	Message<'openoxide.api.v1.SwarmLeaveRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: bool force = 2;
-   */
-  force: boolean;
-};
+		/**
+		 * @generated from field: bool force = 2;
+		 */
+		force: boolean;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmLeaveRequest.
  * Use `create(SwarmLeaveRequestSchema)` to create a new message.
  */
-export const SwarmLeaveRequestSchema: GenMessage<SwarmLeaveRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 33);
+export const SwarmLeaveRequestSchema: GenMessage<SwarmLeaveRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 33);
 
 /**
  * Joins one server into another server's cluster in one shot: the target force-leaves any standalone swarm first, then joins with a VPN-aware advertise address.
  *
  * @generated from message openoxide.api.v1.SwarmJoinRequest
  */
-export type SwarmJoinRequest = Message<"openoxide.api.v1.SwarmJoinRequest"> & {
-  /**
-   * Server that should join the cluster.
-   *
-   * @generated from field: int64 target_server_id = 1;
-   */
-  targetServerId: bigint;
+export type SwarmJoinRequest =
+	Message<'openoxide.api.v1.SwarmJoinRequest'> & {
+		/**
+		 * Server that should join the cluster.
+		 *
+		 * @generated from field: int64 target_server_id = 1;
+		 */
+		targetServerId: bigint;
 
-  /**
-   * Server whose cluster to join; absent means the local engine's cluster.
-   *
-   * @generated from field: optional int64 manager_server_id = 2;
-   */
-  managerServerId?: bigint | undefined;
+		/**
+		 * Server whose cluster to join; absent means the local engine's cluster.
+		 *
+		 * @generated from field: optional int64 manager_server_id = 2;
+		 */
+		managerServerId?: bigint | undefined;
 
-  /**
-   * @generated from field: openoxide.api.v1.SwarmRole role = 3;
-   */
-  role: SwarmRole;
-};
+		/**
+		 * @generated from field: openoxide.api.v1.SwarmRole role = 3;
+		 */
+		role: SwarmRole;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmJoinRequest.
  * Use `create(SwarmJoinRequestSchema)` to create a new message.
  */
-export const SwarmJoinRequestSchema: GenMessage<SwarmJoinRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_swarm, 34);
+export const SwarmJoinRequestSchema: GenMessage<SwarmJoinRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_swarm, 34);
 
 /**
  * @generated from enum openoxide.api.v1.SwarmNodeRole
  */
 export enum SwarmNodeRole {
-  /**
-   * @generated from enum value: SWARM_NODE_ROLE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: SWARM_NODE_ROLE_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: SWARM_NODE_ROLE_WORKER = 1;
-   */
-  WORKER = 1,
+	/**
+	 * @generated from enum value: SWARM_NODE_ROLE_WORKER = 1;
+	 */
+	WORKER = 1,
 
-  /**
-   * @generated from enum value: SWARM_NODE_ROLE_MANAGER = 2;
-   */
-  MANAGER = 2,
+	/**
+	 * @generated from enum value: SWARM_NODE_ROLE_MANAGER = 2;
+	 */
+	MANAGER = 2,
 }
 
 /**
  * Describes the enum openoxide.api.v1.SwarmNodeRole.
  */
-export const SwarmNodeRoleSchema: GenEnum<SwarmNodeRole> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_swarm, 0);
+export const SwarmNodeRoleSchema: GenEnum<SwarmNodeRole> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_swarm, 0);
 
 /**
  * @generated from enum openoxide.api.v1.SwarmRole
  */
 export enum SwarmRole {
-  /**
-   * @generated from enum value: SWARM_ROLE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: SWARM_ROLE_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: SWARM_ROLE_WORKER = 1;
-   */
-  WORKER = 1,
+	/**
+	 * @generated from enum value: SWARM_ROLE_WORKER = 1;
+	 */
+	WORKER = 1,
 
-  /**
-   * @generated from enum value: SWARM_ROLE_MANAGER = 2;
-   */
-  MANAGER = 2,
+	/**
+	 * @generated from enum value: SWARM_ROLE_MANAGER = 2;
+	 */
+	MANAGER = 2,
 }
 
 /**
  * Describes the enum openoxide.api.v1.SwarmRole.
  */
-export const SwarmRoleSchema: GenEnum<SwarmRole> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_swarm, 1);
+export const SwarmRoleSchema: GenEnum<SwarmRole> /*@__PURE__*/ = enumDesc(
+	file_openoxide_api_v1_swarm,
+	1,
+);
 
 /**
  * @generated from enum openoxide.api.v1.SwarmNodeAvailability
  */
 export enum SwarmNodeAvailability {
-  /**
-   * @generated from enum value: SWARM_NODE_AVAILABILITY_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: SWARM_NODE_AVAILABILITY_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: SWARM_NODE_AVAILABILITY_ACTIVE = 1;
-   */
-  ACTIVE = 1,
+	/**
+	 * @generated from enum value: SWARM_NODE_AVAILABILITY_ACTIVE = 1;
+	 */
+	ACTIVE = 1,
 
-  /**
-   * @generated from enum value: SWARM_NODE_AVAILABILITY_PAUSE = 2;
-   */
-  PAUSE = 2,
+	/**
+	 * @generated from enum value: SWARM_NODE_AVAILABILITY_PAUSE = 2;
+	 */
+	PAUSE = 2,
 
-  /**
-   * @generated from enum value: SWARM_NODE_AVAILABILITY_DRAIN = 3;
-   */
-  DRAIN = 3,
+	/**
+	 * @generated from enum value: SWARM_NODE_AVAILABILITY_DRAIN = 3;
+	 */
+	DRAIN = 3,
 }
 
 /**
  * Describes the enum openoxide.api.v1.SwarmNodeAvailability.
  */
-export const SwarmNodeAvailabilitySchema: GenEnum<SwarmNodeAvailability> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_swarm, 2);
+export const SwarmNodeAvailabilitySchema: GenEnum<SwarmNodeAvailability> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_swarm, 2);
 
 /**
  * Sole swarm owner service; absorbs the former SwarmOperationsService; `server_id` selects the target engine, absent means the panel's local Docker daemon.
@@ -914,150 +960,148 @@ export const SwarmNodeAvailabilitySchema: GenEnum<SwarmNodeAvailability> = /*@__
  * @generated from service openoxide.api.v1.SwarmService
  */
 export const SwarmService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.GetSettings
-   */
-  getSettings: {
-    methodKind: "unary";
-    input: typeof SwarmGetSettingsRequestSchema;
-    output: typeof SwarmGetSettingsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.UpdateSettings
-   */
-  updateSettings: {
-    methodKind: "unary";
-    input: typeof SwarmUpdateSettingsRequestSchema;
-    output: typeof SwarmUpdateSettingsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.ListNetworks
-   */
-  listNetworks: {
-    methodKind: "unary";
-    input: typeof SwarmListNetworksRequestSchema;
-    output: typeof SwarmListNetworksResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.CreateNetwork
-   */
-  createNetwork: {
-    methodKind: "unary";
-    input: typeof SwarmCreateNetworkRequestSchema;
-    output: typeof SwarmCreateNetworkResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.UpdateNetwork
-   */
-  updateNetwork: {
-    methodKind: "unary";
-    input: typeof SwarmUpdateNetworkRequestSchema;
-    output: typeof SwarmUpdateNetworkResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.DeleteNetwork
-   */
-  deleteNetwork: {
-    methodKind: "unary";
-    input: typeof SwarmDeleteNetworkRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.ListServices
-   */
-  listServices: {
-    methodKind: "unary";
-    input: typeof SwarmListServicesRequestSchema;
-    output: typeof SwarmListServicesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.GetService
-   */
-  getService: {
-    methodKind: "unary";
-    input: typeof SwarmGetServiceRequestSchema;
-    output: typeof SwarmGetServiceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.UpdateService
-   */
-  updateService: {
-    methodKind: "unary";
-    input: typeof SwarmUpdateServiceRequestSchema;
-    output: typeof SwarmUpdateServiceResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.Info
-   */
-  info: {
-    methodKind: "unary";
-    input: typeof SwarmInfoRequestSchema;
-    output: typeof SwarmInfoResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.GetJoinTokens
-   */
-  getJoinTokens: {
-    methodKind: "unary";
-    input: typeof SwarmGetJoinTokensRequestSchema;
-    output: typeof SwarmGetJoinTokensResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.ListNodes
-   */
-  listNodes: {
-    methodKind: "unary";
-    input: typeof SwarmListNodesRequestSchema;
-    output: typeof SwarmListNodesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.PromoteNode
-   */
-  promoteNode: {
-    methodKind: "unary";
-    input: typeof SwarmPromoteNodeRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.DemoteNode
-   */
-  demoteNode: {
-    methodKind: "unary";
-    input: typeof SwarmDemoteNodeRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.UpdateNodeAvailability
-   */
-  updateNodeAvailability: {
-    methodKind: "unary";
-    input: typeof SwarmUpdateNodeAvailabilityRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.RemoveNode
-   */
-  removeNode: {
-    methodKind: "unary";
-    input: typeof SwarmRemoveNodeRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.Leave
-   */
-  leave: {
-    methodKind: "unary";
-    input: typeof SwarmLeaveRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SwarmService.Join
-   */
-  join: {
-    methodKind: "unary";
-    input: typeof SwarmJoinRequestSchema;
-    output: typeof EmptySchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_swarm, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.GetSettings
+	 */
+	getSettings: {
+		methodKind: 'unary';
+		input: typeof SwarmGetSettingsRequestSchema;
+		output: typeof SwarmGetSettingsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.UpdateSettings
+	 */
+	updateSettings: {
+		methodKind: 'unary';
+		input: typeof SwarmUpdateSettingsRequestSchema;
+		output: typeof SwarmUpdateSettingsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.ListNetworks
+	 */
+	listNetworks: {
+		methodKind: 'unary';
+		input: typeof SwarmListNetworksRequestSchema;
+		output: typeof SwarmListNetworksResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.CreateNetwork
+	 */
+	createNetwork: {
+		methodKind: 'unary';
+		input: typeof SwarmCreateNetworkRequestSchema;
+		output: typeof SwarmCreateNetworkResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.UpdateNetwork
+	 */
+	updateNetwork: {
+		methodKind: 'unary';
+		input: typeof SwarmUpdateNetworkRequestSchema;
+		output: typeof SwarmUpdateNetworkResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.DeleteNetwork
+	 */
+	deleteNetwork: {
+		methodKind: 'unary';
+		input: typeof SwarmDeleteNetworkRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.ListServices
+	 */
+	listServices: {
+		methodKind: 'unary';
+		input: typeof SwarmListServicesRequestSchema;
+		output: typeof SwarmListServicesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.GetService
+	 */
+	getService: {
+		methodKind: 'unary';
+		input: typeof SwarmGetServiceRequestSchema;
+		output: typeof SwarmGetServiceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.UpdateService
+	 */
+	updateService: {
+		methodKind: 'unary';
+		input: typeof SwarmUpdateServiceRequestSchema;
+		output: typeof SwarmUpdateServiceResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.Info
+	 */
+	info: {
+		methodKind: 'unary';
+		input: typeof SwarmInfoRequestSchema;
+		output: typeof SwarmInfoResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.GetJoinTokens
+	 */
+	getJoinTokens: {
+		methodKind: 'unary';
+		input: typeof SwarmGetJoinTokensRequestSchema;
+		output: typeof SwarmGetJoinTokensResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.ListNodes
+	 */
+	listNodes: {
+		methodKind: 'unary';
+		input: typeof SwarmListNodesRequestSchema;
+		output: typeof SwarmListNodesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.PromoteNode
+	 */
+	promoteNode: {
+		methodKind: 'unary';
+		input: typeof SwarmPromoteNodeRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.DemoteNode
+	 */
+	demoteNode: {
+		methodKind: 'unary';
+		input: typeof SwarmDemoteNodeRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.UpdateNodeAvailability
+	 */
+	updateNodeAvailability: {
+		methodKind: 'unary';
+		input: typeof SwarmUpdateNodeAvailabilityRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.RemoveNode
+	 */
+	removeNode: {
+		methodKind: 'unary';
+		input: typeof SwarmRemoveNodeRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.Leave
+	 */
+	leave: {
+		methodKind: 'unary';
+		input: typeof SwarmLeaveRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SwarmService.Join
+	 */
+	join: {
+		methodKind: 'unary';
+		input: typeof SwarmJoinRequestSchema;
+		output: typeof EmptySchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_swarm, 0);

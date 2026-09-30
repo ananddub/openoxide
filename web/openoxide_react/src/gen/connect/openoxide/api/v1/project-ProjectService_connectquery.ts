@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/project.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { ProjectService } from "./project_pb";
+import {ProjectService} from './project_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.ProjectService.GetProject

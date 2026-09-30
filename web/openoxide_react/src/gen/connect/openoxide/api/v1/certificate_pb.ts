@@ -2,512 +2,541 @@
 // @generated from file openoxide/api/v1/certificate.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/certificate.proto.
  */
-export const file_openoxide_api_v1_certificate: GenFile = /*@__PURE__*/
-  fileDesc("CiJvcGVub3hpZGUvYXBpL3YxL2NlcnRpZmljYXRlLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIu8BCgtDZXJ0aWZpY2F0ZRIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEhgKEGNlcnRpZmljYXRlX2RhdGEYAyABKAkSFwoPaGFzX3ByaXZhdGVfa2V5GAQgASgIEhgKEGNlcnRpZmljYXRlX3BhdGgYBSABKAkSEgoKYXV0b19yZW5ldxgGIAEoCBIWCglzZXJ2ZXJfaWQYByABKAlIAIgBARIXCg9vcmdhbml6YXRpb25faWQYCCABKAMSEgoKY3JlYXRlZF9hdBgJIAEoAxISCgp1cGRhdGVkX2F0GAogASgDQgwKCl9zZXJ2ZXJfaWQi0wIKEkNlcnRpZmljYXRlUmVuZXdhbBIKCgJpZBgBIAEoAxIWCg5jZXJ0aWZpY2F0ZV9pZBgCIAEoAxIXCg9vcmdhbml6YXRpb25faWQYAyABKAMSOgoGc3RhdHVzGAQgASgOMioub3Blbm94aWRlLmFwaS52MS5DZXJ0aWZpY2F0ZVJlbmV3YWxTdGF0dXMSIAoTcHJldmlvdXNfZXhwaXJlc19hdBgFIAEoA0gAiAEBEhsKDm5ld19leHBpcmVzX2F0GAYgASgDSAGIAQESEgoFZXJyb3IYByABKAlIAogBARISCgpzdGFydGVkX2F0GAggASgDEhgKC2ZpbmlzaGVkX2F0GAkgASgDSAOIAQFCFgoUX3ByZXZpb3VzX2V4cGlyZXNfYXRCEQoPX25ld19leHBpcmVzX2F0QggKBl9lcnJvckIOCgxfZmluaXNoZWRfYXQiRQoXQ2VydGlmaWNhdGVEZXBlbmRlbmNpZXMSEAoIcmVuZXdhbHMYASABKAMSGAoQcnVubmluZ19yZW5ld2FscxgCIAEoAyIZChdMaXN0Q2VydGlmaWNhdGVzUmVxdWVzdCJPChhMaXN0Q2VydGlmaWNhdGVzUmVzcG9uc2USMwoMY2VydGlmaWNhdGVzGAEgAygLMh0ub3Blbm94aWRlLmFwaS52MS5DZXJ0aWZpY2F0ZSIsChVHZXRDZXJ0aWZpY2F0ZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiTAoWR2V0Q2VydGlmaWNhdGVSZXNwb25zZRIyCgtjZXJ0aWZpY2F0ZRgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuQ2VydGlmaWNhdGUiyQEKGENyZWF0ZUNlcnRpZmljYXRlUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEiEKEGNlcnRpZmljYXRlX2RhdGEYAiABKAlCB7pIBHICEAESEwoLcHJpdmF0ZV9rZXkYAyABKAkSIQoQY2VydGlmaWNhdGVfcGF0aBgEIAEoCUIHukgEcgIQARISCgphdXRvX3JlbmV3GAUgASgIEhYKCXNlcnZlcl9pZBgGIAEoCUgAiAEBQgwKCl9zZXJ2ZXJfaWQiTwoZQ3JlYXRlQ2VydGlmaWNhdGVSZXNwb25zZRIyCgtjZXJ0aWZpY2F0ZRgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuQ2VydGlmaWNhdGUitQIKGFVwZGF0ZUNlcnRpZmljYXRlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIbCgRuYW1lGAIgASgJQgi6SAVyAxj/AUgAiAEBEh0KEGNlcnRpZmljYXRlX2RhdGEYAyABKAlIAYgBARIYCgtwcml2YXRlX2tleRgEIAEoCUgCiAEBEh0KEGNlcnRpZmljYXRlX3BhdGgYBSABKAlIA4gBARIXCgphdXRvX3JlbmV3GAYgASgISASIAQESFgoJc2VydmVyX2lkGAcgASgJSAWIAQFCBwoFX25hbWVCEwoRX2NlcnRpZmljYXRlX2RhdGFCDgoMX3ByaXZhdGVfa2V5QhMKEV9jZXJ0aWZpY2F0ZV9wYXRoQg0KC19hdXRvX3JlbmV3QgwKCl9zZXJ2ZXJfaWQiTwoZVXBkYXRlQ2VydGlmaWNhdGVSZXNwb25zZRIyCgtjZXJ0aWZpY2F0ZRgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuQ2VydGlmaWNhdGUiLwoYRGVsZXRlQ2VydGlmaWNhdGVSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIkUKIkxpc3RDZXJ0aWZpY2F0ZURlcGVuZGVuY2llc1JlcXVlc3QSHwoOY2VydGlmaWNhdGVfaWQYASABKANCB7pIBCICIAAiZgojTGlzdENlcnRpZmljYXRlRGVwZW5kZW5jaWVzUmVzcG9uc2USPwoMZGVwZW5kZW5jaWVzGAEgASgLMikub3Blbm94aWRlLmFwaS52MS5DZXJ0aWZpY2F0ZURlcGVuZGVuY2llcyJvChdSZW5ld0NlcnRpZmljYXRlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIhChBjZXJ0aWZpY2F0ZV9kYXRhGAIgASgJQge6SARyAhABEhwKC3ByaXZhdGVfa2V5GAMgASgJQge6SARyAhABIk4KGFJlbmV3Q2VydGlmaWNhdGVSZXNwb25zZRIyCgtjZXJ0aWZpY2F0ZRgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuQ2VydGlmaWNhdGUiQQoeTGlzdENlcnRpZmljYXRlUmVuZXdhbHNSZXF1ZXN0Eh8KDmNlcnRpZmljYXRlX2lkGAEgASgDQge6SAQiAiAAIlkKH0xpc3RDZXJ0aWZpY2F0ZVJlbmV3YWxzUmVzcG9uc2USNgoIcmVuZXdhbHMYASADKAsyJC5vcGVub3hpZGUuYXBpLnYxLkNlcnRpZmljYXRlUmVuZXdhbCq/AQoYQ2VydGlmaWNhdGVSZW5ld2FsU3RhdHVzEioKJkNFUlRJRklDQVRFX1JFTkVXQUxfU1RBVFVTX1VOU1BFQ0lGSUVEEAASJgoiQ0VSVElGSUNBVEVfUkVORVdBTF9TVEFUVVNfUlVOTklORxABEigKJENFUlRJRklDQVRFX1JFTkVXQUxfU1RBVFVTX1NVQ0NFRURFRBACEiUKIUNFUlRJRklDQVRFX1JFTkVXQUxfU1RBVFVTX0ZBSUxFRBADMvsGChJDZXJ0aWZpY2F0ZVNlcnZpY2USaQoQTGlzdENlcnRpZmljYXRlcxIpLm9wZW5veGlkZS5hcGkudjEuTGlzdENlcnRpZmljYXRlc1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLkxpc3RDZXJ0aWZpY2F0ZXNSZXNwb25zZRJjCg5HZXRDZXJ0aWZpY2F0ZRInLm9wZW5veGlkZS5hcGkudjEuR2V0Q2VydGlmaWNhdGVSZXF1ZXN0Gigub3Blbm94aWRlLmFwaS52MS5HZXRDZXJ0aWZpY2F0ZVJlc3BvbnNlEmwKEUNyZWF0ZUNlcnRpZmljYXRlEioub3Blbm94aWRlLmFwaS52MS5DcmVhdGVDZXJ0aWZpY2F0ZVJlcXVlc3QaKy5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZUNlcnRpZmljYXRlUmVzcG9uc2USbAoRVXBkYXRlQ2VydGlmaWNhdGUSKi5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZUNlcnRpZmljYXRlUmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlQ2VydGlmaWNhdGVSZXNwb25zZRJYChFEZWxldGVDZXJ0aWZpY2F0ZRIqLm9wZW5veGlkZS5hcGkudjEuRGVsZXRlQ2VydGlmaWNhdGVSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJ/ChBMaXN0RGVwZW5kZW5jaWVzEjQub3Blbm94aWRlLmFwaS52MS5MaXN0Q2VydGlmaWNhdGVEZXBlbmRlbmNpZXNSZXF1ZXN0GjUub3Blbm94aWRlLmFwaS52MS5MaXN0Q2VydGlmaWNhdGVEZXBlbmRlbmNpZXNSZXNwb25zZRJpChBSZW5ld0NlcnRpZmljYXRlEikub3Blbm94aWRlLmFwaS52MS5SZW5ld0NlcnRpZmljYXRlUmVxdWVzdBoqLm9wZW5veGlkZS5hcGkudjEuUmVuZXdDZXJ0aWZpY2F0ZVJlc3BvbnNlEnMKDExpc3RSZW5ld2FscxIwLm9wZW5veGlkZS5hcGkudjEuTGlzdENlcnRpZmljYXRlUmVuZXdhbHNSZXF1ZXN0GjEub3Blbm94aWRlLmFwaS52MS5MaXN0Q2VydGlmaWNhdGVSZW5ld2Fsc1Jlc3BvbnNlYgZwcm90bzM", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_certificate: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'CiJvcGVub3hpZGUvYXBpL3YxL2NlcnRpZmljYXRlLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIu8BCgtDZXJ0aWZpY2F0ZRIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEhgKEGNlcnRpZmljYXRlX2RhdGEYAyABKAkSFwoPaGFzX3ByaXZhdGVfa2V5GAQgASgIEhgKEGNlcnRpZmljYXRlX3BhdGgYBSABKAkSEgoKYXV0b19yZW5ldxgGIAEoCBIWCglzZXJ2ZXJfaWQYByABKAlIAIgBARIXCg9vcmdhbml6YXRpb25faWQYCCABKAMSEgoKY3JlYXRlZF9hdBgJIAEoAxISCgp1cGRhdGVkX2F0GAogASgDQgwKCl9zZXJ2ZXJfaWQi0wIKEkNlcnRpZmljYXRlUmVuZXdhbBIKCgJpZBgBIAEoAxIWCg5jZXJ0aWZpY2F0ZV9pZBgCIAEoAxIXCg9vcmdhbml6YXRpb25faWQYAyABKAMSOgoGc3RhdHVzGAQgASgOMioub3Blbm94aWRlLmFwaS52MS5DZXJ0aWZpY2F0ZVJlbmV3YWxTdGF0dXMSIAoTcHJldmlvdXNfZXhwaXJlc19hdBgFIAEoA0gAiAEBEhsKDm5ld19leHBpcmVzX2F0GAYgASgDSAGIAQESEgoFZXJyb3IYByABKAlIAogBARISCgpzdGFydGVkX2F0GAggASgDEhgKC2ZpbmlzaGVkX2F0GAkgASgDSAOIAQFCFgoUX3ByZXZpb3VzX2V4cGlyZXNfYXRCEQoPX25ld19leHBpcmVzX2F0QggKBl9lcnJvckIOCgxfZmluaXNoZWRfYXQiRQoXQ2VydGlmaWNhdGVEZXBlbmRlbmNpZXMSEAoIcmVuZXdhbHMYASABKAMSGAoQcnVubmluZ19yZW5ld2FscxgCIAEoAyIZChdMaXN0Q2VydGlmaWNhdGVzUmVxdWVzdCJPChhMaXN0Q2VydGlmaWNhdGVzUmVzcG9uc2USMwoMY2VydGlmaWNhdGVzGAEgAygLMh0ub3Blbm94aWRlLmFwaS52MS5DZXJ0aWZpY2F0ZSIsChVHZXRDZXJ0aWZpY2F0ZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiTAoWR2V0Q2VydGlmaWNhdGVSZXNwb25zZRIyCgtjZXJ0aWZpY2F0ZRgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuQ2VydGlmaWNhdGUiyQEKGENyZWF0ZUNlcnRpZmljYXRlUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEiEKEGNlcnRpZmljYXRlX2RhdGEYAiABKAlCB7pIBHICEAESEwoLcHJpdmF0ZV9rZXkYAyABKAkSIQoQY2VydGlmaWNhdGVfcGF0aBgEIAEoCUIHukgEcgIQARISCgphdXRvX3JlbmV3GAUgASgIEhYKCXNlcnZlcl9pZBgGIAEoCUgAiAEBQgwKCl9zZXJ2ZXJfaWQiTwoZQ3JlYXRlQ2VydGlmaWNhdGVSZXNwb25zZRIyCgtjZXJ0aWZpY2F0ZRgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuQ2VydGlmaWNhdGUitQIKGFVwZGF0ZUNlcnRpZmljYXRlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIbCgRuYW1lGAIgASgJQgi6SAVyAxj/AUgAiAEBEh0KEGNlcnRpZmljYXRlX2RhdGEYAyABKAlIAYgBARIYCgtwcml2YXRlX2tleRgEIAEoCUgCiAEBEh0KEGNlcnRpZmljYXRlX3BhdGgYBSABKAlIA4gBARIXCgphdXRvX3JlbmV3GAYgASgISASIAQESFgoJc2VydmVyX2lkGAcgASgJSAWIAQFCBwoFX25hbWVCEwoRX2NlcnRpZmljYXRlX2RhdGFCDgoMX3ByaXZhdGVfa2V5QhMKEV9jZXJ0aWZpY2F0ZV9wYXRoQg0KC19hdXRvX3JlbmV3QgwKCl9zZXJ2ZXJfaWQiTwoZVXBkYXRlQ2VydGlmaWNhdGVSZXNwb25zZRIyCgtjZXJ0aWZpY2F0ZRgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuQ2VydGlmaWNhdGUiLwoYRGVsZXRlQ2VydGlmaWNhdGVSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIkUKIkxpc3RDZXJ0aWZpY2F0ZURlcGVuZGVuY2llc1JlcXVlc3QSHwoOY2VydGlmaWNhdGVfaWQYASABKANCB7pIBCICIAAiZgojTGlzdENlcnRpZmljYXRlRGVwZW5kZW5jaWVzUmVzcG9uc2USPwoMZGVwZW5kZW5jaWVzGAEgASgLMikub3Blbm94aWRlLmFwaS52MS5DZXJ0aWZpY2F0ZURlcGVuZGVuY2llcyJvChdSZW5ld0NlcnRpZmljYXRlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIhChBjZXJ0aWZpY2F0ZV9kYXRhGAIgASgJQge6SARyAhABEhwKC3ByaXZhdGVfa2V5GAMgASgJQge6SARyAhABIk4KGFJlbmV3Q2VydGlmaWNhdGVSZXNwb25zZRIyCgtjZXJ0aWZpY2F0ZRgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuQ2VydGlmaWNhdGUiQQoeTGlzdENlcnRpZmljYXRlUmVuZXdhbHNSZXF1ZXN0Eh8KDmNlcnRpZmljYXRlX2lkGAEgASgDQge6SAQiAiAAIlkKH0xpc3RDZXJ0aWZpY2F0ZVJlbmV3YWxzUmVzcG9uc2USNgoIcmVuZXdhbHMYASADKAsyJC5vcGVub3hpZGUuYXBpLnYxLkNlcnRpZmljYXRlUmVuZXdhbCq/AQoYQ2VydGlmaWNhdGVSZW5ld2FsU3RhdHVzEioKJkNFUlRJRklDQVRFX1JFTkVXQUxfU1RBVFVTX1VOU1BFQ0lGSUVEEAASJgoiQ0VSVElGSUNBVEVfUkVORVdBTF9TVEFUVVNfUlVOTklORxABEigKJENFUlRJRklDQVRFX1JFTkVXQUxfU1RBVFVTX1NVQ0NFRURFRBACEiUKIUNFUlRJRklDQVRFX1JFTkVXQUxfU1RBVFVTX0ZBSUxFRBADMvsGChJDZXJ0aWZpY2F0ZVNlcnZpY2USaQoQTGlzdENlcnRpZmljYXRlcxIpLm9wZW5veGlkZS5hcGkudjEuTGlzdENlcnRpZmljYXRlc1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLkxpc3RDZXJ0aWZpY2F0ZXNSZXNwb25zZRJjCg5HZXRDZXJ0aWZpY2F0ZRInLm9wZW5veGlkZS5hcGkudjEuR2V0Q2VydGlmaWNhdGVSZXF1ZXN0Gigub3Blbm94aWRlLmFwaS52MS5HZXRDZXJ0aWZpY2F0ZVJlc3BvbnNlEmwKEUNyZWF0ZUNlcnRpZmljYXRlEioub3Blbm94aWRlLmFwaS52MS5DcmVhdGVDZXJ0aWZpY2F0ZVJlcXVlc3QaKy5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZUNlcnRpZmljYXRlUmVzcG9uc2USbAoRVXBkYXRlQ2VydGlmaWNhdGUSKi5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZUNlcnRpZmljYXRlUmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlQ2VydGlmaWNhdGVSZXNwb25zZRJYChFEZWxldGVDZXJ0aWZpY2F0ZRIqLm9wZW5veGlkZS5hcGkudjEuRGVsZXRlQ2VydGlmaWNhdGVSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJ/ChBMaXN0RGVwZW5kZW5jaWVzEjQub3Blbm94aWRlLmFwaS52MS5MaXN0Q2VydGlmaWNhdGVEZXBlbmRlbmNpZXNSZXF1ZXN0GjUub3Blbm94aWRlLmFwaS52MS5MaXN0Q2VydGlmaWNhdGVEZXBlbmRlbmNpZXNSZXNwb25zZRJpChBSZW5ld0NlcnRpZmljYXRlEikub3Blbm94aWRlLmFwaS52MS5SZW5ld0NlcnRpZmljYXRlUmVxdWVzdBoqLm9wZW5veGlkZS5hcGkudjEuUmVuZXdDZXJ0aWZpY2F0ZVJlc3BvbnNlEnMKDExpc3RSZW5ld2FscxIwLm9wZW5veGlkZS5hcGkudjEuTGlzdENlcnRpZmljYXRlUmVuZXdhbHNSZXF1ZXN0GjEub3Blbm94aWRlLmFwaS52MS5MaXN0Q2VydGlmaWNhdGVSZW5ld2Fsc1Jlc3BvbnNlYgZwcm90bzM',
+		[file_openoxide_api_v1_common, file_buf_validate_validate],
+	);
 
 /**
  * @generated from message openoxide.api.v1.Certificate
  */
-export type Certificate = Message<"openoxide.api.v1.Certificate"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type Certificate = Message<'openoxide.api.v1.Certificate'> & {
+	/**
+	 * @generated from field: int64 id = 1;
+	 */
+	id: bigint;
 
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
+	/**
+	 * @generated from field: string name = 2;
+	 */
+	name: string;
 
-  /**
-   * PEM certificate chain.
-   *
-   * @generated from field: string certificate_data = 3;
-   */
-  certificateData: string;
+	/**
+	 * PEM certificate chain.
+	 *
+	 * @generated from field: string certificate_data = 3;
+	 */
+	certificateData: string;
 
-  /**
-   * Private key material is never echoed back; presence only.
-   *
-   * @generated from field: bool has_private_key = 4;
-   */
-  hasPrivateKey: boolean;
+	/**
+	 * Private key material is never echoed back; presence only.
+	 *
+	 * @generated from field: bool has_private_key = 4;
+	 */
+	hasPrivateKey: boolean;
 
-  /**
-   * @generated from field: string certificate_path = 5;
-   */
-  certificatePath: string;
+	/**
+	 * @generated from field: string certificate_path = 5;
+	 */
+	certificatePath: string;
 
-  /**
-   * @generated from field: bool auto_renew = 6;
-   */
-  autoRenew: boolean;
+	/**
+	 * @generated from field: bool auto_renew = 6;
+	 */
+	autoRenew: boolean;
 
-  /**
-   * @generated from field: optional string server_id = 7;
-   */
-  serverId?: string | undefined;
+	/**
+	 * @generated from field: optional string server_id = 7;
+	 */
+	serverId?: string | undefined;
 
-  /**
-   * @generated from field: int64 organization_id = 8;
-   */
-  organizationId: bigint;
+	/**
+	 * @generated from field: int64 organization_id = 8;
+	 */
+	organizationId: bigint;
 
-  /**
-   * @generated from field: int64 created_at = 9;
-   */
-  createdAt: bigint;
+	/**
+	 * @generated from field: int64 created_at = 9;
+	 */
+	createdAt: bigint;
 
-  /**
-   * @generated from field: int64 updated_at = 10;
-   */
-  updatedAt: bigint;
+	/**
+	 * @generated from field: int64 updated_at = 10;
+	 */
+	updatedAt: bigint;
 };
 
 /**
  * Describes the message openoxide.api.v1.Certificate.
  * Use `create(CertificateSchema)` to create a new message.
  */
-export const CertificateSchema: GenMessage<Certificate> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 0);
+export const CertificateSchema: GenMessage<Certificate> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 0);
 
 /**
  * @generated from message openoxide.api.v1.CertificateRenewal
  */
-export type CertificateRenewal = Message<"openoxide.api.v1.CertificateRenewal"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type CertificateRenewal =
+	Message<'openoxide.api.v1.CertificateRenewal'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: int64 certificate_id = 2;
-   */
-  certificateId: bigint;
+		/**
+		 * @generated from field: int64 certificate_id = 2;
+		 */
+		certificateId: bigint;
 
-  /**
-   * @generated from field: int64 organization_id = 3;
-   */
-  organizationId: bigint;
+		/**
+		 * @generated from field: int64 organization_id = 3;
+		 */
+		organizationId: bigint;
 
-  /**
-   * @generated from field: openoxide.api.v1.CertificateRenewalStatus status = 4;
-   */
-  status: CertificateRenewalStatus;
+		/**
+		 * @generated from field: openoxide.api.v1.CertificateRenewalStatus status = 4;
+		 */
+		status: CertificateRenewalStatus;
 
-  /**
-   * @generated from field: optional int64 previous_expires_at = 5;
-   */
-  previousExpiresAt?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 previous_expires_at = 5;
+		 */
+		previousExpiresAt?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 new_expires_at = 6;
-   */
-  newExpiresAt?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 new_expires_at = 6;
+		 */
+		newExpiresAt?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string error = 7;
-   */
-  error?: string | undefined;
+		/**
+		 * @generated from field: optional string error = 7;
+		 */
+		error?: string | undefined;
 
-  /**
-   * @generated from field: int64 started_at = 8;
-   */
-  startedAt: bigint;
+		/**
+		 * @generated from field: int64 started_at = 8;
+		 */
+		startedAt: bigint;
 
-  /**
-   * @generated from field: optional int64 finished_at = 9;
-   */
-  finishedAt?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 finished_at = 9;
+		 */
+		finishedAt?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.CertificateRenewal.
  * Use `create(CertificateRenewalSchema)` to create a new message.
  */
-export const CertificateRenewalSchema: GenMessage<CertificateRenewal> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 1);
+export const CertificateRenewalSchema: GenMessage<CertificateRenewal> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 1);
 
 /**
  * @generated from message openoxide.api.v1.CertificateDependencies
  */
-export type CertificateDependencies = Message<"openoxide.api.v1.CertificateDependencies"> & {
-  /**
-   * @generated from field: int64 renewals = 1;
-   */
-  renewals: bigint;
+export type CertificateDependencies =
+	Message<'openoxide.api.v1.CertificateDependencies'> & {
+		/**
+		 * @generated from field: int64 renewals = 1;
+		 */
+		renewals: bigint;
 
-  /**
-   * @generated from field: int64 running_renewals = 2;
-   */
-  runningRenewals: bigint;
-};
+		/**
+		 * @generated from field: int64 running_renewals = 2;
+		 */
+		runningRenewals: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.CertificateDependencies.
  * Use `create(CertificateDependenciesSchema)` to create a new message.
  */
-export const CertificateDependenciesSchema: GenMessage<CertificateDependencies> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 2);
+export const CertificateDependenciesSchema: GenMessage<CertificateDependencies> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 2);
 
 /**
  * @generated from message openoxide.api.v1.ListCertificatesRequest
  */
-export type ListCertificatesRequest = Message<"openoxide.api.v1.ListCertificatesRequest"> & {
-};
+export type ListCertificatesRequest =
+	Message<'openoxide.api.v1.ListCertificatesRequest'> & {};
 
 /**
  * Describes the message openoxide.api.v1.ListCertificatesRequest.
  * Use `create(ListCertificatesRequestSchema)` to create a new message.
  */
-export const ListCertificatesRequestSchema: GenMessage<ListCertificatesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 3);
+export const ListCertificatesRequestSchema: GenMessage<ListCertificatesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 3);
 
 /**
  * @generated from message openoxide.api.v1.ListCertificatesResponse
  */
-export type ListCertificatesResponse = Message<"openoxide.api.v1.ListCertificatesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Certificate certificates = 1;
-   */
-  certificates: Certificate[];
-};
+export type ListCertificatesResponse =
+	Message<'openoxide.api.v1.ListCertificatesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Certificate certificates = 1;
+		 */
+		certificates: Certificate[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListCertificatesResponse.
  * Use `create(ListCertificatesResponseSchema)` to create a new message.
  */
-export const ListCertificatesResponseSchema: GenMessage<ListCertificatesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 4);
+export const ListCertificatesResponseSchema: GenMessage<ListCertificatesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 4);
 
 /**
  * @generated from message openoxide.api.v1.GetCertificateRequest
  */
-export type GetCertificateRequest = Message<"openoxide.api.v1.GetCertificateRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type GetCertificateRequest =
+	Message<'openoxide.api.v1.GetCertificateRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GetCertificateRequest.
  * Use `create(GetCertificateRequestSchema)` to create a new message.
  */
-export const GetCertificateRequestSchema: GenMessage<GetCertificateRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 5);
+export const GetCertificateRequestSchema: GenMessage<GetCertificateRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 5);
 
 /**
  * @generated from message openoxide.api.v1.GetCertificateResponse
  */
-export type GetCertificateResponse = Message<"openoxide.api.v1.GetCertificateResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Certificate certificate = 1;
-   */
-  certificate?: Certificate | undefined;
-};
+export type GetCertificateResponse =
+	Message<'openoxide.api.v1.GetCertificateResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Certificate certificate = 1;
+		 */
+		certificate?: Certificate | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GetCertificateResponse.
  * Use `create(GetCertificateResponseSchema)` to create a new message.
  */
-export const GetCertificateResponseSchema: GenMessage<GetCertificateResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 6);
+export const GetCertificateResponseSchema: GenMessage<GetCertificateResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 6);
 
 /**
  * @generated from message openoxide.api.v1.CreateCertificateRequest
  */
-export type CreateCertificateRequest = Message<"openoxide.api.v1.CreateCertificateRequest"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
+export type CreateCertificateRequest =
+	Message<'openoxide.api.v1.CreateCertificateRequest'> & {
+		/**
+		 * @generated from field: string name = 1;
+		 */
+		name: string;
 
-  /**
-   * @generated from field: string certificate_data = 2;
-   */
-  certificateData: string;
+		/**
+		 * @generated from field: string certificate_data = 2;
+		 */
+		certificateData: string;
 
-  /**
-   * @generated from field: string private_key = 3;
-   */
-  privateKey: string;
+		/**
+		 * @generated from field: string private_key = 3;
+		 */
+		privateKey: string;
 
-  /**
-   * @generated from field: string certificate_path = 4;
-   */
-  certificatePath: string;
+		/**
+		 * @generated from field: string certificate_path = 4;
+		 */
+		certificatePath: string;
 
-  /**
-   * @generated from field: bool auto_renew = 5;
-   */
-  autoRenew: boolean;
+		/**
+		 * @generated from field: bool auto_renew = 5;
+		 */
+		autoRenew: boolean;
 
-  /**
-   * @generated from field: optional string server_id = 6;
-   */
-  serverId?: string | undefined;
-};
+		/**
+		 * @generated from field: optional string server_id = 6;
+		 */
+		serverId?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.CreateCertificateRequest.
  * Use `create(CreateCertificateRequestSchema)` to create a new message.
  */
-export const CreateCertificateRequestSchema: GenMessage<CreateCertificateRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 7);
+export const CreateCertificateRequestSchema: GenMessage<CreateCertificateRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 7);
 
 /**
  * @generated from message openoxide.api.v1.CreateCertificateResponse
  */
-export type CreateCertificateResponse = Message<"openoxide.api.v1.CreateCertificateResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Certificate certificate = 1;
-   */
-  certificate?: Certificate | undefined;
-};
+export type CreateCertificateResponse =
+	Message<'openoxide.api.v1.CreateCertificateResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Certificate certificate = 1;
+		 */
+		certificate?: Certificate | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.CreateCertificateResponse.
  * Use `create(CreateCertificateResponseSchema)` to create a new message.
  */
-export const CreateCertificateResponseSchema: GenMessage<CreateCertificateResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 8);
+export const CreateCertificateResponseSchema: GenMessage<CreateCertificateResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 8);
 
 /**
  * An absent field keeps its stored value; `server_id` present-but-empty detaches the server.
  *
  * @generated from message openoxide.api.v1.UpdateCertificateRequest
  */
-export type UpdateCertificateRequest = Message<"openoxide.api.v1.UpdateCertificateRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type UpdateCertificateRequest =
+	Message<'openoxide.api.v1.UpdateCertificateRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: optional string name = 2;
-   */
-  name?: string | undefined;
+		/**
+		 * @generated from field: optional string name = 2;
+		 */
+		name?: string | undefined;
 
-  /**
-   * @generated from field: optional string certificate_data = 3;
-   */
-  certificateData?: string | undefined;
+		/**
+		 * @generated from field: optional string certificate_data = 3;
+		 */
+		certificateData?: string | undefined;
 
-  /**
-   * @generated from field: optional string private_key = 4;
-   */
-  privateKey?: string | undefined;
+		/**
+		 * @generated from field: optional string private_key = 4;
+		 */
+		privateKey?: string | undefined;
 
-  /**
-   * @generated from field: optional string certificate_path = 5;
-   */
-  certificatePath?: string | undefined;
+		/**
+		 * @generated from field: optional string certificate_path = 5;
+		 */
+		certificatePath?: string | undefined;
 
-  /**
-   * @generated from field: optional bool auto_renew = 6;
-   */
-  autoRenew?: boolean | undefined;
+		/**
+		 * @generated from field: optional bool auto_renew = 6;
+		 */
+		autoRenew?: boolean | undefined;
 
-  /**
-   * @generated from field: optional string server_id = 7;
-   */
-  serverId?: string | undefined;
-};
+		/**
+		 * @generated from field: optional string server_id = 7;
+		 */
+		serverId?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateCertificateRequest.
  * Use `create(UpdateCertificateRequestSchema)` to create a new message.
  */
-export const UpdateCertificateRequestSchema: GenMessage<UpdateCertificateRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 9);
+export const UpdateCertificateRequestSchema: GenMessage<UpdateCertificateRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 9);
 
 /**
  * @generated from message openoxide.api.v1.UpdateCertificateResponse
  */
-export type UpdateCertificateResponse = Message<"openoxide.api.v1.UpdateCertificateResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Certificate certificate = 1;
-   */
-  certificate?: Certificate | undefined;
-};
+export type UpdateCertificateResponse =
+	Message<'openoxide.api.v1.UpdateCertificateResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Certificate certificate = 1;
+		 */
+		certificate?: Certificate | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateCertificateResponse.
  * Use `create(UpdateCertificateResponseSchema)` to create a new message.
  */
-export const UpdateCertificateResponseSchema: GenMessage<UpdateCertificateResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 10);
+export const UpdateCertificateResponseSchema: GenMessage<UpdateCertificateResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 10);
 
 /**
  * @generated from message openoxide.api.v1.DeleteCertificateRequest
  */
-export type DeleteCertificateRequest = Message<"openoxide.api.v1.DeleteCertificateRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type DeleteCertificateRequest =
+	Message<'openoxide.api.v1.DeleteCertificateRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.DeleteCertificateRequest.
  * Use `create(DeleteCertificateRequestSchema)` to create a new message.
  */
-export const DeleteCertificateRequestSchema: GenMessage<DeleteCertificateRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 11);
+export const DeleteCertificateRequestSchema: GenMessage<DeleteCertificateRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 11);
 
 /**
  * @generated from message openoxide.api.v1.ListCertificateDependenciesRequest
  */
-export type ListCertificateDependenciesRequest = Message<"openoxide.api.v1.ListCertificateDependenciesRequest"> & {
-  /**
-   * @generated from field: int64 certificate_id = 1;
-   */
-  certificateId: bigint;
-};
+export type ListCertificateDependenciesRequest =
+	Message<'openoxide.api.v1.ListCertificateDependenciesRequest'> & {
+		/**
+		 * @generated from field: int64 certificate_id = 1;
+		 */
+		certificateId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListCertificateDependenciesRequest.
  * Use `create(ListCertificateDependenciesRequestSchema)` to create a new message.
  */
-export const ListCertificateDependenciesRequestSchema: GenMessage<ListCertificateDependenciesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 12);
+export const ListCertificateDependenciesRequestSchema: GenMessage<ListCertificateDependenciesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 12);
 
 /**
  * @generated from message openoxide.api.v1.ListCertificateDependenciesResponse
  */
-export type ListCertificateDependenciesResponse = Message<"openoxide.api.v1.ListCertificateDependenciesResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.CertificateDependencies dependencies = 1;
-   */
-  dependencies?: CertificateDependencies | undefined;
-};
+export type ListCertificateDependenciesResponse =
+	Message<'openoxide.api.v1.ListCertificateDependenciesResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.CertificateDependencies dependencies = 1;
+		 */
+		dependencies?: CertificateDependencies | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListCertificateDependenciesResponse.
  * Use `create(ListCertificateDependenciesResponseSchema)` to create a new message.
  */
-export const ListCertificateDependenciesResponseSchema: GenMessage<ListCertificateDependenciesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 13);
+export const ListCertificateDependenciesResponseSchema: GenMessage<ListCertificateDependenciesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 13);
 
 /**
  * @generated from message openoxide.api.v1.RenewCertificateRequest
  */
-export type RenewCertificateRequest = Message<"openoxide.api.v1.RenewCertificateRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type RenewCertificateRequest =
+	Message<'openoxide.api.v1.RenewCertificateRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: string certificate_data = 2;
-   */
-  certificateData: string;
+		/**
+		 * @generated from field: string certificate_data = 2;
+		 */
+		certificateData: string;
 
-  /**
-   * @generated from field: string private_key = 3;
-   */
-  privateKey: string;
-};
+		/**
+		 * @generated from field: string private_key = 3;
+		 */
+		privateKey: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.RenewCertificateRequest.
  * Use `create(RenewCertificateRequestSchema)` to create a new message.
  */
-export const RenewCertificateRequestSchema: GenMessage<RenewCertificateRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 14);
+export const RenewCertificateRequestSchema: GenMessage<RenewCertificateRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 14);
 
 /**
  * @generated from message openoxide.api.v1.RenewCertificateResponse
  */
-export type RenewCertificateResponse = Message<"openoxide.api.v1.RenewCertificateResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Certificate certificate = 1;
-   */
-  certificate?: Certificate | undefined;
-};
+export type RenewCertificateResponse =
+	Message<'openoxide.api.v1.RenewCertificateResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Certificate certificate = 1;
+		 */
+		certificate?: Certificate | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.RenewCertificateResponse.
  * Use `create(RenewCertificateResponseSchema)` to create a new message.
  */
-export const RenewCertificateResponseSchema: GenMessage<RenewCertificateResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 15);
+export const RenewCertificateResponseSchema: GenMessage<RenewCertificateResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 15);
 
 /**
  * @generated from message openoxide.api.v1.ListCertificateRenewalsRequest
  */
-export type ListCertificateRenewalsRequest = Message<"openoxide.api.v1.ListCertificateRenewalsRequest"> & {
-  /**
-   * @generated from field: int64 certificate_id = 1;
-   */
-  certificateId: bigint;
-};
+export type ListCertificateRenewalsRequest =
+	Message<'openoxide.api.v1.ListCertificateRenewalsRequest'> & {
+		/**
+		 * @generated from field: int64 certificate_id = 1;
+		 */
+		certificateId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListCertificateRenewalsRequest.
  * Use `create(ListCertificateRenewalsRequestSchema)` to create a new message.
  */
-export const ListCertificateRenewalsRequestSchema: GenMessage<ListCertificateRenewalsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 16);
+export const ListCertificateRenewalsRequestSchema: GenMessage<ListCertificateRenewalsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 16);
 
 /**
  * @generated from message openoxide.api.v1.ListCertificateRenewalsResponse
  */
-export type ListCertificateRenewalsResponse = Message<"openoxide.api.v1.ListCertificateRenewalsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.CertificateRenewal renewals = 1;
-   */
-  renewals: CertificateRenewal[];
-};
+export type ListCertificateRenewalsResponse =
+	Message<'openoxide.api.v1.ListCertificateRenewalsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.CertificateRenewal renewals = 1;
+		 */
+		renewals: CertificateRenewal[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListCertificateRenewalsResponse.
  * Use `create(ListCertificateRenewalsResponseSchema)` to create a new message.
  */
-export const ListCertificateRenewalsResponseSchema: GenMessage<ListCertificateRenewalsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_certificate, 17);
+export const ListCertificateRenewalsResponseSchema: GenMessage<ListCertificateRenewalsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_certificate, 17);
 
 /**
  * @generated from enum openoxide.api.v1.CertificateRenewalStatus
  */
 export enum CertificateRenewalStatus {
-  /**
-   * @generated from enum value: CERTIFICATE_RENEWAL_STATUS_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: CERTIFICATE_RENEWAL_STATUS_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: CERTIFICATE_RENEWAL_STATUS_RUNNING = 1;
-   */
-  RUNNING = 1,
+	/**
+	 * @generated from enum value: CERTIFICATE_RENEWAL_STATUS_RUNNING = 1;
+	 */
+	RUNNING = 1,
 
-  /**
-   * @generated from enum value: CERTIFICATE_RENEWAL_STATUS_SUCCEEDED = 2;
-   */
-  SUCCEEDED = 2,
+	/**
+	 * @generated from enum value: CERTIFICATE_RENEWAL_STATUS_SUCCEEDED = 2;
+	 */
+	SUCCEEDED = 2,
 
-  /**
-   * @generated from enum value: CERTIFICATE_RENEWAL_STATUS_FAILED = 3;
-   */
-  FAILED = 3,
+	/**
+	 * @generated from enum value: CERTIFICATE_RENEWAL_STATUS_FAILED = 3;
+	 */
+	FAILED = 3,
 }
 
 /**
  * Describes the enum openoxide.api.v1.CertificateRenewalStatus.
  */
-export const CertificateRenewalStatusSchema: GenEnum<CertificateRenewalStatus> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_certificate, 0);
+export const CertificateRenewalStatusSchema: GenEnum<CertificateRenewalStatus> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_certificate, 0);
 
 /**
  * Sole certificate owner service; replaces CertificateOperationsService.
@@ -515,70 +544,68 @@ export const CertificateRenewalStatusSchema: GenEnum<CertificateRenewalStatus> =
  * @generated from service openoxide.api.v1.CertificateService
  */
 export const CertificateService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.CertificateService.ListCertificates
-   */
-  listCertificates: {
-    methodKind: "unary";
-    input: typeof ListCertificatesRequestSchema;
-    output: typeof ListCertificatesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.CertificateService.GetCertificate
-   */
-  getCertificate: {
-    methodKind: "unary";
-    input: typeof GetCertificateRequestSchema;
-    output: typeof GetCertificateResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.CertificateService.CreateCertificate
-   */
-  createCertificate: {
-    methodKind: "unary";
-    input: typeof CreateCertificateRequestSchema;
-    output: typeof CreateCertificateResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.CertificateService.UpdateCertificate
-   */
-  updateCertificate: {
-    methodKind: "unary";
-    input: typeof UpdateCertificateRequestSchema;
-    output: typeof UpdateCertificateResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.CertificateService.DeleteCertificate
-   */
-  deleteCertificate: {
-    methodKind: "unary";
-    input: typeof DeleteCertificateRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.CertificateService.ListDependencies
-   */
-  listDependencies: {
-    methodKind: "unary";
-    input: typeof ListCertificateDependenciesRequestSchema;
-    output: typeof ListCertificateDependenciesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.CertificateService.RenewCertificate
-   */
-  renewCertificate: {
-    methodKind: "unary";
-    input: typeof RenewCertificateRequestSchema;
-    output: typeof RenewCertificateResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.CertificateService.ListRenewals
-   */
-  listRenewals: {
-    methodKind: "unary";
-    input: typeof ListCertificateRenewalsRequestSchema;
-    output: typeof ListCertificateRenewalsResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_certificate, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.CertificateService.ListCertificates
+	 */
+	listCertificates: {
+		methodKind: 'unary';
+		input: typeof ListCertificatesRequestSchema;
+		output: typeof ListCertificatesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.CertificateService.GetCertificate
+	 */
+	getCertificate: {
+		methodKind: 'unary';
+		input: typeof GetCertificateRequestSchema;
+		output: typeof GetCertificateResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.CertificateService.CreateCertificate
+	 */
+	createCertificate: {
+		methodKind: 'unary';
+		input: typeof CreateCertificateRequestSchema;
+		output: typeof CreateCertificateResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.CertificateService.UpdateCertificate
+	 */
+	updateCertificate: {
+		methodKind: 'unary';
+		input: typeof UpdateCertificateRequestSchema;
+		output: typeof UpdateCertificateResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.CertificateService.DeleteCertificate
+	 */
+	deleteCertificate: {
+		methodKind: 'unary';
+		input: typeof DeleteCertificateRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.CertificateService.ListDependencies
+	 */
+	listDependencies: {
+		methodKind: 'unary';
+		input: typeof ListCertificateDependenciesRequestSchema;
+		output: typeof ListCertificateDependenciesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.CertificateService.RenewCertificate
+	 */
+	renewCertificate: {
+		methodKind: 'unary';
+		input: typeof RenewCertificateRequestSchema;
+		output: typeof RenewCertificateResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.CertificateService.ListRenewals
+	 */
+	listRenewals: {
+		methodKind: 'unary';
+		input: typeof ListCertificateRenewalsRequestSchema;
+		output: typeof ListCertificateRenewalsResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_certificate, 0);

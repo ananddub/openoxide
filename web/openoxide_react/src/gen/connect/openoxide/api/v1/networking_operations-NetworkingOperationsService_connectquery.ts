@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/networking_operations.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { NetworkingOperationsService } from "./networking_operations_pb";
+import {NetworkingOperationsService} from './networking_operations_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.NetworkingOperationsService.PurgeCdn
@@ -12,14 +12,17 @@ export const purgeCdn = NetworkingOperationsService.method.purgeCdn;
 /**
  * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseDomains
  */
-export const diagnoseDomains = NetworkingOperationsService.method.diagnoseDomains;
+export const diagnoseDomains =
+	NetworkingOperationsService.method.diagnoseDomains;
 
 /**
  * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseRootNetwork
  */
-export const diagnoseRootNetwork = NetworkingOperationsService.method.diagnoseRootNetwork;
+export const diagnoseRootNetwork =
+	NetworkingOperationsService.method.diagnoseRootNetwork;
 
 /**
  * @generated from rpc openoxide.api.v1.NetworkingOperationsService.RepairRootNetwork
  */
-export const repairRootNetwork = NetworkingOperationsService.method.repairRootNetwork;
+export const repairRootNetwork =
+	NetworkingOperationsService.method.repairRootNetwork;

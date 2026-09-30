@@ -121,94 +121,99 @@ export function DeploymentActivityList({
 					</TableHeader>
 					<TableBody>
 						{deployments.map(d => {
-						const kind = deploymentType(d);
-						const Icon =
-							KIND_ICON[kind as keyof typeof KIND_ICON] ?? Rocket;
-						const member = usersById.get(Number((d as any).user_id ?? 0));
-						const email =
-							member?.email || String((d as any).user_email || '');
-						const displayName =
-							member?.name?.trim() || (email ? email.split('@')[0] : '');
-						const avatar = member?.avatar || '';
-						const createdAtSec = Number(d.created_at ?? 0);
-						const finishedSec = Number((d as any).finished_at ?? 0);
-						const busy = isBuildActive(d as any);
-						const id = Number(d.id);
-						const isOpen = expandedId === id;
-						return (
-							<Fragment key={String(d.id)}>
-								<TableRow
-									onClick={() =>
-										setExpandedId(prev => (prev === id ? null : id))
-									}
-									className="group cursor-pointer border-b border-border transition-colors hover:bg-accent/30">
-									<TableCell className="max-w-0 px-4 py-1.5">
-										<div className="flex items-center gap-3">
-											<DeployerTile
-												avatar={avatar}
-												name={displayName}
-												icon={Icon}
-												busy={busy}
-											/>
-											<div className="min-w-0">
-												<span className="block truncate text-[13px] leading-tight font-medium text-foreground">
-													{d.title || `Deployment #${d.id}`}
-												</span>
-												<p className="truncate text-xs text-muted-foreground">
-													{kind}
-													<span className="mx-1.5 text-muted-foreground/40">
-														·
+							const kind = deploymentType(d);
+							const Icon =
+								KIND_ICON[kind as keyof typeof KIND_ICON] ?? Rocket;
+							const member = usersById.get(
+								Number((d as any).user_id ?? 0),
+							);
+							const email =
+								member?.email || String((d as any).user_email || '');
+							const displayName =
+								member?.name?.trim() || (email ? email.split('@')[0] : '');
+							const avatar = member?.avatar || '';
+							const createdAtSec = Number(d.created_at ?? 0);
+							const finishedSec = Number((d as any).finished_at ?? 0);
+							const busy = isBuildActive(d as any);
+							const id = Number(d.id);
+							const isOpen = expandedId === id;
+							return (
+								<Fragment key={String(d.id)}>
+									<TableRow
+										onClick={() =>
+											setExpandedId(prev => (prev === id ? null : id))
+										}
+										className="group cursor-pointer border-b border-border transition-colors hover:bg-accent/30">
+										<TableCell className="max-w-0 px-4 py-1.5">
+											<div className="flex items-center gap-3">
+												<DeployerTile
+													avatar={avatar}
+													name={displayName}
+													icon={Icon}
+													busy={busy}
+												/>
+												<div className="min-w-0">
+													<span className="block truncate text-[13px] leading-tight font-medium text-foreground">
+														{d.title || `Deployment #${d.id}`}
 													</span>
-													{displayName || 'System'}
-													<span className="mx-1.5 text-muted-foreground/40">
-														·
-													</span>
-													<span className="font-mono">#{d.id}</span>
-												</p>
-												{d.error_message && (
-													<p className="mt-0.5 flex max-w-md items-center gap-1.5 truncate text-xs font-medium text-danger">
-														<AlertCircle className="size-3 shrink-0" />
-														<span className="truncate">
-															{d.error_message}
+													<p className="truncate text-xs text-muted-foreground">
+														{kind}
+														<span className="mx-1.5 text-muted-foreground/40">
+															·
 														</span>
+														{displayName || 'System'}
+														<span className="mx-1.5 text-muted-foreground/40">
+															·
+														</span>
+														<span className="font-mono">#{d.id}</span>
 													</p>
-												)}
+													{d.error_message && (
+														<p className="mt-0.5 flex max-w-md items-center gap-1.5 truncate text-xs font-medium text-danger">
+															<AlertCircle className="size-3 shrink-0" />
+															<span className="truncate">
+																{d.error_message}
+															</span>
+														</p>
+													)}
+												</div>
 											</div>
-										</div>
-									</TableCell>
-									<TableCell className="px-4 py-1.5 whitespace-nowrap">
-										<DeploymentStatusBadge
-											status={String(d.status || '')}
-										/>
-									</TableCell>
-									<TableCell className="hidden px-4 py-1.5 font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums md:table-cell">
-										{finishedSec > 0
-											? formatDeploymentDuration(createdAtSec, finishedSec)
-											: busy
-												? 'running…'
-												: '—'}
-									</TableCell>
-									<TableCell className="hidden px-4 py-1.5 font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums sm:table-cell">
-										{timeAgo(createdAtSec)}
-									</TableCell>
-									<TableCell className="px-2 py-1.5">
-										<ChevronDown
-											className={cn(
-												'size-3.5 text-muted-foreground/60 transition-transform duration-200 group-hover:text-muted-foreground',
-												isOpen && 'rotate-180',
-											)}
-										/>
-									</TableCell>
-								</TableRow>
-								{isOpen && (
-									<tr>
-										<td colSpan={5} className="p-0">
-											<DeploymentInlineLogs deployment={d} />
-										</td>
-									</tr>
-								)}
-							</Fragment>
-						);
+										</TableCell>
+										<TableCell className="px-4 py-1.5 whitespace-nowrap">
+											<DeploymentStatusBadge
+												status={String(d.status || '')}
+											/>
+										</TableCell>
+										<TableCell className="hidden px-4 py-1.5 font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums md:table-cell">
+											{finishedSec > 0
+												? formatDeploymentDuration(
+														createdAtSec,
+														finishedSec,
+													)
+												: busy
+													? 'running…'
+													: '—'}
+										</TableCell>
+										<TableCell className="hidden px-4 py-1.5 font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums sm:table-cell">
+											{timeAgo(createdAtSec)}
+										</TableCell>
+										<TableCell className="px-2 py-1.5">
+											<ChevronDown
+												className={cn(
+													'size-3.5 text-muted-foreground/60 transition-transform duration-200 group-hover:text-muted-foreground',
+													isOpen && 'rotate-180',
+												)}
+											/>
+										</TableCell>
+									</TableRow>
+									{isOpen && (
+										<tr>
+											<td colSpan={5} className="p-0">
+												<DeploymentInlineLogs deployment={d} />
+											</td>
+										</tr>
+									)}
+								</Fragment>
+							);
 						})}
 					</TableBody>
 				</Table>

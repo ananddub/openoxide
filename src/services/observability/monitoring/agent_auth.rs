@@ -121,6 +121,26 @@ impl MonitoringAgentAuth {
         }
     }
 
+    /// Organization owning a server for authorization checks, falling back to
+    /// the `servers` row when no monitoring_agents row exists yet. A server can
+    /// be registered before its agent ever reports in (e.g. right after add,
+    /// or when the agent is on an old image and never handshook), so lifecycle
+    /// actions like reinstall must still resolve the owner.
+    pub async fn resolve_server_organization(
+        &self,
+        server_id: i64,
+    ) -> Result<Option<i64>, sqlx::Error> {
+        if let Some(id) = self.organization_id(server_id).await? {
+            return Ok(Some(id));
+        }
+        let from_server: Option<i64> =
+            sqlx::query_scalar("SELECT organization_id FROM servers WHERE id = ?")
+                .bind(server_id)
+                .fetch_optional(&self.queries.pool)
+                .await?;
+        Ok(from_server.filter(|id| *id > 0))
+    }
+
     pub async fn touch_seen(&self, server_id: i64) -> Result<(), sqlx::Error> {
         self.queries
             .monitoring_agents_touch_seen(server_id)

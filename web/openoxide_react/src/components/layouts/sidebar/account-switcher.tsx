@@ -58,7 +58,8 @@ export function AccountSwitcher({collapsed}: Props) {
 									className={cn(
 										'flex h-full min-w-0 flex-1 items-center gap-2.5 px-1.5 text-start transition-[padding,gap,color]',
 										SIDEBAR_COLLAPSE,
-										collapsed && 'gap-0 px-0 pl-[calc((var(--sidebar-width-icon)_-_1.5rem)/2)]',
+										collapsed &&
+											'gap-0 px-0 pl-[calc((var(--sidebar-width-icon)_-_1.5rem)/2)]',
 									)}
 									aria-haspopup="dialog"
 									title={collapsed ? activeOrg?.name : undefined}>

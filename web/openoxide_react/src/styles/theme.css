@@ -145,7 +145,12 @@
 	--sidebar-foreground: #ededed;
 	--sidebar-primary: #ededed;
 	--sidebar-primary-foreground: #0a0a0a;
-	--sidebar-accent: rgba(255, 255, 255, 0.14); /* #242424 — one fill, shared by hover and selected */
+	--sidebar-accent: rgba(
+		255,
+		255,
+		255,
+		0.14
+	); /* #242424 — one fill, shared by hover and selected */
 	--sidebar-accent-foreground: #ededed;
 	--sidebar-border: rgba(255, 255, 255, 0.09);
 	--sidebar-ring: rgba(255, 255, 255, 0.24);

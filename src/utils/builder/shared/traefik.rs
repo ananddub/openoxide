@@ -10,6 +10,16 @@ use std::collections::{BTreeMap, HashMap};
 
 const TRAEFIK_NETWORK: &str = "openoxide-network";
 
+/// Converts an internationalized domain name (IDN) to ASCII punycode. Traefik
+/// requires ASCII hostnames, so `тест.рф` becomes `xn--e1aybc.xn--p1ai`.
+/// Falls back to the original host if parsing fails.
+pub fn to_punycode(host: &str) -> String {
+    url::Url::parse(&format!("http://{host}"))
+        .ok()
+        .and_then(|u| u.host_str().map(str::to_owned))
+        .unwrap_or_else(|| host.to_owned())
+}
+
 pub struct SharedDomain {
     pub key: String,
     pub host: String,
@@ -73,7 +83,8 @@ pub fn build_traefik_labels_for_network(
         let router_name = format!("{app_name}-{}", domain.key);
 
         let rule = {
-            let base = Rule::host(&domain.host);
+            let punycode_host = to_punycode(&domain.host);
+            let base = Rule::host(&punycode_host);
             if domain.path != "/" {
                 base.and(Rule::path_prefix(&domain.path))
             } else {
@@ -193,6 +204,19 @@ mod tests {
             custom_cert_resolver: None,
             middlewares: vec![],
         }
+    }
+
+    #[test]
+    fn idn_host_is_converted_to_punycode() {
+        assert_eq!(to_punycode("тест.рф"), "xn--e1aybc.xn--p1ai");
+        assert_eq!(to_punycode("example.com"), "example.com");
+        let mut d = domain("1", "münchen.de");
+        d.https = false;
+        let labels = build_traefik_labels("api", &[d]).remove("api").unwrap();
+        assert!(
+            labels.iter().any(|l| l.contains("xn--mnchen-3ya.de")),
+            "router rule must use the punycode host"
+        );
     }
 
     #[test]

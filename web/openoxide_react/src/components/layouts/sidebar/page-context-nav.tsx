@@ -169,7 +169,10 @@ function ContextHeader({
 				collapsed && SIDEBAR_CENTER_X,
 			)}>
 			<span className={SIDEBAR_ICON_CELL}>
-				<ChevronLeft className="size-4 text-muted-foreground" strokeWidth={2} />
+				<ChevronLeft
+					className="size-4 text-muted-foreground"
+					strokeWidth={2}
+				/>
 			</span>
 			<span
 				className={cn(
@@ -214,8 +217,7 @@ function ContextRow({
 				<span className={SIDEBAR_ICON_CELL}>
 					<Icon className="size-4" strokeWidth={1.7} />
 				</span>
-				<span
-					className={cn(SIDEBAR_LABEL, collapsed && 'opacity-0')}>
+				<span className={cn(SIDEBAR_LABEL, collapsed && 'opacity-0')}>
 					{label}
 				</span>
 			</button>

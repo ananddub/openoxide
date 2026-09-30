@@ -100,9 +100,7 @@ export function StepTimeline({
 									active &&
 										nodeState === 'running' &&
 										'bg-primary text-primary-foreground ring-4 ring-primary/15',
-									!done &&
-									!active &&
-										'border text-muted-foreground/50',
+									!done && !active && 'border text-muted-foreground/50',
 								)}>
 								{done ? (
 									<Check className="size-3" />
@@ -120,18 +118,12 @@ export function StepTimeline({
 								<span
 									className={cn(
 										'w-px grow',
-										done
-											? 'bg-emerald-500/40'
-											: 'bg-border',
+										done ? 'bg-emerald-500/40' : 'bg-border',
 									)}
 								/>
 							)}
 						</div>
-						<div
-							className={cn(
-								'min-w-0 flex-1',
-								!lastRow && 'pb-5',
-							)}>
+						<div className={cn('min-w-0 flex-1', !lastRow && 'pb-5')}>
 							<p
 								className={cn(
 									'text-sm leading-5',
@@ -143,9 +135,7 @@ export function StepTimeline({
 								)}>
 								{s.label}
 							</p>
-							{active && (
-								<div className="pt-3">{children}</div>
-							)}
+							{active && <div className="pt-3">{children}</div>}
 						</div>
 					</div>
 				);

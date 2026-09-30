@@ -2,111 +2,122 @@
 // @generated from file openoxide/api/v1/system.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/system.proto.
  */
-export const file_openoxide_api_v1_system: GenFile = /*@__PURE__*/
-  fileDesc("Ch1vcGVub3hpZGUvYXBpL3YxL3N5c3RlbS5wcm90bxIQb3Blbm94aWRlLmFwaS52MSIVChNTeXN0ZW1IZWFsdGhSZXF1ZXN0IlMKFFN5c3RlbUhlYWx0aFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSHgoHbWVzc2FnZRgCIAEoCUIIukgFcgMYgCBIAIgBAUIKCghfbWVzc2FnZSIZChdTeXN0ZW1UZXN0Q29uZmlnUmVxdWVzdCJXChhTeXN0ZW1UZXN0Q29uZmlnUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIeCgdtZXNzYWdlGAIgASgJQgi6SAVyAxiAIEgAiAEBQgoKCF9tZXNzYWdlMs0BCg1TeXN0ZW1TZXJ2aWNlElcKBkhlYWx0aBIlLm9wZW5veGlkZS5hcGkudjEuU3lzdGVtSGVhbHRoUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuU3lzdGVtSGVhbHRoUmVzcG9uc2USYwoKVGVzdENvbmZpZxIpLm9wZW5veGlkZS5hcGkudjEuU3lzdGVtVGVzdENvbmZpZ1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLlN5c3RlbVRlc3RDb25maWdSZXNwb25zZWIGcHJvdG8z", [file_buf_validate_validate]);
+export const file_openoxide_api_v1_system: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'Ch1vcGVub3hpZGUvYXBpL3YxL3N5c3RlbS5wcm90bxIQb3Blbm94aWRlLmFwaS52MSIVChNTeXN0ZW1IZWFsdGhSZXF1ZXN0IlMKFFN5c3RlbUhlYWx0aFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSHgoHbWVzc2FnZRgCIAEoCUIIukgFcgMYgCBIAIgBAUIKCghfbWVzc2FnZSIZChdTeXN0ZW1UZXN0Q29uZmlnUmVxdWVzdCJXChhTeXN0ZW1UZXN0Q29uZmlnUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIeCgdtZXNzYWdlGAIgASgJQgi6SAVyAxiAIEgAiAEBQgoKCF9tZXNzYWdlMs0BCg1TeXN0ZW1TZXJ2aWNlElcKBkhlYWx0aBIlLm9wZW5veGlkZS5hcGkudjEuU3lzdGVtSGVhbHRoUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuU3lzdGVtSGVhbHRoUmVzcG9uc2USYwoKVGVzdENvbmZpZxIpLm9wZW5veGlkZS5hcGkudjEuU3lzdGVtVGVzdENvbmZpZ1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLlN5c3RlbVRlc3RDb25maWdSZXNwb25zZWIGcHJvdG8z',
+		[file_buf_validate_validate],
+	);
 
 /**
  * @generated from message openoxide.api.v1.SystemHealthRequest
  */
-export type SystemHealthRequest = Message<"openoxide.api.v1.SystemHealthRequest"> & {
-};
+export type SystemHealthRequest =
+	Message<'openoxide.api.v1.SystemHealthRequest'> & {};
 
 /**
  * Describes the message openoxide.api.v1.SystemHealthRequest.
  * Use `create(SystemHealthRequestSchema)` to create a new message.
  */
-export const SystemHealthRequestSchema: GenMessage<SystemHealthRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_system, 0);
+export const SystemHealthRequestSchema: GenMessage<SystemHealthRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_system, 0);
 
 /**
  * success means every dependency (database, docker) is healthy; message summarises unhealthy ones.
  *
  * @generated from message openoxide.api.v1.SystemHealthResponse
  */
-export type SystemHealthResponse = Message<"openoxide.api.v1.SystemHealthResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+export type SystemHealthResponse =
+	Message<'openoxide.api.v1.SystemHealthResponse'> & {
+		/**
+		 * @generated from field: bool success = 1;
+		 */
+		success: boolean;
 
-  /**
-   * @generated from field: optional string message = 2;
-   */
-  message?: string | undefined;
-};
+		/**
+		 * @generated from field: optional string message = 2;
+		 */
+		message?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SystemHealthResponse.
  * Use `create(SystemHealthResponseSchema)` to create a new message.
  */
-export const SystemHealthResponseSchema: GenMessage<SystemHealthResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_system, 1);
+export const SystemHealthResponseSchema: GenMessage<SystemHealthResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_system, 1);
 
 /**
  * @generated from message openoxide.api.v1.SystemTestConfigRequest
  */
-export type SystemTestConfigRequest = Message<"openoxide.api.v1.SystemTestConfigRequest"> & {
-};
+export type SystemTestConfigRequest =
+	Message<'openoxide.api.v1.SystemTestConfigRequest'> & {};
 
 /**
  * Describes the message openoxide.api.v1.SystemTestConfigRequest.
  * Use `create(SystemTestConfigRequestSchema)` to create a new message.
  */
-export const SystemTestConfigRequestSchema: GenMessage<SystemTestConfigRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_system, 2);
+export const SystemTestConfigRequestSchema: GenMessage<SystemTestConfigRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_system, 2);
 
 /**
  * success means no configuration errors; warnings are informational and surface through message only.
  *
  * @generated from message openoxide.api.v1.SystemTestConfigResponse
  */
-export type SystemTestConfigResponse = Message<"openoxide.api.v1.SystemTestConfigResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+export type SystemTestConfigResponse =
+	Message<'openoxide.api.v1.SystemTestConfigResponse'> & {
+		/**
+		 * @generated from field: bool success = 1;
+		 */
+		success: boolean;
 
-  /**
-   * @generated from field: optional string message = 2;
-   */
-  message?: string | undefined;
-};
+		/**
+		 * @generated from field: optional string message = 2;
+		 */
+		message?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SystemTestConfigResponse.
  * Use `create(SystemTestConfigResponseSchema)` to create a new message.
  */
-export const SystemTestConfigResponseSchema: GenMessage<SystemTestConfigResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_system, 3);
+export const SystemTestConfigResponseSchema: GenMessage<SystemTestConfigResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_system, 3);
 
 /**
  * @generated from service openoxide.api.v1.SystemService
  */
 export const SystemService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.SystemService.Health
-   */
-  health: {
-    methodKind: "unary";
-    input: typeof SystemHealthRequestSchema;
-    output: typeof SystemHealthResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SystemService.TestConfig
-   */
-  testConfig: {
-    methodKind: "unary";
-    input: typeof SystemTestConfigRequestSchema;
-    output: typeof SystemTestConfigResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_system, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.SystemService.Health
+	 */
+	health: {
+		methodKind: 'unary';
+		input: typeof SystemHealthRequestSchema;
+		output: typeof SystemHealthResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SystemService.TestConfig
+	 */
+	testConfig: {
+		methodKind: 'unary';
+		input: typeof SystemTestConfigRequestSchema;
+		output: typeof SystemTestConfigResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_system, 0);

@@ -1,12 +1,15 @@
-import {Activity, Gauge, Server} from 'lucide-react';
-import {
-	Sheet,
-	SheetContent,
-	SheetHeader,
-} from '#/components/ui/sheet';
+import {Activity, Gauge, Server, RefreshCw, RotateCw} from 'lucide-react';
+import {useState} from 'react';
+import {toast} from 'sonner';
+import {Sheet, SheetContent, SheetHeader} from '#/components/ui/sheet';
+import {Button} from '#/components/ui/button';
 import {SheetGroup} from '#/components/shared/field';
 import {cn, serverHostLabel} from '#/api/utils';
-import {useServerMetrics} from '#/api/live/monitoring';
+import {
+	useServerMetrics,
+	useReinstallAgent,
+	useRestartAgent,
+} from '#/api/live/monitoring';
 import {TrendCell} from './server-detail-parts';
 import {UsageRing} from '#/components/projects/compose/detail/cards/architecture-usage-rings';
 
@@ -34,6 +37,27 @@ export function ServerSettingsPanel({
 }) {
 	const serverId = isOpen && server ? BigInt(server.id) : null;
 	const metricsQuery = useServerMetrics(serverId);
+	const reinstall = useReinstallAgent();
+	const restart = useRestartAgent();
+	const [busy, setBusy] = useState<'update' | 'restart' | null>(null);
+
+	const runAgentAction = async (
+		kind: 'update' | 'restart',
+		id: bigint,
+	) => {
+		setBusy(kind);
+		const mutation = kind === 'update' ? reinstall : restart;
+		try {
+			const result = await mutation.mutateAsync(id);
+			toast[result.success ? 'success' : 'error'](result.message);
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : 'Agent action failed',
+			);
+		} finally {
+			setBusy(null);
+		}
+	};
 
 	if (!server) return null;
 
@@ -70,9 +94,7 @@ export function ServerSettingsPanel({
 									<span
 										className={cn(
 											'size-1.5 rounded-full',
-											isActive
-												? 'bg-emerald-500'
-												: 'bg-rose-500',
+											isActive ? 'bg-emerald-500' : 'bg-rose-500',
 										)}
 									/>
 									{isActive ? 'Online' : 'Offline'}
@@ -97,11 +119,7 @@ export function ServerSettingsPanel({
 							<UsageRing
 								label="CPU"
 								percent={latest?.cpu ?? 0}
-								sub={
-									latest
-										? `${latest.cpu_cores} cores`
-										: 'no data'
-								}
+								sub={latest ? `${latest.cpu_cores} cores` : 'no data'}
 								ready={!!latest}
 							/>
 							<UsageRing
@@ -143,6 +161,45 @@ export function ServerSettingsPanel({
 								values={memSeries}
 								meta={windowNote(memSeries)}
 							/>
+						</div>
+					</SheetGroup>
+
+					<SheetGroup
+						title="Agent"
+						description="Update pulls the latest agent image and recreates the container; restart just cycles it.">
+						<div className="flex flex-wrap gap-2 rounded-xl border bg-card px-4 py-4">
+							<Button
+								size="sm"
+								variant="default"
+								disabled={busy !== null || serverId === null}
+								onClick={() =>
+									serverId !== null && runAgentAction('update', serverId)
+								}
+								className="h-8 gap-1.5 text-xs">
+								<RefreshCw
+									className={cn(
+										'size-3.5',
+										busy === 'update' && 'animate-spin',
+									)}
+								/>
+								{busy === 'update' ? 'Updating…' : 'Update Agent'}
+							</Button>
+							<Button
+								size="sm"
+								variant="outline"
+								disabled={busy !== null || serverId === null}
+								onClick={() =>
+									serverId !== null && runAgentAction('restart', serverId)
+								}
+								className="h-8 gap-1.5 text-xs">
+								<RotateCw
+									className={cn(
+										'size-3.5',
+										busy === 'restart' && 'animate-spin',
+									)}
+								/>
+								{busy === 'restart' ? 'Restarting…' : 'Restart'}
+							</Button>
 						</div>
 					</SheetGroup>
 				</div>

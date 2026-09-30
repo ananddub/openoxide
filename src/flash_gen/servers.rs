@@ -5,6 +5,26 @@ use super::models::*;
 use super::db::Queries;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
+pub struct GetServerMtlsRow {
+    pub mtls_ca_cert: Option<Vec<u8>>,
+    pub mtls_ca_key: Option<Vec<u8>>,
+    pub mtls_panel_cert: Option<Vec<u8>>,
+    pub mtls_panel_key: Option<Vec<u8>>,
+    pub mtls_agent_cert: Option<Vec<u8>>,
+    pub mtls_agent_key: Option<Vec<u8>>,
+}
+
+pub struct ProvisionServerMtlsParams {
+    pub mtls_ca_cert: Vec<u8>,
+    pub mtls_ca_key: Vec<u8>,
+    pub mtls_panel_cert: Vec<u8>,
+    pub mtls_panel_key: Vec<u8>,
+    pub mtls_agent_cert: Vec<u8>,
+    pub mtls_agent_key: Vec<u8>,
+    pub id: i64,
+}
+
+#[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct ServersGetSshCredentialsRow {
     pub public_ip: String,
     pub private_ip: Option<String>,
@@ -338,6 +358,39 @@ impl Queries {
             "DELETE FROM servers WHERE id = ?;"
         )
         .bind(id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// GetServerMtls
+    pub async fn get_server_mtls(
+        &self,
+        id: i64,
+    ) -> Result<GetServerMtlsRow, sqlx::Error> {
+        sqlx::query_as::<_, GetServerMtlsRow>(
+            "SELECT mtls_ca_cert, mtls_ca_key, mtls_panel_cert, mtls_panel_key, mtls_agent_cert, mtls_agent_key FROM servers WHERE id = ?;"
+        )
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    /// ProvisionServerMtls
+    pub async fn provision_server_mtls(
+        &self,
+        params: &ProvisionServerMtlsParams,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE servers SET mtls_ca_cert = ?, mtls_ca_key = ?, mtls_panel_cert = ?, mtls_panel_key = ?, mtls_agent_cert = ?, mtls_agent_key = ? WHERE id = ? AND mtls_ca_cert IS NULL;"
+        )
+        .bind(&params.mtls_ca_cert)
+        .bind(&params.mtls_ca_key)
+        .bind(&params.mtls_panel_cert)
+        .bind(&params.mtls_panel_key)
+        .bind(&params.mtls_agent_cert)
+        .bind(&params.mtls_agent_key)
+        .bind(&params.id)
         .execute(&self.pool)
         .await?;
         Ok(())

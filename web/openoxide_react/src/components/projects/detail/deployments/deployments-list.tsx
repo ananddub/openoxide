@@ -94,8 +94,8 @@ export function DeploymentsList({
 													Number(e.created_at) < 1e11
 														? Number(e.created_at) * 1000
 														: Number(e.created_at),
-											).toLocaleString()
-										: undefined
+												).toLocaleString()
+											: undefined
 									}>
 									<Clock className="size-3" />
 									{formatRelative(e.created_at)}

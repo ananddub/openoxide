@@ -238,6 +238,26 @@ impl MonitoringService {
             .unwrap_or_else(|_| "/app/data/mtls".to_string());
         let server_dir = std::path::Path::new(&mtls_base).join(format!("server-{server_id}"));
         let ca_file = server_dir.join("ca.crt");
+        // Provision this server's isolated mTLS material on first use. Without
+        // it the panel would fall back to plain HTTP against a TLS-only agent
+        // and the handshake fails with an opaque "h2 protocol error". The DB
+        // holds the CA, so this is idempotent (reuse) after the first call.
+        if !ca_file.exists() && !is_local {
+            if let Ok(store) = auto_di::resolve::<crate::utils::mtls::MtlsCaStore>().await {
+                let sans = vec![
+                    "openoxide-agent".to_string(),
+                    "localhost".to_string(),
+                    "127.0.0.1".to_string(),
+                    host.to_string(),
+                ];
+                if let Err(error) = store
+                    .ensure_server(server_id, std::path::Path::new(&mtls_base), &sans)
+                    .await
+                {
+                    tracing::warn!(server_id, %error, "could not provision per-server mTLS");
+                }
+            }
+        }
         let use_tls = ca_file.exists();
         let scheme = if use_tls { "https" } else { "http" };
         let mut endpoint =

@@ -2,572 +2,601 @@
 // @generated from file openoxide/api/v1/domain.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/domain.proto.
  */
-export const file_openoxide_api_v1_domain: GenFile = /*@__PURE__*/
-  fileDesc("Ch1vcGVub3hpZGUvYXBpL3YxL2RvbWFpbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MSKkBAoGRG9tYWluEgoKAmlkGAEgASgDEgwKBGhvc3QYAiABKAkSDQoFaHR0cHMYAyABKAgSEQoEcG9ydBgEIAEoA0gAiAEBEhEKBHBhdGgYBSABKAlIAYgBARIaCg1pbnRlcm5hbF9wYXRoGAYgASgJSAKIAQESHgoRY3VzdG9tX2VudHJ5cG9pbnQYByABKAlIA4gBARIZCgxzZXJ2aWNlX25hbWUYCCABKAlIBIgBARIhChRjdXN0b21fY2VydF9yZXNvbHZlchgJIAEoCUgFiAEBEhIKCnN0cmlwX3BhdGgYCiABKAgSEwoLbWlkZGxld2FyZXMYCyABKAkSMQoLZG9tYWluX3R5cGUYDCABKA4yHC5vcGVub3hpZGUuYXBpLnYxLkRvbWFpblR5cGUSQQoQY2VydGlmaWNhdGVfdHlwZRgNIAEoDjInLm9wZW5veGlkZS5hcGkudjEuRG9tYWluQ2VydGlmaWNhdGVUeXBlEhcKCnNlcnZpY2VfaWQYDiABKANIBogBARISCgpjcmVhdGVkX2F0GA8gASgDEhIKCnVwZGF0ZWRfYXQYECABKANCBwoFX3BvcnRCBwoFX3BhdGhCEAoOX2ludGVybmFsX3BhdGhCFAoSX2N1c3RvbV9lbnRyeXBvaW50Qg8KDV9zZXJ2aWNlX25hbWVCFwoVX2N1c3RvbV9jZXJ0X3Jlc29sdmVyQg0KC19zZXJ2aWNlX2lkIhQKEkxpc3REb21haW5zUmVxdWVzdCJAChNMaXN0RG9tYWluc1Jlc3BvbnNlEikKB2RvbWFpbnMYASADKAsyGC5vcGVub3hpZGUuYXBpLnYxLkRvbWFpbiInChBHZXREb21haW5SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIj0KEUdldERvbWFpblJlc3BvbnNlEigKBmRvbWFpbhgBIAEoCzIYLm9wZW5veGlkZS5hcGkudjEuRG9tYWluIkAKHUxpc3RBcHBsaWNhdGlvbkRvbWFpbnNSZXF1ZXN0Eh8KDmFwcGxpY2F0aW9uX2lkGAEgASgDQge6SAQiAiAAIksKHkxpc3RBcHBsaWNhdGlvbkRvbWFpbnNSZXNwb25zZRIpCgdkb21haW5zGAEgAygLMhgub3Blbm94aWRlLmFwaS52MS5Eb21haW4iOAoZTGlzdENvbXBvc2VEb21haW5zUmVxdWVzdBIbCgpjb21wb3NlX2lkGAEgASgDQge6SAQiAiAAIkcKGkxpc3RDb21wb3NlRG9tYWluc1Jlc3BvbnNlEikKB2RvbWFpbnMYASADKAsyGC5vcGVub3hpZGUuYXBpLnYxLkRvbWFpbiKnBQoTQ3JlYXRlRG9tYWluUmVxdWVzdBIYCgRob3N0GAEgASgJQgq6SAdyBRABGP8BEg0KBWh0dHBzGAIgASgIEhEKBHBvcnQYAyABKANIAIgBARIRCgRwYXRoGAQgASgJSAGIAQESGgoNaW50ZXJuYWxfcGF0aBgFIAEoCUgCiAEBEh4KEWN1c3RvbV9lbnRyeXBvaW50GAYgASgJSAOIAQESGQoMc2VydmljZV9uYW1lGAcgASgJSASIAQESIQoUY3VzdG9tX2NlcnRfcmVzb2x2ZXIYCCABKAlIBYgBARISCgpzdHJpcF9wYXRoGAkgASgIEhgKC21pZGRsZXdhcmVzGAogASgJSAaIAQESQgoLZG9tYWluX3R5cGUYCyABKA4yHC5vcGVub3hpZGUuYXBpLnYxLkRvbWFpblR5cGVCCrpIB4IBBBABIABIB4gBARJSChBjZXJ0aWZpY2F0ZV90eXBlGAwgASgOMicub3Blbm94aWRlLmFwaS52MS5Eb21haW5DZXJ0aWZpY2F0ZVR5cGVCCrpIB4IBBBABIABICIgBARIkCg5hcHBsaWNhdGlvbl9pZBgNIAEoA0IHukgEIgIgAEgJiAEBEiAKCmNvbXBvc2VfaWQYDiABKANCB7pIBCICIABICogBAUIHCgVfcG9ydEIHCgVfcGF0aEIQCg5faW50ZXJuYWxfcGF0aEIUChJfY3VzdG9tX2VudHJ5cG9pbnRCDwoNX3NlcnZpY2VfbmFtZUIXChVfY3VzdG9tX2NlcnRfcmVzb2x2ZXJCDgoMX21pZGRsZXdhcmVzQg4KDF9kb21haW5fdHlwZUITChFfY2VydGlmaWNhdGVfdHlwZUIRCg9fYXBwbGljYXRpb25faWRCDQoLX2NvbXBvc2VfaWQiQAoUQ3JlYXRlRG9tYWluUmVzcG9uc2USKAoGZG9tYWluGAEgASgLMhgub3Blbm94aWRlLmFwaS52MS5Eb21haW4irQQKE1VwZGF0ZURvbWFpblJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASGwoEaG9zdBgCIAEoCUIIukgFcgMY/wFIAIgBARISCgVodHRwcxgDIAEoCEgBiAEBEhEKBHBvcnQYBCABKANIAogBARIRCgRwYXRoGAUgASgJSAOIAQESGgoNaW50ZXJuYWxfcGF0aBgGIAEoCUgEiAEBEh4KEWN1c3RvbV9lbnRyeXBvaW50GAcgASgJSAWIAQESGQoMc2VydmljZV9uYW1lGAggASgJSAaIAQESIQoUY3VzdG9tX2NlcnRfcmVzb2x2ZXIYCSABKAlIB4gBARIXCgpzdHJpcF9wYXRoGAogASgISAiIAQESGAoLbWlkZGxld2FyZXMYCyABKAlICYgBARJSChBjZXJ0aWZpY2F0ZV90eXBlGAwgASgOMicub3Blbm94aWRlLmFwaS52MS5Eb21haW5DZXJ0aWZpY2F0ZVR5cGVCCrpIB4IBBBABIABICogBAUIHCgVfaG9zdEIICgZfaHR0cHNCBwoFX3BvcnRCBwoFX3BhdGhCEAoOX2ludGVybmFsX3BhdGhCFAoSX2N1c3RvbV9lbnRyeXBvaW50Qg8KDV9zZXJ2aWNlX25hbWVCFwoVX2N1c3RvbV9jZXJ0X3Jlc29sdmVyQg0KC19zdHJpcF9wYXRoQg4KDF9taWRkbGV3YXJlc0ITChFfY2VydGlmaWNhdGVfdHlwZSJAChRVcGRhdGVEb21haW5SZXNwb25zZRIoCgZkb21haW4YASABKAsyGC5vcGVub3hpZGUuYXBpLnYxLkRvbWFpbiIqChNEZWxldGVEb21haW5SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAImMKGFZhbGlkYXRlRG9tYWluRG5zUmVxdWVzdBIYCgRob3N0GAEgASgJQgq6SAdyBRABGP8BEh8KCXNlcnZlcl9pZBgCIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQidwoZVmFsaWRhdGVEb21haW5EbnNSZXNwb25zZRIQCghpc192YWxpZBgBIAEoCBIUCgxyZXNvbHZlZF9pcHMYAiADKAkSFAoMZXhwZWN0ZWRfaXBzGAMgAygJEhIKBWVycm9yGAQgASgJSACIAQFCCAoGX2Vycm9yKl8KCkRvbWFpblR5cGUSGwoXRE9NQUlOX1RZUEVfVU5TUEVDSUZJRUQQABIbChdET01BSU5fVFlQRV9BUFBMSUNBVElPThABEhcKE0RPTUFJTl9UWVBFX0NPTVBPU0UQAiqvAQoVRG9tYWluQ2VydGlmaWNhdGVUeXBlEicKI0RPTUFJTl9DRVJUSUZJQ0FURV9UWVBFX1VOU1BFQ0lGSUVEEAASJwojRE9NQUlOX0NFUlRJRklDQVRFX1RZUEVfTEVUU0VOQ1JZUFQQARIiCh5ET01BSU5fQ0VSVElGSUNBVEVfVFlQRV9DVVNUT00QAhIgChxET01BSU5fQ0VSVElGSUNBVEVfVFlQRV9OT05FEAMyqwYKDURvbWFpblNlcnZpY2USWgoLTGlzdERvbWFpbnMSJC5vcGVub3hpZGUuYXBpLnYxLkxpc3REb21haW5zUmVxdWVzdBolLm9wZW5veGlkZS5hcGkudjEuTGlzdERvbWFpbnNSZXNwb25zZRJUCglHZXREb21haW4SIi5vcGVub3hpZGUuYXBpLnYxLkdldERvbWFpblJlcXVlc3QaIy5vcGVub3hpZGUuYXBpLnYxLkdldERvbWFpblJlc3BvbnNlEnsKFkxpc3RBcHBsaWNhdGlvbkRvbWFpbnMSLy5vcGVub3hpZGUuYXBpLnYxLkxpc3RBcHBsaWNhdGlvbkRvbWFpbnNSZXF1ZXN0GjAub3Blbm94aWRlLmFwaS52MS5MaXN0QXBwbGljYXRpb25Eb21haW5zUmVzcG9uc2USbwoSTGlzdENvbXBvc2VEb21haW5zEisub3Blbm94aWRlLmFwaS52MS5MaXN0Q29tcG9zZURvbWFpbnNSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5MaXN0Q29tcG9zZURvbWFpbnNSZXNwb25zZRJdCgxDcmVhdGVEb21haW4SJS5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZURvbWFpblJlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZURvbWFpblJlc3BvbnNlEl0KDFVwZGF0ZURvbWFpbhIlLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlRG9tYWluUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlRG9tYWluUmVzcG9uc2USTgoMRGVsZXRlRG9tYWluEiUub3Blbm94aWRlLmFwaS52MS5EZWxldGVEb21haW5SZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJsChFWYWxpZGF0ZURvbWFpbkRucxIqLm9wZW5veGlkZS5hcGkudjEuVmFsaWRhdGVEb21haW5EbnNSZXF1ZXN0Gisub3Blbm94aWRlLmFwaS52MS5WYWxpZGF0ZURvbWFpbkRuc1Jlc3BvbnNlYgZwcm90bzM", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_domain: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'Ch1vcGVub3hpZGUvYXBpL3YxL2RvbWFpbi5wcm90bxIQb3Blbm94aWRlLmFwaS52MSKkBAoGRG9tYWluEgoKAmlkGAEgASgDEgwKBGhvc3QYAiABKAkSDQoFaHR0cHMYAyABKAgSEQoEcG9ydBgEIAEoA0gAiAEBEhEKBHBhdGgYBSABKAlIAYgBARIaCg1pbnRlcm5hbF9wYXRoGAYgASgJSAKIAQESHgoRY3VzdG9tX2VudHJ5cG9pbnQYByABKAlIA4gBARIZCgxzZXJ2aWNlX25hbWUYCCABKAlIBIgBARIhChRjdXN0b21fY2VydF9yZXNvbHZlchgJIAEoCUgFiAEBEhIKCnN0cmlwX3BhdGgYCiABKAgSEwoLbWlkZGxld2FyZXMYCyABKAkSMQoLZG9tYWluX3R5cGUYDCABKA4yHC5vcGVub3hpZGUuYXBpLnYxLkRvbWFpblR5cGUSQQoQY2VydGlmaWNhdGVfdHlwZRgNIAEoDjInLm9wZW5veGlkZS5hcGkudjEuRG9tYWluQ2VydGlmaWNhdGVUeXBlEhcKCnNlcnZpY2VfaWQYDiABKANIBogBARISCgpjcmVhdGVkX2F0GA8gASgDEhIKCnVwZGF0ZWRfYXQYECABKANCBwoFX3BvcnRCBwoFX3BhdGhCEAoOX2ludGVybmFsX3BhdGhCFAoSX2N1c3RvbV9lbnRyeXBvaW50Qg8KDV9zZXJ2aWNlX25hbWVCFwoVX2N1c3RvbV9jZXJ0X3Jlc29sdmVyQg0KC19zZXJ2aWNlX2lkIhQKEkxpc3REb21haW5zUmVxdWVzdCJAChNMaXN0RG9tYWluc1Jlc3BvbnNlEikKB2RvbWFpbnMYASADKAsyGC5vcGVub3hpZGUuYXBpLnYxLkRvbWFpbiInChBHZXREb21haW5SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIj0KEUdldERvbWFpblJlc3BvbnNlEigKBmRvbWFpbhgBIAEoCzIYLm9wZW5veGlkZS5hcGkudjEuRG9tYWluIkAKHUxpc3RBcHBsaWNhdGlvbkRvbWFpbnNSZXF1ZXN0Eh8KDmFwcGxpY2F0aW9uX2lkGAEgASgDQge6SAQiAiAAIksKHkxpc3RBcHBsaWNhdGlvbkRvbWFpbnNSZXNwb25zZRIpCgdkb21haW5zGAEgAygLMhgub3Blbm94aWRlLmFwaS52MS5Eb21haW4iOAoZTGlzdENvbXBvc2VEb21haW5zUmVxdWVzdBIbCgpjb21wb3NlX2lkGAEgASgDQge6SAQiAiAAIkcKGkxpc3RDb21wb3NlRG9tYWluc1Jlc3BvbnNlEikKB2RvbWFpbnMYASADKAsyGC5vcGVub3hpZGUuYXBpLnYxLkRvbWFpbiKnBQoTQ3JlYXRlRG9tYWluUmVxdWVzdBIYCgRob3N0GAEgASgJQgq6SAdyBRABGP8BEg0KBWh0dHBzGAIgASgIEhEKBHBvcnQYAyABKANIAIgBARIRCgRwYXRoGAQgASgJSAGIAQESGgoNaW50ZXJuYWxfcGF0aBgFIAEoCUgCiAEBEh4KEWN1c3RvbV9lbnRyeXBvaW50GAYgASgJSAOIAQESGQoMc2VydmljZV9uYW1lGAcgASgJSASIAQESIQoUY3VzdG9tX2NlcnRfcmVzb2x2ZXIYCCABKAlIBYgBARISCgpzdHJpcF9wYXRoGAkgASgIEhgKC21pZGRsZXdhcmVzGAogASgJSAaIAQESQgoLZG9tYWluX3R5cGUYCyABKA4yHC5vcGVub3hpZGUuYXBpLnYxLkRvbWFpblR5cGVCCrpIB4IBBBABIABIB4gBARJSChBjZXJ0aWZpY2F0ZV90eXBlGAwgASgOMicub3Blbm94aWRlLmFwaS52MS5Eb21haW5DZXJ0aWZpY2F0ZVR5cGVCCrpIB4IBBBABIABICIgBARIkCg5hcHBsaWNhdGlvbl9pZBgNIAEoA0IHukgEIgIgAEgJiAEBEiAKCmNvbXBvc2VfaWQYDiABKANCB7pIBCICIABICogBAUIHCgVfcG9ydEIHCgVfcGF0aEIQCg5faW50ZXJuYWxfcGF0aEIUChJfY3VzdG9tX2VudHJ5cG9pbnRCDwoNX3NlcnZpY2VfbmFtZUIXChVfY3VzdG9tX2NlcnRfcmVzb2x2ZXJCDgoMX21pZGRsZXdhcmVzQg4KDF9kb21haW5fdHlwZUITChFfY2VydGlmaWNhdGVfdHlwZUIRCg9fYXBwbGljYXRpb25faWRCDQoLX2NvbXBvc2VfaWQiQAoUQ3JlYXRlRG9tYWluUmVzcG9uc2USKAoGZG9tYWluGAEgASgLMhgub3Blbm94aWRlLmFwaS52MS5Eb21haW4irQQKE1VwZGF0ZURvbWFpblJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASGwoEaG9zdBgCIAEoCUIIukgFcgMY/wFIAIgBARISCgVodHRwcxgDIAEoCEgBiAEBEhEKBHBvcnQYBCABKANIAogBARIRCgRwYXRoGAUgASgJSAOIAQESGgoNaW50ZXJuYWxfcGF0aBgGIAEoCUgEiAEBEh4KEWN1c3RvbV9lbnRyeXBvaW50GAcgASgJSAWIAQESGQoMc2VydmljZV9uYW1lGAggASgJSAaIAQESIQoUY3VzdG9tX2NlcnRfcmVzb2x2ZXIYCSABKAlIB4gBARIXCgpzdHJpcF9wYXRoGAogASgISAiIAQESGAoLbWlkZGxld2FyZXMYCyABKAlICYgBARJSChBjZXJ0aWZpY2F0ZV90eXBlGAwgASgOMicub3Blbm94aWRlLmFwaS52MS5Eb21haW5DZXJ0aWZpY2F0ZVR5cGVCCrpIB4IBBBABIABICogBAUIHCgVfaG9zdEIICgZfaHR0cHNCBwoFX3BvcnRCBwoFX3BhdGhCEAoOX2ludGVybmFsX3BhdGhCFAoSX2N1c3RvbV9lbnRyeXBvaW50Qg8KDV9zZXJ2aWNlX25hbWVCFwoVX2N1c3RvbV9jZXJ0X3Jlc29sdmVyQg0KC19zdHJpcF9wYXRoQg4KDF9taWRkbGV3YXJlc0ITChFfY2VydGlmaWNhdGVfdHlwZSJAChRVcGRhdGVEb21haW5SZXNwb25zZRIoCgZkb21haW4YASABKAsyGC5vcGVub3hpZGUuYXBpLnYxLkRvbWFpbiIqChNEZWxldGVEb21haW5SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAImMKGFZhbGlkYXRlRG9tYWluRG5zUmVxdWVzdBIYCgRob3N0GAEgASgJQgq6SAdyBRABGP8BEh8KCXNlcnZlcl9pZBgCIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQidwoZVmFsaWRhdGVEb21haW5EbnNSZXNwb25zZRIQCghpc192YWxpZBgBIAEoCBIUCgxyZXNvbHZlZF9pcHMYAiADKAkSFAoMZXhwZWN0ZWRfaXBzGAMgAygJEhIKBWVycm9yGAQgASgJSACIAQFCCAoGX2Vycm9yKl8KCkRvbWFpblR5cGUSGwoXRE9NQUlOX1RZUEVfVU5TUEVDSUZJRUQQABIbChdET01BSU5fVFlQRV9BUFBMSUNBVElPThABEhcKE0RPTUFJTl9UWVBFX0NPTVBPU0UQAiqvAQoVRG9tYWluQ2VydGlmaWNhdGVUeXBlEicKI0RPTUFJTl9DRVJUSUZJQ0FURV9UWVBFX1VOU1BFQ0lGSUVEEAASJwojRE9NQUlOX0NFUlRJRklDQVRFX1RZUEVfTEVUU0VOQ1JZUFQQARIiCh5ET01BSU5fQ0VSVElGSUNBVEVfVFlQRV9DVVNUT00QAhIgChxET01BSU5fQ0VSVElGSUNBVEVfVFlQRV9OT05FEAMyqwYKDURvbWFpblNlcnZpY2USWgoLTGlzdERvbWFpbnMSJC5vcGVub3hpZGUuYXBpLnYxLkxpc3REb21haW5zUmVxdWVzdBolLm9wZW5veGlkZS5hcGkudjEuTGlzdERvbWFpbnNSZXNwb25zZRJUCglHZXREb21haW4SIi5vcGVub3hpZGUuYXBpLnYxLkdldERvbWFpblJlcXVlc3QaIy5vcGVub3hpZGUuYXBpLnYxLkdldERvbWFpblJlc3BvbnNlEnsKFkxpc3RBcHBsaWNhdGlvbkRvbWFpbnMSLy5vcGVub3hpZGUuYXBpLnYxLkxpc3RBcHBsaWNhdGlvbkRvbWFpbnNSZXF1ZXN0GjAub3Blbm94aWRlLmFwaS52MS5MaXN0QXBwbGljYXRpb25Eb21haW5zUmVzcG9uc2USbwoSTGlzdENvbXBvc2VEb21haW5zEisub3Blbm94aWRlLmFwaS52MS5MaXN0Q29tcG9zZURvbWFpbnNSZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5MaXN0Q29tcG9zZURvbWFpbnNSZXNwb25zZRJdCgxDcmVhdGVEb21haW4SJS5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZURvbWFpblJlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZURvbWFpblJlc3BvbnNlEl0KDFVwZGF0ZURvbWFpbhIlLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlRG9tYWluUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlRG9tYWluUmVzcG9uc2USTgoMRGVsZXRlRG9tYWluEiUub3Blbm94aWRlLmFwaS52MS5EZWxldGVEb21haW5SZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJsChFWYWxpZGF0ZURvbWFpbkRucxIqLm9wZW5veGlkZS5hcGkudjEuVmFsaWRhdGVEb21haW5EbnNSZXF1ZXN0Gisub3Blbm94aWRlLmFwaS52MS5WYWxpZGF0ZURvbWFpbkRuc1Jlc3BvbnNlYgZwcm90bzM',
+		[file_openoxide_api_v1_common, file_buf_validate_validate],
+	);
 
 /**
  * @generated from message openoxide.api.v1.Domain
  */
-export type Domain = Message<"openoxide.api.v1.Domain"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type Domain = Message<'openoxide.api.v1.Domain'> & {
+	/**
+	 * @generated from field: int64 id = 1;
+	 */
+	id: bigint;
 
-  /**
-   * @generated from field: string host = 2;
-   */
-  host: string;
+	/**
+	 * @generated from field: string host = 2;
+	 */
+	host: string;
 
-  /**
-   * @generated from field: bool https = 3;
-   */
-  https: boolean;
+	/**
+	 * @generated from field: bool https = 3;
+	 */
+	https: boolean;
 
-  /**
-   * @generated from field: optional int64 port = 4;
-   */
-  port?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 port = 4;
+	 */
+	port?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string path = 5;
-   */
-  path?: string | undefined;
+	/**
+	 * @generated from field: optional string path = 5;
+	 */
+	path?: string | undefined;
 
-  /**
-   * @generated from field: optional string internal_path = 6;
-   */
-  internalPath?: string | undefined;
+	/**
+	 * @generated from field: optional string internal_path = 6;
+	 */
+	internalPath?: string | undefined;
 
-  /**
-   * @generated from field: optional string custom_entrypoint = 7;
-   */
-  customEntrypoint?: string | undefined;
+	/**
+	 * @generated from field: optional string custom_entrypoint = 7;
+	 */
+	customEntrypoint?: string | undefined;
 
-  /**
-   * @generated from field: optional string service_name = 8;
-   */
-  serviceName?: string | undefined;
+	/**
+	 * @generated from field: optional string service_name = 8;
+	 */
+	serviceName?: string | undefined;
 
-  /**
-   * @generated from field: optional string custom_cert_resolver = 9;
-   */
-  customCertResolver?: string | undefined;
+	/**
+	 * @generated from field: optional string custom_cert_resolver = 9;
+	 */
+	customCertResolver?: string | undefined;
 
-  /**
-   * @generated from field: bool strip_path = 10;
-   */
-  stripPath: boolean;
+	/**
+	 * @generated from field: bool strip_path = 10;
+	 */
+	stripPath: boolean;
 
-  /**
-   * Traefik middleware names as a JSON array document, e.g. `["auth"]`.
-   *
-   * @generated from field: string middlewares = 11;
-   */
-  middlewares: string;
+	/**
+	 * Traefik middleware names as a JSON array document, e.g. `["auth"]`.
+	 *
+	 * @generated from field: string middlewares = 11;
+	 */
+	middlewares: string;
 
-  /**
-   * @generated from field: openoxide.api.v1.DomainType domain_type = 12;
-   */
-  domainType: DomainType;
+	/**
+	 * @generated from field: openoxide.api.v1.DomainType domain_type = 12;
+	 */
+	domainType: DomainType;
 
-  /**
-   * @generated from field: openoxide.api.v1.DomainCertificateType certificate_type = 13;
-   */
-  certificateType: DomainCertificateType;
+	/**
+	 * @generated from field: openoxide.api.v1.DomainCertificateType certificate_type = 13;
+	 */
+	certificateType: DomainCertificateType;
 
-  /**
-   * @generated from field: optional int64 service_id = 14;
-   */
-  serviceId?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 service_id = 14;
+	 */
+	serviceId?: bigint | undefined;
 
-  /**
-   * @generated from field: int64 created_at = 15;
-   */
-  createdAt: bigint;
+	/**
+	 * @generated from field: int64 created_at = 15;
+	 */
+	createdAt: bigint;
 
-  /**
-   * @generated from field: int64 updated_at = 16;
-   */
-  updatedAt: bigint;
+	/**
+	 * @generated from field: int64 updated_at = 16;
+	 */
+	updatedAt: bigint;
 };
 
 /**
  * Describes the message openoxide.api.v1.Domain.
  * Use `create(DomainSchema)` to create a new message.
  */
-export const DomainSchema: GenMessage<Domain> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 0);
+export const DomainSchema: GenMessage<Domain> /*@__PURE__*/ = messageDesc(
+	file_openoxide_api_v1_domain,
+	0,
+);
 
 /**
  * @generated from message openoxide.api.v1.ListDomainsRequest
  */
-export type ListDomainsRequest = Message<"openoxide.api.v1.ListDomainsRequest"> & {
-};
+export type ListDomainsRequest =
+	Message<'openoxide.api.v1.ListDomainsRequest'> & {};
 
 /**
  * Describes the message openoxide.api.v1.ListDomainsRequest.
  * Use `create(ListDomainsRequestSchema)` to create a new message.
  */
-export const ListDomainsRequestSchema: GenMessage<ListDomainsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 1);
+export const ListDomainsRequestSchema: GenMessage<ListDomainsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 1);
 
 /**
  * @generated from message openoxide.api.v1.ListDomainsResponse
  */
-export type ListDomainsResponse = Message<"openoxide.api.v1.ListDomainsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Domain domains = 1;
-   */
-  domains: Domain[];
-};
+export type ListDomainsResponse =
+	Message<'openoxide.api.v1.ListDomainsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Domain domains = 1;
+		 */
+		domains: Domain[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListDomainsResponse.
  * Use `create(ListDomainsResponseSchema)` to create a new message.
  */
-export const ListDomainsResponseSchema: GenMessage<ListDomainsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 2);
+export const ListDomainsResponseSchema: GenMessage<ListDomainsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 2);
 
 /**
  * @generated from message openoxide.api.v1.GetDomainRequest
  */
-export type GetDomainRequest = Message<"openoxide.api.v1.GetDomainRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type GetDomainRequest =
+	Message<'openoxide.api.v1.GetDomainRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GetDomainRequest.
  * Use `create(GetDomainRequestSchema)` to create a new message.
  */
-export const GetDomainRequestSchema: GenMessage<GetDomainRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 3);
+export const GetDomainRequestSchema: GenMessage<GetDomainRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 3);
 
 /**
  * @generated from message openoxide.api.v1.GetDomainResponse
  */
-export type GetDomainResponse = Message<"openoxide.api.v1.GetDomainResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Domain domain = 1;
-   */
-  domain?: Domain | undefined;
-};
+export type GetDomainResponse =
+	Message<'openoxide.api.v1.GetDomainResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Domain domain = 1;
+		 */
+		domain?: Domain | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GetDomainResponse.
  * Use `create(GetDomainResponseSchema)` to create a new message.
  */
-export const GetDomainResponseSchema: GenMessage<GetDomainResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 4);
+export const GetDomainResponseSchema: GenMessage<GetDomainResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 4);
 
 /**
  * @generated from message openoxide.api.v1.ListApplicationDomainsRequest
  */
-export type ListApplicationDomainsRequest = Message<"openoxide.api.v1.ListApplicationDomainsRequest"> & {
-  /**
-   * @generated from field: int64 application_id = 1;
-   */
-  applicationId: bigint;
-};
+export type ListApplicationDomainsRequest =
+	Message<'openoxide.api.v1.ListApplicationDomainsRequest'> & {
+		/**
+		 * @generated from field: int64 application_id = 1;
+		 */
+		applicationId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListApplicationDomainsRequest.
  * Use `create(ListApplicationDomainsRequestSchema)` to create a new message.
  */
-export const ListApplicationDomainsRequestSchema: GenMessage<ListApplicationDomainsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 5);
+export const ListApplicationDomainsRequestSchema: GenMessage<ListApplicationDomainsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 5);
 
 /**
  * @generated from message openoxide.api.v1.ListApplicationDomainsResponse
  */
-export type ListApplicationDomainsResponse = Message<"openoxide.api.v1.ListApplicationDomainsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Domain domains = 1;
-   */
-  domains: Domain[];
-};
+export type ListApplicationDomainsResponse =
+	Message<'openoxide.api.v1.ListApplicationDomainsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Domain domains = 1;
+		 */
+		domains: Domain[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListApplicationDomainsResponse.
  * Use `create(ListApplicationDomainsResponseSchema)` to create a new message.
  */
-export const ListApplicationDomainsResponseSchema: GenMessage<ListApplicationDomainsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 6);
+export const ListApplicationDomainsResponseSchema: GenMessage<ListApplicationDomainsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 6);
 
 /**
  * @generated from message openoxide.api.v1.ListComposeDomainsRequest
  */
-export type ListComposeDomainsRequest = Message<"openoxide.api.v1.ListComposeDomainsRequest"> & {
-  /**
-   * @generated from field: int64 compose_id = 1;
-   */
-  composeId: bigint;
-};
+export type ListComposeDomainsRequest =
+	Message<'openoxide.api.v1.ListComposeDomainsRequest'> & {
+		/**
+		 * @generated from field: int64 compose_id = 1;
+		 */
+		composeId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListComposeDomainsRequest.
  * Use `create(ListComposeDomainsRequestSchema)` to create a new message.
  */
-export const ListComposeDomainsRequestSchema: GenMessage<ListComposeDomainsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 7);
+export const ListComposeDomainsRequestSchema: GenMessage<ListComposeDomainsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 7);
 
 /**
  * @generated from message openoxide.api.v1.ListComposeDomainsResponse
  */
-export type ListComposeDomainsResponse = Message<"openoxide.api.v1.ListComposeDomainsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Domain domains = 1;
-   */
-  domains: Domain[];
-};
+export type ListComposeDomainsResponse =
+	Message<'openoxide.api.v1.ListComposeDomainsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Domain domains = 1;
+		 */
+		domains: Domain[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListComposeDomainsResponse.
  * Use `create(ListComposeDomainsResponseSchema)` to create a new message.
  */
-export const ListComposeDomainsResponseSchema: GenMessage<ListComposeDomainsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 8);
+export const ListComposeDomainsResponseSchema: GenMessage<ListComposeDomainsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 8);
 
 /**
  * Absent fields fall back to server defaults: path "/", middlewares "[]", domain_type derived from application_id/compose_id, certificate_type NONE.
  *
  * @generated from message openoxide.api.v1.CreateDomainRequest
  */
-export type CreateDomainRequest = Message<"openoxide.api.v1.CreateDomainRequest"> & {
-  /**
-   * @generated from field: string host = 1;
-   */
-  host: string;
+export type CreateDomainRequest =
+	Message<'openoxide.api.v1.CreateDomainRequest'> & {
+		/**
+		 * @generated from field: string host = 1;
+		 */
+		host: string;
 
-  /**
-   * @generated from field: bool https = 2;
-   */
-  https: boolean;
+		/**
+		 * @generated from field: bool https = 2;
+		 */
+		https: boolean;
 
-  /**
-   * @generated from field: optional int64 port = 3;
-   */
-  port?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 port = 3;
+		 */
+		port?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string path = 4;
-   */
-  path?: string | undefined;
+		/**
+		 * @generated from field: optional string path = 4;
+		 */
+		path?: string | undefined;
 
-  /**
-   * @generated from field: optional string internal_path = 5;
-   */
-  internalPath?: string | undefined;
+		/**
+		 * @generated from field: optional string internal_path = 5;
+		 */
+		internalPath?: string | undefined;
 
-  /**
-   * @generated from field: optional string custom_entrypoint = 6;
-   */
-  customEntrypoint?: string | undefined;
+		/**
+		 * @generated from field: optional string custom_entrypoint = 6;
+		 */
+		customEntrypoint?: string | undefined;
 
-  /**
-   * @generated from field: optional string service_name = 7;
-   */
-  serviceName?: string | undefined;
+		/**
+		 * @generated from field: optional string service_name = 7;
+		 */
+		serviceName?: string | undefined;
 
-  /**
-   * @generated from field: optional string custom_cert_resolver = 8;
-   */
-  customCertResolver?: string | undefined;
+		/**
+		 * @generated from field: optional string custom_cert_resolver = 8;
+		 */
+		customCertResolver?: string | undefined;
 
-  /**
-   * @generated from field: bool strip_path = 9;
-   */
-  stripPath: boolean;
+		/**
+		 * @generated from field: bool strip_path = 9;
+		 */
+		stripPath: boolean;
 
-  /**
-   * @generated from field: optional string middlewares = 10;
-   */
-  middlewares?: string | undefined;
+		/**
+		 * @generated from field: optional string middlewares = 10;
+		 */
+		middlewares?: string | undefined;
 
-  /**
-   * @generated from field: optional openoxide.api.v1.DomainType domain_type = 11;
-   */
-  domainType?: DomainType | undefined;
+		/**
+		 * @generated from field: optional openoxide.api.v1.DomainType domain_type = 11;
+		 */
+		domainType?: DomainType | undefined;
 
-  /**
-   * @generated from field: optional openoxide.api.v1.DomainCertificateType certificate_type = 12;
-   */
-  certificateType?: DomainCertificateType | undefined;
+		/**
+		 * @generated from field: optional openoxide.api.v1.DomainCertificateType certificate_type = 12;
+		 */
+		certificateType?: DomainCertificateType | undefined;
 
-  /**
-   * @generated from field: optional int64 application_id = 13;
-   */
-  applicationId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 application_id = 13;
+		 */
+		applicationId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 compose_id = 14;
-   */
-  composeId?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 compose_id = 14;
+		 */
+		composeId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.CreateDomainRequest.
  * Use `create(CreateDomainRequestSchema)` to create a new message.
  */
-export const CreateDomainRequestSchema: GenMessage<CreateDomainRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 9);
+export const CreateDomainRequestSchema: GenMessage<CreateDomainRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 9);
 
 /**
  * @generated from message openoxide.api.v1.CreateDomainResponse
  */
-export type CreateDomainResponse = Message<"openoxide.api.v1.CreateDomainResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Domain domain = 1;
-   */
-  domain?: Domain | undefined;
-};
+export type CreateDomainResponse =
+	Message<'openoxide.api.v1.CreateDomainResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Domain domain = 1;
+		 */
+		domain?: Domain | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.CreateDomainResponse.
  * Use `create(CreateDomainResponseSchema)` to create a new message.
  */
-export const CreateDomainResponseSchema: GenMessage<CreateDomainResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 10);
+export const CreateDomainResponseSchema: GenMessage<CreateDomainResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 10);
 
 /**
  * domain_type is not patchable; it follows the owning service kind.
  *
  * @generated from message openoxide.api.v1.UpdateDomainRequest
  */
-export type UpdateDomainRequest = Message<"openoxide.api.v1.UpdateDomainRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type UpdateDomainRequest =
+	Message<'openoxide.api.v1.UpdateDomainRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: optional string host = 2;
-   */
-  host?: string | undefined;
+		/**
+		 * @generated from field: optional string host = 2;
+		 */
+		host?: string | undefined;
 
-  /**
-   * @generated from field: optional bool https = 3;
-   */
-  https?: boolean | undefined;
+		/**
+		 * @generated from field: optional bool https = 3;
+		 */
+		https?: boolean | undefined;
 
-  /**
-   * @generated from field: optional int64 port = 4;
-   */
-  port?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 port = 4;
+		 */
+		port?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string path = 5;
-   */
-  path?: string | undefined;
+		/**
+		 * @generated from field: optional string path = 5;
+		 */
+		path?: string | undefined;
 
-  /**
-   * @generated from field: optional string internal_path = 6;
-   */
-  internalPath?: string | undefined;
+		/**
+		 * @generated from field: optional string internal_path = 6;
+		 */
+		internalPath?: string | undefined;
 
-  /**
-   * @generated from field: optional string custom_entrypoint = 7;
-   */
-  customEntrypoint?: string | undefined;
+		/**
+		 * @generated from field: optional string custom_entrypoint = 7;
+		 */
+		customEntrypoint?: string | undefined;
 
-  /**
-   * @generated from field: optional string service_name = 8;
-   */
-  serviceName?: string | undefined;
+		/**
+		 * @generated from field: optional string service_name = 8;
+		 */
+		serviceName?: string | undefined;
 
-  /**
-   * @generated from field: optional string custom_cert_resolver = 9;
-   */
-  customCertResolver?: string | undefined;
+		/**
+		 * @generated from field: optional string custom_cert_resolver = 9;
+		 */
+		customCertResolver?: string | undefined;
 
-  /**
-   * @generated from field: optional bool strip_path = 10;
-   */
-  stripPath?: boolean | undefined;
+		/**
+		 * @generated from field: optional bool strip_path = 10;
+		 */
+		stripPath?: boolean | undefined;
 
-  /**
-   * @generated from field: optional string middlewares = 11;
-   */
-  middlewares?: string | undefined;
+		/**
+		 * @generated from field: optional string middlewares = 11;
+		 */
+		middlewares?: string | undefined;
 
-  /**
-   * @generated from field: optional openoxide.api.v1.DomainCertificateType certificate_type = 12;
-   */
-  certificateType?: DomainCertificateType | undefined;
-};
+		/**
+		 * @generated from field: optional openoxide.api.v1.DomainCertificateType certificate_type = 12;
+		 */
+		certificateType?: DomainCertificateType | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateDomainRequest.
  * Use `create(UpdateDomainRequestSchema)` to create a new message.
  */
-export const UpdateDomainRequestSchema: GenMessage<UpdateDomainRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 11);
+export const UpdateDomainRequestSchema: GenMessage<UpdateDomainRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 11);
 
 /**
  * @generated from message openoxide.api.v1.UpdateDomainResponse
  */
-export type UpdateDomainResponse = Message<"openoxide.api.v1.UpdateDomainResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Domain domain = 1;
-   */
-  domain?: Domain | undefined;
-};
+export type UpdateDomainResponse =
+	Message<'openoxide.api.v1.UpdateDomainResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Domain domain = 1;
+		 */
+		domain?: Domain | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateDomainResponse.
  * Use `create(UpdateDomainResponseSchema)` to create a new message.
  */
-export const UpdateDomainResponseSchema: GenMessage<UpdateDomainResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 12);
+export const UpdateDomainResponseSchema: GenMessage<UpdateDomainResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 12);
 
 /**
  * @generated from message openoxide.api.v1.DeleteDomainRequest
  */
-export type DeleteDomainRequest = Message<"openoxide.api.v1.DeleteDomainRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type DeleteDomainRequest =
+	Message<'openoxide.api.v1.DeleteDomainRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.DeleteDomainRequest.
  * Use `create(DeleteDomainRequestSchema)` to create a new message.
  */
-export const DeleteDomainRequestSchema: GenMessage<DeleteDomainRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 13);
+export const DeleteDomainRequestSchema: GenMessage<DeleteDomainRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 13);
 
 /**
  * Resolves the host's A/AAAA records (CNAME chains are followed by the resolver) and compares them with the target server's IP. server_id absent means the panel's own machine.
  *
  * @generated from message openoxide.api.v1.ValidateDomainDnsRequest
  */
-export type ValidateDomainDnsRequest = Message<"openoxide.api.v1.ValidateDomainDnsRequest"> & {
-  /**
-   * @generated from field: string host = 1;
-   */
-  host: string;
+export type ValidateDomainDnsRequest =
+	Message<'openoxide.api.v1.ValidateDomainDnsRequest'> & {
+		/**
+		 * @generated from field: string host = 1;
+		 */
+		host: string;
 
-  /**
-   * @generated from field: optional int64 server_id = 2;
-   */
-  serverId?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 server_id = 2;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ValidateDomainDnsRequest.
  * Use `create(ValidateDomainDnsRequestSchema)` to create a new message.
  */
-export const ValidateDomainDnsRequestSchema: GenMessage<ValidateDomainDnsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 14);
+export const ValidateDomainDnsRequestSchema: GenMessage<ValidateDomainDnsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 14);
 
 /**
  * @generated from message openoxide.api.v1.ValidateDomainDnsResponse
  */
-export type ValidateDomainDnsResponse = Message<"openoxide.api.v1.ValidateDomainDnsResponse"> & {
-  /**
-   * @generated from field: bool is_valid = 1;
-   */
-  isValid: boolean;
+export type ValidateDomainDnsResponse =
+	Message<'openoxide.api.v1.ValidateDomainDnsResponse'> & {
+		/**
+		 * @generated from field: bool is_valid = 1;
+		 */
+		isValid: boolean;
 
-  /**
-   * Public IPs the host currently resolves to.
-   *
-   * @generated from field: repeated string resolved_ips = 2;
-   */
-  resolvedIps: string[];
+		/**
+		 * Public IPs the host currently resolves to.
+		 *
+		 * @generated from field: repeated string resolved_ips = 2;
+		 */
+		resolvedIps: string[];
 
-  /**
-   * IPs the host is expected to point at; empty when the server has none configured.
-   *
-   * @generated from field: repeated string expected_ips = 3;
-   */
-  expectedIps: string[];
+		/**
+		 * IPs the host is expected to point at; empty when the server has none configured.
+		 *
+		 * @generated from field: repeated string expected_ips = 3;
+		 */
+		expectedIps: string[];
 
-  /**
-   * Human-readable failure reason; absent when is_valid.
-   *
-   * @generated from field: optional string error = 4;
-   */
-  error?: string | undefined;
-};
+		/**
+		 * Human-readable failure reason; absent when is_valid.
+		 *
+		 * @generated from field: optional string error = 4;
+		 */
+		error?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ValidateDomainDnsResponse.
  * Use `create(ValidateDomainDnsResponseSchema)` to create a new message.
  */
-export const ValidateDomainDnsResponseSchema: GenMessage<ValidateDomainDnsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_domain, 15);
+export const ValidateDomainDnsResponseSchema: GenMessage<ValidateDomainDnsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_domain, 15);
 
 /**
  * @generated from enum openoxide.api.v1.DomainType
  */
 export enum DomainType {
-  /**
-   * @generated from enum value: DOMAIN_TYPE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: DOMAIN_TYPE_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: DOMAIN_TYPE_APPLICATION = 1;
-   */
-  APPLICATION = 1,
+	/**
+	 * @generated from enum value: DOMAIN_TYPE_APPLICATION = 1;
+	 */
+	APPLICATION = 1,
 
-  /**
-   * @generated from enum value: DOMAIN_TYPE_COMPOSE = 2;
-   */
-  COMPOSE = 2,
+	/**
+	 * @generated from enum value: DOMAIN_TYPE_COMPOSE = 2;
+	 */
+	COMPOSE = 2,
 }
 
 /**
  * Describes the enum openoxide.api.v1.DomainType.
  */
-export const DomainTypeSchema: GenEnum<DomainType> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_domain, 0);
+export const DomainTypeSchema: GenEnum<DomainType> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_domain, 0);
 
 /**
  * @generated from enum openoxide.api.v1.DomainCertificateType
  */
 export enum DomainCertificateType {
-  /**
-   * @generated from enum value: DOMAIN_CERTIFICATE_TYPE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: DOMAIN_CERTIFICATE_TYPE_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: DOMAIN_CERTIFICATE_TYPE_LETSENCRYPT = 1;
-   */
-  LETSENCRYPT = 1,
+	/**
+	 * @generated from enum value: DOMAIN_CERTIFICATE_TYPE_LETSENCRYPT = 1;
+	 */
+	LETSENCRYPT = 1,
 
-  /**
-   * @generated from enum value: DOMAIN_CERTIFICATE_TYPE_CUSTOM = 2;
-   */
-  CUSTOM = 2,
+	/**
+	 * @generated from enum value: DOMAIN_CERTIFICATE_TYPE_CUSTOM = 2;
+	 */
+	CUSTOM = 2,
 
-  /**
-   * @generated from enum value: DOMAIN_CERTIFICATE_TYPE_NONE = 3;
-   */
-  NONE = 3,
+	/**
+	 * @generated from enum value: DOMAIN_CERTIFICATE_TYPE_NONE = 3;
+	 */
+	NONE = 3,
 }
 
 /**
  * Describes the enum openoxide.api.v1.DomainCertificateType.
  */
-export const DomainCertificateTypeSchema: GenEnum<DomainCertificateType> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_domain, 1);
+export const DomainCertificateTypeSchema: GenEnum<DomainCertificateType> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_domain, 1);
 
 /**
  * Sole domain owner service; absorbs the former DomainOperationsService.
@@ -575,70 +604,68 @@ export const DomainCertificateTypeSchema: GenEnum<DomainCertificateType> = /*@__
  * @generated from service openoxide.api.v1.DomainService
  */
 export const DomainService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.DomainService.ListDomains
-   */
-  listDomains: {
-    methodKind: "unary";
-    input: typeof ListDomainsRequestSchema;
-    output: typeof ListDomainsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DomainService.GetDomain
-   */
-  getDomain: {
-    methodKind: "unary";
-    input: typeof GetDomainRequestSchema;
-    output: typeof GetDomainResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DomainService.ListApplicationDomains
-   */
-  listApplicationDomains: {
-    methodKind: "unary";
-    input: typeof ListApplicationDomainsRequestSchema;
-    output: typeof ListApplicationDomainsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DomainService.ListComposeDomains
-   */
-  listComposeDomains: {
-    methodKind: "unary";
-    input: typeof ListComposeDomainsRequestSchema;
-    output: typeof ListComposeDomainsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DomainService.CreateDomain
-   */
-  createDomain: {
-    methodKind: "unary";
-    input: typeof CreateDomainRequestSchema;
-    output: typeof CreateDomainResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DomainService.UpdateDomain
-   */
-  updateDomain: {
-    methodKind: "unary";
-    input: typeof UpdateDomainRequestSchema;
-    output: typeof UpdateDomainResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DomainService.DeleteDomain
-   */
-  deleteDomain: {
-    methodKind: "unary";
-    input: typeof DeleteDomainRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DomainService.ValidateDomainDns
-   */
-  validateDomainDns: {
-    methodKind: "unary";
-    input: typeof ValidateDomainDnsRequestSchema;
-    output: typeof ValidateDomainDnsResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_domain, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.DomainService.ListDomains
+	 */
+	listDomains: {
+		methodKind: 'unary';
+		input: typeof ListDomainsRequestSchema;
+		output: typeof ListDomainsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DomainService.GetDomain
+	 */
+	getDomain: {
+		methodKind: 'unary';
+		input: typeof GetDomainRequestSchema;
+		output: typeof GetDomainResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DomainService.ListApplicationDomains
+	 */
+	listApplicationDomains: {
+		methodKind: 'unary';
+		input: typeof ListApplicationDomainsRequestSchema;
+		output: typeof ListApplicationDomainsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DomainService.ListComposeDomains
+	 */
+	listComposeDomains: {
+		methodKind: 'unary';
+		input: typeof ListComposeDomainsRequestSchema;
+		output: typeof ListComposeDomainsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DomainService.CreateDomain
+	 */
+	createDomain: {
+		methodKind: 'unary';
+		input: typeof CreateDomainRequestSchema;
+		output: typeof CreateDomainResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DomainService.UpdateDomain
+	 */
+	updateDomain: {
+		methodKind: 'unary';
+		input: typeof UpdateDomainRequestSchema;
+		output: typeof UpdateDomainResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DomainService.DeleteDomain
+	 */
+	deleteDomain: {
+		methodKind: 'unary';
+		input: typeof DeleteDomainRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DomainService.ValidateDomainDns
+	 */
+	validateDomainDns: {
+		methodKind: 'unary';
+		input: typeof ValidateDomainDnsRequestSchema;
+		output: typeof ValidateDomainDnsResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_domain, 0);

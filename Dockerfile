@@ -21,6 +21,12 @@ RUN rustup toolchain install nightly-2026-08-30 --profile minimal \
 
 WORKDIR /usr/src/openoxide
 
+# Build profile: `release-fast` (no LTO, many codegen units) for quick
+# iteration; pass `--build-arg BUILD_PROFILE=release` for the smallest
+# production binary. The cargo `--profile` name and its target/ output dir differ,
+# so both are derived here.
+ARG BUILD_PROFILE=release-fast
+
 # ── 1. Dependency manifest pre-cache ──────────────────────────────────────────
 COPY Cargo.toml Cargo.lock ./
 COPY crates/ crates/
@@ -43,7 +49,7 @@ ENV DATABASE_URL="sqlite:///usr/src/openoxide/data/db.sqlite3" \
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/usr/src/openoxide/target \
-    cargo build --release --target x86_64-unknown-linux-musl -p openoxide || true
+    cargo build --profile ${BUILD_PROFILE} --target x86_64-unknown-linux-musl -p openoxide || true
 
 # ── 2. Dashboard SPA 
 # Layer order matters: Docker invalidates every layer after a changed one, so
@@ -72,16 +78,18 @@ RUN cd web/openoxide_react && bun run build
 # ── 3. Actual Source Build ─
 COPY src/ src/
 
-# Invalidate the dummy binary and the SQLx migration embed point. The migration
-# macro reads SQL files at compile time, so recompile this module whenever the
-# copied db/migrations directory changes instead of reusing a stale Cargo cache.
+# Rebuild only what changed. The SQLx migration macro reads SQL at compile
+# time, so touch that module (and the entry points) to force just those to
+# recompile; everything else reuses the incremental cache in the target mount.
+# NOTE: no `cargo clean` here — a full clean threw away the incremental cache
+# and forced a multi-minute from-scratch rebuild on every image build.
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/usr/src/openoxide/target \
-    cargo clean -p openoxide --target x86_64-unknown-linux-musl && \
     touch src/main.rs src/lib.rs src/db/connection/sqlite.rs && \
-    cargo build --release --target x86_64-unknown-linux-musl -p openoxide && \
-    cp target/x86_64-unknown-linux-musl/release/openoxide /usr/src/openoxide/openoxide-binary && \
+    cargo build --profile ${BUILD_PROFILE} --target x86_64-unknown-linux-musl -p openoxide && \
+    _outdir=$([ "${BUILD_PROFILE}" = "release-fast" ] && echo release-fast || echo release) && \
+    cp target/x86_64-unknown-linux-musl/${_outdir}/openoxide /usr/src/openoxide/openoxide-binary && \
     strip /usr/src/openoxide/openoxide-binary
 
 # =============================================================================

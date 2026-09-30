@@ -2,7 +2,7 @@ interface Props {
 	className?: string;
 }
 
-// 1. HashiCorp Vault (Dokploy Exact 1:1)
+// 1. HashiCorp Vault
 export const HashicorpVaultIcon = ({className = 'size-4'}: Props) => (
 	<svg
 		viewBox="0 0 24 24"
@@ -13,7 +13,7 @@ export const HashicorpVaultIcon = ({className = 'size-4'}: Props) => (
 	</svg>
 );
 
-// 2. Infisical (Dokploy Exact 1:1)
+// 2. Infisical
 export const InfisicalIcon = ({className = 'size-4'}: Props) => (
 	<svg
 		viewBox="0 0 91 43"
@@ -27,7 +27,7 @@ export const InfisicalIcon = ({className = 'size-4'}: Props) => (
 	</svg>
 );
 
-// 3. AWS / Route53 (Dokploy Exact 1:1)
+// 3. AWS / Route53
 export const AwsIcon = ({className = 'size-4'}: Props) => (
 	<svg
 		viewBox="0 0 304 182"
@@ -48,7 +48,7 @@ export const AwsIcon = ({className = 'size-4'}: Props) => (
 	</svg>
 );
 
-// 4. Doppler (Dokploy Exact 1:1)
+// 4. Doppler
 export const DopplerIcon = ({className = 'size-4'}: Props) => (
 	<svg
 		viewBox="0 0 101 100"
@@ -62,7 +62,7 @@ export const DopplerIcon = ({className = 'size-4'}: Props) => (
 	</svg>
 );
 
-// 5. Azure Key Vault (Dokploy Exact 1:1)
+// 5. Azure Key Vault
 export const AzureIcon = ({className = 'size-4'}: Props) => (
 	<svg
 		viewBox="0 0 96 96"
@@ -80,7 +80,7 @@ export const AzureIcon = ({className = 'size-4'}: Props) => (
 	</svg>
 );
 
-// 6. Scaleway (Dokploy Exact 1:1)
+// 6. Scaleway
 export const ScalewayIcon = ({className = 'size-4'}: Props) => (
 	<svg
 		viewBox="0 0 24 24"
@@ -91,7 +91,7 @@ export const ScalewayIcon = ({className = 'size-4'}: Props) => (
 	</svg>
 );
 
-// 7. Cloudflare (Dokploy Exact 1:1 from bundled-icons.ts)
+// 7. Cloudflare (Exact 1:1 from bundled-icons.ts)
 export const CloudflareIcon = ({className = 'size-4'}: Props) => (
 	<svg
 		viewBox="0 0 24 24"
@@ -105,7 +105,7 @@ export const CloudflareIcon = ({className = 'size-4'}: Props) => (
 	</svg>
 );
 
-// 8. DigitalOcean (Dokploy Exact 1:1 from bundled-icons.ts)
+// 8. DigitalOcean (Exact 1:1 from bundled-icons.ts)
 export const DigitalOceanIcon = ({className = 'size-4'}: Props) => (
 	<svg
 		viewBox="0 0 24 24"
@@ -119,7 +119,7 @@ export const DigitalOceanIcon = ({className = 'size-4'}: Props) => (
 	</svg>
 );
 
-// 9. Hetzner (Dokploy Exact 1:1)
+// 9. Hetzner
 export const HetznerIcon = ({className = 'size-4'}: Props) => (
 	<svg
 		viewBox="0 0 24 24"
@@ -144,7 +144,7 @@ export const GoDaddyIcon = ({className = 'size-4'}: Props) => (
 	</svg>
 );
 
-// 11. Porkbun (bun mark from dokploy, cropped to the circle)
+// 11. Porkbun (bun mark from , cropped to the circle)
 export const PorkbunIcon = ({className = 'size-4'}: Props) => (
 	<svg
 		viewBox="42 24 68 68"
@@ -173,7 +173,7 @@ export const PorkbunIcon = ({className = 'size-4'}: Props) => (
 	</svg>
 );
 
-// 12. Infomaniak (mark from dokploy)
+// 12. Infomaniak (mark from )
 export const InfomaniakIcon = ({className = 'size-4'}: Props) => (
 	<svg
 		viewBox="0 0 24 24"
@@ -184,7 +184,7 @@ export const InfomaniakIcon = ({className = 'size-4'}: Props) => (
 	</svg>
 );
 
-// 13. OVHcloud (mark from dokploy)
+// 13. OVHcloud (mark from )
 export const OvhIcon = ({className = 'size-4'}: Props) => (
 	<svg
 		viewBox="0 0 24 24"

@@ -181,7 +181,7 @@ fn write_secret(path: &std::path::Path, contents: &str) -> Result<(), String> {
 /// server's trust is stable across restarts and never shared with any other
 /// server.
 pub struct MtlsCaStore {
-    pool: std::sync::Arc<sqlx::SqlitePool>,
+    queries: std::sync::Arc<crate::db::queries::FlashQueries>,
 }
 
 /// Paths of the per-server files written under `dir/server-{id}/`.
@@ -196,8 +196,8 @@ pub struct ServerMtlsPaths {
 
 #[auto_di::singleton]
 impl MtlsCaStore {
-    fn new(pool: std::sync::Arc<sqlx::SqlitePool>) -> Self {
-        Self { pool }
+    fn new(queries: std::sync::Arc<crate::db::queries::FlashQueries>) -> Self {
+        Self { queries }
     }
 
     /// Returns the server's persisted mTLS set, generating and storing it once
@@ -212,55 +212,41 @@ impl MtlsCaStore {
             return Ok(existing);
         }
         let fresh = generate_server_mtls(agent_sans)?;
-        sqlx::query(
-            "UPDATE servers SET \
-                mtls_ca_cert = ?, mtls_ca_key = ?, \
-                mtls_panel_cert = ?, mtls_panel_key = ?, \
-                mtls_agent_cert = ?, mtls_agent_key = ? \
-             WHERE id = ? AND mtls_ca_cert IS NULL",
-        )
-        .bind(fresh.ca_cert.as_bytes())
-        .bind(fresh.ca_key.as_bytes())
-        .bind(fresh.panel_cert.as_bytes())
-        .bind(fresh.panel_key.as_bytes())
-        .bind(fresh.agent_cert.as_bytes())
-        .bind(fresh.agent_key.as_bytes())
-        .bind(server_id)
-        .execute(self.pool.as_ref())
-        .await
-        .map_err(|e| format!("persist server {server_id} mtls: {e}"))?;
-        // Re-read so a racing writer's row wins deterministically.
+        self.queries
+            .provision_server_mtls(&crate::flash_gen::servers::ProvisionServerMtlsParams {
+                mtls_ca_cert: fresh.ca_cert.into_bytes(),
+                mtls_ca_key: fresh.ca_key.into_bytes(),
+                mtls_panel_cert: fresh.panel_cert.into_bytes(),
+                mtls_panel_key: fresh.panel_key.into_bytes(),
+                mtls_agent_cert: fresh.agent_cert.into_bytes(),
+                mtls_agent_key: fresh.agent_key.into_bytes(),
+                id: server_id,
+            })
+            .await
+            .map_err(|e| format!("persist server {server_id} mtls: {e}"))?;
         self.read(server_id)
             .await?
             .ok_or_else(|| format!("server {server_id} not found while persisting mtls"))
     }
 
-    /// Reads the six BLOB columns; `None` if the CA is not yet generated.
     async fn read(&self, server_id: i64) -> Result<Option<ServerMtls>, String> {
-        use sqlx::Row;
-        let row = sqlx::query(
-            "SELECT mtls_ca_cert, mtls_ca_key, mtls_panel_cert, mtls_panel_key, \
-                    mtls_agent_cert, mtls_agent_key \
-             FROM servers WHERE id = ?",
-        )
-        .bind(server_id)
-        .fetch_optional(self.pool.as_ref())
-        .await
-        .map_err(|e| format!("read server {server_id} mtls: {e}"))?;
-        let Some(row) = row else { return Ok(None) };
-        let ca_cert: Option<Vec<u8>> = row.try_get("mtls_ca_cert").map_err(col_err)?;
-        let Some(ca_cert) = ca_cert else { return Ok(None) };
-        let get = |name: &str| -> Result<String, String> {
-            let bytes: Vec<u8> = row.try_get(name).map_err(col_err)?;
+        let row = match self.queries.get_server_mtls(server_id).await {
+            Ok(row) => row,
+            Err(sqlx::Error::RowNotFound) => return Ok(None),
+            Err(e) => return Err(format!("read server {server_id} mtls: {e}")),
+        };
+        let Some(ca_cert) = row.mtls_ca_cert else { return Ok(None) };
+        let utf8 = |name: &str, b: Option<Vec<u8>>| -> Result<String, String> {
+            let bytes = b.ok_or_else(|| format!("{name} missing"))?;
             String::from_utf8(bytes).map_err(|e| format!("{name} not utf8: {e}"))
         };
         Ok(Some(ServerMtls {
             ca_cert: String::from_utf8(ca_cert).map_err(|e| format!("mtls_ca_cert not utf8: {e}"))?,
-            ca_key: get("mtls_ca_key")?,
-            panel_cert: get("mtls_panel_cert")?,
-            panel_key: get("mtls_panel_key")?,
-            agent_cert: get("mtls_agent_cert")?,
-            agent_key: get("mtls_agent_key")?,
+            ca_key: utf8("mtls_ca_key", row.mtls_ca_key)?,
+            panel_cert: utf8("mtls_panel_cert", row.mtls_panel_cert)?,
+            panel_key: utf8("mtls_panel_key", row.mtls_panel_key)?,
+            agent_cert: utf8("mtls_agent_cert", row.mtls_agent_cert)?,
+            agent_key: utf8("mtls_agent_key", row.mtls_agent_key)?,
         }))
     }
 
@@ -300,10 +286,6 @@ impl MtlsCaStore {
         let material = self.load_or_create(server_id, agent_sans).await?;
         self.write_files(server_id, base_dir, &material)
     }
-}
-
-fn col_err(e: sqlx::Error) -> String {
-    format!("mtls column: {e}")
 }
 
 #[cfg(test)]

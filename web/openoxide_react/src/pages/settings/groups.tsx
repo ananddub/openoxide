@@ -171,7 +171,9 @@ export function GroupsPage() {
 						canManage={canManage}
 						canToggle={canToggle}
 						togglingId={togglingId}
-						onToggleActive={(group, next) => void toggleActive(group, next)}
+						onToggleActive={(group, next) =>
+							void toggleActive(group, next)
+						}
 						onEdit={group =>
 							setDraft({
 								id: Number(group.id),

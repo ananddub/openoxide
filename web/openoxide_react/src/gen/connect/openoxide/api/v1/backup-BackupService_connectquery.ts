@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/backup.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { BackupService } from "./backup_pb";
+import {BackupService} from './backup_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.BackupService.ListBackups
@@ -42,7 +42,8 @@ export const restoreBackup = BackupService.method.restoreBackup;
 /**
  * @generated from rpc openoxide.api.v1.BackupService.ValidateDestination
  */
-export const validateDestination = BackupService.method.validateDestination;
+export const validateDestination =
+	BackupService.method.validateDestination;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupService.RunComposeBackup
@@ -102,7 +103,8 @@ export const retryExecution = BackupService.method.retryExecution;
 /**
  * @generated from rpc openoxide.api.v1.BackupService.ListDatabaseBackups
  */
-export const listDatabaseBackups = BackupService.method.listDatabaseBackups;
+export const listDatabaseBackups =
+	BackupService.method.listDatabaseBackups;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupService.GetDatabaseBackup
@@ -112,17 +114,20 @@ export const getDatabaseBackup = BackupService.method.getDatabaseBackup;
 /**
  * @generated from rpc openoxide.api.v1.BackupService.CreateDatabaseBackup
  */
-export const createDatabaseBackup = BackupService.method.createDatabaseBackup;
+export const createDatabaseBackup =
+	BackupService.method.createDatabaseBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupService.UpdateDatabaseBackup
  */
-export const updateDatabaseBackup = BackupService.method.updateDatabaseBackup;
+export const updateDatabaseBackup =
+	BackupService.method.updateDatabaseBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupService.DeleteDatabaseBackup
  */
-export const deleteDatabaseBackup = BackupService.method.deleteDatabaseBackup;
+export const deleteDatabaseBackup =
+	BackupService.method.deleteDatabaseBackup;
 
 /**
  * @generated from rpc openoxide.api.v1.BackupService.RunDatabaseBackup

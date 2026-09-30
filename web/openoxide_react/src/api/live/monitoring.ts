@@ -1,4 +1,8 @@
-import {createServiceClient, useConnectQuery} from './query';
+import {
+	createServiceClient,
+	useConnectMutation,
+	useConnectQuery,
+} from './query';
 import {
 	MonitoringService,
 	type MonitoringContainerState,
@@ -115,4 +119,41 @@ export function useServerMetrics(serverId: bigint | null, limit = 50) {
 		},
 		{enabled: serverId !== null, refetchInterval: 15_000},
 	);
+}
+
+/** Message returned by an agent lifecycle action (restart/reinstall). */
+export type AgentActionResult = {
+	action: string;
+	success: boolean;
+	message: string;
+};
+
+/**
+ * Reinstall (update) the monitoring agent: pulls the latest agent image and
+ * recreates the container. This is the "Update Agent" action — a running agent
+ * on an old image is replaced with the current one.
+ */
+export function useReinstallAgent() {
+	return useConnectMutation<bigint, AgentActionResult>(async serverId => {
+		const res = await monitoringClient.reinstallAgent({serverId});
+		const a = res.action;
+		return {
+			action: a?.action ?? 'reinstall',
+			success: a?.success ?? true,
+			message: a?.message ?? 'agent updated',
+		};
+	});
+}
+
+/** Restart the monitoring agent container (no image change). */
+export function useRestartAgent() {
+	return useConnectMutation<bigint, AgentActionResult>(async serverId => {
+		const res = await monitoringClient.restartAgent({serverId});
+		const a = res.action;
+		return {
+			action: a?.action ?? 'restart',
+			success: a?.success ?? true,
+			message: a?.message ?? 'agent restarted',
+		};
+	});
 }

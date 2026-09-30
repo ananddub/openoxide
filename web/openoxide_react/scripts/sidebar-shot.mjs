@@ -25,9 +25,11 @@ const geometry = () => {
 	const rail = document.querySelector('[data-sidebar="sidebar"]');
 	if (!rail) return {railWidth: 0, rows: [], active: 0};
 	const box = rail.getBoundingClientRect();
-	const rows = [...rail.querySelectorAll(
-		':is(a,button):has(> [class*="place-content-center"])',
-	)]
+	const rows = [
+		...rail.querySelectorAll(
+			':is(a,button):has(> [class*="place-content-center"])',
+		),
+	]
 		.slice(0, 12)
 		.map(row => {
 			const cell = row.querySelector('[class*="place-content-center"]');
@@ -45,8 +47,9 @@ const geometry = () => {
 		});
 	return {
 		railWidth: Math.round(box.width),
-		active: rows.filter(r => !/rgba\(0, 0, 0, 0\)|transparent/.test(r.fill))
-			.length,
+		active: rows.filter(
+			r => !/rgba\(0, 0, 0, 0\)|transparent/.test(r.fill),
+		).length,
 		rows,
 	};
 };
@@ -80,7 +83,12 @@ page.on('pageerror', e => console.log('PAGEERROR', e.message));
 const railShot = async name => {
 	const clip = await page.$eval(RAIL, el => {
 		const r = el.getBoundingClientRect();
-		return {x: 0, y: 0, width: Math.ceil(r.width), height: Math.ceil(r.height)};
+		return {
+			x: 0,
+			y: 0,
+			width: Math.ceil(r.width),
+			height: Math.ceil(r.height),
+		};
 	});
 	await page.screenshot({path: `${OUT}/${name}.png`, clip});
 };
@@ -93,7 +101,11 @@ const toggleRail = async () => {
 };
 
 await page.goto(`${BASE}/singin`, {waitUntil: 'networkidle2'});
-if (await page.evaluate(() => !!document.querySelector('input[type=password]'))) {
+if (
+	await page.evaluate(
+		() => !!document.querySelector('input[type=password]'),
+	)
+) {
 	await page.type('input[type=email]', process.env.EMAIL ?? '');
 	await page.type('input[type=password]', process.env.PASS ?? '');
 	await page.click('button[type=submit]');

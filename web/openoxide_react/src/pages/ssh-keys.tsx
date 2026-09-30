@@ -200,23 +200,23 @@ function SshKeysPage() {
 			{/* Content: grid cards or compact list — the page's only scroll area */}
 			<ListRegion>
 				{!sshKeysQuery.isLoading && keys.length === 0 ? (
-				<div className="flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center">
-					<FileKey2 className="mb-4 size-10 text-muted-foreground/40" />
-					<h3 className="mb-2 text-xl font-semibold tracking-[-0.01em] text-foreground">
-						No SSH keys yet
-					</h3>
-					<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
-						Add a key pair to authenticate with remote servers and Git
-						repositories.
-					</p>
-					<Button
-						onClick={() => setIsCreateOpen(true)}
-						className="mt-4 h-9 gap-1.5 text-xs font-semibold">
-						<Plus className="size-3.5" />
-						New SSH Key
-					</Button>
-				</div>
-			) : (
+					<div className="flex flex-col items-center justify-center rounded-xl border bg-card p-12 text-center">
+						<FileKey2 className="mb-4 size-10 text-muted-foreground/40" />
+						<h3 className="mb-2 text-xl font-semibold tracking-[-0.01em] text-foreground">
+							No SSH keys yet
+						</h3>
+						<p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground/70">
+							Add a key pair to authenticate with remote servers and Git
+							repositories.
+						</p>
+						<Button
+							onClick={() => setIsCreateOpen(true)}
+							className="mt-4 h-9 gap-1.5 text-xs font-semibold">
+							<Plus className="size-3.5" />
+							New SSH Key
+						</Button>
+					</div>
+				) : (
 					<SshKeysList
 						keys={filtered}
 						isLoading={sshKeysQuery.isLoading}

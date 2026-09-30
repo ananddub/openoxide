@@ -115,7 +115,12 @@ type RecordDraft = {
 	zoneName: string;
 	/** The row this draft was opened from, kept aside from the edited fields so the
 	 * server can still find it after a rename or a type change. */
-	editing?: {id: string; name: string; recordType: string; content: string};
+	editing?: {
+		id: string;
+		name: string;
+		recordType: string;
+		content: string;
+	};
 	recordType: string;
 	name: string;
 	content: string;

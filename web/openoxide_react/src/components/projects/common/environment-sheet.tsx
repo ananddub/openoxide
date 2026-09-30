@@ -45,7 +45,8 @@ function EnvironmentSheetBody({
 	const [saving, setSaving] = useState(false);
 	const [saved, setSaved] = useState(false);
 
-	const isModified = serializeEnv(rows) !== serializeEnv(parseEnv(original));
+	const isModified =
+		serializeEnv(rows) !== serializeEnv(parseEnv(original));
 
 	const handleSave = async () => {
 		setSaving(true);

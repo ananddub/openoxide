@@ -102,8 +102,8 @@ export function SwarmPanel() {
 							<strong className="text-foreground">
 								{pendingNode.hostname || pendingNode.id}
 							</strong>
-							? Workloads still scheduled on it can fail — drain
-							or promote the node first if it is serving traffic.
+							? Workloads still scheduled on it can fail — drain or promote
+							the node first if it is serving traffic.
 						</>
 					}
 					confirmLabel="Remove Node"

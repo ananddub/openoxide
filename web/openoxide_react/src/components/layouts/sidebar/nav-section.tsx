@@ -80,10 +80,7 @@ export function NavSection({
 									<single.icon className="size-4" strokeWidth={1.7} />
 								</span>
 								<span
-									className={cn(
-										SIDEBAR_LABEL,
-										collapsed && 'opacity-0',
-									)}>
+									className={cn(SIDEBAR_LABEL, collapsed && 'opacity-0')}>
 									{single.title}
 								</span>
 								{/* Marks a route that swaps the rail to its own context rows. */}

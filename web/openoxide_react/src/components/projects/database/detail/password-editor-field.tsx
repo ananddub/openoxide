@@ -113,7 +113,7 @@ export function PasswordEditorField({
 						</Button>
 					</>
 				)}
-				</div>
+			</div>
 		</Field>
 	);
 }

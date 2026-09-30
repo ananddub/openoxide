@@ -44,7 +44,7 @@ impl Queries {
         organization_id: i64,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO monitoring_policy (organization_id) VALUES (?) ON CONFLICT(organization_id) DO NOTHING;"
+            "INSERT INTO monitoring_policy (organization_id, retention_days, updated_at) VALUES (?, 7, unixepoch()) ON CONFLICT(organization_id) DO NOTHING;"
         )
         .bind(organization_id)
         .execute(&self.pool)

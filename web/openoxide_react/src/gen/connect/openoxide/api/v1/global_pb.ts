@@ -2,1055 +2,1110 @@
 // @generated from file openoxide/api/v1/global.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/global.proto.
  */
-export const file_openoxide_api_v1_global: GenFile = /*@__PURE__*/
-  fileDesc("Ch1vcGVub3hpZGUvYXBpL3YxL2dsb2JhbC5wcm90bxIQb3Blbm94aWRlLmFwaS52MSLjAQoPR2xvYmFsQ29udGFpbmVyEgoKAmlkGAEgASgJEg0KBW5hbWVzGAIgASgJEg0KBWltYWdlGAMgASgJEg8KB2NvbW1hbmQYBCABKAkSEgoKY3JlYXRlZF9hdBgFIAEoCRITCgtydW5uaW5nX2ZvchgGIAEoCRINCgVwb3J0cxgHIAEoCRIOCgZzdGF0dXMYCCABKAkSDQoFc3RhdGUYCSABKAkSDAoEc2l6ZRgKIAEoCRIOCgZsYWJlbHMYCyABKAkSDgoGbW91bnRzGAwgASgJEhAKCG5ldHdvcmtzGA0gASgJIsEBCgtHbG9iYWxJbWFnZRIKCgJpZBgBIAEoCRISCgpyZXBvc2l0b3J5GAIgASgJEgsKA3RhZxgDIAEoCRIOCgZkaWdlc3QYBCABKAkSEgoKY3JlYXRlZF9hdBgFIAEoCRIVCg1jcmVhdGVkX3NpbmNlGAYgASgJEgwKBHNpemUYByABKAkSEwoLc2hhcmVkX3NpemUYCCABKAkSEwoLdW5pcXVlX3NpemUYCSABKAkSEgoKY29udGFpbmVycxgKIAEoCSKMAQoNR2xvYmFsTmV0d29yaxIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg4KBmRyaXZlchgDIAEoCRINCgVzY29wZRgEIAEoCRIMCgRpcHY2GAUgASgJEhAKCGludGVybmFsGAYgASgJEg4KBmxhYmVscxgHIAEoCRISCgpjcmVhdGVkX2F0GAggASgJIqEBCgxHbG9iYWxWb2x1bWUSDAoEbmFtZRgBIAEoCRIOCgZkcml2ZXIYAiABKAkSDQoFc2NvcGUYAyABKAkSEgoKbW91bnRwb2ludBgEIAEoCRIOCgZsYWJlbHMYBSABKAkSFAoMYXZhaWxhYmlsaXR5GAYgASgJEg0KBWdyb3VwGAcgASgJEg0KBWxpbmtzGAggASgJEgwKBHNpemUYCSABKAkiNAoSR2xvYmFsRG9ja2VyT3V0cHV0Eg4KBnN0ZG91dBgBIAEoCRIOCgZzdGRlcnIYAiABKAkivwEKFkdsb2JhbFVwbG9hZEZpbGVIZWFkZXISHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESNwoMY29udGFpbmVyX2lkGAIgASgJQiG6SB5yHBABGP8BMhVeW2EtekEtWjAtOS5fOi9AKy1dKyQSHwoLZGVzdGluYXRpb24YAyABKAlCCrpIB3IFEAEYgCASHAoIZmlsZW5hbWUYBCABKAlCCrpIB3IFEAEYgCBCDAoKX3NlcnZlcl9pZCJ/ChdHbG9iYWxVcGxvYWRGaWxlUmVxdWVzdBI6CgZoZWFkZXIYASABKAsyKC5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbFVwbG9hZEZpbGVIZWFkZXJIABIdCgVjaHVuaxgCIAEoDEIMukgJegcQARiAgIACSABCCQoHcGF5bG9hZCJhChhHbG9iYWxVcGxvYWRGaWxlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBI0CgZvdXRwdXQYAiABKAsyJC5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbERvY2tlck91dHB1dCKdAQoZR2xvYmFsRG93bmxvYWRGaWxlUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARI3Cgxjb250YWluZXJfaWQYAiABKAlCIbpIHnIcEAEY/wEyFV5bYS16QS1aMC05Ll86L0ArLV0rJBIYCgRwYXRoGAMgASgJQgq6SAdyBRABGIAgQgwKCl9zZXJ2ZXJfaWQiOwoaR2xvYmFsRG93bmxvYWRGaWxlUmVzcG9uc2USDwoHY29udGVudBgBIAEoDBIMCgRwYXRoGAIgASgJIsgBCh9HbG9iYWxVcGxvYWRDb250YWluZXJGaWxlSGVhZGVyEh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEjcKDGNvbnRhaW5lcl9pZBgCIAEoCUIhukgechwQARj/ATIVXlthLXpBLVowLTkuXzovQCstXSskEh8KC2Rlc3RpbmF0aW9uGAMgASgJQgq6SAdyBRABGIAgEhwKCGZpbGVuYW1lGAQgASgJQgq6SAdyBRABGIAgQgwKCl9zZXJ2ZXJfaWQikQEKIEdsb2JhbFVwbG9hZENvbnRhaW5lckZpbGVSZXF1ZXN0EkMKBmhlYWRlchgBIAEoCzIxLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsVXBsb2FkQ29udGFpbmVyRmlsZUhlYWRlckgAEh0KBWNodW5rGAIgASgMQgy6SAl6BxABGICAgAJIAEIJCgdwYXlsb2FkImoKIUdsb2JhbFVwbG9hZENvbnRhaW5lckZpbGVSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEjQKBm91dHB1dBgCIAEoCzIkLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsRG9ja2VyT3V0cHV0IqYBCiJHbG9iYWxEb3dubG9hZENvbnRhaW5lckZpbGVSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEjcKDGNvbnRhaW5lcl9pZBgCIAEoCUIhukgechwQARj/ATIVXlthLXpBLVowLTkuXzovQCstXSskEhgKBHBhdGgYAyABKAlCCrpIB3IFEAEYgCBCDAoKX3NlcnZlcl9pZCJECiNHbG9iYWxEb3dubG9hZENvbnRhaW5lckZpbGVSZXNwb25zZRIPCgdjb250ZW50GAEgASgMEgwKBHBhdGgYAiABKAkiTAobR2xvYmFsTGlzdENvbnRhaW5lcnNSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiVQocR2xvYmFsTGlzdENvbnRhaW5lcnNSZXNwb25zZRI1Cgpjb250YWluZXJzGAEgAygLMiEub3Blbm94aWRlLmFwaS52MS5HbG9iYWxDb250YWluZXIiSAoXR2xvYmFsTGlzdEltYWdlc1JlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQFCDAoKX3NlcnZlcl9pZCJJChhHbG9iYWxMaXN0SW1hZ2VzUmVzcG9uc2USLQoGaW1hZ2VzGAEgAygLMh0ub3Blbm94aWRlLmFwaS52MS5HbG9iYWxJbWFnZSJKChlHbG9iYWxMaXN0TmV0d29ya3NSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiTwoaR2xvYmFsTGlzdE5ldHdvcmtzUmVzcG9uc2USMQoIbmV0d29ya3MYASADKAsyHy5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbE5ldHdvcmsiSQoYR2xvYmFsTGlzdFZvbHVtZXNSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiTAoZR2xvYmFsTGlzdFZvbHVtZXNSZXNwb25zZRIvCgd2b2x1bWVzGAEgAygLMh4ub3Blbm94aWRlLmFwaS52MS5HbG9iYWxWb2x1bWUihwEKHUdsb2JhbEluc3BlY3RDb250YWluZXJSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEjcKDGNvbnRhaW5lcl9pZBgCIAEoCUIhukgechwQARj/ATIVXlthLXpBLVowLTkuXzovQCstXSskQgwKCl9zZXJ2ZXJfaWQiMwoeR2xvYmFsSW5zcGVjdENvbnRhaW5lclJlc3BvbnNlEhEKCWRhdGFfanNvbhgBIAEoCSJ/ChlHbG9iYWxJbnNwZWN0SW1hZ2VSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEjMKCGltYWdlX2lkGAIgASgJQiG6SB5yHBABGP8BMhVeW2EtekEtWjAtOS5fOi9AKy1dKyRCDAoKX3NlcnZlcl9pZCIvChpHbG9iYWxJbnNwZWN0SW1hZ2VSZXNwb25zZRIRCglkYXRhX2pzb24YASABKAkigwEKG0dsb2JhbEluc3BlY3ROZXR3b3JrUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARI1CgpuZXR3b3JrX2lkGAIgASgJQiG6SB5yHBABGP8BMhVeW2EtekEtWjAtOS5fOi9AKy1dKyRCDAoKX3NlcnZlcl9pZCIxChxHbG9iYWxJbnNwZWN0TmV0d29ya1Jlc3BvbnNlEhEKCWRhdGFfanNvbhgBIAEoCSKBAQoaR2xvYmFsSW5zcGVjdFZvbHVtZVJlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESNAoJdm9sdW1lX2lkGAIgASgJQiG6SB5yHBABGP8BMhVeW2EtekEtWjAtOS5fOi9AKy1dKyRCDAoKX3NlcnZlcl9pZCIwChtHbG9iYWxJbnNwZWN0Vm9sdW1lUmVzcG9uc2USEQoJZGF0YV9qc29uGAEgASgJIpwBChxHbG9iYWxDb250YWluZXJBY3Rpb25SZXF1ZXN0EjcKDGNvbnRhaW5lcl9pZBgBIAEoCUIhukgechwQARj/ATIVXlthLXpBLVowLTkuXzovQCstXSskEkMKBmFjdGlvbhgCIAEoDjInLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsQ29udGFpbmVyQWN0aW9uQgq6SAeCAQQQASAAImYKHUdsb2JhbENvbnRhaW5lckFjdGlvblJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSNAoGb3V0cHV0GAIgASgLMiQub3Blbm94aWRlLmFwaS52MS5HbG9iYWxEb2NrZXJPdXRwdXQidwocR2xvYmFsUmVtb3ZlQ29udGFpbmVyUmVxdWVzdBI3Cgxjb250YWluZXJfaWQYASABKAlCIbpIHnIcEAEY/wEyFV5bYS16QS1aMC05Ll86L0ArLV0rJBINCgVmb3JjZRgCIAEoCBIPCgd2b2x1bWVzGAMgASgIIncKHEdsb2JhbERlbGV0ZUNvbnRhaW5lclJlcXVlc3QSNwoMY29udGFpbmVyX2lkGAEgASgJQiG6SB5yHBABGP8BMhVeW2EtekEtWjAtOS5fOi9AKy1dKyQSDQoFZm9yY2UYAiABKAgSDwoHdm9sdW1lcxgDIAEoCCJHChZHbG9iYWxEaXNrVXNhZ2VSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiLAoXR2xvYmFsRGlza1VzYWdlUmVzcG9uc2USEQoJZGF0YV9qc29uGAEgASgJIlsKEkdsb2JhbFBydW5lUmVxdWVzdBISCgpjb250YWluZXJzGAEgASgIEg4KBmltYWdlcxgCIAEoCBIQCghuZXR3b3JrcxgDIAEoCBIPCgd2b2x1bWVzGAQgASgIIk8KE0dsb2JhbFBydW5lUmVzcG9uc2USOAoKb3BlcmF0aW9ucxgBIAMoCzIkLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsRG9ja2VyT3V0cHV0KpQCChVHbG9iYWxDb250YWluZXJBY3Rpb24SJwojR0xPQkFMX0NPTlRBSU5FUl9BQ1RJT05fVU5TUEVDSUZJRUQQABIhCh1HTE9CQUxfQ09OVEFJTkVSX0FDVElPTl9TVEFSVBABEiAKHEdMT0JBTF9DT05UQUlORVJfQUNUSU9OX1NUT1AQAhIjCh9HTE9CQUxfQ09OVEFJTkVSX0FDVElPTl9SRVNUQVJUEAMSIAocR0xPQkFMX0NPTlRBSU5FUl9BQ1RJT05fS0lMTBAEEiEKHUdMT0JBTF9DT05UQUlORVJfQUNUSU9OX1BBVVNFEAUSIwofR0xPQkFMX0NPTlRBSU5FUl9BQ1RJT05fVU5QQVVTRRAGMrkOCg1HbG9iYWxTZXJ2aWNlEmUKClVwbG9hZEZpbGUSKS5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbFVwbG9hZEZpbGVSZXF1ZXN0Gioub3Blbm94aWRlLmFwaS52MS5HbG9iYWxVcGxvYWRGaWxlUmVzcG9uc2UoARJpCgxEb3dubG9hZEZpbGUSKy5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbERvd25sb2FkRmlsZVJlcXVlc3QaLC5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbERvd25sb2FkRmlsZVJlc3BvbnNlEoABChNVcGxvYWRDb250YWluZXJGaWxlEjIub3Blbm94aWRlLmFwaS52MS5HbG9iYWxVcGxvYWRDb250YWluZXJGaWxlUmVxdWVzdBozLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsVXBsb2FkQ29udGFpbmVyRmlsZVJlc3BvbnNlKAEShAEKFURvd25sb2FkQ29udGFpbmVyRmlsZRI0Lm9wZW5veGlkZS5hcGkudjEuR2xvYmFsRG93bmxvYWRDb250YWluZXJGaWxlUmVxdWVzdBo1Lm9wZW5veGlkZS5hcGkudjEuR2xvYmFsRG93bmxvYWRDb250YWluZXJGaWxlUmVzcG9uc2USbwoOTGlzdENvbnRhaW5lcnMSLS5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbExpc3RDb250YWluZXJzUmVxdWVzdBouLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsTGlzdENvbnRhaW5lcnNSZXNwb25zZRJjCgpMaXN0SW1hZ2VzEikub3Blbm94aWRlLmFwaS52MS5HbG9iYWxMaXN0SW1hZ2VzUmVxdWVzdBoqLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsTGlzdEltYWdlc1Jlc3BvbnNlEmkKDExpc3ROZXR3b3JrcxIrLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsTGlzdE5ldHdvcmtzUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsTGlzdE5ldHdvcmtzUmVzcG9uc2USZgoLTGlzdFZvbHVtZXMSKi5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbExpc3RWb2x1bWVzUmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsTGlzdFZvbHVtZXNSZXNwb25zZRJ1ChBJbnNwZWN0Q29udGFpbmVyEi8ub3Blbm94aWRlLmFwaS52MS5HbG9iYWxJbnNwZWN0Q29udGFpbmVyUmVxdWVzdBowLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsSW5zcGVjdENvbnRhaW5lclJlc3BvbnNlEmkKDEluc3BlY3RJbWFnZRIrLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsSW5zcGVjdEltYWdlUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsSW5zcGVjdEltYWdlUmVzcG9uc2USbwoOSW5zcGVjdE5ldHdvcmsSLS5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbEluc3BlY3ROZXR3b3JrUmVxdWVzdBouLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsSW5zcGVjdE5ldHdvcmtSZXNwb25zZRJsCg1JbnNwZWN0Vm9sdW1lEiwub3Blbm94aWRlLmFwaS52MS5HbG9iYWxJbnNwZWN0Vm9sdW1lUmVxdWVzdBotLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsSW5zcGVjdFZvbHVtZVJlc3BvbnNlEnIKD0NvbnRhaW5lckFjdGlvbhIuLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsQ29udGFpbmVyQWN0aW9uUmVxdWVzdBovLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsQ29udGFpbmVyQWN0aW9uUmVzcG9uc2USWgoPUmVtb3ZlQ29udGFpbmVyEi4ub3Blbm94aWRlLmFwaS52MS5HbG9iYWxSZW1vdmVDb250YWluZXJSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJaCg9EZWxldGVDb250YWluZXISLi5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbERlbGV0ZUNvbnRhaW5lclJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EmAKCURpc2tVc2FnZRIoLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsRGlza1VzYWdlUmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsRGlza1VzYWdlUmVzcG9uc2USVAoFUHJ1bmUSJC5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbFBydW5lUmVxdWVzdBolLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsUHJ1bmVSZXNwb25zZWIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_global: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'Ch1vcGVub3hpZGUvYXBpL3YxL2dsb2JhbC5wcm90bxIQb3Blbm94aWRlLmFwaS52MSLjAQoPR2xvYmFsQ29udGFpbmVyEgoKAmlkGAEgASgJEg0KBW5hbWVzGAIgASgJEg0KBWltYWdlGAMgASgJEg8KB2NvbW1hbmQYBCABKAkSEgoKY3JlYXRlZF9hdBgFIAEoCRITCgtydW5uaW5nX2ZvchgGIAEoCRINCgVwb3J0cxgHIAEoCRIOCgZzdGF0dXMYCCABKAkSDQoFc3RhdGUYCSABKAkSDAoEc2l6ZRgKIAEoCRIOCgZsYWJlbHMYCyABKAkSDgoGbW91bnRzGAwgASgJEhAKCG5ldHdvcmtzGA0gASgJIsEBCgtHbG9iYWxJbWFnZRIKCgJpZBgBIAEoCRISCgpyZXBvc2l0b3J5GAIgASgJEgsKA3RhZxgDIAEoCRIOCgZkaWdlc3QYBCABKAkSEgoKY3JlYXRlZF9hdBgFIAEoCRIVCg1jcmVhdGVkX3NpbmNlGAYgASgJEgwKBHNpemUYByABKAkSEwoLc2hhcmVkX3NpemUYCCABKAkSEwoLdW5pcXVlX3NpemUYCSABKAkSEgoKY29udGFpbmVycxgKIAEoCSKMAQoNR2xvYmFsTmV0d29yaxIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEg4KBmRyaXZlchgDIAEoCRINCgVzY29wZRgEIAEoCRIMCgRpcHY2GAUgASgJEhAKCGludGVybmFsGAYgASgJEg4KBmxhYmVscxgHIAEoCRISCgpjcmVhdGVkX2F0GAggASgJIqEBCgxHbG9iYWxWb2x1bWUSDAoEbmFtZRgBIAEoCRIOCgZkcml2ZXIYAiABKAkSDQoFc2NvcGUYAyABKAkSEgoKbW91bnRwb2ludBgEIAEoCRIOCgZsYWJlbHMYBSABKAkSFAoMYXZhaWxhYmlsaXR5GAYgASgJEg0KBWdyb3VwGAcgASgJEg0KBWxpbmtzGAggASgJEgwKBHNpemUYCSABKAkiNAoSR2xvYmFsRG9ja2VyT3V0cHV0Eg4KBnN0ZG91dBgBIAEoCRIOCgZzdGRlcnIYAiABKAkivwEKFkdsb2JhbFVwbG9hZEZpbGVIZWFkZXISHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESNwoMY29udGFpbmVyX2lkGAIgASgJQiG6SB5yHBABGP8BMhVeW2EtekEtWjAtOS5fOi9AKy1dKyQSHwoLZGVzdGluYXRpb24YAyABKAlCCrpIB3IFEAEYgCASHAoIZmlsZW5hbWUYBCABKAlCCrpIB3IFEAEYgCBCDAoKX3NlcnZlcl9pZCJ/ChdHbG9iYWxVcGxvYWRGaWxlUmVxdWVzdBI6CgZoZWFkZXIYASABKAsyKC5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbFVwbG9hZEZpbGVIZWFkZXJIABIdCgVjaHVuaxgCIAEoDEIMukgJegcQARiAgIACSABCCQoHcGF5bG9hZCJhChhHbG9iYWxVcGxvYWRGaWxlUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBI0CgZvdXRwdXQYAiABKAsyJC5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbERvY2tlck91dHB1dCKdAQoZR2xvYmFsRG93bmxvYWRGaWxlUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARI3Cgxjb250YWluZXJfaWQYAiABKAlCIbpIHnIcEAEY/wEyFV5bYS16QS1aMC05Ll86L0ArLV0rJBIYCgRwYXRoGAMgASgJQgq6SAdyBRABGIAgQgwKCl9zZXJ2ZXJfaWQiOwoaR2xvYmFsRG93bmxvYWRGaWxlUmVzcG9uc2USDwoHY29udGVudBgBIAEoDBIMCgRwYXRoGAIgASgJIsgBCh9HbG9iYWxVcGxvYWRDb250YWluZXJGaWxlSGVhZGVyEh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEjcKDGNvbnRhaW5lcl9pZBgCIAEoCUIhukgechwQARj/ATIVXlthLXpBLVowLTkuXzovQCstXSskEh8KC2Rlc3RpbmF0aW9uGAMgASgJQgq6SAdyBRABGIAgEhwKCGZpbGVuYW1lGAQgASgJQgq6SAdyBRABGIAgQgwKCl9zZXJ2ZXJfaWQikQEKIEdsb2JhbFVwbG9hZENvbnRhaW5lckZpbGVSZXF1ZXN0EkMKBmhlYWRlchgBIAEoCzIxLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsVXBsb2FkQ29udGFpbmVyRmlsZUhlYWRlckgAEh0KBWNodW5rGAIgASgMQgy6SAl6BxABGICAgAJIAEIJCgdwYXlsb2FkImoKIUdsb2JhbFVwbG9hZENvbnRhaW5lckZpbGVSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEjQKBm91dHB1dBgCIAEoCzIkLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsRG9ja2VyT3V0cHV0IqYBCiJHbG9iYWxEb3dubG9hZENvbnRhaW5lckZpbGVSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEjcKDGNvbnRhaW5lcl9pZBgCIAEoCUIhukgechwQARj/ATIVXlthLXpBLVowLTkuXzovQCstXSskEhgKBHBhdGgYAyABKAlCCrpIB3IFEAEYgCBCDAoKX3NlcnZlcl9pZCJECiNHbG9iYWxEb3dubG9hZENvbnRhaW5lckZpbGVSZXNwb25zZRIPCgdjb250ZW50GAEgASgMEgwKBHBhdGgYAiABKAkiTAobR2xvYmFsTGlzdENvbnRhaW5lcnNSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiVQocR2xvYmFsTGlzdENvbnRhaW5lcnNSZXNwb25zZRI1Cgpjb250YWluZXJzGAEgAygLMiEub3Blbm94aWRlLmFwaS52MS5HbG9iYWxDb250YWluZXIiSAoXR2xvYmFsTGlzdEltYWdlc1JlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQFCDAoKX3NlcnZlcl9pZCJJChhHbG9iYWxMaXN0SW1hZ2VzUmVzcG9uc2USLQoGaW1hZ2VzGAEgAygLMh0ub3Blbm94aWRlLmFwaS52MS5HbG9iYWxJbWFnZSJKChlHbG9iYWxMaXN0TmV0d29ya3NSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiTwoaR2xvYmFsTGlzdE5ldHdvcmtzUmVzcG9uc2USMQoIbmV0d29ya3MYASADKAsyHy5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbE5ldHdvcmsiSQoYR2xvYmFsTGlzdFZvbHVtZXNSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiTAoZR2xvYmFsTGlzdFZvbHVtZXNSZXNwb25zZRIvCgd2b2x1bWVzGAEgAygLMh4ub3Blbm94aWRlLmFwaS52MS5HbG9iYWxWb2x1bWUihwEKHUdsb2JhbEluc3BlY3RDb250YWluZXJSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEjcKDGNvbnRhaW5lcl9pZBgCIAEoCUIhukgechwQARj/ATIVXlthLXpBLVowLTkuXzovQCstXSskQgwKCl9zZXJ2ZXJfaWQiMwoeR2xvYmFsSW5zcGVjdENvbnRhaW5lclJlc3BvbnNlEhEKCWRhdGFfanNvbhgBIAEoCSJ/ChlHbG9iYWxJbnNwZWN0SW1hZ2VSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEjMKCGltYWdlX2lkGAIgASgJQiG6SB5yHBABGP8BMhVeW2EtekEtWjAtOS5fOi9AKy1dKyRCDAoKX3NlcnZlcl9pZCIvChpHbG9iYWxJbnNwZWN0SW1hZ2VSZXNwb25zZRIRCglkYXRhX2pzb24YASABKAkigwEKG0dsb2JhbEluc3BlY3ROZXR3b3JrUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARI1CgpuZXR3b3JrX2lkGAIgASgJQiG6SB5yHBABGP8BMhVeW2EtekEtWjAtOS5fOi9AKy1dKyRCDAoKX3NlcnZlcl9pZCIxChxHbG9iYWxJbnNwZWN0TmV0d29ya1Jlc3BvbnNlEhEKCWRhdGFfanNvbhgBIAEoCSKBAQoaR2xvYmFsSW5zcGVjdFZvbHVtZVJlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESNAoJdm9sdW1lX2lkGAIgASgJQiG6SB5yHBABGP8BMhVeW2EtekEtWjAtOS5fOi9AKy1dKyRCDAoKX3NlcnZlcl9pZCIwChtHbG9iYWxJbnNwZWN0Vm9sdW1lUmVzcG9uc2USEQoJZGF0YV9qc29uGAEgASgJIpwBChxHbG9iYWxDb250YWluZXJBY3Rpb25SZXF1ZXN0EjcKDGNvbnRhaW5lcl9pZBgBIAEoCUIhukgechwQARj/ATIVXlthLXpBLVowLTkuXzovQCstXSskEkMKBmFjdGlvbhgCIAEoDjInLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsQ29udGFpbmVyQWN0aW9uQgq6SAeCAQQQASAAImYKHUdsb2JhbENvbnRhaW5lckFjdGlvblJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSNAoGb3V0cHV0GAIgASgLMiQub3Blbm94aWRlLmFwaS52MS5HbG9iYWxEb2NrZXJPdXRwdXQidwocR2xvYmFsUmVtb3ZlQ29udGFpbmVyUmVxdWVzdBI3Cgxjb250YWluZXJfaWQYASABKAlCIbpIHnIcEAEY/wEyFV5bYS16QS1aMC05Ll86L0ArLV0rJBINCgVmb3JjZRgCIAEoCBIPCgd2b2x1bWVzGAMgASgIIncKHEdsb2JhbERlbGV0ZUNvbnRhaW5lclJlcXVlc3QSNwoMY29udGFpbmVyX2lkGAEgASgJQiG6SB5yHBABGP8BMhVeW2EtekEtWjAtOS5fOi9AKy1dKyQSDQoFZm9yY2UYAiABKAgSDwoHdm9sdW1lcxgDIAEoCCJHChZHbG9iYWxEaXNrVXNhZ2VSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiLAoXR2xvYmFsRGlza1VzYWdlUmVzcG9uc2USEQoJZGF0YV9qc29uGAEgASgJIlsKEkdsb2JhbFBydW5lUmVxdWVzdBISCgpjb250YWluZXJzGAEgASgIEg4KBmltYWdlcxgCIAEoCBIQCghuZXR3b3JrcxgDIAEoCBIPCgd2b2x1bWVzGAQgASgIIk8KE0dsb2JhbFBydW5lUmVzcG9uc2USOAoKb3BlcmF0aW9ucxgBIAMoCzIkLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsRG9ja2VyT3V0cHV0KpQCChVHbG9iYWxDb250YWluZXJBY3Rpb24SJwojR0xPQkFMX0NPTlRBSU5FUl9BQ1RJT05fVU5TUEVDSUZJRUQQABIhCh1HTE9CQUxfQ09OVEFJTkVSX0FDVElPTl9TVEFSVBABEiAKHEdMT0JBTF9DT05UQUlORVJfQUNUSU9OX1NUT1AQAhIjCh9HTE9CQUxfQ09OVEFJTkVSX0FDVElPTl9SRVNUQVJUEAMSIAocR0xPQkFMX0NPTlRBSU5FUl9BQ1RJT05fS0lMTBAEEiEKHUdMT0JBTF9DT05UQUlORVJfQUNUSU9OX1BBVVNFEAUSIwofR0xPQkFMX0NPTlRBSU5FUl9BQ1RJT05fVU5QQVVTRRAGMrkOCg1HbG9iYWxTZXJ2aWNlEmUKClVwbG9hZEZpbGUSKS5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbFVwbG9hZEZpbGVSZXF1ZXN0Gioub3Blbm94aWRlLmFwaS52MS5HbG9iYWxVcGxvYWRGaWxlUmVzcG9uc2UoARJpCgxEb3dubG9hZEZpbGUSKy5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbERvd25sb2FkRmlsZVJlcXVlc3QaLC5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbERvd25sb2FkRmlsZVJlc3BvbnNlEoABChNVcGxvYWRDb250YWluZXJGaWxlEjIub3Blbm94aWRlLmFwaS52MS5HbG9iYWxVcGxvYWRDb250YWluZXJGaWxlUmVxdWVzdBozLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsVXBsb2FkQ29udGFpbmVyRmlsZVJlc3BvbnNlKAEShAEKFURvd25sb2FkQ29udGFpbmVyRmlsZRI0Lm9wZW5veGlkZS5hcGkudjEuR2xvYmFsRG93bmxvYWRDb250YWluZXJGaWxlUmVxdWVzdBo1Lm9wZW5veGlkZS5hcGkudjEuR2xvYmFsRG93bmxvYWRDb250YWluZXJGaWxlUmVzcG9uc2USbwoOTGlzdENvbnRhaW5lcnMSLS5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbExpc3RDb250YWluZXJzUmVxdWVzdBouLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsTGlzdENvbnRhaW5lcnNSZXNwb25zZRJjCgpMaXN0SW1hZ2VzEikub3Blbm94aWRlLmFwaS52MS5HbG9iYWxMaXN0SW1hZ2VzUmVxdWVzdBoqLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsTGlzdEltYWdlc1Jlc3BvbnNlEmkKDExpc3ROZXR3b3JrcxIrLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsTGlzdE5ldHdvcmtzUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsTGlzdE5ldHdvcmtzUmVzcG9uc2USZgoLTGlzdFZvbHVtZXMSKi5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbExpc3RWb2x1bWVzUmVxdWVzdBorLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsTGlzdFZvbHVtZXNSZXNwb25zZRJ1ChBJbnNwZWN0Q29udGFpbmVyEi8ub3Blbm94aWRlLmFwaS52MS5HbG9iYWxJbnNwZWN0Q29udGFpbmVyUmVxdWVzdBowLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsSW5zcGVjdENvbnRhaW5lclJlc3BvbnNlEmkKDEluc3BlY3RJbWFnZRIrLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsSW5zcGVjdEltYWdlUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsSW5zcGVjdEltYWdlUmVzcG9uc2USbwoOSW5zcGVjdE5ldHdvcmsSLS5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbEluc3BlY3ROZXR3b3JrUmVxdWVzdBouLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsSW5zcGVjdE5ldHdvcmtSZXNwb25zZRJsCg1JbnNwZWN0Vm9sdW1lEiwub3Blbm94aWRlLmFwaS52MS5HbG9iYWxJbnNwZWN0Vm9sdW1lUmVxdWVzdBotLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsSW5zcGVjdFZvbHVtZVJlc3BvbnNlEnIKD0NvbnRhaW5lckFjdGlvbhIuLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsQ29udGFpbmVyQWN0aW9uUmVxdWVzdBovLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsQ29udGFpbmVyQWN0aW9uUmVzcG9uc2USWgoPUmVtb3ZlQ29udGFpbmVyEi4ub3Blbm94aWRlLmFwaS52MS5HbG9iYWxSZW1vdmVDb250YWluZXJSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJaCg9EZWxldGVDb250YWluZXISLi5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbERlbGV0ZUNvbnRhaW5lclJlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EmAKCURpc2tVc2FnZRIoLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsRGlza1VzYWdlUmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsRGlza1VzYWdlUmVzcG9uc2USVAoFUHJ1bmUSJC5vcGVub3hpZGUuYXBpLnYxLkdsb2JhbFBydW5lUmVxdWVzdBolLm9wZW5veGlkZS5hcGkudjEuR2xvYmFsUHJ1bmVSZXNwb25zZWIGcHJvdG8z',
+		[file_openoxide_api_v1_common, file_buf_validate_validate],
+	);
 
 /**
  * `docker ps` projection; every column arrives as the CLI-formatted string.
  *
  * @generated from message openoxide.api.v1.GlobalContainer
  */
-export type GlobalContainer = Message<"openoxide.api.v1.GlobalContainer"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
+export type GlobalContainer =
+	Message<'openoxide.api.v1.GlobalContainer'> & {
+		/**
+		 * @generated from field: string id = 1;
+		 */
+		id: string;
 
-  /**
-   * @generated from field: string names = 2;
-   */
-  names: string;
+		/**
+		 * @generated from field: string names = 2;
+		 */
+		names: string;
 
-  /**
-   * @generated from field: string image = 3;
-   */
-  image: string;
+		/**
+		 * @generated from field: string image = 3;
+		 */
+		image: string;
 
-  /**
-   * @generated from field: string command = 4;
-   */
-  command: string;
+		/**
+		 * @generated from field: string command = 4;
+		 */
+		command: string;
 
-  /**
-   * @generated from field: string created_at = 5;
-   */
-  createdAt: string;
+		/**
+		 * @generated from field: string created_at = 5;
+		 */
+		createdAt: string;
 
-  /**
-   * @generated from field: string running_for = 6;
-   */
-  runningFor: string;
+		/**
+		 * @generated from field: string running_for = 6;
+		 */
+		runningFor: string;
 
-  /**
-   * @generated from field: string ports = 7;
-   */
-  ports: string;
+		/**
+		 * @generated from field: string ports = 7;
+		 */
+		ports: string;
 
-  /**
-   * @generated from field: string status = 8;
-   */
-  status: string;
+		/**
+		 * @generated from field: string status = 8;
+		 */
+		status: string;
 
-  /**
-   * @generated from field: string state = 9;
-   */
-  state: string;
+		/**
+		 * @generated from field: string state = 9;
+		 */
+		state: string;
 
-  /**
-   * @generated from field: string size = 10;
-   */
-  size: string;
+		/**
+		 * @generated from field: string size = 10;
+		 */
+		size: string;
 
-  /**
-   * Labels as the CLI-formatted string, not a JSON document.
-   *
-   * @generated from field: string labels = 11;
-   */
-  labels: string;
+		/**
+		 * Labels as the CLI-formatted string, not a JSON document.
+		 *
+		 * @generated from field: string labels = 11;
+		 */
+		labels: string;
 
-  /**
-   * @generated from field: string mounts = 12;
-   */
-  mounts: string;
+		/**
+		 * @generated from field: string mounts = 12;
+		 */
+		mounts: string;
 
-  /**
-   * @generated from field: string networks = 13;
-   */
-  networks: string;
-};
+		/**
+		 * @generated from field: string networks = 13;
+		 */
+		networks: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalContainer.
  * Use `create(GlobalContainerSchema)` to create a new message.
  */
-export const GlobalContainerSchema: GenMessage<GlobalContainer> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 0);
+export const GlobalContainerSchema: GenMessage<GlobalContainer> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 0);
 
 /**
  * `docker images` projection; every column is a CLI-formatted string.
  *
  * @generated from message openoxide.api.v1.GlobalImage
  */
-export type GlobalImage = Message<"openoxide.api.v1.GlobalImage"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
+export type GlobalImage = Message<'openoxide.api.v1.GlobalImage'> & {
+	/**
+	 * @generated from field: string id = 1;
+	 */
+	id: string;
 
-  /**
-   * @generated from field: string repository = 2;
-   */
-  repository: string;
+	/**
+	 * @generated from field: string repository = 2;
+	 */
+	repository: string;
 
-  /**
-   * @generated from field: string tag = 3;
-   */
-  tag: string;
+	/**
+	 * @generated from field: string tag = 3;
+	 */
+	tag: string;
 
-  /**
-   * @generated from field: string digest = 4;
-   */
-  digest: string;
+	/**
+	 * @generated from field: string digest = 4;
+	 */
+	digest: string;
 
-  /**
-   * @generated from field: string created_at = 5;
-   */
-  createdAt: string;
+	/**
+	 * @generated from field: string created_at = 5;
+	 */
+	createdAt: string;
 
-  /**
-   * @generated from field: string created_since = 6;
-   */
-  createdSince: string;
+	/**
+	 * @generated from field: string created_since = 6;
+	 */
+	createdSince: string;
 
-  /**
-   * @generated from field: string size = 7;
-   */
-  size: string;
+	/**
+	 * @generated from field: string size = 7;
+	 */
+	size: string;
 
-  /**
-   * @generated from field: string shared_size = 8;
-   */
-  sharedSize: string;
+	/**
+	 * @generated from field: string shared_size = 8;
+	 */
+	sharedSize: string;
 
-  /**
-   * @generated from field: string unique_size = 9;
-   */
-  uniqueSize: string;
+	/**
+	 * @generated from field: string unique_size = 9;
+	 */
+	uniqueSize: string;
 
-  /**
-   * @generated from field: string containers = 10;
-   */
-  containers: string;
+	/**
+	 * @generated from field: string containers = 10;
+	 */
+	containers: string;
 };
 
 /**
  * Describes the message openoxide.api.v1.GlobalImage.
  * Use `create(GlobalImageSchema)` to create a new message.
  */
-export const GlobalImageSchema: GenMessage<GlobalImage> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 1);
+export const GlobalImageSchema: GenMessage<GlobalImage> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 1);
 
 /**
  * `docker network ls` projection; every column is a CLI-formatted string.
  *
  * @generated from message openoxide.api.v1.GlobalNetwork
  */
-export type GlobalNetwork = Message<"openoxide.api.v1.GlobalNetwork"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
+export type GlobalNetwork = Message<'openoxide.api.v1.GlobalNetwork'> & {
+	/**
+	 * @generated from field: string id = 1;
+	 */
+	id: string;
 
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
+	/**
+	 * @generated from field: string name = 2;
+	 */
+	name: string;
 
-  /**
-   * @generated from field: string driver = 3;
-   */
-  driver: string;
+	/**
+	 * @generated from field: string driver = 3;
+	 */
+	driver: string;
 
-  /**
-   * @generated from field: string scope = 4;
-   */
-  scope: string;
+	/**
+	 * @generated from field: string scope = 4;
+	 */
+	scope: string;
 
-  /**
-   * i64-as-bool rendered by the CLI ("true"/"false" strings).
-   *
-   * @generated from field: string ipv6 = 5;
-   */
-  ipv6: string;
+	/**
+	 * i64-as-bool rendered by the CLI ("true"/"false" strings).
+	 *
+	 * @generated from field: string ipv6 = 5;
+	 */
+	ipv6: string;
 
-  /**
-   * @generated from field: string internal = 6;
-   */
-  internal: string;
+	/**
+	 * @generated from field: string internal = 6;
+	 */
+	internal: string;
 
-  /**
-   * @generated from field: string labels = 7;
-   */
-  labels: string;
+	/**
+	 * @generated from field: string labels = 7;
+	 */
+	labels: string;
 
-  /**
-   * @generated from field: string created_at = 8;
-   */
-  createdAt: string;
+	/**
+	 * @generated from field: string created_at = 8;
+	 */
+	createdAt: string;
 };
 
 /**
  * Describes the message openoxide.api.v1.GlobalNetwork.
  * Use `create(GlobalNetworkSchema)` to create a new message.
  */
-export const GlobalNetworkSchema: GenMessage<GlobalNetwork> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 2);
+export const GlobalNetworkSchema: GenMessage<GlobalNetwork> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 2);
 
 /**
  * `docker volume ls` projection; every column is a CLI-formatted string.
  *
  * @generated from message openoxide.api.v1.GlobalVolume
  */
-export type GlobalVolume = Message<"openoxide.api.v1.GlobalVolume"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
+export type GlobalVolume = Message<'openoxide.api.v1.GlobalVolume'> & {
+	/**
+	 * @generated from field: string name = 1;
+	 */
+	name: string;
 
-  /**
-   * @generated from field: string driver = 2;
-   */
-  driver: string;
+	/**
+	 * @generated from field: string driver = 2;
+	 */
+	driver: string;
 
-  /**
-   * @generated from field: string scope = 3;
-   */
-  scope: string;
+	/**
+	 * @generated from field: string scope = 3;
+	 */
+	scope: string;
 
-  /**
-   * @generated from field: string mountpoint = 4;
-   */
-  mountpoint: string;
+	/**
+	 * @generated from field: string mountpoint = 4;
+	 */
+	mountpoint: string;
 
-  /**
-   * @generated from field: string labels = 5;
-   */
-  labels: string;
+	/**
+	 * @generated from field: string labels = 5;
+	 */
+	labels: string;
 
-  /**
-   * @generated from field: string availability = 6;
-   */
-  availability: string;
+	/**
+	 * @generated from field: string availability = 6;
+	 */
+	availability: string;
 
-  /**
-   * @generated from field: string group = 7;
-   */
-  group: string;
+	/**
+	 * @generated from field: string group = 7;
+	 */
+	group: string;
 
-  /**
-   * @generated from field: string links = 8;
-   */
-  links: string;
+	/**
+	 * @generated from field: string links = 8;
+	 */
+	links: string;
 
-  /**
-   * @generated from field: string size = 9;
-   */
-  size: string;
+	/**
+	 * @generated from field: string size = 9;
+	 */
+	size: string;
 };
 
 /**
  * Describes the message openoxide.api.v1.GlobalVolume.
  * Use `create(GlobalVolumeSchema)` to create a new message.
  */
-export const GlobalVolumeSchema: GenMessage<GlobalVolume> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 3);
+export const GlobalVolumeSchema: GenMessage<GlobalVolume> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 3);
 
 /**
  * @generated from message openoxide.api.v1.GlobalDockerOutput
  */
-export type GlobalDockerOutput = Message<"openoxide.api.v1.GlobalDockerOutput"> & {
-  /**
-   * @generated from field: string stdout = 1;
-   */
-  stdout: string;
+export type GlobalDockerOutput =
+	Message<'openoxide.api.v1.GlobalDockerOutput'> & {
+		/**
+		 * @generated from field: string stdout = 1;
+		 */
+		stdout: string;
 
-  /**
-   * @generated from field: string stderr = 2;
-   */
-  stderr: string;
-};
+		/**
+		 * @generated from field: string stderr = 2;
+		 */
+		stderr: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalDockerOutput.
  * Use `create(GlobalDockerOutputSchema)` to create a new message.
  */
-export const GlobalDockerOutputSchema: GenMessage<GlobalDockerOutput> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 4);
+export const GlobalDockerOutputSchema: GenMessage<GlobalDockerOutput> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 4);
 
 /**
  * First (and only metadata) chunk of an upload stream; the destination inside the container is joined as `<destination>/<filename>`.
  *
  * @generated from message openoxide.api.v1.GlobalUploadFileHeader
  */
-export type GlobalUploadFileHeader = Message<"openoxide.api.v1.GlobalUploadFileHeader"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type GlobalUploadFileHeader =
+	Message<'openoxide.api.v1.GlobalUploadFileHeader'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string container_id = 2;
-   */
-  containerId: string;
+		/**
+		 * @generated from field: string container_id = 2;
+		 */
+		containerId: string;
 
-  /**
-   * @generated from field: string destination = 3;
-   */
-  destination: string;
+		/**
+		 * @generated from field: string destination = 3;
+		 */
+		destination: string;
 
-  /**
-   * @generated from field: string filename = 4;
-   */
-  filename: string;
-};
+		/**
+		 * @generated from field: string filename = 4;
+		 */
+		filename: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalUploadFileHeader.
  * Use `create(GlobalUploadFileHeaderSchema)` to create a new message.
  */
-export const GlobalUploadFileHeaderSchema: GenMessage<GlobalUploadFileHeader> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 5);
+export const GlobalUploadFileHeaderSchema: GenMessage<GlobalUploadFileHeader> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 5);
 
 /**
  * @generated from message openoxide.api.v1.GlobalUploadFileRequest
  */
-export type GlobalUploadFileRequest = Message<"openoxide.api.v1.GlobalUploadFileRequest"> & {
-  /**
-   * @generated from oneof openoxide.api.v1.GlobalUploadFileRequest.payload
-   */
-  payload: {
-    /**
-     * @generated from field: openoxide.api.v1.GlobalUploadFileHeader header = 1;
-     */
-    value: GlobalUploadFileHeader;
-    case: "header";
-  } | {
-    /**
-     * @generated from field: bytes chunk = 2;
-     */
-    value: Uint8Array;
-    case: "chunk";
-  } | { case: undefined; value?: undefined };
-};
+export type GlobalUploadFileRequest =
+	Message<'openoxide.api.v1.GlobalUploadFileRequest'> & {
+		/**
+		 * @generated from oneof openoxide.api.v1.GlobalUploadFileRequest.payload
+		 */
+		payload:
+			| {
+					/**
+					 * @generated from field: openoxide.api.v1.GlobalUploadFileHeader header = 1;
+					 */
+					value: GlobalUploadFileHeader;
+					case: 'header';
+			  }
+			| {
+					/**
+					 * @generated from field: bytes chunk = 2;
+					 */
+					value: Uint8Array;
+					case: 'chunk';
+			  }
+			| {case: undefined; value?: undefined};
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalUploadFileRequest.
  * Use `create(GlobalUploadFileRequestSchema)` to create a new message.
  */
-export const GlobalUploadFileRequestSchema: GenMessage<GlobalUploadFileRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 6);
+export const GlobalUploadFileRequestSchema: GenMessage<GlobalUploadFileRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 6);
 
 /**
  * @generated from message openoxide.api.v1.GlobalUploadFileResponse
  */
-export type GlobalUploadFileResponse = Message<"openoxide.api.v1.GlobalUploadFileResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+export type GlobalUploadFileResponse =
+	Message<'openoxide.api.v1.GlobalUploadFileResponse'> & {
+		/**
+		 * @generated from field: bool success = 1;
+		 */
+		success: boolean;
 
-  /**
-   * @generated from field: openoxide.api.v1.GlobalDockerOutput output = 2;
-   */
-  output?: GlobalDockerOutput | undefined;
-};
+		/**
+		 * @generated from field: openoxide.api.v1.GlobalDockerOutput output = 2;
+		 */
+		output?: GlobalDockerOutput | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalUploadFileResponse.
  * Use `create(GlobalUploadFileResponseSchema)` to create a new message.
  */
-export const GlobalUploadFileResponseSchema: GenMessage<GlobalUploadFileResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 7);
+export const GlobalUploadFileResponseSchema: GenMessage<GlobalUploadFileResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 7);
 
 /**
  * @generated from message openoxide.api.v1.GlobalDownloadFileRequest
  */
-export type GlobalDownloadFileRequest = Message<"openoxide.api.v1.GlobalDownloadFileRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type GlobalDownloadFileRequest =
+	Message<'openoxide.api.v1.GlobalDownloadFileRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string container_id = 2;
-   */
-  containerId: string;
+		/**
+		 * @generated from field: string container_id = 2;
+		 */
+		containerId: string;
 
-  /**
-   * @generated from field: string path = 3;
-   */
-  path: string;
-};
+		/**
+		 * @generated from field: string path = 3;
+		 */
+		path: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalDownloadFileRequest.
  * Use `create(GlobalDownloadFileRequestSchema)` to create a new message.
  */
-export const GlobalDownloadFileRequestSchema: GenMessage<GlobalDownloadFileRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 8);
+export const GlobalDownloadFileRequestSchema: GenMessage<GlobalDownloadFileRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 8);
 
 /**
  * @generated from message openoxide.api.v1.GlobalDownloadFileResponse
  */
-export type GlobalDownloadFileResponse = Message<"openoxide.api.v1.GlobalDownloadFileResponse"> & {
-  /**
-   * Raw file bytes; the old handler base64-wrapped them in a JSON payload.
-   *
-   * @generated from field: bytes content = 1;
-   */
-  content: Uint8Array;
+export type GlobalDownloadFileResponse =
+	Message<'openoxide.api.v1.GlobalDownloadFileResponse'> & {
+		/**
+		 * Raw file bytes; the old handler base64-wrapped them in a JSON payload.
+		 *
+		 * @generated from field: bytes content = 1;
+		 */
+		content: Uint8Array;
 
-  /**
-   * @generated from field: string path = 2;
-   */
-  path: string;
-};
+		/**
+		 * @generated from field: string path = 2;
+		 */
+		path: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalDownloadFileResponse.
  * Use `create(GlobalDownloadFileResponseSchema)` to create a new message.
  */
-export const GlobalDownloadFileResponseSchema: GenMessage<GlobalDownloadFileResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 9);
+export const GlobalDownloadFileResponseSchema: GenMessage<GlobalDownloadFileResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 9);
 
 /**
  * @generated from message openoxide.api.v1.GlobalUploadContainerFileHeader
  */
-export type GlobalUploadContainerFileHeader = Message<"openoxide.api.v1.GlobalUploadContainerFileHeader"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type GlobalUploadContainerFileHeader =
+	Message<'openoxide.api.v1.GlobalUploadContainerFileHeader'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string container_id = 2;
-   */
-  containerId: string;
+		/**
+		 * @generated from field: string container_id = 2;
+		 */
+		containerId: string;
 
-  /**
-   * @generated from field: string destination = 3;
-   */
-  destination: string;
+		/**
+		 * @generated from field: string destination = 3;
+		 */
+		destination: string;
 
-  /**
-   * @generated from field: string filename = 4;
-   */
-  filename: string;
-};
+		/**
+		 * @generated from field: string filename = 4;
+		 */
+		filename: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalUploadContainerFileHeader.
  * Use `create(GlobalUploadContainerFileHeaderSchema)` to create a new message.
  */
-export const GlobalUploadContainerFileHeaderSchema: GenMessage<GlobalUploadContainerFileHeader> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 10);
+export const GlobalUploadContainerFileHeaderSchema: GenMessage<GlobalUploadContainerFileHeader> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 10);
 
 /**
  * @generated from message openoxide.api.v1.GlobalUploadContainerFileRequest
  */
-export type GlobalUploadContainerFileRequest = Message<"openoxide.api.v1.GlobalUploadContainerFileRequest"> & {
-  /**
-   * @generated from oneof openoxide.api.v1.GlobalUploadContainerFileRequest.payload
-   */
-  payload: {
-    /**
-     * @generated from field: openoxide.api.v1.GlobalUploadContainerFileHeader header = 1;
-     */
-    value: GlobalUploadContainerFileHeader;
-    case: "header";
-  } | {
-    /**
-     * @generated from field: bytes chunk = 2;
-     */
-    value: Uint8Array;
-    case: "chunk";
-  } | { case: undefined; value?: undefined };
-};
+export type GlobalUploadContainerFileRequest =
+	Message<'openoxide.api.v1.GlobalUploadContainerFileRequest'> & {
+		/**
+		 * @generated from oneof openoxide.api.v1.GlobalUploadContainerFileRequest.payload
+		 */
+		payload:
+			| {
+					/**
+					 * @generated from field: openoxide.api.v1.GlobalUploadContainerFileHeader header = 1;
+					 */
+					value: GlobalUploadContainerFileHeader;
+					case: 'header';
+			  }
+			| {
+					/**
+					 * @generated from field: bytes chunk = 2;
+					 */
+					value: Uint8Array;
+					case: 'chunk';
+			  }
+			| {case: undefined; value?: undefined};
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalUploadContainerFileRequest.
  * Use `create(GlobalUploadContainerFileRequestSchema)` to create a new message.
  */
-export const GlobalUploadContainerFileRequestSchema: GenMessage<GlobalUploadContainerFileRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 11);
+export const GlobalUploadContainerFileRequestSchema: GenMessage<GlobalUploadContainerFileRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 11);
 
 /**
  * @generated from message openoxide.api.v1.GlobalUploadContainerFileResponse
  */
-export type GlobalUploadContainerFileResponse = Message<"openoxide.api.v1.GlobalUploadContainerFileResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+export type GlobalUploadContainerFileResponse =
+	Message<'openoxide.api.v1.GlobalUploadContainerFileResponse'> & {
+		/**
+		 * @generated from field: bool success = 1;
+		 */
+		success: boolean;
 
-  /**
-   * @generated from field: openoxide.api.v1.GlobalDockerOutput output = 2;
-   */
-  output?: GlobalDockerOutput | undefined;
-};
+		/**
+		 * @generated from field: openoxide.api.v1.GlobalDockerOutput output = 2;
+		 */
+		output?: GlobalDockerOutput | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalUploadContainerFileResponse.
  * Use `create(GlobalUploadContainerFileResponseSchema)` to create a new message.
  */
-export const GlobalUploadContainerFileResponseSchema: GenMessage<GlobalUploadContainerFileResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 12);
+export const GlobalUploadContainerFileResponseSchema: GenMessage<GlobalUploadContainerFileResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 12);
 
 /**
  * @generated from message openoxide.api.v1.GlobalDownloadContainerFileRequest
  */
-export type GlobalDownloadContainerFileRequest = Message<"openoxide.api.v1.GlobalDownloadContainerFileRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type GlobalDownloadContainerFileRequest =
+	Message<'openoxide.api.v1.GlobalDownloadContainerFileRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string container_id = 2;
-   */
-  containerId: string;
+		/**
+		 * @generated from field: string container_id = 2;
+		 */
+		containerId: string;
 
-  /**
-   * @generated from field: string path = 3;
-   */
-  path: string;
-};
+		/**
+		 * @generated from field: string path = 3;
+		 */
+		path: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalDownloadContainerFileRequest.
  * Use `create(GlobalDownloadContainerFileRequestSchema)` to create a new message.
  */
-export const GlobalDownloadContainerFileRequestSchema: GenMessage<GlobalDownloadContainerFileRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 13);
+export const GlobalDownloadContainerFileRequestSchema: GenMessage<GlobalDownloadContainerFileRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 13);
 
 /**
  * @generated from message openoxide.api.v1.GlobalDownloadContainerFileResponse
  */
-export type GlobalDownloadContainerFileResponse = Message<"openoxide.api.v1.GlobalDownloadContainerFileResponse"> & {
-  /**
-   * @generated from field: bytes content = 1;
-   */
-  content: Uint8Array;
+export type GlobalDownloadContainerFileResponse =
+	Message<'openoxide.api.v1.GlobalDownloadContainerFileResponse'> & {
+		/**
+		 * @generated from field: bytes content = 1;
+		 */
+		content: Uint8Array;
 
-  /**
-   * @generated from field: string path = 2;
-   */
-  path: string;
-};
+		/**
+		 * @generated from field: string path = 2;
+		 */
+		path: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalDownloadContainerFileResponse.
  * Use `create(GlobalDownloadContainerFileResponseSchema)` to create a new message.
  */
-export const GlobalDownloadContainerFileResponseSchema: GenMessage<GlobalDownloadContainerFileResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 14);
+export const GlobalDownloadContainerFileResponseSchema: GenMessage<GlobalDownloadContainerFileResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 14);
 
 /**
  * @generated from message openoxide.api.v1.GlobalListContainersRequest
  */
-export type GlobalListContainersRequest = Message<"openoxide.api.v1.GlobalListContainersRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type GlobalListContainersRequest =
+	Message<'openoxide.api.v1.GlobalListContainersRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalListContainersRequest.
  * Use `create(GlobalListContainersRequestSchema)` to create a new message.
  */
-export const GlobalListContainersRequestSchema: GenMessage<GlobalListContainersRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 15);
+export const GlobalListContainersRequestSchema: GenMessage<GlobalListContainersRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 15);
 
 /**
  * @generated from message openoxide.api.v1.GlobalListContainersResponse
  */
-export type GlobalListContainersResponse = Message<"openoxide.api.v1.GlobalListContainersResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.GlobalContainer containers = 1;
-   */
-  containers: GlobalContainer[];
-};
+export type GlobalListContainersResponse =
+	Message<'openoxide.api.v1.GlobalListContainersResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.GlobalContainer containers = 1;
+		 */
+		containers: GlobalContainer[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalListContainersResponse.
  * Use `create(GlobalListContainersResponseSchema)` to create a new message.
  */
-export const GlobalListContainersResponseSchema: GenMessage<GlobalListContainersResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 16);
+export const GlobalListContainersResponseSchema: GenMessage<GlobalListContainersResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 16);
 
 /**
  * @generated from message openoxide.api.v1.GlobalListImagesRequest
  */
-export type GlobalListImagesRequest = Message<"openoxide.api.v1.GlobalListImagesRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type GlobalListImagesRequest =
+	Message<'openoxide.api.v1.GlobalListImagesRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalListImagesRequest.
  * Use `create(GlobalListImagesRequestSchema)` to create a new message.
  */
-export const GlobalListImagesRequestSchema: GenMessage<GlobalListImagesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 17);
+export const GlobalListImagesRequestSchema: GenMessage<GlobalListImagesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 17);
 
 /**
  * @generated from message openoxide.api.v1.GlobalListImagesResponse
  */
-export type GlobalListImagesResponse = Message<"openoxide.api.v1.GlobalListImagesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.GlobalImage images = 1;
-   */
-  images: GlobalImage[];
-};
+export type GlobalListImagesResponse =
+	Message<'openoxide.api.v1.GlobalListImagesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.GlobalImage images = 1;
+		 */
+		images: GlobalImage[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalListImagesResponse.
  * Use `create(GlobalListImagesResponseSchema)` to create a new message.
  */
-export const GlobalListImagesResponseSchema: GenMessage<GlobalListImagesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 18);
+export const GlobalListImagesResponseSchema: GenMessage<GlobalListImagesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 18);
 
 /**
  * @generated from message openoxide.api.v1.GlobalListNetworksRequest
  */
-export type GlobalListNetworksRequest = Message<"openoxide.api.v1.GlobalListNetworksRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type GlobalListNetworksRequest =
+	Message<'openoxide.api.v1.GlobalListNetworksRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalListNetworksRequest.
  * Use `create(GlobalListNetworksRequestSchema)` to create a new message.
  */
-export const GlobalListNetworksRequestSchema: GenMessage<GlobalListNetworksRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 19);
+export const GlobalListNetworksRequestSchema: GenMessage<GlobalListNetworksRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 19);
 
 /**
  * @generated from message openoxide.api.v1.GlobalListNetworksResponse
  */
-export type GlobalListNetworksResponse = Message<"openoxide.api.v1.GlobalListNetworksResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.GlobalNetwork networks = 1;
-   */
-  networks: GlobalNetwork[];
-};
+export type GlobalListNetworksResponse =
+	Message<'openoxide.api.v1.GlobalListNetworksResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.GlobalNetwork networks = 1;
+		 */
+		networks: GlobalNetwork[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalListNetworksResponse.
  * Use `create(GlobalListNetworksResponseSchema)` to create a new message.
  */
-export const GlobalListNetworksResponseSchema: GenMessage<GlobalListNetworksResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 20);
+export const GlobalListNetworksResponseSchema: GenMessage<GlobalListNetworksResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 20);
 
 /**
  * @generated from message openoxide.api.v1.GlobalListVolumesRequest
  */
-export type GlobalListVolumesRequest = Message<"openoxide.api.v1.GlobalListVolumesRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type GlobalListVolumesRequest =
+	Message<'openoxide.api.v1.GlobalListVolumesRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalListVolumesRequest.
  * Use `create(GlobalListVolumesRequestSchema)` to create a new message.
  */
-export const GlobalListVolumesRequestSchema: GenMessage<GlobalListVolumesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 21);
+export const GlobalListVolumesRequestSchema: GenMessage<GlobalListVolumesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 21);
 
 /**
  * @generated from message openoxide.api.v1.GlobalListVolumesResponse
  */
-export type GlobalListVolumesResponse = Message<"openoxide.api.v1.GlobalListVolumesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.GlobalVolume volumes = 1;
-   */
-  volumes: GlobalVolume[];
-};
+export type GlobalListVolumesResponse =
+	Message<'openoxide.api.v1.GlobalListVolumesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.GlobalVolume volumes = 1;
+		 */
+		volumes: GlobalVolume[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalListVolumesResponse.
  * Use `create(GlobalListVolumesResponseSchema)` to create a new message.
  */
-export const GlobalListVolumesResponseSchema: GenMessage<GlobalListVolumesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 22);
+export const GlobalListVolumesResponseSchema: GenMessage<GlobalListVolumesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 22);
 
 /**
  * @generated from message openoxide.api.v1.GlobalInspectContainerRequest
  */
-export type GlobalInspectContainerRequest = Message<"openoxide.api.v1.GlobalInspectContainerRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type GlobalInspectContainerRequest =
+	Message<'openoxide.api.v1.GlobalInspectContainerRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string container_id = 2;
-   */
-  containerId: string;
-};
+		/**
+		 * @generated from field: string container_id = 2;
+		 */
+		containerId: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalInspectContainerRequest.
  * Use `create(GlobalInspectContainerRequestSchema)` to create a new message.
  */
-export const GlobalInspectContainerRequestSchema: GenMessage<GlobalInspectContainerRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 23);
+export const GlobalInspectContainerRequestSchema: GenMessage<GlobalInspectContainerRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 23);
 
 /**
  * @generated from message openoxide.api.v1.GlobalInspectContainerResponse
  */
-export type GlobalInspectContainerResponse = Message<"openoxide.api.v1.GlobalInspectContainerResponse"> & {
-  /**
-   * Raw `docker inspect` JSON document for the container.
-   *
-   * @generated from field: string data_json = 1;
-   */
-  dataJson: string;
-};
+export type GlobalInspectContainerResponse =
+	Message<'openoxide.api.v1.GlobalInspectContainerResponse'> & {
+		/**
+		 * Raw `docker inspect` JSON document for the container.
+		 *
+		 * @generated from field: string data_json = 1;
+		 */
+		dataJson: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalInspectContainerResponse.
  * Use `create(GlobalInspectContainerResponseSchema)` to create a new message.
  */
-export const GlobalInspectContainerResponseSchema: GenMessage<GlobalInspectContainerResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 24);
+export const GlobalInspectContainerResponseSchema: GenMessage<GlobalInspectContainerResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 24);
 
 /**
  * @generated from message openoxide.api.v1.GlobalInspectImageRequest
  */
-export type GlobalInspectImageRequest = Message<"openoxide.api.v1.GlobalInspectImageRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type GlobalInspectImageRequest =
+	Message<'openoxide.api.v1.GlobalInspectImageRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * Image id or reference (validate_resource_name charset).
-   *
-   * @generated from field: string image_id = 2;
-   */
-  imageId: string;
-};
+		/**
+		 * Image id or reference (validate_resource_name charset).
+		 *
+		 * @generated from field: string image_id = 2;
+		 */
+		imageId: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalInspectImageRequest.
  * Use `create(GlobalInspectImageRequestSchema)` to create a new message.
  */
-export const GlobalInspectImageRequestSchema: GenMessage<GlobalInspectImageRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 25);
+export const GlobalInspectImageRequestSchema: GenMessage<GlobalInspectImageRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 25);
 
 /**
  * @generated from message openoxide.api.v1.GlobalInspectImageResponse
  */
-export type GlobalInspectImageResponse = Message<"openoxide.api.v1.GlobalInspectImageResponse"> & {
-  /**
-   * Raw `docker inspect` JSON document for the image.
-   *
-   * @generated from field: string data_json = 1;
-   */
-  dataJson: string;
-};
+export type GlobalInspectImageResponse =
+	Message<'openoxide.api.v1.GlobalInspectImageResponse'> & {
+		/**
+		 * Raw `docker inspect` JSON document for the image.
+		 *
+		 * @generated from field: string data_json = 1;
+		 */
+		dataJson: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalInspectImageResponse.
  * Use `create(GlobalInspectImageResponseSchema)` to create a new message.
  */
-export const GlobalInspectImageResponseSchema: GenMessage<GlobalInspectImageResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 26);
+export const GlobalInspectImageResponseSchema: GenMessage<GlobalInspectImageResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 26);
 
 /**
  * @generated from message openoxide.api.v1.GlobalInspectNetworkRequest
  */
-export type GlobalInspectNetworkRequest = Message<"openoxide.api.v1.GlobalInspectNetworkRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type GlobalInspectNetworkRequest =
+	Message<'openoxide.api.v1.GlobalInspectNetworkRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string network_id = 2;
-   */
-  networkId: string;
-};
+		/**
+		 * @generated from field: string network_id = 2;
+		 */
+		networkId: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalInspectNetworkRequest.
  * Use `create(GlobalInspectNetworkRequestSchema)` to create a new message.
  */
-export const GlobalInspectNetworkRequestSchema: GenMessage<GlobalInspectNetworkRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 27);
+export const GlobalInspectNetworkRequestSchema: GenMessage<GlobalInspectNetworkRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 27);
 
 /**
  * @generated from message openoxide.api.v1.GlobalInspectNetworkResponse
  */
-export type GlobalInspectNetworkResponse = Message<"openoxide.api.v1.GlobalInspectNetworkResponse"> & {
-  /**
-   * Raw `docker inspect` JSON document for the network.
-   *
-   * @generated from field: string data_json = 1;
-   */
-  dataJson: string;
-};
+export type GlobalInspectNetworkResponse =
+	Message<'openoxide.api.v1.GlobalInspectNetworkResponse'> & {
+		/**
+		 * Raw `docker inspect` JSON document for the network.
+		 *
+		 * @generated from field: string data_json = 1;
+		 */
+		dataJson: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalInspectNetworkResponse.
  * Use `create(GlobalInspectNetworkResponseSchema)` to create a new message.
  */
-export const GlobalInspectNetworkResponseSchema: GenMessage<GlobalInspectNetworkResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 28);
+export const GlobalInspectNetworkResponseSchema: GenMessage<GlobalInspectNetworkResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 28);
 
 /**
  * @generated from message openoxide.api.v1.GlobalInspectVolumeRequest
  */
-export type GlobalInspectVolumeRequest = Message<"openoxide.api.v1.GlobalInspectVolumeRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type GlobalInspectVolumeRequest =
+	Message<'openoxide.api.v1.GlobalInspectVolumeRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string volume_id = 2;
-   */
-  volumeId: string;
-};
+		/**
+		 * @generated from field: string volume_id = 2;
+		 */
+		volumeId: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalInspectVolumeRequest.
  * Use `create(GlobalInspectVolumeRequestSchema)` to create a new message.
  */
-export const GlobalInspectVolumeRequestSchema: GenMessage<GlobalInspectVolumeRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 29);
+export const GlobalInspectVolumeRequestSchema: GenMessage<GlobalInspectVolumeRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 29);
 
 /**
  * @generated from message openoxide.api.v1.GlobalInspectVolumeResponse
  */
-export type GlobalInspectVolumeResponse = Message<"openoxide.api.v1.GlobalInspectVolumeResponse"> & {
-  /**
-   * Raw `docker inspect` JSON document for the volume.
-   *
-   * @generated from field: string data_json = 1;
-   */
-  dataJson: string;
-};
+export type GlobalInspectVolumeResponse =
+	Message<'openoxide.api.v1.GlobalInspectVolumeResponse'> & {
+		/**
+		 * Raw `docker inspect` JSON document for the volume.
+		 *
+		 * @generated from field: string data_json = 1;
+		 */
+		dataJson: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalInspectVolumeResponse.
  * Use `create(GlobalInspectVolumeResponseSchema)` to create a new message.
  */
-export const GlobalInspectVolumeResponseSchema: GenMessage<GlobalInspectVolumeResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 30);
+export const GlobalInspectVolumeResponseSchema: GenMessage<GlobalInspectVolumeResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 30);
 
 /**
  * @generated from message openoxide.api.v1.GlobalContainerActionRequest
  */
-export type GlobalContainerActionRequest = Message<"openoxide.api.v1.GlobalContainerActionRequest"> & {
-  /**
-   * @generated from field: string container_id = 1;
-   */
-  containerId: string;
+export type GlobalContainerActionRequest =
+	Message<'openoxide.api.v1.GlobalContainerActionRequest'> & {
+		/**
+		 * @generated from field: string container_id = 1;
+		 */
+		containerId: string;
 
-  /**
-   * @generated from field: openoxide.api.v1.GlobalContainerAction action = 2;
-   */
-  action: GlobalContainerAction;
-};
+		/**
+		 * @generated from field: openoxide.api.v1.GlobalContainerAction action = 2;
+		 */
+		action: GlobalContainerAction;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalContainerActionRequest.
  * Use `create(GlobalContainerActionRequestSchema)` to create a new message.
  */
-export const GlobalContainerActionRequestSchema: GenMessage<GlobalContainerActionRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 31);
+export const GlobalContainerActionRequestSchema: GenMessage<GlobalContainerActionRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 31);
 
 /**
  * @generated from message openoxide.api.v1.GlobalContainerActionResponse
  */
-export type GlobalContainerActionResponse = Message<"openoxide.api.v1.GlobalContainerActionResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+export type GlobalContainerActionResponse =
+	Message<'openoxide.api.v1.GlobalContainerActionResponse'> & {
+		/**
+		 * @generated from field: bool success = 1;
+		 */
+		success: boolean;
 
-  /**
-   * @generated from field: openoxide.api.v1.GlobalDockerOutput output = 2;
-   */
-  output?: GlobalDockerOutput | undefined;
-};
+		/**
+		 * @generated from field: openoxide.api.v1.GlobalDockerOutput output = 2;
+		 */
+		output?: GlobalDockerOutput | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalContainerActionResponse.
  * Use `create(GlobalContainerActionResponseSchema)` to create a new message.
  */
-export const GlobalContainerActionResponseSchema: GenMessage<GlobalContainerActionResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 32);
+export const GlobalContainerActionResponseSchema: GenMessage<GlobalContainerActionResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 32);
 
 /**
  * @generated from message openoxide.api.v1.GlobalRemoveContainerRequest
  */
-export type GlobalRemoveContainerRequest = Message<"openoxide.api.v1.GlobalRemoveContainerRequest"> & {
-  /**
-   * @generated from field: string container_id = 1;
-   */
-  containerId: string;
+export type GlobalRemoveContainerRequest =
+	Message<'openoxide.api.v1.GlobalRemoveContainerRequest'> & {
+		/**
+		 * @generated from field: string container_id = 1;
+		 */
+		containerId: string;
 
-  /**
-   * @generated from field: bool force = 2;
-   */
-  force: boolean;
+		/**
+		 * @generated from field: bool force = 2;
+		 */
+		force: boolean;
 
-  /**
-   * @generated from field: bool volumes = 3;
-   */
-  volumes: boolean;
-};
+		/**
+		 * @generated from field: bool volumes = 3;
+		 */
+		volumes: boolean;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalRemoveContainerRequest.
  * Use `create(GlobalRemoveContainerRequestSchema)` to create a new message.
  */
-export const GlobalRemoveContainerRequestSchema: GenMessage<GlobalRemoveContainerRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 33);
+export const GlobalRemoveContainerRequestSchema: GenMessage<GlobalRemoveContainerRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 33);
 
 /**
  * @generated from message openoxide.api.v1.GlobalDeleteContainerRequest
  */
-export type GlobalDeleteContainerRequest = Message<"openoxide.api.v1.GlobalDeleteContainerRequest"> & {
-  /**
-   * @generated from field: string container_id = 1;
-   */
-  containerId: string;
+export type GlobalDeleteContainerRequest =
+	Message<'openoxide.api.v1.GlobalDeleteContainerRequest'> & {
+		/**
+		 * @generated from field: string container_id = 1;
+		 */
+		containerId: string;
 
-  /**
-   * @generated from field: bool force = 2;
-   */
-  force: boolean;
+		/**
+		 * @generated from field: bool force = 2;
+		 */
+		force: boolean;
 
-  /**
-   * @generated from field: bool volumes = 3;
-   */
-  volumes: boolean;
-};
+		/**
+		 * @generated from field: bool volumes = 3;
+		 */
+		volumes: boolean;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalDeleteContainerRequest.
  * Use `create(GlobalDeleteContainerRequestSchema)` to create a new message.
  */
-export const GlobalDeleteContainerRequestSchema: GenMessage<GlobalDeleteContainerRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 34);
+export const GlobalDeleteContainerRequestSchema: GenMessage<GlobalDeleteContainerRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 34);
 
 /**
  * @generated from message openoxide.api.v1.GlobalDiskUsageRequest
  */
-export type GlobalDiskUsageRequest = Message<"openoxide.api.v1.GlobalDiskUsageRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type GlobalDiskUsageRequest =
+	Message<'openoxide.api.v1.GlobalDiskUsageRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalDiskUsageRequest.
  * Use `create(GlobalDiskUsageRequestSchema)` to create a new message.
  */
-export const GlobalDiskUsageRequestSchema: GenMessage<GlobalDiskUsageRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 35);
+export const GlobalDiskUsageRequestSchema: GenMessage<GlobalDiskUsageRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 35);
 
 /**
  * @generated from message openoxide.api.v1.GlobalDiskUsageResponse
  */
-export type GlobalDiskUsageResponse = Message<"openoxide.api.v1.GlobalDiskUsageResponse"> & {
-  /**
-   * Raw `docker system df` JSON document.
-   *
-   * @generated from field: string data_json = 1;
-   */
-  dataJson: string;
-};
+export type GlobalDiskUsageResponse =
+	Message<'openoxide.api.v1.GlobalDiskUsageResponse'> & {
+		/**
+		 * Raw `docker system df` JSON document.
+		 *
+		 * @generated from field: string data_json = 1;
+		 */
+		dataJson: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalDiskUsageResponse.
  * Use `create(GlobalDiskUsageResponseSchema)` to create a new message.
  */
-export const GlobalDiskUsageResponseSchema: GenMessage<GlobalDiskUsageResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 36);
+export const GlobalDiskUsageResponseSchema: GenMessage<GlobalDiskUsageResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 36);
 
 /**
  * @generated from message openoxide.api.v1.GlobalPruneRequest
  */
-export type GlobalPruneRequest = Message<"openoxide.api.v1.GlobalPruneRequest"> & {
-  /**
-   * @generated from field: bool containers = 1;
-   */
-  containers: boolean;
+export type GlobalPruneRequest =
+	Message<'openoxide.api.v1.GlobalPruneRequest'> & {
+		/**
+		 * @generated from field: bool containers = 1;
+		 */
+		containers: boolean;
 
-  /**
-   * @generated from field: bool images = 2;
-   */
-  images: boolean;
+		/**
+		 * @generated from field: bool images = 2;
+		 */
+		images: boolean;
 
-  /**
-   * @generated from field: bool networks = 3;
-   */
-  networks: boolean;
+		/**
+		 * @generated from field: bool networks = 3;
+		 */
+		networks: boolean;
 
-  /**
-   * @generated from field: bool volumes = 4;
-   */
-  volumes: boolean;
-};
+		/**
+		 * @generated from field: bool volumes = 4;
+		 */
+		volumes: boolean;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalPruneRequest.
  * Use `create(GlobalPruneRequestSchema)` to create a new message.
  */
-export const GlobalPruneRequestSchema: GenMessage<GlobalPruneRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 37);
+export const GlobalPruneRequestSchema: GenMessage<GlobalPruneRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 37);
 
 /**
  * @generated from message openoxide.api.v1.GlobalPruneResponse
  */
-export type GlobalPruneResponse = Message<"openoxide.api.v1.GlobalPruneResponse"> & {
-  /**
-   * One output entry per enabled prune operation, in request order.
-   *
-   * @generated from field: repeated openoxide.api.v1.GlobalDockerOutput operations = 1;
-   */
-  operations: GlobalDockerOutput[];
-};
+export type GlobalPruneResponse =
+	Message<'openoxide.api.v1.GlobalPruneResponse'> & {
+		/**
+		 * One output entry per enabled prune operation, in request order.
+		 *
+		 * @generated from field: repeated openoxide.api.v1.GlobalDockerOutput operations = 1;
+		 */
+		operations: GlobalDockerOutput[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.GlobalPruneResponse.
  * Use `create(GlobalPruneResponseSchema)` to create a new message.
  */
-export const GlobalPruneResponseSchema: GenMessage<GlobalPruneResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_global, 38);
+export const GlobalPruneResponseSchema: GenMessage<GlobalPruneResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_global, 38);
 
 /**
  * Lifecycle actions accepted by `container_action` (ContainerActionDto).
@@ -1058,47 +1113,47 @@ export const GlobalPruneResponseSchema: GenMessage<GlobalPruneResponse> = /*@__P
  * @generated from enum openoxide.api.v1.GlobalContainerAction
  */
 export enum GlobalContainerAction {
-  /**
-   * @generated from enum value: GLOBAL_CONTAINER_ACTION_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: GLOBAL_CONTAINER_ACTION_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: GLOBAL_CONTAINER_ACTION_START = 1;
-   */
-  START = 1,
+	/**
+	 * @generated from enum value: GLOBAL_CONTAINER_ACTION_START = 1;
+	 */
+	START = 1,
 
-  /**
-   * @generated from enum value: GLOBAL_CONTAINER_ACTION_STOP = 2;
-   */
-  STOP = 2,
+	/**
+	 * @generated from enum value: GLOBAL_CONTAINER_ACTION_STOP = 2;
+	 */
+	STOP = 2,
 
-  /**
-   * @generated from enum value: GLOBAL_CONTAINER_ACTION_RESTART = 3;
-   */
-  RESTART = 3,
+	/**
+	 * @generated from enum value: GLOBAL_CONTAINER_ACTION_RESTART = 3;
+	 */
+	RESTART = 3,
 
-  /**
-   * @generated from enum value: GLOBAL_CONTAINER_ACTION_KILL = 4;
-   */
-  KILL = 4,
+	/**
+	 * @generated from enum value: GLOBAL_CONTAINER_ACTION_KILL = 4;
+	 */
+	KILL = 4,
 
-  /**
-   * @generated from enum value: GLOBAL_CONTAINER_ACTION_PAUSE = 5;
-   */
-  PAUSE = 5,
+	/**
+	 * @generated from enum value: GLOBAL_CONTAINER_ACTION_PAUSE = 5;
+	 */
+	PAUSE = 5,
 
-  /**
-   * @generated from enum value: GLOBAL_CONTAINER_ACTION_UNPAUSE = 6;
-   */
-  UNPAUSE = 6,
+	/**
+	 * @generated from enum value: GLOBAL_CONTAINER_ACTION_UNPAUSE = 6;
+	 */
+	UNPAUSE = 6,
 }
 
 /**
  * Describes the enum openoxide.api.v1.GlobalContainerAction.
  */
-export const GlobalContainerActionSchema: GenEnum<GlobalContainerAction> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_global, 0);
+export const GlobalContainerActionSchema: GenEnum<GlobalContainerAction> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_global, 0);
 
 /**
  * Sole Docker-management owner service; absorbs the former GlobalOperationsApiService and GlobalOperationsService surface; `server_id` selects the target engine, absent means the local Agent.
@@ -1106,148 +1161,146 @@ export const GlobalContainerActionSchema: GenEnum<GlobalContainerAction> = /*@__
  * @generated from service openoxide.api.v1.GlobalService
  */
 export const GlobalService: GenService<{
-  /**
-   * Client-streaming upload: exactly one header chunk first, then byte chunks.
-   *
-   * @generated from rpc openoxide.api.v1.GlobalService.UploadFile
-   */
-  uploadFile: {
-    methodKind: "client_streaming";
-    input: typeof GlobalUploadFileRequestSchema;
-    output: typeof GlobalUploadFileResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.DownloadFile
-   */
-  downloadFile: {
-    methodKind: "unary";
-    input: typeof GlobalDownloadFileRequestSchema;
-    output: typeof GlobalDownloadFileResponseSchema;
-  },
-  /**
-   * Twin of UploadFile kept for method-name compatibility with the former GlobalOperationsService.
-   *
-   * @generated from rpc openoxide.api.v1.GlobalService.UploadContainerFile
-   */
-  uploadContainerFile: {
-    methodKind: "client_streaming";
-    input: typeof GlobalUploadContainerFileRequestSchema;
-    output: typeof GlobalUploadContainerFileResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.DownloadContainerFile
-   */
-  downloadContainerFile: {
-    methodKind: "unary";
-    input: typeof GlobalDownloadContainerFileRequestSchema;
-    output: typeof GlobalDownloadContainerFileResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.ListContainers
-   */
-  listContainers: {
-    methodKind: "unary";
-    input: typeof GlobalListContainersRequestSchema;
-    output: typeof GlobalListContainersResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.ListImages
-   */
-  listImages: {
-    methodKind: "unary";
-    input: typeof GlobalListImagesRequestSchema;
-    output: typeof GlobalListImagesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.ListNetworks
-   */
-  listNetworks: {
-    methodKind: "unary";
-    input: typeof GlobalListNetworksRequestSchema;
-    output: typeof GlobalListNetworksResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.ListVolumes
-   */
-  listVolumes: {
-    methodKind: "unary";
-    input: typeof GlobalListVolumesRequestSchema;
-    output: typeof GlobalListVolumesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.InspectContainer
-   */
-  inspectContainer: {
-    methodKind: "unary";
-    input: typeof GlobalInspectContainerRequestSchema;
-    output: typeof GlobalInspectContainerResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.InspectImage
-   */
-  inspectImage: {
-    methodKind: "unary";
-    input: typeof GlobalInspectImageRequestSchema;
-    output: typeof GlobalInspectImageResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.InspectNetwork
-   */
-  inspectNetwork: {
-    methodKind: "unary";
-    input: typeof GlobalInspectNetworkRequestSchema;
-    output: typeof GlobalInspectNetworkResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.InspectVolume
-   */
-  inspectVolume: {
-    methodKind: "unary";
-    input: typeof GlobalInspectVolumeRequestSchema;
-    output: typeof GlobalInspectVolumeResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.ContainerAction
-   */
-  containerAction: {
-    methodKind: "unary";
-    input: typeof GlobalContainerActionRequestSchema;
-    output: typeof GlobalContainerActionResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.RemoveContainer
-   */
-  removeContainer: {
-    methodKind: "unary";
-    input: typeof GlobalRemoveContainerRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * Twin of RemoveContainer kept for method-name compatibility with the former GlobalOperationsService.
-   *
-   * @generated from rpc openoxide.api.v1.GlobalService.DeleteContainer
-   */
-  deleteContainer: {
-    methodKind: "unary";
-    input: typeof GlobalDeleteContainerRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.DiskUsage
-   */
-  diskUsage: {
-    methodKind: "unary";
-    input: typeof GlobalDiskUsageRequestSchema;
-    output: typeof GlobalDiskUsageResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.GlobalService.Prune
-   */
-  prune: {
-    methodKind: "unary";
-    input: typeof GlobalPruneRequestSchema;
-    output: typeof GlobalPruneResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_global, 0);
-
+	/**
+	 * Client-streaming upload: exactly one header chunk first, then byte chunks.
+	 *
+	 * @generated from rpc openoxide.api.v1.GlobalService.UploadFile
+	 */
+	uploadFile: {
+		methodKind: 'client_streaming';
+		input: typeof GlobalUploadFileRequestSchema;
+		output: typeof GlobalUploadFileResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.DownloadFile
+	 */
+	downloadFile: {
+		methodKind: 'unary';
+		input: typeof GlobalDownloadFileRequestSchema;
+		output: typeof GlobalDownloadFileResponseSchema;
+	};
+	/**
+	 * Twin of UploadFile kept for method-name compatibility with the former GlobalOperationsService.
+	 *
+	 * @generated from rpc openoxide.api.v1.GlobalService.UploadContainerFile
+	 */
+	uploadContainerFile: {
+		methodKind: 'client_streaming';
+		input: typeof GlobalUploadContainerFileRequestSchema;
+		output: typeof GlobalUploadContainerFileResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.DownloadContainerFile
+	 */
+	downloadContainerFile: {
+		methodKind: 'unary';
+		input: typeof GlobalDownloadContainerFileRequestSchema;
+		output: typeof GlobalDownloadContainerFileResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.ListContainers
+	 */
+	listContainers: {
+		methodKind: 'unary';
+		input: typeof GlobalListContainersRequestSchema;
+		output: typeof GlobalListContainersResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.ListImages
+	 */
+	listImages: {
+		methodKind: 'unary';
+		input: typeof GlobalListImagesRequestSchema;
+		output: typeof GlobalListImagesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.ListNetworks
+	 */
+	listNetworks: {
+		methodKind: 'unary';
+		input: typeof GlobalListNetworksRequestSchema;
+		output: typeof GlobalListNetworksResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.ListVolumes
+	 */
+	listVolumes: {
+		methodKind: 'unary';
+		input: typeof GlobalListVolumesRequestSchema;
+		output: typeof GlobalListVolumesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.InspectContainer
+	 */
+	inspectContainer: {
+		methodKind: 'unary';
+		input: typeof GlobalInspectContainerRequestSchema;
+		output: typeof GlobalInspectContainerResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.InspectImage
+	 */
+	inspectImage: {
+		methodKind: 'unary';
+		input: typeof GlobalInspectImageRequestSchema;
+		output: typeof GlobalInspectImageResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.InspectNetwork
+	 */
+	inspectNetwork: {
+		methodKind: 'unary';
+		input: typeof GlobalInspectNetworkRequestSchema;
+		output: typeof GlobalInspectNetworkResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.InspectVolume
+	 */
+	inspectVolume: {
+		methodKind: 'unary';
+		input: typeof GlobalInspectVolumeRequestSchema;
+		output: typeof GlobalInspectVolumeResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.ContainerAction
+	 */
+	containerAction: {
+		methodKind: 'unary';
+		input: typeof GlobalContainerActionRequestSchema;
+		output: typeof GlobalContainerActionResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.RemoveContainer
+	 */
+	removeContainer: {
+		methodKind: 'unary';
+		input: typeof GlobalRemoveContainerRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * Twin of RemoveContainer kept for method-name compatibility with the former GlobalOperationsService.
+	 *
+	 * @generated from rpc openoxide.api.v1.GlobalService.DeleteContainer
+	 */
+	deleteContainer: {
+		methodKind: 'unary';
+		input: typeof GlobalDeleteContainerRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.DiskUsage
+	 */
+	diskUsage: {
+		methodKind: 'unary';
+		input: typeof GlobalDiskUsageRequestSchema;
+		output: typeof GlobalDiskUsageResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.GlobalService.Prune
+	 */
+	prune: {
+		methodKind: 'unary';
+		input: typeof GlobalPruneRequestSchema;
+		output: typeof GlobalPruneResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_global, 0);

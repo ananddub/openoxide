@@ -1,7 +1,7 @@
 -- Monitoring lifecycle: policy, event acknowledgement, maintenance windows.
 
 -- name: MonitoringLifecycleEnsurePolicy :exec
-INSERT INTO monitoring_policy (organization_id) VALUES (?) ON CONFLICT(organization_id) DO NOTHING;
+INSERT INTO monitoring_policy (organization_id, retention_days, updated_at) VALUES (?, 7, unixepoch()) ON CONFLICT(organization_id) DO NOTHING;
 
 -- name: MonitoringLifecyclePolicy :one
 SELECT organization_id AS organization_id, desired_agent_version, retention_days AS retention_days, updated_at AS updated_at FROM monitoring_policy WHERE organization_id = ?;

@@ -123,8 +123,7 @@ export function SwarmNodesList({
 
 	return (
 		<div className="flex h-full min-h-0 w-full flex-col gap-3">
-			<Toolbar
-				action={<ViewToggle view={view} onChange={setView} />}>
+			<Toolbar action={<ViewToggle view={view} onChange={setView} />}>
 				<ToolbarSearch
 					placeholder="Search by hostname or node ID…"
 					value={search}
@@ -157,9 +156,7 @@ export function SwarmNodesList({
 						</SelectValue>
 					</SelectTrigger>
 					<SelectContent className="bg-card">
-						<SelectItem value="local">
-							Local Engine (Docker)
-						</SelectItem>
+						<SelectItem value="local">Local Engine (Docker)</SelectItem>
 						{servers.map(srv => (
 							<SelectItem key={srv.id} value={String(srv.id)}>
 								{srv.name} ({srv.ip_address})

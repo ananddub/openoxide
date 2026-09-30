@@ -91,9 +91,8 @@ export function ServerFormFields({
 					onValueChange={val => val && setSshKeyId(val)}>
 					<SelectTrigger id="server-ssh-key">
 						<SelectValue placeholder="Select SSH Key">
-							{sshKeys?.find(
-								k => Number(k.id) === Number(sshKeyId),
-							)?.name || 'Select SSH Key'}
+							{sshKeys?.find(k => Number(k.id) === Number(sshKeyId))
+								?.name || 'Select SSH Key'}
 						</SelectValue>
 					</SelectTrigger>
 					<SelectContent>

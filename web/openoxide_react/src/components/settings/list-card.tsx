@@ -34,9 +34,7 @@ export function Toolbar({
 				{children}
 			</div>
 			{action && (
-				<div className="flex shrink-0 items-center gap-2">
-					{action}
-				</div>
+				<div className="flex shrink-0 items-center gap-2">{action}</div>
 			)}
 		</div>
 	);
@@ -51,11 +49,7 @@ export function ListRegion({
 	className?: string;
 }) {
 	return (
-		<div
-			className={cn(
-				'min-h-0 flex-1 overflow-y-auto',
-				className,
-			)}>
+		<div className={cn('min-h-0 flex-1 overflow-y-auto', className)}>
 			{children}
 		</div>
 	);
@@ -89,9 +83,7 @@ export function SectionHeader({
 				)}
 			</div>
 			{action && (
-				<div className="flex shrink-0 items-center gap-2">
-					{action}
-				</div>
+				<div className="flex shrink-0 items-center gap-2">{action}</div>
 			)}
 		</div>
 	);
@@ -242,7 +234,7 @@ export function ListCard({
 	return (
 		<div
 			className={cn(
-				'w-full max-h-full divide-y overflow-y-auto rounded-xl border bg-card',
+				'max-h-full w-full divide-y overflow-y-auto rounded-xl border bg-card',
 				className,
 			)}>
 			{children}

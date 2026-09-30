@@ -253,7 +253,7 @@ export type DnsValidationResult = {
 	error?: string;
 };
 
-/** Resolve a domain's DNS and compare against the server it should point to (Dokploy-style "Validate DNS"). */
+/** Resolve a domain's DNS and compare against the server it should point to ("Validate DNS"). */
 export function useValidateDomainDns() {
 	return useConnectMutation(
 		(input: {

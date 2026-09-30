@@ -2,1198 +2,1249 @@
 // @generated from file openoxide/api/v1/schedule.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/schedule.proto.
  */
-export const file_openoxide_api_v1_schedule: GenFile = /*@__PURE__*/
-  fileDesc("Ch9vcGVub3hpZGUvYXBpL3YxL3NjaGVkdWxlLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIuAFCghTY2hlZHVsZRIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEhgKC2Rlc2NyaXB0aW9uGAMgASgJSACIAQESFwoPY3Jvbl9leHByZXNzaW9uGAQgASgJEhAKCGFwcF9uYW1lGAUgASgJEhkKDHNlcnZpY2VfbmFtZRgGIAEoCUgBiAEBEjcKCnNoZWxsX3R5cGUYByABKA4yIy5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlU2hlbGxUeXBlEjUKDXNjaGVkdWxlX3R5cGUYCCABKA4yHi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlVHlwZRI5Cg9zY2hlZHVsZV9hY3Rpb24YCSABKA4yIC5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlQWN0aW9uEg8KB2NvbW1hbmQYCiABKAkSEwoGc2NyaXB0GAsgASgJSAKIAQESFQoIdGltZXpvbmUYDCABKAlIA4gBARIPCgdlbmFibGVkGA0gASgIEhcKCnNlcnZpY2VfaWQYDiABKANIBIgBARIbCg5hcHBsaWNhdGlvbl9pZBgPIAEoA0gFiAEBEhcKCmNvbXBvc2VfaWQYECABKANIBogBARIYCgtkYXRhYmFzZV9pZBgRIAEoA0gHiAEBEhYKCXNlcnZlcl9pZBgSIAEoA0gIiAEBEhwKD29yZ2FuaXphdGlvbl9pZBgTIAEoA0gJiAEBEhIKCmNyZWF0ZWRfYXQYFCABKAMSEgoKdXBkYXRlZF9hdBgVIAEoA0IOCgxfZGVzY3JpcHRpb25CDwoNX3NlcnZpY2VfbmFtZUIJCgdfc2NyaXB0QgsKCV90aW1lem9uZUINCgtfc2VydmljZV9pZEIRCg9fYXBwbGljYXRpb25faWRCDQoLX2NvbXBvc2VfaWRCDgoMX2RhdGFiYXNlX2lkQgwKCl9zZXJ2ZXJfaWRCEgoQX29yZ2FuaXphdGlvbl9pZCLKAQoLU2NoZWR1bGVSdW4SLAoIc2NoZWR1bGUYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlEg4KBmFjdGlvbhgCIAEoCRIaCg1kZXBsb3ltZW50X2lkGAMgASgDSACIAQESDwoHbWVzc2FnZRgEIAEoCRITCgZzdGRvdXQYBSABKAlIAYgBARITCgZzdGRlcnIYBiABKAlIAogBAUIQCg5fZGVwbG95bWVudF9pZEIJCgdfc3Rkb3V0QgkKB19zdGRlcnIipQMKEVNjaGVkdWxlRXhlY3V0aW9uEgoKAmlkGAEgASgDEhMKC3NjaGVkdWxlX2lkGAIgASgDEhwKD29yZ2FuaXphdGlvbl9pZBgDIAEoA0gAiAEBEjsKDHRyaWdnZXJfa2luZBgEIAEoDjIlLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVUcmlnZ2VyS2luZBI5CgZzdGF0dXMYBSABKA4yKS5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlRXhlY3V0aW9uU3RhdHVzEg8KB2F0dGVtcHQYBiABKAMSFAoMc2NoZWR1bGVkX2F0GAcgASgDEhIKCnN0YXJ0ZWRfYXQYCCABKAMSGAoLZmluaXNoZWRfYXQYCSABKANIAYgBARIUCgdtZXNzYWdlGAogASgJSAKIAQESEwoGc3Rkb3V0GAsgASgJSAOIAQESEwoGc3RkZXJyGAwgASgJSASIAQFCEgoQX29yZ2FuaXphdGlvbl9pZEIOCgxfZmluaXNoZWRfYXRCCgoIX21lc3NhZ2VCCQoHX3N0ZG91dEIJCgdfc3RkZXJyIoQDChVTY2hlZHVsZVJ1bnRpbWVQb2xpY3kSEwoLc2NoZWR1bGVfaWQYASABKAMSEwoLcmV0cnlfY291bnQYAiABKAMSGwoTcmV0cnlfZGVsYXlfc2Vjb25kcxgDIAEoAxJEChFtaXNzZWRfcnVuX3BvbGljeRgEIAEoDjIpLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVNaXNzZWRSdW5Qb2xpY3kSRwoSY29uY3VycmVuY3lfcG9saWN5GAUgASgOMisub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUNvbmN1cnJlbmN5UG9saWN5EhUKDWxlYXNlX3NlY29uZHMYBiABKAMSGQoRbm90aWZ5X29uX3N1Y2Nlc3MYByABKAgSGQoRbm90aWZ5X29uX2ZhaWx1cmUYCCABKAgSHgoRbGFzdF9zY2hlZHVsZWRfYXQYCSABKANIAIgBARISCgp1cGRhdGVkX2F0GAogASgDQhQKEl9sYXN0X3NjaGVkdWxlZF9hdCIeCgtTY2hlZHVsZUxvZxIPCgdjb250ZW50GAEgASgJIh4KHFNjaGVkdWxlTGlzdFNjaGVkdWxlc1JlcXVlc3QiTgodU2NoZWR1bGVMaXN0U2NoZWR1bGVzUmVzcG9uc2USLQoJc2NoZWR1bGVzGAEgAygLMhoub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZSIxChpTY2hlZHVsZUdldFNjaGVkdWxlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJLChtTY2hlZHVsZUdldFNjaGVkdWxlUmVzcG9uc2USLAoIc2NoZWR1bGUYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlIuUGCh1TY2hlZHVsZUNyZWF0ZVNjaGVkdWxlUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEiIKC2Rlc2NyaXB0aW9uGAIgASgJQgi6SAVyAxjoB0gAiAEBEiAKD2Nyb25fZXhwcmVzc2lvbhgDIAEoCUIHukgEcgIQARIfCghhcHBfbmFtZRgEIAEoCUIIukgFcgMY/wFIAYgBARIjCgxzZXJ2aWNlX25hbWUYBSABKAlCCLpIBXIDGP8BSAKIAQESSAoKc2hlbGxfdHlwZRgGIAEoDjIjLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVTaGVsbFR5cGVCCrpIB4IBBBABIABIA4gBARJGCg1zY2hlZHVsZV90eXBlGAcgASgOMh4ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZVR5cGVCCrpIB4IBBBABIABIBIgBARJKCg9zY2hlZHVsZV9hY3Rpb24YCCABKA4yIC5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlQWN0aW9uQgq6SAeCAQQQASAASAWIAQESGAoHY29tbWFuZBgJIAEoCUIHukgEcgIQARIeCgZzY3JpcHQYCiABKAlCCbpIBnIEGICAQEgGiAEBEhUKCHRpbWV6b25lGAsgASgJSAeIAQESFAoHZW5hYmxlZBgMIAEoCEgIiAEBEiQKDmFwcGxpY2F0aW9uX2lkGA0gASgDQge6SAQiAiAASAmIAQESIAoKY29tcG9zZV9pZBgOIAEoA0IHukgEIgIgAEgKiAEBEh8KCXNlcnZlcl9pZBgPIAEoA0IHukgEIgIgAEgLiAEBEiUKD29yZ2FuaXphdGlvbl9pZBgQIAEoA0IHukgEIgIgAEgMiAEBQg4KDF9kZXNjcmlwdGlvbkILCglfYXBwX25hbWVCDwoNX3NlcnZpY2VfbmFtZUINCgtfc2hlbGxfdHlwZUIQCg5fc2NoZWR1bGVfdHlwZUISChBfc2NoZWR1bGVfYWN0aW9uQgkKB19zY3JpcHRCCwoJX3RpbWV6b25lQgoKCF9lbmFibGVkQhEKD19hcHBsaWNhdGlvbl9pZEINCgtfY29tcG9zZV9pZEIMCgpfc2VydmVyX2lkQhIKEF9vcmdhbml6YXRpb25faWQiTgoeU2NoZWR1bGVDcmVhdGVTY2hlZHVsZVJlc3BvbnNlEiwKCHNjaGVkdWxlGAEgASgLMhoub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZSKeBwodU2NoZWR1bGVVcGRhdGVTY2hlZHVsZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASGwoEbmFtZRgCIAEoCUIIukgFcgMY/wFIAIgBARIiCgtkZXNjcmlwdGlvbhgDIAEoCUIIukgFcgMY6AdIAYgBARIcCg9jcm9uX2V4cHJlc3Npb24YBCABKAlIAogBARIfCghhcHBfbmFtZRgFIAEoCUIIukgFcgMY/wFIA4gBARIjCgxzZXJ2aWNlX25hbWUYBiABKAlCCLpIBXIDGP8BSASIAQESSAoKc2hlbGxfdHlwZRgHIAEoDjIjLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVTaGVsbFR5cGVCCrpIB4IBBBABIABIBYgBARJGCg1zY2hlZHVsZV90eXBlGAggASgOMh4ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZVR5cGVCCrpIB4IBBBABIABIBogBARJKCg9zY2hlZHVsZV9hY3Rpb24YCSABKA4yIC5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlQWN0aW9uQgq6SAeCAQQQASAASAeIAQESFAoHY29tbWFuZBgKIAEoCUgIiAEBEh4KBnNjcmlwdBgLIAEoCUIJukgGcgQYgIBASAmIAQESFQoIdGltZXpvbmUYDCABKAlICogBARIUCgdlbmFibGVkGA0gASgISAuIAQESJAoOYXBwbGljYXRpb25faWQYDiABKANCB7pIBCICIABIDIgBARIgCgpjb21wb3NlX2lkGA8gASgDQge6SAQiAiAASA2IAQESHwoJc2VydmVyX2lkGBAgASgDQge6SAQiAiAASA6IAQESJQoPb3JnYW5pemF0aW9uX2lkGBEgASgDQge6SAQiAiAASA+IAQFCBwoFX25hbWVCDgoMX2Rlc2NyaXB0aW9uQhIKEF9jcm9uX2V4cHJlc3Npb25CCwoJX2FwcF9uYW1lQg8KDV9zZXJ2aWNlX25hbWVCDQoLX3NoZWxsX3R5cGVCEAoOX3NjaGVkdWxlX3R5cGVCEgoQX3NjaGVkdWxlX2FjdGlvbkIKCghfY29tbWFuZEIJCgdfc2NyaXB0QgsKCV90aW1lem9uZUIKCghfZW5hYmxlZEIRCg9fYXBwbGljYXRpb25faWRCDQoLX2NvbXBvc2VfaWRCDAoKX3NlcnZlcl9pZEISChBfb3JnYW5pemF0aW9uX2lkIk4KHlNjaGVkdWxlVXBkYXRlU2NoZWR1bGVSZXNwb25zZRIsCghzY2hlZHVsZRgBIAEoCzIaLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGUiNAodU2NoZWR1bGVEZWxldGVTY2hlZHVsZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiMQoaU2NoZWR1bGVSdW5TY2hlZHVsZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiTAobU2NoZWR1bGVSdW5TY2hlZHVsZVJlc3BvbnNlEi0KBnJlc3VsdBgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVSdW4iMwocU2NoZWR1bGVQYXVzZVNjaGVkdWxlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJNCh1TY2hlZHVsZVBhdXNlU2NoZWR1bGVSZXNwb25zZRIsCghzY2hlZHVsZRgBIAEoCzIaLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGUiNAodU2NoZWR1bGVSZXN1bWVTY2hlZHVsZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiTgoeU2NoZWR1bGVSZXN1bWVTY2hlZHVsZVJlc3BvbnNlEiwKCHNjaGVkdWxlGAEgASgLMhoub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZSJKCidTY2hlZHVsZUxpc3RBcHBsaWNhdGlvblNjaGVkdWxlc1JlcXVlc3QSHwoOYXBwbGljYXRpb25faWQYASABKANCB7pIBCICIAAiWQooU2NoZWR1bGVMaXN0QXBwbGljYXRpb25TY2hlZHVsZXNSZXNwb25zZRItCglzY2hlZHVsZXMYASADKAsyGi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlIkIKI1NjaGVkdWxlTGlzdENvbXBvc2VTY2hlZHVsZXNSZXF1ZXN0EhsKCmNvbXBvc2VfaWQYASABKANCB7pIBCICIAAiVQokU2NoZWR1bGVMaXN0Q29tcG9zZVNjaGVkdWxlc1Jlc3BvbnNlEi0KCXNjaGVkdWxlcxgBIAMoCzIaLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGUiRAokU2NoZWR1bGVMaXN0RGF0YWJhc2VTY2hlZHVsZXNSZXF1ZXN0EhwKC2RhdGFiYXNlX2lkGAEgASgDQge6SAQiAiAAIlYKJVNjaGVkdWxlTGlzdERhdGFiYXNlU2NoZWR1bGVzUmVzcG9uc2USLQoJc2NoZWR1bGVzGAEgAygLMhoub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZSJACiJTY2hlZHVsZUxpc3RTZXJ2ZXJTY2hlZHVsZXNSZXF1ZXN0EhoKCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgACJUCiNTY2hlZHVsZUxpc3RTZXJ2ZXJTY2hlZHVsZXNSZXNwb25zZRItCglzY2hlZHVsZXMYASADKAsyGi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlIkwKKFNjaGVkdWxlTGlzdE9yZ2FuaXphdGlvblNjaGVkdWxlc1JlcXVlc3QSIAoPb3JnYW5pemF0aW9uX2lkGAEgASgDQge6SAQiAiAAIloKKVNjaGVkdWxlTGlzdE9yZ2FuaXphdGlvblNjaGVkdWxlc1Jlc3BvbnNlEi0KCXNjaGVkdWxlcxgBIAMoCzIaLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGUiNQoeU2NoZWR1bGVUcmlnZ2VyU2NoZWR1bGVSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIlAKH1NjaGVkdWxlVHJpZ2dlclNjaGVkdWxlUmVzcG9uc2USLQoGcmVzdWx0GAEgASgLMh0ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZVJ1biI2Ch9TY2hlZHVsZUdldFJ1bnRpbWVQb2xpY3lSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIlsKIFNjaGVkdWxlR2V0UnVudGltZVBvbGljeVJlc3BvbnNlEjcKBnBvbGljeRgBIAEoCzInLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVSdW50aW1lUG9saWN5IoQDCiJTY2hlZHVsZVVwZGF0ZVJ1bnRpbWVQb2xpY3lSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEh4KC3JldHJ5X2NvdW50GAIgASgDQgm6SAYiBBgKKAASKAoTcmV0cnlfZGVsYXlfc2Vjb25kcxgDIAEoA0ILukgIIgYYgKMFKAESUAoRbWlzc2VkX3J1bl9wb2xpY3kYBCABKA4yKS5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTWlzc2VkUnVuUG9saWN5Qgq6SAeCAQQQASAAElMKEmNvbmN1cnJlbmN5X3BvbGljeRgFIAEoDjIrLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVDb25jdXJyZW5jeVBvbGljeUIKukgHggEEEAEgABIiCg1sZWFzZV9zZWNvbmRzGAYgASgDQgu6SAgiBhiAowUoHhIZChFub3RpZnlfb25fc3VjY2VzcxgHIAEoCBIZChFub3RpZnlfb25fZmFpbHVyZRgIIAEoCCJeCiNTY2hlZHVsZVVwZGF0ZVJ1bnRpbWVQb2xpY3lSZXNwb25zZRI3CgZwb2xpY3kYASABKAsyJy5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlUnVudGltZVBvbGljeSI9Ch1TY2hlZHVsZUxpc3RFeGVjdXRpb25zUmVxdWVzdBIcCgtzY2hlZHVsZV9pZBgBIAEoA0IHukgEIgIgACJZCh5TY2hlZHVsZUxpc3RFeGVjdXRpb25zUmVzcG9uc2USNwoKZXhlY3V0aW9ucxgBIAMoCzIjLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVFeGVjdXRpb24iLQoWU2NoZWR1bGVHZXRMb2dzUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJFChdTY2hlZHVsZUdldExvZ3NSZXNwb25zZRIqCgNsb2cYASABKAsyHS5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTG9nIl4KH1NjaGVkdWxlR2V0RXhlY3V0aW9uTG9nc1JlcXVlc3QSHAoLc2NoZWR1bGVfaWQYASABKANCB7pIBCICIAASHQoMZXhlY3V0aW9uX2lkGAIgASgDQge6SAQiAiAAIk4KIFNjaGVkdWxlR2V0RXhlY3V0aW9uTG9nc1Jlc3BvbnNlEioKA2xvZxgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVMb2cqcgoRU2NoZWR1bGVTaGVsbFR5cGUSIwofU0NIRURVTEVfU0hFTExfVFlQRV9VTlNQRUNJRklFRBAAEhwKGFNDSEVEVUxFX1NIRUxMX1RZUEVfQkFTSBABEhoKFlNDSEVEVUxFX1NIRUxMX1RZUEVfU0gQAirAAQoMU2NoZWR1bGVUeXBlEh0KGVNDSEVEVUxFX1RZUEVfVU5TUEVDSUZJRUQQABIdChlTQ0hFRFVMRV9UWVBFX0FQUExJQ0FUSU9OEAESGQoVU0NIRURVTEVfVFlQRV9DT01QT1NFEAISGgoWU0NIRURVTEVfVFlQRV9EQVRBQkFTRRADEhgKFFNDSEVEVUxFX1RZUEVfU0VSVkVSEAQSIQodU0NIRURVTEVfVFlQRV9ET0tQQU5FTF9TRVJWRVIQBSrzAQoOU2NoZWR1bGVBY3Rpb24SHwobU0NIRURVTEVfQUNUSU9OX1VOU1BFQ0lGSUVEEAASGAoUU0NIRURVTEVfQUNUSU9OX0VYRUMQARIaChZTQ0hFRFVMRV9BQ1RJT05fREVQTE9ZEAISHAoYU0NIRURVTEVfQUNUSU9OX1JFREVQTE9ZEAMSGwoXU0NIRURVTEVfQUNUSU9OX1JFQlVJTEQQBBIaChZTQ0hFRFVMRV9BQ1RJT05fUkVMT0FEEAUSGQoVU0NIRURVTEVfQUNUSU9OX1NUQVJUEAYSGAoUU0NIRURVTEVfQUNUSU9OX1NUT1AQByrBAQoTU2NoZWR1bGVUcmlnZ2VyS2luZBIlCiFTQ0hFRFVMRV9UUklHR0VSX0tJTkRfVU5TUEVDSUZJRUQQABIeChpTQ0hFRFVMRV9UUklHR0VSX0tJTkRfQ1JPThABEiAKHFNDSEVEVUxFX1RSSUdHRVJfS0lORF9NQU5VQUwQAhIgChxTQ0hFRFVMRV9UUklHR0VSX0tJTkRfTUlTU0VEEAMSHwobU0NIRURVTEVfVFJJR0dFUl9LSU5EX1JFVFJZEAQq4QEKF1NjaGVkdWxlRXhlY3V0aW9uU3RhdHVzEikKJVNDSEVEVUxFX0VYRUNVVElPTl9TVEFUVVNfVU5TUEVDSUZJRUQQABIlCiFTQ0hFRFVMRV9FWEVDVVRJT05fU1RBVFVTX1JVTk5JTkcQARInCiNTQ0hFRFVMRV9FWEVDVVRJT05fU1RBVFVTX1NVQ0NFRURFRBACEiQKIFNDSEVEVUxFX0VYRUNVVElPTl9TVEFUVVNfRkFJTEVEEAMSJQohU0NIRURVTEVfRVhFQ1VUSU9OX1NUQVRVU19TS0lQUEVEEAQqkwEKF1NjaGVkdWxlTWlzc2VkUnVuUG9saWN5EioKJlNDSEVEVUxFX01JU1NFRF9SVU5fUE9MSUNZX1VOU1BFQ0lGSUVEEAASIwofU0NIRURVTEVfTUlTU0VEX1JVTl9QT0xJQ1lfU0tJUBABEicKI1NDSEVEVUxFX01JU1NFRF9SVU5fUE9MSUNZX1JVTl9PTkNFEAIqvAEKGVNjaGVkdWxlQ29uY3VycmVuY3lQb2xpY3kSKwonU0NIRURVTEVfQ09OQ1VSUkVOQ1lfUE9MSUNZX1VOU1BFQ0lGSUVEEAASJAogU0NIRURVTEVfQ09OQ1VSUkVOQ1lfUE9MSUNZX1NLSVAQARIlCiFTQ0hFRFVMRV9DT05DVVJSRU5DWV9QT0xJQ1lfUVVFVUUQAhIlCiFTQ0hFRFVMRV9DT05DVVJSRU5DWV9QT0xJQ1lfQUxMT1cQAzKTEgoPU2NoZWR1bGVTZXJ2aWNlEnAKDUxpc3RTY2hlZHVsZXMSLi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdFNjaGVkdWxlc1JlcXVlc3QaLy5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdFNjaGVkdWxlc1Jlc3BvbnNlEmoKC0dldFNjaGVkdWxlEiwub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUdldFNjaGVkdWxlUmVxdWVzdBotLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVHZXRTY2hlZHVsZVJlc3BvbnNlEnMKDkNyZWF0ZVNjaGVkdWxlEi8ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUNyZWF0ZVNjaGVkdWxlUmVxdWVzdBowLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVDcmVhdGVTY2hlZHVsZVJlc3BvbnNlEnMKDlVwZGF0ZVNjaGVkdWxlEi8ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZVVwZGF0ZVNjaGVkdWxlUmVxdWVzdBowLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVVcGRhdGVTY2hlZHVsZVJlc3BvbnNlEloKDkRlbGV0ZVNjaGVkdWxlEi8ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZURlbGV0ZVNjaGVkdWxlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSagoLUnVuU2NoZWR1bGUSLC5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlUnVuU2NoZWR1bGVSZXF1ZXN0Gi0ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZVJ1blNjaGVkdWxlUmVzcG9uc2UScAoNUGF1c2VTY2hlZHVsZRIuLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVQYXVzZVNjaGVkdWxlUmVxdWVzdBovLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVQYXVzZVNjaGVkdWxlUmVzcG9uc2UScwoOUmVzdW1lU2NoZWR1bGUSLy5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlUmVzdW1lU2NoZWR1bGVSZXF1ZXN0GjAub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZVJlc3VtZVNjaGVkdWxlUmVzcG9uc2USkQEKGExpc3RBcHBsaWNhdGlvblNjaGVkdWxlcxI5Lm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVMaXN0QXBwbGljYXRpb25TY2hlZHVsZXNSZXF1ZXN0Gjoub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUxpc3RBcHBsaWNhdGlvblNjaGVkdWxlc1Jlc3BvbnNlEoUBChRMaXN0Q29tcG9zZVNjaGVkdWxlcxI1Lm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVMaXN0Q29tcG9zZVNjaGVkdWxlc1JlcXVlc3QaNi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdENvbXBvc2VTY2hlZHVsZXNSZXNwb25zZRKIAQoVTGlzdERhdGFiYXNlU2NoZWR1bGVzEjYub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUxpc3REYXRhYmFzZVNjaGVkdWxlc1JlcXVlc3QaNy5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdERhdGFiYXNlU2NoZWR1bGVzUmVzcG9uc2USggEKE0xpc3RTZXJ2ZXJTY2hlZHVsZXMSNC5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdFNlcnZlclNjaGVkdWxlc1JlcXVlc3QaNS5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdFNlcnZlclNjaGVkdWxlc1Jlc3BvbnNlEpQBChlMaXN0T3JnYW5pemF0aW9uU2NoZWR1bGVzEjoub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUxpc3RPcmdhbml6YXRpb25TY2hlZHVsZXNSZXF1ZXN0Gjsub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUxpc3RPcmdhbml6YXRpb25TY2hlZHVsZXNSZXNwb25zZRJ2Cg9UcmlnZ2VyU2NoZWR1bGUSMC5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlVHJpZ2dlclNjaGVkdWxlUmVxdWVzdBoxLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVUcmlnZ2VyU2NoZWR1bGVSZXNwb25zZRJ5ChBHZXRSdW50aW1lUG9saWN5EjEub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUdldFJ1bnRpbWVQb2xpY3lSZXF1ZXN0GjIub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUdldFJ1bnRpbWVQb2xpY3lSZXNwb25zZRKCAQoTVXBkYXRlUnVudGltZVBvbGljeRI0Lm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVVcGRhdGVSdW50aW1lUG9saWN5UmVxdWVzdBo1Lm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVVcGRhdGVSdW50aW1lUG9saWN5UmVzcG9uc2UScwoOTGlzdEV4ZWN1dGlvbnMSLy5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdEV4ZWN1dGlvbnNSZXF1ZXN0GjAub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUxpc3RFeGVjdXRpb25zUmVzcG9uc2USXgoHR2V0TG9ncxIoLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVHZXRMb2dzUmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVHZXRMb2dzUmVzcG9uc2USeQoQR2V0RXhlY3V0aW9uTG9ncxIxLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVHZXRFeGVjdXRpb25Mb2dzUmVxdWVzdBoyLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVHZXRFeGVjdXRpb25Mb2dzUmVzcG9uc2ViBnByb3RvMw", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_schedule: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'Ch9vcGVub3hpZGUvYXBpL3YxL3NjaGVkdWxlLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIuAFCghTY2hlZHVsZRIKCgJpZBgBIAEoAxIMCgRuYW1lGAIgASgJEhgKC2Rlc2NyaXB0aW9uGAMgASgJSACIAQESFwoPY3Jvbl9leHByZXNzaW9uGAQgASgJEhAKCGFwcF9uYW1lGAUgASgJEhkKDHNlcnZpY2VfbmFtZRgGIAEoCUgBiAEBEjcKCnNoZWxsX3R5cGUYByABKA4yIy5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlU2hlbGxUeXBlEjUKDXNjaGVkdWxlX3R5cGUYCCABKA4yHi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlVHlwZRI5Cg9zY2hlZHVsZV9hY3Rpb24YCSABKA4yIC5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlQWN0aW9uEg8KB2NvbW1hbmQYCiABKAkSEwoGc2NyaXB0GAsgASgJSAKIAQESFQoIdGltZXpvbmUYDCABKAlIA4gBARIPCgdlbmFibGVkGA0gASgIEhcKCnNlcnZpY2VfaWQYDiABKANIBIgBARIbCg5hcHBsaWNhdGlvbl9pZBgPIAEoA0gFiAEBEhcKCmNvbXBvc2VfaWQYECABKANIBogBARIYCgtkYXRhYmFzZV9pZBgRIAEoA0gHiAEBEhYKCXNlcnZlcl9pZBgSIAEoA0gIiAEBEhwKD29yZ2FuaXphdGlvbl9pZBgTIAEoA0gJiAEBEhIKCmNyZWF0ZWRfYXQYFCABKAMSEgoKdXBkYXRlZF9hdBgVIAEoA0IOCgxfZGVzY3JpcHRpb25CDwoNX3NlcnZpY2VfbmFtZUIJCgdfc2NyaXB0QgsKCV90aW1lem9uZUINCgtfc2VydmljZV9pZEIRCg9fYXBwbGljYXRpb25faWRCDQoLX2NvbXBvc2VfaWRCDgoMX2RhdGFiYXNlX2lkQgwKCl9zZXJ2ZXJfaWRCEgoQX29yZ2FuaXphdGlvbl9pZCLKAQoLU2NoZWR1bGVSdW4SLAoIc2NoZWR1bGUYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlEg4KBmFjdGlvbhgCIAEoCRIaCg1kZXBsb3ltZW50X2lkGAMgASgDSACIAQESDwoHbWVzc2FnZRgEIAEoCRITCgZzdGRvdXQYBSABKAlIAYgBARITCgZzdGRlcnIYBiABKAlIAogBAUIQCg5fZGVwbG95bWVudF9pZEIJCgdfc3Rkb3V0QgkKB19zdGRlcnIipQMKEVNjaGVkdWxlRXhlY3V0aW9uEgoKAmlkGAEgASgDEhMKC3NjaGVkdWxlX2lkGAIgASgDEhwKD29yZ2FuaXphdGlvbl9pZBgDIAEoA0gAiAEBEjsKDHRyaWdnZXJfa2luZBgEIAEoDjIlLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVUcmlnZ2VyS2luZBI5CgZzdGF0dXMYBSABKA4yKS5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlRXhlY3V0aW9uU3RhdHVzEg8KB2F0dGVtcHQYBiABKAMSFAoMc2NoZWR1bGVkX2F0GAcgASgDEhIKCnN0YXJ0ZWRfYXQYCCABKAMSGAoLZmluaXNoZWRfYXQYCSABKANIAYgBARIUCgdtZXNzYWdlGAogASgJSAKIAQESEwoGc3Rkb3V0GAsgASgJSAOIAQESEwoGc3RkZXJyGAwgASgJSASIAQFCEgoQX29yZ2FuaXphdGlvbl9pZEIOCgxfZmluaXNoZWRfYXRCCgoIX21lc3NhZ2VCCQoHX3N0ZG91dEIJCgdfc3RkZXJyIoQDChVTY2hlZHVsZVJ1bnRpbWVQb2xpY3kSEwoLc2NoZWR1bGVfaWQYASABKAMSEwoLcmV0cnlfY291bnQYAiABKAMSGwoTcmV0cnlfZGVsYXlfc2Vjb25kcxgDIAEoAxJEChFtaXNzZWRfcnVuX3BvbGljeRgEIAEoDjIpLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVNaXNzZWRSdW5Qb2xpY3kSRwoSY29uY3VycmVuY3lfcG9saWN5GAUgASgOMisub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUNvbmN1cnJlbmN5UG9saWN5EhUKDWxlYXNlX3NlY29uZHMYBiABKAMSGQoRbm90aWZ5X29uX3N1Y2Nlc3MYByABKAgSGQoRbm90aWZ5X29uX2ZhaWx1cmUYCCABKAgSHgoRbGFzdF9zY2hlZHVsZWRfYXQYCSABKANIAIgBARISCgp1cGRhdGVkX2F0GAogASgDQhQKEl9sYXN0X3NjaGVkdWxlZF9hdCIeCgtTY2hlZHVsZUxvZxIPCgdjb250ZW50GAEgASgJIh4KHFNjaGVkdWxlTGlzdFNjaGVkdWxlc1JlcXVlc3QiTgodU2NoZWR1bGVMaXN0U2NoZWR1bGVzUmVzcG9uc2USLQoJc2NoZWR1bGVzGAEgAygLMhoub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZSIxChpTY2hlZHVsZUdldFNjaGVkdWxlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJLChtTY2hlZHVsZUdldFNjaGVkdWxlUmVzcG9uc2USLAoIc2NoZWR1bGUYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlIuUGCh1TY2hlZHVsZUNyZWF0ZVNjaGVkdWxlUmVxdWVzdBIYCgRuYW1lGAEgASgJQgq6SAdyBRABGP8BEiIKC2Rlc2NyaXB0aW9uGAIgASgJQgi6SAVyAxjoB0gAiAEBEiAKD2Nyb25fZXhwcmVzc2lvbhgDIAEoCUIHukgEcgIQARIfCghhcHBfbmFtZRgEIAEoCUIIukgFcgMY/wFIAYgBARIjCgxzZXJ2aWNlX25hbWUYBSABKAlCCLpIBXIDGP8BSAKIAQESSAoKc2hlbGxfdHlwZRgGIAEoDjIjLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVTaGVsbFR5cGVCCrpIB4IBBBABIABIA4gBARJGCg1zY2hlZHVsZV90eXBlGAcgASgOMh4ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZVR5cGVCCrpIB4IBBBABIABIBIgBARJKCg9zY2hlZHVsZV9hY3Rpb24YCCABKA4yIC5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlQWN0aW9uQgq6SAeCAQQQASAASAWIAQESGAoHY29tbWFuZBgJIAEoCUIHukgEcgIQARIeCgZzY3JpcHQYCiABKAlCCbpIBnIEGICAQEgGiAEBEhUKCHRpbWV6b25lGAsgASgJSAeIAQESFAoHZW5hYmxlZBgMIAEoCEgIiAEBEiQKDmFwcGxpY2F0aW9uX2lkGA0gASgDQge6SAQiAiAASAmIAQESIAoKY29tcG9zZV9pZBgOIAEoA0IHukgEIgIgAEgKiAEBEh8KCXNlcnZlcl9pZBgPIAEoA0IHukgEIgIgAEgLiAEBEiUKD29yZ2FuaXphdGlvbl9pZBgQIAEoA0IHukgEIgIgAEgMiAEBQg4KDF9kZXNjcmlwdGlvbkILCglfYXBwX25hbWVCDwoNX3NlcnZpY2VfbmFtZUINCgtfc2hlbGxfdHlwZUIQCg5fc2NoZWR1bGVfdHlwZUISChBfc2NoZWR1bGVfYWN0aW9uQgkKB19zY3JpcHRCCwoJX3RpbWV6b25lQgoKCF9lbmFibGVkQhEKD19hcHBsaWNhdGlvbl9pZEINCgtfY29tcG9zZV9pZEIMCgpfc2VydmVyX2lkQhIKEF9vcmdhbml6YXRpb25faWQiTgoeU2NoZWR1bGVDcmVhdGVTY2hlZHVsZVJlc3BvbnNlEiwKCHNjaGVkdWxlGAEgASgLMhoub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZSKeBwodU2NoZWR1bGVVcGRhdGVTY2hlZHVsZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASGwoEbmFtZRgCIAEoCUIIukgFcgMY/wFIAIgBARIiCgtkZXNjcmlwdGlvbhgDIAEoCUIIukgFcgMY6AdIAYgBARIcCg9jcm9uX2V4cHJlc3Npb24YBCABKAlIAogBARIfCghhcHBfbmFtZRgFIAEoCUIIukgFcgMY/wFIA4gBARIjCgxzZXJ2aWNlX25hbWUYBiABKAlCCLpIBXIDGP8BSASIAQESSAoKc2hlbGxfdHlwZRgHIAEoDjIjLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVTaGVsbFR5cGVCCrpIB4IBBBABIABIBYgBARJGCg1zY2hlZHVsZV90eXBlGAggASgOMh4ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZVR5cGVCCrpIB4IBBBABIABIBogBARJKCg9zY2hlZHVsZV9hY3Rpb24YCSABKA4yIC5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlQWN0aW9uQgq6SAeCAQQQASAASAeIAQESFAoHY29tbWFuZBgKIAEoCUgIiAEBEh4KBnNjcmlwdBgLIAEoCUIJukgGcgQYgIBASAmIAQESFQoIdGltZXpvbmUYDCABKAlICogBARIUCgdlbmFibGVkGA0gASgISAuIAQESJAoOYXBwbGljYXRpb25faWQYDiABKANCB7pIBCICIABIDIgBARIgCgpjb21wb3NlX2lkGA8gASgDQge6SAQiAiAASA2IAQESHwoJc2VydmVyX2lkGBAgASgDQge6SAQiAiAASA6IAQESJQoPb3JnYW5pemF0aW9uX2lkGBEgASgDQge6SAQiAiAASA+IAQFCBwoFX25hbWVCDgoMX2Rlc2NyaXB0aW9uQhIKEF9jcm9uX2V4cHJlc3Npb25CCwoJX2FwcF9uYW1lQg8KDV9zZXJ2aWNlX25hbWVCDQoLX3NoZWxsX3R5cGVCEAoOX3NjaGVkdWxlX3R5cGVCEgoQX3NjaGVkdWxlX2FjdGlvbkIKCghfY29tbWFuZEIJCgdfc2NyaXB0QgsKCV90aW1lem9uZUIKCghfZW5hYmxlZEIRCg9fYXBwbGljYXRpb25faWRCDQoLX2NvbXBvc2VfaWRCDAoKX3NlcnZlcl9pZEISChBfb3JnYW5pemF0aW9uX2lkIk4KHlNjaGVkdWxlVXBkYXRlU2NoZWR1bGVSZXNwb25zZRIsCghzY2hlZHVsZRgBIAEoCzIaLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGUiNAodU2NoZWR1bGVEZWxldGVTY2hlZHVsZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiMQoaU2NoZWR1bGVSdW5TY2hlZHVsZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiTAobU2NoZWR1bGVSdW5TY2hlZHVsZVJlc3BvbnNlEi0KBnJlc3VsdBgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVSdW4iMwocU2NoZWR1bGVQYXVzZVNjaGVkdWxlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJNCh1TY2hlZHVsZVBhdXNlU2NoZWR1bGVSZXNwb25zZRIsCghzY2hlZHVsZRgBIAEoCzIaLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGUiNAodU2NoZWR1bGVSZXN1bWVTY2hlZHVsZVJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiTgoeU2NoZWR1bGVSZXN1bWVTY2hlZHVsZVJlc3BvbnNlEiwKCHNjaGVkdWxlGAEgASgLMhoub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZSJKCidTY2hlZHVsZUxpc3RBcHBsaWNhdGlvblNjaGVkdWxlc1JlcXVlc3QSHwoOYXBwbGljYXRpb25faWQYASABKANCB7pIBCICIAAiWQooU2NoZWR1bGVMaXN0QXBwbGljYXRpb25TY2hlZHVsZXNSZXNwb25zZRItCglzY2hlZHVsZXMYASADKAsyGi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlIkIKI1NjaGVkdWxlTGlzdENvbXBvc2VTY2hlZHVsZXNSZXF1ZXN0EhsKCmNvbXBvc2VfaWQYASABKANCB7pIBCICIAAiVQokU2NoZWR1bGVMaXN0Q29tcG9zZVNjaGVkdWxlc1Jlc3BvbnNlEi0KCXNjaGVkdWxlcxgBIAMoCzIaLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGUiRAokU2NoZWR1bGVMaXN0RGF0YWJhc2VTY2hlZHVsZXNSZXF1ZXN0EhwKC2RhdGFiYXNlX2lkGAEgASgDQge6SAQiAiAAIlYKJVNjaGVkdWxlTGlzdERhdGFiYXNlU2NoZWR1bGVzUmVzcG9uc2USLQoJc2NoZWR1bGVzGAEgAygLMhoub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZSJACiJTY2hlZHVsZUxpc3RTZXJ2ZXJTY2hlZHVsZXNSZXF1ZXN0EhoKCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgACJUCiNTY2hlZHVsZUxpc3RTZXJ2ZXJTY2hlZHVsZXNSZXNwb25zZRItCglzY2hlZHVsZXMYASADKAsyGi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlIkwKKFNjaGVkdWxlTGlzdE9yZ2FuaXphdGlvblNjaGVkdWxlc1JlcXVlc3QSIAoPb3JnYW5pemF0aW9uX2lkGAEgASgDQge6SAQiAiAAIloKKVNjaGVkdWxlTGlzdE9yZ2FuaXphdGlvblNjaGVkdWxlc1Jlc3BvbnNlEi0KCXNjaGVkdWxlcxgBIAMoCzIaLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGUiNQoeU2NoZWR1bGVUcmlnZ2VyU2NoZWR1bGVSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIlAKH1NjaGVkdWxlVHJpZ2dlclNjaGVkdWxlUmVzcG9uc2USLQoGcmVzdWx0GAEgASgLMh0ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZVJ1biI2Ch9TY2hlZHVsZUdldFJ1bnRpbWVQb2xpY3lSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIlsKIFNjaGVkdWxlR2V0UnVudGltZVBvbGljeVJlc3BvbnNlEjcKBnBvbGljeRgBIAEoCzInLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVSdW50aW1lUG9saWN5IoQDCiJTY2hlZHVsZVVwZGF0ZVJ1bnRpbWVQb2xpY3lSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEh4KC3JldHJ5X2NvdW50GAIgASgDQgm6SAYiBBgKKAASKAoTcmV0cnlfZGVsYXlfc2Vjb25kcxgDIAEoA0ILukgIIgYYgKMFKAESUAoRbWlzc2VkX3J1bl9wb2xpY3kYBCABKA4yKS5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTWlzc2VkUnVuUG9saWN5Qgq6SAeCAQQQASAAElMKEmNvbmN1cnJlbmN5X3BvbGljeRgFIAEoDjIrLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVDb25jdXJyZW5jeVBvbGljeUIKukgHggEEEAEgABIiCg1sZWFzZV9zZWNvbmRzGAYgASgDQgu6SAgiBhiAowUoHhIZChFub3RpZnlfb25fc3VjY2VzcxgHIAEoCBIZChFub3RpZnlfb25fZmFpbHVyZRgIIAEoCCJeCiNTY2hlZHVsZVVwZGF0ZVJ1bnRpbWVQb2xpY3lSZXNwb25zZRI3CgZwb2xpY3kYASABKAsyJy5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlUnVudGltZVBvbGljeSI9Ch1TY2hlZHVsZUxpc3RFeGVjdXRpb25zUmVxdWVzdBIcCgtzY2hlZHVsZV9pZBgBIAEoA0IHukgEIgIgACJZCh5TY2hlZHVsZUxpc3RFeGVjdXRpb25zUmVzcG9uc2USNwoKZXhlY3V0aW9ucxgBIAMoCzIjLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVFeGVjdXRpb24iLQoWU2NoZWR1bGVHZXRMb2dzUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACJFChdTY2hlZHVsZUdldExvZ3NSZXNwb25zZRIqCgNsb2cYASABKAsyHS5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTG9nIl4KH1NjaGVkdWxlR2V0RXhlY3V0aW9uTG9nc1JlcXVlc3QSHAoLc2NoZWR1bGVfaWQYASABKANCB7pIBCICIAASHQoMZXhlY3V0aW9uX2lkGAIgASgDQge6SAQiAiAAIk4KIFNjaGVkdWxlR2V0RXhlY3V0aW9uTG9nc1Jlc3BvbnNlEioKA2xvZxgBIAEoCzIdLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVMb2cqcgoRU2NoZWR1bGVTaGVsbFR5cGUSIwofU0NIRURVTEVfU0hFTExfVFlQRV9VTlNQRUNJRklFRBAAEhwKGFNDSEVEVUxFX1NIRUxMX1RZUEVfQkFTSBABEhoKFlNDSEVEVUxFX1NIRUxMX1RZUEVfU0gQAirAAQoMU2NoZWR1bGVUeXBlEh0KGVNDSEVEVUxFX1RZUEVfVU5TUEVDSUZJRUQQABIdChlTQ0hFRFVMRV9UWVBFX0FQUExJQ0FUSU9OEAESGQoVU0NIRURVTEVfVFlQRV9DT01QT1NFEAISGgoWU0NIRURVTEVfVFlQRV9EQVRBQkFTRRADEhgKFFNDSEVEVUxFX1RZUEVfU0VSVkVSEAQSIQodU0NIRURVTEVfVFlQRV9ET0tQQU5FTF9TRVJWRVIQBSrzAQoOU2NoZWR1bGVBY3Rpb24SHwobU0NIRURVTEVfQUNUSU9OX1VOU1BFQ0lGSUVEEAASGAoUU0NIRURVTEVfQUNUSU9OX0VYRUMQARIaChZTQ0hFRFVMRV9BQ1RJT05fREVQTE9ZEAISHAoYU0NIRURVTEVfQUNUSU9OX1JFREVQTE9ZEAMSGwoXU0NIRURVTEVfQUNUSU9OX1JFQlVJTEQQBBIaChZTQ0hFRFVMRV9BQ1RJT05fUkVMT0FEEAUSGQoVU0NIRURVTEVfQUNUSU9OX1NUQVJUEAYSGAoUU0NIRURVTEVfQUNUSU9OX1NUT1AQByrBAQoTU2NoZWR1bGVUcmlnZ2VyS2luZBIlCiFTQ0hFRFVMRV9UUklHR0VSX0tJTkRfVU5TUEVDSUZJRUQQABIeChpTQ0hFRFVMRV9UUklHR0VSX0tJTkRfQ1JPThABEiAKHFNDSEVEVUxFX1RSSUdHRVJfS0lORF9NQU5VQUwQAhIgChxTQ0hFRFVMRV9UUklHR0VSX0tJTkRfTUlTU0VEEAMSHwobU0NIRURVTEVfVFJJR0dFUl9LSU5EX1JFVFJZEAQq4QEKF1NjaGVkdWxlRXhlY3V0aW9uU3RhdHVzEikKJVNDSEVEVUxFX0VYRUNVVElPTl9TVEFUVVNfVU5TUEVDSUZJRUQQABIlCiFTQ0hFRFVMRV9FWEVDVVRJT05fU1RBVFVTX1JVTk5JTkcQARInCiNTQ0hFRFVMRV9FWEVDVVRJT05fU1RBVFVTX1NVQ0NFRURFRBACEiQKIFNDSEVEVUxFX0VYRUNVVElPTl9TVEFUVVNfRkFJTEVEEAMSJQohU0NIRURVTEVfRVhFQ1VUSU9OX1NUQVRVU19TS0lQUEVEEAQqkwEKF1NjaGVkdWxlTWlzc2VkUnVuUG9saWN5EioKJlNDSEVEVUxFX01JU1NFRF9SVU5fUE9MSUNZX1VOU1BFQ0lGSUVEEAASIwofU0NIRURVTEVfTUlTU0VEX1JVTl9QT0xJQ1lfU0tJUBABEicKI1NDSEVEVUxFX01JU1NFRF9SVU5fUE9MSUNZX1JVTl9PTkNFEAIqvAEKGVNjaGVkdWxlQ29uY3VycmVuY3lQb2xpY3kSKwonU0NIRURVTEVfQ09OQ1VSUkVOQ1lfUE9MSUNZX1VOU1BFQ0lGSUVEEAASJAogU0NIRURVTEVfQ09OQ1VSUkVOQ1lfUE9MSUNZX1NLSVAQARIlCiFTQ0hFRFVMRV9DT05DVVJSRU5DWV9QT0xJQ1lfUVVFVUUQAhIlCiFTQ0hFRFVMRV9DT05DVVJSRU5DWV9QT0xJQ1lfQUxMT1cQAzKTEgoPU2NoZWR1bGVTZXJ2aWNlEnAKDUxpc3RTY2hlZHVsZXMSLi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdFNjaGVkdWxlc1JlcXVlc3QaLy5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdFNjaGVkdWxlc1Jlc3BvbnNlEmoKC0dldFNjaGVkdWxlEiwub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUdldFNjaGVkdWxlUmVxdWVzdBotLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVHZXRTY2hlZHVsZVJlc3BvbnNlEnMKDkNyZWF0ZVNjaGVkdWxlEi8ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUNyZWF0ZVNjaGVkdWxlUmVxdWVzdBowLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVDcmVhdGVTY2hlZHVsZVJlc3BvbnNlEnMKDlVwZGF0ZVNjaGVkdWxlEi8ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZVVwZGF0ZVNjaGVkdWxlUmVxdWVzdBowLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVVcGRhdGVTY2hlZHVsZVJlc3BvbnNlEloKDkRlbGV0ZVNjaGVkdWxlEi8ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZURlbGV0ZVNjaGVkdWxlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSagoLUnVuU2NoZWR1bGUSLC5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlUnVuU2NoZWR1bGVSZXF1ZXN0Gi0ub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZVJ1blNjaGVkdWxlUmVzcG9uc2UScAoNUGF1c2VTY2hlZHVsZRIuLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVQYXVzZVNjaGVkdWxlUmVxdWVzdBovLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVQYXVzZVNjaGVkdWxlUmVzcG9uc2UScwoOUmVzdW1lU2NoZWR1bGUSLy5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlUmVzdW1lU2NoZWR1bGVSZXF1ZXN0GjAub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZVJlc3VtZVNjaGVkdWxlUmVzcG9uc2USkQEKGExpc3RBcHBsaWNhdGlvblNjaGVkdWxlcxI5Lm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVMaXN0QXBwbGljYXRpb25TY2hlZHVsZXNSZXF1ZXN0Gjoub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUxpc3RBcHBsaWNhdGlvblNjaGVkdWxlc1Jlc3BvbnNlEoUBChRMaXN0Q29tcG9zZVNjaGVkdWxlcxI1Lm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVMaXN0Q29tcG9zZVNjaGVkdWxlc1JlcXVlc3QaNi5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdENvbXBvc2VTY2hlZHVsZXNSZXNwb25zZRKIAQoVTGlzdERhdGFiYXNlU2NoZWR1bGVzEjYub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUxpc3REYXRhYmFzZVNjaGVkdWxlc1JlcXVlc3QaNy5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdERhdGFiYXNlU2NoZWR1bGVzUmVzcG9uc2USggEKE0xpc3RTZXJ2ZXJTY2hlZHVsZXMSNC5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdFNlcnZlclNjaGVkdWxlc1JlcXVlc3QaNS5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdFNlcnZlclNjaGVkdWxlc1Jlc3BvbnNlEpQBChlMaXN0T3JnYW5pemF0aW9uU2NoZWR1bGVzEjoub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUxpc3RPcmdhbml6YXRpb25TY2hlZHVsZXNSZXF1ZXN0Gjsub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUxpc3RPcmdhbml6YXRpb25TY2hlZHVsZXNSZXNwb25zZRJ2Cg9UcmlnZ2VyU2NoZWR1bGUSMC5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlVHJpZ2dlclNjaGVkdWxlUmVxdWVzdBoxLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVUcmlnZ2VyU2NoZWR1bGVSZXNwb25zZRJ5ChBHZXRSdW50aW1lUG9saWN5EjEub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUdldFJ1bnRpbWVQb2xpY3lSZXF1ZXN0GjIub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUdldFJ1bnRpbWVQb2xpY3lSZXNwb25zZRKCAQoTVXBkYXRlUnVudGltZVBvbGljeRI0Lm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVVcGRhdGVSdW50aW1lUG9saWN5UmVxdWVzdBo1Lm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVVcGRhdGVSdW50aW1lUG9saWN5UmVzcG9uc2UScwoOTGlzdEV4ZWN1dGlvbnMSLy5vcGVub3hpZGUuYXBpLnYxLlNjaGVkdWxlTGlzdEV4ZWN1dGlvbnNSZXF1ZXN0GjAub3Blbm94aWRlLmFwaS52MS5TY2hlZHVsZUxpc3RFeGVjdXRpb25zUmVzcG9uc2USXgoHR2V0TG9ncxIoLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVHZXRMb2dzUmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVHZXRMb2dzUmVzcG9uc2USeQoQR2V0RXhlY3V0aW9uTG9ncxIxLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVHZXRFeGVjdXRpb25Mb2dzUmVxdWVzdBoyLm9wZW5veGlkZS5hcGkudjEuU2NoZWR1bGVHZXRFeGVjdXRpb25Mb2dzUmVzcG9uc2ViBnByb3RvMw',
+		[file_openoxide_api_v1_common, file_buf_validate_validate],
+	);
 
 /**
  * kind "schedule": a cron-driven automation row.
  *
  * @generated from message openoxide.api.v1.Schedule
  */
-export type Schedule = Message<"openoxide.api.v1.Schedule"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type Schedule = Message<'openoxide.api.v1.Schedule'> & {
+	/**
+	 * @generated from field: int64 id = 1;
+	 */
+	id: bigint;
 
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
+	/**
+	 * @generated from field: string name = 2;
+	 */
+	name: string;
 
-  /**
-   * @generated from field: optional string description = 3;
-   */
-  description?: string | undefined;
+	/**
+	 * @generated from field: optional string description = 3;
+	 */
+	description?: string | undefined;
 
-  /**
-   * @generated from field: string cron_expression = 4;
-   */
-  cronExpression: string;
+	/**
+	 * @generated from field: string cron_expression = 4;
+	 */
+	cronExpression: string;
 
-  /**
-   * Generated slug identifying the schedule's service row.
-   *
-   * @generated from field: string app_name = 5;
-   */
-  appName: string;
+	/**
+	 * Generated slug identifying the schedule's service row.
+	 *
+	 * @generated from field: string app_name = 5;
+	 */
+	appName: string;
 
-  /**
-   * @generated from field: optional string service_name = 6;
-   */
-  serviceName?: string | undefined;
+	/**
+	 * @generated from field: optional string service_name = 6;
+	 */
+	serviceName?: string | undefined;
 
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleShellType shell_type = 7;
-   */
-  shellType: ScheduleShellType;
+	/**
+	 * @generated from field: openoxide.api.v1.ScheduleShellType shell_type = 7;
+	 */
+	shellType: ScheduleShellType;
 
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleType schedule_type = 8;
-   */
-  scheduleType: ScheduleType;
+	/**
+	 * @generated from field: openoxide.api.v1.ScheduleType schedule_type = 8;
+	 */
+	scheduleType: ScheduleType;
 
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleAction schedule_action = 9;
-   */
-  scheduleAction: ScheduleAction;
+	/**
+	 * @generated from field: openoxide.api.v1.ScheduleAction schedule_action = 9;
+	 */
+	scheduleAction: ScheduleAction;
 
-  /**
-   * @generated from field: string command = 10;
-   */
-  command: string;
+	/**
+	 * @generated from field: string command = 10;
+	 */
+	command: string;
 
-  /**
-   * @generated from field: optional string script = 11;
-   */
-  script?: string | undefined;
+	/**
+	 * @generated from field: optional string script = 11;
+	 */
+	script?: string | undefined;
 
-  /**
-   * @generated from field: optional string timezone = 12;
-   */
-  timezone?: string | undefined;
+	/**
+	 * @generated from field: optional string timezone = 12;
+	 */
+	timezone?: string | undefined;
 
-  /**
-   * @generated from field: bool enabled = 13;
-   */
-  enabled: boolean;
+	/**
+	 * @generated from field: bool enabled = 13;
+	 */
+	enabled: boolean;
 
-  /**
-   * @generated from field: optional int64 service_id = 14;
-   */
-  serviceId?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 service_id = 14;
+	 */
+	serviceId?: bigint | undefined;
 
-  /**
-   * Typed linkage mirrors derived from (schedule_type, service_id); exactly one is set.
-   *
-   * @generated from field: optional int64 application_id = 15;
-   */
-  applicationId?: bigint | undefined;
+	/**
+	 * Typed linkage mirrors derived from (schedule_type, service_id); exactly one is set.
+	 *
+	 * @generated from field: optional int64 application_id = 15;
+	 */
+	applicationId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 compose_id = 16;
-   */
-  composeId?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 compose_id = 16;
+	 */
+	composeId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 database_id = 17;
-   */
-  databaseId?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 database_id = 17;
+	 */
+	databaseId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 server_id = 18;
-   */
-  serverId?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 server_id = 18;
+	 */
+	serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 organization_id = 19;
-   */
-  organizationId?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 organization_id = 19;
+	 */
+	organizationId?: bigint | undefined;
 
-  /**
-   * @generated from field: int64 created_at = 20;
-   */
-  createdAt: bigint;
+	/**
+	 * @generated from field: int64 created_at = 20;
+	 */
+	createdAt: bigint;
 
-  /**
-   * @generated from field: int64 updated_at = 21;
-   */
-  updatedAt: bigint;
+	/**
+	 * @generated from field: int64 updated_at = 21;
+	 */
+	updatedAt: bigint;
 };
 
 /**
  * Describes the message openoxide.api.v1.Schedule.
  * Use `create(ScheduleSchema)` to create a new message.
  */
-export const ScheduleSchema: GenMessage<Schedule> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 0);
+export const ScheduleSchema: GenMessage<Schedule> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 0);
 
 /**
  * Outcome of running a schedule right now.
  *
  * @generated from message openoxide.api.v1.ScheduleRun
  */
-export type ScheduleRun = Message<"openoxide.api.v1.ScheduleRun"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Schedule schedule = 1;
-   */
-  schedule?: Schedule | undefined;
+export type ScheduleRun = Message<'openoxide.api.v1.ScheduleRun'> & {
+	/**
+	 * @generated from field: openoxide.api.v1.Schedule schedule = 1;
+	 */
+	schedule?: Schedule | undefined;
 
-  /**
-   * Action actually performed (echo of schedule_action, free-form).
-   *
-   * @generated from field: string action = 2;
-   */
-  action: string;
+	/**
+	 * Action actually performed (echo of schedule_action, free-form).
+	 *
+	 * @generated from field: string action = 2;
+	 */
+	action: string;
 
-  /**
-   * @generated from field: optional int64 deployment_id = 3;
-   */
-  deploymentId?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 deployment_id = 3;
+	 */
+	deploymentId?: bigint | undefined;
 
-  /**
-   * @generated from field: string message = 4;
-   */
-  message: string;
+	/**
+	 * @generated from field: string message = 4;
+	 */
+	message: string;
 
-  /**
-   * @generated from field: optional string stdout = 5;
-   */
-  stdout?: string | undefined;
+	/**
+	 * @generated from field: optional string stdout = 5;
+	 */
+	stdout?: string | undefined;
 
-  /**
-   * @generated from field: optional string stderr = 6;
-   */
-  stderr?: string | undefined;
+	/**
+	 * @generated from field: optional string stderr = 6;
+	 */
+	stderr?: string | undefined;
 };
 
 /**
  * Describes the message openoxide.api.v1.ScheduleRun.
  * Use `create(ScheduleRunSchema)` to create a new message.
  */
-export const ScheduleRunSchema: GenMessage<ScheduleRun> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 1);
+export const ScheduleRunSchema: GenMessage<ScheduleRun> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 1);
 
 /**
  * kind "schedule_execution": one recorded run of a schedule.
  *
  * @generated from message openoxide.api.v1.ScheduleExecution
  */
-export type ScheduleExecution = Message<"openoxide.api.v1.ScheduleExecution"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type ScheduleExecution =
+	Message<'openoxide.api.v1.ScheduleExecution'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: int64 schedule_id = 2;
-   */
-  scheduleId: bigint;
+		/**
+		 * @generated from field: int64 schedule_id = 2;
+		 */
+		scheduleId: bigint;
 
-  /**
-   * @generated from field: optional int64 organization_id = 3;
-   */
-  organizationId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 organization_id = 3;
+		 */
+		organizationId?: bigint | undefined;
 
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleTriggerKind trigger_kind = 4;
-   */
-  triggerKind: ScheduleTriggerKind;
+		/**
+		 * @generated from field: openoxide.api.v1.ScheduleTriggerKind trigger_kind = 4;
+		 */
+		triggerKind: ScheduleTriggerKind;
 
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleExecutionStatus status = 5;
-   */
-  status: ScheduleExecutionStatus;
+		/**
+		 * @generated from field: openoxide.api.v1.ScheduleExecutionStatus status = 5;
+		 */
+		status: ScheduleExecutionStatus;
 
-  /**
-   * @generated from field: int64 attempt = 6;
-   */
-  attempt: bigint;
+		/**
+		 * @generated from field: int64 attempt = 6;
+		 */
+		attempt: bigint;
 
-  /**
-   * @generated from field: int64 scheduled_at = 7;
-   */
-  scheduledAt: bigint;
+		/**
+		 * @generated from field: int64 scheduled_at = 7;
+		 */
+		scheduledAt: bigint;
 
-  /**
-   * @generated from field: int64 started_at = 8;
-   */
-  startedAt: bigint;
+		/**
+		 * @generated from field: int64 started_at = 8;
+		 */
+		startedAt: bigint;
 
-  /**
-   * @generated from field: optional int64 finished_at = 9;
-   */
-  finishedAt?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 finished_at = 9;
+		 */
+		finishedAt?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string message = 10;
-   */
-  message?: string | undefined;
+		/**
+		 * @generated from field: optional string message = 10;
+		 */
+		message?: string | undefined;
 
-  /**
-   * @generated from field: optional string stdout = 11;
-   */
-  stdout?: string | undefined;
+		/**
+		 * @generated from field: optional string stdout = 11;
+		 */
+		stdout?: string | undefined;
 
-  /**
-   * @generated from field: optional string stderr = 12;
-   */
-  stderr?: string | undefined;
-};
+		/**
+		 * @generated from field: optional string stderr = 12;
+		 */
+		stderr?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleExecution.
  * Use `create(ScheduleExecutionSchema)` to create a new message.
  */
-export const ScheduleExecutionSchema: GenMessage<ScheduleExecution> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 2);
+export const ScheduleExecutionSchema: GenMessage<ScheduleExecution> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 2);
 
 /**
  * kind "schedule_runtime_policy": per-schedule runner tuning.
  *
  * @generated from message openoxide.api.v1.ScheduleRuntimePolicy
  */
-export type ScheduleRuntimePolicy = Message<"openoxide.api.v1.ScheduleRuntimePolicy"> & {
-  /**
-   * @generated from field: int64 schedule_id = 1;
-   */
-  scheduleId: bigint;
+export type ScheduleRuntimePolicy =
+	Message<'openoxide.api.v1.ScheduleRuntimePolicy'> & {
+		/**
+		 * @generated from field: int64 schedule_id = 1;
+		 */
+		scheduleId: bigint;
 
-  /**
-   * @generated from field: int64 retry_count = 2;
-   */
-  retryCount: bigint;
+		/**
+		 * @generated from field: int64 retry_count = 2;
+		 */
+		retryCount: bigint;
 
-  /**
-   * @generated from field: int64 retry_delay_seconds = 3;
-   */
-  retryDelaySeconds: bigint;
+		/**
+		 * @generated from field: int64 retry_delay_seconds = 3;
+		 */
+		retryDelaySeconds: bigint;
 
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleMissedRunPolicy missed_run_policy = 4;
-   */
-  missedRunPolicy: ScheduleMissedRunPolicy;
+		/**
+		 * @generated from field: openoxide.api.v1.ScheduleMissedRunPolicy missed_run_policy = 4;
+		 */
+		missedRunPolicy: ScheduleMissedRunPolicy;
 
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleConcurrencyPolicy concurrency_policy = 5;
-   */
-  concurrencyPolicy: ScheduleConcurrencyPolicy;
+		/**
+		 * @generated from field: openoxide.api.v1.ScheduleConcurrencyPolicy concurrency_policy = 5;
+		 */
+		concurrencyPolicy: ScheduleConcurrencyPolicy;
 
-  /**
-   * @generated from field: int64 lease_seconds = 6;
-   */
-  leaseSeconds: bigint;
+		/**
+		 * @generated from field: int64 lease_seconds = 6;
+		 */
+		leaseSeconds: bigint;
 
-  /**
-   * @generated from field: bool notify_on_success = 7;
-   */
-  notifyOnSuccess: boolean;
+		/**
+		 * @generated from field: bool notify_on_success = 7;
+		 */
+		notifyOnSuccess: boolean;
 
-  /**
-   * @generated from field: bool notify_on_failure = 8;
-   */
-  notifyOnFailure: boolean;
+		/**
+		 * @generated from field: bool notify_on_failure = 8;
+		 */
+		notifyOnFailure: boolean;
 
-  /**
-   * @generated from field: optional int64 last_scheduled_at = 9;
-   */
-  lastScheduledAt?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 last_scheduled_at = 9;
+		 */
+		lastScheduledAt?: bigint | undefined;
 
-  /**
-   * @generated from field: int64 updated_at = 10;
-   */
-  updatedAt: bigint;
-};
+		/**
+		 * @generated from field: int64 updated_at = 10;
+		 */
+		updatedAt: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleRuntimePolicy.
  * Use `create(ScheduleRuntimePolicySchema)` to create a new message.
  */
-export const ScheduleRuntimePolicySchema: GenMessage<ScheduleRuntimePolicy> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 3);
+export const ScheduleRuntimePolicySchema: GenMessage<ScheduleRuntimePolicy> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 3);
 
 /**
  * kind "schedule_log" / "schedule_execution_log": raw file-log contents.
  *
  * @generated from message openoxide.api.v1.ScheduleLog
  */
-export type ScheduleLog = Message<"openoxide.api.v1.ScheduleLog"> & {
-  /**
-   * @generated from field: string content = 1;
-   */
-  content: string;
+export type ScheduleLog = Message<'openoxide.api.v1.ScheduleLog'> & {
+	/**
+	 * @generated from field: string content = 1;
+	 */
+	content: string;
 };
 
 /**
  * Describes the message openoxide.api.v1.ScheduleLog.
  * Use `create(ScheduleLogSchema)` to create a new message.
  */
-export const ScheduleLogSchema: GenMessage<ScheduleLog> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 4);
+export const ScheduleLogSchema: GenMessage<ScheduleLog> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 4);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListSchedulesRequest
  */
-export type ScheduleListSchedulesRequest = Message<"openoxide.api.v1.ScheduleListSchedulesRequest"> & {
-};
+export type ScheduleListSchedulesRequest =
+	Message<'openoxide.api.v1.ScheduleListSchedulesRequest'> & {};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListSchedulesRequest.
  * Use `create(ScheduleListSchedulesRequestSchema)` to create a new message.
  */
-export const ScheduleListSchedulesRequestSchema: GenMessage<ScheduleListSchedulesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 5);
+export const ScheduleListSchedulesRequestSchema: GenMessage<ScheduleListSchedulesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 5);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListSchedulesResponse
  */
-export type ScheduleListSchedulesResponse = Message<"openoxide.api.v1.ScheduleListSchedulesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Schedule schedules = 1;
-   */
-  schedules: Schedule[];
-};
+export type ScheduleListSchedulesResponse =
+	Message<'openoxide.api.v1.ScheduleListSchedulesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Schedule schedules = 1;
+		 */
+		schedules: Schedule[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListSchedulesResponse.
  * Use `create(ScheduleListSchedulesResponseSchema)` to create a new message.
  */
-export const ScheduleListSchedulesResponseSchema: GenMessage<ScheduleListSchedulesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 6);
+export const ScheduleListSchedulesResponseSchema: GenMessage<ScheduleListSchedulesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 6);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleGetScheduleRequest
  */
-export type ScheduleGetScheduleRequest = Message<"openoxide.api.v1.ScheduleGetScheduleRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ScheduleGetScheduleRequest =
+	Message<'openoxide.api.v1.ScheduleGetScheduleRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleGetScheduleRequest.
  * Use `create(ScheduleGetScheduleRequestSchema)` to create a new message.
  */
-export const ScheduleGetScheduleRequestSchema: GenMessage<ScheduleGetScheduleRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 7);
+export const ScheduleGetScheduleRequestSchema: GenMessage<ScheduleGetScheduleRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 7);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleGetScheduleResponse
  */
-export type ScheduleGetScheduleResponse = Message<"openoxide.api.v1.ScheduleGetScheduleResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Schedule schedule = 1;
-   */
-  schedule?: Schedule | undefined;
-};
+export type ScheduleGetScheduleResponse =
+	Message<'openoxide.api.v1.ScheduleGetScheduleResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Schedule schedule = 1;
+		 */
+		schedule?: Schedule | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleGetScheduleResponse.
  * Use `create(ScheduleGetScheduleResponseSchema)` to create a new message.
  */
-export const ScheduleGetScheduleResponseSchema: GenMessage<ScheduleGetScheduleResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 8);
+export const ScheduleGetScheduleResponseSchema: GenMessage<ScheduleGetScheduleResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 8);
 
 /**
  * Absent fields fall back to server defaults: shell_type BASH, schedule_type APPLICATION, schedule_action EXEC, enabled true.
  *
  * @generated from message openoxide.api.v1.ScheduleCreateScheduleRequest
  */
-export type ScheduleCreateScheduleRequest = Message<"openoxide.api.v1.ScheduleCreateScheduleRequest"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
+export type ScheduleCreateScheduleRequest =
+	Message<'openoxide.api.v1.ScheduleCreateScheduleRequest'> & {
+		/**
+		 * @generated from field: string name = 1;
+		 */
+		name: string;
 
-  /**
-   * @generated from field: optional string description = 2;
-   */
-  description?: string | undefined;
+		/**
+		 * @generated from field: optional string description = 2;
+		 */
+		description?: string | undefined;
 
-  /**
-   * @generated from field: string cron_expression = 3;
-   */
-  cronExpression: string;
+		/**
+		 * @generated from field: string cron_expression = 3;
+		 */
+		cronExpression: string;
 
-  /**
-   * @generated from field: optional string app_name = 4;
-   */
-  appName?: string | undefined;
+		/**
+		 * @generated from field: optional string app_name = 4;
+		 */
+		appName?: string | undefined;
 
-  /**
-   * @generated from field: optional string service_name = 5;
-   */
-  serviceName?: string | undefined;
+		/**
+		 * @generated from field: optional string service_name = 5;
+		 */
+		serviceName?: string | undefined;
 
-  /**
-   * @generated from field: optional openoxide.api.v1.ScheduleShellType shell_type = 6;
-   */
-  shellType?: ScheduleShellType | undefined;
+		/**
+		 * @generated from field: optional openoxide.api.v1.ScheduleShellType shell_type = 6;
+		 */
+		shellType?: ScheduleShellType | undefined;
 
-  /**
-   * @generated from field: optional openoxide.api.v1.ScheduleType schedule_type = 7;
-   */
-  scheduleType?: ScheduleType | undefined;
+		/**
+		 * @generated from field: optional openoxide.api.v1.ScheduleType schedule_type = 7;
+		 */
+		scheduleType?: ScheduleType | undefined;
 
-  /**
-   * @generated from field: optional openoxide.api.v1.ScheduleAction schedule_action = 8;
-   */
-  scheduleAction?: ScheduleAction | undefined;
+		/**
+		 * @generated from field: optional openoxide.api.v1.ScheduleAction schedule_action = 8;
+		 */
+		scheduleAction?: ScheduleAction | undefined;
 
-  /**
-   * @generated from field: string command = 9;
-   */
-  command: string;
+		/**
+		 * @generated from field: string command = 9;
+		 */
+		command: string;
 
-  /**
-   * @generated from field: optional string script = 10;
-   */
-  script?: string | undefined;
+		/**
+		 * @generated from field: optional string script = 10;
+		 */
+		script?: string | undefined;
 
-  /**
-   * @generated from field: optional string timezone = 11;
-   */
-  timezone?: string | undefined;
+		/**
+		 * @generated from field: optional string timezone = 11;
+		 */
+		timezone?: string | undefined;
 
-  /**
-   * @generated from field: optional bool enabled = 12;
-   */
-  enabled?: boolean | undefined;
+		/**
+		 * @generated from field: optional bool enabled = 12;
+		 */
+		enabled?: boolean | undefined;
 
-  /**
-   * @generated from field: optional int64 application_id = 13;
-   */
-  applicationId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 application_id = 13;
+		 */
+		applicationId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 compose_id = 14;
-   */
-  composeId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 compose_id = 14;
+		 */
+		composeId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 server_id = 15;
-   */
-  serverId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 server_id = 15;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 organization_id = 16;
-   */
-  organizationId?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 organization_id = 16;
+		 */
+		organizationId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleCreateScheduleRequest.
  * Use `create(ScheduleCreateScheduleRequestSchema)` to create a new message.
  */
-export const ScheduleCreateScheduleRequestSchema: GenMessage<ScheduleCreateScheduleRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 9);
+export const ScheduleCreateScheduleRequestSchema: GenMessage<ScheduleCreateScheduleRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 9);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleCreateScheduleResponse
  */
-export type ScheduleCreateScheduleResponse = Message<"openoxide.api.v1.ScheduleCreateScheduleResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Schedule schedule = 1;
-   */
-  schedule?: Schedule | undefined;
-};
+export type ScheduleCreateScheduleResponse =
+	Message<'openoxide.api.v1.ScheduleCreateScheduleResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Schedule schedule = 1;
+		 */
+		schedule?: Schedule | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleCreateScheduleResponse.
  * Use `create(ScheduleCreateScheduleResponseSchema)` to create a new message.
  */
-export const ScheduleCreateScheduleResponseSchema: GenMessage<ScheduleCreateScheduleResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 10);
+export const ScheduleCreateScheduleResponseSchema: GenMessage<ScheduleCreateScheduleResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 10);
 
 /**
  * An absent field keeps its stored value.
  *
  * @generated from message openoxide.api.v1.ScheduleUpdateScheduleRequest
  */
-export type ScheduleUpdateScheduleRequest = Message<"openoxide.api.v1.ScheduleUpdateScheduleRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type ScheduleUpdateScheduleRequest =
+	Message<'openoxide.api.v1.ScheduleUpdateScheduleRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: optional string name = 2;
-   */
-  name?: string | undefined;
+		/**
+		 * @generated from field: optional string name = 2;
+		 */
+		name?: string | undefined;
 
-  /**
-   * @generated from field: optional string description = 3;
-   */
-  description?: string | undefined;
+		/**
+		 * @generated from field: optional string description = 3;
+		 */
+		description?: string | undefined;
 
-  /**
-   * @generated from field: optional string cron_expression = 4;
-   */
-  cronExpression?: string | undefined;
+		/**
+		 * @generated from field: optional string cron_expression = 4;
+		 */
+		cronExpression?: string | undefined;
 
-  /**
-   * @generated from field: optional string app_name = 5;
-   */
-  appName?: string | undefined;
+		/**
+		 * @generated from field: optional string app_name = 5;
+		 */
+		appName?: string | undefined;
 
-  /**
-   * @generated from field: optional string service_name = 6;
-   */
-  serviceName?: string | undefined;
+		/**
+		 * @generated from field: optional string service_name = 6;
+		 */
+		serviceName?: string | undefined;
 
-  /**
-   * @generated from field: optional openoxide.api.v1.ScheduleShellType shell_type = 7;
-   */
-  shellType?: ScheduleShellType | undefined;
+		/**
+		 * @generated from field: optional openoxide.api.v1.ScheduleShellType shell_type = 7;
+		 */
+		shellType?: ScheduleShellType | undefined;
 
-  /**
-   * @generated from field: optional openoxide.api.v1.ScheduleType schedule_type = 8;
-   */
-  scheduleType?: ScheduleType | undefined;
+		/**
+		 * @generated from field: optional openoxide.api.v1.ScheduleType schedule_type = 8;
+		 */
+		scheduleType?: ScheduleType | undefined;
 
-  /**
-   * @generated from field: optional openoxide.api.v1.ScheduleAction schedule_action = 9;
-   */
-  scheduleAction?: ScheduleAction | undefined;
+		/**
+		 * @generated from field: optional openoxide.api.v1.ScheduleAction schedule_action = 9;
+		 */
+		scheduleAction?: ScheduleAction | undefined;
 
-  /**
-   * @generated from field: optional string command = 10;
-   */
-  command?: string | undefined;
+		/**
+		 * @generated from field: optional string command = 10;
+		 */
+		command?: string | undefined;
 
-  /**
-   * @generated from field: optional string script = 11;
-   */
-  script?: string | undefined;
+		/**
+		 * @generated from field: optional string script = 11;
+		 */
+		script?: string | undefined;
 
-  /**
-   * @generated from field: optional string timezone = 12;
-   */
-  timezone?: string | undefined;
+		/**
+		 * @generated from field: optional string timezone = 12;
+		 */
+		timezone?: string | undefined;
 
-  /**
-   * @generated from field: optional bool enabled = 13;
-   */
-  enabled?: boolean | undefined;
+		/**
+		 * @generated from field: optional bool enabled = 13;
+		 */
+		enabled?: boolean | undefined;
 
-  /**
-   * @generated from field: optional int64 application_id = 14;
-   */
-  applicationId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 application_id = 14;
+		 */
+		applicationId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 compose_id = 15;
-   */
-  composeId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 compose_id = 15;
+		 */
+		composeId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 server_id = 16;
-   */
-  serverId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 server_id = 16;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 organization_id = 17;
-   */
-  organizationId?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 organization_id = 17;
+		 */
+		organizationId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleUpdateScheduleRequest.
  * Use `create(ScheduleUpdateScheduleRequestSchema)` to create a new message.
  */
-export const ScheduleUpdateScheduleRequestSchema: GenMessage<ScheduleUpdateScheduleRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 11);
+export const ScheduleUpdateScheduleRequestSchema: GenMessage<ScheduleUpdateScheduleRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 11);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleUpdateScheduleResponse
  */
-export type ScheduleUpdateScheduleResponse = Message<"openoxide.api.v1.ScheduleUpdateScheduleResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Schedule schedule = 1;
-   */
-  schedule?: Schedule | undefined;
-};
+export type ScheduleUpdateScheduleResponse =
+	Message<'openoxide.api.v1.ScheduleUpdateScheduleResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Schedule schedule = 1;
+		 */
+		schedule?: Schedule | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleUpdateScheduleResponse.
  * Use `create(ScheduleUpdateScheduleResponseSchema)` to create a new message.
  */
-export const ScheduleUpdateScheduleResponseSchema: GenMessage<ScheduleUpdateScheduleResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 12);
+export const ScheduleUpdateScheduleResponseSchema: GenMessage<ScheduleUpdateScheduleResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 12);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleDeleteScheduleRequest
  */
-export type ScheduleDeleteScheduleRequest = Message<"openoxide.api.v1.ScheduleDeleteScheduleRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ScheduleDeleteScheduleRequest =
+	Message<'openoxide.api.v1.ScheduleDeleteScheduleRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleDeleteScheduleRequest.
  * Use `create(ScheduleDeleteScheduleRequestSchema)` to create a new message.
  */
-export const ScheduleDeleteScheduleRequestSchema: GenMessage<ScheduleDeleteScheduleRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 13);
+export const ScheduleDeleteScheduleRequestSchema: GenMessage<ScheduleDeleteScheduleRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 13);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleRunScheduleRequest
  */
-export type ScheduleRunScheduleRequest = Message<"openoxide.api.v1.ScheduleRunScheduleRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ScheduleRunScheduleRequest =
+	Message<'openoxide.api.v1.ScheduleRunScheduleRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleRunScheduleRequest.
  * Use `create(ScheduleRunScheduleRequestSchema)` to create a new message.
  */
-export const ScheduleRunScheduleRequestSchema: GenMessage<ScheduleRunScheduleRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 14);
+export const ScheduleRunScheduleRequestSchema: GenMessage<ScheduleRunScheduleRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 14);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleRunScheduleResponse
  */
-export type ScheduleRunScheduleResponse = Message<"openoxide.api.v1.ScheduleRunScheduleResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleRun result = 1;
-   */
-  result?: ScheduleRun | undefined;
-};
+export type ScheduleRunScheduleResponse =
+	Message<'openoxide.api.v1.ScheduleRunScheduleResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ScheduleRun result = 1;
+		 */
+		result?: ScheduleRun | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleRunScheduleResponse.
  * Use `create(ScheduleRunScheduleResponseSchema)` to create a new message.
  */
-export const ScheduleRunScheduleResponseSchema: GenMessage<ScheduleRunScheduleResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 15);
+export const ScheduleRunScheduleResponseSchema: GenMessage<ScheduleRunScheduleResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 15);
 
 /**
  * @generated from message openoxide.api.v1.SchedulePauseScheduleRequest
  */
-export type SchedulePauseScheduleRequest = Message<"openoxide.api.v1.SchedulePauseScheduleRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type SchedulePauseScheduleRequest =
+	Message<'openoxide.api.v1.SchedulePauseScheduleRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SchedulePauseScheduleRequest.
  * Use `create(SchedulePauseScheduleRequestSchema)` to create a new message.
  */
-export const SchedulePauseScheduleRequestSchema: GenMessage<SchedulePauseScheduleRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 16);
+export const SchedulePauseScheduleRequestSchema: GenMessage<SchedulePauseScheduleRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 16);
 
 /**
  * @generated from message openoxide.api.v1.SchedulePauseScheduleResponse
  */
-export type SchedulePauseScheduleResponse = Message<"openoxide.api.v1.SchedulePauseScheduleResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Schedule schedule = 1;
-   */
-  schedule?: Schedule | undefined;
-};
+export type SchedulePauseScheduleResponse =
+	Message<'openoxide.api.v1.SchedulePauseScheduleResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Schedule schedule = 1;
+		 */
+		schedule?: Schedule | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SchedulePauseScheduleResponse.
  * Use `create(SchedulePauseScheduleResponseSchema)` to create a new message.
  */
-export const SchedulePauseScheduleResponseSchema: GenMessage<SchedulePauseScheduleResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 17);
+export const SchedulePauseScheduleResponseSchema: GenMessage<SchedulePauseScheduleResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 17);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleResumeScheduleRequest
  */
-export type ScheduleResumeScheduleRequest = Message<"openoxide.api.v1.ScheduleResumeScheduleRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ScheduleResumeScheduleRequest =
+	Message<'openoxide.api.v1.ScheduleResumeScheduleRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleResumeScheduleRequest.
  * Use `create(ScheduleResumeScheduleRequestSchema)` to create a new message.
  */
-export const ScheduleResumeScheduleRequestSchema: GenMessage<ScheduleResumeScheduleRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 18);
+export const ScheduleResumeScheduleRequestSchema: GenMessage<ScheduleResumeScheduleRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 18);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleResumeScheduleResponse
  */
-export type ScheduleResumeScheduleResponse = Message<"openoxide.api.v1.ScheduleResumeScheduleResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Schedule schedule = 1;
-   */
-  schedule?: Schedule | undefined;
-};
+export type ScheduleResumeScheduleResponse =
+	Message<'openoxide.api.v1.ScheduleResumeScheduleResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Schedule schedule = 1;
+		 */
+		schedule?: Schedule | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleResumeScheduleResponse.
  * Use `create(ScheduleResumeScheduleResponseSchema)` to create a new message.
  */
-export const ScheduleResumeScheduleResponseSchema: GenMessage<ScheduleResumeScheduleResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 19);
+export const ScheduleResumeScheduleResponseSchema: GenMessage<ScheduleResumeScheduleResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 19);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListApplicationSchedulesRequest
  */
-export type ScheduleListApplicationSchedulesRequest = Message<"openoxide.api.v1.ScheduleListApplicationSchedulesRequest"> & {
-  /**
-   * @generated from field: int64 application_id = 1;
-   */
-  applicationId: bigint;
-};
+export type ScheduleListApplicationSchedulesRequest =
+	Message<'openoxide.api.v1.ScheduleListApplicationSchedulesRequest'> & {
+		/**
+		 * @generated from field: int64 application_id = 1;
+		 */
+		applicationId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListApplicationSchedulesRequest.
  * Use `create(ScheduleListApplicationSchedulesRequestSchema)` to create a new message.
  */
-export const ScheduleListApplicationSchedulesRequestSchema: GenMessage<ScheduleListApplicationSchedulesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 20);
+export const ScheduleListApplicationSchedulesRequestSchema: GenMessage<ScheduleListApplicationSchedulesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 20);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListApplicationSchedulesResponse
  */
-export type ScheduleListApplicationSchedulesResponse = Message<"openoxide.api.v1.ScheduleListApplicationSchedulesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Schedule schedules = 1;
-   */
-  schedules: Schedule[];
-};
+export type ScheduleListApplicationSchedulesResponse =
+	Message<'openoxide.api.v1.ScheduleListApplicationSchedulesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Schedule schedules = 1;
+		 */
+		schedules: Schedule[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListApplicationSchedulesResponse.
  * Use `create(ScheduleListApplicationSchedulesResponseSchema)` to create a new message.
  */
-export const ScheduleListApplicationSchedulesResponseSchema: GenMessage<ScheduleListApplicationSchedulesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 21);
+export const ScheduleListApplicationSchedulesResponseSchema: GenMessage<ScheduleListApplicationSchedulesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 21);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListComposeSchedulesRequest
  */
-export type ScheduleListComposeSchedulesRequest = Message<"openoxide.api.v1.ScheduleListComposeSchedulesRequest"> & {
-  /**
-   * @generated from field: int64 compose_id = 1;
-   */
-  composeId: bigint;
-};
+export type ScheduleListComposeSchedulesRequest =
+	Message<'openoxide.api.v1.ScheduleListComposeSchedulesRequest'> & {
+		/**
+		 * @generated from field: int64 compose_id = 1;
+		 */
+		composeId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListComposeSchedulesRequest.
  * Use `create(ScheduleListComposeSchedulesRequestSchema)` to create a new message.
  */
-export const ScheduleListComposeSchedulesRequestSchema: GenMessage<ScheduleListComposeSchedulesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 22);
+export const ScheduleListComposeSchedulesRequestSchema: GenMessage<ScheduleListComposeSchedulesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 22);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListComposeSchedulesResponse
  */
-export type ScheduleListComposeSchedulesResponse = Message<"openoxide.api.v1.ScheduleListComposeSchedulesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Schedule schedules = 1;
-   */
-  schedules: Schedule[];
-};
+export type ScheduleListComposeSchedulesResponse =
+	Message<'openoxide.api.v1.ScheduleListComposeSchedulesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Schedule schedules = 1;
+		 */
+		schedules: Schedule[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListComposeSchedulesResponse.
  * Use `create(ScheduleListComposeSchedulesResponseSchema)` to create a new message.
  */
-export const ScheduleListComposeSchedulesResponseSchema: GenMessage<ScheduleListComposeSchedulesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 23);
+export const ScheduleListComposeSchedulesResponseSchema: GenMessage<ScheduleListComposeSchedulesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 23);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListDatabaseSchedulesRequest
  */
-export type ScheduleListDatabaseSchedulesRequest = Message<"openoxide.api.v1.ScheduleListDatabaseSchedulesRequest"> & {
-  /**
-   * @generated from field: int64 database_id = 1;
-   */
-  databaseId: bigint;
-};
+export type ScheduleListDatabaseSchedulesRequest =
+	Message<'openoxide.api.v1.ScheduleListDatabaseSchedulesRequest'> & {
+		/**
+		 * @generated from field: int64 database_id = 1;
+		 */
+		databaseId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListDatabaseSchedulesRequest.
  * Use `create(ScheduleListDatabaseSchedulesRequestSchema)` to create a new message.
  */
-export const ScheduleListDatabaseSchedulesRequestSchema: GenMessage<ScheduleListDatabaseSchedulesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 24);
+export const ScheduleListDatabaseSchedulesRequestSchema: GenMessage<ScheduleListDatabaseSchedulesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 24);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListDatabaseSchedulesResponse
  */
-export type ScheduleListDatabaseSchedulesResponse = Message<"openoxide.api.v1.ScheduleListDatabaseSchedulesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Schedule schedules = 1;
-   */
-  schedules: Schedule[];
-};
+export type ScheduleListDatabaseSchedulesResponse =
+	Message<'openoxide.api.v1.ScheduleListDatabaseSchedulesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Schedule schedules = 1;
+		 */
+		schedules: Schedule[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListDatabaseSchedulesResponse.
  * Use `create(ScheduleListDatabaseSchedulesResponseSchema)` to create a new message.
  */
-export const ScheduleListDatabaseSchedulesResponseSchema: GenMessage<ScheduleListDatabaseSchedulesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 25);
+export const ScheduleListDatabaseSchedulesResponseSchema: GenMessage<ScheduleListDatabaseSchedulesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 25);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListServerSchedulesRequest
  */
-export type ScheduleListServerSchedulesRequest = Message<"openoxide.api.v1.ScheduleListServerSchedulesRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
-};
+export type ScheduleListServerSchedulesRequest =
+	Message<'openoxide.api.v1.ScheduleListServerSchedulesRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListServerSchedulesRequest.
  * Use `create(ScheduleListServerSchedulesRequestSchema)` to create a new message.
  */
-export const ScheduleListServerSchedulesRequestSchema: GenMessage<ScheduleListServerSchedulesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 26);
+export const ScheduleListServerSchedulesRequestSchema: GenMessage<ScheduleListServerSchedulesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 26);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListServerSchedulesResponse
  */
-export type ScheduleListServerSchedulesResponse = Message<"openoxide.api.v1.ScheduleListServerSchedulesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Schedule schedules = 1;
-   */
-  schedules: Schedule[];
-};
+export type ScheduleListServerSchedulesResponse =
+	Message<'openoxide.api.v1.ScheduleListServerSchedulesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Schedule schedules = 1;
+		 */
+		schedules: Schedule[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListServerSchedulesResponse.
  * Use `create(ScheduleListServerSchedulesResponseSchema)` to create a new message.
  */
-export const ScheduleListServerSchedulesResponseSchema: GenMessage<ScheduleListServerSchedulesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 27);
+export const ScheduleListServerSchedulesResponseSchema: GenMessage<ScheduleListServerSchedulesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 27);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListOrganizationSchedulesRequest
  */
-export type ScheduleListOrganizationSchedulesRequest = Message<"openoxide.api.v1.ScheduleListOrganizationSchedulesRequest"> & {
-  /**
-   * @generated from field: int64 organization_id = 1;
-   */
-  organizationId: bigint;
-};
+export type ScheduleListOrganizationSchedulesRequest =
+	Message<'openoxide.api.v1.ScheduleListOrganizationSchedulesRequest'> & {
+		/**
+		 * @generated from field: int64 organization_id = 1;
+		 */
+		organizationId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListOrganizationSchedulesRequest.
  * Use `create(ScheduleListOrganizationSchedulesRequestSchema)` to create a new message.
  */
-export const ScheduleListOrganizationSchedulesRequestSchema: GenMessage<ScheduleListOrganizationSchedulesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 28);
+export const ScheduleListOrganizationSchedulesRequestSchema: GenMessage<ScheduleListOrganizationSchedulesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 28);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListOrganizationSchedulesResponse
  */
-export type ScheduleListOrganizationSchedulesResponse = Message<"openoxide.api.v1.ScheduleListOrganizationSchedulesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Schedule schedules = 1;
-   */
-  schedules: Schedule[];
-};
+export type ScheduleListOrganizationSchedulesResponse =
+	Message<'openoxide.api.v1.ScheduleListOrganizationSchedulesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Schedule schedules = 1;
+		 */
+		schedules: Schedule[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListOrganizationSchedulesResponse.
  * Use `create(ScheduleListOrganizationSchedulesResponseSchema)` to create a new message.
  */
-export const ScheduleListOrganizationSchedulesResponseSchema: GenMessage<ScheduleListOrganizationSchedulesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 29);
+export const ScheduleListOrganizationSchedulesResponseSchema: GenMessage<ScheduleListOrganizationSchedulesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 29);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleTriggerScheduleRequest
  */
-export type ScheduleTriggerScheduleRequest = Message<"openoxide.api.v1.ScheduleTriggerScheduleRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ScheduleTriggerScheduleRequest =
+	Message<'openoxide.api.v1.ScheduleTriggerScheduleRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleTriggerScheduleRequest.
  * Use `create(ScheduleTriggerScheduleRequestSchema)` to create a new message.
  */
-export const ScheduleTriggerScheduleRequestSchema: GenMessage<ScheduleTriggerScheduleRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 30);
+export const ScheduleTriggerScheduleRequestSchema: GenMessage<ScheduleTriggerScheduleRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 30);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleTriggerScheduleResponse
  */
-export type ScheduleTriggerScheduleResponse = Message<"openoxide.api.v1.ScheduleTriggerScheduleResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleRun result = 1;
-   */
-  result?: ScheduleRun | undefined;
-};
+export type ScheduleTriggerScheduleResponse =
+	Message<'openoxide.api.v1.ScheduleTriggerScheduleResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ScheduleRun result = 1;
+		 */
+		result?: ScheduleRun | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleTriggerScheduleResponse.
  * Use `create(ScheduleTriggerScheduleResponseSchema)` to create a new message.
  */
-export const ScheduleTriggerScheduleResponseSchema: GenMessage<ScheduleTriggerScheduleResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 31);
+export const ScheduleTriggerScheduleResponseSchema: GenMessage<ScheduleTriggerScheduleResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 31);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleGetRuntimePolicyRequest
  */
-export type ScheduleGetRuntimePolicyRequest = Message<"openoxide.api.v1.ScheduleGetRuntimePolicyRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ScheduleGetRuntimePolicyRequest =
+	Message<'openoxide.api.v1.ScheduleGetRuntimePolicyRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleGetRuntimePolicyRequest.
  * Use `create(ScheduleGetRuntimePolicyRequestSchema)` to create a new message.
  */
-export const ScheduleGetRuntimePolicyRequestSchema: GenMessage<ScheduleGetRuntimePolicyRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 32);
+export const ScheduleGetRuntimePolicyRequestSchema: GenMessage<ScheduleGetRuntimePolicyRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 32);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleGetRuntimePolicyResponse
  */
-export type ScheduleGetRuntimePolicyResponse = Message<"openoxide.api.v1.ScheduleGetRuntimePolicyResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleRuntimePolicy policy = 1;
-   */
-  policy?: ScheduleRuntimePolicy | undefined;
-};
+export type ScheduleGetRuntimePolicyResponse =
+	Message<'openoxide.api.v1.ScheduleGetRuntimePolicyResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ScheduleRuntimePolicy policy = 1;
+		 */
+		policy?: ScheduleRuntimePolicy | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleGetRuntimePolicyResponse.
  * Use `create(ScheduleGetRuntimePolicyResponseSchema)` to create a new message.
  */
-export const ScheduleGetRuntimePolicyResponseSchema: GenMessage<ScheduleGetRuntimePolicyResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 33);
+export const ScheduleGetRuntimePolicyResponseSchema: GenMessage<ScheduleGetRuntimePolicyResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 33);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleUpdateRuntimePolicyRequest
  */
-export type ScheduleUpdateRuntimePolicyRequest = Message<"openoxide.api.v1.ScheduleUpdateRuntimePolicyRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type ScheduleUpdateRuntimePolicyRequest =
+	Message<'openoxide.api.v1.ScheduleUpdateRuntimePolicyRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: int64 retry_count = 2;
-   */
-  retryCount: bigint;
+		/**
+		 * @generated from field: int64 retry_count = 2;
+		 */
+		retryCount: bigint;
 
-  /**
-   * @generated from field: int64 retry_delay_seconds = 3;
-   */
-  retryDelaySeconds: bigint;
+		/**
+		 * @generated from field: int64 retry_delay_seconds = 3;
+		 */
+		retryDelaySeconds: bigint;
 
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleMissedRunPolicy missed_run_policy = 4;
-   */
-  missedRunPolicy: ScheduleMissedRunPolicy;
+		/**
+		 * @generated from field: openoxide.api.v1.ScheduleMissedRunPolicy missed_run_policy = 4;
+		 */
+		missedRunPolicy: ScheduleMissedRunPolicy;
 
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleConcurrencyPolicy concurrency_policy = 5;
-   */
-  concurrencyPolicy: ScheduleConcurrencyPolicy;
+		/**
+		 * @generated from field: openoxide.api.v1.ScheduleConcurrencyPolicy concurrency_policy = 5;
+		 */
+		concurrencyPolicy: ScheduleConcurrencyPolicy;
 
-  /**
-   * @generated from field: int64 lease_seconds = 6;
-   */
-  leaseSeconds: bigint;
+		/**
+		 * @generated from field: int64 lease_seconds = 6;
+		 */
+		leaseSeconds: bigint;
 
-  /**
-   * @generated from field: bool notify_on_success = 7;
-   */
-  notifyOnSuccess: boolean;
+		/**
+		 * @generated from field: bool notify_on_success = 7;
+		 */
+		notifyOnSuccess: boolean;
 
-  /**
-   * @generated from field: bool notify_on_failure = 8;
-   */
-  notifyOnFailure: boolean;
-};
+		/**
+		 * @generated from field: bool notify_on_failure = 8;
+		 */
+		notifyOnFailure: boolean;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleUpdateRuntimePolicyRequest.
  * Use `create(ScheduleUpdateRuntimePolicyRequestSchema)` to create a new message.
  */
-export const ScheduleUpdateRuntimePolicyRequestSchema: GenMessage<ScheduleUpdateRuntimePolicyRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 34);
+export const ScheduleUpdateRuntimePolicyRequestSchema: GenMessage<ScheduleUpdateRuntimePolicyRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 34);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleUpdateRuntimePolicyResponse
  */
-export type ScheduleUpdateRuntimePolicyResponse = Message<"openoxide.api.v1.ScheduleUpdateRuntimePolicyResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleRuntimePolicy policy = 1;
-   */
-  policy?: ScheduleRuntimePolicy | undefined;
-};
+export type ScheduleUpdateRuntimePolicyResponse =
+	Message<'openoxide.api.v1.ScheduleUpdateRuntimePolicyResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ScheduleRuntimePolicy policy = 1;
+		 */
+		policy?: ScheduleRuntimePolicy | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleUpdateRuntimePolicyResponse.
  * Use `create(ScheduleUpdateRuntimePolicyResponseSchema)` to create a new message.
  */
-export const ScheduleUpdateRuntimePolicyResponseSchema: GenMessage<ScheduleUpdateRuntimePolicyResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 35);
+export const ScheduleUpdateRuntimePolicyResponseSchema: GenMessage<ScheduleUpdateRuntimePolicyResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 35);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListExecutionsRequest
  */
-export type ScheduleListExecutionsRequest = Message<"openoxide.api.v1.ScheduleListExecutionsRequest"> & {
-  /**
-   * Owner schedule id (former envelope `organization_id` slot).
-   *
-   * @generated from field: int64 schedule_id = 1;
-   */
-  scheduleId: bigint;
-};
+export type ScheduleListExecutionsRequest =
+	Message<'openoxide.api.v1.ScheduleListExecutionsRequest'> & {
+		/**
+		 * Owner schedule id (former envelope `organization_id` slot).
+		 *
+		 * @generated from field: int64 schedule_id = 1;
+		 */
+		scheduleId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListExecutionsRequest.
  * Use `create(ScheduleListExecutionsRequestSchema)` to create a new message.
  */
-export const ScheduleListExecutionsRequestSchema: GenMessage<ScheduleListExecutionsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 36);
+export const ScheduleListExecutionsRequestSchema: GenMessage<ScheduleListExecutionsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 36);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleListExecutionsResponse
  */
-export type ScheduleListExecutionsResponse = Message<"openoxide.api.v1.ScheduleListExecutionsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.ScheduleExecution executions = 1;
-   */
-  executions: ScheduleExecution[];
-};
+export type ScheduleListExecutionsResponse =
+	Message<'openoxide.api.v1.ScheduleListExecutionsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.ScheduleExecution executions = 1;
+		 */
+		executions: ScheduleExecution[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleListExecutionsResponse.
  * Use `create(ScheduleListExecutionsResponseSchema)` to create a new message.
  */
-export const ScheduleListExecutionsResponseSchema: GenMessage<ScheduleListExecutionsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 37);
+export const ScheduleListExecutionsResponseSchema: GenMessage<ScheduleListExecutionsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 37);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleGetLogsRequest
  */
-export type ScheduleGetLogsRequest = Message<"openoxide.api.v1.ScheduleGetLogsRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ScheduleGetLogsRequest =
+	Message<'openoxide.api.v1.ScheduleGetLogsRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleGetLogsRequest.
  * Use `create(ScheduleGetLogsRequestSchema)` to create a new message.
  */
-export const ScheduleGetLogsRequestSchema: GenMessage<ScheduleGetLogsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 38);
+export const ScheduleGetLogsRequestSchema: GenMessage<ScheduleGetLogsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 38);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleGetLogsResponse
  */
-export type ScheduleGetLogsResponse = Message<"openoxide.api.v1.ScheduleGetLogsResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleLog log = 1;
-   */
-  log?: ScheduleLog | undefined;
-};
+export type ScheduleGetLogsResponse =
+	Message<'openoxide.api.v1.ScheduleGetLogsResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ScheduleLog log = 1;
+		 */
+		log?: ScheduleLog | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleGetLogsResponse.
  * Use `create(ScheduleGetLogsResponseSchema)` to create a new message.
  */
-export const ScheduleGetLogsResponseSchema: GenMessage<ScheduleGetLogsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 39);
+export const ScheduleGetLogsResponseSchema: GenMessage<ScheduleGetLogsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 39);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleGetExecutionLogsRequest
  */
-export type ScheduleGetExecutionLogsRequest = Message<"openoxide.api.v1.ScheduleGetExecutionLogsRequest"> & {
-  /**
-   * @generated from field: int64 schedule_id = 1;
-   */
-  scheduleId: bigint;
+export type ScheduleGetExecutionLogsRequest =
+	Message<'openoxide.api.v1.ScheduleGetExecutionLogsRequest'> & {
+		/**
+		 * @generated from field: int64 schedule_id = 1;
+		 */
+		scheduleId: bigint;
 
-  /**
-   * Execution row whose log file is read (former envelope `organization_id` slot).
-   *
-   * @generated from field: int64 execution_id = 2;
-   */
-  executionId: bigint;
-};
+		/**
+		 * Execution row whose log file is read (former envelope `organization_id` slot).
+		 *
+		 * @generated from field: int64 execution_id = 2;
+		 */
+		executionId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleGetExecutionLogsRequest.
  * Use `create(ScheduleGetExecutionLogsRequestSchema)` to create a new message.
  */
-export const ScheduleGetExecutionLogsRequestSchema: GenMessage<ScheduleGetExecutionLogsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 40);
+export const ScheduleGetExecutionLogsRequestSchema: GenMessage<ScheduleGetExecutionLogsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 40);
 
 /**
  * @generated from message openoxide.api.v1.ScheduleGetExecutionLogsResponse
  */
-export type ScheduleGetExecutionLogsResponse = Message<"openoxide.api.v1.ScheduleGetExecutionLogsResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ScheduleLog log = 1;
-   */
-  log?: ScheduleLog | undefined;
-};
+export type ScheduleGetExecutionLogsResponse =
+	Message<'openoxide.api.v1.ScheduleGetExecutionLogsResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ScheduleLog log = 1;
+		 */
+		log?: ScheduleLog | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ScheduleGetExecutionLogsResponse.
  * Use `create(ScheduleGetExecutionLogsResponseSchema)` to create a new message.
  */
-export const ScheduleGetExecutionLogsResponseSchema: GenMessage<ScheduleGetExecutionLogsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_schedule, 41);
+export const ScheduleGetExecutionLogsResponseSchema: GenMessage<ScheduleGetExecutionLogsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_schedule, 41);
 
 /**
  * @generated from enum openoxide.api.v1.ScheduleShellType
  */
 export enum ScheduleShellType {
-  /**
-   * @generated from enum value: SCHEDULE_SHELL_TYPE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: SCHEDULE_SHELL_TYPE_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: SCHEDULE_SHELL_TYPE_BASH = 1;
-   */
-  BASH = 1,
+	/**
+	 * @generated from enum value: SCHEDULE_SHELL_TYPE_BASH = 1;
+	 */
+	BASH = 1,
 
-  /**
-   * @generated from enum value: SCHEDULE_SHELL_TYPE_SH = 2;
-   */
-  SH = 2,
+	/**
+	 * @generated from enum value: SCHEDULE_SHELL_TYPE_SH = 2;
+	 */
+	SH = 2,
 }
 
 /**
  * Describes the enum openoxide.api.v1.ScheduleShellType.
  */
-export const ScheduleShellTypeSchema: GenEnum<ScheduleShellType> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_schedule, 0);
+export const ScheduleShellTypeSchema: GenEnum<ScheduleShellType> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_schedule, 0);
 
 /**
  * `DATABASE` is a legacy stored value kept for rows predating the APPLICATION/COMPOSE/SERVER split.
@@ -1201,222 +1252,222 @@ export const ScheduleShellTypeSchema: GenEnum<ScheduleShellType> = /*@__PURE__*/
  * @generated from enum openoxide.api.v1.ScheduleType
  */
 export enum ScheduleType {
-  /**
-   * @generated from enum value: SCHEDULE_TYPE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: SCHEDULE_TYPE_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: SCHEDULE_TYPE_APPLICATION = 1;
-   */
-  APPLICATION = 1,
+	/**
+	 * @generated from enum value: SCHEDULE_TYPE_APPLICATION = 1;
+	 */
+	APPLICATION = 1,
 
-  /**
-   * @generated from enum value: SCHEDULE_TYPE_COMPOSE = 2;
-   */
-  COMPOSE = 2,
+	/**
+	 * @generated from enum value: SCHEDULE_TYPE_COMPOSE = 2;
+	 */
+	COMPOSE = 2,
 
-  /**
-   * @generated from enum value: SCHEDULE_TYPE_DATABASE = 3;
-   */
-  DATABASE = 3,
+	/**
+	 * @generated from enum value: SCHEDULE_TYPE_DATABASE = 3;
+	 */
+	DATABASE = 3,
 
-  /**
-   * @generated from enum value: SCHEDULE_TYPE_SERVER = 4;
-   */
-  SERVER = 4,
+	/**
+	 * @generated from enum value: SCHEDULE_TYPE_SERVER = 4;
+	 */
+	SERVER = 4,
 
-  /**
-   * @generated from enum value: SCHEDULE_TYPE_DOKPANEL_SERVER = 5;
-   */
-  DOKPANEL_SERVER = 5,
+	/**
+	 * @generated from enum value: SCHEDULE_TYPE_DOKPANEL_SERVER = 5;
+	 */
+	DOKPANEL_SERVER = 5,
 }
 
 /**
  * Describes the enum openoxide.api.v1.ScheduleType.
  */
-export const ScheduleTypeSchema: GenEnum<ScheduleType> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_schedule, 1);
+export const ScheduleTypeSchema: GenEnum<ScheduleType> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_schedule, 1);
 
 /**
  * @generated from enum openoxide.api.v1.ScheduleAction
  */
 export enum ScheduleAction {
-  /**
-   * @generated from enum value: SCHEDULE_ACTION_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: SCHEDULE_ACTION_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: SCHEDULE_ACTION_EXEC = 1;
-   */
-  EXEC = 1,
+	/**
+	 * @generated from enum value: SCHEDULE_ACTION_EXEC = 1;
+	 */
+	EXEC = 1,
 
-  /**
-   * @generated from enum value: SCHEDULE_ACTION_DEPLOY = 2;
-   */
-  DEPLOY = 2,
+	/**
+	 * @generated from enum value: SCHEDULE_ACTION_DEPLOY = 2;
+	 */
+	DEPLOY = 2,
 
-  /**
-   * @generated from enum value: SCHEDULE_ACTION_REDEPLOY = 3;
-   */
-  REDEPLOY = 3,
+	/**
+	 * @generated from enum value: SCHEDULE_ACTION_REDEPLOY = 3;
+	 */
+	REDEPLOY = 3,
 
-  /**
-   * @generated from enum value: SCHEDULE_ACTION_REBUILD = 4;
-   */
-  REBUILD = 4,
+	/**
+	 * @generated from enum value: SCHEDULE_ACTION_REBUILD = 4;
+	 */
+	REBUILD = 4,
 
-  /**
-   * @generated from enum value: SCHEDULE_ACTION_RELOAD = 5;
-   */
-  RELOAD = 5,
+	/**
+	 * @generated from enum value: SCHEDULE_ACTION_RELOAD = 5;
+	 */
+	RELOAD = 5,
 
-  /**
-   * @generated from enum value: SCHEDULE_ACTION_START = 6;
-   */
-  START = 6,
+	/**
+	 * @generated from enum value: SCHEDULE_ACTION_START = 6;
+	 */
+	START = 6,
 
-  /**
-   * @generated from enum value: SCHEDULE_ACTION_STOP = 7;
-   */
-  STOP = 7,
+	/**
+	 * @generated from enum value: SCHEDULE_ACTION_STOP = 7;
+	 */
+	STOP = 7,
 }
 
 /**
  * Describes the enum openoxide.api.v1.ScheduleAction.
  */
-export const ScheduleActionSchema: GenEnum<ScheduleAction> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_schedule, 2);
+export const ScheduleActionSchema: GenEnum<ScheduleAction> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_schedule, 2);
 
 /**
  * @generated from enum openoxide.api.v1.ScheduleTriggerKind
  */
 export enum ScheduleTriggerKind {
-  /**
-   * @generated from enum value: SCHEDULE_TRIGGER_KIND_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: SCHEDULE_TRIGGER_KIND_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: SCHEDULE_TRIGGER_KIND_CRON = 1;
-   */
-  CRON = 1,
+	/**
+	 * @generated from enum value: SCHEDULE_TRIGGER_KIND_CRON = 1;
+	 */
+	CRON = 1,
 
-  /**
-   * @generated from enum value: SCHEDULE_TRIGGER_KIND_MANUAL = 2;
-   */
-  MANUAL = 2,
+	/**
+	 * @generated from enum value: SCHEDULE_TRIGGER_KIND_MANUAL = 2;
+	 */
+	MANUAL = 2,
 
-  /**
-   * @generated from enum value: SCHEDULE_TRIGGER_KIND_MISSED = 3;
-   */
-  MISSED = 3,
+	/**
+	 * @generated from enum value: SCHEDULE_TRIGGER_KIND_MISSED = 3;
+	 */
+	MISSED = 3,
 
-  /**
-   * @generated from enum value: SCHEDULE_TRIGGER_KIND_RETRY = 4;
-   */
-  RETRY = 4,
+	/**
+	 * @generated from enum value: SCHEDULE_TRIGGER_KIND_RETRY = 4;
+	 */
+	RETRY = 4,
 }
 
 /**
  * Describes the enum openoxide.api.v1.ScheduleTriggerKind.
  */
-export const ScheduleTriggerKindSchema: GenEnum<ScheduleTriggerKind> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_schedule, 3);
+export const ScheduleTriggerKindSchema: GenEnum<ScheduleTriggerKind> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_schedule, 3);
 
 /**
  * @generated from enum openoxide.api.v1.ScheduleExecutionStatus
  */
 export enum ScheduleExecutionStatus {
-  /**
-   * @generated from enum value: SCHEDULE_EXECUTION_STATUS_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: SCHEDULE_EXECUTION_STATUS_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: SCHEDULE_EXECUTION_STATUS_RUNNING = 1;
-   */
-  RUNNING = 1,
+	/**
+	 * @generated from enum value: SCHEDULE_EXECUTION_STATUS_RUNNING = 1;
+	 */
+	RUNNING = 1,
 
-  /**
-   * @generated from enum value: SCHEDULE_EXECUTION_STATUS_SUCCEEDED = 2;
-   */
-  SUCCEEDED = 2,
+	/**
+	 * @generated from enum value: SCHEDULE_EXECUTION_STATUS_SUCCEEDED = 2;
+	 */
+	SUCCEEDED = 2,
 
-  /**
-   * @generated from enum value: SCHEDULE_EXECUTION_STATUS_FAILED = 3;
-   */
-  FAILED = 3,
+	/**
+	 * @generated from enum value: SCHEDULE_EXECUTION_STATUS_FAILED = 3;
+	 */
+	FAILED = 3,
 
-  /**
-   * @generated from enum value: SCHEDULE_EXECUTION_STATUS_SKIPPED = 4;
-   */
-  SKIPPED = 4,
+	/**
+	 * @generated from enum value: SCHEDULE_EXECUTION_STATUS_SKIPPED = 4;
+	 */
+	SKIPPED = 4,
 }
 
 /**
  * Describes the enum openoxide.api.v1.ScheduleExecutionStatus.
  */
-export const ScheduleExecutionStatusSchema: GenEnum<ScheduleExecutionStatus> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_schedule, 4);
+export const ScheduleExecutionStatusSchema: GenEnum<ScheduleExecutionStatus> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_schedule, 4);
 
 /**
  * @generated from enum openoxide.api.v1.ScheduleMissedRunPolicy
  */
 export enum ScheduleMissedRunPolicy {
-  /**
-   * @generated from enum value: SCHEDULE_MISSED_RUN_POLICY_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: SCHEDULE_MISSED_RUN_POLICY_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: SCHEDULE_MISSED_RUN_POLICY_SKIP = 1;
-   */
-  SKIP = 1,
+	/**
+	 * @generated from enum value: SCHEDULE_MISSED_RUN_POLICY_SKIP = 1;
+	 */
+	SKIP = 1,
 
-  /**
-   * @generated from enum value: SCHEDULE_MISSED_RUN_POLICY_RUN_ONCE = 2;
-   */
-  RUN_ONCE = 2,
+	/**
+	 * @generated from enum value: SCHEDULE_MISSED_RUN_POLICY_RUN_ONCE = 2;
+	 */
+	RUN_ONCE = 2,
 }
 
 /**
  * Describes the enum openoxide.api.v1.ScheduleMissedRunPolicy.
  */
-export const ScheduleMissedRunPolicySchema: GenEnum<ScheduleMissedRunPolicy> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_schedule, 5);
+export const ScheduleMissedRunPolicySchema: GenEnum<ScheduleMissedRunPolicy> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_schedule, 5);
 
 /**
  * @generated from enum openoxide.api.v1.ScheduleConcurrencyPolicy
  */
 export enum ScheduleConcurrencyPolicy {
-  /**
-   * @generated from enum value: SCHEDULE_CONCURRENCY_POLICY_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: SCHEDULE_CONCURRENCY_POLICY_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: SCHEDULE_CONCURRENCY_POLICY_SKIP = 1;
-   */
-  SKIP = 1,
+	/**
+	 * @generated from enum value: SCHEDULE_CONCURRENCY_POLICY_SKIP = 1;
+	 */
+	SKIP = 1,
 
-  /**
-   * @generated from enum value: SCHEDULE_CONCURRENCY_POLICY_QUEUE = 2;
-   */
-  QUEUE = 2,
+	/**
+	 * @generated from enum value: SCHEDULE_CONCURRENCY_POLICY_QUEUE = 2;
+	 */
+	QUEUE = 2,
 
-  /**
-   * @generated from enum value: SCHEDULE_CONCURRENCY_POLICY_ALLOW = 3;
-   */
-  ALLOW = 3,
+	/**
+	 * @generated from enum value: SCHEDULE_CONCURRENCY_POLICY_ALLOW = 3;
+	 */
+	ALLOW = 3,
 }
 
 /**
  * Describes the enum openoxide.api.v1.ScheduleConcurrencyPolicy.
  */
-export const ScheduleConcurrencyPolicySchema: GenEnum<ScheduleConcurrencyPolicy> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_schedule, 6);
+export const ScheduleConcurrencyPolicySchema: GenEnum<ScheduleConcurrencyPolicy> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_schedule, 6);
 
 /**
  * Sole schedule owner service; absorbs the former ScheduleOperationsService.
@@ -1424,158 +1475,156 @@ export const ScheduleConcurrencyPolicySchema: GenEnum<ScheduleConcurrencyPolicy>
  * @generated from service openoxide.api.v1.ScheduleService
  */
 export const ScheduleService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.ListSchedules
-   */
-  listSchedules: {
-    methodKind: "unary";
-    input: typeof ScheduleListSchedulesRequestSchema;
-    output: typeof ScheduleListSchedulesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.GetSchedule
-   */
-  getSchedule: {
-    methodKind: "unary";
-    input: typeof ScheduleGetScheduleRequestSchema;
-    output: typeof ScheduleGetScheduleResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.CreateSchedule
-   */
-  createSchedule: {
-    methodKind: "unary";
-    input: typeof ScheduleCreateScheduleRequestSchema;
-    output: typeof ScheduleCreateScheduleResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.UpdateSchedule
-   */
-  updateSchedule: {
-    methodKind: "unary";
-    input: typeof ScheduleUpdateScheduleRequestSchema;
-    output: typeof ScheduleUpdateScheduleResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.DeleteSchedule
-   */
-  deleteSchedule: {
-    methodKind: "unary";
-    input: typeof ScheduleDeleteScheduleRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.RunSchedule
-   */
-  runSchedule: {
-    methodKind: "unary";
-    input: typeof ScheduleRunScheduleRequestSchema;
-    output: typeof ScheduleRunScheduleResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.PauseSchedule
-   */
-  pauseSchedule: {
-    methodKind: "unary";
-    input: typeof SchedulePauseScheduleRequestSchema;
-    output: typeof SchedulePauseScheduleResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.ResumeSchedule
-   */
-  resumeSchedule: {
-    methodKind: "unary";
-    input: typeof ScheduleResumeScheduleRequestSchema;
-    output: typeof ScheduleResumeScheduleResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.ListApplicationSchedules
-   */
-  listApplicationSchedules: {
-    methodKind: "unary";
-    input: typeof ScheduleListApplicationSchedulesRequestSchema;
-    output: typeof ScheduleListApplicationSchedulesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.ListComposeSchedules
-   */
-  listComposeSchedules: {
-    methodKind: "unary";
-    input: typeof ScheduleListComposeSchedulesRequestSchema;
-    output: typeof ScheduleListComposeSchedulesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.ListDatabaseSchedules
-   */
-  listDatabaseSchedules: {
-    methodKind: "unary";
-    input: typeof ScheduleListDatabaseSchedulesRequestSchema;
-    output: typeof ScheduleListDatabaseSchedulesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.ListServerSchedules
-   */
-  listServerSchedules: {
-    methodKind: "unary";
-    input: typeof ScheduleListServerSchedulesRequestSchema;
-    output: typeof ScheduleListServerSchedulesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.ListOrganizationSchedules
-   */
-  listOrganizationSchedules: {
-    methodKind: "unary";
-    input: typeof ScheduleListOrganizationSchedulesRequestSchema;
-    output: typeof ScheduleListOrganizationSchedulesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.TriggerSchedule
-   */
-  triggerSchedule: {
-    methodKind: "unary";
-    input: typeof ScheduleTriggerScheduleRequestSchema;
-    output: typeof ScheduleTriggerScheduleResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.GetRuntimePolicy
-   */
-  getRuntimePolicy: {
-    methodKind: "unary";
-    input: typeof ScheduleGetRuntimePolicyRequestSchema;
-    output: typeof ScheduleGetRuntimePolicyResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.UpdateRuntimePolicy
-   */
-  updateRuntimePolicy: {
-    methodKind: "unary";
-    input: typeof ScheduleUpdateRuntimePolicyRequestSchema;
-    output: typeof ScheduleUpdateRuntimePolicyResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.ListExecutions
-   */
-  listExecutions: {
-    methodKind: "unary";
-    input: typeof ScheduleListExecutionsRequestSchema;
-    output: typeof ScheduleListExecutionsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.GetLogs
-   */
-  getLogs: {
-    methodKind: "unary";
-    input: typeof ScheduleGetLogsRequestSchema;
-    output: typeof ScheduleGetLogsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ScheduleService.GetExecutionLogs
-   */
-  getExecutionLogs: {
-    methodKind: "unary";
-    input: typeof ScheduleGetExecutionLogsRequestSchema;
-    output: typeof ScheduleGetExecutionLogsResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_schedule, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.ListSchedules
+	 */
+	listSchedules: {
+		methodKind: 'unary';
+		input: typeof ScheduleListSchedulesRequestSchema;
+		output: typeof ScheduleListSchedulesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.GetSchedule
+	 */
+	getSchedule: {
+		methodKind: 'unary';
+		input: typeof ScheduleGetScheduleRequestSchema;
+		output: typeof ScheduleGetScheduleResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.CreateSchedule
+	 */
+	createSchedule: {
+		methodKind: 'unary';
+		input: typeof ScheduleCreateScheduleRequestSchema;
+		output: typeof ScheduleCreateScheduleResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.UpdateSchedule
+	 */
+	updateSchedule: {
+		methodKind: 'unary';
+		input: typeof ScheduleUpdateScheduleRequestSchema;
+		output: typeof ScheduleUpdateScheduleResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.DeleteSchedule
+	 */
+	deleteSchedule: {
+		methodKind: 'unary';
+		input: typeof ScheduleDeleteScheduleRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.RunSchedule
+	 */
+	runSchedule: {
+		methodKind: 'unary';
+		input: typeof ScheduleRunScheduleRequestSchema;
+		output: typeof ScheduleRunScheduleResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.PauseSchedule
+	 */
+	pauseSchedule: {
+		methodKind: 'unary';
+		input: typeof SchedulePauseScheduleRequestSchema;
+		output: typeof SchedulePauseScheduleResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.ResumeSchedule
+	 */
+	resumeSchedule: {
+		methodKind: 'unary';
+		input: typeof ScheduleResumeScheduleRequestSchema;
+		output: typeof ScheduleResumeScheduleResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.ListApplicationSchedules
+	 */
+	listApplicationSchedules: {
+		methodKind: 'unary';
+		input: typeof ScheduleListApplicationSchedulesRequestSchema;
+		output: typeof ScheduleListApplicationSchedulesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.ListComposeSchedules
+	 */
+	listComposeSchedules: {
+		methodKind: 'unary';
+		input: typeof ScheduleListComposeSchedulesRequestSchema;
+		output: typeof ScheduleListComposeSchedulesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.ListDatabaseSchedules
+	 */
+	listDatabaseSchedules: {
+		methodKind: 'unary';
+		input: typeof ScheduleListDatabaseSchedulesRequestSchema;
+		output: typeof ScheduleListDatabaseSchedulesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.ListServerSchedules
+	 */
+	listServerSchedules: {
+		methodKind: 'unary';
+		input: typeof ScheduleListServerSchedulesRequestSchema;
+		output: typeof ScheduleListServerSchedulesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.ListOrganizationSchedules
+	 */
+	listOrganizationSchedules: {
+		methodKind: 'unary';
+		input: typeof ScheduleListOrganizationSchedulesRequestSchema;
+		output: typeof ScheduleListOrganizationSchedulesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.TriggerSchedule
+	 */
+	triggerSchedule: {
+		methodKind: 'unary';
+		input: typeof ScheduleTriggerScheduleRequestSchema;
+		output: typeof ScheduleTriggerScheduleResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.GetRuntimePolicy
+	 */
+	getRuntimePolicy: {
+		methodKind: 'unary';
+		input: typeof ScheduleGetRuntimePolicyRequestSchema;
+		output: typeof ScheduleGetRuntimePolicyResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.UpdateRuntimePolicy
+	 */
+	updateRuntimePolicy: {
+		methodKind: 'unary';
+		input: typeof ScheduleUpdateRuntimePolicyRequestSchema;
+		output: typeof ScheduleUpdateRuntimePolicyResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.ListExecutions
+	 */
+	listExecutions: {
+		methodKind: 'unary';
+		input: typeof ScheduleListExecutionsRequestSchema;
+		output: typeof ScheduleListExecutionsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.GetLogs
+	 */
+	getLogs: {
+		methodKind: 'unary';
+		input: typeof ScheduleGetLogsRequestSchema;
+		output: typeof ScheduleGetLogsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ScheduleService.GetExecutionLogs
+	 */
+	getExecutionLogs: {
+		methodKind: 'unary';
+		input: typeof ScheduleGetExecutionLogsRequestSchema;
+		output: typeof ScheduleGetExecutionLogsResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_schedule, 0);

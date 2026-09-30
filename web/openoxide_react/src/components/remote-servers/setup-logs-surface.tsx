@@ -48,9 +48,7 @@ export function SetupLogsSurface({
 							<span
 								key={idx}
 								className={`font-mono text-[12.5px] leading-[25px] break-all whitespace-pre-wrap ${lineTone(rest)}`}>
-								{ts && (
-									<span className={LOG_TS_CLS}>{ts}</span>
-								)}
+								{ts && <span className={LOG_TS_CLS}>{ts}</span>}
 								{rest || ' '}
 							</span>
 						);
@@ -58,8 +56,7 @@ export function SetupLogsSurface({
 					{/* Tail line states the verdict when done. */}
 					{state === 'failed' && (
 						<span className="py-2 font-mono text-[12.5px] text-red-600 dark:text-red-400">
-							✗ Setup stopped — fix the issue above, then run it
-							again.
+							✗ Setup stopped — fix the issue above, then run it again.
 						</span>
 					)}
 					{state === 'success' && (

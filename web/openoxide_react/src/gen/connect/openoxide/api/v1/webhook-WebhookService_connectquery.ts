@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/webhook.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { WebhookService } from "./webhook_pb";
+import {WebhookService} from './webhook_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.WebhookService.ListWebhooks

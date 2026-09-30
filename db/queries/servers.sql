@@ -53,6 +53,17 @@ UPDATE servers SET metrics_config = ? WHERE id = ?;
 -- name: DeleteServer :exec
 DELETE FROM servers WHERE id = ?;
 
+-- name: GetServerMtls :one
+SELECT mtls_ca_cert, mtls_ca_key, mtls_panel_cert, mtls_panel_key, mtls_agent_cert, mtls_agent_key
+FROM servers WHERE id = ?;
+
+-- name: ProvisionServerMtls :exec
+UPDATE servers
+SET mtls_ca_cert = ?, mtls_ca_key = ?,
+    mtls_panel_cert = ?, mtls_panel_key = ?,
+    mtls_agent_cert = ?, mtls_agent_key = ?
+WHERE id = ? AND mtls_ca_cert IS NULL;
+
 
 -- name: ServersMigrateApplicationServers :exec
 UPDATE services SET server_id = ? WHERE server_id = ? AND service_type = 'APPLICATION';

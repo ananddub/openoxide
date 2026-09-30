@@ -161,7 +161,7 @@ export function DatabaseAdvancedCustomCommand({
 					rows={6}
 					spellCheck={false}
 					placeholder={'KEY=value\nANOTHER_KEY=value'}
-					className="w-full resize-y rounded-lg border border-border/60 bg-background px-3 py-2 font-mono text-[13px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+					className="w-full resize-y rounded-lg border border-border/60 bg-background px-3 py-2 font-mono text-[13px] text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
 				/>
 			</SheetGroup>
 		</SettingsSheet>

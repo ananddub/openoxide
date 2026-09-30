@@ -41,7 +41,8 @@ function EnvVariablesSheet({
 	const [rows, setRows] = useState<EnvRow[]>(() => parseEnv(original));
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const isModified = serializeEnv(rows) !== serializeEnv(parseEnv(original));
+	const isModified =
+		serializeEnv(rows) !== serializeEnv(parseEnv(original));
 
 	const patchProjectMutation = useProjectUpdate();
 	const patchEnvironmentMutation = useEnvironmentUpdate();
@@ -107,8 +108,8 @@ function EnvVariablesSheet({
 					<div className="text-xs leading-relaxed text-muted-foreground">
 						{mode === 'PROJECT' ? (
 							<span>
-								Define global key-value environment variables
-								for every environment in this project.
+								Define global key-value environment variables for every
+								environment in this project.
 							</span>
 						) : (
 							<span>
@@ -145,7 +146,9 @@ function EnvVariablesSheet({
 
 export function EnvVariablesModal(props: EnvVariablesModalProps) {
 	return (
-		<Sheet open={props.isOpen} onOpenChange={open => !open && props.onClose()}>
+		<Sheet
+			open={props.isOpen}
+			onOpenChange={open => !open && props.onClose()}>
 			{props.isOpen && <EnvVariablesSheet {...props} />}
 		</Sheet>
 	);

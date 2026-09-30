@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/global.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { GlobalService } from "./global_pb";
+import {GlobalService} from './global_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.GlobalService.DownloadFile
@@ -12,7 +12,8 @@ export const downloadFile = GlobalService.method.downloadFile;
 /**
  * @generated from rpc openoxide.api.v1.GlobalService.DownloadContainerFile
  */
-export const downloadContainerFile = GlobalService.method.downloadContainerFile;
+export const downloadContainerFile =
+	GlobalService.method.downloadContainerFile;
 
 /**
  * @generated from rpc openoxide.api.v1.GlobalService.ListContainers

@@ -77,11 +77,12 @@ export function SessionProvider({children}: {children: ReactNode}) {
 				// the primary (oldest owned) workspace so a later-created empty org
 				// doesn't become the default and hide the main data.
 				const owned = orgs.filter(
-					(o) => user?.id != null && Number(o.owner_id) === Number(user.id),
+					o => user?.id != null && Number(o.owner_id) === Number(user.id),
 				);
 				const pool = owned.length > 0 ? owned : orgs;
 				const primary = pool.reduce<Record<string, any> | null>(
-					(min, o) => (min == null || Number(o.id) < Number(min.id) ? o : min),
+					(min, o) =>
+						min == null || Number(o.id) < Number(min.id) ? o : min,
 					null,
 				);
 				const nextActive =

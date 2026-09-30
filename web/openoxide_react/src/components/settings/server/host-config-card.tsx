@@ -16,7 +16,13 @@ import {
 } from './use-host-settings-form';
 
 /** Small state chip shown on the right of a settings row. */
-function Chip({label, tone}: {label: string; tone: 'solid' | 'muted' | 'mono'}) {
+function Chip({
+	label,
+	tone,
+}: {
+	label: string;
+	tone: 'solid' | 'muted' | 'mono';
+}) {
 	return (
 		<span
 			className={
@@ -43,8 +49,8 @@ export function HostConfigCard() {
 	if (!canManage) {
 		return (
 			<p className="rounded-xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground">
-				Host configuration is managed by the organization owner
-				(requires org:update).
+				Host configuration is managed by the organization owner (requires
+				org:update).
 			</p>
 		);
 	}
@@ -81,9 +87,7 @@ export function HostConfigCard() {
 							className="h-9 font-mono text-xs"
 						/>
 					</Field>
-					<Field
-						label="Panel Host"
-						hint="Domain the panel is served on">
+					<Field label="Panel Host" hint="Domain the panel is served on">
 						<Input
 							value={form.host}
 							onChange={e => set('host', e.target.value)}
@@ -106,11 +110,7 @@ export function HostConfigCard() {
 						/>
 						<Chip
 							label={form.certificate_type}
-							tone={
-								form.certificate_type === 'None'
-									? 'muted'
-									: 'solid'
-							}
+							tone={form.certificate_type === 'None' ? 'muted' : 'solid'}
 						/>
 					</span>
 				}
@@ -126,17 +126,14 @@ export function HostConfigCard() {
 						<Select
 							value={form.certificate_type}
 							onValueChange={value =>
-								value &&
-								set('certificate_type', value as CertType)
+								value && set('certificate_type', value as CertType)
 							}>
 							<SelectTrigger className="h-9 text-xs">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="None">None</SelectItem>
-								<SelectItem value="Letsencrypt">
-									Letsencrypt
-								</SelectItem>
+								<SelectItem value="Letsencrypt">Letsencrypt</SelectItem>
 								<SelectItem value="Custom">Custom</SelectItem>
 							</SelectContent>
 						</Select>
@@ -148,9 +145,7 @@ export function HostConfigCard() {
 							<Input
 								type="email"
 								value={form.lets_encrypt_email}
-								onChange={e =>
-									set('lets_encrypt_email', e.target.value)
-								}
+								onChange={e => set('lets_encrypt_email', e.target.value)}
 								placeholder="admin@example.com"
 								className="h-9 text-xs"
 							/>
@@ -162,9 +157,7 @@ export function HostConfigCard() {
 							hint="Traefik cert resolver name">
 							<Input
 								value={form.custom_cert_resolver}
-								onChange={e =>
-									set('custom_cert_resolver', e.target.value)
-								}
+								onChange={e => set('custom_cert_resolver', e.target.value)}
 								placeholder="my-resolver"
 								className="h-9 font-mono text-xs"
 							/>
@@ -180,16 +173,12 @@ export function HostConfigCard() {
 				meta={
 					<span className="flex items-center gap-1.5">
 						<Chip
-							label={
-								form.log_cleanup_cron || 'Cleanup off'
-							}
+							label={form.log_cleanup_cron || 'Cleanup off'}
 							tone={form.log_cleanup_cron ? 'mono' : 'muted'}
 						/>
 						<Chip
 							label={`Prune ${form.enable_docker_cleanup ? 'on' : 'off'}`}
-							tone={
-								form.enable_docker_cleanup ? 'solid' : 'muted'
-							}
+							tone={form.enable_docker_cleanup ? 'solid' : 'muted'}
 						/>
 					</span>
 				}
@@ -197,9 +186,7 @@ export function HostConfigCard() {
 				<Field label="Log Cleanup Cron" hint="Blank disables the schedule">
 					<Input
 						value={form.log_cleanup_cron}
-						onChange={e =>
-							set('log_cleanup_cron', e.target.value)
-						}
+						onChange={e => set('log_cleanup_cron', e.target.value)}
 						placeholder="0 4 * * *"
 						className="h-9 font-mono text-xs"
 					/>

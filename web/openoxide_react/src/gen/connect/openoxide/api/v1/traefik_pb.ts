@@ -2,754 +2,791 @@
 // @generated from file openoxide/api/v1/traefik.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/traefik.proto.
  */
-export const file_openoxide_api_v1_traefik: GenFile = /*@__PURE__*/
-  fileDesc("Ch5vcGVub3hpZGUvYXBpL3YxL3RyYWVmaWsucHJvdG8SEG9wZW5veGlkZS5hcGkudjEibgoPVHJhZWZpa0ZpbGVOb2RlEgwKBG5hbWUYASABKAkSFQoNcmVsYXRpdmVfcGF0aBgCIAEoCRIMCgRzaXplGAMgASgEEhMKC2lzX3JlYWRvbmx5GAQgASgIEhMKC21vZGlmaWVkX2F0GAUgASgEIuUBChNUcmFlZmlrRmlsZVRyZWVOb2RlEgwKBG5hbWUYASABKAkSFQoNcmVsYXRpdmVfcGF0aBgCIAEoCRI4Cglub2RlX3R5cGUYAyABKA4yJS5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtGaWxlTm9kZVR5cGUSDAoEc2l6ZRgEIAEoBBITCgtpc19yZWFkb25seRgFIAEoCBITCgttb2RpZmllZF9hdBgGIAEoBBI3CghjaGlsZHJlbhgHIAMoCzIlLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0ZpbGVUcmVlTm9kZSJIChJUcmFlZmlrRmlsZUNvbnRlbnQSDAoEcGF0aBgBIAEoCRIPCgdjb250ZW50GAIgASgJEhMKC2lzX3JlYWRvbmx5GAMgASgIIlkKDVRyYWVmaWtIZWFsdGgSEgoKaXNfaGVhbHRoeRgBIAEoCBIWCg5yYXdkYXRhX3N0YXR1cxgCIAEoCRIcChRjb25maWd1cmF0aW9uX2Vycm9ycxgDIAMoCSJVChVUcmFlZmlrUmVxdWVzdHNTdGF0dXMSEQoJaXNfYWN0aXZlGAEgASgIEhAKCGxvZ19wYXRoGAIgASgJEhcKD2Nyb25fZXhwcmVzc2lvbhgDIAEoCSKlAQoPVHJhZWZpa0xvZ0VudHJ5EhEKCXRpbWVzdGFtcBgBIAEoCRIRCgljbGllbnRfaXAYAiABKAkSDgoGbWV0aG9kGAMgASgJEgwKBHBhdGgYBCABKAkSDgoGc3RhdHVzGAUgASgNEhMKC2R1cmF0aW9uX21zGAYgASgBEhQKDHNlcnZpY2VfbmFtZRgHIAEoCRITCgtyb3V0ZXJfbmFtZRgIIAEoCSJmCg5UcmFlZmlrVmVyc2lvbhIWCglzZXJ2ZXJfaWQYASABKANIAIgBARIVCg1jdXJyZW50X2ltYWdlGAIgASgJEhcKD2Rlc2lyZWRfdmVyc2lvbhgDIAEoCUIMCgpfc2VydmVyX2lkIpYBChFUcmFlZmlrTWlkZGxld2FyZRIRCglyZWZlcmVuY2UYASABKAkSPwoGbGFiZWxzGAIgAygLMi8ub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrTWlkZGxld2FyZS5MYWJlbHNFbnRyeRotCgtMYWJlbHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIkgKF1RyYWVmaWtMaXN0RmlsZXNSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiTAoYVHJhZWZpa0xpc3RGaWxlc1Jlc3BvbnNlEjAKBWZpbGVzGAEgAygLMiEub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrRmlsZU5vZGUiSgoZVHJhZWZpa0dldEZpbGVUcmVlUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBAUIMCgpfc2VydmVyX2lkIlIKGlRyYWVmaWtHZXRGaWxlVHJlZVJlc3BvbnNlEjQKBW5vZGVzGAEgAygLMiUub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrRmlsZVRyZWVOb2RlImQKHFRyYWVmaWtHZXRGaWxlQ29udGVudFJlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESFQoEcGF0aBgCIAEoCUIHukgEcgIQAUIMCgpfc2VydmVyX2lkIlMKHVRyYWVmaWtHZXRGaWxlQ29udGVudFJlc3BvbnNlEjIKBGZpbGUYASABKAsyJC5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtGaWxlQ29udGVudCJ4Ch9UcmFlZmlrVXBkYXRlRmlsZUNvbnRlbnRSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEhUKBHBhdGgYAiABKAlCB7pIBHICEAESDwoHY29udGVudBgDIAEoCUIMCgpfc2VydmVyX2lkIhYKFFRyYWVmaWtIZWFsdGhSZXF1ZXN0IkgKFVRyYWVmaWtIZWFsdGhSZXNwb25zZRIvCgZoZWFsdGgYASABKAsyHy5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtIZWFsdGgiIAoeVHJhZWZpa0dldFJlcXVlc3RTdGF0dXNSZXF1ZXN0IloKH1RyYWVmaWtHZXRSZXF1ZXN0U3RhdHVzUmVzcG9uc2USNwoGc3RhdHVzGAEgASgLMicub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrUmVxdWVzdHNTdGF0dXMiXQocVHJhZWZpa1RvZ2dsZVJlcXVlc3RzUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARIOCgZlbmFibGUYAiABKAhCDAoKX3NlcnZlcl9pZCIvCh1UcmFlZmlrVG9nZ2xlUmVxdWVzdHNSZXNwb25zZRIOCgZhY3RpdmUYASABKAgi7QEKHFRyYWVmaWtHZXRSZXF1ZXN0TG9nc1JlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESGgoEcGFnZRgCIAEoA0IHukgEIgIoAUgBiAEBEiEKCXBhZ2Vfc2l6ZRgDIAEoA0IJukgGIgQYZCgBSAKIAQESHQoGc2VhcmNoGAQgASgJQgi6SAVyAxjoB0gDiAEBEhMKBnN0YXR1cxgFIAEoDUgEiAEBQgwKCl9zZXJ2ZXJfaWRCBwoFX3BhZ2VCDAoKX3BhZ2Vfc2l6ZUIJCgdfc2VhcmNoQgkKB19zdGF0dXMiiQEKHVRyYWVmaWtHZXRSZXF1ZXN0TG9nc1Jlc3BvbnNlEjIKB2VudHJpZXMYASADKAsyIS5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtMb2dFbnRyeRITCgt0b3RhbF9jb3VudBgCIAEoAxIMCgRwYWdlGAMgASgDEhEKCXBhZ2Vfc2l6ZRgEIAEoAyIaChhUcmFlZmlrR2V0VmVyc2lvblJlcXVlc3QiTgoZVHJhZWZpa0dldFZlcnNpb25SZXNwb25zZRIxCgd2ZXJzaW9uGAEgASgLMiAub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrVmVyc2lvbiJmChtUcmFlZmlrVXBkYXRlVmVyc2lvblJlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESGAoHdmVyc2lvbhgCIAEoCUIHukgEcgIQAUIMCgpfc2VydmVyX2lkIlEKHFRyYWVmaWtVcGRhdGVWZXJzaW9uUmVzcG9uc2USMQoHdmVyc2lvbhgBIAEoCzIgLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa1ZlcnNpb24iiAIKHlRyYWVmaWtSZW5kZXJNaWRkbGV3YXJlUmVxdWVzdBJBCgRraW5kGAEgASgOMicub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrTWlkZGxld2FyZUtpbmRCCrpIB4IBBBABIAASGAoEbmFtZRgCIAEoCUIKukgHcgUQARj/ARJMCgZ2YWx1ZXMYAyADKAsyPC5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtSZW5kZXJNaWRkbGV3YXJlUmVxdWVzdC5WYWx1ZXNFbnRyeRIMCgRsaXN0GAQgAygJGi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiWgofVHJhZWZpa1JlbmRlck1pZGRsZXdhcmVSZXNwb25zZRI3CgptaWRkbGV3YXJlGAEgASgLMiMub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrTWlkZGxld2FyZSqEAQoTVHJhZWZpa0ZpbGVOb2RlVHlwZRImCiJUUkFFRklLX0ZJTEVfTk9ERV9UWVBFX1VOU1BFQ0lGSUVEEAASHwobVFJBRUZJS19GSUxFX05PREVfVFlQRV9GSUxFEAESJAogVFJBRUZJS19GSUxFX05PREVfVFlQRV9ESVJFQ1RPUlkQAiqTAwoVVHJhZWZpa01pZGRsZXdhcmVLaW5kEicKI1RSQUVGSUtfTUlERExFV0FSRV9LSU5EX1VOU1BFQ0lGSUVEEAASKAokVFJBRUZJS19NSURETEVXQVJFX0tJTkRfU1RSSVBfUFJFRklYEAESJgoiVFJBRUZJS19NSURETEVXQVJFX0tJTkRfQUREX1BSRUZJWBACEisKJ1RSQUVGSUtfTUlERExFV0FSRV9LSU5EX1JFRElSRUNUX1NDSEVNRRADEiQKIFRSQUVGSUtfTUlERExFV0FSRV9LSU5EX0NPTVBSRVNTEAQSJgoiVFJBRUZJS19NSURETEVXQVJFX0tJTkRfUkFURV9MSU1JVBAFEikKJVRSQUVGSUtfTUlERExFV0FSRV9LSU5EX0lQX0FMTE9XX0xJU1QQBhIrCidUUkFFRklLX01JRERMRVdBUkVfS0lORF9SRVFVRVNUX0hFQURFUlMQBxIsCihUUkFFRklLX01JRERMRVdBUkVfS0lORF9SRVNQT05TRV9IRUFERVJTEAgyvAkKDlRyYWVmaWtTZXJ2aWNlEmIKCUxpc3RGaWxlcxIpLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0xpc3RGaWxlc1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtMaXN0RmlsZXNSZXNwb25zZRJoCgtHZXRGaWxlVHJlZRIrLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0dldEZpbGVUcmVlUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0dldEZpbGVUcmVlUmVzcG9uc2UScQoOR2V0RmlsZUNvbnRlbnQSLi5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtHZXRGaWxlQ29udGVudFJlcXVlc3QaLy5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtHZXRGaWxlQ29udGVudFJlc3BvbnNlEl8KEVVwZGF0ZUZpbGVDb250ZW50EjEub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrVXBkYXRlRmlsZUNvbnRlbnRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJZCgZIZWFsdGgSJi5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtIZWFsdGhSZXF1ZXN0Gicub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrSGVhbHRoUmVzcG9uc2USdwoQR2V0UmVxdWVzdFN0YXR1cxIwLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0dldFJlcXVlc3RTdGF0dXNSZXF1ZXN0GjEub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrR2V0UmVxdWVzdFN0YXR1c1Jlc3BvbnNlEnEKDlRvZ2dsZVJlcXVlc3RzEi4ub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrVG9nZ2xlUmVxdWVzdHNSZXF1ZXN0Gi8ub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrVG9nZ2xlUmVxdWVzdHNSZXNwb25zZRJxCg5HZXRSZXF1ZXN0TG9ncxIuLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0dldFJlcXVlc3RMb2dzUmVxdWVzdBovLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0dldFJlcXVlc3RMb2dzUmVzcG9uc2USZQoKR2V0VmVyc2lvbhIqLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0dldFZlcnNpb25SZXF1ZXN0Gisub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrR2V0VmVyc2lvblJlc3BvbnNlEm4KDVVwZGF0ZVZlcnNpb24SLS5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtVcGRhdGVWZXJzaW9uUmVxdWVzdBouLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa1VwZGF0ZVZlcnNpb25SZXNwb25zZRJ3ChBSZW5kZXJNaWRkbGV3YXJlEjAub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrUmVuZGVyTWlkZGxld2FyZVJlcXVlc3QaMS5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtSZW5kZXJNaWRkbGV3YXJlUmVzcG9uc2ViBnByb3RvMw", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_traefik: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'Ch5vcGVub3hpZGUvYXBpL3YxL3RyYWVmaWsucHJvdG8SEG9wZW5veGlkZS5hcGkudjEibgoPVHJhZWZpa0ZpbGVOb2RlEgwKBG5hbWUYASABKAkSFQoNcmVsYXRpdmVfcGF0aBgCIAEoCRIMCgRzaXplGAMgASgEEhMKC2lzX3JlYWRvbmx5GAQgASgIEhMKC21vZGlmaWVkX2F0GAUgASgEIuUBChNUcmFlZmlrRmlsZVRyZWVOb2RlEgwKBG5hbWUYASABKAkSFQoNcmVsYXRpdmVfcGF0aBgCIAEoCRI4Cglub2RlX3R5cGUYAyABKA4yJS5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtGaWxlTm9kZVR5cGUSDAoEc2l6ZRgEIAEoBBITCgtpc19yZWFkb25seRgFIAEoCBITCgttb2RpZmllZF9hdBgGIAEoBBI3CghjaGlsZHJlbhgHIAMoCzIlLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0ZpbGVUcmVlTm9kZSJIChJUcmFlZmlrRmlsZUNvbnRlbnQSDAoEcGF0aBgBIAEoCRIPCgdjb250ZW50GAIgASgJEhMKC2lzX3JlYWRvbmx5GAMgASgIIlkKDVRyYWVmaWtIZWFsdGgSEgoKaXNfaGVhbHRoeRgBIAEoCBIWCg5yYXdkYXRhX3N0YXR1cxgCIAEoCRIcChRjb25maWd1cmF0aW9uX2Vycm9ycxgDIAMoCSJVChVUcmFlZmlrUmVxdWVzdHNTdGF0dXMSEQoJaXNfYWN0aXZlGAEgASgIEhAKCGxvZ19wYXRoGAIgASgJEhcKD2Nyb25fZXhwcmVzc2lvbhgDIAEoCSKlAQoPVHJhZWZpa0xvZ0VudHJ5EhEKCXRpbWVzdGFtcBgBIAEoCRIRCgljbGllbnRfaXAYAiABKAkSDgoGbWV0aG9kGAMgASgJEgwKBHBhdGgYBCABKAkSDgoGc3RhdHVzGAUgASgNEhMKC2R1cmF0aW9uX21zGAYgASgBEhQKDHNlcnZpY2VfbmFtZRgHIAEoCRITCgtyb3V0ZXJfbmFtZRgIIAEoCSJmCg5UcmFlZmlrVmVyc2lvbhIWCglzZXJ2ZXJfaWQYASABKANIAIgBARIVCg1jdXJyZW50X2ltYWdlGAIgASgJEhcKD2Rlc2lyZWRfdmVyc2lvbhgDIAEoCUIMCgpfc2VydmVyX2lkIpYBChFUcmFlZmlrTWlkZGxld2FyZRIRCglyZWZlcmVuY2UYASABKAkSPwoGbGFiZWxzGAIgAygLMi8ub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrTWlkZGxld2FyZS5MYWJlbHNFbnRyeRotCgtMYWJlbHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIkgKF1RyYWVmaWtMaXN0RmlsZXNSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBQgwKCl9zZXJ2ZXJfaWQiTAoYVHJhZWZpa0xpc3RGaWxlc1Jlc3BvbnNlEjAKBWZpbGVzGAEgAygLMiEub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrRmlsZU5vZGUiSgoZVHJhZWZpa0dldEZpbGVUcmVlUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBAUIMCgpfc2VydmVyX2lkIlIKGlRyYWVmaWtHZXRGaWxlVHJlZVJlc3BvbnNlEjQKBW5vZGVzGAEgAygLMiUub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrRmlsZVRyZWVOb2RlImQKHFRyYWVmaWtHZXRGaWxlQ29udGVudFJlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESFQoEcGF0aBgCIAEoCUIHukgEcgIQAUIMCgpfc2VydmVyX2lkIlMKHVRyYWVmaWtHZXRGaWxlQ29udGVudFJlc3BvbnNlEjIKBGZpbGUYASABKAsyJC5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtGaWxlQ29udGVudCJ4Ch9UcmFlZmlrVXBkYXRlRmlsZUNvbnRlbnRSZXF1ZXN0Eh8KCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgAEgAiAEBEhUKBHBhdGgYAiABKAlCB7pIBHICEAESDwoHY29udGVudBgDIAEoCUIMCgpfc2VydmVyX2lkIhYKFFRyYWVmaWtIZWFsdGhSZXF1ZXN0IkgKFVRyYWVmaWtIZWFsdGhSZXNwb25zZRIvCgZoZWFsdGgYASABKAsyHy5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtIZWFsdGgiIAoeVHJhZWZpa0dldFJlcXVlc3RTdGF0dXNSZXF1ZXN0IloKH1RyYWVmaWtHZXRSZXF1ZXN0U3RhdHVzUmVzcG9uc2USNwoGc3RhdHVzGAEgASgLMicub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrUmVxdWVzdHNTdGF0dXMiXQocVHJhZWZpa1RvZ2dsZVJlcXVlc3RzUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARIOCgZlbmFibGUYAiABKAhCDAoKX3NlcnZlcl9pZCIvCh1UcmFlZmlrVG9nZ2xlUmVxdWVzdHNSZXNwb25zZRIOCgZhY3RpdmUYASABKAgi7QEKHFRyYWVmaWtHZXRSZXF1ZXN0TG9nc1JlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESGgoEcGFnZRgCIAEoA0IHukgEIgIoAUgBiAEBEiEKCXBhZ2Vfc2l6ZRgDIAEoA0IJukgGIgQYZCgBSAKIAQESHQoGc2VhcmNoGAQgASgJQgi6SAVyAxjoB0gDiAEBEhMKBnN0YXR1cxgFIAEoDUgEiAEBQgwKCl9zZXJ2ZXJfaWRCBwoFX3BhZ2VCDAoKX3BhZ2Vfc2l6ZUIJCgdfc2VhcmNoQgkKB19zdGF0dXMiiQEKHVRyYWVmaWtHZXRSZXF1ZXN0TG9nc1Jlc3BvbnNlEjIKB2VudHJpZXMYASADKAsyIS5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtMb2dFbnRyeRITCgt0b3RhbF9jb3VudBgCIAEoAxIMCgRwYWdlGAMgASgDEhEKCXBhZ2Vfc2l6ZRgEIAEoAyIaChhUcmFlZmlrR2V0VmVyc2lvblJlcXVlc3QiTgoZVHJhZWZpa0dldFZlcnNpb25SZXNwb25zZRIxCgd2ZXJzaW9uGAEgASgLMiAub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrVmVyc2lvbiJmChtUcmFlZmlrVXBkYXRlVmVyc2lvblJlcXVlc3QSHwoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAASACIAQESGAoHdmVyc2lvbhgCIAEoCUIHukgEcgIQAUIMCgpfc2VydmVyX2lkIlEKHFRyYWVmaWtVcGRhdGVWZXJzaW9uUmVzcG9uc2USMQoHdmVyc2lvbhgBIAEoCzIgLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa1ZlcnNpb24iiAIKHlRyYWVmaWtSZW5kZXJNaWRkbGV3YXJlUmVxdWVzdBJBCgRraW5kGAEgASgOMicub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrTWlkZGxld2FyZUtpbmRCCrpIB4IBBBABIAASGAoEbmFtZRgCIAEoCUIKukgHcgUQARj/ARJMCgZ2YWx1ZXMYAyADKAsyPC5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtSZW5kZXJNaWRkbGV3YXJlUmVxdWVzdC5WYWx1ZXNFbnRyeRIMCgRsaXN0GAQgAygJGi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiWgofVHJhZWZpa1JlbmRlck1pZGRsZXdhcmVSZXNwb25zZRI3CgptaWRkbGV3YXJlGAEgASgLMiMub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrTWlkZGxld2FyZSqEAQoTVHJhZWZpa0ZpbGVOb2RlVHlwZRImCiJUUkFFRklLX0ZJTEVfTk9ERV9UWVBFX1VOU1BFQ0lGSUVEEAASHwobVFJBRUZJS19GSUxFX05PREVfVFlQRV9GSUxFEAESJAogVFJBRUZJS19GSUxFX05PREVfVFlQRV9ESVJFQ1RPUlkQAiqTAwoVVHJhZWZpa01pZGRsZXdhcmVLaW5kEicKI1RSQUVGSUtfTUlERExFV0FSRV9LSU5EX1VOU1BFQ0lGSUVEEAASKAokVFJBRUZJS19NSURETEVXQVJFX0tJTkRfU1RSSVBfUFJFRklYEAESJgoiVFJBRUZJS19NSURETEVXQVJFX0tJTkRfQUREX1BSRUZJWBACEisKJ1RSQUVGSUtfTUlERExFV0FSRV9LSU5EX1JFRElSRUNUX1NDSEVNRRADEiQKIFRSQUVGSUtfTUlERExFV0FSRV9LSU5EX0NPTVBSRVNTEAQSJgoiVFJBRUZJS19NSURETEVXQVJFX0tJTkRfUkFURV9MSU1JVBAFEikKJVRSQUVGSUtfTUlERExFV0FSRV9LSU5EX0lQX0FMTE9XX0xJU1QQBhIrCidUUkFFRklLX01JRERMRVdBUkVfS0lORF9SRVFVRVNUX0hFQURFUlMQBxIsCihUUkFFRklLX01JRERMRVdBUkVfS0lORF9SRVNQT05TRV9IRUFERVJTEAgyvAkKDlRyYWVmaWtTZXJ2aWNlEmIKCUxpc3RGaWxlcxIpLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0xpc3RGaWxlc1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtMaXN0RmlsZXNSZXNwb25zZRJoCgtHZXRGaWxlVHJlZRIrLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0dldEZpbGVUcmVlUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0dldEZpbGVUcmVlUmVzcG9uc2UScQoOR2V0RmlsZUNvbnRlbnQSLi5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtHZXRGaWxlQ29udGVudFJlcXVlc3QaLy5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtHZXRGaWxlQ29udGVudFJlc3BvbnNlEl8KEVVwZGF0ZUZpbGVDb250ZW50EjEub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrVXBkYXRlRmlsZUNvbnRlbnRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJZCgZIZWFsdGgSJi5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtIZWFsdGhSZXF1ZXN0Gicub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrSGVhbHRoUmVzcG9uc2USdwoQR2V0UmVxdWVzdFN0YXR1cxIwLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0dldFJlcXVlc3RTdGF0dXNSZXF1ZXN0GjEub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrR2V0UmVxdWVzdFN0YXR1c1Jlc3BvbnNlEnEKDlRvZ2dsZVJlcXVlc3RzEi4ub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrVG9nZ2xlUmVxdWVzdHNSZXF1ZXN0Gi8ub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrVG9nZ2xlUmVxdWVzdHNSZXNwb25zZRJxCg5HZXRSZXF1ZXN0TG9ncxIuLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0dldFJlcXVlc3RMb2dzUmVxdWVzdBovLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0dldFJlcXVlc3RMb2dzUmVzcG9uc2USZQoKR2V0VmVyc2lvbhIqLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa0dldFZlcnNpb25SZXF1ZXN0Gisub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrR2V0VmVyc2lvblJlc3BvbnNlEm4KDVVwZGF0ZVZlcnNpb24SLS5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtVcGRhdGVWZXJzaW9uUmVxdWVzdBouLm9wZW5veGlkZS5hcGkudjEuVHJhZWZpa1VwZGF0ZVZlcnNpb25SZXNwb25zZRJ3ChBSZW5kZXJNaWRkbGV3YXJlEjAub3Blbm94aWRlLmFwaS52MS5UcmFlZmlrUmVuZGVyTWlkZGxld2FyZVJlcXVlc3QaMS5vcGVub3hpZGUuYXBpLnYxLlRyYWVmaWtSZW5kZXJNaWRkbGV3YXJlUmVzcG9uc2ViBnByb3RvMw',
+		[file_openoxide_api_v1_common, file_buf_validate_validate],
+	);
 
 /**
  * @generated from message openoxide.api.v1.TraefikFileNode
  */
-export type TraefikFileNode = Message<"openoxide.api.v1.TraefikFileNode"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
+export type TraefikFileNode =
+	Message<'openoxide.api.v1.TraefikFileNode'> & {
+		/**
+		 * @generated from field: string name = 1;
+		 */
+		name: string;
 
-  /**
-   * Path relative to the Traefik config base directory.
-   *
-   * @generated from field: string relative_path = 2;
-   */
-  relativePath: string;
+		/**
+		 * Path relative to the Traefik config base directory.
+		 *
+		 * @generated from field: string relative_path = 2;
+		 */
+		relativePath: string;
 
-  /**
-   * @generated from field: uint64 size = 3;
-   */
-  size: bigint;
+		/**
+		 * @generated from field: uint64 size = 3;
+		 */
+		size: bigint;
 
-  /**
-   * @generated from field: bool is_readonly = 4;
-   */
-  isReadonly: boolean;
+		/**
+		 * @generated from field: bool is_readonly = 4;
+		 */
+		isReadonly: boolean;
 
-  /**
-   * Unix epoch seconds as reported by the filesystem.
-   *
-   * @generated from field: uint64 modified_at = 5;
-   */
-  modifiedAt: bigint;
-};
+		/**
+		 * Unix epoch seconds as reported by the filesystem.
+		 *
+		 * @generated from field: uint64 modified_at = 5;
+		 */
+		modifiedAt: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikFileNode.
  * Use `create(TraefikFileNodeSchema)` to create a new message.
  */
-export const TraefikFileNodeSchema: GenMessage<TraefikFileNode> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 0);
+export const TraefikFileNodeSchema: GenMessage<TraefikFileNode> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 0);
 
 /**
  * @generated from message openoxide.api.v1.TraefikFileTreeNode
  */
-export type TraefikFileTreeNode = Message<"openoxide.api.v1.TraefikFileTreeNode"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
+export type TraefikFileTreeNode =
+	Message<'openoxide.api.v1.TraefikFileTreeNode'> & {
+		/**
+		 * @generated from field: string name = 1;
+		 */
+		name: string;
 
-  /**
-   * @generated from field: string relative_path = 2;
-   */
-  relativePath: string;
+		/**
+		 * @generated from field: string relative_path = 2;
+		 */
+		relativePath: string;
 
-  /**
-   * @generated from field: openoxide.api.v1.TraefikFileNodeType node_type = 3;
-   */
-  nodeType: TraefikFileNodeType;
+		/**
+		 * @generated from field: openoxide.api.v1.TraefikFileNodeType node_type = 3;
+		 */
+		nodeType: TraefikFileNodeType;
 
-  /**
-   * @generated from field: uint64 size = 4;
-   */
-  size: bigint;
+		/**
+		 * @generated from field: uint64 size = 4;
+		 */
+		size: bigint;
 
-  /**
-   * @generated from field: bool is_readonly = 5;
-   */
-  isReadonly: boolean;
+		/**
+		 * @generated from field: bool is_readonly = 5;
+		 */
+		isReadonly: boolean;
 
-  /**
-   * @generated from field: uint64 modified_at = 6;
-   */
-  modifiedAt: bigint;
+		/**
+		 * @generated from field: uint64 modified_at = 6;
+		 */
+		modifiedAt: bigint;
 
-  /**
-   * @generated from field: repeated openoxide.api.v1.TraefikFileTreeNode children = 7;
-   */
-  children: TraefikFileTreeNode[];
-};
+		/**
+		 * @generated from field: repeated openoxide.api.v1.TraefikFileTreeNode children = 7;
+		 */
+		children: TraefikFileTreeNode[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikFileTreeNode.
  * Use `create(TraefikFileTreeNodeSchema)` to create a new message.
  */
-export const TraefikFileTreeNodeSchema: GenMessage<TraefikFileTreeNode> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 1);
+export const TraefikFileTreeNodeSchema: GenMessage<TraefikFileTreeNode> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 1);
 
 /**
  * @generated from message openoxide.api.v1.TraefikFileContent
  */
-export type TraefikFileContent = Message<"openoxide.api.v1.TraefikFileContent"> & {
-  /**
-   * @generated from field: string path = 1;
-   */
-  path: string;
+export type TraefikFileContent =
+	Message<'openoxide.api.v1.TraefikFileContent'> & {
+		/**
+		 * @generated from field: string path = 1;
+		 */
+		path: string;
 
-  /**
-   * Opaque Traefik config document (.yml/.yaml/.json); shape is file-specific.
-   *
-   * @generated from field: string content = 2;
-   */
-  content: string;
+		/**
+		 * Opaque Traefik config document (.yml/.yaml/.json); shape is file-specific.
+		 *
+		 * @generated from field: string content = 2;
+		 */
+		content: string;
 
-  /**
-   * @generated from field: bool is_readonly = 3;
-   */
-  isReadonly: boolean;
-};
+		/**
+		 * @generated from field: bool is_readonly = 3;
+		 */
+		isReadonly: boolean;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikFileContent.
  * Use `create(TraefikFileContentSchema)` to create a new message.
  */
-export const TraefikFileContentSchema: GenMessage<TraefikFileContent> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 2);
+export const TraefikFileContentSchema: GenMessage<TraefikFileContent> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 2);
 
 /**
  * @generated from message openoxide.api.v1.TraefikHealth
  */
-export type TraefikHealth = Message<"openoxide.api.v1.TraefikHealth"> & {
-  /**
-   * @generated from field: bool is_healthy = 1;
-   */
-  isHealthy: boolean;
+export type TraefikHealth = Message<'openoxide.api.v1.TraefikHealth'> & {
+	/**
+	 * @generated from field: bool is_healthy = 1;
+	 */
+	isHealthy: boolean;
 
-  /**
-   * Coarse rawdata endpoint state ("ok" or "unreachable").
-   *
-   * @generated from field: string rawdata_status = 2;
-   */
-  rawdataStatus: string;
+	/**
+	 * Coarse rawdata endpoint state ("ok" or "unreachable").
+	 *
+	 * @generated from field: string rawdata_status = 2;
+	 */
+	rawdataStatus: string;
 
-  /**
-   * @generated from field: repeated string configuration_errors = 3;
-   */
-  configurationErrors: string[];
+	/**
+	 * @generated from field: repeated string configuration_errors = 3;
+	 */
+	configurationErrors: string[];
 };
 
 /**
  * Describes the message openoxide.api.v1.TraefikHealth.
  * Use `create(TraefikHealthSchema)` to create a new message.
  */
-export const TraefikHealthSchema: GenMessage<TraefikHealth> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 3);
+export const TraefikHealthSchema: GenMessage<TraefikHealth> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 3);
 
 /**
  * @generated from message openoxide.api.v1.TraefikRequestsStatus
  */
-export type TraefikRequestsStatus = Message<"openoxide.api.v1.TraefikRequestsStatus"> & {
-  /**
-   * @generated from field: bool is_active = 1;
-   */
-  isActive: boolean;
+export type TraefikRequestsStatus =
+	Message<'openoxide.api.v1.TraefikRequestsStatus'> & {
+		/**
+		 * @generated from field: bool is_active = 1;
+		 */
+		isActive: boolean;
 
-  /**
-   * @generated from field: string log_path = 2;
-   */
-  logPath: string;
+		/**
+		 * @generated from field: string log_path = 2;
+		 */
+		logPath: string;
 
-  /**
-   * @generated from field: string cron_expression = 3;
-   */
-  cronExpression: string;
-};
+		/**
+		 * @generated from field: string cron_expression = 3;
+		 */
+		cronExpression: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikRequestsStatus.
  * Use `create(TraefikRequestsStatusSchema)` to create a new message.
  */
-export const TraefikRequestsStatusSchema: GenMessage<TraefikRequestsStatus> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 4);
+export const TraefikRequestsStatusSchema: GenMessage<TraefikRequestsStatus> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 4);
 
 /**
  * @generated from message openoxide.api.v1.TraefikLogEntry
  */
-export type TraefikLogEntry = Message<"openoxide.api.v1.TraefikLogEntry"> & {
-  /**
-   * Timestamp string as emitted by the Traefik access log (RFC 3339).
-   *
-   * @generated from field: string timestamp = 1;
-   */
-  timestamp: string;
+export type TraefikLogEntry =
+	Message<'openoxide.api.v1.TraefikLogEntry'> & {
+		/**
+		 * Timestamp string as emitted by the Traefik access log (RFC 3339).
+		 *
+		 * @generated from field: string timestamp = 1;
+		 */
+		timestamp: string;
 
-  /**
-   * @generated from field: string client_ip = 2;
-   */
-  clientIp: string;
+		/**
+		 * @generated from field: string client_ip = 2;
+		 */
+		clientIp: string;
 
-  /**
-   * @generated from field: string method = 3;
-   */
-  method: string;
+		/**
+		 * @generated from field: string method = 3;
+		 */
+		method: string;
 
-  /**
-   * @generated from field: string path = 4;
-   */
-  path: string;
+		/**
+		 * @generated from field: string path = 4;
+		 */
+		path: string;
 
-  /**
-   * @generated from field: uint32 status = 5;
-   */
-  status: number;
+		/**
+		 * @generated from field: uint32 status = 5;
+		 */
+		status: number;
 
-  /**
-   * @generated from field: double duration_ms = 6;
-   */
-  durationMs: number;
+		/**
+		 * @generated from field: double duration_ms = 6;
+		 */
+		durationMs: number;
 
-  /**
-   * @generated from field: string service_name = 7;
-   */
-  serviceName: string;
+		/**
+		 * @generated from field: string service_name = 7;
+		 */
+		serviceName: string;
 
-  /**
-   * @generated from field: string router_name = 8;
-   */
-  routerName: string;
-};
+		/**
+		 * @generated from field: string router_name = 8;
+		 */
+		routerName: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikLogEntry.
  * Use `create(TraefikLogEntrySchema)` to create a new message.
  */
-export const TraefikLogEntrySchema: GenMessage<TraefikLogEntry> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 5);
+export const TraefikLogEntrySchema: GenMessage<TraefikLogEntry> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 5);
 
 /**
  * @generated from message openoxide.api.v1.TraefikVersion
  */
-export type TraefikVersion = Message<"openoxide.api.v1.TraefikVersion"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type TraefikVersion = Message<'openoxide.api.v1.TraefikVersion'> & {
+	/**
+	 * @generated from field: optional int64 server_id = 1;
+	 */
+	serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string current_image = 2;
-   */
-  currentImage: string;
+	/**
+	 * @generated from field: string current_image = 2;
+	 */
+	currentImage: string;
 
-  /**
-   * @generated from field: string desired_version = 3;
-   */
-  desiredVersion: string;
+	/**
+	 * @generated from field: string desired_version = 3;
+	 */
+	desiredVersion: string;
 };
 
 /**
  * Describes the message openoxide.api.v1.TraefikVersion.
  * Use `create(TraefikVersionSchema)` to create a new message.
  */
-export const TraefikVersionSchema: GenMessage<TraefikVersion> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 6);
+export const TraefikVersionSchema: GenMessage<TraefikVersion> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 6);
 
 /**
  * @generated from message openoxide.api.v1.TraefikMiddleware
  */
-export type TraefikMiddleware = Message<"openoxide.api.v1.TraefikMiddleware"> & {
-  /**
-   * Docker-label middleware reference, e.g. `openoxide-auth@docker`.
-   *
-   * @generated from field: string reference = 1;
-   */
-  reference: string;
+export type TraefikMiddleware =
+	Message<'openoxide.api.v1.TraefikMiddleware'> & {
+		/**
+		 * Docker-label middleware reference, e.g. `openoxide-auth@docker`.
+		 *
+		 * @generated from field: string reference = 1;
+		 */
+		reference: string;
 
-  /**
-   * Rendered Traefik Docker labels; values are opaque YAML fragments.
-   *
-   * @generated from field: map<string, string> labels = 2;
-   */
-  labels: { [key: string]: string };
-};
+		/**
+		 * Rendered Traefik Docker labels; values are opaque YAML fragments.
+		 *
+		 * @generated from field: map<string, string> labels = 2;
+		 */
+		labels: {[key: string]: string};
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikMiddleware.
  * Use `create(TraefikMiddlewareSchema)` to create a new message.
  */
-export const TraefikMiddlewareSchema: GenMessage<TraefikMiddleware> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 7);
+export const TraefikMiddlewareSchema: GenMessage<TraefikMiddleware> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 7);
 
 /**
  * @generated from message openoxide.api.v1.TraefikListFilesRequest
  */
-export type TraefikListFilesRequest = Message<"openoxide.api.v1.TraefikListFilesRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type TraefikListFilesRequest =
+	Message<'openoxide.api.v1.TraefikListFilesRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikListFilesRequest.
  * Use `create(TraefikListFilesRequestSchema)` to create a new message.
  */
-export const TraefikListFilesRequestSchema: GenMessage<TraefikListFilesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 8);
+export const TraefikListFilesRequestSchema: GenMessage<TraefikListFilesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 8);
 
 /**
  * @generated from message openoxide.api.v1.TraefikListFilesResponse
  */
-export type TraefikListFilesResponse = Message<"openoxide.api.v1.TraefikListFilesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.TraefikFileNode files = 1;
-   */
-  files: TraefikFileNode[];
-};
+export type TraefikListFilesResponse =
+	Message<'openoxide.api.v1.TraefikListFilesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.TraefikFileNode files = 1;
+		 */
+		files: TraefikFileNode[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikListFilesResponse.
  * Use `create(TraefikListFilesResponseSchema)` to create a new message.
  */
-export const TraefikListFilesResponseSchema: GenMessage<TraefikListFilesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 9);
+export const TraefikListFilesResponseSchema: GenMessage<TraefikListFilesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 9);
 
 /**
  * @generated from message openoxide.api.v1.TraefikGetFileTreeRequest
  */
-export type TraefikGetFileTreeRequest = Message<"openoxide.api.v1.TraefikGetFileTreeRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type TraefikGetFileTreeRequest =
+	Message<'openoxide.api.v1.TraefikGetFileTreeRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikGetFileTreeRequest.
  * Use `create(TraefikGetFileTreeRequestSchema)` to create a new message.
  */
-export const TraefikGetFileTreeRequestSchema: GenMessage<TraefikGetFileTreeRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 10);
+export const TraefikGetFileTreeRequestSchema: GenMessage<TraefikGetFileTreeRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 10);
 
 /**
  * @generated from message openoxide.api.v1.TraefikGetFileTreeResponse
  */
-export type TraefikGetFileTreeResponse = Message<"openoxide.api.v1.TraefikGetFileTreeResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.TraefikFileTreeNode nodes = 1;
-   */
-  nodes: TraefikFileTreeNode[];
-};
+export type TraefikGetFileTreeResponse =
+	Message<'openoxide.api.v1.TraefikGetFileTreeResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.TraefikFileTreeNode nodes = 1;
+		 */
+		nodes: TraefikFileTreeNode[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikGetFileTreeResponse.
  * Use `create(TraefikGetFileTreeResponseSchema)` to create a new message.
  */
-export const TraefikGetFileTreeResponseSchema: GenMessage<TraefikGetFileTreeResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 11);
+export const TraefikGetFileTreeResponseSchema: GenMessage<TraefikGetFileTreeResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 11);
 
 /**
  * @generated from message openoxide.api.v1.TraefikGetFileContentRequest
  */
-export type TraefikGetFileContentRequest = Message<"openoxide.api.v1.TraefikGetFileContentRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type TraefikGetFileContentRequest =
+	Message<'openoxide.api.v1.TraefikGetFileContentRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string path = 2;
-   */
-  path: string;
-};
+		/**
+		 * @generated from field: string path = 2;
+		 */
+		path: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikGetFileContentRequest.
  * Use `create(TraefikGetFileContentRequestSchema)` to create a new message.
  */
-export const TraefikGetFileContentRequestSchema: GenMessage<TraefikGetFileContentRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 12);
+export const TraefikGetFileContentRequestSchema: GenMessage<TraefikGetFileContentRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 12);
 
 /**
  * @generated from message openoxide.api.v1.TraefikGetFileContentResponse
  */
-export type TraefikGetFileContentResponse = Message<"openoxide.api.v1.TraefikGetFileContentResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.TraefikFileContent file = 1;
-   */
-  file?: TraefikFileContent | undefined;
-};
+export type TraefikGetFileContentResponse =
+	Message<'openoxide.api.v1.TraefikGetFileContentResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.TraefikFileContent file = 1;
+		 */
+		file?: TraefikFileContent | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikGetFileContentResponse.
  * Use `create(TraefikGetFileContentResponseSchema)` to create a new message.
  */
-export const TraefikGetFileContentResponseSchema: GenMessage<TraefikGetFileContentResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 13);
+export const TraefikGetFileContentResponseSchema: GenMessage<TraefikGetFileContentResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 13);
 
 /**
  * @generated from message openoxide.api.v1.TraefikUpdateFileContentRequest
  */
-export type TraefikUpdateFileContentRequest = Message<"openoxide.api.v1.TraefikUpdateFileContentRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type TraefikUpdateFileContentRequest =
+	Message<'openoxide.api.v1.TraefikUpdateFileContentRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string path = 2;
-   */
-  path: string;
+		/**
+		 * @generated from field: string path = 2;
+		 */
+		path: string;
 
-  /**
-   * Full replacement document; validated as a YAML mapping server-side.
-   *
-   * @generated from field: string content = 3;
-   */
-  content: string;
-};
+		/**
+		 * Full replacement document; validated as a YAML mapping server-side.
+		 *
+		 * @generated from field: string content = 3;
+		 */
+		content: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikUpdateFileContentRequest.
  * Use `create(TraefikUpdateFileContentRequestSchema)` to create a new message.
  */
-export const TraefikUpdateFileContentRequestSchema: GenMessage<TraefikUpdateFileContentRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 14);
+export const TraefikUpdateFileContentRequestSchema: GenMessage<TraefikUpdateFileContentRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 14);
 
 /**
  * @generated from message openoxide.api.v1.TraefikHealthRequest
  */
-export type TraefikHealthRequest = Message<"openoxide.api.v1.TraefikHealthRequest"> & {
-};
+export type TraefikHealthRequest =
+	Message<'openoxide.api.v1.TraefikHealthRequest'> & {};
 
 /**
  * Describes the message openoxide.api.v1.TraefikHealthRequest.
  * Use `create(TraefikHealthRequestSchema)` to create a new message.
  */
-export const TraefikHealthRequestSchema: GenMessage<TraefikHealthRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 15);
+export const TraefikHealthRequestSchema: GenMessage<TraefikHealthRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 15);
 
 /**
  * @generated from message openoxide.api.v1.TraefikHealthResponse
  */
-export type TraefikHealthResponse = Message<"openoxide.api.v1.TraefikHealthResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.TraefikHealth health = 1;
-   */
-  health?: TraefikHealth | undefined;
-};
+export type TraefikHealthResponse =
+	Message<'openoxide.api.v1.TraefikHealthResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.TraefikHealth health = 1;
+		 */
+		health?: TraefikHealth | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikHealthResponse.
  * Use `create(TraefikHealthResponseSchema)` to create a new message.
  */
-export const TraefikHealthResponseSchema: GenMessage<TraefikHealthResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 16);
+export const TraefikHealthResponseSchema: GenMessage<TraefikHealthResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 16);
 
 /**
  * @generated from message openoxide.api.v1.TraefikGetRequestStatusRequest
  */
-export type TraefikGetRequestStatusRequest = Message<"openoxide.api.v1.TraefikGetRequestStatusRequest"> & {
-};
+export type TraefikGetRequestStatusRequest =
+	Message<'openoxide.api.v1.TraefikGetRequestStatusRequest'> & {};
 
 /**
  * Describes the message openoxide.api.v1.TraefikGetRequestStatusRequest.
  * Use `create(TraefikGetRequestStatusRequestSchema)` to create a new message.
  */
-export const TraefikGetRequestStatusRequestSchema: GenMessage<TraefikGetRequestStatusRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 17);
+export const TraefikGetRequestStatusRequestSchema: GenMessage<TraefikGetRequestStatusRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 17);
 
 /**
  * @generated from message openoxide.api.v1.TraefikGetRequestStatusResponse
  */
-export type TraefikGetRequestStatusResponse = Message<"openoxide.api.v1.TraefikGetRequestStatusResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.TraefikRequestsStatus status = 1;
-   */
-  status?: TraefikRequestsStatus | undefined;
-};
+export type TraefikGetRequestStatusResponse =
+	Message<'openoxide.api.v1.TraefikGetRequestStatusResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.TraefikRequestsStatus status = 1;
+		 */
+		status?: TraefikRequestsStatus | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikGetRequestStatusResponse.
  * Use `create(TraefikGetRequestStatusResponseSchema)` to create a new message.
  */
-export const TraefikGetRequestStatusResponseSchema: GenMessage<TraefikGetRequestStatusResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 18);
+export const TraefikGetRequestStatusResponseSchema: GenMessage<TraefikGetRequestStatusResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 18);
 
 /**
  * @generated from message openoxide.api.v1.TraefikToggleRequestsRequest
  */
-export type TraefikToggleRequestsRequest = Message<"openoxide.api.v1.TraefikToggleRequestsRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type TraefikToggleRequestsRequest =
+	Message<'openoxide.api.v1.TraefikToggleRequestsRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: bool enable = 2;
-   */
-  enable: boolean;
-};
+		/**
+		 * @generated from field: bool enable = 2;
+		 */
+		enable: boolean;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikToggleRequestsRequest.
  * Use `create(TraefikToggleRequestsRequestSchema)` to create a new message.
  */
-export const TraefikToggleRequestsRequestSchema: GenMessage<TraefikToggleRequestsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 19);
+export const TraefikToggleRequestsRequestSchema: GenMessage<TraefikToggleRequestsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 19);
 
 /**
  * @generated from message openoxide.api.v1.TraefikToggleRequestsResponse
  */
-export type TraefikToggleRequestsResponse = Message<"openoxide.api.v1.TraefikToggleRequestsResponse"> & {
-  /**
-   * Whether request logging is active after the toggle.
-   *
-   * @generated from field: bool active = 1;
-   */
-  active: boolean;
-};
+export type TraefikToggleRequestsResponse =
+	Message<'openoxide.api.v1.TraefikToggleRequestsResponse'> & {
+		/**
+		 * Whether request logging is active after the toggle.
+		 *
+		 * @generated from field: bool active = 1;
+		 */
+		active: boolean;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikToggleRequestsResponse.
  * Use `create(TraefikToggleRequestsResponseSchema)` to create a new message.
  */
-export const TraefikToggleRequestsResponseSchema: GenMessage<TraefikToggleRequestsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 20);
+export const TraefikToggleRequestsResponseSchema: GenMessage<TraefikToggleRequestsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 20);
 
 /**
  * @generated from message openoxide.api.v1.TraefikGetRequestLogsRequest
  */
-export type TraefikGetRequestLogsRequest = Message<"openoxide.api.v1.TraefikGetRequestLogsRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type TraefikGetRequestLogsRequest =
+	Message<'openoxide.api.v1.TraefikGetRequestLogsRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 page = 2;
-   */
-  page?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 page = 2;
+		 */
+		page?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 page_size = 3;
-   */
-  pageSize?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 page_size = 3;
+		 */
+		pageSize?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string search = 4;
-   */
-  search?: string | undefined;
+		/**
+		 * @generated from field: optional string search = 4;
+		 */
+		search?: string | undefined;
 
-  /**
-   * @generated from field: optional uint32 status = 5;
-   */
-  status?: number | undefined;
-};
+		/**
+		 * @generated from field: optional uint32 status = 5;
+		 */
+		status?: number | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikGetRequestLogsRequest.
  * Use `create(TraefikGetRequestLogsRequestSchema)` to create a new message.
  */
-export const TraefikGetRequestLogsRequestSchema: GenMessage<TraefikGetRequestLogsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 21);
+export const TraefikGetRequestLogsRequestSchema: GenMessage<TraefikGetRequestLogsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 21);
 
 /**
  * @generated from message openoxide.api.v1.TraefikGetRequestLogsResponse
  */
-export type TraefikGetRequestLogsResponse = Message<"openoxide.api.v1.TraefikGetRequestLogsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.TraefikLogEntry entries = 1;
-   */
-  entries: TraefikLogEntry[];
+export type TraefikGetRequestLogsResponse =
+	Message<'openoxide.api.v1.TraefikGetRequestLogsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.TraefikLogEntry entries = 1;
+		 */
+		entries: TraefikLogEntry[];
 
-  /**
-   * @generated from field: int64 total_count = 2;
-   */
-  totalCount: bigint;
+		/**
+		 * @generated from field: int64 total_count = 2;
+		 */
+		totalCount: bigint;
 
-  /**
-   * @generated from field: int64 page = 3;
-   */
-  page: bigint;
+		/**
+		 * @generated from field: int64 page = 3;
+		 */
+		page: bigint;
 
-  /**
-   * @generated from field: int64 page_size = 4;
-   */
-  pageSize: bigint;
-};
+		/**
+		 * @generated from field: int64 page_size = 4;
+		 */
+		pageSize: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikGetRequestLogsResponse.
  * Use `create(TraefikGetRequestLogsResponseSchema)` to create a new message.
  */
-export const TraefikGetRequestLogsResponseSchema: GenMessage<TraefikGetRequestLogsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 22);
+export const TraefikGetRequestLogsResponseSchema: GenMessage<TraefikGetRequestLogsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 22);
 
 /**
  * @generated from message openoxide.api.v1.TraefikGetVersionRequest
  */
-export type TraefikGetVersionRequest = Message<"openoxide.api.v1.TraefikGetVersionRequest"> & {
-};
+export type TraefikGetVersionRequest =
+	Message<'openoxide.api.v1.TraefikGetVersionRequest'> & {};
 
 /**
  * Describes the message openoxide.api.v1.TraefikGetVersionRequest.
  * Use `create(TraefikGetVersionRequestSchema)` to create a new message.
  */
-export const TraefikGetVersionRequestSchema: GenMessage<TraefikGetVersionRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 23);
+export const TraefikGetVersionRequestSchema: GenMessage<TraefikGetVersionRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 23);
 
 /**
  * @generated from message openoxide.api.v1.TraefikGetVersionResponse
  */
-export type TraefikGetVersionResponse = Message<"openoxide.api.v1.TraefikGetVersionResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.TraefikVersion version = 1;
-   */
-  version?: TraefikVersion | undefined;
-};
+export type TraefikGetVersionResponse =
+	Message<'openoxide.api.v1.TraefikGetVersionResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.TraefikVersion version = 1;
+		 */
+		version?: TraefikVersion | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikGetVersionResponse.
  * Use `create(TraefikGetVersionResponseSchema)` to create a new message.
  */
-export const TraefikGetVersionResponseSchema: GenMessage<TraefikGetVersionResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 24);
+export const TraefikGetVersionResponseSchema: GenMessage<TraefikGetVersionResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 24);
 
 /**
  * @generated from message openoxide.api.v1.TraefikUpdateVersionRequest
  */
-export type TraefikUpdateVersionRequest = Message<"openoxide.api.v1.TraefikUpdateVersionRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type TraefikUpdateVersionRequest =
+	Message<'openoxide.api.v1.TraefikUpdateVersionRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: string version = 2;
-   */
-  version: string;
-};
+		/**
+		 * @generated from field: string version = 2;
+		 */
+		version: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikUpdateVersionRequest.
  * Use `create(TraefikUpdateVersionRequestSchema)` to create a new message.
  */
-export const TraefikUpdateVersionRequestSchema: GenMessage<TraefikUpdateVersionRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 25);
+export const TraefikUpdateVersionRequestSchema: GenMessage<TraefikUpdateVersionRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 25);
 
 /**
  * @generated from message openoxide.api.v1.TraefikUpdateVersionResponse
  */
-export type TraefikUpdateVersionResponse = Message<"openoxide.api.v1.TraefikUpdateVersionResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.TraefikVersion version = 1;
-   */
-  version?: TraefikVersion | undefined;
-};
+export type TraefikUpdateVersionResponse =
+	Message<'openoxide.api.v1.TraefikUpdateVersionResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.TraefikVersion version = 1;
+		 */
+		version?: TraefikVersion | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikUpdateVersionResponse.
  * Use `create(TraefikUpdateVersionResponseSchema)` to create a new message.
  */
-export const TraefikUpdateVersionResponseSchema: GenMessage<TraefikUpdateVersionResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 26);
+export const TraefikUpdateVersionResponseSchema: GenMessage<TraefikUpdateVersionResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 26);
 
 /**
  * @generated from message openoxide.api.v1.TraefikRenderMiddlewareRequest
  */
-export type TraefikRenderMiddlewareRequest = Message<"openoxide.api.v1.TraefikRenderMiddlewareRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.TraefikMiddlewareKind kind = 1;
-   */
-  kind: TraefikMiddlewareKind;
+export type TraefikRenderMiddlewareRequest =
+	Message<'openoxide.api.v1.TraefikRenderMiddlewareRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.TraefikMiddlewareKind kind = 1;
+		 */
+		kind: TraefikMiddlewareKind;
 
-  /**
-   * Middleware name; alphanumerics, `-` and `_` only (server-validated).
-   *
-   * @generated from field: string name = 2;
-   */
-  name: string;
+		/**
+		 * Middleware name; alphanumerics, `-` and `_` only (server-validated).
+		 *
+		 * @generated from field: string name = 2;
+		 */
+		name: string;
 
-  /**
-   * Kind-specific scalar values (e.g. `prefix`, `scheme`, `average`, `burst`, headers).
-   *
-   * @generated from field: map<string, string> values = 3;
-   */
-  values: { [key: string]: string };
+		/**
+		 * Kind-specific scalar values (e.g. `prefix`, `scheme`, `average`, `burst`, headers).
+		 *
+		 * @generated from field: map<string, string> values = 3;
+		 */
+		values: {[key: string]: string};
 
-  /**
-   * Kind-specific list input (prefix list for strip-prefix, source ranges for allow-list).
-   *
-   * @generated from field: repeated string list = 4;
-   */
-  list: string[];
-};
+		/**
+		 * Kind-specific list input (prefix list for strip-prefix, source ranges for allow-list).
+		 *
+		 * @generated from field: repeated string list = 4;
+		 */
+		list: string[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikRenderMiddlewareRequest.
  * Use `create(TraefikRenderMiddlewareRequestSchema)` to create a new message.
  */
-export const TraefikRenderMiddlewareRequestSchema: GenMessage<TraefikRenderMiddlewareRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 27);
+export const TraefikRenderMiddlewareRequestSchema: GenMessage<TraefikRenderMiddlewareRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 27);
 
 /**
  * @generated from message openoxide.api.v1.TraefikRenderMiddlewareResponse
  */
-export type TraefikRenderMiddlewareResponse = Message<"openoxide.api.v1.TraefikRenderMiddlewareResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.TraefikMiddleware middleware = 1;
-   */
-  middleware?: TraefikMiddleware | undefined;
-};
+export type TraefikRenderMiddlewareResponse =
+	Message<'openoxide.api.v1.TraefikRenderMiddlewareResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.TraefikMiddleware middleware = 1;
+		 */
+		middleware?: TraefikMiddleware | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.TraefikRenderMiddlewareResponse.
  * Use `create(TraefikRenderMiddlewareResponseSchema)` to create a new message.
  */
-export const TraefikRenderMiddlewareResponseSchema: GenMessage<TraefikRenderMiddlewareResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_traefik, 28);
+export const TraefikRenderMiddlewareResponseSchema: GenMessage<TraefikRenderMiddlewareResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_traefik, 28);
 
 /**
  * @generated from enum openoxide.api.v1.TraefikFileNodeType
  */
 export enum TraefikFileNodeType {
-  /**
-   * @generated from enum value: TRAEFIK_FILE_NODE_TYPE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: TRAEFIK_FILE_NODE_TYPE_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: TRAEFIK_FILE_NODE_TYPE_FILE = 1;
-   */
-  FILE = 1,
+	/**
+	 * @generated from enum value: TRAEFIK_FILE_NODE_TYPE_FILE = 1;
+	 */
+	FILE = 1,
 
-  /**
-   * @generated from enum value: TRAEFIK_FILE_NODE_TYPE_DIRECTORY = 2;
-   */
-  DIRECTORY = 2,
+	/**
+	 * @generated from enum value: TRAEFIK_FILE_NODE_TYPE_DIRECTORY = 2;
+	 */
+	DIRECTORY = 2,
 }
 
 /**
  * Describes the enum openoxide.api.v1.TraefikFileNodeType.
  */
-export const TraefikFileNodeTypeSchema: GenEnum<TraefikFileNodeType> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_traefik, 0);
+export const TraefikFileNodeTypeSchema: GenEnum<TraefikFileNodeType> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_traefik, 0);
 
 /**
  * Closed set mirroring `StructuredMiddlewareKind`.
@@ -757,57 +794,57 @@ export const TraefikFileNodeTypeSchema: GenEnum<TraefikFileNodeType> = /*@__PURE
  * @generated from enum openoxide.api.v1.TraefikMiddlewareKind
  */
 export enum TraefikMiddlewareKind {
-  /**
-   * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_STRIP_PREFIX = 1;
-   */
-  STRIP_PREFIX = 1,
+	/**
+	 * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_STRIP_PREFIX = 1;
+	 */
+	STRIP_PREFIX = 1,
 
-  /**
-   * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_ADD_PREFIX = 2;
-   */
-  ADD_PREFIX = 2,
+	/**
+	 * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_ADD_PREFIX = 2;
+	 */
+	ADD_PREFIX = 2,
 
-  /**
-   * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_REDIRECT_SCHEME = 3;
-   */
-  REDIRECT_SCHEME = 3,
+	/**
+	 * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_REDIRECT_SCHEME = 3;
+	 */
+	REDIRECT_SCHEME = 3,
 
-  /**
-   * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_COMPRESS = 4;
-   */
-  COMPRESS = 4,
+	/**
+	 * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_COMPRESS = 4;
+	 */
+	COMPRESS = 4,
 
-  /**
-   * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_RATE_LIMIT = 5;
-   */
-  RATE_LIMIT = 5,
+	/**
+	 * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_RATE_LIMIT = 5;
+	 */
+	RATE_LIMIT = 5,
 
-  /**
-   * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_IP_ALLOW_LIST = 6;
-   */
-  IP_ALLOW_LIST = 6,
+	/**
+	 * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_IP_ALLOW_LIST = 6;
+	 */
+	IP_ALLOW_LIST = 6,
 
-  /**
-   * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_REQUEST_HEADERS = 7;
-   */
-  REQUEST_HEADERS = 7,
+	/**
+	 * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_REQUEST_HEADERS = 7;
+	 */
+	REQUEST_HEADERS = 7,
 
-  /**
-   * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_RESPONSE_HEADERS = 8;
-   */
-  RESPONSE_HEADERS = 8,
+	/**
+	 * @generated from enum value: TRAEFIK_MIDDLEWARE_KIND_RESPONSE_HEADERS = 8;
+	 */
+	RESPONSE_HEADERS = 8,
 }
 
 /**
  * Describes the enum openoxide.api.v1.TraefikMiddlewareKind.
  */
-export const TraefikMiddlewareKindSchema: GenEnum<TraefikMiddlewareKind> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_traefik, 1);
+export const TraefikMiddlewareKindSchema: GenEnum<TraefikMiddlewareKind> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_traefik, 1);
 
 /**
  * Sole Traefik owner service; absorbs the former TraefikOperationsService.
@@ -815,94 +852,92 @@ export const TraefikMiddlewareKindSchema: GenEnum<TraefikMiddlewareKind> = /*@__
  * @generated from service openoxide.api.v1.TraefikService
  */
 export const TraefikService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.ListFiles
-   */
-  listFiles: {
-    methodKind: "unary";
-    input: typeof TraefikListFilesRequestSchema;
-    output: typeof TraefikListFilesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.GetFileTree
-   */
-  getFileTree: {
-    methodKind: "unary";
-    input: typeof TraefikGetFileTreeRequestSchema;
-    output: typeof TraefikGetFileTreeResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.GetFileContent
-   */
-  getFileContent: {
-    methodKind: "unary";
-    input: typeof TraefikGetFileContentRequestSchema;
-    output: typeof TraefikGetFileContentResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.UpdateFileContent
-   */
-  updateFileContent: {
-    methodKind: "unary";
-    input: typeof TraefikUpdateFileContentRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.Health
-   */
-  health: {
-    methodKind: "unary";
-    input: typeof TraefikHealthRequestSchema;
-    output: typeof TraefikHealthResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.GetRequestStatus
-   */
-  getRequestStatus: {
-    methodKind: "unary";
-    input: typeof TraefikGetRequestStatusRequestSchema;
-    output: typeof TraefikGetRequestStatusResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.ToggleRequests
-   */
-  toggleRequests: {
-    methodKind: "unary";
-    input: typeof TraefikToggleRequestsRequestSchema;
-    output: typeof TraefikToggleRequestsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.GetRequestLogs
-   */
-  getRequestLogs: {
-    methodKind: "unary";
-    input: typeof TraefikGetRequestLogsRequestSchema;
-    output: typeof TraefikGetRequestLogsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.GetVersion
-   */
-  getVersion: {
-    methodKind: "unary";
-    input: typeof TraefikGetVersionRequestSchema;
-    output: typeof TraefikGetVersionResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.UpdateVersion
-   */
-  updateVersion: {
-    methodKind: "unary";
-    input: typeof TraefikUpdateVersionRequestSchema;
-    output: typeof TraefikUpdateVersionResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.TraefikService.RenderMiddleware
-   */
-  renderMiddleware: {
-    methodKind: "unary";
-    input: typeof TraefikRenderMiddlewareRequestSchema;
-    output: typeof TraefikRenderMiddlewareResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_traefik, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.ListFiles
+	 */
+	listFiles: {
+		methodKind: 'unary';
+		input: typeof TraefikListFilesRequestSchema;
+		output: typeof TraefikListFilesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.GetFileTree
+	 */
+	getFileTree: {
+		methodKind: 'unary';
+		input: typeof TraefikGetFileTreeRequestSchema;
+		output: typeof TraefikGetFileTreeResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.GetFileContent
+	 */
+	getFileContent: {
+		methodKind: 'unary';
+		input: typeof TraefikGetFileContentRequestSchema;
+		output: typeof TraefikGetFileContentResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.UpdateFileContent
+	 */
+	updateFileContent: {
+		methodKind: 'unary';
+		input: typeof TraefikUpdateFileContentRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.Health
+	 */
+	health: {
+		methodKind: 'unary';
+		input: typeof TraefikHealthRequestSchema;
+		output: typeof TraefikHealthResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.GetRequestStatus
+	 */
+	getRequestStatus: {
+		methodKind: 'unary';
+		input: typeof TraefikGetRequestStatusRequestSchema;
+		output: typeof TraefikGetRequestStatusResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.ToggleRequests
+	 */
+	toggleRequests: {
+		methodKind: 'unary';
+		input: typeof TraefikToggleRequestsRequestSchema;
+		output: typeof TraefikToggleRequestsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.GetRequestLogs
+	 */
+	getRequestLogs: {
+		methodKind: 'unary';
+		input: typeof TraefikGetRequestLogsRequestSchema;
+		output: typeof TraefikGetRequestLogsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.GetVersion
+	 */
+	getVersion: {
+		methodKind: 'unary';
+		input: typeof TraefikGetVersionRequestSchema;
+		output: typeof TraefikGetVersionResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.UpdateVersion
+	 */
+	updateVersion: {
+		methodKind: 'unary';
+		input: typeof TraefikUpdateVersionRequestSchema;
+		output: typeof TraefikUpdateVersionResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.TraefikService.RenderMiddleware
+	 */
+	renderMiddleware: {
+		methodKind: 'unary';
+		input: typeof TraefikRenderMiddlewareRequestSchema;
+		output: typeof TraefikRenderMiddlewareResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_traefik, 0);

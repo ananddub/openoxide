@@ -11,6 +11,27 @@ use tonic::{Response, Status};
 
 pub type ShellStream = Pin<Box<dyn Stream<Item = Result<ShellMessage, Status>> + Send + 'static>>;
 
+/// Releases the agent cgroup's reclaimable page cache (file-backed pages that
+/// pile up during docker pull/compose). Best-effort and non-blocking: writes to
+/// cgroup-v2 `memory.reclaim`, falling back to `MADV`-style `sync` when that
+/// interface is unavailable. Anonymous (real) memory is never touched.
+pub fn reclaim_own_page_cache() {
+    // cgroup v2: writing a byte budget to memory.reclaim asks the kernel to
+    // reclaim that much from THIS cgroup. A large value reclaims all it can
+    // (only cache; anon stays). The agent runs in its own container cgroup.
+    for path in [
+        "/sys/fs/cgroup/memory.reclaim",
+        "/sys/fs/cgroup/memory/memory.reclaim",
+    ] {
+        if std::path::Path::new(path).exists() {
+            // 512 MiB is far above the agent's footprint; the kernel simply
+            // reclaims whatever cache exists and ignores the rest.
+            let _ = std::fs::write(path, b"536870912");
+            return;
+        }
+    }
+}
+
 pub struct ShellService;
 
 impl ShellService {
@@ -108,6 +129,11 @@ impl ShellService {
                     ..Default::default()
                 }))
                 .await;
+            // A deploy (docker pull/compose) fills this cgroup's page cache
+            // with image-layer and file reads. That cache is reclaimable but
+            // still shows up as the container's memory in `docker stats`, so
+            // release it once the task is done to keep the idle footprint tiny.
+            crate::services::monitoring::shell::reclaim_own_page_cache();
         });
         Ok(tokio_stream::wrappers::ReceiverStream::new(rx))
     }

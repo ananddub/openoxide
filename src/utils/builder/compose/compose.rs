@@ -149,7 +149,7 @@ impl ComposeBuilder {
         Ok(())
     }
 
-    /// Start an already-deployed project without rebuilding — Dokploy's
+ /// Start an already-deployed project without rebuilding
     /// `start`. Compose: `docker compose start`. Stack: scale services back up
     /// via a no-build stack deploy from the rendered file.
     pub async fn start(&self, spec: &ComposeSpec, cancel: &CancellationToken) -> ExecResult<()> {
@@ -186,7 +186,7 @@ impl ComposeBuilder {
     }
 
     /// Recreate containers from the existing image without a source rebuild —
-    /// Dokploy's `reload`. Compose: `docker compose restart`. Stack: force a
+ /// `reload`. Compose: `docker compose restart`. Stack: force a
     /// task recreate on every service.
     pub async fn reload(&self, spec: &ComposeSpec, cancel: &CancellationToken) -> ExecResult<()> {
         self.ctx.emit(BuilderEvent::Message(format!("reloading {}", spec.stack_name))).await;
@@ -330,7 +330,7 @@ impl ComposeBuilder {
             )))
             .await;
 
-        // Command override (Dokploy `command`): replace the default build+up
+ // Command override (`command`): replace the default build+up
         // invocation with the user's `docker <command>`.
         if let Some(command) = spec.command.as_deref() {
             return self.run_command_override(command, cancel).await;
@@ -421,7 +421,7 @@ impl ComposeBuilder {
     }
 }
 
-/// Validates a compose command override, mirroring Dokploy's `sanitizeCommand`:
+/// Validates a compose command override, mirroring the standard `sanitizeCommand`:
 /// no shell control characters, single `&` rejected, and every `&&`-chained
 /// step after the first must be a `docker ...` command.
 fn sanitize_compose_command(command: &str) -> ExecResult<String> {

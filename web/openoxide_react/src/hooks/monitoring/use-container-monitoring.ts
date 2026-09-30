@@ -146,7 +146,15 @@ export function useContainerMonitoring(
 			isMounted = false;
 			controller.abort();
 		};
-	}, [id, entityType, isLive, refetchTrigger, enabled, serviceName, statsCache]);
+	}, [
+		id,
+		entityType,
+		isLive,
+		refetchTrigger,
+		enabled,
+		serviceName,
+		statsCache,
+	]);
 
 	return {
 		isLive,

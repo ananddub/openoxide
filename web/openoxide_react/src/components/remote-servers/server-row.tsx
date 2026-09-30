@@ -8,7 +8,11 @@ function useServerState(item: RemoteServerResponse, connStatus: string) {
 	const isTesting = connStatus === 'testing';
 	const serverStatus = (item.server_status || 'INACTIVE').toUpperCase();
 	const isServerActive = serverStatus === 'ACTIVE';
-	const online = isTesting ? null : connStatus === 'failed' ? false : isServerActive;
+	const online = isTesting
+		? null
+		: connStatus === 'failed'
+			? false
+			: isServerActive;
 	return {
 		isTesting,
 		serverStatus,

@@ -96,7 +96,7 @@ impl ComposeManagementService {
             return Ok(created);
         };
 
-        // Resolve a full Dokploy template.toml (variables + env + domains).
+ // Resolve a full template.toml (variables + env + domains).
         // Fall back to plain generator expansion for a bare env block.
         let server_ip = self.server_ip(input.server_id).await;
         match template_vars::resolve_template_toml(&template_toml, server_ip.as_deref()) {

@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/certificate.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { CertificateService } from "./certificate_pb";
+import {CertificateService} from './certificate_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.CertificateService.ListCertificates
@@ -17,17 +17,20 @@ export const getCertificate = CertificateService.method.getCertificate;
 /**
  * @generated from rpc openoxide.api.v1.CertificateService.CreateCertificate
  */
-export const createCertificate = CertificateService.method.createCertificate;
+export const createCertificate =
+	CertificateService.method.createCertificate;
 
 /**
  * @generated from rpc openoxide.api.v1.CertificateService.UpdateCertificate
  */
-export const updateCertificate = CertificateService.method.updateCertificate;
+export const updateCertificate =
+	CertificateService.method.updateCertificate;
 
 /**
  * @generated from rpc openoxide.api.v1.CertificateService.DeleteCertificate
  */
-export const deleteCertificate = CertificateService.method.deleteCertificate;
+export const deleteCertificate =
+	CertificateService.method.deleteCertificate;
 
 /**
  * @generated from rpc openoxide.api.v1.CertificateService.ListDependencies

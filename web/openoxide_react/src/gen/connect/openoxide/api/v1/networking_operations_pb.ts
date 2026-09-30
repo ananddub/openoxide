@@ -2,339 +2,362 @@
 // @generated from file openoxide/api/v1/networking_operations.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/networking_operations.proto.
  */
-export const file_openoxide_api_v1_networking_operations: GenFile = /*@__PURE__*/
-  fileDesc("CixvcGVub3hpZGUvYXBpL3YxL25ldHdvcmtpbmdfb3BlcmF0aW9ucy5wcm90bxIQb3Blbm94aWRlLmFwaS52MSK/AQoaTmV0d29ya2luZ0RvbWFpbkRpYWdub3N0aWMSDAoEaG9zdBgBIAEoCRIaChJyZXNvbHZlZF9hZGRyZXNzZXMYAiADKAkSDgoGZG5zX29rGAMgASgIEg4KBnRjcF9vaxgEIAEoCBIPCgdodHRwX29rGAUgASgIEhgKC2h0dHBfc3RhdHVzGAYgASgNSACIAQESEgoFZXJyb3IYByABKAlIAYgBAUIOCgxfaHR0cF9zdGF0dXNCCAoGX2Vycm9yIv8BChtOZXR3b3JraW5nUm9vdE5ldHdvcmtTdGF0dXMSDAoEbmFtZRgBIAEoCRIOCgZleGlzdHMYAiABKAgSDwoHaGVhbHRoeRgDIAEoCBIQCghyZXBhaXJlZBgEIAEoCBITCgZkcml2ZXIYBSABKAlIAIgBARISCgVzY29wZRgGIAEoCUgBiAEBEhcKCmF0dGFjaGFibGUYByABKAhIAogBARIbChNjb25uZWN0ZWRfcmVzb3VyY2VzGAggASgDEhIKBWlzc3VlGAkgASgJSAOIAQFCCQoHX2RyaXZlckIICgZfc2NvcGVCDQoLX2F0dGFjaGFibGVCCAoGX2lzc3VlIrQCChlOZXR3b3JraW5nUHVyZ2VDZG5SZXF1ZXN0EkUKCHByb3ZpZGVyGAEgASgOMicub3Blbm94aWRlLmFwaS52MS5OZXR3b3JraW5nQ2RuUHJvdmlkZXJCCrpIB4IBBBABIAASGgoJYXBpX3Rva2VuGAIgASgJQge6SARyAhABEh4KB3pvbmVfaWQYAyABKAlCCLpIBXIDGP8BSACIAQESIQoKc2VydmljZV9pZBgEIAEoCUIIukgFcgMY/wFIAYgBARIZCgxwdWxsX3pvbmVfaWQYBSABKANIAogBARIRCglwdXJnZV9hbGwYBiABKAgSFwoEdXJscxgHIAMoCUIJukgGkgEDEOgHQgoKCF96b25lX2lkQg0KC19zZXJ2aWNlX2lkQg8KDV9wdWxsX3pvbmVfaWQiiAEKGk5ldHdvcmtpbmdQdXJnZUNkblJlc3BvbnNlEhAKCHByb3ZpZGVyGAEgASgJEg8KB3N1Y2Nlc3MYAiABKAgSDgoGc3RhdHVzGAMgASgNEhcKCnJlcXVlc3RfaWQYBCABKAlIAIgBARIPCgdtZXNzYWdlGAUgASgJQg0KC19yZXF1ZXN0X2lkIpgBCiBOZXR3b3JraW5nRGlhZ25vc2VEb21haW5zUmVxdWVzdBIYCgRob3N0GAEgASgJQgq6SAdyBRABGP8BEhwKBHBvcnQYAiABKA1CCbpIBioEGP//A0gAiAEBEg0KBWh0dHBzGAMgASgIEhsKBHBhdGgYBCABKAlCCLpIBXIDGNAPSAGIAQFCBwoFX3BvcnRCBwoFX3BhdGgiZQohTmV0d29ya2luZ0RpYWdub3NlRG9tYWluc1Jlc3BvbnNlEkAKCmRpYWdub3N0aWMYASABKAsyLC5vcGVub3hpZGUuYXBpLnYxLk5ldHdvcmtpbmdEb21haW5EaWFnbm9zdGljIlUKJE5ldHdvcmtpbmdEaWFnbm9zZVJvb3ROZXR3b3JrUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBAUIMCgpfc2VydmVyX2lkImYKJU5ldHdvcmtpbmdEaWFnbm9zZVJvb3ROZXR3b3JrUmVzcG9uc2USPQoGc3RhdHVzGAEgASgLMi0ub3Blbm94aWRlLmFwaS52MS5OZXR3b3JraW5nUm9vdE5ldHdvcmtTdGF0dXMiUwoiTmV0d29ya2luZ1JlcGFpclJvb3ROZXR3b3JrUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBAUIMCgpfc2VydmVyX2lkImQKI05ldHdvcmtpbmdSZXBhaXJSb290TmV0d29ya1Jlc3BvbnNlEj0KBnN0YXR1cxgBIAEoCzItLm9wZW5veGlkZS5hcGkudjEuTmV0d29ya2luZ1Jvb3ROZXR3b3JrU3RhdHVzKq8BChVOZXR3b3JraW5nQ2RuUHJvdmlkZXISJwojTkVUV09SS0lOR19DRE5fUFJPVklERVJfVU5TUEVDSUZJRUQQABImCiJORVRXT1JLSU5HX0NETl9QUk9WSURFUl9DTE9VREZMQVJFEAESIgoeTkVUV09SS0lOR19DRE5fUFJPVklERVJfRkFTVExZEAISIQodTkVUV09SS0lOR19DRE5fUFJPVklERVJfQlVOTlkQAzKMBAobTmV0d29ya2luZ09wZXJhdGlvbnNTZXJ2aWNlEmUKCFB1cmdlQ2RuEisub3Blbm94aWRlLmFwaS52MS5OZXR3b3JraW5nUHVyZ2VDZG5SZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5OZXR3b3JraW5nUHVyZ2VDZG5SZXNwb25zZRJ6Cg9EaWFnbm9zZURvbWFpbnMSMi5vcGVub3hpZGUuYXBpLnYxLk5ldHdvcmtpbmdEaWFnbm9zZURvbWFpbnNSZXF1ZXN0GjMub3Blbm94aWRlLmFwaS52MS5OZXR3b3JraW5nRGlhZ25vc2VEb21haW5zUmVzcG9uc2UShgEKE0RpYWdub3NlUm9vdE5ldHdvcmsSNi5vcGVub3hpZGUuYXBpLnYxLk5ldHdvcmtpbmdEaWFnbm9zZVJvb3ROZXR3b3JrUmVxdWVzdBo3Lm9wZW5veGlkZS5hcGkudjEuTmV0d29ya2luZ0RpYWdub3NlUm9vdE5ldHdvcmtSZXNwb25zZRKAAQoRUmVwYWlyUm9vdE5ldHdvcmsSNC5vcGVub3hpZGUuYXBpLnYxLk5ldHdvcmtpbmdSZXBhaXJSb290TmV0d29ya1JlcXVlc3QaNS5vcGVub3hpZGUuYXBpLnYxLk5ldHdvcmtpbmdSZXBhaXJSb290TmV0d29ya1Jlc3BvbnNlYgZwcm90bzM", [file_buf_validate_validate]);
+export const file_openoxide_api_v1_networking_operations: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'CixvcGVub3hpZGUvYXBpL3YxL25ldHdvcmtpbmdfb3BlcmF0aW9ucy5wcm90bxIQb3Blbm94aWRlLmFwaS52MSK/AQoaTmV0d29ya2luZ0RvbWFpbkRpYWdub3N0aWMSDAoEaG9zdBgBIAEoCRIaChJyZXNvbHZlZF9hZGRyZXNzZXMYAiADKAkSDgoGZG5zX29rGAMgASgIEg4KBnRjcF9vaxgEIAEoCBIPCgdodHRwX29rGAUgASgIEhgKC2h0dHBfc3RhdHVzGAYgASgNSACIAQESEgoFZXJyb3IYByABKAlIAYgBAUIOCgxfaHR0cF9zdGF0dXNCCAoGX2Vycm9yIv8BChtOZXR3b3JraW5nUm9vdE5ldHdvcmtTdGF0dXMSDAoEbmFtZRgBIAEoCRIOCgZleGlzdHMYAiABKAgSDwoHaGVhbHRoeRgDIAEoCBIQCghyZXBhaXJlZBgEIAEoCBITCgZkcml2ZXIYBSABKAlIAIgBARISCgVzY29wZRgGIAEoCUgBiAEBEhcKCmF0dGFjaGFibGUYByABKAhIAogBARIbChNjb25uZWN0ZWRfcmVzb3VyY2VzGAggASgDEhIKBWlzc3VlGAkgASgJSAOIAQFCCQoHX2RyaXZlckIICgZfc2NvcGVCDQoLX2F0dGFjaGFibGVCCAoGX2lzc3VlIrQCChlOZXR3b3JraW5nUHVyZ2VDZG5SZXF1ZXN0EkUKCHByb3ZpZGVyGAEgASgOMicub3Blbm94aWRlLmFwaS52MS5OZXR3b3JraW5nQ2RuUHJvdmlkZXJCCrpIB4IBBBABIAASGgoJYXBpX3Rva2VuGAIgASgJQge6SARyAhABEh4KB3pvbmVfaWQYAyABKAlCCLpIBXIDGP8BSACIAQESIQoKc2VydmljZV9pZBgEIAEoCUIIukgFcgMY/wFIAYgBARIZCgxwdWxsX3pvbmVfaWQYBSABKANIAogBARIRCglwdXJnZV9hbGwYBiABKAgSFwoEdXJscxgHIAMoCUIJukgGkgEDEOgHQgoKCF96b25lX2lkQg0KC19zZXJ2aWNlX2lkQg8KDV9wdWxsX3pvbmVfaWQiiAEKGk5ldHdvcmtpbmdQdXJnZUNkblJlc3BvbnNlEhAKCHByb3ZpZGVyGAEgASgJEg8KB3N1Y2Nlc3MYAiABKAgSDgoGc3RhdHVzGAMgASgNEhcKCnJlcXVlc3RfaWQYBCABKAlIAIgBARIPCgdtZXNzYWdlGAUgASgJQg0KC19yZXF1ZXN0X2lkIpgBCiBOZXR3b3JraW5nRGlhZ25vc2VEb21haW5zUmVxdWVzdBIYCgRob3N0GAEgASgJQgq6SAdyBRABGP8BEhwKBHBvcnQYAiABKA1CCbpIBioEGP//A0gAiAEBEg0KBWh0dHBzGAMgASgIEhsKBHBhdGgYBCABKAlCCLpIBXIDGNAPSAGIAQFCBwoFX3BvcnRCBwoFX3BhdGgiZQohTmV0d29ya2luZ0RpYWdub3NlRG9tYWluc1Jlc3BvbnNlEkAKCmRpYWdub3N0aWMYASABKAsyLC5vcGVub3hpZGUuYXBpLnYxLk5ldHdvcmtpbmdEb21haW5EaWFnbm9zdGljIlUKJE5ldHdvcmtpbmdEaWFnbm9zZVJvb3ROZXR3b3JrUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBAUIMCgpfc2VydmVyX2lkImYKJU5ldHdvcmtpbmdEaWFnbm9zZVJvb3ROZXR3b3JrUmVzcG9uc2USPQoGc3RhdHVzGAEgASgLMi0ub3Blbm94aWRlLmFwaS52MS5OZXR3b3JraW5nUm9vdE5ldHdvcmtTdGF0dXMiUwoiTmV0d29ya2luZ1JlcGFpclJvb3ROZXR3b3JrUmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBAUIMCgpfc2VydmVyX2lkImQKI05ldHdvcmtpbmdSZXBhaXJSb290TmV0d29ya1Jlc3BvbnNlEj0KBnN0YXR1cxgBIAEoCzItLm9wZW5veGlkZS5hcGkudjEuTmV0d29ya2luZ1Jvb3ROZXR3b3JrU3RhdHVzKq8BChVOZXR3b3JraW5nQ2RuUHJvdmlkZXISJwojTkVUV09SS0lOR19DRE5fUFJPVklERVJfVU5TUEVDSUZJRUQQABImCiJORVRXT1JLSU5HX0NETl9QUk9WSURFUl9DTE9VREZMQVJFEAESIgoeTkVUV09SS0lOR19DRE5fUFJPVklERVJfRkFTVExZEAISIQodTkVUV09SS0lOR19DRE5fUFJPVklERVJfQlVOTlkQAzKMBAobTmV0d29ya2luZ09wZXJhdGlvbnNTZXJ2aWNlEmUKCFB1cmdlQ2RuEisub3Blbm94aWRlLmFwaS52MS5OZXR3b3JraW5nUHVyZ2VDZG5SZXF1ZXN0Giwub3Blbm94aWRlLmFwaS52MS5OZXR3b3JraW5nUHVyZ2VDZG5SZXNwb25zZRJ6Cg9EaWFnbm9zZURvbWFpbnMSMi5vcGVub3hpZGUuYXBpLnYxLk5ldHdvcmtpbmdEaWFnbm9zZURvbWFpbnNSZXF1ZXN0GjMub3Blbm94aWRlLmFwaS52MS5OZXR3b3JraW5nRGlhZ25vc2VEb21haW5zUmVzcG9uc2UShgEKE0RpYWdub3NlUm9vdE5ldHdvcmsSNi5vcGVub3hpZGUuYXBpLnYxLk5ldHdvcmtpbmdEaWFnbm9zZVJvb3ROZXR3b3JrUmVxdWVzdBo3Lm9wZW5veGlkZS5hcGkudjEuTmV0d29ya2luZ0RpYWdub3NlUm9vdE5ldHdvcmtSZXNwb25zZRKAAQoRUmVwYWlyUm9vdE5ldHdvcmsSNC5vcGVub3hpZGUuYXBpLnYxLk5ldHdvcmtpbmdSZXBhaXJSb290TmV0d29ya1JlcXVlc3QaNS5vcGVub3hpZGUuYXBpLnYxLk5ldHdvcmtpbmdSZXBhaXJSb290TmV0d29ya1Jlc3BvbnNlYgZwcm90bzM',
+		[file_buf_validate_validate],
+	);
 
 /**
  * @generated from message openoxide.api.v1.NetworkingDomainDiagnostic
  */
-export type NetworkingDomainDiagnostic = Message<"openoxide.api.v1.NetworkingDomainDiagnostic"> & {
-  /**
-   * Lower-cased host that was probed.
-   *
-   * @generated from field: string host = 1;
-   */
-  host: string;
+export type NetworkingDomainDiagnostic =
+	Message<'openoxide.api.v1.NetworkingDomainDiagnostic'> & {
+		/**
+		 * Lower-cased host that was probed.
+		 *
+		 * @generated from field: string host = 1;
+		 */
+		host: string;
 
-  /**
-   * @generated from field: repeated string resolved_addresses = 2;
-   */
-  resolvedAddresses: string[];
+		/**
+		 * @generated from field: repeated string resolved_addresses = 2;
+		 */
+		resolvedAddresses: string[];
 
-  /**
-   * @generated from field: bool dns_ok = 3;
-   */
-  dnsOk: boolean;
+		/**
+		 * @generated from field: bool dns_ok = 3;
+		 */
+		dnsOk: boolean;
 
-  /**
-   * @generated from field: bool tcp_ok = 4;
-   */
-  tcpOk: boolean;
+		/**
+		 * @generated from field: bool tcp_ok = 4;
+		 */
+		tcpOk: boolean;
 
-  /**
-   * @generated from field: bool http_ok = 5;
-   */
-  httpOk: boolean;
+		/**
+		 * @generated from field: bool http_ok = 5;
+		 */
+		httpOk: boolean;
 
-  /**
-   * @generated from field: optional uint32 http_status = 6;
-   */
-  httpStatus?: number | undefined;
+		/**
+		 * @generated from field: optional uint32 http_status = 6;
+		 */
+		httpStatus?: number | undefined;
 
-  /**
-   * @generated from field: optional string error = 7;
-   */
-  error?: string | undefined;
-};
+		/**
+		 * @generated from field: optional string error = 7;
+		 */
+		error?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.NetworkingDomainDiagnostic.
  * Use `create(NetworkingDomainDiagnosticSchema)` to create a new message.
  */
-export const NetworkingDomainDiagnosticSchema: GenMessage<NetworkingDomainDiagnostic> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_networking_operations, 0);
+export const NetworkingDomainDiagnosticSchema: GenMessage<NetworkingDomainDiagnostic> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_networking_operations, 0);
 
 /**
  * @generated from message openoxide.api.v1.NetworkingRootNetworkStatus
  */
-export type NetworkingRootNetworkStatus = Message<"openoxide.api.v1.NetworkingRootNetworkStatus"> & {
-  /**
-   * Overlay network name (the `openoxide` root network).
-   *
-   * @generated from field: string name = 1;
-   */
-  name: string;
+export type NetworkingRootNetworkStatus =
+	Message<'openoxide.api.v1.NetworkingRootNetworkStatus'> & {
+		/**
+		 * Overlay network name (the `openoxide` root network).
+		 *
+		 * @generated from field: string name = 1;
+		 */
+		name: string;
 
-  /**
-   * @generated from field: bool exists = 2;
-   */
-  exists: boolean;
+		/**
+		 * @generated from field: bool exists = 2;
+		 */
+		exists: boolean;
 
-  /**
-   * Encrypted attachable overlay/swarm network with the expected name.
-   *
-   * @generated from field: bool healthy = 3;
-   */
-  healthy: boolean;
+		/**
+		 * Encrypted attachable overlay/swarm network with the expected name.
+		 *
+		 * @generated from field: bool healthy = 3;
+		 */
+		healthy: boolean;
 
-  /**
-   * @generated from field: bool repaired = 4;
-   */
-  repaired: boolean;
+		/**
+		 * @generated from field: bool repaired = 4;
+		 */
+		repaired: boolean;
 
-  /**
-   * @generated from field: optional string driver = 5;
-   */
-  driver?: string | undefined;
+		/**
+		 * @generated from field: optional string driver = 5;
+		 */
+		driver?: string | undefined;
 
-  /**
-   * @generated from field: optional string scope = 6;
-   */
-  scope?: string | undefined;
+		/**
+		 * @generated from field: optional string scope = 6;
+		 */
+		scope?: string | undefined;
 
-  /**
-   * @generated from field: optional bool attachable = 7;
-   */
-  attachable?: boolean | undefined;
+		/**
+		 * @generated from field: optional bool attachable = 7;
+		 */
+		attachable?: boolean | undefined;
 
-  /**
-   * @generated from field: int64 connected_resources = 8;
-   */
-  connectedResources: bigint;
+		/**
+		 * @generated from field: int64 connected_resources = 8;
+		 */
+		connectedResources: bigint;
 
-  /**
-   * @generated from field: optional string issue = 9;
-   */
-  issue?: string | undefined;
-};
+		/**
+		 * @generated from field: optional string issue = 9;
+		 */
+		issue?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.NetworkingRootNetworkStatus.
  * Use `create(NetworkingRootNetworkStatusSchema)` to create a new message.
  */
-export const NetworkingRootNetworkStatusSchema: GenMessage<NetworkingRootNetworkStatus> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_networking_operations, 1);
+export const NetworkingRootNetworkStatusSchema: GenMessage<NetworkingRootNetworkStatus> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_networking_operations, 1);
 
 /**
  * @generated from message openoxide.api.v1.NetworkingPurgeCdnRequest
  */
-export type NetworkingPurgeCdnRequest = Message<"openoxide.api.v1.NetworkingPurgeCdnRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.NetworkingCdnProvider provider = 1;
-   */
-  provider: NetworkingCdnProvider;
+export type NetworkingPurgeCdnRequest =
+	Message<'openoxide.api.v1.NetworkingPurgeCdnRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.NetworkingCdnProvider provider = 1;
+		 */
+		provider: NetworkingCdnProvider;
 
-  /**
-   * Provider API token; never echoed back in the response.
-   *
-   * @generated from field: string api_token = 2;
-   */
-  apiToken: string;
+		/**
+		 * Provider API token; never echoed back in the response.
+		 *
+		 * @generated from field: string api_token = 2;
+		 */
+		apiToken: string;
 
-  /**
-   * Cloudflare only.
-   *
-   * @generated from field: optional string zone_id = 3;
-   */
-  zoneId?: string | undefined;
+		/**
+		 * Cloudflare only.
+		 *
+		 * @generated from field: optional string zone_id = 3;
+		 */
+		zoneId?: string | undefined;
 
-  /**
-   * Fastly only.
-   *
-   * @generated from field: optional string service_id = 4;
-   */
-  serviceId?: string | undefined;
+		/**
+		 * Fastly only.
+		 *
+		 * @generated from field: optional string service_id = 4;
+		 */
+		serviceId?: string | undefined;
 
-  /**
-   * Bunny only.
-   *
-   * @generated from field: optional int64 pull_zone_id = 5;
-   */
-  pullZoneId?: bigint | undefined;
+		/**
+		 * Bunny only.
+		 *
+		 * @generated from field: optional int64 pull_zone_id = 5;
+		 */
+		pullZoneId?: bigint | undefined;
 
-  /**
-   * @generated from field: bool purge_all = 6;
-   */
-  purgeAll: boolean;
+		/**
+		 * @generated from field: bool purge_all = 6;
+		 */
+		purgeAll: boolean;
 
-  /**
-   * @generated from field: repeated string urls = 7;
-   */
-  urls: string[];
-};
+		/**
+		 * @generated from field: repeated string urls = 7;
+		 */
+		urls: string[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.NetworkingPurgeCdnRequest.
  * Use `create(NetworkingPurgeCdnRequestSchema)` to create a new message.
  */
-export const NetworkingPurgeCdnRequestSchema: GenMessage<NetworkingPurgeCdnRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_networking_operations, 2);
+export const NetworkingPurgeCdnRequestSchema: GenMessage<NetworkingPurgeCdnRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_networking_operations, 2);
 
 /**
  * @generated from message openoxide.api.v1.NetworkingPurgeCdnResponse
  */
-export type NetworkingPurgeCdnResponse = Message<"openoxide.api.v1.NetworkingPurgeCdnResponse"> & {
-  /**
-   * @generated from field: string provider = 1;
-   */
-  provider: string;
+export type NetworkingPurgeCdnResponse =
+	Message<'openoxide.api.v1.NetworkingPurgeCdnResponse'> & {
+		/**
+		 * @generated from field: string provider = 1;
+		 */
+		provider: string;
 
-  /**
-   * @generated from field: bool success = 2;
-   */
-  success: boolean;
+		/**
+		 * @generated from field: bool success = 2;
+		 */
+		success: boolean;
 
-  /**
-   * Upstream provider HTTP status code.
-   *
-   * @generated from field: uint32 status = 3;
-   */
-  status: number;
+		/**
+		 * Upstream provider HTTP status code.
+		 *
+		 * @generated from field: uint32 status = 3;
+		 */
+		status: number;
 
-  /**
-   * @generated from field: optional string request_id = 4;
-   */
-  requestId?: string | undefined;
+		/**
+		 * @generated from field: optional string request_id = 4;
+		 */
+		requestId?: string | undefined;
 
-  /**
-   * Truncated provider response body.
-   *
-   * @generated from field: string message = 5;
-   */
-  message: string;
-};
+		/**
+		 * Truncated provider response body.
+		 *
+		 * @generated from field: string message = 5;
+		 */
+		message: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.NetworkingPurgeCdnResponse.
  * Use `create(NetworkingPurgeCdnResponseSchema)` to create a new message.
  */
-export const NetworkingPurgeCdnResponseSchema: GenMessage<NetworkingPurgeCdnResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_networking_operations, 3);
+export const NetworkingPurgeCdnResponseSchema: GenMessage<NetworkingPurgeCdnResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_networking_operations, 3);
 
 /**
  * @generated from message openoxide.api.v1.NetworkingDiagnoseDomainsRequest
  */
-export type NetworkingDiagnoseDomainsRequest = Message<"openoxide.api.v1.NetworkingDiagnoseDomainsRequest"> & {
-  /**
-   * @generated from field: string host = 1;
-   */
-  host: string;
+export type NetworkingDiagnoseDomainsRequest =
+	Message<'openoxide.api.v1.NetworkingDiagnoseDomainsRequest'> & {
+		/**
+		 * @generated from field: string host = 1;
+		 */
+		host: string;
 
-  /**
-   * @generated from field: optional uint32 port = 2;
-   */
-  port?: number | undefined;
+		/**
+		 * @generated from field: optional uint32 port = 2;
+		 */
+		port?: number | undefined;
 
-  /**
-   * @generated from field: bool https = 3;
-   */
-  https: boolean;
+		/**
+		 * @generated from field: bool https = 3;
+		 */
+		https: boolean;
 
-  /**
-   * @generated from field: optional string path = 4;
-   */
-  path?: string | undefined;
-};
+		/**
+		 * @generated from field: optional string path = 4;
+		 */
+		path?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.NetworkingDiagnoseDomainsRequest.
  * Use `create(NetworkingDiagnoseDomainsRequestSchema)` to create a new message.
  */
-export const NetworkingDiagnoseDomainsRequestSchema: GenMessage<NetworkingDiagnoseDomainsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_networking_operations, 4);
+export const NetworkingDiagnoseDomainsRequestSchema: GenMessage<NetworkingDiagnoseDomainsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_networking_operations, 4);
 
 /**
  * @generated from message openoxide.api.v1.NetworkingDiagnoseDomainsResponse
  */
-export type NetworkingDiagnoseDomainsResponse = Message<"openoxide.api.v1.NetworkingDiagnoseDomainsResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.NetworkingDomainDiagnostic diagnostic = 1;
-   */
-  diagnostic?: NetworkingDomainDiagnostic | undefined;
-};
+export type NetworkingDiagnoseDomainsResponse =
+	Message<'openoxide.api.v1.NetworkingDiagnoseDomainsResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.NetworkingDomainDiagnostic diagnostic = 1;
+		 */
+		diagnostic?: NetworkingDomainDiagnostic | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.NetworkingDiagnoseDomainsResponse.
  * Use `create(NetworkingDiagnoseDomainsResponseSchema)` to create a new message.
  */
-export const NetworkingDiagnoseDomainsResponseSchema: GenMessage<NetworkingDiagnoseDomainsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_networking_operations, 5);
+export const NetworkingDiagnoseDomainsResponseSchema: GenMessage<NetworkingDiagnoseDomainsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_networking_operations, 5);
 
 /**
  * @generated from message openoxide.api.v1.NetworkingDiagnoseRootNetworkRequest
  */
-export type NetworkingDiagnoseRootNetworkRequest = Message<"openoxide.api.v1.NetworkingDiagnoseRootNetworkRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type NetworkingDiagnoseRootNetworkRequest =
+	Message<'openoxide.api.v1.NetworkingDiagnoseRootNetworkRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.NetworkingDiagnoseRootNetworkRequest.
  * Use `create(NetworkingDiagnoseRootNetworkRequestSchema)` to create a new message.
  */
-export const NetworkingDiagnoseRootNetworkRequestSchema: GenMessage<NetworkingDiagnoseRootNetworkRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_networking_operations, 6);
+export const NetworkingDiagnoseRootNetworkRequestSchema: GenMessage<NetworkingDiagnoseRootNetworkRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_networking_operations, 6);
 
 /**
  * @generated from message openoxide.api.v1.NetworkingDiagnoseRootNetworkResponse
  */
-export type NetworkingDiagnoseRootNetworkResponse = Message<"openoxide.api.v1.NetworkingDiagnoseRootNetworkResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.NetworkingRootNetworkStatus status = 1;
-   */
-  status?: NetworkingRootNetworkStatus | undefined;
-};
+export type NetworkingDiagnoseRootNetworkResponse =
+	Message<'openoxide.api.v1.NetworkingDiagnoseRootNetworkResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.NetworkingRootNetworkStatus status = 1;
+		 */
+		status?: NetworkingRootNetworkStatus | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.NetworkingDiagnoseRootNetworkResponse.
  * Use `create(NetworkingDiagnoseRootNetworkResponseSchema)` to create a new message.
  */
-export const NetworkingDiagnoseRootNetworkResponseSchema: GenMessage<NetworkingDiagnoseRootNetworkResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_networking_operations, 7);
+export const NetworkingDiagnoseRootNetworkResponseSchema: GenMessage<NetworkingDiagnoseRootNetworkResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_networking_operations, 7);
 
 /**
  * @generated from message openoxide.api.v1.NetworkingRepairRootNetworkRequest
  */
-export type NetworkingRepairRootNetworkRequest = Message<"openoxide.api.v1.NetworkingRepairRootNetworkRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
-};
+export type NetworkingRepairRootNetworkRequest =
+	Message<'openoxide.api.v1.NetworkingRepairRootNetworkRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.NetworkingRepairRootNetworkRequest.
  * Use `create(NetworkingRepairRootNetworkRequestSchema)` to create a new message.
  */
-export const NetworkingRepairRootNetworkRequestSchema: GenMessage<NetworkingRepairRootNetworkRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_networking_operations, 8);
+export const NetworkingRepairRootNetworkRequestSchema: GenMessage<NetworkingRepairRootNetworkRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_networking_operations, 8);
 
 /**
  * @generated from message openoxide.api.v1.NetworkingRepairRootNetworkResponse
  */
-export type NetworkingRepairRootNetworkResponse = Message<"openoxide.api.v1.NetworkingRepairRootNetworkResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.NetworkingRootNetworkStatus status = 1;
-   */
-  status?: NetworkingRootNetworkStatus | undefined;
-};
+export type NetworkingRepairRootNetworkResponse =
+	Message<'openoxide.api.v1.NetworkingRepairRootNetworkResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.NetworkingRootNetworkStatus status = 1;
+		 */
+		status?: NetworkingRootNetworkStatus | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.NetworkingRepairRootNetworkResponse.
  * Use `create(NetworkingRepairRootNetworkResponseSchema)` to create a new message.
  */
-export const NetworkingRepairRootNetworkResponseSchema: GenMessage<NetworkingRepairRootNetworkResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_networking_operations, 9);
+export const NetworkingRepairRootNetworkResponseSchema: GenMessage<NetworkingRepairRootNetworkResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_networking_operations, 9);
 
 /**
  * Closed set mirroring `CdnProvider`.
@@ -342,32 +365,32 @@ export const NetworkingRepairRootNetworkResponseSchema: GenMessage<NetworkingRep
  * @generated from enum openoxide.api.v1.NetworkingCdnProvider
  */
 export enum NetworkingCdnProvider {
-  /**
-   * @generated from enum value: NETWORKING_CDN_PROVIDER_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: NETWORKING_CDN_PROVIDER_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: NETWORKING_CDN_PROVIDER_CLOUDFLARE = 1;
-   */
-  CLOUDFLARE = 1,
+	/**
+	 * @generated from enum value: NETWORKING_CDN_PROVIDER_CLOUDFLARE = 1;
+	 */
+	CLOUDFLARE = 1,
 
-  /**
-   * @generated from enum value: NETWORKING_CDN_PROVIDER_FASTLY = 2;
-   */
-  FASTLY = 2,
+	/**
+	 * @generated from enum value: NETWORKING_CDN_PROVIDER_FASTLY = 2;
+	 */
+	FASTLY = 2,
 
-  /**
-   * @generated from enum value: NETWORKING_CDN_PROVIDER_BUNNY = 3;
-   */
-  BUNNY = 3,
+	/**
+	 * @generated from enum value: NETWORKING_CDN_PROVIDER_BUNNY = 3;
+	 */
+	BUNNY = 3,
 }
 
 /**
  * Describes the enum openoxide.api.v1.NetworkingCdnProvider.
  */
-export const NetworkingCdnProviderSchema: GenEnum<NetworkingCdnProvider> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_networking_operations, 0);
+export const NetworkingCdnProviderSchema: GenEnum<NetworkingCdnProvider> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_networking_operations, 0);
 
 /**
  * Networking utilities: CDN purge plus domain and root-overlay-network diagnostics. Not a domain/certificate/DNS CRUD owner service.
@@ -375,38 +398,39 @@ export const NetworkingCdnProviderSchema: GenEnum<NetworkingCdnProvider> = /*@__
  * @generated from service openoxide.api.v1.NetworkingOperationsService
  */
 export const NetworkingOperationsService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.NetworkingOperationsService.PurgeCdn
-   */
-  purgeCdn: {
-    methodKind: "unary";
-    input: typeof NetworkingPurgeCdnRequestSchema;
-    output: typeof NetworkingPurgeCdnResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseDomains
-   */
-  diagnoseDomains: {
-    methodKind: "unary";
-    input: typeof NetworkingDiagnoseDomainsRequestSchema;
-    output: typeof NetworkingDiagnoseDomainsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseRootNetwork
-   */
-  diagnoseRootNetwork: {
-    methodKind: "unary";
-    input: typeof NetworkingDiagnoseRootNetworkRequestSchema;
-    output: typeof NetworkingDiagnoseRootNetworkResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.NetworkingOperationsService.RepairRootNetwork
-   */
-  repairRootNetwork: {
-    methodKind: "unary";
-    input: typeof NetworkingRepairRootNetworkRequestSchema;
-    output: typeof NetworkingRepairRootNetworkResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_networking_operations, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.NetworkingOperationsService.PurgeCdn
+	 */
+	purgeCdn: {
+		methodKind: 'unary';
+		input: typeof NetworkingPurgeCdnRequestSchema;
+		output: typeof NetworkingPurgeCdnResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseDomains
+	 */
+	diagnoseDomains: {
+		methodKind: 'unary';
+		input: typeof NetworkingDiagnoseDomainsRequestSchema;
+		output: typeof NetworkingDiagnoseDomainsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseRootNetwork
+	 */
+	diagnoseRootNetwork: {
+		methodKind: 'unary';
+		input: typeof NetworkingDiagnoseRootNetworkRequestSchema;
+		output: typeof NetworkingDiagnoseRootNetworkResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.NetworkingOperationsService.RepairRootNetwork
+	 */
+	repairRootNetwork: {
+		methodKind: 'unary';
+		input: typeof NetworkingRepairRootNetworkRequestSchema;
+		output: typeof NetworkingRepairRootNetworkResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(
+	file_openoxide_api_v1_networking_operations,
+	0,
+);

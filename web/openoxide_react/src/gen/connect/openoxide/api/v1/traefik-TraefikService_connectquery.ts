@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/traefik.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { TraefikService } from "./traefik_pb";
+import {TraefikService} from './traefik_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.TraefikService.ListFiles

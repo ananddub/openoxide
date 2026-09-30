@@ -912,7 +912,7 @@ impl DatabaseBuilder {
     }
 
     /// Recreate the database's swarm tasks from the existing image (no
-    /// redeploy) — Dokploy `reload`.
+ /// redeploy) `reload`.
     pub async fn reload(&self, app_name: &str, cancel: &CancellationToken) -> ExecResult<()> {
         self.ctx
             .emit(BuilderEvent::Message(format!("reloading {app_name}")))

@@ -148,9 +148,7 @@ export function TemplateGallerySheet({
 										<TabsTrigger value="compose">
 											docker-compose.yml
 										</TabsTrigger>
-										<TabsTrigger value="toml">
-											template.toml
-										</TabsTrigger>
+										<TabsTrigger value="toml">template.toml</TabsTrigger>
 									</TabsList>
 									<TabsContent
 										value="compose"
@@ -186,9 +184,7 @@ export function TemplateGallerySheet({
 										<Input
 											placeholder="Search templates"
 											value={search}
-											onChange={e =>
-												setSearch(e.target.value)
-											}
+											onChange={e => setSearch(e.target.value)}
 											className="h-9 rounded-lg pl-9 text-sm transition-colors duration-150 hover:border-foreground/25"
 										/>
 									</div>
@@ -208,15 +204,12 @@ export function TemplateGallerySheet({
 									) : templatesQuery.isError ? (
 										<div className="flex flex-col items-center justify-center gap-3 rounded-xl border bg-card p-12 text-center">
 											<p className="text-sm text-muted-foreground">
-												Template registry
-												unreachable — check your
-												network connection.
+												Template registry unreachable — check your network
+												connection.
 											</p>
 											<Button
 												variant="outline"
-												onClick={() =>
-													templatesQuery.refetch()
-												}
+												onClick={() => templatesQuery.refetch()}
 												className="h-9 text-xs font-semibold">
 												Retry
 											</Button>
@@ -225,8 +218,7 @@ export function TemplateGallerySheet({
 										<div className="flex flex-col items-center justify-center gap-2 rounded-xl border bg-card p-12 text-center">
 											<Search className="size-8 text-muted-foreground/40" />
 											<p className="text-sm text-muted-foreground">
-												No templates match
-												&ldquo;{search}&rdquo;
+												No templates match &ldquo;{search}&rdquo;
 											</p>
 										</div>
 									) : view === 'grid' ? (
@@ -250,7 +242,7 @@ export function TemplateGallerySheet({
 											))}
 										</ListCard>
 									)}
-									</div>
+								</div>
 							</div>
 						)}
 					</div>

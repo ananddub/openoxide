@@ -2,1258 +2,1290 @@
 // @generated from file openoxide/api/v1/database.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/database.proto.
  */
-export const file_openoxide_api_v1_database: GenFile = /*@__PURE__*/
-  fileDesc("Ch9vcGVub3hpZGUvYXBpL3YxL2RhdGFiYXNlLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIvQFCghEYXRhYmFzZRI4CgRraW5kGAEgASgOMh4ub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZUtpbmRCCrpIB4IBBBABIAASEwoCaWQYAiABKANCB7pIBCICIAASDAoEbmFtZRgDIAEoCRIYCgtkZXNjcmlwdGlvbhgEIAEoCUgAiAEBEhQKDGRvY2tlcl9pbWFnZRgFIAEoCRIaCg1kYXRhYmFzZV9uYW1lGAYgASgJSAGIAQESGgoNZGF0YWJhc2VfdXNlchgHIAEoCUgCiAEBEh4KEWRhdGFiYXNlX3Bhc3N3b3JkGAggASgJSAOIAQESGgoNZXh0ZXJuYWxfcG9ydBgJIAEoA0gEiAEBEhQKB2NvbW1hbmQYCiABKAlIBYgBARIMCgRhcmdzGAsgAygJEhQKB2Vudl92YXIYDCABKAlIBogBARIZCgxtZW1vcnlfbGltaXQYDSABKAlIB4gBARIWCgljcHVfbGltaXQYDiABKAlICIgBARIQCghyZXBsaWNhcxgPIAEoAxITCgtuZXR3b3JrX2lkcxgQIAMoCRIOCgZzdGF0dXMYESABKAkSFwoKbGFzdF9lcnJvchgSIAEoCUgJiAEBEhYKDmVudmlyb25tZW50X2lkGBMgASgDEhYKCXNlcnZlcl9pZBgUIAEoA0gKiAEBEhIKCmNyZWF0ZWRfYXQYFSABKAMSEgoKdXBkYXRlZF9hdBgWIAEoAxIVCghhcHBfbmFtZRgXIAEoCUgLiAEBQg4KDF9kZXNjcmlwdGlvbkIQCg5fZGF0YWJhc2VfbmFtZUIQCg5fZGF0YWJhc2VfdXNlckIUChJfZGF0YWJhc2VfcGFzc3dvcmRCEAoOX2V4dGVybmFsX3BvcnRCCgoIX2NvbW1hbmRCCgoIX2Vudl92YXJCDwoNX21lbW9yeV9saW1pdEIMCgpfY3B1X2xpbWl0Qg0KC19sYXN0X2Vycm9yQgwKCl9zZXJ2ZXJfaWRCCwoJX2FwcF9uYW1lIk4KEkdldERhdGFiYXNlUmVxdWVzdBIsCgRraW5kGAEgASgOMh4ub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZUtpbmQSCgoCaWQYAiABKAMicQoUTGlzdERhdGFiYXNlc1JlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEh8KDmVudmlyb25tZW50X2lkGAIgASgDQge6SAQiAiAAIkYKFUxpc3REYXRhYmFzZXNSZXNwb25zZRItCglkYXRhYmFzZXMYASADKAsyGi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlIpoEChVDcmVhdGVEYXRhYmFzZVJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhgKBG5hbWUYAiABKAlCCrpIB3IFEAEY/wESGAoLZGVzY3JpcHRpb24YAyABKAlIAIgBARIfCg5lbnZpcm9ubWVudF9pZBgEIAEoA0IHukgEIgIgABIWCglzZXJ2ZXJfaWQYBSABKANIAYgBARIZCgxkb2NrZXJfaW1hZ2UYBiABKAlIAogBARIaCg1kYXRhYmFzZV9uYW1lGAcgASgJSAOIAQESGgoNZGF0YWJhc2VfdXNlchgIIAEoCUgEiAEBEh4KEWRhdGFiYXNlX3Bhc3N3b3JkGAkgASgJSAWIAQESJwoNZXh0ZXJuYWxfcG9ydBgKIAEoA0ILukgIIgYY//8DKAFIBogBARIMCgRhcmdzGAsgAygJEhQKB2Vudl92YXIYDCABKAlIB4gBARITCgtuZXR3b3JrX2lkcxgNIAMoCUIOCgxfZGVzY3JpcHRpb25CDAoKX3NlcnZlcl9pZEIPCg1fZG9ja2VyX2ltYWdlQhAKDl9kYXRhYmFzZV9uYW1lQhAKDl9kYXRhYmFzZV91c2VyQhQKEl9kYXRhYmFzZV9wYXNzd29yZEIQCg5fZXh0ZXJuYWxfcG9ydEIKCghfZW52X3ZhciLUBgoVVXBkYXRlRGF0YWJhc2VSZXF1ZXN0EjgKBGtpbmQYASABKA4yHi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlS2luZEIKukgHggEEEAEgABITCgJpZBgCIAEoA0IHukgEIgIgABIRCgRuYW1lGAMgASgJSACIAQESGAoLZGVzY3JpcHRpb24YBCABKAlIAYgBARIZCgxkb2NrZXJfaW1hZ2UYBSABKAlIAogBARIaCg1kYXRhYmFzZV9uYW1lGAYgASgJSAOIAQESGgoNZGF0YWJhc2VfdXNlchgHIAEoCUgEiAEBEh4KEWRhdGFiYXNlX3Bhc3N3b3JkGAggASgJSAWIAQESJwoNZXh0ZXJuYWxfcG9ydBgJIAEoA0ILukgIIgYY//8DKAFIBogBARIUCgdjb21tYW5kGAogASgJSAeIAQESDAoEYXJncxgLIAMoCRIUCgdlbnZfdmFyGAwgASgJSAiIAQESGQoMbWVtb3J5X2xpbWl0GA0gASgJSAmIAQESFgoJY3B1X2xpbWl0GA4gASgJSAqIAQESFQoIcmVwbGljYXMYDyABKANIC4gBARIWCglzZXJ2ZXJfaWQYECABKANIDIgBARITCgtuZXR3b3JrX2lkcxgRIAMoCRIkChdkZXRhY2hfcnVzdHBsb3lfbmV0d29yaxgSIAEoA0gNiAEBEh8KEm1lbW9yeV9yZXNlcnZhdGlvbhgTIAEoCUgOiAEBEhwKD2NwdV9yZXNlcnZhdGlvbhgUIAEoCUgPiAEBQgcKBV9uYW1lQg4KDF9kZXNjcmlwdGlvbkIPCg1fZG9ja2VyX2ltYWdlQhAKDl9kYXRhYmFzZV9uYW1lQhAKDl9kYXRhYmFzZV91c2VyQhQKEl9kYXRhYmFzZV9wYXNzd29yZEIQCg5fZXh0ZXJuYWxfcG9ydEIKCghfY29tbWFuZEIKCghfZW52X3ZhckIPCg1fbWVtb3J5X2xpbWl0QgwKCl9jcHVfbGltaXRCCwoJX3JlcGxpY2FzQgwKCl9zZXJ2ZXJfaWRCGgoYX2RldGFjaF9ydXN0cGxveV9uZXR3b3JrQhUKE19tZW1vcnlfcmVzZXJ2YXRpb25CEgoQX2NwdV9yZXNlcnZhdGlvbiJmChVEZWxldGVEYXRhYmFzZVJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhMKAmlkGAIgASgDQge6SAQiAiAAImkKGERhdGFiYXNlT3BlcmF0aW9uUmVxdWVzdBI4CgRraW5kGAEgASgOMh4ub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZUtpbmRCCrpIB4IBBBABIAASEwoCaWQYAiABKANCB7pIBCICIAAiVAoRRGF0YWJhc2VPcGVyYXRpb24SLAoIZGF0YWJhc2UYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlEhEKCW9wZXJhdGlvbhgCIAEoCSJmChVEYXRhYmFzZVRhcmdldFJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhMKAmlkGAIgASgDQge6SAQiAiAAImUKFFN3YXJtU2V0dGluZ3NSZXF1ZXN0EjgKBGtpbmQYASABKA4yHi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlS2luZEIKukgHggEEEAEgABITCgJpZBgCIAEoA0IHukgEIgIgACLVAwoNU3dhcm1TZXR0aW5ncxIZCgxoZWFsdGhfY2hlY2sYASABKAlIAIgBARIbCg5yZXN0YXJ0X3BvbGljeRgCIAEoCUgBiAEBEhYKCXBsYWNlbWVudBgDIAEoCUgCiAEBEhoKDXVwZGF0ZV9jb25maWcYBCABKAlIA4gBARIcCg9yb2xsYmFja19jb25maWcYBSABKAlIBIgBARIRCgRtb2RlGAYgASgJSAWIAQESEwoGbGFiZWxzGAcgASgJSAaIAQESFAoHbmV0d29yaxgIIAEoCUgHiAEBEhoKDWVuZHBvaW50X3NwZWMYCSABKAlICIgBARIUCgd1bGltaXRzGAogASgJSAmIAQESHgoRc3RvcF9ncmFjZV9wZXJpb2QYCyABKANICogBAUIPCg1faGVhbHRoX2NoZWNrQhEKD19yZXN0YXJ0X3BvbGljeUIMCgpfcGxhY2VtZW50QhAKDl91cGRhdGVfY29uZmlnQhIKEF9yb2xsYmFja19jb25maWdCBwoFX21vZGVCCQoHX2xhYmVsc0IKCghfbmV0d29ya0IQCg5fZW5kcG9pbnRfc3BlY0IKCghfdWxpbWl0c0IUChJfc3RvcF9ncmFjZV9wZXJpb2QingEKGlVwZGF0ZVN3YXJtU2V0dGluZ3NSZXF1ZXN0EjgKBGtpbmQYASABKA4yHi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlS2luZEIKukgHggEEEAEgABITCgJpZBgCIAEoA0IHukgEIgIgABIxCghzZXR0aW5ncxgDIAEoCzIfLm9wZW5veGlkZS5hcGkudjEuU3dhcm1TZXR0aW5ncyL7AQoFTW91bnQSCgoCaWQYASABKAMSEgoKbW91bnRfdHlwZRgCIAEoCRIWCglob3N0X3BhdGgYAyABKAlIAIgBARIYCgt2b2x1bWVfbmFtZRgEIAEoCUgBiAEBEhYKCWZpbGVfcGF0aBgFIAEoCUgCiAEBEhQKB2NvbnRlbnQYBiABKAlIA4gBARISCgptb3VudF9wYXRoGAcgASgJEhIKCmNyZWF0ZWRfYXQYCCABKAMSEgoKdXBkYXRlZF9hdBgJIAEoA0IMCgpfaG9zdF9wYXRoQg4KDF92b2x1bWVfbmFtZUIMCgpfZmlsZV9wYXRoQgoKCF9jb250ZW50IjQKCU1vdW50TGlzdBInCgZtb3VudHMYASADKAsyFy5vcGVub3hpZGUuYXBpLnYxLk1vdW50Ir4CChJDcmVhdGVNb3VudFJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhwKC2RhdGFiYXNlX2lkGAIgASgDQge6SAQiAiAAEhsKCm1vdW50X3R5cGUYAyABKAlCB7pIBHICEAESFgoJaG9zdF9wYXRoGAQgASgJSACIAQESGAoLdm9sdW1lX25hbWUYBSABKAlIAYgBARIWCglmaWxlX3BhdGgYBiABKAlIAogBARIUCgdjb250ZW50GAcgASgJSAOIAQESGwoKbW91bnRfcGF0aBgIIAEoCUIHukgEcgIQAUIMCgpfaG9zdF9wYXRoQg4KDF92b2x1bWVfbmFtZUIMCgpfZmlsZV9wYXRoQgoKCF9jb250ZW50ItMCChJVcGRhdGVNb3VudFJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhwKC2RhdGFiYXNlX2lkGAIgASgDQge6SAQiAiAAEhMKAmlkGAMgASgDQge6SAQiAiAAEhsKCm1vdW50X3R5cGUYBCABKAlCB7pIBHICEAESFgoJaG9zdF9wYXRoGAUgASgJSACIAQESGAoLdm9sdW1lX25hbWUYBiABKAlIAYgBARIWCglmaWxlX3BhdGgYByABKAlIAogBARIUCgdjb250ZW50GAggASgJSAOIAQESGwoKbW91bnRfcGF0aBgJIAEoCUIHukgEcgIQAUIMCgpfaG9zdF9wYXRoQg4KDF92b2x1bWVfbmFtZUIMCgpfZmlsZV9wYXRoQgoKCF9jb250ZW50IoEBChJEZWxldGVNb3VudFJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhwKC2RhdGFiYXNlX2lkGAIgASgDQge6SAQiAiAAEhMKAmlkGAMgASgDQge6SAQiAiAAIh0KDERlcGVuZGVuY2llcxINCgVpdGVtcxgBIAMoCSJ/ChVFeHBvcnREYXRhYmFzZVJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhMKAmlkGAIgASgDQge6SAQiAiAAEhcKD2luY2x1ZGVfc2VjcmV0cxgDIAEoCCIhCg5EYXRhYmFzZUV4cG9ydBIPCgdhcmNoaXZlGAEgASgJIpEBChVJbXBvcnREYXRhYmFzZVJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEh8KDmVudmlyb25tZW50X2lkGAIgASgDQge6SAQiAiAAEh0KB2FyY2hpdmUYAyABKAlCDLpICXIHEAEYgICABSKCAQoSRGF0YWJhc2VDb25uZWN0aW9uEiwKBGtpbmQYASABKA4yHi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlS2luZBIMCgRob3N0GAIgASgJEgwKBHBvcnQYAyABKAMSEAoIZGF0YWJhc2UYBCABKAkSEAoIdXNlcm5hbWUYBSABKAkiQwoQVmFsaWRhdGlvblJlc3VsdBINCgV2YWxpZBgBIAEoCBIUCgdtZXNzYWdlGAIgASgJSACIAQFCCgoIX21lc3NhZ2UiZAoOQWR2YW5jZWRDb25maWcSHQoQcmVwbGljYXRpb25fcm9sZRgBIAEoCUgAiAEBEhMKBmNvbmZpZxgCIAEoCUgBiAEBQhMKEV9yZXBsaWNhdGlvbl9yb2xlQgkKB19jb25maWcingEKG1VwZGF0ZUFkdmFuY2VkQ29uZmlnUmVxdWVzdBI4CgRraW5kGAEgASgOMh4ub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZUtpbmRCCrpIB4IBBBABIAASEwoCaWQYAiABKANCB7pIBCICIAASMAoGY29uZmlnGAMgASgLMiAub3Blbm94aWRlLmFwaS52MS5BZHZhbmNlZENvbmZpZyrJAQoMRGF0YWJhc2VLaW5kEh0KGURBVEFCQVNFX0tJTkRfVU5TUEVDSUZJRUQQABIaChZEQVRBQkFTRV9LSU5EX1BPU1RHUkVTEAESFwoTREFUQUJBU0VfS0lORF9NWVNRTBACEhkKFURBVEFCQVNFX0tJTkRfTUFSSUFEQhADEhcKE0RBVEFCQVNFX0tJTkRfTU9OR08QBBIXChNEQVRBQkFTRV9LSU5EX1JFRElTEAUSGAoUREFUQUJBU0VfS0lORF9MSUJTUUwQBjLhEQoPRGF0YWJhc2VTZXJ2aWNlEk8KC0dldERhdGFiYXNlEiQub3Blbm94aWRlLmFwaS52MS5HZXREYXRhYmFzZVJlcXVlc3QaGi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlEmAKDUxpc3REYXRhYmFzZXMSJi5vcGVub3hpZGUuYXBpLnYxLkxpc3REYXRhYmFzZXNSZXF1ZXN0Gicub3Blbm94aWRlLmFwaS52MS5MaXN0RGF0YWJhc2VzUmVzcG9uc2USVQoOQ3JlYXRlRGF0YWJhc2USJy5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZURhdGFiYXNlUmVxdWVzdBoaLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2USVQoOVXBkYXRlRGF0YWJhc2USJy5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZURhdGFiYXNlUmVxdWVzdBoaLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2USUgoORGVsZXRlRGF0YWJhc2USJy5vcGVub3hpZGUuYXBpLnYxLkRlbGV0ZURhdGFiYXNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSWQoGRGVwbG95Eioub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZU9wZXJhdGlvblJlcXVlc3QaIy5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlT3BlcmF0aW9uElsKCFJlZGVwbG95Eioub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZU9wZXJhdGlvblJlcXVlc3QaIy5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlT3BlcmF0aW9uElkKBlJlbG9hZBIqLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VPcGVyYXRpb25SZXF1ZXN0GiMub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZU9wZXJhdGlvbhJYCgVTdGFydBIqLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VPcGVyYXRpb25SZXF1ZXN0GiMub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZU9wZXJhdGlvbhJXCgRTdG9wEioub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZU9wZXJhdGlvblJlcXVlc3QaIy5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlT3BlcmF0aW9uEk0KBkNhbmNlbBIqLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VPcGVyYXRpb25SZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJbChBHZXRTd2FybVNldHRpbmdzEiYub3Blbm94aWRlLmFwaS52MS5Td2FybVNldHRpbmdzUmVxdWVzdBofLm9wZW5veGlkZS5hcGkudjEuU3dhcm1TZXR0aW5ncxJkChNVcGRhdGVTd2FybVNldHRpbmdzEiwub3Blbm94aWRlLmFwaS52MS5VcGRhdGVTd2FybVNldHRpbmdzUmVxdWVzdBofLm9wZW5veGlkZS5hcGkudjEuU3dhcm1TZXR0aW5ncxJSCgpMaXN0TW91bnRzEicub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZVRhcmdldFJlcXVlc3QaGy5vcGVub3hpZGUuYXBpLnYxLk1vdW50TGlzdBJMCgtDcmVhdGVNb3VudBIkLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlTW91bnRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5Nb3VudBJMCgtVcGRhdGVNb3VudBIkLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlTW91bnRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5Nb3VudBJMCgtEZWxldGVNb3VudBIkLm9wZW5veGlkZS5hcGkudjEuRGVsZXRlTW91bnRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJbChBMaXN0RGVwZW5kZW5jaWVzEicub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZVRhcmdldFJlcXVlc3QaHi5vcGVub3hpZGUuYXBpLnYxLkRlcGVuZGVuY2llcxJbCg5FeHBvcnREYXRhYmFzZRInLm9wZW5veGlkZS5hcGkudjEuRXhwb3J0RGF0YWJhc2VSZXF1ZXN0GiAub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZUV4cG9ydBJVCg5JbXBvcnREYXRhYmFzZRInLm9wZW5veGlkZS5hcGkudjEuSW1wb3J0RGF0YWJhc2VSZXF1ZXN0Ghoub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZRJeCg1HZXRDb25uZWN0aW9uEicub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZVRhcmdldFJlcXVlc3QaJC5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlQ29ubmVjdGlvbhJYChFSb3RhdGVDcmVkZW50aWFscxInLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VUYXJnZXRSZXF1ZXN0Ghoub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZRJfChBWYWxpZGF0ZURhdGFiYXNlEicub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZVRhcmdldFJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlZhbGlkYXRpb25SZXN1bHQSZgoZR2V0UG9zdGdyZXNBZHZhbmNlZENvbmZpZxInLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VUYXJnZXRSZXF1ZXN0GiAub3Blbm94aWRlLmFwaS52MS5BZHZhbmNlZENvbmZpZxJvChxVcGRhdGVQb3N0Z3Jlc0FkdmFuY2VkQ29uZmlnEi0ub3Blbm94aWRlLmFwaS52MS5VcGRhdGVBZHZhbmNlZENvbmZpZ1JlcXVlc3QaIC5vcGVub3hpZGUuYXBpLnYxLkFkdmFuY2VkQ29uZmlnYgZwcm90bzM", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_database: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'Ch9vcGVub3hpZGUvYXBpL3YxL2RhdGFiYXNlLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIvQFCghEYXRhYmFzZRI4CgRraW5kGAEgASgOMh4ub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZUtpbmRCCrpIB4IBBBABIAASEwoCaWQYAiABKANCB7pIBCICIAASDAoEbmFtZRgDIAEoCRIYCgtkZXNjcmlwdGlvbhgEIAEoCUgAiAEBEhQKDGRvY2tlcl9pbWFnZRgFIAEoCRIaCg1kYXRhYmFzZV9uYW1lGAYgASgJSAGIAQESGgoNZGF0YWJhc2VfdXNlchgHIAEoCUgCiAEBEh4KEWRhdGFiYXNlX3Bhc3N3b3JkGAggASgJSAOIAQESGgoNZXh0ZXJuYWxfcG9ydBgJIAEoA0gEiAEBEhQKB2NvbW1hbmQYCiABKAlIBYgBARIMCgRhcmdzGAsgAygJEhQKB2Vudl92YXIYDCABKAlIBogBARIZCgxtZW1vcnlfbGltaXQYDSABKAlIB4gBARIWCgljcHVfbGltaXQYDiABKAlICIgBARIQCghyZXBsaWNhcxgPIAEoAxITCgtuZXR3b3JrX2lkcxgQIAMoCRIOCgZzdGF0dXMYESABKAkSFwoKbGFzdF9lcnJvchgSIAEoCUgJiAEBEhYKDmVudmlyb25tZW50X2lkGBMgASgDEhYKCXNlcnZlcl9pZBgUIAEoA0gKiAEBEhIKCmNyZWF0ZWRfYXQYFSABKAMSEgoKdXBkYXRlZF9hdBgWIAEoAxIVCghhcHBfbmFtZRgXIAEoCUgLiAEBQg4KDF9kZXNjcmlwdGlvbkIQCg5fZGF0YWJhc2VfbmFtZUIQCg5fZGF0YWJhc2VfdXNlckIUChJfZGF0YWJhc2VfcGFzc3dvcmRCEAoOX2V4dGVybmFsX3BvcnRCCgoIX2NvbW1hbmRCCgoIX2Vudl92YXJCDwoNX21lbW9yeV9saW1pdEIMCgpfY3B1X2xpbWl0Qg0KC19sYXN0X2Vycm9yQgwKCl9zZXJ2ZXJfaWRCCwoJX2FwcF9uYW1lIk4KEkdldERhdGFiYXNlUmVxdWVzdBIsCgRraW5kGAEgASgOMh4ub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZUtpbmQSCgoCaWQYAiABKAMicQoUTGlzdERhdGFiYXNlc1JlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEh8KDmVudmlyb25tZW50X2lkGAIgASgDQge6SAQiAiAAIkYKFUxpc3REYXRhYmFzZXNSZXNwb25zZRItCglkYXRhYmFzZXMYASADKAsyGi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlIpoEChVDcmVhdGVEYXRhYmFzZVJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhgKBG5hbWUYAiABKAlCCrpIB3IFEAEY/wESGAoLZGVzY3JpcHRpb24YAyABKAlIAIgBARIfCg5lbnZpcm9ubWVudF9pZBgEIAEoA0IHukgEIgIgABIWCglzZXJ2ZXJfaWQYBSABKANIAYgBARIZCgxkb2NrZXJfaW1hZ2UYBiABKAlIAogBARIaCg1kYXRhYmFzZV9uYW1lGAcgASgJSAOIAQESGgoNZGF0YWJhc2VfdXNlchgIIAEoCUgEiAEBEh4KEWRhdGFiYXNlX3Bhc3N3b3JkGAkgASgJSAWIAQESJwoNZXh0ZXJuYWxfcG9ydBgKIAEoA0ILukgIIgYY//8DKAFIBogBARIMCgRhcmdzGAsgAygJEhQKB2Vudl92YXIYDCABKAlIB4gBARITCgtuZXR3b3JrX2lkcxgNIAMoCUIOCgxfZGVzY3JpcHRpb25CDAoKX3NlcnZlcl9pZEIPCg1fZG9ja2VyX2ltYWdlQhAKDl9kYXRhYmFzZV9uYW1lQhAKDl9kYXRhYmFzZV91c2VyQhQKEl9kYXRhYmFzZV9wYXNzd29yZEIQCg5fZXh0ZXJuYWxfcG9ydEIKCghfZW52X3ZhciLUBgoVVXBkYXRlRGF0YWJhc2VSZXF1ZXN0EjgKBGtpbmQYASABKA4yHi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlS2luZEIKukgHggEEEAEgABITCgJpZBgCIAEoA0IHukgEIgIgABIRCgRuYW1lGAMgASgJSACIAQESGAoLZGVzY3JpcHRpb24YBCABKAlIAYgBARIZCgxkb2NrZXJfaW1hZ2UYBSABKAlIAogBARIaCg1kYXRhYmFzZV9uYW1lGAYgASgJSAOIAQESGgoNZGF0YWJhc2VfdXNlchgHIAEoCUgEiAEBEh4KEWRhdGFiYXNlX3Bhc3N3b3JkGAggASgJSAWIAQESJwoNZXh0ZXJuYWxfcG9ydBgJIAEoA0ILukgIIgYY//8DKAFIBogBARIUCgdjb21tYW5kGAogASgJSAeIAQESDAoEYXJncxgLIAMoCRIUCgdlbnZfdmFyGAwgASgJSAiIAQESGQoMbWVtb3J5X2xpbWl0GA0gASgJSAmIAQESFgoJY3B1X2xpbWl0GA4gASgJSAqIAQESFQoIcmVwbGljYXMYDyABKANIC4gBARIWCglzZXJ2ZXJfaWQYECABKANIDIgBARITCgtuZXR3b3JrX2lkcxgRIAMoCRIkChdkZXRhY2hfcnVzdHBsb3lfbmV0d29yaxgSIAEoA0gNiAEBEh8KEm1lbW9yeV9yZXNlcnZhdGlvbhgTIAEoCUgOiAEBEhwKD2NwdV9yZXNlcnZhdGlvbhgUIAEoCUgPiAEBQgcKBV9uYW1lQg4KDF9kZXNjcmlwdGlvbkIPCg1fZG9ja2VyX2ltYWdlQhAKDl9kYXRhYmFzZV9uYW1lQhAKDl9kYXRhYmFzZV91c2VyQhQKEl9kYXRhYmFzZV9wYXNzd29yZEIQCg5fZXh0ZXJuYWxfcG9ydEIKCghfY29tbWFuZEIKCghfZW52X3ZhckIPCg1fbWVtb3J5X2xpbWl0QgwKCl9jcHVfbGltaXRCCwoJX3JlcGxpY2FzQgwKCl9zZXJ2ZXJfaWRCGgoYX2RldGFjaF9ydXN0cGxveV9uZXR3b3JrQhUKE19tZW1vcnlfcmVzZXJ2YXRpb25CEgoQX2NwdV9yZXNlcnZhdGlvbiJmChVEZWxldGVEYXRhYmFzZVJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhMKAmlkGAIgASgDQge6SAQiAiAAImkKGERhdGFiYXNlT3BlcmF0aW9uUmVxdWVzdBI4CgRraW5kGAEgASgOMh4ub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZUtpbmRCCrpIB4IBBBABIAASEwoCaWQYAiABKANCB7pIBCICIAAiVAoRRGF0YWJhc2VPcGVyYXRpb24SLAoIZGF0YWJhc2UYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlEhEKCW9wZXJhdGlvbhgCIAEoCSJmChVEYXRhYmFzZVRhcmdldFJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhMKAmlkGAIgASgDQge6SAQiAiAAImUKFFN3YXJtU2V0dGluZ3NSZXF1ZXN0EjgKBGtpbmQYASABKA4yHi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlS2luZEIKukgHggEEEAEgABITCgJpZBgCIAEoA0IHukgEIgIgACLVAwoNU3dhcm1TZXR0aW5ncxIZCgxoZWFsdGhfY2hlY2sYASABKAlIAIgBARIbCg5yZXN0YXJ0X3BvbGljeRgCIAEoCUgBiAEBEhYKCXBsYWNlbWVudBgDIAEoCUgCiAEBEhoKDXVwZGF0ZV9jb25maWcYBCABKAlIA4gBARIcCg9yb2xsYmFja19jb25maWcYBSABKAlIBIgBARIRCgRtb2RlGAYgASgJSAWIAQESEwoGbGFiZWxzGAcgASgJSAaIAQESFAoHbmV0d29yaxgIIAEoCUgHiAEBEhoKDWVuZHBvaW50X3NwZWMYCSABKAlICIgBARIUCgd1bGltaXRzGAogASgJSAmIAQESHgoRc3RvcF9ncmFjZV9wZXJpb2QYCyABKANICogBAUIPCg1faGVhbHRoX2NoZWNrQhEKD19yZXN0YXJ0X3BvbGljeUIMCgpfcGxhY2VtZW50QhAKDl91cGRhdGVfY29uZmlnQhIKEF9yb2xsYmFja19jb25maWdCBwoFX21vZGVCCQoHX2xhYmVsc0IKCghfbmV0d29ya0IQCg5fZW5kcG9pbnRfc3BlY0IKCghfdWxpbWl0c0IUChJfc3RvcF9ncmFjZV9wZXJpb2QingEKGlVwZGF0ZVN3YXJtU2V0dGluZ3NSZXF1ZXN0EjgKBGtpbmQYASABKA4yHi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlS2luZEIKukgHggEEEAEgABITCgJpZBgCIAEoA0IHukgEIgIgABIxCghzZXR0aW5ncxgDIAEoCzIfLm9wZW5veGlkZS5hcGkudjEuU3dhcm1TZXR0aW5ncyL7AQoFTW91bnQSCgoCaWQYASABKAMSEgoKbW91bnRfdHlwZRgCIAEoCRIWCglob3N0X3BhdGgYAyABKAlIAIgBARIYCgt2b2x1bWVfbmFtZRgEIAEoCUgBiAEBEhYKCWZpbGVfcGF0aBgFIAEoCUgCiAEBEhQKB2NvbnRlbnQYBiABKAlIA4gBARISCgptb3VudF9wYXRoGAcgASgJEhIKCmNyZWF0ZWRfYXQYCCABKAMSEgoKdXBkYXRlZF9hdBgJIAEoA0IMCgpfaG9zdF9wYXRoQg4KDF92b2x1bWVfbmFtZUIMCgpfZmlsZV9wYXRoQgoKCF9jb250ZW50IjQKCU1vdW50TGlzdBInCgZtb3VudHMYASADKAsyFy5vcGVub3hpZGUuYXBpLnYxLk1vdW50Ir4CChJDcmVhdGVNb3VudFJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhwKC2RhdGFiYXNlX2lkGAIgASgDQge6SAQiAiAAEhsKCm1vdW50X3R5cGUYAyABKAlCB7pIBHICEAESFgoJaG9zdF9wYXRoGAQgASgJSACIAQESGAoLdm9sdW1lX25hbWUYBSABKAlIAYgBARIWCglmaWxlX3BhdGgYBiABKAlIAogBARIUCgdjb250ZW50GAcgASgJSAOIAQESGwoKbW91bnRfcGF0aBgIIAEoCUIHukgEcgIQAUIMCgpfaG9zdF9wYXRoQg4KDF92b2x1bWVfbmFtZUIMCgpfZmlsZV9wYXRoQgoKCF9jb250ZW50ItMCChJVcGRhdGVNb3VudFJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhwKC2RhdGFiYXNlX2lkGAIgASgDQge6SAQiAiAAEhMKAmlkGAMgASgDQge6SAQiAiAAEhsKCm1vdW50X3R5cGUYBCABKAlCB7pIBHICEAESFgoJaG9zdF9wYXRoGAUgASgJSACIAQESGAoLdm9sdW1lX25hbWUYBiABKAlIAYgBARIWCglmaWxlX3BhdGgYByABKAlIAogBARIUCgdjb250ZW50GAggASgJSAOIAQESGwoKbW91bnRfcGF0aBgJIAEoCUIHukgEcgIQAUIMCgpfaG9zdF9wYXRoQg4KDF92b2x1bWVfbmFtZUIMCgpfZmlsZV9wYXRoQgoKCF9jb250ZW50IoEBChJEZWxldGVNb3VudFJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhwKC2RhdGFiYXNlX2lkGAIgASgDQge6SAQiAiAAEhMKAmlkGAMgASgDQge6SAQiAiAAIh0KDERlcGVuZGVuY2llcxINCgVpdGVtcxgBIAMoCSJ/ChVFeHBvcnREYXRhYmFzZVJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEhMKAmlkGAIgASgDQge6SAQiAiAAEhcKD2luY2x1ZGVfc2VjcmV0cxgDIAEoCCIhCg5EYXRhYmFzZUV4cG9ydBIPCgdhcmNoaXZlGAEgASgJIpEBChVJbXBvcnREYXRhYmFzZVJlcXVlc3QSOAoEa2luZBgBIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VLaW5kQgq6SAeCAQQQASAAEh8KDmVudmlyb25tZW50X2lkGAIgASgDQge6SAQiAiAAEh0KB2FyY2hpdmUYAyABKAlCDLpICXIHEAEYgICABSKCAQoSRGF0YWJhc2VDb25uZWN0aW9uEiwKBGtpbmQYASABKA4yHi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlS2luZBIMCgRob3N0GAIgASgJEgwKBHBvcnQYAyABKAMSEAoIZGF0YWJhc2UYBCABKAkSEAoIdXNlcm5hbWUYBSABKAkiQwoQVmFsaWRhdGlvblJlc3VsdBINCgV2YWxpZBgBIAEoCBIUCgdtZXNzYWdlGAIgASgJSACIAQFCCgoIX21lc3NhZ2UiZAoOQWR2YW5jZWRDb25maWcSHQoQcmVwbGljYXRpb25fcm9sZRgBIAEoCUgAiAEBEhMKBmNvbmZpZxgCIAEoCUgBiAEBQhMKEV9yZXBsaWNhdGlvbl9yb2xlQgkKB19jb25maWcingEKG1VwZGF0ZUFkdmFuY2VkQ29uZmlnUmVxdWVzdBI4CgRraW5kGAEgASgOMh4ub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZUtpbmRCCrpIB4IBBBABIAASEwoCaWQYAiABKANCB7pIBCICIAASMAoGY29uZmlnGAMgASgLMiAub3Blbm94aWRlLmFwaS52MS5BZHZhbmNlZENvbmZpZyrJAQoMRGF0YWJhc2VLaW5kEh0KGURBVEFCQVNFX0tJTkRfVU5TUEVDSUZJRUQQABIaChZEQVRBQkFTRV9LSU5EX1BPU1RHUkVTEAESFwoTREFUQUJBU0VfS0lORF9NWVNRTBACEhkKFURBVEFCQVNFX0tJTkRfTUFSSUFEQhADEhcKE0RBVEFCQVNFX0tJTkRfTU9OR08QBBIXChNEQVRBQkFTRV9LSU5EX1JFRElTEAUSGAoUREFUQUJBU0VfS0lORF9MSUJTUUwQBjLhEQoPRGF0YWJhc2VTZXJ2aWNlEk8KC0dldERhdGFiYXNlEiQub3Blbm94aWRlLmFwaS52MS5HZXREYXRhYmFzZVJlcXVlc3QaGi5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlEmAKDUxpc3REYXRhYmFzZXMSJi5vcGVub3hpZGUuYXBpLnYxLkxpc3REYXRhYmFzZXNSZXF1ZXN0Gicub3Blbm94aWRlLmFwaS52MS5MaXN0RGF0YWJhc2VzUmVzcG9uc2USVQoOQ3JlYXRlRGF0YWJhc2USJy5vcGVub3hpZGUuYXBpLnYxLkNyZWF0ZURhdGFiYXNlUmVxdWVzdBoaLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2USVQoOVXBkYXRlRGF0YWJhc2USJy5vcGVub3hpZGUuYXBpLnYxLlVwZGF0ZURhdGFiYXNlUmVxdWVzdBoaLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2USUgoORGVsZXRlRGF0YWJhc2USJy5vcGVub3hpZGUuYXBpLnYxLkRlbGV0ZURhdGFiYXNlUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSWQoGRGVwbG95Eioub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZU9wZXJhdGlvblJlcXVlc3QaIy5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlT3BlcmF0aW9uElsKCFJlZGVwbG95Eioub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZU9wZXJhdGlvblJlcXVlc3QaIy5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlT3BlcmF0aW9uElkKBlJlbG9hZBIqLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VPcGVyYXRpb25SZXF1ZXN0GiMub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZU9wZXJhdGlvbhJYCgVTdGFydBIqLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VPcGVyYXRpb25SZXF1ZXN0GiMub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZU9wZXJhdGlvbhJXCgRTdG9wEioub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZU9wZXJhdGlvblJlcXVlc3QaIy5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlT3BlcmF0aW9uEk0KBkNhbmNlbBIqLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VPcGVyYXRpb25SZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJbChBHZXRTd2FybVNldHRpbmdzEiYub3Blbm94aWRlLmFwaS52MS5Td2FybVNldHRpbmdzUmVxdWVzdBofLm9wZW5veGlkZS5hcGkudjEuU3dhcm1TZXR0aW5ncxJkChNVcGRhdGVTd2FybVNldHRpbmdzEiwub3Blbm94aWRlLmFwaS52MS5VcGRhdGVTd2FybVNldHRpbmdzUmVxdWVzdBofLm9wZW5veGlkZS5hcGkudjEuU3dhcm1TZXR0aW5ncxJSCgpMaXN0TW91bnRzEicub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZVRhcmdldFJlcXVlc3QaGy5vcGVub3hpZGUuYXBpLnYxLk1vdW50TGlzdBJMCgtDcmVhdGVNb3VudBIkLm9wZW5veGlkZS5hcGkudjEuQ3JlYXRlTW91bnRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5Nb3VudBJMCgtVcGRhdGVNb3VudBIkLm9wZW5veGlkZS5hcGkudjEuVXBkYXRlTW91bnRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5Nb3VudBJMCgtEZWxldGVNb3VudBIkLm9wZW5veGlkZS5hcGkudjEuRGVsZXRlTW91bnRSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJbChBMaXN0RGVwZW5kZW5jaWVzEicub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZVRhcmdldFJlcXVlc3QaHi5vcGVub3hpZGUuYXBpLnYxLkRlcGVuZGVuY2llcxJbCg5FeHBvcnREYXRhYmFzZRInLm9wZW5veGlkZS5hcGkudjEuRXhwb3J0RGF0YWJhc2VSZXF1ZXN0GiAub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZUV4cG9ydBJVCg5JbXBvcnREYXRhYmFzZRInLm9wZW5veGlkZS5hcGkudjEuSW1wb3J0RGF0YWJhc2VSZXF1ZXN0Ghoub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZRJeCg1HZXRDb25uZWN0aW9uEicub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZVRhcmdldFJlcXVlc3QaJC5vcGVub3hpZGUuYXBpLnYxLkRhdGFiYXNlQ29ubmVjdGlvbhJYChFSb3RhdGVDcmVkZW50aWFscxInLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VUYXJnZXRSZXF1ZXN0Ghoub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZRJfChBWYWxpZGF0ZURhdGFiYXNlEicub3Blbm94aWRlLmFwaS52MS5EYXRhYmFzZVRhcmdldFJlcXVlc3QaIi5vcGVub3hpZGUuYXBpLnYxLlZhbGlkYXRpb25SZXN1bHQSZgoZR2V0UG9zdGdyZXNBZHZhbmNlZENvbmZpZxInLm9wZW5veGlkZS5hcGkudjEuRGF0YWJhc2VUYXJnZXRSZXF1ZXN0GiAub3Blbm94aWRlLmFwaS52MS5BZHZhbmNlZENvbmZpZxJvChxVcGRhdGVQb3N0Z3Jlc0FkdmFuY2VkQ29uZmlnEi0ub3Blbm94aWRlLmFwaS52MS5VcGRhdGVBZHZhbmNlZENvbmZpZ1JlcXVlc3QaIC5vcGVub3hpZGUuYXBpLnYxLkFkdmFuY2VkQ29uZmlnYgZwcm90bzM',
+		[file_openoxide_api_v1_common, file_buf_validate_validate],
+	);
 
 /**
  * @generated from message openoxide.api.v1.Database
  */
-export type Database = Message<"openoxide.api.v1.Database"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type Database = Message<'openoxide.api.v1.Database'> & {
+	/**
+	 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+	 */
+	kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 id = 2;
-   */
-  id: bigint;
+	/**
+	 * @generated from field: int64 id = 2;
+	 */
+	id: bigint;
 
-  /**
-   * @generated from field: string name = 3;
-   */
-  name: string;
+	/**
+	 * @generated from field: string name = 3;
+	 */
+	name: string;
 
-  /**
-   * @generated from field: optional string description = 4;
-   */
-  description?: string | undefined;
+	/**
+	 * @generated from field: optional string description = 4;
+	 */
+	description?: string | undefined;
 
-  /**
-   * @generated from field: string docker_image = 5;
-   */
-  dockerImage: string;
+	/**
+	 * @generated from field: string docker_image = 5;
+	 */
+	dockerImage: string;
 
-  /**
-   * @generated from field: optional string database_name = 6;
-   */
-  databaseName?: string | undefined;
+	/**
+	 * @generated from field: optional string database_name = 6;
+	 */
+	databaseName?: string | undefined;
 
-  /**
-   * @generated from field: optional string database_user = 7;
-   */
-  databaseUser?: string | undefined;
+	/**
+	 * @generated from field: optional string database_user = 7;
+	 */
+	databaseUser?: string | undefined;
 
-  /**
-   * @generated from field: optional string database_password = 8;
-   */
-  databasePassword?: string | undefined;
+	/**
+	 * @generated from field: optional string database_password = 8;
+	 */
+	databasePassword?: string | undefined;
 
-  /**
-   * @generated from field: optional int64 external_port = 9;
-   */
-  externalPort?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 external_port = 9;
+	 */
+	externalPort?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string command = 10;
-   */
-  command?: string | undefined;
+	/**
+	 * @generated from field: optional string command = 10;
+	 */
+	command?: string | undefined;
 
-  /**
-   * @generated from field: repeated string args = 11;
-   */
-  args: string[];
+	/**
+	 * @generated from field: repeated string args = 11;
+	 */
+	args: string[];
 
-  /**
-   * @generated from field: optional string env_var = 12;
-   */
-  envVar?: string | undefined;
+	/**
+	 * @generated from field: optional string env_var = 12;
+	 */
+	envVar?: string | undefined;
 
-  /**
-   * @generated from field: optional string memory_limit = 13;
-   */
-  memoryLimit?: string | undefined;
+	/**
+	 * @generated from field: optional string memory_limit = 13;
+	 */
+	memoryLimit?: string | undefined;
 
-  /**
-   * @generated from field: optional string cpu_limit = 14;
-   */
-  cpuLimit?: string | undefined;
+	/**
+	 * @generated from field: optional string cpu_limit = 14;
+	 */
+	cpuLimit?: string | undefined;
 
-  /**
-   * @generated from field: int64 replicas = 15;
-   */
-  replicas: bigint;
+	/**
+	 * @generated from field: int64 replicas = 15;
+	 */
+	replicas: bigint;
 
-  /**
-   * @generated from field: repeated string network_ids = 16;
-   */
-  networkIds: string[];
+	/**
+	 * @generated from field: repeated string network_ids = 16;
+	 */
+	networkIds: string[];
 
-  /**
-   * @generated from field: string status = 17;
-   */
-  status: string;
+	/**
+	 * @generated from field: string status = 17;
+	 */
+	status: string;
 
-  /**
-   * @generated from field: optional string last_error = 18;
-   */
-  lastError?: string | undefined;
+	/**
+	 * @generated from field: optional string last_error = 18;
+	 */
+	lastError?: string | undefined;
 
-  /**
-   * @generated from field: int64 environment_id = 19;
-   */
-  environmentId: bigint;
+	/**
+	 * @generated from field: int64 environment_id = 19;
+	 */
+	environmentId: bigint;
 
-  /**
-   * @generated from field: optional int64 server_id = 20;
-   */
-  serverId?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 server_id = 20;
+	 */
+	serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: int64 created_at = 21;
-   */
-  createdAt: bigint;
+	/**
+	 * @generated from field: int64 created_at = 21;
+	 */
+	createdAt: bigint;
 
-  /**
-   * @generated from field: int64 updated_at = 22;
-   */
-  updatedAt: bigint;
+	/**
+	 * @generated from field: int64 updated_at = 22;
+	 */
+	updatedAt: bigint;
 
-  /**
-   * Real container/service handle (`postgres-test-1ed127`); `name` is the human label. Log streams and exec target this, never `name`, so same-labeled DBs don't collide.
-   *
-   * @generated from field: optional string app_name = 23;
-   */
-  appName?: string | undefined;
+	/**
+	 * Real container/service handle (`postgres-test-1ed127`); `name` is the human label. Log streams and exec target this, never `name`, so same-labeled DBs don't collide.
+	 *
+	 * @generated from field: optional string app_name = 23;
+	 */
+	appName?: string | undefined;
 };
 
 /**
  * Describes the message openoxide.api.v1.Database.
  * Use `create(DatabaseSchema)` to create a new message.
  */
-export const DatabaseSchema: GenMessage<Database> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 0);
+export const DatabaseSchema: GenMessage<Database> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 0);
 
 /**
  * @generated from message openoxide.api.v1.GetDatabaseRequest
  */
-export type GetDatabaseRequest = Message<"openoxide.api.v1.GetDatabaseRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type GetDatabaseRequest =
+	Message<'openoxide.api.v1.GetDatabaseRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 id = 2;
-   */
-  id: bigint;
-};
+		/**
+		 * @generated from field: int64 id = 2;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.GetDatabaseRequest.
  * Use `create(GetDatabaseRequestSchema)` to create a new message.
  */
-export const GetDatabaseRequestSchema: GenMessage<GetDatabaseRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 1);
+export const GetDatabaseRequestSchema: GenMessage<GetDatabaseRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 1);
 
 /**
  * @generated from message openoxide.api.v1.ListDatabasesRequest
  */
-export type ListDatabasesRequest = Message<"openoxide.api.v1.ListDatabasesRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type ListDatabasesRequest =
+	Message<'openoxide.api.v1.ListDatabasesRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 environment_id = 2;
-   */
-  environmentId: bigint;
-};
+		/**
+		 * @generated from field: int64 environment_id = 2;
+		 */
+		environmentId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListDatabasesRequest.
  * Use `create(ListDatabasesRequestSchema)` to create a new message.
  */
-export const ListDatabasesRequestSchema: GenMessage<ListDatabasesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 2);
+export const ListDatabasesRequestSchema: GenMessage<ListDatabasesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 2);
 
 /**
  * @generated from message openoxide.api.v1.ListDatabasesResponse
  */
-export type ListDatabasesResponse = Message<"openoxide.api.v1.ListDatabasesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Database databases = 1;
-   */
-  databases: Database[];
-};
+export type ListDatabasesResponse =
+	Message<'openoxide.api.v1.ListDatabasesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.Database databases = 1;
+		 */
+		databases: Database[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ListDatabasesResponse.
  * Use `create(ListDatabasesResponseSchema)` to create a new message.
  */
-export const ListDatabasesResponseSchema: GenMessage<ListDatabasesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 3);
+export const ListDatabasesResponseSchema: GenMessage<ListDatabasesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 3);
 
 /**
  * @generated from message openoxide.api.v1.CreateDatabaseRequest
  */
-export type CreateDatabaseRequest = Message<"openoxide.api.v1.CreateDatabaseRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type CreateDatabaseRequest =
+	Message<'openoxide.api.v1.CreateDatabaseRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
+		/**
+		 * @generated from field: string name = 2;
+		 */
+		name: string;
 
-  /**
-   * @generated from field: optional string description = 3;
-   */
-  description?: string | undefined;
+		/**
+		 * @generated from field: optional string description = 3;
+		 */
+		description?: string | undefined;
 
-  /**
-   * @generated from field: int64 environment_id = 4;
-   */
-  environmentId: bigint;
+		/**
+		 * @generated from field: int64 environment_id = 4;
+		 */
+		environmentId: bigint;
 
-  /**
-   * @generated from field: optional int64 server_id = 5;
-   */
-  serverId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 server_id = 5;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string docker_image = 6;
-   */
-  dockerImage?: string | undefined;
+		/**
+		 * @generated from field: optional string docker_image = 6;
+		 */
+		dockerImage?: string | undefined;
 
-  /**
-   * @generated from field: optional string database_name = 7;
-   */
-  databaseName?: string | undefined;
+		/**
+		 * @generated from field: optional string database_name = 7;
+		 */
+		databaseName?: string | undefined;
 
-  /**
-   * @generated from field: optional string database_user = 8;
-   */
-  databaseUser?: string | undefined;
+		/**
+		 * @generated from field: optional string database_user = 8;
+		 */
+		databaseUser?: string | undefined;
 
-  /**
-   * @generated from field: optional string database_password = 9;
-   */
-  databasePassword?: string | undefined;
+		/**
+		 * @generated from field: optional string database_password = 9;
+		 */
+		databasePassword?: string | undefined;
 
-  /**
-   * @generated from field: optional int64 external_port = 10;
-   */
-  externalPort?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 external_port = 10;
+		 */
+		externalPort?: bigint | undefined;
 
-  /**
-   * @generated from field: repeated string args = 11;
-   */
-  args: string[];
+		/**
+		 * @generated from field: repeated string args = 11;
+		 */
+		args: string[];
 
-  /**
-   * @generated from field: optional string env_var = 12;
-   */
-  envVar?: string | undefined;
+		/**
+		 * @generated from field: optional string env_var = 12;
+		 */
+		envVar?: string | undefined;
 
-  /**
-   * @generated from field: repeated string network_ids = 13;
-   */
-  networkIds: string[];
-};
+		/**
+		 * @generated from field: repeated string network_ids = 13;
+		 */
+		networkIds: string[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.CreateDatabaseRequest.
  * Use `create(CreateDatabaseRequestSchema)` to create a new message.
  */
-export const CreateDatabaseRequestSchema: GenMessage<CreateDatabaseRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 4);
+export const CreateDatabaseRequestSchema: GenMessage<CreateDatabaseRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 4);
 
 /**
  * @generated from message openoxide.api.v1.UpdateDatabaseRequest
  */
-export type UpdateDatabaseRequest = Message<"openoxide.api.v1.UpdateDatabaseRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type UpdateDatabaseRequest =
+	Message<'openoxide.api.v1.UpdateDatabaseRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 id = 2;
-   */
-  id: bigint;
+		/**
+		 * @generated from field: int64 id = 2;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: optional string name = 3;
-   */
-  name?: string | undefined;
+		/**
+		 * @generated from field: optional string name = 3;
+		 */
+		name?: string | undefined;
 
-  /**
-   * @generated from field: optional string description = 4;
-   */
-  description?: string | undefined;
+		/**
+		 * @generated from field: optional string description = 4;
+		 */
+		description?: string | undefined;
 
-  /**
-   * @generated from field: optional string docker_image = 5;
-   */
-  dockerImage?: string | undefined;
+		/**
+		 * @generated from field: optional string docker_image = 5;
+		 */
+		dockerImage?: string | undefined;
 
-  /**
-   * @generated from field: optional string database_name = 6;
-   */
-  databaseName?: string | undefined;
+		/**
+		 * @generated from field: optional string database_name = 6;
+		 */
+		databaseName?: string | undefined;
 
-  /**
-   * @generated from field: optional string database_user = 7;
-   */
-  databaseUser?: string | undefined;
+		/**
+		 * @generated from field: optional string database_user = 7;
+		 */
+		databaseUser?: string | undefined;
 
-  /**
-   * @generated from field: optional string database_password = 8;
-   */
-  databasePassword?: string | undefined;
+		/**
+		 * @generated from field: optional string database_password = 8;
+		 */
+		databasePassword?: string | undefined;
 
-  /**
-   * @generated from field: optional int64 external_port = 9;
-   */
-  externalPort?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 external_port = 9;
+		 */
+		externalPort?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string command = 10;
-   */
-  command?: string | undefined;
+		/**
+		 * @generated from field: optional string command = 10;
+		 */
+		command?: string | undefined;
 
-  /**
-   * @generated from field: repeated string args = 11;
-   */
-  args: string[];
+		/**
+		 * @generated from field: repeated string args = 11;
+		 */
+		args: string[];
 
-  /**
-   * @generated from field: optional string env_var = 12;
-   */
-  envVar?: string | undefined;
+		/**
+		 * @generated from field: optional string env_var = 12;
+		 */
+		envVar?: string | undefined;
 
-  /**
-   * @generated from field: optional string memory_limit = 13;
-   */
-  memoryLimit?: string | undefined;
+		/**
+		 * @generated from field: optional string memory_limit = 13;
+		 */
+		memoryLimit?: string | undefined;
 
-  /**
-   * @generated from field: optional string cpu_limit = 14;
-   */
-  cpuLimit?: string | undefined;
+		/**
+		 * @generated from field: optional string cpu_limit = 14;
+		 */
+		cpuLimit?: string | undefined;
 
-  /**
-   * @generated from field: optional int64 replicas = 15;
-   */
-  replicas?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 replicas = 15;
+		 */
+		replicas?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 server_id = 16;
-   */
-  serverId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 server_id = 16;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: repeated string network_ids = 17;
-   */
-  networkIds: string[];
+		/**
+		 * @generated from field: repeated string network_ids = 17;
+		 */
+		networkIds: string[];
 
-  /**
-   * @generated from field: optional int64 detach_rustploy_network = 18;
-   */
-  detachRustployNetwork?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 detach_rustploy_network = 18;
+		 */
+		detachRustployNetwork?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string memory_reservation = 19;
-   */
-  memoryReservation?: string | undefined;
+		/**
+		 * @generated from field: optional string memory_reservation = 19;
+		 */
+		memoryReservation?: string | undefined;
 
-  /**
-   * @generated from field: optional string cpu_reservation = 20;
-   */
-  cpuReservation?: string | undefined;
-};
+		/**
+		 * @generated from field: optional string cpu_reservation = 20;
+		 */
+		cpuReservation?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateDatabaseRequest.
  * Use `create(UpdateDatabaseRequestSchema)` to create a new message.
  */
-export const UpdateDatabaseRequestSchema: GenMessage<UpdateDatabaseRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 5);
+export const UpdateDatabaseRequestSchema: GenMessage<UpdateDatabaseRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 5);
 
 /**
  * @generated from message openoxide.api.v1.DeleteDatabaseRequest
  */
-export type DeleteDatabaseRequest = Message<"openoxide.api.v1.DeleteDatabaseRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type DeleteDatabaseRequest =
+	Message<'openoxide.api.v1.DeleteDatabaseRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 id = 2;
-   */
-  id: bigint;
-};
+		/**
+		 * @generated from field: int64 id = 2;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.DeleteDatabaseRequest.
  * Use `create(DeleteDatabaseRequestSchema)` to create a new message.
  */
-export const DeleteDatabaseRequestSchema: GenMessage<DeleteDatabaseRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 6);
+export const DeleteDatabaseRequestSchema: GenMessage<DeleteDatabaseRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 6);
 
 /**
  * @generated from message openoxide.api.v1.DatabaseOperationRequest
  */
-export type DatabaseOperationRequest = Message<"openoxide.api.v1.DatabaseOperationRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type DatabaseOperationRequest =
+	Message<'openoxide.api.v1.DatabaseOperationRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 id = 2;
-   */
-  id: bigint;
-};
+		/**
+		 * @generated from field: int64 id = 2;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.DatabaseOperationRequest.
  * Use `create(DatabaseOperationRequestSchema)` to create a new message.
  */
-export const DatabaseOperationRequestSchema: GenMessage<DatabaseOperationRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 7);
+export const DatabaseOperationRequestSchema: GenMessage<DatabaseOperationRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 7);
 
 /**
  * @generated from message openoxide.api.v1.DatabaseOperation
  */
-export type DatabaseOperation = Message<"openoxide.api.v1.DatabaseOperation"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Database database = 1;
-   */
-  database?: Database | undefined;
+export type DatabaseOperation =
+	Message<'openoxide.api.v1.DatabaseOperation'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Database database = 1;
+		 */
+		database?: Database | undefined;
 
-  /**
-   * @generated from field: string operation = 2;
-   */
-  operation: string;
-};
+		/**
+		 * @generated from field: string operation = 2;
+		 */
+		operation: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.DatabaseOperation.
  * Use `create(DatabaseOperationSchema)` to create a new message.
  */
-export const DatabaseOperationSchema: GenMessage<DatabaseOperation> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 8);
+export const DatabaseOperationSchema: GenMessage<DatabaseOperation> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 8);
 
 /**
  * @generated from message openoxide.api.v1.DatabaseTargetRequest
  */
-export type DatabaseTargetRequest = Message<"openoxide.api.v1.DatabaseTargetRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type DatabaseTargetRequest =
+	Message<'openoxide.api.v1.DatabaseTargetRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 id = 2;
-   */
-  id: bigint;
-};
+		/**
+		 * @generated from field: int64 id = 2;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.DatabaseTargetRequest.
  * Use `create(DatabaseTargetRequestSchema)` to create a new message.
  */
-export const DatabaseTargetRequestSchema: GenMessage<DatabaseTargetRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 9);
+export const DatabaseTargetRequestSchema: GenMessage<DatabaseTargetRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 9);
 
 /**
  * @generated from message openoxide.api.v1.SwarmSettingsRequest
  */
-export type SwarmSettingsRequest = Message<"openoxide.api.v1.SwarmSettingsRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type SwarmSettingsRequest =
+	Message<'openoxide.api.v1.SwarmSettingsRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 id = 2;
-   */
-  id: bigint;
-};
+		/**
+		 * @generated from field: int64 id = 2;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SwarmSettingsRequest.
  * Use `create(SwarmSettingsRequestSchema)` to create a new message.
  */
-export const SwarmSettingsRequestSchema: GenMessage<SwarmSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 10);
+export const SwarmSettingsRequestSchema: GenMessage<SwarmSettingsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 10);
 
 /**
  * @generated from message openoxide.api.v1.SwarmSettings
  */
-export type SwarmSettings = Message<"openoxide.api.v1.SwarmSettings"> & {
-  /**
-   * @generated from field: optional string health_check = 1;
-   */
-  healthCheck?: string | undefined;
+export type SwarmSettings = Message<'openoxide.api.v1.SwarmSettings'> & {
+	/**
+	 * @generated from field: optional string health_check = 1;
+	 */
+	healthCheck?: string | undefined;
 
-  /**
-   * @generated from field: optional string restart_policy = 2;
-   */
-  restartPolicy?: string | undefined;
+	/**
+	 * @generated from field: optional string restart_policy = 2;
+	 */
+	restartPolicy?: string | undefined;
 
-  /**
-   * @generated from field: optional string placement = 3;
-   */
-  placement?: string | undefined;
+	/**
+	 * @generated from field: optional string placement = 3;
+	 */
+	placement?: string | undefined;
 
-  /**
-   * @generated from field: optional string update_config = 4;
-   */
-  updateConfig?: string | undefined;
+	/**
+	 * @generated from field: optional string update_config = 4;
+	 */
+	updateConfig?: string | undefined;
 
-  /**
-   * @generated from field: optional string rollback_config = 5;
-   */
-  rollbackConfig?: string | undefined;
+	/**
+	 * @generated from field: optional string rollback_config = 5;
+	 */
+	rollbackConfig?: string | undefined;
 
-  /**
-   * @generated from field: optional string mode = 6;
-   */
-  mode?: string | undefined;
+	/**
+	 * @generated from field: optional string mode = 6;
+	 */
+	mode?: string | undefined;
 
-  /**
-   * @generated from field: optional string labels = 7;
-   */
-  labels?: string | undefined;
+	/**
+	 * @generated from field: optional string labels = 7;
+	 */
+	labels?: string | undefined;
 
-  /**
-   * @generated from field: optional string network = 8;
-   */
-  network?: string | undefined;
+	/**
+	 * @generated from field: optional string network = 8;
+	 */
+	network?: string | undefined;
 
-  /**
-   * @generated from field: optional string endpoint_spec = 9;
-   */
-  endpointSpec?: string | undefined;
+	/**
+	 * @generated from field: optional string endpoint_spec = 9;
+	 */
+	endpointSpec?: string | undefined;
 
-  /**
-   * @generated from field: optional string ulimits = 10;
-   */
-  ulimits?: string | undefined;
+	/**
+	 * @generated from field: optional string ulimits = 10;
+	 */
+	ulimits?: string | undefined;
 
-  /**
-   * @generated from field: optional int64 stop_grace_period = 11;
-   */
-  stopGracePeriod?: bigint | undefined;
+	/**
+	 * @generated from field: optional int64 stop_grace_period = 11;
+	 */
+	stopGracePeriod?: bigint | undefined;
 };
 
 /**
  * Describes the message openoxide.api.v1.SwarmSettings.
  * Use `create(SwarmSettingsSchema)` to create a new message.
  */
-export const SwarmSettingsSchema: GenMessage<SwarmSettings> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 11);
+export const SwarmSettingsSchema: GenMessage<SwarmSettings> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 11);
 
 /**
  * @generated from message openoxide.api.v1.UpdateSwarmSettingsRequest
  */
-export type UpdateSwarmSettingsRequest = Message<"openoxide.api.v1.UpdateSwarmSettingsRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type UpdateSwarmSettingsRequest =
+	Message<'openoxide.api.v1.UpdateSwarmSettingsRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 id = 2;
-   */
-  id: bigint;
+		/**
+		 * @generated from field: int64 id = 2;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: openoxide.api.v1.SwarmSettings settings = 3;
-   */
-  settings?: SwarmSettings | undefined;
-};
+		/**
+		 * @generated from field: openoxide.api.v1.SwarmSettings settings = 3;
+		 */
+		settings?: SwarmSettings | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateSwarmSettingsRequest.
  * Use `create(UpdateSwarmSettingsRequestSchema)` to create a new message.
  */
-export const UpdateSwarmSettingsRequestSchema: GenMessage<UpdateSwarmSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 12);
+export const UpdateSwarmSettingsRequestSchema: GenMessage<UpdateSwarmSettingsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 12);
 
 /**
  * @generated from message openoxide.api.v1.Mount
  */
-export type Mount = Message<"openoxide.api.v1.Mount"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type Mount = Message<'openoxide.api.v1.Mount'> & {
+	/**
+	 * @generated from field: int64 id = 1;
+	 */
+	id: bigint;
 
-  /**
-   * @generated from field: string mount_type = 2;
-   */
-  mountType: string;
+	/**
+	 * @generated from field: string mount_type = 2;
+	 */
+	mountType: string;
 
-  /**
-   * @generated from field: optional string host_path = 3;
-   */
-  hostPath?: string | undefined;
+	/**
+	 * @generated from field: optional string host_path = 3;
+	 */
+	hostPath?: string | undefined;
 
-  /**
-   * @generated from field: optional string volume_name = 4;
-   */
-  volumeName?: string | undefined;
+	/**
+	 * @generated from field: optional string volume_name = 4;
+	 */
+	volumeName?: string | undefined;
 
-  /**
-   * @generated from field: optional string file_path = 5;
-   */
-  filePath?: string | undefined;
+	/**
+	 * @generated from field: optional string file_path = 5;
+	 */
+	filePath?: string | undefined;
 
-  /**
-   * @generated from field: optional string content = 6;
-   */
-  content?: string | undefined;
+	/**
+	 * @generated from field: optional string content = 6;
+	 */
+	content?: string | undefined;
 
-  /**
-   * @generated from field: string mount_path = 7;
-   */
-  mountPath: string;
+	/**
+	 * @generated from field: string mount_path = 7;
+	 */
+	mountPath: string;
 
-  /**
-   * @generated from field: int64 created_at = 8;
-   */
-  createdAt: bigint;
+	/**
+	 * @generated from field: int64 created_at = 8;
+	 */
+	createdAt: bigint;
 
-  /**
-   * @generated from field: int64 updated_at = 9;
-   */
-  updatedAt: bigint;
+	/**
+	 * @generated from field: int64 updated_at = 9;
+	 */
+	updatedAt: bigint;
 };
 
 /**
  * Describes the message openoxide.api.v1.Mount.
  * Use `create(MountSchema)` to create a new message.
  */
-export const MountSchema: GenMessage<Mount> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 13);
+export const MountSchema: GenMessage<Mount> /*@__PURE__*/ = messageDesc(
+	file_openoxide_api_v1_database,
+	13,
+);
 
 /**
  * @generated from message openoxide.api.v1.MountList
  */
-export type MountList = Message<"openoxide.api.v1.MountList"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.Mount mounts = 1;
-   */
-  mounts: Mount[];
+export type MountList = Message<'openoxide.api.v1.MountList'> & {
+	/**
+	 * @generated from field: repeated openoxide.api.v1.Mount mounts = 1;
+	 */
+	mounts: Mount[];
 };
 
 /**
  * Describes the message openoxide.api.v1.MountList.
  * Use `create(MountListSchema)` to create a new message.
  */
-export const MountListSchema: GenMessage<MountList> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 14);
+export const MountListSchema: GenMessage<MountList> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 14);
 
 /**
  * @generated from message openoxide.api.v1.CreateMountRequest
  */
-export type CreateMountRequest = Message<"openoxide.api.v1.CreateMountRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type CreateMountRequest =
+	Message<'openoxide.api.v1.CreateMountRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 database_id = 2;
-   */
-  databaseId: bigint;
+		/**
+		 * @generated from field: int64 database_id = 2;
+		 */
+		databaseId: bigint;
 
-  /**
-   * @generated from field: string mount_type = 3;
-   */
-  mountType: string;
+		/**
+		 * @generated from field: string mount_type = 3;
+		 */
+		mountType: string;
 
-  /**
-   * @generated from field: optional string host_path = 4;
-   */
-  hostPath?: string | undefined;
+		/**
+		 * @generated from field: optional string host_path = 4;
+		 */
+		hostPath?: string | undefined;
 
-  /**
-   * @generated from field: optional string volume_name = 5;
-   */
-  volumeName?: string | undefined;
+		/**
+		 * @generated from field: optional string volume_name = 5;
+		 */
+		volumeName?: string | undefined;
 
-  /**
-   * @generated from field: optional string file_path = 6;
-   */
-  filePath?: string | undefined;
+		/**
+		 * @generated from field: optional string file_path = 6;
+		 */
+		filePath?: string | undefined;
 
-  /**
-   * @generated from field: optional string content = 7;
-   */
-  content?: string | undefined;
+		/**
+		 * @generated from field: optional string content = 7;
+		 */
+		content?: string | undefined;
 
-  /**
-   * @generated from field: string mount_path = 8;
-   */
-  mountPath: string;
-};
+		/**
+		 * @generated from field: string mount_path = 8;
+		 */
+		mountPath: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.CreateMountRequest.
  * Use `create(CreateMountRequestSchema)` to create a new message.
  */
-export const CreateMountRequestSchema: GenMessage<CreateMountRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 15);
+export const CreateMountRequestSchema: GenMessage<CreateMountRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 15);
 
 /**
  * @generated from message openoxide.api.v1.UpdateMountRequest
  */
-export type UpdateMountRequest = Message<"openoxide.api.v1.UpdateMountRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type UpdateMountRequest =
+	Message<'openoxide.api.v1.UpdateMountRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 database_id = 2;
-   */
-  databaseId: bigint;
+		/**
+		 * @generated from field: int64 database_id = 2;
+		 */
+		databaseId: bigint;
 
-  /**
-   * @generated from field: int64 id = 3;
-   */
-  id: bigint;
+		/**
+		 * @generated from field: int64 id = 3;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: string mount_type = 4;
-   */
-  mountType: string;
+		/**
+		 * @generated from field: string mount_type = 4;
+		 */
+		mountType: string;
 
-  /**
-   * @generated from field: optional string host_path = 5;
-   */
-  hostPath?: string | undefined;
+		/**
+		 * @generated from field: optional string host_path = 5;
+		 */
+		hostPath?: string | undefined;
 
-  /**
-   * @generated from field: optional string volume_name = 6;
-   */
-  volumeName?: string | undefined;
+		/**
+		 * @generated from field: optional string volume_name = 6;
+		 */
+		volumeName?: string | undefined;
 
-  /**
-   * @generated from field: optional string file_path = 7;
-   */
-  filePath?: string | undefined;
+		/**
+		 * @generated from field: optional string file_path = 7;
+		 */
+		filePath?: string | undefined;
 
-  /**
-   * @generated from field: optional string content = 8;
-   */
-  content?: string | undefined;
+		/**
+		 * @generated from field: optional string content = 8;
+		 */
+		content?: string | undefined;
 
-  /**
-   * @generated from field: string mount_path = 9;
-   */
-  mountPath: string;
-};
+		/**
+		 * @generated from field: string mount_path = 9;
+		 */
+		mountPath: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateMountRequest.
  * Use `create(UpdateMountRequestSchema)` to create a new message.
  */
-export const UpdateMountRequestSchema: GenMessage<UpdateMountRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 16);
+export const UpdateMountRequestSchema: GenMessage<UpdateMountRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 16);
 
 /**
  * @generated from message openoxide.api.v1.DeleteMountRequest
  */
-export type DeleteMountRequest = Message<"openoxide.api.v1.DeleteMountRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type DeleteMountRequest =
+	Message<'openoxide.api.v1.DeleteMountRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 database_id = 2;
-   */
-  databaseId: bigint;
+		/**
+		 * @generated from field: int64 database_id = 2;
+		 */
+		databaseId: bigint;
 
-  /**
-   * @generated from field: int64 id = 3;
-   */
-  id: bigint;
-};
+		/**
+		 * @generated from field: int64 id = 3;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.DeleteMountRequest.
  * Use `create(DeleteMountRequestSchema)` to create a new message.
  */
-export const DeleteMountRequestSchema: GenMessage<DeleteMountRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 17);
+export const DeleteMountRequestSchema: GenMessage<DeleteMountRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 17);
 
 /**
  * @generated from message openoxide.api.v1.Dependencies
  */
-export type Dependencies = Message<"openoxide.api.v1.Dependencies"> & {
-  /**
-   * @generated from field: repeated string items = 1;
-   */
-  items: string[];
+export type Dependencies = Message<'openoxide.api.v1.Dependencies'> & {
+	/**
+	 * @generated from field: repeated string items = 1;
+	 */
+	items: string[];
 };
 
 /**
  * Describes the message openoxide.api.v1.Dependencies.
  * Use `create(DependenciesSchema)` to create a new message.
  */
-export const DependenciesSchema: GenMessage<Dependencies> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 18);
+export const DependenciesSchema: GenMessage<Dependencies> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 18);
 
 /**
  * @generated from message openoxide.api.v1.ExportDatabaseRequest
  */
-export type ExportDatabaseRequest = Message<"openoxide.api.v1.ExportDatabaseRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type ExportDatabaseRequest =
+	Message<'openoxide.api.v1.ExportDatabaseRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 id = 2;
-   */
-  id: bigint;
+		/**
+		 * @generated from field: int64 id = 2;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: bool include_secrets = 3;
-   */
-  includeSecrets: boolean;
-};
+		/**
+		 * @generated from field: bool include_secrets = 3;
+		 */
+		includeSecrets: boolean;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ExportDatabaseRequest.
  * Use `create(ExportDatabaseRequestSchema)` to create a new message.
  */
-export const ExportDatabaseRequestSchema: GenMessage<ExportDatabaseRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 19);
+export const ExportDatabaseRequestSchema: GenMessage<ExportDatabaseRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 19);
 
 /**
  * @generated from message openoxide.api.v1.DatabaseExport
  */
-export type DatabaseExport = Message<"openoxide.api.v1.DatabaseExport"> & {
-  /**
-   * @generated from field: string archive = 1;
-   */
-  archive: string;
+export type DatabaseExport = Message<'openoxide.api.v1.DatabaseExport'> & {
+	/**
+	 * @generated from field: string archive = 1;
+	 */
+	archive: string;
 };
 
 /**
  * Describes the message openoxide.api.v1.DatabaseExport.
  * Use `create(DatabaseExportSchema)` to create a new message.
  */
-export const DatabaseExportSchema: GenMessage<DatabaseExport> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 20);
+export const DatabaseExportSchema: GenMessage<DatabaseExport> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 20);
 
 /**
  * @generated from message openoxide.api.v1.ImportDatabaseRequest
  */
-export type ImportDatabaseRequest = Message<"openoxide.api.v1.ImportDatabaseRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type ImportDatabaseRequest =
+	Message<'openoxide.api.v1.ImportDatabaseRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 environment_id = 2;
-   */
-  environmentId: bigint;
+		/**
+		 * @generated from field: int64 environment_id = 2;
+		 */
+		environmentId: bigint;
 
-  /**
-   * @generated from field: string archive = 3;
-   */
-  archive: string;
-};
+		/**
+		 * @generated from field: string archive = 3;
+		 */
+		archive: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ImportDatabaseRequest.
  * Use `create(ImportDatabaseRequestSchema)` to create a new message.
  */
-export const ImportDatabaseRequestSchema: GenMessage<ImportDatabaseRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 21);
+export const ImportDatabaseRequestSchema: GenMessage<ImportDatabaseRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 21);
 
 /**
  * @generated from message openoxide.api.v1.DatabaseConnection
  */
-export type DatabaseConnection = Message<"openoxide.api.v1.DatabaseConnection"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type DatabaseConnection =
+	Message<'openoxide.api.v1.DatabaseConnection'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: string host = 2;
-   */
-  host: string;
+		/**
+		 * @generated from field: string host = 2;
+		 */
+		host: string;
 
-  /**
-   * @generated from field: int64 port = 3;
-   */
-  port: bigint;
+		/**
+		 * @generated from field: int64 port = 3;
+		 */
+		port: bigint;
 
-  /**
-   * @generated from field: string database = 4;
-   */
-  database: string;
+		/**
+		 * @generated from field: string database = 4;
+		 */
+		database: string;
 
-  /**
-   * @generated from field: string username = 5;
-   */
-  username: string;
-};
+		/**
+		 * @generated from field: string username = 5;
+		 */
+		username: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.DatabaseConnection.
  * Use `create(DatabaseConnectionSchema)` to create a new message.
  */
-export const DatabaseConnectionSchema: GenMessage<DatabaseConnection> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 22);
+export const DatabaseConnectionSchema: GenMessage<DatabaseConnection> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 22);
 
 /**
  * @generated from message openoxide.api.v1.ValidationResult
  */
-export type ValidationResult = Message<"openoxide.api.v1.ValidationResult"> & {
-  /**
-   * @generated from field: bool valid = 1;
-   */
-  valid: boolean;
+export type ValidationResult =
+	Message<'openoxide.api.v1.ValidationResult'> & {
+		/**
+		 * @generated from field: bool valid = 1;
+		 */
+		valid: boolean;
 
-  /**
-   * @generated from field: optional string message = 2;
-   */
-  message?: string | undefined;
-};
+		/**
+		 * @generated from field: optional string message = 2;
+		 */
+		message?: string | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ValidationResult.
  * Use `create(ValidationResultSchema)` to create a new message.
  */
-export const ValidationResultSchema: GenMessage<ValidationResult> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 23);
+export const ValidationResultSchema: GenMessage<ValidationResult> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 23);
 
 /**
  * @generated from message openoxide.api.v1.AdvancedConfig
  */
-export type AdvancedConfig = Message<"openoxide.api.v1.AdvancedConfig"> & {
-  /**
-   * @generated from field: optional string replication_role = 1;
-   */
-  replicationRole?: string | undefined;
+export type AdvancedConfig = Message<'openoxide.api.v1.AdvancedConfig'> & {
+	/**
+	 * @generated from field: optional string replication_role = 1;
+	 */
+	replicationRole?: string | undefined;
 
-  /**
-   * @generated from field: optional string config = 2;
-   */
-  config?: string | undefined;
+	/**
+	 * @generated from field: optional string config = 2;
+	 */
+	config?: string | undefined;
 };
 
 /**
  * Describes the message openoxide.api.v1.AdvancedConfig.
  * Use `create(AdvancedConfigSchema)` to create a new message.
  */
-export const AdvancedConfigSchema: GenMessage<AdvancedConfig> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 24);
+export const AdvancedConfigSchema: GenMessage<AdvancedConfig> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 24);
 
 /**
  * @generated from message openoxide.api.v1.UpdateAdvancedConfigRequest
  */
-export type UpdateAdvancedConfigRequest = Message<"openoxide.api.v1.UpdateAdvancedConfigRequest"> & {
-  /**
-   * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
-   */
-  kind: DatabaseKind;
+export type UpdateAdvancedConfigRequest =
+	Message<'openoxide.api.v1.UpdateAdvancedConfigRequest'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.DatabaseKind kind = 1;
+		 */
+		kind: DatabaseKind;
 
-  /**
-   * @generated from field: int64 id = 2;
-   */
-  id: bigint;
+		/**
+		 * @generated from field: int64 id = 2;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: openoxide.api.v1.AdvancedConfig config = 3;
-   */
-  config?: AdvancedConfig | undefined;
-};
+		/**
+		 * @generated from field: openoxide.api.v1.AdvancedConfig config = 3;
+		 */
+		config?: AdvancedConfig | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.UpdateAdvancedConfigRequest.
  * Use `create(UpdateAdvancedConfigRequestSchema)` to create a new message.
  */
-export const UpdateAdvancedConfigRequestSchema: GenMessage<UpdateAdvancedConfigRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_database, 25);
+export const UpdateAdvancedConfigRequestSchema: GenMessage<UpdateAdvancedConfigRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_database, 25);
 
 /**
  * @generated from enum openoxide.api.v1.DatabaseKind
  */
 export enum DatabaseKind {
-  /**
-   * @generated from enum value: DATABASE_KIND_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: DATABASE_KIND_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: DATABASE_KIND_POSTGRES = 1;
-   */
-  POSTGRES = 1,
+	/**
+	 * @generated from enum value: DATABASE_KIND_POSTGRES = 1;
+	 */
+	POSTGRES = 1,
 
-  /**
-   * @generated from enum value: DATABASE_KIND_MYSQL = 2;
-   */
-  MYSQL = 2,
+	/**
+	 * @generated from enum value: DATABASE_KIND_MYSQL = 2;
+	 */
+	MYSQL = 2,
 
-  /**
-   * @generated from enum value: DATABASE_KIND_MARIADB = 3;
-   */
-  MARIADB = 3,
+	/**
+	 * @generated from enum value: DATABASE_KIND_MARIADB = 3;
+	 */
+	MARIADB = 3,
 
-  /**
-   * @generated from enum value: DATABASE_KIND_MONGO = 4;
-   */
-  MONGO = 4,
+	/**
+	 * @generated from enum value: DATABASE_KIND_MONGO = 4;
+	 */
+	MONGO = 4,
 
-  /**
-   * @generated from enum value: DATABASE_KIND_REDIS = 5;
-   */
-  REDIS = 5,
+	/**
+	 * @generated from enum value: DATABASE_KIND_REDIS = 5;
+	 */
+	REDIS = 5,
 
-  /**
-   * @generated from enum value: DATABASE_KIND_LIBSQL = 6;
-   */
-  LIBSQL = 6,
+	/**
+	 * @generated from enum value: DATABASE_KIND_LIBSQL = 6;
+	 */
+	LIBSQL = 6,
 }
 
 /**
  * Describes the enum openoxide.api.v1.DatabaseKind.
  */
-export const DatabaseKindSchema: GenEnum<DatabaseKind> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_database, 0);
+export const DatabaseKindSchema: GenEnum<DatabaseKind> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_database, 0);
 
 /**
  * @generated from service openoxide.api.v1.DatabaseService
  */
 export const DatabaseService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.GetDatabase
-   */
-  getDatabase: {
-    methodKind: "unary";
-    input: typeof GetDatabaseRequestSchema;
-    output: typeof DatabaseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.ListDatabases
-   */
-  listDatabases: {
-    methodKind: "unary";
-    input: typeof ListDatabasesRequestSchema;
-    output: typeof ListDatabasesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.CreateDatabase
-   */
-  createDatabase: {
-    methodKind: "unary";
-    input: typeof CreateDatabaseRequestSchema;
-    output: typeof DatabaseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.UpdateDatabase
-   */
-  updateDatabase: {
-    methodKind: "unary";
-    input: typeof UpdateDatabaseRequestSchema;
-    output: typeof DatabaseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.DeleteDatabase
-   */
-  deleteDatabase: {
-    methodKind: "unary";
-    input: typeof DeleteDatabaseRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.Deploy
-   */
-  deploy: {
-    methodKind: "unary";
-    input: typeof DatabaseOperationRequestSchema;
-    output: typeof DatabaseOperationSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.Redeploy
-   */
-  redeploy: {
-    methodKind: "unary";
-    input: typeof DatabaseOperationRequestSchema;
-    output: typeof DatabaseOperationSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.Reload
-   */
-  reload: {
-    methodKind: "unary";
-    input: typeof DatabaseOperationRequestSchema;
-    output: typeof DatabaseOperationSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.Start
-   */
-  start: {
-    methodKind: "unary";
-    input: typeof DatabaseOperationRequestSchema;
-    output: typeof DatabaseOperationSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.Stop
-   */
-  stop: {
-    methodKind: "unary";
-    input: typeof DatabaseOperationRequestSchema;
-    output: typeof DatabaseOperationSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.Cancel
-   */
-  cancel: {
-    methodKind: "unary";
-    input: typeof DatabaseOperationRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.GetSwarmSettings
-   */
-  getSwarmSettings: {
-    methodKind: "unary";
-    input: typeof SwarmSettingsRequestSchema;
-    output: typeof SwarmSettingsSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.UpdateSwarmSettings
-   */
-  updateSwarmSettings: {
-    methodKind: "unary";
-    input: typeof UpdateSwarmSettingsRequestSchema;
-    output: typeof SwarmSettingsSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.ListMounts
-   */
-  listMounts: {
-    methodKind: "unary";
-    input: typeof DatabaseTargetRequestSchema;
-    output: typeof MountListSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.CreateMount
-   */
-  createMount: {
-    methodKind: "unary";
-    input: typeof CreateMountRequestSchema;
-    output: typeof MountSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.UpdateMount
-   */
-  updateMount: {
-    methodKind: "unary";
-    input: typeof UpdateMountRequestSchema;
-    output: typeof MountSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.DeleteMount
-   */
-  deleteMount: {
-    methodKind: "unary";
-    input: typeof DeleteMountRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.ListDependencies
-   */
-  listDependencies: {
-    methodKind: "unary";
-    input: typeof DatabaseTargetRequestSchema;
-    output: typeof DependenciesSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.ExportDatabase
-   */
-  exportDatabase: {
-    methodKind: "unary";
-    input: typeof ExportDatabaseRequestSchema;
-    output: typeof DatabaseExportSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.ImportDatabase
-   */
-  importDatabase: {
-    methodKind: "unary";
-    input: typeof ImportDatabaseRequestSchema;
-    output: typeof DatabaseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.GetConnection
-   */
-  getConnection: {
-    methodKind: "unary";
-    input: typeof DatabaseTargetRequestSchema;
-    output: typeof DatabaseConnectionSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.RotateCredentials
-   */
-  rotateCredentials: {
-    methodKind: "unary";
-    input: typeof DatabaseTargetRequestSchema;
-    output: typeof DatabaseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.ValidateDatabase
-   */
-  validateDatabase: {
-    methodKind: "unary";
-    input: typeof DatabaseTargetRequestSchema;
-    output: typeof ValidationResultSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.GetPostgresAdvancedConfig
-   */
-  getPostgresAdvancedConfig: {
-    methodKind: "unary";
-    input: typeof DatabaseTargetRequestSchema;
-    output: typeof AdvancedConfigSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.DatabaseService.UpdatePostgresAdvancedConfig
-   */
-  updatePostgresAdvancedConfig: {
-    methodKind: "unary";
-    input: typeof UpdateAdvancedConfigRequestSchema;
-    output: typeof AdvancedConfigSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_database, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.GetDatabase
+	 */
+	getDatabase: {
+		methodKind: 'unary';
+		input: typeof GetDatabaseRequestSchema;
+		output: typeof DatabaseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.ListDatabases
+	 */
+	listDatabases: {
+		methodKind: 'unary';
+		input: typeof ListDatabasesRequestSchema;
+		output: typeof ListDatabasesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.CreateDatabase
+	 */
+	createDatabase: {
+		methodKind: 'unary';
+		input: typeof CreateDatabaseRequestSchema;
+		output: typeof DatabaseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.UpdateDatabase
+	 */
+	updateDatabase: {
+		methodKind: 'unary';
+		input: typeof UpdateDatabaseRequestSchema;
+		output: typeof DatabaseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.DeleteDatabase
+	 */
+	deleteDatabase: {
+		methodKind: 'unary';
+		input: typeof DeleteDatabaseRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.Deploy
+	 */
+	deploy: {
+		methodKind: 'unary';
+		input: typeof DatabaseOperationRequestSchema;
+		output: typeof DatabaseOperationSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.Redeploy
+	 */
+	redeploy: {
+		methodKind: 'unary';
+		input: typeof DatabaseOperationRequestSchema;
+		output: typeof DatabaseOperationSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.Reload
+	 */
+	reload: {
+		methodKind: 'unary';
+		input: typeof DatabaseOperationRequestSchema;
+		output: typeof DatabaseOperationSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.Start
+	 */
+	start: {
+		methodKind: 'unary';
+		input: typeof DatabaseOperationRequestSchema;
+		output: typeof DatabaseOperationSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.Stop
+	 */
+	stop: {
+		methodKind: 'unary';
+		input: typeof DatabaseOperationRequestSchema;
+		output: typeof DatabaseOperationSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.Cancel
+	 */
+	cancel: {
+		methodKind: 'unary';
+		input: typeof DatabaseOperationRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.GetSwarmSettings
+	 */
+	getSwarmSettings: {
+		methodKind: 'unary';
+		input: typeof SwarmSettingsRequestSchema;
+		output: typeof SwarmSettingsSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.UpdateSwarmSettings
+	 */
+	updateSwarmSettings: {
+		methodKind: 'unary';
+		input: typeof UpdateSwarmSettingsRequestSchema;
+		output: typeof SwarmSettingsSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.ListMounts
+	 */
+	listMounts: {
+		methodKind: 'unary';
+		input: typeof DatabaseTargetRequestSchema;
+		output: typeof MountListSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.CreateMount
+	 */
+	createMount: {
+		methodKind: 'unary';
+		input: typeof CreateMountRequestSchema;
+		output: typeof MountSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.UpdateMount
+	 */
+	updateMount: {
+		methodKind: 'unary';
+		input: typeof UpdateMountRequestSchema;
+		output: typeof MountSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.DeleteMount
+	 */
+	deleteMount: {
+		methodKind: 'unary';
+		input: typeof DeleteMountRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.ListDependencies
+	 */
+	listDependencies: {
+		methodKind: 'unary';
+		input: typeof DatabaseTargetRequestSchema;
+		output: typeof DependenciesSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.ExportDatabase
+	 */
+	exportDatabase: {
+		methodKind: 'unary';
+		input: typeof ExportDatabaseRequestSchema;
+		output: typeof DatabaseExportSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.ImportDatabase
+	 */
+	importDatabase: {
+		methodKind: 'unary';
+		input: typeof ImportDatabaseRequestSchema;
+		output: typeof DatabaseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.GetConnection
+	 */
+	getConnection: {
+		methodKind: 'unary';
+		input: typeof DatabaseTargetRequestSchema;
+		output: typeof DatabaseConnectionSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.RotateCredentials
+	 */
+	rotateCredentials: {
+		methodKind: 'unary';
+		input: typeof DatabaseTargetRequestSchema;
+		output: typeof DatabaseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.ValidateDatabase
+	 */
+	validateDatabase: {
+		methodKind: 'unary';
+		input: typeof DatabaseTargetRequestSchema;
+		output: typeof ValidationResultSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.GetPostgresAdvancedConfig
+	 */
+	getPostgresAdvancedConfig: {
+		methodKind: 'unary';
+		input: typeof DatabaseTargetRequestSchema;
+		output: typeof AdvancedConfigSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.DatabaseService.UpdatePostgresAdvancedConfig
+	 */
+	updatePostgresAdvancedConfig: {
+		methodKind: 'unary';
+		input: typeof UpdateAdvancedConfigRequestSchema;
+		output: typeof AdvancedConfigSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_database, 0);

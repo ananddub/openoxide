@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/environment.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { EnvironmentService } from "./environment_pb";
+import {EnvironmentService} from './environment_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.EnvironmentService.GetEnvironment
@@ -17,19 +17,23 @@ export const listEnvironments = EnvironmentService.method.listEnvironments;
 /**
  * @generated from rpc openoxide.api.v1.EnvironmentService.CreateEnvironment
  */
-export const createEnvironment = EnvironmentService.method.createEnvironment;
+export const createEnvironment =
+	EnvironmentService.method.createEnvironment;
 
 /**
  * @generated from rpc openoxide.api.v1.EnvironmentService.UpdateEnvironment
  */
-export const updateEnvironment = EnvironmentService.method.updateEnvironment;
+export const updateEnvironment =
+	EnvironmentService.method.updateEnvironment;
 
 /**
  * @generated from rpc openoxide.api.v1.EnvironmentService.SetDefaultEnvironment
  */
-export const setDefaultEnvironment = EnvironmentService.method.setDefaultEnvironment;
+export const setDefaultEnvironment =
+	EnvironmentService.method.setDefaultEnvironment;
 
 /**
  * @generated from rpc openoxide.api.v1.EnvironmentService.DeleteEnvironment
  */
-export const deleteEnvironment = EnvironmentService.method.deleteEnvironment;
+export const deleteEnvironment =
+	EnvironmentService.method.deleteEnvironment;

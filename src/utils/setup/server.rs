@@ -305,9 +305,12 @@ impl ServerSetup {
         docker.images().pull(image).pull().await?;
 
         let docker_socket_mount = Mount::bind("/var/run/docker.sock", "/var/run/docker.sock");
-        let cgroup_mount = Mount::bind_ro("/sys/fs/cgroup", "/sys/fs/cgroup");
+        let cgroup_mount = Mount::bind("/sys/fs/cgroup", "/sys/fs/cgroup");
         let workspace_mount = Mount::bind(&self.config.paths.agent, "/app/workspace");
         let traefik_mount = Mount::bind(&self.config.paths.traefik, "/etc/openoxide/traefik");
+        let apps_mount =
+            Mount::bind(&self.config.paths.applications, &self.config.paths.applications);
+        let compose_mount = Mount::bind(&self.config.paths.compose, &self.config.paths.compose);
 
         let p_grpc = Port::tcp(50051, 50051);
 
@@ -322,6 +325,8 @@ impl ServerSetup {
             .mount(docker_socket_mount)
             .mount(cgroup_mount)
             .mount(workspace_mount)
+            .mount(apps_mount)
+            .mount(compose_mount)
             .mount(traefik_mount)
             .publish(p_grpc);
         if mtls_ready {
@@ -340,8 +345,9 @@ impl ServerSetup {
                 .env("SERVER_ID", server_id.to_string())
                 .env("OPENOXIDE_SERVER_URL", panel_url)
                 .env("METRICS_TOKEN", token)
+                .env("OPENOXIDE_BASE_PATH", self.config.paths.base.as_str())
                 .env("MONITOR_DATABASE_URL", "memory://metrics")
-                .env("REFRESH_RATE", "2")
+                .env("REFRESH_RATE", agent_refresh_rate())
                 .env(
                     "RETENTION_DAYS",
                     self.config.agent_retention_days.to_string(),
@@ -758,17 +764,26 @@ impl ServerSetup {
             .restart(RestartPolicy::Always)
             .network(self.config.network_name.as_str())
             .mount(Mount::bind("/var/run/docker.sock", "/var/run/docker.sock"))
-            .mount(Mount::bind_ro("/sys/fs/cgroup", "/sys/fs/cgroup"))
+            .mount(Mount::bind("/sys/fs/cgroup", "/sys/fs/cgroup"))
             .mount(Mount::bind(self.config.paths.agent.as_str(), "/app/workspace"))
             .mount(Mount::bind(
                 self.config.paths.traefik.as_str(),
                 "/etc/openoxide/traefik",
             ))
+            .mount(Mount::bind(
+                self.config.paths.applications.as_str(),
+                self.config.paths.applications.as_str(),
+            ))
+            .mount(Mount::bind(
+                self.config.paths.compose.as_str(),
+                self.config.paths.compose.as_str(),
+            ))
             .env("SERVER_ID", self.config.agent_server_id.unwrap_or(0).to_string())
             .env("OPENOXIDE_SERVER_URL", self.config.agent_panel_url.clone().unwrap_or_default())
             .env("METRICS_TOKEN", self.config.agent_token.clone().unwrap_or_default())
+            .env("OPENOXIDE_BASE_PATH", self.config.paths.base.as_str())
             .env("MONITOR_DATABASE_URL", "memory://metrics")
-            .env("REFRESH_RATE", "2")
+            .env("REFRESH_RATE", agent_refresh_rate())
             .env("RETENTION_DAYS", self.config.agent_retention_days.to_string());
         if mtls {
             create_cmd = create_cmd
@@ -816,6 +831,19 @@ fn guarded_by_absent_container(docker: &DockerCli, name: &str, body: Vec<ShellIR
 
 pub(crate) fn agent_image() -> &'static str {
     "dubeyanand/openoxide-agent:latest"
+}
+
+/// Metric collection interval for the agent. Metrics are sampled live per
+/// request (no history stored), so this only affects the shared stats feed
+/// cadence. Default 2s for live-feeling stats; override with
+/// `AGENT_REFRESH_RATE`.
+fn agent_refresh_rate() -> String {
+    std::env::var("AGENT_REFRESH_RATE")
+        .ok()
+        .and_then(|v| v.trim().parse::<u32>().ok())
+        .filter(|v| *v > 0)
+        .unwrap_or(2)
+        .to_string()
 }
 
 fn agent_image_unsupported(architecture: &str) -> bool {

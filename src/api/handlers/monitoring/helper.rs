@@ -28,7 +28,7 @@ pub async fn verify_server_organization(
     organization_id: i64,
 ) -> Result<(), ConnectError> {
     let bound = auth
-        .organization_id(server_id)
+        .resolve_server_organization(server_id)
         .await
         .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
     if bound == Some(organization_id) {

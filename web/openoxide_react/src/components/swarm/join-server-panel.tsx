@@ -105,9 +105,7 @@ export function JoinServerPanel({
 				hint="Servers you registered in OpenOxide — the panel talks to each one over SSH.">
 				<Select
 					value={selectedRemoteServerId}
-					onValueChange={val =>
-						val && setSelectedRemoteServerId(val)
-					}>
+					onValueChange={val => val && setSelectedRemoteServerId(val)}>
 					<SelectTrigger>
 						<SelectValue placeholder="Select a server…">
 							{selectedRemoteServer
@@ -156,9 +154,7 @@ export function JoinServerPanel({
 							) : (
 								<LogOut className="size-4" />
 							)}
-							{isLeaving
-								? 'Disconnecting…'
-								: 'Disconnect from Cluster'}
+							{isLeaving ? 'Disconnecting…' : 'Disconnect from Cluster'}
 						</Button>
 					) : (
 						<div className="flex items-end gap-2.5">
@@ -173,12 +169,8 @@ export function JoinServerPanel({
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value="worker">
-												Worker
-											</SelectItem>
-											<SelectItem value="manager">
-												Manager
-											</SelectItem>
+											<SelectItem value="worker">Worker</SelectItem>
+											<SelectItem value="manager">Manager</SelectItem>
 										</SelectContent>
 									</Select>
 								</WizardField>

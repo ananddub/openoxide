@@ -2,231 +2,247 @@
 // @generated from file openoxide/api/v1/settings.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/settings.proto.
  */
-export const file_openoxide_api_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("Ch9vcGVub3hpZGUvYXBpL3YxL3NldHRpbmdzLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIpEECghTZXR0aW5ncxIKCgJpZBgBIAEoAxIWCglzZXJ2ZXJfaXAYAiABKAlIAIgBARJDChBjZXJ0aWZpY2F0ZV90eXBlGAMgASgOMikub3Blbm94aWRlLmFwaS52MS5TZXR0aW5nc0NlcnRpZmljYXRlVHlwZRIhChRjdXN0b21fY2VydF9yZXNvbHZlchgEIAEoCUgBiAEBEg0KBWh0dHBzGAUgASgIEhEKBGhvc3QYBiABKAlIAogBARIfChJsZXRzX2VuY3J5cHRfZW1haWwYByABKAlIA4gBARIdChVlbmFibGVfZG9ja2VyX2NsZWFudXAYCCABKAgSHQoQbG9nX2NsZWFudXBfY3JvbhgJIAEoCUgEiAEBEhYKDm1ldHJpY3NfY29uZmlnGAogASgJEhkKEXBhbmVsX2JhY2t1cF9jcm9uGAsgASgJEhoKEmxvZ19yZXRlbnRpb25fZGF5cxgMIAEoAxIcChRwYW5lbF9iYWNrdXBfZW5hYmxlZBgNIAEoCBIbChNsb2dfY2xlYW51cF9lbmFibGVkGA4gASgIEhIKCnVwZGF0ZWRfYXQYDyABKANCDAoKX3NlcnZlcl9pcEIXChVfY3VzdG9tX2NlcnRfcmVzb2x2ZXJCBwoFX2hvc3RCFQoTX2xldHNfZW5jcnlwdF9lbWFpbEITChFfbG9nX2NsZWFudXBfY3JvbiIcChpTZXR0aW5nc0dldFNldHRpbmdzUmVxdWVzdCJLChtTZXR0aW5nc0dldFNldHRpbmdzUmVzcG9uc2USLAoIc2V0dGluZ3MYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLlNldHRpbmdzIvgFCh1TZXR0aW5nc1VwZGF0ZVNldHRpbmdzUmVxdWVzdBIWCglzZXJ2ZXJfaXAYASABKAlIAIgBARJUChBjZXJ0aWZpY2F0ZV90eXBlGAIgASgOMikub3Blbm94aWRlLmFwaS52MS5TZXR0aW5nc0NlcnRpZmljYXRlVHlwZUIKukgHggEEEAEgAEgBiAEBEiEKFGN1c3RvbV9jZXJ0X3Jlc29sdmVyGAMgASgJSAKIAQESEgoFaHR0cHMYBCABKAhIA4gBARIRCgRob3N0GAUgASgJSASIAQESHwoSbGV0c19lbmNyeXB0X2VtYWlsGAYgASgJSAWIAQESIgoVZW5hYmxlX2RvY2tlcl9jbGVhbnVwGAcgASgISAaIAQESHQoQbG9nX2NsZWFudXBfY3JvbhgIIAEoCUgHiAEBEiYKDm1ldHJpY3NfY29uZmlnGAkgASgJQgm6SAZyBBiAgEBICIgBARIeChFwYW5lbF9iYWNrdXBfY3JvbhgKIAEoCUgJiAEBEigKEmxvZ19yZXRlbnRpb25fZGF5cxgLIAEoA0IHukgEIgIoAEgKiAEBEiEKFHBhbmVsX2JhY2t1cF9lbmFibGVkGAwgASgISAuIAQESIAoTbG9nX2NsZWFudXBfZW5hYmxlZBgNIAEoCEgMiAEBQgwKCl9zZXJ2ZXJfaXBCEwoRX2NlcnRpZmljYXRlX3R5cGVCFwoVX2N1c3RvbV9jZXJ0X3Jlc29sdmVyQggKBl9odHRwc0IHCgVfaG9zdEIVChNfbGV0c19lbmNyeXB0X2VtYWlsQhgKFl9lbmFibGVfZG9ja2VyX2NsZWFudXBCEwoRX2xvZ19jbGVhbnVwX2Nyb25CEQoPX21ldHJpY3NfY29uZmlnQhQKEl9wYW5lbF9iYWNrdXBfY3JvbkIVChNfbG9nX3JldGVudGlvbl9kYXlzQhcKFV9wYW5lbF9iYWNrdXBfZW5hYmxlZEIWChRfbG9nX2NsZWFudXBfZW5hYmxlZCJOCh5TZXR0aW5nc1VwZGF0ZVNldHRpbmdzUmVzcG9uc2USLAoIc2V0dGluZ3MYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLlNldHRpbmdzKrkBChdTZXR0aW5nc0NlcnRpZmljYXRlVHlwZRIpCiVTRVRUSU5HU19DRVJUSUZJQ0FURV9UWVBFX1VOU1BFQ0lGSUVEEAASIgoeU0VUVElOR1NfQ0VSVElGSUNBVEVfVFlQRV9OT05FEAESKQolU0VUVElOR1NfQ0VSVElGSUNBVEVfVFlQRV9MRVRTRU5DUllQVBACEiQKIFNFVFRJTkdTX0NFUlRJRklDQVRFX1RZUEVfQ1VTVE9NEAMy8gEKD1NldHRpbmdzU2VydmljZRJqCgtHZXRTZXR0aW5ncxIsLm9wZW5veGlkZS5hcGkudjEuU2V0dGluZ3NHZXRTZXR0aW5nc1JlcXVlc3QaLS5vcGVub3hpZGUuYXBpLnYxLlNldHRpbmdzR2V0U2V0dGluZ3NSZXNwb25zZRJzCg5VcGRhdGVTZXR0aW5ncxIvLm9wZW5veGlkZS5hcGkudjEuU2V0dGluZ3NVcGRhdGVTZXR0aW5nc1JlcXVlc3QaMC5vcGVub3hpZGUuYXBpLnYxLlNldHRpbmdzVXBkYXRlU2V0dGluZ3NSZXNwb25zZWIGcHJvdG8z", [file_buf_validate_validate]);
+export const file_openoxide_api_v1_settings: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'Ch9vcGVub3hpZGUvYXBpL3YxL3NldHRpbmdzLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIpEECghTZXR0aW5ncxIKCgJpZBgBIAEoAxIWCglzZXJ2ZXJfaXAYAiABKAlIAIgBARJDChBjZXJ0aWZpY2F0ZV90eXBlGAMgASgOMikub3Blbm94aWRlLmFwaS52MS5TZXR0aW5nc0NlcnRpZmljYXRlVHlwZRIhChRjdXN0b21fY2VydF9yZXNvbHZlchgEIAEoCUgBiAEBEg0KBWh0dHBzGAUgASgIEhEKBGhvc3QYBiABKAlIAogBARIfChJsZXRzX2VuY3J5cHRfZW1haWwYByABKAlIA4gBARIdChVlbmFibGVfZG9ja2VyX2NsZWFudXAYCCABKAgSHQoQbG9nX2NsZWFudXBfY3JvbhgJIAEoCUgEiAEBEhYKDm1ldHJpY3NfY29uZmlnGAogASgJEhkKEXBhbmVsX2JhY2t1cF9jcm9uGAsgASgJEhoKEmxvZ19yZXRlbnRpb25fZGF5cxgMIAEoAxIcChRwYW5lbF9iYWNrdXBfZW5hYmxlZBgNIAEoCBIbChNsb2dfY2xlYW51cF9lbmFibGVkGA4gASgIEhIKCnVwZGF0ZWRfYXQYDyABKANCDAoKX3NlcnZlcl9pcEIXChVfY3VzdG9tX2NlcnRfcmVzb2x2ZXJCBwoFX2hvc3RCFQoTX2xldHNfZW5jcnlwdF9lbWFpbEITChFfbG9nX2NsZWFudXBfY3JvbiIcChpTZXR0aW5nc0dldFNldHRpbmdzUmVxdWVzdCJLChtTZXR0aW5nc0dldFNldHRpbmdzUmVzcG9uc2USLAoIc2V0dGluZ3MYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLlNldHRpbmdzIvgFCh1TZXR0aW5nc1VwZGF0ZVNldHRpbmdzUmVxdWVzdBIWCglzZXJ2ZXJfaXAYASABKAlIAIgBARJUChBjZXJ0aWZpY2F0ZV90eXBlGAIgASgOMikub3Blbm94aWRlLmFwaS52MS5TZXR0aW5nc0NlcnRpZmljYXRlVHlwZUIKukgHggEEEAEgAEgBiAEBEiEKFGN1c3RvbV9jZXJ0X3Jlc29sdmVyGAMgASgJSAKIAQESEgoFaHR0cHMYBCABKAhIA4gBARIRCgRob3N0GAUgASgJSASIAQESHwoSbGV0c19lbmNyeXB0X2VtYWlsGAYgASgJSAWIAQESIgoVZW5hYmxlX2RvY2tlcl9jbGVhbnVwGAcgASgISAaIAQESHQoQbG9nX2NsZWFudXBfY3JvbhgIIAEoCUgHiAEBEiYKDm1ldHJpY3NfY29uZmlnGAkgASgJQgm6SAZyBBiAgEBICIgBARIeChFwYW5lbF9iYWNrdXBfY3JvbhgKIAEoCUgJiAEBEigKEmxvZ19yZXRlbnRpb25fZGF5cxgLIAEoA0IHukgEIgIoAEgKiAEBEiEKFHBhbmVsX2JhY2t1cF9lbmFibGVkGAwgASgISAuIAQESIAoTbG9nX2NsZWFudXBfZW5hYmxlZBgNIAEoCEgMiAEBQgwKCl9zZXJ2ZXJfaXBCEwoRX2NlcnRpZmljYXRlX3R5cGVCFwoVX2N1c3RvbV9jZXJ0X3Jlc29sdmVyQggKBl9odHRwc0IHCgVfaG9zdEIVChNfbGV0c19lbmNyeXB0X2VtYWlsQhgKFl9lbmFibGVfZG9ja2VyX2NsZWFudXBCEwoRX2xvZ19jbGVhbnVwX2Nyb25CEQoPX21ldHJpY3NfY29uZmlnQhQKEl9wYW5lbF9iYWNrdXBfY3JvbkIVChNfbG9nX3JldGVudGlvbl9kYXlzQhcKFV9wYW5lbF9iYWNrdXBfZW5hYmxlZEIWChRfbG9nX2NsZWFudXBfZW5hYmxlZCJOCh5TZXR0aW5nc1VwZGF0ZVNldHRpbmdzUmVzcG9uc2USLAoIc2V0dGluZ3MYASABKAsyGi5vcGVub3hpZGUuYXBpLnYxLlNldHRpbmdzKrkBChdTZXR0aW5nc0NlcnRpZmljYXRlVHlwZRIpCiVTRVRUSU5HU19DRVJUSUZJQ0FURV9UWVBFX1VOU1BFQ0lGSUVEEAASIgoeU0VUVElOR1NfQ0VSVElGSUNBVEVfVFlQRV9OT05FEAESKQolU0VUVElOR1NfQ0VSVElGSUNBVEVfVFlQRV9MRVRTRU5DUllQVBACEiQKIFNFVFRJTkdTX0NFUlRJRklDQVRFX1RZUEVfQ1VTVE9NEAMy8gEKD1NldHRpbmdzU2VydmljZRJqCgtHZXRTZXR0aW5ncxIsLm9wZW5veGlkZS5hcGkudjEuU2V0dGluZ3NHZXRTZXR0aW5nc1JlcXVlc3QaLS5vcGVub3hpZGUuYXBpLnYxLlNldHRpbmdzR2V0U2V0dGluZ3NSZXNwb25zZRJzCg5VcGRhdGVTZXR0aW5ncxIvLm9wZW5veGlkZS5hcGkudjEuU2V0dGluZ3NVcGRhdGVTZXR0aW5nc1JlcXVlc3QaMC5vcGVub3hpZGUuYXBpLnYxLlNldHRpbmdzVXBkYXRlU2V0dGluZ3NSZXNwb25zZWIGcHJvdG8z',
+		[file_buf_validate_validate],
+	);
 
 /**
  * @generated from message openoxide.api.v1.Settings
  */
-export type Settings = Message<"openoxide.api.v1.Settings"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type Settings = Message<'openoxide.api.v1.Settings'> & {
+	/**
+	 * @generated from field: int64 id = 1;
+	 */
+	id: bigint;
 
-  /**
-   * @generated from field: optional string server_ip = 2;
-   */
-  serverIp?: string | undefined;
+	/**
+	 * @generated from field: optional string server_ip = 2;
+	 */
+	serverIp?: string | undefined;
 
-  /**
-   * @generated from field: openoxide.api.v1.SettingsCertificateType certificate_type = 3;
-   */
-  certificateType: SettingsCertificateType;
+	/**
+	 * @generated from field: openoxide.api.v1.SettingsCertificateType certificate_type = 3;
+	 */
+	certificateType: SettingsCertificateType;
 
-  /**
-   * @generated from field: optional string custom_cert_resolver = 4;
-   */
-  customCertResolver?: string | undefined;
+	/**
+	 * @generated from field: optional string custom_cert_resolver = 4;
+	 */
+	customCertResolver?: string | undefined;
 
-  /**
-   * @generated from field: bool https = 5;
-   */
-  https: boolean;
+	/**
+	 * @generated from field: bool https = 5;
+	 */
+	https: boolean;
 
-  /**
-   * @generated from field: optional string host = 6;
-   */
-  host?: string | undefined;
+	/**
+	 * @generated from field: optional string host = 6;
+	 */
+	host?: string | undefined;
 
-  /**
-   * @generated from field: optional string lets_encrypt_email = 7;
-   */
-  letsEncryptEmail?: string | undefined;
+	/**
+	 * @generated from field: optional string lets_encrypt_email = 7;
+	 */
+	letsEncryptEmail?: string | undefined;
 
-  /**
-   * @generated from field: bool enable_docker_cleanup = 8;
-   */
-  enableDockerCleanup: boolean;
+	/**
+	 * @generated from field: bool enable_docker_cleanup = 8;
+	 */
+	enableDockerCleanup: boolean;
 
-  /**
-   * @generated from field: optional string log_cleanup_cron = 9;
-   */
-  logCleanupCron?: string | undefined;
+	/**
+	 * @generated from field: optional string log_cleanup_cron = 9;
+	 */
+	logCleanupCron?: string | undefined;
 
-  /**
-   * Metrics scrape configuration as an opaque JSON document ("{}" default).
-   *
-   * @generated from field: string metrics_config = 10;
-   */
-  metricsConfig: string;
+	/**
+	 * Metrics scrape configuration as an opaque JSON document ("{}" default).
+	 *
+	 * @generated from field: string metrics_config = 10;
+	 */
+	metricsConfig: string;
 
-  /**
-   * @generated from field: string panel_backup_cron = 11;
-   */
-  panelBackupCron: string;
+	/**
+	 * @generated from field: string panel_backup_cron = 11;
+	 */
+	panelBackupCron: string;
 
-  /**
-   * @generated from field: int64 log_retention_days = 12;
-   */
-  logRetentionDays: bigint;
+	/**
+	 * @generated from field: int64 log_retention_days = 12;
+	 */
+	logRetentionDays: bigint;
 
-  /**
-   * @generated from field: bool panel_backup_enabled = 13;
-   */
-  panelBackupEnabled: boolean;
+	/**
+	 * @generated from field: bool panel_backup_enabled = 13;
+	 */
+	panelBackupEnabled: boolean;
 
-  /**
-   * @generated from field: bool log_cleanup_enabled = 14;
-   */
-  logCleanupEnabled: boolean;
+	/**
+	 * @generated from field: bool log_cleanup_enabled = 14;
+	 */
+	logCleanupEnabled: boolean;
 
-  /**
-   * @generated from field: int64 updated_at = 15;
-   */
-  updatedAt: bigint;
+	/**
+	 * @generated from field: int64 updated_at = 15;
+	 */
+	updatedAt: bigint;
 };
 
 /**
  * Describes the message openoxide.api.v1.Settings.
  * Use `create(SettingsSchema)` to create a new message.
  */
-export const SettingsSchema: GenMessage<Settings> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_settings, 0);
+export const SettingsSchema: GenMessage<Settings> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_settings, 0);
 
 /**
  * @generated from message openoxide.api.v1.SettingsGetSettingsRequest
  */
-export type SettingsGetSettingsRequest = Message<"openoxide.api.v1.SettingsGetSettingsRequest"> & {
-};
+export type SettingsGetSettingsRequest =
+	Message<'openoxide.api.v1.SettingsGetSettingsRequest'> & {};
 
 /**
  * Describes the message openoxide.api.v1.SettingsGetSettingsRequest.
  * Use `create(SettingsGetSettingsRequestSchema)` to create a new message.
  */
-export const SettingsGetSettingsRequestSchema: GenMessage<SettingsGetSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_settings, 1);
+export const SettingsGetSettingsRequestSchema: GenMessage<SettingsGetSettingsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_settings, 1);
 
 /**
  * @generated from message openoxide.api.v1.SettingsGetSettingsResponse
  */
-export type SettingsGetSettingsResponse = Message<"openoxide.api.v1.SettingsGetSettingsResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Settings settings = 1;
-   */
-  settings?: Settings | undefined;
-};
+export type SettingsGetSettingsResponse =
+	Message<'openoxide.api.v1.SettingsGetSettingsResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Settings settings = 1;
+		 */
+		settings?: Settings | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SettingsGetSettingsResponse.
  * Use `create(SettingsGetSettingsResponseSchema)` to create a new message.
  */
-export const SettingsGetSettingsResponseSchema: GenMessage<SettingsGetSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_settings, 2);
+export const SettingsGetSettingsResponseSchema: GenMessage<SettingsGetSettingsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_settings, 2);
 
 /**
  * Patch semantics: an absent field keeps its stored value.
  *
  * @generated from message openoxide.api.v1.SettingsUpdateSettingsRequest
  */
-export type SettingsUpdateSettingsRequest = Message<"openoxide.api.v1.SettingsUpdateSettingsRequest"> & {
-  /**
-   * @generated from field: optional string server_ip = 1;
-   */
-  serverIp?: string | undefined;
+export type SettingsUpdateSettingsRequest =
+	Message<'openoxide.api.v1.SettingsUpdateSettingsRequest'> & {
+		/**
+		 * @generated from field: optional string server_ip = 1;
+		 */
+		serverIp?: string | undefined;
 
-  /**
-   * @generated from field: optional openoxide.api.v1.SettingsCertificateType certificate_type = 2;
-   */
-  certificateType?: SettingsCertificateType | undefined;
+		/**
+		 * @generated from field: optional openoxide.api.v1.SettingsCertificateType certificate_type = 2;
+		 */
+		certificateType?: SettingsCertificateType | undefined;
 
-  /**
-   * @generated from field: optional string custom_cert_resolver = 3;
-   */
-  customCertResolver?: string | undefined;
+		/**
+		 * @generated from field: optional string custom_cert_resolver = 3;
+		 */
+		customCertResolver?: string | undefined;
 
-  /**
-   * @generated from field: optional bool https = 4;
-   */
-  https?: boolean | undefined;
+		/**
+		 * @generated from field: optional bool https = 4;
+		 */
+		https?: boolean | undefined;
 
-  /**
-   * @generated from field: optional string host = 5;
-   */
-  host?: string | undefined;
+		/**
+		 * @generated from field: optional string host = 5;
+		 */
+		host?: string | undefined;
 
-  /**
-   * @generated from field: optional string lets_encrypt_email = 6;
-   */
-  letsEncryptEmail?: string | undefined;
+		/**
+		 * @generated from field: optional string lets_encrypt_email = 6;
+		 */
+		letsEncryptEmail?: string | undefined;
 
-  /**
-   * @generated from field: optional bool enable_docker_cleanup = 7;
-   */
-  enableDockerCleanup?: boolean | undefined;
+		/**
+		 * @generated from field: optional bool enable_docker_cleanup = 7;
+		 */
+		enableDockerCleanup?: boolean | undefined;
 
-  /**
-   * @generated from field: optional string log_cleanup_cron = 8;
-   */
-  logCleanupCron?: string | undefined;
+		/**
+		 * @generated from field: optional string log_cleanup_cron = 8;
+		 */
+		logCleanupCron?: string | undefined;
 
-  /**
-   * @generated from field: optional string metrics_config = 9;
-   */
-  metricsConfig?: string | undefined;
+		/**
+		 * @generated from field: optional string metrics_config = 9;
+		 */
+		metricsConfig?: string | undefined;
 
-  /**
-   * @generated from field: optional string panel_backup_cron = 10;
-   */
-  panelBackupCron?: string | undefined;
+		/**
+		 * @generated from field: optional string panel_backup_cron = 10;
+		 */
+		panelBackupCron?: string | undefined;
 
-  /**
-   * @generated from field: optional int64 log_retention_days = 11;
-   */
-  logRetentionDays?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 log_retention_days = 11;
+		 */
+		logRetentionDays?: bigint | undefined;
 
-  /**
-   * @generated from field: optional bool panel_backup_enabled = 12;
-   */
-  panelBackupEnabled?: boolean | undefined;
+		/**
+		 * @generated from field: optional bool panel_backup_enabled = 12;
+		 */
+		panelBackupEnabled?: boolean | undefined;
 
-  /**
-   * @generated from field: optional bool log_cleanup_enabled = 13;
-   */
-  logCleanupEnabled?: boolean | undefined;
-};
+		/**
+		 * @generated from field: optional bool log_cleanup_enabled = 13;
+		 */
+		logCleanupEnabled?: boolean | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SettingsUpdateSettingsRequest.
  * Use `create(SettingsUpdateSettingsRequestSchema)` to create a new message.
  */
-export const SettingsUpdateSettingsRequestSchema: GenMessage<SettingsUpdateSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_settings, 3);
+export const SettingsUpdateSettingsRequestSchema: GenMessage<SettingsUpdateSettingsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_settings, 3);
 
 /**
  * @generated from message openoxide.api.v1.SettingsUpdateSettingsResponse
  */
-export type SettingsUpdateSettingsResponse = Message<"openoxide.api.v1.SettingsUpdateSettingsResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.Settings settings = 1;
-   */
-  settings?: Settings | undefined;
-};
+export type SettingsUpdateSettingsResponse =
+	Message<'openoxide.api.v1.SettingsUpdateSettingsResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.Settings settings = 1;
+		 */
+		settings?: Settings | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.SettingsUpdateSettingsResponse.
  * Use `create(SettingsUpdateSettingsResponseSchema)` to create a new message.
  */
-export const SettingsUpdateSettingsResponseSchema: GenMessage<SettingsUpdateSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_settings, 4);
+export const SettingsUpdateSettingsResponseSchema: GenMessage<SettingsUpdateSettingsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_settings, 4);
 
 /**
  * Traefik certificate resolution mode (SettingsCertificateTypeDto).
@@ -234,32 +250,32 @@ export const SettingsUpdateSettingsResponseSchema: GenMessage<SettingsUpdateSett
  * @generated from enum openoxide.api.v1.SettingsCertificateType
  */
 export enum SettingsCertificateType {
-  /**
-   * @generated from enum value: SETTINGS_CERTIFICATE_TYPE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: SETTINGS_CERTIFICATE_TYPE_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: SETTINGS_CERTIFICATE_TYPE_NONE = 1;
-   */
-  NONE = 1,
+	/**
+	 * @generated from enum value: SETTINGS_CERTIFICATE_TYPE_NONE = 1;
+	 */
+	NONE = 1,
 
-  /**
-   * @generated from enum value: SETTINGS_CERTIFICATE_TYPE_LETSENCRYPT = 2;
-   */
-  LETSENCRYPT = 2,
+	/**
+	 * @generated from enum value: SETTINGS_CERTIFICATE_TYPE_LETSENCRYPT = 2;
+	 */
+	LETSENCRYPT = 2,
 
-  /**
-   * @generated from enum value: SETTINGS_CERTIFICATE_TYPE_CUSTOM = 3;
-   */
-  CUSTOM = 3,
+	/**
+	 * @generated from enum value: SETTINGS_CERTIFICATE_TYPE_CUSTOM = 3;
+	 */
+	CUSTOM = 3,
 }
 
 /**
  * Describes the enum openoxide.api.v1.SettingsCertificateType.
  */
-export const SettingsCertificateTypeSchema: GenEnum<SettingsCertificateType> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_settings, 0);
+export const SettingsCertificateTypeSchema: GenEnum<SettingsCertificateType> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_settings, 0);
 
 /**
  * Singleton panel settings row.
@@ -267,22 +283,20 @@ export const SettingsCertificateTypeSchema: GenEnum<SettingsCertificateType> = /
  * @generated from service openoxide.api.v1.SettingsService
  */
 export const SettingsService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.SettingsService.GetSettings
-   */
-  getSettings: {
-    methodKind: "unary";
-    input: typeof SettingsGetSettingsRequestSchema;
-    output: typeof SettingsGetSettingsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.SettingsService.UpdateSettings
-   */
-  updateSettings: {
-    methodKind: "unary";
-    input: typeof SettingsUpdateSettingsRequestSchema;
-    output: typeof SettingsUpdateSettingsResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_settings, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.SettingsService.GetSettings
+	 */
+	getSettings: {
+		methodKind: 'unary';
+		input: typeof SettingsGetSettingsRequestSchema;
+		output: typeof SettingsGetSettingsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.SettingsService.UpdateSettings
+	 */
+	updateSettings: {
+		methodKind: 'unary';
+		input: typeof SettingsUpdateSettingsRequestSchema;
+		output: typeof SettingsUpdateSettingsResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_settings, 0);

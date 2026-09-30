@@ -32,7 +32,10 @@ export function parseEnv(text: string): EnvRow[] {
 		if (!line || line.startsWith('#') || line.startsWith(';')) continue;
 		const eq = line.indexOf('=');
 		if (eq === -1) continue;
-		const key = line.slice(0, eq).replace(/^export\s+/, '').trim();
+		const key = line
+			.slice(0, eq)
+			.replace(/^export\s+/, '')
+			.trim();
 		if (!key) continue;
 		let value = line.slice(eq + 1).trim();
 		if (
@@ -81,7 +84,8 @@ export function EnvRowsCard({
 	const removeAt = (i: number) =>
 		onRowsChange(prev => prev.filter((_, idx) => idx !== i));
 
-	const addRow = () => onRowsChange(prev => [...prev, {key: '', value: ''}]);
+	const addRow = () =>
+		onRowsChange(prev => [...prev, {key: '', value: ''}]);
 
 	const handleImport = () => {
 		const incoming = parseEnv(importText);
@@ -138,7 +142,7 @@ export function EnvRowsCard({
 					<span className="truncate font-mono text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
 						{fileName}
 					</span>
-					<span className="shrink-0 rounded-full bg-foreground/[0.06] px-1.5 py-px font-mono text-[10px] tabular-nums text-muted-foreground">
+					<span className="shrink-0 rounded-full bg-foreground/[0.06] px-1.5 py-px font-mono text-[10px] text-muted-foreground tabular-nums">
 						{rows.filter(r => r.key.trim()).length}
 					</span>
 					{isModified && (
@@ -196,15 +200,14 @@ export function EnvRowsCard({
 							<KeyRound className="size-4 text-muted-foreground" />
 						</div>
 						<p className="text-xs text-muted-foreground">
-							No variables yet — add one below or import a .env
-							file.
+							No variables yet — add one below or import a .env file.
 						</p>
 					</div>
 				) : (
 					rows.map((r, i) => (
 						<div
 							key={i}
-							className="group grid h-12 grid-cols-[minmax(0,2fr)_1px_minmax(0,3fr)_auto] items-stretch border-b border-border/60 transition-colors hover:bg-accent/30 focus-within:bg-accent/40">
+							className="group grid h-12 grid-cols-[minmax(0,2fr)_1px_minmax(0,3fr)_auto] items-stretch border-b border-border/60 transition-colors focus-within:bg-accent/40 hover:bg-accent/30">
 							<Input
 								value={r.key}
 								spellCheck={false}
@@ -221,9 +224,7 @@ export function EnvRowsCard({
 								value={r.value}
 								type={showValues ? 'text' : 'password'}
 								spellCheck={false}
-								onChange={e =>
-									setAt(i, {value: e.target.value})
-								}
+								onChange={e => setAt(i, {value: e.target.value})}
 								placeholder="value"
 								className="h-full w-full min-w-0 rounded-none border-0 bg-transparent px-3 font-mono text-xs shadow-none focus-visible:ring-0"
 							/>
@@ -258,8 +259,8 @@ export function EnvRowsCard({
 					<DialogHeader>
 						<DialogTitle>Import from .env</DialogTitle>
 						<DialogDescription>
-							Paste the whole file — comments and blank lines are
-							ignored, and keys that already exist get updated.
+							Paste the whole file — comments and blank lines are ignored,
+							and keys that already exist get updated.
 						</DialogDescription>
 					</DialogHeader>
 					<Textarea

@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/domain.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { DomainService } from "./domain_pb";
+import {DomainService} from './domain_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.DomainService.ListDomains
@@ -17,7 +17,8 @@ export const getDomain = DomainService.method.getDomain;
 /**
  * @generated from rpc openoxide.api.v1.DomainService.ListApplicationDomains
  */
-export const listApplicationDomains = DomainService.method.listApplicationDomains;
+export const listApplicationDomains =
+	DomainService.method.listApplicationDomains;
 
 /**
  * @generated from rpc openoxide.api.v1.DomainService.ListComposeDomains

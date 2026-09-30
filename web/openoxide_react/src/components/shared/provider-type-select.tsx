@@ -100,8 +100,7 @@ export function ProviderTypeSelect({
 								onClick={() => pick(option.value)}
 								className={cn(
 									'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors outline-none hover:bg-accent focus-visible:bg-accent',
-									option.value === value &&
-										'bg-accent',
+									option.value === value && 'bg-accent',
 								)}>
 								<span className="flex size-6 shrink-0 items-center justify-center">
 									{option.icon}

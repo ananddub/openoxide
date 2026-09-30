@@ -2,538 +2,573 @@
 // @generated from file openoxide/api/v1/server_management.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/server_management.proto.
  */
-export const file_openoxide_api_v1_server_management: GenFile = /*@__PURE__*/
-  fileDesc("CihvcGVub3hpZGUvYXBpL3YxL3NlcnZlcl9tYW5hZ2VtZW50LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIm4KE1NlcnZlckNsZWFudXBQb2xpY3kSEgoKY29udGFpbmVycxgBIAEoCBIOCgZpbWFnZXMYAiABKAgSEAoIbmV0d29ya3MYAyABKAgSDwoHdm9sdW1lcxgEIAEoCBIQCghwYWNrYWdlcxgFIAEoCCLQAgoQU2VydmVyTWFuYWdlbWVudBIRCglzZXJ2ZXJfaWQYASABKAMSGAoQbWFpbnRlbmFuY2VfbW9kZRgCIAEoCBIgChNtYWludGVuYW5jZV9tZXNzYWdlGAMgASgJSACIAQESPgoGbGFiZWxzGAQgAygLMi4ub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50LkxhYmVsc0VudHJ5Ej0KDmNsZWFudXBfcG9saWN5GAUgASgLMiUub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJDbGVhbnVwUG9saWN5EhMKC2dwdV9lbmFibGVkGAYgASgIEhIKCnVwZGF0ZWRfYXQYByABKAMaLQoLTGFiZWxzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIWChRfbWFpbnRlbmFuY2VfbWVzc2FnZSJFChJTZXJ2ZXJBY3Rpb25SZXN1bHQSDwoHc3VjY2VzcxgBIAEoCBIOCgZzdGRvdXQYAiABKAkSDgoGc3RkZXJyGAMgASgJIjcKDFNlcnZlckJhY2t1cBITCgtyZW1vdGVfcGF0aBgBIAEoCRISCgpjcmVhdGVkX2F0GAIgASgDIvwBChZTZXJ2ZXJDbGVhbnVwRXhlY3V0aW9uEgoKAmlkGAEgASgDEhEKCXNlcnZlcl9pZBgCIAEoAxI1CgZzdGF0dXMYAyABKA4yJS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckNsZWFudXBTdGF0dXMSDgoGcG9saWN5GAQgASgJEhMKBnN0ZG91dBgFIAEoCUgAiAEBEhMKBnN0ZGVychgGIAEoCUgBiAEBEhIKCnN0YXJ0ZWRfYXQYByABKAMSGAoLZmluaXNoZWRfYXQYCCABKANIAogBAUIJCgdfc3Rkb3V0QgkKB19zdGRlcnJCDgoMX2ZpbmlzaGVkX2F0IjEKGlNlcnZlck1hbmFnZW1lbnRHZXRSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIlUKG1NlcnZlck1hbmFnZW1lbnRHZXRSZXNwb25zZRI2CgptYW5hZ2VtZW50GAEgASgLMiIub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50IuwCCh1TZXJ2ZXJNYW5hZ2VtZW50VXBkYXRlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIYChBtYWludGVuYW5jZV9tb2RlGAIgASgIEioKE21haW50ZW5hbmNlX21lc3NhZ2UYAyABKAlCCLpIBXIDGOgHSACIAQESVQoGbGFiZWxzGAQgAygLMjsub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50VXBkYXRlUmVxdWVzdC5MYWJlbHNFbnRyeUIIukgFmgECEEASPQoOY2xlYW51cF9wb2xpY3kYBSABKAsyJS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckNsZWFudXBQb2xpY3kSEwoLZ3B1X2VuYWJsZWQYBiABKAgaLQoLTGFiZWxzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIWChRfbWFpbnRlbmFuY2VfbWVzc2FnZSJYCh5TZXJ2ZXJNYW5hZ2VtZW50VXBkYXRlUmVzcG9uc2USNgoKbWFuYWdlbWVudBgBIAEoCzIiLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudCI5CiJTZXJ2ZXJNYW5hZ2VtZW50UmVwYWlyQXVkaXRSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIlsKI1NlcnZlck1hbmFnZW1lbnRSZXBhaXJBdWRpdFJlc3BvbnNlEjQKBnJlc3VsdBgBIAEoCzIkLm9wZW5veGlkZS5hcGkudjEuU2VydmVyQWN0aW9uUmVzdWx0IjoKI1NlcnZlck1hbmFnZW1lbnRDb25maWd1cmVHcHVSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIlwKJFNlcnZlck1hbmFnZW1lbnRDb25maWd1cmVHcHVSZXNwb25zZRI0CgZyZXN1bHQYASABKAsyJC5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckFjdGlvblJlc3VsdCI4CiFTZXJ2ZXJNYW5hZ2VtZW50UnVuQ2xlYW51cFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiWgoiU2VydmVyTWFuYWdlbWVudFJ1bkNsZWFudXBSZXNwb25zZRI0CgZyZXN1bHQYASABKAsyJC5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckFjdGlvblJlc3VsdCJHCilTZXJ2ZXJNYW5hZ2VtZW50TGlzdENsZWFudXBIaXN0b3J5UmVxdWVzdBIaCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIAAiagoqU2VydmVyTWFuYWdlbWVudExpc3RDbGVhbnVwSGlzdG9yeVJlc3BvbnNlEjwKCmV4ZWN1dGlvbnMYASADKAsyKC5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckNsZWFudXBFeGVjdXRpb24iNQoeU2VydmVyTWFuYWdlbWVudFVwZ3JhZGVSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIlcKH1NlcnZlck1hbmFnZW1lbnRVcGdyYWRlUmVzcG9uc2USNAoGcmVzdWx0GAEgASgLMiQub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJBY3Rpb25SZXN1bHQiNAodU2VydmVyTWFuYWdlbWVudEJhY2t1cFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiUAoeU2VydmVyTWFuYWdlbWVudEJhY2t1cFJlc3BvbnNlEi4KBmJhY2t1cBgBIAEoCzIeLm9wZW5veGlkZS5hcGkudjEuU2VydmVyQmFja3VwIjkKIlNlcnZlck1hbmFnZW1lbnREaWFnbm9zdGljc1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiWwojU2VydmVyTWFuYWdlbWVudERpYWdub3N0aWNzUmVzcG9uc2USNAoGcmVzdWx0GAEgASgLMiQub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJBY3Rpb25SZXN1bHQqgwEKE1NlcnZlckNsZWFudXBTdGF0dXMSJQohU0VSVkVSX0NMRUFOVVBfU1RBVFVTX1VOU1BFQ0lGSUVEEAASIwofU0VSVkVSX0NMRUFOVVBfU1RBVFVTX1NVQ0NFRURFRBABEiAKHFNFUlZFUl9DTEVBTlVQX1NUQVRVU19GQUlMRUQQAjLdCAoXU2VydmVyTWFuYWdlbWVudFNlcnZpY2USbAoNR2V0TWFuYWdlbWVudBIsLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudEdldFJlcXVlc3QaLS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlck1hbmFnZW1lbnRHZXRSZXNwb25zZRJ1ChBVcGRhdGVNYW5hZ2VtZW50Ei8ub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50VXBkYXRlUmVxdWVzdBowLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudFVwZGF0ZVJlc3BvbnNlEnoKC1JlcGFpckF1ZGl0EjQub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50UmVwYWlyQXVkaXRSZXF1ZXN0GjUub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50UmVwYWlyQXVkaXRSZXNwb25zZRJ9CgxDb25maWd1cmVHcHUSNS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlck1hbmFnZW1lbnRDb25maWd1cmVHcHVSZXF1ZXN0GjYub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50Q29uZmlndXJlR3B1UmVzcG9uc2USdwoKUnVuQ2xlYW51cBIzLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudFJ1bkNsZWFudXBSZXF1ZXN0GjQub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50UnVuQ2xlYW51cFJlc3BvbnNlEo8BChJMaXN0Q2xlYW51cEhpc3RvcnkSOy5vcGVub3hpZGUuYXBpLnYxLlNlcnZlck1hbmFnZW1lbnRMaXN0Q2xlYW51cEhpc3RvcnlSZXF1ZXN0Gjwub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50TGlzdENsZWFudXBIaXN0b3J5UmVzcG9uc2USbgoHVXBncmFkZRIwLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudFVwZ3JhZGVSZXF1ZXN0GjEub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50VXBncmFkZVJlc3BvbnNlEmsKBkJhY2t1cBIvLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudEJhY2t1cFJlcXVlc3QaMC5vcGVub3hpZGUuYXBpLnYxLlNlcnZlck1hbmFnZW1lbnRCYWNrdXBSZXNwb25zZRJ6CgtEaWFnbm9zdGljcxI0Lm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudERpYWdub3N0aWNzUmVxdWVzdBo1Lm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudERpYWdub3N0aWNzUmVzcG9uc2ViBnByb3RvMw", [file_buf_validate_validate]);
+export const file_openoxide_api_v1_server_management: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'CihvcGVub3hpZGUvYXBpL3YxL3NlcnZlcl9tYW5hZ2VtZW50LnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIm4KE1NlcnZlckNsZWFudXBQb2xpY3kSEgoKY29udGFpbmVycxgBIAEoCBIOCgZpbWFnZXMYAiABKAgSEAoIbmV0d29ya3MYAyABKAgSDwoHdm9sdW1lcxgEIAEoCBIQCghwYWNrYWdlcxgFIAEoCCLQAgoQU2VydmVyTWFuYWdlbWVudBIRCglzZXJ2ZXJfaWQYASABKAMSGAoQbWFpbnRlbmFuY2VfbW9kZRgCIAEoCBIgChNtYWludGVuYW5jZV9tZXNzYWdlGAMgASgJSACIAQESPgoGbGFiZWxzGAQgAygLMi4ub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50LkxhYmVsc0VudHJ5Ej0KDmNsZWFudXBfcG9saWN5GAUgASgLMiUub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJDbGVhbnVwUG9saWN5EhMKC2dwdV9lbmFibGVkGAYgASgIEhIKCnVwZGF0ZWRfYXQYByABKAMaLQoLTGFiZWxzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIWChRfbWFpbnRlbmFuY2VfbWVzc2FnZSJFChJTZXJ2ZXJBY3Rpb25SZXN1bHQSDwoHc3VjY2VzcxgBIAEoCBIOCgZzdGRvdXQYAiABKAkSDgoGc3RkZXJyGAMgASgJIjcKDFNlcnZlckJhY2t1cBITCgtyZW1vdGVfcGF0aBgBIAEoCRISCgpjcmVhdGVkX2F0GAIgASgDIvwBChZTZXJ2ZXJDbGVhbnVwRXhlY3V0aW9uEgoKAmlkGAEgASgDEhEKCXNlcnZlcl9pZBgCIAEoAxI1CgZzdGF0dXMYAyABKA4yJS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckNsZWFudXBTdGF0dXMSDgoGcG9saWN5GAQgASgJEhMKBnN0ZG91dBgFIAEoCUgAiAEBEhMKBnN0ZGVychgGIAEoCUgBiAEBEhIKCnN0YXJ0ZWRfYXQYByABKAMSGAoLZmluaXNoZWRfYXQYCCABKANIAogBAUIJCgdfc3Rkb3V0QgkKB19zdGRlcnJCDgoMX2ZpbmlzaGVkX2F0IjEKGlNlcnZlck1hbmFnZW1lbnRHZXRSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIlUKG1NlcnZlck1hbmFnZW1lbnRHZXRSZXNwb25zZRI2CgptYW5hZ2VtZW50GAEgASgLMiIub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50IuwCCh1TZXJ2ZXJNYW5hZ2VtZW50VXBkYXRlUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIYChBtYWludGVuYW5jZV9tb2RlGAIgASgIEioKE21haW50ZW5hbmNlX21lc3NhZ2UYAyABKAlCCLpIBXIDGOgHSACIAQESVQoGbGFiZWxzGAQgAygLMjsub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50VXBkYXRlUmVxdWVzdC5MYWJlbHNFbnRyeUIIukgFmgECEEASPQoOY2xlYW51cF9wb2xpY3kYBSABKAsyJS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckNsZWFudXBQb2xpY3kSEwoLZ3B1X2VuYWJsZWQYBiABKAgaLQoLTGFiZWxzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIWChRfbWFpbnRlbmFuY2VfbWVzc2FnZSJYCh5TZXJ2ZXJNYW5hZ2VtZW50VXBkYXRlUmVzcG9uc2USNgoKbWFuYWdlbWVudBgBIAEoCzIiLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudCI5CiJTZXJ2ZXJNYW5hZ2VtZW50UmVwYWlyQXVkaXRSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIlsKI1NlcnZlck1hbmFnZW1lbnRSZXBhaXJBdWRpdFJlc3BvbnNlEjQKBnJlc3VsdBgBIAEoCzIkLm9wZW5veGlkZS5hcGkudjEuU2VydmVyQWN0aW9uUmVzdWx0IjoKI1NlcnZlck1hbmFnZW1lbnRDb25maWd1cmVHcHVSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIlwKJFNlcnZlck1hbmFnZW1lbnRDb25maWd1cmVHcHVSZXNwb25zZRI0CgZyZXN1bHQYASABKAsyJC5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckFjdGlvblJlc3VsdCI4CiFTZXJ2ZXJNYW5hZ2VtZW50UnVuQ2xlYW51cFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiWgoiU2VydmVyTWFuYWdlbWVudFJ1bkNsZWFudXBSZXNwb25zZRI0CgZyZXN1bHQYASABKAsyJC5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckFjdGlvblJlc3VsdCJHCilTZXJ2ZXJNYW5hZ2VtZW50TGlzdENsZWFudXBIaXN0b3J5UmVxdWVzdBIaCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIAAiagoqU2VydmVyTWFuYWdlbWVudExpc3RDbGVhbnVwSGlzdG9yeVJlc3BvbnNlEjwKCmV4ZWN1dGlvbnMYASADKAsyKC5vcGVub3hpZGUuYXBpLnYxLlNlcnZlckNsZWFudXBFeGVjdXRpb24iNQoeU2VydmVyTWFuYWdlbWVudFVwZ3JhZGVSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIlcKH1NlcnZlck1hbmFnZW1lbnRVcGdyYWRlUmVzcG9uc2USNAoGcmVzdWx0GAEgASgLMiQub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJBY3Rpb25SZXN1bHQiNAodU2VydmVyTWFuYWdlbWVudEJhY2t1cFJlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiUAoeU2VydmVyTWFuYWdlbWVudEJhY2t1cFJlc3BvbnNlEi4KBmJhY2t1cBgBIAEoCzIeLm9wZW5veGlkZS5hcGkudjEuU2VydmVyQmFja3VwIjkKIlNlcnZlck1hbmFnZW1lbnREaWFnbm9zdGljc1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAAiWwojU2VydmVyTWFuYWdlbWVudERpYWdub3N0aWNzUmVzcG9uc2USNAoGcmVzdWx0GAEgASgLMiQub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJBY3Rpb25SZXN1bHQqgwEKE1NlcnZlckNsZWFudXBTdGF0dXMSJQohU0VSVkVSX0NMRUFOVVBfU1RBVFVTX1VOU1BFQ0lGSUVEEAASIwofU0VSVkVSX0NMRUFOVVBfU1RBVFVTX1NVQ0NFRURFRBABEiAKHFNFUlZFUl9DTEVBTlVQX1NUQVRVU19GQUlMRUQQAjLdCAoXU2VydmVyTWFuYWdlbWVudFNlcnZpY2USbAoNR2V0TWFuYWdlbWVudBIsLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudEdldFJlcXVlc3QaLS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlck1hbmFnZW1lbnRHZXRSZXNwb25zZRJ1ChBVcGRhdGVNYW5hZ2VtZW50Ei8ub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50VXBkYXRlUmVxdWVzdBowLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudFVwZGF0ZVJlc3BvbnNlEnoKC1JlcGFpckF1ZGl0EjQub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50UmVwYWlyQXVkaXRSZXF1ZXN0GjUub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50UmVwYWlyQXVkaXRSZXNwb25zZRJ9CgxDb25maWd1cmVHcHUSNS5vcGVub3hpZGUuYXBpLnYxLlNlcnZlck1hbmFnZW1lbnRDb25maWd1cmVHcHVSZXF1ZXN0GjYub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50Q29uZmlndXJlR3B1UmVzcG9uc2USdwoKUnVuQ2xlYW51cBIzLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudFJ1bkNsZWFudXBSZXF1ZXN0GjQub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50UnVuQ2xlYW51cFJlc3BvbnNlEo8BChJMaXN0Q2xlYW51cEhpc3RvcnkSOy5vcGVub3hpZGUuYXBpLnYxLlNlcnZlck1hbmFnZW1lbnRMaXN0Q2xlYW51cEhpc3RvcnlSZXF1ZXN0Gjwub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50TGlzdENsZWFudXBIaXN0b3J5UmVzcG9uc2USbgoHVXBncmFkZRIwLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudFVwZ3JhZGVSZXF1ZXN0GjEub3Blbm94aWRlLmFwaS52MS5TZXJ2ZXJNYW5hZ2VtZW50VXBncmFkZVJlc3BvbnNlEmsKBkJhY2t1cBIvLm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudEJhY2t1cFJlcXVlc3QaMC5vcGVub3hpZGUuYXBpLnYxLlNlcnZlck1hbmFnZW1lbnRCYWNrdXBSZXNwb25zZRJ6CgtEaWFnbm9zdGljcxI0Lm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudERpYWdub3N0aWNzUmVxdWVzdBo1Lm9wZW5veGlkZS5hcGkudjEuU2VydmVyTWFuYWdlbWVudERpYWdub3N0aWNzUmVzcG9uc2ViBnByb3RvMw',
+		[file_buf_validate_validate],
+	);
 
 /**
  * @generated from message openoxide.api.v1.ServerCleanupPolicy
  */
-export type ServerCleanupPolicy = Message<"openoxide.api.v1.ServerCleanupPolicy"> & {
-  /**
-   * @generated from field: bool containers = 1;
-   */
-  containers: boolean;
+export type ServerCleanupPolicy =
+	Message<'openoxide.api.v1.ServerCleanupPolicy'> & {
+		/**
+		 * @generated from field: bool containers = 1;
+		 */
+		containers: boolean;
 
-  /**
-   * @generated from field: bool images = 2;
-   */
-  images: boolean;
+		/**
+		 * @generated from field: bool images = 2;
+		 */
+		images: boolean;
 
-  /**
-   * @generated from field: bool networks = 3;
-   */
-  networks: boolean;
+		/**
+		 * @generated from field: bool networks = 3;
+		 */
+		networks: boolean;
 
-  /**
-   * @generated from field: bool volumes = 4;
-   */
-  volumes: boolean;
+		/**
+		 * @generated from field: bool volumes = 4;
+		 */
+		volumes: boolean;
 
-  /**
-   * @generated from field: bool packages = 5;
-   */
-  packages: boolean;
-};
+		/**
+		 * @generated from field: bool packages = 5;
+		 */
+		packages: boolean;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerCleanupPolicy.
  * Use `create(ServerCleanupPolicySchema)` to create a new message.
  */
-export const ServerCleanupPolicySchema: GenMessage<ServerCleanupPolicy> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 0);
+export const ServerCleanupPolicySchema: GenMessage<ServerCleanupPolicy> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 0);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagement
  */
-export type ServerManagement = Message<"openoxide.api.v1.ServerManagement"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
+export type ServerManagement =
+	Message<'openoxide.api.v1.ServerManagement'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
 
-  /**
-   * @generated from field: bool maintenance_mode = 2;
-   */
-  maintenanceMode: boolean;
+		/**
+		 * @generated from field: bool maintenance_mode = 2;
+		 */
+		maintenanceMode: boolean;
 
-  /**
-   * @generated from field: optional string maintenance_message = 3;
-   */
-  maintenanceMessage?: string | undefined;
+		/**
+		 * @generated from field: optional string maintenance_message = 3;
+		 */
+		maintenanceMessage?: string | undefined;
 
-  /**
-   * @generated from field: map<string, string> labels = 4;
-   */
-  labels: { [key: string]: string };
+		/**
+		 * @generated from field: map<string, string> labels = 4;
+		 */
+		labels: {[key: string]: string};
 
-  /**
-   * @generated from field: openoxide.api.v1.ServerCleanupPolicy cleanup_policy = 5;
-   */
-  cleanupPolicy?: ServerCleanupPolicy | undefined;
+		/**
+		 * @generated from field: openoxide.api.v1.ServerCleanupPolicy cleanup_policy = 5;
+		 */
+		cleanupPolicy?: ServerCleanupPolicy | undefined;
 
-  /**
-   * @generated from field: bool gpu_enabled = 6;
-   */
-  gpuEnabled: boolean;
+		/**
+		 * @generated from field: bool gpu_enabled = 6;
+		 */
+		gpuEnabled: boolean;
 
-  /**
-   * @generated from field: int64 updated_at = 7;
-   */
-  updatedAt: bigint;
-};
+		/**
+		 * @generated from field: int64 updated_at = 7;
+		 */
+		updatedAt: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagement.
  * Use `create(ServerManagementSchema)` to create a new message.
  */
-export const ServerManagementSchema: GenMessage<ServerManagement> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 1);
+export const ServerManagementSchema: GenMessage<ServerManagement> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 1);
 
 /**
  * Generic remote-command outcome returned by repair/GPU/cleanup/upgrade/diagnostic runs.
  *
  * @generated from message openoxide.api.v1.ServerActionResult
  */
-export type ServerActionResult = Message<"openoxide.api.v1.ServerActionResult"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+export type ServerActionResult =
+	Message<'openoxide.api.v1.ServerActionResult'> & {
+		/**
+		 * @generated from field: bool success = 1;
+		 */
+		success: boolean;
 
-  /**
-   * @generated from field: string stdout = 2;
-   */
-  stdout: string;
+		/**
+		 * @generated from field: string stdout = 2;
+		 */
+		stdout: string;
 
-  /**
-   * @generated from field: string stderr = 3;
-   */
-  stderr: string;
-};
+		/**
+		 * @generated from field: string stderr = 3;
+		 */
+		stderr: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerActionResult.
  * Use `create(ServerActionResultSchema)` to create a new message.
  */
-export const ServerActionResultSchema: GenMessage<ServerActionResult> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 2);
+export const ServerActionResultSchema: GenMessage<ServerActionResult> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 2);
 
 /**
  * @generated from message openoxide.api.v1.ServerBackup
  */
-export type ServerBackup = Message<"openoxide.api.v1.ServerBackup"> & {
-  /**
-   * @generated from field: string remote_path = 1;
-   */
-  remotePath: string;
+export type ServerBackup = Message<'openoxide.api.v1.ServerBackup'> & {
+	/**
+	 * @generated from field: string remote_path = 1;
+	 */
+	remotePath: string;
 
-  /**
-   * @generated from field: int64 created_at = 2;
-   */
-  createdAt: bigint;
+	/**
+	 * @generated from field: int64 created_at = 2;
+	 */
+	createdAt: bigint;
 };
 
 /**
  * Describes the message openoxide.api.v1.ServerBackup.
  * Use `create(ServerBackupSchema)` to create a new message.
  */
-export const ServerBackupSchema: GenMessage<ServerBackup> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 3);
+export const ServerBackupSchema: GenMessage<ServerBackup> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 3);
 
 /**
  * @generated from message openoxide.api.v1.ServerCleanupExecution
  */
-export type ServerCleanupExecution = Message<"openoxide.api.v1.ServerCleanupExecution"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type ServerCleanupExecution =
+	Message<'openoxide.api.v1.ServerCleanupExecution'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: int64 server_id = 2;
-   */
-  serverId: bigint;
+		/**
+		 * @generated from field: int64 server_id = 2;
+		 */
+		serverId: bigint;
 
-  /**
-   * @generated from field: openoxide.api.v1.ServerCleanupStatus status = 3;
-   */
-  status: ServerCleanupStatus;
+		/**
+		 * @generated from field: openoxide.api.v1.ServerCleanupStatus status = 3;
+		 */
+		status: ServerCleanupStatus;
 
-  /**
-   * Cleanup policy snapshot as a JSON document.
-   *
-   * @generated from field: string policy = 4;
-   */
-  policy: string;
+		/**
+		 * Cleanup policy snapshot as a JSON document.
+		 *
+		 * @generated from field: string policy = 4;
+		 */
+		policy: string;
 
-  /**
-   * @generated from field: optional string stdout = 5;
-   */
-  stdout?: string | undefined;
+		/**
+		 * @generated from field: optional string stdout = 5;
+		 */
+		stdout?: string | undefined;
 
-  /**
-   * @generated from field: optional string stderr = 6;
-   */
-  stderr?: string | undefined;
+		/**
+		 * @generated from field: optional string stderr = 6;
+		 */
+		stderr?: string | undefined;
 
-  /**
-   * @generated from field: int64 started_at = 7;
-   */
-  startedAt: bigint;
+		/**
+		 * @generated from field: int64 started_at = 7;
+		 */
+		startedAt: bigint;
 
-  /**
-   * @generated from field: optional int64 finished_at = 8;
-   */
-  finishedAt?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 finished_at = 8;
+		 */
+		finishedAt?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerCleanupExecution.
  * Use `create(ServerCleanupExecutionSchema)` to create a new message.
  */
-export const ServerCleanupExecutionSchema: GenMessage<ServerCleanupExecution> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 4);
+export const ServerCleanupExecutionSchema: GenMessage<ServerCleanupExecution> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 4);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementGetRequest
  */
-export type ServerManagementGetRequest = Message<"openoxide.api.v1.ServerManagementGetRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ServerManagementGetRequest =
+	Message<'openoxide.api.v1.ServerManagementGetRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementGetRequest.
  * Use `create(ServerManagementGetRequestSchema)` to create a new message.
  */
-export const ServerManagementGetRequestSchema: GenMessage<ServerManagementGetRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 5);
+export const ServerManagementGetRequestSchema: GenMessage<ServerManagementGetRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 5);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementGetResponse
  */
-export type ServerManagementGetResponse = Message<"openoxide.api.v1.ServerManagementGetResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ServerManagement management = 1;
-   */
-  management?: ServerManagement | undefined;
-};
+export type ServerManagementGetResponse =
+	Message<'openoxide.api.v1.ServerManagementGetResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ServerManagement management = 1;
+		 */
+		management?: ServerManagement | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementGetResponse.
  * Use `create(ServerManagementGetResponseSchema)` to create a new message.
  */
-export const ServerManagementGetResponseSchema: GenMessage<ServerManagementGetResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 6);
+export const ServerManagementGetResponseSchema: GenMessage<ServerManagementGetResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 6);
 
 /**
  * Full replacement semantics (PUT): every field is required.
  *
  * @generated from message openoxide.api.v1.ServerManagementUpdateRequest
  */
-export type ServerManagementUpdateRequest = Message<"openoxide.api.v1.ServerManagementUpdateRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type ServerManagementUpdateRequest =
+	Message<'openoxide.api.v1.ServerManagementUpdateRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: bool maintenance_mode = 2;
-   */
-  maintenanceMode: boolean;
+		/**
+		 * @generated from field: bool maintenance_mode = 2;
+		 */
+		maintenanceMode: boolean;
 
-  /**
-   * @generated from field: optional string maintenance_message = 3;
-   */
-  maintenanceMessage?: string | undefined;
+		/**
+		 * @generated from field: optional string maintenance_message = 3;
+		 */
+		maintenanceMessage?: string | undefined;
 
-  /**
-   * @generated from field: map<string, string> labels = 4;
-   */
-  labels: { [key: string]: string };
+		/**
+		 * @generated from field: map<string, string> labels = 4;
+		 */
+		labels: {[key: string]: string};
 
-  /**
-   * @generated from field: openoxide.api.v1.ServerCleanupPolicy cleanup_policy = 5;
-   */
-  cleanupPolicy?: ServerCleanupPolicy | undefined;
+		/**
+		 * @generated from field: openoxide.api.v1.ServerCleanupPolicy cleanup_policy = 5;
+		 */
+		cleanupPolicy?: ServerCleanupPolicy | undefined;
 
-  /**
-   * @generated from field: bool gpu_enabled = 6;
-   */
-  gpuEnabled: boolean;
-};
+		/**
+		 * @generated from field: bool gpu_enabled = 6;
+		 */
+		gpuEnabled: boolean;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementUpdateRequest.
  * Use `create(ServerManagementUpdateRequestSchema)` to create a new message.
  */
-export const ServerManagementUpdateRequestSchema: GenMessage<ServerManagementUpdateRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 7);
+export const ServerManagementUpdateRequestSchema: GenMessage<ServerManagementUpdateRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 7);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementUpdateResponse
  */
-export type ServerManagementUpdateResponse = Message<"openoxide.api.v1.ServerManagementUpdateResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ServerManagement management = 1;
-   */
-  management?: ServerManagement | undefined;
-};
+export type ServerManagementUpdateResponse =
+	Message<'openoxide.api.v1.ServerManagementUpdateResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ServerManagement management = 1;
+		 */
+		management?: ServerManagement | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementUpdateResponse.
  * Use `create(ServerManagementUpdateResponseSchema)` to create a new message.
  */
-export const ServerManagementUpdateResponseSchema: GenMessage<ServerManagementUpdateResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 8);
+export const ServerManagementUpdateResponseSchema: GenMessage<ServerManagementUpdateResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 8);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementRepairAuditRequest
  */
-export type ServerManagementRepairAuditRequest = Message<"openoxide.api.v1.ServerManagementRepairAuditRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ServerManagementRepairAuditRequest =
+	Message<'openoxide.api.v1.ServerManagementRepairAuditRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementRepairAuditRequest.
  * Use `create(ServerManagementRepairAuditRequestSchema)` to create a new message.
  */
-export const ServerManagementRepairAuditRequestSchema: GenMessage<ServerManagementRepairAuditRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 9);
+export const ServerManagementRepairAuditRequestSchema: GenMessage<ServerManagementRepairAuditRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 9);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementRepairAuditResponse
  */
-export type ServerManagementRepairAuditResponse = Message<"openoxide.api.v1.ServerManagementRepairAuditResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ServerActionResult result = 1;
-   */
-  result?: ServerActionResult | undefined;
-};
+export type ServerManagementRepairAuditResponse =
+	Message<'openoxide.api.v1.ServerManagementRepairAuditResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ServerActionResult result = 1;
+		 */
+		result?: ServerActionResult | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementRepairAuditResponse.
  * Use `create(ServerManagementRepairAuditResponseSchema)` to create a new message.
  */
-export const ServerManagementRepairAuditResponseSchema: GenMessage<ServerManagementRepairAuditResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 10);
+export const ServerManagementRepairAuditResponseSchema: GenMessage<ServerManagementRepairAuditResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 10);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementConfigureGpuRequest
  */
-export type ServerManagementConfigureGpuRequest = Message<"openoxide.api.v1.ServerManagementConfigureGpuRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ServerManagementConfigureGpuRequest =
+	Message<'openoxide.api.v1.ServerManagementConfigureGpuRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementConfigureGpuRequest.
  * Use `create(ServerManagementConfigureGpuRequestSchema)` to create a new message.
  */
-export const ServerManagementConfigureGpuRequestSchema: GenMessage<ServerManagementConfigureGpuRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 11);
+export const ServerManagementConfigureGpuRequestSchema: GenMessage<ServerManagementConfigureGpuRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 11);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementConfigureGpuResponse
  */
-export type ServerManagementConfigureGpuResponse = Message<"openoxide.api.v1.ServerManagementConfigureGpuResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ServerActionResult result = 1;
-   */
-  result?: ServerActionResult | undefined;
-};
+export type ServerManagementConfigureGpuResponse =
+	Message<'openoxide.api.v1.ServerManagementConfigureGpuResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ServerActionResult result = 1;
+		 */
+		result?: ServerActionResult | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementConfigureGpuResponse.
  * Use `create(ServerManagementConfigureGpuResponseSchema)` to create a new message.
  */
-export const ServerManagementConfigureGpuResponseSchema: GenMessage<ServerManagementConfigureGpuResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 12);
+export const ServerManagementConfigureGpuResponseSchema: GenMessage<ServerManagementConfigureGpuResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 12);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementRunCleanupRequest
  */
-export type ServerManagementRunCleanupRequest = Message<"openoxide.api.v1.ServerManagementRunCleanupRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ServerManagementRunCleanupRequest =
+	Message<'openoxide.api.v1.ServerManagementRunCleanupRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementRunCleanupRequest.
  * Use `create(ServerManagementRunCleanupRequestSchema)` to create a new message.
  */
-export const ServerManagementRunCleanupRequestSchema: GenMessage<ServerManagementRunCleanupRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 13);
+export const ServerManagementRunCleanupRequestSchema: GenMessage<ServerManagementRunCleanupRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 13);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementRunCleanupResponse
  */
-export type ServerManagementRunCleanupResponse = Message<"openoxide.api.v1.ServerManagementRunCleanupResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ServerActionResult result = 1;
-   */
-  result?: ServerActionResult | undefined;
-};
+export type ServerManagementRunCleanupResponse =
+	Message<'openoxide.api.v1.ServerManagementRunCleanupResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ServerActionResult result = 1;
+		 */
+		result?: ServerActionResult | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementRunCleanupResponse.
  * Use `create(ServerManagementRunCleanupResponseSchema)` to create a new message.
  */
-export const ServerManagementRunCleanupResponseSchema: GenMessage<ServerManagementRunCleanupResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 14);
+export const ServerManagementRunCleanupResponseSchema: GenMessage<ServerManagementRunCleanupResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 14);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementListCleanupHistoryRequest
  */
-export type ServerManagementListCleanupHistoryRequest = Message<"openoxide.api.v1.ServerManagementListCleanupHistoryRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
-};
+export type ServerManagementListCleanupHistoryRequest =
+	Message<'openoxide.api.v1.ServerManagementListCleanupHistoryRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementListCleanupHistoryRequest.
  * Use `create(ServerManagementListCleanupHistoryRequestSchema)` to create a new message.
  */
-export const ServerManagementListCleanupHistoryRequestSchema: GenMessage<ServerManagementListCleanupHistoryRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 15);
+export const ServerManagementListCleanupHistoryRequestSchema: GenMessage<ServerManagementListCleanupHistoryRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 15);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementListCleanupHistoryResponse
  */
-export type ServerManagementListCleanupHistoryResponse = Message<"openoxide.api.v1.ServerManagementListCleanupHistoryResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.ServerCleanupExecution executions = 1;
-   */
-  executions: ServerCleanupExecution[];
-};
+export type ServerManagementListCleanupHistoryResponse =
+	Message<'openoxide.api.v1.ServerManagementListCleanupHistoryResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.ServerCleanupExecution executions = 1;
+		 */
+		executions: ServerCleanupExecution[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementListCleanupHistoryResponse.
  * Use `create(ServerManagementListCleanupHistoryResponseSchema)` to create a new message.
  */
-export const ServerManagementListCleanupHistoryResponseSchema: GenMessage<ServerManagementListCleanupHistoryResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 16);
+export const ServerManagementListCleanupHistoryResponseSchema: GenMessage<ServerManagementListCleanupHistoryResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 16);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementUpgradeRequest
  */
-export type ServerManagementUpgradeRequest = Message<"openoxide.api.v1.ServerManagementUpgradeRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ServerManagementUpgradeRequest =
+	Message<'openoxide.api.v1.ServerManagementUpgradeRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementUpgradeRequest.
  * Use `create(ServerManagementUpgradeRequestSchema)` to create a new message.
  */
-export const ServerManagementUpgradeRequestSchema: GenMessage<ServerManagementUpgradeRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 17);
+export const ServerManagementUpgradeRequestSchema: GenMessage<ServerManagementUpgradeRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 17);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementUpgradeResponse
  */
-export type ServerManagementUpgradeResponse = Message<"openoxide.api.v1.ServerManagementUpgradeResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ServerActionResult result = 1;
-   */
-  result?: ServerActionResult | undefined;
-};
+export type ServerManagementUpgradeResponse =
+	Message<'openoxide.api.v1.ServerManagementUpgradeResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ServerActionResult result = 1;
+		 */
+		result?: ServerActionResult | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementUpgradeResponse.
  * Use `create(ServerManagementUpgradeResponseSchema)` to create a new message.
  */
-export const ServerManagementUpgradeResponseSchema: GenMessage<ServerManagementUpgradeResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 18);
+export const ServerManagementUpgradeResponseSchema: GenMessage<ServerManagementUpgradeResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 18);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementBackupRequest
  */
-export type ServerManagementBackupRequest = Message<"openoxide.api.v1.ServerManagementBackupRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ServerManagementBackupRequest =
+	Message<'openoxide.api.v1.ServerManagementBackupRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementBackupRequest.
  * Use `create(ServerManagementBackupRequestSchema)` to create a new message.
  */
-export const ServerManagementBackupRequestSchema: GenMessage<ServerManagementBackupRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 19);
+export const ServerManagementBackupRequestSchema: GenMessage<ServerManagementBackupRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 19);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementBackupResponse
  */
-export type ServerManagementBackupResponse = Message<"openoxide.api.v1.ServerManagementBackupResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ServerBackup backup = 1;
-   */
-  backup?: ServerBackup | undefined;
-};
+export type ServerManagementBackupResponse =
+	Message<'openoxide.api.v1.ServerManagementBackupResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ServerBackup backup = 1;
+		 */
+		backup?: ServerBackup | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementBackupResponse.
  * Use `create(ServerManagementBackupResponseSchema)` to create a new message.
  */
-export const ServerManagementBackupResponseSchema: GenMessage<ServerManagementBackupResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 20);
+export const ServerManagementBackupResponseSchema: GenMessage<ServerManagementBackupResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 20);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementDiagnosticsRequest
  */
-export type ServerManagementDiagnosticsRequest = Message<"openoxide.api.v1.ServerManagementDiagnosticsRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type ServerManagementDiagnosticsRequest =
+	Message<'openoxide.api.v1.ServerManagementDiagnosticsRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementDiagnosticsRequest.
  * Use `create(ServerManagementDiagnosticsRequestSchema)` to create a new message.
  */
-export const ServerManagementDiagnosticsRequestSchema: GenMessage<ServerManagementDiagnosticsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 21);
+export const ServerManagementDiagnosticsRequestSchema: GenMessage<ServerManagementDiagnosticsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 21);
 
 /**
  * @generated from message openoxide.api.v1.ServerManagementDiagnosticsResponse
  */
-export type ServerManagementDiagnosticsResponse = Message<"openoxide.api.v1.ServerManagementDiagnosticsResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.ServerActionResult result = 1;
-   */
-  result?: ServerActionResult | undefined;
-};
+export type ServerManagementDiagnosticsResponse =
+	Message<'openoxide.api.v1.ServerManagementDiagnosticsResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.ServerActionResult result = 1;
+		 */
+		result?: ServerActionResult | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.ServerManagementDiagnosticsResponse.
  * Use `create(ServerManagementDiagnosticsResponseSchema)` to create a new message.
  */
-export const ServerManagementDiagnosticsResponseSchema: GenMessage<ServerManagementDiagnosticsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_server_management, 22);
+export const ServerManagementDiagnosticsResponseSchema: GenMessage<ServerManagementDiagnosticsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_server_management, 22);
 
 /**
  * Closed set: cleanup executions are finished with exactly one of the two literals written by `ServerCleanupService::run`.
@@ -541,104 +576,102 @@ export const ServerManagementDiagnosticsResponseSchema: GenMessage<ServerManagem
  * @generated from enum openoxide.api.v1.ServerCleanupStatus
  */
 export enum ServerCleanupStatus {
-  /**
-   * @generated from enum value: SERVER_CLEANUP_STATUS_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: SERVER_CLEANUP_STATUS_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: SERVER_CLEANUP_STATUS_SUCCEEDED = 1;
-   */
-  SUCCEEDED = 1,
+	/**
+	 * @generated from enum value: SERVER_CLEANUP_STATUS_SUCCEEDED = 1;
+	 */
+	SUCCEEDED = 1,
 
-  /**
-   * @generated from enum value: SERVER_CLEANUP_STATUS_FAILED = 2;
-   */
-  FAILED = 2,
+	/**
+	 * @generated from enum value: SERVER_CLEANUP_STATUS_FAILED = 2;
+	 */
+	FAILED = 2,
 }
 
 /**
  * Describes the enum openoxide.api.v1.ServerCleanupStatus.
  */
-export const ServerCleanupStatusSchema: GenEnum<ServerCleanupStatus> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_server_management, 0);
+export const ServerCleanupStatusSchema: GenEnum<ServerCleanupStatus> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_server_management, 0);
 
 /**
  * @generated from service openoxide.api.v1.ServerManagementService
  */
 export const ServerManagementService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.ServerManagementService.GetManagement
-   */
-  getManagement: {
-    methodKind: "unary";
-    input: typeof ServerManagementGetRequestSchema;
-    output: typeof ServerManagementGetResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerManagementService.UpdateManagement
-   */
-  updateManagement: {
-    methodKind: "unary";
-    input: typeof ServerManagementUpdateRequestSchema;
-    output: typeof ServerManagementUpdateResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerManagementService.RepairAudit
-   */
-  repairAudit: {
-    methodKind: "unary";
-    input: typeof ServerManagementRepairAuditRequestSchema;
-    output: typeof ServerManagementRepairAuditResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerManagementService.ConfigureGpu
-   */
-  configureGpu: {
-    methodKind: "unary";
-    input: typeof ServerManagementConfigureGpuRequestSchema;
-    output: typeof ServerManagementConfigureGpuResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerManagementService.RunCleanup
-   */
-  runCleanup: {
-    methodKind: "unary";
-    input: typeof ServerManagementRunCleanupRequestSchema;
-    output: typeof ServerManagementRunCleanupResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerManagementService.ListCleanupHistory
-   */
-  listCleanupHistory: {
-    methodKind: "unary";
-    input: typeof ServerManagementListCleanupHistoryRequestSchema;
-    output: typeof ServerManagementListCleanupHistoryResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerManagementService.Upgrade
-   */
-  upgrade: {
-    methodKind: "unary";
-    input: typeof ServerManagementUpgradeRequestSchema;
-    output: typeof ServerManagementUpgradeResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerManagementService.Backup
-   */
-  backup: {
-    methodKind: "unary";
-    input: typeof ServerManagementBackupRequestSchema;
-    output: typeof ServerManagementBackupResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.ServerManagementService.Diagnostics
-   */
-  diagnostics: {
-    methodKind: "unary";
-    input: typeof ServerManagementDiagnosticsRequestSchema;
-    output: typeof ServerManagementDiagnosticsResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_server_management, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.ServerManagementService.GetManagement
+	 */
+	getManagement: {
+		methodKind: 'unary';
+		input: typeof ServerManagementGetRequestSchema;
+		output: typeof ServerManagementGetResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ServerManagementService.UpdateManagement
+	 */
+	updateManagement: {
+		methodKind: 'unary';
+		input: typeof ServerManagementUpdateRequestSchema;
+		output: typeof ServerManagementUpdateResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ServerManagementService.RepairAudit
+	 */
+	repairAudit: {
+		methodKind: 'unary';
+		input: typeof ServerManagementRepairAuditRequestSchema;
+		output: typeof ServerManagementRepairAuditResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ServerManagementService.ConfigureGpu
+	 */
+	configureGpu: {
+		methodKind: 'unary';
+		input: typeof ServerManagementConfigureGpuRequestSchema;
+		output: typeof ServerManagementConfigureGpuResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ServerManagementService.RunCleanup
+	 */
+	runCleanup: {
+		methodKind: 'unary';
+		input: typeof ServerManagementRunCleanupRequestSchema;
+		output: typeof ServerManagementRunCleanupResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ServerManagementService.ListCleanupHistory
+	 */
+	listCleanupHistory: {
+		methodKind: 'unary';
+		input: typeof ServerManagementListCleanupHistoryRequestSchema;
+		output: typeof ServerManagementListCleanupHistoryResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ServerManagementService.Upgrade
+	 */
+	upgrade: {
+		methodKind: 'unary';
+		input: typeof ServerManagementUpgradeRequestSchema;
+		output: typeof ServerManagementUpgradeResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ServerManagementService.Backup
+	 */
+	backup: {
+		methodKind: 'unary';
+		input: typeof ServerManagementBackupRequestSchema;
+		output: typeof ServerManagementBackupResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.ServerManagementService.Diagnostics
+	 */
+	diagnostics: {
+		methodKind: 'unary';
+		input: typeof ServerManagementDiagnosticsRequestSchema;
+		output: typeof ServerManagementDiagnosticsResponseSchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_server_management, 0);

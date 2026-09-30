@@ -102,7 +102,7 @@ impl SystemCollector {
         };
 
         // Report the host root filesystem. Summing every mount double-counts
-        // one device; match Dokploy's `df /`. When the agent runs in a
+ // one device; match the standard `df /`. When the agent runs in a
         // container the host root is bind-mounted at `/host` (see the agent
         // compose), so prefer that, then `/`, then the largest device.
         let disk_for = |mount: &str| {

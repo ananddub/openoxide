@@ -123,23 +123,13 @@ export function VaultTypeFields({
 					return (
 						<WizardField
 							key={name}
-							label={
-								optional
-									? label.slice(0, -11)
-									: label
-							}
+							label={optional ? label.slice(0, -11) : label}
 							optional={optional}>
 							<Input
-								type={
-									isSecretField(name)
-										? 'password'
-										: 'text'
-								}
+								type={isSecretField(name) ? 'password' : 'text'}
 								placeholder={placeholder}
 								value={field(name)}
-								onChange={e =>
-									setField(name, e.target.value)
-								}
+								onChange={e => setField(name, e.target.value)}
 								className="font-mono"
 							/>
 						</WizardField>

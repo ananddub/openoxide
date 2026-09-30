@@ -2,1031 +2,1082 @@
 // @generated from file openoxide/api/v1/monitoring.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { EmptySchema } from "./common_pb";
-import { file_openoxide_api_v1_common } from "./common_pb";
-import { file_buf_validate_validate } from "../../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+	GenEnum,
+	GenFile,
+	GenMessage,
+	GenService,
+} from '@bufbuild/protobuf/codegenv2';
+import {
+	enumDesc,
+	fileDesc,
+	messageDesc,
+	serviceDesc,
+} from '@bufbuild/protobuf/codegenv2';
+import type {EmptySchema} from './common_pb';
+import {file_openoxide_api_v1_common} from './common_pb';
+import {file_buf_validate_validate} from '../../../buf/validate/validate_pb';
+import type {Message} from '@bufbuild/protobuf';
 
 /**
  * Describes the file openoxide/api/v1/monitoring.proto.
  */
-export const file_openoxide_api_v1_monitoring: GenFile = /*@__PURE__*/
-  fileDesc("CiFvcGVub3hpZGUvYXBpL3YxL21vbml0b3JpbmcucHJvdG8SEG9wZW5veGlkZS5hcGkudjEihwMKFk1vbml0b3JpbmdTZXJ2ZXJNZXRyaWMSFgoJdGltZXN0YW1wGAEgASgDSACIAQESEQoJc2VydmVyX2lkGAIgASgDEgsKA2NwdRgDIAEoARIRCgljcHVfbW9kZWwYBCABKAkSEQoJY3B1X2NvcmVzGAUgASgDEhoKEmNwdV9waHlzaWNhbF9jb3JlcxgGIAEoAxIRCgljcHVfc3BlZWQYByABKAESCgoCb3MYCCABKAkSDgoGZGlzdHJvGAkgASgJEg4KBmtlcm5lbBgKIAEoCRIMCgRhcmNoGAsgASgJEhAKCG1lbV91c2VkGAwgASgBEhMKC21lbV91c2VkX2diGA0gASgBEhEKCW1lbV90b3RhbBgOIAEoARIOCgZ1cHRpbWUYDyABKAMSEQoJZGlza191c2VkGBAgASgBEhIKCnRvdGFsX2Rpc2sYESABKAESEgoKbmV0d29ya19pbhgSIAEoARITCgtuZXR3b3JrX291dBgTIAEoAUIMCgpfdGltZXN0YW1wItEBChhNb25pdG9yaW5nQ29udGFpbmVyU3RhdHMSEwoLY3B1X3BlcmNlbnQYASABKAESFgoObWVtb3J5X3BlcmNlbnQYAiABKAESFgoObWVtb3J5X3VzZWRfbWIYAyABKAESFwoPbWVtb3J5X2xpbWl0X21iGAQgASgBEhMKC25ldF9yeF9rYnBzGAUgASgBEhMKC25ldF90eF9rYnBzGAYgASgBEhUKDWJsb2NrX3JlYWRfbWIYByABKAESFgoOYmxvY2tfd3JpdGVfbWIYCCABKAEimgIKGU1vbml0b3JpbmdDb250YWluZXJNZXRyaWMSDwoCaWQYASABKANIAIgBARIRCgl0aW1lc3RhbXAYAiABKAMSFAoMY29udGFpbmVyX2lkGAMgASgJEhYKDmNvbnRhaW5lcl9uYW1lGAQgASgJEjkKBXN0YXRzGAUgASgLMioub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nQ29udGFpbmVyU3RhdHMSEQoJc2VydmVyX2lkGAYgASgDEhsKDmFwcGxpY2F0aW9uX2lkGAcgASgDSAGIAQESFwoKY29tcG9zZV9pZBgIIAEoA0gCiAEBQgUKA19pZEIRCg9fYXBwbGljYXRpb25faWRCDQoLX2NvbXBvc2VfaWQiuwEKGE1vbml0b3JpbmdDb250YWluZXJTdGF0ZRIUCgxjb250YWluZXJfaWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVzdGF0ZRgDIAEoCRIOCgZzdGF0dXMYBCABKAkSFgoOYXBwbGljYXRpb25faWQYBSABKAMSEgoKY29tcG9zZV9pZBgGIAEoAxIXCg9jb21wb3NlX3Byb2plY3QYByABKAkSFwoPY29tcG9zZV9zZXJ2aWNlGAggASgJItQBChVNb25pdG9yaW5nQWdlbnRTdGF0dXMSEQoJc2VydmVyX2lkGAEgASgDEhcKD29yZ2FuaXphdGlvbl9pZBgCIAEoAxIZCgxsYXN0X3NlZW5fYXQYAyABKANIAIgBARIaCg1hZ2VudF92ZXJzaW9uGAQgASgJSAGIAQESNQoFc3RhdGUYBSABKA4yJi5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdBZ2VudFN0YXRlQg8KDV9sYXN0X3NlZW5fYXRCEAoOX2FnZW50X3ZlcnNpb24iSQoVTW9uaXRvcmluZ0FnZW50QWN0aW9uEg4KBmFjdGlvbhgBIAEoCRIPCgdzdWNjZXNzGAIgASgIEg8KB21lc3NhZ2UYAyABKAkisAEKG01vbml0b3JpbmdNYWludGVuYW5jZVdpbmRvdxIKCgJpZBgBIAEoAxIXCg9vcmdhbml6YXRpb25faWQYAiABKAMSFgoJc2VydmVyX2lkGAMgASgDSACIAQESEQoJc3RhcnRzX2F0GAQgASgDEg8KB2VuZHNfYXQYBSABKAMSDgoGcmVhc29uGAYgASgJEhIKCmNyZWF0ZWRfYXQYByABKANCDAoKX3NlcnZlcl9pZCIzChxNb25pdG9yaW5nR2V0T3ZlcnZpZXdSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIjIKG01vbml0b3JpbmdHZXRNZXRyaWNzUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACI5CiJNb25pdG9yaW5nR2V0Q29udGFpbmVyU3RhdGVSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIiIKIE1vbml0b3JpbmdHZXRMb2NhbE1ldHJpY3NSZXF1ZXN0IlcKIU1vbml0b3JpbmdHZXRMb2NhbE1ldHJpY3NSZXNwb25zZRIOCgZzdGF0dXMYASABKAkSDwoHc2VydmljZRgCIAEoCRIRCgllbmRwb2ludHMYAyADKAkiPwohTW9uaXRvcmluZ0dldFNlcnZlck1ldHJpY3NSZXF1ZXN0EhoKCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgACJfCiJNb25pdG9yaW5nR2V0U2VydmVyTWV0cmljc1Jlc3BvbnNlEjkKB21ldHJpY3MYASADKAsyKC5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdTZXJ2ZXJNZXRyaWMivAEKJE1vbml0b3JpbmdHZXRDb250YWluZXJNZXRyaWNzUmVxdWVzdBIaCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIAASIAoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAAEh8KCGFwcF9uYW1lGAMgASgJQgi6SAVyAxj/AUgAiAEBEh4KBWxpbWl0GAQgASgDQgq6SAciBRjoBygBSAGIAQFCCwoJX2FwcF9uYW1lQggKBl9saW1pdCJlCiVNb25pdG9yaW5nR2V0Q29udGFpbmVyTWV0cmljc1Jlc3BvbnNlEjwKB21ldHJpY3MYASADKAsyKy5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdDb250YWluZXJNZXRyaWMiQQojTW9uaXRvcmluZ0dldENvbnRhaW5lclN0YXRlc1JlcXVlc3QSGgoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAAImIKJE1vbml0b3JpbmdHZXRDb250YWluZXJTdGF0ZXNSZXNwb25zZRI6CgZzdGF0ZXMYASADKAsyKi5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdDb250YWluZXJTdGF0ZSJhCiFNb25pdG9yaW5nQ3JlYXRlQWdlbnRUb2tlblJlcXVlc3QSGgoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAAEiAKD29yZ2FuaXphdGlvbl9pZBgCIAEoA0IHukgEIgIgACJfCiJNb25pdG9yaW5nQ3JlYXRlQWdlbnRUb2tlblJlc3BvbnNlEhEKCXNlcnZlcl9pZBgBIAEoAxIXCg9vcmdhbml6YXRpb25faWQYAiABKAMSDQoFdG9rZW4YAyABKAkiPQofTW9uaXRvcmluZ0dldEFnZW50U3RhdHVzUmVxdWVzdBIaCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIAAiWwogTW9uaXRvcmluZ0dldEFnZW50U3RhdHVzUmVzcG9uc2USNwoGc3RhdHVzGAEgASgLMicub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nQWdlbnRTdGF0dXMiOQobTW9uaXRvcmluZ1N0YXJ0QWdlbnRSZXF1ZXN0EhoKCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgACJXChxNb25pdG9yaW5nU3RhcnRBZ2VudFJlc3BvbnNlEjcKBmFjdGlvbhgBIAEoCzInLm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0FnZW50QWN0aW9uIjgKGk1vbml0b3JpbmdTdG9wQWdlbnRSZXF1ZXN0EhoKCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgACJWChtNb25pdG9yaW5nU3RvcEFnZW50UmVzcG9uc2USNwoGYWN0aW9uGAEgASgLMicub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nQWdlbnRBY3Rpb24iOwodTW9uaXRvcmluZ1Jlc3RhcnRBZ2VudFJlcXVlc3QSGgoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAAIlkKHk1vbml0b3JpbmdSZXN0YXJ0QWdlbnRSZXNwb25zZRI3CgZhY3Rpb24YASABKAsyJy5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdBZ2VudEFjdGlvbiI9Ch9Nb25pdG9yaW5nUmVpbnN0YWxsQWdlbnRSZXF1ZXN0EhoKCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgACJbCiBNb25pdG9yaW5nUmVpbnN0YWxsQWdlbnRSZXNwb25zZRI3CgZhY3Rpb24YASABKAsyJy5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdBZ2VudEFjdGlvbiJCCiRNb25pdG9yaW5nRXhwb3J0U2VydmVyTWV0cmljc1JlcXVlc3QSGgoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAAIjQKJU1vbml0b3JpbmdFeHBvcnRTZXJ2ZXJNZXRyaWNzUmVzcG9uc2USCwoDY3N2GAEgASgJIkMKJU1vbml0b3JpbmdHZXRQcm9tZXRoZXVzTWV0cmljc1JlcXVlc3QSGgoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAAIkEKJk1vbml0b3JpbmdHZXRQcm9tZXRoZXVzTWV0cmljc1Jlc3BvbnNlEhcKD3Byb21ldGhldXNfdGV4dBgBIAEoCSLUAQooTW9uaXRvcmluZ0NyZWF0ZU1haW50ZW5hbmNlV2luZG93UmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARIRCglzdGFydHNfYXQYAiABKAMSDwoHZW5kc19hdBgDIAEoAxIaCgZyZWFzb24YBCABKAlCCrpIB3IFEAEY6AcSJQoPb3JnYW5pemF0aW9uX2lkGAUgASgDQge6SAQiAiAASAGIAQFCDAoKX3NlcnZlcl9pZEISChBfb3JnYW5pemF0aW9uX2lkIjcKKU1vbml0b3JpbmdDcmVhdGVNYWludGVuYW5jZVdpbmRvd1Jlc3BvbnNlEgoKAmlkGAEgASgDIrcBCidNb25pdG9yaW5nTGlzdE1haW50ZW5hbmNlV2luZG93c1JlcXVlc3QSJQoPb3JnYW5pemF0aW9uX2lkGAEgASgDQge6SAQiAiAASACIAQESHgoFbGltaXQYAiABKANCCrpIByIFGOgHKAFIAYgBARIcCgZvZmZzZXQYAyABKANCB7pIBCICKABIAogBAUISChBfb3JnYW5pemF0aW9uX2lkQggKBl9saW1pdEIJCgdfb2Zmc2V0ImoKKE1vbml0b3JpbmdMaXN0TWFpbnRlbmFuY2VXaW5kb3dzUmVzcG9uc2USPgoHd2luZG93cxgBIAMoCzItLm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ01haW50ZW5hbmNlV2luZG93InoKKE1vbml0b3JpbmdEZWxldGVNYWludGVuYW5jZVdpbmRvd1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASJQoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCqsAQoUTW9uaXRvcmluZ0FnZW50U3RhdGUSJgoiTU9OSVRPUklOR19BR0VOVF9TVEFURV9VTlNQRUNJRklFRBAAEiEKHU1PTklUT1JJTkdfQUdFTlRfU1RBVEVfT05MSU5FEAESIgoeTU9OSVRPUklOR19BR0VOVF9TVEFURV9PRkZMSU5FEAISJQohTU9OSVRPUklOR19BR0VOVF9TVEFURV9ORVZFUl9TRUVOEAMylhEKEU1vbml0b3JpbmdTZXJ2aWNlElYKC0dldE92ZXJ2aWV3Ei4ub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nR2V0T3ZlcnZpZXdSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJUCgpHZXRNZXRyaWNzEi0ub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nR2V0TWV0cmljc1JlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EmIKEUdldENvbnRhaW5lclN0YXRlEjQub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nR2V0Q29udGFpbmVyU3RhdGVSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJ6Cg9HZXRMb2NhbE1ldHJpY3MSMi5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdHZXRMb2NhbE1ldHJpY3NSZXF1ZXN0GjMub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nR2V0TG9jYWxNZXRyaWNzUmVzcG9uc2USfQoQR2V0U2VydmVyTWV0cmljcxIzLm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0dldFNlcnZlck1ldHJpY3NSZXF1ZXN0GjQub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nR2V0U2VydmVyTWV0cmljc1Jlc3BvbnNlEoYBChNHZXRDb250YWluZXJNZXRyaWNzEjYub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nR2V0Q29udGFpbmVyTWV0cmljc1JlcXVlc3QaNy5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdHZXRDb250YWluZXJNZXRyaWNzUmVzcG9uc2USgwEKEkdldENvbnRhaW5lclN0YXRlcxI1Lm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0dldENvbnRhaW5lclN0YXRlc1JlcXVlc3QaNi5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdHZXRDb250YWluZXJTdGF0ZXNSZXNwb25zZRJ9ChBDcmVhdGVBZ2VudFRva2VuEjMub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nQ3JlYXRlQWdlbnRUb2tlblJlcXVlc3QaNC5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdDcmVhdGVBZ2VudFRva2VuUmVzcG9uc2USdwoOR2V0QWdlbnRTdGF0dXMSMS5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdHZXRBZ2VudFN0YXR1c1JlcXVlc3QaMi5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdHZXRBZ2VudFN0YXR1c1Jlc3BvbnNlEmsKClN0YXJ0QWdlbnQSLS5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdTdGFydEFnZW50UmVxdWVzdBouLm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ1N0YXJ0QWdlbnRSZXNwb25zZRJoCglTdG9wQWdlbnQSLC5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdTdG9wQWdlbnRSZXF1ZXN0Gi0ub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nU3RvcEFnZW50UmVzcG9uc2UScQoMUmVzdGFydEFnZW50Ei8ub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nUmVzdGFydEFnZW50UmVxdWVzdBowLm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ1Jlc3RhcnRBZ2VudFJlc3BvbnNlEncKDlJlaW5zdGFsbEFnZW50EjEub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nUmVpbnN0YWxsQWdlbnRSZXF1ZXN0GjIub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nUmVpbnN0YWxsQWdlbnRSZXNwb25zZRKGAQoTRXhwb3J0U2VydmVyTWV0cmljcxI2Lm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0V4cG9ydFNlcnZlck1ldHJpY3NSZXF1ZXN0Gjcub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nRXhwb3J0U2VydmVyTWV0cmljc1Jlc3BvbnNlEokBChRHZXRQcm9tZXRoZXVzTWV0cmljcxI3Lm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0dldFByb21ldGhldXNNZXRyaWNzUmVxdWVzdBo4Lm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0dldFByb21ldGhldXNNZXRyaWNzUmVzcG9uc2USkgEKF0NyZWF0ZU1haW50ZW5hbmNlV2luZG93Ejoub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nQ3JlYXRlTWFpbnRlbmFuY2VXaW5kb3dSZXF1ZXN0Gjsub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nQ3JlYXRlTWFpbnRlbmFuY2VXaW5kb3dSZXNwb25zZRKPAQoWTGlzdE1haW50ZW5hbmNlV2luZG93cxI5Lm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0xpc3RNYWludGVuYW5jZVdpbmRvd3NSZXF1ZXN0Gjoub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nTGlzdE1haW50ZW5hbmNlV2luZG93c1Jlc3BvbnNlEm4KF0RlbGV0ZU1haW50ZW5hbmNlV2luZG93Ejoub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nRGVsZXRlTWFpbnRlbmFuY2VXaW5kb3dSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z", [file_openoxide_api_v1_common, file_buf_validate_validate]);
+export const file_openoxide_api_v1_monitoring: GenFile /*@__PURE__*/ =
+	fileDesc(
+		'CiFvcGVub3hpZGUvYXBpL3YxL21vbml0b3JpbmcucHJvdG8SEG9wZW5veGlkZS5hcGkudjEihwMKFk1vbml0b3JpbmdTZXJ2ZXJNZXRyaWMSFgoJdGltZXN0YW1wGAEgASgDSACIAQESEQoJc2VydmVyX2lkGAIgASgDEgsKA2NwdRgDIAEoARIRCgljcHVfbW9kZWwYBCABKAkSEQoJY3B1X2NvcmVzGAUgASgDEhoKEmNwdV9waHlzaWNhbF9jb3JlcxgGIAEoAxIRCgljcHVfc3BlZWQYByABKAESCgoCb3MYCCABKAkSDgoGZGlzdHJvGAkgASgJEg4KBmtlcm5lbBgKIAEoCRIMCgRhcmNoGAsgASgJEhAKCG1lbV91c2VkGAwgASgBEhMKC21lbV91c2VkX2diGA0gASgBEhEKCW1lbV90b3RhbBgOIAEoARIOCgZ1cHRpbWUYDyABKAMSEQoJZGlza191c2VkGBAgASgBEhIKCnRvdGFsX2Rpc2sYESABKAESEgoKbmV0d29ya19pbhgSIAEoARITCgtuZXR3b3JrX291dBgTIAEoAUIMCgpfdGltZXN0YW1wItEBChhNb25pdG9yaW5nQ29udGFpbmVyU3RhdHMSEwoLY3B1X3BlcmNlbnQYASABKAESFgoObWVtb3J5X3BlcmNlbnQYAiABKAESFgoObWVtb3J5X3VzZWRfbWIYAyABKAESFwoPbWVtb3J5X2xpbWl0X21iGAQgASgBEhMKC25ldF9yeF9rYnBzGAUgASgBEhMKC25ldF90eF9rYnBzGAYgASgBEhUKDWJsb2NrX3JlYWRfbWIYByABKAESFgoOYmxvY2tfd3JpdGVfbWIYCCABKAEimgIKGU1vbml0b3JpbmdDb250YWluZXJNZXRyaWMSDwoCaWQYASABKANIAIgBARIRCgl0aW1lc3RhbXAYAiABKAMSFAoMY29udGFpbmVyX2lkGAMgASgJEhYKDmNvbnRhaW5lcl9uYW1lGAQgASgJEjkKBXN0YXRzGAUgASgLMioub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nQ29udGFpbmVyU3RhdHMSEQoJc2VydmVyX2lkGAYgASgDEhsKDmFwcGxpY2F0aW9uX2lkGAcgASgDSAGIAQESFwoKY29tcG9zZV9pZBgIIAEoA0gCiAEBQgUKA19pZEIRCg9fYXBwbGljYXRpb25faWRCDQoLX2NvbXBvc2VfaWQiuwEKGE1vbml0b3JpbmdDb250YWluZXJTdGF0ZRIUCgxjb250YWluZXJfaWQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVzdGF0ZRgDIAEoCRIOCgZzdGF0dXMYBCABKAkSFgoOYXBwbGljYXRpb25faWQYBSABKAMSEgoKY29tcG9zZV9pZBgGIAEoAxIXCg9jb21wb3NlX3Byb2plY3QYByABKAkSFwoPY29tcG9zZV9zZXJ2aWNlGAggASgJItQBChVNb25pdG9yaW5nQWdlbnRTdGF0dXMSEQoJc2VydmVyX2lkGAEgASgDEhcKD29yZ2FuaXphdGlvbl9pZBgCIAEoAxIZCgxsYXN0X3NlZW5fYXQYAyABKANIAIgBARIaCg1hZ2VudF92ZXJzaW9uGAQgASgJSAGIAQESNQoFc3RhdGUYBSABKA4yJi5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdBZ2VudFN0YXRlQg8KDV9sYXN0X3NlZW5fYXRCEAoOX2FnZW50X3ZlcnNpb24iSQoVTW9uaXRvcmluZ0FnZW50QWN0aW9uEg4KBmFjdGlvbhgBIAEoCRIPCgdzdWNjZXNzGAIgASgIEg8KB21lc3NhZ2UYAyABKAkisAEKG01vbml0b3JpbmdNYWludGVuYW5jZVdpbmRvdxIKCgJpZBgBIAEoAxIXCg9vcmdhbml6YXRpb25faWQYAiABKAMSFgoJc2VydmVyX2lkGAMgASgDSACIAQESEQoJc3RhcnRzX2F0GAQgASgDEg8KB2VuZHNfYXQYBSABKAMSDgoGcmVhc29uGAYgASgJEhIKCmNyZWF0ZWRfYXQYByABKANCDAoKX3NlcnZlcl9pZCIzChxNb25pdG9yaW5nR2V0T3ZlcnZpZXdSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIjIKG01vbml0b3JpbmdHZXRNZXRyaWNzUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgACI5CiJNb25pdG9yaW5nR2V0Q29udGFpbmVyU3RhdGVSZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAIiIKIE1vbml0b3JpbmdHZXRMb2NhbE1ldHJpY3NSZXF1ZXN0IlcKIU1vbml0b3JpbmdHZXRMb2NhbE1ldHJpY3NSZXNwb25zZRIOCgZzdGF0dXMYASABKAkSDwoHc2VydmljZRgCIAEoCRIRCgllbmRwb2ludHMYAyADKAkiPwohTW9uaXRvcmluZ0dldFNlcnZlck1ldHJpY3NSZXF1ZXN0EhoKCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgACJfCiJNb25pdG9yaW5nR2V0U2VydmVyTWV0cmljc1Jlc3BvbnNlEjkKB21ldHJpY3MYASADKAsyKC5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdTZXJ2ZXJNZXRyaWMivAEKJE1vbml0b3JpbmdHZXRDb250YWluZXJNZXRyaWNzUmVxdWVzdBIaCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIAASIAoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAAEh8KCGFwcF9uYW1lGAMgASgJQgi6SAVyAxj/AUgAiAEBEh4KBWxpbWl0GAQgASgDQgq6SAciBRjoBygBSAGIAQFCCwoJX2FwcF9uYW1lQggKBl9saW1pdCJlCiVNb25pdG9yaW5nR2V0Q29udGFpbmVyTWV0cmljc1Jlc3BvbnNlEjwKB21ldHJpY3MYASADKAsyKy5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdDb250YWluZXJNZXRyaWMiQQojTW9uaXRvcmluZ0dldENvbnRhaW5lclN0YXRlc1JlcXVlc3QSGgoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAAImIKJE1vbml0b3JpbmdHZXRDb250YWluZXJTdGF0ZXNSZXNwb25zZRI6CgZzdGF0ZXMYASADKAsyKi5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdDb250YWluZXJTdGF0ZSJhCiFNb25pdG9yaW5nQ3JlYXRlQWdlbnRUb2tlblJlcXVlc3QSGgoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAAEiAKD29yZ2FuaXphdGlvbl9pZBgCIAEoA0IHukgEIgIgACJfCiJNb25pdG9yaW5nQ3JlYXRlQWdlbnRUb2tlblJlc3BvbnNlEhEKCXNlcnZlcl9pZBgBIAEoAxIXCg9vcmdhbml6YXRpb25faWQYAiABKAMSDQoFdG9rZW4YAyABKAkiPQofTW9uaXRvcmluZ0dldEFnZW50U3RhdHVzUmVxdWVzdBIaCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIAAiWwogTW9uaXRvcmluZ0dldEFnZW50U3RhdHVzUmVzcG9uc2USNwoGc3RhdHVzGAEgASgLMicub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nQWdlbnRTdGF0dXMiOQobTW9uaXRvcmluZ1N0YXJ0QWdlbnRSZXF1ZXN0EhoKCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgACJXChxNb25pdG9yaW5nU3RhcnRBZ2VudFJlc3BvbnNlEjcKBmFjdGlvbhgBIAEoCzInLm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0FnZW50QWN0aW9uIjgKGk1vbml0b3JpbmdTdG9wQWdlbnRSZXF1ZXN0EhoKCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgACJWChtNb25pdG9yaW5nU3RvcEFnZW50UmVzcG9uc2USNwoGYWN0aW9uGAEgASgLMicub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nQWdlbnRBY3Rpb24iOwodTW9uaXRvcmluZ1Jlc3RhcnRBZ2VudFJlcXVlc3QSGgoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAAIlkKHk1vbml0b3JpbmdSZXN0YXJ0QWdlbnRSZXNwb25zZRI3CgZhY3Rpb24YASABKAsyJy5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdBZ2VudEFjdGlvbiI9Ch9Nb25pdG9yaW5nUmVpbnN0YWxsQWdlbnRSZXF1ZXN0EhoKCXNlcnZlcl9pZBgBIAEoA0IHukgEIgIgACJbCiBNb25pdG9yaW5nUmVpbnN0YWxsQWdlbnRSZXNwb25zZRI3CgZhY3Rpb24YASABKAsyJy5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdBZ2VudEFjdGlvbiJCCiRNb25pdG9yaW5nRXhwb3J0U2VydmVyTWV0cmljc1JlcXVlc3QSGgoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAAIjQKJU1vbml0b3JpbmdFeHBvcnRTZXJ2ZXJNZXRyaWNzUmVzcG9uc2USCwoDY3N2GAEgASgJIkMKJU1vbml0b3JpbmdHZXRQcm9tZXRoZXVzTWV0cmljc1JlcXVlc3QSGgoJc2VydmVyX2lkGAEgASgDQge6SAQiAiAAIkEKJk1vbml0b3JpbmdHZXRQcm9tZXRoZXVzTWV0cmljc1Jlc3BvbnNlEhcKD3Byb21ldGhldXNfdGV4dBgBIAEoCSLUAQooTW9uaXRvcmluZ0NyZWF0ZU1haW50ZW5hbmNlV2luZG93UmVxdWVzdBIfCglzZXJ2ZXJfaWQYASABKANCB7pIBCICIABIAIgBARIRCglzdGFydHNfYXQYAiABKAMSDwoHZW5kc19hdBgDIAEoAxIaCgZyZWFzb24YBCABKAlCCrpIB3IFEAEY6AcSJQoPb3JnYW5pemF0aW9uX2lkGAUgASgDQge6SAQiAiAASAGIAQFCDAoKX3NlcnZlcl9pZEISChBfb3JnYW5pemF0aW9uX2lkIjcKKU1vbml0b3JpbmdDcmVhdGVNYWludGVuYW5jZVdpbmRvd1Jlc3BvbnNlEgoKAmlkGAEgASgDIrcBCidNb25pdG9yaW5nTGlzdE1haW50ZW5hbmNlV2luZG93c1JlcXVlc3QSJQoPb3JnYW5pemF0aW9uX2lkGAEgASgDQge6SAQiAiAASACIAQESHgoFbGltaXQYAiABKANCCrpIByIFGOgHKAFIAYgBARIcCgZvZmZzZXQYAyABKANCB7pIBCICKABIAogBAUISChBfb3JnYW5pemF0aW9uX2lkQggKBl9saW1pdEIJCgdfb2Zmc2V0ImoKKE1vbml0b3JpbmdMaXN0TWFpbnRlbmFuY2VXaW5kb3dzUmVzcG9uc2USPgoHd2luZG93cxgBIAMoCzItLm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ01haW50ZW5hbmNlV2luZG93InoKKE1vbml0b3JpbmdEZWxldGVNYWludGVuYW5jZVdpbmRvd1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASJQoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCqsAQoUTW9uaXRvcmluZ0FnZW50U3RhdGUSJgoiTU9OSVRPUklOR19BR0VOVF9TVEFURV9VTlNQRUNJRklFRBAAEiEKHU1PTklUT1JJTkdfQUdFTlRfU1RBVEVfT05MSU5FEAESIgoeTU9OSVRPUklOR19BR0VOVF9TVEFURV9PRkZMSU5FEAISJQohTU9OSVRPUklOR19BR0VOVF9TVEFURV9ORVZFUl9TRUVOEAMylhEKEU1vbml0b3JpbmdTZXJ2aWNlElYKC0dldE92ZXJ2aWV3Ei4ub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nR2V0T3ZlcnZpZXdSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJUCgpHZXRNZXRyaWNzEi0ub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nR2V0TWV0cmljc1JlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5EmIKEUdldENvbnRhaW5lclN0YXRlEjQub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nR2V0Q29udGFpbmVyU3RhdGVSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eRJ6Cg9HZXRMb2NhbE1ldHJpY3MSMi5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdHZXRMb2NhbE1ldHJpY3NSZXF1ZXN0GjMub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nR2V0TG9jYWxNZXRyaWNzUmVzcG9uc2USfQoQR2V0U2VydmVyTWV0cmljcxIzLm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0dldFNlcnZlck1ldHJpY3NSZXF1ZXN0GjQub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nR2V0U2VydmVyTWV0cmljc1Jlc3BvbnNlEoYBChNHZXRDb250YWluZXJNZXRyaWNzEjYub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nR2V0Q29udGFpbmVyTWV0cmljc1JlcXVlc3QaNy5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdHZXRDb250YWluZXJNZXRyaWNzUmVzcG9uc2USgwEKEkdldENvbnRhaW5lclN0YXRlcxI1Lm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0dldENvbnRhaW5lclN0YXRlc1JlcXVlc3QaNi5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdHZXRDb250YWluZXJTdGF0ZXNSZXNwb25zZRJ9ChBDcmVhdGVBZ2VudFRva2VuEjMub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nQ3JlYXRlQWdlbnRUb2tlblJlcXVlc3QaNC5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdDcmVhdGVBZ2VudFRva2VuUmVzcG9uc2USdwoOR2V0QWdlbnRTdGF0dXMSMS5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdHZXRBZ2VudFN0YXR1c1JlcXVlc3QaMi5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdHZXRBZ2VudFN0YXR1c1Jlc3BvbnNlEmsKClN0YXJ0QWdlbnQSLS5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdTdGFydEFnZW50UmVxdWVzdBouLm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ1N0YXJ0QWdlbnRSZXNwb25zZRJoCglTdG9wQWdlbnQSLC5vcGVub3hpZGUuYXBpLnYxLk1vbml0b3JpbmdTdG9wQWdlbnRSZXF1ZXN0Gi0ub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nU3RvcEFnZW50UmVzcG9uc2UScQoMUmVzdGFydEFnZW50Ei8ub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nUmVzdGFydEFnZW50UmVxdWVzdBowLm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ1Jlc3RhcnRBZ2VudFJlc3BvbnNlEncKDlJlaW5zdGFsbEFnZW50EjEub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nUmVpbnN0YWxsQWdlbnRSZXF1ZXN0GjIub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nUmVpbnN0YWxsQWdlbnRSZXNwb25zZRKGAQoTRXhwb3J0U2VydmVyTWV0cmljcxI2Lm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0V4cG9ydFNlcnZlck1ldHJpY3NSZXF1ZXN0Gjcub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nRXhwb3J0U2VydmVyTWV0cmljc1Jlc3BvbnNlEokBChRHZXRQcm9tZXRoZXVzTWV0cmljcxI3Lm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0dldFByb21ldGhldXNNZXRyaWNzUmVxdWVzdBo4Lm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0dldFByb21ldGhldXNNZXRyaWNzUmVzcG9uc2USkgEKF0NyZWF0ZU1haW50ZW5hbmNlV2luZG93Ejoub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nQ3JlYXRlTWFpbnRlbmFuY2VXaW5kb3dSZXF1ZXN0Gjsub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nQ3JlYXRlTWFpbnRlbmFuY2VXaW5kb3dSZXNwb25zZRKPAQoWTGlzdE1haW50ZW5hbmNlV2luZG93cxI5Lm9wZW5veGlkZS5hcGkudjEuTW9uaXRvcmluZ0xpc3RNYWludGVuYW5jZVdpbmRvd3NSZXF1ZXN0Gjoub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nTGlzdE1haW50ZW5hbmNlV2luZG93c1Jlc3BvbnNlEm4KF0RlbGV0ZU1haW50ZW5hbmNlV2luZG93Ejoub3Blbm94aWRlLmFwaS52MS5Nb25pdG9yaW5nRGVsZXRlTWFpbnRlbmFuY2VXaW5kb3dSZXF1ZXN0Ghcub3Blbm94aWRlLmFwaS52MS5FbXB0eWIGcHJvdG8z',
+		[file_openoxide_api_v1_common, file_buf_validate_validate],
+	);
 
 /**
  * One server metric sample returned by the agent (host facts repeated per row).
  *
  * @generated from message openoxide.api.v1.MonitoringServerMetric
  */
-export type MonitoringServerMetric = Message<"openoxide.api.v1.MonitoringServerMetric"> & {
-  /**
-   * @generated from field: optional int64 timestamp = 1;
-   */
-  timestamp?: bigint | undefined;
+export type MonitoringServerMetric =
+	Message<'openoxide.api.v1.MonitoringServerMetric'> & {
+		/**
+		 * @generated from field: optional int64 timestamp = 1;
+		 */
+		timestamp?: bigint | undefined;
 
-  /**
-   * @generated from field: int64 server_id = 2;
-   */
-  serverId: bigint;
+		/**
+		 * @generated from field: int64 server_id = 2;
+		 */
+		serverId: bigint;
 
-  /**
-   * CPU utilisation percent.
-   *
-   * @generated from field: double cpu = 3;
-   */
-  cpu: number;
+		/**
+		 * CPU utilisation percent.
+		 *
+		 * @generated from field: double cpu = 3;
+		 */
+		cpu: number;
 
-  /**
-   * @generated from field: string cpu_model = 4;
-   */
-  cpuModel: string;
+		/**
+		 * @generated from field: string cpu_model = 4;
+		 */
+		cpuModel: string;
 
-  /**
-   * @generated from field: int64 cpu_cores = 5;
-   */
-  cpuCores: bigint;
+		/**
+		 * @generated from field: int64 cpu_cores = 5;
+		 */
+		cpuCores: bigint;
 
-  /**
-   * @generated from field: int64 cpu_physical_cores = 6;
-   */
-  cpuPhysicalCores: bigint;
+		/**
+		 * @generated from field: int64 cpu_physical_cores = 6;
+		 */
+		cpuPhysicalCores: bigint;
 
-  /**
-   * @generated from field: double cpu_speed = 7;
-   */
-  cpuSpeed: number;
+		/**
+		 * @generated from field: double cpu_speed = 7;
+		 */
+		cpuSpeed: number;
 
-  /**
-   * @generated from field: string os = 8;
-   */
-  os: string;
+		/**
+		 * @generated from field: string os = 8;
+		 */
+		os: string;
 
-  /**
-   * @generated from field: string distro = 9;
-   */
-  distro: string;
+		/**
+		 * @generated from field: string distro = 9;
+		 */
+		distro: string;
 
-  /**
-   * @generated from field: string kernel = 10;
-   */
-  kernel: string;
+		/**
+		 * @generated from field: string kernel = 10;
+		 */
+		kernel: string;
 
-  /**
-   * @generated from field: string arch = 11;
-   */
-  arch: string;
+		/**
+		 * @generated from field: string arch = 11;
+		 */
+		arch: string;
 
-  /**
-   * Memory / disk utilisation percents.
-   *
-   * @generated from field: double mem_used = 12;
-   */
-  memUsed: number;
+		/**
+		 * Memory / disk utilisation percents.
+		 *
+		 * @generated from field: double mem_used = 12;
+		 */
+		memUsed: number;
 
-  /**
-   * @generated from field: double mem_used_gb = 13;
-   */
-  memUsedGb: number;
+		/**
+		 * @generated from field: double mem_used_gb = 13;
+		 */
+		memUsedGb: number;
 
-  /**
-   * @generated from field: double mem_total = 14;
-   */
-  memTotal: number;
+		/**
+		 * @generated from field: double mem_total = 14;
+		 */
+		memTotal: number;
 
-  /**
-   * @generated from field: int64 uptime = 15;
-   */
-  uptime: bigint;
+		/**
+		 * @generated from field: int64 uptime = 15;
+		 */
+		uptime: bigint;
 
-  /**
-   * @generated from field: double disk_used = 16;
-   */
-  diskUsed: number;
+		/**
+		 * @generated from field: double disk_used = 16;
+		 */
+		diskUsed: number;
 
-  /**
-   * @generated from field: double total_disk = 17;
-   */
-  totalDisk: number;
+		/**
+		 * @generated from field: double total_disk = 17;
+		 */
+		totalDisk: number;
 
-  /**
-   * @generated from field: double network_in = 18;
-   */
-  networkIn: number;
+		/**
+		 * @generated from field: double network_in = 18;
+		 */
+		networkIn: number;
 
-  /**
-   * @generated from field: double network_out = 19;
-   */
-  networkOut: number;
-};
+		/**
+		 * @generated from field: double network_out = 19;
+		 */
+		networkOut: number;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringServerMetric.
  * Use `create(MonitoringServerMetricSchema)` to create a new message.
  */
-export const MonitoringServerMetricSchema: GenMessage<MonitoringServerMetric> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 0);
+export const MonitoringServerMetricSchema: GenMessage<MonitoringServerMetric> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 0);
 
 /**
  * Fixed-key projection of the agent's per-container metrics_json document.
  *
  * @generated from message openoxide.api.v1.MonitoringContainerStats
  */
-export type MonitoringContainerStats = Message<"openoxide.api.v1.MonitoringContainerStats"> & {
-  /**
-   * @generated from field: double cpu_percent = 1;
-   */
-  cpuPercent: number;
+export type MonitoringContainerStats =
+	Message<'openoxide.api.v1.MonitoringContainerStats'> & {
+		/**
+		 * @generated from field: double cpu_percent = 1;
+		 */
+		cpuPercent: number;
 
-  /**
-   * @generated from field: double memory_percent = 2;
-   */
-  memoryPercent: number;
+		/**
+		 * @generated from field: double memory_percent = 2;
+		 */
+		memoryPercent: number;
 
-  /**
-   * @generated from field: double memory_used_mb = 3;
-   */
-  memoryUsedMb: number;
+		/**
+		 * @generated from field: double memory_used_mb = 3;
+		 */
+		memoryUsedMb: number;
 
-  /**
-   * @generated from field: double memory_limit_mb = 4;
-   */
-  memoryLimitMb: number;
+		/**
+		 * @generated from field: double memory_limit_mb = 4;
+		 */
+		memoryLimitMb: number;
 
-  /**
-   * @generated from field: double net_rx_kbps = 5;
-   */
-  netRxKbps: number;
+		/**
+		 * @generated from field: double net_rx_kbps = 5;
+		 */
+		netRxKbps: number;
 
-  /**
-   * @generated from field: double net_tx_kbps = 6;
-   */
-  netTxKbps: number;
+		/**
+		 * @generated from field: double net_tx_kbps = 6;
+		 */
+		netTxKbps: number;
 
-  /**
-   * @generated from field: double block_read_mb = 7;
-   */
-  blockReadMb: number;
+		/**
+		 * @generated from field: double block_read_mb = 7;
+		 */
+		blockReadMb: number;
 
-  /**
-   * @generated from field: double block_write_mb = 8;
-   */
-  blockWriteMb: number;
-};
+		/**
+		 * @generated from field: double block_write_mb = 8;
+		 */
+		blockWriteMb: number;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringContainerStats.
  * Use `create(MonitoringContainerStatsSchema)` to create a new message.
  */
-export const MonitoringContainerStatsSchema: GenMessage<MonitoringContainerStats> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 1);
+export const MonitoringContainerStatsSchema: GenMessage<MonitoringContainerStats> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 1);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringContainerMetric
  */
-export type MonitoringContainerMetric = Message<"openoxide.api.v1.MonitoringContainerMetric"> & {
-  /**
-   * @generated from field: optional int64 id = 1;
-   */
-  id?: bigint | undefined;
+export type MonitoringContainerMetric =
+	Message<'openoxide.api.v1.MonitoringContainerMetric'> & {
+		/**
+		 * @generated from field: optional int64 id = 1;
+		 */
+		id?: bigint | undefined;
 
-  /**
-   * @generated from field: int64 timestamp = 2;
-   */
-  timestamp: bigint;
+		/**
+		 * @generated from field: int64 timestamp = 2;
+		 */
+		timestamp: bigint;
 
-  /**
-   * @generated from field: string container_id = 3;
-   */
-  containerId: string;
+		/**
+		 * @generated from field: string container_id = 3;
+		 */
+		containerId: string;
 
-  /**
-   * @generated from field: string container_name = 4;
-   */
-  containerName: string;
+		/**
+		 * @generated from field: string container_name = 4;
+		 */
+		containerName: string;
 
-  /**
-   * @generated from field: openoxide.api.v1.MonitoringContainerStats stats = 5;
-   */
-  stats?: MonitoringContainerStats | undefined;
+		/**
+		 * @generated from field: openoxide.api.v1.MonitoringContainerStats stats = 5;
+		 */
+		stats?: MonitoringContainerStats | undefined;
 
-  /**
-   * @generated from field: int64 server_id = 6;
-   */
-  serverId: bigint;
+		/**
+		 * @generated from field: int64 server_id = 6;
+		 */
+		serverId: bigint;
 
-  /**
-   * @generated from field: optional int64 application_id = 7;
-   */
-  applicationId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 application_id = 7;
+		 */
+		applicationId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 compose_id = 8;
-   */
-  composeId?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 compose_id = 8;
+		 */
+		composeId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringContainerMetric.
  * Use `create(MonitoringContainerMetricSchema)` to create a new message.
  */
-export const MonitoringContainerMetricSchema: GenMessage<MonitoringContainerMetric> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 2);
+export const MonitoringContainerMetricSchema: GenMessage<MonitoringContainerMetric> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 2);
 
 /**
  * Container state point as reported by the agent; `state` is the Docker-native status string (no panel-side closed set).
  *
  * @generated from message openoxide.api.v1.MonitoringContainerState
  */
-export type MonitoringContainerState = Message<"openoxide.api.v1.MonitoringContainerState"> & {
-  /**
-   * @generated from field: string container_id = 1;
-   */
-  containerId: string;
+export type MonitoringContainerState =
+	Message<'openoxide.api.v1.MonitoringContainerState'> & {
+		/**
+		 * @generated from field: string container_id = 1;
+		 */
+		containerId: string;
 
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
+		/**
+		 * @generated from field: string name = 2;
+		 */
+		name: string;
 
-  /**
-   * @generated from field: string state = 3;
-   */
-  state: string;
+		/**
+		 * @generated from field: string state = 3;
+		 */
+		state: string;
 
-  /**
-   * @generated from field: string status = 4;
-   */
-  status: string;
+		/**
+		 * @generated from field: string status = 4;
+		 */
+		status: string;
 
-  /**
-   * @generated from field: int64 application_id = 5;
-   */
-  applicationId: bigint;
+		/**
+		 * @generated from field: int64 application_id = 5;
+		 */
+		applicationId: bigint;
 
-  /**
-   * @generated from field: int64 compose_id = 6;
-   */
-  composeId: bigint;
+		/**
+		 * @generated from field: int64 compose_id = 6;
+		 */
+		composeId: bigint;
 
-  /**
-   * @generated from field: string compose_project = 7;
-   */
-  composeProject: string;
+		/**
+		 * @generated from field: string compose_project = 7;
+		 */
+		composeProject: string;
 
-  /**
-   * @generated from field: string compose_service = 8;
-   */
-  composeService: string;
-};
+		/**
+		 * @generated from field: string compose_service = 8;
+		 */
+		composeService: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringContainerState.
  * Use `create(MonitoringContainerStateSchema)` to create a new message.
  */
-export const MonitoringContainerStateSchema: GenMessage<MonitoringContainerState> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 3);
+export const MonitoringContainerStateSchema: GenMessage<MonitoringContainerState> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 3);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringAgentStatus
  */
-export type MonitoringAgentStatus = Message<"openoxide.api.v1.MonitoringAgentStatus"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
+export type MonitoringAgentStatus =
+	Message<'openoxide.api.v1.MonitoringAgentStatus'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
 
-  /**
-   * @generated from field: int64 organization_id = 2;
-   */
-  organizationId: bigint;
+		/**
+		 * @generated from field: int64 organization_id = 2;
+		 */
+		organizationId: bigint;
 
-  /**
-   * @generated from field: optional int64 last_seen_at = 3;
-   */
-  lastSeenAt?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 last_seen_at = 3;
+		 */
+		lastSeenAt?: bigint | undefined;
 
-  /**
-   * @generated from field: optional string agent_version = 4;
-   */
-  agentVersion?: string | undefined;
+		/**
+		 * @generated from field: optional string agent_version = 4;
+		 */
+		agentVersion?: string | undefined;
 
-  /**
-   * @generated from field: openoxide.api.v1.MonitoringAgentState state = 5;
-   */
-  state: MonitoringAgentState;
-};
+		/**
+		 * @generated from field: openoxide.api.v1.MonitoringAgentState state = 5;
+		 */
+		state: MonitoringAgentState;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringAgentStatus.
  * Use `create(MonitoringAgentStatusSchema)` to create a new message.
  */
-export const MonitoringAgentStatusSchema: GenMessage<MonitoringAgentStatus> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 4);
+export const MonitoringAgentStatusSchema: GenMessage<MonitoringAgentStatus> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 4);
 
 /**
  * Result of an agent lifecycle command; `action` echoes the verb ("start", "stop", "restart", "reinstall").
  *
  * @generated from message openoxide.api.v1.MonitoringAgentAction
  */
-export type MonitoringAgentAction = Message<"openoxide.api.v1.MonitoringAgentAction"> & {
-  /**
-   * @generated from field: string action = 1;
-   */
-  action: string;
+export type MonitoringAgentAction =
+	Message<'openoxide.api.v1.MonitoringAgentAction'> & {
+		/**
+		 * @generated from field: string action = 1;
+		 */
+		action: string;
 
-  /**
-   * @generated from field: bool success = 2;
-   */
-  success: boolean;
+		/**
+		 * @generated from field: bool success = 2;
+		 */
+		success: boolean;
 
-  /**
-   * @generated from field: string message = 3;
-   */
-  message: string;
-};
+		/**
+		 * @generated from field: string message = 3;
+		 */
+		message: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringAgentAction.
  * Use `create(MonitoringAgentActionSchema)` to create a new message.
  */
-export const MonitoringAgentActionSchema: GenMessage<MonitoringAgentAction> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 5);
+export const MonitoringAgentActionSchema: GenMessage<MonitoringAgentAction> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 5);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringMaintenanceWindow
  */
-export type MonitoringMaintenanceWindow = Message<"openoxide.api.v1.MonitoringMaintenanceWindow"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type MonitoringMaintenanceWindow =
+	Message<'openoxide.api.v1.MonitoringMaintenanceWindow'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: int64 organization_id = 2;
-   */
-  organizationId: bigint;
+		/**
+		 * @generated from field: int64 organization_id = 2;
+		 */
+		organizationId: bigint;
 
-  /**
-   * @generated from field: optional int64 server_id = 3;
-   */
-  serverId?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 server_id = 3;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: int64 starts_at = 4;
-   */
-  startsAt: bigint;
+		/**
+		 * @generated from field: int64 starts_at = 4;
+		 */
+		startsAt: bigint;
 
-  /**
-   * @generated from field: int64 ends_at = 5;
-   */
-  endsAt: bigint;
+		/**
+		 * @generated from field: int64 ends_at = 5;
+		 */
+		endsAt: bigint;
 
-  /**
-   * @generated from field: string reason = 6;
-   */
-  reason: string;
+		/**
+		 * @generated from field: string reason = 6;
+		 */
+		reason: string;
 
-  /**
-   * @generated from field: int64 created_at = 7;
-   */
-  createdAt: bigint;
-};
+		/**
+		 * @generated from field: int64 created_at = 7;
+		 */
+		createdAt: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringMaintenanceWindow.
  * Use `create(MonitoringMaintenanceWindowSchema)` to create a new message.
  */
-export const MonitoringMaintenanceWindowSchema: GenMessage<MonitoringMaintenanceWindow> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 6);
+export const MonitoringMaintenanceWindowSchema: GenMessage<MonitoringMaintenanceWindow> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 6);
 
 /**
  * Legacy stub: no server-side implementation yet; envelope carries the addressed resource only.
  *
  * @generated from message openoxide.api.v1.MonitoringGetOverviewRequest
  */
-export type MonitoringGetOverviewRequest = Message<"openoxide.api.v1.MonitoringGetOverviewRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type MonitoringGetOverviewRequest =
+	Message<'openoxide.api.v1.MonitoringGetOverviewRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetOverviewRequest.
  * Use `create(MonitoringGetOverviewRequestSchema)` to create a new message.
  */
-export const MonitoringGetOverviewRequestSchema: GenMessage<MonitoringGetOverviewRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 7);
+export const MonitoringGetOverviewRequestSchema: GenMessage<MonitoringGetOverviewRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 7);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringGetMetricsRequest
  */
-export type MonitoringGetMetricsRequest = Message<"openoxide.api.v1.MonitoringGetMetricsRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type MonitoringGetMetricsRequest =
+	Message<'openoxide.api.v1.MonitoringGetMetricsRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetMetricsRequest.
  * Use `create(MonitoringGetMetricsRequestSchema)` to create a new message.
  */
-export const MonitoringGetMetricsRequestSchema: GenMessage<MonitoringGetMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 8);
+export const MonitoringGetMetricsRequestSchema: GenMessage<MonitoringGetMetricsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 8);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringGetContainerStateRequest
  */
-export type MonitoringGetContainerStateRequest = Message<"openoxide.api.v1.MonitoringGetContainerStateRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type MonitoringGetContainerStateRequest =
+	Message<'openoxide.api.v1.MonitoringGetContainerStateRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetContainerStateRequest.
  * Use `create(MonitoringGetContainerStateRequestSchema)` to create a new message.
  */
-export const MonitoringGetContainerStateRequestSchema: GenMessage<MonitoringGetContainerStateRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 9);
+export const MonitoringGetContainerStateRequestSchema: GenMessage<MonitoringGetContainerStateRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 9);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringGetLocalMetricsRequest
  */
-export type MonitoringGetLocalMetricsRequest = Message<"openoxide.api.v1.MonitoringGetLocalMetricsRequest"> & {
-};
+export type MonitoringGetLocalMetricsRequest =
+	Message<'openoxide.api.v1.MonitoringGetLocalMetricsRequest'> & {};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetLocalMetricsRequest.
  * Use `create(MonitoringGetLocalMetricsRequestSchema)` to create a new message.
  */
-export const MonitoringGetLocalMetricsRequestSchema: GenMessage<MonitoringGetLocalMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 10);
+export const MonitoringGetLocalMetricsRequestSchema: GenMessage<MonitoringGetLocalMetricsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 10);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringGetLocalMetricsResponse
  */
-export type MonitoringGetLocalMetricsResponse = Message<"openoxide.api.v1.MonitoringGetLocalMetricsResponse"> & {
-  /**
-   * @generated from field: string status = 1;
-   */
-  status: string;
+export type MonitoringGetLocalMetricsResponse =
+	Message<'openoxide.api.v1.MonitoringGetLocalMetricsResponse'> & {
+		/**
+		 * @generated from field: string status = 1;
+		 */
+		status: string;
 
-  /**
-   * @generated from field: string service = 2;
-   */
-  service: string;
+		/**
+		 * @generated from field: string service = 2;
+		 */
+		service: string;
 
-  /**
-   * @generated from field: repeated string endpoints = 3;
-   */
-  endpoints: string[];
-};
+		/**
+		 * @generated from field: repeated string endpoints = 3;
+		 */
+		endpoints: string[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetLocalMetricsResponse.
  * Use `create(MonitoringGetLocalMetricsResponseSchema)` to create a new message.
  */
-export const MonitoringGetLocalMetricsResponseSchema: GenMessage<MonitoringGetLocalMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 11);
+export const MonitoringGetLocalMetricsResponseSchema: GenMessage<MonitoringGetLocalMetricsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 11);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringGetServerMetricsRequest
  */
-export type MonitoringGetServerMetricsRequest = Message<"openoxide.api.v1.MonitoringGetServerMetricsRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
-};
+export type MonitoringGetServerMetricsRequest =
+	Message<'openoxide.api.v1.MonitoringGetServerMetricsRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetServerMetricsRequest.
  * Use `create(MonitoringGetServerMetricsRequestSchema)` to create a new message.
  */
-export const MonitoringGetServerMetricsRequestSchema: GenMessage<MonitoringGetServerMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 12);
+export const MonitoringGetServerMetricsRequestSchema: GenMessage<MonitoringGetServerMetricsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 12);
 
 /**
  * History capped server-side at 50 samples.
  *
  * @generated from message openoxide.api.v1.MonitoringGetServerMetricsResponse
  */
-export type MonitoringGetServerMetricsResponse = Message<"openoxide.api.v1.MonitoringGetServerMetricsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.MonitoringServerMetric metrics = 1;
-   */
-  metrics: MonitoringServerMetric[];
-};
+export type MonitoringGetServerMetricsResponse =
+	Message<'openoxide.api.v1.MonitoringGetServerMetricsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.MonitoringServerMetric metrics = 1;
+		 */
+		metrics: MonitoringServerMetric[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetServerMetricsResponse.
  * Use `create(MonitoringGetServerMetricsResponseSchema)` to create a new message.
  */
-export const MonitoringGetServerMetricsResponseSchema: GenMessage<MonitoringGetServerMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 13);
+export const MonitoringGetServerMetricsResponseSchema: GenMessage<MonitoringGetServerMetricsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 13);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringGetContainerMetricsRequest
  */
-export type MonitoringGetContainerMetricsRequest = Message<"openoxide.api.v1.MonitoringGetContainerMetricsRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
+export type MonitoringGetContainerMetricsRequest =
+	Message<'openoxide.api.v1.MonitoringGetContainerMetricsRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
 
-  /**
-   * @generated from field: int64 organization_id = 2;
-   */
-  organizationId: bigint;
+		/**
+		 * @generated from field: int64 organization_id = 2;
+		 */
+		organizationId: bigint;
 
-  /**
-   * @generated from field: optional string app_name = 3;
-   */
-  appName?: string | undefined;
+		/**
+		 * @generated from field: optional string app_name = 3;
+		 */
+		appName?: string | undefined;
 
-  /**
-   * @generated from field: optional int64 limit = 4;
-   */
-  limit?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 limit = 4;
+		 */
+		limit?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetContainerMetricsRequest.
  * Use `create(MonitoringGetContainerMetricsRequestSchema)` to create a new message.
  */
-export const MonitoringGetContainerMetricsRequestSchema: GenMessage<MonitoringGetContainerMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 14);
+export const MonitoringGetContainerMetricsRequestSchema: GenMessage<MonitoringGetContainerMetricsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 14);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringGetContainerMetricsResponse
  */
-export type MonitoringGetContainerMetricsResponse = Message<"openoxide.api.v1.MonitoringGetContainerMetricsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.MonitoringContainerMetric metrics = 1;
-   */
-  metrics: MonitoringContainerMetric[];
-};
+export type MonitoringGetContainerMetricsResponse =
+	Message<'openoxide.api.v1.MonitoringGetContainerMetricsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.MonitoringContainerMetric metrics = 1;
+		 */
+		metrics: MonitoringContainerMetric[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetContainerMetricsResponse.
  * Use `create(MonitoringGetContainerMetricsResponseSchema)` to create a new message.
  */
-export const MonitoringGetContainerMetricsResponseSchema: GenMessage<MonitoringGetContainerMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 15);
+export const MonitoringGetContainerMetricsResponseSchema: GenMessage<MonitoringGetContainerMetricsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 15);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringGetContainerStatesRequest
  */
-export type MonitoringGetContainerStatesRequest = Message<"openoxide.api.v1.MonitoringGetContainerStatesRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
-};
+export type MonitoringGetContainerStatesRequest =
+	Message<'openoxide.api.v1.MonitoringGetContainerStatesRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetContainerStatesRequest.
  * Use `create(MonitoringGetContainerStatesRequestSchema)` to create a new message.
  */
-export const MonitoringGetContainerStatesRequestSchema: GenMessage<MonitoringGetContainerStatesRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 16);
+export const MonitoringGetContainerStatesRequestSchema: GenMessage<MonitoringGetContainerStatesRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 16);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringGetContainerStatesResponse
  */
-export type MonitoringGetContainerStatesResponse = Message<"openoxide.api.v1.MonitoringGetContainerStatesResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.MonitoringContainerState states = 1;
-   */
-  states: MonitoringContainerState[];
-};
+export type MonitoringGetContainerStatesResponse =
+	Message<'openoxide.api.v1.MonitoringGetContainerStatesResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.MonitoringContainerState states = 1;
+		 */
+		states: MonitoringContainerState[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetContainerStatesResponse.
  * Use `create(MonitoringGetContainerStatesResponseSchema)` to create a new message.
  */
-export const MonitoringGetContainerStatesResponseSchema: GenMessage<MonitoringGetContainerStatesResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 17);
+export const MonitoringGetContainerStatesResponseSchema: GenMessage<MonitoringGetContainerStatesResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 17);
 
 /**
  * Rotates the server's agent token; the plaintext token is returned once.
  *
  * @generated from message openoxide.api.v1.MonitoringCreateAgentTokenRequest
  */
-export type MonitoringCreateAgentTokenRequest = Message<"openoxide.api.v1.MonitoringCreateAgentTokenRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
+export type MonitoringCreateAgentTokenRequest =
+	Message<'openoxide.api.v1.MonitoringCreateAgentTokenRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
 
-  /**
-   * @generated from field: int64 organization_id = 2;
-   */
-  organizationId: bigint;
-};
+		/**
+		 * @generated from field: int64 organization_id = 2;
+		 */
+		organizationId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringCreateAgentTokenRequest.
  * Use `create(MonitoringCreateAgentTokenRequestSchema)` to create a new message.
  */
-export const MonitoringCreateAgentTokenRequestSchema: GenMessage<MonitoringCreateAgentTokenRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 18);
+export const MonitoringCreateAgentTokenRequestSchema: GenMessage<MonitoringCreateAgentTokenRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 18);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringCreateAgentTokenResponse
  */
-export type MonitoringCreateAgentTokenResponse = Message<"openoxide.api.v1.MonitoringCreateAgentTokenResponse"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
+export type MonitoringCreateAgentTokenResponse =
+	Message<'openoxide.api.v1.MonitoringCreateAgentTokenResponse'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
 
-  /**
-   * @generated from field: int64 organization_id = 2;
-   */
-  organizationId: bigint;
+		/**
+		 * @generated from field: int64 organization_id = 2;
+		 */
+		organizationId: bigint;
 
-  /**
-   * @generated from field: string token = 3;
-   */
-  token: string;
-};
+		/**
+		 * @generated from field: string token = 3;
+		 */
+		token: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringCreateAgentTokenResponse.
  * Use `create(MonitoringCreateAgentTokenResponseSchema)` to create a new message.
  */
-export const MonitoringCreateAgentTokenResponseSchema: GenMessage<MonitoringCreateAgentTokenResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 19);
+export const MonitoringCreateAgentTokenResponseSchema: GenMessage<MonitoringCreateAgentTokenResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 19);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringGetAgentStatusRequest
  */
-export type MonitoringGetAgentStatusRequest = Message<"openoxide.api.v1.MonitoringGetAgentStatusRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
-};
+export type MonitoringGetAgentStatusRequest =
+	Message<'openoxide.api.v1.MonitoringGetAgentStatusRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetAgentStatusRequest.
  * Use `create(MonitoringGetAgentStatusRequestSchema)` to create a new message.
  */
-export const MonitoringGetAgentStatusRequestSchema: GenMessage<MonitoringGetAgentStatusRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 20);
+export const MonitoringGetAgentStatusRequestSchema: GenMessage<MonitoringGetAgentStatusRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 20);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringGetAgentStatusResponse
  */
-export type MonitoringGetAgentStatusResponse = Message<"openoxide.api.v1.MonitoringGetAgentStatusResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.MonitoringAgentStatus status = 1;
-   */
-  status?: MonitoringAgentStatus | undefined;
-};
+export type MonitoringGetAgentStatusResponse =
+	Message<'openoxide.api.v1.MonitoringGetAgentStatusResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.MonitoringAgentStatus status = 1;
+		 */
+		status?: MonitoringAgentStatus | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetAgentStatusResponse.
  * Use `create(MonitoringGetAgentStatusResponseSchema)` to create a new message.
  */
-export const MonitoringGetAgentStatusResponseSchema: GenMessage<MonitoringGetAgentStatusResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 21);
+export const MonitoringGetAgentStatusResponseSchema: GenMessage<MonitoringGetAgentStatusResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 21);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringStartAgentRequest
  */
-export type MonitoringStartAgentRequest = Message<"openoxide.api.v1.MonitoringStartAgentRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
-};
+export type MonitoringStartAgentRequest =
+	Message<'openoxide.api.v1.MonitoringStartAgentRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringStartAgentRequest.
  * Use `create(MonitoringStartAgentRequestSchema)` to create a new message.
  */
-export const MonitoringStartAgentRequestSchema: GenMessage<MonitoringStartAgentRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 22);
+export const MonitoringStartAgentRequestSchema: GenMessage<MonitoringStartAgentRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 22);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringStartAgentResponse
  */
-export type MonitoringStartAgentResponse = Message<"openoxide.api.v1.MonitoringStartAgentResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.MonitoringAgentAction action = 1;
-   */
-  action?: MonitoringAgentAction | undefined;
-};
+export type MonitoringStartAgentResponse =
+	Message<'openoxide.api.v1.MonitoringStartAgentResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.MonitoringAgentAction action = 1;
+		 */
+		action?: MonitoringAgentAction | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringStartAgentResponse.
  * Use `create(MonitoringStartAgentResponseSchema)` to create a new message.
  */
-export const MonitoringStartAgentResponseSchema: GenMessage<MonitoringStartAgentResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 23);
+export const MonitoringStartAgentResponseSchema: GenMessage<MonitoringStartAgentResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 23);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringStopAgentRequest
  */
-export type MonitoringStopAgentRequest = Message<"openoxide.api.v1.MonitoringStopAgentRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
-};
+export type MonitoringStopAgentRequest =
+	Message<'openoxide.api.v1.MonitoringStopAgentRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringStopAgentRequest.
  * Use `create(MonitoringStopAgentRequestSchema)` to create a new message.
  */
-export const MonitoringStopAgentRequestSchema: GenMessage<MonitoringStopAgentRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 24);
+export const MonitoringStopAgentRequestSchema: GenMessage<MonitoringStopAgentRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 24);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringStopAgentResponse
  */
-export type MonitoringStopAgentResponse = Message<"openoxide.api.v1.MonitoringStopAgentResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.MonitoringAgentAction action = 1;
-   */
-  action?: MonitoringAgentAction | undefined;
-};
+export type MonitoringStopAgentResponse =
+	Message<'openoxide.api.v1.MonitoringStopAgentResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.MonitoringAgentAction action = 1;
+		 */
+		action?: MonitoringAgentAction | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringStopAgentResponse.
  * Use `create(MonitoringStopAgentResponseSchema)` to create a new message.
  */
-export const MonitoringStopAgentResponseSchema: GenMessage<MonitoringStopAgentResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 25);
+export const MonitoringStopAgentResponseSchema: GenMessage<MonitoringStopAgentResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 25);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringRestartAgentRequest
  */
-export type MonitoringRestartAgentRequest = Message<"openoxide.api.v1.MonitoringRestartAgentRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
-};
+export type MonitoringRestartAgentRequest =
+	Message<'openoxide.api.v1.MonitoringRestartAgentRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringRestartAgentRequest.
  * Use `create(MonitoringRestartAgentRequestSchema)` to create a new message.
  */
-export const MonitoringRestartAgentRequestSchema: GenMessage<MonitoringRestartAgentRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 26);
+export const MonitoringRestartAgentRequestSchema: GenMessage<MonitoringRestartAgentRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 26);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringRestartAgentResponse
  */
-export type MonitoringRestartAgentResponse = Message<"openoxide.api.v1.MonitoringRestartAgentResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.MonitoringAgentAction action = 1;
-   */
-  action?: MonitoringAgentAction | undefined;
-};
+export type MonitoringRestartAgentResponse =
+	Message<'openoxide.api.v1.MonitoringRestartAgentResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.MonitoringAgentAction action = 1;
+		 */
+		action?: MonitoringAgentAction | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringRestartAgentResponse.
  * Use `create(MonitoringRestartAgentResponseSchema)` to create a new message.
  */
-export const MonitoringRestartAgentResponseSchema: GenMessage<MonitoringRestartAgentResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 27);
+export const MonitoringRestartAgentResponseSchema: GenMessage<MonitoringRestartAgentResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 27);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringReinstallAgentRequest
  */
-export type MonitoringReinstallAgentRequest = Message<"openoxide.api.v1.MonitoringReinstallAgentRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
-};
+export type MonitoringReinstallAgentRequest =
+	Message<'openoxide.api.v1.MonitoringReinstallAgentRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringReinstallAgentRequest.
  * Use `create(MonitoringReinstallAgentRequestSchema)` to create a new message.
  */
-export const MonitoringReinstallAgentRequestSchema: GenMessage<MonitoringReinstallAgentRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 28);
+export const MonitoringReinstallAgentRequestSchema: GenMessage<MonitoringReinstallAgentRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 28);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringReinstallAgentResponse
  */
-export type MonitoringReinstallAgentResponse = Message<"openoxide.api.v1.MonitoringReinstallAgentResponse"> & {
-  /**
-   * @generated from field: openoxide.api.v1.MonitoringAgentAction action = 1;
-   */
-  action?: MonitoringAgentAction | undefined;
-};
+export type MonitoringReinstallAgentResponse =
+	Message<'openoxide.api.v1.MonitoringReinstallAgentResponse'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.MonitoringAgentAction action = 1;
+		 */
+		action?: MonitoringAgentAction | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringReinstallAgentResponse.
  * Use `create(MonitoringReinstallAgentResponseSchema)` to create a new message.
  */
-export const MonitoringReinstallAgentResponseSchema: GenMessage<MonitoringReinstallAgentResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 29);
+export const MonitoringReinstallAgentResponseSchema: GenMessage<MonitoringReinstallAgentResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 29);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringExportServerMetricsRequest
  */
-export type MonitoringExportServerMetricsRequest = Message<"openoxide.api.v1.MonitoringExportServerMetricsRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
-};
+export type MonitoringExportServerMetricsRequest =
+	Message<'openoxide.api.v1.MonitoringExportServerMetricsRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringExportServerMetricsRequest.
  * Use `create(MonitoringExportServerMetricsRequestSchema)` to create a new message.
  */
-export const MonitoringExportServerMetricsRequestSchema: GenMessage<MonitoringExportServerMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 30);
+export const MonitoringExportServerMetricsRequestSchema: GenMessage<MonitoringExportServerMetricsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 30);
 
 /**
  * CSV export (up to 1000 samples) with header timestamp,server_id,cpu,mem_used,mem_total,disk_used,total_disk,network_in,network_out.
  *
  * @generated from message openoxide.api.v1.MonitoringExportServerMetricsResponse
  */
-export type MonitoringExportServerMetricsResponse = Message<"openoxide.api.v1.MonitoringExportServerMetricsResponse"> & {
-  /**
-   * @generated from field: string csv = 1;
-   */
-  csv: string;
-};
+export type MonitoringExportServerMetricsResponse =
+	Message<'openoxide.api.v1.MonitoringExportServerMetricsResponse'> & {
+		/**
+		 * @generated from field: string csv = 1;
+		 */
+		csv: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringExportServerMetricsResponse.
  * Use `create(MonitoringExportServerMetricsResponseSchema)` to create a new message.
  */
-export const MonitoringExportServerMetricsResponseSchema: GenMessage<MonitoringExportServerMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 31);
+export const MonitoringExportServerMetricsResponseSchema: GenMessage<MonitoringExportServerMetricsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 31);
 
 /**
  * Single latest sample rendered in Prometheus exposition format.
  *
  * @generated from message openoxide.api.v1.MonitoringGetPrometheusMetricsRequest
  */
-export type MonitoringGetPrometheusMetricsRequest = Message<"openoxide.api.v1.MonitoringGetPrometheusMetricsRequest"> & {
-  /**
-   * @generated from field: int64 server_id = 1;
-   */
-  serverId: bigint;
-};
+export type MonitoringGetPrometheusMetricsRequest =
+	Message<'openoxide.api.v1.MonitoringGetPrometheusMetricsRequest'> & {
+		/**
+		 * @generated from field: int64 server_id = 1;
+		 */
+		serverId: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetPrometheusMetricsRequest.
  * Use `create(MonitoringGetPrometheusMetricsRequestSchema)` to create a new message.
  */
-export const MonitoringGetPrometheusMetricsRequestSchema: GenMessage<MonitoringGetPrometheusMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 32);
+export const MonitoringGetPrometheusMetricsRequestSchema: GenMessage<MonitoringGetPrometheusMetricsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 32);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringGetPrometheusMetricsResponse
  */
-export type MonitoringGetPrometheusMetricsResponse = Message<"openoxide.api.v1.MonitoringGetPrometheusMetricsResponse"> & {
-  /**
-   * @generated from field: string prometheus_text = 1;
-   */
-  prometheusText: string;
-};
+export type MonitoringGetPrometheusMetricsResponse =
+	Message<'openoxide.api.v1.MonitoringGetPrometheusMetricsResponse'> & {
+		/**
+		 * @generated from field: string prometheus_text = 1;
+		 */
+		prometheusText: string;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringGetPrometheusMetricsResponse.
  * Use `create(MonitoringGetPrometheusMetricsResponseSchema)` to create a new message.
  */
-export const MonitoringGetPrometheusMetricsResponseSchema: GenMessage<MonitoringGetPrometheusMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 33);
+export const MonitoringGetPrometheusMetricsResponseSchema: GenMessage<MonitoringGetPrometheusMetricsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 33);
 
 /**
  * `ends_at` must follow `starts_at`; absent organization_id uses the authenticated scope.
  *
  * @generated from message openoxide.api.v1.MonitoringCreateMaintenanceWindowRequest
  */
-export type MonitoringCreateMaintenanceWindowRequest = Message<"openoxide.api.v1.MonitoringCreateMaintenanceWindowRequest"> & {
-  /**
-   * @generated from field: optional int64 server_id = 1;
-   */
-  serverId?: bigint | undefined;
+export type MonitoringCreateMaintenanceWindowRequest =
+	Message<'openoxide.api.v1.MonitoringCreateMaintenanceWindowRequest'> & {
+		/**
+		 * @generated from field: optional int64 server_id = 1;
+		 */
+		serverId?: bigint | undefined;
 
-  /**
-   * @generated from field: int64 starts_at = 2;
-   */
-  startsAt: bigint;
+		/**
+		 * @generated from field: int64 starts_at = 2;
+		 */
+		startsAt: bigint;
 
-  /**
-   * @generated from field: int64 ends_at = 3;
-   */
-  endsAt: bigint;
+		/**
+		 * @generated from field: int64 ends_at = 3;
+		 */
+		endsAt: bigint;
 
-  /**
-   * @generated from field: string reason = 4;
-   */
-  reason: string;
+		/**
+		 * @generated from field: string reason = 4;
+		 */
+		reason: string;
 
-  /**
-   * @generated from field: optional int64 organization_id = 5;
-   */
-  organizationId?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 organization_id = 5;
+		 */
+		organizationId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringCreateMaintenanceWindowRequest.
  * Use `create(MonitoringCreateMaintenanceWindowRequestSchema)` to create a new message.
  */
-export const MonitoringCreateMaintenanceWindowRequestSchema: GenMessage<MonitoringCreateMaintenanceWindowRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 34);
+export const MonitoringCreateMaintenanceWindowRequestSchema: GenMessage<MonitoringCreateMaintenanceWindowRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 34);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringCreateMaintenanceWindowResponse
  */
-export type MonitoringCreateMaintenanceWindowResponse = Message<"openoxide.api.v1.MonitoringCreateMaintenanceWindowResponse"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
-};
+export type MonitoringCreateMaintenanceWindowResponse =
+	Message<'openoxide.api.v1.MonitoringCreateMaintenanceWindowResponse'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringCreateMaintenanceWindowResponse.
  * Use `create(MonitoringCreateMaintenanceWindowResponseSchema)` to create a new message.
  */
-export const MonitoringCreateMaintenanceWindowResponseSchema: GenMessage<MonitoringCreateMaintenanceWindowResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 35);
+export const MonitoringCreateMaintenanceWindowResponseSchema: GenMessage<MonitoringCreateMaintenanceWindowResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 35);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringListMaintenanceWindowsRequest
  */
-export type MonitoringListMaintenanceWindowsRequest = Message<"openoxide.api.v1.MonitoringListMaintenanceWindowsRequest"> & {
-  /**
-   * @generated from field: optional int64 organization_id = 1;
-   */
-  organizationId?: bigint | undefined;
+export type MonitoringListMaintenanceWindowsRequest =
+	Message<'openoxide.api.v1.MonitoringListMaintenanceWindowsRequest'> & {
+		/**
+		 * @generated from field: optional int64 organization_id = 1;
+		 */
+		organizationId?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 limit = 2;
-   */
-  limit?: bigint | undefined;
+		/**
+		 * @generated from field: optional int64 limit = 2;
+		 */
+		limit?: bigint | undefined;
 
-  /**
-   * @generated from field: optional int64 offset = 3;
-   */
-  offset?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 offset = 3;
+		 */
+		offset?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringListMaintenanceWindowsRequest.
  * Use `create(MonitoringListMaintenanceWindowsRequestSchema)` to create a new message.
  */
-export const MonitoringListMaintenanceWindowsRequestSchema: GenMessage<MonitoringListMaintenanceWindowsRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 36);
+export const MonitoringListMaintenanceWindowsRequestSchema: GenMessage<MonitoringListMaintenanceWindowsRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 36);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringListMaintenanceWindowsResponse
  */
-export type MonitoringListMaintenanceWindowsResponse = Message<"openoxide.api.v1.MonitoringListMaintenanceWindowsResponse"> & {
-  /**
-   * @generated from field: repeated openoxide.api.v1.MonitoringMaintenanceWindow windows = 1;
-   */
-  windows: MonitoringMaintenanceWindow[];
-};
+export type MonitoringListMaintenanceWindowsResponse =
+	Message<'openoxide.api.v1.MonitoringListMaintenanceWindowsResponse'> & {
+		/**
+		 * @generated from field: repeated openoxide.api.v1.MonitoringMaintenanceWindow windows = 1;
+		 */
+		windows: MonitoringMaintenanceWindow[];
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringListMaintenanceWindowsResponse.
  * Use `create(MonitoringListMaintenanceWindowsResponseSchema)` to create a new message.
  */
-export const MonitoringListMaintenanceWindowsResponseSchema: GenMessage<MonitoringListMaintenanceWindowsResponse> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 37);
+export const MonitoringListMaintenanceWindowsResponseSchema: GenMessage<MonitoringListMaintenanceWindowsResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 37);
 
 /**
  * @generated from message openoxide.api.v1.MonitoringDeleteMaintenanceWindowRequest
  */
-export type MonitoringDeleteMaintenanceWindowRequest = Message<"openoxide.api.v1.MonitoringDeleteMaintenanceWindowRequest"> & {
-  /**
-   * @generated from field: int64 id = 1;
-   */
-  id: bigint;
+export type MonitoringDeleteMaintenanceWindowRequest =
+	Message<'openoxide.api.v1.MonitoringDeleteMaintenanceWindowRequest'> & {
+		/**
+		 * @generated from field: int64 id = 1;
+		 */
+		id: bigint;
 
-  /**
-   * @generated from field: optional int64 organization_id = 2;
-   */
-  organizationId?: bigint | undefined;
-};
+		/**
+		 * @generated from field: optional int64 organization_id = 2;
+		 */
+		organizationId?: bigint | undefined;
+	};
 
 /**
  * Describes the message openoxide.api.v1.MonitoringDeleteMaintenanceWindowRequest.
  * Use `create(MonitoringDeleteMaintenanceWindowRequestSchema)` to create a new message.
  */
-export const MonitoringDeleteMaintenanceWindowRequestSchema: GenMessage<MonitoringDeleteMaintenanceWindowRequest> = /*@__PURE__*/
-  messageDesc(file_openoxide_api_v1_monitoring, 38);
+export const MonitoringDeleteMaintenanceWindowRequestSchema: GenMessage<MonitoringDeleteMaintenanceWindowRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_monitoring, 38);
 
 /**
  * Derived from the agent heartbeat: ONLINE within 30s, OFFLINE once seen, NEVER_SEEN when no heartbeat was ever recorded.
@@ -1034,32 +1085,32 @@ export const MonitoringDeleteMaintenanceWindowRequestSchema: GenMessage<Monitori
  * @generated from enum openoxide.api.v1.MonitoringAgentState
  */
 export enum MonitoringAgentState {
-  /**
-   * @generated from enum value: MONITORING_AGENT_STATE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
+	/**
+	 * @generated from enum value: MONITORING_AGENT_STATE_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
 
-  /**
-   * @generated from enum value: MONITORING_AGENT_STATE_ONLINE = 1;
-   */
-  ONLINE = 1,
+	/**
+	 * @generated from enum value: MONITORING_AGENT_STATE_ONLINE = 1;
+	 */
+	ONLINE = 1,
 
-  /**
-   * @generated from enum value: MONITORING_AGENT_STATE_OFFLINE = 2;
-   */
-  OFFLINE = 2,
+	/**
+	 * @generated from enum value: MONITORING_AGENT_STATE_OFFLINE = 2;
+	 */
+	OFFLINE = 2,
 
-  /**
-   * @generated from enum value: MONITORING_AGENT_STATE_NEVER_SEEN = 3;
-   */
-  NEVER_SEEN = 3,
+	/**
+	 * @generated from enum value: MONITORING_AGENT_STATE_NEVER_SEEN = 3;
+	 */
+	NEVER_SEEN = 3,
 }
 
 /**
  * Describes the enum openoxide.api.v1.MonitoringAgentState.
  */
-export const MonitoringAgentStateSchema: GenEnum<MonitoringAgentState> = /*@__PURE__*/
-  enumDesc(file_openoxide_api_v1_monitoring, 0);
+export const MonitoringAgentStateSchema: GenEnum<MonitoringAgentState> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_monitoring, 0);
 
 /**
  * Sole monitoring owner service; absorbs the former MonitoringOperationsService.
@@ -1067,150 +1118,148 @@ export const MonitoringAgentStateSchema: GenEnum<MonitoringAgentState> = /*@__PU
  * @generated from service openoxide.api.v1.MonitoringService
  */
 export const MonitoringService: GenService<{
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.GetOverview
-   */
-  getOverview: {
-    methodKind: "unary";
-    input: typeof MonitoringGetOverviewRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.GetMetrics
-   */
-  getMetrics: {
-    methodKind: "unary";
-    input: typeof MonitoringGetMetricsRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerState
-   */
-  getContainerState: {
-    methodKind: "unary";
-    input: typeof MonitoringGetContainerStateRequestSchema;
-    output: typeof EmptySchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.GetLocalMetrics
-   */
-  getLocalMetrics: {
-    methodKind: "unary";
-    input: typeof MonitoringGetLocalMetricsRequestSchema;
-    output: typeof MonitoringGetLocalMetricsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.GetServerMetrics
-   */
-  getServerMetrics: {
-    methodKind: "unary";
-    input: typeof MonitoringGetServerMetricsRequestSchema;
-    output: typeof MonitoringGetServerMetricsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerMetrics
-   */
-  getContainerMetrics: {
-    methodKind: "unary";
-    input: typeof MonitoringGetContainerMetricsRequestSchema;
-    output: typeof MonitoringGetContainerMetricsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerStates
-   */
-  getContainerStates: {
-    methodKind: "unary";
-    input: typeof MonitoringGetContainerStatesRequestSchema;
-    output: typeof MonitoringGetContainerStatesResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.CreateAgentToken
-   */
-  createAgentToken: {
-    methodKind: "unary";
-    input: typeof MonitoringCreateAgentTokenRequestSchema;
-    output: typeof MonitoringCreateAgentTokenResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.GetAgentStatus
-   */
-  getAgentStatus: {
-    methodKind: "unary";
-    input: typeof MonitoringGetAgentStatusRequestSchema;
-    output: typeof MonitoringGetAgentStatusResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.StartAgent
-   */
-  startAgent: {
-    methodKind: "unary";
-    input: typeof MonitoringStartAgentRequestSchema;
-    output: typeof MonitoringStartAgentResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.StopAgent
-   */
-  stopAgent: {
-    methodKind: "unary";
-    input: typeof MonitoringStopAgentRequestSchema;
-    output: typeof MonitoringStopAgentResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.RestartAgent
-   */
-  restartAgent: {
-    methodKind: "unary";
-    input: typeof MonitoringRestartAgentRequestSchema;
-    output: typeof MonitoringRestartAgentResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.ReinstallAgent
-   */
-  reinstallAgent: {
-    methodKind: "unary";
-    input: typeof MonitoringReinstallAgentRequestSchema;
-    output: typeof MonitoringReinstallAgentResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.ExportServerMetrics
-   */
-  exportServerMetrics: {
-    methodKind: "unary";
-    input: typeof MonitoringExportServerMetricsRequestSchema;
-    output: typeof MonitoringExportServerMetricsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.GetPrometheusMetrics
-   */
-  getPrometheusMetrics: {
-    methodKind: "unary";
-    input: typeof MonitoringGetPrometheusMetricsRequestSchema;
-    output: typeof MonitoringGetPrometheusMetricsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.CreateMaintenanceWindow
-   */
-  createMaintenanceWindow: {
-    methodKind: "unary";
-    input: typeof MonitoringCreateMaintenanceWindowRequestSchema;
-    output: typeof MonitoringCreateMaintenanceWindowResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.ListMaintenanceWindows
-   */
-  listMaintenanceWindows: {
-    methodKind: "unary";
-    input: typeof MonitoringListMaintenanceWindowsRequestSchema;
-    output: typeof MonitoringListMaintenanceWindowsResponseSchema;
-  },
-  /**
-   * @generated from rpc openoxide.api.v1.MonitoringService.DeleteMaintenanceWindow
-   */
-  deleteMaintenanceWindow: {
-    methodKind: "unary";
-    input: typeof MonitoringDeleteMaintenanceWindowRequestSchema;
-    output: typeof EmptySchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_openoxide_api_v1_monitoring, 0);
-
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.GetOverview
+	 */
+	getOverview: {
+		methodKind: 'unary';
+		input: typeof MonitoringGetOverviewRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.GetMetrics
+	 */
+	getMetrics: {
+		methodKind: 'unary';
+		input: typeof MonitoringGetMetricsRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerState
+	 */
+	getContainerState: {
+		methodKind: 'unary';
+		input: typeof MonitoringGetContainerStateRequestSchema;
+		output: typeof EmptySchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.GetLocalMetrics
+	 */
+	getLocalMetrics: {
+		methodKind: 'unary';
+		input: typeof MonitoringGetLocalMetricsRequestSchema;
+		output: typeof MonitoringGetLocalMetricsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.GetServerMetrics
+	 */
+	getServerMetrics: {
+		methodKind: 'unary';
+		input: typeof MonitoringGetServerMetricsRequestSchema;
+		output: typeof MonitoringGetServerMetricsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerMetrics
+	 */
+	getContainerMetrics: {
+		methodKind: 'unary';
+		input: typeof MonitoringGetContainerMetricsRequestSchema;
+		output: typeof MonitoringGetContainerMetricsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerStates
+	 */
+	getContainerStates: {
+		methodKind: 'unary';
+		input: typeof MonitoringGetContainerStatesRequestSchema;
+		output: typeof MonitoringGetContainerStatesResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.CreateAgentToken
+	 */
+	createAgentToken: {
+		methodKind: 'unary';
+		input: typeof MonitoringCreateAgentTokenRequestSchema;
+		output: typeof MonitoringCreateAgentTokenResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.GetAgentStatus
+	 */
+	getAgentStatus: {
+		methodKind: 'unary';
+		input: typeof MonitoringGetAgentStatusRequestSchema;
+		output: typeof MonitoringGetAgentStatusResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.StartAgent
+	 */
+	startAgent: {
+		methodKind: 'unary';
+		input: typeof MonitoringStartAgentRequestSchema;
+		output: typeof MonitoringStartAgentResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.StopAgent
+	 */
+	stopAgent: {
+		methodKind: 'unary';
+		input: typeof MonitoringStopAgentRequestSchema;
+		output: typeof MonitoringStopAgentResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.RestartAgent
+	 */
+	restartAgent: {
+		methodKind: 'unary';
+		input: typeof MonitoringRestartAgentRequestSchema;
+		output: typeof MonitoringRestartAgentResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.ReinstallAgent
+	 */
+	reinstallAgent: {
+		methodKind: 'unary';
+		input: typeof MonitoringReinstallAgentRequestSchema;
+		output: typeof MonitoringReinstallAgentResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.ExportServerMetrics
+	 */
+	exportServerMetrics: {
+		methodKind: 'unary';
+		input: typeof MonitoringExportServerMetricsRequestSchema;
+		output: typeof MonitoringExportServerMetricsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.GetPrometheusMetrics
+	 */
+	getPrometheusMetrics: {
+		methodKind: 'unary';
+		input: typeof MonitoringGetPrometheusMetricsRequestSchema;
+		output: typeof MonitoringGetPrometheusMetricsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.CreateMaintenanceWindow
+	 */
+	createMaintenanceWindow: {
+		methodKind: 'unary';
+		input: typeof MonitoringCreateMaintenanceWindowRequestSchema;
+		output: typeof MonitoringCreateMaintenanceWindowResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.ListMaintenanceWindows
+	 */
+	listMaintenanceWindows: {
+		methodKind: 'unary';
+		input: typeof MonitoringListMaintenanceWindowsRequestSchema;
+		output: typeof MonitoringListMaintenanceWindowsResponseSchema;
+	};
+	/**
+	 * @generated from rpc openoxide.api.v1.MonitoringService.DeleteMaintenanceWindow
+	 */
+	deleteMaintenanceWindow: {
+		methodKind: 'unary';
+		input: typeof MonitoringDeleteMaintenanceWindowRequestSchema;
+		output: typeof EmptySchema;
+	};
+}> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_monitoring, 0);

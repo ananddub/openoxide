@@ -1,12 +1,6 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {createFileRoute} from '@tanstack/react-router';
-import {
-	Cloud,
-	HardDrive,
-	LayoutGrid,
-	List,
-	Plus,
-} from 'lucide-react';
+import {Cloud, HardDrive, LayoutGrid, List, Plus} from 'lucide-react';
 import {toast} from 'sonner';
 import {Button} from '#/components/ui/button';
 import {

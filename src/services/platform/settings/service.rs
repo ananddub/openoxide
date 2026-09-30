@@ -93,6 +93,22 @@ impl SettingsService {
                 log_cleanup_enabled: policy.log_cleanup_enabled,
             })
             .await?;
+        // Reflect the panel's own domain into Traefik so the dashboard routes
+ // on its configured host (). Best-effort: a Traefik/edge
+        // hiccup must not fail the settings save.
+        if let Ok(traefik) = auto_di::resolve::<crate::services::networking::traefik::TraefikService>().await {
+            if let Err(error) = traefik
+                .update_panel_domain(
+                    setting.host.as_deref(),
+                    setting.https != 0,
+                    &setting.certificate_type,
+                    setting.custom_cert_resolver.as_deref(),
+                )
+                .await
+            {
+                tracing::warn!(%error, "could not write panel Traefik router");
+            }
+        }
         Ok(response(setting, &policy))
     }
 

@@ -190,8 +190,11 @@ export function PermissionOverridesSheet({
 	/** Click cycles inherit → allow → deny → inherit. */
 	const cycle = (policy: Policy) => {
 		const current = choices[policy.id];
-		const next: Choice | null =
-			!current ? 'GRANT' : current === 'GRANT' ? 'DENY' : null;
+		const next: Choice | null = !current
+			? 'GRANT'
+			: current === 'GRANT'
+				? 'DENY'
+				: null;
 		setChoices(state => {
 			const updated = {...state};
 			if (next === null) delete updated[policy.id];
@@ -203,7 +206,8 @@ export function PermissionOverridesSheet({
 	// Tick a whole row or column to force-allow it; clicking again clears those overrides.
 	const toggleGroup = (list: Policy[]) => {
 		const on =
-			list.length > 0 && list.every(policy => choices[policy.id] === 'GRANT');
+			list.length > 0 &&
+			list.every(policy => choices[policy.id] === 'GRANT');
 		setChoices(state => {
 			const updated = {...state};
 			for (const policy of list) {
@@ -239,7 +243,9 @@ export function PermissionOverridesSheet({
 	};
 
 	return (
-		<Sheet open={Boolean(member)} onOpenChange={open => !open && onClose()}>
+		<Sheet
+			open={Boolean(member)}
+			onOpenChange={open => !open && onClose()}>
 			<SheetContent className="max-w-[calc(100vw_-_1.5rem)] sm:data-[side=right]:w-[720px]">
 				<SheetHeader>
 					<SheetTitle>Permission overrides</SheetTitle>
@@ -248,7 +254,8 @@ export function PermissionOverridesSheet({
 						<span className="font-medium text-foreground">
 							{member?.email}
 						</span>{' '}
-						— an override wins over the role, everything else stays inherited.
+						— an override wins over the role, everything else stays
+						inherited.
 					</SheetDescription>
 				</SheetHeader>
 
@@ -317,8 +324,8 @@ export function PermissionOverridesSheet({
 								The action catalog is empty
 							</p>
 							<p className="mt-1 text-[13px] text-muted-foreground">
-								Apply the policy-catalog migration so the server returns the
-								actions a member can override.
+								Apply the policy-catalog migration so the server returns
+								the actions a member can override.
 							</p>
 						</div>
 					) : visibleRows.length === 0 ? (
@@ -327,7 +334,8 @@ export function PermissionOverridesSheet({
 								Nothing matches “{query.trim()}”
 							</p>
 							<p className="mt-1 text-[13px] text-muted-foreground">
-								Try a resource like app or database, or an action like read.
+								Try a resource like app or database, or an action like
+								read.
 							</p>
 						</div>
 					) : (
@@ -346,7 +354,9 @@ export function PermissionOverridesSheet({
 											.filter((p): p is Policy => !!p);
 										const on =
 											column.length > 0 &&
-											column.every(policy => choices[policy.id] === 'GRANT');
+											column.every(
+												policy => choices[policy.id] === 'GRANT',
+											);
 										return (
 											<button
 												key={op}
@@ -361,14 +371,14 @@ export function PermissionOverridesSheet({
 															: `Force allow ${titleCase(op)} everywhere`
 												}
 												className="flex cursor-pointer flex-col items-center gap-1 py-2 transition-colors hover:bg-accent/40 disabled:cursor-default disabled:hover:bg-transparent">
-													<Checkbox
-														checked={on}
-														tabIndex={-1}
-														className="pointer-events-none"
-													/>
-													<span className="text-[10px] leading-none text-muted-foreground">
-														{titleCase(op)}
-													</span>
+												<Checkbox
+													checked={on}
+													tabIndex={-1}
+													className="pointer-events-none"
+												/>
+												<span className="text-[10px] leading-none text-muted-foreground">
+													{titleCase(op)}
+												</span>
 											</button>
 										);
 									})}
@@ -438,14 +448,15 @@ export function PermissionOverridesSheet({
 								<span
 									key={face}
 									className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-										<FaceMark face={face} />
-										{FACE[face].label}
+									<FaceMark face={face} />
+									{FACE[face].label}
 								</span>
 							))}
 						</div>
 						<p className="text-[12px] leading-relaxed text-muted-foreground/80">
 							Click a cell to cycle it: inherited → forced allow → forced
-								deny. Overrides apply to this member only and win over the role.
+							deny. Overrides apply to this member only and win over the
+							role.
 						</p>
 					</div>
 				</div>

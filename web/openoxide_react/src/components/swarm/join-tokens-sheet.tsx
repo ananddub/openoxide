@@ -13,10 +13,7 @@ import {Server, ShieldCheck, Terminal} from 'lucide-react';
 
 import type {RemoteServerResponse, SwarmTokens} from '#/types/api-helpers';
 import type {TaggedSwarmNode} from '#/components/swarm/swarm-nodes-list';
-import {
-	OptionRow,
-	StepBody,
-} from '#/components/shared/sheet-wizard';
+import {OptionRow, StepBody} from '#/components/shared/sheet-wizard';
 import {CommandBlock} from '#/components/swarm/join-tokens-command-block';
 import {JoinServerPanel} from '#/components/swarm/join-server-panel';
 
@@ -81,8 +78,8 @@ export function JoinTokensSheet({
 				<SheetHeader>
 					<SheetTitle>New Swarm Node</SheetTitle>
 					<SheetDescription>
-						Attach another Docker engine to this cluster as a worker
-						or a manager.
+						Attach another Docker engine to this cluster as a worker or a
+						manager.
 					</SheetDescription>
 				</SheetHeader>
 
@@ -126,8 +123,8 @@ export function JoinTokensSheet({
 									/>
 									<p className="flex items-start gap-2 rounded-lg border border-border/60 bg-muted/20 p-3 text-[13px] text-muted-foreground">
 										<ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-500" />
-										Managers get full cluster control — only
-										join machines you trust as managers.
+										Managers get full cluster control — only join machines
+										you trust as managers.
 									</p>
 								</div>
 							)}

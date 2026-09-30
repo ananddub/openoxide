@@ -13,7 +13,11 @@ type Cache = Map<string, unknown>;
 
 const MonitoringCacheContext = createContext<Cache | null>(null);
 
-export function MonitoringCacheProvider({children}: {children: ReactNode}) {
+export function MonitoringCacheProvider({
+	children,
+}: {
+	children: ReactNode;
+}) {
 	const cacheRef = useRef<Cache>(new Map());
 	return (
 		<MonitoringCacheContext.Provider value={cacheRef.current}>

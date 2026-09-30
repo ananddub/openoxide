@@ -39,13 +39,25 @@ export function TraefikHeader({
 	isDirty,
 	isReadOnly,
 }: TraefikHeaderProps) {
+	const LOCAL_HOSTS = [
+		'127.0.0.1',
+		'localhost',
+		'openoxide-agent',
+		'openoxide-monitor',
+		'0.0.0.0',
+		'',
+	];
 	const availableServers = [
 		{id: 'local', name: 'Local Server', ip_address: '127.0.0.1'},
-		...(servers || []).map(s => ({
-			id: s.id.toString(),
-			name: s.name,
-			ip_address: s.ip_address || 'Remote',
-		})),
+		// The local host is already represented by the fixed "Local Server"
+		// entry above; drop its DB row so it isn't listed twice.
+		...(servers || [])
+			.filter(s => !LOCAL_HOSTS.includes((s.ip_address || '').trim()))
+			.map(s => ({
+				id: s.id.toString(),
+				name: s.name,
+				ip_address: s.ip_address || 'Remote',
+			})),
 	];
 
 	const selectedServer = availableServers.find(

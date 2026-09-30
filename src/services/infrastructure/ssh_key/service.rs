@@ -79,8 +79,16 @@ impl SshKeyService {
                 "Invalid key type. Supported types are 'ed25519' and 'rsa'".into(),
             ));
         }
-        let (private_key, public_key) =
-            ssh::generate_keypair(&kt).map_err(|e| sqlx::Error::Configuration(e.into()))?;
+        let (private_key, public_key) = {
+            let kt = kt.clone();
+            // RSA-4096 generation is ~1s of CPU-bound prime search; run it on
+            // the blocking pool so it never stalls async worker threads (which
+            // would slow every other in-flight request).
+            tokio::task::spawn_blocking(move || ssh::generate_keypair(&kt))
+                .await
+                .map_err(|e| sqlx::Error::Configuration(format!("key generation task failed: {e}").into()))?
+                .map_err(|e| sqlx::Error::Configuration(e.into()))?
+        };
 
         let now = chrono::Utc::now().timestamp();
         self.queries

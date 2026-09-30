@@ -52,7 +52,10 @@ const brandGlyphs: Record<string, SimpleIcon> = {
 
 /** Stable per-provider hue so the tail of the list doesn't read as one grey block. */
 const hueOf = (value: string) =>
-	[...value].reduce((hue, char) => (hue * 31 + char.charCodeAt(0)) % 360, 7);
+	[...value].reduce(
+		(hue, char) => (hue * 31 + char.charCodeAt(0)) % 360,
+		7,
+	);
 
 const initialOf = (label: string, value: string) => {
 	const head = label.replace(/\b(?:dns|cloud|net|com)\b/gi, '').trim();
@@ -80,7 +83,12 @@ export function DnsProviderMark({
 	// Drawn as an SVG <text> so the tile scales with whatever size class the caller passes.
 	return (
 		<svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-			<rect width="24" height="24" rx="5" fill={`hsl(${hue} 62% 50% / 0.18)`} />
+			<rect
+				width="24"
+				height="24"
+				rx="5"
+				fill={`hsl(${hue} 62% 50% / 0.18)`}
+			/>
 			<text
 				x="12"
 				y="12"

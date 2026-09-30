@@ -100,17 +100,10 @@ export function AuditFeed({
 				<Table>
 					<TableHeader className="sticky top-0 z-10 bg-muted-solid">
 						<TableRow className="border-b hover:bg-transparent">
-							<TableHead className={cn(HEAD_CLS, 'w-24')}>
-								Time
-							</TableHead>
-							<TableHead className={HEAD_CLS}>
-								Actor
-							</TableHead>
-							<TableHead className={HEAD_CLS}>
-								Action
-							</TableHead>
-							<TableHead
-								className={cn(HEAD_CLS, 'hidden sm:table-cell')}>
+							<TableHead className={cn(HEAD_CLS, 'w-24')}>Time</TableHead>
+							<TableHead className={HEAD_CLS}>Actor</TableHead>
+							<TableHead className={HEAD_CLS}>Action</TableHead>
+							<TableHead className={cn(HEAD_CLS, 'hidden sm:table-cell')}>
 								Resource
 							</TableHead>
 						</TableRow>
@@ -118,14 +111,10 @@ export function AuditFeed({
 					<TableBody>
 						{rows.map(e => {
 							const info = sentenceFor(e.action);
-							const member = usersById.get(
-								Number(e.user_id ?? 0),
-							);
-							const email =
-								member?.email || String(e.user_email || '');
+							const member = usersById.get(Number(e.user_id ?? 0));
+							const email = member?.email || String(e.user_email || '');
 							const displayName =
-								member?.name?.trim() ||
-								(email ? email.split('@')[0] : '');
+								member?.name?.trim() || (email ? email.split('@')[0] : '');
 							const avatar = member?.avatar || '';
 							return (
 								<TableRow
@@ -146,14 +135,11 @@ export function AuditFeed({
 												className={cn(
 													'flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-foreground/[0.06] text-[9px] font-semibold text-foreground uppercase',
 												)}>
-												{isSolidColorAvatar(
-													avatar,
-												) ? (
+												{isSolidColorAvatar(avatar) ? (
 													<span
 														className="size-full ring-1 ring-border/50 ring-inset"
 														style={{
-															backgroundColor:
-																avatar,
+															backgroundColor: avatar,
 														}}
 													/>
 												) : avatar ? (
@@ -163,9 +149,7 @@ export function AuditFeed({
 														className="size-full bg-muted object-cover"
 													/>
 												) : displayName ? (
-													getAvatarInitials(
-														displayName,
-													)
+													getAvatarInitials(displayName)
 												) : (
 													<UserIcon className="size-3.5 text-muted-foreground" />
 												)}

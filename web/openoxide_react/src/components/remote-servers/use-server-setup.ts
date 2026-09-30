@@ -90,16 +90,18 @@ export function useServerSetup(server: RemoteServerResponse | null) {
 				}
 			}
 
-			setSetupLogs(prev =>
-				[...prev, ...stampLogs(['Setup completed successfully.'])],
-			);
+			setSetupLogs(prev => [
+				...prev,
+				...stampLogs(['Setup completed successfully.']),
+			]);
 			setSetupState('success');
 			toast.success(`Server ${server.name} setup completed successfully!`);
 		} catch (err: unknown) {
 			const message = formatApiError(err);
-			setSetupLogs(prev =>
-				[...prev, ...stampLogs([`Setup failed: ${message}`])],
-			);
+			setSetupLogs(prev => [
+				...prev,
+				...stampLogs([`Setup failed: ${message}`]),
+			]);
 			setSetupState('failed');
 			toast.error(`Setup failed: ${message}`);
 		}

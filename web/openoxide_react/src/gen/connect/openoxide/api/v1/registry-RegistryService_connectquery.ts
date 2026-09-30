@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/registry.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { RegistryService } from "./registry_pb";
+import {RegistryService} from './registry_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.RegistryService.ListRegistries

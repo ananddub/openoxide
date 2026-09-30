@@ -82,7 +82,7 @@ export function AppHeader({
 				</div>
 			</div>
 
-			{/* Dokploy Style Tab Bar */}
+			{/* Tab Bar */}
 			<div className="-mb-[1px] flex w-full scrollbar-none gap-6 overflow-x-auto border-b  pt-3">
 				{tabs.map(tab => {
 					const isActive = activeTab === tab;

@@ -33,14 +33,10 @@ export function SwarmDangerDialog({
 			<AlertDialogContent>
 				<AlertDialogHeader>
 					<AlertDialogTitle>{title}</AlertDialogTitle>
-					<AlertDialogDescription>
-						{description}
-					</AlertDialogDescription>
+					<AlertDialogDescription>{description}</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel onClick={onCancel}>
-						Cancel
-					</AlertDialogCancel>
+					<AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
 					<AlertDialogAction
 						className="bg-danger text-white hover:bg-danger/90"
 						disabled={busy}

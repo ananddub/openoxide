@@ -2,7 +2,7 @@
 // @generated from file openoxide/api/v1/ai.proto (package openoxide.api.v1, syntax proto3)
 /* eslint-disable */
 
-import { AiService } from "./ai_pb";
+import {AiService} from './ai_pb';
 
 /**
  * @generated from rpc openoxide.api.v1.AiService.ListSettings

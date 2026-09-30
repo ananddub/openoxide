@@ -54,6 +54,7 @@ RUN apk add --no-cache \
     gzip \
     jq \
     openssh-client \
+    openssl \
     rclone \
     tar \
     unzip \
