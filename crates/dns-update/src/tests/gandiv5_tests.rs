@@ -473,4 +473,56 @@ mod tests {
             .await;
         assert!(matches!(result, Err(Error::Api(_))), "got {result:?}");
     }
+
+    #[tokio::test]
+    async fn test_list_zone_infos_returns_domains() {
+        let mut server = mockito::Server::new_async().await;
+        let get = server
+            .mock("GET", "/domains?per_page=100&page=1")
+            .match_header("authorization", "Bearer test_token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"[{"domain":"example.com","hrefs":{"organization":"/v5/organization/0123"}},
+                    {"domain":"other.org","hrefs":{"organization":"/v5/organization/0123"}}]"#,
+            )
+            .create();
+
+        let provider = setup_provider(server.url());
+        let zones = provider.list_zone_infos().await.unwrap();
+        assert_eq!(zones.len(), 2);
+        assert_eq!(zones[0].id, "example.com");
+        assert_eq!(zones[0].name, "example.com");
+        assert_eq!(zones[1].name, "other.org");
+        get.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_maps_rrsets() {
+        let mut server = mockito::Server::new_async().await;
+        let get = server
+            .mock("GET", "/domains/example.com/records?per_page=100&page=1")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"[{"zone_id":"example.com","rrset_id":".../A","rrset_name":"@","rrset_type":"A","rrset_ttl":3600,"rrset_values":["1.2.3.4"]},
+                    {"zone_id":"example.com","rrset_id":".../TXT","rrset_name":"www","rrset_type":"TXT","rrset_ttl":300,"rrset_values":["\"hello world\""]},
+                    {"zone_id":"example.com","rrset_id":".../SOA","rrset_name":"@","rrset_type":"SOA","rrset_ttl":3600,"rrset_values":["ns1.gandi.net root.gandi.net 2024010100 7 10000 604800 0"]},
+                    {"zone_id":"example.com","rrset_id":".../MX","rrset_name":"@","rrset_type":"MX","rrset_ttl":3600,"rrset_values":["10 mail.example.com."]}]"#,
+            )
+            .create();
+
+        let provider = setup_provider(server.url());
+        let records = provider.list_zone_records("example.com").await.unwrap();
+        // SOA is skipped (unsupported record type).
+        assert_eq!(records.len(), 3);
+        assert_eq!(records[0].name, "@");
+        assert_eq!(records[0].record_type, "A");
+        assert_eq!(records[0].ttl, 3600);
+        assert_eq!(records[1].name, "www");
+        assert_eq!(records[1].record_type, "TXT");
+        assert_eq!(records[1].content, "hello world");
+        assert_eq!(records[2].record_type, "MX");
+        get.assert();
+    }
 }

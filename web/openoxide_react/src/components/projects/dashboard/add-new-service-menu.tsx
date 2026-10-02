@@ -128,6 +128,8 @@ export function AddNewServiceMenu({
 			<TemplateGallerySheet
 				open={galleryOpen}
 				onClose={() => setGalleryOpen(false)}
+				projectId={projectId}
+				environmentId={envId}
 			/>
 
 			<AiAssistantSheet

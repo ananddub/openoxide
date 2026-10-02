@@ -127,7 +127,10 @@ impl OracleCloudProvider {
         let key_pair = parse_rsa_pkcs8_pem(&config.private_key_pem)
             .map_err(|e| Error::Client(format!("Failed to parse OCI private key: {}", e)))?;
 
-        let endpoint = format!("https://dns.{}.oraclecloud.com", config.region);
+        // Current OCI DNS regional endpoint format per
+        // https://docs.oracle.com/iaas/Content/General/Concepts/endpoints.htmldns
+        // (e.g. https://dns.us-ashburn-1.oci.oraclecloud.com).
+        let endpoint = format!("https://dns.{}.oci.oraclecloud.com", config.region);
 
         Ok(Self {
             config,

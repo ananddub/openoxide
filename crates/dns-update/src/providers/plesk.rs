@@ -458,7 +458,7 @@ fn decode_record(expected_type: DnsRecordType, record: &PleskRecord) -> crate::R
 
 impl PleskProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        // Plesk REST API v3: GET /api/v3/domains returns {"resources": [{id, name, ...}],
+        // Plesk REST API v2: GET /api/v2/domains returns {"resources": [{id, name, ...}],
         // "paging": {"total-items": ..., "total-pages": ..., "current-page": ...}}.
         let mut out = Vec::new();
         let mut page = 1u64;
@@ -466,7 +466,7 @@ impl PleskProvider {
             let response = self
                 .client
                 .get(format!(
-                    "{}/api/v3/domains?page={}&limit=100",
+                    "{}/api/v2/domains?page={}&limit=100",
                     self.endpoint, page
                 ))
                 .send_with_retry::<serde_json::Value>(3)

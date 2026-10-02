@@ -579,6 +579,9 @@ mod tests {
             .match_query(mockito::Matcher::AllOf(vec![
                 mockito::Matcher::UrlEncoded("host".into(), "".into()),
                 mockito::Matcher::UrlEncoded("type".into(), "A".into()),
+                // ClouDNS records.json accepts rows-per-page of only
+                // 10, 20, 30, 50 or 100 (https://www.cloudns.net/wiki/article/57/).
+                mockito::Matcher::UrlEncoded("rows-per-page".into(), "100".into()),
             ]))
             .with_status(200)
             .with_body("[]")
@@ -607,6 +610,149 @@ mod tests {
         assert!(result.is_ok(), "apex set_rrset failed: {result:?}");
         lookup.assert();
         add.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_infos_parses_array_response() {
+        // list-zones.json returns a JSON *array* of zone objects
+        // (https://www.cloudns.net/wiki/article/50/).
+        let mut server = mockito::Server::new_async().await;
+        let zones_mock = server
+            .mock("GET", mockito::Matcher::Regex("^/list-zones.json".into()))
+            .match_query(mockito::Matcher::AllOf(vec![
+                mockito::Matcher::UrlEncoded("page".into(), "1".into()),
+                mockito::Matcher::UrlEncoded("rows-per-page".into(), "100".into()),
+            ]))
+            .with_status(200)
+            .with_body(
+                r#"[{"id":1,"name":"example.com","status":"active"},
+                   {"id":2,"name":"example.org","status":"deleged"}]"#,
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let zones = provider.list_zone_infos().await.unwrap();
+        assert_eq!(zones.len(), 2);
+        assert_eq!(zones[0].id, "1");
+        assert_eq!(zones[0].name, "example.com");
+        assert_eq!(zones[0].status.as_deref(), Some("active"));
+        assert_eq!(zones[1].name, "example.org");
+        zones_mock.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_infos_surfaces_error_envelope() {
+        let mut server = mockito::Server::new_async().await;
+        let zones_mock = server
+            .mock("GET", mockito::Matcher::Regex("^/list-zones.json".into()))
+            .with_status(200)
+            .with_body(r#"{"status":"Failed","statusDescription":"Invalid authentication."}"#)
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider.list_zone_infos().await;
+        assert!(matches!(result, Err(Error::Api(_))), "got {result:?}");
+        zones_mock.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_paginates_until_short_page() {
+        // records.json is an object keyed by record id; a full page of 100
+        // must trigger a second request, which returns "[]" to stop.
+        let mut page1 = serde_json::Map::new();
+        for i in 1..=100 {
+            page1.insert(
+                i.to_string(),
+                serde_json::json!({
+                    "id": i.to_string(),
+                    "type": "A",
+                    "host": format!("www{i}"),
+                    "record": format!("10.0.0.{}", i % 256),
+                    "ttl": 60,
+                }),
+            );
+        }
+        let page1 = serde_json::Value::Object(page1).to_string();
+
+        let mut server = mockito::Server::new_async().await;
+        let first = server
+            .mock("GET", mockito::Matcher::Regex("^/records.json".into()))
+            .match_query(mockito::Matcher::UrlEncoded("page".into(), "1".into()))
+            .with_status(200)
+            .with_body(page1)
+            .create();
+        let second = server
+            .mock("GET", mockito::Matcher::Regex("^/records.json".into()))
+            .match_query(mockito::Matcher::UrlEncoded("page".into(), "2".into()))
+            .with_status(200)
+            .with_body("[]")
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let records = provider.list_zone_records("example.com").await.unwrap();
+        assert_eq!(records.len(), 100);
+        assert_eq!(records[0].record_type, "A");
+        first.assert();
+        second.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_empty() {
+        let mut server = mockito::Server::new_async().await;
+        let recs_mock = server
+            .mock("GET", mockito::Matcher::Regex("^/records.json".into()))
+            .with_status(200)
+            .with_body("[]")
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let records = provider.list_zone_records("example.com").await.unwrap();
+        assert!(records.is_empty());
+        recs_mock.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_at_follows_pagination() {
+        // An rrset wider than one 100-record page must be collected across
+        // pages instead of being truncated to the first 100.
+        let mut page1 = serde_json::Map::new();
+        for i in 1..=100 {
+            page1.insert(
+                i.to_string(),
+                serde_json::json!({
+                    "id": i.to_string(),
+                    "type": "A",
+                    "host": "many",
+                    "record": format!("10.0.0.{}", i % 256),
+                }),
+            );
+        }
+        let page1 = serde_json::Value::Object(page1).to_string();
+
+        let mut server = mockito::Server::new_async().await;
+        let first = server
+            .mock("GET", mockito::Matcher::Regex("^/records.json".into()))
+            .match_query(mockito::Matcher::UrlEncoded("page".into(), "1".into()))
+            .with_status(200)
+            .with_body(page1)
+            .create();
+        let second = server
+            .mock("GET", mockito::Matcher::Regex("^/records.json".into()))
+            .match_query(mockito::Matcher::UrlEncoded("page".into(), "2".into()))
+            .with_status(200)
+            .with_body(
+                r#"{"101": {"id": "101", "type": "A", "host": "many", "record": "10.0.0.101"}}"#,
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .list_rrset("many.example.com", DnsRecordType::A, "example.com")
+            .await
+            .unwrap();
+        assert_eq!(result.len(), 101);
+        first.assert();
+        second.assert();
     }
 
     #[test]

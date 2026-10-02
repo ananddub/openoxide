@@ -72,6 +72,17 @@ pub struct ArvanListedRecord {
     pub ttl: Option<u32>,
     #[serde(default = "default_true")]
     pub can_delete: bool,
+    // The API marks user-immutable records with `is_protected`
+    // ("Protected records cannot be modified or deleted by user").
+    // https://git.arvancloud.ir/arvancloud/cdn-go-sdk/-/blob/main/docs/DnsRecordGeneric.md
+    #[serde(default)]
+    pub is_protected: bool,
+}
+
+impl ArvanListedRecord {
+    fn deletable(&self) -> bool {
+        self.can_delete && !self.is_protected
+    }
 }
 
 fn default_true() -> bool {
@@ -128,8 +139,16 @@ impl PartialEq<Value> for DesiredRecord {
 
 impl ArvanCloudProvider {
     pub(crate) fn new(api_key: impl AsRef<str>, timeout: Option<Duration>) -> Self {
+        // The API expects "Authorization: Apikey <token>"; accept bare tokens too.
+        // https://docs.arvancloud.ir/en/developer-tools/api/api-usage
+        let api_key = api_key.as_ref();
+        let header = if api_key.starts_with("Apikey") {
+            api_key.to_string()
+        } else {
+            format!("Apikey {api_key}")
+        };
         let client = HttpClientBuilder::default()
-            .with_header("Authorization", api_key.as_ref())
+            .with_header("Authorization", header)
             .with_timeout(timeout)
             .build();
         Self {
@@ -164,7 +183,7 @@ impl ArvanCloudProvider {
         let existing = self.list_at(&domain, &subdomain, wire_type).await?;
 
         let mut existing_pool: Vec<ArvanListedRecord> =
-            existing.into_iter().filter(|r| r.can_delete).collect();
+            existing.into_iter().filter(|r| r.deletable()).collect();
 
         let mut to_create: Vec<DesiredRecord> = Vec::new();
         for desired_record in desired {
@@ -245,9 +264,9 @@ impl ArvanCloudProvider {
                 .iter()
                 .find(|r| desired_record == normalize_listed(r))
             {
-                if !entry.can_delete {
+                if !entry.deletable() {
                     return Err(Error::Api(format!(
-                        "ArvanCloud record {} cannot be removed (can_delete=false)",
+                        "ArvanCloud record {} cannot be removed (can_delete=false or is_protected)",
                         entry.id
                     )));
                 }
@@ -401,6 +420,16 @@ fn normalize_listed(record: &ArvanListedRecord) -> Value {
     normalize_value(static_wire(&record.record_type), record.value.clone())
 }
 
+// The ArvanCloud schema models TLSA codes as strings ("3") but may return
+// numbers; accept both forms.
+fn value_code(value: &Value) -> Option<u64> {
+    match value {
+        Value::Number(n) => n.as_u64(),
+        Value::String(s) => s.trim().parse().ok(),
+        _ => None,
+    }
+}
+
 fn static_wire(s: &str) -> &'static str {
     match s {
         "a" => "a",
@@ -483,12 +512,9 @@ fn normalize_value(wire_type: &str, mut value: Value) -> Value {
             })
         }
         "tlsa" => {
-            let usage = value.get("usage").and_then(|v| v.as_u64()).unwrap_or(0);
-            let selector = value.get("selector").and_then(|v| v.as_u64()).unwrap_or(0);
-            let matching_type = value
-                .get("matching_type")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0);
+            let usage = value.get("usage").and_then(value_code).unwrap_or(0);
+            let selector = value.get("selector").and_then(value_code).unwrap_or(0);
+            let matching_type = value.get("matching_type").and_then(value_code).unwrap_or(0);
             let certificate = value
                 .get("certificate")
                 .and_then(|v| v.as_str())
@@ -502,7 +528,7 @@ fn normalize_value(wire_type: &str, mut value: Value) -> Value {
             })
         }
         "caa" => {
-            let flag = value.get("flag").and_then(|v| v.as_u64()).unwrap_or(0);
+            let flag = value.get("flag").and_then(value_code).unwrap_or(0);
             let tag = value
                 .get("tag")
                 .and_then(|v| v.as_str())
@@ -566,9 +592,9 @@ fn listed_to_dns_record(record_type: DnsRecordType, value: &Value) -> Option<Dns
             }))
         }
         DnsRecordType::TLSA => {
-            let usage = value.get("usage")?.as_u64()? as u8;
-            let selector = value.get("selector")?.as_u64()? as u8;
-            let matching = value.get("matching_type")?.as_u64()? as u8;
+            let usage = value.get("usage").and_then(value_code)? as u8;
+            let selector = value.get("selector").and_then(value_code)? as u8;
+            let matching = value.get("matching_type").and_then(value_code)? as u8;
             let hex = value.get("certificate")?.as_str()?;
             let cert_data = decode_hex(hex)?;
             let cert_usage = match usage {
@@ -597,7 +623,7 @@ fn listed_to_dns_record(record_type: DnsRecordType, value: &Value) -> Option<Dns
             }))
         }
         DnsRecordType::CAA => {
-            let flag = value.get("flag")?.as_u64()? as u8;
+            let flag = value.get("flag").and_then(value_code).unwrap_or(0) as u8;
             let tag = value.get("tag")?.as_str()?.to_string();
             let v = value.get("value")?.as_str()?.to_string();
             let issuer_critical = flag & 0x80 != 0;
@@ -716,9 +742,9 @@ impl TryFrom<DnsRecord> for ArvanRecordContent {
                 Ok(ArvanRecordContent {
                     record_type: "tlsa",
                     value: serde_json::json!({
-                        "usage": u8::from(tlsa.cert_usage),
-                        "selector": u8::from(tlsa.selector),
-                        "matching_type": u8::from(tlsa.matching),
+                        "usage": u8::from(tlsa.cert_usage).to_string(),
+                        "selector": u8::from(tlsa.selector).to_string(),
+                        "matching_type": u8::from(tlsa.matching).to_string(),
                         "certificate": certificate,
                     }),
                 })

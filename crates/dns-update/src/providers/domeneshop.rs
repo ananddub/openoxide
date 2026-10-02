@@ -9,17 +9,21 @@
  * except according to those terms.
  */
 
-use crate::utils::build_caa;
+use crate::utils::{
+    decode_hex, strip_origin_from_name, tlsa_cert_usage_from_u8, tlsa_matching_from_u8,
+    tlsa_selector_from_u8,
+};
 use crate::{
-    DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord,
+    DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord, TLSARecord,
     http::{HttpClient, HttpClientBuilder},
-    utils::strip_origin_from_name,
 };
 use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 const DEFAULT_API_ENDPOINT: &str = "https://api.domeneshop.no/v0";
+const TTL_MIN: u32 = 60;
+const TTL_MAX: u32 = 604_800;
 
 #[derive(Clone)]
 pub struct DomeneshopProvider {
@@ -49,9 +53,11 @@ pub struct DnsRecordPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub port: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub flags: Option<u8>,
+    pub usage: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub tag: Option<String>,
+    pub selector: Option<u8>,
+    #[serde(rename = "dtype", skip_serializing_if = "Option::is_none")]
+    pub matching_type: Option<u8>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -71,9 +77,11 @@ pub struct ExistingDnsRecord {
     #[serde(default)]
     pub port: Option<u16>,
     #[serde(default)]
-    pub flags: Option<u8>,
+    pub usage: Option<u8>,
     #[serde(default)]
-    pub tag: Option<String>,
+    pub selector: Option<u8>,
+    #[serde(rename = "dtype", default)]
+    pub matching_type: Option<u8>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -83,8 +91,9 @@ pub struct DomeneshopRecordContent {
     pub priority: Option<u16>,
     pub weight: Option<u16>,
     pub port: Option<u16>,
-    pub flags: Option<u8>,
-    pub tag: Option<String>,
+    pub usage: Option<u8>,
+    pub selector: Option<u8>,
+    pub matching_type: Option<u8>,
 }
 
 impl DomeneshopProvider {
@@ -289,13 +298,21 @@ fn build_payload(host: &str, ttl: u32, content: &DomeneshopRecordContent) -> Dns
         host: host.to_string(),
         record_type: content.record_type.to_string(),
         data: content.data.clone(),
-        ttl,
+        ttl: clamp_ttl(ttl),
         priority: content.priority,
         weight: content.weight,
         port: content.port,
-        flags: content.flags,
-        tag: content.tag.clone(),
+        usage: content.usage,
+        selector: content.selector,
+        matching_type: content.matching_type,
     }
+}
+
+/// The Domeneshop API requires the TTL to be a multiple of 60 seconds, within
+/// 60..604800; round up to the next valid value.
+fn clamp_ttl(ttl: u32) -> u32 {
+    let clamped = ttl.clamp(TTL_MIN, TTL_MAX);
+    ((clamped + 59) / 60) * 60
 }
 
 fn build_contents(
@@ -317,13 +334,20 @@ fn build_contents(
 }
 
 fn record_matches(existing: &ExistingDnsRecord, desired: &DomeneshopRecordContent) -> bool {
+    let data_matches = if desired.record_type == "TLSA" {
+        // TLSA data is a hex digest; the API may return it in upper case.
+        existing.data.eq_ignore_ascii_case(&desired.data)
+    } else {
+        existing.data == desired.data
+    };
     existing.record_type == desired.record_type
-        && existing.data == desired.data
+        && data_matches
         && existing.priority == desired.priority
         && existing.weight == desired.weight
         && existing.port == desired.port
-        && existing.flags == desired.flags
-        && existing.tag == desired.tag
+        && existing.usage == desired.usage
+        && existing.selector == desired.selector
+        && existing.matching_type == desired.matching_type
 }
 
 impl TryFrom<DnsRecord> for DomeneshopRecordContent {
@@ -337,8 +361,9 @@ impl TryFrom<DnsRecord> for DomeneshopRecordContent {
                 priority: None,
                 weight: None,
                 port: None,
-                flags: None,
-                tag: None,
+                usage: None,
+                selector: None,
+                matching_type: None,
             }),
             DnsRecord::AAAA(addr) => Ok(DomeneshopRecordContent {
                 record_type: "AAAA",
@@ -346,8 +371,9 @@ impl TryFrom<DnsRecord> for DomeneshopRecordContent {
                 priority: None,
                 weight: None,
                 port: None,
-                flags: None,
-                tag: None,
+                usage: None,
+                selector: None,
+                matching_type: None,
             }),
             DnsRecord::CNAME(target) => Ok(DomeneshopRecordContent {
                 record_type: "CNAME",
@@ -355,26 +381,22 @@ impl TryFrom<DnsRecord> for DomeneshopRecordContent {
                 priority: None,
                 weight: None,
                 port: None,
-                flags: None,
-                tag: None,
+                usage: None,
+                selector: None,
+                matching_type: None,
             }),
-            DnsRecord::NS(target) => Ok(DomeneshopRecordContent {
-                record_type: "NS",
-                data: target,
-                priority: None,
-                weight: None,
-                port: None,
-                flags: None,
-                tag: None,
-            }),
+            DnsRecord::NS(_) => Err(Error::Unsupported(
+                "NS records are not supported by the Domeneshop DNS API".to_string(),
+            )),
             DnsRecord::MX(mx) => Ok(DomeneshopRecordContent {
                 record_type: "MX",
                 data: mx.exchange,
                 priority: Some(mx.priority),
                 weight: None,
                 port: None,
-                flags: None,
-                tag: None,
+                usage: None,
+                selector: None,
+                matching_type: None,
             }),
             DnsRecord::TXT(text) => Ok(DomeneshopRecordContent {
                 record_type: "TXT",
@@ -382,8 +404,9 @@ impl TryFrom<DnsRecord> for DomeneshopRecordContent {
                 priority: None,
                 weight: None,
                 port: None,
-                flags: None,
-                tag: None,
+                usage: None,
+                selector: None,
+                matching_type: None,
             }),
             DnsRecord::SRV(srv) => Ok(DomeneshopRecordContent {
                 record_type: "SRV",
@@ -391,24 +414,23 @@ impl TryFrom<DnsRecord> for DomeneshopRecordContent {
                 priority: Some(srv.priority),
                 weight: Some(srv.weight),
                 port: Some(srv.port),
-                flags: None,
-                tag: None,
+                usage: None,
+                selector: None,
+                matching_type: None,
             }),
-            DnsRecord::TLSA(_) => Err(Error::Unsupported(
-                "TLSA records are not supported by Domeneshop".to_string(),
+            DnsRecord::TLSA(tlsa) => Ok(DomeneshopRecordContent {
+                record_type: "TLSA",
+                data: tlsa.cert_data.iter().map(|b| format!("{b:02x}")).collect(),
+                priority: None,
+                weight: None,
+                port: None,
+                usage: Some(u8::from(tlsa.cert_usage)),
+                selector: Some(u8::from(tlsa.selector)),
+                matching_type: Some(u8::from(tlsa.matching)),
+            }),
+            DnsRecord::CAA(_) => Err(Error::Unsupported(
+                "CAA records are not supported by the Domeneshop DNS API".to_string(),
             )),
-            DnsRecord::CAA(caa) => {
-                let (flags, tag, value) = caa.decompose();
-                Ok(DomeneshopRecordContent {
-                    record_type: "CAA",
-                    data: value,
-                    priority: None,
-                    weight: None,
-                    port: None,
-                    flags: Some(flags),
-                    tag: Some(tag),
-                })
-            }
         }
     }
 }
@@ -441,11 +463,12 @@ impl TryFrom<ExistingDnsRecord> for DnsRecord {
                 port: record.port.unwrap_or_default(),
                 target: record.data,
             })),
-            "CAA" => {
-                let flags = record.flags.unwrap_or_default();
-                let tag = record.tag.unwrap_or_default();
-                Ok(DnsRecord::CAA(build_caa(flags, &tag, &record.data)?))
-            }
+            "TLSA" => Ok(DnsRecord::TLSA(TLSARecord {
+                cert_usage: tlsa_cert_usage_from_u8(record.usage.unwrap_or_default())?,
+                selector: tlsa_selector_from_u8(record.selector.unwrap_or_default())?,
+                matching: tlsa_matching_from_u8(record.matching_type.unwrap_or_default())?,
+                cert_data: decode_hex(&record.data)?,
+            })),
             other => Err(Error::Parse(format!(
                 "Unsupported Domeneshop record type: {other}"
             ))),

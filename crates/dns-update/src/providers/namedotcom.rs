@@ -61,10 +61,8 @@ struct ListRecordsResponse {
 
 #[derive(Deserialize, Debug)]
 struct DomainEntry {
-    #[serde(default)]
-    id: i64,
-    #[serde(default)]
-    name: String,
+    #[serde(default, rename = "domainName")]
+    domain_name: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -81,7 +79,7 @@ struct NormalizedRecord {
     priority: Option<u16>,
 }
 
-const DEFAULT_API_ENDPOINT: &str = "https://api.name.com";
+const DEFAULT_API_ENDPOINT: &str = "https://api.name.com/core/v1";
 
 impl NameDotComProvider {
     pub(crate) fn new(
@@ -237,7 +235,7 @@ impl NameDotComProvider {
             let response = self
                 .client
                 .get(format!(
-                    "{}/v4/domains/{}/records?page={}",
+                    "{}/domains/{}/records?page={}",
                     self.endpoint, domain, page
                 ))
                 .send::<ListRecordsResponse>()
@@ -277,7 +275,7 @@ impl NameDotComProvider {
         ttl: u32,
     ) -> crate::Result<()> {
         self.client
-            .post(format!("{}/v4/domains/{}/records", self.endpoint, domain))
+            .post(format!("{}/domains/{}/records", self.endpoint, domain))
             .with_body(CreateRecord {
                 host,
                 record_type: record_type.as_str(),
@@ -293,7 +291,7 @@ impl NameDotComProvider {
     async fn delete_record(&self, domain: &str, record_id: i64) -> crate::Result<()> {
         self.client
             .delete(format!(
-                "{}/v4/domains/{}/records/{}",
+                "{}/domains/{}/records/{}",
                 self.endpoint, domain, record_id
             ))
             .send_with_retry::<serde_json::Value>(3)
@@ -315,6 +313,11 @@ fn validate_type(record_type: DnsRecordType) -> crate::Result<()> {
     if matches!(record_type, DnsRecordType::TLSA) {
         return Err(Error::Unsupported(
             "TLSA records are not supported by Name.com".to_string(),
+        ));
+    }
+    if matches!(record_type, DnsRecordType::CAA) {
+        return Err(Error::Unsupported(
+            "CAA records are not supported by the Name.com Core API".to_string(),
         ));
     }
     Ok(())
@@ -460,16 +463,16 @@ impl NameDotComProvider {
         loop {
             let response = self
                 .client
-                .get(format!("{}/v4/domains?page={}", self.endpoint, page))
+                .get(format!("{}/domains?page={}", self.endpoint, page))
                 .send::<ListDomainsResponse>()
                 .await?;
             for domain in response.domains {
-                if domain.name.is_empty() {
+                if domain.domain_name.is_empty() {
                     continue;
                 }
                 out.push(crate::ZoneInfo {
-                    id: domain.id.to_string(),
-                    name: domain.name,
+                    id: domain.domain_name.clone(),
+                    name: domain.domain_name,
                     status: None,
                 });
             }
@@ -491,7 +494,7 @@ impl NameDotComProvider {
             let response = self
                 .client
                 .get(format!(
-                    "{}/v4/domains/{}/records?page={}",
+                    "{}/domains/{}/records?page={}",
                     self.endpoint, zone, page
                 ))
                 .send::<ListRecordsResponse>()

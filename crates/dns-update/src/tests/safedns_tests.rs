@@ -773,6 +773,90 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_list_zone_infos_maps_named_zones() {
+        let mut server = mockito::Server::new_async().await;
+        let zones = server
+            .mock("GET", "/zones")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("per_page".into(), "200".into()),
+                Matcher::UrlEncoded("page".into(), "1".into()),
+            ]))
+            .match_header("authorization", "auth_token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "data": [
+                        {"id": 5, "name": "example.com"},
+                        {"id": 6, "name": "example.org"}
+                    ],
+                    "meta": {"pagination": {"total_pages": 1}}
+                })
+                .to_string(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .list_zone_infos()
+            .await
+            .expect("list_zone_infos failed");
+        zones.assert();
+
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].id, "5");
+        assert_eq!(result[0].name, "example.com");
+        assert_eq!(result[1].id, "6");
+        assert_eq!(result[1].name, "example.org");
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_maps_fqdn_names_relative() {
+        let mut server = mockito::Server::new_async().await;
+        let records = server
+            .mock("GET", list_path().as_str())
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("per_page".into(), "200".into()),
+                Matcher::UrlEncoded("page".into(), "1".into()),
+            ]))
+            .match_header("authorization", "auth_token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "data": [
+                        {"id": 1, "name": "example.com", "type": "A", "content": "1.2.3.4", "ttl": 86400},
+                        {"id": 2, "name": "host.example.com", "type": "A", "content": "5.6.7.8", "ttl": 300},
+                        {"id": 3, "name": "example.com", "type": "SPF", "content": "v=spf1 -all", "ttl": 300}
+                    ],
+                    "meta": {"pagination": {"total_pages": 1}}
+                })
+                .to_string(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .list_zone_records("example.com")
+            .await
+            .expect("list_zone_records failed");
+        records.assert();
+
+        // SPF is not a managed record type and must be skipped.
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].id, "1");
+        assert_eq!(result[0].name, "@");
+        assert_eq!(result[0].record_type, "A");
+        assert_eq!(result[0].content, "1.2.3.4");
+        assert_eq!(result[0].ttl, 86400);
+        assert_eq!(result[1].id, "2");
+        assert_eq!(result[1].name, "host");
+        assert_eq!(result[1].record_type, "A");
+        assert_eq!(result[1].content, "5.6.7.8");
+        assert_eq!(result[1].ttl, 300);
+    }
+
+    #[tokio::test]
     #[ignore = "Requires SafeDNS auth token"]
     async fn integration_test() {
         let token = std::env::var("SAFEDNS_AUTH_TOKEN").unwrap_or_default();

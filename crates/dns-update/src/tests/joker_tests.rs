@@ -12,7 +12,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        DnsRecord, DnsRecordType, Error, MXRecord,
+        CAARecord, DnsRecord, DnsRecordType, Error, MXRecord, SRVRecord,
         providers::joker::{JokerAuth, JokerProvider},
     };
     use mockito::Matcher;
@@ -416,9 +416,232 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn set_rrset_writes_srv_in_dma_format() {
+        let mut server = mockito::Server::new_async().await;
+        let login = login_mock(&mut server, "sid");
+        let get = get_zone_mock(&mut server, "sid", "example.com", "");
+        let put = put_zone_mock_with_zone(
+            &mut server,
+            "sid",
+            "example.com",
+            "www SRV 10/100 ldap.example.com.:389 60",
+        );
+
+        let p = provider(server.url());
+        let res = p
+            .set_rrset(
+                "www.example.com",
+                DnsRecordType::SRV,
+                60,
+                vec![DnsRecord::SRV(SRVRecord {
+                    priority: 10,
+                    weight: 100,
+                    port: 389,
+                    target: "ldap.example.com".to_string(),
+                })],
+                "example.com",
+            )
+            .await;
+        assert!(res.is_ok(), "{res:?}");
+        login.assert();
+        get.assert();
+        put.assert();
+    }
+
+    #[tokio::test]
+    async fn list_rrset_parses_srv() {
+        let mut server = mockito::Server::new_async().await;
+        let login = login_mock(&mut server, "sid");
+        let get = get_zone_mock(
+            &mut server,
+            "sid",
+            "example.com",
+            "www SRV 10/100 ldap.example.com.:389 60\n",
+        );
+
+        let p = provider(server.url());
+        let listed = p
+            .list_rrset("www.example.com", DnsRecordType::SRV, "example.com")
+            .await
+            .unwrap();
+        assert_eq!(
+            listed,
+            vec![DnsRecord::SRV(SRVRecord {
+                priority: 10,
+                weight: 100,
+                port: 389,
+                target: "ldap.example.com".to_string(),
+            })]
+        );
+        login.assert();
+        get.assert();
+    }
+
+    #[tokio::test]
+    async fn set_rrset_writes_caa_in_dma_format() {
+        let mut server = mockito::Server::new_async().await;
+        let login = login_mock(&mut server, "sid");
+        let get = get_zone_mock(&mut server, "sid", "example.com", "");
+        let put = put_zone_mock_with_zone(
+            &mut server,
+            "sid",
+            "example.com",
+            "caa CAA 0 issue \"letsencrypt.org\" 300",
+        );
+
+        let p = provider(server.url());
+        let res = p
+            .set_rrset(
+                "caa.example.com",
+                DnsRecordType::CAA,
+                300,
+                vec![DnsRecord::CAA(CAARecord::Issue {
+                    issuer_critical: false,
+                    name: Some("letsencrypt.org".to_string()),
+                    options: vec![],
+                })],
+                "example.com",
+            )
+            .await;
+        assert!(res.is_ok(), "{res:?}");
+        login.assert();
+        get.assert();
+        put.assert();
+    }
+
+    #[tokio::test]
+    async fn list_rrset_parses_caa() {
+        let mut server = mockito::Server::new_async().await;
+        let login = login_mock(&mut server, "sid");
+        let get = get_zone_mock(
+            &mut server,
+            "sid",
+            "example.com",
+            "caa CAA 0 issue \"letsencrypt.org\" 300\n",
+        );
+
+        let p = provider(server.url());
+        let listed = p
+            .list_rrset("caa.example.com", DnsRecordType::CAA, "example.com")
+            .await
+            .unwrap();
+        assert_eq!(
+            listed,
+            vec![DnsRecord::CAA(CAARecord::Issue {
+                issuer_critical: false,
+                name: Some("letsencrypt.org".to_string()),
+                options: vec![],
+            })]
+        );
+        login.assert();
+        get.assert();
+    }
+
+    #[tokio::test]
+    async fn set_rrset_rejects_critical_caa() {
+        let server = mockito::Server::new_async().await;
+        let p = provider(server.url());
+        let res = p
+            .set_rrset(
+                "caa.example.com",
+                DnsRecordType::CAA,
+                300,
+                vec![DnsRecord::CAA(CAARecord::Issue {
+                    issuer_critical: true,
+                    name: Some("letsencrypt.org".to_string()),
+                    options: vec![],
+                })],
+                "example.com",
+            )
+            .await;
+        assert!(
+            matches!(res, Err(Error::Unsupported(ref msg)) if msg.contains("CAA")),
+            "{res:?}"
+        );
+        let _ = server;
+    }
+
+    #[tokio::test]
+    async fn list_zone_infos_parses_dns_zone_list() {
+        let mut server = mockito::Server::new_async().await;
+        let login = login_mock(&mut server, "sid");
+        let list = server
+            .mock("POST", "/dns-zone-list")
+            .match_body(Matcher::UrlEncoded("auth-sid".into(), "sid".into()))
+            .with_status(200)
+            .with_body("Status-Code: 0\nStatus-Text: OK\n\nexample.com\nexample.net\n")
+            .create();
+
+        let p = provider(server.url());
+        let zones = p.list_zone_infos().await.unwrap();
+        assert_eq!(zones.len(), 2);
+        assert_eq!(zones[0].name, "example.com");
+        assert_eq!(zones[0].id, "example.com");
+        assert_eq!(zones[1].name, "example.net");
+        login.assert();
+        list.assert();
+    }
+
+    #[tokio::test]
+    async fn list_zone_records_parses_dma_lines() {
+        let mut server = mockito::Server::new_async().await;
+        let login = login_mock(&mut server, "sid");
+        let get = get_zone_mock(
+            &mut server,
+            "sid",
+            "example.com",
+            "www A 0 1.1.1.1 300\n@ MX 10 mail.example.com. 86400\nwww SRV 10/100 ldap.example.com.:389 60\n",
+        );
+
+        let p = provider(server.url());
+        let records = p.list_zone_records("example.com").await.unwrap();
+        assert_eq!(records.len(), 3);
+        assert_eq!(records[0].name, "www");
+        assert_eq!(records[0].record_type, "A");
+        assert_eq!(records[0].content, "1.1.1.1");
+        assert_eq!(records[0].ttl, 300);
+        assert_eq!(records[1].name, "@");
+        assert_eq!(records[1].record_type, "MX");
+        assert_eq!(records[1].content, "10 mail.example.com");
+        assert_eq!(records[1].ttl, 86400);
+        assert_eq!(records[2].record_type, "SRV");
+        assert_eq!(records[2].ttl, 60);
+        login.assert();
+        get.assert();
+    }
+
+    #[tokio::test]
     async fn set_rrset_clamps_low_ttl_to_minimum() {
         let mut server = mockito::Server::new_async().await;
         let login = login_mock(&mut server, "sid");
+        let get = get_zone_mock(&mut server, "sid", "example.com", "");
+        let put = put_zone_mock_with_zone(&mut server, "sid", "example.com", "www A 0 1.1.1.1 60");
+
+        let p = provider(server.url());
+        let res = p
+            .set_rrset(
+                "www.example.com",
+                DnsRecordType::A,
+                10,
+                vec![DnsRecord::A("1.1.1.1".parse().unwrap())],
+                "example.com",
+            )
+            .await;
+        assert!(res.is_ok(), "{res:?}");
+        login.assert();
+        get.assert();
+        put.assert();
+    }
+
+    #[tokio::test]
+    async fn status_code_1000_range_is_success() {
+        let mut server = mockito::Server::new_async().await;
+        let login = server
+            .mock("POST", "/login")
+            .match_body(Matcher::UrlEncoded("api-key".into(), "api-key-1".into()))
+            .with_status(200)
+            .with_body("Status-Code: 1000\nStatus-Text: OK\nAuth-Sid: sid\n\n")
+            .create();
         let get = get_zone_mock(&mut server, "sid", "example.com", "");
         let put = put_zone_mock_with_zone(&mut server, "sid", "example.com", "www A 0 1.1.1.1 300");
 
@@ -427,7 +650,7 @@ mod tests {
             .set_rrset(
                 "www.example.com",
                 DnsRecordType::A,
-                60,
+                300,
                 vec![DnsRecord::A("1.1.1.1".parse().unwrap())],
                 "example.com",
             )

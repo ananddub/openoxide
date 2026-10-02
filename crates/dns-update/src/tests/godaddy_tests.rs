@@ -531,4 +531,87 @@ mod tests {
         untouched.assert();
         untouched_delete.assert();
     }
+
+    #[tokio::test]
+    async fn test_list_zone_infos_returns_bare_domain_array() {
+        let mut server = mockito::Server::new_async().await;
+        let get = server
+            .mock("GET", "/v1/domains?limit=1000")
+            .match_header("authorization", "sso-key test_key:test_secret")
+            .with_status(200)
+            .with_body(
+                json!([
+                    {"domain": "example.com", "status": "ACTIVE"},
+                    {"domain": "other.test", "status": "PENDING_DNS"},
+                ])
+                .to_string(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url());
+        let zones = provider.list_zone_infos().await.unwrap();
+
+        assert_eq!(zones.len(), 2);
+        assert_eq!(zones[0].id, "example.com");
+        assert_eq!(zones[0].status.as_deref(), Some("ACTIVE"));
+        assert_eq!(zones[1].name, "other.test");
+        get.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_infos_follows_marker_pagination() {
+        let mut server = mockito::Server::new_async().await;
+        let page = json!(
+            (0..1000)
+                .map(|i| { json!({"domain": format!("d{i:04}.com"), "status": "ACTIVE"}) })
+                .collect::<Vec<_>>()
+        );
+        let first = server
+            .mock("GET", "/v1/domains?limit=1000")
+            .with_status(200)
+            .with_body(page.to_string())
+            .create();
+        let second = server
+            .mock("GET", "/v1/domains?limit=1000&marker=d0999.com")
+            .with_status(200)
+            .with_body(json!([{"domain": "last.com", "status": "ACTIVE"}]).to_string())
+            .create();
+
+        let provider = setup_provider(server.url());
+        let zones = provider.list_zone_infos().await.unwrap();
+
+        assert_eq!(zones.len(), 1001);
+        assert_eq!(zones[1000].name, "last.com");
+        first.assert();
+        second.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_maps_names_and_ttl() {
+        let mut server = mockito::Server::new_async().await;
+        let get = server
+            .mock("GET", "/v1/domains/example.com/records")
+            .match_header("authorization", "sso-key test_key:test_secret")
+            .with_status(200)
+            .with_body(
+                json!([
+                    {"data": "1.2.3.4", "name": "www", "ttl": 3600, "type": "A"},
+                    {"data": "5.6.7.8", "name": "@", "ttl": 3600, "type": "A"},
+                    {"data": "10 mail.example.com.", "name": "@", "ttl": 3600, "type": "MX"},
+                    {"data": "ignored", "name": "x", "ttl": 3600, "type": "ALIAS"},
+                ])
+                .to_string(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url());
+        let records = provider.list_zone_records("example.com").await.unwrap();
+
+        assert_eq!(records.len(), 3);
+        assert_eq!(records[0].name, "www");
+        assert_eq!(records[1].name, "@");
+        assert_eq!(records[2].record_type, "MX");
+        assert_eq!(records[2].ttl, 3600);
+        get.assert();
+    }
 }

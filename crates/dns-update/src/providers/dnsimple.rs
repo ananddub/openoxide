@@ -37,7 +37,9 @@ pub struct ApiResponse<T> {
 #[derive(Deserialize, Debug)]
 pub struct RecordEntry {
     pub id: i64,
-    pub name: String,
+    /// Apex records have a `null` name in the DNSimple API response.
+    #[serde(default)]
+    pub name: Option<String>,
     #[serde(rename = "type")]
     pub record_type: String,
     pub content: String,
@@ -239,7 +241,9 @@ impl DNSimpleProvider {
         Ok(response
             .data
             .into_iter()
-            .filter(|r| r.name == subdomain && r.record_type == target_type)
+            .filter(|r| {
+                r.name.as_deref().unwrap_or("") == subdomain && r.record_type == target_type
+            })
             .map(|r| ListedRecord {
                 id: r.id,
                 content: RecordContent {
@@ -426,11 +430,9 @@ fn parse_caa(content: &str) -> crate::Result<CAARecord> {
 }
 
 #[derive(Deserialize, Debug)]
-struct DomainListing {
+struct ZoneListing {
     id: i64,
     name: String,
-    #[serde(default)]
-    state: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -465,20 +467,22 @@ fn record_type_from_str(value: &str) -> Option<DnsRecordType> {
 
 impl DNSimpleProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
+        // DNSimple exposes zones at GET /v2/{account}/zones (the zones API is what the
+        // records endpoints are keyed by); /domains lists registrars' domains instead.
         let mut zones = Vec::new();
         let mut page = 1;
         loop {
             let url = format!(
-                "{}/{}/domains?page={}&per_page=100",
+                "{}/{}/zones?page={}&per_page=100",
                 self.endpoint, self.account_id, page
             );
-            let response: ApiResponse<Vec<DomainListing>> =
+            let response: ApiResponse<Vec<ZoneListing>> =
                 self.client.get(url).send_with_retry(3).await?;
             let count = response.data.len();
             zones.extend(response.data.into_iter().map(|d| crate::ZoneInfo {
                 id: d.id.to_string(),
                 name: d.name,
-                status: d.state,
+                status: None,
             }));
             if count < 100 || page > 100 {
                 break;

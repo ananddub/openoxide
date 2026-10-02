@@ -15,7 +15,7 @@ use crate::{
     CAARecord, DnsRecord, DnsRecordType, Error, IntoFqdn, MXRecord, SRVRecord,
     crypto::hmac_sha1,
     http::{HttpClient, HttpClientBuilder},
-    utils::strip_origin_from_name,
+    utils::{parse_tlsa, strip_origin_from_name},
 };
 use base64::{Engine, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use chrono::{SecondsFormat, Utc};
@@ -25,6 +25,7 @@ use std::time::Duration;
 
 const DEFAULT_ENDPOINT: &str = "https://rest.websupport.sk";
 const SERVICES_PAGE_SIZE: u32 = 500;
+const RECORDS_PAGE_SIZE: u32 = 100;
 
 #[derive(Clone)]
 pub struct WebSupportProvider {
@@ -70,6 +71,12 @@ struct WebSupportRecord {
 #[derive(Deserialize, Debug)]
 struct RecordResponse {
     data: Vec<WebSupportRecord>,
+    #[serde(rename = "rowsPerPage", default)]
+    rows_per_page: u32,
+    #[serde(rename = "totalPages", default)]
+    total_pages: u32,
+    #[serde(rename = "totalRecords", default)]
+    total_records: u32,
 }
 
 #[derive(Deserialize, Debug)]
@@ -168,7 +175,6 @@ impl WebSupportProvider {
         origin: impl IntoFqdn<'_>,
     ) -> crate::Result<()> {
         check_record_types(record_type, &records)?;
-        reject_unsupported_type(record_type)?;
         let name = name.into_name();
         let domain = origin.into_name();
         let subdomain = strip_origin_from_name(&name, &domain, None);
@@ -214,7 +220,6 @@ impl WebSupportProvider {
             return Ok(());
         }
         check_record_types(record_type, &records)?;
-        reject_unsupported_type(record_type)?;
         let name = name.into_name();
         let domain = origin.into_name();
         let subdomain = strip_origin_from_name(&name, &domain, None);
@@ -248,7 +253,6 @@ impl WebSupportProvider {
             return Ok(());
         }
         check_record_types(record_type, &records)?;
-        reject_unsupported_type(record_type)?;
         let name = name.into_name();
         let domain = origin.into_name();
         let subdomain = strip_origin_from_name(&name, &domain, None);
@@ -275,7 +279,6 @@ impl WebSupportProvider {
         record_type: DnsRecordType,
         origin: impl IntoFqdn<'_>,
     ) -> crate::Result<Vec<DnsRecord>> {
-        reject_unsupported_type(record_type)?;
         let name = name.into_name();
         let domain = origin.into_name();
         let subdomain = strip_origin_from_name(&name, &domain, None);
@@ -324,21 +327,49 @@ impl WebSupportProvider {
         }
     }
 
+    async fn list_records(&self, service_id: i64) -> crate::Result<Vec<WebSupportRecord>> {
+        let path = format!("/v2/service/{}/dns/record", service_id);
+        let mut out = Vec::new();
+        let mut page: u32 = 1;
+        loop {
+            let url = format!(
+                "{}{}?page={}&rowsPerPage={}",
+                self.endpoint, path, page, RECORDS_PAGE_SIZE
+            );
+            let response: RecordResponse = self
+                .signed(self.client.get(url), Method::GET, &path)
+                .send()
+                .await?;
+            let returned = response.data.len();
+            out.extend(response.data);
+            if returned == 0 {
+                break;
+            }
+            if response.total_pages > 0 {
+                if page >= response.total_pages {
+                    break;
+                }
+            } else if response.total_records == 0
+                || out.len() as u32 >= response.total_records
+                || response.rows_per_page == 0
+            {
+                break;
+            }
+            page += 1;
+        }
+        Ok(out)
+    }
+
     async fn list_at(
         &self,
         service_id: i64,
         subdomain: &str,
         record_type: DnsRecordType,
     ) -> crate::Result<Vec<ListedRecord>> {
-        let path = format!("/v2/service/{}/dns/record", service_id);
-        let url = format!("{}{}", self.endpoint, path);
-        let response: RecordResponse = self
-            .signed(self.client.get(url), Method::GET, &path)
-            .send()
-            .await?;
+        let records = self.list_records(service_id).await?;
         let type_str = record_type.as_str();
         let mut out = Vec::new();
-        for r in response.data {
+        for r in records {
             if r.name != subdomain || r.record_type != type_str {
                 continue;
             }
@@ -387,15 +418,6 @@ fn check_record_types(expected: DnsRecordType, records: &[DnsRecord]) -> crate::
                 r.as_type().as_str(),
             )));
         }
-    }
-    Ok(())
-}
-
-fn reject_unsupported_type(record_type: DnsRecordType) -> crate::Result<()> {
-    if matches!(record_type, DnsRecordType::TLSA) {
-        return Err(Error::Unsupported(
-            "TLSA records are not supported by WebSupport".into(),
-        ));
     }
     Ok(())
 }
@@ -468,11 +490,12 @@ fn record_to_content(record: DnsRecord) -> crate::Result<RecordContent> {
             port: None,
             weight: None,
         },
-        DnsRecord::TLSA(_) => {
-            return Err(Error::Unsupported(
-                "TLSA records are not supported by WebSupport".into(),
-            ));
-        }
+        DnsRecord::TLSA(tlsa) => RecordContent {
+            content: tlsa.to_string(),
+            priority: None,
+            port: None,
+            weight: None,
+        },
     })
 }
 
@@ -520,11 +543,7 @@ fn record_from_listed(
             port: content.port.unwrap_or(0),
         }),
         DnsRecordType::CAA => DnsRecord::CAA(parse_caa(&content.content)?),
-        DnsRecordType::TLSA => {
-            return Err(Error::Unsupported(
-                "TLSA records are not supported by WebSupport".into(),
-            ));
-        }
+        DnsRecordType::TLSA => parse_tlsa(&content.content)?,
     })
 }
 
@@ -619,14 +638,9 @@ impl WebSupportProvider {
         zone: &str,
     ) -> crate::Result<Vec<crate::ZoneRecord>> {
         let service_id = self.obtain_service_id(zone.trim_end_matches('.')).await?;
-        let path = format!("/v2/service/{}/dns/record", service_id);
-        let url = format!("{}{}", self.endpoint, path);
-        let response: RecordResponse = self
-            .signed(self.client.get(url), Method::GET, &path)
-            .send()
-            .await?;
+        let records = self.list_records(service_id).await?;
         let mut out = Vec::new();
-        for record in response.data {
+        for record in records {
             let Some(record_type) = zone_record_type(&record.record_type) else {
                 continue;
             };
@@ -666,6 +680,7 @@ fn zone_record_type(record_type: &str) -> Option<DnsRecordType> {
         "TXT" => Some(DnsRecordType::TXT),
         "SRV" => Some(DnsRecordType::SRV),
         "CAA" => Some(DnsRecordType::CAA),
+        "TLSA" => Some(DnsRecordType::TLSA),
         _ => None,
     }
 }

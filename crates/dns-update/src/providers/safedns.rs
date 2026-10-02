@@ -541,7 +541,7 @@ impl SafeDnsProvider {
         let mut page: u32 = 1;
         loop {
             let url = format!(
-                "{endpoint}/zones/{zone}/records?per_page={LIST_PAGE_SIZE}&page={page}",
+                "{endpoint}/zones/{zone_name}/records?per_page={LIST_PAGE_SIZE}&page={page}",
                 endpoint = self.endpoint
             );
             let response: ListRecordsResponse = self.client.get(url).send_with_retry(3).await?;

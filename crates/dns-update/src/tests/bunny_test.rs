@@ -19,7 +19,7 @@ mod tests {
     use serde_json::json;
     use std::time::Duration;
 
-    const ZONE_ID: u32 = 12345;
+    const ZONE_ID: i64 = 12345;
 
     fn setup_provider(endpoint: String) -> BunnyProvider {
         BunnyProvider::new("bunny-mock-api-key", Some(Duration::from_secs(1)))
@@ -682,6 +682,99 @@ mod tests {
             "expected Unauthorized, got {result:?}"
         );
         unauth.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_infos_paginates_and_handles_int64_ids() {
+        let mut server = mockito::Server::new_async().await;
+        let page1 = server
+            .mock("GET", "/dnszone")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "1".into()),
+                Matcher::UrlEncoded("perPage".into(), "100".into()),
+            ]))
+            .match_header("accesskey", "bunny-mock-api-key")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "Items": [{
+                        "Id": 9000000001i64,
+                        "Domain": "big-id-zone.com",
+                        "Records": null,
+                    }],
+                    "CurrentPage": 1,
+                    "TotalItems": 2,
+                    "HasMoreItems": true,
+                })
+                .to_string(),
+            )
+            .create();
+        let page2 = server
+            .mock("GET", "/dnszone")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "2".into()),
+                Matcher::UrlEncoded("perPage".into(), "100".into()),
+            ]))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "Items": [{
+                        "Id": ZONE_ID,
+                        "Domain": "example.com",
+                    }],
+                    "CurrentPage": 2,
+                    "TotalItems": 2,
+                    "HasMoreItems": false,
+                })
+                .to_string(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url());
+        let zones = provider
+            .list_zone_infos()
+            .await
+            .expect("list_zone_infos failed");
+
+        assert_eq!(zones.len(), 2, "expected 2 zones, got {zones:?}");
+        assert_eq!(zones[0].id, "9000000001");
+        assert_eq!(zones[0].name, "big-id-zone.com");
+        assert_eq!(zones[1].id, ZONE_ID.to_string());
+        assert_eq!(zones[1].name, "example.com");
+        page1.assert();
+        page2.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_maps_records_and_apex_name() {
+        let mut server = mockito::Server::new_async().await;
+        let zone = mock_zone_lookup(
+            &mut server,
+            "example.com",
+            json!([
+                {"Id": 1, "Name": "", "Type": 4, "Value": "mail.example.com", "Priority": 10, "Ttl": 3600},
+                {"Id": 2, "Name": "www", "Type": 0, "Value": "1.2.3.4", "Ttl": 300},
+                {"Id": 3, "Name": "skip", "Type": 5, "Value": "https://example.com", "Ttl": 300},
+            ]),
+        );
+
+        let provider = setup_provider(server.url());
+        let records = provider
+            .list_zone_records("example.com")
+            .await
+            .expect("list_zone_records failed");
+
+        // Type 5 (Redirect) is not a supported record type and must be skipped.
+        assert_eq!(records.len(), 2, "expected 2 records, got {records:?}");
+        assert_eq!(records[0].id, "1");
+        assert_eq!(records[0].name, "@");
+        assert_eq!(records[0].record_type, "MX");
+        assert_eq!(records[1].id, "2");
+        assert_eq!(records[1].name, "www");
+        assert_eq!(records[1].record_type, "A");
+        zone.assert();
     }
 
     #[test]

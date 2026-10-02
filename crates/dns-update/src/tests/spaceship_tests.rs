@@ -773,4 +773,79 @@ mod tests {
             })]
         );
     }
+
+    #[tokio::test]
+    async fn list_zone_infos_maps_domains_page() {
+        let mut server = mockito::Server::new_async().await;
+        let domains = server
+            .mock("GET", "/domains")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("take".into(), "100".into()),
+                Matcher::UrlEncoded("skip".into(), "0".into()),
+            ]))
+            .match_header("x-api-key", "test_api_key")
+            .match_header("x-api-secret", "test_api_secret")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "items": [
+                        {"name":"example.com","lifecycleStatus":"registered"},
+                        {"name":"example.org","lifecycleStatus":"pendingDelete"}
+                    ],
+                    "total": 2
+                })
+                .to_string(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let zones = provider
+            .list_zone_infos()
+            .await
+            .expect("list_zone_infos failed");
+        domains.assert();
+
+        assert_eq!(zones.len(), 2);
+        assert_eq!(zones[0].id, "example.com");
+        assert_eq!(zones[0].name, "example.com");
+        assert_eq!(zones[0].status.as_deref(), Some("registered"));
+        assert_eq!(zones[1].status.as_deref(), Some("pendingDelete"));
+    }
+
+    #[tokio::test]
+    async fn list_zone_records_returns_parsed_records() {
+        let mut server = mockito::Server::new_async().await;
+        let list = mock_list(
+            &mut server,
+            "example.com",
+            json!({
+                "items": [
+                    {"type":"A","name":"host","address":"1.1.1.1","ttl":300},
+                    {"type":"TXT","name":"@","value":"apex-text","ttl":60},
+                    {"type":"URLFWD","name":"old","pointer":"target","ttl":3600}
+                ],
+                "total": 3,
+            }),
+        );
+
+        let provider = setup_provider(server.url().as_str());
+        let records = provider
+            .list_zone_records("example.com")
+            .await
+            .expect("list_zone_records failed");
+        list.assert();
+
+        // URLFWD is not a supported DnsRecordType and must be skipped.
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].name, "host");
+        assert_eq!(records[0].record_type, "A");
+        assert_eq!(records[0].content, "1.1.1.1");
+        assert_eq!(records[0].ttl, 300);
+        // Records have no provider-side id; the fallback key is name|type|content.
+        assert_eq!(records[0].id, "host|A|1.1.1.1");
+        assert_eq!(records[1].name, "@");
+        assert_eq!(records[1].record_type, "TXT");
+        assert_eq!(records[1].content, "apex-text");
+    }
 }

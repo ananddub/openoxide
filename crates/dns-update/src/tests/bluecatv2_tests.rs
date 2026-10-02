@@ -124,7 +124,7 @@ mod tests {
         let create_new = server
             .mock("POST", "/api/v2/zones/42/resourceRecords")
             .match_body(mockito::Matcher::PartialJson(serde_json::json!({
-                "type": "GenericRecord",
+                "type": "HostRecord",
                 "name": "app",
                 "recordType": "A",
                 "addresses": ["2.2.2.2"],
@@ -443,7 +443,7 @@ mod tests {
         let create = server
             .mock("POST", "/api/v2/zones/42/resourceRecords")
             .match_body(mockito::Matcher::PartialJson(serde_json::json!({
-                "type": "GenericRecord",
+                "type": "HostRecord",
                 "recordType": "A",
                 "addresses": ["1.1.1.1"],
             })))
@@ -575,5 +575,66 @@ mod tests {
         no_post.assert();
         no_delete.assert();
         no_deploy.assert();
+    }
+
+    #[tokio::test]
+    async fn list_zone_infos_pages_with_limit_offset() {
+        let mut server = mockito::Server::new_async().await;
+        let session = mock_session(&mut server);
+        let zones = server
+            .mock("GET", "/api/v2/zones")
+            .match_query(mockito::Matcher::AllOf(vec![
+                mockito::Matcher::UrlEncoded("limit".into(), "1000".into()),
+                mockito::Matcher::UrlEncoded("offset".into(), "0".into()),
+            ]))
+            .match_header("authorization", "Basic AUTH")
+            .with_status(200)
+            .with_body(
+                r#"{"count":1,"data":[{"id":42,"absoluteName":"example.com","properties":"status=ACTIVE"}]}"#,
+            )
+            .expect(1)
+            .create();
+
+        let provider = setup(server.url().as_str());
+        let infos = provider.list_zone_infos().await.expect("list_zone_infos");
+        assert_eq!(infos.len(), 1);
+        assert_eq!(infos[0].id, "42");
+        assert_eq!(infos[0].name, "example.com");
+        assert_eq!(infos[0].status.as_deref(), Some("ACTIVE"));
+        session.assert();
+        zones.assert();
+    }
+
+    #[tokio::test]
+    async fn list_zone_records_maps_records_in_zone() {
+        let mut server = mockito::Server::new_async().await;
+        let session = mock_session(&mut server);
+        let zone = mock_zone(&mut server);
+        let records = server
+            .mock(
+                "GET",
+                mockito::Matcher::Regex("/api/v2/zones/42/resourceRecords\\?.*".into()),
+            )
+            .with_status(200)
+            .with_body(
+                r#"{"count":1,"data":[{"id":11,"absoluteName":"example.com","recordType":"A","addresses":["1.1.1.1"],"ttl":300}]}"#,
+            )
+            .expect(8)
+            .create();
+
+        let provider = setup(server.url().as_str());
+        let listed = provider
+            .list_zone_records("example.com")
+            .await
+            .expect("list_zone_records");
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].id, "11");
+        assert_eq!(listed[0].name, "@");
+        assert_eq!(listed[0].record_type, "A");
+        assert_eq!(listed[0].ttl, 300);
+        assert_eq!(listed[0].content, "1.1.1.1");
+        session.assert();
+        zone.assert();
+        records.assert();
     }
 }

@@ -161,16 +161,14 @@ mod tests {
 
     fn mock_list(
         server: &mut mockito::ServerGuard,
-        field_type: &str,
-        sub_domain: &str,
+        _field_type: &str,
+        _sub_domain: &str,
         body: serde_json::Value,
     ) -> mockito::Mock {
-        let path = format!(
-            "/domain/zone/example.com/record?fieldType={}&subDomain={}",
-            field_type, sub_domain
-        );
+        // GET /domain/zone/{zone}/record takes no query parameters and returns
+        // every record id of the zone.
         server
-            .mock("GET", path.as_str())
+            .mock("GET", "/domain/zone/example.com/record")
             .with_status(200)
             .with_body(serde_json::to_string(&body).unwrap())
             .create()
@@ -891,6 +889,62 @@ mod tests {
         zone.assert();
         list.assert();
         fetch.assert();
+    }
+
+    #[tokio::test]
+    async fn test_apex_operations_ignore_other_subdomains() {
+        // The record-id listing returns every record of the zone; an apex
+        // operation must only see records whose subDomain is empty, even when
+        // another subdomain holds a matching record type.
+        let mut server = mockito::Server::new_async().await;
+        let zone = mock_zone(&mut server);
+        let list = mock_list(&mut server, "A", "", json!([1400, 1401]));
+        let fetch_other = mock_get_record(
+            &mut server,
+            1400,
+            json!({
+                "id": 1400,
+                "zone": "example.com",
+                "subDomain": "www",
+                "fieldType": "A",
+                "target": "9.9.9.9",
+                "ttl": 300
+            }),
+        );
+        let fetch_apex = mock_get_record(
+            &mut server,
+            1401,
+            json!({
+                "id": 1401,
+                "zone": "example.com",
+                "subDomain": "",
+                "fieldType": "A",
+                "target": "1.1.1.1",
+                "ttl": 300
+            }),
+        );
+
+        let mut provider = setup_provider();
+        provider.endpoint = server.url();
+
+        let result = provider
+            .set_rrset(
+                "example.com",
+                DnsRecordType::A,
+                300,
+                vec![DnsRecord::A("1.1.1.1".parse().unwrap())],
+                "example.com",
+            )
+            .await;
+
+        // The www record must not be deleted and no mutation must be attempted
+        // (no delete/create/refresh mocks are registered, so any such call
+        // would surface as an error here).
+        assert!(result.is_ok(), "set_rrset returned: {result:?}");
+        zone.assert();
+        list.assert();
+        fetch_other.assert();
+        fetch_apex.assert();
     }
 
     #[tokio::test]

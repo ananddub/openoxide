@@ -1,0 +1,29 @@
+{
+	"name": "openoxide-agent-cpp",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": ".."
+	},
+	// Scoped to this folder: VS Code mounts experiments/agent-cpp as the
+	// workspace. Only proto/ from the repo is added, read-only, for codegen.
+	"mounts": [
+		"type=bind,source=${localWorkspaceFolder}/../../proto,target=/proto-src,readonly",
+		"type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock"
+	],
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-vscode.cpptools",
+				"ms-vscode.cmake-tools",
+				"twxs.cmake",
+				"eamodio.gitlens"
+			]
+		}
+	},
+	// containerUser=root lets the image entrypoint join vscode to the host
+	// docker.sock group at start; the VS Code server itself runs as vscode.
+	// overrideCommand=false so Docker actually runs our ENTRYPOINT hook.
+	"containerUser": "root",
+	"overrideCommand": false,
+	"remoteUser": "vscode"
+}

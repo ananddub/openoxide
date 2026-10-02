@@ -138,7 +138,7 @@ impl SimplyComProvider {
         let desired = build_contents(record_type, records)?;
         let (object, zone) = self.find_object(&origin).await?;
         let host = strip_origin_from_name(&name, &zone, Some("@"));
-        let existing = self.list_at(&object, &host, record_type).await?;
+        let existing = self.list_at(&object, &zone, &host, record_type).await?;
 
         let mut existing_pool = existing;
         let mut to_add: Vec<SimplyComRecordContent> = Vec::new();
@@ -179,7 +179,7 @@ impl SimplyComProvider {
         let desired = build_contents(record_type, records)?;
         let (object, zone) = self.find_object(&origin).await?;
         let host = strip_origin_from_name(&name, &zone, Some("@"));
-        let existing = self.list_at(&object, &host, record_type).await?;
+        let existing = self.list_at(&object, &zone, &host, record_type).await?;
 
         for content in desired {
             if existing.iter().any(|r| record_matches(r, &content)) {
@@ -205,7 +205,7 @@ impl SimplyComProvider {
         let to_remove = build_contents(record_type, records)?;
         let (object, zone) = self.find_object(&origin).await?;
         let host = strip_origin_from_name(&name, &zone, Some("@"));
-        let existing = self.list_at(&object, &host, record_type).await?;
+        let existing = self.list_at(&object, &zone, &host, record_type).await?;
 
         for content in to_remove {
             if let Some(entry) = existing.iter().find(|r| record_matches(r, &content)) {
@@ -225,7 +225,7 @@ impl SimplyComProvider {
         let origin = origin.into_name().into_owned();
         let (object, zone) = self.find_object(&origin).await?;
         let host = strip_origin_from_name(&name, &zone, Some("@"));
-        let existing = self.list_at(&object, &host, record_type).await?;
+        let existing = self.list_at(&object, &zone, &host, record_type).await?;
         existing.into_iter().map(DnsRecord::try_from).collect()
     }
 
@@ -254,6 +254,7 @@ impl SimplyComProvider {
     async fn list_at(
         &self,
         object: &str,
+        zone: &str,
         host: &str,
         record_type: DnsRecordType,
     ) -> crate::Result<Vec<ExistingDnsRecord>> {
@@ -269,7 +270,7 @@ impl SimplyComProvider {
         Ok(response
             .records
             .into_iter()
-            .filter(|r| r.name == host && r.record_type == type_str)
+            .filter(|r| normalize_record_name(&r.name, zone) == host && r.record_type == type_str)
             .collect())
     }
 
@@ -315,6 +316,20 @@ fn product_matches(product: &Product, candidate: &str) -> bool {
         || product.domain.as_ref().is_some_and(|d| {
             d.name.as_deref() == Some(candidate) || d.name_idn.as_deref() == Some(candidate)
         })
+}
+
+/// The API documents record names both as relative labels and as fully qualified
+/// names (e.g. the apex is returned as "example.com"), so normalize every stored
+/// name back to the relative form ("@" for the apex) before comparing or listing.
+fn normalize_record_name(raw: &str, zone: &str) -> String {
+    let raw = raw.trim_end_matches('.');
+    if raw.is_empty() || raw == zone {
+        "@".to_string()
+    } else if let Some(rel) = raw.strip_suffix(&format!(".{zone}")) {
+        rel.to_string()
+    } else {
+        raw.to_string()
+    }
 }
 
 fn build_contents(
@@ -505,7 +520,7 @@ impl SimplyComProvider {
         &self,
         zone: &str,
     ) -> crate::Result<Vec<crate::ZoneRecord>> {
-        let (object, _) = self.find_object(zone.trim_end_matches('.')).await?;
+        let (object, zone) = self.find_object(zone.trim_end_matches('.')).await?;
         let response = self
             .client
             .get(format!(
@@ -523,11 +538,7 @@ impl SimplyComProvider {
             };
             out.push(crate::ZoneRecord {
                 id: record.record_id.to_string(),
-                name: if record.name.is_empty() {
-                    "@".to_string()
-                } else {
-                    record.name
-                },
+                name: normalize_record_name(&record.name, &zone),
                 record_type: record.record_type.to_ascii_uppercase(),
                 content: typed.to_string(),
                 ttl,

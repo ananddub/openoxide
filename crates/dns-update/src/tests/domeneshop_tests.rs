@@ -12,7 +12,10 @@
 #[cfg(test)]
 mod tests {
     use crate::providers::domeneshop::DomeneshopProvider;
-    use crate::{CAARecord, DnsRecord, DnsRecordType, Error, MXRecord, SRVRecord};
+    use crate::{
+        CAARecord, DnsRecord, DnsRecordType, Error, MXRecord, SRVRecord, TLSARecord, TlsaCertUsage,
+        TlsaMatching, TlsaSelector,
+    };
     use mockito::{Matcher, Mock, ServerGuard};
     use serde_json::json;
     use std::time::Duration;
@@ -606,21 +609,122 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_set_rrset_caa_uses_flat_flags_tag_data() {
+    async fn test_set_rrset_tlsa_uses_flat_usage_selector_dtype_data() {
         let mut server = mockito::Server::new_async().await;
         let domains = mock_domains(&mut server);
-        let list = mock_list(&mut server, "@", "CAA", json!([]));
+        let list = mock_list(&mut server, "_443._tcp", "TLSA", json!([]));
         let create = mock_post(
             &mut server,
             json!({
-                "host": "@",
-                "type": "CAA",
-                "data": "letsencrypt.org",
+                "host": "_443._tcp",
+                "type": "TLSA",
+                "data": "aabb",
                 "ttl": 3600,
-                "flags": 0,
-                "tag": "issue",
+                "usage": 3,
+                "selector": 1,
+                "dtype": 1,
             }),
         );
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .set_rrset(
+                "_443._tcp.example.com",
+                DnsRecordType::TLSA,
+                3600,
+                vec![DnsRecord::TLSA(TLSARecord {
+                    cert_usage: TlsaCertUsage::DaneEe,
+                    selector: TlsaSelector::Spki,
+                    matching: TlsaMatching::Sha256,
+                    cert_data: vec![0xaa, 0xbb],
+                })],
+                "example.com",
+            )
+            .await;
+
+        assert!(result.is_ok(), "set_rrset returned: {result:?}");
+        domains.assert();
+        list.assert();
+        create.assert();
+    }
+
+    #[tokio::test]
+    async fn test_set_rrset_tlsa_matches_uppercase_hex_from_api() {
+        let mut server = mockito::Server::new_async().await;
+        let domains = mock_domains(&mut server);
+        let list = mock_list(
+            &mut server,
+            "_443._tcp",
+            "TLSA",
+            json!([
+                {"id": 1, "host": "_443._tcp", "type": "TLSA", "data": "AABB", "usage": 3, "selector": 1, "dtype": 1}
+            ]),
+        );
+        let _no_post = server.mock("POST", "/domains/42/dns").expect(0).create();
+        let _no_delete = server
+            .mock("DELETE", Matcher::Regex("^/domains/42/dns/".into()))
+            .expect(0)
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .set_rrset(
+                "_443._tcp.example.com",
+                DnsRecordType::TLSA,
+                3600,
+                vec![DnsRecord::TLSA(TLSARecord {
+                    cert_usage: TlsaCertUsage::DaneEe,
+                    selector: TlsaSelector::Spki,
+                    matching: TlsaMatching::Sha256,
+                    cert_data: vec![0xaa, 0xbb],
+                })],
+                "example.com",
+            )
+            .await;
+
+        assert!(result.is_ok(), "set_rrset returned: {result:?}");
+        domains.assert();
+        list.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_rrset_tlsa_round_trip() {
+        let mut server = mockito::Server::new_async().await;
+        let domains = mock_domains(&mut server);
+        let list = mock_list(
+            &mut server,
+            "_443._tcp",
+            "TLSA",
+            json!([
+                {"id": 1, "host": "_443._tcp", "type": "TLSA", "data": "AABB", "usage": 3, "selector": 1, "dtype": 1}
+            ]),
+        );
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .list_rrset("_443._tcp.example.com", DnsRecordType::TLSA, "example.com")
+            .await;
+
+        assert!(result.is_ok(), "list_rrset returned: {result:?}");
+        let records = result.unwrap();
+        assert_eq!(records.len(), 1);
+        match &records[0] {
+            DnsRecord::TLSA(tlsa) => {
+                assert_eq!(tlsa.cert_usage, TlsaCertUsage::DaneEe);
+                assert_eq!(tlsa.selector, TlsaSelector::Spki);
+                assert_eq!(tlsa.matching, TlsaMatching::Sha256);
+                assert_eq!(tlsa.cert_data, vec![0xaa, 0xbb]);
+            }
+            other => panic!("expected TLSA, got {other:?}"),
+        }
+        domains.assert();
+        list.assert();
+    }
+
+    #[tokio::test]
+    async fn test_set_rrset_caa_is_unsupported() {
+        let mut server = mockito::Server::new_async().await;
+        let _no_call = server.mock("GET", Matcher::Any).expect(0).create();
 
         let provider = setup_provider(server.url().as_str());
         let result = provider
@@ -633,6 +737,60 @@ mod tests {
                     name: Some("letsencrypt.org".to_string()),
                     options: vec![],
                 })],
+                "example.com",
+            )
+            .await;
+
+        assert!(
+            matches!(result, Err(Error::Unsupported(_))),
+            "got {result:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_set_rrset_ns_is_unsupported() {
+        let mut server = mockito::Server::new_async().await;
+        let _no_call = server.mock("GET", Matcher::Any).expect(0).create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .set_rrset(
+                "example.com",
+                DnsRecordType::NS,
+                3600,
+                vec![DnsRecord::NS("ns1.example.com".to_string())],
+                "example.com",
+            )
+            .await;
+
+        assert!(
+            matches!(result, Err(Error::Unsupported(_))),
+            "got {result:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_set_rrset_ttl_below_minimum_is_rounded_up() {
+        let mut server = mockito::Server::new_async().await;
+        let domains = mock_domains(&mut server);
+        let list = mock_list(&mut server, "www", "A", json!([]));
+        let create = mock_post(
+            &mut server,
+            json!({
+                "host": "www",
+                "type": "A",
+                "data": "1.2.3.4",
+                "ttl": 60,
+            }),
+        );
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .set_rrset(
+                "www.example.com",
+                DnsRecordType::A,
+                30,
+                vec![DnsRecord::A("1.2.3.4".parse().unwrap())],
                 "example.com",
             )
             .await;

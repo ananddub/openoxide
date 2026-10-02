@@ -77,7 +77,7 @@ mod tests {
                 mockito::Matcher::UrlEncoded("DomainName".into(), "example.com".into()),
                 mockito::Matcher::UrlEncoded("RRKeyWord".into(), rr.into()),
                 mockito::Matcher::UrlEncoded("TypeKeyWord".into(), record_type.into()),
-                mockito::Matcher::UrlEncoded("SearchMode".into(), "EXACT".into()),
+                mockito::Matcher::UrlEncoded("SearchMode".into(), "ADVANCED".into()),
                 mockito::Matcher::UrlEncoded("PageSize".into(), "500".into()),
             ]))
             .with_status(200)

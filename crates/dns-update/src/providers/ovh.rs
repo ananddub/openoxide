@@ -58,6 +58,8 @@ struct OvhRecordBody {
     id: u64,
     #[serde(rename = "fieldType")]
     field_type: String,
+    #[serde(default, rename = "subDomain")]
+    sub_domain: Option<String>,
     target: String,
 }
 
@@ -247,19 +249,11 @@ impl OvhProvider {
             .map_err(|_| Error::Api(format!("Zone {} not found or not accessible", domain_name)))
     }
 
-    async fn list_record_ids(
-        &self,
-        zone: &str,
-        subdomain: &str,
-        record_type: DnsRecordType,
-    ) -> crate::Result<Vec<u64>> {
-        let url = format!(
-            "{}/domain/zone/{}/record?fieldType={}&subDomain={}",
-            self.endpoint,
-            zone,
-            record_type.as_str(),
-            subdomain
-        );
+    async fn list_record_ids(&self, zone: &str) -> crate::Result<Vec<u64>> {
+        // GET /domain/zone/{zone}/record returns every record id of the zone;
+        // it accepts no filtering query parameters, so fieldType/subDomain
+        // matching must be done client-side after fetching each record body.
+        let url = format!("{}/domain/zone/{}/record", self.endpoint, zone);
         let body = self
             .send_authenticated_request(Method::GET, &url, "")
             .await?;
@@ -282,11 +276,12 @@ impl OvhProvider {
         subdomain: &str,
         record_type: DnsRecordType,
     ) -> crate::Result<Vec<OvhRecordBody>> {
-        let ids = self.list_record_ids(zone, subdomain, record_type).await?;
+        let ids = self.list_record_ids(zone).await?;
         let mut out = Vec::with_capacity(ids.len());
         for id in ids {
             let body = self.fetch_record(zone, id).await?;
-            if body.field_type == record_type.as_str() {
+            let record_subdomain = body.sub_domain.clone().unwrap_or_default();
+            if body.field_type == record_type.as_str() && record_subdomain == subdomain {
                 out.push(body);
             }
         }

@@ -231,12 +231,6 @@ impl NamecheapProvider {
                 host.ttl.clone()
             };
             params.push((format!("TTL{i}"), ttl));
-            if let Some(flag) = host.caa_flag {
-                params.push((format!("Flag{i}"), flag.to_string()));
-            }
-            if let Some(tag) = &host.caa_tag {
-                params.push((format!("Tag{i}"), tag.clone()));
-            }
         }
         let body =
             serde_urlencoded::to_string(&params).map_err(|e| Error::Serialize(e.to_string()))?;
@@ -540,10 +534,11 @@ fn build_hosts_for_record(
         }
         DnsRecord::CAA(caa) => {
             let (flags, tag, value) = caa.decompose();
+            // Official docs format the CAA Address as `flag tag "value"`.
             hosts.push(Host {
                 name: subdomain.to_string(),
                 record_type: type_str,
-                address: format!("{flags} {tag} {value}"),
+                address: format!("{flags} {tag} \"{value}\""),
                 mx_pref,
                 ttl: ttl_str,
                 caa_flag: None,

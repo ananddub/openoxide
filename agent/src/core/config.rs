@@ -113,6 +113,7 @@ mod tests {
             upload_roots: vec!["/tmp".into()],
             tls_cert: None,
             tls_key: None,
+            tls_client_ca: None,
         }
     }
 

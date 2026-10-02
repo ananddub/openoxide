@@ -656,4 +656,243 @@ mod tests {
         mock.assert_async().await;
         no_other_calls.assert_async().await;
     }
+
+    #[tokio::test]
+    async fn tlsa_records_are_supported() {
+        let mut server = mockito::Server::new_async().await;
+        let mock = server
+            .mock(
+                "PUT",
+                "/config-dns/v2/zones/example.com/names/_443._tcp.example.com/types/TLSA",
+            )
+            .match_body(Matcher::Json(json!({
+                "name": "_443._tcp.example.com",
+                "type": "TLSA",
+                "ttl": 300,
+                "rdata": ["3 1 1 aabb"]
+            })))
+            .with_status(200)
+            .with_body("{}")
+            .create_async()
+            .await;
+
+        let provider = provider_with_endpoint(&server.url());
+        let result = provider
+            .set_rrset(
+                "_443._tcp.example.com",
+                DnsRecordType::TLSA,
+                300,
+                vec![DnsRecord::TLSA(crate::TLSARecord {
+                    cert_usage: crate::TlsaCertUsage::DaneEe,
+                    selector: crate::TlsaSelector::Spki,
+                    matching: crate::TlsaMatching::Sha256,
+                    cert_data: vec![0xaa, 0xbb],
+                })],
+                "example.com",
+            )
+            .await;
+        assert!(result.is_ok(), "set_rrset failed: {:?}", result);
+        mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn list_rrset_parses_tlsa_records() {
+        let mut server = mockito::Server::new_async().await;
+        let mock = server
+            .mock(
+                "GET",
+                "/config-dns/v2/zones/example.com/names/_443._tcp.example.com/types/TLSA",
+            )
+            .with_status(200)
+            .with_body(
+                r#"{"name":"_443._tcp.example.com","type":"TLSA","ttl":300,"rdata":["3 1 1 aabb"]}"#,
+            )
+            .create_async()
+            .await;
+
+        let provider = provider_with_endpoint(&server.url());
+        let result = provider
+            .list_rrset("_443._tcp.example.com", DnsRecordType::TLSA, "example.com")
+            .await
+            .unwrap();
+        assert_eq!(
+            result,
+            vec![DnsRecord::TLSA(crate::TLSARecord {
+                cert_usage: crate::TlsaCertUsage::DaneEe,
+                selector: crate::TlsaSelector::Spki,
+                matching: crate::TlsaMatching::Sha256,
+                cert_data: vec![0xaa, 0xbb],
+            })]
+        );
+        mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn account_switch_key_is_signed_query_param() {
+        let mut server = mockito::Server::new_async().await;
+        let mock = server
+            .mock(
+                "PUT",
+                "/config-dns/v2/zones/example.com/names/www.example.com/types/A?accountSwitchKey=AAA-BBB",
+            )
+            .with_status(200)
+            .with_body("{}")
+            .create_async()
+            .await;
+
+        let config = crate::providers::edgedns::EdgeDnsConfig {
+            host: "edgedns.akamaiapis.net".to_string(),
+            client_token: "ct".to_string(),
+            client_secret: "cs".to_string(),
+            access_token: "at".to_string(),
+            account_switch_key: Some("AAA-BBB".to_string()),
+            request_timeout: Some(Duration::from_secs(5)),
+        };
+        let provider = EdgeDnsProvider::new(config)
+            .unwrap()
+            .with_endpoint(server.url());
+        let result = provider
+            .set_rrset(
+                "www.example.com",
+                DnsRecordType::A,
+                120,
+                vec![DnsRecord::A("1.2.3.4".parse().unwrap())],
+                "example.com",
+            )
+            .await;
+        assert!(result.is_ok(), "set_rrset failed: {:?}", result);
+        mock.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn list_zone_infos_paginates_with_total_elements() {
+        let mut server = mockito::Server::new_async().await;
+        let first: Vec<_> = (0..100)
+            .map(|i| {
+                json!({
+                    "zone": format!("z{i}.example.com"),
+                    "activationState": "ACTIVE",
+                })
+            })
+            .collect();
+        let first_json = json!({
+            "metadata": {"page": 1, "pageSize": 100, "totalElements": 101},
+            "zones": first,
+        })
+        .to_string();
+        let page1 = server
+            .mock("GET", "/config-dns/v2/zones?page=1&pageSize=100")
+            .with_status(200)
+            .with_body(first_json)
+            .expect(1)
+            .create_async()
+            .await;
+        let last_json = json!({
+            "metadata": {"page": 2, "pageSize": 100, "totalElements": 101},
+            "zones": [{"zone": "last.example.com", "activationState": "PENDING"}],
+        })
+        .to_string();
+        let page2 = server
+            .mock("GET", "/config-dns/v2/zones?page=2&pageSize=100")
+            .with_status(200)
+            .with_body(last_json)
+            .expect(1)
+            .create_async()
+            .await;
+
+        let provider = provider_with_endpoint(&server.url());
+        let result = provider.list_zone_infos().await.unwrap();
+        assert_eq!(result.len(), 101);
+        assert_eq!(result[100].name, "last.example.com");
+        assert_eq!(result[100].status.as_deref(), Some("PENDING"));
+        page1.assert_async().await;
+        page2.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn list_zone_infos_honors_legacy_last_page_flag() {
+        let mut server = mockito::Server::new_async().await;
+        let page1 = server
+            .mock("GET", "/config-dns/v2/zones?page=1&pageSize=100")
+            .with_status(200)
+            .with_body(
+                json!({
+                    "metadata": {"lastPage": true},
+                    "zones": [{"zone": "example.com", "activationState": "ACTIVE"}],
+                })
+                .to_string(),
+            )
+            .create_async()
+            .await;
+        let page2 = server
+            .mock("GET", "/config-dns/v2/zones?page=2&pageSize=100")
+            .expect(0)
+            .create_async()
+            .await;
+
+        let provider = provider_with_endpoint(&server.url());
+        let result = provider.list_zone_infos().await.unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].status.as_deref(), Some("ACTIVE"));
+        page1.assert_async().await;
+        page2.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn list_zone_records_paginates_and_maps_zone_apex() {
+        let mut server = mockito::Server::new_async().await;
+        let first: Vec<_> = (0..100)
+            .map(|i| {
+                json!({
+                    "name": format!("h{i}.example.com"),
+                    "type": "A",
+                    "ttl": 300,
+                    "rdata": [format!("192.0.2.{}", i % 256)],
+                })
+            })
+            .collect();
+        let page1 = server
+            .mock(
+                "GET",
+                "/config-dns/v2/zones/example.com/recordsets?page=1&pageSize=100",
+            )
+            .with_status(200)
+            .with_body(
+                json!({
+                    "metadata": {"page": 1, "pageSize": 100, "totalElements": 101, "types": ["A"], "zone": "example.com"},
+                    "recordsets": first,
+                })
+                .to_string(),
+            )
+            .expect(1)
+            .create_async()
+            .await;
+        let page2 = server
+            .mock(
+                "GET",
+                "/config-dns/v2/zones/example.com/recordsets?page=2&pageSize=100",
+            )
+            .with_status(200)
+            .with_body(
+                json!({
+                    "metadata": {"page": 2, "pageSize": 100, "totalElements": 101, "types": ["A"], "zone": "example.com"},
+                    "recordsets": [
+                        {"name": "example.com", "type": "A", "ttl": 300, "rdata": ["192.0.2.200"]}
+                    ],
+                })
+                .to_string(),
+            )
+            .expect(1)
+            .create_async()
+            .await;
+
+        let provider = provider_with_endpoint(&server.url());
+        let result = provider.list_zone_records("example.com").await.unwrap();
+        assert_eq!(result.len(), 101);
+        assert_eq!(result[0].name, "h0");
+        assert_eq!(result[100].name, "@");
+        assert_eq!(result[100].ttl, 300);
+        page1.assert_async().await;
+        page2.assert_async().await;
+    }
 }

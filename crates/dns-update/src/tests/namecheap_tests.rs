@@ -542,7 +542,7 @@ mod tests {
             .mock("POST", "/xml.response")
             .match_body(Matcher::AllOf(vec![
                 Matcher::UrlEncoded("RecordType1".into(), "CAA".into()),
-                Matcher::UrlEncoded("Address1".into(), "0 issue letsencrypt.org".into()),
+                Matcher::UrlEncoded("Address1".into(), "0 issue \"letsencrypt.org\"".into()),
             ]))
             .with_status(200)
             .with_body(SET_HOSTS_OK)
@@ -565,6 +565,53 @@ mod tests {
         assert!(result.is_ok(), "set_rrset returned {result:?}");
         get.assert();
         set.assert();
+    }
+
+    #[tokio::test]
+    async fn test_set_hosts_does_not_send_flag_or_tag_params() {
+        let mut server = mockito::Server::new_async().await;
+        let body = get_hosts_xml("");
+        let get = server
+            .mock("GET", "/xml.response")
+            .match_query(Matcher::Any)
+            .with_status(200)
+            .with_body(body)
+            .create();
+
+        let set = server
+            .mock("POST", "/xml.response")
+            .match_body(Matcher::UrlEncoded(
+                "Address1".into(),
+                "0 issue \"pki.example\"".into(),
+            ))
+            .with_status(200)
+            .with_body(SET_HOSTS_OK)
+            .expect(1)
+            .create();
+        let flag_absent = server
+            .mock("POST", "/xml.response")
+            .match_body(Matcher::UrlEncoded("Flag1".into(), "0".into()))
+            .expect(0)
+            .create();
+
+        let provider = provider(server.url());
+        let result = provider
+            .set_rrset(
+                "example.com",
+                DnsRecordType::CAA,
+                300,
+                vec![DnsRecord::CAA(CAARecord::Issue {
+                    issuer_critical: false,
+                    name: Some("pki.example".to_string()),
+                    options: Vec::new(),
+                })],
+                "example.com",
+            )
+            .await;
+        assert!(result.is_ok(), "set_rrset returned {result:?}");
+        get.assert();
+        set.assert();
+        flag_absent.assert();
     }
 
     #[tokio::test]
@@ -652,5 +699,75 @@ mod tests {
                 priority: 20,
             })
         );
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_infos_parses_get_list_with_paging() {
+        let mut server = mockito::Server::new_async().await;
+        let body = r#"<?xml version="1.0"?>
+<ApiResponse Status="OK">
+  <Errors/>
+  <CommandResponse>
+    <DomainGetListResult>
+      <Domain ID="127" Name="example.com" User="owner"/>
+      <Domain ID="381" Name="other.test" User="owner"/>
+    </DomainGetListResult>
+    <Paging><TotalItems>2</TotalItems><CurrentPage>1</CurrentPage><PageSize>100</PageSize></Paging>
+  </CommandResponse>
+</ApiResponse>"#;
+        let get = server
+            .mock("GET", "/xml.response")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("Command".into(), "namecheap.domains.getList".into()),
+                Matcher::UrlEncoded("Page".into(), "1".into()),
+                Matcher::UrlEncoded("PageSize".into(), "100".into()),
+            ]))
+            .with_status(200)
+            .with_body(body)
+            .create();
+
+        let provider = provider(server.url());
+        let zones = provider.list_zone_infos().await.unwrap();
+        assert_eq!(zones.len(), 2);
+        assert_eq!(zones[0].id, "127");
+        assert_eq!(zones[0].name, "example.com");
+        assert_eq!(zones[1].name, "other.test");
+        get.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_maps_hosts_including_caa() {
+        let mut server = mockito::Server::new_async().await;
+        let body = get_hosts_xml(&format!(
+            "{}\n{}\n{}",
+            host_xml("www", "A", "1.1.1.1", "10", "300"),
+            host_xml(
+                "@",
+                "CAA",
+                "0 issue &quot;letsencrypt.org&quot;",
+                "10",
+                "1800"
+            ),
+            host_xml("txt", "TXT", "hello", "10", "60"),
+        ));
+        let get = server
+            .mock("GET", "/xml.response")
+            .match_query(Matcher::AllOf(vec![Matcher::UrlEncoded(
+                "Command".into(),
+                "namecheap.domains.dns.getHosts".into(),
+            )]))
+            .with_status(200)
+            .with_body(body)
+            .create();
+
+        let provider = provider(server.url());
+        let records = provider.list_zone_records("example.com").await.unwrap();
+        assert_eq!(records.len(), 3);
+        assert_eq!(records[0].name, "www");
+        assert_eq!(records[0].ttl, 300);
+        assert_eq!(records[1].name, "@");
+        assert_eq!(records[1].record_type, "CAA");
+        assert_eq!(records[2].record_type, "TXT");
+        get.assert();
     }
 }

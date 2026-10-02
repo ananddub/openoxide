@@ -12,41 +12,34 @@ use crate::docker::types::ContainerSummary;
 use crate::telemetry::collector::bytes_to_mb;
 use crate::telemetry::collector::system::{ServerMetric, SystemCollector};
 
-/// Every metric is sampled live at request time — the agent stores no
-/// history. Server vitals come from live sysinfo samples (two when the panel
-/// asks for a trend); container vitals come straight from Docker's one-shot
-/// stats API (the same multiplexed request `docker stats --no-stream` makes).
+/// Server vitals come from the latest sample taken by the background
+/// collector loop — requests never trigger host scanning themselves.
+/// Container vitals come straight from Docker's one-shot stats API (the same
+/// multiplexed request `docker stats --no-stream` makes).
 pub struct MetricsService;
 
 impl MetricsService {
     pub async fn server(
+        cache: &Mutex<Option<ServerMetric>>,
         collector: &Mutex<SystemCollector>,
-        request: GetMetricsRequest,
+        _request: GetMetricsRequest,
     ) -> Result<Response<ServerMetricsResponse>, Status> {
-        let first = {
-            let mut collector = collector.lock().await;
-            collector.sample().await
+        let cached = cache.lock().await.clone();
+        let row = match cached {
+            Some(row) => row,
+            // First request raced ahead of the collector's first tick.
+            None => {
+                let row = {
+                    let mut collector = collector.lock().await;
+                    collector.sample().await
+                };
+                *cache.lock().await = Some(row.clone());
+                row
+            }
         };
-        // History is never stored; when the panel asks for a trend it gets a
-        // second live sample a moment later, which is the minimum that makes
-        // a sparkline drawable.
-        let mut metrics = vec![server_point(&first)];
-        if request.limit > 1 {
-            let host = host_info(&first);
-            tokio::time::sleep(std::time::Duration::from_millis(1200)).await;
-            let second = {
-                let mut collector = collector.lock().await;
-                collector.sample().await
-            };
-            metrics.push(server_point(&second));
-            return Ok(Response::new(ServerMetricsResponse {
-                host: Some(host),
-                metrics,
-            }));
-        }
         Ok(Response::new(ServerMetricsResponse {
-            host: Some(host_info(&first)),
-            metrics,
+            host: Some(host_info(&row)),
+            metrics: vec![server_point(&row)],
         }))
     }
 

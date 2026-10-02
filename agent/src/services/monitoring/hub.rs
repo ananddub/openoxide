@@ -105,7 +105,14 @@ impl StatsHub {
         let shared_sizes = self.sizes.clone();
         let docker = self.docker.clone();
         tokio::spawn(async move {
-            pump_stats(&docker, &shared_tx, &shared_sizes, &shared_state, generation).await;
+            pump_stats(
+                &docker,
+                &shared_tx,
+                &shared_sizes,
+                &shared_state,
+                generation,
+            )
+            .await;
         });
         rx
     }
@@ -242,8 +249,7 @@ async fn pump_stats(
                 continue;
             }
         };
-        let live: std::collections::HashSet<&str> =
-            live_ids.iter().map(String::as_str).collect();
+        let live: std::collections::HashSet<&str> = live_ids.iter().map(String::as_str).collect();
 
         // Reap feeds for gone/finished containers, releasing their connections.
         feeds.retain(|id, handle| {

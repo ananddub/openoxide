@@ -511,6 +511,192 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn list_records_requests_value_return_fields() {
+        let mut server = mockito::Server::new_async().await;
+        let lookup = server
+            .mock("GET", "/record:txt")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("name".into(), "_acme.example.com".into()),
+                Matcher::UrlEncoded("view".into(), "External".into()),
+                Matcher::UrlEncoded("_return_fields".into(), "ttl,use_ttl,text".into()),
+            ]))
+            .with_status(200)
+            .with_body(
+                r#"[{"_ref":"record:txt/1:_acme.example.com/External","text":"token-value"}]"#,
+            )
+            .create();
+
+        let provider = setup(server.url().as_str());
+        let records = provider
+            .list_rrset("_acme.example.com", DnsRecordType::TXT, "example.com")
+            .await
+            .expect("list_rrset");
+        assert_eq!(records, vec![DnsRecord::TXT("token-value".into())]);
+        lookup.assert();
+    }
+
+    #[tokio::test]
+    async fn list_zone_infos_returns_zones() {
+        let mut server = mockito::Server::new_async().await;
+        let zones = server
+            .mock("GET", "/zone_auth")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("view".into(), "External".into()),
+                Matcher::UrlEncoded("_return_fields".into(), "fqdn".into()),
+                Matcher::UrlEncoded("_paging".into(), "1".into()),
+                Matcher::UrlEncoded("_max_results".into(), "1000".into()),
+                Matcher::UrlEncoded("_return_as_object".into(), "1".into()),
+            ]))
+            .with_status(200)
+            .with_body(
+                r#"{"result":[{"_ref":"zone_auth/Z1:example.com/External","fqdn":"example.com"}]}"#,
+            )
+            .create();
+
+        let provider = setup(server.url().as_str());
+        let infos = provider.list_zone_infos().await.expect("list_zone_infos");
+        assert_eq!(infos.len(), 1);
+        assert_eq!(infos[0].name, "example.com");
+        assert_eq!(infos[0].id, "zone_auth/Z1:example.com/External");
+        assert_eq!(infos[0].status, None);
+        zones.assert();
+    }
+
+    #[tokio::test]
+    async fn list_zone_infos_follows_page_id() {
+        let mut server = mockito::Server::new_async().await;
+        let first = server
+            .mock(
+                "GET",
+                Matcher::Regex(r"/zone_auth\?.*_return_as_object=1$".to_string()),
+            )
+            .with_status(200)
+            .with_body(
+                r#"{"result":[{"_ref":"zone_auth/Z1:a.example.com/External","fqdn":"a.example.com"}],"next_page_id":"TOKEN123"}"#,
+            )
+            .expect(1)
+            .create();
+        let second = server
+            .mock("GET", "/zone_auth")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("_page_id".into(), "TOKEN123".into()),
+                Matcher::UrlEncoded("_paging".into(), "1".into()),
+                Matcher::UrlEncoded("_return_as_object".into(), "1".into()),
+            ]))
+            .with_status(200)
+            .with_body(
+                r#"{"result":[{"_ref":"zone_auth/Z2:b.example.com/External","fqdn":"b.example.com"}]}"#,
+            )
+            .expect(1)
+            .create();
+
+        let provider = setup(server.url().as_str());
+        let infos = provider.list_zone_infos().await.expect("list_zone_infos");
+        assert_eq!(infos.len(), 2);
+        assert_eq!(infos[0].name, "a.example.com");
+        assert_eq!(infos[1].name, "b.example.com");
+        first.assert();
+        second.assert();
+    }
+
+    #[tokio::test]
+    async fn list_zone_records_requests_value_fields_per_object() {
+        let mut server = mockito::Server::new_async().await;
+        let a_mock = server
+            .mock("GET", "/record:a")
+            .match_query(Matcher::UrlEncoded(
+                "_return_fields".into(),
+                "name,ttl,use_ttl,ipv4addr".into(),
+            ))
+            .with_status(200)
+            .with_body(
+                r#"{"result":[{"_ref":"record:a/A1:www.example.com/External","name":"www.example.com","ttl":300,"use_ttl":true,"ipv4addr":"1.2.3.4"}]}"#,
+            )
+            .create();
+        let mx_mock = server
+            .mock("GET", "/record:mx")
+            .match_query(Matcher::UrlEncoded(
+                "_return_fields".into(),
+                "name,ttl,use_ttl,mail_exchanger,preference".into(),
+            ))
+            .with_status(200)
+            .with_body(
+                r#"{"result":[{"_ref":"record:mx/M1:example.com/External","name":"example.com","ttl":0,"use_ttl":false,"mail_exchanger":"mail.example.com","preference":10}]}"#,
+            )
+            .create();
+        let txt_mock = server
+            .mock("GET", "/record:txt")
+            .match_query(Matcher::UrlEncoded(
+                "_return_fields".into(),
+                "name,ttl,use_ttl,text".into(),
+            ))
+            .with_status(200)
+            .with_body(r#"{"result":[]}"#)
+            .create();
+        // Remaining object types are queried too; return empty lists.
+        for path in [
+            "/record:aaaa",
+            "/record:cname",
+            "/record:ns",
+            "/record:srv",
+            "/record:caa",
+            "/record:tlsa",
+        ] {
+            server
+                .mock("GET", path)
+                .with_status(200)
+                .with_body(r#"{"result":[]}"#)
+                .create();
+        }
+
+        let provider = setup(server.url().as_str());
+        let records = provider
+            .list_zone_records("example.com")
+            .await
+            .expect("list_zone_records");
+        assert_eq!(records.len(), 2);
+        let a = records
+            .iter()
+            .find(|r| r.record_type == "A")
+            .expect("A record");
+        assert_eq!(a.name, "www");
+        assert_eq!(a.ttl, 300);
+        assert_eq!(a.id, "record:a/A1:www.example.com/External");
+        let mx = records
+            .iter()
+            .find(|r| r.record_type == "MX")
+            .expect("MX record");
+        assert_eq!(mx.name, "@");
+        assert_eq!(mx.ttl, 0);
+        assert_eq!(
+            mx.record,
+            DnsRecord::MX(crate::MXRecord {
+                exchange: "mail.example.com".into(),
+                priority: 10,
+            })
+        );
+        a_mock.assert();
+        mx_mock.assert();
+        txt_mock.assert();
+    }
+
+    #[tokio::test]
+    async fn unauthorized_status_maps_to_error() {
+        let mut server = mockito::Server::new_async().await;
+        let lookup = server
+            .mock("GET", Matcher::Regex(r"/record:a\?.*".to_string()))
+            .with_status(401)
+            .create();
+
+        let provider = setup(server.url().as_str());
+        let result = provider
+            .list_rrset("host.example.com", DnsRecordType::A, "example.com")
+            .await;
+        assert!(matches!(result, Err(Error::Unauthorized)), "{result:?}");
+        lookup.assert();
+    }
+
+    #[tokio::test]
     #[ignore = "Requires Infoblox grid manager credentials"]
     async fn integration_test() {
         let host = std::env::var("INFOBLOX_HOST").unwrap_or_default();

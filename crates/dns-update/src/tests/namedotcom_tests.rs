@@ -40,7 +40,7 @@ mod tests {
         server
             .mock(
                 "GET",
-                format!("/v4/domains/{domain}/records?page={page}").as_str(),
+                format!("/domains/{domain}/records?page={page}").as_str(),
             )
             .match_header("authorization", basic_auth_value().as_str())
             .with_status(200)
@@ -60,7 +60,7 @@ mod tests {
         );
 
         let create_1 = server
-            .mock("POST", "/v4/domains/example.com/records")
+            .mock("POST", "/domains/example.com/records")
             .match_body(Matcher::Json(json!({
                 "host": "mail",
                 "type": "A",
@@ -71,7 +71,7 @@ mod tests {
             .with_body(r#"{"id":100}"#)
             .create();
         let create_2 = server
-            .mock("POST", "/v4/domains/example.com/records")
+            .mock("POST", "/domains/example.com/records")
             .match_body(Matcher::Json(json!({
                 "host": "mail",
                 "type": "A",
@@ -117,13 +117,13 @@ mod tests {
             }),
         );
         let _no_post = server
-            .mock("POST", "/v4/domains/example.com/records")
+            .mock("POST", "/domains/example.com/records")
             .expect(0)
             .create();
         let _no_delete = server
             .mock(
                 "DELETE",
-                Matcher::Regex("^/v4/domains/example.com/records/".to_string()),
+                Matcher::Regex("^/domains/example.com/records/".to_string()),
             )
             .expect(0)
             .create();
@@ -160,12 +160,12 @@ mod tests {
         );
 
         let delete_stale = server
-            .mock("DELETE", "/v4/domains/example.com/records/11")
+            .mock("DELETE", "/domains/example.com/records/11")
             .with_status(200)
             .with_body("{}")
             .create();
         let create_new = server
-            .mock("POST", "/v4/domains/example.com/records")
+            .mock("POST", "/domains/example.com/records")
             .match_body(Matcher::Json(json!({
                 "host": "host",
                 "type": "A",
@@ -213,12 +213,12 @@ mod tests {
         );
 
         let delete_a = server
-            .mock("DELETE", "/v4/domains/example.com/records/20")
+            .mock("DELETE", "/domains/example.com/records/20")
             .with_status(200)
             .with_body("{}")
             .create();
         let delete_b = server
-            .mock("DELETE", "/v4/domains/example.com/records/21")
+            .mock("DELETE", "/domains/example.com/records/21")
             .with_status(200)
             .with_body("{}")
             .create();
@@ -260,7 +260,7 @@ mod tests {
         let _no_delete_others = server
             .mock(
                 "DELETE",
-                Matcher::Regex("^/v4/domains/example.com/records/(31|32)$".to_string()),
+                Matcher::Regex("^/domains/example.com/records/(31|32)$".to_string()),
             )
             .expect(0)
             .create();
@@ -347,7 +347,7 @@ mod tests {
         );
 
         let delete = server
-            .mock("DELETE", "/v4/domains/example.com/records/2")
+            .mock("DELETE", "/domains/example.com/records/2")
             .with_status(200)
             .with_body("{}")
             .create();
@@ -380,7 +380,7 @@ mod tests {
         );
 
         let create = server
-            .mock("POST", "/v4/domains/example.com/records")
+            .mock("POST", "/domains/example.com/records")
             .match_body(Matcher::Json(json!({
                 "host": "",
                 "type": "MX",
@@ -426,13 +426,13 @@ mod tests {
             }),
         );
         let _no_create = server
-            .mock("POST", "/v4/domains/example.com/records")
+            .mock("POST", "/domains/example.com/records")
             .expect(0)
             .create();
         let _no_delete = server
             .mock(
                 "DELETE",
-                Matcher::Regex("^/v4/domains/example.com/records/".to_string()),
+                Matcher::Regex("^/domains/example.com/records/".to_string()),
             )
             .expect(0)
             .create();
@@ -471,7 +471,7 @@ mod tests {
         );
 
         let create = server
-            .mock("POST", "/v4/domains/example.com/records")
+            .mock("POST", "/domains/example.com/records")
             .match_body(Matcher::Json(json!({
                 "host": "",
                 "type": "MX",
@@ -519,7 +519,7 @@ mod tests {
         );
 
         let create = server
-            .mock("POST", "/v4/domains/example.com/records")
+            .mock("POST", "/domains/example.com/records")
             .match_body(Matcher::Json(json!({
                 "host": "_imaps._tcp",
                 "type": "SRV",
@@ -553,26 +553,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_set_rrset_caa_uses_bind_string() {
+    async fn test_set_rrset_caa_rejected_by_core_api() {
         let mut server = mockito::Server::new_async().await;
-        let list = mock_list_page(
-            &mut server,
-            "example.com",
-            1,
-            json!({"records": [], "nextPage": 0}),
-        );
-
-        let create = server
-            .mock("POST", "/v4/domains/example.com/records")
-            .match_body(Matcher::Json(json!({
-                "host": "",
-                "type": "CAA",
-                "answer": "0 issue \"letsencrypt.org\"",
-                "ttl": 3600,
-            })))
-            .with_status(200)
-            .with_body(r#"{"id":90}"#)
-            .create();
+        let _no_call = server.mock("GET", Matcher::Any).expect(0).create();
+        let _no_post = server.mock("POST", Matcher::Any).expect(0).create();
 
         let provider = setup_provider(server.url());
         let result = provider
@@ -589,9 +573,10 @@ mod tests {
             )
             .await;
 
-        assert!(result.is_ok(), "set_rrset returned: {result:?}");
-        list.assert();
-        create.assert();
+        assert!(
+            matches!(result, Err(Error::Unsupported(ref msg)) if msg.contains("CAA")),
+            "expected CAA refusal, got {result:?}"
+        );
     }
 
     #[tokio::test]
@@ -610,7 +595,7 @@ mod tests {
         );
 
         let create = server
-            .mock("POST", "/v4/domains/example.com/records")
+            .mock("POST", "/domains/example.com/records")
             .match_body(Matcher::Json(json!({
                 "host": "_acme",
                 "type": "TXT",
@@ -677,7 +662,7 @@ mod tests {
         );
 
         let delete = server
-            .mock("DELETE", "/v4/domains/example.com/records/111")
+            .mock("DELETE", "/domains/example.com/records/111")
             .with_status(200)
             .with_body("{}")
             .create();
@@ -714,7 +699,7 @@ mod tests {
         let _no_delete = server
             .mock(
                 "DELETE",
-                Matcher::Regex("^/v4/domains/example.com/records/".to_string()),
+                Matcher::Regex("^/domains/example.com/records/".to_string()),
             )
             .expect(0)
             .create();
@@ -811,5 +796,85 @@ mod tests {
             matches!(result, Err(Error::Unsupported(ref msg)) if msg.contains("TLSA")),
             "got {result:?}"
         );
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_infos_maps_domain_names() {
+        let mut server = mockito::Server::new_async().await;
+        let list_1 = server
+            .mock("GET", "/domains?page=1")
+            .match_header("authorization", basic_auth_value().as_str())
+            .with_status(200)
+            .with_body(
+                json!({
+                    "domains": [
+                        {"domainName": "example.com"},
+                        {"domainName": "other.com"}
+                    ],
+                    "nextPage": 2,
+                })
+                .to_string(),
+            )
+            .create();
+        let list_2 = server
+            .mock("GET", "/domains?page=2")
+            .with_status(200)
+            .with_body(
+                json!({
+                    "domains": [{"domainName": "third.com"}],
+                    "nextPage": 0,
+                })
+                .to_string(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url());
+        let zones = provider.list_zone_infos().await.expect("list_zone_infos");
+        list_1.assert();
+        list_2.assert();
+        assert_eq!(zones.len(), 3);
+        assert_eq!(zones[0].name, "example.com");
+        assert_eq!(zones[0].id, "example.com");
+        assert_eq!(zones[2].name, "third.com");
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_returns_core_api_shapes() {
+        let mut server = mockito::Server::new_async().await;
+        let list = server
+            .mock("GET", "/domains/example.com/records?page=1")
+            .match_header("authorization", basic_auth_value().as_str())
+            .with_status(200)
+            .with_body(
+                json!({
+                    "records": [
+                        {"id": 1, "host": "", "fqdn": "example.com.", "type": "A", "answer": "1.1.1.1", "ttl": 300},
+                        {"id": 2, "host": "www", "fqdn": "www.example.com.", "type": "CNAME", "answer": "example.com.", "ttl": 3600},
+                        {"id": 3, "host": null, "fqdn": "example.com.", "type": "SOA", "answer": "ignored", "ttl": 3600}
+                    ],
+                    "nextPage": 0,
+                })
+                .to_string(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url());
+        let records = provider
+            .list_zone_records("example.com")
+            .await
+            .expect("list_zone_records");
+        list.assert();
+        assert_eq!(
+            records.len(),
+            2,
+            "unsupported SOA must be skipped: {records:?}"
+        );
+        assert_eq!(records[0].id, "1");
+        assert_eq!(records[0].name, "@");
+        assert_eq!(records[0].record_type, "A");
+        assert_eq!(records[0].ttl, 300);
+        assert_eq!(records[0].record, DnsRecord::A("1.1.1.1".parse().unwrap()));
+        assert_eq!(records[1].name, "www");
+        assert_eq!(records[1].record_type, "CNAME");
     }
 }

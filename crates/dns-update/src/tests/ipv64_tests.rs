@@ -499,4 +499,49 @@ mod tests {
         }
         list.assert();
     }
+
+    #[tokio::test]
+    async fn test_list_zone_infos_returns_domain_keys() {
+        let mut server = mockito::Server::new_async().await;
+        let list = server
+            .mock("GET", "/")
+            .match_query(Matcher::UrlEncoded("get_domains".into(), "".into()))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"subdomains":{"example.com":{"records":[]},"other.de":{"records":[]}}}"#)
+            .create();
+
+        let provider = setup_provider(server.url());
+        let mut zones = provider.list_zone_infos().await.unwrap();
+        zones.sort_by(|a, b| a.name.cmp(&b.name));
+        assert_eq!(zones.len(), 2);
+        assert_eq!(zones[0].id, "example.com");
+        assert_eq!(zones[1].name, "other.de");
+        list.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_maps_records_and_apex_prefix() {
+        let mut server = mockito::Server::new_async().await;
+        let list = mock_get_domains(
+            &mut server,
+            get_domains_response(json!([
+                {"record_id": 12001, "praefix": "", "type": "A", "content": "1.1.1.1", "ttl": 60},
+                {"record_id": 12002, "praefix": "www", "type": "TXT", "content": "hi", "ttl": 120},
+                {"record_id": 12003, "praefix": "www", "type": "HTTPS", "content": "skip me", "ttl": 60},
+            ])),
+        );
+
+        let provider = setup_provider(server.url());
+        let records = provider.list_zone_records(DOMAIN).await.unwrap();
+        // Unsupported HTTPS row is skipped.
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].name, "@");
+        assert_eq!(records[0].id, "12001");
+        assert_eq!(records[0].ttl, 60);
+        assert_eq!(records[1].name, "www");
+        assert_eq!(records[1].record_type, "TXT");
+        assert_eq!(records[1].ttl, 120);
+        list.assert();
+    }
 }

@@ -32,6 +32,8 @@ pub struct SystemCollector {
     disks: Disks,
     networks: Networks,
     host: HostInfo,
+    cpu_primed: bool,
+    last_lists_refresh: Option<std::time::Instant>,
 }
 
 struct HostInfo {
@@ -80,16 +82,36 @@ impl SystemCollector {
             disks: Disks::new_with_refreshed_list(),
             networks: Networks::new_with_refreshed_list(),
             host,
+            cpu_primed: false,
+            last_lists_refresh: None,
         }
     }
 
+    /// One incremental host sample, designed to be called on a fixed tick
+    /// (see the background loop in `MonitoringService`). CPU usage is a
+    /// delta against the previous refresh, so after priming a single
+    /// `refresh_cpu_usage` per call suffices; the expensive full
+    /// re-enumerations (disk mounts, network interfaces) run at most every
+    /// 30s — a Docker host's `/proc/mounts` grows with every container and
+    /// re-statfs'ing all of it per request was the CPU spikes.
     pub async fn sample(&mut self) -> ServerMetric {
         self.system.refresh_cpu_usage();
-        tokio::time::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL).await;
-        self.system.refresh_cpu_usage();
+        if !self.cpu_primed {
+            tokio::time::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL).await;
+            self.system.refresh_cpu_usage();
+            self.cpu_primed = true;
+        }
         self.system.refresh_memory();
-        self.disks.refresh(true);
-        self.networks.refresh(true);
+        let lists_stale = self
+            .last_lists_refresh
+            .is_none_or(|at| at.elapsed() >= std::time::Duration::from_secs(30));
+        if lists_stale {
+            self.disks.refresh(true);
+            self.networks.refresh(true);
+            self.last_lists_refresh = Some(std::time::Instant::now());
+        } else {
+            self.networks.refresh(false);
+        }
 
         let cpu = self.system.global_cpu_usage() as f64;
 
@@ -102,7 +124,7 @@ impl SystemCollector {
         };
 
         // Report the host root filesystem. Summing every mount double-counts
- // one device; match the standard `df /`. When the agent runs in a
+        // one device; match the standard `df /`. When the agent runs in a
         // container the host root is bind-mounted at `/host` (see the agent
         // compose), so prefer that, then `/`, then the largest device.
         let disk_for = |mount: &str| {

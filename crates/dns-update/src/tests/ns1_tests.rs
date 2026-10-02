@@ -835,6 +835,77 @@ mod tests {
         get_tlsa.assert();
     }
 
+    #[tokio::test]
+    async fn test_list_zone_infos_returns_zone_array() {
+        let mut server = mockito::Server::new_async().await;
+        let list = server
+            .mock("GET", "/zones")
+            .match_header("x-nsone-key", "test_key")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"[{"zone":"example.com","id":"zn123"},{"zone":"other.com"}]"#)
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let zones = provider.list_zone_infos().await.unwrap();
+
+        assert_eq!(zones.len(), 2);
+        assert_eq!(zones[0].id, "zn123");
+        assert_eq!(zones[0].name, "example.com");
+        assert_eq!(zones[1].id, "other.com");
+        assert_eq!(zones[1].name, "other.com");
+        list.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_paginates_with_offset_and_max() {
+        let mut server = mockito::Server::new_async().await;
+        let list = server
+            .mock("GET", "/zones/example.com/records?offset=0&max=1000")
+            .match_header("x-nsone-key", "test_key")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"{
+                    "total": 2,
+                    "records": [
+                        {
+                            "id": "recA",
+                            "zone": "example.com",
+                            "domain": "test.example.com",
+                            "type": "A",
+                            "ttl": 3600,
+                            "answers": [{"id": "anA", "answer": ["1.1.1.1"]}]
+                        },
+                        {
+                            "id": "recB",
+                            "zone": "example.com",
+                            "domain": "example.com",
+                            "type": "MX",
+                            "ttl": 300,
+                            "answers": [{"id": "anB", "answer": ["10", "mail.example.com"]}]
+                        }
+                    ]
+                }"#,
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let records = provider.list_zone_records("example.com").await.unwrap();
+
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].id, "recA");
+        assert_eq!(records[0].name, "test");
+        assert_eq!(records[0].record_type, "A");
+        assert_eq!(records[0].content, "1.1.1.1");
+        assert_eq!(records[0].ttl, 3600);
+        assert_eq!(records[1].id, "recB");
+        assert_eq!(records[1].name, "@");
+        assert_eq!(records[1].record_type, "MX");
+        assert_eq!(records[1].content, "10 mail.example.com");
+        list.assert();
+    }
+
     #[test]
     fn provider_creation() {
         let provider = Ns1Provider::new("mock", Some(Duration::from_secs(1)));

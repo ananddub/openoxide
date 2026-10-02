@@ -382,9 +382,9 @@ mod tests {
                 "type": "tlsa",
                 "name": "_443._tcp.www",
                 "value": {
-                    "usage": 3,
-                    "selector": 1,
-                    "matching_type": 1,
+                    "usage": "3",
+                    "selector": "1",
+                    "matching_type": "1",
                     "certificate": "aa"
                 }
             })))
@@ -397,9 +397,9 @@ mod tests {
                 "type": "tlsa",
                 "name": "_443._tcp.www",
                 "value": {
-                    "usage": 2,
-                    "selector": 1,
-                    "matching_type": 1,
+                    "usage": "2",
+                    "selector": "1",
+                    "matching_type": "1",
                     "certificate": "bb"
                 }
             })))
@@ -592,6 +592,97 @@ mod tests {
             "expected can_delete error, got {result:?}"
         );
         list.assert();
+    }
+
+    #[tokio::test]
+    async fn test_remove_from_rrset_errors_on_is_protected() {
+        let mut server = mockito::Server::new_async().await;
+        let list = mock_list(
+            &mut server,
+            paged(json!([
+                {
+                    "id": "protected-1",
+                    "name": "@",
+                    "type": "ns",
+                    "value": {"host": "ns1.ns.arvancdn.com."},
+                    "can_delete": true,
+                    "is_protected": true,
+                }
+            ])),
+        );
+        let _no_delete = server
+            .mock(
+                "DELETE",
+                "/cdn/4.0/domains/example.com/dns-records/protected-1",
+            )
+            .expect(0)
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .remove_from_rrset(
+                "example.com",
+                DnsRecordType::NS,
+                vec![DnsRecord::NS("ns1.ns.arvancdn.com".to_string())],
+                "example.com",
+            )
+            .await;
+
+        assert!(
+            matches!(result, Err(Error::Api(ref msg)) if msg.contains("is_protected")),
+            "expected is_protected error, got {result:?}"
+        );
+        list.assert();
+    }
+
+    #[tokio::test]
+    async fn test_set_rrset_skips_is_protected_records() {
+        let mut server = mockito::Server::new_async().await;
+        let list = mock_list(
+            &mut server,
+            paged(json!([
+                {
+                    "id": "protected-1",
+                    "name": "@",
+                    "type": "ns",
+                    "value": {"host": "ns1.ns.arvancdn.com."},
+                    "can_delete": true,
+                    "is_protected": true,
+                }
+            ])),
+        );
+        let _no_delete = server
+            .mock(
+                "DELETE",
+                "/cdn/4.0/domains/example.com/dns-records/protected-1",
+            )
+            .expect(0)
+            .create();
+        let create_new = server
+            .mock("POST", "/cdn/4.0/domains/example.com/dns-records")
+            .match_body(Matcher::PartialJson(json!({
+                "type": "ns",
+                "name": "@",
+                "value": {"host": "ns2.example.net"},
+            })))
+            .with_status(201)
+            .with_body(r#"{"data":{"id":"new","name":"@","type":"ns"}}"#)
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .set_rrset(
+                "example.com",
+                DnsRecordType::NS,
+                3600,
+                vec![DnsRecord::NS("ns2.example.net".to_string())],
+                "example.com",
+            )
+            .await;
+
+        assert!(result.is_ok(), "{:?}", result);
+        list.assert();
+        create_new.assert();
     }
 
     #[tokio::test]
@@ -808,6 +899,200 @@ mod tests {
             .await;
 
         assert!(matches!(result, Err(Error::Unauthorized)), "{:?}", result);
+    }
+
+    #[tokio::test]
+    async fn test_list_rrset_tlsa_parses_string_codes() {
+        let mut server = mockito::Server::new_async().await;
+        let list = mock_list(
+            &mut server,
+            paged(json!([
+                {
+                    "id": "tlsa-1",
+                    "name": "_443._tcp.www",
+                    "type": "tlsa",
+                    "value": {
+                        "usage": "3",
+                        "selector": "1",
+                        "matching_type": "1",
+                        "certificate": "AA"
+                    },
+                    "can_delete": true,
+                }
+            ])),
+        );
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .list_rrset(
+                "_443._tcp.www.example.com",
+                DnsRecordType::TLSA,
+                "example.com",
+            )
+            .await
+            .unwrap();
+
+        list.assert();
+        assert_eq!(result.len(), 1);
+        match &result[0] {
+            DnsRecord::TLSA(tlsa) => {
+                assert_eq!(tlsa.cert_usage, TlsaCertUsage::DaneEe);
+                assert_eq!(tlsa.selector, TlsaSelector::Spki);
+                assert_eq!(tlsa.matching, TlsaMatching::Sha256);
+                assert_eq!(tlsa.cert_data, vec![0xaa]);
+            }
+            other => panic!("expected TLSA, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_list_rrset_caa_without_flag_defaults_to_not_critical() {
+        let mut server = mockito::Server::new_async().await;
+        let list = mock_list(
+            &mut server,
+            paged(json!([
+                {
+                    "id": "caa-1",
+                    "name": "@",
+                    "type": "caa",
+                    "value": {"tag": "issue", "value": "letsencrypt.org"},
+                    "can_delete": true,
+                }
+            ])),
+        );
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .list_rrset("example.com", DnsRecordType::CAA, "example.com")
+            .await
+            .unwrap();
+
+        list.assert();
+        assert_eq!(result.len(), 1);
+        match &result[0] {
+            DnsRecord::CAA(crate::CAARecord::Issue {
+                issuer_critical,
+                name,
+                ..
+            }) => {
+                assert!(!issuer_critical);
+                assert_eq!(name.as_deref(), Some("letsencrypt.org"));
+            }
+            other => panic!("expected CAA issue, got {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_bare_api_key_gets_apikey_prefix() {
+        let mut server = mockito::Server::new_async().await;
+        let list = server
+            .mock("GET", "/cdn/4.0/domains/example.com/dns-records")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "1".into()),
+                Matcher::UrlEncoded("per_page".into(), "300".into()),
+            ]))
+            .match_header(
+                "authorization",
+                "Apikey 12345678-1234-1234-1234-123456789abc",
+            )
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(serde_json::to_string(&paged(json!([]))).unwrap())
+            .create();
+
+        let provider = ArvanCloudProvider::new(
+            "12345678-1234-1234-1234-123456789abc",
+            Some(Duration::from_secs(2)),
+        )
+        .with_endpoint(server.url().as_str());
+        let result = provider
+            .list_rrset("www.example.com", DnsRecordType::A, "example.com")
+            .await;
+
+        assert!(result.is_ok(), "{:?}", result);
+        list.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_infos_maps_domains_page() {
+        let mut server = mockito::Server::new_async().await;
+        let domains = server
+            .mock("GET", "/cdn/4.0/domains")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "1".into()),
+                Matcher::UrlEncoded("per_page".into(), "300".into()),
+            ]))
+            .match_header("authorization", auth_header())
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                serde_json::to_string(&json!({
+                    "data": [
+                        {"id": "dm-1", "domain": "example.com", "status": "active"},
+                        {"id": "", "domain": "empty-id.ir", "status": null}
+                    ],
+                    "meta": {"current_page": 1, "last_page": 1, "per_page": 300, "total": 2}
+                }))
+                .unwrap(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let zones = provider.list_zone_infos().await.unwrap();
+
+        domains.assert();
+        assert_eq!(zones.len(), 2);
+        assert_eq!(zones[0].id, "dm-1");
+        assert_eq!(zones[0].name, "example.com");
+        assert_eq!(zones[0].status.as_deref(), Some("active"));
+        assert_eq!(zones[1].id, "empty-id.ir");
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_maps_records_with_ttl_and_type() {
+        let mut server = mockito::Server::new_async().await;
+        let list = mock_list(
+            &mut server,
+            paged(json!([
+                {
+                    "id": "a-1",
+                    "name": "www",
+                    "type": "a",
+                    "value": [{"ip": "1.2.3.4", "port": null, "weight": 100, "country": ""}],
+                    "ttl": 300,
+                    "can_delete": true,
+                },
+                {
+                    "id": "txt-1",
+                    "name": "@",
+                    "type": "txt",
+                    "value": {"text": "hello"},
+                    "ttl": 60,
+                    "can_delete": true,
+                },
+                {
+                    "id": "unknown-1",
+                    "name": "x",
+                    "type": "sshfp",
+                    "value": {"anything": true},
+                    "ttl": 60,
+                    "can_delete": true,
+                }
+            ])),
+        );
+
+        let provider = setup_provider(server.url().as_str());
+        let records = provider.list_zone_records("example.com").await.unwrap();
+
+        list.assert();
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].name, "www");
+        assert_eq!(records[0].record_type, "A");
+        assert_eq!(records[0].ttl, 300);
+        assert_eq!(records[0].content, "1.2.3.4");
+        assert_eq!(records[1].name, "@");
+        assert_eq!(records[1].record_type, "TXT");
+        assert_eq!(records[1].content, "hello");
     }
 
     #[tokio::test]

@@ -56,11 +56,20 @@ export const authInterceptor: Interceptor = next => async req => {
 		)
 			throw error;
 
-		const newToken = await refreshAccessToken();
-		if (!newToken) throw error;
+		const result = await refreshAccessToken();
+		if (result.status === 'transient') {
+			// Network/server failure during refresh — the stored token may be
+			// perfectly valid. Surface a transport error instead of the
+			// original 401 so callers keep the session and retry later.
+			throw new ConnectError(
+				'unable to reach the server to refresh the session',
+				Code.Unavailable,
+			);
+		}
+		if (result.status === 'expired') throw error;
 
 		const retryHeaders = new Headers(headers);
-		retryHeaders.set('Authorization', `Bearer ${newToken}`);
+		retryHeaders.set('Authorization', `Bearer ${result.token}`);
 		return next({...req, header: retryHeaders});
 	}
 };

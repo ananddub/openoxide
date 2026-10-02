@@ -283,7 +283,9 @@ impl AlidnsProvider {
             ("DomainName".to_string(), zone.to_string()),
             ("RRKeyWord".to_string(), rr.to_string()),
             ("TypeKeyWord".to_string(), record_type.to_string()),
-            ("SearchMode".to_string(), "EXACT".to_string()),
+            // RRKeyWord/TypeKeyWord only take effect in ADVANCED mode; EXACT mode
+            // matches against the single KeyWord parameter instead.
+            ("SearchMode".to_string(), "ADVANCED".to_string()),
             ("PageSize".to_string(), "500".to_string()),
         ];
         let raw = self.send(params).await?;

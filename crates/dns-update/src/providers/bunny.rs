@@ -16,7 +16,7 @@ use crate::{
     http::{HttpClient, HttpClientBuilder},
     utils::strip_origin_from_name,
 };
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, de::DeserializeOwned};
 use std::{borrow::Cow, time::Duration};
 
 const DEFAULT_API_ENDPOINT: &str = "https://api.bunny.net";
@@ -168,7 +168,7 @@ impl BunnyProvider {
 
     async fn add_record(
         &self,
-        zone_id: u32,
+        zone_id: i64,
         name: &str,
         ttl: u32,
         content: &BunnyRecordContent,
@@ -182,7 +182,7 @@ impl BunnyProvider {
             .map(|_| ())
     }
 
-    async fn delete_record(&self, zone_id: u32, record_id: u32) -> crate::Result<()> {
+    async fn delete_record(&self, zone_id: i64, record_id: i64) -> crate::Result<()> {
         self.client
             .delete(format!(
                 "{}/dnszone/{zone_id}/records/{record_id}",
@@ -249,6 +249,16 @@ pub struct BunnyRecordContent {
 
 fn is_zero_u8(v: &u8) -> bool {
     *v == 0
+}
+
+/// Deserialize a field that the API may return as `null` (per the OpenAPI
+/// spec several fields are nullable) into its default value.
+fn deserialize_null_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    T: Default + DeserializeOwned,
+    D: Deserializer<'de>,
+{
+    Ok(Option::<T>::deserialize(deserializer)?.unwrap_or_default())
 }
 
 fn is_zero_u16(v: &u16) -> bool {
@@ -421,8 +431,9 @@ pub struct ApiItems<T> {
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct PartialDnsZone {
-    pub id: u32,
+    pub id: i64,
     pub domain: String,
+    #[serde(default, deserialize_with = "deserialize_null_default")]
     pub records: Vec<BunnyDnsRecord>,
     #[serde(default)]
     pub status: Option<serde_json::Value>,
@@ -431,7 +442,7 @@ pub struct PartialDnsZone {
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct BunnyDnsRecord {
-    pub id: u32,
+    pub id: i64,
     pub name: String,
     #[serde(default)]
     pub ttl: u32,

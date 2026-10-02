@@ -52,20 +52,23 @@ struct RoundRobinValue {
     value: Option<String>,
     #[serde(rename = "priority", skip_serializing_if = "Option::is_none")]
     priority: Option<u16>,
-    #[serde(rename = "level", skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     level: Option<u16>,
-    #[serde(rename = "weight", skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     weight: Option<u16>,
-    #[serde(rename = "port", skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     port: Option<u16>,
-    #[serde(rename = "host", skip_serializing_if = "Option::is_none")]
-    host: Option<String>,
-    #[serde(rename = "caaType", skip_serializing_if = "Option::is_none")]
-    caa_type: Option<String>,
-    #[serde(rename = "flags", skip_serializing_if = "Option::is_none")]
-    flags: Option<u8>,
-    #[serde(rename = "tag", skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    data: Option<String>,
+    #[serde(rename = "flag", skip_serializing_if = "Option::is_none")]
+    flag: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     tag: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct RecordHit {
+    id: i64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -363,7 +366,8 @@ impl ConstellixProvider {
             API_VERSION,
             urlencode(domain)
         );
-        let domains: Vec<ConstellixDomain> = self.signed(self.client.get(url)).send().await?;
+        let domains: Vec<ConstellixDomain> =
+            self.signed(self.client.get(url)).send_with_retry(3).await?;
         domains
             .into_iter()
             .next()
@@ -371,6 +375,8 @@ impl ConstellixProvider {
             .ok_or_else(|| Error::Api(format!("Constellix domain {} not found", domain)))
     }
 
+    /// The record search endpoint returns only `[{ "name", "id" }]` per the API docs, so the
+    /// full record (ttl and roundRobin values) has to be fetched by its id afterwards.
     async fn find_record(
         &self,
         domain_id: i64,
@@ -385,8 +391,18 @@ impl ConstellixProvider {
             type_segment,
             urlencode(subdomain)
         );
-        let records: Vec<ConstellixRecord> = self.signed(self.client.get(url)).send().await?;
-        Ok(records.into_iter().next())
+        let hits: Vec<RecordHit> = self.signed(self.client.get(url)).send_with_retry(3).await?;
+        let Some(hit) = hits.into_iter().next() else {
+            return Ok(None);
+        };
+        let record: ConstellixRecord = self
+            .signed(self.client.get(format!(
+                "{}/{}/domains/{}/records/{}/{}",
+                self.endpoint, API_VERSION, domain_id, type_segment, hit.id
+            )))
+            .send_with_retry(3)
+            .await?;
+        Ok(Some(record))
     }
 }
 
@@ -450,14 +466,13 @@ fn same_entry(listed: &RoundRobinValue, desired: &RoundRobinValue) -> bool {
     }
 
     same_text(&listed.value, &desired.value)
-        && same_text(&listed.host, &desired.host)
-        && same_text(&listed.caa_type, &desired.caa_type)
+        && same_text(&listed.data, &desired.data)
         && same_text(&listed.tag, &desired.tag)
         && listed.priority == desired.priority
         && listed.level == desired.level
         && listed.weight == desired.weight
         && listed.port == desired.port
-        && listed.flags == desired.flags
+        && listed.flag == desired.flag
 }
 
 fn record_to_round_robin_entries(record: &DnsRecord) -> crate::Result<Vec<RoundRobinValue>> {
@@ -465,8 +480,8 @@ fn record_to_round_robin_entries(record: &DnsRecord) -> crate::Result<Vec<RoundR
     match record {
         DnsRecord::A(addr) => entry.value = Some(addr.to_string()),
         DnsRecord::AAAA(addr) => entry.value = Some(addr.to_string()),
-        DnsRecord::CNAME(target) => entry.host = Some(target.clone()),
-        DnsRecord::NS(target) => entry.host = Some(target.clone()),
+        DnsRecord::CNAME(target) => entry.value = Some(target.clone()),
+        DnsRecord::NS(target) => entry.value = Some(target.clone()),
         DnsRecord::MX(mx) => {
             entry.value = Some(mx.exchange.clone());
             entry.level = Some(mx.priority);
@@ -475,7 +490,7 @@ fn record_to_round_robin_entries(record: &DnsRecord) -> crate::Result<Vec<RoundR
             entry.value = Some(render_txt_value(text));
         }
         DnsRecord::SRV(srv) => {
-            entry.host = Some(srv.target.clone());
+            entry.value = Some(srv.target.clone());
             entry.priority = Some(srv.priority);
             entry.weight = Some(srv.weight);
             entry.port = Some(srv.port);
@@ -487,8 +502,8 @@ fn record_to_round_robin_entries(record: &DnsRecord) -> crate::Result<Vec<RoundR
         }
         DnsRecord::CAA(caa) => {
             let (flags, tag, val) = caa.clone().decompose();
-            entry.value = Some(val);
-            entry.flags = Some(flags);
+            entry.data = Some(val);
+            entry.flag = Some(flags);
             entry.tag = Some(tag);
         }
     }
@@ -520,22 +535,19 @@ fn round_robin_to_record(
         }
         DnsRecordType::CNAME => {
             let target = entry
-                .host
-                .or(entry.value)
-                .ok_or_else(|| Error::Parse("Constellix CNAME record missing host".into()))?;
+                .value
+                .ok_or_else(|| Error::Parse("Constellix CNAME record missing value".into()))?;
             Ok(DnsRecord::CNAME(target))
         }
         DnsRecordType::NS => {
             let target = entry
-                .host
-                .or(entry.value)
-                .ok_or_else(|| Error::Parse("Constellix NS record missing host".into()))?;
+                .value
+                .ok_or_else(|| Error::Parse("Constellix NS record missing value".into()))?;
             Ok(DnsRecord::NS(target))
         }
         DnsRecordType::MX => {
             let exchange = entry
                 .value
-                .or_else(|| entry.host.clone())
                 .ok_or_else(|| Error::Parse("Constellix MX record missing exchange".into()))?;
             let priority = entry
                 .level
@@ -551,8 +563,8 @@ fn round_robin_to_record(
         }
         DnsRecordType::SRV => {
             let target = entry
-                .host
-                .ok_or_else(|| Error::Parse("Constellix SRV record missing host".into()))?;
+                .value
+                .ok_or_else(|| Error::Parse("Constellix SRV record missing value".into()))?;
             let priority = entry
                 .priority
                 .ok_or_else(|| Error::Parse("Constellix SRV record missing priority".into()))?;
@@ -571,9 +583,10 @@ fn round_robin_to_record(
         }
         DnsRecordType::CAA => {
             let value = entry
-                .value
-                .ok_or_else(|| Error::Parse("Constellix CAA record missing value".into()))?;
-            let flags = entry.flags.unwrap_or(0);
+                .data
+                .or(entry.value)
+                .ok_or_else(|| Error::Parse("Constellix CAA record missing data".into()))?;
+            let flags = entry.flag.unwrap_or(0);
             let tag = entry
                 .tag
                 .ok_or_else(|| Error::Parse("Constellix CAA record missing tag".into()))?;
@@ -591,10 +604,11 @@ impl ConstellixProvider {
         let mut offset = 0;
         loop {
             let url = format!(
-                "{}/{}/domains/all?offset={}&limit=100",
+                "{}/{}/domains?offset={}&max=100",
                 self.endpoint, API_VERSION, offset
             );
-            let domains: Vec<ConstellixDomain> = self.signed(self.client.get(url)).send().await?;
+            let domains: Vec<ConstellixDomain> =
+                self.signed(self.client.get(url)).send_with_retry(3).await?;
             let count = domains.len();
             zones.extend(domains.into_iter().map(|d| crate::ZoneInfo {
                 id: d.id.to_string(),
@@ -618,10 +632,11 @@ impl ConstellixProvider {
         let mut offset = 0;
         loop {
             let url = format!(
-                "{}/{}/domains/{}/records/all?offset={}&limit=100",
+                "{}/{}/domains/{}/records?offset={}&max=100",
                 self.endpoint, API_VERSION, domain_id, offset
             );
-            let listed: Vec<ConstellixRecord> = self.signed(self.client.get(url)).send().await?;
+            let listed: Vec<ConstellixRecord> =
+                self.signed(self.client.get(url)).send_with_retry(3).await?;
             let count = listed.len();
             for record in listed {
                 let id = record.id.to_string();

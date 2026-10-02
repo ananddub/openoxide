@@ -24,6 +24,9 @@ use std::time::Duration;
 
 const DEFAULT_API_BASE: &str = "/config-dns/v2";
 const DEFAULT_MAX_BODY: usize = 131072;
+// The Edge DNS v2 API paginates /zones and /zones/{zone}/recordsets with `page` and
+// `pageSize` query parameters (see "Use pagination" in the Edge DNS API docs).
+const LIST_PAGE_SIZE: u32 = 100;
 
 #[derive(Debug, Clone)]
 pub struct EdgeDnsConfig {
@@ -309,7 +312,16 @@ impl EdgeDnsProvider {
         url: &str,
         body: Option<&str>,
     ) -> Result<(String, reqwest::header::HeaderMap)> {
-        let parsed = url
+        // Akamai SDKs append accountSwitchKey as a query parameter BEFORE signing, so the
+        // signed path must include it.
+        let signed_url = match &self.account_switch_key {
+            Some(asw) => {
+                let sep = if url.contains('?') { '&' } else { '?' };
+                format!("{url}{sep}accountSwitchKey={}", url_encode(asw))
+            }
+            None => url.to_string(),
+        };
+        let parsed = signed_url
             .parse::<reqwest::Url>()
             .map_err(|e| Error::Client(format!("edgedns url parse: {e}")))?;
         let path_query = match parsed.query() {
@@ -324,7 +336,9 @@ impl EdgeDnsProvider {
         let timestamp = Utc::now().format("%Y%m%dT%H:%M:%S+0000").to_string();
         let nonce = generate_nonce();
 
-        let body_for_hash = if matches!(method, "POST" | "PUT") {
+        // The EdgeGrid signing spec includes the content hash only for POST requests with a
+        // body; PUT signatures must leave it empty (see AkamaiOPEN edgegrid signer).
+        let body_for_hash = if method == "POST" {
             body.unwrap_or("").as_bytes()
         } else {
             &[][..]
@@ -366,10 +380,10 @@ impl EdgeDnsProvider {
         let authorization = format!("{}signature={}", auth_without_signature, signature);
 
         let mut request = match method {
-            "GET" => self.client.get(url),
-            "POST" => self.client.post(url),
-            "PUT" => self.client.put(url),
-            "DELETE" => self.client.delete(url),
+            "GET" => self.client.get(signed_url),
+            "POST" => self.client.post(signed_url),
+            "PUT" => self.client.put(signed_url),
+            "DELETE" => self.client.delete(signed_url),
             other => {
                 return Err(Error::Unsupported(format!(
                     "edgedns unsupported method: {other}"
@@ -379,9 +393,6 @@ impl EdgeDnsProvider {
         request = request
             .with_header("Authorization", authorization)
             .with_header("Accept", "application/json");
-        if let Some(asw) = &self.account_switch_key {
-            request = request.with_header("X-AccountSwitchKey", asw);
-        }
         if let Some(body) = body {
             request = request
                 .with_header("Content-Type", "application/json")
@@ -446,9 +457,7 @@ fn edgedns_record_type(record_type: DnsRecordType) -> Result<&'static str> {
         DnsRecordType::TXT => Ok("TXT"),
         DnsRecordType::SRV => Ok("SRV"),
         DnsRecordType::CAA => Ok("CAA"),
-        DnsRecordType::TLSA => Err(Error::Unsupported(
-            "TLSA records are not supported by EdgeDNS".to_string(),
-        )),
+        DnsRecordType::TLSA => Ok("TLSA"),
     }
 }
 
@@ -509,11 +518,10 @@ impl TryFrom<&DnsRecord> for EdgeDnsRecord {
                 record_type: "CAA".to_string(),
                 rdata: vec![caa_to_rdata(caa)],
             },
-            DnsRecord::TLSA(_) => {
-                return Err(Error::Unsupported(
-                    "TLSA records are not supported by EdgeDNS".to_string(),
-                ));
-            }
+            DnsRecord::TLSA(tlsa) => Self {
+                record_type: "TLSA".to_string(),
+                rdata: vec![tlsa.to_string()],
+            },
         })
     }
 }
@@ -654,9 +662,7 @@ fn rdata_to_record(record_type: DnsRecordType, entry: &str) -> Result<DnsRecord>
             }))
         }
         DnsRecordType::CAA => parse_caa_rdata(entry),
-        DnsRecordType::TLSA => Err(Error::Unsupported(
-            "TLSA records are not supported by EdgeDNS".to_string(),
-        )),
+        DnsRecordType::TLSA => crate::utils::parse_tlsa(entry),
     }
 }
 
@@ -737,8 +743,12 @@ fn parse_caa_rdata(entry: &str) -> Result<DnsRecord> {
 
 #[derive(Deserialize, Default)]
 struct ZoneListMetadata {
+    // `lastPage` appears in older Edge DNS responses; current docs return `totalElements`
+    // instead, so honor both.
     #[serde(default, rename = "lastPage")]
     last_page: bool,
+    #[serde(default, rename = "totalElements")]
+    total_elements: Option<u64>,
 }
 
 #[derive(Deserialize)]
@@ -756,8 +766,16 @@ struct ZoneSummary {
     status: Option<String>,
 }
 
+#[derive(Deserialize, Default)]
+struct RecordSetListMetadata {
+    #[serde(default, rename = "totalElements")]
+    total_elements: Option<u64>,
+}
+
 #[derive(Deserialize)]
 struct RecordSetListResponse {
+    #[serde(default)]
+    metadata: RecordSetListMetadata,
     #[serde(default)]
     recordsets: Vec<ZoneRecordEntry>,
 }
@@ -783,21 +801,29 @@ fn edgedns_record_type_from_str(value: &str) -> Option<DnsRecordType> {
         "TXT" => Some(DnsRecordType::TXT),
         "SRV" => Some(DnsRecordType::SRV),
         "CAA" => Some(DnsRecordType::CAA),
+        "TLSA" => Some(DnsRecordType::TLSA),
         _ => None,
     }
 }
 
 impl EdgeDnsProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        // Akamai Edge DNS GET /zones returns {"metadata":{...,"lastPage":bool},"zones":[{"zone":...}]}
+        // Akamai Edge DNS GET /zones is paginated (page/pageSize query params) and returns
+        // {"metadata":{"page":n,"pageSize":n,"totalElements":n,...},"zones":[{"zone":...,
+        // "activationState":...}]}.
         let mut out = Vec::new();
         let mut page = 1u32;
         loop {
-            let url = format!("{}/zones?page={}&pageSize=100", self.base_url(), page);
+            let url = format!(
+                "{}/zones?page={}&pageSize={}",
+                self.base_url(),
+                page,
+                LIST_PAGE_SIZE
+            );
             let text = self.send("GET", &url, None).await?;
             let parsed: ZoneListResponse = serde_json::from_str(&text)
                 .map_err(|e| Error::Parse(format!("edgedns zones parse: {e}")))?;
-            let empty_page = parsed.zones.is_empty();
+            let seen = parsed.zones.len() as u64;
             for zone in parsed.zones {
                 out.push(crate::ZoneInfo {
                     id: zone.zone.clone(),
@@ -805,7 +831,13 @@ impl EdgeDnsProvider {
                     status: zone.status,
                 });
             }
-            if empty_page || parsed.metadata.last_page || page > 100 {
+            let exhausted = seen == 0
+                || parsed.metadata.last_page
+                || parsed
+                    .metadata
+                    .total_elements
+                    .is_some_and(|total| (page as u64) * LIST_PAGE_SIZE as u64 >= total);
+            if exhausted || page > 100 {
                 break;
             }
             page += 1;
@@ -821,38 +853,54 @@ impl EdgeDnsProvider {
         if zone_name.is_empty() {
             return Err(Error::Api("edgedns: zone is required".to_string()));
         }
-        // Akamai Edge DNS GET /zones/{zone}/recordsets returns
-        // {"metadata":{...},"recordsets":[{"name":...,"type":...,"ttl":...,"rdata":[...]}]}
-        let url = format!(
-            "{}/zones/{}/recordsets",
-            self.base_url(),
-            url_encode(&zone_name)
-        );
-        let text = self.send("GET", &url, None).await?;
-        let parsed: RecordSetListResponse = serde_json::from_str(&text)
-            .map_err(|e| Error::Parse(format!("edgedns recordsets parse: {e}")))?;
+        // Akamai Edge DNS GET /zones/{zone}/recordsets is paginated (page/pageSize query
+        // params, default page size 25) and returns {"metadata":{"totalElements":n,...},
+        // "recordsets":[{"name":...,"type":...,"ttl":...,"rdata":[...]}]}.
         let mut out = Vec::new();
-        for entry in parsed.recordsets {
-            let Some(record_type) = edgedns_record_type_from_str(&entry.record_type) else {
-                continue;
-            };
-            let relative =
-                strip_origin_from_name(&entry.name.to_ascii_lowercase(), &zone_name, Some("@"));
-            for rdata in entry.rdata {
-                let Ok(record) = rdata_to_record(record_type, &rdata) else {
+        let mut page = 1u32;
+        loop {
+            let url = format!(
+                "{}/zones/{}/recordsets?page={}&pageSize={}",
+                self.base_url(),
+                url_encode(&zone_name),
+                page,
+                LIST_PAGE_SIZE
+            );
+            let text = self.send("GET", &url, None).await?;
+            let parsed: RecordSetListResponse = serde_json::from_str(&text)
+                .map_err(|e| Error::Parse(format!("edgedns recordsets parse: {e}")))?;
+            let seen = parsed.recordsets.len() as u64;
+            for entry in parsed.recordsets {
+                let Some(record_type) = edgedns_record_type_from_str(&entry.record_type) else {
                     continue;
                 };
-                let content = record.to_string();
-                let raw_type = entry.record_type.clone();
-                out.push(crate::ZoneRecord {
-                    id: format!("{relative}|{raw_type}|{content}"),
-                    name: relative.clone(),
-                    record_type: raw_type.to_ascii_uppercase(),
-                    content,
-                    ttl: entry.ttl,
-                    record,
-                });
+                let relative =
+                    strip_origin_from_name(&entry.name.to_ascii_lowercase(), &zone_name, Some("@"));
+                for rdata in entry.rdata {
+                    let Ok(record) = rdata_to_record(record_type, &rdata) else {
+                        continue;
+                    };
+                    let content = record.to_string();
+                    let raw_type = entry.record_type.clone();
+                    out.push(crate::ZoneRecord {
+                        id: format!("{relative}|{raw_type}|{content}"),
+                        name: relative.clone(),
+                        record_type: raw_type.to_ascii_uppercase(),
+                        content,
+                        ttl: entry.ttl,
+                        record,
+                    });
+                }
             }
+            let exhausted = seen == 0
+                || parsed
+                    .metadata
+                    .total_elements
+                    .is_some_and(|total| (page as u64) * LIST_PAGE_SIZE as u64 >= total);
+            if exhausted || page > 100 {
+                break;
+            }
+            page += 1;
         }
         Ok(out)
     }

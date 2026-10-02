@@ -445,11 +445,14 @@ impl HuaweiCloudProvider {
         query: &str,
         body: Option<String>,
     ) -> crate::Result<String> {
+        // Huawei's signing rule requires the canonical URI to end with "/", but the
+        // request itself must be sent on the route as defined (without the trailing
+        // slash). Keep the two paths separate: sign with `canonical_uri`, send `path`.
         let canonical_uri = canonicalize_path(path);
         let url = if query.is_empty() {
-            format!("{}{}", self.endpoint, canonical_uri)
+            format!("{}{}", self.endpoint, path)
         } else {
-            format!("{}{}?{}", self.endpoint, canonical_uri, query)
+            format!("{}{}?{}", self.endpoint, path, query)
         };
 
         let host = host_from_endpoint(&self.endpoint);

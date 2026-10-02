@@ -962,4 +962,117 @@ mod tests {
         );
         unauthorized.assert();
     }
+
+    #[tokio::test]
+    async fn list_rrset_handles_null_apex_name() {
+        let mut server = mockito::Server::new_async().await;
+        let list = server
+            .mock("GET", "/1010/zones/example.com/records")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("name".into(), "".into()),
+                Matcher::UrlEncoded("type".into(), "A".into()),
+                Matcher::UrlEncoded("per_page".into(), "100".into()),
+            ]))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"{"data":[{"id":100,"zone_id":"example.com","parent_id":null,"name":null,
+                "content":"1.2.3.4","ttl":3600,"priority":null,"type":"A","regions":["global"],
+                "system_record":false}]}"#,
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider
+            .list_rrset("example.com", DnsRecordType::A, "example.com")
+            .await
+            .unwrap();
+
+        assert_eq!(result, vec![DnsRecord::A("1.2.3.4".parse().unwrap())]);
+        list.assert();
+    }
+
+    #[tokio::test]
+    async fn list_zone_infos_uses_zones_endpoint() {
+        let mut server = mockito::Server::new_async().await;
+        let list = server
+            .mock("GET", "/1010/zones")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "1".into()),
+                Matcher::UrlEncoded("per_page".into(), "100".into()),
+            ]))
+            .match_header("Authorization", "Bearer test_bearer_token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"{"data":[{"id":1,"name":"example.com","secondary":false,
+                "last_check":null,"created_at":"2020-01-01T00:00:00Z",
+                "updated_at":"2020-01-01T00:00:00Z"}]}"#,
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let zones = provider.list_zone_infos().await.unwrap();
+
+        assert_eq!(zones.len(), 1);
+        assert_eq!(zones[0].id, "1");
+        assert_eq!(zones[0].name, "example.com");
+        assert_eq!(zones[0].status, None);
+        list.assert();
+    }
+
+    #[tokio::test]
+    async fn list_zone_records_maps_apex_and_skips_unsupported_types() {
+        let mut server = mockito::Server::new_async().await;
+        let list = server
+            .mock("GET", "/1010/zones/example.com/records")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "1".into()),
+                Matcher::UrlEncoded("per_page".into(), "100".into()),
+            ]))
+            .match_header("Authorization", "Bearer test_bearer_token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"{"data":[
+                    {"id":1,"zone_id":"example.com","parent_id":null,"name":null,
+                     "content":"1.2.3.4","ttl":3600,"priority":null,"type":"A",
+                     "regions":["global"],"system_record":false},
+                    {"id":2,"zone_id":"example.com","parent_id":null,"name":"www",
+                     "content":"example.com","ttl":600,"priority":null,"type":"CNAME",
+                     "regions":["global"],"system_record":false},
+                    {"id":3,"zone_id":"example.com","parent_id":null,"name":"",
+                     "content":"mx.example.com","ttl":3600,"priority":10,"type":"MX",
+                     "regions":["global"],"system_record":false},
+                    {"id":4,"zone_id":"example.com","parent_id":null,"name":"",
+                     "content":"ns1.example.com host.example.com 1 2 3",
+                     "ttl":3600,"priority":null,"type":"SOA",
+                     "regions":["global"],"system_record":true}
+                ]}"#,
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let records = provider.list_zone_records("example.com").await.unwrap();
+
+        // SOA is not a supported type and must be skipped.
+        assert_eq!(records.len(), 3);
+        assert_eq!(records[0].name, "@");
+        assert_eq!(records[0].record_type, "A");
+        assert_eq!(records[0].content, "1.2.3.4");
+        assert_eq!(records[0].ttl, 3600);
+        assert_eq!(records[1].name, "www");
+        assert_eq!(records[1].record_type, "CNAME");
+        assert_eq!(records[2].name, "@");
+        assert_eq!(records[2].record_type, "MX");
+        assert_eq!(records[2].content, "10 mx.example.com");
+        assert_eq!(
+            records[2].record,
+            DnsRecord::MX(MXRecord {
+                exchange: "mx.example.com".to_string(),
+                priority: 10,
+            })
+        );
+        list.assert();
+    }
 }

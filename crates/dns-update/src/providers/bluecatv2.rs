@@ -717,15 +717,18 @@ fn build_payload_from_normalized(
     content: NormalizedContent,
 ) -> ResourceRecordPayload<'_> {
     let (rr_type, record_type, data) = match content {
+        // A/AAAA records are the HostRecord entity type in the RESTful v2 API
+        // (see the 9.6.0 "What's New" example: type "HostRecord" with an
+        // "addresses" list).
         NormalizedContent::A(addr) => (
-            "GenericRecord",
+            "HostRecord",
             "A",
             RecordData::Address {
                 addresses: vec![addr.to_string()],
             },
         ),
         NormalizedContent::Aaaa(addr) => (
-            "GenericRecord",
+            "HostRecord",
             "AAAA",
             RecordData::Address {
                 addresses: vec![addr.to_string()],

@@ -469,12 +469,32 @@ fn parse_caa(content: &str) -> crate::Result<CAARecord> {
 
 impl GodaddyProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        // GET /v1/domains returns the full domain list (no pagination).
-        let domains = self
-            .client
-            .get(format!("{}/v1/domains", self.endpoint))
-            .send_with_retry::<Vec<GodaddyDomain>>(3)
-            .await?;
+        // GET /v1/domains returns an array of domain summaries, paginated with
+        // the optional `limit` and `marker` query parameters (marker is the
+        // last domain name of the previous page).
+        const DOMAIN_PAGE_SIZE: u32 = 1000;
+        let mut domains = Vec::new();
+        let mut marker: Option<String> = None;
+        loop {
+            let url = match marker.as_ref() {
+                Some(marker) => format!(
+                    "{}/v1/domains?limit={DOMAIN_PAGE_SIZE}&marker={marker}",
+                    self.endpoint
+                ),
+                None => format!("{}/v1/domains?limit={DOMAIN_PAGE_SIZE}", self.endpoint),
+            };
+            let page = self
+                .client
+                .get(url)
+                .send_with_retry::<Vec<GodaddyDomain>>(3)
+                .await?;
+            let full = page.len() as u32 == DOMAIN_PAGE_SIZE;
+            marker = page.last().map(|d| d.domain.clone());
+            domains.extend(page);
+            if !full {
+                break;
+            }
+        }
         Ok(domains
             .into_iter()
             .filter(|d| !d.domain.is_empty())

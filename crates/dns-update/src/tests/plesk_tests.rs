@@ -448,6 +448,96 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn list_zone_infos_pages_domains_resources() {
+        let mut server = mockito::Server::new_async().await;
+        let page1 = server
+            .mock("GET", "/api/v2/domains")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "1".into()),
+                Matcher::UrlEncoded("limit".into(), "100".into()),
+            ]))
+            .match_header("x-api-key", "test_api_key")
+            .with_status(200)
+            .with_body(
+                json!({
+                    "resources": [
+                        {"id": 1, "name": "example.com"},
+                        {"id": 2, "name": "other.com"}
+                    ],
+                    "paging": {
+                        "total-items": 3,
+                        "total-pages": 2,
+                        "current-page": 1
+                    }
+                })
+                .to_string(),
+            )
+            .create();
+        let page2 = server
+            .mock("GET", "/api/v2/domains")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "2".into()),
+                Matcher::UrlEncoded("limit".into(), "100".into()),
+            ]))
+            .with_status(200)
+            .with_body(
+                json!({
+                    "resources": [{"id": 3, "name": "third.com"}],
+                    "paging": {
+                        "total-items": 3,
+                        "total-pages": 2,
+                        "current-page": 2
+                    }
+                })
+                .to_string(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let infos = provider.list_zone_infos().await.unwrap();
+
+        assert_eq!(infos.len(), 3);
+        assert_eq!(infos[0].id, "1");
+        assert_eq!(infos[0].name, "example.com");
+        assert_eq!(infos[2].id, "3");
+        assert_eq!(infos[2].name, "third.com");
+        assert!(infos.iter().all(|z| z.status.is_none()));
+        page1.assert();
+        page2.assert();
+    }
+
+    #[tokio::test]
+    async fn list_zone_records_maps_and_filters_records() {
+        let mut server = mockito::Server::new_async().await;
+        let _list_mock = mock_list_records(
+            &mut server,
+            json!([
+                {"id": 20001, "type": "A", "host": "example.com.", "value": "1.1.1.1", "opt": "", "ttl": 3600},
+                {"id": 20002, "type": "TXT", "host": "_acme", "value": "token", "opt": "", "ttl": 300},
+                {"id": 20003, "type": "SOA", "host": "example.com.", "value": "ns.example.com. root.example.com. 1", "opt": ""}
+            ]),
+        );
+
+        let provider = setup_provider(server.url().as_str());
+        let records = provider.list_zone_records("example.com").await.unwrap();
+
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].id, "20001");
+        assert_eq!(records[0].name, "@");
+        assert_eq!(records[0].record_type, "A");
+        assert_eq!(records[0].ttl, 3600);
+        assert_eq!(records[0].record, DnsRecord::A("1.1.1.1".parse().unwrap()));
+        assert_eq!(records[1].id, "20002");
+        assert_eq!(records[1].name, "_acme");
+        assert_eq!(records[1].record_type, "TXT");
+        assert_eq!(records[1].record, DnsRecord::TXT("token".to_string()));
+        assert_eq!(
+            records[1].content,
+            DnsRecord::TXT("token".to_string()).to_string()
+        );
+    }
+
+    #[tokio::test]
     async fn list_rrset_returns_filtered_records() {
         let mut server = mockito::Server::new_async().await;
         let _list_mock = mock_list_records(

@@ -1,3 +1,4 @@
+import {Code, ConnectError} from '@connectrpc/connect';
 import {getSessionActions} from '#/stores/session-context';
 import {AuthService} from '#/gen/connect/openoxide/api/v1/auth_pb';
 import {createServiceClient} from '#/api/live/query';
@@ -22,10 +23,32 @@ export const getApiBaseUrl = () => {
 	return '';
 };
 
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<RefreshResult> | null = null;
 let refreshRetryAfter = 0;
 let refreshRetryToken = '';
 const REFRESH_RETRY_COOLDOWN_MS = 15_000;
+
+/**
+ * Outcome of a refresh attempt:
+ * - `ok` — new access token issued.
+ * - `expired` — the backend rejected the refresh token (logout performed);
+ *   the session is genuinely dead.
+ * - `transient` — network/transport/server failure; the stored refresh
+ *   token is untouched and the session must NOT be dropped.
+ */
+export type RefreshResult =
+	| {status: 'ok'; token: string}
+	| {status: 'expired'}
+	| {status: 'transient'};
+
+// The backend maps invalid/expired/revoked refresh tokens to Unauthenticated
+// (map_auth_error); a transport-level failure surfaces as Unknown/Unavailable
+// instead, so only an explicit server rejection ends the session.
+function isSessionRejected(error: unknown): boolean {
+	return (
+		error instanceof ConnectError && error.code === Code.Unauthenticated
+	);
+}
 
 // NOTE: created lazily inside refreshAccessToken(), never at module scope.
 // client.ts ↔ connect.ts ↔ query.ts is an import cycle; a module-level
@@ -33,7 +56,7 @@ const REFRESH_RETRY_COOLDOWN_MS = 15_000;
 // undefined (bundler-evaluated), which silently breaks every refresh call.
 
 /** Refreshes the access token through the ConnectRPC AuthService and rewrites the stored session (user.id / tokens.accessToken, camelCase). */
-export async function refreshAccessToken(): Promise<string | null> {
+export async function refreshAccessToken(): Promise<RefreshResult> {
 	if (refreshPromise) return refreshPromise;
 
 	refreshPromise = (async () => {
@@ -47,27 +70,27 @@ export async function refreshAccessToken(): Promise<string | null> {
 			const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
 			if (!sessionRaw || sessionRaw === 'undefined') {
 				logout();
-				return null;
+				return {status: 'expired'};
 			}
 
 			const session = JSON.parse(sessionRaw);
 			refreshToken = session?.tokens?.refreshToken || '';
 			if (!refreshToken) {
 				logout();
-				return null;
+				return {status: 'expired'};
 			}
 			if (
 				refreshRetryToken === refreshToken &&
 				Date.now() < refreshRetryAfter
 			)
-				return null;
+				return {status: 'transient'};
 
 			const response = await createServiceClient(AuthService).refresh({
 				refreshToken,
 			});
 			if (!response.user || !response.tokens) {
 				logout();
-				return null;
+				return {status: 'expired'};
 			}
 
 			const newSession = {
@@ -91,12 +114,23 @@ export async function refreshAccessToken(): Promise<string | null> {
 				lastName: response.user.lastName,
 			});
 
-			return newSession.tokens.accessToken || null;
-		} catch {
-			// A failed refresh means the session is gone; the cooldown keeps a broken backend from being hammered on every request.
+			if (!newSession.tokens.accessToken) return {status: 'transient'};
+			return {status: 'ok', token: newSession.tokens.accessToken};
+		} catch (error) {
+			if (isSessionRejected(error)) {
+				// The server itself rejected the refresh token: genuinely expired
+				// or revoked. End the session now.
+				refreshRetryToken = '';
+				refreshRetryAfter = 0;
+				logout();
+				return {status: 'expired'};
+			}
+			// Network/transport/server failure: keep the session so the next
+			// attempt can succeed; the cooldown keeps a broken backend from
+			// being hammered on every request.
 			refreshRetryToken = refreshToken;
 			refreshRetryAfter = Date.now() + REFRESH_RETRY_COOLDOWN_MS;
-			return null;
+			return {status: 'transient'};
 		} finally {
 			refreshPromise = null;
 		}

@@ -25,6 +25,7 @@ const DEFAULT_API_ENDPOINT: &str = "https://rest.easydns.net";
 pub struct EasyDnsProvider {
     client: HttpClient,
     endpoint: String,
+    token: String,
 }
 
 #[derive(Serialize, Debug)]
@@ -101,6 +102,7 @@ impl EasyDnsProvider {
         Ok(Self {
             client,
             endpoint: DEFAULT_API_ENDPOINT.to_string(),
+            token: token.to_string(),
         })
     }
 
@@ -467,13 +469,35 @@ fn parse_caa(rdata: &str) -> crate::Result<CAARecord> {
 
 impl EasyDnsProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        // The legacy EasyDNS REST API only exposes per-zone record endpoints
-        // (GET /zones/records/all/{domain}; see https://github.com/easydns/lexicon),
-        // there is no public zone-list endpoint.
-        Err(crate::Error::Unsupported(
-            "EasyDNS has no zone-list API — set the 'zone' credential to the domain you manage"
-                .to_string(),
-        ))
+        // GET /domains/list/{user} returns the account's domains as an object
+        // keyed by numeric indexes (see https://docs.rest.easydns.net:
+        // "Getting a List of Your Domains"). The API token doubles as the
+        // username used in this path.
+        let body = self
+            .client
+            .get(format!(
+                "{}/domains/list/{}?format=json",
+                self.endpoint, self.token,
+            ))
+            .send_raw()
+            .await?;
+        let envelope: ApiEnvelope<serde_json::Value> = serde_json::from_str(&body)
+            .map_err(|e| Error::Parse(format!("Invalid EasyDNS response: {e}")))?;
+        check_error(envelope.error)?;
+        let mut zones = Vec::new();
+        if let Some(map) = envelope.data.as_ref().and_then(|d| d.as_object()) {
+            for entry in map.values() {
+                let Some(name) = entry.get("name").and_then(|n| n.as_str()) else {
+                    continue;
+                };
+                zones.push(crate::ZoneInfo {
+                    id: name.to_string(),
+                    name: name.to_string(),
+                    status: None,
+                });
+            }
+        }
+        Ok(zones)
     }
 
     pub(crate) async fn list_zone_records(

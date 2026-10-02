@@ -189,25 +189,41 @@ impl ClouDnsProvider {
         }
     }
 
+    /// List records for one host/type pair, following ClouDNS pagination.
+    ///
+    /// `rows-per-page` may only be 10, 20, 30, 50 or 100 per the docs
+    /// (https://www.cloudns.net/wiki/article/57/); the previous value of 250
+    /// was rejected by the API.
     async fn list_at(
         &self,
         zone: &str,
         host: &str,
         rr_type: &str,
     ) -> crate::Result<Vec<ClouDnsRecord>> {
-        let body = self
-            .get_form(
-                "records.json",
-                vec![
-                    ("domain-name", zone.to_string()),
-                    ("host", host.to_string()),
-                    ("type", rr_type.to_string()),
-                    ("rows-per-page", "250".to_string()),
-                    ("page", "1".to_string()),
-                ],
-            )
-            .await?;
-        Self::parse_list_response(&body, host, rr_type)
+        let mut records = Vec::new();
+        let mut page = 1u32;
+        loop {
+            let body = self
+                .get_form(
+                    "records.json",
+                    vec![
+                        ("domain-name", zone.to_string()),
+                        ("host", host.to_string()),
+                        ("type", rr_type.to_string()),
+                        ("rows-per-page", "100".to_string()),
+                        ("page", page.to_string()),
+                    ],
+                )
+                .await?;
+            let page_records = Self::parse_list_response(&body, host, rr_type)?;
+            let count = page_records.len();
+            records.extend(page_records);
+            if count < 100 || page >= 100 {
+                break;
+            }
+            page += 1;
+        }
+        Ok(records)
     }
 
     /// Parse the response of the ClouDNS `records.json` (list) endpoint.
@@ -689,8 +705,9 @@ impl ClouDnsProvider {
         loop {
             let body = self
                 .get_form(
-                    // ClouDNS zone listing endpoint. Returns an object keyed by
-                    // zone id with `name`/`id`/`status` per zone.
+                    // ClouDNS zone listing endpoint. Returns a JSON *array* of
+                    // zone objects with `name`/`id`/`status` per zone (unlike
+                    // `records.json`, which is an object keyed by record id).
                     // https://www.cloudns.net/wiki/article/50/
                     "list-zones.json",
                     vec![
@@ -700,9 +717,9 @@ impl ClouDnsProvider {
                 )
                 .await?;
             check_error_envelope(&body, "list-zones")?;
-            let entries = parse_json_object(&body)?;
+            let entries = parse_json_entries(&body)?;
             let count = entries.len();
-            for (_key, entry) in entries {
+            for entry in entries {
                 let Some(entry) = entry.as_object() else {
                     continue;
                 };
@@ -749,9 +766,9 @@ impl ClouDnsProvider {
                 break;
             }
             check_error_envelope(&body, "list-records")?;
-            let entries = parse_json_object(&body)?;
+            let entries = parse_json_entries(&body)?;
             let count = entries.len();
-            for (_key, entry) in entries {
+            for entry in entries {
                 let Ok(record) = serde_json::from_value::<ClouDnsRecord>(entry) else {
                     continue;
                 };
@@ -771,7 +788,7 @@ impl ClouDnsProvider {
                     record: dns_record,
                 });
             }
-            if count == 0 || page > 100 {
+            if count < 100 || page > 100 {
                 break;
             }
             page += 1;
@@ -793,10 +810,17 @@ fn check_error_envelope(body: &str, action: &str) -> crate::Result<()> {
     Ok(())
 }
 
-fn parse_json_object(body: &str) -> crate::Result<serde_json::Map<String, serde_json::Value>> {
+/// Normalise a ClouDNS list response into its entries.
+///
+/// `list-zones.json` returns a JSON array of zone objects, while
+/// `records.json` returns a JSON object keyed by record id (`[]` when
+/// empty). Previously only the object form was handled, so a real
+/// `list-zones.json` array was silently parsed into zero zones.
+fn parse_json_entries(body: &str) -> crate::Result<Vec<serde_json::Value>> {
     match serde_json::from_str::<serde_json::Value>(body) {
-        Ok(serde_json::Value::Object(map)) => Ok(map),
-        Ok(_) => Ok(serde_json::Map::new()),
+        Ok(serde_json::Value::Array(items)) => Ok(items),
+        Ok(serde_json::Value::Object(map)) => Ok(map.into_values().collect()),
+        Ok(_) => Ok(Vec::new()),
         Err(err) => Err(Error::Serialize(format!(
             "Failed to parse ClouDNS response: {err}"
         ))),

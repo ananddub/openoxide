@@ -66,8 +66,8 @@ export function useTableWatch(): void {
 					error instanceof ConnectError &&
 					error.code === Code.Unauthenticated
 				) {
-					authHealed =
-						(await refreshAccessToken().catch(() => null)) !== null;
+					const refresh = await refreshAccessToken().catch(() => null);
+					authHealed = refresh?.status === 'ok';
 				}
 				if (!closed && !abort.signal.aborted) {
 					console.warn(

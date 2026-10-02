@@ -568,4 +568,62 @@ mod tests {
         assert!(result.is_ok(), "set_rrset returned {result:?}");
         list.assert();
     }
+
+    #[tokio::test]
+    async fn test_list_zone_infos_maps_domains_list() {
+        let mut server = mockito::Server::new_async().await;
+        let domains = server
+            .mock("GET", "/domains/list/token?format=json")
+            .match_header("authorization", "Basic dG9rZW46a2V5")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"{"msg":"OK","status":200,"data":{"user":"token","0":{"name":"example.com"},"1":{"name":"example.org"}}}"#,
+            )
+            .create();
+
+        let provider = provider(server.url());
+        let infos = provider
+            .list_zone_infos()
+            .await
+            .expect("list_zone_infos failed");
+        assert_eq!(infos.len(), 2);
+        assert!(
+            infos
+                .iter()
+                .any(|z| z.name == "example.com" && z.id == "example.com")
+        );
+        assert!(infos.iter().any(|z| z.name == "example.org"));
+        domains.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_maps_host_id_ttl() {
+        let mut server = mockito::Server::new_async().await;
+        let list = mock_list(
+            &mut server,
+            r#"{"data":[
+                {"id":"898914","host":"@","type":"A","rdata":"1.2.3.4","ttl":"300","prio":"0"},
+                {"id":"898915","host":"www","type":"CNAME","rdata":"example.com.","ttl":"0","prio":"0"}
+            ]}"#,
+        );
+
+        let provider = provider(server.url());
+        let records = provider
+            .list_zone_records("example.com")
+            .await
+            .expect("list_zone_records failed");
+        assert_eq!(records.len(), 2);
+        assert!(
+            records
+                .iter()
+                .any(|r| r.id == "898914" && r.ttl == 300 && r.name == "@")
+        );
+        assert!(
+            records
+                .iter()
+                .any(|r| r.name == "www" && r.record_type == "CNAME")
+        );
+        list.assert();
+    }
 }

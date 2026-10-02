@@ -249,14 +249,11 @@ impl AutodnsProvider {
         fqdn: &str,
         record_type: DnsRecordType,
     ) -> crate::Result<Vec<ResourceRecord>> {
-        let url = format!("{}/zone/{}/_search", self.endpoint, domain);
-        let response = self
-            .client
-            .post(url)
-            .with_raw_body("{}".to_string())
-            .send_raw()
-            .await
-            .ok();
+        // Zone Info (0205): GET /zone/{name} returns the zone with its
+        // `resourceRecords`. There is no documented POST /zone/{name}/_search
+        // route; see the official swagger (domainrobot.json, /zone/{name}).
+        let url = format!("{}/zone/{}", self.endpoint, domain);
+        let response = self.client.get(url).send_raw().await.ok();
         let Some(body) = response else {
             return Ok(Vec::new());
         };

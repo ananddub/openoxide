@@ -18,7 +18,7 @@ import {
 } from '#/components/ui/tabs';
 import {TemplateLogo} from './template-logo';
 import {TemplateFilePreview} from './template-file-preview';
-import {TemplateDeployDialog} from './template-deploy-dialog';
+import {TemplateDeployForm} from './template-deploy-form';
 import {useTemplateFile, type TemplateMeta} from '#/api/live';
 
 /** Template preview as a right side panel: metadata + links, the compose manifest and template config, and the Deploy entry point. */
@@ -38,18 +38,34 @@ export function TemplateDetailDialog({
 	const links = template ? Object.entries(template.links ?? {}) : [];
 
 	return (
-		<>
-			<Sheet open={template !== null} onOpenChange={onOpenChange}>
-				<SheetContent>
-					{template && (
-						<>
+		<Sheet
+			open={template !== null}
+			onOpenChange={next => {
+				if (!next) setDeployOpen(false);
+				onOpenChange(next);
+			}}>
+			<SheetContent>
+				{template && (
+					<>
+						{!deployOpen && (
 							<SheetHeader>
 								<SheetTitle>{template.name}</SheetTitle>
 								<SheetDescription className="text-xs leading-relaxed">
 									{template.description}
 								</SheetDescription>
 							</SheetHeader>
+						)}
 
+						{deployOpen && (
+							<div className="flex min-h-0 flex-1 flex-col gap-4 px-6 pt-4 pb-6">
+								<TemplateDeployForm
+									template={template}
+									onCancel={() => setDeployOpen(false)}
+								/>
+							</div>
+						)}
+
+						{!deployOpen && (
 							<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-6">
 								<div className="flex items-center gap-3">
 									<TemplateLogo
@@ -117,7 +133,9 @@ export function TemplateDetailDialog({
 									</TabsContent>
 								</Tabs>
 							</div>
+						)}
 
+						{!deployOpen && (
 							<SheetFooter>
 								<Button
 									onClick={() => setDeployOpen(true)}
@@ -126,16 +144,10 @@ export function TemplateDetailDialog({
 									Deploy
 								</Button>
 							</SheetFooter>
-						</>
-					)}
-				</SheetContent>
-			</Sheet>
-
-			<TemplateDeployDialog
-				template={template}
-				open={deployOpen}
-				onOpenChange={setDeployOpen}
-			/>
-		</>
+						)}
+					</>
+				)}
+			</SheetContent>
+		</Sheet>
 	);
 }

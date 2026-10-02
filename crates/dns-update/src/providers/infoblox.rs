@@ -112,7 +112,9 @@ impl InfobloxProvider {
         let object = wapi_object_for_type(record_type)?;
         let name = name.into_name().into_owned();
 
-        let existing = self.list_records(object, &name).await?;
+        let existing = self
+            .list_records(object, &name, wapi_value_fields(record_type))
+            .await?;
 
         if records.is_empty() {
             for entry in existing {
@@ -160,7 +162,9 @@ impl InfobloxProvider {
         let object = wapi_object_for_type(record_type)?;
         let name = name.into_name().into_owned();
 
-        let existing = self.list_records(object, &name).await?;
+        let existing = self
+            .list_records(object, &name, wapi_value_fields(record_type))
+            .await?;
 
         for record in records {
             if existing
@@ -189,7 +193,9 @@ impl InfobloxProvider {
         let object = wapi_object_for_type(record_type)?;
         let name = name.into_name().into_owned();
 
-        let existing = self.list_records(object, &name).await?;
+        let existing = self
+            .list_records(object, &name, wapi_value_fields(record_type))
+            .await?;
 
         for record in records {
             if let Some(entry) = existing
@@ -210,16 +216,23 @@ impl InfobloxProvider {
     ) -> Result<Vec<DnsRecord>> {
         let object = wapi_object_for_type(record_type)?;
         let name = name.into_name().into_owned();
-        let listed = self.list_records(object, &name).await?;
+        let listed = self
+            .list_records(object, &name, wapi_value_fields(record_type))
+            .await?;
         listed
             .into_iter()
             .map(|entry| infoblox_value_to_record(&entry.fields, record_type))
             .collect()
     }
 
-    async fn list_records(&self, object: &str, name: &str) -> Result<Vec<ListedRecord>> {
+    async fn list_records(
+        &self,
+        object: &str,
+        name: &str,
+        value_fields: &str,
+    ) -> Result<Vec<ListedRecord>> {
         let url = format!(
-            "{base}/{object}?name={name}&view={view}",
+            "{base}/{object}?name={name}&view={view}&_return_fields=ttl,use_ttl,{value_fields}",
             base = self.base_url,
             view = self.dns_view
         );
@@ -307,6 +320,22 @@ fn wapi_object_for_type(record_type: DnsRecordType) -> Result<&'static str> {
         DnsRecordType::CAA => "record:caa",
         DnsRecordType::TLSA => "record:tlsa",
     })
+}
+
+/// WAPI value fields returned for each record object; requested explicitly
+/// via _return_fields so lookups always include the comparison fields.
+fn wapi_value_fields(record_type: DnsRecordType) -> &'static str {
+    match record_type {
+        DnsRecordType::A => "ipv4addr",
+        DnsRecordType::AAAA => "ipv6addr",
+        DnsRecordType::CNAME => "canonical",
+        DnsRecordType::NS => "nameserver",
+        DnsRecordType::MX => "mail_exchanger,preference",
+        DnsRecordType::TXT => "text",
+        DnsRecordType::SRV => "target,port,priority,weight",
+        DnsRecordType::CAA => "ca_flag,ca_tag,ca_value",
+        DnsRecordType::TLSA => "certificate_usage,selector,matched_type,certificate_data",
+    }
 }
 
 fn build_create_body(name: &str, record: &DnsRecord, ttl: u32, view: &str) -> Result<Value> {
@@ -642,6 +671,16 @@ fn extract_infoblox_message(text: &str) -> String {
 const INFOBLOX_PAGE_SIZE: u64 = 1000;
 const INFOBLOX_MAX_PAGES: u64 = 100;
 
+/// Envelope returned by WAPI paging requests
+/// (`_paging=1&_return_as_object=1`).
+#[derive(Deserialize)]
+struct PagedObjects {
+    #[serde(default)]
+    result: Vec<Value>,
+    #[serde(default)]
+    next_page_id: Option<String>,
+}
+
 fn infoblox_relative_name(name: &str, zone: &str) -> Option<String> {
     let name = name.trim_end_matches('.');
     let zone = zone.trim_end_matches('.');
@@ -653,12 +692,23 @@ fn infoblox_relative_name(name: &str, zone: &str) -> Option<String> {
 }
 
 impl InfobloxProvider {
-    async fn list_object_page(&self, query: &str, offset: u64) -> Result<Vec<Value>> {
-        let url = format!(
-            "{base}/{query}{sep}_max_results={INFOBLOX_PAGE_SIZE}&_offset={offset}",
+    async fn list_object_page(
+        &self,
+        query: &str,
+        page_id: Option<&str>,
+    ) -> Result<(Vec<Value>, Option<String>)> {
+        // WAPI paging: initial request sets _paging=1, _max_results and
+        // _return_as_object=1; subsequent pages pass the _page_id token
+        // returned as next_page_id (URL-safe, no encoding required).
+        let mut url = format!(
+            "{base}/{query}{sep}_paging=1&_max_results={INFOBLOX_PAGE_SIZE}&_return_as_object=1",
             base = self.base_url,
+            query = query,
             sep = if query.contains('?') { "&" } else { "?" },
         );
+        if let Some(page_id) = page_id {
+            url.push_str(&format!("&_page_id={page_id}"));
+        }
         let raw = self
             .client
             .get(url)
@@ -666,36 +716,42 @@ impl InfobloxProvider {
             .await
             .map_err(map_list_error)?;
         if raw.is_empty() {
-            return Ok(Vec::new());
+            return Ok((Vec::new(), None));
         }
-        serde_json::from_str(&raw)
-            .map_err(|err| Error::Api(format!("Failed to parse Infoblox list response: {err}")))
+        let page: PagedObjects = serde_json::from_str(&raw)
+            .map_err(|err| Error::Api(format!("Failed to parse Infoblox paged response: {err}")))?;
+        Ok((page.result, page.next_page_id))
     }
 
     async fn list_all_objects(&self, query: &str) -> Result<Vec<Value>> {
         let mut out = Vec::new();
-        let mut offset = 0u64;
+        let mut page_id: Option<String> = None;
+        let mut pages = 0u64;
         loop {
-            let page = self.list_object_page(query, offset).await?;
-            let count = page.len() as u64;
-            out.extend(page);
-            offset += INFOBLOX_PAGE_SIZE;
-            if count < INFOBLOX_PAGE_SIZE || offset / INFOBLOX_PAGE_SIZE > INFOBLOX_MAX_PAGES {
+            let (values, next) = self.list_object_page(query, page_id.as_deref()).await?;
+            out.extend(values);
+            pages += 1;
+            let Some(next) = next else { break };
+            if next.is_empty() || pages >= INFOBLOX_MAX_PAGES {
                 break;
             }
+            page_id = Some(next);
         }
         Ok(out)
     }
 
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
-        let query = format!(
-            "zone?view={}&_return_fields=name,zone_status",
-            self.dns_view
-        );
+        // The documented WAPI object for authoritative zones is `zone_auth`;
+        // its name is carried in the `fqdn` field.
+        let query = format!("zone_auth?view={}&_return_fields=fqdn", self.dns_view);
         let values = self.list_all_objects(&query).await?;
         let mut out = Vec::with_capacity(values.len());
         for value in values {
-            let name = match value.get("name").and_then(Value::as_str) {
+            let name = match value
+                .get("fqdn")
+                .or_else(|| value.get("name"))
+                .and_then(Value::as_str)
+            {
                 Some(name) if !name.is_empty() => name.to_string(),
                 _ => continue,
             };
@@ -721,21 +777,43 @@ impl InfobloxProvider {
         zone: &str,
     ) -> crate::Result<Vec<crate::ZoneRecord>> {
         let zone_name = zone.into_name().to_ascii_lowercase();
-        let objects: &[(&str, &str, DnsRecordType)] = &[
-            ("record:a", "A", DnsRecordType::A),
-            ("record:aaaa", "AAAA", DnsRecordType::AAAA),
-            ("record:cname", "CNAME", DnsRecordType::CNAME),
-            ("record:ns", "NS", DnsRecordType::NS),
-            ("record:mx", "MX", DnsRecordType::MX),
-            ("record:txt", "TXT", DnsRecordType::TXT),
-            ("record:srv", "SRV", DnsRecordType::SRV),
-            ("record:caa", "CAA", DnsRecordType::CAA),
-            ("record:tlsa", "TLSA", DnsRecordType::TLSA),
+        // WAPI only returns the fields listed in _return_fields (plus base
+        // fields); request each object's value fields so records can be parsed.
+        let objects: &[(&str, &str, DnsRecordType, &str)] = &[
+            ("record:a", "A", DnsRecordType::A, "ipv4addr"),
+            ("record:aaaa", "AAAA", DnsRecordType::AAAA, "ipv6addr"),
+            ("record:cname", "CNAME", DnsRecordType::CNAME, "canonical"),
+            ("record:ns", "NS", DnsRecordType::NS, "nameserver"),
+            (
+                "record:mx",
+                "MX",
+                DnsRecordType::MX,
+                "mail_exchanger,preference",
+            ),
+            ("record:txt", "TXT", DnsRecordType::TXT, "text"),
+            (
+                "record:srv",
+                "SRV",
+                DnsRecordType::SRV,
+                "target,port,priority,weight",
+            ),
+            (
+                "record:caa",
+                "CAA",
+                DnsRecordType::CAA,
+                "ca_flag,ca_tag,ca_value",
+            ),
+            (
+                "record:tlsa",
+                "TLSA",
+                DnsRecordType::TLSA,
+                "certificate_usage,selector,matched_type,certificate_data",
+            ),
         ];
         let mut out = Vec::new();
-        for (object, type_str, record_type) in objects {
+        for (object, type_str, record_type, value_fields) in objects {
             let query = format!(
-                "{object}?view={}&_return_fields=name,ttl,use_ttl",
+                "{object}?view={}&_return_fields=name,ttl,use_ttl,{value_fields}",
                 self.dns_view
             );
             let values = match self.list_all_objects(&query).await {

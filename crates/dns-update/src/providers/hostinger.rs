@@ -49,7 +49,7 @@ pub struct RecordSet {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RecordValue {
     pub content: String,
-    #[serde(default, skip_serializing_if = "is_false")]
+    #[serde(alias = "isDisabled", default, skip_serializing_if = "is_false")]
     pub is_disabled: bool,
 }
 

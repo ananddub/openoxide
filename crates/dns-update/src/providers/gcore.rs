@@ -87,6 +87,7 @@ impl GcoreProvider {
         records: Vec<DnsRecord>,
         origin: impl IntoFqdn<'_>,
     ) -> crate::Result<()> {
+        check_supported_type(record_type)?;
         check_record_types(record_type, &records)?;
         let zone = self.obtain_zone(&origin.into_name()).await?;
         let fqdn = name.into_name();
@@ -105,8 +106,11 @@ impl GcoreProvider {
                 });
         }
 
+        // Gcore uses POST to create an RRset and PUT to replace an existing one, so the
+        // current existence must be checked before picking the method.
+        let existed = self.fetch_rrset(&url).await?.is_some();
         let body = build_rrset_from_many(records, ttl)?;
-        self.put_or_post(url, body).await
+        self.write_rrset(url, body, existed).await
     }
 
     pub(crate) async fn add_to_rrset(
@@ -120,6 +124,7 @@ impl GcoreProvider {
         if records.is_empty() {
             return Ok(());
         }
+        check_supported_type(record_type)?;
         check_record_types(record_type, &records)?;
         let zone = self.obtain_zone(&origin.into_name()).await?;
         let fqdn = name.into_name();
@@ -143,9 +148,9 @@ impl GcoreProvider {
         let before = current.len();
         for content in to_add {
             if !current
-                    .iter()
-                    .any(|c| contents_equal(record_type, c, &content))
-                {
+                .iter()
+                .any(|c| contents_equal(record_type, c, &content))
+            {
                 current.push(content);
             }
         }
@@ -161,7 +166,7 @@ impl GcoreProvider {
                 .map(|content| ResourceRecord { content })
                 .collect(),
         };
-        self.put_or_post(url, body).await
+        self.write_rrset(url, body, existed).await
     }
 
     pub(crate) async fn remove_from_rrset(
@@ -174,6 +179,7 @@ impl GcoreProvider {
         if records.is_empty() {
             return Ok(());
         }
+        check_supported_type(record_type)?;
         check_record_types(record_type, &records)?;
         let zone = self.obtain_zone(&origin.into_name()).await?;
         let fqdn = name.into_name();
@@ -190,7 +196,11 @@ impl GcoreProvider {
             .resource_records
             .into_iter()
             .map(|r| r.content)
-            .filter(|content| !to_remove.iter().any(|r| contents_equal(record_type, r, content)))
+            .filter(|content| {
+                !to_remove
+                    .iter()
+                    .any(|r| contents_equal(record_type, r, content))
+            })
             .collect();
 
         if filtered.len() == original_len {
@@ -231,6 +241,7 @@ impl GcoreProvider {
         record_type: DnsRecordType,
         origin: impl IntoFqdn<'_>,
     ) -> crate::Result<Vec<DnsRecord>> {
+        check_supported_type(record_type)?;
         let zone = self.obtain_zone(&origin.into_name()).await?;
         let fqdn = name.into_name();
         let url = self.rrset_url(&zone, &fqdn, record_type);
@@ -270,24 +281,15 @@ impl GcoreProvider {
         }
     }
 
-    async fn put_or_post(&self, url: String, body: RrSet) -> crate::Result<()> {
-        match self
-            .client
-            .put(url.clone())
-            .with_body(&body)?
-            .send_raw()
-            .await
-        {
-            Ok(_) => Ok(()),
-            Err(Error::NotFound) => self
-                .client
-                .post(url)
-                .with_body(body)?
-                .send_raw()
-                .await
-                .map(|_| ()),
-            Err(err) => Err(err),
-        }
+    /// Creates a missing RRset with POST or replaces an existing one with PUT, as
+    /// mandated by the Gcore DNS API.
+    async fn write_rrset(&self, url: String, body: RrSet, existed: bool) -> crate::Result<()> {
+        let request = if existed {
+            self.client.put(url)
+        } else {
+            self.client.post(url)
+        };
+        request.with_body(body)?.send_raw().await.map(|_| ())
     }
 
     async fn obtain_zone(&self, origin: &str) -> crate::Result<String> {
@@ -310,6 +312,17 @@ impl GcoreProvider {
                 }
             }
         }
+    }
+}
+
+/// Gcore's DNS API supports A, AAAA, NS, CNAME, MX, TXT, SRV, CAA, HTTPS, SVCB and PTR
+/// resource records; TLSA is not among them, so reject it before any request is issued.
+fn check_supported_type(record_type: DnsRecordType) -> crate::Result<()> {
+    match record_type {
+        DnsRecordType::TLSA => Err(Error::Unsupported(
+            "TLSA records are not supported by Gcore DNS".into(),
+        )),
+        _ => Ok(()),
     }
 }
 
@@ -554,7 +567,7 @@ fn parse_tlsa_text(text: &str) -> crate::Result<DnsRecord> {
 #[derive(Deserialize, Debug)]
 struct ZoneListResponse {
     #[serde(default)]
-    results: Vec<ZoneListEntry>,
+    zones: Vec<ZoneListEntry>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -567,15 +580,13 @@ struct ZoneListEntry {
 }
 
 #[derive(Deserialize, Debug)]
-struct RecordListResponse {
+struct RrSetListResponse {
     #[serde(default)]
-    results: Vec<RecordEntry>,
+    rrsets: Vec<RrSetListEntry>,
 }
 
 #[derive(Deserialize, Debug)]
-struct RecordEntry {
-    #[serde(default)]
-    id: i64,
+struct RrSetListEntry {
     #[serde(default)]
     name: String,
     #[serde(rename = "type", default)]
@@ -595,7 +606,6 @@ fn gcore_type_from_str(value: &str) -> Option<DnsRecordType> {
         "MX" => Some(DnsRecordType::MX),
         "TXT" => Some(DnsRecordType::TXT),
         "SRV" => Some(DnsRecordType::SRV),
-        "TLSA" => Some(DnsRecordType::TLSA),
         "CAA" => Some(DnsRecordType::CAA),
         _ => None,
     }
@@ -604,28 +614,28 @@ fn gcore_type_from_str(value: &str) -> Option<DnsRecordType> {
 impl GcoreProvider {
     pub(crate) async fn list_zone_infos(&self) -> crate::Result<Vec<crate::ZoneInfo>> {
         let mut zones = Vec::new();
-        let mut page = 1u32;
+        let mut offset = 0u32;
         loop {
             let response: ZoneListResponse = self
                 .client
                 .get(format!(
-                    "{}/v2/zones?page={}&page_size=100",
-                    self.endpoint, page
+                    "{}/v2/zones?limit=100&offset={}",
+                    self.endpoint, offset
                 ))
                 .send_with_retry(3)
                 .await?;
-            let len = response.results.len();
-            for entry in response.results {
+            let len = response.zones.len();
+            for entry in response.zones {
                 zones.push(crate::ZoneInfo {
                     id: entry.id.to_string(),
                     name: entry.name,
                     status: entry.status,
                 });
             }
-            if len < 100 {
+            if len < 100 || offset >= 10_000 {
                 break;
             }
-            page += 1;
+            offset += 100;
         }
         Ok(zones)
     }
@@ -636,18 +646,18 @@ impl GcoreProvider {
     ) -> crate::Result<Vec<crate::ZoneRecord>> {
         let zone_name = self.obtain_zone(zone).await?;
         let mut out = Vec::new();
-        let mut page = 1u32;
+        let mut offset = 0u32;
         loop {
-            let response: RecordListResponse = self
+            let response: RrSetListResponse = self
                 .client
                 .get(format!(
-                    "{}/v2/zones/{}/records?page={}&page_size=100",
-                    self.endpoint, zone_name, page
+                    "{}/v2/zones/{}/rrsets?limit=100&offset={}",
+                    self.endpoint, zone_name, offset
                 ))
                 .send_with_retry(3)
                 .await?;
-            let len = response.results.len();
-            for entry in response.results {
+            let len = response.rrsets.len();
+            for entry in response.rrsets {
                 let rel_name = crate::utils::strip_origin_from_name(&entry.name, &zone_name, None);
                 let name = if rel_name.is_empty() || rel_name == zone_name {
                     "@".to_string()
@@ -663,7 +673,7 @@ impl GcoreProvider {
                     };
                     let content = record.to_string();
                     out.push(crate::ZoneRecord {
-                        id: format!("{}:{}", entry.id, idx),
+                        id: format!("{}:{}:{}", entry.name, entry.rr_type, idx),
                         name: name.clone(),
                         record_type: record_type.as_str().to_string(),
                         content,
@@ -672,10 +682,10 @@ impl GcoreProvider {
                     });
                 }
             }
-            if len < 100 {
+            if len < 100 || offset >= 10_000 {
                 break;
             }
-            page += 1;
+            offset += 100;
         }
         Ok(out)
     }

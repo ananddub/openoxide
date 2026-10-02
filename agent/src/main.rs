@@ -30,8 +30,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         warn!(%error, socket = %context.config.docker_socket, "docker daemon unreachable");
     }
 
-    // One gRPC server is the agent's only listener: every metrics query it
-    // answers is sampled live (sysinfo + Docker API), nothing is stored.
+    // One gRPC server is the agent's only listener: host metrics are served
+    // from the background collector's latest sample, container vitals from
+    // the shared Docker feeds.
     let shutdown = CancellationToken::new();
     let grpc = {
         let container = container.clone();

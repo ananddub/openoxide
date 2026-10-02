@@ -920,6 +920,134 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn list_zone_infos_paginates_list_all_domains() {
+        let mut server = mockito::Server::new_async().await;
+
+        let first = server
+            .mock("POST", "/domain/listAll")
+            .match_body(Matcher::Json(json!({
+                "apikey": "test_api_key",
+                "secretapikey": "test_secret_api_key",
+                "start": 0,
+            })))
+            .with_body(
+                json!({
+                    "status": "SUCCESS",
+                    "count": 2,
+                    "domains": [
+                        {"domain": "example.com", "status": "ACTIVE"},
+                        {"domain": "example.net", "status": "INACTIVE"},
+                    ],
+                })
+                .to_string(),
+            )
+            .expect(1)
+            .create();
+        let second = server
+            .mock("POST", "/domain/listAll")
+            .match_body(Matcher::Json(json!({
+                "apikey": "test_api_key",
+                "secretapikey": "test_secret_api_key",
+                "start": 2,
+            })))
+            .with_body(json!({"status": "SUCCESS", "count": 0, "domains": []}).to_string())
+            .expect(1)
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let zones = provider.list_zone_infos().await.expect("list_zone_infos");
+        first.assert();
+        second.assert();
+        assert_eq!(zones.len(), 2);
+        assert_eq!(zones[0].id, "example.com");
+        assert_eq!(zones[0].name, "example.com");
+        assert_eq!(zones[0].status.as_deref(), Some("ACTIVE"));
+        assert_eq!(zones[1].status.as_deref(), Some("INACTIVE"));
+    }
+
+    #[tokio::test]
+    async fn list_zone_infos_maps_error_status() {
+        let mut server = mockito::Server::new_async().await;
+        let err = server
+            .mock("POST", "/domain/listAll")
+            .with_body(
+                json!({"status": "ERROR", "message": "Invalid API key", "code": "invalid_credentials"})
+                    .to_string(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider.list_zone_infos().await;
+        assert!(
+            matches!(&result, Err(Error::Api(m)) if m == "Invalid API key"),
+            "got {result:?}"
+        );
+        err.assert();
+    }
+
+    #[tokio::test]
+    async fn list_zone_records_retrieves_and_relationalizes_names() {
+        let mut server = mockito::Server::new_async().await;
+
+        let retrieve = server
+            .mock("POST", "/dns/retrieve/example.com")
+            .match_body(Matcher::Json(auth_only()))
+            .with_body(
+                json!({
+                    "status": "SUCCESS",
+                    "cloudflare": "disabled",
+                    "records": [
+                        {"id": "1", "name": "example.com", "type": "A", "content": "1.2.3.4", "ttl": "600", "prio": null, "notes": null},
+                        {"id": "2", "name": "www.example.com", "type": "CNAME", "content": "example.com", "ttl": "600", "prio": null, "notes": null},
+                        {"id": "3", "name": "example.com", "type": "MX", "content": "mail.example.com", "ttl": "600", "prio": "10", "notes": null},
+                        {"id": "4", "name": "example.com", "type": "URLFORWARD", "content": "https://example.org", "ttl": "600", "prio": null, "notes": null},
+                    ],
+                })
+                .to_string(),
+            )
+            .expect(1)
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let records = provider
+            .list_zone_records("example.com")
+            .await
+            .expect("list_zone_records");
+        retrieve.assert();
+        assert_eq!(records.len(), 3, "URLFORWARD must be skipped: {records:?}");
+        assert_eq!(records[0].id, "1");
+        assert_eq!(records[0].name, "@");
+        assert_eq!(records[0].ttl, 600);
+        assert_eq!(records[0].record, DnsRecord::A("1.2.3.4".parse().unwrap()));
+        assert_eq!(records[1].name, "www");
+        assert_eq!(records[1].record_type, "CNAME");
+        assert_eq!(
+            records[2].record,
+            DnsRecord::MX(MXRecord {
+                exchange: "mail.example.com".to_string(),
+                priority: 10,
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn list_zone_records_maps_error_status() {
+        let mut server = mockito::Server::new_async().await;
+        let err = server
+            .mock("POST", "/dns/retrieve/example.com")
+            .with_body(json!({"status": "ERROR", "message": "Domain not found"}).to_string())
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+        let result = provider.list_zone_records("example.com").await;
+        assert!(
+            matches!(&result, Err(Error::Api(m)) if m == "Domain not found"),
+            "got {result:?}"
+        );
+        err.assert();
+    }
+
+    #[tokio::test]
     #[ignore = "Requires Porkbun API credentials and domain configuration"]
     async fn integration_test() {
         let api_key = std::env::var("PB_API_KEY").unwrap_or_default();

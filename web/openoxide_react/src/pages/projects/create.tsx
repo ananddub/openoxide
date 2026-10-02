@@ -119,6 +119,8 @@ function CreateServicePage() {
 			<TemplateGallerySheet
 				open={form.templateGalleryOpen}
 				onClose={() => form.setTemplateGalleryOpen(false)}
+				projectId={projectId}
+				environmentId={form.selectedEnvId ?? undefined}
 			/>
 		</div>
 	);

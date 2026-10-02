@@ -46,7 +46,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
+            .mock("GET", "/zone/example.com")
             .with_status(200)
             .with_body(
                 r#"{"data":[{"origin":"example.com","resourceRecords":[
@@ -98,7 +98,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
+            .mock("GET", "/zone/example.com")
             .with_status(200)
             .with_body(
                 r#"{"data":[{"origin":"example.com","resourceRecords":[
@@ -147,7 +147,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
+            .mock("GET", "/zone/example.com")
             .with_status(200)
             .with_body(
                 r#"{"data":[{"origin":"example.com","resourceRecords":[
@@ -192,7 +192,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
+            .mock("GET", "/zone/example.com")
             .with_status(200)
             .with_body(
                 r#"{"data":[{"origin":"example.com","resourceRecords":[
@@ -246,7 +246,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
+            .mock("GET", "/zone/example.com")
             .with_status(200)
             .with_body(
                 r#"{"data":[{"origin":"example.com","resourceRecords":[
@@ -290,10 +290,7 @@ mod tests {
     async fn add_to_rrset_empty_short_circuits() {
         let mut server = mockito::Server::new_async().await;
 
-        let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
-            .expect(0)
-            .create();
+        let search_mock = server.mock("GET", "/zone/example.com").expect(0).create();
         let stream_mock = server
             .mock("POST", "/zone/example.com/_stream")
             .expect(0)
@@ -321,7 +318,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
+            .mock("GET", "/zone/example.com")
             .with_status(200)
             .with_body(
                 r#"{"data":[{"origin":"example.com","resourceRecords":[
@@ -374,7 +371,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
+            .mock("GET", "/zone/example.com")
             .with_status(200)
             .with_body(
                 r#"{"data":[{"origin":"example.com","resourceRecords":[
@@ -419,7 +416,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
+            .mock("GET", "/zone/example.com")
             .with_status(200)
             .with_body(
                 r#"{"data":[{"origin":"example.com","resourceRecords":[
@@ -457,10 +454,7 @@ mod tests {
     async fn remove_from_rrset_empty_short_circuits() {
         let mut server = mockito::Server::new_async().await;
 
-        let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
-            .expect(0)
-            .create();
+        let search_mock = server.mock("GET", "/zone/example.com").expect(0).create();
         let stream_mock = server
             .mock("POST", "/zone/example.com/_stream")
             .expect(0)
@@ -482,7 +476,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
+            .mock("GET", "/zone/example.com")
             .with_status(200)
             .with_body(r#"{"data":[]}"#)
             .create();
@@ -529,7 +523,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
+            .mock("GET", "/zone/example.com")
             .with_status(200)
             .with_body(
                 r#"{"data":[{"origin":"example.com","resourceRecords":[
@@ -576,7 +570,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
+            .mock("GET", "/zone/example.com")
             .with_status(200)
             .with_body(
                 r#"{"data":[{"origin":"example.com","resourceRecords":[
@@ -627,7 +621,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let search_mock = server
-            .mock("POST", "/zone/example.com/_search")
+            .mock("GET", "/zone/example.com")
             .with_status(200)
             .with_body(
                 r#"{"data":[{"origin":"example.com","resourceRecords":[
@@ -664,7 +658,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _search_mock = server
-            .mock("POST", "/zone/example.com/_search")
+            .mock("GET", "/zone/example.com")
             .with_status(200)
             .with_body(r#"{"data":[]}"#)
             .create();
@@ -677,6 +671,62 @@ mod tests {
             .unwrap();
 
         assert!(result.is_empty());
+    }
+
+    #[tokio::test]
+    async fn list_zone_infos_uses_zone_search_with_view() {
+        let mut server = mockito::Server::new_async().await;
+
+        let search_mock = server
+            .mock("POST", "/zone/_search")
+            .match_body(mockito::Matcher::Json(json!({
+                "view": {"limit": 250, "offset": 0}
+            })))
+            .with_status(200)
+            .with_body(
+                r#"{"data":[
+                    {"origin":"example.com","resourceRecords":[]},
+                    {"origin":"example.org","resourceRecords":[]}
+                ]}"#,
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+
+        let zones = provider.list_zone_infos().await.unwrap();
+        assert_eq!(zones.len(), 2);
+        assert_eq!(zones[0].name, "example.com");
+        assert_eq!(zones[1].id, "example.org");
+        search_mock.assert();
+    }
+
+    #[tokio::test]
+    async fn list_zone_records_returns_parsed_records() {
+        let mut server = mockito::Server::new_async().await;
+
+        let zone_mock = server
+            .mock("GET", "/zone/example.com")
+            .with_status(200)
+            .with_body(
+                r#"{"data":[{"origin":"example.com","resourceRecords":[
+                    {"name":"example.com.","ttl":3600,"type":"A","value":"203.0.113.10"},
+                    {"name":"www.example.com.","ttl":3600,"type":"TXT","value":"hello"},
+                    {"name":"example.com.","ttl":3600,"type":"SOA","value":"ns host 1 2 3 4 5"}
+                ]}]}"#,
+            )
+            .create();
+
+        let provider = setup_provider(server.url().as_str());
+
+        let records = provider.list_zone_records("example.com").await.unwrap();
+        // Unsupported SOA rows are skipped.
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].name, "@");
+        assert_eq!(records[0].record_type, "A");
+        assert_eq!(records[0].ttl, 3600);
+        assert_eq!(records[1].name, "www");
+        assert_eq!(records[1].record_type, "TXT");
+        zone_mock.assert();
     }
 
     #[tokio::test]

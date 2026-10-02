@@ -47,6 +47,10 @@ mod tests {
     fn mock_list(server: &mut ServerGuard, body: serde_json::Value) -> Mock {
         server
             .mock("GET", "/v2/service/111/dns/record")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "1".into()),
+                Matcher::UrlEncoded("rowsPerPage".into(), "100".into()),
+            ]))
             .with_status(200)
             .with_header("content-type", "application/json")
             .with_body(serde_json::to_string(&body).unwrap())
@@ -299,9 +303,22 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_set_rrset_tlsa_rejected() {
+    async fn test_set_rrset_tlsa_creates_record() {
         let mut server = mockito::Server::new_async().await;
-        let _no_calls = server.mock("GET", Matcher::Any).expect(0).create();
+        let services = mock_services(&mut server);
+        let list = mock_list(&mut server, json!({"data":[]}));
+        let create = server
+            .mock("POST", "/v2/service/111/dns/record")
+            .match_body(Matcher::Json(json!({
+                "type": "TLSA",
+                "name": "host",
+                "content": "3 1 1 aa",
+                "ttl": 300
+            })))
+            .with_status(201)
+            .with_body(r#"{"data":{"id":1}}"#)
+            .create();
+
         let provider = setup_provider(server.url());
         let result = provider
             .set_rrset(
@@ -317,10 +334,65 @@ mod tests {
                 "example.com",
             )
             .await;
-        assert!(
-            matches!(result, Err(Error::Unsupported(ref msg)) if msg.contains("TLSA")),
-            "expected TLSA Unsupported error, got {result:?}"
-        );
+        assert!(result.is_ok(), "set_rrset returned: {result:?}");
+        services.assert();
+        list.assert();
+        create.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_records_paginates() {
+        let mut server = mockito::Server::new_async().await;
+        let services = mock_services(&mut server);
+        let page_1 = server
+            .mock("GET", "/v2/service/111/dns/record")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "1".into()),
+                Matcher::UrlEncoded("rowsPerPage".into(), "100".into(),),
+            ]))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"{"data":[{"id":1,"type":"A","name":"host","content":"9.9.9.9"}],"rowsPerPage":100,"totalPages":2,"totalRecords":2,"currentPage":1}"#,
+            )
+            .create();
+        let page_2 = server
+            .mock("GET", "/v2/service/111/dns/record")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "2".into()),
+                Matcher::UrlEncoded("rowsPerPage".into(), "100".into(),),
+            ]))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"{"data":[{"id":2,"type":"A","name":"host","content":"1.1.1.1"}],"rowsPerPage":100,"totalPages":2,"totalRecords":2,"currentPage":2}"#,
+            )
+            .create();
+        let delete_stale = server
+            .mock("DELETE", "/v2/service/111/dns/record/1")
+            .with_status(200)
+            .with_body("{}")
+            .create();
+        let _no_post = server
+            .mock("POST", "/v2/service/111/dns/record")
+            .expect(0)
+            .create();
+
+        let provider = setup_provider(server.url());
+        let result = provider
+            .set_rrset(
+                "host.example.com",
+                DnsRecordType::A,
+                300,
+                vec![DnsRecord::A("1.1.1.1".parse().unwrap())],
+                "example.com",
+            )
+            .await;
+        assert!(result.is_ok(), "set_rrset returned: {result:?}");
+        services.assert();
+        page_1.assert();
+        page_2.assert();
+        delete_stale.assert();
     }
 
     #[tokio::test]
@@ -685,6 +757,7 @@ mod tests {
 
         let list = server
             .mock("GET", "/v2/service/222/dns/record")
+            .match_query(Matcher::UrlEncoded("page".into(), "1".into()))
             .with_status(200)
             .with_body(r#"{"data":[]}"#)
             .create();

@@ -32,7 +32,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -40,7 +40,7 @@ mod tests {
             .await;
 
         let _list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::AllOf(vec![
                 mockito::Matcher::UrlEncoded("name".to_string(), "www.example.com.".to_string()),
                 mockito::Matcher::UrlEncoded("type".to_string(), "A".to_string()),
@@ -51,7 +51,7 @@ mod tests {
             .await;
 
         let post_mock = server
-            .mock("POST", "/v2/zones/zoneA/recordsets/")
+            .mock("POST", "/v2/zones/zoneA/recordsets")
             .match_body(mockito::Matcher::Json(serde_json::json!({
                 "name": "www.example.com.",
                 "type": "A",
@@ -86,7 +86,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -94,7 +94,7 @@ mod tests {
             .await;
 
         let _list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::AllOf(vec![
                 mockito::Matcher::UrlEncoded("name".to_string(), "www.example.com.".to_string()),
                 mockito::Matcher::UrlEncoded("type".to_string(), "A".to_string()),
@@ -107,7 +107,7 @@ mod tests {
             .await;
 
         let put_mock = server
-            .mock("PUT", "/v2/zones/zoneA/recordsets/rsX/")
+            .mock("PUT", "/v2/zones/zoneA/recordsets/rsX")
             .match_body(mockito::Matcher::Json(serde_json::json!({
                 "name": "www.example.com.",
                 "type": "A",
@@ -139,7 +139,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -147,7 +147,7 @@ mod tests {
             .await;
 
         let _list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::AllOf(vec![
                 mockito::Matcher::UrlEncoded("name".to_string(), "www.example.com.".to_string()),
                 mockito::Matcher::UrlEncoded("type".to_string(), "A".to_string()),
@@ -160,7 +160,7 @@ mod tests {
             .await;
 
         let delete_mock = server
-            .mock("DELETE", "/v2/zones/zoneA/recordsets/rsKill/")
+            .mock("DELETE", "/v2/zones/zoneA/recordsets/rsKill")
             .with_status(202)
             .with_body(r#"{}"#)
             .create_async()
@@ -186,7 +186,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -194,7 +194,7 @@ mod tests {
             .await;
 
         let list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(r#"{"recordsets":[]}"#)
@@ -282,7 +282,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -290,7 +290,7 @@ mod tests {
             .await;
 
         let _list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(r#"{"recordsets":[]}"#)
@@ -298,7 +298,7 @@ mod tests {
             .await;
 
         let post_mock = server
-            .mock("POST", "/v2/zones/zoneA/recordsets/")
+            .mock("POST", "/v2/zones/zoneA/recordsets")
             .match_body(mockito::Matcher::Json(serde_json::json!({
                 "name": "www.example.com.",
                 "type": "A",
@@ -329,7 +329,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -337,7 +337,7 @@ mod tests {
             .await;
 
         let _list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(
@@ -347,7 +347,7 @@ mod tests {
             .await;
 
         let put_mock = server
-            .mock("PUT", "/v2/zones/zoneA/recordsets/rsM/")
+            .mock("PUT", "/v2/zones/zoneA/recordsets/rsM")
             .match_body(mockito::Matcher::Json(serde_json::json!({
                 "name": "www.example.com.",
                 "type": "A",
@@ -378,7 +378,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -386,7 +386,7 @@ mod tests {
             .await;
 
         let _list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(
@@ -396,7 +396,7 @@ mod tests {
             .await;
 
         let put_mock = server
-            .mock("PUT", "/v2/zones/zoneA/recordsets/rsD/")
+            .mock("PUT", "/v2/zones/zoneA/recordsets/rsD")
             .match_body(mockito::Matcher::Json(serde_json::json!({
                 "name": "www.example.com.",
                 "type": "A",
@@ -437,7 +437,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -445,7 +445,7 @@ mod tests {
             .await;
 
         let list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(r#"{"recordsets":[]}"#)
@@ -470,7 +470,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -478,7 +478,7 @@ mod tests {
             .await;
 
         let _list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(
@@ -488,7 +488,7 @@ mod tests {
             .await;
 
         let put_mock = server
-            .mock("PUT", "/v2/zones/zoneA/recordsets/rsR/")
+            .mock("PUT", "/v2/zones/zoneA/recordsets/rsR")
             .match_body(mockito::Matcher::Json(serde_json::json!({
                 "name": "www.example.com.",
                 "type": "A",
@@ -518,7 +518,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -526,7 +526,7 @@ mod tests {
             .await;
 
         let _list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(
@@ -536,7 +536,7 @@ mod tests {
             .await;
 
         let delete_mock = server
-            .mock("DELETE", "/v2/zones/zoneA/recordsets/rsZ/")
+            .mock("DELETE", "/v2/zones/zoneA/recordsets/rsZ")
             .with_status(202)
             .with_body(r#"{}"#)
             .create_async()
@@ -560,7 +560,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -568,7 +568,7 @@ mod tests {
             .await;
 
         let list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(
@@ -595,7 +595,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -603,7 +603,7 @@ mod tests {
             .await;
 
         let _list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::AllOf(vec![
                 mockito::Matcher::UrlEncoded("name".to_string(), "www.example.com.".to_string()),
                 mockito::Matcher::UrlEncoded("type".to_string(), "A".to_string()),
@@ -634,7 +634,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -642,7 +642,7 @@ mod tests {
             .await;
 
         let _list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(r#"{"recordsets":[]}"#)
@@ -662,7 +662,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -670,7 +670,7 @@ mod tests {
             .await;
 
         let _list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(
@@ -692,7 +692,7 @@ mod tests {
         let mut server = mockito::Server::new_async().await;
 
         let _zones_mock = server
-            .mock("GET", "/v2/zones/")
+            .mock("GET", "/v2/zones")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(zones_mock_body("zoneA"))
@@ -700,7 +700,7 @@ mod tests {
             .await;
 
         let _list_mock = server
-            .mock("GET", "/v2/zones/zoneA/recordsets/")
+            .mock("GET", "/v2/zones/zoneA/recordsets")
             .match_query(mockito::Matcher::Any)
             .with_status(200)
             .with_body(
@@ -714,7 +714,7 @@ mod tests {
             .await;
 
         let put_mock = server
-            .mock("PUT", "/v2/zones/zoneA/recordsets/good/")
+            .mock("PUT", "/v2/zones/zoneA/recordsets/good")
             .match_body(mockito::Matcher::PartialJsonString(
                 r#"{"name":"www.example.com.","type":"A","ttl":600,"records":["5.5.5.5"]}"#
                     .to_string(),

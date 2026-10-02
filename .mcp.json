@@ -6,7 +6,7 @@
         "-y",
         "chrome-devtools-mcp@latest",
         "--executablePath",
-        "/run/current-system/sw/bin/google-chrome",
+        "/usr/bin/google-chrome",
         "--acceptInsecureCerts"
       ]
     }

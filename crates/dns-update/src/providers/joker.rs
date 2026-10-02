@@ -21,7 +21,9 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 const DEFAULT_API_ENDPOINT: &str = "https://dmapi.joker.com/request";
-const MIN_TTL: u32 = 300;
+// DMAPI "Modify Zonedata": <ttl> must be at least 60 for all records
+// (except NAPTR/SRV where 0 means no caching).
+const MIN_TTL: u32 = 60;
 
 #[derive(Clone)]
 pub enum JokerAuth {
@@ -183,8 +185,13 @@ impl JokerProvider {
     }
 
     async fn get_zone(&self, domain: &str) -> crate::Result<String> {
+        // `include-defaults=1` makes `dns-zone-get` expand defaulted fields
+        // (TTL, priority) so every returned line has the full column set.
         let parsed = self
-            .dmapi_call("dns-zone-get", &[("domain", domain)])
+            .dmapi_call(
+                "dns-zone-get",
+                &[("domain", domain), ("include-defaults", "1")],
+            )
             .await?;
         Ok(parsed.body)
     }
@@ -390,18 +397,29 @@ fn parse_response(message: &str) -> ParsedResponse {
 }
 
 fn check_status(parsed: &ParsedResponse) -> crate::Result<()> {
-    match parsed.status_code {
-        Some(0) | None => Ok(()),
-        Some(code) => Err(Error::Api(format!(
+    if is_success_code(parsed.status_code) {
+        Ok(())
+    } else {
+        Err(Error::Api(format!(
             "Joker DMAPI error {}: {}",
-            code, parsed.status_text
-        ))),
+            parsed.status_code.unwrap_or(-1),
+            parsed.status_text
+        )))
+    }
+}
+
+// DMAPI Basics: "Status-Code: 0 or 1000-1999 if no error occured,
+// all other values indicate some sort of error."
+fn is_success_code(code: Option<i64>) -> bool {
+    match code {
+        None | Some(0) => true,
+        Some(code) => (1000..=1999).contains(&code),
     }
 }
 
 fn is_auth_failure(parsed: &ParsedResponse) -> bool {
     match parsed.status_code {
-        Some(code) if code != 0 => {
+        Some(code) if !is_success_code(Some(code)) => {
             let text = parsed.status_text.to_ascii_lowercase();
             text.contains("auth")
                 || text.contains("session")
@@ -440,27 +458,31 @@ fn reject_tlsa(record_type: DnsRecordType) -> crate::Result<()> {
     }
 }
 
+// DMAPI "Modify Zonedata" zone line format (one record per line):
+// <label> <type> <pri> <target> <ttl> [valid-from] [valid-to] [parameters]
+// <pri> is only meaningful for MX (preference) and SRV (priority/weight),
+// and must be 0 for every other type. SRV carries its port inside the
+// target: `host SRV 10/100 ldap.example.com.:389 60`.
 fn render_zone_entries(host: &str, record: &DnsRecord, ttl: u32) -> crate::Result<Vec<String>> {
     let (label, priority, values) = match record {
-        DnsRecord::A(addr) => ("A", 0u16, vec![addr.to_string()]),
-        DnsRecord::AAAA(addr) => ("AAAA", 0, vec![addr.to_string()]),
-        DnsRecord::CNAME(content) => ("CNAME", 0, vec![ensure_dot(content)]),
-        DnsRecord::NS(content) => ("NS", 0, vec![ensure_dot(content)]),
-        DnsRecord::MX(mx) => ("MX", mx.priority, vec![ensure_dot(&mx.exchange)]),
+        DnsRecord::A(addr) => ("A", "0".to_string(), vec![addr.to_string()]),
+        DnsRecord::AAAA(addr) => ("AAAA", "0".to_string(), vec![addr.to_string()]),
+        DnsRecord::CNAME(content) => ("CNAME", "0".to_string(), vec![ensure_dot(content)]),
+        DnsRecord::NS(content) => ("NS", "0".to_string(), vec![ensure_dot(content)]),
+        DnsRecord::MX(mx) => (
+            "MX",
+            mx.priority.to_string(),
+            vec![ensure_dot(&mx.exchange)],
+        ),
         DnsRecord::TXT(content) => {
             let mut quoted = String::new();
             txt_chunks_to_text(&mut quoted, content, " ");
-            ("TXT", 0, vec![quoted])
+            ("TXT", "0".to_string(), vec![quoted])
         }
         DnsRecord::SRV(srv) => (
             "SRV",
-            srv.priority,
-            vec![format!(
-                "{} {} {}",
-                srv.weight,
-                srv.port,
-                ensure_dot(&srv.target)
-            )],
+            format!("{}/{}", srv.priority, srv.weight),
+            vec![format!("{}:{}", ensure_dot(&srv.target), srv.port)],
         ),
         DnsRecord::TLSA(_) => {
             return Err(Error::Unsupported(
@@ -469,7 +491,16 @@ fn render_zone_entries(host: &str, record: &DnsRecord, ttl: u32) -> crate::Resul
         }
         DnsRecord::CAA(caa) => {
             let (flags, tag, value) = caa.clone().decompose();
-            ("CAA", 0, vec![format!("{flags} {tag} \"{value}\"")])
+            if flags != 0 {
+                return Err(Error::Unsupported(
+                    "issuer-critical CAA records are not supported by Joker.com".to_string(),
+                ));
+            }
+            (
+                "CAA",
+                "0".to_string(),
+                vec![format!("{tag} {}", quote_value(&value))],
+            )
         }
     };
 
@@ -477,6 +508,19 @@ fn render_zone_entries(host: &str, record: &DnsRecord, ttl: u32) -> crate::Resul
         .into_iter()
         .map(|value| format!("{host} {label} {priority} {value} {ttl}"))
         .collect())
+}
+
+fn quote_value(value: &str) -> String {
+    let mut out = String::with_capacity(value.len() + 2);
+    out.push('"');
+    for ch in value.chars() {
+        if ch == '\\' || ch == '"' {
+            out.push('\\');
+        }
+        out.push(ch);
+    }
+    out.push('"');
+    out
 }
 
 fn ensure_dot(value: &str) -> String {
@@ -641,40 +685,44 @@ fn parse_zone_record(
         }
         DnsRecordType::TXT => DnsRecord::TXT(unquote_txt_tokens(value_tokens)),
         DnsRecordType::SRV => {
-            if value_tokens.len() < 3 {
+            if value_tokens.is_empty() {
                 return Err(Error::Parse(
-                    "SRV record requires weight port target".to_string(),
+                    "SRV record requires priority/weight and target:port".to_string(),
                 ));
             }
+            let (priority_str, weight_str) = priority_str.split_once('/').ok_or_else(|| {
+                Error::Parse(format!("invalid SRV priority/weight '{priority_str}'"))
+            })?;
             let priority: u16 = priority_str
                 .parse()
                 .map_err(|err| Error::Parse(format!("invalid SRV priority: {err}")))?;
-            let weight: u16 = value_tokens[0]
+            let weight: u16 = weight_str
                 .parse()
                 .map_err(|err| Error::Parse(format!("invalid SRV weight: {err}")))?;
-            let port: u16 = value_tokens[1]
+            let (target, port) = value_tokens[0].rsplit_once(':').ok_or_else(|| {
+                Error::Parse(format!("invalid SRV target:port '{}'", value_tokens[0]))
+            })?;
+            let port: u16 = port
                 .parse()
                 .map_err(|err| Error::Parse(format!("invalid SRV port: {err}")))?;
             DnsRecord::SRV(SRVRecord {
                 priority,
                 weight,
                 port,
-                target: strip_trailing_dot(&value_tokens[2]).to_string(),
+                target: strip_trailing_dot(target).to_string(),
             })
         }
         DnsRecordType::CAA => {
-            if value_tokens.len() < 3 {
+            if value_tokens.len() < 2 {
                 return Err(Error::Parse(
-                    "CAA record requires flags tag value".to_string(),
+                    "CAA record requires tag and quoted value".to_string(),
                 ));
             }
-            let flags: u8 = value_tokens[0]
-                .parse()
-                .map_err(|err| Error::Parse(format!("invalid CAA flags: {err}")))?;
-            let tag = value_tokens[1].clone();
-            let raw_value = value_tokens[2..].join(" ");
+            let tag = value_tokens[0].clone();
+            let raw_value = value_tokens[1..].join(" ");
             let value = strip_quotes(&raw_value);
-            DnsRecord::CAA(build_caa(flags, &tag, &value)?)
+            // Joker DMAPI CAA lines carry no flags field (pri must be 0).
+            DnsRecord::CAA(build_caa(0, &tag, &value)?)
         }
         DnsRecordType::TLSA => {
             return Err(Error::Unsupported(

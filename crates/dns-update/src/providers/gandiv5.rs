@@ -404,7 +404,10 @@ impl GandiV5Provider {
         loop {
             let batch: Vec<DomainListEntry> = self
                 .client
-                .get(format!("{}/domains?limit=100&page={}", self.endpoint, page))
+                .get(format!(
+                    "{}/domains?per_page=100&page={}",
+                    self.endpoint, page
+                ))
                 .send()
                 .await?;
             let len = batch.len();
@@ -434,7 +437,7 @@ impl GandiV5Provider {
             let batch: Vec<RRSetListEntry> = self
                 .client
                 .get(format!(
-                    "{}/domains/{}/records?limit=100&page={}",
+                    "{}/domains/{}/records?per_page=100&page={}",
                     self.endpoint, domain, page
                 ))
                 .send()

@@ -3,7 +3,10 @@ use std::sync::Arc;
 use auto_di::singleton;
 use tokio::sync::Mutex;
 
-use crate::{docker::api::DockerApi, telemetry::collector::system::SystemCollector};
+use crate::{
+    docker::api::DockerApi,
+    telemetry::collector::system::{ServerMetric, SystemCollector},
+};
 
 pub mod hub;
 pub mod lifecycle;
@@ -12,17 +15,22 @@ pub mod shell;
 pub mod state;
 pub mod stats;
 
+/// How often the background collector refreshes the cached host sample.
+const METRICS_TICK: std::time::Duration = std::time::Duration::from_secs(5);
+
 /// Agent-side service facade. Transport handlers delegate here so Docker,
 /// metrics, lifecycle and shell dependencies stay in one owned service.
-/// Host metrics are sampled live through the retained `SystemCollector`
-/// (sysinfo needs two CPU refreshes over time, so it is stateful); container
-/// data comes from the shared hubs: one stats feed and one events feed serve
-/// every listener, so the agent holds one Docker connection per feed no
-/// matter how many panel consumers watch.
+/// Host metrics are sampled by a background loop every `METRICS_TICK` into
+/// `metrics_cache`; panel requests read that cached latest sample, so request
+/// load never multiplies host scanning. Container data comes from the shared
+/// hubs: one stats feed and one events feed serve every listener, so the
+/// agent holds one Docker connection per feed no matter how many panel
+/// consumers watch.
 #[derive(Clone)]
 pub struct MonitoringService {
     pub docker: Arc<DockerApi>,
     pub system: Arc<Mutex<SystemCollector>>,
+    pub metrics_cache: Arc<Mutex<Option<ServerMetric>>>,
     pub stats_hub: Arc<hub::StatsHub>,
     pub events_hub: Arc<hub::EventsHub>,
 }
@@ -34,9 +42,27 @@ impl MonitoringService {
         stats_hub: Arc<hub::StatsHub>,
         events_hub: Arc<hub::EventsHub>,
     ) -> Self {
+        let system: Arc<Mutex<SystemCollector>> = Arc::new(Mutex::new(SystemCollector::new()));
+        let metrics_cache: Arc<Mutex<Option<ServerMetric>>> = Arc::new(Mutex::new(None));
+        {
+            let system = Arc::clone(&system);
+            let cache = Arc::clone(&metrics_cache);
+            tokio::spawn(async move {
+                let mut tick = tokio::time::interval(METRICS_TICK);
+                loop {
+                    tick.tick().await;
+                    let sample = {
+                        let mut collector = system.lock().await;
+                        collector.sample().await
+                    };
+                    *cache.lock().await = Some(sample);
+                }
+            });
+        }
         Self {
             docker,
-            system: Arc::new(Mutex::new(SystemCollector::new())),
+            system,
+            metrics_cache,
             stats_hub,
             events_hub,
         }
@@ -46,7 +72,7 @@ impl MonitoringService {
         &self,
         request: crate::api::proto::GetMetricsRequest,
     ) -> Result<tonic::Response<crate::api::proto::ServerMetricsResponse>, tonic::Status> {
-        metrics::MetricsService::server(&self.system, request).await
+        metrics::MetricsService::server(&self.metrics_cache, &self.system, request).await
     }
 
     pub async fn container_metrics(

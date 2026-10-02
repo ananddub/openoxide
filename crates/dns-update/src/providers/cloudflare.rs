@@ -318,6 +318,7 @@ impl CloudflareProvider {
             })?
             .send_with_retry::<ApiResult<Value>>(3)
             .await
+            .and_then(|r| r.unwrap_response("create DNS record"))
             .map(|_| ())
     }
 
@@ -329,6 +330,7 @@ impl CloudflareProvider {
             ))
             .send_with_retry::<ApiResult<Value>>(3)
             .await
+            .and_then(|r| r.unwrap_response("delete DNS record"))
             .map(|_| ())
     }
 }
@@ -463,6 +465,22 @@ impl TryFrom<DnsContent> for DnsRecord {
 
 const ZONE_PAGE_SIZE: u32 = 100;
 
+impl DnsContent {
+    fn type_name(&self) -> &'static str {
+        match self {
+            DnsContent::A { .. } => "A",
+            DnsContent::AAAA { .. } => "AAAA",
+            DnsContent::CNAME { .. } => "CNAME",
+            DnsContent::NS { .. } => "NS",
+            DnsContent::MX { .. } => "MX",
+            DnsContent::TXT { .. } => "TXT",
+            DnsContent::SRV { .. } => "SRV",
+            DnsContent::TLSA { .. } => "TLSA",
+            DnsContent::CAA { .. } => "CAA",
+        }
+    }
+}
+
 #[derive(Deserialize, Debug)]
 struct ListedZone {
     id: String,
@@ -475,8 +493,6 @@ struct ListedZone {
 struct ZoneRecordEntry {
     id: String,
     name: String,
-    #[serde(rename = "type")]
-    record_type: String,
     #[serde(default)]
     ttl: u32,
     #[serde(flatten)]
@@ -563,6 +579,7 @@ impl CloudflareProvider {
                 let Ok(entry) = serde_json::from_value::<ZoneRecordEntry>(item) else {
                     continue;
                 };
+                let record_type = entry.content.type_name().to_string();
                 let Ok(record) = DnsRecord::try_from(entry.content) else {
                     continue;
                 };
@@ -576,7 +593,7 @@ impl CloudflareProvider {
                 out.push(crate::ZoneRecord {
                     id: entry.id,
                     name,
-                    record_type: entry.record_type.to_ascii_uppercase(),
+                    record_type,
                     content: record.to_string(),
                     ttl: entry.ttl,
                     record,

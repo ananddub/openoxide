@@ -1185,6 +1185,138 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_create_record_success_false_surfaces_as_api_error() {
+        // Cloudflare returns HTTP 200 with success=false on logical errors;
+        // the create path must surface that instead of reporting success.
+        let mut server = mockito::Server::new_async().await;
+        let _zone = mock_zone_lookup(&mut server, "example.com");
+        let _list = mock_list(&mut server, "test.example.com", "A", ok_result(json!([])));
+
+        let create = server
+            .mock("POST", format!("/zones/{ZONE_ID}/dns_records").as_str())
+            .with_status(200)
+            .with_body(
+                r#"{"errors":[{"code":1061,"message":"An object with that name already exists"}],"success":false,"result":null}"#,
+            )
+            .create();
+
+        let provider = setup_provider(server.url());
+        let result = provider
+            .set_rrset(
+                "test.example.com",
+                DnsRecordType::A,
+                300,
+                vec![DnsRecord::A("1.1.1.1".parse().unwrap())],
+                "example.com",
+            )
+            .await;
+
+        assert!(matches!(result, Err(Error::Api(_))), "got {result:?}");
+        create.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_infos_paginates() {
+        let mut server = mockito::Server::new_async().await;
+        let page1 = server
+            .mock("GET", "/zones")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "1".into()),
+                Matcher::UrlEncoded("per_page".into(), "100".into()),
+            ]))
+            .match_header("authorization", "Bearer test_token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "errors": [],
+                    "success": true,
+                    "result": [{"id": ZONE_ID, "name": "example.com", "status": "active"}],
+                    "result_info": {"page": 1, "total_pages": 2},
+                })
+                .to_string(),
+            )
+            .create();
+        let page2 = server
+            .mock("GET", "/zones")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "2".into()),
+                Matcher::UrlEncoded("per_page".into(), "100".into()),
+            ]))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "errors": [],
+                    "success": true,
+                    "result": [{"id": "other", "name": "other.com"}],
+                    "result_info": {"page": 2, "total_pages": 2},
+                })
+                .to_string(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url());
+        let zones = provider
+            .list_zone_infos()
+            .await
+            .expect("list_zone_infos failed");
+
+        assert_eq!(zones.len(), 2, "expected 2 zones, got {zones:?}");
+        assert_eq!(zones[0].id, ZONE_ID);
+        assert_eq!(zones[0].name, "example.com");
+        assert_eq!(zones[0].status.as_deref(), Some("active"));
+        assert_eq!(zones[1].status, None);
+        page1.assert();
+        page2.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_maps_apex_and_preserves_fields() {
+        let mut server = mockito::Server::new_async().await;
+        let zone = mock_zone_lookup(&mut server, "example.com");
+        let list = server
+            .mock("GET", format!("/zones/{ZONE_ID}/dns_records").as_str())
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("page".into(), "1".into()),
+                Matcher::UrlEncoded("per_page".into(), "100".into()),
+            ]))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "errors": [],
+                    "success": true,
+                    "result": [
+                        {"id": "rec-1", "name": "example.com", "type": "MX",
+                         "content": "mail.example.com", "priority": 10, "ttl": 3600},
+                        {"id": "rec-2", "name": "www.example.com", "type": "A",
+                         "content": "1.2.3.4", "ttl": 300},
+                    ],
+                    "result_info": {"page": 1, "total_pages": 1},
+                })
+                .to_string(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url());
+        let records = provider
+            .list_zone_records("example.com")
+            .await
+            .expect("list_zone_records failed");
+
+        assert_eq!(records.len(), 2, "expected 2 records, got {records:?}");
+        assert_eq!(records[0].name, "@");
+        assert_eq!(records[0].record_type, "MX");
+        assert_eq!(records[0].ttl, 3600);
+        assert_eq!(records[1].name, "www");
+        assert_eq!(records[1].record_type, "A");
+        assert_eq!(records[1].record, DnsRecord::A("1.2.3.4".parse().unwrap()));
+        zone.assert();
+        list.assert();
+    }
+
+    #[tokio::test]
     #[ignore = "Requires CLOUDFLARE_API_TOKEN and CLOUDFLARE_ORIGIN"]
     async fn integration_test() {
         use crate::providers::cloudflare::DnsContent;

@@ -828,4 +828,74 @@ mod tests {
         list.assert();
         create.assert();
     }
+
+    #[tokio::test]
+    async fn test_list_zone_infos_returns_domains() {
+        let mut server = mockito::Server::new_async().await;
+        let list = server
+            .mock("GET", "/v2/domains")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("per_page".into(), "200".into()),
+                Matcher::UrlEncoded("page".into(), "1".into()),
+            ]))
+            .match_header("authorization", "Bearer test_token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"{"domains":[{"name":"example.com","ttl":1800,"zone_file":""}],"links":{},"meta":{"total":1}}"#,
+            )
+            .create();
+
+        let provider = setup_provider(server.url());
+        let zones = provider.list_zone_infos().await.unwrap();
+        assert_eq!(zones.len(), 1);
+        assert_eq!(zones[0].id, "example.com");
+        assert_eq!(zones[0].name, "example.com");
+        list.assert();
+    }
+
+    #[tokio::test]
+    async fn test_list_zone_records_maps_all_types() {
+        let mut server = mockito::Server::new_async().await;
+        let list = server
+            .mock("GET", format!("/v2/domains/{DOMAIN}/records").as_str())
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("per_page".into(), "200".into()),
+                Matcher::UrlEncoded("page".into(), "1".into()),
+            ]))
+            .match_header("authorization", "Bearer test_token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                serde_json::to_string(&json!({
+                    "domain_records": [
+                        {"id": 10, "type": "A", "name": "@", "data": "1.2.3.4", "ttl": 1800,
+                         "priority": null, "port": null, "weight": null, "flags": null, "tag": null},
+                        {"id": 11, "type": "MX", "name": "@", "data": "mail.example.com.", "ttl": 1800,
+                         "priority": 10, "port": null, "weight": null, "flags": null, "tag": null},
+                        {"id": 12, "type": "PTR", "name": "@", "data": "ignored.example.com.", "ttl": 1800,
+                         "priority": null, "port": null, "weight": null, "flags": null, "tag": null}
+                    ],
+                    "links": {},
+                    "meta": {"total": 3}
+                }))
+                .unwrap(),
+            )
+            .create();
+
+        let provider = setup_provider(server.url());
+        let records = provider.list_zone_records(DOMAIN).await.unwrap();
+        // PTR rows cannot map onto a tagged RecordData arm and are skipped.
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].id, "10");
+        assert_eq!(records[0].name, "@");
+        assert_eq!(records[0].record_type, "A");
+        assert_eq!(records[0].ttl, 1800);
+        assert_eq!(records[1].record_type, "MX");
+        assert!(matches!(
+            records[1].record,
+            DnsRecord::MX(MXRecord { priority: 10, .. })
+        ));
+        list.assert();
+    }
 }

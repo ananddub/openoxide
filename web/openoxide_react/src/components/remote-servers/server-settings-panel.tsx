@@ -1,4 +1,12 @@
-import {Activity, Gauge, Server, RefreshCw, RotateCw} from 'lucide-react';
+import {
+	Activity,
+	ArrowDownLeft,
+	ArrowUpRight,
+	Gauge,
+	Server,
+	RefreshCw,
+	RotateCw,
+} from 'lucide-react';
 import {useState} from 'react';
 import {toast} from 'sonner';
 import {Sheet, SheetContent, SheetHeader} from '#/components/ui/sheet';
@@ -10,16 +18,77 @@ import {
 	useReinstallAgent,
 	useRestartAgent,
 } from '#/api/live/monitoring';
-import {TrendCell} from './server-detail-parts';
+import {TrendCell, formatGb} from './server-detail-parts';
 import {UsageRing} from '#/components/projects/compose/detail/cards/architecture-usage-rings';
 
 import type {RemoteServerResponse} from '#/types/api-helpers';
+import type {ServerMetricPayload} from '#/api/live/monitoring';
 
 /** "avg 34% · peak 71%" over the sample window. */
 function windowNote(values: number[]): string | undefined {
 	if (values.length < 2) return undefined;
 	const avg = values.reduce((a, b) => a + b, 0) / values.length;
 	return `avg ${Math.round(avg)}% · peak ${Math.round(Math.max(...values))}%`;
+}
+
+/** Agent ships cumulative MB since boot; sample deltas give an MB/s rate. */
+function formatRate(mbPerSec: number): string {
+	if (mbPerSec >= 1024) return `${(mbPerSec / 1024).toFixed(2)} GB/s`;
+	if (mbPerSec < 1) return `${Math.round(mbPerSec * 1024)} KB/s`;
+	return `${mbPerSec.toFixed(2)} MB/s`;
+}
+
+function sampleSeconds(m: ServerMetricPayload): number | null {
+	if (m.timestamp === undefined) return null;
+	const n = Number(m.timestamp);
+	if (!Number.isFinite(n) || n <= 0) return null;
+	return n < 1e11 ? n : n / 1000;
+}
+
+/** Rate over the last two chronological samples. Counter resets (agent
+ * restart, NIC swap) show as a decrease, so they read as unknown. */
+function rateBetween(
+	chronological: ServerMetricPayload[],
+	key: 'network_in' | 'network_out',
+): number | null {
+	const cur = chronological.at(-1);
+	const prev = chronological.at(-2);
+	if (!cur || !prev) return null;
+	const ts = sampleSeconds(cur);
+	const pts = sampleSeconds(prev);
+	if (ts === null || pts === null) return null;
+	const dt = ts - pts;
+	if (dt <= 0) return null;
+	const delta = Number(cur[key]) - Number(prev[key]);
+	if (!Number.isFinite(delta) || delta < 0) return null;
+	return delta / dt;
+}
+
+function NetworkCell({
+	icon: Icon,
+	label,
+	rate,
+	totalMb,
+}: {
+	icon: typeof ArrowDownLeft;
+	label: string;
+	rate: number | null;
+	totalMb: number;
+}) {
+	return (
+		<div className="flex flex-col gap-1.5 bg-card px-4 py-4">
+			<span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+				<Icon className="size-3.5" strokeWidth={2} />
+				{label}
+			</span>
+			<p className="text-lg leading-none font-semibold text-foreground tabular-nums">
+				{rate === null ? '—' : formatRate(rate)}
+			</p>
+			<p className="text-[11px] text-muted-foreground tabular-nums">
+				{formatGb(totalMb / 1024)} since boot
+			</p>
+		</div>
+	);
 }
 
 /**
@@ -70,6 +139,8 @@ export function ServerSettingsPanel({
 	const chronological = [...samples].reverse();
 	const cpuSeries = chronological.map(m => Number(m.cpu) || 0);
 	const memSeries = chronological.map(m => Number(m.mem_used) || 0);
+	const rateIn = rateBetween(chronological, 'network_in');
+	const rateOut = rateBetween(chronological, 'network_out');
 
 	return (
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
@@ -141,6 +212,25 @@ export function ServerSettingsPanel({
 										: 'no data'
 								}
 								ready={!!latest}
+							/>
+						</div>
+					</SheetGroup>
+
+					<SheetGroup
+						title="Network"
+						description="Agent reports cumulative traffic; the rate comes from the delta between the two newest samples.">
+						<div className="grid shrink-0 grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border">
+							<NetworkCell
+								icon={ArrowDownLeft}
+								label="In"
+								rate={rateIn}
+								totalMb={latest?.network_in ?? 0}
+							/>
+							<NetworkCell
+								icon={ArrowUpRight}
+								label="Out"
+								rate={rateOut}
+								totalMb={latest?.network_out ?? 0}
 							/>
 						</div>
 					</SheetGroup>

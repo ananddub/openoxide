@@ -673,6 +673,55 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_set_rrset_matches_fqdn_form_names_from_api() {
+        // The official API docs show the apex record returned with name "example.com"
+        // (fully qualified), so listing rows in FQDN form must still match relative hosts.
+        let mut server = mockito::Server::new_async().await;
+        let _products = mock_products(&mut server);
+        let _list = mock_list(
+            &mut server,
+            "example.com",
+            json!([
+                {"record_id": 1, "name": "www.example.com", "type": "A", "data": "1.2.3.4", "ttl": 300},
+                {"record_id": 2, "name": "example.com", "type": "TXT", "data": "apex-text", "ttl": 300}
+            ]),
+        );
+        let _no_post = server
+            .mock("POST", "/my/products/example.com/dns/records/")
+            .expect(0)
+            .create();
+        let _no_delete = server
+            .mock(
+                "DELETE",
+                Matcher::Regex("^/my/products/example.com/dns/records/".to_string()),
+            )
+            .expect(0)
+            .create();
+
+        let provider = setup_provider(server.url());
+        provider
+            .set_rrset(
+                "www.example.com",
+                DnsRecordType::A,
+                300,
+                vec![DnsRecord::A("1.2.3.4".parse().unwrap())],
+                "example.com",
+            )
+            .await
+            .unwrap();
+        provider
+            .set_rrset(
+                "example.com",
+                DnsRecordType::TXT,
+                300,
+                vec![DnsRecord::TXT("apex-text".to_string())],
+                "example.com",
+            )
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
     #[ignore = "requires Simply.com credentials in SIMPLY_ACCOUNT, SIMPLY_API_KEY, SIMPLY_DOMAIN"]
     async fn test_live_simply_txt_roundtrip() {
         let account = std::env::var("SIMPLY_ACCOUNT").unwrap();
