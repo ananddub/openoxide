@@ -17,6 +17,7 @@ pub struct AgentGrpc {
     config: Arc<crate::core::config::Config>,
     service: Arc<AgentMonitoringService>,
     file_transfer: Arc<FileTransferService>,
+    docker: Arc<crate::docker::api::DockerApi>,
 }
 
 #[auto_di::singleton]
@@ -25,11 +26,13 @@ impl AgentGrpc {
         config: Arc<crate::core::config::Config>,
         service: Arc<AgentMonitoringService>,
         file_transfer: Arc<FileTransferService>,
+        docker: Arc<crate::docker::api::DockerApi>,
     ) -> Self {
         Self {
             config,
             service,
             file_transfer,
+            docker,
         }
     }
 
@@ -73,7 +76,9 @@ impl AgentService for AgentGrpc {
     ) -> Result<tonic::Response<proto::AgentInfoResponse>, tonic::Status> {
         let request = request.into_inner();
         self.check_server_id(request.server_id)?;
-        Ok(tonic::Response::new(self.file_transfer.agent_info()))
+        let mut info = self.file_transfer.agent_info();
+        crate::services::update_probe::fill(&self.docker, &mut info, &request.update_image).await;
+        Ok(tonic::Response::new(info))
     }
 
     async fn get_container_metrics(

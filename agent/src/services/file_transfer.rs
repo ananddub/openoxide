@@ -26,6 +26,11 @@ impl FileTransferService {
             capabilities: vec!["file_upload".into()],
             max_upload_bytes: self.config.max_upload_bytes,
             upload_roots: self.config.upload_roots.clone(),
+            // Filled live by the update probe in the gRPC handler.
+            self_image_id: String::new(),
+            self_server_id: 0,
+            self_running: false,
+            latest_image_id: String::new(),
         }
     }
 

@@ -23,8 +23,8 @@ impl GrpcServerTask {
 
         // Register against the process's existing container so the handlers
         // share the same singleton MonitoringService (live Docker API and
-        // sysinfo dependencies). A fresh Container here would build a second
-        // set of singletons and miss the warm collector.
+        // host collector). A fresh Container here would build a second set
+        // of singletons and duplicate the gRPC listeners.
         let mut routes = RoutesBuilder::default();
         if let Err(error) = auto_grpc::register(&container, &mut routes).await {
             error!(%error, "could not register gRPC services");

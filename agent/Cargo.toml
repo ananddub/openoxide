@@ -12,13 +12,11 @@ thiserror = "2"
 chrono = { version = "0.4.45", features = ["serde"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt"] }
-# Only cpu/mem/disk/network are collected; drop the default multithread
-# (rayon pool), component and user features.
-sysinfo = { version = "0.33.1", default-features = false, features = [
-    "disk",
-    "network",
-    "system",
-] }
+# Only cpu/mem are collected through sysinfo (disk via statvfs, network via
+# /proc/net/dev); drop the default multithread (rayon pool), component, user,
+# disk and network features.
+sysinfo = { version = "0.33.1", default-features = false, features = ["system"] }
+libc = "0.2"
 dotenvy = "0.15.7"
 tonic = { version = "0.12.3", features = ["transport", "tls"] }
 prost = "0.13.5"

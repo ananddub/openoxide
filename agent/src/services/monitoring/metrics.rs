@@ -12,30 +12,20 @@ use crate::docker::types::ContainerSummary;
 use crate::telemetry::collector::bytes_to_mb;
 use crate::telemetry::collector::system::{ServerMetric, SystemCollector};
 
-/// Server vitals come from the latest sample taken by the background
-/// collector loop — requests never trigger host scanning themselves.
-/// Container vitals come straight from Docker's one-shot stats API (the same
-/// multiplexed request `docker stats --no-stream` makes).
+/// Every metric is measured live at request time — the agent stores nothing
+/// and runs no background sampling. A server vitals request pays for one
+/// host read (the CPU window needs a short in-request gap to measure
+/// usage); container vitals come straight from Docker's one-shot stats API.
 pub struct MetricsService;
 
 impl MetricsService {
     pub async fn server(
-        cache: &Mutex<Option<ServerMetric>>,
         collector: &Mutex<SystemCollector>,
         _request: GetMetricsRequest,
     ) -> Result<Response<ServerMetricsResponse>, Status> {
-        let cached = cache.lock().await.clone();
-        let row = match cached {
-            Some(row) => row,
-            // First request raced ahead of the collector's first tick.
-            None => {
-                let row = {
-                    let mut collector = collector.lock().await;
-                    collector.sample().await
-                };
-                *cache.lock().await = Some(row.clone());
-                row
-            }
+        let row = {
+            let mut collector = collector.lock().await;
+            collector.sample().await
         };
         Ok(Response::new(ServerMetricsResponse {
             host: Some(host_info(&row)),
@@ -67,7 +57,7 @@ impl MetricsService {
         // One one-shot stats call per matched container, in parallel —
         // exactly what `docker stats --no-stream` does (joined-id
         // multiplexing was removed from Docker 29).
-        let samples: Vec<Option<super::hub::RawStats>> =
+        let samples: Vec<Option<super::stats::RawStats>> =
             futures::future::join_all(matched.iter().map(|summary| {
                 let docker = docker.clone();
                 let id = summary.id.to_string();
@@ -80,7 +70,7 @@ impl MetricsService {
                     while let Some(chunk) = chunks.next().await {
                         let Ok(chunk) = chunk else { break };
                         if let Some(doc) = accumulator
-                            .push::<super::hub::RawStats>(&chunk)
+                            .push::<super::stats::RawStats>(&chunk)
                             .into_iter()
                             .next()
                         {

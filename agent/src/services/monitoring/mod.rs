@@ -3,68 +3,34 @@ use std::sync::Arc;
 use auto_di::singleton;
 use tokio::sync::Mutex;
 
-use crate::{
-    docker::api::DockerApi,
-    telemetry::collector::system::{ServerMetric, SystemCollector},
-};
+use crate::{docker::api::DockerApi, telemetry::collector::system::SystemCollector};
 
-pub mod hub;
 pub mod lifecycle;
 pub mod metrics;
 pub mod shell;
 pub mod state;
 pub mod stats;
 
-/// How often the background collector refreshes the cached host sample.
-const METRICS_TICK: std::time::Duration = std::time::Duration::from_secs(5);
-
 /// Agent-side service facade. Transport handlers delegate here so Docker,
 /// metrics, lifecycle and shell dependencies stay in one owned service.
-/// Host metrics are sampled by a background loop every `METRICS_TICK` into
-/// `metrics_cache`; panel requests read that cached latest sample, so request
-/// load never multiplies host scanning. Container data comes from the shared
-/// hubs: one stats feed and one events feed serve every listener, so the
-/// agent holds one Docker connection per feed no matter how many panel
-/// consumers watch.
+/// Nothing is stored or buffered between calls: every request reads its
+/// values live from Docker, procfs and sysinfo at the moment it arrives, so
+/// an answer may lag by the measurement time itself but is always the
+/// current one. The `Mutex` around the host collector only serialises
+/// measurements (two overlapping CPU windows would corrupt each other); the
+/// collector itself carries no data from one sample to the next.
 #[derive(Clone)]
 pub struct MonitoringService {
     pub docker: Arc<DockerApi>,
     pub system: Arc<Mutex<SystemCollector>>,
-    pub metrics_cache: Arc<Mutex<Option<ServerMetric>>>,
-    pub stats_hub: Arc<hub::StatsHub>,
-    pub events_hub: Arc<hub::EventsHub>,
 }
 
 #[singleton]
 impl MonitoringService {
-    pub fn new(
-        docker: Arc<DockerApi>,
-        stats_hub: Arc<hub::StatsHub>,
-        events_hub: Arc<hub::EventsHub>,
-    ) -> Self {
-        let system: Arc<Mutex<SystemCollector>> = Arc::new(Mutex::new(SystemCollector::new()));
-        let metrics_cache: Arc<Mutex<Option<ServerMetric>>> = Arc::new(Mutex::new(None));
-        {
-            let system = Arc::clone(&system);
-            let cache = Arc::clone(&metrics_cache);
-            tokio::spawn(async move {
-                let mut tick = tokio::time::interval(METRICS_TICK);
-                loop {
-                    tick.tick().await;
-                    let sample = {
-                        let mut collector = system.lock().await;
-                        collector.sample().await
-                    };
-                    *cache.lock().await = Some(sample);
-                }
-            });
-        }
+    pub fn new(docker: Arc<DockerApi>) -> Self {
         Self {
             docker,
-            system,
-            metrics_cache,
-            stats_hub,
-            events_hub,
+            system: Arc::new(Mutex::new(SystemCollector::new())),
         }
     }
 
@@ -72,7 +38,7 @@ impl MonitoringService {
         &self,
         request: crate::api::proto::GetMetricsRequest,
     ) -> Result<tonic::Response<crate::api::proto::ServerMetricsResponse>, tonic::Status> {
-        metrics::MetricsService::server(&self.metrics_cache, &self.system, request).await
+        metrics::MetricsService::server(&self.system, request).await
     }
 
     pub async fn container_metrics(
@@ -92,8 +58,7 @@ impl MonitoringService {
         &self,
         request: crate::api::proto::WatchRequest,
     ) -> Result<tonic::Response<lifecycle::LifecycleStream>, tonic::Status> {
-        lifecycle::LifecycleService::watch(self.docker.clone(), (*self.events_hub).clone(), request)
-            .await
+        lifecycle::LifecycleService::watch(self.docker.clone(), request).await
     }
 
     pub async fn shell(
@@ -108,6 +73,6 @@ impl MonitoringService {
         &self,
         request: crate::api::proto::StreamStatsRequest,
     ) -> Result<tonic::Response<stats::StatsStream>, tonic::Status> {
-        stats::StatsService::stream((*self.stats_hub).clone(), request).await
+        stats::StatsService::stream(self.docker.clone(), request).await
     }
 }

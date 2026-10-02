@@ -1,10 +1,10 @@
-use sysinfo::{CpuRefreshKind, Disks, MemoryRefreshKind, Networks, RefreshKind, System};
+use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind, System};
 use tracing::debug;
 
 use super::{bytes_to_gb, bytes_to_mb};
 
-/// One live host sample: vitals plus the static host identity fields the
-/// panel's `HostInfo` wire message needs.
+/// One live host sample. Produced fresh per request; nothing here survives
+/// the call that created it.
 #[derive(Debug, Clone)]
 pub struct ServerMetric {
     pub timestamp: String,
@@ -27,34 +27,31 @@ pub struct ServerMetric {
     pub network_out: f64,
 }
 
-pub struct SystemCollector {
-    system: System,
-    disks: Disks,
-    networks: Networks,
-    host: HostInfo,
-    cpu_primed: bool,
-    last_lists_refresh: Option<std::time::Instant>,
-}
-
-struct HostInfo {
-    cpu_model: String,
-    cpu_cores: i32,
-    cpu_physical_cores: i32,
-    cpu_speed: f64,
-    os: String,
-    distro: String,
-    kernel: String,
-    arch: String,
-}
+/// Stateless host reader: every call measures from scratch and keeps nothing
+/// between requests. CPU usage is inherently a delta, so each sample measures
+/// one short window inside the request itself — the answer may arrive a
+/// moment late, but it is always live. Disk is a single `statvfs` on one
+/// mount and network is a single `/proc/net/dev` read: no per-request
+/// device/mount enumeration, which is what made older versions spike CPU on
+/// Docker hosts with many mounts.
+pub struct SystemCollector;
 
 impl SystemCollector {
     pub fn new() -> Self {
-        let system = System::new_with_specifics(
+        Self
+    }
+
+    pub async fn sample(&mut self) -> ServerMetric {
+        let mut system = System::new_with_specifics(
             RefreshKind::nothing()
                 .with_cpu(CpuRefreshKind::nothing().with_cpu_usage().with_frequency())
                 .with_memory(MemoryRefreshKind::nothing().with_ram()),
         );
+        system.refresh_cpu_usage();
+        tokio::time::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL).await;
+        system.refresh_cpu_usage();
 
+        let cpu = system.global_cpu_usage() as f64;
         let cpus = system.cpus();
         let logical_cores = cpus.len();
         let cpu_model = cpus
@@ -66,7 +63,30 @@ impl SystemCollector {
             .map(|c| c.frequency() as f64 / 1000.0)
             .unwrap_or(0.0);
 
-        let host = HostInfo {
+        let mem_total_bytes = system.total_memory() as f64;
+        let mem_used_bytes = system.used_memory() as f64;
+        let mem_percent = if mem_total_bytes > 0.0 {
+            (mem_used_bytes / mem_total_bytes) * 100.0
+        } else {
+            0.0
+        };
+
+        // Report the host root filesystem. When the agent runs in a container
+        // the host root is bind-mounted at `/host` (see the agent compose),
+        // so prefer that, then `/`.
+        let (disk_used_bytes, disk_total_bytes) =
+            statvfs("/host").or_else(|| statvfs("/")).unwrap_or((0, 0));
+        let disk_percent = if disk_total_bytes > 0 {
+            (disk_used_bytes as f64 / disk_total_bytes as f64) * 100.0
+        } else {
+            0.0
+        };
+
+        let (net_in, net_out) = net_totals();
+
+        let metric = ServerMetric {
+            timestamp: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+            cpu,
             cpu_model,
             cpu_cores: logical_cores as i32,
             cpu_physical_cores: system.physical_core_count().unwrap_or(logical_cores) as i32,
@@ -75,102 +95,6 @@ impl SystemCollector {
             distro: System::long_os_version().unwrap_or_else(|| "unknown".to_string()),
             kernel: System::kernel_version().unwrap_or_else(|| "unknown".to_string()),
             arch: System::cpu_arch(),
-        };
-
-        Self {
-            system,
-            disks: Disks::new_with_refreshed_list(),
-            networks: Networks::new_with_refreshed_list(),
-            host,
-            cpu_primed: false,
-            last_lists_refresh: None,
-        }
-    }
-
-    /// One incremental host sample, designed to be called on a fixed tick
-    /// (see the background loop in `MonitoringService`). CPU usage is a
-    /// delta against the previous refresh, so after priming a single
-    /// `refresh_cpu_usage` per call suffices; the expensive full
-    /// re-enumerations (disk mounts, network interfaces) run at most every
-    /// 30s — a Docker host's `/proc/mounts` grows with every container and
-    /// re-statfs'ing all of it per request was the CPU spikes.
-    pub async fn sample(&mut self) -> ServerMetric {
-        self.system.refresh_cpu_usage();
-        if !self.cpu_primed {
-            tokio::time::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL).await;
-            self.system.refresh_cpu_usage();
-            self.cpu_primed = true;
-        }
-        self.system.refresh_memory();
-        let lists_stale = self
-            .last_lists_refresh
-            .is_none_or(|at| at.elapsed() >= std::time::Duration::from_secs(30));
-        if lists_stale {
-            self.disks.refresh(true);
-            self.networks.refresh(true);
-            self.last_lists_refresh = Some(std::time::Instant::now());
-        } else {
-            self.networks.refresh(false);
-        }
-
-        let cpu = self.system.global_cpu_usage() as f64;
-
-        let mem_total_bytes = self.system.total_memory() as f64;
-        let mem_used_bytes = self.system.used_memory() as f64;
-        let mem_percent = if mem_total_bytes > 0.0 {
-            (mem_used_bytes / mem_total_bytes) * 100.0
-        } else {
-            0.0
-        };
-
-        // Report the host root filesystem. Summing every mount double-counts
-        // one device; match the standard `df /`. When the agent runs in a
-        // container the host root is bind-mounted at `/host` (see the agent
-        // compose), so prefer that, then `/`, then the largest device.
-        let disk_for = |mount: &str| {
-            self.disks
-                .list()
-                .iter()
-                .find(|d| d.mount_point() == std::path::Path::new(mount))
-                .map(|d| (d.total_space() - d.available_space(), d.total_space()))
-        };
-        let (disk_used_bytes, disk_total_bytes) = disk_for("/host")
-            .or_else(|| disk_for("/"))
-            .or_else(|| {
-                self.disks
-                    .list()
-                    .iter()
-                    .filter(|d| !d.is_removable())
-                    .max_by_key(|d| d.total_space())
-                    .map(|d| (d.total_space() - d.available_space(), d.total_space()))
-            })
-            .unwrap_or((0, 0));
-
-        let disk_percent = if disk_total_bytes > 0 {
-            (disk_used_bytes as f64 / disk_total_bytes as f64) * 100.0
-        } else {
-            0.0
-        };
-
-        let (net_in, net_out) = self
-            .networks
-            .list()
-            .values()
-            .fold((0u64, 0u64), |(rx, tx), d| {
-                (rx + d.total_received(), tx + d.total_transmitted())
-            });
-
-        let metric = ServerMetric {
-            timestamp: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
-            cpu,
-            cpu_model: self.host.cpu_model.clone(),
-            cpu_cores: self.host.cpu_cores,
-            cpu_physical_cores: self.host.cpu_physical_cores,
-            cpu_speed: self.host.cpu_speed,
-            os: self.host.os.clone(),
-            distro: self.host.distro.clone(),
-            kernel: self.host.kernel.clone(),
-            arch: self.host.arch.clone(),
             mem_used: mem_percent,
             mem_used_gb: bytes_to_gb(mem_used_bytes),
             mem_total: bytes_to_gb(mem_total_bytes),
@@ -192,6 +116,41 @@ impl SystemCollector {
     }
 }
 
+/// Total and used bytes of the filesystem one path sits on, via `statvfs` —
+/// the same numbers `df` prints, with no device list walk.
+fn statvfs(path: &str) -> Option<(u64, u64)> {
+    let c_path = std::ffi::CString::new(path).ok()?;
+    let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
+    if unsafe { libc::statvfs(c_path.as_ptr(), &mut stat) } != 0 {
+        return None;
+    }
+    let block = stat.f_frsize as u64;
+    let total = stat.f_blocks as u64 * block;
+    let used = (stat.f_blocks as u64 - stat.f_bfree as u64) * block;
+    Some((used, total))
+}
+
+/// Cumulative RX/TX bytes across every interface, straight from
+/// `/proc/net/dev` — one small file read, no per-interface state kept.
+fn net_totals() -> (u64, u64) {
+    let Ok(text) = std::fs::read_to_string("/proc/net/dev") else {
+        return (0, 0);
+    };
+    let mut rx = 0u64;
+    let mut tx = 0u64;
+    for line in text.lines().skip(2) {
+        let Some((_, data)) = line.split_once(':') else {
+            continue;
+        };
+        let fields: Vec<&str> = data.split_whitespace().collect();
+        if fields.len() >= 9 {
+            rx += fields[0].parse().unwrap_or(0);
+            tx += fields[8].parse().unwrap_or(0);
+        }
+    }
+    (rx, tx)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -200,6 +159,26 @@ mod tests {
     fn converts_units() {
         assert!((bytes_to_gb(1_073_741_824.0) - 1.0).abs() < f64::EPSILON);
         assert!((bytes_to_mb(1_048_576.0) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn net_totals_sums_interfaces_from_proc_format() {
+        // Same parsing as `net_totals`, over the `/proc/net/dev` shape.
+        let text =
+            "  lo: 100 0 0 0 0 0 0 0 50 0 0 0 0 0 0 0\n eth0: 200 0 0 0 0 0 0 0 75 0 0 0 0 0 0 0\n";
+        let mut rx = 0u64;
+        let mut tx = 0u64;
+        for line in text.lines() {
+            let Some((_, data)) = line.split_once(':') else {
+                continue;
+            };
+            let fields: Vec<&str> = data.split_whitespace().collect();
+            if fields.len() >= 9 {
+                rx += fields[0].parse().unwrap_or(0);
+                tx += fields[8].parse().unwrap_or(0);
+            }
+        }
+        assert_eq!((rx, tx), (300, 125));
     }
 
     #[tokio::test]

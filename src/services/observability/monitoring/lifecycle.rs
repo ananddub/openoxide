@@ -112,7 +112,10 @@ impl MonitoringLifecycleService {
     /// Restarts the agent out-of-band (local Docker socket / remote SSH), which
     /// works even when the gRPC link is down — e.g. right after rotating the
     /// agent's mTLS certs, when the old in-memory cert no longer verifies.
-    pub async fn restart_agent_out_of_band(&self, server_id: i64) -> sqlx::Result<MonitoringActionDto> {
+    pub async fn restart_agent_out_of_band(
+        &self,
+        server_id: i64,
+    ) -> sqlx::Result<MonitoringActionDto> {
         let docker = self.out_of_band_docker(server_id).await?;
         docker
             .stop_agent_container()
@@ -167,12 +170,10 @@ impl MonitoringLifecycleService {
     /// Returns the local Docker socket API when `server_id` is the panel's own
     /// host, or an SSH-backed docker client for a remote server.
     async fn out_of_band_docker(&self, server_id: i64) -> sqlx::Result<OutOfBandDocker> {
-        let ip: Option<String> = sqlx::query_scalar(
-            "SELECT ip_address FROM servers WHERE id = ?",
-        )
-        .bind(server_id)
-        .fetch_optional(&self.queries.pool)
-        .await?;
+        let ip: Option<String> = sqlx::query_scalar("SELECT ip_address FROM servers WHERE id = ?")
+            .bind(server_id)
+            .fetch_optional(&self.queries.pool)
+            .await?;
         let is_local = ip
             .as_deref()
             .is_some_and(|value| {
@@ -183,10 +184,12 @@ impl MonitoringLifecycleService {
         if is_local {
             Ok(OutOfBandDocker::Local)
         } else {
-            let executor =
-                crate::services::compute::compose::remote::remote_executor(&self.queries.pool, server_id)
-                    .await
-                    .map_err(sqlx::Error::Protocol)?;
+            let executor = crate::services::compute::compose::remote::remote_executor(
+                &self.queries.pool,
+                server_id,
+            )
+            .await
+            .map_err(sqlx::Error::Protocol)?;
             Ok(OutOfBandDocker::Remote(DockerCli::from_remote_executor(
                 executor,
             )))
@@ -196,11 +199,32 @@ impl MonitoringLifecycleService {
     /// Pull the published agent image and recreate the monitor only when the
     /// running container is backed by an older image.
     pub async fn update_agent_if_needed(&self, server_id: i64) -> sqlx::Result<bool> {
+        let image = crate::utils::setup::agent_image();
+        // Prefer the agent's own socket probe over the CLI path: an
+        // up-to-date host answers entirely through its existing gRPC channel,
+        // so no docker CLI process (a 28 MiB RSS charge in the agent's
+        // cgroup) is ever spawned on the five-minute check. Any older agent,
+        // a failed probe, or an out-of-date image falls through to the
+        // out-of-band CLI repair below.
+        if let Ok(monitoring) = auto_di::resolve::<
+            crate::services::observability::monitoring::service::MonitoringService,
+        >()
+        .await
+            && let Ok(info) = monitoring.agent_update_probe(server_id, image).await
+            && info.self_running
+            && info.self_server_id == server_id
+            && !info.self_image_id.is_empty()
+            && !info.latest_image_id.is_empty()
+            && info.self_image_id == info.latest_image_id
+        {
+            tracing::debug!(server_id, "agent update probe confirms latest image");
+            return Ok(false);
+        }
+
         let executor = crate::services::compute::compose::remote::agent_executor(server_id)
             .await
             .map_err(sqlx::Error::Protocol)?;
         let docker = DockerCli::from_executor(executor);
-        let image = crate::utils::setup::agent_image();
 
         let inspected = match docker.container(AGENT_CONTAINER_NAME).inspect().await {
             Ok(container) => Some(container),
@@ -266,10 +290,12 @@ impl MonitoringLifecycleService {
             // monitoring_agents table yet. The panel-wide metrics token is a
             // valid fallback, so repair the container without requiring a
             // pre-existing registration row.
-            let executor =
-                crate::services::compute::compose::remote::remote_executor(&self.queries.pool, server_id)
-                    .await
-                    .map_err(sqlx::Error::Protocol)?;
+            let executor = crate::services::compute::compose::remote::remote_executor(
+                &self.queries.pool,
+                server_id,
+            )
+            .await
+            .map_err(sqlx::Error::Protocol)?;
             let mut config = SetupConfig::default();
             config.agent_server_id = Some(server_id);
             config.agent_token = Some(self.agent_auth_token_fallback());
@@ -493,12 +519,11 @@ impl MonitoringLifecycleService {
             None => {
                 // Prefer the server's own org; fall back to a linked resource's
                 // project org. A server with neither cannot be attributed.
-                let from_server: Option<i64> = sqlx::query_scalar(
-                    "SELECT organization_id FROM servers WHERE id = ?",
-                )
-                .bind(server_id)
-                .fetch_optional(&self.queries.pool)
-                .await?;
+                let from_server: Option<i64> =
+                    sqlx::query_scalar("SELECT organization_id FROM servers WHERE id = ?")
+                        .bind(server_id)
+                        .fetch_optional(&self.queries.pool)
+                        .await?;
                 match from_server.filter(|id| *id > 0) {
                     Some(id) => id,
                     None => sqlx::query_scalar(
@@ -531,10 +556,12 @@ impl MonitoringLifecycleService {
                 .await?;
             token
         };
-        let executor =
-            crate::services::compute::compose::remote::remote_executor(&self.queries.pool, server_id)
-                .await
-                .map_err(sqlx::Error::Protocol)?;
+        let executor = crate::services::compute::compose::remote::remote_executor(
+            &self.queries.pool,
+            server_id,
+        )
+        .await
+        .map_err(sqlx::Error::Protocol)?;
         let docker = DockerCli::from_remote_executor(executor.clone());
         let _ = docker
             .containers()
@@ -696,7 +723,11 @@ impl OutOfBandDocker {
             Self::Local => {
                 let api = local_docker_api();
                 match api
-                    .request("POST", &format!("/containers/{AGENT_CONTAINER_NAME}/stop"), None)
+                    .request(
+                        "POST",
+                        &format!("/containers/{AGENT_CONTAINER_NAME}/stop"),
+                        None,
+                    )
                     .await
                 {
                     // 204 on success; "already stopped" is idempotent success.
@@ -729,7 +760,11 @@ impl OutOfBandDocker {
             Self::Local => {
                 let api = local_docker_api();
                 match api
-                    .request("POST", &format!("/containers/{AGENT_CONTAINER_NAME}/start"), None)
+                    .request(
+                        "POST",
+                        &format!("/containers/{AGENT_CONTAINER_NAME}/start"),
+                        None,
+                    )
                     .await
                 {
                     Ok(_) => Ok(()),

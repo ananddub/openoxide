@@ -234,8 +234,8 @@ impl MonitoringService {
             }
             other => other,
         };
-        let mtls_base = std::env::var("OPENOXIDE_MTLS_DIR")
-            .unwrap_or_else(|_| "/app/data/mtls".to_string());
+        let mtls_base =
+            std::env::var("OPENOXIDE_MTLS_DIR").unwrap_or_else(|_| "/app/data/mtls".to_string());
         let server_dir = std::path::Path::new(&mtls_base).join(format!("server-{server_id}"));
         let ca_file = server_dir.join("ca.crt");
         // Provision this server's isolated mTLS material on first use. Without
@@ -409,7 +409,13 @@ impl MonitoringService {
 
     pub async fn agent_info(&self, server_id: i64) -> Result<proto::AgentInfoResponse, String> {
         let request = self
-            .authenticated(server_id, proto::AgentInfoRequest { server_id })
+            .authenticated(
+                server_id,
+                proto::AgentInfoRequest {
+                    server_id,
+                    update_image: String::new(),
+                },
+            )
             .await?;
         self.client(server_id)
             .await?
@@ -417,6 +423,31 @@ impl MonitoringService {
             .await
             .map(|response| response.into_inner())
             .map_err(|error| format!("agent capability negotiation failed: {error}"))
+    }
+
+    /// Asks the agent to self-inspect and pull `image` through its Docker
+    /// socket, so an up-to-date host is confirmed without spawning any CLI
+    /// process on the remote machine.
+    pub async fn agent_update_probe(
+        &self,
+        server_id: i64,
+        image: &str,
+    ) -> Result<proto::AgentInfoResponse, String> {
+        let request = self
+            .authenticated(
+                server_id,
+                proto::AgentInfoRequest {
+                    server_id,
+                    update_image: image.to_string(),
+                },
+            )
+            .await?;
+        self.client(server_id)
+            .await?
+            .get_agent_info(request)
+            .await
+            .map(|response| response.into_inner())
+            .map_err(|error| format!("agent update probe failed: {error}"))
     }
 
     async fn authenticated<T>(&self, server_id: i64, message: T) -> Result<Request<T>, String> {

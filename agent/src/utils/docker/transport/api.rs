@@ -78,8 +78,18 @@ impl DockerApi {
     }
 
     pub async fn get_raw(&self, path: &str) -> Result<Bytes, DockerError> {
+        self.request(hyper::Method::GET, path).await
+    }
+
+    /// POST with an empty body, collecting the (bounded) response — the
+    /// shape of Docker's RPC-style endpoints like /images/create.
+    pub async fn post_raw(&self, path: &str) -> Result<Bytes, DockerError> {
+        self.request(hyper::Method::POST, path).await
+    }
+
+    async fn request(&self, method: hyper::Method, path: &str) -> Result<Bytes, DockerError> {
         let mut guard = self.checkout().await?;
-        let response = match self.send(guard.sender(), path).await {
+        let response = match self.send(guard.sender(), method, path).await {
             Ok(response) => response,
             Err(error) => {
                 guard.discard();
@@ -126,6 +136,21 @@ impl DockerApi {
     /// Long-lived responses (stats streams, /events) own a dedicated
     /// connection for their whole lifetime.
     pub async fn get_stream(&self, path: &str) -> Result<ByteStream, DockerError> {
+        self.open_stream(hyper::Method::GET, path).await
+    }
+
+    /// Dedicated-connection POST for long-running streamed endpoints such as
+    /// /images/create, whose progress body can outlive the shared connection's
+    /// request serialization.
+    pub async fn post_stream(&self, path: &str) -> Result<ByteStream, DockerError> {
+        self.open_stream(hyper::Method::POST, path).await
+    }
+
+    async fn open_stream(
+        &self,
+        method: hyper::Method,
+        path: &str,
+    ) -> Result<ByteStream, DockerError> {
         let (mut sender, connection) = self.open().await?;
         let driver = tokio::spawn(async move {
             if let Err(error) = connection.await {
@@ -133,7 +158,7 @@ impl DockerApi {
             }
         });
 
-        match self.send(&mut sender, path).await {
+        match self.send(&mut sender, method, path).await {
             Ok(response) => {
                 let status = response.status();
                 if !status.is_success() {
@@ -213,11 +238,12 @@ impl DockerApi {
     async fn send(
         &self,
         sender: &mut Sender,
+        method: hyper::Method,
         path: &str,
     ) -> Result<hyper::Response<hyper::body::Incoming>, DockerError> {
         let uri = uri_for(path);
         let request = Request::builder()
-            .method("GET")
+            .method(method)
             .uri(&uri)
             .header("Host", "docker")
             .body(Empty::<Bytes>::new())

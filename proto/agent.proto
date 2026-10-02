@@ -31,6 +31,8 @@ service AgentService {
 
 message AgentInfoRequest {
   int64 server_id = 1;
+  // When set (e.g. "dubeyanand/openoxide-agent:latest") the agent pulls that image through the Docker socket — no CLI process — and reports its resulting image id in latest_image_id.
+  string update_image = 2;
 }
 
 message AgentInfoResponse {
@@ -39,6 +41,12 @@ message AgentInfoResponse {
   repeated string capabilities = 3;
   uint64 max_upload_bytes = 4;
   repeated string upload_roots = 5;
+  // Socket self-inspection so the panel's update check spawns no docker CLI: the image id this agent's own container runs, its configured SERVER_ID, and whether it is running. Empty/zero on agents too old to answer.
+  string self_image_id = 6;
+  int64 self_server_id = 7;
+  bool self_running = 8;
+  // Image id of update_image after the socket pull; empty when no pull was requested or it failed.
+  string latest_image_id = 9;
 }
 
 message FileUploadMessage {
