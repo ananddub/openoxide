@@ -1,16 +1,23 @@
 #include "docker/docker_client.h"
 
-#include <asio/connect.hpp>
-#include <asio/read_until.hpp>
-#include <asio/redirect_error.hpp>
-#include <asio/write.hpp>
+#include <asio/post.hpp>
+#include <asio/posix/stream_descriptor.hpp>
+#include <asio/steady_timer.hpp>
+#include <asio/use_awaitable.hpp>
+
+#include <curl/curl.h>
 
 #include <algorithm>
-#include <cctype>
-#include <cstdlib>
+#include <atomic>
+#include <chrono>
 #include <fmt/format.h>
-#include <sstream>
+#include <functional>
+#include <mutex>
 #include <stdexcept>
+#include <string_view>
+#include <unordered_map>
+#include <unistd.h>
+#include <vector>
 
 #include "core/async_util.h"
 
@@ -18,325 +25,513 @@ namespace {
 
 const char* kApiVersion = "v1.41";
 constexpr size_t kMaxResponseBytes = 32 * 1024 * 1024;
-constexpr size_t kReadChunk = 64 * 1024;
-
-std::string lower(std::string value) {
-	for (auto& c : value) {
-		c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-	}
-	return value;
-}
-
-struct ResponseMeta {
-	int status = 0;
-	bool chunked = false;
-	long long content_length = -1;
-	bool connection_close = false;
-};
-
-ResponseMeta parse_headers(const std::string& head) {
-	ResponseMeta meta;
-	std::istringstream stream(head);
-	std::string line;
-	if (std::getline(stream, line) && line.size() >= 12) {
-		meta.status = std::atoi(line.c_str() + 9);
-	}
-	while (std::getline(stream, line)) {
-		if (!line.empty() && line.back() == '\r') {
-			line.pop_back();
-		}
-		const auto colon = line.find(':');
-		if (colon == std::string::npos) {
-			continue;
-		}
-		const auto name = lower(line.substr(0, colon));
-		std::string value = line.substr(colon + 1);
-		while (!value.empty() && value.front() == ' ') {
-			value.erase(value.begin());
-		}
-		if (name == "transfer-encoding" && lower(value).find("chunked") != std::string::npos) {
-			meta.chunked = true;
-		} else if (name == "content-length") {
-			meta.content_length = std::atoll(value.c_str());
-		} else if (name == "connection" && lower(value).find("close") != std::string::npos) {
-			meta.connection_close = true;
-		}
-	}
-	return meta;
-}
 
 std::string uri_for(const std::string& path) {
 	return fmt::format("/{}{}", kApiVersion, path);
 }
 
-std::string build_request(const std::string& method, const std::string& path,
-                          const std::string& body) {
-	std::string req = fmt::format("{} {} HTTP/1.1\r\nHost: docker\r\nAccept: */*\r\n", method, uri_for(path));
-	if (!body.empty()) {
-		req += fmt::format("Content-Type: application/json\r\nContent-Length: {}\r\n", body.size());
-	} else if (method == "POST") {
-		req += "Content-Length: 0\r\n";
-	}
-	req += "\r\n";
-	req += body;
-	return req;
-}
-
-// One connected docker API session: request sent, response headers parsed.
-struct Session {
-	asio::local::stream_protocol::socket socket;
-	ResponseMeta meta;
-	std::string head_carry; // body bytes delivered with the headers
-};
-
-asio::awaitable<Session> exchange(asio::any_io_executor ex, const std::string& socket_path,
-                                  const std::string& request) {
-	asio::local::stream_protocol::socket socket{ex};
-	asio::local::stream_protocol::endpoint endpoint(socket_path);
-	asio::error_code ec;
-	co_await socket.async_connect(endpoint, asio::redirect_error(asio::use_awaitable, ec));
-	if (ec) {
-		throw std::runtime_error(
-		    fmt::format("docker socket connect to {} failed: {}", socket_path, ec.message()));
-	}
-	co_await asio::async_write(socket, asio::buffer(request),
-	                           asio::redirect_error(asio::use_awaitable, ec));
-	if (ec) {
-		throw std::runtime_error("docker: write failed");
-	}
-	std::string head;
-	co_await asio::async_read_until(socket, asio::dynamic_buffer(head), "\r\n\r\n",
-	                                asio::redirect_error(asio::use_awaitable, ec));
-	if (ec && head.find("\r\n\r\n") == std::string::npos) {
-		throw std::runtime_error("docker: connection closed while reading headers");
-	}
-	// dynamic_buffer consumed everything the kernel delivered at once, so
-	// bytes past the header boundary are body, already removed from the
-	// socket. Hand them to the body reader instead of losing them.
-	std::string head_carry;
-	const auto boundary = head.find("\r\n\r\n");
-	if (boundary != std::string::npos) {
-		head_carry = head.substr(boundary + 4);
-		head.resize(boundary);
-	} else {
-		head_carry = std::move(head);
-		head.clear();
-	}
-	co_return Session{std::move(socket), parse_headers(head), std::move(head_carry)};
-}
-
-// Drain a complete one-shot body (Content-Length, chunked, or until close).
-asio::awaitable<std::string> read_full_body(Session& session) {
-	std::string body;
-	std::string carry = std::move(session.head_carry);
-	char raw[kReadChunk];
-	const auto pull = [&]() -> asio::awaitable<long long> {
-		asio::error_code ec;
-		const size_t n = co_await session.socket.async_read_some(
-			asio::buffer(raw, sizeof(raw)), asio::redirect_error(asio::use_awaitable, ec));
-		if (ec) {
-			co_return -1;
-		}
-		carry.append(raw, n);
-		co_return static_cast<long long>(n);
-	};
-
-	if (session.meta.chunked) {
-		while (true) {
-			const auto eol = carry.find("\r\n");
-			if (eol == std::string::npos) {
-				if (co_await pull() < 0) {
-					break;
-				}
-				continue;
-			}
-			const long long size = std::strtoll(carry.substr(0, eol).c_str(), nullptr, 16);
-			if (size == 0) {
-				break;
-			}
-			if (carry.size() < eol + 2 + static_cast<size_t>(size) + 2) {
-				if (co_await pull() < 0) {
-					break;
-				}
-				continue;
-			}
-			body.append(carry, eol + 2, static_cast<size_t>(size));
-			carry.erase(0, static_cast<size_t>(eol + 2 + size + 2));
-			if (body.size() > kMaxResponseBytes) {
-				throw std::runtime_error("docker response too large");
-			}
-		}
-		co_return body;
-	}
-	if (session.meta.content_length >= 0) {
-		body.reserve(static_cast<size_t>(
-			std::min<long long>(session.meta.content_length, static_cast<long long>(kMaxResponseBytes))));
-		long long remaining = session.meta.content_length;
-		while (remaining > 0) {
-			if (carry.empty()) {
-				if (co_await pull() < 0) {
-					break;
-				}
-			}
-			const size_t take = std::min(carry.size(), static_cast<size_t>(remaining));
-			body.append(carry, 0, take);
-			carry.erase(0, take);
-			remaining -= static_cast<long long>(take);
-		}
-		co_return body;
-	}
-	while (true) {
-		if (carry.empty()) {
-			if (co_await pull() < 0) {
-				break;
-			}
-		}
-		body += carry;
-		carry.clear();
-		if (body.size() > kMaxResponseBytes) {
-			throw std::runtime_error("docker response too large");
-		}
-	}
-	co_return body;
-}
-
-void require_ok(const ResponseMeta& meta, const std::string& path, const std::string& body) {
-	if (meta.status < 200 || meta.status >= 300) {
-		throw std::runtime_error(fmt::format("docker {}: status {} {}", uri_for(path), meta.status, body));
-	}
-}
-
 } // namespace
 
-DockerClient::DockerClient(asio::any_io_executor executor, std::string socket_path)
-    : executor_(std::move(executor)), socket_path_(std::move(socket_path)) {}
+namespace detail {
 
-asio::awaitable<std::string> DockerClient::get(const std::string& path) {
-	auto session = co_await exchange(executor_, socket_path_, build_request("GET", path, ""));
-	auto body = co_await read_full_body(session);
-	require_ok(session.meta, path, body);
-	co_return body;
+struct Pump;
+struct Transfer;
+
+struct Outcome {
+	long status = 0;
+	CURLcode result = CURLE_OK;
+	std::string body;
+};
+
+// The shared state of one open stream: the frame mailbox the reader awaits,
+// plus the transfer an abort has to tear down.
+struct StreamCore : std::enable_shared_from_this<StreamCore> {
+	asio::any_io_executor ex;
+	std::shared_ptr<Pump> pump;
+	std::shared_ptr<Transfer> transfer;
+	std::shared_ptr<Mailbox<std::string>> frames;
+	std::shared_ptr<Mailbox<Outcome>> opened;
+	std::atomic<bool> aborted{false};
+
+	void abort();
+};
+
+// One curl_easy transfer plus everything needed to deliver it. Everything
+// here is touched only on the io thread (curl calls its callbacks from the
+// multi actions the Pump runs there), except the mailboxes, which are
+// thread-safe by design.
+struct Transfer {
+	explicit Transfer(Pump& owner) : pump(owner) {}
+
+	Pump& pump;
+	CURL* easy = nullptr;
+	std::string uri; // "/v1.41/..." — used in error messages
+	std::string url;
+	std::string post_body;             // curl does not copy CURLOPT_POSTFIELDS
+	struct curl_slist* headers = nullptr;
+	bool streaming = false;
+	bool dead = false; // completion already delivered
+	bool status_seen = false;
+	long status = 0;
+	std::string buffer; // one-shot body accumulation
+	std::function<void(detail::Outcome)> oneshot_done;
+	std::shared_ptr<detail::StreamCore> stream; // streaming sink
+};
+
+// A curl socket wired into Asio: two dup()ed descriptors, one waited for
+// readability and one for writability, so both directions can have a
+// pending completion at the same time. curl owns the original fd; the dups
+// close with the descriptors. A slot can outlive its waits by one io-loop
+// pass (the cancel handler holds it), so it only weakly references the Pump.
+struct SocketSlot : std::enable_shared_from_this<SocketSlot> {
+	SocketSlot(Pump& owner, curl_socket_t socket, std::shared_ptr<Transfer> session);
+
+	std::weak_ptr<Pump> pump;
+	curl_socket_t fd;
+	std::shared_ptr<Transfer> transfer;
+	asio::posix::stream_descriptor in;
+	asio::posix::stream_descriptor out;
+	bool want_in = true;
+	bool want_out = true;
+	bool waiting_in = false;
+	bool waiting_out = false;
+	bool detached = false; // poll removed or curl closed: waiters no-op
+
+	void arm();
+	void arm_in();
+	void arm_out();
+	void detach();
+};
+
+// The single-threaded curl_multi engine: curl hands out socket/timer events,
+// Asio waits on them, and completion handlers resume the agent coroutines.
+struct Pump : std::enable_shared_from_this<Pump> {
+	Pump(asio::any_io_executor ex, std::string socket_path);
+	~Pump();
+
+	// Must run on the io thread (all callers are coroutines on it).
+	std::shared_ptr<Transfer> begin(const std::string& method, const std::string& path,
+	                                const std::string& body,
+	                                std::function<void(detail::Outcome)> done,
+	                                std::shared_ptr<detail::StreamCore> stream);
+	void kill(const std::shared_ptr<Transfer>& transfer);
+
+	void slot_ready(SocketSlot& slot, bool readable);
+	void socket_event(CURL* easy, curl_socket_t fd, int what, void* socketp);
+	void timer_event(long timeout_ms);
+
+	asio::any_io_executor executor;
+	std::string socket_path;
+	CURLM* multi = nullptr;
+	asio::steady_timer timer;
+	std::unordered_map<CURL*, std::shared_ptr<Transfer>> transfers;
+
+	static int socket_cb(CURL* easy, curl_socket_t fd, int what, void* clientp, void* socketp);
+	static int timer_cb(CURLM* multi, long timeout_ms, void* clientp);
+	static size_t write_cb(char* data, size_t size, size_t count, void* userp);
+	static size_t header_cb(char* data, size_t size, size_t count, void* userp);
+
+	void start();
+	void process();
+	void finish(const std::shared_ptr<Transfer>& transfer, CURLcode result);
+	void deliver_bytes(Transfer& transfer, std::string_view bytes);
+};
+
+void Pump::slot_ready(SocketSlot& slot, bool readable) {
+	if (slot.detached || slot.transfer->dead) {
+		return;
+	}
+	int select_bits = 0;
+	if (readable && slot.want_in) {
+		select_bits = CURL_CSELECT_IN;
+	} else if (!readable && slot.want_out) {
+		select_bits = CURL_CSELECT_OUT;
+	}
+	if (select_bits != 0) {
+		int running = 0;
+		curl_multi_socket_action(multi, slot.fd, select_bits, &running);
+		process();
+	}
+	if (!slot.detached && !slot.transfer->dead) {
+		if (readable && slot.want_in) {
+			slot.arm_in();
+		} else if (!readable && slot.want_out) {
+			slot.arm_out();
+		}
+	}
 }
 
-asio::awaitable<std::string> DockerClient::post(const std::string& path, const std::string& json_body) {
-	auto session = co_await exchange(executor_, socket_path_, build_request("POST", path, json_body));
-	auto body = co_await read_full_body(session);
-	require_ok(session.meta, path, body);
-	co_return body;
+void Pump::socket_event(CURL* easy, curl_socket_t fd, int what, void* socketp) {
+	if (socketp == nullptr) { // CURL_SOCKOPT_NEW: first sight of the socket
+		auto it = transfers.find(easy);
+		if (it == transfers.end()) {
+			return;
+		}
+		auto slot = std::make_shared<SocketSlot>(*this, fd, it->second);
+		curl_multi_assign(multi, fd, slot.get());
+		slot->arm();
+		return;
+	}
+	auto& slot = *static_cast<SocketSlot*>(socketp);
+	// curl 7.87 calls this CURL_SOCKOPT_CLEANUP (later releases renamed it
+	// CURL_SOCKOPT_CLOSED); it is the last callback for the socket.
+#ifndef CURL_SOCKOPT_CLEANUP
+#define CURL_SOCKOPT_CLEANUP 4
+#endif
+	if (what == CURL_POLL_REMOVE || what == CURL_SOCKOPT_CLEANUP) {
+		slot.detach();
+		return;
+	}
+	switch (what) {
+	case CURL_POLL_IN:
+		slot.want_in = true;
+		slot.want_out = false;
+		break;
+	case CURL_POLL_OUT:
+		slot.want_out = true;
+		slot.want_in = false;
+		break;
+	case CURL_POLL_INOUT:
+		slot.want_in = true;
+		slot.want_out = true;
+		break;
+	}
+	slot.arm();
+}
+
+void Pump::timer_event(long timeout_ms) {
+	if (timeout_ms < 0) {
+		timer.cancel();
+		return;
+	}
+	timer.expires_after(std::chrono::milliseconds(timeout_ms));
+	std::weak_ptr<Pump> weak = shared_from_this();
+	timer.async_wait([weak](const asio::error_code& ec) {
+		if (ec) {
+			return;
+		}
+		if (auto pump = weak.lock()) {
+			int running = 0;
+			curl_multi_socket_action(pump->multi, CURL_SOCKET_TIMEOUT, 0, &running);
+			pump->process();
+		}
+	});
+}
+
+int Pump::socket_cb(CURL* easy, curl_socket_t fd, int what, void* clientp, void* socketp) {
+	static_cast<Pump*>(clientp)->socket_event(easy, fd, what, socketp);
+	return 0;
+}
+
+int Pump::timer_cb(CURLM*, long timeout_ms, void* clientp) {
+	static_cast<Pump*>(clientp)->timer_event(timeout_ms);
+	return 0;
+}
+
+size_t Pump::write_cb(char* data, size_t size, size_t count, void* userp) {
+	auto& transfer = *static_cast<Transfer*>(userp);
+	const size_t bytes = size * count;
+	transfer.pump.deliver_bytes(transfer, std::string_view(data, bytes));
+	// Returning short of the full count aborts with CURLE_WRITE_ERROR, which
+	// is how the one-shot response cap (and stream aborts) tear down.
+	return transfer.dead ? 0 : bytes;
+}
+
+size_t Pump::header_cb(char*, size_t size, size_t count, void* userp) {
+	auto& transfer = *static_cast<Transfer*>(userp);
+	if (!transfer.status_seen) {
+		transfer.status_seen = true;
+		long code = 0;
+		curl_easy_getinfo(transfer.easy, CURLINFO_RESPONSE_CODE, &code);
+		transfer.status = code;
+		if (transfer.stream) {
+			// Wake open_stream as soon as the status line is known.
+			detail::Outcome outcome;
+			outcome.status = code;
+			transfer.stream->opened->push(outcome);
+			transfer.stream->opened->close();
+		}
+	}
+	return size * count;
+}
+
+void Pump::deliver_bytes(Transfer& transfer, std::string_view bytes) {
+	if (transfer.streaming) {
+		if (transfer.stream && transfer.status >= 200 && transfer.status < 300) {
+			transfer.stream->frames->push(std::string(bytes));
+		}
+		return;
+	}
+	if (transfer.buffer.size() + bytes.size() > kMaxResponseBytes) {
+		transfer.dead = true; // makes write_cb return short -> CURLE_WRITE_ERROR
+		return;
+	}
+	transfer.buffer.append(bytes);
+}
+
+std::shared_ptr<Transfer> Pump::begin(const std::string& method, const std::string& path,
+                                      const std::string& body,
+                                      std::function<void(detail::Outcome)> done,
+                                      std::shared_ptr<detail::StreamCore> stream) {
+	auto transfer = std::make_shared<Transfer>(*this);
+	transfer->uri = uri_for(path);
+	transfer->url = "http://localhost" + transfer->uri;
+	transfer->streaming = (stream != nullptr);
+	transfer->oneshot_done = std::move(done);
+	transfer->stream = std::move(stream);
+	transfer->easy = curl_easy_init();
+	if (!transfer->easy) {
+		throw std::runtime_error("docker: curl_easy_init failed");
+	}
+	curl_easy_setopt(transfer->easy, CURLOPT_URL, transfer->url.c_str());
+	curl_easy_setopt(transfer->easy, CURLOPT_UNIX_SOCKET_PATH, socket_path.c_str());
+	curl_easy_setopt(transfer->easy, CURLOPT_NOSIGNAL, 1L);
+	curl_easy_setopt(transfer->easy, CURLOPT_PRIVATE, transfer.get());
+	curl_easy_setopt(transfer->easy, CURLOPT_WRITEFUNCTION, &Pump::write_cb);
+	curl_easy_setopt(transfer->easy, CURLOPT_WRITEDATA, transfer.get());
+	curl_easy_setopt(transfer->easy, CURLOPT_HEADERFUNCTION, &Pump::header_cb);
+	curl_easy_setopt(transfer->easy, CURLOPT_HEADERDATA, transfer.get());
+	if (method == "POST") {
+		transfer->post_body = body;
+		curl_easy_setopt(transfer->easy, CURLOPT_POST, 1L);
+		curl_easy_setopt(transfer->easy, CURLOPT_POSTFIELDS, transfer->post_body.c_str());
+		curl_easy_setopt(transfer->easy, CURLOPT_POSTFIELDSIZE_LARGE,
+		                 static_cast<curl_off_t>(transfer->post_body.size()));
+		transfer->headers = curl_slist_append(transfer->headers, "Content-Type: application/json");
+		curl_easy_setopt(transfer->easy, CURLOPT_HTTPHEADER, transfer->headers);
+	}
+	transfers.emplace(transfer->easy, transfer);
+	curl_multi_add_handle(multi, transfer->easy);
+	start();
+	return transfer;
+}
+
+void Pump::start() {
+	// Any pending timeout keeps the loop alive; this kick advances fresh
+	// handles and (re)arms the timer through the socket/timer callbacks.
+	int running = 0;
+	curl_multi_socket_action(multi, CURL_SOCKET_TIMEOUT, 0, &running);
+	process();
+}
+
+void Pump::process() {
+	int messages = 0;
+	while (CURLMsg* message = curl_multi_info_read(multi, &messages)) {
+		if (message->msg != CURLMSG_DONE) {
+			continue;
+		}
+		auto it = transfers.find(message->easy_handle);
+		if (it == transfers.end()) {
+			continue;
+		}
+		finish(it->second, message->data.result);
+	}
+}
+
+void Pump::finish(const std::shared_ptr<Transfer>& transfer, CURLcode result) {
+	const bool already_dead = transfer->dead; // one-shot size cap aborted it
+	transfer->dead = true;
+	if (!already_dead || transfer->status == 0) {
+		long code = 0;
+		curl_easy_getinfo(transfer->easy, CURLINFO_RESPONSE_CODE, &code);
+		transfer->status = code;
+	}
+	if (transfer->stream) {
+		detail::Outcome outcome;
+		outcome.status = transfer->status;
+		outcome.result = result;
+		transfer->stream->opened->push(outcome);
+		transfer->stream->opened->close();
+		transfer->stream->frames->close();
+	} else if (transfer->oneshot_done) {
+		detail::Outcome outcome;
+		outcome.status = transfer->status;
+		outcome.result = result;
+		outcome.body = std::move(transfer->buffer);
+		auto done = std::move(transfer->oneshot_done);
+		transfer->oneshot_done = nullptr;
+		done(std::move(outcome));
+	}
+	// Ordering: getinfo first, then detach the socket callbacks, then free.
+	if (auto it = transfers.find(transfer->easy); it != transfers.end()) {
+		transfers.erase(it);
+	}
+	curl_multi_remove_handle(multi, transfer->easy);
+	if (transfer->headers) {
+		curl_slist_free_all(transfer->headers);
+		transfer->headers = nullptr;
+	}
+	curl_easy_cleanup(transfer->easy);
+	transfer->easy = nullptr;
+}
+
+void Pump::kill(const std::shared_ptr<Transfer>& transfer) {
+	if (transfer->dead || !transfers.contains(transfer->easy)) {
+		return; // completion already delivered (or abort raced ahead of it)
+	}
+	finish(transfer, CURLE_ABORTED_BY_CALLBACK);
+}
+
+Pump::Pump(asio::any_io_executor ex, std::string path)
+    : executor(ex), socket_path(std::move(path)), timer(std::move(ex)) {
+	static std::once_flag global_init;
+	std::call_once(global_init, [] { curl_global_init(CURL_GLOBAL_DEFAULT); });
+	multi = curl_multi_init();
+	if (!multi) {
+		throw std::runtime_error("docker: curl_multi_init failed");
+	}
+	curl_multi_setopt(multi, CURLMOPT_SOCKETFUNCTION, &Pump::socket_cb);
+	curl_multi_setopt(multi, CURLMOPT_SOCKETDATA, this);
+	curl_multi_setopt(multi, CURLMOPT_TIMERFUNCTION, &Pump::timer_cb);
+	curl_multi_setopt(multi, CURLMOPT_TIMERDATA, this);
+}
+
+Pump::~Pump() {
+	for (auto& [easy, transfer] : transfers) {
+		(void)easy;
+		transfer->dead = true;
+		curl_multi_remove_handle(multi, transfer->easy);
+		curl_easy_cleanup(transfer->easy);
+		transfer->easy = nullptr;
+	}
+	transfers.clear();
+	curl_multi_cleanup(multi);
+}
+
+SocketSlot::SocketSlot(Pump& owner, curl_socket_t socket, std::shared_ptr<Transfer> session)
+    : pump(owner.shared_from_this()), fd(socket), transfer(std::move(session)),
+      in(owner.executor, ::dup(socket)), out(owner.executor, ::dup(socket)) {}
+
+void SocketSlot::arm() {
+	if (detached) {
+		return;
+	}
+	if (want_in && !waiting_in) {
+		arm_in();
+	}
+	if (want_out && !waiting_out) {
+		arm_out();
+	}
+}
+
+void SocketSlot::arm_in() {
+	waiting_in = true;
+	in.async_wait(asio::posix::stream_descriptor::wait_read,
+	              [this, self = shared_from_this()](const asio::error_code&) {
+		              self->waiting_in = false;
+		              if (auto pump = self->pump.lock()) {
+			              pump->slot_ready(*self, true);
+		              }
+	              });
+}
+
+void SocketSlot::arm_out() {
+	waiting_out = true;
+	out.async_wait(asio::posix::stream_descriptor::wait_write,
+	               [this, self = shared_from_this()](const asio::error_code&) {
+		               self->waiting_out = false;
+		               if (auto pump = self->pump.lock()) {
+			               pump->slot_ready(*self, false);
+		               }
+	               });
+}
+
+void SocketSlot::detach() {
+	detached = true;
+	in.cancel();
+	out.cancel();
+}
+
+void StreamCore::abort() {
+	if (aborted.exchange(true)) {
+		return;
+	}
+	frames->close();
+	opened->close();
+	asio::post(ex, [self = shared_from_this()] { self->pump->kill(self->transfer); });
+}
+
+} // namespace detail
+
+DockerClient::DockerClient(asio::any_io_executor executor, std::string socket_path)
+    : executor_(executor),
+      pump_(std::make_shared<detail::Pump>(std::move(executor), std::move(socket_path))) {}
+
+asio::awaitable<std::string> DockerClient::perform(const std::string& method,
+                                                   const std::string& path,
+                                                   const std::string& body) {
+	auto box = std::make_shared<Mailbox<detail::Outcome>>(executor_);
+	pump_->begin(method, path, body, [box](detail::Outcome outcome) {
+		box->push(std::move(outcome));
+	}, nullptr);
+	auto outcome = co_await box->next();
+	if (!outcome) {
+		throw std::runtime_error(fmt::format("docker {}: call interrupted", uri_for(path)));
+	}
+	if (outcome->result != CURLE_OK) {
+		if (outcome->result == CURLE_WRITE_ERROR) {
+			throw std::runtime_error("docker response too large");
+		}
+		throw std::runtime_error(
+		    fmt::format("docker socket call to {} failed: {}", uri_for(path),
+		                curl_easy_strerror(outcome->result)));
+	}
+	if (outcome->status < 200 || outcome->status >= 300) {
+		throw std::runtime_error(fmt::format("docker {}: status {} {}", uri_for(path),
+		                                     outcome->status, outcome->body));
+	}
+	co_return std::move(outcome->body);
+}
+
+asio::awaitable<std::string> DockerClient::get(const std::string& path) {
+	co_return co_await perform("GET", path, "");
+}
+
+asio::awaitable<std::string> DockerClient::post(const std::string& path,
+                                                const std::string& json_body) {
+	co_return co_await perform("POST", path, json_body);
 }
 
 asio::awaitable<std::unique_ptr<DockerStream>> DockerClient::open_stream(const std::string& path) {
-	auto session = co_await exchange(executor_, socket_path_, build_request("GET", path, ""));
-	if (session.meta.status < 200 || session.meta.status >= 300) {
+	auto core = std::make_shared<detail::StreamCore>();
+	core->ex = executor_;
+	core->pump = pump_;
+	core->frames = std::make_shared<Mailbox<std::string>>(executor_);
+	core->opened = std::make_shared<Mailbox<detail::Outcome>>(executor_);
+	core->transfer = pump_->begin("GET", path, "", nullptr, core);
+	auto outcome = co_await core->opened->next();
+	if (!outcome) {
 		throw std::runtime_error(
-		    fmt::format("docker {}: status {}", uri_for(path), session.meta.status));
+		    fmt::format("docker stream {} failed: connection closed before headers", uri_for(path)));
 	}
-	co_return std::make_unique<DockerStream>(std::move(session.socket), session.meta.chunked,
-	                                         std::move(session.head_carry));
+	if (outcome->result != CURLE_OK && outcome->status == 0) {
+		throw std::runtime_error(
+		    fmt::format("docker socket call to {} failed: {}", uri_for(path),
+		                curl_easy_strerror(outcome->result)));
+	}
+	if (outcome->status < 200 || outcome->status >= 300) {
+		throw std::runtime_error(fmt::format("docker {}: status {}", uri_for(path), outcome->status));
+	}
+	co_return std::unique_ptr<DockerStream>(new DockerStream(std::move(core)));
 }
 
-DockerStream::DockerStream(asio::local::stream_protocol::socket socket, bool chunked,
-                           std::string initial_carry)
-    : socket_(std::move(socket)), chunked_(chunked), carry_(std::move(initial_carry)) {}
+DockerStream::DockerStream(std::shared_ptr<detail::StreamCore> core) : core_(std::move(core)) {}
 
 DockerStream::~DockerStream() {
 	close();
 }
 
 void DockerStream::close() {
-	asio::error_code ec;
-	socket_.close(ec);
-}
-
-asio::awaitable<bool> DockerStream::pull() {
-	if (eof_) {
-		co_return false;
-	}
-	char raw[kReadChunk];
-	asio::error_code ec;
-	const size_t n = co_await socket_.async_read_some(asio::buffer(raw, sizeof(raw)),
-	                                                  asio::redirect_error(asio::use_awaitable, ec));
-	if (ec) {
-		eof_ = true;
-		co_return false;
-	}
-	carry_.append(raw, n);
-	co_return true;
+	core_->abort();
 }
 
 asio::awaitable<std::optional<std::string>> DockerStream::read() {
-	if (!chunked_) {
-		if (carry_.empty() && !eof_) {
-			if (!co_await pull() && carry_.empty()) {
-				co_return std::nullopt;
-			}
-		}
-		if (carry_.empty()) {
-			co_return std::nullopt;
-		}
-		co_return std::move(carry_);
+	std::string frame;
+	if (core_->frames->try_pop(frame)) {
+		co_return frame;
 	}
-
-	std::string out;
-	while (!out.empty() || !eof_) {
-		if (chunk_state_ == ChunkState::Size) {
-			const auto pos = carry_.find("\r\n");
-			if (pos == std::string::npos) {
-				if (!co_await pull()) {
-					break;
-				}
-				continue;
-			}
-			unsigned long long v = 0;
-			try {
-				v = std::stoull(carry_.substr(0, pos), nullptr, 16);
-			} catch (...) {
-				eof_ = true;
-				break;
-			}
-			carry_.erase(0, pos + 2);
-			if (v == 0) {
-				chunk_state_ = ChunkState::Done;
-				break;
-			}
-			chunk_remaining_ = v;
-			chunk_state_ = ChunkState::Data;
-			continue;
-		}
-		if (chunk_state_ == ChunkState::Data) {
-			if (carry_.empty()) {
-				if (!co_await pull()) {
-					break;
-				}
-				continue;
-			}
-			const size_t take = std::min(carry_.size(), static_cast<size_t>(chunk_remaining_));
-			out.append(carry_, 0, take);
-			carry_.erase(0, take);
-			chunk_remaining_ -= take;
-			if (chunk_remaining_ == 0) {
-				chunk_state_ = ChunkState::DataCrlf;
-			}
-			if (!out.empty()) {
-				co_return out;
-			}
-			continue;
-		}
-		if (chunk_state_ == ChunkState::DataCrlf) {
-			if (carry_.size() < 2) {
-				if (!co_await pull()) {
-					break;
-				}
-				continue;
-			}
-			carry_.erase(0, 2);
-			chunk_state_ = ChunkState::Size;
-			continue;
-		}
-		break; // Done
+	if (core_->frames->closed()) {
+		co_return std::nullopt;
 	}
-	if (out.empty()) {
-		eof_ = true;
-	}
-	co_return out.empty() ? std::nullopt : std::optional<std::string>{std::move(out)};
+	co_return co_await core_->frames->next();
 }

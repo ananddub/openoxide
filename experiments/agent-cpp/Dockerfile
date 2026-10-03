@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		nlohmann-json3-dev \
 		libfmt-dev \
 		libasio-dev \
+		libcurl4-openssl-dev \
 		libconcurrentqueue-dev \
 		libssl-dev
 COPY proto/agent.proto /src/proto/agent.proto
@@ -28,6 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		libprotobuf32 \
 		libfmt9 \
 		libssl3 \
+		libcurl4 \
 		ca-certificates \
 		docker.io \
 	&& rm -rf /var/lib/apt/lists/*

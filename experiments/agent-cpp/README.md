@@ -35,7 +35,9 @@ Simplifications vs. Rust (documented deviations):
 - Host-escape shell uses `nsenter -t 1` directly (when present) instead of
   spawning a privileged helper container from the agent's own image.
 - Single Unix-socket HTTP calls are opened per request (Rust pools one
-  persistent connection).
+  persistent connection). HTTP/1.1 framing, chunked decoding and status
+  parsing are libcurl's job: `curl_multi` sockets and timers are driven
+  from the agent's own Asio io_context, so curl adds no threads.
 
 ## Build (Docker — the host needs no gRPC toolchain)
 
@@ -125,7 +127,7 @@ src/
     json_split.*        streamed JSON-document framing via nlohmann parser
     tiny_event_engine.* custom gRPC EventEngine (bounded thread pool)
   docker/
-    docker_client.*     HTTP/1.1 over docker.sock (+ chunked streams, hijack)
+    docker_client.*     libcurl over docker.sock (curl_multi + Asio)
     docker_stats.*      stats doc, docker-CLI line rendering, byte formatting
     hubs.*              StatsHub / EventsHub shared Docker feeds + subscribers
   telemetry/

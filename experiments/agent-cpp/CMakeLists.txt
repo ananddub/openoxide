@@ -30,6 +30,7 @@ get_filename_component(AGENT_PROTO_DIR "${AGENT_PROTO}" DIRECTORY)
 
 find_package(Protobuf REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(CURL REQUIRED)
 
 # gRPC: prefer the CMake config package, fall back to pkg-config (Debian).
 find_package(gRPC CONFIG QUIET)
@@ -93,7 +94,8 @@ add_executable(openoxide-agent-cpp
 target_include_directories(openoxide-agent-cpp PRIVATE src)
 target_link_libraries(openoxide-agent-cpp PRIVATE
 	agent_proto
-	OpenSSL::Crypto)
+	OpenSSL::Crypto
+	CURL::libcurl)
 find_package(nlohmann_json QUIET)
 if(nlohmann_json_FOUND)
 	target_link_libraries(openoxide-agent-cpp PRIVATE nlohmann_json::nlohmann_json)

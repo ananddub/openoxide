@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		nlohmann-json3-dev \
 		libfmt-dev \
 		libasio-dev \
+		libcurl4-openssl-dev \
 		libconcurrentqueue-dev \
 		libssl-dev \
 		gdb \
