@@ -4,9 +4,18 @@
 //! server cert and presents its client cert during the handshake.
 
 use rcgen::{
-    BasicConstraints, CertificateParams, DistinguishedName, DnType, IsCa, KeyPair,
-    KeyUsagePurpose, ExtendedKeyUsagePurpose, SanType,
+    BasicConstraints, CertificateParams, DistinguishedName, DnType, ExtendedKeyUsagePurpose, IsCa,
+    KeyPair, KeyUsagePurpose, SanType, date_time_ymd,
 };
+
+/// Validity window for every generated certificate. rcgen's defaults put
+/// notAfter in year 4096, which encodes as GeneralizedTime — BoringSSL (used
+/// by the gRPC C++ agent) parses only UTCTime and fails the TLS handshake with
+/// an ASN1 error. Keep both bounds inside the UTCTime-representable range.
+fn set_utc_validity(params: &mut CertificateParams) {
+    params.not_before = date_time_ymd(2000, 1, 1);
+    params.not_after = date_time_ymd(2045, 1, 1);
+}
 
 pub struct Pem {
     pub cert: String,
@@ -48,6 +57,7 @@ pub fn generate_ca() -> Result<CaMaterial, String> {
         KeyUsagePurpose::CrlSign,
         KeyUsagePurpose::DigitalSignature,
     ];
+    set_utc_validity(&mut ca_params);
     let ca_key = KeyPair::generate().map_err(|e| format!("ca key: {e}"))?;
     let ca = ca_params
         .self_signed(&ca_key)
@@ -76,9 +86,12 @@ pub fn sign_leaves(
         CertificateParams::new(Vec::new()).map_err(|e| format!("server params: {e}"))?;
     server_params.distinguished_name = distinguished("openoxide-agent");
     server_params.subject_alt_names = san_list(agent_sans);
-    server_params.key_usages =
-        vec![KeyUsagePurpose::DigitalSignature, KeyUsagePurpose::KeyEncipherment];
+    server_params.key_usages = vec![
+        KeyUsagePurpose::DigitalSignature,
+        KeyUsagePurpose::KeyEncipherment,
+    ];
     server_params.extended_key_usages = vec![ExtendedKeyUsagePurpose::ServerAuth];
+    set_utc_validity(&mut server_params);
     let server_key = KeyPair::generate().map_err(|e| format!("server key: {e}"))?;
     let server_cert = server_params
         .signed_by(&server_key, &ca, &ca_key)
@@ -89,6 +102,7 @@ pub fn sign_leaves(
     client_params.distinguished_name = distinguished("openoxide-panel");
     client_params.key_usages = vec![KeyUsagePurpose::DigitalSignature];
     client_params.extended_key_usages = vec![ExtendedKeyUsagePurpose::ClientAuth];
+    set_utc_validity(&mut client_params);
     let client_key = KeyPair::generate().map_err(|e| format!("client key: {e}"))?;
     let client_cert = client_params
         .signed_by(&client_key, &ca, &ca_key)
@@ -235,13 +249,16 @@ impl MtlsCaStore {
             Err(sqlx::Error::RowNotFound) => return Ok(None),
             Err(e) => return Err(format!("read server {server_id} mtls: {e}")),
         };
-        let Some(ca_cert) = row.mtls_ca_cert else { return Ok(None) };
+        let Some(ca_cert) = row.mtls_ca_cert else {
+            return Ok(None);
+        };
         let utf8 = |name: &str, b: Option<Vec<u8>>| -> Result<String, String> {
             let bytes = b.ok_or_else(|| format!("{name} missing"))?;
             String::from_utf8(bytes).map_err(|e| format!("{name} not utf8: {e}"))
         };
         Ok(Some(ServerMtls {
-            ca_cert: String::from_utf8(ca_cert).map_err(|e| format!("mtls_ca_cert not utf8: {e}"))?,
+            ca_cert: String::from_utf8(ca_cert)
+                .map_err(|e| format!("mtls_ca_cert not utf8: {e}"))?,
             ca_key: utf8("mtls_ca_key", row.mtls_ca_key)?,
             panel_cert: utf8("mtls_panel_cert", row.mtls_panel_cert)?,
             panel_key: utf8("mtls_panel_key", row.mtls_panel_key)?,
@@ -302,7 +319,11 @@ mod tests {
         assert!(bundle.panel_client.key.contains("BEGIN PRIVATE KEY"));
         // Leaf + CA chain: two certificate blocks in the agent server PEM.
         assert_eq!(
-            bundle.agent_server.cert.matches("BEGIN CERTIFICATE").count(),
+            bundle
+                .agent_server
+                .cert
+                .matches("BEGIN CERTIFICATE")
+                .count(),
             2
         );
     }
@@ -315,10 +336,23 @@ mod tests {
         let b = generate_server_mtls(&["10.0.0.2".into()]).unwrap();
         assert_ne!(a.ca_cert, b.ca_cert, "each server must get its own CA");
         assert_ne!(a.ca_key, b.ca_key);
-        assert_ne!(a.panel_key, b.panel_key, "each server has its own panel key");
-        assert_ne!(a.agent_key, b.agent_key, "each server has its own agent key");
+        assert_ne!(
+            a.panel_key, b.panel_key,
+            "each server has its own panel key"
+        );
+        assert_ne!(
+            a.agent_key, b.agent_key,
+            "each server has its own agent key"
+        );
         // Every field is real PEM.
-        for pem in [&a.ca_cert, &a.ca_key, &a.panel_cert, &a.panel_key, &a.agent_cert, &a.agent_key] {
+        for pem in [
+            &a.ca_cert,
+            &a.ca_key,
+            &a.panel_cert,
+            &a.panel_key,
+            &a.agent_cert,
+            &a.agent_key,
+        ] {
             assert!(pem.contains("BEGIN"));
         }
         // Server A's panel cert chains to A's CA, not B's (isolation): the
