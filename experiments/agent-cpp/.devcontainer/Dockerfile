@@ -4,7 +4,16 @@
 FROM debian:bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# HTTPS mirrors + retries: plain-HTTP .deb fetches get corrupted on this
+# network ("Hash Sum mismatch"), which used to fail the toolchain layer.
+# The slim base ships no CA store, so bootstrap ca-certificates over HTTP
+# first, then switch the mirrors to HTTPS for the rest.
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+	&& sed -i 's|http://deb.debian.org|https://deb.debian.org|g; s|http://security.debian.org|https://deb.debian.org|g' \
+		/etc/apt/sources.list.d/debian.sources \
+	&& printf 'Acquire::Retries "3";\nAcquire::http::Pipeline-Depth "0";\n' \
+		> /etc/apt/apt.conf.d/90ci-fetch \
+	&& apt-get update && apt-get install -y --no-install-recommends \
 		build-essential \
 		cmake \
 		ninja-build \
@@ -25,7 +34,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		ltrace \
 		cppcheck \
 		clangd \
-		ca-certificates \
 		curl \
 		git \
 		procps \
