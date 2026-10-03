@@ -1,5 +1,6 @@
-#include "config.h"
+#include "core/config.h"
 
+#include <fmt/format.h>
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
@@ -51,7 +52,7 @@ std::optional<std::string> env_opt(const char* key) {
 
 bool Config::validate(std::string& error) const {
 	if (server_id == 0 || server_id < -1) {
-		error = "SERVER_ID must be a positive integer or -1 for the local Agent, got " + std::to_string(server_id);
+		error = fmt::format("SERVER_ID must be a positive integer or -1 for the local Agent, got {}", server_id);
 		return false;
 	}
 	if (trim(metrics_token).empty()) {

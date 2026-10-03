@@ -9,6 +9,11 @@ project(openoxide_agent_cpp CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# GCC 12 keeps C++20 coroutines behind a flag.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	add_compile_options(-fcoroutines)
+endif()
+
 # The single source of truth for the wire contract is the repo-root proto.
 # The dev container scopes the workspace to this folder and bind-mounts the
 # proto dir at /proto-src, so fall back to that when the repo is not present.
@@ -73,19 +78,27 @@ endif()
 
 add_executable(openoxide-agent-cpp
 	src/main.cpp
-	src/config.cpp
-	src/json_split.cpp
-	src/docker_client.cpp
-	src/docker_stats.cpp
-	src/collector.cpp
-	src/hubs.cpp
-	src/file_transfer.cpp
-	src/shell_service.cpp
-	src/agent_service.cpp)
+	src/core/config.cpp
+	src/core/tiny_event_engine.cpp
+	src/core/json_split.cpp
+	src/docker/docker_client.cpp
+	src/docker/docker_stats.cpp
+	src/docker/hubs.cpp
+	src/telemetry/collector.cpp
+	src/services/file_transfer.cpp
+	src/services/shell_service.cpp
+	src/services/agent_service.cpp)
+# Project headers are included src-rooted ("core/config.h"), so src itself
+# is an include directory.
+target_include_directories(openoxide-agent-cpp PRIVATE src)
 target_link_libraries(openoxide-agent-cpp PRIVATE
 	agent_proto
 	OpenSSL::Crypto)
 find_package(nlohmann_json QUIET)
 if(nlohmann_json_FOUND)
 	target_link_libraries(openoxide-agent-cpp PRIVATE nlohmann_json::nlohmann_json)
+endif()
+find_package(fmt QUIET)
+if(fmt_FOUND)
+	target_link_libraries(openoxide-agent-cpp PRIVATE fmt::fmt)
 endif()

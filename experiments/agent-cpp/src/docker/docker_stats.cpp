@@ -1,8 +1,7 @@
-#include "docker_stats.h"
+#include "docker/docker_stats.h"
 
+#include <fmt/format.h>
 #include <algorithm>
-#include <cstdio>
-#include <sstream>
 
 namespace {
 
@@ -141,13 +140,10 @@ std::string human_bytes(unsigned long long bytes, bool binary) {
 		value /= divisor;
 		++unit;
 	}
-	char buffer[64];
 	if (unit == 0) {
-		std::snprintf(buffer, sizeof(buffer), "%lluB", static_cast<unsigned long long>(value));
-	} else {
-		std::snprintf(buffer, sizeof(buffer), "%.2f%s", value, units[unit]);
+		return fmt::format("{}B", static_cast<unsigned long long>(value));
 	}
-	return buffer;
+	return fmt::format("{:.2f}{}", value, units[unit]);
 }
 
 double bytes_to_mb(double bytes) {
@@ -180,25 +176,21 @@ bool docker_id_matches_any(const std::vector<std::string>& ids, const std::strin
 
 std::string stats_to_cli_line(const DockerStatsDoc& doc, unsigned long long size_rw) {
 	nlohmann::json out;
-	std::ostringstream oss;
 	std::string name = doc.name;
 	if (!name.empty() && name.front() == '/') {
 		name.erase(name.begin());
 	}
 	const std::string short_id = doc.id.substr(0, 12);
 
-	oss << std::fixed << std::setprecision(2) << doc.cpu_percent();
-	out["CPUPerc"] = oss.str() + "%";
-	oss.str("");
-	oss << std::fixed << std::setprecision(2) << doc.mem_used_percent();
-	out["MemPerc"] = oss.str() + "%";
+	out["CPUPerc"] = fmt::format("{:.2f}%", doc.cpu_percent());
+	out["MemPerc"] = fmt::format("{:.2f}%", doc.mem_used_percent());
 	out["Container"] = short_id;
 	out["ID"] = doc.id;
-	out["MemUsage"] = human_bytes(doc.mem_used_bytes(), true) + " / " + human_bytes(doc.mem_limit, true);
+	out["MemUsage"] = fmt::format("{} / {}", human_bytes(doc.mem_used_bytes(), true), human_bytes(doc.mem_limit, true));
 	out["Name"] = name;
-	out["NetIO"] = human_bytes(doc.net_rx, false) + " / " + human_bytes(doc.net_tx, false);
-	out["BlockIO"] = human_bytes(doc.blk_read, false) + " / " + human_bytes(doc.blk_write, false);
-	out["PIDs"] = std::to_string(doc.pids_current);
+	out["NetIO"] = fmt::format("{} / {}", human_bytes(doc.net_rx, false), human_bytes(doc.net_tx, false));
+	out["BlockIO"] = fmt::format("{} / {}", human_bytes(doc.blk_read, false), human_bytes(doc.blk_write, false));
+	out["PIDs"] = fmt::format("{}", doc.pids_current);
 	out["SizeRw"] = human_bytes(size_rw, true);
 	return out.dump();
 }

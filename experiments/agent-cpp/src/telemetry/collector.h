@@ -1,9 +1,10 @@
 #pragma once
-#include <atomic>
+#include <asio/any_io_executor.hpp>
+#include <asio/awaitable.hpp>
+#include <asio/steady_timer.hpp>
 #include <cstdint>
-#include <mutex>
+#include <memory>
 #include <string>
-#include <thread>
 
 // One live host sample, mirroring agent/src/telemetry/collector/system's
 // ServerMetric. Host-static facts are collected once; vitals on every tick.
@@ -28,29 +29,32 @@ struct HostSample {
 	double net_out_mb = 0.0;
 };
 
-// Background sampler that refreshes the cached latest sample every METRICS_TICK
-// (5 s), exactly like the Rust agent's loop: requests read the cache and never
-// trigger host scanning themselves.
+// Sampling loop coroutine on the agent's io thread, refreshing the cached
+// sample every 5 s like the Rust agent's loop. /proc reads are syscalls only
+// (sub-millisecond), so running them on the io thread costs nothing and the
+// agent holds no dedicated sampler thread.
 class HostCollector {
 public:
-	HostCollector() = default;
+	explicit HostCollector(asio::any_io_executor executor);
 	~HostCollector();
 	HostCollector(const HostCollector&) = delete;
 	HostCollector& operator=(const HostCollector&) = delete;
 
 	void start();
 	void stop();
-	HostSample latest(); // blocks until the first sample exists
+	// Cached sample; on the very first call waits for the loop's first tick.
+	asio::awaitable<HostSample> latest();
 
 private:
-	void loop();
+	asio::awaitable<void> loop();
+	void sample();
 
-	std::thread worker_;
-	std::atomic<bool> running_{false};
-	std::mutex mutex_;
+	asio::any_io_executor ex_;
+	asio::steady_timer tick_;
+	std::shared_ptr<asio::steady_timer> ready_;
 	HostSample cached_;
+	bool running_ = false;
 	bool has_sample_ = false;
-	std::atomic<bool> first_ready_{false};
 
 	// /proc deltas
 	unsigned long long prev_cpu_total_ = 0;

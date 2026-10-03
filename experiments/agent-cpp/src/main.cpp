@@ -1,28 +1,35 @@
 #include <grpcpp/grpcpp.h>
 
-#include <atomic>
+#include <asio/co_spawn.hpp>
+#include <asio/detached.hpp>
+#include <asio/executor_work_guard.hpp>
+#include <asio/io_context.hpp>
+#include <asio/signal_set.hpp>
+#include <asio/use_awaitable.hpp>
+
 #include <chrono>
-#include <csignal>
+#include <cstdlib>
+#include <fmt/core.h>
+#include <fmt/format.h>
 #include <fstream>
-#include <iostream>
-#include <sstream>
+#include <memory>
+#include <signal.h>
 #include <thread>
 
-#include "agent_service.h"
-#include "collector.h"
-#include "config.h"
-#include "docker_client.h"
-#include "file_transfer.h"
-#include "hubs.h"
-#include "shell_service.h"
+#if defined(__GLIBC__)
+#include <malloc.h>
+#endif
+
+#include "services/agent_service.h"
+#include "telemetry/collector.h"
+#include "core/config.h"
+#include "docker/docker_client.h"
+#include "services/file_transfer.h"
+#include "docker/hubs.h"
+#include "services/shell_service.h"
+#include "core/tiny_event_engine.h"
 
 namespace {
-
-std::atomic<bool> g_shutdown{false};
-
-void handle_signal(int) {
-	g_shutdown = true;
-}
 
 // Mirrors read_with_wait in app/grpc.rs: the panel provisions the shared
 // mTLS material at its own startup, which may lag the agent's boot, so wait
@@ -38,7 +45,7 @@ std::string read_with_wait(const std::string& path) {
 			}
 		}
 		if (attempt == 0) {
-			std::cerr << "waiting for mTLS material to be provisioned: " << path << "\n";
+			fmt::print(stderr, "waiting for mTLS material to be provisioned: {}\n", path);
 		}
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
@@ -51,33 +58,41 @@ std::string read_with_wait(const std::string& path) {
 } // namespace
 
 int main() {
-	std::signal(SIGTERM, handle_signal);
-	std::signal(SIGINT, handle_signal);
+	// gRPC's built-in EventEngine spawns a hardware_concurrency-sized thread
+	// pool (32 threads here) plus an EE poller per connection; the default
+	// engine would otherwise be created on first grpc init and dominate RSS.
+	InstallTinyEventEngine();
+	// Belt-and-braces: classic iomgr keeps doing all socket work, so the tiny
+	// engine above only runs closures and timers. Must precede any grpc_init.
+	setenv("GRPC_EXPERIMENTS", "-event_engine_client", 0);
+#if defined(__GLIBC__)
+	// One malloc arena: default spawns an arena per core, each holding pages.
+	mallopt(M_ARENA_MAX, 1);
+#endif
 
 	Config config;
 	try {
 		config = Config::from_env();
 	} catch (const std::exception& error) {
-		std::cerr << "invalid configuration: " << error.what() << "\n";
+		fmt::print(stderr, "invalid configuration: {}\n", error.what());
 		return 1;
 	}
-	std::cerr << "starting openoxide-agent-cpp server_id=" << config.server_id
-	          << " grpc_port=" << config.grpc_port << "\n";
+	fmt::print(stderr, "starting openoxide-agent-cpp server_id={} grpc_port={}\n", config.server_id,
+	       config.grpc_port);
 
-	DockerClient docker(config.docker_socket);
-	try {
-		docker.get("/_ping");
-	} catch (const std::exception& error) {
-		std::cerr << "docker daemon unreachable: " << error.what() << "\n";
-	}
+	asio::io_context io;
+	// The work guard keeps io.run() from returning while gRPC EventEngine
+	// threads may still post completions onto it; released after Wait().
+	auto work = asio::make_work_guard(io);
+	const asio::any_io_executor ex = io.get_executor();
 
-	HostCollector collector;
-	collector.start();
-	StatsHub stats(docker);
-	EventsHub events(docker);
-	FileTransferService files(config);
-	ShellService shells(config, docker);
-	AgentServiceImpl service(config, docker, collector, stats, events, files, shells);
+	DockerClient docker(ex, config.docker_socket);
+	HostCollector collector(ex);
+	StatsHub stats(ex, docker);
+	EventsHub events(ex, docker);
+	FileTransferService files(ex, config);
+	ShellService shells(ex, config, docker);
+	AgentServiceImpl service(ex, config, docker, collector, stats, events, files, shells);
 
 	grpc::ServerBuilder builder;
 	std::shared_ptr<grpc::ServerCredentials> credentials = grpc::InsecureServerCredentials();
@@ -85,7 +100,7 @@ int main() {
 		const std::string cert = read_with_wait(*config.tls_cert);
 		const std::string key = read_with_wait(*config.tls_key);
 		if (cert.empty() || key.empty()) {
-			std::cerr << "gRPC TLS certificate/key never appeared\n";
+			fmt::print(stderr, "gRPC TLS certificate/key never appeared\n");
 			return 1;
 		}
 		grpc::SslServerCredentialsOptions options(
@@ -94,7 +109,7 @@ int main() {
 		if (config.tls_client_ca) {
 			const std::string ca = read_with_wait(*config.tls_client_ca);
 			if (ca.empty()) {
-				std::cerr << "gRPC client CA never appeared\n";
+				fmt::print(stderr, "gRPC client CA never appeared\n");
 				return 1;
 			}
 			options.pem_root_certs = ca;
@@ -104,37 +119,71 @@ int main() {
 		pair.cert_chain = cert;
 		options.pem_key_cert_pairs.push_back(pair);
 		credentials = grpc::SslServerCredentials(options);
-		std::cerr << "gRPC TLS enabled mtls=" << (config.tls_client_ca ? "true" : "false") << "\n";
+		fmt::print(stderr, "gRPC TLS enabled mtls={}\n", config.tls_client_ca ? "true" : "false");
 	} else {
-		std::cerr << "gRPC TLS disabled; configure AGENT_TLS_CERT and AGENT_TLS_KEY for encrypted transport\n";
+		fmt::print(stderr, "gRPC TLS disabled; configure AGENT_TLS_CERT and AGENT_TLS_KEY for encrypted transport\n");
 	}
-	builder.AddListeningPort("0.0.0.0:" + std::to_string(config.grpc_port), credentials);
+	builder.AddListeningPort(fmt::format("0.0.0.0:{}", config.grpc_port), credentials);
 	builder.RegisterService(&service);
-	builder.SetSyncServerOption(grpc::ServerBuilder::NUM_CQS, 2);
 
 	std::unique_ptr<grpc::Server> server;
 	try {
 		server = builder.BuildAndStart();
 	} catch (...) {
-		std::cerr << "could not start gRPC server on port " << config.grpc_port << "\n";
+		fmt::print(stderr, "could not start gRPC server on port {}\n", config.grpc_port);
 		return 1;
 	}
 	if (!server) {
-		std::cerr << "could not bind port " << config.grpc_port << "\n";
+		fmt::print(stderr, "could not bind port {}\n", config.grpc_port);
 		return 1;
 	}
-	std::cerr << "gRPC query server listening on 0.0.0.0:" << config.grpc_port << "\n";
+	fmt::print(stderr, "gRPC query server listening on 0.0.0.0:{}\n", config.grpc_port);
 
-	std::thread shutdown_watchdog([&] {
-		while (!g_shutdown) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		}
-		std::cerr << "shutdown signal received, stopping tasks\n";
-		collector.stop();
-		server->Shutdown();
-	});
+	// Callback-API server: gRPC hands rpcs to handlers on EventEngine
+	// closures and every handler continues as a coroutine on this single io
+	// thread — RSS stays in the low megabytes regardless of stream count.
+	collector.start();
+	grpc::Server* server_ptr = server.get();
+	asio::co_spawn(
+	    ex,
+	    [&docker]() -> asio::awaitable<void> {
+		    try {
+			    co_await docker.get("/_ping");
+		    } catch (const std::exception& error) {
+			    fmt::print(stderr, "docker daemon unreachable: {}\n", error.what());
+		    }
+	    },
+	    asio::detached);
+	asio::co_spawn(
+	    ex,
+	    [server_ptr, &collector, ex]() -> asio::awaitable<void> {
+		    auto signals = std::make_shared<asio::signal_set>(ex, SIGTERM, SIGINT);
+		    int signo = 0;
+		    try {
+			    signo = co_await signals->async_wait(asio::use_awaitable);
+		    } catch (const asio::system_error&) {
+			    co_return;
+		    }
+		    fmt::print(stderr, "shutdown signal {} received, stopping tasks\n", signo);
+		    collector.stop();
+		    // The deadline'd Shutdown tells in-flight rpcs (watch/stats/shell
+		    // loops) to return after that long, so a stuck stream cannot make
+		    // us miss the docker stop deadline. Shutdown blocks until the rpcs
+		    // drain — and those rpc coroutines run on this io thread — so it
+		    // must never be called here; give it a thread of its own.
+		    std::thread([server_ptr] {
+			    server_ptr->Shutdown(std::chrono::system_clock::now() + std::chrono::seconds(3));
+		    }).detach();
+	    },
+	    asio::detached);
+
+	std::thread io_thread([&io] { io.run(); });
 
 	server->Wait();
-	shutdown_watchdog.join();
+	// Every rpc is done; release the guard, abort any hub timer still armed,
+	// and let the io thread unwind the remaining coroutine frames.
+	work.reset();
+	io.stop();
+	io_thread.join();
 	return 0;
 }

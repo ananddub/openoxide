@@ -14,6 +14,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		protobuf-compiler \
 		protobuf-compiler-grpc \
 		nlohmann-json3-dev \
+		libfmt-dev \
+		libasio-dev \
+		libconcurrentqueue-dev \
 		libssl-dev \
 		gdb \
 		valgrind \

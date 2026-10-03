@@ -12,17 +12,17 @@ in `src/`, `agent/` or `web/` depends on it.
 
 | Rust source | C++ counterpart |
 |---|---|
-| `core/config.rs` (env vars + validation) | `src/config.{h,cpp}` |
+| `core/config.rs` (env vars + validation) | `src/core/config.{h,cpp}` |
 | `core/middleware.rs` (`x-metrics-token` auth) | `AgentServiceImpl::authenticate` |
-| `api/agent.rs` (9 RPCs, `check_server_id`) | `src/agent_service.{h,cpp}` |
+| `api/agent.rs` (9 RPCs, `check_server_id`) | `src/services/agent_service.{h,cpp}` |
 | `app/grpc.rs` (TLS / mTLS with wait-for-provisioning) | `src/main.cpp` |
-| `telemetry/collector/system` (5 s host sampling loop) | `src/collector.{h,cpp}` (reads `/proc`, `statvfs`) |
-| `utils/docker/transport/api.rs` (unix-socket HTTP) | `src/docker_client.{h,cpp}` |
-| `utils/docker/query/types.rs` (stats formulas) | `src/docker_stats.{h,cpp}` |
-| `services/monitoring/hub.rs` (StatsHub / EventsHub) | `src/hubs.{h,cpp}` |
+| `telemetry/collector/system` (5 s host sampling loop) | `src/telemetry/collector.{h,cpp}` (reads `/proc`, `statvfs`) |
+| `utils/docker/transport/api.rs` (unix-socket HTTP) | `src/docker/docker_client.{h,cpp}` |
+| `utils/docker/query/types.rs` (stats formulas) | `src/docker/docker_stats.{h,cpp}` |
+| `services/monitoring/hub.rs` (StatsHub / EventsHub) | `src/docker/hubs.{h,cpp}` |
 | `services/monitoring/metrics.rs` / `state.rs` / `stats.rs` / `lifecycle.rs` | RPCs in `agent_service.cpp` |
-| `services/monitoring/shell.rs` (PTY shell, ExecTask, page-cache reclaim) | `src/shell_service.{h,cpp}` |
-| `services/file_transfer.rs` (SHA-256 streamed upload) | `src/file_transfer.{h,cpp}` |
+| `services/monitoring/shell.rs` (PTY shell, ExecTask, page-cache reclaim) | `src/services/shell_service.{h,cpp}` |
+| `services/file_transfer.rs` (SHA-256 streamed upload) | `src/services/file_transfer.{h,cpp}` |
 
 Behavioral details kept identical: `docker stats --format {{json .}}`-shaped
 `StatsFrame` lines, `/v1.41` API prefix, short/full container-id tolerant
@@ -118,14 +118,20 @@ Dockerfile        production multi-stage image (repo-root build context)
 .devcontainer/    VS Code dev container (same toolchain as `make compile`)
 build/            generated binary (gitignored)
 src/
-  main.cpp          server bootstrap, TLS, signals
-  config.*          env config + validation
-  agent_service.*   all 9 AgentService RPCs
-  collector.*       /proc host sampler (background thread)
-  docker_client.*   HTTP/1.1 over docker.sock (+ chunked streams, hijack)
-  docker_stats.*    stats doc, docker-CLI line rendering, byte formatting
-  hubs.*            StatsHub / EventsHub shared Docker feeds + subscribers
-  json_split.*      streamed JSON-document framing via nlohmann parser
-  shell_service.*   PTY Shell + ExecTask
-  file_transfer.*   UploadFile (SHA-256, atomic install)
+  main.cpp              server bootstrap, TLS, signals
+  core/
+    config.*            env config + validation
+    async_util.h        coroutine/await helpers shared across modules
+    json_split.*        streamed JSON-document framing via nlohmann parser
+    tiny_event_engine.* custom gRPC EventEngine (bounded thread pool)
+  docker/
+    docker_client.*     HTTP/1.1 over docker.sock (+ chunked streams, hijack)
+    docker_stats.*      stats doc, docker-CLI line rendering, byte formatting
+    hubs.*              StatsHub / EventsHub shared Docker feeds + subscribers
+  telemetry/
+    collector.*         /proc host sampler (background thread)
+  services/
+    agent_service.*     all 9 AgentService RPCs
+    shell_service.*     PTY Shell + ExecTask
+    file_transfer.*     UploadFile (SHA-256, atomic install)
 ```

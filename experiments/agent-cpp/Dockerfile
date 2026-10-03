@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		protobuf-compiler \
 		protobuf-compiler-grpc \
 		nlohmann-json3-dev \
+		libfmt-dev \
+		libasio-dev \
+		libconcurrentqueue-dev \
 		libssl-dev
 COPY proto/agent.proto /src/proto/agent.proto
 COPY experiments/agent-cpp /src/experiments/agent-cpp
@@ -23,6 +26,7 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
 		libgrpc++1.51 \
 		libprotobuf32 \
+		libfmt9 \
 		libssl3 \
 		ca-certificates \
 		docker.io \
