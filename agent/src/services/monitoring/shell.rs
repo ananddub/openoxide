@@ -302,125 +302,176 @@ impl ShellService {
         let cols = u16::try_from(open.cols.max(1)).unwrap_or(u16::MAX);
         let rows = u16::try_from(open.rows.max(1)).unwrap_or(u16::MAX);
         let _ = stream.resize(cols, rows).await;
-        Ok(Self::spawn_pump(input, stream, None))
+        Ok(Self::spawn_pump(input, stream))
     }
 
-    /// Opens an interactive root shell on the agent's own host. The agent
-    /// container has no host namespaces, so a short-lived privileged helper
-    /// container (host PID namespace, agent's own image) is created and the
-    /// shell is exec'd into it via `nsenter -t 1`, which lands in PID 1's
-    /// namespaces - full host root. The helper is force-removed when the
-    /// stream ends.
+    /// Opens an interactive root shell on the agent's own host directly —
+    /// no helper container, no `docker exec`, no `nsenter` process chain.
+    /// The agent mounts the host root read-only at `/host`, so
+    /// `/host/proc/1/ns/*` are the host namespace files; the shell child is
+    /// `setns`'d into them in its `pre_exec` window (single-threaded after
+    /// fork, which the kernel requires for the mount namespace) and lands on
+    /// a host PTY. Requires the agent container to run with `CAP_SYS_ADMIN`;
+    /// without it (or without the `/host` mount) this fails with a clear
+    /// precondition error.
     async fn open_host_shell(
         input: tonic::Streaming<ShellMessage>,
         open: ShellOpen,
     ) -> Result<Response<ShellStream>, Status> {
-        let docker = os::docker::DockerCli::new_local();
+        use std::os::fd::AsRawFd;
+
         let shell = if open.shell.is_empty() {
             "sh".to_owned()
         } else {
             open.shell.clone()
         };
-        let image = docker
-            .containers()
-            .inspect(std::env::var("HOSTNAME").unwrap_or_default())
-            .await
-            .map(|info| info.image)
-            .map_err(|error| {
-                Status::internal(format!("could not inspect agent container: {error}"))
-            })?;
-        let helper = format!("openoxide-host-shell-{}", uuid::Uuid::new_v4());
-        // Reap helpers orphaned by an Agent restart (their pump tasks died
-        // with the process, so nothing else will remove them). Helpers of
-        // sessions that are live in *this* process are tracked and skipped.
-        let active = ACTIVE_HOST_HELPERS
-            .lock()
-            .map(|active| active.clone())
-            .unwrap_or_default();
-        if let Ok(containers) = docker.containers().ps().all().api().list().await {
-            for container in containers
-                .iter()
-                .filter(|container| container.names.contains("openoxide-host-shell-"))
-                .filter(|container| {
-                    let name = container.names.trim_start_matches('/');
-                    !active.iter().any(|live| live == name)
-                })
-            {
-                let id = if container.id.is_empty() {
-                    container.names.trim_start_matches('/').to_owned()
-                } else {
-                    container.id.clone()
-                };
-                let _ = docker.containers().rm(id).force().run().await;
-            }
-        }
-        if let Ok(mut active) = ACTIVE_HOST_HELPERS.lock() {
-            active.push(helper.clone());
-        }
-        // Any failure before `spawn_pump` owns the cleanup must undo the
-        // push above, or the name lingers in the vec forever.
-        let untrack = |helper: &str| {
-            if let Ok(mut active) = ACTIVE_HOST_HELPERS.lock() {
-                active.retain(|name| name != helper);
-            }
-        };
-        docker
-            .containers()
-            .create(&image)
-            .name(&helper)
-            .detach()
-            .privileged()
-            .pid("host")
-            .network("host")
-            .mount(os::docker::core::Mount::bind("/", "/host"))
-            .entrypoint(["sleep"])
-            .command(["infinity"])
-            .run()
-            .await
-            .map_err(|error| {
-                untrack(&helper);
-                Status::internal(format!("could not start host-shell helper: {error}"))
-            })?;
-        let stream = match docker
-            .containers()
-            .exec(&helper)
-            .interactive()
-            .tty(true)
-            .api()
-            .env("TERM", "xterm-256color")
-            .shell([
-                "nsenter".to_owned(),
-                "-t".to_owned(),
-                "1".to_owned(),
-                "-m".to_owned(),
-                "-u".to_owned(),
-                "-i".to_owned(),
-                "-n".to_owned(),
-                "-p".to_owned(),
-                "--".to_owned(),
-                shell,
-            ])
-            .await
-        {
-            Ok(stream) => stream,
-            Err(error) => {
-                untrack(&helper);
-                let _ = docker.containers().rm(&helper).force().run().await;
-                return Err(Status::internal(format!(
-                    "could not start host shell: {error}"
-                )));
-            }
-        };
         let cols = u16::try_from(open.cols.max(1)).unwrap_or(u16::MAX);
         let rows = u16::try_from(open.rows.max(1)).unwrap_or(u16::MAX);
-        let _ = stream.resize(cols, rows).await;
-        Ok(Self::spawn_pump(input, stream, Some((docker, helper))))
+
+        let namespaces = open_host_namespaces()?;
+        let (master, slave) = open_host_pty(rows, cols)?;
+
+        // The raw fds captured for `pre_exec` are the parent's — valid in the
+        // forked child, and O_CLOEXEC so they are gone once the shell execs.
+        let pid_fd = namespaces.pid.as_raw_fd();
+        let mnt_fd = namespaces.mnt.as_raw_fd();
+        let uts_fd = namespaces.uts.as_raw_fd();
+        let ipc_fd = namespaces.ipc.as_raw_fd();
+        let net_fd = namespaces.net.as_raw_fd();
+        let slave_fd = slave.as_raw_fd();
+
+        let mut command = tokio::process::Command::new(&shell);
+        command
+            .stdin(std::process::Stdio::from(
+                slave.try_clone().map_err(host_shell_error)?,
+            ))
+            .stdout(std::process::Stdio::from(
+                slave.try_clone().map_err(host_shell_error)?,
+            ))
+            .stderr(std::process::Stdio::from(slave))
+            .env("TERM", "xterm-256color");
+        unsafe {
+            command.pre_exec(move || {
+                use std::io;
+                // New session so the PTY slave can be claimed as the child's
+                // controlling terminal — exit status, job control and ^C all
+                // behave like a real login shell.
+                if libc::setsid() < 0 {
+                    return Err(io::Error::last_os_error());
+                }
+                if libc::ioctl(slave_fd, libc::TIOCSCTTY, 0) < 0 {
+                    return Err(io::Error::last_os_error());
+                }
+                let targets = [
+                    (pid_fd, libc::CLONE_NEWPID),
+                    (uts_fd, libc::CLONE_NEWUTS),
+                    (ipc_fd, libc::CLONE_NEWIPC),
+                    (net_fd, libc::CLONE_NEWNET),
+                    (mnt_fd, libc::CLONE_NEWNS),
+                ];
+                for (fd, flag) in targets {
+                    if libc::setns(fd, flag) != 0 {
+                        return Err(io::Error::last_os_error());
+                    }
+                }
+                // The container's cwd does not exist in the host mount ns.
+                if libc::chdir(c"/".as_ptr()) != 0 {
+                    return Err(io::Error::last_os_error());
+                }
+                Ok(())
+            });
+        }
+        let child = command
+            .spawn()
+            .map_err(|error| Status::internal(format!("could not start host shell: {error}")))?;
+        Ok(Self::spawn_pump_pty(input, child, master))
+    }
+
+    /// Bridges a host PTY master to the gRPC shell stream: reader output to
+    /// the client, keystrokes to the PTY, resize to `TIOCSWINSZ`. When the
+    /// session ends the child is killed and reaped, and dropping the master
+    /// fds hangs up the PTY so the shell gets SIGHUP even if it ignores the
+    /// kill.
+    fn spawn_pump_pty(
+        mut input: tonic::Streaming<ShellMessage>,
+        mut child: tokio::process::Child,
+        master: std::fs::File,
+    ) -> Response<ShellStream> {
+        use std::io::{Read, Write};
+        use std::os::fd::AsRawFd;
+
+        let (tx, rx) = tokio::sync::mpsc::channel(32);
+        let mut writer = master.try_clone().expect("dup of PTY master fd");
+        let mut reader = master;
+        let (data_tx, mut data_rx) = tokio::sync::mpsc::channel::<Vec<u8>>(64);
+        tokio::spawn(async move {
+            let _ = tokio::task::spawn_blocking(move || {
+                let mut buffer = [0u8; 4096];
+                loop {
+                    match reader.read(&mut buffer) {
+                        Ok(0) => break,
+                        Ok(size) => {
+                            if data_tx.blocking_send(buffer[..size].to_vec()).is_err() {
+                                break;
+                            }
+                        }
+                        Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+                        Err(_) => break,
+                    }
+                }
+            })
+            .await;
+        });
+
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    message = input.message() => match message {
+                        Ok(Some(ShellMessage { payload: Some(shell_message::Payload::Input(ShellInput { data })) })) => {
+                            if writer.write_all(&data).and_then(|_| writer.flush()).is_err() { break; }
+                        }
+                        Ok(Some(ShellMessage { payload: Some(shell_message::Payload::Resize(resize)) })) => {
+                            let window = libc::winsize {
+                                ws_row: u16::try_from(resize.rows.max(1)).unwrap_or(u16::MAX),
+                                ws_col: u16::try_from(resize.cols.max(1)).unwrap_or(u16::MAX),
+                                ws_xpixel: 0,
+                                ws_ypixel: 0,
+                            };
+                            unsafe { libc::ioctl(writer.as_raw_fd(), libc::TIOCSWINSZ, &window) };
+                        }
+                        Ok(Some(ShellMessage { payload: Some(shell_message::Payload::Close(_)) })) => break,
+                        Ok(Some(_)) => {}
+                        _ => break,
+                    },
+                    chunk = data_rx.recv() => match chunk {
+                        Some(bytes) => {
+                            if tx.send(Ok(stdout_message(&bytes))).await.is_err() { break; }
+                        }
+                        // PTY hung up: the shell exited.
+                        None => break,
+                    },
+                }
+            }
+            // Reap: without `wait` the killed shell becomes a zombie — this
+            // process never spawns a reaper.
+            if child.try_wait().ok().flatten().is_none() {
+                let _ = child.kill().await;
+            }
+            let code = child
+                .wait()
+                .await
+                .ok()
+                .and_then(|status| status.code())
+                .unwrap_or(-1);
+            let _ = tx.send(Ok(exit_message(code))).await;
+        });
+
+        Response::new(Box::pin(tokio_stream::wrappers::ReceiverStream::new(rx)))
     }
 
     fn spawn_pump(
         mut input: tonic::Streaming<ShellMessage>,
         stream: os::docker::handles::containers::socat::ContainerSocketExecStream,
-        helper: Option<(os::docker::DockerCli, String)>,
     ) -> Response<ShellStream> {
         let mut reader = stream.reader;
         let mut writer = stream.writer;
@@ -466,24 +517,94 @@ impl ShellService {
                     }
                 }
             }
-            if let Some((docker, helper)) = helper {
-                ACTIVE_HOST_HELPERS
-                    .lock()
-                    .map(|mut active| active.retain(|name| name != &helper))
-                    .ok();
-                let _ = docker.containers().rm(helper).force().run().await;
-            }
         });
 
         Response::new(Box::pin(tokio_stream::wrappers::ReceiverStream::new(rx)))
     }
 }
 
-/// Names of host-shell helper containers owned by sessions live in this
-/// Agent process. `open_host_shell` reaps any `openoxide-host-shell-*`
-/// container missing from this set — leftovers of a crashed or restarted
-/// Agent whose cleanup task died with it.
-static ACTIVE_HOST_HELPERS: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+/// Host namespace file descriptors for the machine's PID 1, opened through
+/// the `/host` bind of the host root. Held open until the shell has been
+/// spawned; `pre_exec` uses the raw numbers in the forked child.
+struct HostNamespaces {
+    pid: std::fs::File,
+    mnt: std::fs::File,
+    uts: std::fs::File,
+    ipc: std::fs::File,
+    net: std::fs::File,
+}
+
+fn open_host_namespaces() -> Result<HostNamespaces, Status> {
+    let open = |kind: &str| {
+        std::fs::File::open(format!("/host/proc/1/ns/{kind}")).map_err(|error| {
+            Status::failed_precondition(format!(
+                "host namespaces unavailable at /host/proc/1/ns/{kind} ({error}); the agent \
+                 container needs the /host bind mount and CAP_SYS_ADMIN"
+            ))
+        })
+    };
+    Ok(HostNamespaces {
+        pid: open("pid")?,
+        mnt: open("mnt")?,
+        uts: open("uts")?,
+        ipc: open("ipc")?,
+        net: open("net")?,
+    })
+}
+
+/// Create a PTY pair sized for the terminal the panel opened. Built from
+/// plain `posix_openpt`/`grantpt`/`unlockpt`/`ptsname` syscalls so the
+/// static musl binary needs no extra libutil linkage.
+fn open_host_pty(rows: u16, cols: u16) -> Result<(std::fs::File, std::fs::File), Status> {
+    use std::ffi::CStr;
+    use std::os::fd::{AsRawFd, FromRawFd};
+
+    let master_fd = unsafe { libc::posix_openpt(libc::O_RDWR | libc::O_NOCTTY) };
+    if master_fd < 0 {
+        return Err(Status::internal("could not open a PTY for the host shell"));
+    }
+    let master = unsafe { std::fs::File::from_raw_fd(master_fd) };
+    let pending = unsafe {
+        if libc::grantpt(master.as_raw_fd()) != 0 {
+            Some("grantpt")
+        } else if libc::unlockpt(master.as_raw_fd()) != 0 {
+            Some("unlockpt")
+        } else {
+            None
+        }
+    };
+    if let Some(stage) = pending {
+        return Err(Status::internal(format!(
+            "could not prepare PTY slave: {stage} failed"
+        )));
+    }
+    let slave_name = unsafe {
+        let ptr = libc::ptsname(master.as_raw_fd());
+        if ptr.is_null() {
+            return Err(Status::internal("could not resolve PTY slave name"));
+        }
+        CStr::from_ptr(ptr).to_string_lossy().into_owned()
+    };
+    let slave = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(&slave_name)
+        .map_err(|error| {
+            Status::internal(format!("could not open PTY slave {slave_name}: {error}"))
+        })?;
+    let window = libc::winsize {
+        ws_row: rows,
+        ws_col: cols,
+        ws_xpixel: 0,
+        ws_ypixel: 0,
+    };
+    unsafe { libc::ioctl(master.as_raw_fd(), libc::TIOCSWINSZ, &window) };
+    Ok((master, slave))
+}
+
+fn host_shell_error(error: std::io::Error) -> Status {
+    Status::internal(format!("could not wire host shell PTY: {error}"))
+}
 
 fn stdout_message(data: &[u8]) -> ShellMessage {
     ShellMessage {

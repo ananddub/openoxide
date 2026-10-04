@@ -1,4 +1,5 @@
 use super::{ServerAudit, SetupConfig, validation};
+use crate::utils::os::file::FileMode;
 use crate::utils::{
     docker::{
         DockerCli,
@@ -11,7 +12,6 @@ use crate::utils::{
     },
     os::OsCli,
 };
-use crate::utils::os::file::FileMode;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SetupStep {
@@ -156,7 +156,6 @@ impl ServerSetup {
         let name = self.config.traefik_name.as_str();
         let mut started = false;
         if docker.container(name).inspect().await.is_ok() {
-
             let _ = docker
                 .networks()
                 .connect(self.config.network_name.as_str(), name)
@@ -225,7 +224,11 @@ impl ServerSetup {
         let mut changed = false;
         for (name, contents, mode) in [
             ("ca.crt", ca, FileMode::OwnerReadWriteGroupReadWorldRead),
-            ("agent.crt", cert, FileMode::OwnerReadWriteGroupReadWorldRead),
+            (
+                "agent.crt",
+                cert,
+                FileMode::OwnerReadWriteGroupReadWorldRead,
+            ),
             ("agent.key", key, FileMode::OwnerReadWrite),
         ] {
             let path = format!("{dir}/{name}");
@@ -275,7 +278,6 @@ impl ServerSetup {
         }
         if let Ok(existing) = docker.container(name).inspect().await {
             if existing.state.running && self.config.agent_server_id.is_some() {
-
                 if !mtls_changed {
                     return Ok(());
                 }
@@ -306,10 +308,17 @@ impl ServerSetup {
 
         let docker_socket_mount = Mount::bind("/var/run/docker.sock", "/var/run/docker.sock");
         let cgroup_mount = Mount::bind("/sys/fs/cgroup", "/sys/fs/cgroup");
+        // Host root, read-only: the live metrics collector resolves container
+        // cgroups and per-container network counters through /host/proc, and
+        // the direct host shell enters /host/proc/1/ns/* with setns. The
+        // shell also needs CAP_SYS_ADMIN for the namespace switch itself.
+        let host_mount = Mount::bind_ro("/", "/host");
         let workspace_mount = Mount::bind(&self.config.paths.agent, "/app/workspace");
         let traefik_mount = Mount::bind(&self.config.paths.traefik, "/etc/openoxide/traefik");
-        let apps_mount =
-            Mount::bind(&self.config.paths.applications, &self.config.paths.applications);
+        let apps_mount = Mount::bind(
+            &self.config.paths.applications,
+            &self.config.paths.applications,
+        );
         let compose_mount = Mount::bind(&self.config.paths.compose, &self.config.paths.compose);
 
         let p_grpc = Port::tcp(50051, 50051);
@@ -324,6 +333,8 @@ impl ServerSetup {
             .network(self.config.network_name.as_str())
             .mount(docker_socket_mount)
             .mount(cgroup_mount)
+            .mount(host_mount)
+            .cap_add("SYS_ADMIN")
             .mount(workspace_mount)
             .mount(apps_mount)
             .mount(compose_mount)
@@ -461,7 +472,6 @@ impl ServerSetup {
     }
 
     fn append_dependency_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
-
         steps.extend(sh!(
             info!("Checking Docker installation");
             if !os.has_command("docker") {
@@ -477,9 +487,7 @@ impl ServerSetup {
         ));
     }
 
-    fn append_build_tool_steps(&self, _steps: &mut Vec<ShellIR>, _os: &OsCli<'_>) {
-
-    }
+    fn append_build_tool_steps(&self, _steps: &mut Vec<ShellIR>, _os: &OsCli<'_>) {}
 
     fn append_directory_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
         steps.extend(sh!(info!("Creating OpenOxide directories");));
@@ -741,7 +749,11 @@ impl ServerSetup {
                 ));
                 for (fname, contents, mode) in [
                     ("ca.crt", ca, FileMode::OwnerReadWriteGroupReadWorldRead),
-                    ("agent.crt", cert, FileMode::OwnerReadWriteGroupReadWorldRead),
+                    (
+                        "agent.crt",
+                        cert,
+                        FileMode::OwnerReadWriteGroupReadWorldRead,
+                    ),
                     ("agent.key", key, FileMode::OwnerReadWrite),
                 ] {
                     let path = format!("{mtls_dir}/{fname}");
@@ -759,13 +771,17 @@ impl ServerSetup {
             .create(image)
             .detach()
             .name(name)
-
             .init()
             .restart(RestartPolicy::Always)
             .network(self.config.network_name.as_str())
             .mount(Mount::bind("/var/run/docker.sock", "/var/run/docker.sock"))
             .mount(Mount::bind("/sys/fs/cgroup", "/sys/fs/cgroup"))
-            .mount(Mount::bind(self.config.paths.agent.as_str(), "/app/workspace"))
+            .mount(Mount::bind_ro("/", "/host"))
+            .cap_add("SYS_ADMIN")
+            .mount(Mount::bind(
+                self.config.paths.agent.as_str(),
+                "/app/workspace",
+            ))
             .mount(Mount::bind(
                 self.config.paths.traefik.as_str(),
                 "/etc/openoxide/traefik",
@@ -778,13 +794,25 @@ impl ServerSetup {
                 self.config.paths.compose.as_str(),
                 self.config.paths.compose.as_str(),
             ))
-            .env("SERVER_ID", self.config.agent_server_id.unwrap_or(0).to_string())
-            .env("OPENOXIDE_SERVER_URL", self.config.agent_panel_url.clone().unwrap_or_default())
-            .env("METRICS_TOKEN", self.config.agent_token.clone().unwrap_or_default())
+            .env(
+                "SERVER_ID",
+                self.config.agent_server_id.unwrap_or(0).to_string(),
+            )
+            .env(
+                "OPENOXIDE_SERVER_URL",
+                self.config.agent_panel_url.clone().unwrap_or_default(),
+            )
+            .env(
+                "METRICS_TOKEN",
+                self.config.agent_token.clone().unwrap_or_default(),
+            )
             .env("OPENOXIDE_BASE_PATH", self.config.paths.base.as_str())
             .env("MONITOR_DATABASE_URL", "memory://metrics")
             .env("REFRESH_RATE", agent_refresh_rate())
-            .env("RETENTION_DAYS", self.config.agent_retention_days.to_string());
+            .env(
+                "RETENTION_DAYS",
+                self.config.agent_retention_days.to_string(),
+            );
         if mtls {
             create_cmd = create_cmd
                 .mount(Mount::bind_ro(mtls_dir.as_str(), "/etc/openoxide/mtls"))
@@ -823,7 +851,7 @@ fn guarded_by_absent_container(docker: &DockerCli, name: &str, body: Vec<ShellIR
         .stdout(crate::utils::exec::script::dsl::OutputTarget::Null)
         .stderr(crate::utils::exec::script::dsl::OutputTarget::Null);
     ShellIR::If {
-        cond: Box::new(ShellIR::Raw(format!("! {}", inspect.to_bash()))),
+        cond: Box::new(inspect.failure()),
         then_branch: body,
         else_branch: None,
     }
@@ -918,6 +946,18 @@ mod tests {
     }
 
     #[test]
+    fn agent_create_grants_host_shell_prerequisites() {
+        // The direct host shell setns'es into /host/proc/1/ns/* — it needs the
+        // host-root bind mount and CAP_SYS_ADMIN on every provisioning path.
+        let setup = ServerSetup::new_local(SetupConfig::default());
+        let script = setup.compile_oneshot_script(false);
+        // Every argv token is shell-quoted by the builder, so match the
+        // rendered pair rather than a raw `--cap-add SYS_ADMIN`.
+        assert!(script.contains("'--cap-add' 'SYS_ADMIN'"), "{script}");
+        assert!(script.contains("/:/host:ro"), "{script}");
+    }
+
+    #[test]
     fn oneshot_setup_script_contains_expected_steps() {
         let setup = ServerSetup::new_local(SetupConfig::default());
         let script = setup.compile_oneshot_script(true);
@@ -952,7 +992,7 @@ mod tests {
         assert!(script.contains("uname '-m'"));
         assert!(script.contains("Skipping OpenOxide agent on ARM64; image has no arm64 manifest"));
         assert!(script.contains("Checking OpenOxide agent container"));
-        assert!(script.contains("--name openoxide-agent"));
+        assert!(script.contains("'--name' 'openoxide-agent'"));
     }
 
     #[test]
