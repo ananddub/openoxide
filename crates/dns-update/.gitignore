@@ -1,7 +1,0 @@
-/target
-Cargo.lock
-/.claude
-.idea/
-.ignore
-**/.vscode
-docs/
