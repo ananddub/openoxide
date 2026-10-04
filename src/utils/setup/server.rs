@@ -278,10 +278,18 @@ impl ServerSetup {
         }
         if let Ok(existing) = docker.container(name).inspect().await {
             if existing.state.running && self.config.agent_server_id.is_some() {
-                if !mtls_changed {
+                if !mtls_changed
+                    && agent_supports_direct_host_shell(&existing.mounts, &existing.host_config)
+                {
                     return Ok(());
                 }
-                tracing::info!("agent mTLS certs rotated; recreating agent to load them");
+                if mtls_changed {
+                    tracing::info!("agent mTLS certs rotated; recreating agent to load them");
+                } else {
+                    tracing::info!(
+                        "agent container predates the direct host shell; recreating it with CAP_SYS_ADMIN and the /host bind"
+                    );
+                }
             } else if self.config.agent_server_id.is_none() {
                 if docker.container(name).start().run().await.is_ok() {
                     return Ok(());
@@ -861,6 +869,39 @@ pub(crate) fn agent_image() -> &'static str {
     "dubeyanand/openoxide-agent:latest"
 }
 
+/// Whether a running agent container can serve the direct host shell: the
+/// read-only host-root bind whose `/proc/1/ns/*` the namespaces are opened
+/// through, and the capability that makes `setns` legal. Agents created
+/// before either existed are recreated rather than left answering every
+/// shell open with `failed_precondition`.
+pub(crate) fn agent_supports_direct_host_shell(
+    mounts: &[crate::utils::docker::core::types::ContainerInspectMount],
+    host_config: &serde_json::Value,
+) -> bool {
+    let host_bind = mounts
+        .iter()
+        .any(|mount| mount.destination == "/host" && !mount.rw)
+        || string_array(host_config, "Binds")
+            .iter()
+            .any(|bind| bind.ends_with(":/host:ro"));
+    string_array(host_config, "CapAdd")
+        .iter()
+        .any(|cap| cap == "SYS_ADMIN")
+        && host_bind
+}
+
+fn string_array(value: &serde_json::Value, field: &str) -> Vec<String> {
+    value
+        .get(field)
+        .and_then(|arr| arr.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|item| item.as_str().map(str::to_owned))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 /// Metric collection interval for the agent. Metrics are sampled live per
 /// request (no history stored), so this only affects the shared stats feed
 /// cadence. Default 2s for live-feeling stats; override with
@@ -955,6 +996,51 @@ mod tests {
         // rendered pair rather than a raw `--cap-add SYS_ADMIN`.
         assert!(script.contains("'--cap-add' 'SYS_ADMIN'"), "{script}");
         assert!(script.contains("/:/host:ro"), "{script}");
+    }
+
+    fn host_mount(rw: bool) -> crate::utils::docker::core::types::ContainerInspectMount {
+        crate::utils::docker::core::types::ContainerInspectMount {
+            destination: "/host".into(),
+            source: "/".into(),
+            rw,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn running_agent_with_caps_and_host_bind_is_left_alone() {
+        let host_config = serde_json::json!({ "CapAdd": ["SYS_ADMIN", "NET_ADMIN"] });
+        assert!(agent_supports_direct_host_shell(
+            &[host_mount(false)],
+            &host_config
+        ));
+    }
+
+    #[test]
+    fn stale_agent_container_is_recreated_for_the_host_shell() {
+        // Deployed before the direct shell: no capability, no host bind, and a
+        // writable bind is not enough either.
+        let caps = serde_json::json!({ "CapAdd": ["NET_ADMIN"] });
+        assert!(!agent_supports_direct_host_shell(
+            &[host_mount(false)],
+            &caps
+        ));
+        assert!(!agent_supports_direct_host_shell(
+            &[],
+            &serde_json::json!({ "CapAdd": ["SYS_ADMIN"] })
+        ));
+        let granted = serde_json::json!({ "CapAdd": ["SYS_ADMIN"] });
+        assert!(!agent_supports_direct_host_shell(
+            &[host_mount(true)],
+            &granted
+        ));
+
+        // `-v /:/host:ro` shows up as a HostConfig bind instead of a Mount entry.
+        let binds = serde_json::json!({
+            "CapAdd": ["SYS_ADMIN"],
+            "Binds": ["/var/run/docker.sock:/var/run/docker.sock", "/:/host:ro"]
+        });
+        assert!(agent_supports_direct_host_shell(&[], &binds));
     }
 
     #[test]
