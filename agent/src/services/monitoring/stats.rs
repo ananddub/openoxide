@@ -1,12 +1,14 @@
-use std::{pin::Pin, sync::Arc};
+use std::{pin::Pin, sync::Arc, time::Duration};
 
-use tokio_stream::{Stream, StreamExt};
+use tokio_stream::Stream;
 use tonic::{Response, Status};
 
+use super::cgroup::CgroupCollector;
 use crate::api::proto::StatsFrame;
-use crate::docker::api::DockerApi;
-use crate::docker::json_lines::JsonAccumulator;
-use crate::docker::types::{ContainerStats, ContainerSummary};
+use crate::docker::{
+    api::DockerApi,
+    types::{ContainerStats, ContainerSummary},
+};
 use serde::Deserialize;
 
 pub type StatsStream = Pin<Box<dyn Stream<Item = Result<StatsFrame, Status>> + Send + 'static>>;
@@ -31,47 +33,148 @@ pub struct PidsStats {
     pub current: u64,
 }
 
-/// Streams container stats straight from Docker with nothing held in
-/// between: one live `/stats` connection per requested container while the
-/// panel watches (or a one-shot `stream=false` sample per container), each
-/// document parsed and forwarded the instant it arrives. The agent queues no
-/// frames and merges nothing — when the panel stops reading, Docker's own
-/// flow control pauses the socket and the agent simply waits.
+/// Streams container stats read directly from cgroup v2 and procfs — dockerd's
+/// `/stats` sampler is never touched, so the daemon does no per-container stats
+/// work no matter how many views are open. The container listing is re-read
+/// every round, so created/deleted containers join/leave on their own; a
+/// recreated container is re-resolved to its new pid/cgroup on its first round.
+/// CPU% needs two cumulative samples, so the first frame per container reads
+/// 0 and every later frame is the live rate. The panel fans the single stream
+/// out to browser views, so a host runs exactly one sampler set for all tabs.
 pub struct StatsService;
+
+/// Cadence of the relay. Each round does a handful of tiny cgroup/procfs file
+/// reads per watched container — cheap enough to stay live at CLI-refresh speed
+/// without the daemon doing any stats work in between.
+const RELAY_INTERVAL: Duration = Duration::from_secs(3);
+
+/// How a watched target selects containers. Exact id/name forms are
+/// accepted from the panel; `prefix*` selectors keep matching containers
+/// that were recreated after the stream opened.
+enum Selector {
+    Exact(String),
+    NamePrefix(String),
+    IdPrefix(String),
+}
+
+impl Selector {
+    fn parse(raw: &str) -> Self {
+        match raw.strip_suffix('*') {
+            Some(prefix) if !prefix.is_empty() => {
+                if prefix.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+                    Self::IdPrefix(prefix.to_lowercase())
+                } else {
+                    Self::NamePrefix(prefix.to_lowercase())
+                }
+            }
+            _ => Self::Exact(raw.to_owned()),
+        }
+    }
+
+    fn matches(&self, full_id: &str, short_id: &str, name: &str) -> bool {
+        match self {
+            Self::Exact(target) => {
+                target.as_str() == full_id
+                    || target.as_str() == short_id
+                    || target.as_str() == name
+                    || (target.len() >= 8 && full_id.starts_with(target.as_str()))
+            }
+            Self::NamePrefix(prefix) => {
+                name.to_lowercase().starts_with(prefix.as_str())
+                    || full_id.starts_with(prefix.as_str())
+            }
+            Self::IdPrefix(prefix) => full_id.starts_with(prefix.as_str()),
+        }
+    }
+}
 
 impl StatsService {
     pub async fn stream(
         docker: Arc<DockerApi>,
         request: crate::api::proto::StreamStatsRequest,
     ) -> Result<Response<StatsStream>, Status> {
-        let ids = if request.container_ids.is_empty() {
-            let summaries: Vec<ContainerSummary> = docker
-                .get_json("/containers/json")
-                .await
-                .map_err(|error| Status::unavailable(error.to_string()))?;
-            summaries.into_iter().map(|s| s.id.to_string()).collect()
-        } else {
-            request.container_ids
-        };
-
         if request.stream {
-            let feeds: Vec<_> = ids
-                .into_iter()
-                .map(|id| container_feed(docker.clone(), id))
+            let selectors: Vec<Selector> = request
+                .container_ids
+                .iter()
+                .map(|target| Selector::parse(target))
                 .collect();
+            let all = selectors.is_empty();
+            let mut collector = CgroupCollector::new(Arc::clone(&docker));
             let stream = async_stream::stream! {
-                let mut merged = futures::stream::select_all(feeds);
-                while let Some(frame) = merged.next().await {
-                    yield Ok(frame);
+                loop {
+                    let summaries: Vec<ContainerSummary> =
+                        match docker.get_json("/containers/json").await {
+                            Ok(summaries) => summaries,
+                            Err(error) => {
+                                tracing::debug!(%error, "container listing failed");
+                                Vec::new()
+                            }
+                        };
+                    for summary in &summaries {
+                        if !all {
+                            let full = summary.id.as_str();
+                            let short = summary.id.short();
+                            let name = summary.display_name();
+                            if !selectors
+                                .iter()
+                                .any(|selector| selector.matches(full, short, name.as_str()))
+                            {
+                                continue;
+                            }
+                        }
+                        let name = summary.display_name();
+                        match collector.sample(summary.id.as_str(), name.as_str()).await {
+                            Some(doc) => yield Ok(StatsFrame {
+                                json_line: to_cli_line(&doc),
+                            }),
+                            None => continue,
+                        }
+                    }
+                    tokio::time::sleep(RELAY_INTERVAL).await;
                 }
             };
             return Ok(Response::new(Box::pin(stream)));
         }
 
+        // One-shot snapshot: prime each container's CPU window, pause so a real
+        // delta accrues, then emit. `container_ids` are exact ids/names (the
+        // panel strips `prefix*` selectors before a non-stream call).
+        let summaries: Vec<ContainerSummary> = docker
+            .get_json("/containers/json")
+            .await
+            .map_err(|error| Status::unavailable(error.to_string()))?;
+        let wanted: Vec<(String, String)> = if request.container_ids.is_empty() {
+            summaries
+                .iter()
+                .map(|s| (s.id.to_string(), s.display_name().to_string()))
+                .collect()
+        } else {
+            summaries
+                .iter()
+                .filter(|s| {
+                    let full = s.id.as_str();
+                    let short = s.id.short();
+                    let name = s.display_name();
+                    request
+                        .container_ids
+                        .iter()
+                        .any(|target| target == full || target == short || target == name.as_str())
+                })
+                .map(|s| (s.id.to_string(), s.display_name().to_string()))
+                .collect()
+        };
+        let mut collector = CgroupCollector::new(Arc::clone(&docker));
         let stream = async_stream::stream! {
-            for id in ids {
-                if let Some(frame) = one_shot(&docker, &id).await {
-                    yield Ok(frame);
+            for (id, name) in &wanted {
+                collector.sample(id, name).await;
+            }
+            tokio::time::sleep(Duration::from_millis(300)).await;
+            for (id, name) in &wanted {
+                if let Some(doc) = collector.sample(id, name).await {
+                    yield Ok(StatsFrame {
+                        json_line: to_cli_line(&doc),
+                    });
                 }
             }
         };
@@ -79,78 +182,11 @@ impl StatsService {
     }
 }
 
-/// One container's live `/stats` feed rendered to CLI-shaped JSON. The
-/// writable-layer size is inspected once when the feed opens because the
-/// stats API never carries `size_rw`.
-fn container_feed(
-    docker: Arc<DockerApi>,
-    id: String,
-) -> futures::stream::BoxStream<'static, StatsFrame> {
-    Box::pin(async_stream::stream! {
-        let size_rw = inspect_size_rw(&docker, &id).await;
-        let mut chunks = match docker
-            .get_stream(&format!("/containers/{id}/stats?stream=true"))
-            .await
-        {
-            Ok(chunks) => chunks,
-            Err(error) => {
-                tracing::debug!(%error, "stats feed could not open");
-                return;
-            }
-        };
-        let mut accumulator = JsonAccumulator::new();
-        while let Some(chunk) = chunks.next().await {
-            match chunk {
-                Ok(chunk) => {
-                    for doc in accumulator.push::<RawStats>(&chunk) {
-                        yield StatsFrame {
-                            json_line: to_cli_line(&doc, size_rw),
-                        };
-                    }
-                }
-                Err(error) => {
-                    tracing::debug!(%error, "stats feed error");
-                    return;
-                }
-            }
-        }
-        // Dropping `chunks` releases the dedicated Docker connection.
-    })
-}
-
-/// A single live sample of one container, exactly what `docker stats
-/// --no-stream` collects.
-async fn one_shot(docker: &DockerApi, id: &str) -> Option<StatsFrame> {
-    let mut chunks = docker
-        .get_stream(&format!("/containers/{id}/stats?stream=false"))
-        .await
-        .ok()?;
-    let mut accumulator = JsonAccumulator::new();
-    while let Some(chunk) = chunks.next().await {
-        let Ok(chunk) = chunk else { break };
-        if let Some(doc) = accumulator.push::<RawStats>(&chunk).into_iter().next() {
-            let size_rw = inspect_size_rw(docker, id).await;
-            return Some(StatsFrame {
-                json_line: to_cli_line(&doc, size_rw),
-            });
-        }
-    }
-    None
-}
-
-/// Inspects a container's writable-layer size (stats API omits `size_rw`).
-async fn inspect_size_rw(docker: &DockerApi, id: &str) -> u64 {
-    docker
-        .get_json::<serde_json::Value>(&format!("/containers/{id}/json?size=1"))
-        .await
-        .ok()
-        .and_then(|doc| doc.get("SizeRw").and_then(|v| v.as_u64()))
-        .unwrap_or(0)
-}
-
 /// Renders one API stats document as the JSON object produced by
-/// `docker stats --format {{json .}}`.
-fn to_cli_line(doc: &RawStats, size_rw: u64) -> String {
+/// `docker stats --format {{json .}}`. Writable-layer disk size (`SizeRw`) is
+/// deliberately absent: computing it makes the daemon stat-walk every
+/// container's overlay layer, and consumers only need CPU/RAM/Net.
+fn to_cli_line(doc: &RawStats) -> String {
     let name = doc.name.trim_start_matches('/');
     let short_id = doc.id.get(..12).unwrap_or(&doc.id);
     let (rx, tx_bytes) = doc.stats.network_bytes();
@@ -169,10 +205,6 @@ fn to_cli_line(doc: &RawStats, size_rw: u64) -> String {
         "Name": name,
         "NetIO": format!("{} / {}", human(rx, false), human(tx_bytes, false)),
         "PIDs": doc.pids.current.to_string(),
-        // Writable-layer disk usage. Docker's own `docker stats` shows this as
-        // `SIZE`; there is no percentage (containers have no disk quota), so
-        // consumers render it as a byte value only.
-        "SizeRw": human(size_rw, true),
     })
     .to_string()
 }
@@ -227,7 +259,7 @@ mod tests {
         )
         .expect("valid stats json");
 
-        let line = to_cli_line(&doc, 40_960);
+        let line = to_cli_line(&doc);
         let value: serde_json::Value = serde_json::from_str(&line).expect("valid JSON line");
         assert_eq!(value["Name"], "test-app");
         assert_eq!(value["Container"], "9c40c7061e00");
@@ -237,7 +269,7 @@ mod tests {
         assert_eq!(value["MemPerc"], "25.00%");
         assert_eq!(value["NetIO"], "2.00kB / 1.00kB");
         assert_eq!(value["BlockIO"], "3.00kB / 4.00kB");
-        assert_eq!(value["SizeRw"], "40.00KiB");
+        assert!(value.get("SizeRw").is_none());
     }
 
     #[test]
@@ -247,7 +279,7 @@ mod tests {
         )
         .expect("valid stats json");
         let value: serde_json::Value =
-            serde_json::from_str(&to_cli_line(&doc, 0)).expect("valid JSON line");
+            serde_json::from_str(&to_cli_line(&doc)).expect("valid JSON line");
         assert_eq!(value["PIDs"], "0");
         assert_eq!(value["Name"], "");
         assert_eq!(value["CPUPerc"], "0.00%");

@@ -1,5 +1,6 @@
+use std::sync::Arc;
+
 use tokio::sync::Mutex;
-use tokio_stream::StreamExt;
 use tonic::{Response, Status};
 
 use crate::api::proto::{
@@ -7,10 +8,11 @@ use crate::api::proto::{
     HostInfo, ServerMetricPoint, ServerMetricsResponse,
 };
 use crate::docker::api::DockerApi;
-use crate::docker::json_lines::JsonAccumulator;
 use crate::docker::types::ContainerSummary;
 use crate::telemetry::collector::bytes_to_mb;
 use crate::telemetry::collector::system::{ServerMetric, SystemCollector};
+
+use super::cgroup::CgroupCollector;
 
 /// Every metric is measured live at request time — the agent stores nothing
 /// and runs no background sampling. A server vitals request pays for one
@@ -34,7 +36,7 @@ impl MetricsService {
     }
 
     pub async fn containers(
-        docker: &DockerApi,
+        docker: &Arc<DockerApi>,
         request: GetContainerMetricsRequest,
     ) -> Result<Response<ContainerMetricsResponse>, Status> {
         let summaries: Vec<ContainerSummary> = docker
@@ -54,38 +56,26 @@ impl MetricsService {
             return Ok(Response::new(ContainerMetricsResponse { metrics: vec![] }));
         }
 
-        // One one-shot stats call per matched container, in parallel —
-        // exactly what `docker stats --no-stream` does (joined-id
-        // multiplexing was removed from Docker 29).
-        let samples: Vec<Option<super::stats::RawStats>> =
-            futures::future::join_all(matched.iter().map(|summary| {
-                let docker = docker.clone();
-                let id = summary.id.to_string();
-                async move {
-                    let mut chunks = docker
-                        .get_stream(&format!("/containers/{id}/stats?stream=false"))
-                        .await
-                        .ok()?;
-                    let mut accumulator = JsonAccumulator::new();
-                    while let Some(chunk) = chunks.next().await {
-                        let Ok(chunk) = chunk else { break };
-                        if let Some(doc) = accumulator
-                            .push::<super::stats::RawStats>(&chunk)
-                            .into_iter()
-                            .next()
-                        {
-                            return Some(doc);
-                        }
-                    }
-                    None
-                }
-            }))
-            .await;
+        // Read live from cgroup v2 + procfs — dockerd's /stats sampler is never
+        // invoked. CPU% is a rate over two cumulative reads, so prime each
+        // container's window, let a real delta accrue, then take the sample.
+        let mut collector = CgroupCollector::new(Arc::clone(docker));
+        for summary in &matched {
+            collector
+                .sample(summary.id.as_str(), summary.display_name().as_str())
+                .await;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
 
         let now = chrono::Utc::now().timestamp();
         let mut metrics = Vec::new();
-        for (summary, doc) in matched.iter().zip(samples) {
-            let Some(doc) = doc else { continue };
+        for summary in &matched {
+            let Some(doc) = collector
+                .sample(summary.id.as_str(), summary.display_name().as_str())
+                .await
+            else {
+                continue;
+            };
             let (application_id, compose_id) = (
                 label_id(summary, "com.openoxide.application-id"),
                 label_id(summary, "com.openoxide.compose-id"),

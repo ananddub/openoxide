@@ -228,7 +228,12 @@ impl ShellService {
                     }
                 }
             }
-            let _ = child.kill().await;
+            // Reap after kill: without `wait` the SIGKILLed shell stays a
+            // zombie forever — this process never spawns a reaper.
+            if child.try_wait().ok().flatten().is_none() {
+                let _ = child.kill().await;
+            }
+            let _ = child.wait().await;
         });
 
         Ok(Response::new(Box::pin(
@@ -352,6 +357,13 @@ impl ShellService {
         if let Ok(mut active) = ACTIVE_HOST_HELPERS.lock() {
             active.push(helper.clone());
         }
+        // Any failure before `spawn_pump` owns the cleanup must undo the
+        // push above, or the name lingers in the vec forever.
+        let untrack = |helper: &str| {
+            if let Ok(mut active) = ACTIVE_HOST_HELPERS.lock() {
+                active.retain(|name| name != helper);
+            }
+        };
         docker
             .containers()
             .create(&image)
@@ -366,6 +378,7 @@ impl ShellService {
             .run()
             .await
             .map_err(|error| {
+                untrack(&helper);
                 Status::internal(format!("could not start host-shell helper: {error}"))
             })?;
         let stream = match docker
@@ -391,6 +404,7 @@ impl ShellService {
         {
             Ok(stream) => stream,
             Err(error) => {
+                untrack(&helper);
                 let _ = docker.containers().rm(&helper).force().run().await;
                 return Err(Status::internal(format!(
                     "could not start host shell: {error}"

@@ -48,27 +48,23 @@ impl GrpcServerTask {
                     return;
                 }
             };
-            server = match server
-                .tls_config({
-                    let mut tls =
-                        ServerTlsConfig::new().identity(Identity::from_pem(cert, key));
-                    // mTLS: require and verify the panel's client certificate
-                    // against the configured CA.
-                    if let Some(ca_path) = &ctx.config.tls_client_ca {
-                        match read_with_wait(ca_path).await {
-                            Ok(ca) => {
-                                tls = tls.client_ca_root(
-                                    tonic::transport::Certificate::from_pem(ca),
-                                );
-                            }
-                            Err(error) => {
-                                error!(%error, path = %ca_path, "gRPC client CA never appeared");
-                                return;
-                            }
+            server = match server.tls_config({
+                let mut tls = ServerTlsConfig::new().identity(Identity::from_pem(cert, key));
+                // mTLS: require and verify the panel's client certificate
+                // against the configured CA.
+                if let Some(ca_path) = &ctx.config.tls_client_ca {
+                    match read_with_wait(ca_path).await {
+                        Ok(ca) => {
+                            tls = tls.client_ca_root(tonic::transport::Certificate::from_pem(ca));
+                        }
+                        Err(error) => {
+                            error!(%error, path = %ca_path, "gRPC client CA never appeared");
+                            return;
                         }
                     }
-                    tls
-                }) {
+                }
+                tls
+            }) {
                 Ok(value) => value,
                 Err(error) => {
                     error!(%error, "could not configure gRPC TLS");
@@ -84,6 +80,14 @@ impl GrpcServerTask {
                 "gRPC TLS disabled; configure AGENT_TLS_CERT and AGENT_TLS_KEY for encrypted transport"
             );
         }
+        // Match the panel's client-side h2 tuning: 16 KiB per inbound stream
+        // window, 64 KiB connection window. Inbound traffic here is uploads,
+        // shell keystrokes and small unary requests — none of it needs the
+        // default ~64 KiB-per-stream buffering, and every open stream would
+        // otherwise charge that to this process's RSS.
+        let mut server = server
+            .initial_stream_window_size(16 * 1024)
+            .initial_connection_window_size(64 * 1024);
         if let Err(error) = server
             .add_routes(routes.routes())
             .serve_with_shutdown(addr, shutdown.cancelled_owned())

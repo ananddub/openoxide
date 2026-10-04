@@ -13,6 +13,26 @@ pub struct FileTransferService {
     config: Arc<Config>,
 }
 
+/// Deletes the in-flight upload temp file when the guard drops — covering the
+/// paths a plain `if result.is_err()` misses: a client disconnect mid-stream
+/// (tonic drops this handler's future) or a panic. `mem::forget` on the
+/// completed rename keeps the file.
+struct TempUploadGuard {
+    path: PathBuf,
+}
+
+impl TempUploadGuard {
+    fn new(path: PathBuf) -> Self {
+        Self { path }
+    }
+}
+
+impl Drop for TempUploadGuard {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.path);
+    }
+}
+
 #[singleton]
 impl FileTransferService {
     pub fn new(config: Arc<Config>) -> Self {
@@ -88,6 +108,11 @@ impl FileTransferService {
             uuid::Uuid::new_v4()
         ));
         let mut file = tokio::fs::File::create(&temp).await.map_err(internal)?;
+        // RAII cleanup: the plain error path below cannot run when tonic
+        // drops this future on a mid-upload client disconnect, so the guard
+        // deletes the temp file on ANY unwind; the completed rename forgets
+        // the guard instead.
+        let mut guard = Some(TempUploadGuard::new(temp.clone()));
         let mut hasher = Sha256::new();
         let mut written = 0u64;
         let result = async {
@@ -131,15 +156,17 @@ impl FileTransferService {
             tokio::fs::rename(&temp, &destination)
                 .await
                 .map_err(internal)?;
+            // Only a completed rename means "keep the file"; until this point
+            // the guard's Drop removes the temp file on error or cancellation.
+            if let Some(guard) = guard.take() {
+                std::mem::forget(guard);
+            }
             Ok(proto::FileUploadResult {
                 bytes_written: written,
                 destination: destination.to_string_lossy().into_owned(),
             })
         }
         .await;
-        if result.is_err() {
-            let _ = tokio::fs::remove_file(&temp).await;
-        }
         result
     }
 }
