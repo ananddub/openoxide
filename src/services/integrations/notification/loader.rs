@@ -137,8 +137,12 @@ impl NotificationConfigLoader {
     fn parse_config<T: serde::de::DeserializeOwned>(
         notification: &Notification,
     ) -> Result<T, String> {
-        serde_json::from_str(&notification.config_json)
-            .map_err(|e| format!("invalid config for {} notification: {e}", notification.notification_type))
+        serde_json::from_str(&notification.config_json).map_err(|e| {
+            format!(
+                "invalid config for {} notification: {e}",
+                notification.notification_type
+            )
+        })
     }
 
     /// Loads the channel config matching the notification's `notification_type`.
@@ -151,9 +155,7 @@ impl NotificationConfigLoader {
             .map_err(|e| format!("unknown notification type: {e}"))?;
 
         Ok(match provider {
-            NotificationProvider::Slack => {
-                ChannelConfig::Slack(Self::parse_config(notification)?)
-            }
+            NotificationProvider::Slack => ChannelConfig::Slack(Self::parse_config(notification)?),
             NotificationProvider::Telegram => {
                 ChannelConfig::Telegram(Self::parse_config(notification)?)
             }
@@ -171,9 +173,7 @@ impl NotificationConfigLoader {
             NotificationProvider::Mattermost => {
                 ChannelConfig::Mattermost(Self::parse_config(notification)?)
             }
-            NotificationProvider::Teams => {
-                ChannelConfig::Teams(Self::parse_config(notification)?)
-            }
+            NotificationProvider::Teams => ChannelConfig::Teams(Self::parse_config(notification)?),
             NotificationProvider::Lark => ChannelConfig::Lark(Self::parse_config(notification)?),
             NotificationProvider::Pushover => {
                 ChannelConfig::Pushover(Self::parse_config(notification)?)

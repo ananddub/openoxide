@@ -16,7 +16,10 @@ pub fn verify_scope(authenticated: i64, requested: i64) -> Result<(), ConnectErr
     if authenticated == requested {
         Ok(())
     } else {
-        Err(ConnectError::new(ErrorCode::PermissionDenied, "organization does not match authenticated scope"))
+        Err(ConnectError::new(
+            ErrorCode::PermissionDenied,
+            "organization does not match authenticated scope",
+        ))
     }
 }
 
@@ -32,7 +35,9 @@ fn provider_of_row(stored: &str) -> NotificationProvider {
     stored.parse().unwrap_or(NotificationProvider::Custom)
 }
 
-fn provider_to_proto(provider: NotificationProvider) -> ::buffa::EnumValue<ProtoNotificationProviderType> {
+fn provider_to_proto(
+    provider: NotificationProvider,
+) -> ::buffa::EnumValue<ProtoNotificationProviderType> {
     ::buffa::EnumValue::Known(match provider {
         NotificationProvider::Slack => ProtoNotificationProviderType::Slack,
         NotificationProvider::Telegram => ProtoNotificationProviderType::Telegram,
@@ -72,7 +77,6 @@ pub fn notif_to_proto(value: Notification) -> ProtoNotification {
         organization_id: value.organization_id,
         created_at: value.created_at,
         updated_at: value.updated_at,
-        ..Default::default()
     }
 }
 
@@ -90,7 +94,6 @@ pub fn delivery_to_proto(value: NotificationDeliveryAttempts) -> ProtoNotificati
         error: value.error,
         created_at: value.created_at,
         finished_at: value.finished_at,
-        ..Default::default()
     }
 }
 
@@ -108,7 +111,6 @@ pub fn binding_to_proto(value: NotificationResourceBindings) -> ProtoNotificatio
         }),
         resource_id: value.resource_id,
         created_at: value.created_at,
-        ..Default::default()
     }
 }
 
@@ -125,7 +127,7 @@ pub fn proto_resource_type_name(
         _ => {
             return Err(ConnectError::invalid_argument(
                 "resource_type must be a defined notification resource",
-            ))
+            ));
         }
     }
     .to_owned())

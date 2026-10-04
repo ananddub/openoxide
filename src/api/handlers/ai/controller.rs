@@ -26,7 +26,7 @@ impl AiService for AiController {
     async fn list_settings<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, AiListSettingsRequest>,
+        _request: ServiceRequest<'_, AiListSettingsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AiListSettingsResponse> + Send + use<'a>> {
         let organization_id = auth.organization_id;
         let items = self
@@ -35,10 +35,7 @@ impl AiService for AiController {
             .await
             .map_err(map_error)?;
         let settings = items.into_iter().map(setting_to_proto).collect();
-        Response::ok(AiListSettingsResponse {
-            settings,
-            ..Default::default()
-        })
+        Response::ok(AiListSettingsResponse { settings })
     }
 
     #[permission(Application, CanRead)]
@@ -55,7 +52,6 @@ impl AiService for AiController {
             .map_err(map_error)?;
         Response::ok(AiGetSettingsResponse {
             setting: ::buffa::MessageField::some(setting_to_proto(setting)),
-            ..Default::default()
         })
     }
 
@@ -80,7 +76,6 @@ impl AiService for AiController {
             .map_err(map_error)?;
         Response::ok(AiCreateSettingsResponse {
             setting: ::buffa::MessageField::some(setting_to_proto(setting)),
-            ..Default::default()
         })
     }
 
@@ -105,7 +100,6 @@ impl AiService for AiController {
             .map_err(map_error)?;
         Response::ok(AiUpdateSettingsResponse {
             setting: ::buffa::MessageField::some(setting_to_proto(setting)),
-            ..Default::default()
         })
     }
 
@@ -140,10 +134,7 @@ impl AiService for AiController {
             .discover_setting_models(request.setting_id, organization_id)
             .await
             .map_err(map_error)?;
-        Response::ok(AiListModelsResponse {
-            models,
-            ..Default::default()
-        })
+        Response::ok(AiListModelsResponse { models })
     }
 
     #[permission(Application, CanRead)]
@@ -160,7 +151,6 @@ impl AiService for AiController {
         Response::ok(AiTestSettingsResponse {
             success: true,
             message: "connection successful".into(),
-            ..Default::default()
         })
     }
 
@@ -175,10 +165,7 @@ impl AiService for AiController {
             .discover_models(request.api_url.to_owned(), request.api_key.to_owned())
             .await
             .map_err(map_error)?;
-        Response::ok(AiDiscoverModelsResponse {
-            models,
-            ..Default::default()
-        })
+        Response::ok(AiDiscoverModelsResponse { models })
     }
 
     #[permission(Application, CanRead)]
@@ -198,7 +185,6 @@ impl AiService for AiController {
         Response::ok(AiTestConnectionResponse {
             success: true,
             message: "connection successful".into(),
-            ..Default::default()
         })
     }
 
@@ -216,10 +202,7 @@ impl AiService for AiController {
             .await
             .map_err(map_error)?;
         let generations = items.into_iter().map(generation_to_proto).collect();
-        Response::ok(AiListGenerationsResponse {
-            generations,
-            ..Default::default()
-        })
+        Response::ok(AiListGenerationsResponse { generations })
     }
 
     #[permission(Application, CanRead)]
@@ -236,7 +219,6 @@ impl AiService for AiController {
             .map_err(map_error)?;
         Response::ok(AiGetGenerationResponse {
             generation: ::buffa::MessageField::some(generation_to_proto(generation)),
-            ..Default::default()
         })
     }
 
@@ -245,7 +227,8 @@ impl AiService for AiController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, AiCreateGenerationRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<AiCreateGenerationResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<AiCreateGenerationResponse> + Send + use<'a>>
+    {
         let auth = Self::extract_auth(&ctx).await?;
         let organization_id = auth.organization_id;
         let generation = self
@@ -260,7 +243,6 @@ impl AiService for AiController {
             .map_err(map_error)?;
         Response::ok(AiCreateGenerationResponse {
             generation: ::buffa::MessageField::some(generation_to_proto(generation)),
-            ..Default::default()
         })
     }
 
@@ -269,7 +251,8 @@ impl AiService for AiController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, AiReviewGenerationRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<AiReviewGenerationResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<AiReviewGenerationResponse> + Send + use<'a>>
+    {
         let organization_id = auth.organization_id;
         let output_view = request.output.as_option().ok_or_else(|| {
             ConnectError::invalid_argument("review generation requires an output")
@@ -282,7 +265,6 @@ impl AiService for AiController {
             .map_err(map_error)?;
         Response::ok(AiReviewGenerationResponse {
             generation: ::buffa::MessageField::some(generation_to_proto(generation)),
-            ..Default::default()
         })
     }
 
@@ -291,7 +273,8 @@ impl AiService for AiController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, AiDeployGenerationRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<AiDeployGenerationResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<AiDeployGenerationResponse> + Send + use<'a>>
+    {
         let organization_id = auth.organization_id;
         let input = AiDeployInput {
             suggestion_id: request.suggestion_id.to_owned(),
@@ -308,7 +291,6 @@ impl AiService for AiController {
             generation: ::buffa::MessageField::some(generation_to_proto(result.generation)),
             compose_id: result.compose_id,
             deployment_id: result.deployment_id,
-            ..Default::default()
         })
     }
 
@@ -334,10 +316,7 @@ impl AiService for AiController {
             )
             .await
             .map_err(map_error)?;
-        Response::ok(AiAnalyzeLogsResponse {
-            analysis,
-            ..Default::default()
-        })
+        Response::ok(AiAnalyzeLogsResponse { analysis })
     }
 }
 
@@ -388,7 +367,9 @@ fn output_view_to_dto(
         Ok(output) => output,
         Err(error) => {
             tracing::error!(error = %error, "failed to decode AI review output");
-            AppAiGenerationOutput { suggestions: vec![] }
+            AppAiGenerationOutput {
+                suggestions: vec![],
+            }
         }
     }
 }

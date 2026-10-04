@@ -61,8 +61,12 @@ impl OverviewService {
                 path: r.path,
                 port: r.port.map(|p| p as i32),
                 https: r.https != 0,
-                application_id: (r.service_type == "APPLICATION").then_some(r.service_id).flatten(),
-                compose_id: (r.service_type == "COMPOSE").then_some(r.service_id).flatten(),
+                application_id: (r.service_type == "APPLICATION")
+                    .then_some(r.service_id)
+                    .flatten(),
+                compose_id: (r.service_type == "COMPOSE")
+                    .then_some(r.service_id)
+                    .flatten(),
                 service_name: r
                     .service_name
                     .filter(|value| !value.trim().is_empty())
@@ -127,10 +131,7 @@ impl OverviewService {
                 } else {
                     "DISABLED".into()
                 },
-                destination: format!(
-                    "Destination #{}",
-                    b.destination_id.unwrap_or_default()
-                ),
+                destination: format!("Destination #{}", b.destination_id.unwrap_or_default()),
                 linkage,
                 created_at: b.created_at.unwrap_or_default(),
             });

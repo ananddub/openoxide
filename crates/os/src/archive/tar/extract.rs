@@ -36,6 +36,12 @@ impl<'a> ArchiveExtractBuilder<'a> {
         self.overwrite = policy;
         self
     }
+    /// Read the archive from stdin (`tar xf -`) instead of a file, for piping
+    /// another command's output into extraction.
+    pub fn from_stdin(mut self) -> Self {
+        self.archive = "-".into();
+        self
+    }
     pub fn strip_components(mut self, count: u32) -> Self {
         self.strip_components = Some(count);
         self

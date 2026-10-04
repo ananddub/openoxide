@@ -62,7 +62,6 @@ pub fn record_to_proto(
         server_id: record.server_id,
         created_at: record.created_at,
         updated_at: record.updated_at,
-        ..Default::default()
     }
 }
 
@@ -77,7 +76,6 @@ pub fn mount_to_proto(mount: crate::flash_gen::models::Mounts) -> MountProto {
         mount_path: mount.mount_path,
         created_at: mount.created_at,
         updated_at: mount.updated_at,
-        ..Default::default()
     }
 }
 
@@ -115,7 +113,6 @@ pub async fn run_operation(
     Ok(DatabaseOperationProto {
         database: ::buffa::MessageField::some(record_to_proto(result.database)),
         operation: result.operation.as_str().into(),
-        ..Default::default()
     })
 }
 
@@ -132,7 +129,6 @@ pub fn dto_to_swarm_settings(dto: DatabaseSwarmSettingsDto) -> SwarmSettings {
         endpoint_spec: dto.endpoint_spec_swarm,
         ulimits: dto.ulimits_swarm,
         stop_grace_period: dto.stop_grace_period_swarm,
-        ..Default::default()
     }
 }
 

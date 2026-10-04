@@ -173,12 +173,13 @@ pub fn check_sh_stmts(
             crate::parser::ShStmt::ShFn { name, params, .. } => {
                 tracker.declare_fn(name.clone(), params.len());
             }
-            crate::parser::ShStmt::Syn(Stmt::Item(syn::Item::Fn(item_fn))) => {
-                let name = item_fn.sig.ident.to_string();
-                let arity = item_fn.sig.inputs.len();
-                tracker.declare_fn(name, arity);
+            crate::parser::ShStmt::Syn(syn_stmt) => {
+                if let Stmt::Item(syn::Item::Fn(item_fn)) = &**syn_stmt {
+                    let name = item_fn.sig.ident.to_string();
+                    let arity = item_fn.sig.inputs.len();
+                    tracker.declare_fn(name, arity);
+                }
             }
-            _ => {}
         }
     }
 
@@ -212,11 +213,11 @@ fn levenshtein_distance(a: &str, b: &str) -> usize {
     let len_b = b_chars.len();
     let mut dp = vec![vec![0; len_b + 1]; len_a + 1];
 
-    for i in 0..=len_a {
-        dp[i][0] = i;
+    for (i, row) in dp.iter_mut().enumerate() {
+        row[0] = i;
     }
-    for j in 0..=len_b {
-        dp[0][j] = j;
+    for (j, cell) in dp[0].iter_mut().enumerate() {
+        *cell = j;
     }
 
     for i in 1..=len_a {
@@ -274,10 +275,10 @@ pub fn check_stmts(stmts: &[Stmt], tracker: &mut ScopeTracker) -> Result<(), syn
                 tracker.declare_fn(name, arity);
                 tracker.push_scope();
                 for input in &item_fn.sig.inputs {
-                    if let syn::FnArg::Typed(pat_type) = input {
-                        if let syn::Pat::Ident(pat_ident) = &*pat_type.pat {
-                            tracker.declare(pat_ident.ident.to_string());
-                        }
+                    if let syn::FnArg::Typed(pat_type) = input
+                        && let syn::Pat::Ident(pat_ident) = &*pat_type.pat
+                    {
+                        tracker.declare(pat_ident.ident.to_string());
                     }
                 }
                 check_stmts(&item_fn.block.stmts, tracker)?;
@@ -353,7 +354,7 @@ fn check_expr(expr: &Expr, tracker: &mut ScopeTracker) -> Result<(), syn::Error>
                     Expr::Path(p) => p
                         .path
                         .get_ident()
-                        .map_or(false, |i| i == "os" || i == "docker"),
+                        .is_some_and(|i| i == "os" || i == "docker"),
                     _ => false,
                 };
                 if !is_os_receiver {

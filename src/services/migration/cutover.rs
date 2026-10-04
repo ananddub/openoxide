@@ -36,7 +36,10 @@ pub enum CertificateAction {
     Migrate { certificate_id: i64 },
     /// ACME-origin: re-point the row but the TARGET must issue its own cert;
     /// the source edge must be stopped so it stops renewing (warn the user).
-    ReissueOnTarget { certificate_id: i64, warning: String },
+    ReissueOnTarget {
+        certificate_id: i64,
+        warning: String,
+    },
 }
 
 pub fn decide_certificate_action(
@@ -45,9 +48,9 @@ pub fn decide_certificate_action(
     has_material: bool,
 ) -> CertificateAction {
     match origin {
-        CertificateOrigin::Material if has_material => CertificateAction::Migrate {
-            certificate_id,
-        },
+        CertificateOrigin::Material if has_material => {
+            CertificateAction::Migrate { certificate_id }
+        }
         // Material row with empty material is broken data; reissue path is
         // the only safe one and it surfaces a warning.
         CertificateOrigin::Material => CertificateAction::ReissueOnTarget {
@@ -71,9 +74,10 @@ pub fn decide_certificate_action(
 pub fn assert_not_acme_store(paths: &OpenOxidePaths, candidate: &str) -> Result<(), String> {
     let normalized = crate::services::migration::scope::normalize_ref(candidate)
         .ok_or_else(|| format!("unusable path reference {candidate:?}"))?;
-    let acme = crate::services::migration::scope::normalize_ref(
-        &format!("{}/acme.json", paths.traefik_dynamic()),
-    )
+    let acme = crate::services::migration::scope::normalize_ref(&format!(
+        "{}/acme.json",
+        paths.traefik_dynamic()
+    ))
     .expect("canonical acme path normalises");
     if normalized == acme {
         return Err(format!(
@@ -122,7 +126,9 @@ pub fn classify_health(container_state: Option<&str>, probe_ok: Option<bool>) ->
 pub fn health_poll_attempts(timeout: std::time::Duration, interval: std::time::Duration) -> u32 {
     let interval_ms = interval.as_millis().max(1);
     let timeout_ms = timeout.as_millis();
-    u32::try_from(timeout_ms / interval_ms).unwrap_or(u32::MAX).max(1)
+    u32::try_from(timeout_ms / interval_ms)
+        .unwrap_or(u32::MAX)
+        .max(1)
 }
 
 /// SUPERSEDED gate: terminal success may only be recorded when the phase
@@ -145,12 +151,16 @@ mod tests {
 
     #[test]
     fn acme_store_is_never_a_transfer_operand() {
-        assert!(assert_not_acme_store(&paths(), "/etc/openoxide/traefik/dynamic/acme.json").is_err());
+        assert!(
+            assert_not_acme_store(&paths(), "/etc/openoxide/traefik/dynamic/acme.json").is_err()
+        );
         // Trailing-slash / `.` noise normalises into the same refusal.
         assert!(
             assert_not_acme_store(&paths(), "/etc/openoxide/traefik/dynamic/./acme.json").is_err()
         );
-        assert!(assert_not_acme_store(&paths(), "/etc/openoxide/traefik/dynamic/acme.json.bak").is_ok());
+        assert!(
+            assert_not_acme_store(&paths(), "/etc/openoxide/traefik/dynamic/acme.json.bak").is_ok()
+        );
         assert!(
             assert_not_acme_store(&paths(), "/etc/openoxide/migrations/m1/staging/CERT-aa").is_ok()
         );
@@ -176,7 +186,10 @@ mod tests {
 
     #[test]
     fn health_fails_closed() {
-        assert_eq!(classify_health(Some("running"), Some(true)), HealthVerdict::Up);
+        assert_eq!(
+            classify_health(Some("running"), Some(true)),
+            HealthVerdict::Up
+        );
         assert!(matches!(
             classify_health(Some("running"), None),
             HealthVerdict::Waiting { .. }
@@ -202,10 +215,19 @@ mod tests {
     #[test]
     fn health_budget_rounds_sensibly() {
         use std::time::Duration;
-        assert_eq!(health_poll_attempts(Duration::from_secs(60), Duration::from_secs(2)), 30);
-        assert_eq!(health_poll_attempts(Duration::ZERO, Duration::from_secs(2)), 1);
+        assert_eq!(
+            health_poll_attempts(Duration::from_secs(60), Duration::from_secs(2)),
+            30
+        );
+        assert_eq!(
+            health_poll_attempts(Duration::ZERO, Duration::from_secs(2)),
+            1
+        );
         // A zero interval is floored to 1ms so the budget stays finite.
-        assert_eq!(health_poll_attempts(Duration::from_secs(5), Duration::ZERO), 5000);
+        assert_eq!(
+            health_poll_attempts(Duration::from_secs(5), Duration::ZERO),
+            5000
+        );
     }
 
     #[test]

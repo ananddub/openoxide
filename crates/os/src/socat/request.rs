@@ -172,10 +172,10 @@ impl SocatRequestBuilder {
             }
         };
         if !header_str.contains("101") {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed HTTP socket upgrade: {}", header_str),
-            ));
+            return Err(std::io::Error::other(format!(
+                "Failed HTTP socket upgrade: {}",
+                header_str
+            )));
         }
         Ok(header_str)
     }

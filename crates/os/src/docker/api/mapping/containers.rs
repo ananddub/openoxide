@@ -66,7 +66,6 @@ fn container_create(args: &[String]) -> Option<ApiRequest> {
                 };
                 let (container_port, protocol) = container_port
                     .split_once('/')
-                    .map(|(p, proto)| (p, proto))
                     .unwrap_or((container_port, protocol));
                 let key = format!("{container_port}/{protocol}");
                 let binding = if host_ip.is_empty() {

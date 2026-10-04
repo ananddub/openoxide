@@ -132,10 +132,10 @@ impl<'a> ContainerSocketStreamBuilder<'a> {
             .nth(1)
             .and_then(|s| s.split('"').next())
             .ok_or_else(|| {
-                std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to parse exec Id from Docker response: {}", res1),
-                )
+                std::io::Error::other(format!(
+                    "Failed to parse exec Id from Docker response: {}",
+                    res1
+                ))
             })?
             .to_string();
 

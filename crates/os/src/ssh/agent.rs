@@ -103,12 +103,12 @@ impl SshAgentSession {
                     let path_str = val.trim_start_matches("SSH_AUTH_SOCK=");
                     socket_path = Some(PathBuf::from(path_str));
                 }
-            } else if line.starts_with("SSH_AGENT_PID=") {
-                if let Some(val) = line.split(';').next() {
-                    let pid_str = val.trim_start_matches("SSH_AGENT_PID=");
-                    if let Ok(parsed_pid) = pid_str.parse::<u32>() {
-                        pid = Some(parsed_pid);
-                    }
+            } else if line.starts_with("SSH_AGENT_PID=")
+                && let Some(val) = line.split(';').next()
+            {
+                let pid_str = val.trim_start_matches("SSH_AGENT_PID=");
+                if let Ok(parsed_pid) = pid_str.parse::<u32>() {
+                    pid = Some(parsed_pid);
                 }
             }
         }
@@ -144,10 +144,11 @@ pub fn sweep_orphaned_agent_sockets() {
     if let Ok(entries) = std::fs::read_dir("/tmp") {
         for entry in entries.flatten() {
             let path = entry.path();
-            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                if name.starts_with("ssh-") && path.is_dir() {
-                    let _ = std::fs::remove_dir_all(&path);
-                }
+            if let Some(name) = path.file_name().and_then(|n| n.to_str())
+                && name.starts_with("ssh-")
+                && path.is_dir()
+            {
+                let _ = std::fs::remove_dir_all(&path);
             }
         }
     }

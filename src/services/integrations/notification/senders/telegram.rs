@@ -1,4 +1,6 @@
-use crate::services::integrations::notification::{loader::TelegramConfig, message::NotificationMessage};
+use crate::services::integrations::notification::{
+    loader::TelegramConfig, message::NotificationMessage,
+};
 use reqwest::Client;
 use serde_json::json;
 

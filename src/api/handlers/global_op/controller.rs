@@ -41,7 +41,8 @@ impl GlobalService for DockerManagementController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, GlobalDownloadFileRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<GlobalDownloadFileResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<GlobalDownloadFileResponse> + Send + use<'a>>
+    {
         // Download returns raw bytes on the wire; the old handler
         // base64-wrapped them in a JSON payload.
         let path = request.path.to_owned();
@@ -53,7 +54,6 @@ impl GlobalService for DockerManagementController {
         Response::ok(GlobalDownloadFileResponse {
             content: ::buffa::bytes::Bytes::from(bytes),
             path,
-            ..Default::default()
         })
     }
 
@@ -62,14 +62,12 @@ impl GlobalService for DockerManagementController {
         &'a self,
         ctx: RequestContext,
         _requests: connectrpc::InboundStream<GlobalUploadContainerFileRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<GlobalUploadContainerFileResponse> + Send + use<'a>,
-    > {
-        let error: ServiceResult<GlobalUploadContainerFileResponse> = Err(
-            ConnectError::unimplemented(
+    ) -> ServiceResult<impl connectrpc::Encodable<GlobalUploadContainerFileResponse> + Send + use<'a>>
+    {
+        let error: ServiceResult<GlobalUploadContainerFileResponse> =
+            Err(ConnectError::unimplemented(
                 "streaming file upload is not yet supported via ConnectRPC",
-            ),
-        );
+            ));
         error
     }
 
@@ -90,7 +88,6 @@ impl GlobalService for DockerManagementController {
         Response::ok(GlobalDownloadContainerFileResponse {
             content: ::buffa::bytes::Bytes::from(bytes),
             path,
-            ..Default::default()
         })
     }
 
@@ -108,7 +105,6 @@ impl GlobalService for DockerManagementController {
             .map_err(api_error)?;
         Response::ok(GlobalListContainersResponse {
             containers: items.into_iter().map(container_to_proto).collect(),
-            ..Default::default()
         })
     }
 
@@ -125,7 +121,6 @@ impl GlobalService for DockerManagementController {
             .map_err(api_error)?;
         Response::ok(GlobalListImagesResponse {
             images: items.into_iter().map(image_to_proto).collect(),
-            ..Default::default()
         })
     }
 
@@ -134,7 +129,8 @@ impl GlobalService for DockerManagementController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, GlobalListNetworksRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<GlobalListNetworksResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<GlobalListNetworksResponse> + Send + use<'a>>
+    {
         let items = self
             .service
             .networks(request.server_id)
@@ -142,7 +138,6 @@ impl GlobalService for DockerManagementController {
             .map_err(api_error)?;
         Response::ok(GlobalListNetworksResponse {
             networks: items.into_iter().map(network_to_proto).collect(),
-            ..Default::default()
         })
     }
 
@@ -159,7 +154,6 @@ impl GlobalService for DockerManagementController {
             .map_err(api_error)?;
         Response::ok(GlobalListVolumesResponse {
             volumes: items.into_iter().map(volume_to_proto).collect(),
-            ..Default::default()
         })
     }
 
@@ -177,7 +171,6 @@ impl GlobalService for DockerManagementController {
             .map_err(api_error)?;
         Response::ok(GlobalInspectContainerResponse {
             data_json: json_data(&value),
-            ..Default::default()
         })
     }
 
@@ -186,7 +179,8 @@ impl GlobalService for DockerManagementController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, GlobalInspectImageRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<GlobalInspectImageResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<GlobalInspectImageResponse> + Send + use<'a>>
+    {
         let value = self
             .service
             .image_inspect(request.server_id, request.image_id)
@@ -194,7 +188,6 @@ impl GlobalService for DockerManagementController {
             .map_err(api_error)?;
         Response::ok(GlobalInspectImageResponse {
             data_json: json_data(&value),
-            ..Default::default()
         })
     }
 
@@ -212,7 +205,6 @@ impl GlobalService for DockerManagementController {
             .map_err(api_error)?;
         Response::ok(GlobalInspectNetworkResponse {
             data_json: json_data(&value),
-            ..Default::default()
         })
     }
 
@@ -221,7 +213,8 @@ impl GlobalService for DockerManagementController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, GlobalInspectVolumeRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<GlobalInspectVolumeResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<GlobalInspectVolumeResponse> + Send + use<'a>>
+    {
         let value = self
             .service
             .volume_inspect(request.server_id, request.volume_id)
@@ -229,7 +222,6 @@ impl GlobalService for DockerManagementController {
             .map_err(api_error)?;
         Response::ok(GlobalInspectVolumeResponse {
             data_json: json_data(&value),
-            ..Default::default()
         })
     }
 
@@ -251,7 +243,6 @@ impl GlobalService for DockerManagementController {
         Response::ok(GlobalContainerActionResponse {
             success: true,
             output: ::buffa::MessageField::some(output_to_proto(result)),
-            ..Default::default()
         })
     }
 
@@ -294,7 +285,6 @@ impl GlobalService for DockerManagementController {
             .map_err(api_error)?;
         Response::ok(GlobalDiskUsageResponse {
             data_json: json_data(&value),
-            ..Default::default()
         })
     }
 
@@ -313,7 +303,6 @@ impl GlobalService for DockerManagementController {
         let result = self.service.prune(None, dto).await.map_err(api_error)?;
         Response::ok(GlobalPruneResponse {
             operations: result.operations.into_iter().map(output_to_proto).collect(),
-            ..Default::default()
         })
     }
 }

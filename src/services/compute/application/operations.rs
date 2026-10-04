@@ -42,7 +42,9 @@ impl ApplicationService {
         // server, otherwise the server_management row must not be in
         // maintenance mode.
         if let Some(server_id) = app.server_id {
-            self.queries.server_management_get_or_create1(server_id).await?;
+            self.queries
+                .server_management_get_or_create1(server_id)
+                .await?;
             let management = self
                 .queries
                 .server_management_get_or_create2(server_id)
@@ -132,12 +134,15 @@ impl ApplicationService {
     pub async fn stop_or_cancel_smart(&self, id: i64) -> sqlx::Result<bool> {
         let app_user = self.get_by_id(id).await?;
         let current_status =
-            crate::services::compute::application::types::ApplicationStatus::from_str(&app_user.app_status)
-                .unwrap_or(crate::services::compute::application::types::ApplicationStatus::Idle);
+            crate::services::compute::application::types::ApplicationStatus::from_str_opt(
+                &app_user.app_status,
+            )
+            .unwrap_or(crate::services::compute::application::types::ApplicationStatus::Idle);
 
         let (intermediate, final_st) = if current_status.is_building() {
             (
-                crate::services::compute::application::types::ApplicationStatus::Cancelling.as_str(),
+                crate::services::compute::application::types::ApplicationStatus::Cancelling
+                    .as_str(),
                 crate::services::compute::application::types::ApplicationStatus::Cancelled.as_str(),
             )
         } else {

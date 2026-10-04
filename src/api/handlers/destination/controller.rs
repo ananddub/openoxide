@@ -25,10 +25,7 @@ impl DestinationService for DestinationController {
         let cache_key = CacheKey::DestinationsList(organization_id);
         if let Some(CacheEnum::DestinationsList(cached)) = self.cache.get(&cache_key).await {
             let destinations = cached.into_iter().map(destination_to_proto).collect();
-            return Response::ok(ListDestinationsResponse {
-                destinations,
-                ..Default::default()
-            });
+            return Response::ok(ListDestinationsResponse { destinations });
         }
 
         let items = self
@@ -41,10 +38,7 @@ impl DestinationService for DestinationController {
             .await;
 
         let destinations = items.into_iter().map(destination_to_proto).collect();
-        Response::ok(ListDestinationsResponse {
-            destinations,
-            ..Default::default()
-        })
+        Response::ok(ListDestinationsResponse { destinations })
     }
 
     #[permission(Database, CanRead)]
@@ -60,7 +54,6 @@ impl DestinationService for DestinationController {
             .map_err(map_sqlx_error)?;
         Response::ok(GetDestinationResponse {
             destination: ::buffa::MessageField::some(destination_to_proto(dest)),
-            ..Default::default()
         })
     }
 
@@ -87,7 +80,6 @@ impl DestinationService for DestinationController {
             .await;
         Response::ok(CreateDestinationResponse {
             destination: ::buffa::MessageField::some(destination_to_proto(created)),
-            ..Default::default()
         })
     }
 
@@ -116,7 +108,6 @@ impl DestinationService for DestinationController {
             .await;
         Response::ok(UpdateDestinationResponse {
             destination: ::buffa::MessageField::some(destination_to_proto(updated)),
-            ..Default::default()
         })
     }
 
@@ -154,9 +145,6 @@ impl DestinationService for DestinationController {
             )
             .await
             .map_err(ConnectError::invalid_argument)?;
-        Response::ok(TestDestinationResponse {
-            success: true,
-            ..Default::default()
-        })
+        Response::ok(TestDestinationResponse { success: true })
     }
 }

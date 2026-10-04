@@ -123,7 +123,11 @@ impl RealtimeHandle {
     }
 
     /// Attach the realtime C engine to an active SQLite raw handle (*mut sqlite3)
-    pub fn attach(raw_sqlite_ptr: *mut c_void) -> Result<Arc<Self>, String> {
+    ///
+    /// # Safety
+    /// `raw_sqlite_ptr` must be a live `sqlite3*` for the caller's thread
+    /// (SQLite serializes handles to the connection that opened them).
+    pub unsafe fn attach(raw_sqlite_ptr: *mut c_void) -> Result<Arc<Self>, String> {
         let mut out_fd: c_int = -1;
         let rc = unsafe { sqlite3_realtime_init(raw_sqlite_ptr, &mut out_fd) };
         if rc != 0 {
@@ -273,7 +277,10 @@ impl RealtimeHandle {
     /// existing for an already-attached connection, fresh otherwise. Pool
     /// layers that re-open connections call this from their connect hook so
     /// every physical connection captures changes.
-    pub fn attach_if_needed(raw_sqlite_ptr: *mut c_void) -> Result<Arc<Self>, String> {
+    ///
+    /// # Safety
+    /// `raw_sqlite_ptr` must be a live `sqlite3*` for the caller's thread.
+    pub unsafe fn attach_if_needed(raw_sqlite_ptr: *mut c_void) -> Result<Arc<Self>, String> {
         // A live handle for this exact connection is reused as-is.
         if let Some(existing) = lookup_handle(raw_sqlite_ptr as usize) {
             tracing::debug!(
@@ -287,7 +294,7 @@ impl RealtimeHandle {
         // pointer: clean it up before initializing fresh.
         unsafe { sqlite3_realtime_cleanup(raw_sqlite_ptr) };
 
-        Self::attach(raw_sqlite_ptr)
+        unsafe { Self::attach(raw_sqlite_ptr) }
     }
 
     /// Return the raw `sqlite3*` handle as a `usize` for safe cross-thread transfer.

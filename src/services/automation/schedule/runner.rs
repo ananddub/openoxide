@@ -12,7 +12,7 @@ use tokio::sync::{Mutex, Semaphore};
 use tokio_cron_scheduler::{Job, JobScheduler};
 use uuid::Uuid;
 
-use super::schedule::{ScheduleService, volume_backup_has_valid_resource};
+use super::service::{ScheduleService, volume_backup_has_valid_resource};
 
 const REFRESH_CRON: &str = "0/30 * * * * *";
 
@@ -377,11 +377,7 @@ impl ScheduleRunner {
                 let key_str = key_clone.clone();
                 let backup_slots = Arc::clone(&backup_slots);
                 Box::pin(async move {
-                    let current = service
-                        .get_volume_backup(backup_id)
-                        .await
-                        .ok()
-                        .flatten();
+                    let current = service.get_volume_backup(backup_id).await.ok().flatten();
                     if !current.as_ref().is_some_and(|backup| {
                         backup_is_enabled(Some(backup.enabled))
                             && volume_backup_has_valid_resource(backup)

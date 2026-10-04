@@ -1,30 +1,32 @@
-use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 use validator::Validate;
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    Empty, RemoteServer, RemoteServerActivateRequest, RemoteServerActivateResponse,
-    RemoteServerAction, RemoteServerApplicationMigration,
+    Empty, RemoteServer, RemoteServerAction, RemoteServerActivateRequest,
+    RemoteServerActivateResponse, RemoteServerApplicationMigration,
     RemoteServerApplicationMigrationStatus, RemoteServerCancelMigrationRequest,
     RemoteServerCancelMigrationResponse, RemoteServerCreateRequest, RemoteServerCreateResponse,
-    RemoteServerDeleteRequest, RemoteServerDeactivateRequest, RemoteServerDeactivateResponse,
-    RemoteServerDependencyMigration,
-    RemoteServerDependencyMigrationStatus, RemoteServerGetMigrationRequest,
-    RemoteServerGetMigrationResponse, RemoteServerGetRequest, RemoteServerGetResponse,
-    RemoteServerListMigrationObjectsRequest, RemoteServerListMigrationObjectsResponse,
-    RemoteServerListMigrationsRequest, RemoteServerListMigrationsResponse, RemoteServerListRequest,
-    RemoteServerListResponse, RemoteServerMigrateDependenciesRequest,
-    RemoteServerMigrateDependenciesResponse, RemoteServerMigrateServiceRequest,
-    RemoteServerMigrateServiceResponse, RemoteServerMigrationObject,
-    RemoteServerMigrationObjectKind, RemoteServerMigrationPhase, RemoteServerRollbackMigrationRequest,
-    RemoteServerRollbackMigrationResponse, RemoteServerService, RemoteServerServiceExt,
-    RemoteServerStatus as ProtoRemoteServerStatus, RemoteServerTestConnectionRequest,
-    RemoteServerTestConnectionResponse, RemoteServerType as ProtoRemoteServerType,
-    RemoteServerUpdateRequest, RemoteServerUpdateResponse,
+    RemoteServerDeactivateRequest, RemoteServerDeactivateResponse, RemoteServerDeleteRequest,
+    RemoteServerDependencyMigration, RemoteServerDependencyMigrationStatus,
+    RemoteServerGetMigrationRequest, RemoteServerGetMigrationResponse, RemoteServerGetRequest,
+    RemoteServerGetResponse, RemoteServerListMigrationObjectsRequest,
+    RemoteServerListMigrationObjectsResponse, RemoteServerListMigrationsRequest,
+    RemoteServerListMigrationsResponse, RemoteServerListRequest, RemoteServerListResponse,
+    RemoteServerMigrateDependenciesRequest, RemoteServerMigrateDependenciesResponse,
+    RemoteServerMigrateServiceRequest, RemoteServerMigrateServiceResponse,
+    RemoteServerMigrationObject, RemoteServerMigrationObjectKind, RemoteServerMigrationPhase,
+    RemoteServerRollbackMigrationRequest, RemoteServerRollbackMigrationResponse,
+    RemoteServerService, RemoteServerServiceExt, RemoteServerStatus as ProtoRemoteServerStatus,
+    RemoteServerTestConnectionRequest, RemoteServerTestConnectionResponse,
+    RemoteServerType as ProtoRemoteServerType, RemoteServerUpdateRequest,
+    RemoteServerUpdateResponse,
 };
 use crate::flash_gen::models::{ApplicationMigrations, MigrationObjects, Servers};
 use crate::services::infrastructure::server::{
-    CreateRemoteServerDto, PatchRemoteServerDto,
-    RemoteServerStatusDto as ServiceRemoteServerStatusDto, RemoteServerStatus as ServiceRemoteServerStatus,
+    CreateRemoteServerDto, PatchRemoteServerDto, RemoteServerStatus as ServiceRemoteServerStatus,
+    RemoteServerStatusDto as ServiceRemoteServerStatusDto,
     RemoteServerTypeDto as ServiceRemoteServerTypeDto, ServerDependencyMigrationDto,
 };
 
@@ -176,11 +178,12 @@ fn server_to_proto(server: Servers) -> RemoteServer {
         updated_at: server.updated_at,
         build_memory_limit: server.build_memory_limit,
         build_cpu_limit: server.build_cpu_limit,
-        ..Default::default()
     }
 }
 
-fn dependency_migration_to_proto(dto: ServerDependencyMigrationDto) -> RemoteServerDependencyMigration {
+fn dependency_migration_to_proto(
+    dto: ServerDependencyMigrationDto,
+) -> RemoteServerDependencyMigration {
     RemoteServerDependencyMigration {
         migration_id: dto.migration_id,
         status: ::buffa::EnumValue::Known(dependency_status_to_proto(&dto.status)),
@@ -195,7 +198,6 @@ fn dependency_migration_to_proto(dto: ServerDependencyMigrationDto) -> RemoteSer
         queued_applications: dto.queued_applications,
         queued_compose_projects: dto.queued_compose_projects,
         error: dto.error,
-        ..Default::default()
     }
 }
 
@@ -214,7 +216,6 @@ fn application_migration_to_proto(row: ApplicationMigrations) -> RemoteServerApp
         log_path: row.log_path,
         created_at: row.created_at,
         updated_at: row.updated_at,
-        ..Default::default()
     }
 }
 
@@ -230,7 +231,6 @@ fn migration_object_to_proto(row: MigrationObjects) -> RemoteServerMigrationObje
         error: row.error,
         created_at: row.created_at,
         updated_at: row.updated_at,
-        ..Default::default()
     }
 }
 
@@ -250,10 +250,7 @@ impl RemoteServerService for RemoteServerController {
             .into_iter()
             .map(server_to_proto)
             .collect();
-        Response::ok(RemoteServerListResponse {
-            servers,
-            ..Default::default()
-        })
+        Response::ok(RemoteServerListResponse { servers })
     }
 
     #[permission(Server, CanRead)]
@@ -269,7 +266,6 @@ impl RemoteServerService for RemoteServerController {
             .map_err(map_db_error)?;
         Response::ok(RemoteServerGetResponse {
             server: ::buffa::MessageField::some(server_to_proto(server)),
-            ..Default::default()
         })
     }
 
@@ -278,7 +274,8 @@ impl RemoteServerService for RemoteServerController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, RemoteServerCreateRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<RemoteServerCreateResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<RemoteServerCreateResponse> + Send + use<'a>>
+    {
         // Preserve the serde defaults the retired JSON envelope carried:
         // missing port → 22, empty username → "root", unspecified type → DEPLOY.
         let server_type = match request.server_type {
@@ -289,7 +286,10 @@ impl RemoteServerService for RemoteServerController {
         };
         let dto = CreateRemoteServerDto {
             name: request.name.to_owned(),
-            description: request.description.map(str::to_owned).filter(|value| !value.is_empty()),
+            description: request
+                .description
+                .map(str::to_owned)
+                .filter(|value| !value.is_empty()),
             ip_address: request.ip_address.to_owned(),
             port: if request.port == 0 { 22 } else { request.port },
             username: if request.username.is_empty() {
@@ -311,7 +311,6 @@ impl RemoteServerService for RemoteServerController {
             .map_err(map_db_error)?;
         Response::ok(RemoteServerCreateResponse {
             server: ::buffa::MessageField::some(server_to_proto(server)),
-            ..Default::default()
         })
     }
 
@@ -320,7 +319,8 @@ impl RemoteServerService for RemoteServerController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, RemoteServerUpdateRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<RemoteServerUpdateResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<RemoteServerUpdateResponse> + Send + use<'a>>
+    {
         let dto = PatchRemoteServerDto {
             name: request.name.map(str::to_owned),
             description: request.description.map(str::to_owned),
@@ -331,10 +331,7 @@ impl RemoteServerService for RemoteServerController {
                 .server_status
                 .map(proto_to_server_status)
                 .transpose()?,
-            server_type: request
-                .server_type
-                .map(proto_to_server_type)
-                .transpose()?,
+            server_type: request.server_type.map(proto_to_server_type).transpose()?,
             enable_docker_cleanup: request.enable_docker_cleanup.map(i64::from),
             log_cleanup_cron: request.log_cleanup_cron.map(str::to_owned),
             command: request.command.map(str::to_owned),
@@ -352,7 +349,6 @@ impl RemoteServerService for RemoteServerController {
             .map_err(map_db_error)?;
         Response::ok(RemoteServerUpdateResponse {
             server: ::buffa::MessageField::some(server_to_proto(server)),
-            ..Default::default()
         })
     }
 
@@ -371,7 +367,6 @@ impl RemoteServerService for RemoteServerController {
         Response::ok(RemoteServerActivateResponse {
             server: ::buffa::MessageField::some(server_to_proto(server)),
             action: ::buffa::EnumValue::Known(RemoteServerAction::Activate),
-            ..Default::default()
         })
     }
 
@@ -380,9 +375,8 @@ impl RemoteServerService for RemoteServerController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, RemoteServerDeactivateRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<RemoteServerDeactivateResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<RemoteServerDeactivateResponse> + Send + use<'a>>
+    {
         let server = self
             .service
             .set_status(request.id, ServiceRemoteServerStatus::Inactive)
@@ -391,7 +385,6 @@ impl RemoteServerService for RemoteServerController {
         Response::ok(RemoteServerDeactivateResponse {
             server: ::buffa::MessageField::some(server_to_proto(server)),
             action: ::buffa::EnumValue::Known(RemoteServerAction::Deactivate),
-            ..Default::default()
         })
     }
 
@@ -411,7 +404,6 @@ impl RemoteServerService for RemoteServerController {
         Response::ok(RemoteServerTestConnectionResponse {
             server: ::buffa::MessageField::some(server_to_proto(server)),
             action: ::buffa::EnumValue::Known(RemoteServerAction::TestConnection),
-            ..Default::default()
         })
     }
 
@@ -437,7 +429,9 @@ impl RemoteServerService for RemoteServerController {
         impl connectrpc::Encodable<RemoteServerMigrateDependenciesResponse> + Send + use<'a>,
     > {
         if request.target_server_id < 1 {
-            return Err(ConnectError::invalid_argument("target_server_id is required"));
+            return Err(ConnectError::invalid_argument(
+                "target_server_id is required",
+            ));
         }
         let migration = self
             .service
@@ -446,7 +440,6 @@ impl RemoteServerService for RemoteServerController {
             .map_err(map_db_error)?;
         Response::ok(RemoteServerMigrateDependenciesResponse {
             migration: ::buffa::MessageField::some(dependency_migration_to_proto(migration)),
-            ..Default::default()
         })
     }
 
@@ -455,7 +448,8 @@ impl RemoteServerService for RemoteServerController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, RemoteServerGetMigrationRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<RemoteServerGetMigrationResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<RemoteServerGetMigrationResponse> + Send + use<'a>>
+    {
         let migration = self
             .service
             .migration_status(request.migration_id)
@@ -463,7 +457,6 @@ impl RemoteServerService for RemoteServerController {
             .map_err(map_db_error)?;
         Response::ok(RemoteServerGetMigrationResponse {
             migration: ::buffa::MessageField::some(dependency_migration_to_proto(migration)),
-            ..Default::default()
         })
     }
 
@@ -482,7 +475,6 @@ impl RemoteServerService for RemoteServerController {
             .map_err(map_db_error)?;
         Response::ok(RemoteServerRollbackMigrationResponse {
             migration: ::buffa::MessageField::some(dependency_migration_to_proto(migration)),
-            ..Default::default()
         })
     }
 
@@ -491,7 +483,9 @@ impl RemoteServerService for RemoteServerController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, RemoteServerCancelMigrationRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<RemoteServerCancelMigrationResponse> + Send + use<'a>> {
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<RemoteServerCancelMigrationResponse> + Send + use<'a>,
+    > {
         let row = self
             .service
             .request_stateful_migration_cancel(request.migration_id, auth.organization_id)
@@ -499,7 +493,6 @@ impl RemoteServerService for RemoteServerController {
             .map_err(map_db_error)?;
         Response::ok(RemoteServerCancelMigrationResponse {
             migration: ::buffa::MessageField::some(application_migration_to_proto(row)),
-            ..Default::default()
         })
     }
 
@@ -512,7 +505,9 @@ impl RemoteServerService for RemoteServerController {
         impl connectrpc::Encodable<RemoteServerMigrateServiceResponse> + Send + use<'a>,
     > {
         if request.target_server_id < 1 {
-            return Err(ConnectError::invalid_argument("target_server_id is required"));
+            return Err(ConnectError::invalid_argument(
+                "target_server_id is required",
+            ));
         }
         let row = self
             .service
@@ -521,7 +516,6 @@ impl RemoteServerService for RemoteServerController {
             .map_err(map_db_error)?;
         Response::ok(RemoteServerMigrateServiceResponse {
             migration: ::buffa::MessageField::some(application_migration_to_proto(row)),
-            ..Default::default()
         })
     }
 
@@ -530,7 +524,9 @@ impl RemoteServerService for RemoteServerController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, RemoteServerListMigrationsRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<RemoteServerListMigrationsResponse> + Send + use<'a>> {
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<RemoteServerListMigrationsResponse> + Send + use<'a>,
+    > {
         let migrations = self
             .service
             .list_service_migrations(request.service_id, auth.organization_id)
@@ -539,10 +535,7 @@ impl RemoteServerService for RemoteServerController {
             .into_iter()
             .map(application_migration_to_proto)
             .collect();
-        Response::ok(RemoteServerListMigrationsResponse {
-            migrations,
-            ..Default::default()
-        })
+        Response::ok(RemoteServerListMigrationsResponse { migrations })
     }
 
     #[permission(Server, CanRead)]
@@ -561,9 +554,6 @@ impl RemoteServerService for RemoteServerController {
             .into_iter()
             .map(migration_object_to_proto)
             .collect();
-        Response::ok(RemoteServerListMigrationObjectsResponse {
-            objects,
-            ..Default::default()
-        })
+        Response::ok(RemoteServerListMigrationObjectsResponse { objects })
     }
 }

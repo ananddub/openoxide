@@ -79,10 +79,9 @@ pub async fn detect_advertise_addr(executor: &CommandExecutor) -> String {
         .ipv4_addresses()
         .run()
         .await
+        && let Some(ip) = first_vpn_addr(&out.stdout)
     {
-        if let Some(ip) = first_vpn_addr(&out.stdout) {
-            return ip;
-        }
+        return ip;
     }
     crate::OsCli::new(executor)
         .system()
@@ -99,10 +98,10 @@ pub async fn detect_advertise_addr_cancelled(
     cancel: &CancellationToken,
 ) -> String {
     let os = crate::OsCli::new(executor);
-    if let Ok(out) = os.network().ipv4_addresses().run_cancelled(cancel).await {
-        if let Some(ip) = first_vpn_addr(&out.stdout) {
-            return ip;
-        }
+    if let Ok(out) = os.network().ipv4_addresses().run_cancelled(cancel).await
+        && let Some(ip) = first_vpn_addr(&out.stdout)
+    {
+        return ip;
     }
     os.system()
         .host_addresses()

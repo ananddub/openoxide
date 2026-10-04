@@ -2,6 +2,9 @@
 name = "auto_grpc_macros"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+description = "Procedural macros for auto_grpc: #[service] and #[middleware] expansion"
+keywords = ["macros", "grpc", "proc-macro"]
 
 [lib]
 proc-macro = true

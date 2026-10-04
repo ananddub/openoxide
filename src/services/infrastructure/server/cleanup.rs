@@ -105,7 +105,9 @@ impl ServerCleanupService {
         &self,
         server_id: i64,
     ) -> sqlx::Result<crate::flash_gen::models::ServerManagement> {
-        self.queries.server_management_get_or_create1(server_id).await?;
+        self.queries
+            .server_management_get_or_create1(server_id)
+            .await?;
         self.queries
             .server_management_get_or_create2(server_id)
             .await

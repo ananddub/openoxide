@@ -2,11 +2,7 @@ use std::fmt;
 
 use serde::Serialize;
 
-use crate::utils::jwt::{
-    claim::JwtSubject,
-    error::TokenError,
-    service::TokenPair,
-};
+use crate::utils::jwt::{claim::JwtSubject, error::TokenError, service::TokenPair};
 
 #[derive(Debug)]
 pub enum AuthError {

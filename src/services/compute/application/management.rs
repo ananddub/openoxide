@@ -61,13 +61,12 @@ impl ApplicationService {
                     id: deployment_id,
                 })
                 .await?;
-            let _ = sqlx::query(
-                "UPDATE deployments SET logs = COALESCE(logs, '') || ? WHERE id = ?;",
-            )
-            .bind(format!("\n[ERROR] {error_message}\n"))
-            .bind(deployment_id)
-            .execute(&self.queries.pool)
-            .await;
+            let _ =
+                sqlx::query("UPDATE deployments SET logs = COALESCE(logs, '') || ? WHERE id = ?;")
+                    .bind(format!("\n[ERROR] {error_message}\n"))
+                    .bind(deployment_id)
+                    .execute(&self.queries.pool)
+                    .await;
             self.queries
                 .deployments_finalize_with_resource3(&DeploymentsFinalizeWithResource3Params {
                     app_status: "ERROR".to_owned(),
@@ -225,10 +224,7 @@ pub(crate) async fn remote_executor(
 /// Resolve the host-key verification policy for a server from its stored pin.
 /// Falls back to accepting any key (with a warning) only when no fingerprint
 /// was captured during setup, preserving pre-migration behaviour.
-pub(crate) async fn host_key_for_server(
-    queries: &FlashQueries,
-    server_id: i64,
-) -> SshHostKey {
+pub(crate) async fn host_key_for_server(queries: &FlashQueries, server_id: i64) -> SshHostKey {
     match queries.servers_get_host_key_fingerprint(server_id).await {
         Ok(fp) if !fp.trim().is_empty() => SshHostKey::PinnedSha256(fp.trim().to_owned()),
         _ => {

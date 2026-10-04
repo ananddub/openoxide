@@ -11,8 +11,8 @@
 //! Two host views are required and both are mounted into the agent container:
 //!   * `/sys/fs/cgroup`  — the host cgroup root (the `docker-<id>.scope` trees).
 //!   * `/host/proc`      — the host procfs (via `/:/host:ro`), for per-container
-//!                         network counters at `/host/proc/<pid>/net/dev` and the
-//!                         cgroup path at `/host/proc/<pid>/cgroup`.
+//!     network counters at `/host/proc/<pid>/net/dev` and the cgroup path at
+//!     `/host/proc/<pid>/cgroup`.
 //!
 //! The synthesized [`RawStats`] is fed to the existing `to_cli_line`, so the
 //! gRPC frame the panel and browser parse is unchanged.
@@ -174,10 +174,10 @@ impl CgroupCollector {
     /// are reused while `/host/proc/<pid>` still exists; a recreated container
     /// has a dead pid and is re-inspected (the only Docker call, once).
     async fn resolve(&mut self, full_id: &str) -> Option<(u32, String)> {
-        if let Some(tracked) = self.tracked.get(full_id) {
-            if proc_path_exists(&self.proc_root, &tracked.pid.to_string()).await {
-                return Some((tracked.pid, tracked.cgroup_rel.clone()));
-            }
+        if let Some(tracked) = self.tracked.get(full_id)
+            && proc_path_exists(&self.proc_root, &tracked.pid.to_string()).await
+        {
+            return Some((tracked.pid, tracked.cgroup_rel.clone()));
         }
         let value: Value = self
             .docker

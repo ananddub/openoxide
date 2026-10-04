@@ -67,5 +67,7 @@ async fn timeout<F, T>(future: F) -> Option<T>
 where
     F: std::future::Future<Output = T>,
 {
-    tokio::time::timeout(Duration::from_secs(5), future).await.ok()
+    tokio::time::timeout(Duration::from_secs(5), future)
+        .await
+        .ok()
 }

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 macro_rules! strict_runtime_enum {
     ($name:ident { $($variant:ident => $value:literal),+ $(,)? }) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ts_rs::TS)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
         pub enum $name { $($variant),+ }
         impl $name {
@@ -68,4 +68,18 @@ string_enum! {
         Start => "START",
         Stop => "STOP",
     }
+}
+
+/// A whole runtime-policy write for one schedule. The service takes it as a
+/// unit, so the retry, concurrency and notification knobs travel together.
+#[derive(Debug, Clone)]
+pub struct RuntimePolicyUpdate<'a> {
+    pub schedule_id: i64,
+    pub retry_count: i64,
+    pub retry_delay_seconds: i64,
+    pub missed_run_policy: &'a str,
+    pub concurrency_policy: &'a str,
+    pub lease_seconds: i64,
+    pub notify_on_success: bool,
+    pub notify_on_failure: bool,
 }

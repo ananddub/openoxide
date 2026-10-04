@@ -1,5 +1,7 @@
 use super::webhook::post_webhook;
-use crate::services::integrations::notification::{loader::MattermostConfig, message::NotificationMessage};
+use crate::services::integrations::notification::{
+    loader::MattermostConfig, message::NotificationMessage,
+};
 use reqwest::Client;
 use serde_json::json;
 

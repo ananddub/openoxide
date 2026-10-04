@@ -50,7 +50,7 @@ pub fn proto_to_provider_type(
         .strip_prefix(PROVIDER_TYPE_PREFIX)
         .unwrap_or(name)
         .to_ascii_uppercase();
-    DnsProviderType::from_str(&raw).ok_or_else(|| {
+    DnsProviderType::from_code(&raw).ok_or_else(|| {
         ConnectError::invalid_argument(format!("unsupported DNS provider type '{name}'"))
     })
 }
@@ -64,7 +64,6 @@ pub fn provider_to_proto(dto: DnsProviderDto) -> DnsProviderProto {
         organization_id: dto.organization_id,
         created_at: dto.created_at,
         updated_at: dto.updated_at,
-        ..Default::default()
     }
 }
 
@@ -73,7 +72,6 @@ pub fn zone_to_proto(dto: DnsZoneDto) -> DnsZoneProto {
         id: dto.id,
         name: dto.name,
         status: dto.status,
-        ..Default::default()
     }
 }
 
@@ -86,6 +84,5 @@ pub fn record_to_proto(dto: DnsRecordDto) -> DnsRecordProto {
         content: dto.content,
         ttl: dto.ttl,
         proxied: dto.proxied,
-        ..Default::default()
     }
 }

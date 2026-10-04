@@ -32,8 +32,7 @@ impl Config {
         let metrics_token = std::env::var("METRICS_TOKEN").unwrap_or_default();
         let tls_cert_path =
             std::env::var("TLS_CERT_PATH").unwrap_or_else(|_| "cert.pem".to_string());
-        let tls_key_path =
-            std::env::var("TLS_KEY_PATH").unwrap_or_else(|_| "key.pem".to_string());
+        let tls_key_path = std::env::var("TLS_KEY_PATH").unwrap_or_else(|_| "key.pem".to_string());
         Ok(Config {
             database_url,
             port,

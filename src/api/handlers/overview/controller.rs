@@ -28,10 +28,7 @@ impl OverviewService for OverviewController {
             .await
             .map_err(map_db_error)?;
         let services = items.into_iter().map(service_item_to_proto).collect();
-        Response::ok(OverviewListServicesResponse {
-            services,
-            ..Default::default()
-        })
+        Response::ok(OverviewListServicesResponse { services })
     }
 
     #[permission(Project, CanRead)]
@@ -48,10 +45,7 @@ impl OverviewService for OverviewController {
             .await
             .map_err(map_db_error)?;
         let domains = items.into_iter().map(domain_item_to_proto).collect();
-        Response::ok(OverviewListDomainsResponse {
-            domains,
-            ..Default::default()
-        })
+        Response::ok(OverviewListDomainsResponse { domains })
     }
 
     #[permission(Project, CanRead)]
@@ -68,10 +62,7 @@ impl OverviewService for OverviewController {
             .await
             .map_err(map_db_error)?;
         let backups = items.into_iter().map(backup_item_to_proto).collect();
-        Response::ok(OverviewListBackupsResponse {
-            backups,
-            ..Default::default()
-        })
+        Response::ok(OverviewListBackupsResponse { backups })
     }
 
     #[permission(Project, CanRead)]
@@ -89,10 +80,7 @@ impl OverviewService for OverviewController {
             .await
             .map_err(map_db_error)?;
         let services = items.into_iter().map(service_item_to_proto).collect();
-        Response::ok(OverviewListOrganizationServicesResponse {
-            services,
-            ..Default::default()
-        })
+        Response::ok(OverviewListOrganizationServicesResponse { services })
     }
 
     #[permission(Project, CanRead)]
@@ -110,10 +98,7 @@ impl OverviewService for OverviewController {
             .await
             .map_err(map_db_error)?;
         let domains = items.into_iter().map(domain_item_to_proto).collect();
-        Response::ok(OverviewListOrganizationDomainsResponse {
-            domains,
-            ..Default::default()
-        })
+        Response::ok(OverviewListOrganizationDomainsResponse { domains })
     }
 
     #[permission(Project, CanRead)]
@@ -131,9 +116,6 @@ impl OverviewService for OverviewController {
             .await
             .map_err(map_db_error)?;
         let backups = items.into_iter().map(backup_item_to_proto).collect();
-        Response::ok(OverviewListOrganizationBackupsResponse {
-            backups,
-            ..Default::default()
-        })
+        Response::ok(OverviewListOrganizationBackupsResponse { backups })
     }
 }

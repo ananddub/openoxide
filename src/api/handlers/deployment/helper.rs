@@ -24,14 +24,20 @@ pub fn map_error(err: sqlx::Error) -> ConnectError {
     }
 }
 
-pub fn deployment_to_proto(dto: &Deployments) -> crate::api::connect::generated::openoxide::api::v1::Deployment {
+pub fn deployment_to_proto(
+    dto: &Deployments,
+) -> crate::api::connect::generated::openoxide::api::v1::Deployment {
     crate::api::connect::generated::openoxide::api::v1::Deployment {
         id: dto.id,
         resource_type: dto.title.clone(),
         resource_id: dto.service_id.unwrap_or(0),
         status: dto.status.clone(),
         error: dto.error_message.clone(),
-        logs: if dto.log_path.is_empty() { None } else { Some(dto.log_path.clone()) },
+        logs: if dto.log_path.is_empty() {
+            None
+        } else {
+            Some(dto.log_path.clone())
+        },
         created_at: dto.created_at,
         updated_at: dto.last_state_at.unwrap_or(dto.created_at),
         user_id: dto.user_id,
@@ -39,7 +45,9 @@ pub fn deployment_to_proto(dto: &Deployments) -> crate::api::connect::generated:
     }
 }
 
-pub fn active_to_deployment(snapshot: &ActiveDeploySnapshot) -> crate::api::connect::generated::openoxide::api::v1::Deployment {
+pub fn active_to_deployment(
+    snapshot: &ActiveDeploySnapshot,
+) -> crate::api::connect::generated::openoxide::api::v1::Deployment {
     let (kind, id) = match snapshot.id {
         IdType::AppId(id) => ("application", id),
         IdType::ComposeId(id) => ("compose", id),
@@ -75,11 +83,6 @@ pub fn docker_log_options(
     }
 }
 
-pub fn empty_event_stream(
-) -> impl futures::Stream<Item = Result<DeploymentEvent, ConnectError>> + Send + 'static {
-    futures::stream::empty()
-}
-
 /// Adapts a docker CLI stream (stdout = data, stderr = failure) into
 /// DeploymentEvents of the given kind. Each stdout chunk becomes one event
 /// carrying the raw `{{json .}}` output.
@@ -89,10 +92,7 @@ pub fn docker_event_stream(
 ) -> impl futures::Stream<Item = Result<DeploymentEvent, ConnectError>> + Send + 'static {
     use futures::StreamExt;
     tokio_stream::wrappers::ReceiverStream::new(receiver).map(|event| {
-        let is_error = matches!(
-            event,
-            crate::utils::docker::DockerStreamEvent::Stderr(_)
-        );
+        let is_error = matches!(event, crate::utils::docker::DockerStreamEvent::Stderr(_));
         let output = match event {
             crate::utils::docker::DockerStreamEvent::Stdout(bytes) => bytes,
             crate::utils::docker::DockerStreamEvent::Stderr(bytes) => bytes,
@@ -143,9 +143,7 @@ pub fn select_log_output(
     selector: DockerLogStream,
 ) -> Vec<u8> {
     match selector {
-        DockerLogStream::All => {
-            format!("{}{}", output.stdout, output.stderr).into_bytes()
-        }
+        DockerLogStream::All => format!("{}{}", output.stdout, output.stderr).into_bytes(),
         DockerLogStream::Stdout => output.stdout.into_bytes(),
         DockerLogStream::Stderr => output.stderr.into_bytes(),
     }

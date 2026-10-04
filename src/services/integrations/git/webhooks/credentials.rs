@@ -30,7 +30,9 @@ impl WebhookCredentialStore {
             GitProviderKind::Github => self.queries.webhooks_credential_secret1(provider_id).await,
             GitProviderKind::Gitlab => self.queries.webhooks_credential_secret2(provider_id).await,
             GitProviderKind::Gitea => self.queries.webhooks_credential_secret3(provider_id).await,
-            GitProviderKind::Bitbucket => self.queries.webhooks_credential_secret4(provider_id).await,
+            GitProviderKind::Bitbucket => {
+                self.queries.webhooks_credential_secret4(provider_id).await
+            }
         }
         .map_err(|error| error.to_string())?
         .filter(|secret| !secret.is_empty())

@@ -16,22 +16,6 @@ impl StateService {
         })
     }
 
-    pub async fn send_snapshot(
-        docker: &DockerApi,
-        tx: &tokio::sync::mpsc::Sender<Result<ContainerStatesResponse, Status>>,
-    ) -> Result<(), ()> {
-        let mut containers = Self::current(docker)
-            .await
-            .map_err(
-                |error| tracing::debug!(%error, "could not read containers after Docker event"),
-            )?
-            .containers;
-        containers.sort_by(|a, b| a.container_id.cmp(&b.container_id));
-        tx.send(Ok(ContainerStatesResponse { containers }))
-            .await
-            .map_err(|_| ())
-    }
-
     pub fn container_state(row: ContainerSummary) -> ContainerStatePoint {
         ContainerStatePoint {
             container_id: row.id.short().to_string(),

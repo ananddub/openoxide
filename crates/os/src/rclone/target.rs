@@ -373,13 +373,12 @@ impl RcloneTarget {
 
 fn obscure_password(password: &str) -> String {
     if let Ok(output) = std::process::Command::new("rclone")
-        .args(&["obscure", password])
+        .args(["obscure", password])
         .output()
+        && output.status.success()
     {
-        if output.status.success() {
-            let obscured = String::from_utf8_lossy(&output.stdout);
-            return obscured.trim().to_string();
-        }
+        let obscured = String::from_utf8_lossy(&output.stdout);
+        return obscured.trim().to_string();
     }
     password.to_string()
 }

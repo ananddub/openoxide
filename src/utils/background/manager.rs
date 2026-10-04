@@ -4,10 +4,11 @@ use std::sync::Arc;
 use crate::db::queries::FlashQueries;
 use crate::{
     services::{
-        automation::backup::PanelBackupService, automation::schedule::ScheduleRunner,
+        automation::backup::PanelBackupService,
+        automation::schedule::ScheduleRunner,
         compute::engine::DeploymentService,
         infrastructure::server::ServerPrivateNetworkService,
-        integrations::notification::NotificationService, observability::alert::AlertService,
+        integrations::notification::NotificationService,
         observability::monitoring::{
             lifecycle::MonitoringLifecycleService, reconciler::MonitoringReconciler,
         },
@@ -39,11 +40,6 @@ impl BackgroundManager {
             .await
             .map_err(|error| format!("failed to resolve traefik service: {error}"))?;
         super::edge::start(traefik);
-
-        let alerts = resolve::<AlertService>()
-            .await
-            .map_err(|error| format!("failed to resolve alert service: {error}"))?;
-        super::alert::start(alerts);
 
         let monitoring = resolve::<MonitoringReconciler>()
             .await
@@ -89,8 +85,8 @@ impl BackgroundManager {
     /// (generated once, then reused) so no trust is shared between servers.
     /// Remote servers are provisioned during their own setup flow.
     async fn ensure_mtls_material() {
-        let base_dir = std::env::var("OPENOXIDE_MTLS_DIR")
-            .unwrap_or_else(|_| "/app/data/mtls".to_string());
+        let base_dir =
+            std::env::var("OPENOXIDE_MTLS_DIR").unwrap_or_else(|_| "/app/data/mtls".to_string());
         let sans = vec![
             "openoxide-agent".to_string(),
             "localhost".to_string(),
@@ -107,12 +103,15 @@ impl BackgroundManager {
         // the gRPC client uses. Falls back to SERVER_ID/1 if registration is
         // not ready yet.
         let server_id = match resolve::<MonitoringLifecycleService>().await {
-            Ok(lifecycle) => lifecycle.ensure_local_registration().await.unwrap_or_else(|_| {
-                std::env::var("SERVER_ID")
-                    .ok()
-                    .and_then(|v| v.trim().parse().ok())
-                    .unwrap_or(1)
-            }),
+            Ok(lifecycle) => lifecycle
+                .ensure_local_registration()
+                .await
+                .unwrap_or_else(|_| {
+                    std::env::var("SERVER_ID")
+                        .ok()
+                        .and_then(|v| v.trim().parse().ok())
+                        .unwrap_or(1)
+                }),
             Err(_) => std::env::var("SERVER_ID")
                 .ok()
                 .and_then(|v| v.trim().parse().ok())
@@ -144,11 +143,14 @@ impl BackgroundManager {
         // material or a rotation), restart the agent so it serves the current
         // cert — otherwise the panel would reject it with BadSignature until a
         // manual restart. Skipped on first-ever boot when nothing pre-existed.
-        if certs_changed {
-            if let Ok(lifecycle) = resolve::<MonitoringLifecycleService>().await {
-                match lifecycle.restart_agent_out_of_band(server_id).await {
-                    Ok(_) => tracing::info!(server_id, "restarted local agent to load rotated mTLS certs"),
-                    Err(error) => tracing::warn!(%error, server_id, "could not restart local agent after cert change"),
+        if certs_changed && let Ok(lifecycle) = resolve::<MonitoringLifecycleService>().await {
+            match lifecycle.restart_agent_out_of_band(server_id).await {
+                Ok(_) => tracing::info!(
+                    server_id,
+                    "restarted local agent to load rotated mTLS certs"
+                ),
+                Err(error) => {
+                    tracing::warn!(%error, server_id, "could not restart local agent after cert change")
                 }
             }
         }
@@ -184,7 +186,8 @@ fn write_local_agent_root(
         let current = std::fs::read(&path).ok();
         if current.as_deref() != Some(contents.as_bytes()) {
             changed = true;
-            std::fs::write(&path, contents).map_err(|e| format!("write {}: {e}", path.display()))?;
+            std::fs::write(&path, contents)
+                .map_err(|e| format!("write {}: {e}", path.display()))?;
             #[cfg(unix)]
             {
                 use std::os::unix::fs::PermissionsExt;

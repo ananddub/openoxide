@@ -73,13 +73,15 @@ pub fn server_metric_to_proto(metric: ServerMetric) -> MonitoringServerMetricPro
         total_disk: metric.total_disk,
         network_in: metric.network_in,
         network_out: metric.network_out,
-        ..Default::default()
     }
 }
 
 fn stats_from_json(value: &str) -> MonitoringContainerStatsProto {
     let pick = |payload: &serde_json::Value, key: &str| {
-        payload.get(key).and_then(|v| v.as_f64()).unwrap_or_default()
+        payload
+            .get(key)
+            .and_then(|v| v.as_f64())
+            .unwrap_or_default()
     };
     let payload: serde_json::Value = serde_json::from_str(value).unwrap_or_default();
     MonitoringContainerStatsProto {
@@ -91,7 +93,6 @@ fn stats_from_json(value: &str) -> MonitoringContainerStatsProto {
         net_tx_kbps: pick(&payload, "net_tx_kbps"),
         block_read_mb: pick(&payload, "block_read_mb"),
         block_write_mb: pick(&payload, "block_write_mb"),
-        ..Default::default()
     }
 }
 
@@ -105,12 +106,12 @@ pub fn container_metric_to_proto(metric: ContainerMetric) -> MonitoringContainer
         server_id: metric.server_id,
         application_id: metric.application_id,
         compose_id: metric.compose_id,
-        ..Default::default()
     }
 }
 
-pub fn container_state_to_proto(state: proto::ContainerStatePoint) -> MonitoringContainerStateProto
-{
+pub fn container_state_to_proto(
+    state: proto::ContainerStatePoint,
+) -> MonitoringContainerStateProto {
     MonitoringContainerStateProto {
         container_id: state.container_id,
         name: state.name,
@@ -120,7 +121,6 @@ pub fn container_state_to_proto(state: proto::ContainerStatePoint) -> Monitoring
         compose_id: state.compose_id,
         compose_project: state.compose_project,
         compose_service: state.compose_service,
-        ..Default::default()
     }
 }
 
@@ -141,7 +141,6 @@ pub fn agent_status_to_proto(
         last_seen_at,
         agent_version,
         state: ::buffa::EnumValue::Known(state),
-        ..Default::default()
     }
 }
 
@@ -150,7 +149,6 @@ pub fn agent_action_to_proto(action: MonitoringActionDto) -> MonitoringAgentActi
         action: action.action,
         success: action.success,
         message: action.message,
-        ..Default::default()
     }
 }
 
@@ -165,6 +163,5 @@ pub fn maintenance_window_to_proto(
         ends_at: window.ends_at,
         reason: window.reason,
         created_at: window.created_at,
-        ..Default::default()
     }
 }

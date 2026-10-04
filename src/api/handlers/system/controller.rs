@@ -27,25 +27,25 @@ impl SystemService for SystemController {
             }
         };
 
-        let docker_healthy = match crate::services::compute::compose::remote::agent_executor_for(None).await
-        {
-            Ok(executor) => match DockerCli::from_executor(executor)
-                .system()
-                .info()
-                .run()
-                .await
-            {
-                Ok(_) => true,
+        let docker_healthy =
+            match crate::services::compute::compose::remote::agent_executor_for(None).await {
+                Ok(executor) => match DockerCli::from_executor(executor)
+                    .system()
+                    .info()
+                    .run()
+                    .await
+                {
+                    Ok(_) => true,
+                    Err(error) => {
+                        tracing::error!(error = %error, "docker health check failed");
+                        false
+                    }
+                },
                 Err(error) => {
-                    tracing::error!(error = %error, "docker health check failed");
+                    tracing::error!(error = %error, "docker agent unavailable");
                     false
                 }
-            },
-            Err(error) => {
-                tracing::error!(error = %error, "docker agent unavailable");
-                false
-            }
-        };
+            };
 
         let healthy = database_healthy && docker_healthy;
         let mut messages: Vec<String> = Vec::new();
@@ -63,7 +63,6 @@ impl SystemService for SystemController {
             } else {
                 messages.join(", ")
             }),
-            ..Default::default()
         })
     }
 
@@ -100,7 +99,6 @@ impl SystemService for SystemController {
             } else {
                 details.join(", ")
             }),
-            ..Default::default()
         })
     }
 }

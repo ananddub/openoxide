@@ -1,4 +1,4 @@
-use super::application::ApplicationBuilder;
+use super::builder::ApplicationBuilder;
 use crate::utils::{
     builder::spec::ApplicationSpec,
     docker::query::filter::{TaskDesiredState, TaskFilter},

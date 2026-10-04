@@ -1,7 +1,9 @@
 use super::{destination::S3Destination, dumper::DatabaseDumper};
 use crate::utils::docker::query::filter::{ContainerFilter, ContainerStatus};
 use crate::utils::docker::{DockerCli, DockerError};
-use crate::utils::exec::{CommandExecutor, ExecError, ExecOutput, ExecResult};
+use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::script::sh;
+use crate::utils::exec::{CommandExecutor, ExecError, ExecOutput, ExecResult, ScriptPipeline};
 use crate::utils::rclone::{RcloneBuilder, RcloneCommand};
 use tokio_util::sync::CancellationToken;
 
@@ -58,14 +60,18 @@ impl<'a> BackupRunner<'a> {
     }
 
     async fn verify_connection(&self, container_id: &str) -> ExecResult<()> {
-        let check_cmd = self.dumper.connection_check_command();
+        let check_script = self.dumper.connection_check_command();
 
-        let out = self
-            .docker()
-            .containers()
-            .exec(container_id)
-            .interactive()
-            .run(["sh", "-c", &check_cmd])
+        let docker = self.docker();
+        let containers = docker.containers();
+        let mut exec = containers.exec(container_id).interactive();
+
+        if let Some((key, value)) = self.dumper.secret_env() {
+            exec = exec.env(key, value);
+        }
+
+        let out = exec
+            .run(["sh", "-c", &check_script])
             .await
             .map_err(docker_to_exec_error)?;
 
@@ -78,6 +84,10 @@ impl<'a> BackupRunner<'a> {
         Ok(())
     }
 
+    /// `docker exec -i <id> sh -c '<inner>' | rclone rcat <target>` written as
+    /// a shell pipeline with `sh!`: the exec step and the rclone step are both
+    /// typed builders rendered with full per-token quoting (Gates G2/G3), and
+    /// `pipefail` makes any stage failure abort the whole stream.
     pub async fn run(
         &self,
         object_key: &str,
@@ -87,23 +97,29 @@ impl<'a> BackupRunner<'a> {
 
         self.verify_connection(&container_id).await?;
 
-        let inner_cmd = self.dumper.inner_dump_command();
+        let inner_cmd = self.dumper.inner_dump_command(self.executor);
 
         let rclone_target = self.destination.to_rclone_target(object_key);
 
-        let builder = RcloneBuilder::new(RcloneCommand::Rcat).destination(rclone_target);
+        let rclone = RcloneBuilder::new(RcloneCommand::Rcat).destination(rclone_target);
 
-        let rclone_cmd = builder.to_command_string();
+        let docker = self.docker();
+        let containers = docker.containers();
+        let mut exec = containers
+            .exec(&container_id)
+            .interactive()
+            .command(["sh", "-c", &inner_cmd]);
 
-        let pipeline = format!(
-            "set -eo pipefail; docker exec -i {id} sh -c {inner} | {rclone}",
-            id = container_id,
-            inner = shell_single_quote(&inner_cmd),
-            rclone = rclone_cmd,
-        );
+        if let Some((key, value)) = self.dumper.secret_env() {
+            exec = exec.env(key, value);
+        }
 
-        self.executor
-            .run_cancelled("sh", ["-c", &pipeline], cancel)
+        let script = sh!(pipe![exec, rclone];);
+
+        ScriptPipeline::new()
+            .pipefail(true)
+            .cmd(script)
+            .execute_cancelled(self.executor, cancel)
             .await
     }
 
@@ -116,23 +132,29 @@ impl<'a> BackupRunner<'a> {
 
         self.verify_connection(&container_id).await?;
 
-        let inner_cmd = self.dumper.inner_restore_command();
+        let inner_cmd = self.dumper.inner_restore_command(self.executor);
 
         let rclone_target = self.destination.to_rclone_target(object_key);
 
-        let builder = RcloneBuilder::new(RcloneCommand::Cat).source(rclone_target);
+        let rclone = RcloneBuilder::new(RcloneCommand::Cat).source(rclone_target);
 
-        let rclone_cmd = builder.to_command_string();
+        let docker = self.docker();
+        let containers = docker.containers();
+        let mut exec = containers
+            .exec(&container_id)
+            .interactive()
+            .command(["sh", "-c", &inner_cmd]);
 
-        let pipeline = format!(
-            "set -eo pipefail; {rclone} | docker exec -i {id} sh -c {inner}",
-            rclone = rclone_cmd,
-            id = container_id,
-            inner = shell_single_quote(&inner_cmd),
-        );
+        if let Some((key, value)) = self.dumper.secret_env() {
+            exec = exec.env(key, value);
+        }
 
-        self.executor
-            .run_cancelled("sh", ["-c", &pipeline], cancel)
+        let script = sh!(pipe![rclone, exec];);
+
+        ScriptPipeline::new()
+            .pipefail(true)
+            .cmd(script)
+            .execute_cancelled(self.executor, cancel)
             .await
     }
 }
@@ -142,8 +164,4 @@ fn docker_to_exec_error(e: DockerError) -> ExecError {
         code: None,
         stderr: e.to_string(),
     }
-}
-
-fn shell_single_quote(s: &str) -> String {
-    format!("'{}'", s.replace('\'', "'\\''"))
 }

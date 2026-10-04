@@ -44,20 +44,19 @@ pub async fn build_postgres_stack(
     let mut command: Option<Vec<String>> = None;
     if let Some(c) = &command_row {
         let mut full = c.split_whitespace().map(String::from).collect::<Vec<_>>();
-        if let Some(a_str) = &db.args {
-            if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
-                full.extend(parsed_args);
-            }
+        if let Some(a_str) = &db.args
+            && let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str)
+        {
+            full.extend(parsed_args);
         }
         command = Some(full);
-    } else if let Some(a_str) = &db.args {
-        if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
-            if !parsed_args.is_empty() {
-                let mut full = vec!["postgres".to_string()];
-                full.extend(parsed_args);
-                command = Some(full);
-            }
-        }
+    } else if let Some(a_str) = &db.args
+        && let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str)
+        && !parsed_args.is_empty()
+    {
+        let mut full = vec!["postgres".to_string()];
+        full.extend(parsed_args);
+        command = Some(full);
     }
     // postgres_config is an optional map of `-c key=value` server settings;
     // an empty value means "no advanced config" (STANDALONE defaults).
@@ -235,10 +234,10 @@ fn get_postgres_mount_path(image: &str) -> String {
         let end = version_part
             .find(|c: char| !c.is_ascii_digit())
             .unwrap_or(version_part.len());
-        if let Ok(version) = version_part[..end].parse::<i32>() {
-            if version >= 18 {
-                return format!("/var/lib/postgresql/{}/docker", version);
-            }
+        if let Ok(version) = version_part[..end].parse::<i32>()
+            && version >= 18
+        {
+            return format!("/var/lib/postgresql/{}/docker", version);
         }
     }
     "/var/lib/postgresql/data".to_string()

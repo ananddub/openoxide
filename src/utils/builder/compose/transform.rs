@@ -1,7 +1,7 @@
 use serde_yaml::{Mapping, Value};
 use tokio_util::sync::CancellationToken;
 
-use super::{compose::ComposeBuilder, spec::ComposeSpec};
+use super::{builder::ComposeBuilder, spec::ComposeSpec};
 use crate::utils::exec::{ExecError, ExecResult};
 
 impl ComposeBuilder {

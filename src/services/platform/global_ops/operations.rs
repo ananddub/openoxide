@@ -129,7 +129,12 @@ impl GlobalOperationsService {
                 .map(|_| "stop queued".into()),
             (BulkResourceKind::Database, BulkResourceAction::Redeploy) => self
                 .databases
-                .run_operation(database_kind(item)?, item.id, DatabaseOperation::Redeploy, 0)
+                .run_operation(
+                    database_kind(item)?,
+                    item.id,
+                    DatabaseOperation::Redeploy,
+                    0,
+                )
                 .await
                 .map(|_| "redeploy queued".into()),
             (BulkResourceKind::Database, BulkResourceAction::Delete) => self
@@ -201,7 +206,10 @@ impl GlobalOperationsService {
                 .queries
                 .servers_count_build_assignments(server_id)
                 .await?,
-            compose_projects: self.queries.servers_count_compose_projects(server_id).await?,
+            compose_projects: self
+                .queries
+                .servers_count_compose_projects(server_id)
+                .await?,
             databases: self.queries.servers_count_databases(server_id).await?,
             certificates: self.queries.servers_count_certificates(server_id).await?,
             schedules: self.queries.servers_count_schedules(server_id).await?,
@@ -262,7 +270,9 @@ impl GlobalOperationsService {
     }
 }
 
-fn database_kind(item: &BulkResourceItem) -> sqlx::Result<crate::services::compute::database::DatabaseKind> {
+fn database_kind(
+    item: &BulkResourceItem,
+) -> sqlx::Result<crate::services::compute::database::DatabaseKind> {
     item.database_kind
         .ok_or_else(|| sqlx::Error::Protocol("database_kind is required".into()))
 }

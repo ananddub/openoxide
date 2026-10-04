@@ -14,7 +14,7 @@ use crate::{
         builder::{
             custom_type::{DeployState, IdType},
             errors::BuilderError,
-            queue::queue::BuilderQueue,
+            queue::dispatcher::BuilderQueue,
             spec::BuilderEvent,
         },
         exec::CommandExecutor,
@@ -33,9 +33,7 @@ impl BuilderQueue {
 
         let q = resolve::<crate::db::queries::FlashQueries>()
             .await
-            .map_err(|e| {
-                BuilderError::Execution(format!("could not resolve FlashQueries: {e}"))
-            })?;
+            .map_err(|e| BuilderError::Execution(format!("could not resolve FlashQueries: {e}")))?;
 
         let effective_server_id =
             crate::services::compute::compose::remote::agent_server_id(server_id)
@@ -340,19 +338,16 @@ impl BuilderQueue {
         database_id: Option<i64>,
         database_kind: Option<&str>,
     ) -> Option<i64> {
-        let q = resolve::<crate::db::queries::FlashQueries>()
-            .await
-            .ok()?;
+        let q = resolve::<crate::db::queries::FlashQueries>().await.ok()?;
 
         let lookup = if let Some(app_id) = application_id {
             q.deployments_application_organization_id(app_id).await
         } else if let Some(cmp_id) = compose_id {
             q.deployments_compose_organization_id(cmp_id).await
-        } else if let Some(db_id) = database_id {
+        } else {
+            let db_id = database_id?;
             let _ = database_kind;
             q.deployments_application_organization_id(db_id).await
-        } else {
-            return None;
         };
 
         match lookup {

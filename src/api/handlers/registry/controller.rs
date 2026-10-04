@@ -1,4 +1,6 @@
-use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     CreateRegistryRequest, CreateRegistryResponse, DeleteRegistryRequest, Empty,
@@ -27,10 +29,7 @@ impl RegistryService for RegistryController {
         let cache_key = CacheKey::RegistriesList(organization_id);
         if let Some(CacheEnum::RegistriesList(cached)) = self.cache.get(&cache_key).await {
             let registries = cached.into_iter().map(registry_to_proto).collect();
-            return Response::ok(ListRegistriesResponse {
-                registries,
-                ..Default::default()
-            });
+            return Response::ok(ListRegistriesResponse { registries });
         }
 
         let items = self
@@ -43,10 +42,7 @@ impl RegistryService for RegistryController {
             .await;
 
         let registries = items.into_iter().map(registry_to_proto).collect();
-        Response::ok(ListRegistriesResponse {
-            registries,
-            ..Default::default()
-        })
+        Response::ok(ListRegistriesResponse { registries })
     }
 
     #[permission(Registry, CanRead)]
@@ -62,7 +58,6 @@ impl RegistryService for RegistryController {
             .map_err(map_sqlx_error)?;
         Response::ok(GetRegistryResponse {
             registry: ::buffa::MessageField::some(registry_to_proto(registry)),
-            ..Default::default()
         })
     }
 
@@ -90,7 +85,6 @@ impl RegistryService for RegistryController {
             .await;
         Response::ok(CreateRegistryResponse {
             registry: ::buffa::MessageField::some(registry_to_proto(created)),
-            ..Default::default()
         })
     }
 
@@ -104,9 +98,13 @@ impl RegistryService for RegistryController {
         // present-but-empty clears it.
         let dto = PatchRegistryDto {
             registry_name: request.registry_name.map(str::to_owned),
-            image_prefix: request
-                .image_prefix
-                .map(|v| if v.is_empty() { None } else { Some(v.to_owned()) }),
+            image_prefix: request.image_prefix.map(|v| {
+                if v.is_empty() {
+                    None
+                } else {
+                    Some(v.to_owned())
+                }
+            }),
             username: request.username.map(str::to_owned),
             password: request.password.map(str::to_owned),
             registry_url: request.registry_url.map(str::to_owned),
@@ -122,7 +120,6 @@ impl RegistryService for RegistryController {
             .await;
         Response::ok(UpdateRegistryResponse {
             registry: ::buffa::MessageField::some(registry_to_proto(updated)),
-            ..Default::default()
         })
     }
 
@@ -151,11 +148,7 @@ impl RegistryService for RegistryController {
         // With `id` set, the saved registry's stored credentials are tested;
         // otherwise the raw url/username/password are used (create dialog).
         let result = match request.id {
-            Some(id) => {
-                self.service
-                    .test_connection(id, auth.organization_id)
-                    .await
-            }
+            Some(id) => self.service.test_connection(id, auth.organization_id).await,
             None => {
                 self.service
                     .test_connection_raw(request.registry_url, request.username, request.password)
@@ -163,10 +156,7 @@ impl RegistryService for RegistryController {
             }
         };
         result.map_err(ConnectError::invalid_argument)?;
-        Response::ok(TestRegistryResponse {
-            success: true,
-            ..Default::default()
-        })
+        Response::ok(TestRegistryResponse { success: true })
     }
 
     #[permission(Registry, CanRead)]
@@ -174,18 +164,14 @@ impl RegistryService for RegistryController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, ListRegistryRepositoriesRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<ListRegistryRepositoriesResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<ListRegistryRepositoriesResponse> + Send + use<'a>>
+    {
         let repositories = self
             .service
             .repositories(request.registry_id, auth.organization_id)
             .await
             .map_err(|e| ConnectError::new(ErrorCode::Unavailable, e))?;
-        Response::ok(ListRegistryRepositoriesResponse {
-            repositories,
-            ..Default::default()
-        })
+        Response::ok(ListRegistryRepositoriesResponse { repositories })
     }
 
     #[permission(Registry, CanRead)]
@@ -200,11 +186,7 @@ impl RegistryService for RegistryController {
             .tags(request.registry_id, &repository, auth.organization_id)
             .await
             .map_err(|e| ConnectError::new(ErrorCode::Unavailable, e))?;
-        Response::ok(ListRegistryTagsResponse {
-            repository,
-            tags,
-            ..Default::default()
-        })
+        Response::ok(ListRegistryTagsResponse { repository, tags })
     }
 
     #[permission(Registry, CanCreate)]
@@ -212,9 +194,8 @@ impl RegistryService for RegistryController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, RotateRegistryCredentialsRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<RotateRegistryCredentialsResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<RotateRegistryCredentialsResponse> + Send + use<'a>>
+    {
         let registry = self
             .service
             .rotate_credentials(
@@ -227,7 +208,6 @@ impl RegistryService for RegistryController {
             .map_err(ConnectError::invalid_argument)?;
         Response::ok(RotateRegistryCredentialsResponse {
             registry: ::buffa::MessageField::some(registry_to_proto(registry)),
-            ..Default::default()
         })
     }
 
@@ -243,9 +223,6 @@ impl RegistryService for RegistryController {
             .await
             .map_err(map_sqlx_error)?;
         let usage = rows.into_iter().map(usage_to_proto).collect();
-        Response::ok(GetRegistryUsageResponse {
-            usage,
-            ..Default::default()
-        })
+        Response::ok(GetRegistryUsageResponse { usage })
     }
 }

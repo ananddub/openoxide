@@ -318,21 +318,26 @@ impl DockerManagementService {
                 .await
                 .map(DockerCli::from_executor),
             Some(server_id) => {
-                let (host, port, username, private_key, public_key) = crate::services::infrastructure::server::direct_ssh_credentials(&self.queries, server_id)
+                let (host, port, username, private_key, public_key) =
+                    crate::services::infrastructure::server::direct_ssh_credentials(
+                        &self.queries,
+                        server_id,
+                    )
                     .await
                     .map_err(|error| error.to_string())?
                     .ok_or_else(|| "server or SSH key not found".to_owned())?;
                 let port = u16::try_from(port).map_err(|_| "invalid SSH port".to_owned())?;
-                Ok(DockerCli::from_executor(CommandExecutor::Remote(
-                    RemoteExecutor::new(
-                        host,
-                        port,
-                        username,
-                        SshAuth::key_pair(private_key, public_key),
-                        SshHostKey::InsecureAcceptAny,
-                    )
-                    .with_sudo(),
-                )))
+                let remote = RemoteExecutor::new(
+                    host,
+                    port,
+                    username,
+                    SshAuth::key_pair(private_key, public_key),
+                    SshHostKey::InsecureAcceptAny,
+                )
+                .with_sudo();
+                Ok(DockerCli::from_executor(CommandExecutor::Remote(Box::new(
+                    remote,
+                ))))
             }
         }
     }

@@ -1,5 +1,6 @@
-
-use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Application as ApplicationProto, ApplicationCreateMiddlewareRequest,
@@ -9,35 +10,33 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ApplicationCreateRedirectResponse, ApplicationCreateSecurityRequest,
     ApplicationCreateSecurityResponse, ApplicationDeleteMiddlewareRequest,
     ApplicationDeleteMountRequest, ApplicationDeletePatchRequest, ApplicationDeletePortRequest,
-    ApplicationDeleteRedirectRequest, ApplicationDeleteSecurityRequest,
-    ApplicationGetSecurityRequest, ApplicationGetSecurityResponse, ApplicationListMiddlewaresRequest,
-    ApplicationListMiddlewaresResponse, ApplicationListMountsRequest, ApplicationListMountsResponse,
-    ApplicationListPatchesRequest, ApplicationListPatchesResponse, ApplicationListPortsRequest,
-    ApplicationListPortsResponse, ApplicationListRedirectsRequest, ApplicationListRedirectsResponse,
-    ApplicationUpdateMiddlewareRequest, ApplicationUpdateMiddlewareResponse,
-    ApplicationUpdateMountRequest, ApplicationUpdateMountResponse, ApplicationUpdateNetworksRequest,
+    ApplicationDeleteRedirectRequest, ApplicationDeleteSecurityRequest, ApplicationDependencies,
+    ApplicationExport, ApplicationGetSecurityRequest, ApplicationGetSecurityResponse,
+    ApplicationListMiddlewaresRequest, ApplicationListMiddlewaresResponse,
+    ApplicationListMountsRequest, ApplicationListMountsResponse, ApplicationListPatchesRequest,
+    ApplicationListPatchesResponse, ApplicationListPortsRequest, ApplicationListPortsResponse,
+    ApplicationListRedirectsRequest, ApplicationListRedirectsResponse, ApplicationMiddlewares,
+    ApplicationMounts, ApplicationNetworks, ApplicationOperation, ApplicationOperationRequest,
+    ApplicationPatches, ApplicationPorts, ApplicationRedirects, ApplicationSecurity,
+    ApplicationService, ApplicationServiceExt, ApplicationUpdateMiddlewareRequest,
+    ApplicationUpdateMiddlewareResponse, ApplicationUpdateMountRequest,
+    ApplicationUpdateMountResponse, ApplicationUpdateNetworksRequest,
     ApplicationUpdateNetworksResponse, ApplicationUpdatePatchRequest,
     ApplicationUpdatePatchResponse, ApplicationUpdatePortRequest, ApplicationUpdatePortResponse,
     ApplicationUpdateRedirectRequest, ApplicationUpdateRedirectResponse,
-    ApplicationUpdateSecurityRequest, ApplicationUpdateSecurityResponse, ApplicationDependencies,
-    ApplicationExport, ApplicationMiddlewares, ApplicationMounts, ApplicationNetworks,
-    ApplicationOperation, ApplicationOperationRequest, ApplicationPatches, ApplicationPorts,
-    ApplicationRedirects, ApplicationSecurity, ApplicationService, ApplicationServiceExt,
-    ApplicationWebhookToken, CreateApplicationRequest, DeleteApplicationRequest,
-    DeleteRollbackRequest, Empty, ExportApplicationRequest, GetApplicationRequest,
-    ImportApplicationRequest, ListApplicationsRequest, ListApplicationsResponse,
-    ListRollbacksRequest, ListRollbacksResponse, MoveApplicationRequest, ResourceListRequest,
-    Rollback, RollbackTrigger, SetBitbucketSourceRequest, SetCustomGitSourceRequest,
-    SetDockerSourceRequest, SetDropSourceRequest, SetGiteaSourceRequest, SetGithubSourceRequest,
-    SetGitlabSourceRequest, TriggerRollbackRequest, UpdateApplicationRequest,
-    UpdateBuildConfigRequest, UpdatePreviewConfigRequest, UpdateResourceConfigRequest,
-    UploadSourceRequest,
+    ApplicationUpdateSecurityRequest, ApplicationUpdateSecurityResponse, ApplicationWebhookToken,
+    CreateApplicationRequest, DeleteApplicationRequest, DeleteRollbackRequest, Empty,
+    ExportApplicationRequest, GetApplicationRequest, ImportApplicationRequest,
+    ListApplicationsRequest, ListApplicationsResponse, ListRollbacksRequest, ListRollbacksResponse,
+    MoveApplicationRequest, ResourceListRequest, Rollback, RollbackTrigger,
+    SetBitbucketSourceRequest, SetCustomGitSourceRequest, SetDockerSourceRequest,
+    SetDropSourceRequest, SetGiteaSourceRequest, SetGithubSourceRequest, SetGitlabSourceRequest,
+    TriggerRollbackRequest, UpdateApplicationRequest, UpdateBuildConfigRequest,
+    UpdatePreviewConfigRequest, UpdateResourceConfigRequest, UploadSourceRequest,
 };
-use crate::flash_gen::models::{
-    ApplicationMiddlewares as ApplicationMiddlewaresModel, Mounts,
-};
-use crate::services::compute::application::import_export::ImportApplicationDto;
+use crate::flash_gen::models::Mounts;
 use crate::services::compute::application::ApplicationOperation as AppApplicationOperation;
+use crate::services::compute::application::import_export::ImportApplicationDto;
 
 use super::helper::*;
 use super::init::ApplicationController;
@@ -71,37 +70,6 @@ fn build_middleware_dto(
         burst,
         source_ranges: (!source_ranges.is_empty()).then_some(source_ranges),
     }
-}
-
-/// Mirrors `middleware.rs response()`: parses the stored middleware config
-/// JSON into the response DTO. Kept local because the service's converter is
-/// module-private and the streaming mapping cannot go through it.
-fn middleware_response_dto(
-    item: ApplicationMiddlewaresModel,
-) -> sqlx::Result<crate::services::compute::application::middleware::ApplicationMiddlewareResponseDto> {
-    use crate::services::compute::application::middleware::{
-        ApplicationMiddlewareResponseDto, MiddlewareHeaderDto, StoredMiddlewareConfig,
-    };
-    let config: StoredMiddlewareConfig = serde_json::from_str(&item.config).map_err(|error| {
-        sqlx::Error::Protocol(format!("invalid stored middleware config: {error}"))
-    })?;
-    Ok(ApplicationMiddlewareResponseDto {
-        id: item.id,
-        application_id: item.service_id,
-        name: item.name,
-        middleware_type: item.middleware_type,
-        enabled: item.enabled != 0,
-        headers: config
-            .headers
-            .into_iter()
-            .map(|(name, value)| MiddlewareHeaderDto { name, value })
-            .collect(),
-        average: config.average,
-        burst: config.burst,
-        source_ranges: config.source_ranges,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-    })
 }
 
 /// Mirrors `mount.rs normalize_row`: Flash bind params write `None` as `""`,
@@ -147,10 +115,7 @@ impl ApplicationService for ApplicationController {
             .await
             .map_err(map_db_error)?;
         let applications = items.into_iter().map(app_to_proto).collect();
-        Response::ok(ListApplicationsResponse {
-            applications,
-            ..Default::default()
-        })
+        Response::ok(ListApplicationsResponse { applications })
     }
 
     #[permission(Application, CanCreate)]
@@ -187,12 +152,15 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DeleteApplicationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.delete(request.id).await.map_err(map_db_error)?;
+        self.service
+            .delete(request.id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 
     // ── Import / Export ────────────────────────────────────────────────
-    //Todo: Incomplete Import Application 
+    //Todo: Incomplete Import Application
     #[permission(Application, CanCreate)]
     async fn import_application<'a>(
         &'a self,
@@ -204,7 +172,7 @@ impl ApplicationService for ApplicationController {
         // must be encoded in the archive JSON or passed via a wrapper.
         // Try to parse the archive as the full DTO first; fall back to
         // using the archive field directly.
-        let dto: ImportApplicationDto = match serde_json::from_str(&request.archive) {
+        let dto: ImportApplicationDto = match serde_json::from_str(request.archive) {
             Ok(dto) => dto,
             Err(_) => {
                 return Err(ConnectError::invalid_argument(
@@ -229,13 +197,15 @@ impl ApplicationService for ApplicationController {
             .map_err(map_db_error)?;
         let archive = serde_json::to_string_pretty(&bundle).map_err(|error| {
             tracing::error!(%error, "could not serialize application export");
-            ConnectError::new(ErrorCode::Internal, "could not serialize application export")
+            ConnectError::new(
+                ErrorCode::Internal,
+                "could not serialize application export",
+            )
         })?;
         Response::ok(ApplicationExport {
             format: "openoxide.application+json".into(),
             schema_version: i64::from(bundle.schema_version),
             archive,
-            ..Default::default()
         })
     }
 
@@ -378,18 +348,16 @@ impl ApplicationService for ApplicationController {
             .await
             .map_err(map_db_error)?;
 
-        let staging = std::env::temp_dir().join(format!(
-            "openoxide-drop-{}.zip",
-            uuid::Uuid::new_v4()
-        ));
+        let staging =
+            std::env::temp_dir().join(format!("openoxide-drop-{}.zip", uuid::Uuid::new_v4()));
         let staged = async {
             let mut file = tokio::fs::File::create(&staging)
                 .await
                 .map_err(|error| ConnectError::internal(format!("stage upload: {error}")))?;
             let mut written = 0u64;
             while let Some(message) = requests.next().await {
-                let message =
-                    message.map_err(|error| ConnectError::new(ErrorCode::Internal, error.to_string()))?;
+                let message = message
+                    .map_err(|error| ConnectError::new(ErrorCode::Internal, error.to_string()))?;
                 match message.to_owned_message().payload {
                     Some(Payload::Chunk(chunk)) => {
                         written += chunk.len() as u64;
@@ -524,7 +492,11 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationOperation> + Send + use<'a>> {
         let result = self
             .service
-            .run_operation(request.id, AppApplicationOperation::Redeploy, auth.user_id())
+            .run_operation(
+                request.id,
+                AppApplicationOperation::Redeploy,
+                auth.user_id(),
+            )
             .await
             .map_err(map_db_error)?;
         Response::ok(operation_result(result))
@@ -590,7 +562,6 @@ impl ApplicationService for ApplicationController {
         Response::ok(ApplicationOperation {
             application: app_to_proto(app).into(),
             operation: "stop".into(),
-            ..Default::default()
         })
     }
 
@@ -618,10 +589,7 @@ impl ApplicationService for ApplicationController {
             .rotate_webhook_token(request.id)
             .await
             .map_err(map_db_error)?;
-        Response::ok(ApplicationWebhookToken {
-            token,
-            ..Default::default()
-        })
+        Response::ok(ApplicationWebhookToken { token })
     }
 
     #[permission(Application, CanUpdate)]
@@ -700,13 +668,9 @@ impl ApplicationService for ApplicationController {
                 status: "AVAILABLE".into(),
                 commit: r.image.clone(),
                 created_at: r.created_at,
-                ..Default::default()
             })
             .collect();
-        Response::ok(ListRollbacksResponse {
-            rollbacks,
-            ..Default::default()
-        })
+        Response::ok(ListRollbacksResponse { rollbacks })
     }
 
     #[permission(Application, CanUpdate)]
@@ -723,7 +687,6 @@ impl ApplicationService for ApplicationController {
         Response::ok(RollbackTrigger {
             rollback_id: request.rollback_id,
             status: "TRIGGERED".into(),
-            ..Default::default()
         })
     }
 
@@ -779,7 +742,10 @@ impl ApplicationService for ApplicationController {
             items.push(format!("enabled_backups:{}", counts.enabled_backups));
         }
         if counts.preview_deployments > 0 {
-            items.push(format!("preview_deployments:{}", counts.preview_deployments));
+            items.push(format!(
+                "preview_deployments:{}",
+                counts.preview_deployments
+            ));
         }
         if counts.middleware > 0 {
             items.push(format!("middleware:{}", counts.middleware));
@@ -793,10 +759,7 @@ impl ApplicationService for ApplicationController {
         if counts.security_rules > 0 {
             items.push(format!("security_rules:{}", counts.security_rules));
         }
-        Response::ok(ApplicationDependencies {
-            items,
-            ..Default::default()
-        })
+        Response::ok(ApplicationDependencies { items })
     }
 
     // ── Application-level resource list methods ────────────────────────
@@ -814,12 +777,16 @@ impl ApplicationService for ApplicationController {
             .map_err(map_db_error)?;
         let items = items
             .into_iter()
-            .map(|p| serde_json::to_string(&crate::services::compute::application::port::ApplicationPortResponseDto::from(p)).unwrap_or_default())
+            .map(|p| {
+                serde_json::to_string(
+                    &crate::services::compute::application::port::ApplicationPortResponseDto::from(
+                        p,
+                    ),
+                )
+                .unwrap_or_default()
+            })
             .collect();
-        Response::ok(ApplicationPorts {
-            items,
-            ..Default::default()
-        })
+        Response::ok(ApplicationPorts { items })
     }
 
     #[permission(Application, CanRead)]
@@ -837,10 +804,7 @@ impl ApplicationService for ApplicationController {
             .into_iter()
             .map(|m| serde_json::to_string(&crate::services::compute::application::mount::ApplicationMountResponseDto::from(m)).unwrap_or_default())
             .collect();
-        Response::ok(ApplicationMounts {
-            items,
-            ..Default::default()
-        })
+        Response::ok(ApplicationMounts { items })
     }
 
     #[permission(Application, CanRead)]
@@ -860,23 +824,21 @@ impl ApplicationService for ApplicationController {
                 // Field-wise mapping: works for both the hand-written
                 // DatabaseNetwork model and the flash-generated
                 // DatabaseNetworks model (identical field layout).
-                let dto = crate::services::networking::database_network::DatabaseNetworkResponseDto {
-                    id: n.id,
-                    name: n.name,
-                    docker_network_name: n.docker_network_name,
-                    description: n.description,
-                    external: n.external,
-                    server_id: n.server_id,
-                    created_at: n.created_at,
-                    updated_at: n.updated_at,
-                };
+                let dto =
+                    crate::services::networking::database_network::DatabaseNetworkResponseDto {
+                        id: n.id,
+                        name: n.name,
+                        docker_network_name: n.docker_network_name,
+                        description: n.description,
+                        external: n.external,
+                        server_id: n.server_id,
+                        created_at: n.created_at,
+                        updated_at: n.updated_at,
+                    };
                 serde_json::to_string(&dto).unwrap_or_default()
             })
             .collect();
-        Response::ok(ApplicationNetworks {
-            items,
-            ..Default::default()
-        })
+        Response::ok(ApplicationNetworks { items })
     }
 
     #[permission(Application, CanRead)]
@@ -894,10 +856,7 @@ impl ApplicationService for ApplicationController {
             .into_iter()
             .map(|p| serde_json::to_string(&crate::services::compute::application::patch::ApplicationPatchResponseDto::from(p)).unwrap_or_default())
             .collect();
-        Response::ok(ApplicationPatches {
-            items,
-            ..Default::default()
-        })
+        Response::ok(ApplicationPatches { items })
     }
 
     #[permission(Application, CanRead)]
@@ -915,10 +874,7 @@ impl ApplicationService for ApplicationController {
             .into_iter()
             .map(|m| serde_json::to_string(&m).unwrap_or_default())
             .collect();
-        Response::ok(ApplicationMiddlewares {
-            items,
-            ..Default::default()
-        })
+        Response::ok(ApplicationMiddlewares { items })
     }
 
     #[permission(Application, CanRead)]
@@ -936,10 +892,7 @@ impl ApplicationService for ApplicationController {
             .into_iter()
             .map(|r| serde_json::to_string(&crate::services::compute::application::redirect::ApplicationRedirectResponseDto::from(r)).unwrap_or_default())
             .collect();
-        Response::ok(ApplicationRedirects {
-            items,
-            ..Default::default()
-        })
+        Response::ok(ApplicationRedirects { items })
     }
 
     #[permission(Application, CanRead)]
@@ -957,10 +910,7 @@ impl ApplicationService for ApplicationController {
             .into_iter()
             .map(|s| serde_json::to_string(&crate::services::compute::application::security::ApplicationSecurityResponseDto::from(s)).unwrap_or_default())
             .collect();
-        Response::ok(ApplicationSecurity {
-            items,
-            ..Default::default()
-        })
+        Response::ok(ApplicationSecurity { items })
     }
 
     // ── Ports ──────────────────────────────────────────────────────────
@@ -970,7 +920,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationListPortsRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListPortsResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListPortsResponse> + Send + use<'a>>
+    {
         let items = self
             .ports
             .list(request.application_id)
@@ -980,14 +931,13 @@ impl ApplicationService for ApplicationController {
             .into_iter()
             .map(|p| {
                 port_to_proto(
-                    crate::services::compute::application::port::ApplicationPortResponseDto::from(p),
+                    crate::services::compute::application::port::ApplicationPortResponseDto::from(
+                        p,
+                    ),
                 )
             })
             .collect();
-        Response::ok(ApplicationListPortsResponse {
-            ports,
-            ..Default::default()
-        })
+        Response::ok(ApplicationListPortsResponse { ports })
     }
 
     #[permission(Application, CanCreate)]
@@ -995,7 +945,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationCreatePortRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreatePortResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreatePortResponse> + Send + use<'a>>
+    {
         let dto = crate::services::compute::application::port::UpsertApplicationPortDto {
             published_port: request.published_port,
             target_port: request.target_port,
@@ -1011,7 +962,6 @@ impl ApplicationService for ApplicationController {
             port: ::buffa::MessageField::some(port_to_proto(
                 crate::services::compute::application::port::ApplicationPortResponseDto::from(item),
             )),
-            ..Default::default()
         })
     }
 
@@ -1020,7 +970,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationUpdatePortRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdatePortResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdatePortResponse> + Send + use<'a>>
+    {
         let dto = crate::services::compute::application::port::UpsertApplicationPortDto {
             published_port: request.published_port,
             target_port: request.target_port,
@@ -1036,7 +987,6 @@ impl ApplicationService for ApplicationController {
             port: ::buffa::MessageField::some(port_to_proto(
                 crate::services::compute::application::port::ApplicationPortResponseDto::from(item),
             )),
-            ..Default::default()
         })
     }
 
@@ -1060,7 +1010,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationListMountsRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListMountsResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListMountsResponse> + Send + use<'a>>
+    {
         let items = self
             .mounts
             .list(request.application_id)
@@ -1071,14 +1022,13 @@ impl ApplicationService for ApplicationController {
             .map(normalize_mount_row)
             .map(|m| {
                 mount_to_proto(
-                    crate::services::compute::application::mount::ApplicationMountResponseDto::from(m),
+                    crate::services::compute::application::mount::ApplicationMountResponseDto::from(
+                        m,
+                    ),
                 )
             })
             .collect();
-        Response::ok(ApplicationListMountsResponse {
-            mounts,
-            ..Default::default()
-        })
+        Response::ok(ApplicationListMountsResponse { mounts })
     }
 
     #[permission(Application, CanCreate)]
@@ -1086,7 +1036,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationCreateMountRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreateMountResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreateMountResponse> + Send + use<'a>>
+    {
         let dto = crate::services::compute::application::mount::UpsertApplicationMountDto {
             mount_type: mount_type_from_proto(request.mount_type),
             host_path: request.host_path.map(str::to_owned),
@@ -1102,9 +1053,10 @@ impl ApplicationService for ApplicationController {
             .map_err(map_db_error)?;
         Response::ok(ApplicationCreateMountResponse {
             mount: ::buffa::MessageField::some(mount_to_proto(
-                crate::services::compute::application::mount::ApplicationMountResponseDto::from(item),
+                crate::services::compute::application::mount::ApplicationMountResponseDto::from(
+                    item,
+                ),
             )),
-            ..Default::default()
         })
     }
 
@@ -1113,7 +1065,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationUpdateMountRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdateMountResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdateMountResponse> + Send + use<'a>>
+    {
         let dto = crate::services::compute::application::mount::UpsertApplicationMountDto {
             mount_type: mount_type_from_proto(request.mount_type),
             host_path: request.host_path.map(str::to_owned),
@@ -1129,9 +1082,10 @@ impl ApplicationService for ApplicationController {
             .map_err(map_db_error)?;
         Response::ok(ApplicationUpdateMountResponse {
             mount: ::buffa::MessageField::some(mount_to_proto(
-                crate::services::compute::application::mount::ApplicationMountResponseDto::from(item),
+                crate::services::compute::application::mount::ApplicationMountResponseDto::from(
+                    item,
+                ),
             )),
-            ..Default::default()
         })
     }
 
@@ -1155,7 +1109,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationListPatchesRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListPatchesResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListPatchesResponse> + Send + use<'a>>
+    {
         let items = self
             .patches
             .list(request.application_id)
@@ -1165,14 +1120,13 @@ impl ApplicationService for ApplicationController {
             .into_iter()
             .map(|p| {
                 patch_to_proto(
-                    crate::services::compute::application::patch::ApplicationPatchResponseDto::from(p),
+                    crate::services::compute::application::patch::ApplicationPatchResponseDto::from(
+                        p,
+                    ),
                 )
             })
             .collect();
-        Response::ok(ApplicationListPatchesResponse {
-            patches,
-            ..Default::default()
-        })
+        Response::ok(ApplicationListPatchesResponse { patches })
     }
 
     #[permission(Application, CanCreate)]
@@ -1180,7 +1134,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationCreatePatchRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreatePatchResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreatePatchResponse> + Send + use<'a>>
+    {
         let dto = crate::services::compute::application::patch::UpsertApplicationPatchDto {
             patch_type: patch_type_from_proto(request.patch_type),
             file_path: request.file_path.to_owned(),
@@ -1194,9 +1149,10 @@ impl ApplicationService for ApplicationController {
             .map_err(map_db_error)?;
         Response::ok(ApplicationCreatePatchResponse {
             patch: ::buffa::MessageField::some(patch_to_proto(
-                crate::services::compute::application::patch::ApplicationPatchResponseDto::from(item),
+                crate::services::compute::application::patch::ApplicationPatchResponseDto::from(
+                    item,
+                ),
             )),
-            ..Default::default()
         })
     }
 
@@ -1205,7 +1161,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationUpdatePatchRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdatePatchResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdatePatchResponse> + Send + use<'a>>
+    {
         let dto = crate::services::compute::application::patch::UpsertApplicationPatchDto {
             patch_type: patch_type_from_proto(request.patch_type),
             file_path: request.file_path.to_owned(),
@@ -1219,9 +1176,10 @@ impl ApplicationService for ApplicationController {
             .map_err(map_db_error)?;
         Response::ok(ApplicationUpdatePatchResponse {
             patch: ::buffa::MessageField::some(patch_to_proto(
-                crate::services::compute::application::patch::ApplicationPatchResponseDto::from(item),
+                crate::services::compute::application::patch::ApplicationPatchResponseDto::from(
+                    item,
+                ),
             )),
-            ..Default::default()
         })
     }
 
@@ -1254,10 +1212,7 @@ impl ApplicationService for ApplicationController {
             .await
             .map_err(map_db_error)?;
         let middlewares = items.into_iter().map(middleware_to_proto).collect();
-        Response::ok(ApplicationListMiddlewaresResponse {
-            middlewares,
-            ..Default::default()
-        })
+        Response::ok(ApplicationListMiddlewaresResponse { middlewares })
     }
 
     #[permission(Application, CanCreate)]
@@ -1279,7 +1234,11 @@ impl ApplicationService for ApplicationController {
                 .collect(),
             request.average,
             request.burst,
-            request.source_ranges.iter().map(|s| s.to_string()).collect(),
+            request
+                .source_ranges
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
         );
         let item = self
             .middles
@@ -1288,7 +1247,6 @@ impl ApplicationService for ApplicationController {
             .map_err(map_db_error)?;
         Response::ok(ApplicationCreateMiddlewareResponse {
             middleware: ::buffa::MessageField::some(middleware_to_proto(item)),
-            ..Default::default()
         })
     }
 
@@ -1311,7 +1269,11 @@ impl ApplicationService for ApplicationController {
                 .collect(),
             request.average,
             request.burst,
-            request.source_ranges.iter().map(|s| s.to_string()).collect(),
+            request
+                .source_ranges
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
         );
         let item = self
             .middles
@@ -1320,7 +1282,6 @@ impl ApplicationService for ApplicationController {
             .map_err(map_db_error)?;
         Response::ok(ApplicationUpdateMiddlewareResponse {
             middleware: ::buffa::MessageField::some(middleware_to_proto(item)),
-            ..Default::default()
         })
     }
 
@@ -1344,9 +1305,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationListRedirectsRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<ApplicationListRedirectsResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListRedirectsResponse> + Send + use<'a>>
+    {
         let items = self
             .redirects
             .list(request.application_id)
@@ -1360,10 +1320,7 @@ impl ApplicationService for ApplicationController {
                 )
             })
             .collect();
-        Response::ok(ApplicationListRedirectsResponse {
-            redirects,
-            ..Default::default()
-        })
+        Response::ok(ApplicationListRedirectsResponse { redirects })
     }
 
     #[permission(Application, CanCreate)]
@@ -1371,9 +1328,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationCreateRedirectRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<ApplicationCreateRedirectResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreateRedirectResponse> + Send + use<'a>>
+    {
         let dto = crate::services::compute::application::redirect::UpsertApplicationRedirectDto {
             regex: request.regex.to_owned(),
             replacement: request.replacement.to_owned(),
@@ -1389,7 +1345,6 @@ impl ApplicationService for ApplicationController {
             redirect: ::buffa::MessageField::some(redirect_to_proto(
                 crate::services::compute::application::redirect::ApplicationRedirectResponseDto::from(item),
             )),
-            ..Default::default()
         })
     }
 
@@ -1398,9 +1353,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationUpdateRedirectRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<ApplicationUpdateRedirectResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdateRedirectResponse> + Send + use<'a>>
+    {
         let dto = crate::services::compute::application::redirect::UpsertApplicationRedirectDto {
             regex: request.regex.to_owned(),
             replacement: request.replacement.to_owned(),
@@ -1416,7 +1370,6 @@ impl ApplicationService for ApplicationController {
             redirect: ::buffa::MessageField::some(redirect_to_proto(
                 crate::services::compute::application::redirect::ApplicationRedirectResponseDto::from(item),
             )),
-            ..Default::default()
         })
     }
 
@@ -1455,10 +1408,7 @@ impl ApplicationService for ApplicationController {
                 )
             })
             .collect();
-        Response::ok(ApplicationGetSecurityResponse {
-            security,
-            ..Default::default()
-        })
+        Response::ok(ApplicationGetSecurityResponse { security })
     }
 
     #[permission(Application, CanCreate)]
@@ -1466,9 +1416,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationCreateSecurityRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<ApplicationCreateSecurityResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreateSecurityResponse> + Send + use<'a>>
+    {
         let dto = crate::services::compute::application::security::UpsertApplicationSecurityDto {
             username: request.username.to_owned(),
             password: request.password.to_owned(),
@@ -1482,7 +1431,6 @@ impl ApplicationService for ApplicationController {
             security: ::buffa::MessageField::some(security_to_proto(
                 crate::services::compute::application::security::ApplicationSecurityResponseDto::from(item),
             )),
-            ..Default::default()
         })
     }
 
@@ -1491,9 +1439,8 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationUpdateSecurityRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<ApplicationUpdateSecurityResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdateSecurityResponse> + Send + use<'a>>
+    {
         let dto = crate::services::compute::application::security::UpsertApplicationSecurityDto {
             username: request.username.to_owned(),
             password: request.password.to_owned(),
@@ -1507,7 +1454,6 @@ impl ApplicationService for ApplicationController {
             security: ::buffa::MessageField::some(security_to_proto(
                 crate::services::compute::application::security::ApplicationSecurityResponseDto::from(item),
             )),
-            ..Default::default()
         })
     }
 
@@ -1531,11 +1477,10 @@ impl ApplicationService for ApplicationController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationUpdateNetworksRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<ApplicationUpdateNetworksResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdateNetworksResponse> + Send + use<'a>>
+    {
         let dto = crate::services::compute::application::network::UpdateApplicationNetworksDto {
-            network_ids: request.network_ids.iter().map(|id| *id).collect(),
+            network_ids: request.network_ids.iter().copied().collect(),
             detach_rustploy_network: request.detach_rustploy_network,
         };
         let (_detach, _networks) = self
@@ -1546,7 +1491,6 @@ impl ApplicationService for ApplicationController {
         Response::ok(ApplicationUpdateNetworksResponse {
             success: true,
             operation: "update_networks".into(),
-            ..Default::default()
         })
     }
 }

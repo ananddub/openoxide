@@ -88,10 +88,7 @@ pub async fn generate_env_db(env_id: i64, db_env_var: &str) -> Option<HashMap<St
     let q = resolve::<FlashQueries>().await.ok()?;
 
     let db_env = q.environments_get_by_id(env_id).await.ok()?;
-    let db_project_env = q
-        .projects_get_by_id(db_env.project_id)
-        .await
-        .ok()?;
+    let db_project_env = q.projects_get_by_id(db_env.project_id).await.ok()?;
     let map: HashMap<String, String> = convert_env_to_map(&db_env.env_var);
 
     let pro_env = fix_env(
@@ -142,7 +139,7 @@ fn env_project_map(env: HashMap<String, String>, proj: HashMap<String, String>) 
 
 fn fix_env<S: Serialize>(map: S, text: &str) -> String {
     let mut env = Environment::new();
-    env.add_template("env", &text).unwrap();
+    env.add_template("env", text).unwrap();
     let template = env.get_template("env").unwrap();
     template.render(map).unwrap()
 }

@@ -250,14 +250,16 @@ impl DatabaseService {
             .unwrap_or(serde_json::Value::Null);
         let settings_value = config.get("postgres_config").cloned().unwrap_or_default();
         let settings_value = match settings_value {
-            serde_json::Value::String(inner) => serde_json::from_str::<serde_json::Value>(&inner)
-                .map_err(|error| sqlx::Error::Protocol(error.to_string()))?,
+            serde_json::Value::String(inner) => {
+                serde_json::from_str::<serde_json::Value>(&inner)
+                    .map_err(|error| sqlx::Error::Protocol(error.to_string()))?
+            }
             other => other,
         };
         Ok(PostgresAdvancedConfigResponseDto {
             settings: serde_json::from_value(settings_value)
                 .map_err(|error| sqlx::Error::Protocol(error.to_string()))?,
-            replication_role: PostgresReplicationRole::from_str(
+            replication_role: PostgresReplicationRole::from_str_opt(
                 config
                     .get("replication_role")
                     .and_then(|value| value.as_str())
@@ -289,19 +291,20 @@ impl DatabaseService {
         self.get_by_id(DatabaseKind::Postgres, id).await?;
         validate_postgres_settings(&input.settings)?;
         let role = input.replication_role;
-        if matches!(role, PostgresReplicationRole::Replica) && (input
-            .primary_host
-            .as_deref()
-            .unwrap_or("")
-            .trim()
-            .is_empty()
-            || input
-                .replication_user
+        if matches!(role, PostgresReplicationRole::Replica)
+            && (input
+                .primary_host
                 .as_deref()
                 .unwrap_or("")
                 .trim()
                 .is_empty()
-            || input.replication_password.as_deref().unwrap_or("").len() < 16)
+                || input
+                    .replication_user
+                    .as_deref()
+                    .unwrap_or("")
+                    .trim()
+                    .is_empty()
+                || input.replication_password.as_deref().unwrap_or("").len() < 16)
         {
             return Err(sqlx::Error::Protocol(
                 "replica requires primary_host, replication_user and a 16+ character replication_password".into(),
@@ -390,17 +393,18 @@ impl DatabaseService {
             ));
         }
         let current = self.engine_credentials(kind, id).await?;
-        let live_changed = if crate::services::compute::database::types::DatabaseRuntimeStatus::from_str(
-            record.app_status.as_str(),
-        )
-        .unwrap_or(crate::services::compute::database::types::DatabaseRuntimeStatus::Idle)
-            == crate::services::compute::database::types::DatabaseRuntimeStatus::Running
-        {
-            self.apply_live_password(kind, &current, &password).await?;
-            true
-        } else {
-            false
-        };
+        let live_changed =
+            if crate::services::compute::database::types::DatabaseRuntimeStatus::from_str_opt(
+                record.app_status.as_str(),
+            )
+            .unwrap_or(crate::services::compute::database::types::DatabaseRuntimeStatus::Idle)
+                == crate::services::compute::database::types::DatabaseRuntimeStatus::Running
+            {
+                self.apply_live_password(kind, &current, &password).await?;
+                true
+            } else {
+                false
+            };
         if let Err(error) = self
             .queries
             .database_management_rotate_password(&password, id)
@@ -433,10 +437,11 @@ impl DatabaseService {
                 "stop libSQL before rotating its authentication token".into(),
             ));
         }
-        let docker = crate::services::compute::compose::remote::agent_executor_for(current.server_id)
-            .await
-            .map(crate::utils::docker::DockerCli::from_executor)
-            .map_err(sqlx::Error::Protocol)?;
+        let docker =
+            crate::services::compute::compose::remote::agent_executor_for(current.server_id)
+                .await
+                .map(crate::utils::docker::DockerCli::from_executor)
+                .map_err(sqlx::Error::Protocol)?;
         let containers = docker
             .containers()
             .ps()

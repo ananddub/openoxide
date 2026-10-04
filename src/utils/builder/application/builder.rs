@@ -40,25 +40,49 @@ impl ApplicationBuilder {
         self
     }
 
- /// Scale the app's swarm services back up (no build) `start`.
-    pub async fn start(&self, spec: &ApplicationSpec, cancel: &CancellationToken) -> ExecResult<()> {
-        self.ctx.emit(BuilderEvent::Message(format!("starting {}", spec.stack_name))).await;
-        self.scale_services(spec, spec.replicas.max(1), cancel).await;
+    /// Scale the app's swarm services back up (no build) `start`.
+    pub async fn start(
+        &self,
+        spec: &ApplicationSpec,
+        cancel: &CancellationToken,
+    ) -> ExecResult<()> {
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "starting {}",
+                spec.stack_name
+            )))
+            .await;
+        self.scale_services(spec, spec.replicas.max(1), cancel)
+            .await;
         self.ctx.emit(BuilderEvent::Deployed).await;
         Ok(())
     }
 
- /// Scale the app's swarm services to zero `stop`.
+    /// Scale the app's swarm services to zero `stop`.
     pub async fn stop(&self, spec: &ApplicationSpec, cancel: &CancellationToken) -> ExecResult<()> {
-        self.ctx.emit(BuilderEvent::Message(format!("stopping {}", spec.stack_name))).await;
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "stopping {}",
+                spec.stack_name
+            )))
+            .await;
         self.scale_services(spec, 0, cancel).await;
         self.ctx.emit(BuilderEvent::Cancelled).await;
         Ok(())
     }
 
- /// Recreate the app's swarm tasks from the existing image `reload`.
-    pub async fn reload(&self, spec: &ApplicationSpec, cancel: &CancellationToken) -> ExecResult<()> {
-        self.ctx.emit(BuilderEvent::Message(format!("reloading {}", spec.stack_name))).await;
+    /// Recreate the app's swarm tasks from the existing image `reload`.
+    pub async fn reload(
+        &self,
+        spec: &ApplicationSpec,
+        cancel: &CancellationToken,
+    ) -> ExecResult<()> {
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "reloading {}",
+                spec.stack_name
+            )))
+            .await;
         for name in self.app_services(spec).await {
             let _ = self
                 .ctx
@@ -89,7 +113,12 @@ impl ApplicationBuilder {
             .unwrap_or_default()
     }
 
-    async fn scale_services(&self, spec: &ApplicationSpec, replicas: u32, cancel: &CancellationToken) {
+    async fn scale_services(
+        &self,
+        spec: &ApplicationSpec,
+        replicas: u32,
+        cancel: &CancellationToken,
+    ) {
         for name in self.app_services(spec).await {
             let _ = self
                 .ctx

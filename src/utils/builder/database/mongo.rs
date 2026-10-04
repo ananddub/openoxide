@@ -40,10 +40,10 @@ pub async fn build_mongo_stack(
         ]);
     } else if let Some(c) = &command_row {
         let mut full = c.split_whitespace().map(String::from).collect::<Vec<_>>();
-        if let Some(a_str) = &db.args {
-            if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
-                full.extend(parsed_args);
-            }
+        if let Some(a_str) = &db.args
+            && let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str)
+        {
+            full.extend(parsed_args);
         }
         command = Some(full);
     }
@@ -200,38 +200,67 @@ pub async fn build_mongo_stack(
 }
 
 fn mongo_replica_startup_script(app_name: &str, user: &str, password: &str) -> String {
-    format!(
-        r#"mongod --port 27017 --replSet rs0 --bind_ip_all &
-MONGOD_PID=$!
-until mongosh --eval "db.adminCommand('ping')" >/dev/null 2>&1; do
-  sleep 2
-done
-REPLICA_STATUS=$(mongosh --quiet --eval "rs.status().ok || 0")
-if [ "$REPLICA_STATUS" != "1" ]; then
-  echo "Initializing MongoDB replica set..."
-  mongosh --eval {init}
-else
-  echo "MongoDB replica set already initialized."
-fi
-wait "$MONGOD_PID"
-"#,
-        init = shell_single_quote(&format!(
-            r#"rs.initiate({{ _id: "rs0", members: [{{ _id: 0, host: "{app_name}:27017", priority: 1 }}] }});
+    use crate::utils::os::database::MongoshBuilder;
+    use crate::utils::os::exec::script::dsl::{
+        CaptureSource, IntoShellIRGeneric, ShellIR, ShellIRWrapper, Statement,
+    };
+
+    let init_js = format!(
+        r#"rs.initiate({{ _id: "rs0", members: [{{ _id: 0, host: "{app_name}:27017", priority: 1 }}] }});
 while (!rs.isMaster().ismaster) {{ sleep(1000); }}
 db.getSiblingDB("admin").createUser({{ user: "{user}", pwd: "{password}", roles: ["root"] }});"#,
-            app_name = js_string_escape(app_name),
-            user = js_string_escape(user),
-            password = js_string_escape(password),
-        )),
+        app_name = js_string_escape(app_name),
+        user = js_string_escape(user),
+        password = js_string_escape(password),
+    );
+
+    // `until mongosh ping; do sleep 2; done` as a while loop over the negated
+    // (`failure`) typed mongosh command.
+    let ping = ShellIRWrapper(MongoshBuilder::new().eval_script("db.adminCommand('ping')"))
+        .into_shell_ir()
+        .stdout_null()
+        .stderr_null()
+        .failure();
+
+    let status = ShellIRWrapper(
+        MongoshBuilder::new()
+            .quiet()
+            .eval_script("rs.status().ok || 0"),
     )
+    .into_shell_ir();
+
+    ShellIR::Sequence(vec![
+        ShellIR::Raw("mongod --port 27017 --replSet rs0 --bind_ip_all &".into()),
+        ShellIR::Raw("MONGOD_PID=$!".into()),
+        ShellIR::While {
+            cond: Box::new(ping),
+            body: vec![ShellIR::Raw("sleep 2".into())],
+        },
+        ShellIR::Statement(Statement::VarAssign {
+            name: "REPLICA_STATUS".into(),
+            val: Box::new(ShellIR::Capture {
+                cmd: Box::new(status),
+                source: CaptureSource::Stdout,
+            }),
+            default: None,
+        }),
+        ShellIR::If {
+            cond: Box::new(ShellIR::Raw("[ \"$REPLICA_STATUS\" != \"1\" ]".into())),
+            then_branch: vec![
+                ShellIR::Raw("echo 'Initializing MongoDB replica set...'".into()),
+                ShellIRWrapper(MongoshBuilder::new().eval_script(init_js)).into_shell_ir(),
+            ],
+            else_branch: Some(vec![ShellIR::Raw(
+                "echo 'MongoDB replica set already initialized.'".into(),
+            )]),
+        },
+        ShellIR::Raw("wait \"$MONGOD_PID\"".into()),
+    ])
+    .to_bash()
 }
 
 fn replica_sets_enabled(value: i64) -> bool {
     value != 0
-}
-
-fn shell_single_quote(value: &str) -> String {
-    format!("'{}'", value.replace('\'', "'\\''"))
 }
 
 fn js_string_escape(value: &str) -> String {

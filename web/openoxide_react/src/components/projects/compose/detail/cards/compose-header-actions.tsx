@@ -8,7 +8,7 @@ import {
 	Ban,
 	Terminal,
 	KeyRound,
-	GitBranch,
+	Pencil,
 	X,
 } from 'lucide-react';
 import {
@@ -216,14 +216,14 @@ export function ComposeHeaderActions({
 				</IconTooltip>
 			)}
 			{onOpenSource && (
-				<IconTooltip label="Source configuration">
+				<IconTooltip label="Edit source">
 					<Button
 						variant="ghost"
 						size="icon"
-						aria-label="Source configuration"
+						aria-label="Edit source"
 						onClick={onOpenSource}
 						className="size-8 text-muted-foreground hover:text-foreground">
-						<GitBranch className="size-4" />
+						<Pencil className="size-4" />
 					</Button>
 				</IconTooltip>
 			)}

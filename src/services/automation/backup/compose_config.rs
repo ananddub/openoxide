@@ -6,9 +6,11 @@ use sha2::{Digest, Sha256};
 use crate::{
     db::queries::FlashQueries,
     flash_gen::backup_executions::{
-        BackupExecutionsNextAttemptParams, BackupExecutionsStartParams, BackupExecutionsSucceedParams,
+        BackupExecutionsNextAttemptParams, BackupExecutionsStartParams,
+        BackupExecutionsSucceedParams,
     },
-    services::compute::compose::management::ComposeTransferService, utils::paths::openoxide_paths,
+    services::compute::compose::management::ComposeTransferService,
+    utils::paths::openoxide_paths,
 };
 
 use super::panel::PanelBackupResponseDto;

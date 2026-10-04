@@ -1,4 +1,4 @@
-use super::application::ApplicationBuilder;
+use super::builder::ApplicationBuilder;
 use crate::utils::builder::packs::{
     heroku::{HerokuBuilderImage, HerokuCli},
     nixpacks::NixpacksCli,
@@ -235,9 +235,7 @@ impl ApplicationBuilder {
         let build_cmd = builder.cancel_with(cancel.clone());
 
         let pipeline = pipeline! { build_cmd; };
-        let result = pipeline
-            .execute_cancelled(&self.ctx.executor, cancel)
-            .await;
+        let result = pipeline.execute_cancelled(&self.ctx.executor, cancel).await;
 
         let _ = crate::utils::os::OsCli::new(&self.ctx.executor)
             .dir(&secret_dir)
@@ -344,6 +342,4 @@ fn validate_build_context(value: Option<&str>) -> ExecResult<()> {
     Ok(())
 }
 
-const SPA_NGINX: &str = r#"events { worker_connections 1024; }
-http { include mime.types; server { listen 80; root /usr/share/nginx/html; index index.html; location / { try_files $uri $uri/ /index.html; } } }
-"#;
+const SPA_NGINX: &str = include_str!("assets/spa.nginx.conf");

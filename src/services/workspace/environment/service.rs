@@ -8,7 +8,9 @@ use crate::{
     },
     db::queries::FlashQueries,
     flash_gen::{
-        environments::{EnvironmentsCreateInTransactionParams, EnvironmentsUpdateInTransactionParams},
+        environments::{
+            EnvironmentsCreateInTransactionParams, EnvironmentsUpdateInTransactionParams,
+        },
         models::Environments,
     },
 };
@@ -56,7 +58,11 @@ impl EnvironmentService {
             .await
     }
 
-    pub async fn update(&self, id: i64, input: UpdateEnvironmentRequest) -> sqlx::Result<Environments> {
+    pub async fn update(
+        &self,
+        id: i64,
+        input: UpdateEnvironmentRequest,
+    ) -> sqlx::Result<Environments> {
         let current = self.get_by_id(id).await?;
 
         if input.is_default == Some(true) {
@@ -64,7 +70,10 @@ impl EnvironmentService {
         }
 
         let name = input.name.unwrap_or(current.name);
-        let description = input.description.or(current.description).unwrap_or_default();
+        let description = input
+            .description
+            .or(current.description)
+            .unwrap_or_default();
         let env_var = input.environment_variables.unwrap_or(current.env_var);
         let is_default = match input.is_default {
             Some(false) if current.is_default != 0 => {
@@ -162,7 +171,6 @@ mod tests {
             environment_variables: String::new(),
             is_default,
             project_id: 1,
-            ..Default::default()
         }
     }
 
@@ -195,7 +203,10 @@ mod tests {
             .create(create_input("production", false))
             .await
             .unwrap();
-        let second = service.create(create_input("preview", false)).await.unwrap();
+        let second = service
+            .create(create_input("preview", false))
+            .await
+            .unwrap();
 
         service.delete(first.id).await.unwrap();
 
@@ -213,7 +224,6 @@ mod tests {
                 environment_variables: "PORT=3000".into(),
                 is_default: false,
                 project_id: 1,
-                ..Default::default()
             })
             .await
             .unwrap();

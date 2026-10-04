@@ -1,18 +1,17 @@
 use uuid::Uuid;
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    ApplicationBuildType, ApplicationSourceType, CreateApplicationRequest,
-    UpdateApplicationRequest,
+    ApplicationBuildType, ApplicationSourceType, CreateApplicationRequest, UpdateApplicationRequest,
 };
 use crate::core::cache::{CacheEnum, CacheKey};
 use crate::flash_gen::resource_dependencies::{
     ServiceDependencyCountsParams, ServiceDependencyCountsRow,
 };
+use crate::flash_gen::service_git::AppCoreCreateServiceGitSourceParams;
 use crate::flash_gen::services::{
     AppCoreCreateApplicationNoServerParams, AppCoreCreateApplicationWithServerParams,
     AppCorePatchApplicationParams,
 };
-use crate::flash_gen::service_git::AppCoreCreateServiceGitSourceParams;
 use crate::services::compute::database::crud::serialize_json_string_vec;
 
 use super::{ApplicationRecord, ApplicationService};
@@ -71,7 +70,12 @@ impl ApplicationService {
         id: i64,
         organization_id: i64,
     ) -> sqlx::Result<()> {
-        if self.queries.services_belongs_to_organization(id, organization_id).await? > 0 {
+        if self
+            .queries
+            .services_belongs_to_organization(id, organization_id)
+            .await?
+            > 0
+        {
             Ok(())
         } else {
             Err(sqlx::Error::RowNotFound)
@@ -108,13 +112,13 @@ impl ApplicationService {
                     .load_record(id)
                     .await?
                     .ok_or(sqlx::Error::RowNotFound)?;
-                Ok::<_, sqlx::Error>(CacheEnum::Application(app))
+                Ok::<_, sqlx::Error>(CacheEnum::Application(Box::new(app)))
             })
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
 
         if let CacheEnum::Application(record) = res {
-            Ok(record)
+            Ok(*record)
         } else {
             Err(sqlx::Error::RowNotFound)
         }
@@ -236,7 +240,9 @@ impl ApplicationService {
             })
             .await?;
         if let Some(description) = input.description {
-            self.queries.app_core_patch_description(&description, id).await?;
+            self.queries
+                .app_core_patch_description(&description, id)
+                .await?;
         }
         if let Some(env_var) = input.env_var {
             self.queries.update_service_env_var(&env_var, id).await?;
@@ -245,7 +251,9 @@ impl ApplicationService {
             self.queries.update_service_server(server_id, id).await?;
         }
         if build_type != current.build_type {
-            self.queries.app_core_patch_build_type(&build_type, id).await?;
+            self.queries
+                .app_core_patch_build_type(&build_type, id)
+                .await?;
         }
         if trigger_type != current.trigger_type {
             self.queries
@@ -258,7 +266,9 @@ impl ApplicationService {
                 .await?;
         }
         if let Some(registry_id) = input.registry_id {
-            self.queries.app_core_patch_registry(registry_id, id).await?;
+            self.queries
+                .app_core_patch_registry(registry_id, id)
+                .await?;
         }
 
         let record = self
@@ -268,7 +278,7 @@ impl ApplicationService {
         self.cache
             .insert(
                 CacheKey::Application(id),
-                CacheEnum::Application(record.clone()),
+                CacheEnum::Application(Box::new(record.clone())),
             )
             .await;
         Ok(record)
@@ -287,9 +297,10 @@ impl ApplicationService {
                 dependencies.active_deployments, dependencies.enabled_backups
             )));
         }
-        let previews = auto_di::resolve::<crate::services::compute::preview::PreviewDeploymentService>()
-            .await
-            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        let previews =
+            auto_di::resolve::<crate::services::compute::preview::PreviewDeploymentService>()
+                .await
+                .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
         previews
             .ensure_application_can_be_deleted(id)
             .await
@@ -308,8 +319,7 @@ impl ApplicationService {
             .mount_fetch_for_application(id)
             .await
             .unwrap_or_default();
-        let volume_names =
-            crate::services::compute::cleanup::volume_names_from_mounts(&mounts);
+        let volume_names = crate::services::compute::cleanup::volume_names_from_mounts(&mounts);
 
         tokio::spawn(async move {
             let Ok(executor) =

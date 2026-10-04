@@ -4,14 +4,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '#/components/ui/card';
-import {
-	HardDrive,
-	MemoryStick,
-	Network,
-	Server,
-	Timer,
-	Zap,
-} from 'lucide-react';
+import {HardDrive, MemoryStick, Network, Timer, Zap} from 'lucide-react';
 
 // Live snapshot cards — current docker-stats values only. No history buffer,
 // no time-series charts: the panel deliberately avoids keeping sample
@@ -23,8 +16,6 @@ interface MonitoringCardsProps {
 		memPercent: number;
 		memUsage: string;
 		memLimit: string;
-		dockerDiskUsage: string;
-		dockerDiskPercent: number;
 		diskSpaceUsed: string;
 		diskSpaceTotal: string;
 		diskSpacePercent: number;
@@ -117,13 +108,6 @@ export function MonitoringCards({metrics}: MonitoringCardsProps) {
 				sub={`Total: ${metrics?.diskSpaceTotal || '0 GB'}`}
 				pct={metrics?.diskSpacePercent ?? 0}
 				barColor="bg-purple-500"
-			/>
-			<MetricCard
-				icon={Server}
-				title="Docker Disk Usage"
-				value={metrics?.dockerDiskUsage || '0 MB'}
-				pct={metrics?.dockerDiskPercent ?? 0}
-				barColor="bg-amber-500"
 			/>
 			<MetricCard
 				icon={Timer}

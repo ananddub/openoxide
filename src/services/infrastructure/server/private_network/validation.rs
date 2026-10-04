@@ -1,6 +1,4 @@
-use super::service::{
-    PrivateNetworkProviderDto, ServerConnectionModeDto, UpdatePrivateNetworkDto,
-};
+use super::service::{PrivateNetworkProviderDto, ServerConnectionModeDto, UpdatePrivateNetworkDto};
 
 use super::addressing::tunnel_addresses;
 
@@ -30,9 +28,6 @@ pub(super) fn validate(input: &UpdatePrivateNetworkDto) -> sqlx::Result<()> {
                     "managed private networks require the WIREGUARD provider".into(),
                 ));
             }
-            let _cidr = input.tunnel_address.as_deref().ok_or_else(|| {
-                sqlx::Error::Protocol("managed WireGuard requires tunnel_address".into())
-            })?;
             let endpoint = input
                 .endpoint
                 .as_deref()
@@ -187,13 +182,19 @@ mod tests {
         assert!(validate(&managed()).is_ok());
     }
 
+    /// The panel substitutes `{remote server IP}:{listen port}` for an absent or
+    /// placeholder endpoint when it applies the profile, so validation has to
+    /// accept both; a real endpoint still has to agree with the listen port.
     #[test]
-    fn rejects_missing_and_placeholder_managed_endpoints() {
+    fn accepts_missing_and_placeholder_managed_endpoints() {
         let mut input = managed();
         input.endpoint = None;
-        assert!(validate(&input).is_err());
+        assert!(validate(&input).is_ok());
 
         input.endpoint = Some("panel.example.com:51820".into());
+        assert!(validate(&input).is_ok());
+
+        input.endpoint = Some("203.0.113.10:52180".into());
         assert!(validate(&input).is_err());
     }
 

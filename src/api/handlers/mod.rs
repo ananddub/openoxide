@@ -1,5 +1,4 @@
 pub mod ai;
-pub mod alert_rule;
 pub mod application;
 pub mod audit;
 pub mod auth;
@@ -23,8 +22,8 @@ pub mod overview;
 pub mod permission;
 pub mod preview;
 pub mod project;
-pub mod registry;
 pub mod realtime;
+pub mod registry;
 pub mod schedule;
 pub mod server;
 pub mod settings;

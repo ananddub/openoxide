@@ -1,7 +1,7 @@
 use connectrpc::{ConnectError, ErrorCode};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    TraefikFileContent, TraefikFileNode, TraefikFileTreeNode, TraefikFileNodeType, TraefikHealth,
+    TraefikFileContent, TraefikFileNode, TraefikFileNodeType, TraefikFileTreeNode, TraefikHealth,
     TraefikLogEntry, TraefikMiddleware, TraefikMiddlewareKind, TraefikRequestsStatus,
     TraefikVersion,
 };
@@ -25,8 +25,7 @@ pub fn map_bad_request(error: String) -> ConnectError {
 pub fn typed_dto<T: serde::de::DeserializeOwned>(
     value: serde_json::Value,
 ) -> Result<T, ConnectError> {
-    serde_json::from_value(value)
-        .map_err(|error| ConnectError::invalid_argument(error.to_string()))
+    serde_json::from_value(value).map_err(|error| ConnectError::invalid_argument(error.to_string()))
 }
 
 pub fn middleware_kind_name(
@@ -40,10 +39,10 @@ pub fn middleware_kind_name(
         ::buffa::EnumValue::Known(TraefikMiddlewareKind::RateLimit) => Ok("RATE_LIMIT"),
         ::buffa::EnumValue::Known(TraefikMiddlewareKind::IpAllowList) => Ok("IP_ALLOW_LIST"),
         ::buffa::EnumValue::Known(TraefikMiddlewareKind::RequestHeaders) => Ok("REQUEST_HEADERS"),
-        ::buffa::EnumValue::Known(TraefikMiddlewareKind::ResponseHeaders) => {
-            Ok("RESPONSE_HEADERS")
-        }
-        _ => Err(ConnectError::invalid_argument("unsupported middleware kind")),
+        ::buffa::EnumValue::Known(TraefikMiddlewareKind::ResponseHeaders) => Ok("RESPONSE_HEADERS"),
+        _ => Err(ConnectError::invalid_argument(
+            "unsupported middleware kind",
+        )),
     }
 }
 
@@ -54,7 +53,6 @@ pub fn file_node_to_proto(dto: TraefikFileNodeDto) -> TraefikFileNode {
         size: dto.size,
         is_readonly: dto.is_readonly,
         modified_at: dto.modified_at,
-        ..Default::default()
     }
 }
 
@@ -71,7 +69,6 @@ pub fn file_tree_node_to_proto(dto: TraefikFileTreeNodeDto) -> TraefikFileTreeNo
             .into_iter()
             .map(file_tree_node_to_proto)
             .collect(),
-        ..Default::default()
     }
 }
 
@@ -88,7 +85,6 @@ pub fn file_content_to_proto(path: String, dto: TraefikFileContentDto) -> Traefi
         path,
         content: dto.content,
         is_readonly: dto.is_readonly,
-        ..Default::default()
     }
 }
 
@@ -97,7 +93,6 @@ pub fn health_to_proto(dto: TraefikHealthResponseDto) -> TraefikHealth {
         is_healthy: dto.is_healthy,
         rawdata_status: dto.rawdata_status,
         configuration_errors: dto.configuration_errors,
-        ..Default::default()
     }
 }
 
@@ -106,7 +101,6 @@ pub fn requests_status_to_proto(dto: TraefikRequestsStatusDto) -> TraefikRequest
         is_active: dto.is_active,
         log_path: dto.log_path,
         cron_expression: dto.cron_expression,
-        ..Default::default()
     }
 }
 
@@ -120,7 +114,6 @@ pub fn log_entry_to_proto(entry: TraefikLogEntryDto) -> TraefikLogEntry {
         duration_ms: entry.duration_ms,
         service_name: entry.service_name,
         router_name: entry.router_name,
-        ..Default::default()
     }
 }
 
@@ -129,7 +122,6 @@ pub fn version_to_proto(dto: TraefikVersionDto) -> TraefikVersion {
         server_id: dto.server_id,
         current_image: dto.current_image,
         desired_version: dto.desired_version,
-        ..Default::default()
     }
 }
 
@@ -137,6 +129,5 @@ pub fn middleware_to_proto(dto: StructuredMiddlewareResponseDto) -> TraefikMiddl
     TraefikMiddleware {
         reference: dto.reference,
         labels: dto.labels.into_iter().collect(),
-        ..Default::default()
     }
 }

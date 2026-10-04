@@ -1,20 +1,20 @@
 use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    Empty, TraefikGetFileContentRequest, TraefikGetFileContentResponse,
-    TraefikGetFileTreeRequest, TraefikGetFileTreeResponse, TraefikGetRequestLogsRequest,
-    TraefikGetRequestLogsResponse, TraefikGetRequestStatusRequest, TraefikGetRequestStatusResponse,
-    TraefikGetVersionRequest, TraefikGetVersionResponse, TraefikHealthRequest,
-    TraefikHealthResponse, TraefikListFilesRequest, TraefikListFilesResponse,
-    TraefikRenderMiddlewareRequest, TraefikRenderMiddlewareResponse, TraefikService,
-    TraefikServiceExt, TraefikToggleRequestsRequest, TraefikToggleRequestsResponse,
-    TraefikUpdateFileContentRequest, TraefikUpdateVersionRequest, TraefikUpdateVersionResponse,
+    Empty, TraefikGetFileContentRequest, TraefikGetFileContentResponse, TraefikGetFileTreeRequest,
+    TraefikGetFileTreeResponse, TraefikGetRequestLogsRequest, TraefikGetRequestLogsResponse,
+    TraefikGetRequestStatusRequest, TraefikGetRequestStatusResponse, TraefikGetVersionRequest,
+    TraefikGetVersionResponse, TraefikHealthRequest, TraefikHealthResponse,
+    TraefikListFilesRequest, TraefikListFilesResponse, TraefikRenderMiddlewareRequest,
+    TraefikRenderMiddlewareResponse, TraefikService, TraefikServiceExt,
+    TraefikToggleRequestsRequest, TraefikToggleRequestsResponse, TraefikUpdateFileContentRequest,
+    TraefikUpdateVersionRequest, TraefikUpdateVersionResponse,
 };
+use crate::services::networking::traefik::TraefikService as TraefikLifecycleService;
 use crate::services::networking::traefik::{
     TraefikStatsLogsQueryDto, TraefikToggleRequestsDto, TraefikWriteFileDto,
     UpdateTraefikVersionDto,
 };
-use crate::services::networking::traefik::TraefikService as TraefikLifecycleService;
 
 use super::helper::*;
 use super::init::TraefikController;
@@ -28,12 +28,13 @@ impl TraefikService for TraefikController {
         request: ServiceRequest<'_, TraefikListFilesRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<TraefikListFilesResponse> + Send + use<'a>> {
         let server_id = request.server_id;
-        let files = self.service.list_files(server_id).await.map_err(map_error)?;
+        let files = self
+            .service
+            .list_files(server_id)
+            .await
+            .map_err(map_error)?;
         let files = files.into_iter().map(file_node_to_proto).collect();
-        Response::ok(TraefikListFilesResponse {
-            files,
-            ..Default::default()
-        })
+        Response::ok(TraefikListFilesResponse { files })
     }
 
     #[permission(Traefik, CanRead)]
@@ -41,7 +42,8 @@ impl TraefikService for TraefikController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, TraefikGetFileTreeRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<TraefikGetFileTreeResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<TraefikGetFileTreeResponse> + Send + use<'a>>
+    {
         let server_id = request.server_id;
         let nodes = self
             .service
@@ -49,10 +51,7 @@ impl TraefikService for TraefikController {
             .await
             .map_err(map_error)?;
         let nodes = nodes.into_iter().map(file_tree_node_to_proto).collect();
-        Response::ok(TraefikGetFileTreeResponse {
-            nodes,
-            ..Default::default()
-        })
+        Response::ok(TraefikGetFileTreeResponse { nodes })
     }
 
     #[permission(Traefik, CanRead)]
@@ -71,7 +70,6 @@ impl TraefikService for TraefikController {
             .map_err(map_bad_request)?;
         Response::ok(TraefikGetFileContentResponse {
             file: ::buffa::MessageField::some(file_content_to_proto(path, file_content)),
-            ..Default::default()
         })
     }
 
@@ -86,7 +84,10 @@ impl TraefikService for TraefikController {
             path: request.path.to_owned(),
             content: request.content.to_owned(),
         };
-        self.service.write_file(dto).await.map_err(map_bad_request)?;
+        self.service
+            .write_file(dto)
+            .await
+            .map_err(map_bad_request)?;
         Response::ok(Empty::default())
     }
 
@@ -99,7 +100,6 @@ impl TraefikService for TraefikController {
         let health = self.service.check_health(None).await.map_err(map_error)?;
         Response::ok(TraefikHealthResponse {
             health: ::buffa::MessageField::some(health_to_proto(health)),
-            ..Default::default()
         })
     }
 
@@ -117,7 +117,6 @@ impl TraefikService for TraefikController {
             .map_err(map_error)?;
         Response::ok(TraefikGetRequestStatusResponse {
             status: ::buffa::MessageField::some(requests_status_to_proto(status)),
-            ..Default::default()
         })
     }
 
@@ -133,10 +132,7 @@ impl TraefikService for TraefikController {
             enable: request.enable,
         };
         let result = self.service.toggle_requests(dto).await.map_err(map_error)?;
-        Response::ok(TraefikToggleRequestsResponse {
-            active: result,
-            ..Default::default()
-        })
+        Response::ok(TraefikToggleRequestsResponse { active: result })
     }
 
     #[permission(Traefik, CanRead)]
@@ -148,13 +144,17 @@ impl TraefikService for TraefikController {
     {
         let page = request
             .page
-            .map(|page| usize::try_from(page).map_err(|_| connectrpc::ConnectError::invalid_argument("page out of range")))
+            .map(|page| {
+                usize::try_from(page)
+                    .map_err(|_| connectrpc::ConnectError::invalid_argument("page out of range"))
+            })
             .transpose()?;
         let page_size = request
             .page_size
             .map(|page_size| {
-                usize::try_from(page_size)
-                    .map_err(|_| connectrpc::ConnectError::invalid_argument("page_size out of range"))
+                usize::try_from(page_size).map_err(|_| {
+                    connectrpc::ConnectError::invalid_argument("page_size out of range")
+                })
             })
             .transpose()?;
         let status = request
@@ -178,7 +178,6 @@ impl TraefikService for TraefikController {
             total_count: logs.total_count as i64,
             page: logs.page as i64,
             page_size: logs.page_size as i64,
-            ..Default::default()
         })
     }
 
@@ -188,16 +187,11 @@ impl TraefikService for TraefikController {
         ctx: RequestContext,
         _request: ServiceRequest<'_, TraefikGetVersionRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<TraefikGetVersionResponse> + Send + use<'a>> {
-        let version = self
-            .service
-            .version(None)
-            .await
-            .map_err(|error| {
-                connectrpc::ConnectError::new(connectrpc::ErrorCode::FailedPrecondition, error)
-            })?;
+        let version = self.service.version(None).await.map_err(|error| {
+            connectrpc::ConnectError::new(connectrpc::ErrorCode::FailedPrecondition, error)
+        })?;
         Response::ok(TraefikGetVersionResponse {
             version: ::buffa::MessageField::some(version_to_proto(version)),
-            ..Default::default()
         })
     }
 
@@ -217,7 +211,6 @@ impl TraefikService for TraefikController {
         })?;
         Response::ok(TraefikUpdateVersionResponse {
             version: ::buffa::MessageField::some(version_to_proto(result)),
-            ..Default::default()
         })
     }
 
@@ -236,10 +229,9 @@ impl TraefikService for TraefikController {
             "list": request.list.iter().collect::<Vec<_>>(),
         }))?;
         let result = TraefikLifecycleService::structured_middleware(dto)
-            .map_err(|error| connectrpc::ConnectError::invalid_argument(error))?;
+            .map_err(connectrpc::ConnectError::invalid_argument)?;
         Response::ok(TraefikRenderMiddlewareResponse {
             middleware: ::buffa::MessageField::some(middleware_to_proto(result)),
-            ..Default::default()
         })
     }
 }

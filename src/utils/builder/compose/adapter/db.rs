@@ -21,10 +21,7 @@ impl ComposeSpecAdapter {
         let compose = self.queries.compose_get_spec_row(compose_id).await?;
         let service_networks =
             resolve_service_networks(compose.service_networks.as_deref().unwrap_or("")).await?;
-        let domains = self
-            .queries
-            .domains_list_by_compose_raw(compose_id)
-            .await?;
+        let domains = self.queries.domains_list_by_compose_raw(compose_id).await?;
         let mounts = self.queries.mount_fetch_for_compose(compose_id).await?;
         let patches = self.queries.patches_list_by_compose(compose_id).await?;
 

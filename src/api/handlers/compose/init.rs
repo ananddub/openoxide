@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
+use crate::services::compute::compose::ComposeService as AppComposeService;
 use crate::services::compute::compose::management::{
     ComposeManagementService, ComposeMountService, ComposePatchService, ComposeTransferService,
 };
-use crate::services::compute::compose::ComposeService as AppComposeService;
 
 pub struct ComposeController {
     pub(super) service: Arc<AppComposeService>,
@@ -25,6 +25,12 @@ impl ComposeController {
         mounts: Arc<ComposeMountService>,
         patches: Arc<ComposePatchService>,
     ) -> Self {
-        Self { service, management, transfer, mounts, patches }
+        Self {
+            service,
+            management,
+            transfer,
+            mounts,
+            patches,
+        }
     }
 }

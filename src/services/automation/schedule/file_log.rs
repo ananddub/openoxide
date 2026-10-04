@@ -1,27 +1,8 @@
-use dashmap::DashMap;
-use std::{
-    io,
-    sync::{Arc, OnceLock},
-};
-use tokio::sync::broadcast;
+use std::io;
 use tokio::{
     fs::{OpenOptions, create_dir_all},
     io::AsyncWriteExt,
 };
-
-static CHANNELS: OnceLock<DashMap<String, Arc<broadcast::Sender<String>>>> = OnceLock::new();
-
-fn channels() -> &'static DashMap<String, Arc<broadcast::Sender<String>>> {
-    CHANNELS.get_or_init(DashMap::new)
-}
-
-pub fn subscribe(key: &str) -> broadcast::Receiver<String> {
-    let sender = channels()
-        .entry(key.to_owned())
-        .or_insert_with(|| Arc::new(broadcast::channel(128).0))
-        .clone();
-    sender.subscribe()
-}
 
 pub async fn read(key: &str) -> io::Result<String> {
     match tokio::fs::read_to_string(
@@ -59,9 +40,6 @@ pub async fn append(
     }
     file.write_all(entry.as_bytes()).await?;
     file.flush().await?;
-    if let Some(sender) = channels().get(key) {
-        let _ = sender.send(entry);
-    }
     Ok(())
 }
 

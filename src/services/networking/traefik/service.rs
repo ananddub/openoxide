@@ -22,7 +22,10 @@ impl TraefikService {
         let executor = self.get_executor(None).await?;
         let config = crate::utils::setup::SetupConfig::default();
         let setup = crate::utils::setup::ServerSetup::new(executor, config);
-        setup.write_traefik_config().await.map_err(|e| e.to_string())?;
+        setup
+            .write_traefik_config()
+            .await
+            .map_err(|e| e.to_string())?;
         setup.ensure_traefik().await.map_err(|e| e.to_string())?;
         Ok(())
     }
@@ -34,7 +37,7 @@ impl TraefikService {
     }
 
     /// Writes (or removes) the panel's own Traefik router so the dashboard is
- /// reachable on its configured domain — the equivalent of the standard 
+    /// reachable on its configured domain — the equivalent of the standard
     /// `updateServerTraefik`. Called after host settings change. A blank host
     /// removes the config. HTTPS adds a redirect-to-https on `web` plus a
     /// `websecure` router (with the letsencrypt/custom resolver).
@@ -85,7 +88,12 @@ impl TraefikService {
         );
 
         if let Some(parent) = std::path::Path::new(&config_path).parent() {
-            let _ = os.dir(parent.to_string_lossy().as_ref()).create().parents(true).run().await;
+            let _ = os
+                .dir(parent.to_string_lossy().as_ref())
+                .create()
+                .parents(true)
+                .run()
+                .await;
         }
         os.file(&config_path)
             .write(&yaml)
@@ -135,8 +143,10 @@ impl TraefikService {
             .force()
             .run()
             .await;
-        let mut config = crate::utils::setup::SetupConfig::default();
-        config.traefik_version = version.to_owned();
+        let config = crate::utils::setup::SetupConfig {
+            traefik_version: version.to_owned(),
+            ..Default::default()
+        };
         crate::utils::setup::ServerSetup::new(executor, config)
             .ensure_traefik()
             .await

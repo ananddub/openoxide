@@ -2,7 +2,7 @@ use tokio_util::sync::CancellationToken;
 
 use crate::utils::{
     builder::{
-        application::application::ApplicationBuilder,
+        application::builder::ApplicationBuilder,
         spec::{ApplicationSpec, SourceSpec},
     },
     exec::{ExecError, ExecResult},

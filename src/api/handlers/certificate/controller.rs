@@ -1,13 +1,12 @@
 use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    CertificateService, CertificateServiceExt, CreateCertificateRequest,
-    CreateCertificateResponse, DeleteCertificateRequest, Empty, GetCertificateRequest,
-    GetCertificateResponse, ListCertificateDependenciesRequest,
-    ListCertificateDependenciesResponse, ListCertificateRenewalsRequest,
-    ListCertificateRenewalsResponse, ListCertificatesRequest, ListCertificatesResponse,
-    RenewCertificateRequest, RenewCertificateResponse, UpdateCertificateRequest,
-    UpdateCertificateResponse,
+    CertificateService, CertificateServiceExt, CreateCertificateRequest, CreateCertificateResponse,
+    DeleteCertificateRequest, Empty, GetCertificateRequest, GetCertificateResponse,
+    ListCertificateDependenciesRequest, ListCertificateDependenciesResponse,
+    ListCertificateRenewalsRequest, ListCertificateRenewalsResponse, ListCertificatesRequest,
+    ListCertificatesResponse, RenewCertificateRequest, RenewCertificateResponse,
+    UpdateCertificateRequest, UpdateCertificateResponse,
 };
 use crate::services::networking::certificate::{
     CreateCertificateDto, PatchCertificateDto, RenewCertificateDto,
@@ -24,12 +23,13 @@ impl CertificateService for CertificateController {
         ctx: RequestContext,
         _request: ServiceRequest<'_, ListCertificatesRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListCertificatesResponse> + Send + use<'a>> {
-        let items = self.service.list(auth.organization_id).await.map_err(map_error)?;
+        let items = self
+            .service
+            .list(auth.organization_id)
+            .await
+            .map_err(map_error)?;
         let certificates = items.into_iter().map(cert_to_proto).collect();
-        Response::ok(ListCertificatesResponse {
-            certificates,
-            ..Default::default()
-        })
+        Response::ok(ListCertificatesResponse { certificates })
     }
 
     #[permission(Certificate, CanRead)]
@@ -45,7 +45,6 @@ impl CertificateService for CertificateController {
             .map_err(map_error)?;
         Response::ok(GetCertificateResponse {
             certificate: ::buffa::MessageField::some(cert_to_proto(item)),
-            ..Default::default()
         })
     }
 
@@ -70,7 +69,6 @@ impl CertificateService for CertificateController {
             .map_err(map_error)?;
         Response::ok(CreateCertificateResponse {
             certificate: ::buffa::MessageField::some(cert_to_proto(item)),
-            ..Default::default()
         })
     }
 
@@ -98,7 +96,6 @@ impl CertificateService for CertificateController {
             .map_err(map_error)?;
         Response::ok(UpdateCertificateResponse {
             certificate: ::buffa::MessageField::some(cert_to_proto(item)),
-            ..Default::default()
         })
     }
 
@@ -130,7 +127,6 @@ impl CertificateService for CertificateController {
             .map_err(map_error)?;
         Response::ok(ListCertificateDependenciesResponse {
             dependencies: ::buffa::MessageField::some(dependencies_to_proto(deps)),
-            ..Default::default()
         })
     }
 
@@ -151,7 +147,6 @@ impl CertificateService for CertificateController {
             .map_err(map_error)?;
         Response::ok(RenewCertificateResponse {
             certificate: ::buffa::MessageField::some(cert_to_proto(item)),
-            ..Default::default()
         })
     }
 
@@ -168,9 +163,6 @@ impl CertificateService for CertificateController {
             .await
             .map_err(map_error)?;
         let renewals = rows.into_iter().map(renewal_to_proto).collect();
-        Response::ok(ListCertificateRenewalsResponse {
-            renewals,
-            ..Default::default()
-        })
+        Response::ok(ListCertificateRenewalsResponse { renewals })
     }
 }

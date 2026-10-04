@@ -1,17 +1,17 @@
 use connectrpc::{ConnectError, ErrorCode};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    BackupDatabase, BackupExecution, BackupVolume,
-    BackupExecutionStatus as ProtoBackupExecutionStatus, BackupKind as ProtoBackupKind,
-    BackupOperation as ProtoBackupOperation,
+    BackupDatabase, BackupExecution, BackupExecutionStatus as ProtoBackupExecutionStatus,
+    BackupKind as ProtoBackupKind, BackupOperation as ProtoBackupOperation, BackupVolume,
 };
-use crate::flash_gen::models::{Backups, BackupExecutions, VolumeBackups};
+use crate::flash_gen::models::{BackupExecutions, Backups, VolumeBackups};
 
 pub async fn refresh_schedule_runner() {
-    if let Ok(runner) = auto_di::resolve::<crate::services::automation::schedule::ScheduleRunner>().await {
-        if let Err(error) = runner.refresh_jobs().await {
-            tracing::error!(%error, "could not refresh scheduler after backup mutation");
-        }
+    if let Ok(runner) =
+        auto_di::resolve::<crate::services::automation::schedule::ScheduleRunner>().await
+        && let Err(error) = runner.refresh_jobs().await
+    {
+        tracing::error!(%error, "could not refresh scheduler after backup mutation");
     }
 }
 
@@ -71,7 +71,6 @@ pub fn db_backup_to_proto(value: Backups) -> BackupDatabase {
         organization_id: value.organization_id,
         created_at: value.created_at,
         updated_at: value.updated_at,
-        ..Default::default()
     }
 }
 
@@ -79,7 +78,11 @@ pub fn volume_backup_to_proto(value: VolumeBackups) -> BackupVolume {
     // service_type is consumed by the literal below; keep a borrow for
     // the typed linkage mirrors.
     let service_type = value.service_type.clone();
-    let on = |target: &str| (service_type == target).then_some(value.service_id).flatten();
+    let on = |target: &str| {
+        (service_type == target)
+            .then_some(value.service_id)
+            .flatten()
+    };
     BackupVolume {
         id: value.id,
         name: value.name,
@@ -105,7 +108,6 @@ pub fn volume_backup_to_proto(value: VolumeBackups) -> BackupVolume {
         libsql_id: on("LIBSQL"),
         created_at: value.created_at,
         updated_at: value.updated_at,
-        ..Default::default()
     }
 }
 
@@ -123,6 +125,5 @@ pub fn execution_to_proto(value: BackupExecutions) -> BackupExecution {
         error: value.error,
         started_at: value.started_at,
         finished_at: value.finished_at,
-        ..Default::default()
     }
 }

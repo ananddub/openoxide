@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use auto_di::singleton;
-use sqlx::SqlitePool;
 
 use crate::{
     api::connect::generated::openoxide::api::v1::{
@@ -16,14 +15,13 @@ use crate::{
 };
 
 pub struct OrganizationService {
-    db: Arc<SqlitePool>,
     queries: Arc<FlashQueries>,
 }
 
 #[singleton]
 impl OrganizationService {
-    fn new(db: Arc<SqlitePool>, queries: Arc<FlashQueries>) -> Self {
-        Self { db, queries }
+    fn new(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
     }
 
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Organization> {
@@ -36,7 +34,14 @@ impl OrganizationService {
 
     /// Whether the user owns or joined the organization.
     pub async fn is_member(&self, organization_id: i64, user_id: i64) -> sqlx::Result<bool> {
-        if self.queries.organization_members_role(user_id, organization_id).await.ok().flatten().is_some() {
+        if self
+            .queries
+            .organization_members_role(user_id, organization_id)
+            .await
+            .ok()
+            .flatten()
+            .is_some()
+        {
             return Ok(true);
         }
         match self.get_by_id(organization_id).await {
@@ -65,37 +70,31 @@ impl OrganizationService {
     /// membership — with the caller's effective role per organization.
     /// Owned organizations always report OWNER even when a (stale) member
     /// row carries a lesser role.
-    pub async fn list_for_user(
-        &self,
-        user_id: i64,
-    ) -> sqlx::Result<Vec<(Organization, String)>> {
+    pub async fn list_for_user(&self, user_id: i64) -> sqlx::Result<Vec<(Organization, String)>> {
         let owned = self.queries.list_organizations_by_owner(user_id).await?;
         let joined = self.queries.list_organizations_by_member(user_id).await?;
         let mut result: Vec<(Organization, String)> = owned
             .into_iter()
             .map(|org| (org, "OWNER".to_string()))
             .collect();
-        let seen: std::collections::HashSet<i64> =
-            result.iter().map(|(org, _)| org.id).collect();
+        let seen: std::collections::HashSet<i64> = result.iter().map(|(org, _)| org.id).collect();
         for row in joined {
             if seen.contains(&row.id) {
                 continue;
             }
             let role = row.member_role.clone().unwrap_or_else(|| "MEMBER".into());
-            result.push(
-                (
-                    Organization {
-                        id: row.id,
-                        name: row.name,
-                        logo: row.logo,
-                        slug: row.slug,
-                        owner_id: row.owner_id,
-                        created_at: row.created_at,
-                        updated_at: row.updated_at,
-                    },
-                    role,
-                ),
-            );
+            result.push((
+                Organization {
+                    id: row.id,
+                    name: row.name,
+                    logo: row.logo,
+                    slug: row.slug,
+                    owner_id: row.owner_id,
+                    created_at: row.created_at,
+                    updated_at: row.updated_at,
+                },
+                role,
+            ));
         }
         result.sort_by_key(|(org, _)| std::cmp::Reverse(org.created_at));
         Ok(result)
@@ -137,7 +136,11 @@ impl OrganizationService {
         Ok(organization)
     }
 
-    pub async fn update(&self, id: i64, input: UpdateOrganizationRequest) -> sqlx::Result<Organization> {
+    pub async fn update(
+        &self,
+        id: i64,
+        input: UpdateOrganizationRequest,
+    ) -> sqlx::Result<Organization> {
         let current = self.get_by_id(id).await?;
         let name = input.name.unwrap_or(current.name);
         let logo = input.logo.or(current.logo);
@@ -171,16 +174,15 @@ impl OrganizationService {
             .queries
             .permission_groups_admin_group_exists(organization_id)
             .await?;
-        if hit > 0 {
-            if let Some(existing) = self
+        if hit > 0
+            && let Some(existing) = self
                 .queries
                 .list_groups_for_organization(organization_id)
                 .await?
                 .into_iter()
                 .find(|group| group.name == "Organization Admin")
-            {
-                return Ok(existing.id);
-            }
+        {
+            return Ok(existing.id);
         }
         let admin = self
             .queries
@@ -258,7 +260,6 @@ mod tests {
 
         let db = Arc::new(pool);
         let service = OrganizationService {
-            db: db.clone(),
             queries: Arc::new(FlashQueries::new(db.clone())),
         };
 
@@ -269,7 +270,6 @@ mod tests {
                     name: "My Cool Team".into(),
                     logo: None,
                     slug: None,
-                    ..Default::default()
                 },
             )
             .await
@@ -280,7 +280,7 @@ mod tests {
             "SELECT role FROM organization_members WHERE organization_id = ? AND user_id = 7",
         )
         .bind(organization.id)
-        .fetch_one(service.db.as_ref())
+        .fetch_one(db.as_ref())
         .await
         .unwrap();
         assert_eq!(role, "ADMIN");

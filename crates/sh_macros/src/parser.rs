@@ -5,7 +5,7 @@ use syn::parse::Parse;
 /// Either a regular Rust statement, or a shell function definition
 /// with untyped parameters: `fn name(p1, p2) { ... }`.
 pub enum ShStmt {
-    Syn(Stmt),
+    Syn(Box<Stmt>),
     ShFn {
         name: String,
         params: Vec<String>,
@@ -64,6 +64,6 @@ impl Parse for ShStmt {
         }
 
         // Regular Rust statement
-        Ok(ShStmt::Syn(input.parse()?))
+        Ok(ShStmt::Syn(Box::new(input.parse()?)))
     }
 }

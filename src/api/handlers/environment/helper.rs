@@ -12,7 +12,6 @@ pub fn env_to_proto(e: crate::flash_gen::models::Environments) -> EnvironmentPro
         project_id: e.project_id,
         created_at: e.created_at,
         updated_at: e.updated_at,
-        ..Default::default()
     }
 }
 

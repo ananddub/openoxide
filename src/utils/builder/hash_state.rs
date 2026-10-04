@@ -23,7 +23,7 @@ impl ApplicationState {
 
     pub fn add_default(&self, app_id: IdType, env_id: i64, project_id: i64) {
         let app_deploy = AppDeploy {
-            app_id: app_id.clone(),
+            app_id,
             project_id,
             env_id,
             state: watch::channel(DeployState::Queue).0,
@@ -34,21 +34,19 @@ impl ApplicationState {
     }
 
     pub fn ensure_default(&self, app_id: IdType, env_id: i64, project_id: i64) {
-        self.hashmap
-            .entry(app_id.clone())
-            .or_insert_with(|| AppDeploy {
-                app_id,
-                project_id,
-                env_id,
-                state: watch::channel(DeployState::Queue).0,
-                broadcast: broadcast::channel(5).0,
-                cancellation_token: CancellationToken::new(),
-            });
+        self.hashmap.entry(app_id).or_insert_with(|| AppDeploy {
+            app_id,
+            project_id,
+            env_id,
+            state: watch::channel(DeployState::Queue).0,
+            broadcast: broadcast::channel(5).0,
+            cancellation_token: CancellationToken::new(),
+        });
     }
 
     pub fn reset_default(&self, app_id: IdType, env_id: i64, project_id: i64) {
         let app_deploy = AppDeploy {
-            app_id: app_id.clone(),
+            app_id,
             project_id,
             env_id,
             state: watch::channel(DeployState::Queue).0,
@@ -152,5 +150,11 @@ impl ApplicationState {
 
     pub fn send_broadcast(&self, app_id: IdType, event: String) -> Result<(), String> {
         self.send_event(app_id, DeployEvent::Message(event))
+    }
+}
+
+impl Default for ApplicationState {
+    fn default() -> Self {
+        Self::new()
     }
 }

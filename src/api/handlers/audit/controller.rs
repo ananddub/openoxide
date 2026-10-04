@@ -66,10 +66,7 @@ impl AuditService for AuditController {
         };
 
         let logs = rows.into_iter().map(log_to_proto).collect();
-        Response::ok(AuditListAuditLogsResponse {
-            logs,
-            ..Default::default()
-        })
+        Response::ok(AuditListAuditLogsResponse { logs })
     }
 
     #[permission(AuditLog, CanRead)]
@@ -83,33 +80,32 @@ impl AuditService for AuditController {
         let action = request.action;
 
         let rows = match action {
-            Some(action) => {
-                self.queries
-                    .audit_logs_list_by_organization_and_action(
-                        &AuditLogsListByOrganizationAndActionParams {
-                            organization_id,
-                            action: action.to_owned(),
-                            limit: 500,
-                            offset: 0,
-                        },
-                    )
-                    .await
-                    .map_err(map_db_error)?
-            }
-            None => {
-                self.queries
-                    .audit_logs_list_by_organization(&AuditLogsListByOrganizationParams {
+            Some(action) => self
+                .queries
+                .audit_logs_list_by_organization_and_action(
+                    &AuditLogsListByOrganizationAndActionParams {
                         organization_id,
+                        action: action.to_owned(),
                         limit: 500,
                         offset: 0,
-                    })
-                    .await
-                    .map_err(map_db_error)?
-            }
+                    },
+                )
+                .await
+                .map_err(map_db_error)?,
+            None => self
+                .queries
+                .audit_logs_list_by_organization(&AuditLogsListByOrganizationParams {
+                    organization_id,
+                    limit: 500,
+                    offset: 0,
+                })
+                .await
+                .map_err(map_db_error)?,
         };
 
-        let mut csv =
-            String::from("id,created_at,user_email,user_role,action,resource_type,resource_id,resource_name\n");
+        let mut csv = String::from(
+            "id,created_at,user_email,user_role,action,resource_type,resource_id,resource_name\n",
+        );
         for row in rows {
             csv.push_str(&format!(
                 "{},{},\"{}\",\"{}\",\"{}\",\"{}\",\"{}\",\"{}\"\n",
@@ -124,9 +120,6 @@ impl AuditService for AuditController {
             ));
         }
 
-        Response::ok(AuditExportAuditLogsResponse {
-            csv,
-            ..Default::default()
-        })
+        Response::ok(AuditExportAuditLogsResponse { csv })
     }
 }

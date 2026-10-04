@@ -3,9 +3,7 @@ use connectrpc::{ConnectError, ErrorCode};
 use crate::api::connect::generated::openoxide::api::v1::{
     Settings as SettingsProto, SettingsCertificateType as ProtoCertificateType,
 };
-use crate::services::platform::settings::{
-    SettingsCertificateTypeDto, SettingsResponseDto,
-};
+use crate::services::platform::settings::{SettingsCertificateTypeDto, SettingsResponseDto};
 
 pub fn map_error(err: sqlx::Error) -> ConnectError {
     match &err {
@@ -62,6 +60,5 @@ pub fn settings_to_proto(dto: SettingsResponseDto) -> SettingsProto {
         panel_backup_enabled: dto.panel_backup_enabled,
         log_cleanup_enabled: dto.log_cleanup_enabled,
         updated_at: dto.updated_at,
-        ..Default::default()
     }
 }

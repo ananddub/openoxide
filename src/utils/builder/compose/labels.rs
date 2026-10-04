@@ -1,5 +1,5 @@
 use super::{
-    compose::ComposeBuilder,
+    builder::ComposeBuilder,
     spec::{ComposeRuntime, ComposeSpec},
 };
 use crate::utils::{
@@ -51,29 +51,29 @@ pub fn inject_compose_yaml_labels(yaml_str: &str, spec: &ComposeSpec) -> Result<
 
 fn strip_traefik_labels_from_services(services: &mut Mapping) {
     for (_name, service) in services.iter_mut() {
-        if let Ok(service_map) = mapping_mut(service, "") {
-            if let Some(labels) = service_map.get_mut(Value::String("labels".into())) {
-                match labels {
-                    Value::Sequence(items) => {
-                        items.retain(|item| {
-                            if let Value::String(s) = item {
-                                !s.starts_with("traefik.")
-                            } else {
-                                true
-                            }
-                        });
-                    }
-                    Value::Mapping(map) => {
-                        map.retain(|k, _| {
-                            if let Value::String(s) = k {
-                                !s.starts_with("traefik.")
-                            } else {
-                                true
-                            }
-                        });
-                    }
-                    _ => {}
+        if let Ok(service_map) = mapping_mut(service, "")
+            && let Some(labels) = service_map.get_mut(Value::String("labels".into()))
+        {
+            match labels {
+                Value::Sequence(items) => {
+                    items.retain(|item| {
+                        if let Value::String(s) = item {
+                            !s.starts_with("traefik.")
+                        } else {
+                            true
+                        }
+                    });
                 }
+                Value::Mapping(map) => {
+                    map.retain(|k, _| {
+                        if let Value::String(s) = k {
+                            !s.starts_with("traefik.")
+                        } else {
+                            true
+                        }
+                    });
+                }
+                _ => {}
             }
         }
     }
@@ -112,8 +112,7 @@ fn inject_domain_labels(document: &mut Value, spec: &ComposeSpec) -> ExecResult<
 
     for service_network in &spec.service_networks {
         let service_name = &service_network.service_name;
-        let service = if let Some(s) = services.get_mut(Value::String(service_name.clone().into()))
-        {
+        let service = if let Some(s) = services.get_mut(Value::String(service_name.clone())) {
             s
         } else if services.len() == 1 {
             services.values_mut().next().unwrap()

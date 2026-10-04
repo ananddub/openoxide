@@ -33,7 +33,6 @@ pub fn registry_to_proto(registry: Registries) -> RegistryProto {
         registry_type: registry.registry_type,
         created_at: registry.created_at,
         updated_at: registry.updated_at,
-        ..Default::default()
     }
 }
 
@@ -43,6 +42,5 @@ pub fn usage_to_proto(row: RegistriesUsageReferencesRow) -> RegistryUsageReferen
         resource_name: row.resource_name,
         resource_type: row.resource_type,
         usage_kind: row.usage_kind,
-        ..Default::default()
     }
 }

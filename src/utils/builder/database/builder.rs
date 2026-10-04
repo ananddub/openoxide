@@ -259,11 +259,9 @@ pub async fn apply_database_swarm_settings(
                     let protocol = string_field(port, "Protocol", "protocol", "tcp");
                     let mode = string_field(port, "PublishMode", "publish_mode", "ingress");
                     if mode == "ingress" {
-                        service
-                            .ports
-                            .push(serde_json::Value::String(format!(
-                                "{published}:{target}/{protocol}"
-                            )));
+                        service.ports.push(serde_json::Value::String(format!(
+                            "{published}:{target}/{protocol}"
+                        )));
                     } else {
                         // Long syntax for host (or other) publish modes.
                         service.ports.push(serde_json::json!({
@@ -516,11 +514,7 @@ impl EngineConfig {
     pub fn flag(&self, key: &str) -> i64 {
         self.0
             .get(key)
-            .and_then(|v| {
-                v.as_bool()
-                    .map(|b| b as i64)
-                    .or_else(|| v.as_i64())
-            })
+            .and_then(|v| v.as_bool().map(|b| b as i64).or_else(|| v.as_i64()))
             .unwrap_or(0)
     }
 
@@ -538,31 +532,31 @@ pub async fn resolve_database_networks(
         names.insert(super::super::swarm::OPENOXIDE_NETWORK.to_string());
     }
 
-    if let Some(raw) = network_ids {
-        if let Ok(parsed) = serde_json::from_str::<Vec<String>>(raw) {
-            let q = auto_di::resolve::<FlashQueries>()
-                .await
-                .map_err(|e| ExecError::CommandFailed {
-                    code: None,
-                    stderr: format!("Failed to resolve FlashQueries: {}", e),
-                })?;
-            for value in parsed {
-                let trimmed = value.trim();
-                if trimmed.is_empty() {
-                    continue;
-                }
-                let resolved = match trimmed.parse::<i64>() {
-                    Ok(id) => q
-                        .database_networks_get_by_id(id)
-                        .await
-                        .map(|network| network.docker_network_name)
-                        .unwrap_or_else(|_| trimmed.to_string()),
-                    Err(_) => trimmed.to_string(),
-                };
-                let resolved = resolved.trim();
-                if !resolved.is_empty() {
-                    names.insert(resolved.to_string());
-                }
+    if let Some(raw) = network_ids
+        && let Ok(parsed) = serde_json::from_str::<Vec<String>>(raw)
+    {
+        let q = auto_di::resolve::<FlashQueries>()
+            .await
+            .map_err(|e| ExecError::CommandFailed {
+                code: None,
+                stderr: format!("Failed to resolve FlashQueries: {}", e),
+            })?;
+        for value in parsed {
+            let trimmed = value.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            let resolved = match trimmed.parse::<i64>() {
+                Ok(id) => q
+                    .database_networks_get_by_id(id)
+                    .await
+                    .map(|network| network.docker_network_name)
+                    .unwrap_or_else(|_| trimmed.to_string()),
+                Err(_) => trimmed.to_string(),
+            };
+            let resolved = resolved.trim();
+            if !resolved.is_empty() {
+                names.insert(resolved.to_string());
             }
         }
     }
@@ -640,13 +634,13 @@ impl DatabaseBuilder {
                 code: None,
                 stderr: format!("Failed to resolve FlashQueries: {}", e),
             })?;
-        let mounts = q
-            .mount_fetch_for_database(db_id)
-            .await
-            .map_err(|e| ExecError::CommandFailed {
-                code: None,
-                stderr: format!("Failed to fetch mounts: {}", e),
-            })?;
+        let mounts =
+            q.mount_fetch_for_database(db_id)
+                .await
+                .map_err(|e| ExecError::CommandFailed {
+                    code: None,
+                    stderr: format!("Failed to fetch mounts: {}", e),
+                })?;
 
         // 1. Build stack file based on database kind
         let (app_name, docker_image, stack_file_content) = match db_kind {
@@ -740,9 +734,7 @@ impl DatabaseBuilder {
             deploy_cmd;
         };
 
-        let result = pipeline
-            .execute_cancelled(&self.ctx.executor, cancel)
-            .await;
+        let result = pipeline.execute_cancelled(&self.ctx.executor, cancel).await;
 
         match result {
             Ok(output) => {
@@ -784,88 +776,75 @@ impl DatabaseBuilder {
                 "Synchronising configured credentials into {service_name}..."
             )))
             .await;
-        if let Ok(q) = auto_di::resolve::<FlashQueries>().await {
-            if let Ok(creds) = q.database_management_credentials(db_id).await {
-                let password = creds.db_password.clone().unwrap_or_default();
-                if !password.is_empty() {
-                    if let Ok(containers) = self.ctx.docker.containers().ps().all().list().await {
-                        if let Some(matched) = containers.iter().find(|c| {
-                            let name = c.names.trim_start_matches('/').to_lowercase();
-                            name.starts_with(&format!("{}_db", app_name).to_lowercase())
-                                || name.contains(&app_name.to_lowercase())
-                        }) {
-                            let container_id = &matched.id;
-                            let user_name =
-                                creds.db_user.clone().unwrap_or_else(|| "openoxide".to_string());
-                            let escaped_pwd = password.replace('\'', "''");
-                            match db_kind {
-                                DatabaseKind::Postgres => {
-                                    let sql = format!(
-                                        "ALTER USER \"{}\" WITH PASSWORD '{}';",
-                                        user_name, escaped_pwd
-                                    );
-                                    let _ = self
-                                        .ctx
-                                        .docker
-                                        .containers()
-                                        .exec(container_id)
-                                        .run([
-                                            "psql", "-U", &user_name, "-d", "postgres", "-c", &sql,
-                                        ])
-                                        .await;
-                                    let _ = self
-                                        .ctx
-                                        .docker
-                                        .containers()
-                                        .exec(container_id)
-                                        .run(["psql", "-U", "postgres", "-c", &sql])
-                                        .await;
-                                }
-                                DatabaseKind::Mysql | DatabaseKind::Mariadb => {
-                                    let sql = format!(
-                                        "ALTER USER '{}'@'%' IDENTIFIED BY '{}'; FLUSH PRIVILEGES;",
-                                        user_name, escaped_pwd
-                                    );
-                                    let _ = self
-                                        .ctx
-                                        .docker
-                                        .containers()
-                                        .exec(container_id)
-                                        .run(["mysql", "-u", "root", "-e", &sql])
-                                        .await;
-                                }
-                                DatabaseKind::Redis => {
-                                    let _ = self
-                                        .ctx
-                                        .docker
-                                        .containers()
-                                        .exec(container_id)
-                                        .run([
-                                            "redis-cli",
-                                            "CONFIG",
-                                            "SET",
-                                            "requirepass",
-                                            &password,
-                                        ])
-                                        .await;
-                                    let _ = self
-                                        .ctx
-                                        .docker
-                                        .containers()
-                                        .exec(container_id)
-                                        .run([
-                                            "redis-cli",
-                                            "-a",
-                                            &password,
-                                            "CONFIG",
-                                            "REWRITE",
-                                        ])
-                                        .await;
-                                }
-                                _ => {}
-                            }
-                        }
+        if let Ok(q) = auto_di::resolve::<FlashQueries>().await
+            && let Ok(creds) = q.database_management_credentials(db_id).await
+        {
+            let password = creds.db_password.clone().unwrap_or_default();
+            if !password.is_empty()
+                && let Ok(containers) = self.ctx.docker.containers().ps().all().list().await
+                && let Some(matched) = containers.iter().find(|c| {
+                    let name = c.names.trim_start_matches('/').to_lowercase();
+                    name.starts_with(&format!("{}_db", app_name).to_lowercase())
+                        || name.contains(&app_name.to_lowercase())
+                })
+            {
+                let container_id = &matched.id;
+                let user_name = creds
+                    .db_user
+                    .clone()
+                    .unwrap_or_else(|| "openoxide".to_string());
+                let escaped_pwd = password.replace('\'', "''");
+                match db_kind {
+                    DatabaseKind::Postgres => {
+                        let sql = format!(
+                            "ALTER USER \"{}\" WITH PASSWORD '{}';",
+                            user_name, escaped_pwd
+                        );
+                        let _ = self
+                            .ctx
+                            .docker
+                            .containers()
+                            .exec(container_id)
+                            .run(["psql", "-U", &user_name, "-d", "postgres", "-c", &sql])
+                            .await;
+                        let _ = self
+                            .ctx
+                            .docker
+                            .containers()
+                            .exec(container_id)
+                            .run(["psql", "-U", "postgres", "-c", &sql])
+                            .await;
                     }
+                    DatabaseKind::Mysql | DatabaseKind::Mariadb => {
+                        let sql = format!(
+                            "ALTER USER '{}'@'%' IDENTIFIED BY '{}'; FLUSH PRIVILEGES;",
+                            user_name, escaped_pwd
+                        );
+                        let _ = self
+                            .ctx
+                            .docker
+                            .containers()
+                            .exec(container_id)
+                            .run(["mysql", "-u", "root", "-e", &sql])
+                            .await;
+                    }
+                    DatabaseKind::Redis => {
+                        let _ = self
+                            .ctx
+                            .docker
+                            .containers()
+                            .exec(container_id)
+                            .run(["redis-cli", "CONFIG", "SET", "requirepass", &password])
+                            .await;
+                        let _ = self
+                            .ctx
+                            .docker
+                            .containers()
+                            .exec(container_id)
+                            .run(["redis-cli", "-a", &password, "CONFIG", "REWRITE"])
+                            .await;
+                    }
+                    _ => {}
                 }
             }
         }
@@ -912,7 +891,7 @@ impl DatabaseBuilder {
     }
 
     /// Recreate the database's swarm tasks from the existing image (no
- /// redeploy) `reload`.
+    /// redeploy) `reload`.
     pub async fn reload(&self, app_name: &str, cancel: &CancellationToken) -> ExecResult<()> {
         self.ctx
             .emit(BuilderEvent::Message(format!("reloading {app_name}")))

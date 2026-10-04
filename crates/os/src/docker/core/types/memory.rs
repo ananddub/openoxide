@@ -32,11 +32,11 @@ impl fmt::Display for Memory {
         const GB: u64 = 1_024 * 1_024 * 1_024;
         const MB: u64 = 1_024 * 1_024;
         const KB: u64 = 1_024;
-        if self.0 % GB == 0 {
+        if self.0.is_multiple_of(GB) {
             write!(f, "{}g", self.0 / GB)
-        } else if self.0 % MB == 0 {
+        } else if self.0.is_multiple_of(MB) {
             write!(f, "{}m", self.0 / MB)
-        } else if self.0 % KB == 0 {
+        } else if self.0.is_multiple_of(KB) {
             write!(f, "{}k", self.0 / KB)
         } else {
             write!(f, "{}", self.0)

@@ -176,46 +176,45 @@ impl ApplicationService {
                 ))
                 .list()
                 .await
+                && let Some(c) = containers.first()
             {
-                if let Some(c) = containers.first() {
-                    let target_name = c.names.trim_start_matches('/').to_string();
-                    let containers_handle = docker.containers();
-                    let mut update_builder = containers_handle.update(&target_name);
-                    if let Some(mem) = mem_lim {
-                        if !mem.trim().is_empty() {
-                            update_builder = update_builder.memory_str(mem);
-                            has_cgroup_update = true;
-                        }
-                    }
-                    if let Some(cpu) = cpu_lim {
-                        if !cpu.trim().is_empty() {
-                            update_builder = update_builder.cpus_str(cpu);
-                            has_cgroup_update = true;
-                        }
-                    }
-                    if has_cgroup_update {
-                        let _ = update_builder.run().await;
-                    }
+                let target_name = c.names.trim_start_matches('/').to_string();
+                let containers_handle = docker.containers();
+                let mut update_builder = containers_handle.update(&target_name);
+                if let Some(mem) = mem_lim
+                    && !mem.trim().is_empty()
+                {
+                    update_builder = update_builder.memory_str(mem);
+                    has_cgroup_update = true;
+                }
+                if let Some(cpu) = cpu_lim
+                    && !cpu.trim().is_empty()
+                {
+                    update_builder = update_builder.cpus_str(cpu);
+                    has_cgroup_update = true;
+                }
+                if has_cgroup_update {
+                    let _ = update_builder.run().await;
                 }
             }
 
             // 2. Live Swarm service scaling if replicas is provided
-            if let Some(reps) = target_replicas {
-                if reps > 0 {
-                    let swarm_service_name = format!("{}_{}", app_name, app_name);
-                    let _ = docker
-                        .services()
-                        .scale()
-                        .service(&swarm_service_name, reps as u32)
-                        .run()
-                        .await;
-                    let _ = docker
-                        .services()
-                        .scale()
-                        .service(&app_name, reps as u32)
-                        .run()
-                        .await;
-                }
+            if let Some(reps) = target_replicas
+                && reps > 0
+            {
+                let swarm_service_name = format!("{}_{}", app_name, app_name);
+                let _ = docker
+                    .services()
+                    .scale()
+                    .service(&swarm_service_name, reps as u32)
+                    .run()
+                    .await;
+                let _ = docker
+                    .services()
+                    .scale()
+                    .service(&app_name, reps as u32)
+                    .run()
+                    .await;
             }
         });
 

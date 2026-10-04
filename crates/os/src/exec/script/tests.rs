@@ -139,7 +139,7 @@ async fn test_pipeline_condition_enum_and_fluent_api() {
     let cond = Condition::dir_exists("/tmp/repo")
         & Condition::file_exists("/tmp/repo/config.json")
         & Condition::cmd_succeeds("git status")
-        | Condition::env_set("FORCE_DEPLOY").not();
+        | Condition::env_set("FORCE_DEPLOY").negated();
 
     let pipeline = ScriptPipeline::new()
         .if_condition(cond)
@@ -425,7 +425,7 @@ fn test_sh_macro_convenience_dsls() {
     assert!(bash.contains("cat '/etc/passwd'"));
     assert!(bash.contains("test -f \"$tmp\""));
     assert!(bash.contains("rm -f \"$tmp\""));
-    assert!(bash.contains("chmod '755' \"$tmp\""));
+    assert!(bash.contains("chmod '0755' \"$tmp\""));
     assert!(bash.contains("chown 'root' \"$tmp\""));
 
     // 3. Directory DSL
@@ -468,9 +468,62 @@ fn test_sh_macro_with_rust_builders() {
 
     assert_eq!(script_ir.len(), 1);
     let bash = script_ir[0].to_bash();
+    assert!(bash.contains(
+        "docker container run '--name' 'test-sh-macro-container' '--tty' 'alpine:latest'"
+    ));
+}
+
+#[test]
+fn test_sh_macro_pipe_accepts_bound_typed_builders() {
+    use super::sh;
+    use crate::archive::GzipBuilder;
+    use crate::database::PgDumpBuilder;
+
+    let dump = PgDumpBuilder::new().username("app").database("orders");
+    let gzip = GzipBuilder::new();
+
+    let script_ir = sh!(pipe![dump, gzip];);
+
+    assert_eq!(script_ir.len(), 1);
+    let bash = script_ir[0].to_bash();
     assert!(
-        bash.contains("docker container run --name test-sh-macro-container --tty alpine:latest")
+        bash.contains("pg_dump '-U' 'app' 'orders' | gzip"),
+        "got: {bash}"
     );
+}
+
+#[test]
+fn test_sh_macro_pipe_accepts_inline_typed_builders() {
+    use super::sh;
+    use crate::archive::GzipBuilder;
+    use crate::database::PgDumpBuilder;
+
+    let user = "app";
+    let script_ir = sh!(
+        pipe![
+            PgDumpBuilder::new().username(user).database("orders"),
+            GzipBuilder::new()
+        ];
+    );
+
+    assert_eq!(script_ir.len(), 1);
+    let bash = script_ir[0].to_bash();
+    assert!(
+        bash.contains("pg_dump '-U' 'app' 'orders' | gzip"),
+        "got: {bash}"
+    );
+}
+
+#[test]
+fn test_sh_macro_inline_typed_builder_statement() {
+    use super::sh;
+    use crate::database::RedisCliBuilder;
+
+    let script_ir = sh!(RedisCliBuilder::new().ping(););
+
+    assert_eq!(script_ir.len(), 1);
+    let bash = script_ir[0].to_bash();
+    assert!(bash.starts_with("redis-cli 'PING'"), "got: {bash}");
 }
 
 #[test]
@@ -964,7 +1017,7 @@ fn test_sh_macro_new_features() {
         .collect::<Vec<_>>()
         .join("\n");
     assert!(bash.contains("sed -i 's|old_ip|new_ip|g' 'config.txt'"));
-    assert!(bash.contains("command '-v' 'nginx'"));
+    assert!(bash.contains("command -v nginx >/dev/null 2>&1"));
     assert!(
         bash.contains("user=$(echo \"$info\" | jq '-r' '.user.name')"),
         "generated shell:\n{bash}"

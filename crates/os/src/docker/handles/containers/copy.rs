@@ -103,7 +103,7 @@ impl DockerCopyCommand<'_> {
             return extract_single_tar_file(&archive);
         }
         let output = self.cli.run_bytes(self.args).await?;
-        Ok(extract_single_tar_file(&output.stdout)?)
+        extract_single_tar_file(&output.stdout)
     }
 
     async fn run_api(self) -> DockerResult<DockerOutput> {

@@ -95,7 +95,11 @@ pub fn normalize_ref(reference: &str) -> Option<String> {
 pub fn derive_obj_key(kind: MigrationObjectKind, reference: &str) -> Option<String> {
     let normalized = normalize_ref(reference)?;
     let digest = Sha256::digest(normalized.as_bytes());
-    let hex: String = digest.iter().take(8).map(|byte| format!("{byte:02x}")).collect();
+    let hex: String = digest
+        .iter()
+        .take(8)
+        .map(|byte| format!("{byte:02x}"))
+        .collect();
     Some(format!("{}:{}", kind.as_str(), hex))
 }
 
@@ -153,7 +157,10 @@ mod tests {
 
     #[test]
     fn normalize_collapses_redundant_separators() {
-        assert_eq!(normalize_ref("/var//lib///docker").as_deref(), Some("/var/lib/docker"));
+        assert_eq!(
+            normalize_ref("/var//lib///docker").as_deref(),
+            Some("/var/lib/docker")
+        );
         assert_eq!(normalize_ref("a/./b").as_deref(), Some("a/b"));
     }
 

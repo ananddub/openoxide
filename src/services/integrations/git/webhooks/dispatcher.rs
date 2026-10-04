@@ -74,11 +74,13 @@ impl WebhookDispatcher {
         let compose_service = resolve::<ComposeService>()
             .await
             .map_err(|error| error.to_string())?;
-        let mut outcome = DispatchOutcome::default();
-        outcome.event_type = event.trigger.as_str().to_ascii_lowercase();
-        outcome.provider = Some(event.provider.as_str().into());
-        outcome.owner = Some(event.owner.clone());
-        outcome.repository = Some(event.repository.clone());
+        let mut outcome = DispatchOutcome {
+            event_type: event.trigger.as_str().to_ascii_lowercase(),
+            provider: Some(event.provider.as_str().into()),
+            owner: Some(event.owner.clone()),
+            repository: Some(event.repository.clone()),
+            ..Default::default()
+        };
 
         for resource in applications {
             if event.trigger == GitTrigger::Push
@@ -171,7 +173,10 @@ impl WebhookDispatcher {
                 })
                 .await?
                 .into_iter()
-                .map(|row| WebhookResource { id: row.id, watch_paths: row.watch_paths })
+                .map(|row| WebhookResource {
+                    id: row.id,
+                    watch_paths: row.watch_paths,
+                })
                 .collect(),
             GitProviderKind::Gitlab => self
                 .queries
@@ -184,7 +189,10 @@ impl WebhookDispatcher {
                 })
                 .await?
                 .into_iter()
-                .map(|row| WebhookResource { id: row.id, watch_paths: row.watch_paths })
+                .map(|row| WebhookResource {
+                    id: row.id,
+                    watch_paths: row.watch_paths,
+                })
                 .collect(),
             GitProviderKind::Gitea => self
                 .queries
@@ -197,7 +205,10 @@ impl WebhookDispatcher {
                 })
                 .await?
                 .into_iter()
-                .map(|row| WebhookResource { id: row.id, watch_paths: row.watch_paths })
+                .map(|row| WebhookResource {
+                    id: row.id,
+                    watch_paths: row.watch_paths,
+                })
                 .collect(),
             GitProviderKind::Bitbucket => self
                 .queries
@@ -210,7 +221,10 @@ impl WebhookDispatcher {
                 })
                 .await?
                 .into_iter()
-                .map(|row| WebhookResource { id: row.id, watch_paths: row.watch_paths })
+                .map(|row| WebhookResource {
+                    id: row.id,
+                    watch_paths: row.watch_paths,
+                })
                 .collect(),
         };
         Ok(rows)

@@ -40,10 +40,7 @@ impl PermissionService for PermissionGroupController {
             .await
             .map_err(map_error)?;
         let groups = groups.into_iter().map(group_to_proto).collect();
-        Response::ok(ListPermissionsResponse {
-            groups,
-            ..Default::default()
-        })
+        Response::ok(ListPermissionsResponse { groups })
     }
 
     #[permission(Groups, CanRead)]
@@ -63,7 +60,6 @@ impl PermissionService for PermissionGroupController {
             .ok_or_else(|| ConnectError::not_found("group not found"))?;
         Response::ok(GetPermissionResponse {
             group: ::buffa::MessageField::some(group_to_proto(group)),
-            ..Default::default()
         })
     }
 
@@ -82,10 +78,7 @@ impl PermissionService for PermissionGroupController {
             .create_group(auth.user_id(), auth.organization_id, dto)
             .await
             .map_err(map_error)?;
-        Response::ok(CreatePermissionResponse {
-            id,
-            ..Default::default()
-        })
+        Response::ok(CreatePermissionResponse { id })
     }
 
     #[permission(Groups, CanUpdate)]
@@ -133,10 +126,7 @@ impl PermissionService for PermissionGroupController {
             .await
             .map_err(map_error)?;
         let groups = groups.into_iter().map(group_to_proto).collect();
-        Response::ok(PermissionListGroupsResponse {
-            groups,
-            ..Default::default()
-        })
+        Response::ok(PermissionListGroupsResponse { groups })
     }
 
     #[permission(Groups, CanRead)]
@@ -157,7 +147,6 @@ impl PermissionService for PermissionGroupController {
             .ok_or_else(|| ConnectError::not_found("group not found"))?;
         Response::ok(PermissionGetGroupResponse {
             group: ::buffa::MessageField::some(group_to_proto(group)),
-            ..Default::default()
         })
     }
 
@@ -177,10 +166,7 @@ impl PermissionService for PermissionGroupController {
             .create_group(auth.user_id(), auth.organization_id, dto)
             .await
             .map_err(map_error)?;
-        Response::ok(PermissionCreateGroupResponse {
-            id,
-            ..Default::default()
-        })
+        Response::ok(PermissionCreateGroupResponse { id })
     }
 
     #[permission(Groups, CanUpdate)]
@@ -223,10 +209,7 @@ impl PermissionService for PermissionGroupController {
     {
         let policies = self.service.list_policies().await.map_err(map_error)?;
         let policies = policies.into_iter().map(policy_to_proto).collect();
-        Response::ok(PermissionListPoliciesResponse {
-            policies,
-            ..Default::default()
-        })
+        Response::ok(PermissionListPoliciesResponse { policies })
     }
 
     // Auth-only: members must be able to read their own grants to gate the
@@ -246,7 +229,6 @@ impl PermissionService for PermissionGroupController {
             role: ::buffa::EnumValue::Known(user_role_str_to_proto(&role)),
             organization_id: auth.organization_id,
             actions,
-            ..Default::default()
         })
     }
 
@@ -283,10 +265,7 @@ impl PermissionService for PermissionGroupController {
             .await
             .map_err(map_error)?;
         let members = members.into_iter().map(member_to_proto).collect();
-        Response::ok(PermissionListMembersResponse {
-            members,
-            ..Default::default()
-        })
+        Response::ok(PermissionListMembersResponse { members })
     }
 
     #[permission(Members, CanCreate)]
@@ -350,10 +329,7 @@ impl PermissionService for PermissionGroupController {
             .await
             .map_err(map_error)?;
         let invites = invites.into_iter().map(invite_to_proto).collect();
-        Response::ok(PermissionListInvitesResponse {
-            invites,
-            ..Default::default()
-        })
+        Response::ok(PermissionListInvitesResponse { invites })
     }
 
     #[permission(Invitation, CanCreate)]
@@ -373,10 +349,7 @@ impl PermissionService for PermissionGroupController {
             .create_invite(auth.user_id(), auth.organization_id, dto)
             .await
             .map_err(map_error)?;
-        Response::ok(PermissionCreateInviteResponse {
-            token,
-            ..Default::default()
-        })
+        Response::ok(PermissionCreateInviteResponse { token })
     }
 
     async fn accept_invite<'a>(
@@ -465,10 +438,8 @@ impl PermissionService for PermissionGroupController {
                 .map(|entry| PermissionUserPolicyEntry {
                     policy_id: entry.policy_id,
                     effect: policy_effect_str_to_proto(&entry.effect),
-                    ..Default::default()
                 })
                 .collect(),
-            ..Default::default()
         })
     }
 }

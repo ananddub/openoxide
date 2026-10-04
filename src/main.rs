@@ -55,7 +55,11 @@ async fn main() {
         )
     });
 
-    tracing::info!("Listening on https://{}:{} (HTTP/2 only, ALPN [h2])", host, port);
+    tracing::info!(
+        "Listening on https://{}:{} (HTTP/2 only, ALPN [h2])",
+        host,
+        port
+    );
     openoxide::api::connect::serve(listener, connect_service, tls)
         .await
         .unwrap();

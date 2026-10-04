@@ -39,7 +39,7 @@ use crate::utils::exec::CommandExecutor;
 use crate::utils::paths::OpenOxidePaths;
 
 use super::cutover::{HealthVerdict, classify_health, health_poll_attempts, may_mark_superseded};
-use super::mounts::plan_service_objects;
+use super::mounts::{MountPlanScope, plan_service_objects};
 use super::planner::PlannedObject;
 use super::quiesce::{CancelSignal, SchedulePauseRecord, decide_schedule_restore};
 use super::runner::{ObjectCheckpoint, SyncCredentials, SyncOutcome, sync_and_verify_object};
@@ -115,7 +115,9 @@ pub fn volume_name_from_mountpoint(path: &str) -> Option<String> {
     if !trimmed.ends_with("/_data") {
         return None;
     }
-    let name = trimmed[..trimmed.len() - "/_data".len()].rsplit('/').next()?;
+    let name = trimmed[..trimmed.len() - "/_data".len()]
+        .rsplit('/')
+        .next()?;
     if name.is_empty() || name.contains('/') {
         return None;
     }
@@ -128,12 +130,12 @@ pub fn volume_name_from_mountpoint(path: &str) -> Option<String> {
 /// DONE deployment plus a running service is the only pass; a failed
 /// deployment fails immediately; anything else keeps waiting.
 pub fn health_verdict(app_status: &str, deployment_status: Option<&str>) -> HealthVerdict {
-    if let Some(status) = deployment_status {
-        if deployment_failed(status) {
-            return HealthVerdict::Down {
-                reason: format!("redeploy deployment ended as {status}"),
-            };
-        }
+    if let Some(status) = deployment_status
+        && deployment_failed(status)
+    {
+        return HealthVerdict::Down {
+            reason: format!("redeploy deployment ended as {status}"),
+        };
     }
     let probe_ok = matches!(deployment_status, Some("DONE"));
     classify_health(Some(&app_status.to_lowercase()), probe_ok.then_some(true))
@@ -219,16 +221,16 @@ impl MigrationOrchestrator {
         // ---- PREFLIGHT ----------------------------------------------------
         self.set_phase(req, MigrationPhase::Preflight, "RUNNING", 0)
             .await?;
-        let source = CommandExecutor::Remote(
+        let source = CommandExecutor::Remote(Box::new(
             remote_executor(&self.queries.pool, req.source_server_id)
                 .await
                 .map_err(Flow::Failed)?,
-        );
-        let target = CommandExecutor::Remote(
+        ));
+        let target = CommandExecutor::Remote(Box::new(
             remote_executor(&self.queries.pool, req.target_server_id)
                 .await
                 .map_err(Flow::Failed)?,
-        );
+        ));
         let credentials = self.sync_credentials(req.target_server_id).await?;
         self.require_rsync(&source, "source").await?;
         self.require_rsync(&target, "target").await?;
@@ -292,8 +294,13 @@ impl MigrationOrchestrator {
                 SyncOutcome::Verified { .. } => {
                     done += 1;
                     statuses.insert(object.obj_key.clone(), "VERIFIED".into());
-                    self.set_phase(req, MigrationPhase::Sync, "RUNNING", sync_progress(done, total))
-                        .await?;
+                    self.set_phase(
+                        req,
+                        MigrationPhase::Sync,
+                        "RUNNING",
+                        sync_progress(done, total),
+                    )
+                    .await?;
                 }
                 SyncOutcome::Dirty { message } | SyncOutcome::Failed { message } => {
                     return Err(Flow::Failed(format!(
@@ -308,7 +315,12 @@ impl MigrationOrchestrator {
         self.set_phase(req, MigrationPhase::Verify, "RUNNING", 80)
             .await?;
         for object in &planned {
-            if !sync_done(statuses.get(&object.obj_key).map(String::as_str).unwrap_or("")) {
+            if !sync_done(
+                statuses
+                    .get(&object.obj_key)
+                    .map(String::as_str)
+                    .unwrap_or(""),
+            ) {
                 return Err(Flow::Failed(format!(
                     "{} never reached VERIFIED",
                     object.obj_key
@@ -362,9 +374,7 @@ impl MigrationOrchestrator {
             .migration_objects_list_by_migration(&req.migration_id)
             .await?;
         if !may_mark_superseded(MigrationPhase::Superseded, unsettled_objects(&rows)) {
-            return Err(Flow::Failed(
-                "checkpoints unsettled at SUPERSEDED".into(),
-            ));
+            return Err(Flow::Failed("checkpoints unsettled at SUPERSEDED".into()));
         }
         // Nothing on the source is deleted: the workload was stopped at
         // QUIESCE and its rows now point at the target. Staging prefixes are
@@ -416,10 +426,14 @@ impl MigrationOrchestrator {
     ) -> Result<Vec<crate::flash_gen::models::Schedules>, Flow> {
         let rows = match req.kind {
             MigratedServiceKind::Application => {
-                self.queries.list_schedules_by_application(req.service_id).await?
+                self.queries
+                    .list_schedules_by_application(req.service_id)
+                    .await?
             }
             MigratedServiceKind::Compose => {
-                self.queries.list_schedules_by_compose(req.service_id).await?
+                self.queries
+                    .list_schedules_by_compose(req.service_id)
+                    .await?
             }
         };
         Ok(rows)
@@ -444,7 +458,9 @@ impl MigrationOrchestrator {
         }
         match req.kind {
             MigratedServiceKind::Application => {
-                self.applications.stop_or_cancel_smart(req.service_id).await?;
+                self.applications
+                    .stop_or_cancel_smart(req.service_id)
+                    .await?;
             }
             MigratedServiceKind::Compose => {
                 self.compose.stop_or_cancel_smart(req.service_id).await?;
@@ -460,32 +476,22 @@ impl MigrationOrchestrator {
         source: &CommandExecutor,
     ) -> Result<Vec<PlannedObject>, Flow> {
         let paths = OpenOxidePaths::from_env();
-        let (application_ids, compose_ids): (Vec<i64>, Vec<i64>) = match req.kind {
-            MigratedServiceKind::Application => (vec![req.service_id], Vec::new()),
-            MigratedServiceKind::Compose => (Vec::new(), vec![req.service_id]),
+        let scope = match req.kind {
+            MigratedServiceKind::Application => MountPlanScope {
+                application_ids: vec![req.service_id],
+                app_names: HashMap::from([(req.service_id, req.app_name.clone())]),
+                ..MountPlanScope::default()
+            },
+            MigratedServiceKind::Compose => MountPlanScope {
+                compose_ids: vec![req.service_id],
+                compose_names: HashMap::from([(req.service_id, req.app_name.clone())]),
+                ..MountPlanScope::default()
+            },
         };
-        let mut app_names = HashMap::new();
-        let mut compose_names = HashMap::new();
-        match req.kind {
-            MigratedServiceKind::Application => {
-                app_names.insert(req.service_id, req.app_name.clone());
-            }
-            MigratedServiceKind::Compose => {
-                compose_names.insert(req.service_id, req.app_name.clone());
-            }
-        }
-        let (planned, issues) = plan_service_objects(
-            &paths,
-            &req.migration_id,
-            &self.queries,
-            source,
-            &application_ids,
-            &compose_ids,
-            &app_names,
-            &compose_names,
-        )
-        .await
-        .map_err(|error| Flow::Failed(error.to_string()))?;
+        let (planned, issues) =
+            plan_service_objects(&paths, &req.migration_id, &self.queries, source, &scope)
+                .await
+                .map_err(|error| Flow::Failed(error.to_string()))?;
         if !issues.is_empty() {
             // Fail closed: an unresolved volume or escaping bind means the
             // byte inventory is incomplete; the tar-stream fallback is not
@@ -527,12 +533,13 @@ impl MigrationOrchestrator {
             }
             let dest = match object.kind {
                 super::scope::MigrationObjectKind::Volume => {
-                    let name = volume_name_from_mountpoint(&object.source_ref).ok_or_else(|| {
-                        Flow::Failed(format!(
-                            "cannot derive volume name from {}",
-                            object.source_ref
-                        ))
-                    })?;
+                    let name =
+                        volume_name_from_mountpoint(&object.source_ref).ok_or_else(|| {
+                            Flow::Failed(format!(
+                                "cannot derive volume name from {}",
+                                object.source_ref
+                            ))
+                        })?;
                     // Idempotent; a pre-existing volume keeps its data and
                     // trips the foreign-content refusal below.
                     target
@@ -624,11 +631,7 @@ impl MigrationOrchestrator {
     /// deliberately untouched in this slice (per-service cert repoint +
     /// ACME re-issue is a follow-up); the queries validate the old
     /// ownership in-statement, so a mismatch simply moves nothing.
-    async fn repoint(
-        &self,
-        req: &StatefulMigrationRequest,
-        ctx: &RunContext,
-    ) -> Result<(), Flow> {
+    async fn repoint(&self, req: &StatefulMigrationRequest, ctx: &RunContext) -> Result<(), Flow> {
         let id_list = serde_json::to_string(&[req.service_id])
             .map_err(|error| Flow::Failed(error.to_string()))?;
         match req.kind {
@@ -656,13 +659,11 @@ impl MigrationOrchestrator {
             }
         }
         self.queries
-            .servers_migrate_build_assignments_by_ids(
-                &ServersMigrateBuildAssignmentsByIdsParams {
-                    build_server_id: req.target_server_id,
-                    build_server_id2: req.source_server_id,
-                    service_id_list: id_list,
-                },
-            )
+            .servers_migrate_build_assignments_by_ids(&ServersMigrateBuildAssignmentsByIdsParams {
+                build_server_id: req.target_server_id,
+                build_server_id2: req.source_server_id,
+                service_id_list: id_list,
+            })
             .await?;
         if !ctx.schedule_ids.is_empty() {
             let schedule_list = serde_json::to_string(&ctx.schedule_ids)
@@ -765,12 +766,7 @@ impl MigrationOrchestrator {
         self.restore(req, ctx).await;
     }
 
-    async fn on_failed(
-        &self,
-        req: &StatefulMigrationRequest,
-        message: &str,
-        ctx: &RunContext,
-    ) {
+    async fn on_failed(&self, req: &StatefulMigrationRequest, message: &str, ctx: &RunContext) {
         let _ = self
             .queries
             .application_migrations_finish_failure(message, &req.migration_id)

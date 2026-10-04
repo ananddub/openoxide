@@ -15,11 +15,12 @@ pub struct NotificationController {
 
 #[singleton]
 impl NotificationController {
-    fn new(
-        queries: Arc<FlashQueries>,
-        service: Arc<NotificationService>,
-    ) -> Self {
+    fn new(queries: Arc<FlashQueries>, service: Arc<NotificationService>) -> Self {
         let builder = NotificationProviderBuilder;
-        Self { queries, service, builder }
+        Self {
+            queries,
+            service,
+            builder,
+        }
     }
 }

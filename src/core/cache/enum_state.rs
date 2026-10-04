@@ -27,9 +27,9 @@ pub enum CacheKey {
 
 #[derive(Debug, Clone)]
 pub enum CacheEnum {
-    Application(ApplicationRecord),
-    Compose(ComposeRecord),
-    Database(DatabaseRecord),
+    Application(Box<ApplicationRecord>),
+    Compose(Box<ComposeRecord>),
+    Database(Box<DatabaseRecord>),
     ProjectsList(Vec<crate::flash_gen::models::Projects>),
     Environments(Vec<crate::flash_gen::models::Environments>),
     DestinationsList(Vec<crate::flash_gen::models::Destinations>),

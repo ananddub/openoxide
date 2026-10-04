@@ -10,8 +10,6 @@ use std::sync::Arc;
 
 use super::files;
 
-
-
 #[derive(Debug, Deserialize)]
 pub struct CreateCertificateDto {
     pub name: String,
@@ -135,9 +133,7 @@ impl CertificateService {
             .await
             .map_err(Error::Protocol)?;
 
-        files::write(&current)
-            .await
-            .map_err(Error::Protocol)?;
+        files::write(&current).await.map_err(Error::Protocol)?;
         self.certificates_update(id, &current).await?;
         Ok(current)
     }
@@ -146,13 +142,9 @@ impl CertificateService {
         let current = self.get_by_id(id, organization_id).await?;
         let dependencies = self.queries.certificate_dependency_counts(id).await?;
         if dependencies.running_renewals > 0 {
-            return Err(Error::Protocol(
-                "certificate has a running renewal".into(),
-            ));
+            return Err(Error::Protocol("certificate has a running renewal".into()));
         }
-        files::delete(&current)
-            .await
-            .map_err(Error::Protocol)?;
+        files::delete(&current).await.map_err(Error::Protocol)?;
         self.queries
             .certificates_delete_for_organization(id, organization_id)
             .await?;

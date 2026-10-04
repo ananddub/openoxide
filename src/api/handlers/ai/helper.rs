@@ -3,8 +3,8 @@ use connectrpc::{ConnectError, ErrorCode};
 use crate::api::connect::generated::openoxide::api::v1::{
     AiComposeSuggestion as AiComposeSuggestionProto, AiDomain as AiDomainProto,
     AiEnvironmentVariable as AiEnvironmentVariableProto, AiGeneratedFile as AiGeneratedFileProto,
-    AiGeneration as AiGenerationProto, AiGenerationOutput as AiGenerationOutputProto,
-    AiProvider, AiSetting as AiSettingProto,
+    AiGeneration as AiGenerationProto, AiGenerationOutput as AiGenerationOutputProto, AiProvider,
+    AiSetting as AiSettingProto,
 };
 use crate::services::platform::ai::{AiGenerationView, AiSettingView};
 
@@ -101,6 +101,5 @@ pub fn generation_to_proto(view: AiGenerationView) -> AiGenerationProto {
         compose_id: view.compose_id,
         created_at: view.created_at,
         updated_at: view.updated_at,
-        ..Default::default()
     }
 }

@@ -1,4 +1,7 @@
-use super::{VaultProviderType, VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto, providers};
+use super::{
+    VaultProviderType, VaultSecretListDto, VaultService, VaultServiceError, VaultTestResultDto,
+    providers,
+};
 
 impl VaultService {
     pub async fn test_connection(

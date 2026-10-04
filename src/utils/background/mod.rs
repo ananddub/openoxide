@@ -1,4 +1,3 @@
-pub mod alert;
 pub mod builder;
 pub mod edge;
 pub mod log_cleanup;

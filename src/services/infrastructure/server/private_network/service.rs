@@ -11,8 +11,10 @@ use crate::{
             ServerPrivateNetworksAcquireOperationParams, ServerPrivateNetworksFinishRotationParams,
             ServerPrivateNetworksInsertParams, ServerPrivateNetworksRenewOperationParams,
             ServerPrivateNetworksSetHealthHandshakeParams, ServerPrivateNetworksSetHealthParams,
-            ServerPrivateNetworksSetRuntimeFullParams, ServerPrivateNetworksSetRuntimeStatusHandshakeParams,
-            ServerPrivateNetworksSetRuntimeStatusKeyParams, ServerPrivateNetworksUpdateConfigParams,
+            ServerPrivateNetworksSetRuntimeFullParams,
+            ServerPrivateNetworksSetRuntimeStatusHandshakeParams,
+            ServerPrivateNetworksSetRuntimeStatusKeyParams,
+            ServerPrivateNetworksUpdateConfigParams,
         },
     },
     utils::exec::{CommandExecutor, RemoteExecutor, SshAuth, SshHostKey},
@@ -80,20 +82,20 @@ impl ServerPrivateNetworkService {
         let dns_name = input.dns_name.as_deref().map(str::to_ascii_lowercase);
         let network = map_network(
             self.networks_upsert(
-                    server_id,
-                    connection_mode(input.connection_mode),
-                    input.provider.map(provider),
-                    input.private_host.as_deref(),
-                    input.tunnel_address.as_deref(),
-                    input.public_key.as_deref(),
-                    input.endpoint.as_deref(),
-                    input.listen_port.map(i64::from),
-                    input.persistent_keepalive.map(i64::from),
-                    dns_name.as_deref(),
-                    &routes,
-                    status,
-                )
-                .await?,
+                server_id,
+                connection_mode(input.connection_mode),
+                input.provider.map(provider),
+                input.private_host.as_deref(),
+                input.tunnel_address.as_deref(),
+                input.public_key.as_deref(),
+                input.endpoint.as_deref(),
+                input.listen_port.map(i64::from),
+                input.persistent_keepalive.map(i64::from),
+                dns_name.as_deref(),
+                &routes,
+                status,
+            )
+            .await?,
         )?;
         Ok(network)
     }
@@ -111,10 +113,13 @@ impl ServerPrivateNetworkService {
             .run()
             .await;
 
-        if let Ok(executor) =
-            crate::services::compute::compose::remote::remote_executor(&self.queries.pool, server_id).await
+        if let Ok(executor) = crate::services::compute::compose::remote::remote_executor(
+            &self.queries.pool,
+            server_id,
+        )
+        .await
         {
-            let remote_exec = CommandExecutor::Remote(executor);
+            let remote_exec = CommandExecutor::Remote(Box::new(executor));
             let remote_os = crate::utils::os::OsCli::new(&remote_exec);
             let _ = remote_os
                 .wireguard()
@@ -155,8 +160,13 @@ impl ServerPrivateNetworkService {
             let backend = KernelWireGuardBackend::new(&local, &remote);
             let interface = interface_name(server_id);
             let _ = backend.teardown(&interface).await;
-            self.networks_set_runtime_state(server_id, PrivateNetworkStatus::Configuring, None, None)
-                .await?;
+            self.networks_set_runtime_state(
+                server_id,
+                PrivateNetworkStatus::Configuring,
+                None,
+                None,
+            )
+            .await?;
             self.setup_locked(server_id).await
         })
         .await
@@ -173,8 +183,13 @@ impl ServerPrivateNetworkService {
             let backend = KernelWireGuardBackend::new(&local, &remote);
             let interface = interface_name(server_id);
             let _ = backend.teardown(&interface).await;
-            self.networks_set_runtime_state(server_id, PrivateNetworkStatus::Configuring, None, None)
-                .await?;
+            self.networks_set_runtime_state(
+                server_id,
+                PrivateNetworkStatus::Configuring,
+                None,
+                None,
+            )
+            .await?;
             self.setup_locked(server_id).await
         })
         .await
@@ -214,12 +229,12 @@ impl ServerPrivateNetworkService {
                     .await?;
                 self.verify_private_ssh(server_id, &remote_host).await?;
                 self.networks_set_runtime_state(
-                        server_id,
-                        PrivateNetworkStatus::Active,
-                        Some(&public_key),
-                        None,
-                    )
-                    .await?;
+                    server_id,
+                    PrivateNetworkStatus::Active,
+                    Some(&public_key),
+                    None,
+                )
+                .await?;
                 self.get_required(server_id).await
             }
             .await;
@@ -342,17 +357,16 @@ impl ServerPrivateNetworkService {
                             PrivateNetworkStatus::try_from(refreshed.status.as_str()),
                             Ok(PrivateNetworkStatus::Failed)
                         )
-                    {
-                        if let Err(error) = self.networks_set_runtime_state(
+                        && let Err(error) = self
+                            .networks_set_runtime_state(
                                 network.server_id,
                                 PrivateNetworkStatus::Active,
                                 refreshed.public_key.as_deref(),
                                 refreshed.last_handshake_at,
                             )
                             .await
-                        {
-                            tracing::warn!(server_id = network.server_id, %error, "could not recover WireGuard runtime status");
-                        }
+                    {
+                        tracing::warn!(server_id = network.server_id, %error, "could not recover WireGuard runtime status");
                     }
                 }
                 Err(error) => {
@@ -469,19 +483,19 @@ impl ServerPrivateNetworkService {
                     }
                 };
                 self.networks_set_runtime_state(
-                        server_id,
-                        PrivateNetworkStatus::Active,
-                        Some(&public_key),
-                        health.latest_handshake,
-                    )
-                    .await?;
+                    server_id,
+                    PrivateNetworkStatus::Active,
+                    Some(&public_key),
+                    health.latest_handshake,
+                )
+                .await?;
                 self.networks_set_health(
-                        server_id,
-                        PrivateNetworkHealthStatus::Healthy,
-                        None,
-                        health.latest_handshake,
-                    )
-                    .await?;
+                    server_id,
+                    PrivateNetworkHealthStatus::Healthy,
+                    None,
+                    health.latest_handshake,
+                )
+                .await?;
                 self.get_required(server_id).await
             }
             Err(error) => {
@@ -501,12 +515,12 @@ impl ServerPrivateNetworkService {
         self.networks_set_runtime_state(server_id, PrivateNetworkStatus::Failed, public_key, None)
             .await?;
         self.networks_set_health(
-                server_id,
-                PrivateNetworkHealthStatus::Unreachable,
-                Some(message),
-                None,
-            )
-            .await
+            server_id,
+            PrivateNetworkHealthStatus::Unreachable,
+            Some(message),
+            None,
+        )
+        .await
     }
 
     async fn require_managed_wireguard(&self, server_id: i64) -> sqlx::Result<()> {
@@ -521,19 +535,16 @@ impl ServerPrivateNetworkService {
         Ok(())
     }
 
-    async fn verify_external_transport(
-        &self,
-        network: &ServerPrivateNetworks,
-    ) -> sqlx::Result<()> {
+    async fn verify_external_transport(&self, network: &ServerPrivateNetworks) -> sqlx::Result<()> {
         let host = required(network.private_host.as_deref(), "private_host")?;
         self.verify_private_ssh(network.server_id, host).await?;
         self.networks_set_health(
-                network.server_id,
-                PrivateNetworkHealthStatus::Healthy,
-                None,
-                None,
-            )
-            .await
+            network.server_id,
+            PrivateNetworkHealthStatus::Healthy,
+            None,
+            None,
+        )
+        .await
     }
 
     async fn external_health(
@@ -619,29 +630,28 @@ impl ServerPrivateNetworkService {
         Ok((local, remote))
     }
 
-    async fn get_model(
-        &self,
-        server_id: i64,
-    ) -> sqlx::Result<ServerPrivateNetworks> {
+    async fn get_model(&self, server_id: i64) -> sqlx::Result<ServerPrivateNetworks> {
         if let Some(existing) = self.networks_get(server_id).await? {
             Ok(existing)
         } else {
             self.assert_server(server_id).await?;
             let tunnel_ip = format!("10.77.{server_id}.1/24");
-            let default_network = self.networks_upsert(
-                server_id,
-                PrivateNetworkConnectionMode::ManagedWireguard,
-                Some(PrivateNetworkProvider::Wireguard),
-                None,
-                Some(&tunnel_ip),
-                None,
-                None,
-                Some(51820),
-                Some(20),
-                None,
-                "[]",
-                PrivateNetworkStatus::Configuring,
-            ).await?;
+            let default_network = self
+                .networks_upsert(
+                    server_id,
+                    PrivateNetworkConnectionMode::ManagedWireguard,
+                    Some(PrivateNetworkProvider::Wireguard),
+                    None,
+                    Some(&tunnel_ip),
+                    None,
+                    None,
+                    Some(51820),
+                    Some(20),
+                    None,
+                    "[]",
+                    PrivateNetworkStatus::Configuring,
+                )
+                .await?;
             Ok(default_network)
         }
     }
@@ -704,9 +714,12 @@ impl ServerPrivateNetworkService {
 
     async fn verify_private_ssh(&self, server_id: i64, host: &str) -> sqlx::Result<()> {
         let (_, port, username, private_key, public_key) =
-            crate::services::infrastructure::server::direct_ssh_credentials(&self.queries, server_id)
-                .await?
-                .ok_or(sqlx::Error::RowNotFound)?;
+            crate::services::infrastructure::server::direct_ssh_credentials(
+                &self.queries,
+                server_id,
+            )
+            .await?
+            .ok_or(sqlx::Error::RowNotFound)?;
         let port = port
             .try_into()
             .map_err(|error: std::num::TryFromIntError| sqlx::Error::Protocol(error.to_string()))?;
@@ -725,7 +738,7 @@ impl ServerPrivateNetworkService {
                         executor.run("true", std::iter::empty::<&str>()),
                     )
                     .await
-                    .unwrap_or_else(|_| Err(crate::utils::exec::ExecError::Timeout { seconds: 3 }));
+                    .unwrap_or(Err(crate::utils::exec::ExecError::Timeout { seconds: 3 }));
 
                     if let Err(ref error) = result {
                         tracing::debug!(attempt, %error, "private-network SSH verification attempt failed");
@@ -738,23 +751,6 @@ impl ServerPrivateNetworkService {
         .map_err(|error| {
             sqlx::Error::Protocol(format!("private network SSH verification failed: {error}"))
         })
-    }
-
-    async fn direct_executor(&self, server_id: i64) -> sqlx::Result<RemoteExecutor> {
-        let (host, port, username, private_key, public_key) =
-            crate::services::infrastructure::server::direct_ssh_credentials(&self.queries, server_id)
-                .await?
-                .ok_or(sqlx::Error::RowNotFound)?;
-        Ok(RemoteExecutor::new(
-            host,
-            port.try_into()
-                .map_err(|error: std::num::TryFromIntError| {
-                    sqlx::Error::Protocol(error.to_string())
-                })?,
-            username,
-            SshAuth::key_pair(private_key, public_key),
-            SshHostKey::InsecureAcceptAny,
-        ))
     }
 
     async fn networks_get(&self, server_id: i64) -> sqlx::Result<Option<ServerPrivateNetworks>> {
@@ -779,7 +775,9 @@ impl ServerPrivateNetworkService {
     }
 
     async fn networks_disable(&self, server_id: i64) -> sqlx::Result<()> {
-        self.queries.server_private_networks_disable(server_id).await
+        self.queries
+            .server_private_networks_disable(server_id)
+            .await
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -802,7 +800,10 @@ impl ServerPrivateNetworkService {
             self.queries
                 .server_private_networks_update_config(&ServerPrivateNetworksUpdateConfigParams {
                     connection_mode: mode.as_str().to_owned(),
-                    provider: provider.map(|value| value.as_str()).unwrap_or_default().to_owned(),
+                    provider: provider
+                        .map(|value| value.as_str())
+                        .unwrap_or_default()
+                        .to_owned(),
                     private_host: private_host.unwrap_or_default().to_owned(),
                     tunnel_address: tunnel_address.unwrap_or_default().to_owned(),
                     public_key: public_key.unwrap_or_default().to_owned(),
@@ -820,7 +821,10 @@ impl ServerPrivateNetworkService {
                 .server_private_networks_insert(&ServerPrivateNetworksInsertParams {
                     server_id,
                     connection_mode: mode.as_str().to_owned(),
-                    provider: provider.map(|value| value.as_str()).unwrap_or_default().to_owned(),
+                    provider: provider
+                        .map(|value| value.as_str())
+                        .unwrap_or_default()
+                        .to_owned(),
                     private_host: private_host.unwrap_or_default().to_owned(),
                     tunnel_address: tunnel_address.unwrap_or_default().to_owned(),
                     public_key: public_key.unwrap_or_default().to_owned(),
@@ -875,12 +879,14 @@ impl ServerPrivateNetworkService {
             }
             (Some(public_key), Some(last_handshake_at)) => {
                 self.queries
-                    .server_private_networks_set_runtime_full(&ServerPrivateNetworksSetRuntimeFullParams {
-                        status: status.as_str().to_owned(),
-                        public_key: public_key.to_owned(),
-                        last_handshake_at,
-                        server_id,
-                    })
+                    .server_private_networks_set_runtime_full(
+                        &ServerPrivateNetworksSetRuntimeFullParams {
+                            status: status.as_str().to_owned(),
+                            public_key: public_key.to_owned(),
+                            last_handshake_at,
+                            server_id,
+                        },
+                    )
                     .await
             }
         }
@@ -895,12 +901,14 @@ impl ServerPrivateNetworkService {
         let lease_until = chrono::Utc::now().timestamp() + lease_seconds;
         Ok(self
             .queries
-            .server_private_networks_acquire_operation(&ServerPrivateNetworksAcquireOperationParams {
-                operation: operation.as_str().to_owned(),
-                operation_lease_until: lease_until,
-                server_id,
-                operation_lease_until2: lease_until,
-            })
+            .server_private_networks_acquire_operation(
+                &ServerPrivateNetworksAcquireOperationParams {
+                    operation: operation.as_str().to_owned(),
+                    operation_lease_until: lease_until,
+                    server_id,
+                    operation_lease_until2: lease_until,
+                },
+            )
             .await
             .is_ok())
     }
@@ -979,11 +987,7 @@ impl ServerPrivateNetworkService {
             .await
     }
 
-    async fn networks_finish_rotation(
-        &self,
-        server_id: i64,
-        public_key: &str,
-    ) -> sqlx::Result<()> {
+    async fn networks_finish_rotation(&self, server_id: i64, public_key: &str) -> sqlx::Result<()> {
         self.queries
             .server_private_networks_finish_rotation(&ServerPrivateNetworksFinishRotationParams {
                 public_key: public_key.to_owned(),

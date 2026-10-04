@@ -19,13 +19,10 @@ pub fn map_error(err: PermissionGroupError) -> ConnectError {
         }
         PermissionGroupError::NotFound => ConnectError::not_found(err.to_string()),
         PermissionGroupError::Database(e) => {
-            if let sqlx::Error::Database(db_err) = e {
-                if db_err.is_unique_violation() {
-                    return ConnectError::new(
-                        ErrorCode::AlreadyExists,
-                        "group name already exists",
-                    );
-                }
+            if let sqlx::Error::Database(db_err) = e
+                && db_err.is_unique_violation()
+            {
+                return ConnectError::new(ErrorCode::AlreadyExists, "group name already exists");
             }
             tracing::error!(error = %err, "permission group operation failed");
             ConnectError::new(ErrorCode::Internal, "permission operation failed")
@@ -108,7 +105,6 @@ pub fn group_to_proto(dto: PermissionGroupDto) -> PermissionGroupProto {
         actions: dto.actions,
         created_at: dto.created_at,
         updated_at: dto.updated_at,
-        ..Default::default()
     }
 }
 
@@ -116,7 +112,6 @@ pub fn policy_to_proto(dto: PermissionPolicyDto) -> PermissionPolicyProto {
     PermissionPolicyProto {
         id: dto.id,
         action: dto.action,
-        ..Default::default()
     }
 }
 
@@ -134,7 +129,6 @@ pub fn member_to_proto(
         updated_at: row.updated_at.unwrap_or_default(),
         group_id: row.group_id.unwrap_or_default(),
         group_name: row.group_name.filter(|n| !n.is_empty()),
-        ..Default::default()
     }
 }
 
@@ -150,6 +144,5 @@ pub fn invite_to_proto(
         invited_by: invite.invited_by,
         expired_at: invite.expired_at,
         created_at: invite.created_at,
-        ..Default::default()
     }
 }

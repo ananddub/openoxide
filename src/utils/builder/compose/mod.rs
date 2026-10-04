@@ -1,7 +1,7 @@
-pub use compose::ComposeBuilder;
+pub use builder::ComposeBuilder;
 
 pub mod adapter;
-pub mod compose;
+pub mod builder;
 pub mod health;
 pub mod labels;
 pub mod mounts;

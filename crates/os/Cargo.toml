@@ -1,7 +1,10 @@
 [package]
-name = "os"
+name = "oxos"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+description = "System operations toolkit: local and remote command execution, Docker/Git/rsync/rclone drivers, archives, SSH and network configuration"
+keywords = ["ops", "ssh", "docker", "exec"]
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -30,7 +33,7 @@ auto-di = "0.6.0"
 base64 = "0.22"
 uuid = { version = "1.2.2", features = ["v4", "serde"] }
 chrono = { version = "0.4.45", features = ["serde"] }
-sh_macros = { path = "../sh_macros" }
+sh_macros = { version = "0.1.0", path = "../sh_macros" }
 async-trait = "0.1"
 russh = "0.45"
 russh-keys = "0.45"

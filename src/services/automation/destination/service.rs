@@ -95,7 +95,9 @@ impl DestinationService {
     }
 
     pub async fn list(&self, organization_id: i64) -> sqlx::Result<Vec<Destinations>> {
-        self.queries.destinations_list_by_organization(organization_id).await
+        self.queries
+            .destinations_list_by_organization(organization_id)
+            .await
     }
 
     pub async fn create(&self, input: CreateDestinationDto) -> sqlx::Result<Destinations> {
@@ -171,7 +173,9 @@ impl DestinationService {
     pub async fn delete(&self, id: &str, organization_id: i64) -> sqlx::Result<()> {
         let id_i64 = id.parse::<i64>().map_err(|_| sqlx::Error::RowNotFound)?;
         self.get_by_id(id, organization_id).await?;
-        self.queries.destinations_delete(id_i64, organization_id).await
+        self.queries
+            .destinations_delete(id_i64, organization_id)
+            .await
     }
 
     pub async fn test_connection(&self, id: &str, organization_id: i64) -> Result<(), String> {

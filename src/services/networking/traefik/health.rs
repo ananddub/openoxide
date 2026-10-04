@@ -123,8 +123,8 @@ impl TraefikService {
                     serde_yaml::Value::Mapping(access_log_map),
                 );
             } else {
-                map.remove(&serde_yaml::Value::String("accessLog".to_string()));
-                map.remove(&serde_yaml::Value::String("accesslog".to_string()));
+                map.remove(serde_yaml::Value::String("accessLog".to_string()));
+                map.remove(serde_yaml::Value::String("accesslog".to_string()));
             }
         }
 

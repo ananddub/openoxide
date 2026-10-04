@@ -5,8 +5,8 @@ use crate::api::connect::generated::openoxide::api::v1::{
     CertificateRenewal as CertificateRenewalProto,
     CertificateRenewalStatus as ProtoCertificateRenewalStatus,
 };
-use crate::flash_gen::resource_dependencies::CertificateDependencyCountsRow;
 use crate::flash_gen::models::{CertificateRenewals, Certificates};
+use crate::flash_gen::resource_dependencies::CertificateDependencyCountsRow;
 
 pub fn map_error(err: sqlx::Error) -> ConnectError {
     match &err {
@@ -43,7 +43,6 @@ pub fn cert_to_proto(value: Certificates) -> CertificateProto {
         organization_id: value.organization_id,
         created_at: value.created_at,
         updated_at: value.updated_at,
-        ..Default::default()
     }
 }
 
@@ -59,7 +58,6 @@ pub fn renewal_to_proto(value: CertificateRenewals) -> CertificateRenewalProto {
         error: value.error,
         started_at: value.started_at,
         finished_at: value.finished_at,
-        ..Default::default()
     }
 }
 
@@ -67,6 +65,5 @@ pub fn dependencies_to_proto(row: CertificateDependencyCountsRow) -> Certificate
     CertificateDependenciesProto {
         renewals: row.renewals,
         running_renewals: row.running_renewals,
-        ..Default::default()
     }
 }

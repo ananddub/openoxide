@@ -1,8 +1,10 @@
 mod builder;
+mod gzip;
 pub mod tar;
 pub mod zip;
 
 pub use builder::ArchiveBuilder;
+pub use gzip::{GunzipBuilder, GzipBuilder};
 pub use tar::{ArchiveCreateBuilder, ArchiveExtractBuilder, ArchiveListBuilder, TarBuilder};
 pub use zip::{CompressionLevel, ZipBuilder, ZipError, ZipPathMode};
 

@@ -163,9 +163,11 @@ pub(crate) async fn agent_server_id(server_id: Option<i64>) -> Result<i64, Strin
     if let Some(server_id) = server_id {
         return Ok(server_id);
     }
-    let lifecycle = resolve::<crate::services::observability::monitoring::lifecycle::MonitoringLifecycleService>()
-        .await
-        .map_err(|error| format!("local Agent lifecycle unavailable: {error}"))?;
+    let lifecycle = resolve::<
+        crate::services::observability::monitoring::lifecycle::MonitoringLifecycleService,
+    >()
+    .await
+    .map_err(|error| format!("local Agent lifecycle unavailable: {error}"))?;
     lifecycle
         .ensure_local_registration()
         .await

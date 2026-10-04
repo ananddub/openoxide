@@ -21,7 +21,6 @@ pub fn tag_to_proto(tag_dto: TagDto) -> TagProto {
         color: tag_dto.color,
         organization_id: tag_dto.organization_id,
         created_at: tag_dto.created_at,
-        ..Default::default()
     }
 }
 

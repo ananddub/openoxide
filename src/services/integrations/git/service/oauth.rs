@@ -4,8 +4,9 @@ use crate::{
     utils::provider::oauth::{AuthorizationInfo, OAuthConfig},
 };
 
-use super::{config_to_string, parse_config, GitProviderService, GiteaConfig, GithubConfig,
-    GitlabConfig};
+use super::{
+    GitProviderService, GiteaConfig, GithubConfig, GitlabConfig, config_to_string, parse_config,
+};
 
 impl GitProviderService {
     pub async fn authorization(
@@ -39,18 +40,13 @@ impl GitProviderService {
                     state,
                 })
             }
-            Some(GitProviderType::Gitlab) => Ok(self
-                .oauth
-                .authorization_url(
-                    &self.gitlab_oauth_config(id, organization_id).await?,
-                    &state,
-                )),
+            Some(GitProviderType::Gitlab) => Ok(self.oauth.authorization_url(
+                &self.gitlab_oauth_config(id, organization_id).await?,
+                &state,
+            )),
             Some(GitProviderType::Gitea) => Ok(self
                 .oauth
-                .authorization_url(
-                    &self.gitea_oauth_config(id, organization_id).await?,
-                    &state,
-                )),
+                .authorization_url(&self.gitea_oauth_config(id, organization_id).await?, &state)),
             _ => Err("This provider does not support browser authorization".into()),
         }
     }
@@ -293,11 +289,7 @@ impl GitProviderService {
         })
     }
 
-    async fn oauth_state(
-        &self,
-        id: i64,
-        organization_id: i64,
-    ) -> Result<String, String> {
+    async fn oauth_state(&self, id: i64, organization_id: i64) -> Result<String, String> {
         let payload = format!("{id}.{}", chrono::Utc::now().timestamp() + 600);
         let signature = crate::services::integrations::git::webhooks::sign_hmac_sha256(
             self.webhook_secret(id, organization_id).await?.as_bytes(),

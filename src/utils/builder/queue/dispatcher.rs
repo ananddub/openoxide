@@ -1,9 +1,9 @@
 use crate::core::cache::{AppStateCache, CacheKey};
+use crate::utils::builder::custom_type::IdType;
 use crate::utils::builder::hash_state::ApplicationState;
 use auto_di::singleton;
 use dashmap::DashMap;
 use futures::FutureExt;
-use sqlx::SqlitePool;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
@@ -12,7 +12,6 @@ use tokio::sync::{Notify, Semaphore};
 type ServerKey = Option<i64>;
 
 pub struct BuilderQueue {
-    pub(super) db: Arc<SqlitePool>,
     pub(super) application_state: Arc<ApplicationState>,
     pub(super) cache: Arc<AppStateCache>,
     slots: DashMap<ServerKey, Arc<Semaphore>>,
@@ -23,11 +22,7 @@ pub struct BuilderQueue {
 
 #[singleton]
 impl BuilderQueue {
-    pub fn new(
-        db: Arc<SqlitePool>,
-        application_state: Arc<ApplicationState>,
-        cache: Arc<AppStateCache>,
-    ) -> Self {
+    pub fn new(application_state: Arc<ApplicationState>, cache: Arc<AppStateCache>) -> Self {
         let per_server_limit = std::env::var("DEPLOYMENT_PER_SERVER_CONCURRENCY")
             .ok()
             .and_then(|v| v.parse().ok())
@@ -35,7 +30,6 @@ impl BuilderQueue {
             .max(1);
 
         Self {
-            db,
             application_state,
             cache,
             slots: DashMap::new(),
@@ -368,8 +362,7 @@ impl BuilderQueue {
                         Some(sid) => q.deployments_claim_service_type(sid).await.ok(),
                         None => None,
                     };
-                    let (application_id, compose_id, database_id) = match service_type.as_deref()
-                    {
+                    let (application_id, compose_id, database_id) = match service_type.as_deref() {
                         Some("COMPOSE") => (None, service_id, None),
                         Some("DATABASE") => (None, None, service_id),
                         _ => (service_id, None, None),
@@ -422,12 +415,15 @@ impl BuilderQueue {
                             }
                             if let Some(id) = application_id {
                                 q.cache.invalidate(&CacheKey::Application(id)).await;
+                                q.application_state.remove_state(IdType::AppId(id));
                             }
                             if let Some(id) = compose_id {
                                 q.cache.invalidate(&CacheKey::Compose(id)).await;
+                                q.application_state.remove_state(IdType::ComposeId(id));
                             }
                             if let Some(id) = database_id {
                                 q.cache.invalidate(&CacheKey::Database(id)).await;
+                                q.application_state.remove_state(IdType::DatabaseId(id));
                             }
                         }
                         // Free the per-server slot, then wake dispatcher.

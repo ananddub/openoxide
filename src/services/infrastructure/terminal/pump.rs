@@ -4,8 +4,8 @@ use tokio::time::interval;
 use tokio_util::sync::CancellationToken;
 
 use crate::api::connect::generated::openoxide::api::v1::TerminalOutputStream;
-use crate::services::observability::monitoring::proto::shell_message::Payload;
 use crate::services::observability::monitoring::proto::ShellMessage;
+use crate::services::observability::monitoring::proto::shell_message::Payload;
 
 use super::events::SessionEvents;
 use super::registry::TerminalSessionRegistry;
@@ -14,7 +14,7 @@ use super::registry::TerminalSessionRegistry;
 /// PTY output into the event channel.
 pub enum TerminalPump {
     Agent {
-        stream: tonic::Streaming<ShellMessage>,
+        stream: Box<tonic::Streaming<ShellMessage>>,
     },
     Russh {
         terminal: Arc<os::ssh::RusshTerminal>,
@@ -34,7 +34,7 @@ impl TerminalPump {
         match self {
             Self::Agent { stream } => AgentPump {
                 events,
-                stream,
+                stream: *stream,
                 cancel,
                 registry,
             }

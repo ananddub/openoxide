@@ -5,8 +5,8 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ScheduleConcurrencyPolicy as ProtoScheduleConcurrencyPolicy,
     ScheduleExecution as ScheduleExecutionProto,
     ScheduleExecutionStatus as ProtoScheduleExecutionStatus,
-    ScheduleMissedRunPolicy as ProtoScheduleMissedRunPolicy,
-    ScheduleRun as ScheduleRunProto, ScheduleRuntimePolicy as ScheduleRuntimePolicyProto,
+    ScheduleMissedRunPolicy as ProtoScheduleMissedRunPolicy, ScheduleRun as ScheduleRunProto,
+    ScheduleRuntimePolicy as ScheduleRuntimePolicyProto,
     ScheduleShellType as ProtoScheduleShellType, ScheduleTriggerKind as ProtoScheduleTriggerKind,
     ScheduleType as ProtoScheduleType,
 };
@@ -16,10 +16,9 @@ use crate::services::automation::schedule::ScheduleRunResult;
 pub async fn refresh_schedule_runner() {
     if let Ok(runner) =
         auto_di::resolve::<crate::services::automation::schedule::ScheduleRunner>().await
+        && let Err(error) = runner.refresh_jobs().await
     {
-        if let Err(error) = runner.refresh_jobs().await {
-            tracing::error!(%error, "could not refresh scheduler after schedule mutation");
-        }
+        tracing::error!(%error, "could not refresh scheduler after schedule mutation");
     }
 }
 
@@ -196,7 +195,6 @@ pub fn schedule_to_proto(value: Schedules) -> ScheduleProto {
         organization_id: value.organization_id,
         created_at: value.created_at,
         updated_at: value.updated_at,
-        ..Default::default()
     }
 }
 
@@ -208,7 +206,6 @@ pub fn run_result_to_proto(value: ScheduleRunResult) -> ScheduleRunProto {
         message: value.message,
         stdout: value.stdout,
         stderr: value.stderr,
-        ..Default::default()
     }
 }
 
@@ -228,7 +225,6 @@ pub fn runtime_policy_to_proto(value: ScheduleRuntimePolicies) -> ScheduleRuntim
         notify_on_failure: value.notify_on_failure != 0,
         last_scheduled_at: value.last_scheduled_at,
         updated_at: value.updated_at,
-        ..Default::default()
     }
 }
 
@@ -246,6 +242,5 @@ pub fn execution_to_proto(value: ScheduleExecutions) -> ScheduleExecutionProto {
         message: value.message,
         stdout: value.stdout,
         stderr: value.stderr,
-        ..Default::default()
     }
 }

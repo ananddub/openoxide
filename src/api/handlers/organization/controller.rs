@@ -25,9 +25,15 @@ impl OrganizationService for OrganizationController {
             .await
             .map_err(map_db_error)?
         {
-            return Err(ConnectError::permission_denied("not a member of this organization"));
+            return Err(ConnectError::permission_denied(
+                "not a member of this organization",
+            ));
         }
-        let org = self.service.get_by_id(request.id).await.map_err(map_db_error)?;
+        let org = self
+            .service
+            .get_by_id(request.id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(org_to_proto(org))
     }
 
@@ -36,15 +42,16 @@ impl OrganizationService for OrganizationController {
         ctx: RequestContext,
         _request: ServiceRequest<'_, ListOrganizationsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListOrganizationsResponse> + Send + use<'a>> {
-        let orgs = self.service.list_for_user(auth.user_id()).await.map_err(map_db_error)?;
+        let orgs = self
+            .service
+            .list_for_user(auth.user_id())
+            .await
+            .map_err(map_db_error)?;
         let organizations = orgs
             .into_iter()
             .map(|(org, role)| org_with_role_to_proto(org, role))
             .collect();
-        Response::ok(ListOrganizationsResponse {
-            organizations,
-            ..Default::default()
-        })
+        Response::ok(ListOrganizationsResponse { organizations })
     }
 
     // Auth-only (no permission macro): leaving is a self-service action;
@@ -89,7 +96,11 @@ impl OrganizationService for OrganizationController {
                 "switch to the organization before editing it",
             ));
         }
-        let org = self.service.update(dto.id, dto).await.map_err(map_db_error)?;
+        let org = self
+            .service
+            .update(dto.id, dto)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(org_to_proto(org))
     }
 
@@ -106,13 +117,20 @@ impl OrganizationService for OrganizationController {
         }
         // Only the owner may delete the organization itself; the org
         // ADMIN role must not be able to destroy someone else's workspace.
-        let org = self.service.get_by_id(request.id).await.map_err(map_db_error)?;
+        let org = self
+            .service
+            .get_by_id(request.id)
+            .await
+            .map_err(map_db_error)?;
         if org.owner_id != auth.user_id() {
             return Err(ConnectError::permission_denied(
                 "only the organization owner can delete it",
             ));
         }
-        self.service.delete(request.id).await.map_err(map_db_error)?;
+        self.service
+            .delete(request.id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 }

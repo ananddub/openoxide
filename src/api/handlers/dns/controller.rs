@@ -32,10 +32,7 @@ impl DnsService for DnsController {
             .await
             .map_err(map_dns_error)?;
         let providers = items.into_iter().map(provider_to_proto).collect();
-        Response::ok(ListDnsProvidersResponse {
-            providers,
-            ..Default::default()
-        })
+        Response::ok(ListDnsProvidersResponse { providers })
     }
 
     #[permission(Server, CanRead)]
@@ -52,7 +49,6 @@ impl DnsService for DnsController {
             .map_err(map_dns_error)?;
         Response::ok(GetDnsProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
-            ..Default::default()
         })
     }
 
@@ -75,7 +71,6 @@ impl DnsService for DnsController {
             .map_err(map_dns_error)?;
         Response::ok(CreateDnsProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
-            ..Default::default()
         })
     }
 
@@ -101,7 +96,6 @@ impl DnsService for DnsController {
             .map_err(map_dns_error)?;
         Response::ok(UpdateDnsProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
-            ..Default::default()
         })
     }
 
@@ -134,7 +128,6 @@ impl DnsService for DnsController {
         Response::ok(TestDnsProviderResponse {
             success: result.success,
             message: result.message,
-            ..Default::default()
         })
     }
 
@@ -154,7 +147,6 @@ impl DnsService for DnsController {
         Response::ok(TestDnsConnectionResponse {
             success: result.success,
             message: result.message,
-            ..Default::default()
         })
     }
 
@@ -171,10 +163,7 @@ impl DnsService for DnsController {
             .await
             .map_err(map_dns_error)?;
         let zones = zones.into_iter().map(zone_to_proto).collect();
-        Response::ok(ListDnsZonesResponse {
-            zones,
-            ..Default::default()
-        })
+        Response::ok(ListDnsZonesResponse { zones })
     }
 
     #[permission(Server, CanRead)]
@@ -191,10 +180,7 @@ impl DnsService for DnsController {
             .await
             .map_err(map_dns_error)?;
         let records = records.into_iter().map(record_to_proto).collect();
-        Response::ok(ListDnsRecordsResponse {
-            records,
-            ..Default::default()
-        })
+        Response::ok(ListDnsRecordsResponse { records })
     }
 
     #[permission(Server, CanCreate)]
@@ -219,7 +205,6 @@ impl DnsService for DnsController {
             .map_err(map_dns_error)?;
         Response::ok(CreateDnsRecordResponse {
             record: ::buffa::MessageField::some(record_to_proto(record)),
-            ..Default::default()
         })
     }
 
@@ -256,7 +241,6 @@ impl DnsService for DnsController {
             .map_err(map_dns_error)?;
         Response::ok(UpdateDnsRecordResponse {
             record: ::buffa::MessageField::some(record_to_proto(record)),
-            ..Default::default()
         })
     }
 

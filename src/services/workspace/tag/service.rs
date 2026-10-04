@@ -32,20 +32,17 @@ impl TagService {
     }
 
     pub async fn list_all(&self) -> sqlx::Result<Vec<Tags>> {
-        self.queries
-            .tags_get_all()
-            .await
-            .map(|rows| {
-                rows.into_iter()
-                    .map(|row| Tags {
-                        id: row.id,
-                        name: row.name,
-                        color: row.color,
-                        organization_id: row.organization_id,
-                        created_at: row.created_at,
-                    })
-                    .collect()
-            })
+        self.queries.tags_get_all().await.map(|rows| {
+            rows.into_iter()
+                .map(|row| Tags {
+                    id: row.id,
+                    name: row.name,
+                    color: row.color,
+                    organization_id: row.organization_id,
+                    created_at: row.created_at,
+                })
+                .collect()
+        })
     }
 
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<Option<Tags>> {

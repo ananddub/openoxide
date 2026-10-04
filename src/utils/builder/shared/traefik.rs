@@ -1,9 +1,9 @@
 use crate::utils::traefik::{
+    builder::TraefikBuilder,
     entrypoint::Entrypoint,
     middleware::Middleware,
     rule::Rule,
     tls::{CertResolver, TlsConfig},
-    traefik::TraefikBuilder,
     types::CertificateType,
 };
 use std::collections::{BTreeMap, HashMap};
@@ -160,10 +160,7 @@ pub fn build_traefik_labels_for_network(
                 .service(&router_name);
         }
 
-        builders
-            .entry(service_name)
-            .or_insert_with(TraefikBuilder::new)
-            .append(traefik);
+        builders.entry(service_name).or_default().append(traefik);
     }
 
     builders
@@ -256,18 +253,14 @@ mod tests {
 
         let main = labels
             .iter()
-            .find(|label| {
-                label.starts_with("traefik.http.routers.api-1.entrypoints=")
-            })
+            .find(|label| label.starts_with("traefik.http.routers.api-1.entrypoints="))
             .expect("main router entrypoint label");
         assert_eq!(main.split_once('=').unwrap().1, "websecure");
         // An empty entrypoint counts as unset, so the HTTPS redirect router
         // must still be emitted on `web`.
         let redirect = labels
             .iter()
-            .find(|label| {
-                label.starts_with("traefik.http.routers.api-1-redirect.entrypoints=")
-            })
+            .find(|label| label.starts_with("traefik.http.routers.api-1-redirect.entrypoints="))
             .expect("redirect router entrypoint label");
         assert_eq!(redirect.split_once('=').unwrap().1, "web");
     }
@@ -276,17 +269,15 @@ mod tests {
     fn custom_entrypoint_is_used_verbatim() {
         let mut custom = domain("1", "custom.test");
         custom.entrypoint = Some("edge".into());
-        let labels = build_traefik_labels("api", &[custom]).remove("api").unwrap();
+        let labels = build_traefik_labels("api", &[custom])
+            .remove("api")
+            .unwrap();
         assert!(
             labels
                 .iter()
                 .any(|label| label == "traefik.http.routers.api-1.entrypoints=edge")
         );
         // A named entrypoint suppresses the automatic redirect router.
-        assert!(
-            !labels
-                .iter()
-                .any(|label| label.contains("api-1-redirect"))
-        );
+        assert!(!labels.iter().any(|label| label.contains("api-1-redirect")));
     }
 }

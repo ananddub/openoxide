@@ -14,14 +14,12 @@ use crate::flash_gen::schedule_runtime::{
     ScheduleRuntimeAcquireParams, ScheduleRuntimeBeginParams, ScheduleRuntimeFinishParams,
     ScheduleRuntimeUpdatePolicyParams,
 };
-use crate::flash_gen::schedules::{
-    SchedulesCreateAndReturnParams, SchedulesUpdateAndReturnParams,
+use crate::flash_gen::schedules::{SchedulesCreateAndReturnParams, SchedulesUpdateAndReturnParams};
+use crate::services::automation::schedule::types::{
+    ConcurrencyPolicy, MissedRunPolicy, RuntimePolicyUpdate, ScheduleAction,
+    ScheduleExecutionStatus, ScheduleTriggerKind, ScheduleType, ShellType,
 };
 use crate::services::compute::compose::ComposeType;
-use crate::services::automation::schedule::types::{
-    ConcurrencyPolicy, MissedRunPolicy, ScheduleAction, ScheduleExecutionStatus,
-    ScheduleTriggerKind, ScheduleType, ShellType,
-};
 use crate::utils::docker::query::ContainerFilter;
 use crate::{
     services::{
@@ -136,7 +134,10 @@ impl ScheduleService {
     }
 
     pub async fn list_by_application(&self, application_id: i64) -> sqlx::Result<Vec<Schedules>> {
-        let rows = self.queries.schedules_list_by_application(application_id).await?;
+        let rows = self
+            .queries
+            .schedules_list_by_application(application_id)
+            .await?;
         Ok(rows)
     }
 
@@ -302,7 +303,10 @@ impl ScheduleService {
             .map_err(sqlx::Error::Protocol)?;
 
         let dumper = self.resolve_database_dumper(&backup).await?;
-        let dest_model = self.queries.get_destination_by_i_d(backup.destination_id).await?;
+        let dest_model = self
+            .queries
+            .get_destination_by_i_d(backup.destination_id)
+            .await?;
 
         let destination = crate::utils::backup::database::S3Destination {
             access_key: dest_model.access_key,
@@ -634,9 +638,7 @@ impl ScheduleService {
     }
 
     async fn run_once(&self, schedule: Schedules) -> sqlx::Result<ScheduleRunResult> {
-        let v = ScheduleType::try_from(schedule.schedule_type.as_str()).map_err(|_| {
-            sqlx::Error::Protocol(format!("invalid schedule type: {}", schedule.schedule_type))
-        })?;
+        let v = ScheduleType::from(schedule.schedule_type.as_str());
         match v {
             ScheduleType::Application => self.run_application_schedule(schedule).await,
             ScheduleType::Compose => self.run_compose_schedule(schedule).await,
@@ -707,12 +709,11 @@ impl ScheduleService {
             return Err(sqlx::Error::Protocol("schedule command is empty".into()));
         }
 
-        let executor = crate::services::compute::compose::remote::agent_executor_for(schedule.server_id)
-            .await
-            .map_err(sqlx::Error::Protocol)?;
-        let v = ShellType::try_from(schedule.shell_type.as_str()).map_err(|_| {
-            sqlx::Error::Protocol(format!("invalid shell type: {}", schedule.shell_type))
-        })?;
+        let executor =
+            crate::services::compute::compose::remote::agent_executor_for(schedule.server_id)
+                .await
+                .map_err(sqlx::Error::Protocol)?;
+        let v = ShellType::from(schedule.shell_type.as_str());
         let shell = v.executable();
         let output = executor
             .run(shell, ["-lc", command])
@@ -759,9 +760,7 @@ impl ScheduleService {
         let compose_service = schedule.service_name.clone().ok_or_else(|| {
             sqlx::Error::Protocol("compose EXEC schedule requires service_name".into())
         })?;
-        let v = ComposeType::try_from(compose_type.as_str()).map_err(|_| {
-            sqlx::Error::Protocol(format!("invalid compose type: {}", compose_type))
-        })?;
+        let v = ComposeType::from(compose_type.as_str());
         match v {
             ComposeType::Stack => {
                 let service_name = if compose_service.starts_with(&format!("{app_name}_")) {
@@ -810,9 +809,7 @@ impl ScheduleService {
                     "running container not found for swarm service {service_name}"
                 ))
             })?;
-        let v = ShellType::try_from(schedule.shell_type.as_str()).map_err(|_| {
-            sqlx::Error::Protocol(format!("invalid shell type: {}", schedule.shell_type))
-        })?;
+        let v = ShellType::from(schedule.shell_type.as_str());
         let shell = v.executable();
         let output = docker
             .containers()
@@ -855,9 +852,7 @@ impl ScheduleService {
                     "running container not found for compose project={project_name} service={service_name}"
                 ))
             })?;
-        let v = ShellType::try_from(schedule.shell_type.as_str()).map_err(|_| {
-            sqlx::Error::Protocol(format!("invalid shell type: {}", schedule.shell_type))
-        })?;
+        let v = ShellType::from(schedule.shell_type.as_str());
         let shell = v.executable();
         let output = docker
             .containers()
@@ -919,7 +914,9 @@ impl ScheduleService {
                         .unwrap_or_else(|| format!("{}_{}", backup.app_name, backup.app_name))
                 };
                 Ok(
-                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService { service_name },
+                    crate::utils::backup::volume::VolumeServiceTarget::SwarmService {
+                        service_name,
+                    },
                 )
             }
         }
@@ -1153,34 +1150,29 @@ impl ScheduleService {
     }
 
     pub async fn runtime_policy(&self, schedule_id: i64) -> sqlx::Result<ScheduleRuntimePolicies> {
-        self.queries.schedule_runtime_ensure_policy(schedule_id).await?;
+        self.queries
+            .schedule_runtime_ensure_policy(schedule_id)
+            .await?;
         self.queries.schedule_runtime_get_policy(schedule_id).await
     }
 
     pub async fn update_runtime_policy(
         &self,
-        schedule_id: i64,
-        retry_count: i64,
-        retry_delay_seconds: i64,
-        missed_run_policy: &str,
-        concurrency_policy: &str,
-        lease_seconds: i64,
-        notify_on_success: bool,
-        notify_on_failure: bool,
+        update: &RuntimePolicyUpdate<'_>,
     ) -> sqlx::Result<ScheduleRuntimePolicies> {
         self.queries
             .schedule_runtime_update_policy(&ScheduleRuntimeUpdatePolicyParams {
-                schedule_id,
-                retry_count,
-                retry_delay_seconds,
-                missed_run_policy: missed_run_policy.to_string(),
-                concurrency_policy: concurrency_policy.to_string(),
-                lease_seconds,
-                notify_on_success: i64::from(notify_on_success),
-                notify_on_failure: i64::from(notify_on_failure),
+                schedule_id: update.schedule_id,
+                retry_count: update.retry_count,
+                retry_delay_seconds: update.retry_delay_seconds,
+                missed_run_policy: update.missed_run_policy.to_string(),
+                concurrency_policy: update.concurrency_policy.to_string(),
+                lease_seconds: update.lease_seconds,
+                notify_on_success: i64::from(update.notify_on_success),
+                notify_on_failure: i64::from(update.notify_on_failure),
             })
             .await?;
-        self.runtime_policy(schedule_id).await
+        self.runtime_policy(update.schedule_id).await
     }
 
     pub async fn list_executions(
@@ -1233,11 +1225,7 @@ impl ScheduleService {
             .await
     }
 
-    async fn runtime_mark_scheduled(
-        &self,
-        schedule_id: i64,
-        timestamp: i64,
-    ) -> sqlx::Result<()> {
+    async fn runtime_mark_scheduled(&self, schedule_id: i64, timestamp: i64) -> sqlx::Result<()> {
         self.queries
             .schedule_runtime_mark_scheduled(timestamp, schedule_id)
             .await
@@ -1421,9 +1409,7 @@ fn database_dumper_for(
     managed_database: String,
     service_name: String,
 ) -> crate::utils::backup::database::DatabaseDumper {
-    use crate::utils::backup::database::{
-        ContainerTarget, DatabaseDumper, DbCredentials,
-    };
+    use crate::utils::backup::database::{ContainerTarget, DatabaseDumper, DbCredentials};
     let target = ContainerTarget { service_name };
     match kind {
         BackupsDatabaseTypeEnum::Postgres => DatabaseDumper::Postgres {
@@ -1463,7 +1449,6 @@ fn database_dumper_for(
     }
 }
 
-
 pub(crate) fn validate_backup_cron_expression(value: &str) -> sqlx::Result<()> {
     let expression = value.trim();
     if expression.is_empty() {
@@ -1502,8 +1487,7 @@ fn validate_cron_expression(value: &str) -> sqlx::Result<()> {
 
 fn normalize_shell_type(value: Option<&str>) -> sqlx::Result<String> {
     let value = value.unwrap_or("BASH").trim().to_ascii_uppercase();
-    let v = ShellType::try_from(value.as_str())
-        .map_err(|_| sqlx::Error::Protocol(format!("invalid shell type: {}", value)))?;
+    let v = ShellType::from(value.as_str());
     match v {
         ShellType::Bash => Ok(value),
         ShellType::Sh => Ok(value),
@@ -1512,8 +1496,7 @@ fn normalize_shell_type(value: Option<&str>) -> sqlx::Result<String> {
 
 fn normalize_schedule_type(value: Option<&str>) -> sqlx::Result<String> {
     let value = value.unwrap_or("APPLICATION").trim().to_ascii_uppercase();
-    let v = ScheduleType::try_from(value.as_str())
-        .map_err(|_| sqlx::Error::Protocol(format!("invalid schedule type: {}", value)))?;
+    let v = ScheduleType::from(value.as_str());
     match v {
         ScheduleType::Application => Ok(value),
         ScheduleType::Compose => Ok(value),
@@ -1531,8 +1514,7 @@ fn normalize_schedule_action(
         .map(|value| value.trim().to_ascii_uppercase())
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| infer_schedule_action(schedule_type, command));
-    let v = ScheduleAction::try_from(value.as_str())
-        .map_err(|_| sqlx::Error::Protocol(format!("invalid schedule action: {}", value)))?;
+    let v = ScheduleAction::from(value.as_str());
     match v {
         ScheduleAction::Exec => Ok(value),
         ScheduleAction::Deploy => Ok(value),
@@ -1546,9 +1528,7 @@ fn normalize_schedule_action(
 
 fn infer_schedule_action(schedule_type: &str, command: &str) -> String {
     let command = command.trim().to_ascii_lowercase();
-    let schedule = ScheduleType::try_from(schedule_type)
-        .map_err(|_| sqlx::Error::Protocol(format!("invalid schedule type: {}", schedule_type)))
-        .unwrap();
+    let schedule = ScheduleType::from(schedule_type);
     let is_operation = match schedule {
         ScheduleType::Application => matches!(
             command.as_str(),
@@ -1581,9 +1561,7 @@ fn validate_target(
     server_id: Option<i64>,
     service_name: Option<&str>,
 ) -> sqlx::Result<()> {
-    let v = ScheduleType::try_from(schedule_type)
-        .map_err(|_| sqlx::Error::Protocol(format!("invalid schedule type: {}", schedule_type)))
-        .unwrap();
+    let v = ScheduleType::from(schedule_type);
     match v {
         ScheduleType::Application if service_id.is_none() => Err(sqlx::Error::Protocol(
             "APPLICATION schedule requires application_id".into(),
@@ -1612,9 +1590,7 @@ fn validate_target(
 }
 
 fn parse_application_operation(value: &str) -> sqlx::Result<ApplicationOperation> {
-    let v = ScheduleAction::try_from(value.trim().to_ascii_uppercase().as_str())
-        .map_err(|_| sqlx::Error::Protocol(format!("invalid schedule action: {}", value)))
-        .unwrap();
+    let v = ScheduleAction::from(value.trim().to_ascii_uppercase().as_str());
     match v {
         ScheduleAction::Deploy => Ok(ApplicationOperation::Deploy),
         ScheduleAction::Redeploy => Ok(ApplicationOperation::Redeploy),
@@ -1629,9 +1605,7 @@ fn parse_application_operation(value: &str) -> sqlx::Result<ApplicationOperation
 }
 
 fn parse_compose_operation(value: &str) -> sqlx::Result<ComposeOperation> {
-    let v = ScheduleAction::try_from(value.trim().to_ascii_uppercase().as_str())
-        .map_err(|_| sqlx::Error::Protocol(format!("invalid schedule action: {}", value)))
-        .unwrap();
+    let v = ScheduleAction::from(value.trim().to_ascii_uppercase().as_str());
     match v {
         ScheduleAction::Deploy => Ok(ComposeOperation::Deploy),
         ScheduleAction::Redeploy => Ok(ComposeOperation::Redeploy),
@@ -1677,7 +1651,7 @@ fn generate_schedule_app_name(name: &str) -> String {
 }
 
 fn parse_database_type(value: &str) -> Option<BackupsDatabaseTypeEnum> {
-    match DatabaseBackupTypeInput::from_str(value)? {
+    match DatabaseBackupTypeInput::from_str_opt(value)? {
         DatabaseBackupTypeInput::Postgres | DatabaseBackupTypeInput::Postgresql => {
             Some(BackupsDatabaseTypeEnum::Postgres)
         }
@@ -1692,7 +1666,7 @@ fn parse_database_type(value: &str) -> Option<BackupsDatabaseTypeEnum> {
 }
 
 fn parse_volume_service_type(value: &str) -> Option<VolumeBackupsServiceTypeEnum> {
-    match VolumeBackupServiceTypeInput::from_str(value)? {
+    match VolumeBackupServiceTypeInput::from_str_opt(value)? {
         VolumeBackupServiceTypeInput::Application => {
             Some(VolumeBackupsServiceTypeEnum::Application)
         }

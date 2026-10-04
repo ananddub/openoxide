@@ -11,7 +11,9 @@ use crate::{
         mount::MountCreateForApplicationParams, patches::PatchesCreateParams,
         ports::PortsCreateParams, security::SecurityCreateParams,
     },
-    services::compute::application::{crud::generate_app_name, redirect::Redirect, ApplicationRecord},
+    services::compute::application::{
+        ApplicationRecord, crud::generate_app_name, redirect::Redirect,
+    },
 };
 
 const APPLICATION_EXPORT_SCHEMA_VERSION: u32 = 1;
@@ -96,10 +98,7 @@ impl ApplicationTransferService {
             .queries
             .app_sub_get_application_by_i_d(application_id)
             .await?;
-        let mut service_application = self
-            .queries
-            .get_service_application(application_id)
-            .await?;
+        let mut service_application = self.queries.get_service_application(application_id).await?;
         let service_git = match self.queries.get_service_git_by_i_d(application_id).await {
             Ok(git) => Some(git),
             Err(sqlx::Error::RowNotFound) => None,
@@ -112,7 +111,10 @@ impl ApplicationTransferService {
             .into_iter()
             .map(normalize_domain)
             .collect();
-        let ports = self.queries.ports_list_by_application(application_id).await?;
+        let ports = self
+            .queries
+            .ports_list_by_application(application_id)
+            .await?;
         let mounts = self
             .queries
             .mount_fetch_for_application(application_id)
@@ -121,8 +123,14 @@ impl ApplicationTransferService {
             .map(normalize_mount)
             .collect();
         let redirects = self.list_redirects(application_id).await?;
-        let mut security = self.queries.security_list_by_application(application_id).await?;
-        let patches = self.queries.patches_list_by_application(application_id).await?;
+        let mut security = self
+            .queries
+            .security_list_by_application(application_id)
+            .await?;
+        let patches = self
+            .queries
+            .patches_list_by_application(application_id)
+            .await?;
         let middlewares = self
             .queries
             .application_middlewares_list_by_application(application_id)
@@ -209,10 +217,7 @@ impl ApplicationTransferService {
             .queries
             .app_sub_get_application_by_i_d(application_id)
             .await?;
-        let service_application = self
-            .queries
-            .get_service_application(application_id)
-            .await?;
+        let service_application = self.queries.get_service_application(application_id).await?;
         let service_git = match self.queries.get_service_git_by_i_d(application_id).await {
             Ok(git) => Some(git),
             Err(sqlx::Error::RowNotFound) => None,
@@ -222,7 +227,7 @@ impl ApplicationTransferService {
         self.cache
             .insert(
                 CacheKey::Application(application_id),
-                CacheEnum::Application(record.clone()),
+                CacheEnum::Application(Box::new(record.clone())),
             )
             .await;
         Ok(record)
@@ -282,11 +287,11 @@ impl ApplicationTransferService {
         .bind(&service.network_swarm)
         .bind(&service.endpoint_spec_swarm)
         .bind(&service.ulimits_swarm)
-        .bind(&service.stop_grace_period_swarm)
+        .bind(service.stop_grace_period_swarm)
         .bind(&service.network_ids)
         .bind(service.detach_rustploy_network)
         .bind(service.environment_id)
-        .bind(&service.server_id)
+        .bind(service.server_id)
         .bind(service.created_at)
         .bind(service.updated_at)
         .execute(&self.queries.pool)
@@ -322,7 +327,7 @@ impl ApplicationTransferService {
         .bind(&ext.docker_context_path)
         .bind(&ext.docker_build_stage)
         .bind(&ext.publish_directory)
-        .bind(&ext.is_static_spa)
+        .bind(ext.is_static_spa)
         .bind(ext.create_env_file)
         .bind(&ext.railpack_version)
         .bind(&ext.heroku_version)
@@ -332,22 +337,22 @@ impl ApplicationTransferService {
         .bind(&ext.docker_username)
         .bind(&ext.docker_password)
         .bind(&ext.registry_url)
-        .bind(&ext.build_server_id)
-        .bind(&ext.registry_id)
-        .bind(&ext.rollback_registry_id)
-        .bind(&ext.build_registry_id)
+        .bind(ext.build_server_id)
+        .bind(ext.registry_id)
+        .bind(ext.rollback_registry_id)
+        .bind(ext.build_registry_id)
         .bind(ext.rollback_active)
         .bind(&ext.preview_env)
         .bind(&ext.preview_build_args)
         .bind(&ext.preview_build_secrets)
         .bind(&ext.preview_labels)
         .bind(&ext.preview_wildcard)
-        .bind(&ext.preview_port)
+        .bind(ext.preview_port)
         .bind(ext.preview_https)
         .bind(&ext.preview_path)
         .bind(&ext.preview_certificate_type)
         .bind(&ext.preview_custom_cert_resolver)
-        .bind(&ext.preview_limit)
+        .bind(ext.preview_limit)
         .bind(ext.is_preview_deployments_active)
         .bind(ext.preview_require_collaborator_permissions)
         .bind(ext.updated_at)
@@ -374,13 +379,13 @@ impl ApplicationTransferService {
         .bind(git.service_id)
         .bind(&git.source_type)
         .bind(&git.trigger_type)
-        .bind(&git.auto_deploy)
+        .bind(git.auto_deploy)
         .bind(&git.watch_paths)
         .bind(git.enable_submodules)
         .bind(&git.repository)
         .bind(&git.owner)
         .bind(&git.branch)
-        .bind(&git.gitlab_project_id)
+        .bind(git.gitlab_project_id)
         .bind(&git.gitlab_repository)
         .bind(&git.gitlab_owner)
         .bind(&git.gitlab_branch)
@@ -398,11 +403,11 @@ impl ApplicationTransferService {
         .bind(&git.custom_git_url)
         .bind(&git.custom_git_branch)
         .bind(&git.custom_git_build_path)
-        .bind(&git.custom_git_ssh_key_id)
-        .bind(&git.github_provider_id)
-        .bind(&git.gitlab_provider_id)
-        .bind(&git.gitea_provider_id)
-        .bind(&git.bitbucket_provider_id)
+        .bind(git.custom_git_ssh_key_id)
+        .bind(git.github_provider_id)
+        .bind(git.gitlab_provider_id)
+        .bind(git.gitea_provider_id)
+        .bind(git.bitbucket_provider_id)
         .bind(git.created_at)
         .bind(git.updated_at)
         .execute(&self.queries.pool)

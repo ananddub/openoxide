@@ -112,10 +112,7 @@ impl ApplicationMiddlewareService {
             enabled,
             config,
         };
-        let item = self
-            .queries
-            .application_middlewares_create(&params)
-            .await?;
+        let item = self.queries.application_middlewares_create(&params).await?;
         response(item)
     }
 
@@ -135,10 +132,7 @@ impl ApplicationMiddlewareService {
             id,
             service_id: application_id,
         };
-        let item = self
-            .queries
-            .application_middlewares_update(&params)
-            .await?;
+        let item = self.queries.application_middlewares_update(&params).await?;
         response(item)
     }
 

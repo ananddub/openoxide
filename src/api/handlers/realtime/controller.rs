@@ -14,7 +14,9 @@ impl RealtimeService for RealtimeController {
         &self,
         ctx: RequestContext,
         _request: ServiceRequest<'_, Empty>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<WatchTablesEvent> + Send + use<>>> {
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<impl connectrpc::Encodable<WatchTablesEvent> + Send + use<>>,
+    > {
         // The notification channel only ever carries table names — row data
         // still flows through the caller's regular permission-checked RPCs,
         // so org scoping here is purely routing, not an access boundary.

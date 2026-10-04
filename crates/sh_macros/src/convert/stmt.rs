@@ -84,14 +84,14 @@ pub fn convert_stmt(stmt: &syn::Stmt) -> Result<proc_macro2::TokenStream, syn::E
             }
 
             let mut default_tokens = quote! { None };
-            if let Expr::MethodCall(method_call) = &**val_expr {
-                if method_call.method == "default" {
-                    let arg = method_call.args.first().ok_or_else(|| {
-                        syn::Error::new_spanned(method_call, "default method needs one argument")
-                    })?;
-                    default_tokens = quote! { Some((#arg).to_string()) };
-                    val_expr = &method_call.receiver;
-                }
+            if let Expr::MethodCall(method_call) = &**val_expr
+                && method_call.method == "default"
+            {
+                let arg = method_call.args.first().ok_or_else(|| {
+                    syn::Error::new_spanned(method_call, "default method needs one argument")
+                })?;
+                default_tokens = quote! { Some((#arg).to_string()) };
+                val_expr = &method_call.receiver;
             }
 
             let val_tokens = convert_expr(val_expr)?;
@@ -121,10 +121,10 @@ pub fn convert_stmt(stmt: &syn::Stmt) -> Result<proc_macro2::TokenStream, syn::E
             let func_name = item_fn.sig.ident.to_string();
             let mut params = Vec::new();
             for input in &item_fn.sig.inputs {
-                if let syn::FnArg::Typed(pat_type) = input {
-                    if let syn::Pat::Ident(pat_ident) = &*pat_type.pat {
-                        params.push(pat_ident.ident.to_string());
-                    }
+                if let syn::FnArg::Typed(pat_type) = input
+                    && let syn::Pat::Ident(pat_ident) = &*pat_type.pat
+                {
+                    params.push(pat_ident.ident.to_string());
                 }
             }
 

@@ -131,7 +131,7 @@ impl DockerCli {
     }
     pub fn from_remote_executor(executor: RemoteExecutor) -> Self {
         Self {
-            executor: CommandExecutor::Remote(executor),
+            executor: CommandExecutor::Remote(Box::new(executor)),
             executable: "docker".into(),
             global_args: vec![],
             registry_auth: Default::default(),
@@ -139,13 +139,13 @@ impl DockerCli {
     }
     pub fn with_remote_sudo(mut self) -> Self {
         if let CommandExecutor::Remote(remote) = self.executor {
-            self.executor = CommandExecutor::Remote(remote.with_sudo());
+            self.executor = CommandExecutor::Remote(Box::new(remote.with_sudo()));
         }
         self
     }
     pub fn with_remote_sudo_password(mut self, password: impl Into<String>) -> Self {
         if let CommandExecutor::Remote(remote) = self.executor {
-            self.executor = CommandExecutor::Remote(remote.with_sudo_password(password));
+            self.executor = CommandExecutor::Remote(Box::new(remote.with_sudo_password(password)));
         }
         self
     }
@@ -269,15 +269,15 @@ impl DockerCli {
         if trimmed.is_empty() {
             return Ok(Vec::new());
         }
-        if trimmed.starts_with('[') {
-            if let Ok(vec) = serde_json::from_str::<Vec<T>>(trimmed) {
-                return Ok(vec);
-            }
+        if trimmed.starts_with('[')
+            && let Ok(vec) = serde_json::from_str::<Vec<T>>(trimmed)
+        {
+            return Ok(vec);
         }
-        if trimmed.starts_with('{') {
-            if let Ok(item) = serde_json::from_str::<T>(trimmed) {
-                return Ok(vec![item]);
-            }
+        if trimmed.starts_with('{')
+            && let Ok(item) = serde_json::from_str::<T>(trimmed)
+        {
+            return Ok(vec![item]);
         }
         let mut items = Vec::new();
         for line in trimmed.lines().filter(|l| !l.trim().is_empty()) {
@@ -300,7 +300,7 @@ impl DockerCli {
             attempts += 1;
             if let Some(cancel) = &builder.cancel_token {
                 if cancel.is_cancelled() {
-                    return Err(crate::exec::ExecError::StreamCancelled.into());
+                    return Err(crate::exec::ExecError::StreamCancelled);
                 }
                 match self.run_cancelled(&refs, cancel).await {
                     Ok(out) => return Ok(out),
@@ -359,35 +359,34 @@ impl DockerCli {
             ))
         })?;
         let mut body = request.body;
-        if let Some(value) = body.as_mut() {
-            if let Some(files) = value
+        if let Some(value) = body.as_mut()
+            && let Some(files) = value
                 .get("__openoxide_env_files")
                 .and_then(serde_json::Value::as_array)
                 .cloned()
+        {
+            if let Some(env) = value
+                .get_mut("Env")
+                .and_then(serde_json::Value::as_array_mut)
             {
-                if let Some(env) = value
-                    .get_mut("Env")
-                    .and_then(serde_json::Value::as_array_mut)
-                {
-                    for file in files {
-                        let path = file.as_str().ok_or_else(|| {
-                            crate::docker::DockerError::Ssh("invalid env file path".into())
-                        })?;
-                        let content = tokio::fs::read_to_string(path)
-                            .await
-                            .map_err(crate::docker::DockerError::Io)?;
-                        for line in content
-                            .lines()
-                            .map(str::trim)
-                            .filter(|line| !line.is_empty() && !line.starts_with('#'))
-                        {
-                            env.push(serde_json::json!(line));
-                        }
+                for file in files {
+                    let path = file.as_str().ok_or_else(|| {
+                        crate::docker::DockerError::Ssh("invalid env file path".into())
+                    })?;
+                    let content = tokio::fs::read_to_string(path)
+                        .await
+                        .map_err(crate::docker::DockerError::Io)?;
+                    for line in content
+                        .lines()
+                        .map(str::trim)
+                        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+                    {
+                        env.push(serde_json::json!(line));
                     }
                 }
-                if let Some(object) = value.as_object_mut() {
-                    object.remove("__openoxide_env_files");
-                }
+            }
+            if let Some(object) = value.as_object_mut() {
+                object.remove("__openoxide_env_files");
             }
         }
         let registry_request = request.path.starts_with("/images/create")
@@ -552,7 +551,7 @@ impl DockerCli {
                 .map(|body| serde_json::to_vec(&body).unwrap().into());
             let stream = api.request_stream(request.method, &request.path, body, sender);
             let status = if let Some(cancel) = &builder.cancel_token {
-                tokio::select! { result = stream => result?, _ = cancel.cancelled() => return Err(crate::exec::ExecError::StreamCancelled.into()) }
+                tokio::select! { result = stream => result?, _ = cancel.cancelled() => return Err(crate::exec::ExecError::StreamCancelled) }
             } else {
                 stream.await?
             };
@@ -563,10 +562,10 @@ impl DockerCli {
         let refs: Vec<&str> = args.iter().map(String::as_str).collect();
         loop {
             attempts += 1;
-            if let Some(cancel) = &builder.cancel_token {
-                if cancel.is_cancelled() {
-                    return Err(crate::exec::ExecError::StreamCancelled.into());
-                }
+            if let Some(cancel) = &builder.cancel_token
+                && cancel.is_cancelled()
+            {
+                return Err(crate::exec::ExecError::StreamCancelled);
             }
             match self.run_stream(&refs, sender.clone()).await {
                 Ok(out) => return Ok(out),
@@ -591,15 +590,15 @@ impl DockerCli {
         if trimmed.is_empty() {
             return Ok(Vec::new());
         }
-        if trimmed.starts_with('[') {
-            if let Ok(vec) = serde_json::from_str::<Vec<T>>(trimmed) {
-                return Ok(vec);
-            }
+        if trimmed.starts_with('[')
+            && let Ok(vec) = serde_json::from_str::<Vec<T>>(trimmed)
+        {
+            return Ok(vec);
         }
-        if trimmed.starts_with('{') {
-            if let Ok(item) = serde_json::from_str::<T>(trimmed) {
-                return Ok(vec![item]);
-            }
+        if trimmed.starts_with('{')
+            && let Ok(item) = serde_json::from_str::<T>(trimmed)
+        {
+            return Ok(vec![item]);
         }
         let mut items = Vec::new();
         for line in trimmed.lines().filter(|l| !l.trim().is_empty()) {

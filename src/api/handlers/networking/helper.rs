@@ -53,9 +53,10 @@ pub fn diagnostic_to_proto(dto: &impl serde::Serialize) -> NetworkingDomainDiagn
         dns_ok: json_bool(&value, "dns_ok"),
         tcp_ok: json_bool(&value, "tcp_ok"),
         http_ok: json_bool(&value, "http_ok"),
-        http_status: value["http_status"].as_u64().and_then(|n| u32::try_from(n).ok()),
+        http_status: value["http_status"]
+            .as_u64()
+            .and_then(|n| u32::try_from(n).ok()),
         error: value["error"].as_str().map(str::to_owned),
-        ..Default::default()
     }
 }
 
@@ -71,7 +72,6 @@ pub fn root_network_to_proto(dto: &impl serde::Serialize) -> NetworkingRootNetwo
         attachable: value["attachable"].as_bool(),
         connected_resources: value["connected_resources"].as_i64().unwrap_or_default(),
         issue: value["issue"].as_str().map(str::to_owned),
-        ..Default::default()
     }
 }
 

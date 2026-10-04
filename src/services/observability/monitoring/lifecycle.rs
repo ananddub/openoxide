@@ -13,7 +13,7 @@ use crate::{
     services::observability::monitoring::agent_auth::MonitoringAgentAuth,
     utils::{
         docker::DockerCli,
-        setup::{AGENT_CONTAINER_NAME, ServerSetup, SetupConfig},
+        setup::{AGENT_CONTAINER_NAME, ServerSetup, SetupConfig, agent_supports_direct_host_shell},
     },
 };
 
@@ -190,15 +190,27 @@ impl MonitoringLifecycleService {
             )
             .await
             .map_err(sqlx::Error::Protocol)?;
-            Ok(OutOfBandDocker::Remote(DockerCli::from_remote_executor(
-                executor,
+            Ok(OutOfBandDocker::Remote(Box::new(
+                DockerCli::from_remote_executor(executor),
             )))
         }
     }
 
     /// Pull the published agent image and recreate the monitor only when the
     /// running container is backed by an older image.
-    pub async fn update_agent_if_needed(&self, server_id: i64) -> sqlx::Result<bool> {
+    ///
+    /// `check_registry` selects the probe depth. A registry check asks the
+    /// agent to pull the image (the only way to learn the upstream digest),
+    /// which is expensive on the remote host; the caller therefore runs it on
+    /// a staggered hourly schedule per server. Cheap ticks only self-inspect —
+    /// an agent that answers consistently with the same identity is assumed
+    /// current until its next registry check, so the five-minute loop never
+    /// touches the remote Docker daemon beyond one container inspect.
+    pub async fn update_agent_if_needed(
+        &self,
+        server_id: i64,
+        check_registry: bool,
+    ) -> sqlx::Result<bool> {
         let image = crate::utils::setup::agent_image();
         // Prefer the agent's own socket probe over the CLI path: an
         // up-to-date host answers entirely through its existing gRPC channel,
@@ -210,15 +222,21 @@ impl MonitoringLifecycleService {
             crate::services::observability::monitoring::service::MonitoringService,
         >()
         .await
-            && let Ok(info) = monitoring.agent_update_probe(server_id, image).await
-            && info.self_running
-            && info.self_server_id == server_id
-            && !info.self_image_id.is_empty()
-            && !info.latest_image_id.is_empty()
-            && info.self_image_id == info.latest_image_id
         {
-            tracing::debug!(server_id, "agent update probe confirms latest image");
-            return Ok(false);
+            let probed_image = if check_registry { image } else { "" };
+            if let Ok(info) = monitoring.agent_update_probe(server_id, probed_image).await
+                && info.self_running
+                && info.self_server_id == server_id
+                && !info.self_image_id.is_empty()
+            {
+                if !check_registry {
+                    return Ok(false);
+                }
+                if !info.latest_image_id.is_empty() && info.self_image_id == info.latest_image_id {
+                    tracing::debug!(server_id, "agent update probe confirms latest image");
+                    return Ok(false);
+                }
+            }
         }
 
         let executor = crate::services::compute::compose::remote::agent_executor(server_id)
@@ -253,16 +271,17 @@ impl MonitoringLifecycleService {
                 .await;
             running_image_id = None;
         }
-        if let Some(container) = inspected.as_ref() {
-            if configured_server_id == Some(server_id) && !container.state.running {
-                docker
-                    .container(AGENT_CONTAINER_NAME)
-                    .start()
-                    .run()
-                    .await
-                    .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
-                return Ok(true);
-            }
+        if let Some(container) = inspected.as_ref()
+            && configured_server_id == Some(server_id)
+            && !container.state.running
+        {
+            docker
+                .container(AGENT_CONTAINER_NAME)
+                .start()
+                .run()
+                .await
+                .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+            return Ok(true);
         }
 
         docker
@@ -279,7 +298,14 @@ impl MonitoringLifecycleService {
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?
             .id;
 
-        if running_image_id.as_deref() == Some(latest_image_id.as_str()) {
+        // Matching image IDs are only "current" when the container was also
+        // created by a spec that image needs: an agent running the newest image
+        // under an older spec still has to be recreated for the direct host
+        // shell, which reads its namespaces through /host.
+        let spec_ready = inspected.as_ref().is_some_and(|container| {
+            agent_supports_direct_host_shell(&container.mounts, &container.host_config)
+        });
+        if running_image_id.as_deref() == Some(latest_image_id.as_str()) && spec_ready {
             return Ok(false);
         }
 
@@ -296,14 +322,16 @@ impl MonitoringLifecycleService {
             )
             .await
             .map_err(sqlx::Error::Protocol)?;
-            let mut config = SetupConfig::default();
-            config.agent_server_id = Some(server_id);
-            config.agent_token = Some(self.agent_auth_token_fallback());
-            config.agent_panel_url = Some(
-                std::env::var("OPENOXIDE_SERVER_URL")
-                    .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
-                    .unwrap_or_else(|_| "http://127.0.0.1:4000".into()),
-            );
+            let mut config = SetupConfig {
+                agent_server_id: Some(server_id),
+                agent_token: Some(self.agent_auth_token_fallback()),
+                agent_panel_url: Some(
+                    std::env::var("OPENOXIDE_SERVER_URL")
+                        .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
+                        .unwrap_or_else(|_| "http://127.0.0.1:4000".into()),
+                ),
+                ..Default::default()
+            };
             self.apply_agent_mtls(server_id, &mut config).await;
             ServerSetup::new_remote(executor, config)
                 .ensure_agent()
@@ -418,13 +446,12 @@ impl MonitoringLifecycleService {
                 .await?;
         if let (Some(organization_id), Ok(token)) =
             (organization_id, std::env::var("METRICS_TOKEN"))
+            && !token.is_empty()
         {
-            if !token.is_empty() {
-                self.agent_auth
-                    .register_token(server_id, organization_id, &token)
-                    .await?;
-                tracing::debug!(server_id, "local monitoring agent credentials registered");
-            }
+            self.agent_auth
+                .register_token(server_id, organization_id, &token)
+                .await?;
+            tracing::debug!(server_id, "local monitoring agent credentials registered");
         }
 
         Ok(server_id)
@@ -467,16 +494,16 @@ impl MonitoringLifecycleService {
                     .await;
             }
             running_image_id = None;
-        } else if let Some(container) = inspected.as_ref() {
-            if !container.state.running {
-                docker
-                    .container(AGENT_CONTAINER_NAME)
-                    .start()
-                    .run()
-                    .await
-                    .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
-                return Ok(true);
-            }
+        } else if let Some(container) = inspected.as_ref()
+            && !container.state.running
+        {
+            docker
+                .container(AGENT_CONTAINER_NAME)
+                .start()
+                .run()
+                .await
+                .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+            return Ok(true);
         }
         docker.images().pull(image).pull().await.map_err(|error| {
             sqlx::Error::Protocol(format!("local monitor image pull failed: {error}"))
@@ -487,18 +514,23 @@ impl MonitoringLifecycleService {
             .await
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?
             .id;
-        if running_image_id.as_deref() == Some(latest_image_id.as_str()) {
+        let spec_ready = inspected.as_ref().is_some_and(|container| {
+            agent_supports_direct_host_shell(&container.mounts, &container.host_config)
+        });
+        if running_image_id.as_deref() == Some(latest_image_id.as_str()) && spec_ready {
             return Ok(false);
         }
 
-        let mut config = SetupConfig::default();
-        config.agent_server_id = Some(server_id);
-        config.agent_token = Some(self.agent_auth_token_fallback());
-        config.agent_panel_url = Some(
-            std::env::var("OPENOXIDE_SERVER_URL")
-                .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
-                .unwrap_or_else(|_| "http://openoxide:4000".into()),
-        );
+        let config = SetupConfig {
+            agent_server_id: Some(server_id),
+            agent_token: Some(self.agent_auth_token_fallback()),
+            agent_panel_url: Some(
+                std::env::var("OPENOXIDE_SERVER_URL")
+                    .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
+                    .unwrap_or_else(|_| "http://openoxide:4000".into()),
+            ),
+            ..Default::default()
+        };
         ServerSetup::new_local(config)
             .ensure_agent()
             .await
@@ -569,15 +601,17 @@ impl MonitoringLifecycleService {
             .force()
             .run()
             .await;
-        let mut config = SetupConfig::default();
-        config.agent_server_id = Some(server_id);
-        config.agent_token = Some(token);
-        config.agent_retention_days = policy.retention_days;
-        config.agent_panel_url = Some(
-            std::env::var("OPENOXIDE_SERVER_URL")
-                .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
-                .unwrap_or_else(|_| "http://127.0.0.1:4000".into()),
-        );
+        let mut config = SetupConfig {
+            agent_server_id: Some(server_id),
+            agent_token: Some(token),
+            agent_retention_days: policy.retention_days,
+            agent_panel_url: Some(
+                std::env::var("OPENOXIDE_SERVER_URL")
+                    .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
+                    .unwrap_or_else(|_| "http://127.0.0.1:4000".into()),
+            ),
+            ..Default::default()
+        };
         self.apply_agent_mtls(server_id, &mut config).await;
         ServerSetup::new_remote(executor, config)
             .ensure_agent()
@@ -714,7 +748,7 @@ enum OutOfBandDocker {
     /// container. Works even with no agent running at all.
     Local,
     /// Remote host: docker CLI over the SSH executor.
-    Remote(DockerCli),
+    Remote(Box<DockerCli>),
 }
 
 impl OutOfBandDocker {
@@ -739,10 +773,10 @@ impl OutOfBandDocker {
             Self::Remote(docker) => {
                 // docker CLI exits non-zero when the container is already
                 // stopped, so inspect first for an idempotent result.
-                if let Ok(inspected) = docker.container(AGENT_CONTAINER_NAME).inspect().await {
-                    if !inspected.state.running {
-                        return Ok(());
-                    }
+                if let Ok(inspected) = docker.container(AGENT_CONTAINER_NAME).inspect().await
+                    && !inspected.state.running
+                {
+                    return Ok(());
                 }
                 docker
                     .containers()
@@ -781,10 +815,10 @@ impl OutOfBandDocker {
                 }
             }
             Self::Remote(docker) => {
-                if let Ok(inspected) = docker.container(AGENT_CONTAINER_NAME).inspect().await {
-                    if inspected.state.running {
-                        return Ok(());
-                    }
+                if let Ok(inspected) = docker.container(AGENT_CONTAINER_NAME).inspect().await
+                    && inspected.state.running
+                {
+                    return Ok(());
                 }
                 docker
                     .containers()

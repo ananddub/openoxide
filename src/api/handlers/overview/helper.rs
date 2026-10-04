@@ -2,8 +2,9 @@ use connectrpc::{ConnectError, ErrorCode};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     OverviewBackupItem as OverviewBackupItemProto,
-    OverviewBackupStatus as ProtoOverviewBackupStatus, OverviewBackupType as ProtoOverviewBackupType,
-    OverviewDomainItem as OverviewDomainItemProto, OverviewServiceItem as OverviewServiceItemProto,
+    OverviewBackupStatus as ProtoOverviewBackupStatus,
+    OverviewBackupType as ProtoOverviewBackupType, OverviewDomainItem as OverviewDomainItemProto,
+    OverviewServiceItem as OverviewServiceItemProto,
     OverviewServiceType as ProtoOverviewServiceType,
 };
 use crate::services::platform::overview::{
@@ -54,7 +55,6 @@ pub fn service_item_to_proto(dto: OverviewServiceItemDto) -> OverviewServiceItem
         db_kind: dto.db_kind,
         server_id: dto.server_id,
         server_name: dto.server_name,
-        ..Default::default()
     }
 }
 
@@ -77,7 +77,6 @@ pub fn domain_item_to_proto(dto: OverviewDomainItemDto) -> OverviewDomainItemPro
         domain_type: dto.domain_type,
         certificate_type: dto.certificate_type,
         domain_service_name: dto.domain_service_name,
-        ..Default::default()
     }
 }
 
@@ -98,6 +97,5 @@ pub fn backup_item_to_proto(dto: OverviewBackupItemDto) -> OverviewBackupItemPro
         mongo_id: dto.linkage.mongo_id,
         redis_id: dto.linkage.redis_id,
         libsql_id: dto.linkage.libsql_id,
-        ..Default::default()
     }
 }

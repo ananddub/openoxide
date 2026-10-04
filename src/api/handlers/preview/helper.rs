@@ -10,11 +10,14 @@ pub fn view_to_proto(v: PreviewDeploymentView) -> PreviewDeployment {
         application_id: v.base_application_id,
         status: v.status,
         branch: Some(v.source_branch.clone()),
-        url: if v.domain.is_empty() { None } else { Some(v.domain) },
+        url: if v.domain.is_empty() {
+            None
+        } else {
+            Some(v.domain)
+        },
         error: None,
         created_at: v.created_at,
         updated_at: v.updated_at,
-        ..Default::default()
     }
 }
 
@@ -24,11 +27,14 @@ pub fn outcome_to_proto(o: PreviewDeploymentOutcome) -> PreviewDeployment {
         application_id: o.preview.base_application_id,
         status: o.preview.status,
         branch: Some(o.preview.source_branch.clone()),
-        url: if o.preview.domain.is_empty() { None } else { Some(o.preview.domain) },
+        url: if o.preview.domain.is_empty() {
+            None
+        } else {
+            Some(o.preview.domain)
+        },
         error: None,
         created_at: o.preview.created_at,
         updated_at: o.preview.updated_at,
-        ..Default::default()
     }
 }
 

@@ -63,9 +63,9 @@ export type Stat = {value: string; label: string; note: string};
 /** Each number is countable in the repository: provider modules, proto enum arms, engine defaults, builder paths. */
 export const stats: Stat[] = [
 	{
-		value: '72',
+		value: '7',
 		label: 'DNS providers',
-		note: 'modules in crates/dns-update',
+		note: 'one client per provider in crates/dns',
 	},
 	{
 		value: '12',
@@ -161,7 +161,7 @@ export const features: Feature[] = [
 		title: 'Certificates that renew themselves',
 		body: 'Point a domain at the panel, pick a DNS provider, and the wildcard certificate is issued, installed and renewed. Traefik config stays a file you can read.',
 		bullets: [
-			'ACME DNS challenges through 72 providers',
+			'ACME DNS challenges through 7 providers',
 			'Redirects, middlewares and per route TLS',
 			'Live Traefik dynamic config with validation',
 		],

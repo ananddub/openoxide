@@ -32,10 +32,10 @@ impl VaultService {
             encode_path(path)
         );
         let mut req = self.client.get(&url).header("X-Vault-Token", clean_token);
-        if let Some(ns) = namespace {
-            if !ns.trim().is_empty() {
-                req = req.header("X-Vault-Namespace", ns.trim());
-            }
+        if let Some(ns) = namespace
+            && !ns.trim().is_empty()
+        {
+            req = req.header("X-Vault-Namespace", ns.trim());
         }
 
         let res = req.send().await?;
@@ -76,10 +76,10 @@ impl VaultService {
 
         let url = format!("{}/v1/auth/token/lookup-self", clean_url);
         let mut req = self.client.get(&url).header("X-Vault-Token", clean_token);
-        if let Some(ns) = namespace {
-            if !ns.trim().is_empty() {
-                req = req.header("X-Vault-Namespace", ns.trim());
-            }
+        if let Some(ns) = namespace
+            && !ns.trim().is_empty()
+        {
+            req = req.header("X-Vault-Namespace", ns.trim());
         }
         let res = req.send().await?;
         if res.status().is_success() {
@@ -115,10 +115,10 @@ impl VaultService {
             urlencoding::encode(&mount)
         );
         let mut req = self.client.get(&url).header("X-Vault-Token", clean_token);
-        if let Some(ns) = namespace {
-            if !ns.trim().is_empty() {
-                req = req.header("X-Vault-Namespace", ns.trim());
-            }
+        if let Some(ns) = namespace
+            && !ns.trim().is_empty()
+        {
+            req = req.header("X-Vault-Namespace", ns.trim());
         }
         let res = req.send().await?;
         let status = res.status();

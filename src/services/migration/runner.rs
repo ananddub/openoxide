@@ -10,6 +10,8 @@ use crate::db::queries::FlashQueries;
 use crate::utils::exec::{CommandExecutor, ExecStreamEvent};
 use crate::utils::os::rsync::parse_progress2;
 
+use std::path::Path;
+
 use super::planner::{
     PlannedObject, known_hosts_entry, remote_destination, sync_argv, verify_argv,
 };
@@ -50,10 +52,16 @@ impl TempCredentials {
             known_hosts_entry(&credentials.connect_host, &credentials.host_key_openssh)
                 .map_err(|error| error.to_string())?;
         let dir = tempfile::tempdir().map_err(|error| error.to_string())?;
-        std::fs::write(dir.path().join(KEY_FILE_NAME), credentials.private_key.as_bytes())
-            .map_err(|error| error.to_string())?;
-        std::fs::set_permissions(dir.path().join(KEY_FILE_NAME), std::fs::Permissions::from_mode(0o600))
-            .map_err(|error| error.to_string())?;
+        std::fs::write(
+            dir.path().join(KEY_FILE_NAME),
+            credentials.private_key.as_bytes(),
+        )
+        .map_err(|error| error.to_string())?;
+        std::fs::set_permissions(
+            dir.path().join(KEY_FILE_NAME),
+            std::fs::Permissions::from_mode(0o600),
+        )
+        .map_err(|error| error.to_string())?;
         std::fs::write(
             dir.path().join(KNOWN_HOSTS_FILE_NAME),
             format!("{known_hosts}\n").as_bytes(),
@@ -68,7 +76,9 @@ impl TempCredentials {
         // stay whitespace-free even under a customised TMPDIR.
         for path in [Self::key_path_in(&dir), Self::known_hosts_path_in(&dir)] {
             if path.chars().any(char::is_whitespace) {
-                return Err(format!("temp credential path contains whitespace: {path:?}"));
+                return Err(format!(
+                    "temp credential path contains whitespace: {path:?}"
+                ));
             }
         }
         Ok(Self { dir })
@@ -83,7 +93,10 @@ impl TempCredentials {
     }
 
     fn key_path_in(dir: &tempfile::TempDir) -> String {
-        dir.path().join(KEY_FILE_NAME).to_string_lossy().into_owned()
+        dir.path()
+            .join(KEY_FILE_NAME)
+            .to_string_lossy()
+            .into_owned()
     }
 
     fn known_hosts_path_in(dir: &tempfile::TempDir) -> String {
@@ -118,7 +131,9 @@ pub fn ssh_exec_args(
         .map_err(|error| error.to_string())?;
     for path in [key_path, known_hosts_path] {
         if path.is_empty() || path.chars().any(char::is_whitespace) {
-            return Err(format!("credential path must be non-empty and whitespace-free: {path:?}"));
+            return Err(format!(
+                "credential path must be non-empty and whitespace-free: {path:?}"
+            ));
         }
     }
     if remote_command.is_empty() || remote_command.contains('\0') {
@@ -135,10 +150,7 @@ pub fn ssh_exec_args(
         "StrictHostKeyChecking=yes".into(),
         "-o".into(),
         "BatchMode=yes".into(),
-        format!(
-            "{}@{}",
-            credentials.username, credentials.connect_host
-        ),
+        format!("{}@{}", credentials.username, credentials.connect_host),
         "mkdir".into(),
         "-p".into(),
         "--".into(),
@@ -171,11 +183,9 @@ pub fn has_dirty_delta(output: &str) -> bool {
         // (`.` / `./`) — or a bare marker — is structurally clean; any named
         // directory or file entry means the destination still differs.
         let name_of = |line: &str| -> String {
-            let marker_len = line
-                .find(char::is_whitespace)
-                .unwrap_or(line.len());
-            let name = line[marker_len..].trim().trim_matches('"').to_owned();
-            name
+            let marker_len = line.find(char::is_whitespace).unwrap_or(line.len());
+
+            line[marker_len..].trim().trim_matches('"').to_owned()
         };
         if kind == '.' && trimmed.starts_with("./") {
             continue;
@@ -213,7 +223,7 @@ impl ProgressAccumulator {
         self.buffer.push_str(&String::from_utf8_lossy(bytes));
         // progress2 rewrites one line with \r; drain complete segments.
         while let Some(cut) = self.buffer.find(['\r', '\n']) {
-            let segment: String = self.buffer.drain(..=cut).map(char::from).collect();
+            let segment: String = self.buffer.drain(..=cut).collect();
             if let Some(progress) = parse_progress2(&segment) {
                 self.last_bytes = progress.transferred_bytes;
             }
@@ -236,7 +246,15 @@ impl ProgressAccumulator {
 }
 
 fn failure_message(stderr: &str, code: Option<i32>) -> String {
-    let tail: String = stderr.trim().chars().rev().take(600).collect::<Vec<_>>().into_iter().rev().collect();
+    let tail: String = stderr
+        .trim()
+        .chars()
+        .rev()
+        .take(600)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
     format!("rsync/ssh failed (exit {code:?}): {tail}")
 }
 
@@ -302,16 +320,18 @@ impl ObjectCheckpoint {
     ) -> Result<(), sqlx::Error> {
         let now = now_unix();
         queries
-            .migration_objects_upsert(&crate::flash_gen::migration_objects::MigrationObjectsUpsertParams {
-                migration_id: self.migration_id.clone(),
-                obj_key: self.obj_key.clone(),
-                kind: kind.to_owned(),
-                source_ref: source_ref.to_owned(),
-                dest_ref: dest_ref.to_owned(),
-                status: "PENDING".into(),
-                created_at: now,
-                updated_at: now,
-            })
+            .migration_objects_upsert(
+                &crate::flash_gen::migration_objects::MigrationObjectsUpsertParams {
+                    migration_id: self.migration_id.clone(),
+                    obj_key: self.obj_key.clone(),
+                    kind: kind.to_owned(),
+                    source_ref: source_ref.to_owned(),
+                    dest_ref: dest_ref.to_owned(),
+                    status: "PENDING".into(),
+                    created_at: now,
+                    updated_at: now,
+                },
+            )
             .await
     }
 
@@ -375,7 +395,13 @@ async fn run_sync_and_verify(
     let staging_parent = planned
         .dest_staging
         .rsplit_once('/')
-        .map(|(parent, _)| if parent.is_empty() { "/".into() } else { parent.to_owned() })
+        .map(|(parent, _)| {
+            if parent.is_empty() {
+                "/".into()
+            } else {
+                parent.to_owned()
+            }
+        })
         .ok_or_else(|| "staging path has no parent".to_owned())?;
     let ssh_args = ssh_exec_args(
         credentials,
@@ -388,11 +414,13 @@ async fn run_sync_and_verify(
         .await
         .map_err(|error| failure_message(&error.to_string(), None))?;
 
+    let identity_file = temp.key_path();
+    let known_hosts_file = temp.known_hosts_path();
     let argv = sync_argv(
         planned,
         &destination,
-        &temp.key_path().into(),
-        &temp.known_hosts_path().into(),
+        Path::new(&identity_file),
+        Path::new(&known_hosts_file),
         credentials.ssh_port,
     )
     .map_err(|error| error.to_string())?;
@@ -426,8 +454,8 @@ async fn run_sync_and_verify(
     let verify = verify_argv(
         planned,
         &destination,
-        &temp.key_path().into(),
-        &temp.known_hosts_path().into(),
+        Path::new(&identity_file),
+        Path::new(&known_hosts_file),
         credentials.ssh_port,
     )
     .map_err(|error| error.to_string())?;
@@ -478,7 +506,10 @@ mod tests {
         let temp = TempCredentials::create(&credentials()).unwrap();
         let mode = {
             use std::os::unix::fs::PermissionsExt;
-            std::fs::metadata(temp.key_path()).unwrap().permissions().mode()
+            std::fs::metadata(temp.key_path())
+                .unwrap()
+                .permissions()
+                .mode()
         };
         assert_eq!(mode & 0o777, 0o600, "private key must be 0600");
         let kh = std::fs::read_to_string(temp.known_hosts_path()).unwrap();
@@ -504,20 +535,29 @@ mod tests {
 
     #[test]
     fn ssh_exec_args_pin_and_mkdir_parent() {
-        let args =
-            ssh_exec_args(&credentials(), "/tmp/kh", "/tmp/key", "/etc/openoxide/migrations/mig-1/staging")
-                .unwrap();
+        let args = ssh_exec_args(
+            &credentials(),
+            "/tmp/kh",
+            "/tmp/key",
+            "/etc/openoxide/migrations/mig-1/staging",
+        )
+        .unwrap();
         assert_eq!(args[0], "-p");
         assert!(args.contains(&"StrictHostKeyChecking=yes".to_string()));
         assert!(args.contains(&"BatchMode=yes".to_string()));
         assert!(args.contains(&"UserKnownHostsFile=/tmp/kh".to_string()));
         assert!(args.contains(&"root@10.0.0.5".to_string()));
         let mkdir = args.iter().position(|t| t == "mkdir").unwrap();
-        assert_eq!(&args[mkdir..], ["mkdir", "-p", "--", "/etc/openoxide/migrations/mig-1/staging"]);
-        assert!(matches!(
-            ssh_exec_args(&credentials(), "/tmp /kh", "/tmp/key", "/x"),
-            Err(_)
-        ));
+        assert_eq!(
+            &args[mkdir..],
+            [
+                "mkdir",
+                "-p",
+                "--",
+                "/etc/openoxide/migrations/mig-1/staging"
+            ]
+        );
+        assert!(ssh_exec_args(&credentials(), "/tmp /kh", "/tmp/key", "/x").is_err());
     }
 
     #[test]
@@ -526,8 +566,12 @@ mod tests {
         assert!(!has_dirty_delta(
             "sending incremental file list\n./\ncd+++++++++\n\ntotal size is 1,000  speedup is 1.0\n"
         ));
-        assert!(!has_dirty_delta("sending incremental file list\nd..t------ ./\n"));
-        assert!(!has_dirty_delta("sending incremental file list\ncd+++++++++ .\n"));
+        assert!(!has_dirty_delta(
+            "sending incremental file list\nd..t------ ./\n"
+        ));
+        assert!(!has_dirty_delta(
+            "sending incremental file list\ncd+++++++++ .\n"
+        ));
         assert!(has_dirty_delta(
             "sending incremental file list\n>f+++++++++ big-file\n"
         ));
@@ -535,7 +579,9 @@ mod tests {
             "sending incremental file list\ncd+++++++++ sub/dir/\n"
         ));
         assert!(has_dirty_delta("*deleting orphan\n"));
-        assert!(has_dirty_delta("sending incremental file list\ncd+++++++++ \"dir with space/\"\n"));
+        assert!(has_dirty_delta(
+            "sending incremental file list\ncd+++++++++ \"dir with space/\"\n"
+        ));
     }
 
     #[test]

@@ -2,8 +2,7 @@ use super::{
     DatabaseKind, DatabaseOperation, DatabaseRecord, DatabaseService,
     queries::{
         ResourceDependencyCounts, build_engine_config, db_type_value, dependency_counts,
-        generate_app_name, patch_engine_config, random_secret, slug_value,
-        update_service_identity,
+        generate_app_name, patch_engine_config, random_secret, slug_value, update_service_identity,
     },
 };
 use serde::Deserialize;
@@ -106,13 +105,13 @@ impl DatabaseService {
                 if record.kind != kind {
                     return Err(sqlx::Error::RowNotFound);
                 }
-                Ok::<_, sqlx::Error>(CacheEnum::Database(record))
+                Ok::<_, sqlx::Error>(CacheEnum::Database(Box::new(record)))
             })
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
 
         if let CacheEnum::Database(record) = res {
-            Ok(record)
+            Ok(*record)
         } else {
             Err(sqlx::Error::RowNotFound)
         }
@@ -129,14 +128,22 @@ impl DatabaseService {
             .clone()
             .unwrap_or_else(|| kind.default_image().into());
         let db_name = match kind {
-            DatabaseKind::Postgres | DatabaseKind::Mysql | DatabaseKind::Mariadb => {
-                Some(input.database_name.clone().unwrap_or_else(|| slug_value(&input.name)))
-            }
+            DatabaseKind::Postgres | DatabaseKind::Mysql | DatabaseKind::Mariadb => Some(
+                input
+                    .database_name
+                    .clone()
+                    .unwrap_or_else(|| slug_value(&input.name)),
+            ),
             _ => None,
         };
         let db_user = match kind {
             DatabaseKind::Redis => None,
-            _ => Some(input.database_user.clone().unwrap_or_else(|| "openoxide".into())),
+            _ => Some(
+                input
+                    .database_user
+                    .clone()
+                    .unwrap_or_else(|| "openoxide".into()),
+            ),
         };
         let db_password = input
             .database_password
@@ -149,32 +156,29 @@ impl DatabaseService {
         let engine_config = build_engine_config(kind, &input, &root_password);
 
         let now = chrono::Utc::now().timestamp();
-        let network_ids = serialize_json_string_vec(input.network_ids.as_ref())?
-            .unwrap_or_else(|| "[]".into());
+        let network_ids =
+            serialize_json_string_vec(input.network_ids.as_ref())?.unwrap_or_else(|| "[]".into());
         let detach_rustploy_network = input.detach_rustploy_network.unwrap_or(0);
 
         let service_id = match input.server_id {
             None => {
                 self.queries
-                    .db_create_database_service_global(
-                        &DbCreateDatabaseServiceGlobalParams {
-                            service_type: "DATABASE".into(),
-                            name: input.name.clone(),
-                            app_name: app_name.clone(),
-                            description: input.description.clone().unwrap_or_default(),
-                            env_var: input.env_var.clone().unwrap_or_default(),
-                            command: input.command.clone().unwrap_or_default(),
-                            args: serialize_json_string_vec(input.args.as_ref())?
-                                .unwrap_or_default(),
-                            docker_image: image,
-                            replicas: 1,
-                            network_ids,
-                            detach_rustploy_network,
-                            environment_id: input.environment_id,
-                            created_at: now,
-                            updated_at: now,
-                        },
-                    )
+                    .db_create_database_service_global(&DbCreateDatabaseServiceGlobalParams {
+                        service_type: "DATABASE".into(),
+                        name: input.name.clone(),
+                        app_name: app_name.clone(),
+                        description: input.description.clone().unwrap_or_default(),
+                        env_var: input.env_var.clone().unwrap_or_default(),
+                        command: input.command.clone().unwrap_or_default(),
+                        args: serialize_json_string_vec(input.args.as_ref())?.unwrap_or_default(),
+                        docker_image: image,
+                        replicas: 1,
+                        network_ids,
+                        detach_rustploy_network,
+                        environment_id: input.environment_id,
+                        created_at: now,
+                        updated_at: now,
+                    })
                     .await?
             }
             Some(server_id) => {
@@ -220,16 +224,14 @@ impl DatabaseService {
             }
             None => {
                 self.queries
-                    .db_create_service_database_no_port(
-                        &DbCreateServiceDatabaseNoPortParams {
-                            service_id,
-                            db_type,
-                            db_name: db_name.unwrap_or_default(),
-                            db_user: db_user.unwrap_or_default(),
-                            db_password,
-                            engine_config,
-                        },
-                    )
+                    .db_create_service_database_no_port(&DbCreateServiceDatabaseNoPortParams {
+                        service_id,
+                        db_type,
+                        db_name: db_name.unwrap_or_default(),
+                        db_user: db_user.unwrap_or_default(),
+                        db_password,
+                        engine_config,
+                    })
                     .await?;
             }
         }
@@ -251,8 +253,7 @@ impl DatabaseService {
             .as_deref()
             .or(current.description.as_deref());
         let command = input.command.as_deref().or(current.command.as_deref());
-        let args = serialize_json_string_vec(input.args.as_ref())?
-            .or(current.args.clone());
+        let args = serialize_json_string_vec(input.args.as_ref())?.or(current.args.clone());
         let env_var = input.env_var.as_deref().or(current.env_var.as_deref());
         let memory_reservation = input
             .memory_reservation
@@ -310,7 +311,9 @@ impl DatabaseService {
         if let Some(value) = cpu_limit {
             self.queries.db_update_service_cpu_limit(value, id).await?;
         }
-        self.queries.db_update_service_replicas(replicas, id).await?;
+        self.queries
+            .db_update_service_replicas(replicas, id)
+            .await?;
         if let Some(server_id) = server_id {
             self.queries.update_service_server(server_id, id).await?;
         }
@@ -341,108 +344,108 @@ impl DatabaseService {
         self.cache.invalidate(&CacheKey::Database(id)).await;
         let record = self.get_by_id(kind, id).await?;
 
-        if let Some(new_password) = &input.database_password {
-            if !new_password.is_empty() {
-                let pwd = new_password.clone();
-                let app_name = record.app_name.clone();
-                let server_id = record.server_id;
-                let user_name = record
-                    .database_user
-                    .clone()
-                    .unwrap_or_else(|| "openoxide".to_string());
-                tokio::spawn(async move {
-                    let Ok(executor) =
-                        crate::services::compute::compose::remote::agent_executor_for(server_id).await
-                    else {
-                        tracing::warn!(database = %app_name, "could not resolve Agent for password update");
-                        return;
-                    };
-                    let docker = crate::utils::docker::DockerCli::from_executor(executor);
+        if let Some(new_password) = &input.database_password
+            && !new_password.is_empty()
+        {
+            let pwd = new_password.clone();
+            let app_name = record.app_name.clone();
+            let server_id = record.server_id;
+            let user_name = record
+                .database_user
+                .clone()
+                .unwrap_or_else(|| "openoxide".to_string());
+            tokio::spawn(async move {
+                let Ok(executor) =
+                    crate::services::compute::compose::remote::agent_executor_for(server_id).await
+                else {
+                    tracing::warn!(database = %app_name, "could not resolve Agent for password update");
+                    return;
+                };
+                let docker = crate::utils::docker::DockerCli::from_executor(executor);
 
-                    let containers = docker
-                        .containers()
-                        .ps()
-                        .all()
-                        .list()
-                        .await
-                        .unwrap_or_default();
-                    let target_id = containers
-                        .iter()
-                        .find(|c| {
-                            let name = c.names.trim_start_matches('/').to_lowercase();
-                            name.starts_with(&format!("{}_db", app_name).to_lowercase())
-                                || name.contains(&app_name.to_lowercase())
-                        })
-                        .map(|c| c.id.clone())
-                        .unwrap_or_else(|| format!("{}_db", app_name));
+                let containers = docker
+                    .containers()
+                    .ps()
+                    .all()
+                    .list()
+                    .await
+                    .unwrap_or_default();
+                let target_id = containers
+                    .iter()
+                    .find(|c| {
+                        let name = c.names.trim_start_matches('/').to_lowercase();
+                        name.starts_with(&format!("{}_db", app_name).to_lowercase())
+                            || name.contains(&app_name.to_lowercase())
+                    })
+                    .map(|c| c.id.clone())
+                    .unwrap_or_else(|| format!("{}_db", app_name));
 
-                    let escaped_pwd = pwd.replace('\'', "''");
-                    match kind {
-                        DatabaseKind::Postgres => {
-                            let sql = format!(
-                                "ALTER USER \"{}\" WITH PASSWORD '{}';",
-                                user_name, escaped_pwd
-                            );
-                            let _ = docker
-                                .containers()
-                                .exec(&target_id)
-                                .run(["psql", "-U", &user_name, "-d", "postgres", "-c", &sql])
-                                .await;
-                            let _ = docker
-                                .containers()
-                                .exec(&target_id)
-                                .run(["psql", "-U", "postgres", "-c", &sql])
-                                .await;
-                        }
-                        DatabaseKind::Mysql | DatabaseKind::Mariadb => {
-                            let sql = format!(
-                                "ALTER USER '{}'@'%' IDENTIFIED BY '{}'; FLUSH PRIVILEGES;",
-                                user_name, escaped_pwd
-                            );
-                            let _ = docker
-                                .containers()
-                                .exec(&target_id)
-                                .run(["mysql", "-u", "root", "-e", &sql])
-                                .await;
-                            let _ = docker
-                                .containers()
-                                .exec(&target_id)
-                                .run(["mariadb", "-u", "root", "-e", &sql])
-                                .await;
-                        }
-                        DatabaseKind::Redis => {
-                            // Apply password in live Redis server and rewrite configuration
-                            let _ = docker
-                                .containers()
-                                .exec(&target_id)
-                                .run(["redis-cli", "CONFIG", "SET", "requirepass", &pwd])
-                                .await;
-                            let _ = docker
-                                .containers()
-                                .exec(&target_id)
-                                .run(["redis-cli", "-a", &pwd, "CONFIG", "REWRITE"])
-                                .await;
-                        }
-                        DatabaseKind::Mongo => {
-                            let script = format!(
-                                "try {{ db.getSiblingDB('admin').changeUserPassword('{}', '{}'); }} catch(e) {{ db.changeUserPassword('{}', '{}'); }}",
-                                user_name, escaped_pwd, user_name, escaped_pwd
-                            );
-                            let _ = docker
-                                .containers()
-                                .exec(&target_id)
-                                .run(["mongosh", "--eval", &script])
-                                .await;
-                            let _ = docker
-                                .containers()
-                                .exec(&target_id)
-                                .run(["mongo", "--eval", &script])
-                                .await;
-                        }
-                        _ => {}
+                let escaped_pwd = pwd.replace('\'', "''");
+                match kind {
+                    DatabaseKind::Postgres => {
+                        let sql = format!(
+                            "ALTER USER \"{}\" WITH PASSWORD '{}';",
+                            user_name, escaped_pwd
+                        );
+                        let _ = docker
+                            .containers()
+                            .exec(&target_id)
+                            .run(["psql", "-U", &user_name, "-d", "postgres", "-c", &sql])
+                            .await;
+                        let _ = docker
+                            .containers()
+                            .exec(&target_id)
+                            .run(["psql", "-U", "postgres", "-c", &sql])
+                            .await;
                     }
-                });
-            }
+                    DatabaseKind::Mysql | DatabaseKind::Mariadb => {
+                        let sql = format!(
+                            "ALTER USER '{}'@'%' IDENTIFIED BY '{}'; FLUSH PRIVILEGES;",
+                            user_name, escaped_pwd
+                        );
+                        let _ = docker
+                            .containers()
+                            .exec(&target_id)
+                            .run(["mysql", "-u", "root", "-e", &sql])
+                            .await;
+                        let _ = docker
+                            .containers()
+                            .exec(&target_id)
+                            .run(["mariadb", "-u", "root", "-e", &sql])
+                            .await;
+                    }
+                    DatabaseKind::Redis => {
+                        // Apply password in live Redis server and rewrite configuration
+                        let _ = docker
+                            .containers()
+                            .exec(&target_id)
+                            .run(["redis-cli", "CONFIG", "SET", "requirepass", &pwd])
+                            .await;
+                        let _ = docker
+                            .containers()
+                            .exec(&target_id)
+                            .run(["redis-cli", "-a", &pwd, "CONFIG", "REWRITE"])
+                            .await;
+                    }
+                    DatabaseKind::Mongo => {
+                        let script = format!(
+                            "try {{ db.getSiblingDB('admin').changeUserPassword('{}', '{}'); }} catch(e) {{ db.changeUserPassword('{}', '{}'); }}",
+                            user_name, escaped_pwd, user_name, escaped_pwd
+                        );
+                        let _ = docker
+                            .containers()
+                            .exec(&target_id)
+                            .run(["mongosh", "--eval", &script])
+                            .await;
+                        let _ = docker
+                            .containers()
+                            .exec(&target_id)
+                            .run(["mongo", "--eval", &script])
+                            .await;
+                    }
+                    _ => {}
+                }
+            });
         }
 
         let needs_redeploy = input.external_port.is_some()
@@ -472,7 +475,9 @@ impl DatabaseService {
         if needs_redeploy {
             tokio::spawn(async move {
                 if let Ok(svc) = auto_di::resolve::<DatabaseService>().await {
-                    let _ = svc.run_operation(kind, id, DatabaseOperation::Deploy, 0).await;
+                    let _ = svc
+                        .run_operation(kind, id, DatabaseOperation::Deploy, 0)
+                        .await;
                 }
             });
         }
@@ -496,8 +501,7 @@ impl DatabaseService {
             .mount_fetch_for_database(id)
             .await
             .unwrap_or_default();
-        let volume_names =
-            crate::services::compute::cleanup::volume_names_from_mounts(&mounts);
+        let volume_names = crate::services::compute::cleanup::volume_names_from_mounts(&mounts);
 
         // Tear down the runtime in the background before removing the row.
         let app_name = record.app_name.clone();

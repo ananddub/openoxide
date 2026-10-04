@@ -6,10 +6,10 @@ use crate::api::connect::generated::openoxide::api::v1::{
     GitProviderType as ProtoGitProviderType, GitProviderWebhookInfo,
 };
 use crate::services::integrations::git::{GitProviderConfigView, GitProviderView};
+use crate::utils::provider::GitProviderType;
 use crate::utils::provider::discovery::{
     CollaboratorPermission, GitReferenceInfo, ProviderWebhookInfo, RepositoryInfo,
 };
-use crate::utils::provider::GitProviderType;
 
 pub fn map_db_error(err: sqlx::Error) -> ConnectError {
     match &err {
@@ -82,7 +82,6 @@ pub fn config_to_proto(view: GitProviderConfigView) -> GitProviderConfigProto {
         has_access_token: view.has_access_token,
         has_app_password: view.has_app_password,
         has_api_token: view.has_api_token,
-        ..Default::default()
     }
 }
 
@@ -97,7 +96,6 @@ pub fn provider_to_proto(view: GitProviderView) -> GitProviderProto {
         created_at: view.created_at,
         updated_at: view.updated_at,
         config: ::buffa::MessageField::some(config_to_proto(view.config)),
-        ..Default::default()
     }
 }
 
@@ -109,7 +107,6 @@ pub fn repository_to_proto(info: RepositoryInfo) -> GitProviderRepository {
         private: info.private,
         default_branch: info.default_branch,
         clone_url: info.clone_url,
-        ..Default::default()
     }
 }
 
@@ -117,7 +114,6 @@ pub fn reference_to_proto(info: GitReferenceInfo) -> GitProviderReference {
     GitProviderReference {
         name: info.name,
         commit: info.commit,
-        ..Default::default()
     }
 }
 
@@ -126,16 +122,16 @@ pub fn webhook_info_to_proto(info: ProviderWebhookInfo) -> GitProviderWebhookInf
         id: info.id,
         url: info.url,
         active: info.active,
-        ..Default::default()
     }
 }
 
-pub fn permission_to_proto(permission: CollaboratorPermission) -> GitProviderCollaboratorPermission {
+pub fn permission_to_proto(
+    permission: CollaboratorPermission,
+) -> GitProviderCollaboratorPermission {
     GitProviderCollaboratorPermission {
         username: permission.username,
         level: permission.level,
         can_write: permission.can_write,
         can_admin: permission.can_admin,
-        ..Default::default()
     }
 }

@@ -72,6 +72,5 @@ pub fn domain_to_proto(record: DomainRecord) -> DomainProto {
         service_id: record.service_id,
         created_at: record.created_at,
         updated_at: record.updated_at,
-        ..Default::default()
     }
 }

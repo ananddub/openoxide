@@ -7,8 +7,8 @@ use crate::api::connect::generated::openoxide::api::v1::{
     SwarmGetSettingsResponse, SwarmInfo, SwarmInfoRequest, SwarmInfoResponse, SwarmJoinRequest,
     SwarmJoinTokens, SwarmLeaveRequest, SwarmListNetworksRequest, SwarmListNetworksResponse,
     SwarmListNodesRequest, SwarmListNodesResponse, SwarmListServicesRequest,
-    SwarmListServicesResponse, SwarmPromoteNodeRequest, SwarmRemoveNodeRequest,
-    SwarmService, SwarmServiceExt, SwarmUpdateNetworkRequest, SwarmUpdateNetworkResponse,
+    SwarmListServicesResponse, SwarmPromoteNodeRequest, SwarmRemoveNodeRequest, SwarmService,
+    SwarmServiceExt, SwarmUpdateNetworkRequest, SwarmUpdateNetworkResponse,
     SwarmUpdateNodeAvailabilityRequest, SwarmUpdateServiceRequest, SwarmUpdateServiceResponse,
     SwarmUpdateSettingsRequest, SwarmUpdateSettingsResponse,
 };
@@ -142,11 +142,9 @@ impl SwarmService for SwarmController {
             control_available: swarm.control_available,
             nodes: swarm.nodes as i64,
             managers: swarm.managers as i64,
-            ..Default::default()
         };
         Response::ok(SwarmInfoResponse {
             info: ::buffa::MessageField::some(info),
-            ..Default::default()
         })
     }
 
@@ -170,14 +168,9 @@ impl SwarmService for SwarmController {
             .get(crate::utils::docker::core::types::SwarmRole::Manager)
             .await
             .map_err(map_exec)?;
-        let tokens = SwarmJoinTokens {
-            worker,
-            manager,
-            ..Default::default()
-        };
+        let tokens = SwarmJoinTokens { worker, manager };
         Response::ok(SwarmGetJoinTokensResponse {
             tokens: ::buffa::MessageField::some(tokens),
-            ..Default::default()
         })
     }
 
@@ -204,10 +197,7 @@ impl SwarmService for SwarmController {
             unreachable!("SwarmNodes key always yields a SwarmNodes cache entry")
         };
         let nodes = nodes.into_iter().map(node_to_proto).collect();
-        Response::ok(SwarmListNodesResponse {
-            nodes,
-            ..Default::default()
-        })
+        Response::ok(SwarmListNodesResponse { nodes })
     }
 
     async fn promote_node<'a>(
@@ -218,7 +208,12 @@ impl SwarmService for SwarmController {
         let server_id = request.server_id;
         let node_id = request.node_id.to_owned();
         let docker = self.docker(server_id).await?;
-        docker.nodes().promote(node_id).run().await.map_err(map_exec)?;
+        docker
+            .nodes()
+            .promote(node_id)
+            .run()
+            .await
+            .map_err(map_exec)?;
         self.invalidate_swarm(server_id).await;
         Response::ok(Empty::default())
     }
@@ -231,7 +226,12 @@ impl SwarmService for SwarmController {
         let server_id = request.server_id;
         let node_id = request.node_id.to_owned();
         let docker = self.docker(server_id).await?;
-        docker.nodes().demote(node_id).run().await.map_err(map_exec)?;
+        docker
+            .nodes()
+            .demote(node_id)
+            .run()
+            .await
+            .map_err(map_exec)?;
         self.invalidate_swarm(server_id).await;
         Response::ok(Empty::default())
     }
@@ -244,9 +244,8 @@ impl SwarmService for SwarmController {
         let server_id = request.server_id;
         let node_id = request.node_id.to_owned();
         let availability = availability_to_docker_str(request.availability)?;
-        let node_aval =
-            crate::utils::docker::core::types::NodeAvailability::try_from(availability)
-                .map_err(|_| ConnectError::invalid_argument("invalid availability value"))?;
+        let node_aval = crate::utils::docker::core::types::NodeAvailability::try_from(availability)
+            .map_err(|_| ConnectError::invalid_argument("invalid availability value"))?;
         let docker = self.docker(server_id).await?;
         docker
             .nodes()
@@ -267,7 +266,13 @@ impl SwarmService for SwarmController {
         let server_id = request.server_id;
         let node_id = request.node_id.to_owned();
         let docker = self.docker(server_id).await?;
-        docker.nodes().remove(node_id).force().run().await.map_err(map_exec)?;
+        docker
+            .nodes()
+            .remove(node_id)
+            .force()
+            .run()
+            .await
+            .map_err(map_exec)?;
         self.invalidate_swarm(server_id).await;
         Response::ok(Empty::default())
     }
@@ -348,8 +353,12 @@ impl SwarmService for SwarmController {
             .map_err(map_exec)?;
 
         if !target_hostname.is_empty() {
-            self.remove_stale_hostname_duplicates(&manager_docker, &target_docker, &target_hostname)
-                .await;
+            self.remove_stale_hostname_duplicates(
+                &manager_docker,
+                &target_docker,
+                &target_hostname,
+            )
+            .await;
         }
 
         self.invalidate_swarm(Some(target_server_id)).await;

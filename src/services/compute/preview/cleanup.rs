@@ -65,20 +65,15 @@ impl PreviewDeploymentService {
                 if let Ok(service) = resolve::<ApplicationService>().await {
                     let _ = service.cancel_operation(application_id).await;
                 }
-                if let Ok(executor) = app_new_cmd(
-                    Arc::new(self.queries.pool.clone()),
-                    application_id,
-                )
-                .await
-                {
-                    if let Err(error) = DockerCli::from_executor(executor)
+                if let Ok(executor) =
+                    app_new_cmd(Arc::new(self.queries.pool.clone()), application_id).await
+                    && let Err(error) = DockerCli::from_executor(executor)
                         .stacks()
                         .remove(&application.app_name)
                         .run()
                         .await
-                    {
-                        tracing::warn!(preview_id = id, error = %error, "preview stack cleanup failed");
-                    }
+                {
+                    tracing::warn!(preview_id = id, error = %error, "preview stack cleanup failed");
                 }
                 // service_git / service_application / domains cascade via FK.
                 self.queries

@@ -15,7 +15,7 @@ impl<'a> VolumeCreate<'a> {
         }
     }
     pub fn driver(mut self, d: VolumeDriver) -> Self {
-        self.args.pair("--driver", d.as_str().to_string());
+        self.args.pair("--driver", d.as_str());
         self
     }
     pub fn label(mut self, k: impl AsRef<str>, v: impl AsRef<str>) -> Self {

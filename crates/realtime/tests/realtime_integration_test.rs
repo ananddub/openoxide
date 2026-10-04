@@ -19,7 +19,7 @@ async fn attached_handle() -> (sqlx::SqlitePool, Arc<RealtimeHandle>) {
     let mut conn = pool.acquire().await.expect("acquire");
     let mut raw = conn.lock_handle().await.expect("lock handle");
     let ptr = raw.as_raw_handle().as_ptr() as *mut std::ffi::c_void;
-    let handle = RealtimeHandle::attach(ptr).expect("attach");
+    let handle = unsafe { RealtimeHandle::attach(ptr) }.expect("attach");
     drop(raw);
     drop(conn);
     (pool, handle)
@@ -102,7 +102,7 @@ async fn attach_if_needed_reuses_live_handle() {
     let mut conn = pool.acquire().await.unwrap();
     let mut raw = conn.lock_handle().await.unwrap();
     let ptr = raw.as_raw_handle().as_ptr() as *mut std::ffi::c_void;
-    let second =
-        RealtimeHandle::attach_if_needed(ptr).expect("idempotent re-attach must reuse the handle");
+    let second = unsafe { RealtimeHandle::attach_if_needed(ptr) }
+        .expect("idempotent re-attach must reuse the handle");
     assert_eq!(first.db_ptr(), second.db_ptr());
 }

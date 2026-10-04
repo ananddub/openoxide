@@ -106,7 +106,9 @@ impl DatabaseMountService {
         self.ensure_database(kind, database_id).await?;
         match self.queries.mount_get_for_database(id, database_id).await {
             Ok(_) => {
-                self.queries.mount_delete_for_database(id, database_id).await?;
+                self.queries
+                    .mount_delete_for_database(id, database_id)
+                    .await?;
                 Ok(true)
             }
             Err(sqlx::Error::RowNotFound) => Ok(false),
@@ -123,7 +125,7 @@ fn normalize_mount(
     content: Option<String>,
     mount_path: String,
 ) -> Result<NormalizedMount, String> {
-    let mount_type = crate::utils::builder::spec::MountType::from_str(mount_type)
+    let mount_type = crate::utils::builder::spec::MountType::from_str_opt(mount_type)
         .ok_or_else(|| format!("invalid mount type: {mount_type}"))?;
     let mut input = NormalizedMount {
         mount_type,

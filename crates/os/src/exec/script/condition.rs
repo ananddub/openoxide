@@ -27,7 +27,7 @@ impl Condition {
     }
 
     // ── Method-chaining API (existing) ────────────────────────
-    pub fn not(self) -> Self {
+    pub fn negated(self) -> Self {
         Condition::Not(Box::new(self))
     }
     pub fn and(self, other: Condition) -> Self {
@@ -103,7 +103,7 @@ impl BitOr for Condition {
 impl Not for Condition {
     type Output = Condition;
     fn not(self) -> Condition {
-        Condition::not(self)
+        self.negated()
     }
 }
 
@@ -126,7 +126,7 @@ impl BitOr for &Condition {
 impl Not for &Condition {
     type Output = Condition;
     fn not(self) -> Condition {
-        Condition::not(self.clone())
+        self.clone().negated()
     }
 }
 

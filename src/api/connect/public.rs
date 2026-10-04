@@ -10,7 +10,9 @@ use super::generated::openoxide::api::v1::{
     GenerateDomainRequest, GenerateDomainResponse, ListGitBranchesRequest, ListGitBranchesResponse,
     PublicService, PublicServiceExt,
 };
-use crate::services::identity::permission::{PermissionOperation, PermissionResource, Server, CanRead};
+use crate::services::identity::permission::{
+    CanRead, PermissionOperation, PermissionResource, Server,
+};
 use crate::utils::git::GitCli;
 
 pub struct PublicConnectService {
@@ -32,7 +34,9 @@ impl PublicService for PublicConnectService {
         request: ServiceRequest<'_, ListGitBranchesRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListGitBranchesResponse> + Send + use<'a>> {
         let auth = Self::extract_auth(&ctx).await?;
-        auth.require_permission(Server::NAME, CanRead::NAME).await.map_err(|e| e.into_connect_error())?;
+        auth.require_permission(Server::NAME, CanRead::NAME)
+            .await
+            .map_err(|e| e.into_connect_error())?;
 
         let repository_url = request.repository_url.trim();
         if repository_url.is_empty() {
@@ -53,10 +57,7 @@ impl PublicService for PublicConnectService {
             .map(|branch| branch.name)
             .collect();
 
-        Response::ok(ListGitBranchesResponse {
-            branches,
-            ..Default::default()
-        })
+        Response::ok(ListGitBranchesResponse { branches })
     }
 
     async fn generate_domain<'a>(
@@ -86,10 +87,7 @@ impl PublicService for PublicConnectService {
             _ => format!("{name}.localhost"),
         };
 
-        Response::ok(GenerateDomainResponse {
-            domain,
-            ..Default::default()
-        })
+        Response::ok(GenerateDomainResponse { domain })
     }
 }
 

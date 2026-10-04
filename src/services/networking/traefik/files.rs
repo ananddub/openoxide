@@ -17,7 +17,10 @@ impl TraefikService {
             .unwrap_or_else(|| format!("{}/traefik", crate::utils::paths::openoxide_paths().base))
     }
 
-    pub(crate) async fn get_executor(&self, server_id: Option<i64>) -> Result<CommandExecutor, String> {
+    pub(crate) async fn get_executor(
+        &self,
+        server_id: Option<i64>,
+    ) -> Result<CommandExecutor, String> {
         crate::services::compute::compose::remote::agent_executor_for(server_id).await
     }
 
@@ -73,14 +76,14 @@ impl TraefikService {
             .unwrap_or_default();
         let is_yml = full_path
             .extension()
-            .map_or(false, |ext| ext == "yml" || ext == "yaml" || ext == "json");
+            .is_some_and(|ext| ext == "yml" || ext == "yaml" || ext == "json");
         let is_acme = file_name == "acme.json";
         // Certificate material lives under dynamic/certificates/<name>/ as
         // chain.crt + privkey.key. Allow these (and .pem) so uploaded certs
         // can be written and shown in the file tree.
         let is_cert = full_path
             .extension()
-            .map_or(false, |ext| ext == "crt" || ext == "key" || ext == "pem");
+            .is_some_and(|ext| ext == "crt" || ext == "key" || ext == "pem");
 
         if !is_yml && !is_acme && !is_cert {
             return Err(

@@ -1,0 +1,38 @@
+{
+  "ping": { "status": "SUCCESS", "message": "This is a ping verification endpoint" },
+  "domains": {
+    "status": "SUCCESS",
+    "domains": [{ "domain": "example.com" }, { "domain": "second.com" }]
+  },
+  "records": {
+    "status": "SUCCESS",
+    "ns": ["ns1.porkbun.com", "ns2.porkbun.com"],
+    "records": [
+      {
+        "id": "111",
+        "name": "www.example.com",
+        "type": "A",
+        "content": "192.0.2.1",
+        "ttl": "600",
+        "prio": ""
+      },
+      {
+        "id": "222",
+        "name": "example.com",
+        "type": "MX",
+        "content": "smtp.example.com",
+        "ttl": 600,
+        "prio": "10"
+      }
+    ]
+  },
+  "created": { "status": "SUCCESS", "id": "333" },
+  "edited": { "status": "SUCCESS" },
+  "deleted": { "status": "SUCCESS" },
+  "rejected": {
+    "status": "ERROR",
+    "httpStatus": 400,
+    "shortError": "Auth fail",
+    "message": "API key is incorrect"
+  }
+}

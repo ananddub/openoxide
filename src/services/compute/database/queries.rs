@@ -11,7 +11,7 @@ use super::types::DatabaseKind;
 /// Replaces the deleted `crate::repository::ResourceDependencyCounts`
 /// (same shape and `blocks_delete` semantics; `poem_openapi` is no longer a
 /// dependency, so the old `Object` derive is dropped).
-#[derive(Clone, Debug, Default, serde::Serialize, ts_rs::TS)]
+#[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct ResourceDependencyCounts {
     pub active_deployments: i64,
     pub deployments: i64,
@@ -162,10 +162,7 @@ pub(super) async fn patch_engine_config(
     match kind {
         DatabaseKind::Mysql | DatabaseKind::Mariadb | DatabaseKind::Mongo => {
             if let Some(value) = &input.database_root_password {
-                config.insert(
-                    "database_root_password".into(),
-                    json!(value.to_string()),
-                );
+                config.insert("database_root_password".into(), json!(value.to_string()));
             }
             if kind == DatabaseKind::Mongo
                 && let Some(value) = input.replica_sets

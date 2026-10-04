@@ -146,7 +146,9 @@ impl ServerLifecycleService {
     }
 
     async fn get_or_create(&self, server_id: i64) -> sqlx::Result<ServerManagement> {
-        self.queries.server_management_get_or_create1(server_id).await?;
+        self.queries
+            .server_management_get_or_create1(server_id)
+            .await?;
         self.queries
             .server_management_get_or_create2(server_id)
             .await
@@ -185,7 +187,7 @@ pub struct ServerBackupDto {
 
 fn remote(executor: &CommandExecutor) -> sqlx::Result<crate::utils::exec::RemoteExecutor> {
     match executor {
-        CommandExecutor::Remote(value) => Ok(value.clone()),
+        CommandExecutor::Remote(value) => Ok(*value.clone()),
         CommandExecutor::Local(_) => Err(sqlx::Error::Protocol("remote server required".into())),
         CommandExecutor::Agent(_) => {
             Err(sqlx::Error::Protocol("remote SSH executor required".into()))

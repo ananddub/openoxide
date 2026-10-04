@@ -20,11 +20,12 @@ impl TagService for TagController {
         _query: ServiceRequest<'_, ListTagsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListTagsResponse> + Send + use<'a>> {
         let items = self.service.list_all().await.map_err(map_db_error)?;
-        let tags = items.into_iter().map(TagDto::from).map(tag_to_proto).collect();
-        Response::ok(ListTagsResponse {
-            tags,
-            ..Default::default()
-        })
+        let tags = items
+            .into_iter()
+            .map(TagDto::from)
+            .map(tag_to_proto)
+            .collect();
+        Response::ok(ListTagsResponse { tags })
     }
 
     async fn get_tag<'a>(
@@ -40,7 +41,6 @@ impl TagService for TagController {
             .ok_or_else(|| ConnectError::not_found("tag not found"))?;
         Response::ok(GetTagResponse {
             tag: ::buffa::MessageField::some(tag_to_proto(TagDto::from(tag))),
-            ..Default::default()
         })
     }
 
@@ -57,7 +57,6 @@ impl TagService for TagController {
         let tag = self.service.create(dto).await.map_err(map_db_error)?;
         Response::ok(CreateTagResponse {
             tag: ::buffa::MessageField::some(tag_to_proto(TagDto::from(tag))),
-            ..Default::default()
         })
     }
 
@@ -77,7 +76,6 @@ impl TagService for TagController {
             .map_err(map_db_error)?;
         Response::ok(UpdateTagResponse {
             tag: ::buffa::MessageField::some(tag_to_proto(TagDto::from(tag))),
-            ..Default::default()
         })
     }
 
@@ -86,7 +84,10 @@ impl TagService for TagController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, DeleteTagRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.delete(request.id).await.map_err(map_db_error)?;
+        self.service
+            .delete(request.id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 
@@ -95,10 +96,7 @@ impl TagService for TagController {
         _ctx: RequestContext,
         _request: ServiceRequest<'_, AddTagRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AddTagResponse> + Send + use<'a>> {
-        Response::ok(AddTagResponse {
-            success: true,
-            ..Default::default()
-        })
+        Response::ok(AddTagResponse { success: true })
     }
 
     async fn remove_tag<'a>(
@@ -106,7 +104,10 @@ impl TagService for TagController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, RemoveTagRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.delete(request.id).await.map_err(map_db_error)?;
+        self.service
+            .delete(request.id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 
@@ -120,11 +121,12 @@ impl TagService for TagController {
             .list_project_tags(request.project_id)
             .await
             .map_err(map_db_error)?;
-        let tags = items.into_iter().map(TagDto::from).map(tag_to_proto).collect();
-        Response::ok(ListProjectTagsResponse {
-            tags,
-            ..Default::default()
-        })
+        let tags = items
+            .into_iter()
+            .map(TagDto::from)
+            .map(tag_to_proto)
+            .collect();
+        Response::ok(ListProjectTagsResponse { tags })
     }
 
     async fn attach_project_tag<'a>(
@@ -136,10 +138,7 @@ impl TagService for TagController {
             .attach_project_tag(request.project_id, request.tag_id)
             .await
             .map_err(map_db_error)?;
-        Response::ok(AttachProjectTagResponse {
-            success: true,
-            ..Default::default()
-        })
+        Response::ok(AttachProjectTagResponse { success: true })
     }
 
     async fn detach_project_tag<'a>(

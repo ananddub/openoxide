@@ -7,10 +7,7 @@ use auto_di::singleton;
 use sqlx::SqlitePool;
 
 use crate::core::cache::AppStateCache;
-use crate::{
-    db::queries::FlashQueries,
-    services::compute::engine::DeploymentService,
-};
+use crate::{db::queries::FlashQueries, services::compute::engine::DeploymentService};
 
 pub struct ApplicationService {
     pub(super) db: Arc<SqlitePool>,

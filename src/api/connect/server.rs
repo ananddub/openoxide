@@ -231,14 +231,6 @@ fn preflight() -> Response<ResponseBody> {
         .expect("static preflight response is always valid")
 }
 
-fn not_found() -> Response<ResponseBody> {
-    let body: Full<Bytes> = Full::new(Bytes::from_static(b"not found"));
-    Response::builder()
-        .status(404)
-        .body(body.map_err(|error| match error {}).boxed_unsync())
-        .expect("static not-found response is always valid")
-}
-
 fn box_connect_body(body: ConnectRpcBody) -> ResponseBody {
     body.map_err(|error| match error {}).boxed_unsync()
 }

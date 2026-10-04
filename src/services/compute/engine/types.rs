@@ -42,7 +42,7 @@ pub struct LogSearchOptions {
     pub limit: usize,
 }
 
-#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct LogSearchResult {
     pub deployment_id: i64,
     pub title: String,

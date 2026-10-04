@@ -3,7 +3,9 @@ use sha2::{Digest, Sha256};
 use std::sync::Arc;
 
 use crate::db::queries::FlashQueries;
-use crate::flash_gen::monitoring_agents::{MonitoringAgentsRotateParams, MonitoringAgentsStatusRow};
+use crate::flash_gen::monitoring_agents::{
+    MonitoringAgentsRotateParams, MonitoringAgentsStatusRow,
+};
 
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct MonitoringAgentStatus {
@@ -142,9 +144,7 @@ impl MonitoringAgentAuth {
     }
 
     pub async fn touch_seen(&self, server_id: i64) -> Result<(), sqlx::Error> {
-        self.queries
-            .monitoring_agents_touch_seen(server_id)
-            .await
+        self.queries.monitoring_agents_touch_seen(server_id).await
     }
 
     pub async fn query_token(&self, server_id: i64) -> Result<Option<String>, sqlx::Error> {

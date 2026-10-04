@@ -8,8 +8,6 @@ export interface ContainerMetrics {
 	memPercent: number;
 	memUsage: string;
 	memLimit: string;
-	dockerDiskUsage: string;
-	dockerDiskPercent: number;
 	diskSpaceUsed: string;
 	diskSpaceTotal: string;
 	diskSpacePercent: number;
@@ -78,12 +76,6 @@ export function parseStats(raw: unknown): ContainerMetrics | null {
 		memPercent: num(String(s.MemPerc || s.memory_percent || '0')),
 		memUsage: memUsage || '0 B',
 		memLimit: memLimit || '0 B',
-		dockerDiskUsage: String(
-			s.SizeRw || s.docker_disk_usage || s.size_rw || '0 MB',
-		),
-		dockerDiskPercent: num(
-			String(s.DockerDiskPerc || s.docker_disk_percent || '0'),
-		),
 		diskSpaceUsed: String(s.DiskUsed || s.disk_space_used || '0 GB'),
 		diskSpaceTotal: String(s.DiskTotal || s.disk_space_total || '0 GB'),
 		diskSpacePercent: num(

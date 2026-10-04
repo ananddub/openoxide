@@ -50,7 +50,7 @@ impl GitCli {
     }
     pub fn from_remote_executor(executor: RemoteExecutor) -> Self {
         Self {
-            executor: CommandExecutor::Remote(executor),
+            executor: CommandExecutor::Remote(Box::new(executor)),
             executable: "git".into(),
             repository: None,
         }
@@ -65,13 +65,13 @@ impl GitCli {
     }
     pub fn with_remote_sudo(mut self) -> Self {
         if let CommandExecutor::Remote(remote) = self.executor {
-            self.executor = CommandExecutor::Remote(remote.with_sudo());
+            self.executor = CommandExecutor::Remote(Box::new(remote.with_sudo()));
         }
         self
     }
     pub fn with_remote_sudo_password(mut self, password: impl Into<String>) -> Self {
         if let CommandExecutor::Remote(remote) = self.executor {
-            self.executor = CommandExecutor::Remote(remote.with_sudo_password(password));
+            self.executor = CommandExecutor::Remote(Box::new(remote.with_sudo_password(password)));
         }
         self
     }
@@ -484,4 +484,3 @@ impl GitCli {
         self.run(command).await
     }
 }
-

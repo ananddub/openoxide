@@ -55,7 +55,11 @@ impl AuthService for AuthController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, RefreshRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AuthResponse> + Send + use<'a>> {
-        let result = self.service.refresh(request.refresh_token).await.map_err(map_auth_error)?;
+        let result = self
+            .service
+            .refresh(request.refresh_token)
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(auth_response_proto(result.user, result.tokens))
     }
 
@@ -65,10 +69,13 @@ impl AuthService for AuthController {
         _ctx: RequestContext,
         _request: ServiceRequest<'_, GetSetupStatusRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<SetupStatus> + Send + use<'a>> {
-        let present = self.service.is_owner_present().await.map_err(map_auth_error)?;
+        let present = self
+            .service
+            .is_owner_present()
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(SetupStatus {
             owner_present: present,
-            ..Default::default()
         })
     }
 
@@ -78,7 +85,10 @@ impl AuthService for AuthController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, RequestPasswordResetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.request_password_reset(request.email).await.map_err(map_auth_error)?;
+        self.service
+            .request_password_reset(request.email)
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(Empty::default())
     }
 
@@ -88,7 +98,10 @@ impl AuthService for AuthController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ResetPasswordRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.reset_password(request.token, request.password.to_owned()).await.map_err(map_auth_error)?;
+        self.service
+            .reset_password(request.token, request.password.to_owned())
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(Empty::default())
     }
 
@@ -99,7 +112,11 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         _request: ServiceRequest<'_, WhoAmIRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<User> + Send + use<'a>> {
-        let subject = self.service.get_whoami(auth.user_id()).await.map_err(map_auth_error)?;
+        let subject = self
+            .service
+            .get_whoami(auth.user_id())
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(subject_to_user(subject))
     }
 
@@ -108,7 +125,10 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         _request: ServiceRequest<'_, LogoutRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.logout_all(auth.user_id()).await.map_err(map_auth_error)?;
+        self.service
+            .logout_all(auth.user_id())
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(Empty::default())
     }
 
@@ -132,7 +152,11 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         _request: ServiceRequest<'_, GetEmailVerificationStatusRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<EmailVerificationStatus> + Send + use<'a>> {
-        let status = self.service.email_verification_status(auth.user_id()).await.map_err(map_auth_error)?;
+        let status = self
+            .service
+            .email_verification_status(auth.user_id())
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(status)
     }
 
@@ -141,7 +165,10 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         _request: ServiceRequest<'_, RequestEmailVerificationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.request_email_verification(auth.user_id()).await.map_err(map_auth_error)?;
+        self.service
+            .request_email_verification(auth.user_id())
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(Empty::default())
     }
 
@@ -151,7 +178,10 @@ impl AuthService for AuthController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ConfirmEmailVerificationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.verify_email(request.token).await.map_err(map_auth_error)?;
+        self.service
+            .verify_email(request.token)
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(Empty::default())
     }
 
@@ -162,7 +192,11 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         _request: ServiceRequest<'_, GetTwoFactorStatusRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<TwoFactorStatus> + Send + use<'a>> {
-        let status = self.service.two_factor_status(auth.user_id()).await.map_err(map_auth_error)?;
+        let status = self
+            .service
+            .two_factor_status(auth.user_id())
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(status)
     }
 
@@ -171,7 +205,11 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         request: ServiceRequest<'_, SetupTwoFactorRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<TwoFactorSetup> + Send + use<'a>> {
-        let result = self.service.setup_two_factor(auth.user_id(), request.password.to_owned()).await.map_err(map_auth_error)?;
+        let result = self
+            .service
+            .setup_two_factor(auth.user_id(), request.password.to_owned())
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(result)
     }
 
@@ -180,7 +218,10 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         request: ServiceRequest<'_, EnableTwoFactorRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.enable_two_factor(auth.user_id(), request.code).await.map_err(map_auth_error)?;
+        self.service
+            .enable_two_factor(auth.user_id(), request.code)
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(Empty::default())
     }
 
@@ -189,7 +230,10 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DisableTwoFactorRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.disable_two_factor(auth.user_id(), request.password.to_owned(), request.code).await.map_err(map_auth_error)?;
+        self.service
+            .disable_two_factor(auth.user_id(), request.password.to_owned(), request.code)
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(Empty::default())
     }
 
@@ -198,7 +242,11 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         request: ServiceRequest<'_, RegenerateRecoveryCodesRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<RecoveryCodes> + Send + use<'a>> {
-        let result = self.service.regenerate_recovery_codes(auth.user_id(), request.password.to_owned(), request.code).await.map_err(map_auth_error)?;
+        let result = self
+            .service
+            .regenerate_recovery_codes(auth.user_id(), request.password.to_owned(), request.code)
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(result)
     }
 
@@ -209,8 +257,12 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         _request: ServiceRequest<'_, ListSessionsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListSessionsResponse> + Send + use<'a>> {
-        let sessions = self.service.list_sessions(auth.user_id(), &auth.claims.jti).await.map_err(map_auth_error)?;
-        Response::ok(ListSessionsResponse { sessions, ..Default::default() })
+        let sessions = self
+            .service
+            .list_sessions(auth.user_id(), &auth.claims.jti)
+            .await
+            .map_err(map_auth_error)?;
+        Response::ok(ListSessionsResponse { sessions })
     }
 
     async fn revoke_session<'a>(
@@ -218,7 +270,10 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         request: ServiceRequest<'_, RevokeSessionRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.revoke_session(auth.user_id(), request.session_id).await.map_err(map_auth_error)?;
+        self.service
+            .revoke_session(auth.user_id(), request.session_id)
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(Empty::default())
     }
 
@@ -228,19 +283,32 @@ impl AuthService for AuthController {
         &'a self,
         ctx: RequestContext,
         _request: ServiceRequest<'_, ListPersonalAccessTokensRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ListPersonalAccessTokensResponse> + Send + use<'a>> {
-        let tokens = self.service.list_personal_access_tokens(auth.user_id()).await.map_err(map_auth_error)?;
-        Response::ok(ListPersonalAccessTokensResponse { tokens, ..Default::default() })
+    ) -> ServiceResult<impl connectrpc::Encodable<ListPersonalAccessTokensResponse> + Send + use<'a>>
+    {
+        let tokens = self
+            .service
+            .list_personal_access_tokens(auth.user_id())
+            .await
+            .map_err(map_auth_error)?;
+        Response::ok(ListPersonalAccessTokensResponse { tokens })
     }
 
     async fn create_personal_access_token<'a>(
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, CreatePersonalAccessTokenRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<CreatedPersonalAccessToken> + Send + use<'a>> {
-        let result = self.service.create_personal_access_token(
-            auth.user_id(), request.name.to_owned(), request.password.to_owned(), request.expires_at,
-        ).await.map_err(map_auth_error)?;
+    ) -> ServiceResult<impl connectrpc::Encodable<CreatedPersonalAccessToken> + Send + use<'a>>
+    {
+        let result = self
+            .service
+            .create_personal_access_token(
+                auth.user_id(),
+                request.name.to_owned(),
+                request.password.to_owned(),
+                request.expires_at,
+            )
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(result)
     }
 
@@ -249,7 +317,10 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         request: ServiceRequest<'_, RevokePersonalAccessTokenRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.revoke_personal_access_token(auth.user_id(), request.id).await.map_err(map_auth_error)?;
+        self.service
+            .revoke_personal_access_token(auth.user_id(), request.id)
+            .await
+            .map_err(map_auth_error)?;
         Response::ok(Empty::default())
     }
 }

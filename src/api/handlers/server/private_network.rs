@@ -1,4 +1,6 @@
-use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, ServerConnectionMode, ServerPrivateNetwork as ServerPrivateNetworkProto,
@@ -9,11 +11,10 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ServerPrivateNetworkReSetupRequest, ServerPrivateNetworkReSetupResponse,
     ServerPrivateNetworkRepairRequest, ServerPrivateNetworkRepairResponse,
     ServerPrivateNetworkRotateKeysRequest, ServerPrivateNetworkRotateKeysResponse,
-    ServerPrivateNetworkRotationState, ServerPrivateNetworkService,
-    ServerPrivateNetworkServiceExt, ServerPrivateNetworkSetupRequest,
-    ServerPrivateNetworkSetupResponse, ServerPrivateNetworkStatus,
-    ServerPrivateNetworkTeardownRequest, ServerPrivateNetworkUpdateRequest,
-    ServerPrivateNetworkUpdateResponse,
+    ServerPrivateNetworkRotationState, ServerPrivateNetworkService, ServerPrivateNetworkServiceExt,
+    ServerPrivateNetworkSetupRequest, ServerPrivateNetworkSetupResponse,
+    ServerPrivateNetworkStatus, ServerPrivateNetworkTeardownRequest,
+    ServerPrivateNetworkUpdateRequest, ServerPrivateNetworkUpdateResponse,
 };
 use crate::services::infrastructure::server::ServerPrivateNetworkService as AppServerPrivateNetworkService;
 
@@ -104,7 +105,9 @@ macro_rules! network_to_proto {
         let dto = $dto;
         ServerPrivateNetworkProto {
             server_id: dto.server_id,
-            connection_mode: ::buffa::EnumValue::Known(connection_mode_to_proto(dto.connection_mode)),
+            connection_mode: ::buffa::EnumValue::Known(connection_mode_to_proto(
+                dto.connection_mode,
+            )),
             provider: dto
                 .provider
                 .map(|p| ::buffa::EnumValue::Known(provider_to_proto(p))),
@@ -123,11 +126,8 @@ macro_rules! network_to_proto {
             health_error: dto.health_error,
             last_health_check_at: dto.last_health_check_at,
             consecutive_failures: dto.consecutive_failures,
-            rotation_state: ::buffa::EnumValue::Known(rotation_state_to_proto(
-                dto.rotation_state,
-            )),
+            rotation_state: ::buffa::EnumValue::Known(rotation_state_to_proto(dto.rotation_state)),
             updated_at: dto.updated_at,
-            ..Default::default()
         }
     }};
 }
@@ -142,7 +142,6 @@ macro_rules! health_to_proto {
             latest_handshake_at: dto.latest_handshake_at,
             checked_at: dto.checked_at,
             error: dto.error,
-            ..Default::default()
         }
     }};
 }
@@ -154,15 +153,13 @@ impl ServerPrivateNetworkService for ServerPrivateNetworkController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, ServerPrivateNetworkGetRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<ServerPrivateNetworkGetResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<ServerPrivateNetworkGetResponse> + Send + use<'a>>
+    {
         let network = self.service.get(request.id).await.map_err(map_db_error)?;
         Response::ok(ServerPrivateNetworkGetResponse {
             network: network
                 .map(|dto| ::buffa::MessageField::some(network_to_proto!(dto)))
                 .unwrap_or_default(),
-            ..Default::default()
         })
     }
 
@@ -186,7 +183,9 @@ impl ServerPrivateNetworkService for ServerPrivateNetworkController {
                 "EXTERNAL_PRIVATE_NETWORK"
             }
             _ => {
-                return Err(ConnectError::invalid_argument("unsupported connection mode"))
+                return Err(ConnectError::invalid_argument(
+                    "unsupported connection mode",
+                ));
             }
         };
         let provider = match request.provider {
@@ -221,10 +220,13 @@ impl ServerPrivateNetworkService for ServerPrivateNetworkController {
         .to_string();
         let dto = AppServerPrivateNetworkService::parse_update_payload(&payload)
             .map_err(|e| ConnectError::invalid_argument(e.to_string()))?;
-        let network = self.service.update(request.id, dto).await.map_err(map_db_error)?;
+        let network = self
+            .service
+            .update(request.id, dto)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(ServerPrivateNetworkUpdateResponse {
             network: ::buffa::MessageField::some(network_to_proto!(network)),
-            ..Default::default()
         })
     }
 
@@ -234,7 +236,10 @@ impl ServerPrivateNetworkService for ServerPrivateNetworkController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ServerPrivateNetworkDeleteRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.disable(request.id).await.map_err(map_db_error)?;
+        self.service
+            .disable(request.id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 
@@ -243,9 +248,8 @@ impl ServerPrivateNetworkService for ServerPrivateNetworkController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, ServerPrivateNetworkSetupRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<ServerPrivateNetworkSetupResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<ServerPrivateNetworkSetupResponse> + Send + use<'a>>
+    {
         let network = self
             .service
             .setup_transport(request.id)
@@ -253,7 +257,6 @@ impl ServerPrivateNetworkService for ServerPrivateNetworkController {
             .map_err(map_db_error)?;
         Response::ok(ServerPrivateNetworkSetupResponse {
             network: ::buffa::MessageField::some(network_to_proto!(network)),
-            ..Default::default()
         })
     }
 
@@ -265,10 +268,13 @@ impl ServerPrivateNetworkService for ServerPrivateNetworkController {
     ) -> ServiceResult<
         impl connectrpc::Encodable<ServerPrivateNetworkHealthResponse> + Send + use<'a>,
     > {
-        let health = self.service.health(request.id).await.map_err(map_db_error)?;
+        let health = self
+            .service
+            .health(request.id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(ServerPrivateNetworkHealthResponse {
             health: ::buffa::MessageField::some(health_to_proto!(health)),
-            ..Default::default()
         })
     }
 
@@ -287,7 +293,6 @@ impl ServerPrivateNetworkService for ServerPrivateNetworkController {
             .map_err(map_db_error)?;
         Response::ok(ServerPrivateNetworkRepairResponse {
             network: ::buffa::MessageField::some(network_to_proto!(network)),
-            ..Default::default()
         })
     }
 
@@ -306,7 +311,6 @@ impl ServerPrivateNetworkService for ServerPrivateNetworkController {
             .map_err(map_db_error)?;
         Response::ok(ServerPrivateNetworkReSetupResponse {
             network: ::buffa::MessageField::some(network_to_proto!(network)),
-            ..Default::default()
         })
     }
 
@@ -325,7 +329,6 @@ impl ServerPrivateNetworkService for ServerPrivateNetworkController {
             .map_err(map_db_error)?;
         Response::ok(ServerPrivateNetworkRotateKeysResponse {
             network: ::buffa::MessageField::some(network_to_proto!(network)),
-            ..Default::default()
         })
     }
 

@@ -43,7 +43,6 @@ impl AuthService {
         Ok(CreatedPersonalAccessToken {
             token,
             details: ::buffa::MessageField::some(row.into()),
-            ..Default::default()
         })
     }
 
@@ -91,7 +90,9 @@ impl AuthService {
             Err(sqlx::Error::RowNotFound) => return Err(AuthError::InvalidToken),
             Err(error) => return Err(error.into()),
         };
-        self.queries.personal_access_tokens_authenticate2(row.id).await?;
+        self.queries
+            .personal_access_tokens_authenticate2(row.id)
+            .await?;
         let user = self.get_user_by_id(row.user_id).await?;
         Ok(Claims {
             sub: row.user_id.to_string(),
@@ -114,7 +115,6 @@ impl From<PersonalAccessTokensCreateRow> for PersonalAccessToken {
             last_used_at: row.last_used_at,
             revoked_at: row.revoked_at,
             created_at: row.created_at,
-            ..Default::default()
         }
     }
 }

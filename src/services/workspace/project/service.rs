@@ -3,9 +3,7 @@ use std::sync::Arc;
 use auto_di::singleton;
 
 use crate::{
-    api::connect::generated::openoxide::api::v1::{
-        CreateProjectRequest, UpdateProjectRequest,
-    },
+    api::connect::generated::openoxide::api::v1::{CreateProjectRequest, UpdateProjectRequest},
     db::queries::FlashQueries,
     flash_gen::{
         environments::EnvironmentsCreateInTransactionParams,
@@ -66,7 +64,10 @@ impl ProjectService {
     pub async fn update(&self, id: i64, input: UpdateProjectRequest) -> sqlx::Result<Projects> {
         let current = self.get_by_id(id).await?;
         let name = input.name.unwrap_or(current.name);
-        let description = input.description.or(current.description).unwrap_or_default();
+        let description = input
+            .description
+            .or(current.description)
+            .unwrap_or_default();
         let env_var = input.environment_variables.unwrap_or(current.env_var);
 
         self.queries
@@ -131,7 +132,6 @@ mod tests {
                 description: None,
                 environment_variables: String::new(),
                 organization_id: 1,
-                ..Default::default()
             })
             .await
             .unwrap();

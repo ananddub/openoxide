@@ -63,10 +63,7 @@ impl ComposeService for ComposeController {
             .map(ComposeResponseDto::from)
             .map(|c| compose_to_proto(&c))
             .collect();
-        Response::ok(ListComposesResponse {
-            composes,
-            ..Default::default()
-        })
+        Response::ok(ListComposesResponse { composes })
     }
 
     #[permission(Application, CanCreate)]
@@ -79,7 +76,7 @@ impl ComposeService for ComposeController {
         // DTO is typed so no caller can smuggle a non-canonical string in.
         let compose_type = match request.compose_type {
             None => ComposeType::DockerCompose,
-            Some(value) => ComposeType::from_str(value).ok_or_else(|| {
+            Some(value) => ComposeType::from_str_opt(value).ok_or_else(|| {
                 ConnectError::invalid_argument(format!("invalid compose_type: {value}"))
             })?,
         };
@@ -302,7 +299,6 @@ impl ComposeService for ComposeController {
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&dto.compose)),
             operation: dto.operation,
-            ..Default::default()
         })
     }
 
@@ -321,7 +317,6 @@ impl ComposeService for ComposeController {
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&dto.compose)),
             operation: dto.operation,
-            ..Default::default()
         })
     }
 
@@ -340,7 +335,6 @@ impl ComposeService for ComposeController {
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&dto.compose)),
             operation: dto.operation,
-            ..Default::default()
         })
     }
 
@@ -359,7 +353,6 @@ impl ComposeService for ComposeController {
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&dto.compose)),
             operation: dto.operation,
-            ..Default::default()
         })
     }
 
@@ -382,7 +375,6 @@ impl ComposeService for ComposeController {
         Response::ok(ComposeOperation {
             compose: ::buffa::MessageField::some(compose_to_proto(&compose_dto)),
             operation: AppComposeOperation::Stop.as_str().to_string(),
-            ..Default::default()
         })
     }
 
@@ -424,10 +416,7 @@ impl ComposeService for ComposeController {
             .rotate_webhook_token(request.id)
             .await
             .map_err(map_error)?;
-        Response::ok(ComposeWebhookToken {
-            token,
-            ..Default::default()
-        })
+        Response::ok(ComposeWebhookToken { token })
     }
 
     #[permission(Application, CanRead)]
@@ -497,10 +486,7 @@ impl ComposeService for ComposeController {
         if security_rules > 0 {
             items.push(format!("security_rules: {security_rules}"));
         }
-        Response::ok(ComposeDependencies {
-            items,
-            ..Default::default()
-        })
+        Response::ok(ComposeDependencies { items })
     }
 
     #[permission(Application, CanRead)]
@@ -521,7 +507,6 @@ impl ComposeService for ComposeController {
         Response::ok(ComposePreview {
             content: result.compose_file,
             services: result.services,
-            ..Default::default()
         })
     }
 
@@ -563,10 +548,7 @@ impl ComposeService for ComposeController {
             .map_err(map_error)?;
         let archive = serde_json::to_string_pretty(&bundle)
             .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
-        Response::ok(ComposeExport {
-            archive,
-            ..Default::default()
-        })
+        Response::ok(ComposeExport { archive })
     }
 
     #[permission(Application, CanCreate)]
@@ -594,7 +576,7 @@ impl ComposeService for ComposeController {
         let service_name = request.services.first().cloned().unwrap_or_default();
         let _ = self
             .management
-            .remove_service(request.id, &service_name)
+            .remove_service(request.id, service_name)
             .await
             .map_err(map_error)?;
         Response::ok(Empty::default())
@@ -679,10 +661,7 @@ impl ComposeService for ComposeController {
             .map(ComposeMountResponseDto::from)
             .map(mount_to_proto)
             .collect();
-        Response::ok(ComposeListMountsResponse {
-            mounts,
-            ..Default::default()
-        })
+        Response::ok(ComposeListMountsResponse { mounts })
     }
 
     #[permission(Application, CanCreate)]
@@ -700,7 +679,6 @@ impl ComposeService for ComposeController {
             .map_err(map_error)?;
         Response::ok(ComposeCreateMountResponse {
             mount: ::buffa::MessageField::some(mount_to_proto(ComposeMountResponseDto::from(item))),
-            ..Default::default()
         })
     }
 
@@ -719,7 +697,6 @@ impl ComposeService for ComposeController {
             .map_err(map_error)?;
         Response::ok(ComposeUpdateMountResponse {
             mount: ::buffa::MessageField::some(mount_to_proto(ComposeMountResponseDto::from(item))),
-            ..Default::default()
         })
     }
 
@@ -761,10 +738,7 @@ impl ComposeService for ComposeController {
             .map(ComposePatchResponseDto::from)
             .map(patch_to_proto)
             .collect();
-        Response::ok(ComposeListPatchesResponse {
-            patches,
-            ..Default::default()
-        })
+        Response::ok(ComposeListPatchesResponse { patches })
     }
 
     #[permission(Application, CanCreate)]
@@ -782,7 +756,6 @@ impl ComposeService for ComposeController {
             .map_err(map_error)?;
         Response::ok(ComposeCreatePatchResponse {
             patch: ::buffa::MessageField::some(patch_to_proto(ComposePatchResponseDto::from(item))),
-            ..Default::default()
         })
     }
 
@@ -801,7 +774,6 @@ impl ComposeService for ComposeController {
             .map_err(map_error)?;
         Response::ok(ComposeUpdatePatchResponse {
             patch: ::buffa::MessageField::some(patch_to_proto(ComposePatchResponseDto::from(item))),
-            ..Default::default()
         })
     }
 

@@ -49,6 +49,10 @@ impl LocalExecutor {
         } else {
             Command::new(&resolved)
         };
+        // If the owning future is dropped mid-flight (client disconnect,
+        // outer select!, panic), the cancellation branches below never run —
+        // without this the child would be orphaned holding pipes/sockets.
+        c.kill_on_drop(true);
         c.args(args);
         c
     }
@@ -270,7 +274,7 @@ async fn read_pipe_with_trace(
 async fn join_pipe(
     task: tokio::task::JoinHandle<Result<Vec<u8>, std::io::Error>>,
 ) -> Result<Vec<u8>, std::io::Error> {
-    task.await.map_err(|error| std::io::Error::other(error))?
+    task.await.map_err(std::io::Error::other)?
 }
 fn checked(output: std::process::Output) -> ExecResult<ExecOutput> {
     let result = ExecOutput {

@@ -45,15 +45,15 @@ impl BackupController {
 // Controller extensions — non-gRPC helper methods live here, not in controller.rs.
 impl BackupController {
     pub(super) async fn resolve_organization_id(&self, requested_id: Option<i64>) -> i64 {
-        if let Some(id) = requested_id.filter(|id| *id > 0) {
-            if self.queries.organization_get_by_id(id).await.is_ok() {
-                return id;
-            }
+        if let Some(id) = requested_id.filter(|id| *id > 0)
+            && self.queries.organization_get_by_id(id).await.is_ok()
+        {
+            return id;
         }
-        if let Ok(orgs) = self.queries.organization_get_all().await {
-            if let Some(first) = orgs.first() {
-                return first.id;
-            }
+        if let Ok(orgs) = self.queries.organization_get_all().await
+            && let Some(first) = orgs.first()
+        {
+            return first.id;
         }
         1
     }

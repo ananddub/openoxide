@@ -182,6 +182,10 @@ impl RemoteExecutor {
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped());
+        // Terminal sessions must not outlive their owner: dropping the
+        // RemoteTerminal/child here would otherwise orphan the ssh process
+        // and its remote pty.
+        tokio_command.kill_on_drop(true);
 
         let mut child = tokio_command
             .spawn()

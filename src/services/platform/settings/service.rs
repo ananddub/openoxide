@@ -94,10 +94,11 @@ impl SettingsService {
             })
             .await?;
         // Reflect the panel's own domain into Traefik so the dashboard routes
- // on its configured host (). Best-effort: a Traefik/edge
+        // on its configured host (). Best-effort: a Traefik/edge
         // hiccup must not fail the settings save.
-        if let Ok(traefik) = auto_di::resolve::<crate::services::networking::traefik::TraefikService>().await {
-            if let Err(error) = traefik
+        if let Ok(traefik) =
+            auto_di::resolve::<crate::services::networking::traefik::TraefikService>().await
+            && let Err(error) = traefik
                 .update_panel_domain(
                     setting.host.as_deref(),
                     setting.https != 0,
@@ -105,9 +106,8 @@ impl SettingsService {
                     setting.custom_cert_resolver.as_deref(),
                 )
                 .await
-            {
-                tracing::warn!(%error, "could not write panel Traefik router");
-            }
+        {
+            tracing::warn!(%error, "could not write panel Traefik router");
         }
         Ok(response(setting, &policy))
     }
@@ -117,8 +117,7 @@ impl SettingsService {
             return Ok(normalize(row));
         }
         let now = chrono::Utc::now().timestamp();
-        let _ = self
-            .queries
+        self.queries
             .settings_create(&SettingsCreateParams {
                 server_ip: String::new(),
                 certificate_type: "NONE".into(),
@@ -169,11 +168,7 @@ fn patch(current: Option<String>, incoming: Option<String>) -> Option<String> {
         None => current,
         Some(value) => {
             let value = value.trim().to_owned();
-            if value.is_empty() {
-                None
-            } else {
-                Some(value)
-            }
+            if value.is_empty() { None } else { Some(value) }
         }
     }
 }
@@ -228,6 +223,32 @@ fn validate(setting: &Settings) -> sqlx::Result<()> {
     Ok(())
 }
 
+fn response(setting: Settings, policy: &BackgroundPoliciesGetRow) -> SettingsResponseDto {
+    let mut dto: SettingsResponseDto = setting.into();
+    dto.panel_backup_cron = policy.panel_backup_cron.clone();
+    dto.log_cleanup_cron = Some(policy.log_cleanup_cron.clone());
+    dto.log_retention_days = policy.log_retention_days;
+    dto.panel_backup_enabled = policy.panel_backup_enabled != 0;
+    dto.log_cleanup_enabled = policy.log_cleanup_enabled != 0;
+    dto
+}
+
+fn validate_policy(policy: &BackgroundPoliciesGetRow) -> sqlx::Result<()> {
+    if policy.panel_backup_cron.split_whitespace().count() != 5
+        || policy.log_cleanup_cron.split_whitespace().count() != 5
+    {
+        return Err(sqlx::Error::Protocol(
+            "background cron expressions must contain five fields".into(),
+        ));
+    }
+    if !(1..=3650).contains(&policy.log_retention_days) {
+        return Err(sqlx::Error::Protocol(
+            "log_retention_days must be between 1 and 3650".into(),
+        ));
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::validate;
@@ -263,30 +284,4 @@ mod tests {
         invalid_json.metrics_config = "{".into();
         assert!(validate(&invalid_json).is_err());
     }
-}
-
-fn response(setting: Settings, policy: &BackgroundPoliciesGetRow) -> SettingsResponseDto {
-    let mut dto: SettingsResponseDto = setting.into();
-    dto.panel_backup_cron = policy.panel_backup_cron.clone();
-    dto.log_cleanup_cron = Some(policy.log_cleanup_cron.clone());
-    dto.log_retention_days = policy.log_retention_days;
-    dto.panel_backup_enabled = policy.panel_backup_enabled != 0;
-    dto.log_cleanup_enabled = policy.log_cleanup_enabled != 0;
-    dto
-}
-
-fn validate_policy(policy: &BackgroundPoliciesGetRow) -> sqlx::Result<()> {
-    if policy.panel_backup_cron.split_whitespace().count() != 5
-        || policy.log_cleanup_cron.split_whitespace().count() != 5
-    {
-        return Err(sqlx::Error::Protocol(
-            "background cron expressions must contain five fields".into(),
-        ));
-    }
-    if !(1..=3650).contains(&policy.log_retention_days) {
-        return Err(sqlx::Error::Protocol(
-            "log_retention_days must be between 1 and 3650".into(),
-        ));
-    }
-    Ok(())
 }

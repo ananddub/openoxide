@@ -57,10 +57,10 @@ impl<'a> ConfigCreateBuilder<'a> {
             let mut labels = serde_json::Map::new();
             let built = self.args.clone().build();
             for pair in built.windows(2) {
-                if pair[0] == "--label" {
-                    if let Some((k, v)) = pair[1].split_once('=') {
-                        labels.insert(k.into(), serde_json::json!(v));
-                    }
+                if pair[0] == "--label"
+                    && let Some((k, v)) = pair[1].split_once('=')
+                {
+                    labels.insert(k.into(), serde_json::json!(v));
                 }
             }
             return self.cli.api_json_request("/configs/create", serde_json::json!({"Name": self.name, "Labels": labels, "Data": base64::engine::general_purpose::STANDARD.encode(data)})).await;

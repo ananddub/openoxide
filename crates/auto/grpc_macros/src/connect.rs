@@ -41,21 +41,26 @@ impl syn::parse::Parse for PermissionArgs {
         input.parse::<syn::Token![,]>()?;
         let operation: Ident = input.parse()?;
         let _ = input.parse::<syn::Token![,]>(); // tolerate a trailing comma
-        Ok(Self { resource, operation })
+        Ok(Self {
+            resource,
+            operation,
+        })
     }
 }
 
 /// Find the name of the `RequestContext` parameter in a method signature.
 fn find_ctx_param_name(sig: &syn::Signature) -> Option<Ident> {
     for arg in &sig.inputs {
-        if let syn::FnArg::Typed(pat) = arg {
-            if let syn::Type::Path(tp) = &*pat.ty {
-                if tp.path.segments.last().map_or(false, |s| s.ident == "RequestContext") {
-                    if let syn::Pat::Ident(ident) = &*pat.pat {
-                        return Some(ident.ident.clone());
-                    }
-                }
-            }
+        if let syn::FnArg::Typed(pat) = arg
+            && let syn::Type::Path(tp) = &*pat.ty
+            && tp
+                .path
+                .segments
+                .last()
+                .is_some_and(|s| s.ident == "RequestContext")
+            && let syn::Pat::Ident(ident) = &*pat.pat
+        {
+            return Some(ident.ident.clone());
         }
     }
     None
@@ -108,7 +113,9 @@ fn inject_auth_into_impl(impl_block: &mut syn::ImplItemFn, auth: bool) {
     }
 
     // Remove ALL #[permission] attributes from the output
-    impl_block.attrs.retain(|a| !a.path().is_ident("permission"));
+    impl_block
+        .attrs
+        .retain(|a| !a.path().is_ident("permission"));
 
     // Prepend the injected statements to the method body
     let body_stmts = std::mem::take(&mut impl_block.block.stmts);

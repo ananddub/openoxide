@@ -1,0 +1,28 @@
+{
+  "zones": ["example.com", "second.com"],
+  "record_ids": [7001, 7002],
+  "record_a": {
+    "id": 7001,
+    "fieldType": "A",
+    "subDomain": "www",
+    "target": "192.0.2.1",
+    "ttl": 3600,
+    "zone": "example.com"
+  },
+  "record_txt": {
+    "id": 7002,
+    "fieldType": "TXT",
+    "subDomain": "",
+    "target": "\"v=spf1 -all\"",
+    "ttl": 0,
+    "zone": "example.com"
+  },
+  "created": {
+    "id": 7003,
+    "fieldType": "A",
+    "subDomain": "api",
+    "target": "192.0.2.9",
+    "ttl": 3600
+  },
+  "ack": { "id": 7001 }
+}

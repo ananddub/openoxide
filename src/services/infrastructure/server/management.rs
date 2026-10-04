@@ -23,11 +23,7 @@ impl ServerManagementService {
         map(self.get_or_create(server_id).await?)
     }
 
-    pub async fn update(
-        &self,
-        server_id: i64,
-        payload: &str,
-    ) -> sqlx::Result<ServerManagementDto> {
+    pub async fn update(&self, server_id: i64, payload: &str) -> sqlx::Result<ServerManagementDto> {
         let input: UpdateServerManagementDto = serde_json::from_str(payload)
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
         self.queries.servers_get_by_id(server_id).await?;
@@ -51,7 +47,9 @@ impl ServerManagementService {
     }
 
     async fn get_or_create(&self, server_id: i64) -> sqlx::Result<ServerManagement> {
-        self.queries.server_management_get_or_create1(server_id).await?;
+        self.queries
+            .server_management_get_or_create1(server_id)
+            .await?;
         self.queries
             .server_management_get_or_create2(server_id)
             .await

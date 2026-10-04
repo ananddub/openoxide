@@ -21,7 +21,8 @@ fn current_auto_deploy(git: Option<&crate::flash_gen::models::ServiceGit>) -> i6
 }
 
 fn current_watch_paths(git: Option<&crate::flash_gen::models::ServiceGit>) -> String {
-    git.and_then(|git| git.watch_paths.clone()).unwrap_or_default()
+    git.and_then(|git| git.watch_paths.clone())
+        .unwrap_or_default()
 }
 
 fn current_enable_submodules(git: Option<&crate::flash_gen::models::ServiceGit>) -> i64 {
@@ -58,7 +59,7 @@ impl ApplicationService {
         .bind(&input.repository)
         .bind(&input.owner)
         .bind(&input.branch)
-        .bind(&input.provider_id)
+        .bind(input.provider_id)
         .bind(i64::from(input.auto_deploy.unwrap_or(true)))
         .bind(current_watch_paths(git.as_ref()))
         .bind(current_enable_submodules(git.as_ref()))
@@ -103,13 +104,13 @@ impl ApplicationService {
         )
         .bind(id)
         .bind(current_trigger(git.as_ref()))
-        .bind(&input.project_id)
+        .bind(input.project_id)
         .bind(&input.repository)
         .bind(&input.owner)
         .bind(&input.branch)
         .bind(input.build_path.unwrap_or_else(|| "/".into()))
         .bind(&input.path_namespace)
-        .bind(&input.provider_id)
+        .bind(input.provider_id)
         .bind(current_auto_deploy(git.as_ref()))
         .bind(current_watch_paths(git.as_ref()))
         .bind(current_enable_submodules(git.as_ref()))
@@ -156,7 +157,7 @@ impl ApplicationService {
         .bind(&input.owner)
         .bind(&input.branch)
         .bind(input.build_path.unwrap_or_else(|| "/".into()))
-        .bind(&input.provider_id)
+        .bind(input.provider_id)
         .bind(current_auto_deploy(git.as_ref()))
         .bind(current_watch_paths(git.as_ref()))
         .bind(current_enable_submodules(git.as_ref()))
@@ -204,7 +205,7 @@ impl ApplicationService {
         .bind(&input.owner)
         .bind(&input.branch)
         .bind(input.build_path.unwrap_or_else(|| "/".into()))
-        .bind(&input.provider_id)
+        .bind(input.provider_id)
         .bind(current_auto_deploy(git.as_ref()))
         .bind(current_watch_paths(git.as_ref()))
         .bind(current_enable_submodules(git.as_ref()))
@@ -274,7 +275,7 @@ impl ApplicationService {
         .bind(&input.url)
         .bind(&input.branch)
         .bind(input.build_path.unwrap_or_else(|| "/".into()))
-        .bind(&input.ssh_key_id)
+        .bind(input.ssh_key_id)
         .bind(current_auto_deploy(git.as_ref()))
         .bind(current_watch_paths(git.as_ref()))
         .bind(current_enable_submodules(git.as_ref()))
@@ -330,8 +331,7 @@ pub async fn install_drop_zip(
     server_id: Option<i64>,
     zip_path: &Path,
 ) -> Result<(), String> {
-    let server_id =
-        crate::services::compute::compose::remote::agent_server_id(server_id).await?;
+    let server_id = crate::services::compute::compose::remote::agent_server_id(server_id).await?;
     let monitoring = auto_di::resolve::<MonitoringService>()
         .await
         .map_err(|e| format!("DI error: {e}"))?;

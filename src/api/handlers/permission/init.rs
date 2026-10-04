@@ -13,10 +13,10 @@ pub struct PermissionGroupController {
 
 #[singleton]
 impl PermissionGroupController {
-    fn new(
-        service: Arc<AppPermissionGroupService>,
-        permissions: Arc<PermissionService>,
-    ) -> Self {
-        Self { service, permissions }
+    fn new(service: Arc<AppPermissionGroupService>, permissions: Arc<PermissionService>) -> Self {
+        Self {
+            service,
+            permissions,
+        }
     }
 }

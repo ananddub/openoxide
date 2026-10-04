@@ -2,8 +2,8 @@ use bytes::Bytes;
 use tokio::sync::mpsc;
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    TerminalError, TerminalEvent, TerminalExit, TerminalKind, TerminalOutputStream,
-    TerminalOutput, TerminalStarted, terminal_event,
+    TerminalError, TerminalEvent, TerminalExit, TerminalKind, TerminalOutput, TerminalOutputStream,
+    TerminalStarted, terminal_event,
 };
 
 /// Client-supplied terminal dimensions clamped to sane PTY bounds.
@@ -50,10 +50,12 @@ impl SessionEvents {
     }
 
     pub async fn emit_started(&self, kind: TerminalKind, host: Option<String>) -> bool {
-        self.emit(terminal_event::Payload::Started(Box::new(TerminalStarted {
-            kind: ::buffa::EnumValue::Known(kind),
-            host,
-        })))
+        self.emit(terminal_event::Payload::Started(Box::new(
+            TerminalStarted {
+                kind: ::buffa::EnumValue::Known(kind),
+                host,
+            },
+        )))
         .await
     }
 
@@ -74,7 +76,9 @@ impl SessionEvents {
     }
 
     pub async fn emit_exit(&self, code: Option<i32>) -> bool {
-        self.emit(terminal_event::Payload::Exit(Box::new(TerminalExit { code })))
-            .await
+        self.emit(terminal_event::Payload::Exit(Box::new(TerminalExit {
+            code,
+        })))
+        .await
     }
 }

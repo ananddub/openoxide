@@ -2,16 +2,6 @@ use crate::services::compute::engine::{ComposeLogOptions, DeploymentService, Doc
 use crate::utils::docker::{DockerCli, DockerStreamEvent};
 use tokio::sync::mpsc;
 
-/// Stats stream with nothing to watch. An empty target list must never reach
-/// the Agent — it treats "no ids" as "every running container", which made
-/// stopped/unresolved apps, databases and compose stacks display someone
-/// else's CPU/RAM.
-fn empty_stats_stream() -> mpsc::Receiver<DockerStreamEvent> {
-    let (sender, receiver) = mpsc::channel(1);
-    drop(sender);
-    receiver
-}
-
 /// Checks a `docker ps` Labels cell for an exact key/value pair. Handles both
 /// serialisations seen in the wild: the CLI's `k=v,k2=v2` string and a compact
 /// JSON object emitted by other Docker versions.
@@ -84,6 +74,29 @@ async fn stack_log_targets(
         }
     }
     if running.is_empty() { stopped } else { running }
+}
+
+/// Records a container's exact id and display name as stats targets: the
+/// shared-feed filter matches both forms, and they are the forms the Agent's
+/// one-shot snapshot endpoint accepts.
+fn push_container_targets(
+    targets: &mut Vec<String>,
+    container: &crate::utils::docker::ContainerSummary,
+) {
+    let id = container.id.trim();
+    if !id.is_empty() && !targets.iter().any(|target| target == id) {
+        targets.push(id.to_owned());
+    }
+    let name = container
+        .names
+        .split(',')
+        .next()
+        .unwrap_or("")
+        .trim_start_matches('/')
+        .trim();
+    if !name.is_empty() && !targets.iter().any(|target| target == name) {
+        targets.push(name.to_owned());
+    }
 }
 
 fn find_best_matching_container<'a>(
@@ -169,12 +182,11 @@ impl DeploymentService {
                         .filter(crate::utils::docker::query::ServiceFilter::name(cand))
                         .run_json()
                         .await
+                        && !services.is_empty()
                     {
-                        if !services.is_empty() {
-                            resolved_target = services[0].name.clone();
-                            is_service = true;
-                            break;
-                        }
+                        resolved_target = services[0].name.clone();
+                        is_service = true;
+                        break;
                     }
                 }
                 if !is_service
@@ -250,12 +262,11 @@ impl DeploymentService {
                         .filter(crate::utils::docker::query::ServiceFilter::name(cand))
                         .run_json()
                         .await
+                        && !services.is_empty()
                     {
-                        if !services.is_empty() {
-                            resolved_target = services[0].name.clone();
-                            is_service = true;
-                            break;
-                        }
+                        resolved_target = services[0].name.clone();
+                        is_service = true;
+                        break;
                     }
                 }
                 if !is_service
@@ -321,10 +332,10 @@ impl DeploymentService {
         let docker = self.docker_for_server(server_id).await?;
         let mut resolved_target = target.clone();
 
-        if let Ok(containers) = docker.containers().ps().all().list().await {
-            if let Some(matched) = find_best_matching_container(&containers, &target) {
-                resolved_target = matched.names.trim_start_matches('/').to_string();
-            }
+        if let Ok(containers) = docker.containers().ps().all().list().await
+            && let Some(matched) = find_best_matching_container(&containers, &target)
+        {
+            resolved_target = matched.names.trim_start_matches('/').to_string();
         }
 
         let server_id = crate::services::compute::compose::remote::agent_server_id(server_id)
@@ -353,30 +364,32 @@ impl DeploymentService {
         };
 
         let service_name = format!("{app_name}_{app_name}");
-        let mut targets: Vec<String> = containers
+        // Stable selectors first: the stats feed is shared per server and
+        // never re-resolves, so a stream must survive container recreation.
+        // `*` tokens match by name prefix; ids/names of the current run are
+        // added for exact matching and one-shot snapshots.
+        let mut targets: Vec<String> = vec![format!("{service_name}.*"), format!("{app_name}-*")];
+        let matched: Vec<&_> = containers
             .iter()
             .filter(|c| label_matches(&c.labels, "com.docker.swarm.service.name", &service_name))
-            .map(|c| c.id.trim().to_string())
-            .filter(|id| !id.is_empty())
             .collect();
-        if targets.is_empty() {
-            // Standalone mode: find container by name matching.
-            if let Some(matched) = find_best_matching_container(&containers, &app_name) {
-                let id = matched.id.trim().to_string();
-                if !id.is_empty() {
-                    targets.push(id);
-                }
+        if matched.is_empty() {
+            if let Some(best) = find_best_matching_container(&containers, &app_name) {
+                push_container_targets(&mut targets, best);
+            }
+        } else {
+            for container in matched {
+                push_container_targets(&mut targets, container);
             }
         }
 
-        if targets.is_empty() {
+        if targets.len() == 2 {
             tracing::info!(
                 server_id,
                 %app_name,
                 running = containers.len(),
-                "no running container resolved for application stats"
+                "no running container resolved for application stats; streaming by selector"
             );
-            return Ok(empty_stats_stream());
         }
 
         let agent_id = crate::services::compute::compose::remote::agent_server_id(server_id)
@@ -404,44 +417,35 @@ impl DeploymentService {
             }
         };
 
-        let mut targets: Vec<String> = containers
+        // Stable selectors first (see stream_application_stats): the shared
+        // per-server feed is never re-resolved, so `*` tokens keep matching
+        // containers recreated after the stream opened. Ids/names of the
+        // current run are added for exact matching and one-shot snapshots.
+        let mut targets: Vec<String> = vec![format!("{app_name}-*"), format!("{app_name}_*")];
+        let matched: Vec<&_> = containers
             .iter()
-            .filter(|c| label_matches(&c.labels, "com.docker.compose.project", &app_name))
-            .map(|c| c.id.trim().to_string())
-            .filter(|id| !id.is_empty())
-            .collect();
-        if targets.is_empty() {
-            // Fallback: name-based match against the compose project prefix.
-            let matched: Vec<String> = containers
-                .iter()
-                .filter(|c| {
+            .filter(|c| {
+                label_matches(&c.labels, "com.docker.compose.project", &app_name) || {
                     let name = c.names.trim_start_matches('/').to_lowercase();
                     name.starts_with(&format!("{}-", app_name.to_lowercase()))
                         || name.starts_with(&format!("{}_", app_name.to_lowercase()))
-                })
-                .map(|c| c.id.trim().to_string())
-                .filter(|id| !id.is_empty())
-                .collect();
-            targets = matched;
-        }
-
-        if targets.is_empty() {
-            if let Some(matched) = find_best_matching_container(&containers, &app_name) {
-                let id = matched.id.trim().to_string();
-                if !id.is_empty() {
-                    targets.push(id);
                 }
+            })
+            .collect();
+        if matched.is_empty() {
+            if let Some(best) = find_best_matching_container(&containers, &app_name) {
+                push_container_targets(&mut targets, best);
             }
-        }
-
-        if targets.is_empty() {
             tracing::info!(
                 server_id,
                 %app_name,
                 running = containers.len(),
-                "no running container resolved for compose stats"
+                "no running container resolved for compose stats; streaming by selector"
             );
-            return Ok(empty_stats_stream());
+        } else {
+            for container in matched {
+                push_container_targets(&mut targets, container);
+            }
         }
 
         let agent_id = crate::services::compute::compose::remote::agent_server_id(server_id)
@@ -471,30 +475,28 @@ impl DeploymentService {
 
         // Databases run in Swarm as: {app_name}_db service
         let swarm_service = format!("{app_name}_db");
-        let mut targets: Vec<String> = containers
+        // Stable selector (see stream_application_stats) plus the current
+        // run's ids/names for snapshots.
+        let mut targets: Vec<String> = vec![format!("{swarm_service}.*")];
+        let matched: Vec<&_> = containers
             .iter()
             .filter(|c| label_matches(&c.labels, "com.docker.swarm.service.name", &swarm_service))
-            .map(|c| c.id.trim().to_string())
-            .filter(|id| !id.is_empty())
             .collect();
-        if targets.is_empty() {
+        if matched.is_empty() {
             // Fallback: name-based match (standalone / non-Swarm).
-            if let Some(matched) = find_best_matching_container(&containers, &app_name) {
-                let id = matched.id.trim().to_string();
-                if !id.is_empty() {
-                    targets.push(id);
-                }
+            if let Some(best) = find_best_matching_container(&containers, &app_name) {
+                push_container_targets(&mut targets, best);
             }
-        }
-
-        if targets.is_empty() {
             tracing::info!(
                 server_id,
                 %app_name,
                 running = containers.len(),
-                "no running container resolved for database stats"
+                "no running container resolved for database stats; streaming by selector"
             );
-            return Ok(empty_stats_stream());
+        } else {
+            for container in matched {
+                push_container_targets(&mut targets, container);
+            }
         }
 
         let agent_id = crate::services::compute::compose::remote::agent_server_id(server_id)
@@ -550,11 +552,10 @@ impl DeploymentService {
                         .bind(&target)
                         .fetch_optional(self.database())
                         .await
+                        && row.0.is_some()
                     {
-                        if row.0.is_some() {
-                            found_sid = row.0;
-                            break;
-                        }
+                        found_sid = row.0;
+                        break;
                     }
                 }
                 found_sid
@@ -581,12 +582,11 @@ impl DeploymentService {
                         .filter(crate::utils::docker::query::ServiceFilter::name(cand))
                         .run_json()
                         .await
+                        && !services.is_empty()
                     {
-                        if !services.is_empty() {
-                            resolved_target = services[0].name.clone();
-                            is_service = true;
-                            break;
-                        }
+                        resolved_target = services[0].name.clone();
+                        is_service = true;
+                        break;
                     }
                 }
                 if !is_service
@@ -707,7 +707,6 @@ impl DeploymentService {
                 builder.build_command_args()
             })
             .collect();
-        drop(handle);
         Ok(spawn_docker_streams(docker, commands))
     }
 
@@ -726,9 +725,16 @@ impl DeploymentService {
 /// repackages each frame as CLI-shaped stdout bytes, so every browser
 /// consumer costs zero subprocesses (previously one `docker stats` CLI per
 /// stream, ~11 MB RSS each on the Agent host).
+///
+/// Streaming views share one per-Agent feed: the feed samples only the union
+/// of selector targets its registered consumers watch, and each consumer
+/// further filters frames down to its own containers, so opening more browser
+/// tabs never multiplies remote CPU and dockerd never samples a container no
+/// one is watching. One-shot requests (`stream=false`) stay direct: the agent
+/// samples once and the RPC ends.
 async fn agent_stats_stream(
     server_id: i64,
-    targets: Vec<String>,
+    mut targets: Vec<String>,
     stream: bool,
 ) -> sqlx::Result<mpsc::Receiver<DockerStreamEvent>> {
     use auto_di::resolve;
@@ -739,12 +745,84 @@ async fn agent_stats_stream(
     >()
     .await
     .map_err(|error| sqlx::Error::Protocol(format!("monitoring Agent unavailable: {error}")))?;
-    let mut frames = monitoring
-        .stream_container_stats(server_id, targets, stream)
-        .await
-        .map_err(sqlx::Error::Protocol)?;
 
     let (sender, receiver) = mpsc::channel(128);
+    if stream {
+        tokio::spawn(async move {
+            let (mut feed, mut consumer) = match monitoring
+                .subscribe_container_stats(server_id, targets.clone())
+                .await
+            {
+                Ok(subscription) => subscription,
+                Err(error) => {
+                    tracing::warn!(server_id, %error, "shared stats feed unavailable");
+                    return;
+                }
+            };
+            loop {
+                match feed.recv().await {
+                    Ok(frame) => {
+                        if !stats_frame_matches(&targets, &frame) {
+                            continue;
+                        }
+                        let mut line = frame.json_line.as_ref().clone();
+                        line.push('\n');
+                        if sender
+                            .send(DockerStreamEvent::Stdout(line.into_bytes()))
+                            .await
+                            .is_err()
+                        {
+                            break; // browser consumer went away
+                        }
+                    }
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => continue,
+                    Err(tokio::sync::broadcast::error::RecvError::Closed) => {
+                        // Feed task died (agent stream broke); reopen after a
+                        // short pause while this consumer is still waiting.
+                        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+                        monitoring.unsubscribe_container_stats(server_id, consumer);
+                        match monitoring
+                            .subscribe_container_stats(server_id, targets.clone())
+                            .await
+                        {
+                            Ok((new_feed, new_consumer)) => {
+                                feed = new_feed;
+                                consumer = new_consumer;
+                            }
+                            Err(error) => {
+                                tracing::warn!(
+                                    server_id, %error, "shared stats feed could not reopen"
+                                );
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            monitoring.unsubscribe_container_stats(server_id, consumer);
+        });
+        return Ok(receiver);
+    }
+
+    // One-shot snapshots go straight to the Agent, which only accepts exact
+    // ids/names. Drop selector tokens; and when a selector matched nothing
+    // running, send nothing — empty targets at the Agent mean the whole host.
+    let scoped = !targets.is_empty();
+    targets.retain(|target| !target.ends_with('*'));
+    if scoped && targets.is_empty() {
+        return Ok(receiver);
+    }
+
+    let mut frames = match monitoring
+        .stream_container_stats(server_id, targets, false)
+        .await
+    {
+        Ok(frames) => frames,
+        Err(error) => {
+            tracing::warn!(server_id, %error, "Agent stats stream failed to open");
+            return Ok(receiver);
+        }
+    };
     tokio::spawn(async move {
         loop {
             match frames.next().await {
@@ -768,6 +846,31 @@ async fn agent_stats_stream(
         }
     });
     Ok(receiver)
+}
+
+/// True when a shared-feed frame belongs to one of a consumer's requested
+/// targets (full id, id prefix, or container name — the same forms the
+/// per-container Agent endpoint accepted).
+fn stats_frame_matches(
+    targets: &[String],
+    frame: &crate::services::observability::monitoring::service::StatsFeedFrame,
+) -> bool {
+    targets.is_empty()
+        || targets.iter().any(|target| {
+            if let Some(prefix) = target.strip_suffix('*') {
+                // Selector token: survives container recreation, so it must
+                // match swarm task names (`{service}.{task}.{slot}`) and
+                // compose names (`{project}-{service}-{n}`) case-insensitively.
+                let prefix = prefix.to_lowercase();
+                return frame.name.to_lowercase().starts_with(&prefix)
+                    || frame.id.starts_with(&prefix);
+            }
+            target == &frame.id
+                || target == &frame.name
+                || (target.len() >= 12
+                    && target.bytes().all(|byte| byte.is_ascii_hexdigit())
+                    && frame.id.starts_with(target.as_str()))
+        })
 }
 
 fn spawn_docker_stream(
@@ -806,7 +909,7 @@ fn spawn_docker_streams(
 
 #[cfg(test)]
 mod tests {
-    use super::stack_container_matches;
+    use super::{stack_container_matches, stats_frame_matches};
 
     // Verbatim shapes of the two label serialisations `docker ps` produces on this
     // project's own host: a swarm task and a compose-managed container.
@@ -864,6 +967,67 @@ mod tests {
             SWARM_TASK,
             "test-76e37f1d-extra",
             None
+        ));
+    }
+
+    fn frame(
+        id: &str,
+        name: &str,
+    ) -> crate::services::observability::monitoring::service::StatsFeedFrame {
+        crate::services::observability::monitoring::service::StatsFeedFrame {
+            id: id.to_owned(),
+            name: name.to_owned(),
+            json_line: std::sync::Arc::new(String::new()),
+        }
+    }
+
+    #[test]
+    fn selector_tokens_survive_container_recreation() {
+        let targets = vec![
+            "test-76e37f1d_test-76e37f1d.*".to_owned(),
+            "test-76e37f1d-*".to_owned(),
+        ];
+        // A task recreated under a brand-new id and name must still match.
+        assert!(stats_frame_matches(
+            &targets,
+            &frame("ffffffffffffffff", "test-76e37f1d_test-76e37f1d.2.zzz")
+        ));
+        assert!(stats_frame_matches(
+            &targets,
+            &frame("eeeeeeeeeeeeeeee", "test-76e37f1d-worker-7")
+        ));
+        // An unrelated row's container must not.
+        assert!(!stats_frame_matches(
+            &targets,
+            &frame("dddddddddddddddd", "other-service.1.aaa")
+        ));
+        // `test-76e37f1d-*` is deliberately loose: a longer project sharing
+        // the prefix also matches, which is exactly how the old name-based
+        // fallback behaved, and panel app names are generated suffixes.
+        assert!(stats_frame_matches(
+            &targets,
+            &frame("cccccccccccccccc", "test-76e37f1d-extra-1")
+        ));
+    }
+
+    #[test]
+    fn exact_targets_keep_matching_feed_frames() {
+        let targets = vec!["0123456789abcdef".to_owned(), "my-container".to_owned()];
+        assert!(stats_frame_matches(
+            &targets,
+            &frame("0123456789abcdef0", "renamed")
+        ));
+        assert!(stats_frame_matches(
+            &targets,
+            &frame("ffffffffffffffff", "my-container")
+        ));
+        assert!(!stats_frame_matches(
+            &targets,
+            &frame("0123456789ab0000", "x")
+        ));
+        assert!(!stats_frame_matches(
+            &targets,
+            &frame("ffffffffffffffff", "other")
         ));
     }
 }

@@ -122,17 +122,12 @@ pub enum DigTransport {
     Tcp,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum DigAddressFamily {
+    #[default]
     Any,
     Ipv4,
     Ipv6,
-}
-
-impl Default for DigAddressFamily {
-    fn default() -> Self {
-        Self::Any
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

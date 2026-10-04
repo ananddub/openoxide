@@ -9,7 +9,6 @@ use crate::db::queries::FlashQueries;
 /// silently drops the `unique_config_key` column, making it unusable in
 /// generated queries and models. These statements preserve the exact SQL
 /// semantics of the deleted `RedirectRepository`.
-
 /// Local row shape for the `redirects` table. It lives here instead of
 /// `flash_gen::models` because the generator drops `unique_config_key`, so
 /// no generated `Redirects` model can represent this table.

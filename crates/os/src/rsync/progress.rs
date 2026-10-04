@@ -52,7 +52,9 @@ fn parse_sample(s: &str) -> Option<RsyncProgress> {
     }
     let transferred_bytes = digits.parse::<u64>().ok()?;
 
-    let percent = fields.find_map(|f| f.strip_suffix('%')).and_then(|p| p.parse::<u8>().ok());
+    let percent = fields
+        .find_map(|f| f.strip_suffix('%'))
+        .and_then(|p| p.parse::<u8>().ok());
 
     Some(RsyncProgress {
         transferred_bytes,
@@ -66,18 +68,15 @@ mod tests {
 
     #[test]
     fn parses_grouped_bytes_and_percent() {
-        let p = parse_progress2(
-            "344,244  12%    4.10MB/s    0:00:00  (xfr#1, ir-chk=1001/1005)",
-        )
-        .expect("should parse");
+        let p = parse_progress2("344,244  12%    4.10MB/s    0:00:00  (xfr#1, ir-chk=1001/1005)")
+            .expect("should parse");
         assert_eq!(p.transferred_bytes, 344244);
         assert_eq!(p.percent, Some(12));
     }
 
     #[test]
     fn parses_plain_bytes_without_percent() {
-        let p = parse_progress2("9983440266 100%  226.52MB/s  0:00:42")
-            .expect("should parse");
+        let p = parse_progress2("9983440266 100%  226.52MB/s  0:00:42").expect("should parse");
         assert_eq!(p.transferred_bytes, 9983440266);
         assert_eq!(p.percent, Some(100));
     }

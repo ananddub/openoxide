@@ -26,10 +26,7 @@ impl PreviewDeploymentService for PreviewDeploymentController {
                 .collect(),
             None => items.into_iter().map(view_to_proto).collect(),
         };
-        Response::ok(ListPreviewsResponse {
-            previews,
-            ..Default::default()
-        })
+        Response::ok(ListPreviewsResponse { previews })
     }
 
     #[permission(Application, CanRead)]
@@ -41,7 +38,6 @@ impl PreviewDeploymentService for PreviewDeploymentController {
         let view = self.service.get(request.id).await.map_err(map_sqlx)?;
         Response::ok(GetPreviewResponse {
             preview: ::buffa::MessageField::some(view_to_proto(view)),
-            ..Default::default()
         })
     }
 
@@ -59,7 +55,6 @@ impl PreviewDeploymentService for PreviewDeploymentController {
             .map_err(map_service)?;
         Response::ok(CreatePreviewResponse {
             preview: ::buffa::MessageField::some(outcome_to_proto(outcome)),
-            ..Default::default()
         })
     }
 
@@ -69,10 +64,13 @@ impl PreviewDeploymentService for PreviewDeploymentController {
         ctx: RequestContext,
         request: ServiceRequest<'_, RedeployPreviewRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<RedeployPreviewResponse> + Send + use<'a>> {
-        let outcome = self.service.redeploy(request.id).await.map_err(map_service)?;
+        let outcome = self
+            .service
+            .redeploy(request.id)
+            .await
+            .map_err(map_service)?;
         Response::ok(RedeployPreviewResponse {
             preview: ::buffa::MessageField::some(outcome_to_proto(outcome)),
-            ..Default::default()
         })
     }
 
@@ -82,7 +80,10 @@ impl PreviewDeploymentService for PreviewDeploymentController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DeletePreviewRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.remove(request.id, true).await.map_err(map_service)?;
+        self.service
+            .remove(request.id, true)
+            .await
+            .map_err(map_service)?;
         Response::ok(Empty::default())
     }
 }

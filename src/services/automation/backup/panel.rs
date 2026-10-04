@@ -8,7 +8,8 @@ use crate::{
     core::config::Config,
     db::queries::FlashQueries,
     flash_gen::backup_executions::{
-        BackupExecutionsNextAttemptParams, BackupExecutionsStartParams, BackupExecutionsSucceedParams,
+        BackupExecutionsNextAttemptParams, BackupExecutionsStartParams,
+        BackupExecutionsSucceedParams,
     },
     utils::{
         exec::{CommandExecutor, LocalExecutor},
@@ -51,7 +52,11 @@ pub struct PanelBackupService {
 #[singleton]
 impl PanelBackupService {
     fn new(db: Arc<SqlitePool>, config: Arc<Config>, queries: Arc<FlashQueries>) -> Self {
-        Self { db, config, queries }
+        Self {
+            db,
+            config,
+            queries,
+        }
     }
 
     pub async fn create(&self) -> sqlx::Result<PanelBackupResponseDto> {

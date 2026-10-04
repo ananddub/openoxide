@@ -1,8 +1,11 @@
 use crate::utils::backup::database::destination::S3Destination;
+use crate::utils::docker::core::Mount;
 use crate::utils::docker::query::ServiceFilter;
 use crate::utils::docker::query::filter::{ContainerFilter, ContainerStatus};
 use crate::utils::docker::{DockerCli, DockerError};
-use crate::utils::exec::{CommandExecutor, ExecError, ExecOutput, ExecResult};
+use crate::utils::exec::script::IntoCommand;
+use crate::utils::exec::script::sh;
+use crate::utils::exec::{CommandExecutor, ExecError, ExecOutput, ExecResult, ScriptPipeline};
 use crate::utils::rclone::{RcloneBuilder, RcloneCommand};
 use tokio_util::sync::CancellationToken;
 
@@ -153,18 +156,22 @@ impl<'a> VolumeBackupRunner<'a> {
 
         let rclone_target = self.destination.to_rclone_target(object_key);
 
-        let builder = RcloneBuilder::new(RcloneCommand::Rcat).destination(rclone_target);
+        let rclone = RcloneBuilder::new(RcloneCommand::Rcat).destination(rclone_target);
 
-        let rclone_cmd = builder.to_command_string();
+        let docker = self.docker();
+        let containers = docker.containers();
+        let tar_run = containers
+            .create("ubuntu")
+            .rm()
+            .mount(Mount::volume(vol.clone(), "/volume_data"))
+            .command(["tar", "cf", "-", "-C", "/volume_data", "."]);
 
-        let pipeline = format!(
-            "set -eo pipefail; docker run --rm -v {vol}:/volume_data ubuntu tar cf - -C /volume_data . | {rclone}",
-            vol = vol,
-            rclone = rclone_cmd,
-        );
+        let script = sh!(pipe![tar_run, rclone];);
 
-        self.executor
-            .run_cancelled("sh", ["-c", &pipeline], cancel)
+        ScriptPipeline::new()
+            .pipefail(true)
+            .cmd(script)
+            .execute_cancelled(self.executor, cancel)
             .await
     }
 
@@ -177,18 +184,23 @@ impl<'a> VolumeBackupRunner<'a> {
 
         let rclone_target = self.destination.to_rclone_target(object_key);
 
-        let builder = RcloneBuilder::new(RcloneCommand::Cat).source(rclone_target);
+        let rclone = RcloneBuilder::new(RcloneCommand::Cat).source(rclone_target);
 
-        let rclone_cmd = builder.to_command_string();
+        let docker = self.docker();
+        let containers = docker.containers();
+        let tar_run = containers
+            .create("ubuntu")
+            .interactive()
+            .rm()
+            .mount(Mount::volume(vol.clone(), "/volume_data"))
+            .command(["tar", "xf", "-", "-C", "/volume_data"]);
 
-        let pipeline = format!(
-            "set -eo pipefail; {rclone} | docker run -i --rm -v {vol}:/volume_data ubuntu tar xf - -C /volume_data",
-            vol = vol,
-            rclone = rclone_cmd,
-        );
+        let script = sh!(pipe![rclone, tar_run];);
 
-        self.executor
-            .run_cancelled("sh", ["-c", &pipeline], cancel)
+        ScriptPipeline::new()
+            .pipefail(true)
+            .cmd(script)
+            .execute_cancelled(self.executor, cancel)
             .await
     }
 
@@ -197,7 +209,7 @@ impl<'a> VolumeBackupRunner<'a> {
         object_key: &str,
         cancel: &CancellationToken,
     ) -> ExecResult<ExecOutput> {
-        let result = match (&self.backup.service, self.backup.turn_off) {
+        match (&self.backup.service, self.backup.turn_off) {
             (VolumeServiceTarget::SwarmService { service_name }, true) => {
                 let replicas = self.swarm_stop(service_name).await?;
                 let out = self.stream_to_s3(object_key, cancel).await;
@@ -217,9 +229,7 @@ impl<'a> VolumeBackupRunner<'a> {
                 self.stream_to_s3(object_key, cancel).await
             }
             (VolumeServiceTarget::Standalone, _) => self.stream_to_s3(object_key, cancel).await,
-        };
-
-        result
+        }
     }
 
     pub async fn run_restore(
@@ -227,7 +237,7 @@ impl<'a> VolumeBackupRunner<'a> {
         object_key: &str,
         cancel: &CancellationToken,
     ) -> ExecResult<ExecOutput> {
-        let result = match (&self.backup.service, self.backup.turn_off) {
+        match (&self.backup.service, self.backup.turn_off) {
             (VolumeServiceTarget::SwarmService { service_name }, true) => {
                 let replicas = self.swarm_stop(service_name).await?;
                 let out = self.stream_from_s3(object_key, cancel).await;
@@ -247,8 +257,6 @@ impl<'a> VolumeBackupRunner<'a> {
                 self.stream_from_s3(object_key, cancel).await
             }
             (VolumeServiceTarget::Standalone, _) => self.stream_from_s3(object_key, cancel).await,
-        };
-
-        result
+        }
     }
 }

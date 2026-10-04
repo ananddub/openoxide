@@ -26,12 +26,6 @@ crate::string_enum! {
     }
 }
 
-impl Default for ExecutionKind {
-    fn default() -> Self {
-        Self::Agent
-    }
-}
-
 #[derive(Debug)]
 pub enum ExecExitStatus {
     Local(ExitStatus),
@@ -177,7 +171,7 @@ pub enum SshHostKey {
 #[derive(Clone, Debug)]
 pub enum CommandExecutor {
     Local(LocalExecutor),
-    Remote(RemoteExecutor),
+    Remote(Box<RemoteExecutor>),
     Agent(AgentExecutor),
 }
 impl CommandExecutor {
@@ -394,7 +388,10 @@ mod file_path_tests {
 
     #[test]
     fn execution_kind_supports_agent() {
-        assert_eq!(ExecutionKind::from_str("agent"), Some(ExecutionKind::Agent));
+        assert_eq!(
+            ExecutionKind::from_str_opt("agent"),
+            Some(ExecutionKind::Agent)
+        );
         assert_eq!(ExecutionKind::Agent.as_str(), "AGENT");
     }
 }

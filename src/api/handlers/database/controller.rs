@@ -1,21 +1,23 @@
-
 use buffa::MessageView;
-use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     AdvancedConfig, CreateDatabaseRequest, CreateMountRequest, Database as DatabaseProto,
-    DatabaseConnection, DatabaseExport,
-    DatabaseOperation as DatabaseOperationProto, DatabaseOperationRequest,
-    DatabaseService, DatabaseServiceExt, DatabaseTargetRequest, DeleteDatabaseRequest,
-    DeleteMountRequest, Dependencies, Empty, ExportDatabaseRequest, GetDatabaseRequest,
-    ImportDatabaseRequest, ListDatabasesRequest, ListDatabasesResponse, Mount as MountProto,
-    MountList, SwarmSettings, SwarmSettingsRequest, UpdateAdvancedConfigRequest,
-    UpdateDatabaseRequest, UpdateSwarmSettingsRequest, UpdateMountRequest,
-    ValidationResult,
+    DatabaseConnection, DatabaseExport, DatabaseOperation as DatabaseOperationProto,
+    DatabaseOperationRequest, DatabaseService, DatabaseServiceExt, DatabaseTargetRequest,
+    DeleteDatabaseRequest, DeleteMountRequest, Dependencies, Empty, ExportDatabaseRequest,
+    GetDatabaseRequest, ImportDatabaseRequest, ListDatabasesRequest, ListDatabasesResponse,
+    Mount as MountProto, MountList, SwarmSettings, SwarmSettingsRequest,
+    UpdateAdvancedConfigRequest, UpdateDatabaseRequest, UpdateMountRequest,
+    UpdateSwarmSettingsRequest, ValidationResult,
 };
-use crate::services::compute::database::crud::{CreateDatabaseDto, PatchDatabaseDto};
-use crate::services::compute::database::management::{ImportDatabaseDto, PostgresAdvancedConfigDto};
 use crate::services::compute::database::DatabaseOperation;
+use crate::services::compute::database::crud::{CreateDatabaseDto, PatchDatabaseDto};
+use crate::services::compute::database::management::{
+    ImportDatabaseDto, PostgresAdvancedConfigDto,
+};
 
 use super::helper::*;
 use super::init::DatabaseController;
@@ -29,7 +31,11 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, GetDatabaseRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseProto> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let record = self.service.get_by_id(kind, request.id).await.map_err(map_db_error)?;
+        let record = self
+            .service
+            .get_by_id(kind, request.id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(record_to_proto(record))
     }
 
@@ -50,7 +56,7 @@ impl DatabaseService for DatabaseController {
             .filter(|item| item.kind == kind)
             .map(record_to_proto)
             .collect();
-        Response::ok(ListDatabasesResponse { databases, ..Default::default() })
+        Response::ok(ListDatabasesResponse { databases })
     }
 
     #[permission(Database, CanCreate)]
@@ -62,25 +68,31 @@ impl DatabaseService for DatabaseController {
         let kind = proto_to_kind(request.kind)?;
         let dto = CreateDatabaseDto {
             name: request.name.to_owned(),
-            description: request.description.as_deref().map(String::from),
+            description: request.description.map(String::from),
             environment_id: request.environment_id,
             server_id: request.server_id,
-            docker_image: request.docker_image.as_deref().map(String::from),
-            database_name: request.database_name.as_deref().map(String::from),
-            database_user: request.database_user.as_deref().map(String::from),
-            database_password: request.database_password.as_deref().map(String::from),
+            docker_image: request.docker_image.map(String::from),
+            database_name: request.database_name.map(String::from),
+            database_user: request.database_user.map(String::from),
+            database_password: request.database_password.map(String::from),
             database_root_password: None,
             external_port: request.external_port,
             external_grpc_port: None,
             external_admin_port: None,
             command: None,
             args: Some(request.args.iter().map(|s| (*s).to_owned()).collect()),
-            env_var: request.env_var.as_deref().map(String::from),
+            env_var: request.env_var.map(String::from),
             replica_sets: None,
             sqld_node: None,
             sqld_primary_url: None,
             enable_namespaces: None,
-            network_ids: Some(request.network_ids.iter().map(|s| (*s).to_owned()).collect()),
+            network_ids: Some(
+                request
+                    .network_ids
+                    .iter()
+                    .map(|s| (*s).to_owned())
+                    .collect(),
+            ),
             detach_rustploy_network: None,
         };
         let record = self.service.create(kind, dto).await.map_err(map_db_error)?;
@@ -95,33 +107,43 @@ impl DatabaseService for DatabaseController {
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseProto> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
         let dto = PatchDatabaseDto {
-            name: request.name.as_deref().map(String::from),
-            description: request.description.as_deref().map(String::from),
-            docker_image: request.docker_image.as_deref().map(String::from),
-            database_name: request.database_name.as_deref().map(String::from),
-            database_user: request.database_user.as_deref().map(String::from),
-            database_password: request.database_password.as_deref().map(String::from),
+            name: request.name.map(String::from),
+            description: request.description.map(String::from),
+            docker_image: request.docker_image.map(String::from),
+            database_name: request.database_name.map(String::from),
+            database_user: request.database_user.map(String::from),
+            database_password: request.database_password.map(String::from),
             database_root_password: None,
             external_port: request.external_port,
             external_grpc_port: None,
             external_admin_port: None,
-            command: request.command.as_deref().map(String::from),
+            command: request.command.map(String::from),
             args: Some(request.args.iter().map(|s| (*s).to_owned()).collect()),
-            env_var: request.env_var.as_deref().map(String::from),
-            memory_reservation: request.memory_reservation.as_deref().map(String::from),
-            memory_limit: request.memory_limit.as_deref().map(String::from),
-            cpu_reservation: request.cpu_reservation.as_deref().map(String::from),
-            cpu_limit: request.cpu_limit.as_deref().map(String::from),
+            env_var: request.env_var.map(String::from),
+            memory_reservation: request.memory_reservation.map(String::from),
+            memory_limit: request.memory_limit.map(String::from),
+            cpu_reservation: request.cpu_reservation.map(String::from),
+            cpu_limit: request.cpu_limit.map(String::from),
             replicas: request.replicas,
             server_id: request.server_id,
             replica_sets: None,
             sqld_node: None,
             sqld_primary_url: None,
             enable_namespaces: None,
-            network_ids: Some(request.network_ids.iter().map(|s| (*s).to_owned()).collect()),
+            network_ids: Some(
+                request
+                    .network_ids
+                    .iter()
+                    .map(|s| (*s).to_owned())
+                    .collect(),
+            ),
             detach_rustploy_network: request.detach_rustploy_network,
         };
-        let record = self.service.patch(kind, request.id, dto).await.map_err(map_db_error)?;
+        let record = self
+            .service
+            .patch(kind, request.id, dto)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(record_to_proto(record))
     }
 
@@ -132,7 +154,10 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, DeleteDatabaseRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        self.service.delete(kind, request.id).await.map_err(map_db_error)?;
+        self.service
+            .delete(kind, request.id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(Empty::default())
     }
 
@@ -143,7 +168,14 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Deploy, auth.user_id()).await?;
+        let result = run_operation(
+            &self.service,
+            kind,
+            request.id,
+            DatabaseOperation::Deploy,
+            auth.user_id(),
+        )
+        .await?;
         Response::ok(result)
     }
 
@@ -154,7 +186,14 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Redeploy, auth.user_id()).await?;
+        let result = run_operation(
+            &self.service,
+            kind,
+            request.id,
+            DatabaseOperation::Redeploy,
+            auth.user_id(),
+        )
+        .await?;
         Response::ok(result)
     }
 
@@ -165,7 +204,14 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Reload, auth.user_id()).await?;
+        let result = run_operation(
+            &self.service,
+            kind,
+            request.id,
+            DatabaseOperation::Reload,
+            auth.user_id(),
+        )
+        .await?;
         Response::ok(result)
     }
 
@@ -176,7 +222,14 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Start, auth.user_id()).await?;
+        let result = run_operation(
+            &self.service,
+            kind,
+            request.id,
+            DatabaseOperation::Start,
+            auth.user_id(),
+        )
+        .await?;
         Response::ok(result)
     }
 
@@ -187,7 +240,14 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let result = run_operation(&self.service, kind, request.id, DatabaseOperation::Stop, auth.user_id()).await?;
+        let result = run_operation(
+            &self.service,
+            kind,
+            request.id,
+            DatabaseOperation::Stop,
+            auth.user_id(),
+        )
+        .await?;
         Response::ok(result)
     }
 
@@ -212,7 +272,11 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, SwarmSettingsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<SwarmSettings> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let dto = self.swarm.get(kind, request.id).await.map_err(map_db_error)?;
+        let dto = self
+            .swarm
+            .get(kind, request.id)
+            .await
+            .map_err(map_db_error)?;
         let settings = dto_to_swarm_settings(dto);
         Response::ok(settings)
     }
@@ -247,9 +311,13 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, DatabaseTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<MountList> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let items = self.mounts.list(kind, request.id).await.map_err(map_db_error)?;
+        let items = self
+            .mounts
+            .list(kind, request.id)
+            .await
+            .map_err(map_db_error)?;
         let mounts = items.into_iter().map(mount_to_proto).collect();
-        Response::ok(MountList { mounts, ..Default::default() })
+        Response::ok(MountList { mounts })
     }
 
     #[permission(Database, CanCreate)]
@@ -276,7 +344,12 @@ impl DatabaseService for DatabaseController {
         let kind = proto_to_kind(request.kind)?;
         let mount = self
             .mounts
-            .update(kind, request.database_id, request.id, request.to_owned_message())
+            .update(
+                kind,
+                request.database_id,
+                request.id,
+                request.to_owned_message(),
+            )
             .await
             .map_err(map_db_error)?;
         Response::ok(mount_to_proto(mount))
@@ -308,22 +381,55 @@ impl DatabaseService for DatabaseController {
         request: ServiceRequest<'_, DatabaseTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Dependencies> + Send + use<'a>> {
         let kind = proto_to_kind(request.kind)?;
-        let counts = self.service.dependencies(kind, request.id).await.map_err(map_db_error)?;
+        let counts = self
+            .service
+            .dependencies(kind, request.id)
+            .await
+            .map_err(map_db_error)?;
         let mut items = Vec::new();
-        if counts.active_deployments > 0 { items.push(format!("active_deployments: {}", counts.active_deployments)); }
-        if counts.deployments > 0 { items.push(format!("deployments: {}", counts.deployments)); }
-        if counts.domains > 0 { items.push(format!("domains: {}", counts.domains)); }
-        if counts.mounts > 0 { items.push(format!("mounts: {}", counts.mounts)); }
-        if counts.patches > 0 { items.push(format!("patches: {}", counts.patches)); }
-        if counts.schedules > 0 { items.push(format!("schedules: {}", counts.schedules)); }
-        if counts.backups > 0 { items.push(format!("backups: {}", counts.backups)); }
-        if counts.enabled_backups > 0 { items.push(format!("enabled_backups: {}", counts.enabled_backups)); }
-        if counts.preview_deployments > 0 { items.push(format!("preview_deployments: {}", counts.preview_deployments)); }
-        if counts.middleware > 0 { items.push(format!("middleware: {}", counts.middleware)); }
-        if counts.ports > 0 { items.push(format!("ports: {}", counts.ports)); }
-        if counts.redirects > 0 { items.push(format!("redirects: {}", counts.redirects)); }
-        if counts.security_rules > 0 { items.push(format!("security_rules: {}", counts.security_rules)); }
-        Response::ok(Dependencies { items, ..Default::default() })
+        if counts.active_deployments > 0 {
+            items.push(format!("active_deployments: {}", counts.active_deployments));
+        }
+        if counts.deployments > 0 {
+            items.push(format!("deployments: {}", counts.deployments));
+        }
+        if counts.domains > 0 {
+            items.push(format!("domains: {}", counts.domains));
+        }
+        if counts.mounts > 0 {
+            items.push(format!("mounts: {}", counts.mounts));
+        }
+        if counts.patches > 0 {
+            items.push(format!("patches: {}", counts.patches));
+        }
+        if counts.schedules > 0 {
+            items.push(format!("schedules: {}", counts.schedules));
+        }
+        if counts.backups > 0 {
+            items.push(format!("backups: {}", counts.backups));
+        }
+        if counts.enabled_backups > 0 {
+            items.push(format!("enabled_backups: {}", counts.enabled_backups));
+        }
+        if counts.preview_deployments > 0 {
+            items.push(format!(
+                "preview_deployments: {}",
+                counts.preview_deployments
+            ));
+        }
+        if counts.middleware > 0 {
+            items.push(format!("middleware: {}", counts.middleware));
+        }
+        if counts.ports > 0 {
+            items.push(format!("ports: {}", counts.ports));
+        }
+        if counts.redirects > 0 {
+            items.push(format!("redirects: {}", counts.redirects));
+        }
+        if counts.security_rules > 0 {
+            items.push(format!("security_rules: {}", counts.security_rules));
+        }
+        Response::ok(Dependencies { items })
     }
 
     #[permission(Database, CanRead)]
@@ -340,10 +446,7 @@ impl DatabaseService for DatabaseController {
             .map_err(map_db_error)?;
         let archive = serde_json::to_string_pretty(&bundle)
             .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
-        Response::ok(DatabaseExport {
-            archive,
-            ..Default::default()
-        })
+        Response::ok(DatabaseExport { archive })
     }
 
     #[permission(Database, CanUpdate)]
@@ -380,7 +483,6 @@ impl DatabaseService for DatabaseController {
             port: conn.port,
             database: conn.database.unwrap_or_default(),
             username: conn.username.unwrap_or_default(),
-            ..Default::default()
         })
     }
 
@@ -397,7 +499,11 @@ impl DatabaseService for DatabaseController {
             .await
             .map_err(map_db_error)?;
         // After rotation, fetch the updated record to return
-        let record = self.service.get_by_id(kind, request.id).await.map_err(map_db_error)?;
+        let record = self
+            .service
+            .get_by_id(kind, request.id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(record_to_proto(record))
     }
 
@@ -416,12 +522,19 @@ impl DatabaseService for DatabaseController {
         let message = if result.errors.is_empty() && result.warnings.is_empty() {
             None
         } else {
-            Some(result.errors.iter().chain(result.warnings.iter()).cloned().collect::<Vec<_>>().join("; "))
+            Some(
+                result
+                    .errors
+                    .iter()
+                    .chain(result.warnings.iter())
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join("; "),
+            )
         };
         Response::ok(ValidationResult {
             valid: result.valid,
             message,
-            ..Default::default()
         })
     }
 
@@ -454,7 +567,6 @@ impl DatabaseService for DatabaseController {
         Response::ok(AdvancedConfig {
             replication_role,
             config: Some(config_json),
-            ..Default::default()
         })
     }
 
@@ -472,12 +584,20 @@ impl DatabaseService for DatabaseController {
             .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?
             .unwrap_or_default();
         let replication_role_str = config.replication_role.as_deref().unwrap_or("STANDALONE");
-        let replication_role = crate::services::compute::database::management::PostgresReplicationRole::from_str(replication_role_str)
-            .ok_or_else(|| ConnectError::invalid_argument(format!("invalid replication role: {}", replication_role_str)))?;
+        let replication_role =
+            crate::services::compute::database::management::PostgresReplicationRole::from_str_opt(
+                replication_role_str,
+            )
+            .ok_or_else(|| {
+                ConnectError::invalid_argument(format!(
+                    "invalid replication role: {}",
+                    replication_role_str
+                ))
+            })?;
         let config_map: std::collections::BTreeMap<String, String> = config
             .config
             .as_deref()
-            .map(|s| serde_json::from_str(s))
+            .map(serde_json::from_str)
             .transpose()
             .map_err(|e| ConnectError::invalid_argument(format!("invalid config JSON: {}", e)))?
             .unwrap_or_default();
@@ -489,7 +609,12 @@ impl DatabaseService for DatabaseController {
             map.get(key).filter(|v| !v.trim().is_empty()).cloned()
         };
         let mut settings = config_map.clone();
-        for key in ["primary_host", "primary_port", "replication_user", "replication_password"] {
+        for key in [
+            "primary_host",
+            "primary_port",
+            "replication_user",
+            "replication_password",
+        ] {
             settings.remove(key);
         }
         let dto = PostgresAdvancedConfigDto {
@@ -513,7 +638,6 @@ impl DatabaseService for DatabaseController {
         Response::ok(AdvancedConfig {
             replication_role: replication_role_out,
             config: Some(config_json),
-            ..Default::default()
         })
     }
 }

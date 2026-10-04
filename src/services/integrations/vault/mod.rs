@@ -14,7 +14,7 @@ use auto_di::singleton;
 use reqwest::Client;
 use std::sync::Arc;
 
-use types::{encode_path, field as config_field};
+use types::field as config_field;
 
 pub struct VaultService {
     queries: Arc<FlashQueries>,
@@ -93,10 +93,11 @@ impl VaultService {
         if let Some(api_url) = body.api_url {
             existing.api_url = api_url.trim_end_matches('/').to_string();
         }
-        if let Some(auth_token) = body.auth_token {
-            if auth_token != VAULT_MASK_TOKEN && !auth_token.trim().is_empty() {
-                existing.auth_token = auth_token;
-            }
+        if let Some(auth_token) = body.auth_token
+            && auth_token != VAULT_MASK_TOKEN
+            && !auth_token.trim().is_empty()
+        {
+            existing.auth_token = auth_token;
         }
         if let Some(namespace) = body.namespace {
             existing.namespace = Some(namespace);

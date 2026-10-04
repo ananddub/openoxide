@@ -8,9 +8,15 @@ import {
 	Terminal,
 	KeyRound,
 	GitBranch,
-	Wrench,
+	Pencil,
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '#/components/ui/dropdown';
 import {IconTooltip} from '#/components/shared/icon-tooltip';
 import {
 	rawAppStatus,
@@ -188,29 +194,38 @@ export function AppHeaderActions({
 					</Button>
 				</IconTooltip>
 			)}
-			{onOpenSource && (
-				<IconTooltip label="Source configuration">
-					<Button
-						variant="ghost"
-						size="icon"
-						aria-label="Source configuration"
-						onClick={onOpenSource}
-						className={iconBtn}>
-						<GitBranch className="size-4" />
-					</Button>
-				</IconTooltip>
-			)}
-			{onOpenBuild && (
-				<IconTooltip label="Build configuration">
-					<Button
-						variant="ghost"
-						size="icon"
-						aria-label="Build configuration"
-						onClick={onOpenBuild}
-						className={iconBtn}>
-						<Wrench className="size-4" />
-					</Button>
-				</IconTooltip>
+			{(onOpenSource || onOpenBuild) && (
+				<DropdownMenu>
+					<DropdownMenuTrigger
+						render={
+							<Button
+								variant="ghost"
+								size="icon"
+								aria-label="Edit configuration"
+								className={iconBtn}
+							/>
+						}>
+						<Pencil className="size-4" />
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-52">
+						{onOpenSource && (
+							<DropdownMenuItem
+								className="cursor-pointer gap-2"
+								onClick={onOpenSource}>
+								<GitBranch className="size-3.5" />
+								Source & Provider
+							</DropdownMenuItem>
+						)}
+						{onOpenBuild && (
+							<DropdownMenuItem
+								className="cursor-pointer gap-2"
+								onClick={onOpenBuild}>
+								<Hammer className="size-3.5" />
+								Build
+							</DropdownMenuItem>
+						)}
+					</DropdownMenuContent>
+				</DropdownMenu>
 			)}
 		</div>
 	);

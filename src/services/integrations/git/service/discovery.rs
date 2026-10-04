@@ -2,15 +2,12 @@ use crate::utils::provider::discovery::{
     CollaboratorPermission, GitReferenceInfo, ProviderAccess, RepositoryInfo,
 };
 
-use super::{parse_config, BitbucketConfig, GitProviderService, GiteaConfig, GithubConfig,
-    GitlabConfig};
+use super::{
+    BitbucketConfig, GitProviderService, GiteaConfig, GithubConfig, GitlabConfig, parse_config,
+};
 
 impl GitProviderService {
-    pub async fn test_connection(
-        &self,
-        id: i64,
-        organization_id: i64,
-    ) -> Result<(), String> {
+    pub async fn test_connection(&self, id: i64, organization_id: i64) -> Result<(), String> {
         self.discovery
             .test(&self.access(id, organization_id).await?)
             .await
@@ -34,11 +31,7 @@ impl GitProviderService {
         organization_id: i64,
     ) -> Result<Vec<GitReferenceInfo>, String> {
         self.discovery
-            .branches(
-                &self.access(id, organization_id).await?,
-                owner,
-                repository,
-            )
+            .branches(&self.access(id, organization_id).await?, owner, repository)
             .await
     }
 
@@ -85,8 +78,8 @@ impl GitProviderService {
             .map_err(|_| format!("Unsupported Git provider: {}", row.provider_type))?;
         match provider_kind {
             GitProviderType::Github => {
-                let item: GithubConfig = parse_config(&row.config_json)
-                    .map_err(|error| error.to_string())?;
+                let item: GithubConfig =
+                    parse_config(&row.config_json).map_err(|error| error.to_string())?;
                 Ok(ProviderAccess::GithubApp {
                     app_id: item.app_id.ok_or("GitHub App ID is required")?,
                     installation_id: item
@@ -96,16 +89,14 @@ impl GitProviderService {
                 })
             }
             GitProviderType::Gitlab => {
-                let item: GitlabConfig = parse_config(&row.config_json)
-                    .map_err(|error| error.to_string())?;
+                let item: GitlabConfig =
+                    parse_config(&row.config_json).map_err(|error| error.to_string())?;
                 Ok(ProviderAccess::Gitlab {
                     base_url: item
                         .url
                         .filter(|value| !value.trim().is_empty())
                         .ok_or("GitLab URL is required")?,
-                    token: item
-                        .access_token
-                        .ok_or("GitLab access token is required")?,
+                    token: item.access_token.ok_or("GitLab access token is required")?,
                 })
             }
             GitProviderType::Gitea => {
@@ -120,8 +111,8 @@ impl GitProviderService {
                 })
             }
             GitProviderType::Bitbucket => {
-                let item: BitbucketConfig = parse_config(&row.config_json)
-                    .map_err(|error| error.to_string())?;
+                let item: BitbucketConfig =
+                    parse_config(&row.config_json).map_err(|error| error.to_string())?;
                 Ok(ProviderAccess::Bitbucket {
                     username: item.username,
                     app_password: item.app_password,

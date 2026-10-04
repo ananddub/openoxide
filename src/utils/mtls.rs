@@ -5,17 +5,8 @@
 
 use rcgen::{
     BasicConstraints, CertificateParams, DistinguishedName, DnType, ExtendedKeyUsagePurpose, IsCa,
-    KeyPair, KeyUsagePurpose, SanType, date_time_ymd,
+    KeyPair, KeyUsagePurpose, SanType,
 };
-
-/// Validity window for every generated certificate. rcgen's defaults put
-/// notAfter in year 4096, which encodes as GeneralizedTime — BoringSSL (used
-/// by the gRPC C++ agent) parses only UTCTime and fails the TLS handshake with
-/// an ASN1 error. Keep both bounds inside the UTCTime-representable range.
-fn set_utc_validity(params: &mut CertificateParams) {
-    params.not_before = date_time_ymd(2000, 1, 1);
-    params.not_after = date_time_ymd(2045, 1, 1);
-}
 
 pub struct Pem {
     pub cert: String,
@@ -57,7 +48,6 @@ pub fn generate_ca() -> Result<CaMaterial, String> {
         KeyUsagePurpose::CrlSign,
         KeyUsagePurpose::DigitalSignature,
     ];
-    set_utc_validity(&mut ca_params);
     let ca_key = KeyPair::generate().map_err(|e| format!("ca key: {e}"))?;
     let ca = ca_params
         .self_signed(&ca_key)
@@ -91,7 +81,6 @@ pub fn sign_leaves(
         KeyUsagePurpose::KeyEncipherment,
     ];
     server_params.extended_key_usages = vec![ExtendedKeyUsagePurpose::ServerAuth];
-    set_utc_validity(&mut server_params);
     let server_key = KeyPair::generate().map_err(|e| format!("server key: {e}"))?;
     let server_cert = server_params
         .signed_by(&server_key, &ca, &ca_key)
@@ -102,7 +91,6 @@ pub fn sign_leaves(
     client_params.distinguished_name = distinguished("openoxide-panel");
     client_params.key_usages = vec![KeyUsagePurpose::DigitalSignature];
     client_params.extended_key_usages = vec![ExtendedKeyUsagePurpose::ClientAuth];
-    set_utc_validity(&mut client_params);
     let client_key = KeyPair::generate().map_err(|e| format!("client key: {e}"))?;
     let client_cert = client_params
         .signed_by(&client_key, &ca, &ca_key)
@@ -171,10 +159,10 @@ fn san_list(sans: &[String]) -> Vec<SanType> {
             }
         }
     }
-    if out.is_empty() {
-        if let Ok(dns) = "openoxide-agent".to_owned().try_into() {
-            out.push(SanType::DnsName(dns));
-        }
+    if out.is_empty()
+        && let Ok(dns) = "openoxide-agent".to_owned().try_into()
+    {
+        out.push(SanType::DnsName(dns));
     }
     out
 }
@@ -302,6 +290,20 @@ impl MtlsCaStore {
     ) -> Result<ServerMtlsPaths, String> {
         let material = self.load_or_create(server_id, agent_sans).await?;
         self.write_files(server_id, base_dir, &material)
+    }
+
+    /// Deletes `server-{id}/` from `OPENOXIDE_MTLS_DIR` after the server row
+    /// is removed — without this the private key material for deleted servers
+    /// lingers on disk forever.
+    pub fn remove_server_files(&self, server_id: i64) {
+        let base_dir =
+            std::env::var("OPENOXIDE_MTLS_DIR").unwrap_or_else(|_| "/app/data/mtls".to_string());
+        let dir = std::path::Path::new(&base_dir).join(format!("server-{server_id}"));
+        if dir.exists()
+            && let Err(error) = std::fs::remove_dir_all(&dir)
+        {
+            tracing::warn!(%error, path = %dir.display(), "could not remove server mtls files");
+        }
     }
 }
 

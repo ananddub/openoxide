@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::flash_gen::models::PreviewDeployments;
 
-#[derive(Debug, Clone, Serialize, ts_rs::TS)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PreviewDeploymentView {
     pub id: i64,
     pub base_application_id: i64,

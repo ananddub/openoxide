@@ -5,7 +5,7 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
 use crate::services::observability::monitoring::proto::{
-    shell_message, ShellClose, ShellInput, ShellMessage, ShellResize,
+    ShellClose, ShellInput, ShellMessage, ShellResize, shell_message,
 };
 
 use super::events::TerminalSize;

@@ -1,0 +1,88 @@
+{
+  "zones": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": [
+      { "id": "0ss4vkxTzjBuHWcnq2khO636I1ZRGkmi", "name": "example.com", "status": "active" }
+    ]
+  },
+  "records": {
+    "success": true,
+    "errors": [],
+    "messages": [],
+    "result": [
+      {
+        "id": "rec-a",
+        "type": "A",
+        "name": "www.example.com",
+        "content": "192.0.2.1",
+        "ttl": 300,
+        "proxied": false
+      },
+      {
+        "id": "rec-mx",
+        "type": "MX",
+        "name": "example.com",
+        "content": "smtp.example.com",
+        "priority": 10,
+        "ttl": 1
+      },
+      {
+        "id": "rec-srv",
+        "type": "SRV",
+        "name": "_sip._tcp.example.com",
+        "ttl": 300,
+        "data": {
+          "priority": 10,
+          "weight": 60,
+          "port": 5060,
+          "target": "sip.example.com"
+        }
+      },
+      {
+        "id": "rec-caa",
+        "type": "CAA",
+        "name": "example.com",
+        "ttl": 300,
+        "data": { "flags": 0, "tag": "issue", "value": "letsencrypt.org" }
+      }
+    ]
+  },
+  "created": {
+    "success": true,
+    "errors": [],
+    "result": {
+      "id": "rec-new",
+      "type": "MX",
+      "name": "mail.example.com",
+      "content": "smtp.example.com",
+      "priority": 10,
+      "ttl": 300
+    }
+  },
+  "updated": {
+    "success": true,
+    "errors": [],
+    "result": {
+      "id": "rec-a",
+      "type": "A",
+      "name": "www.example.com",
+      "content": "192.0.2.9",
+      "ttl": 300,
+      "proxied": false
+    }
+  },
+  "deleted": { "success": true, "errors": [], "result": { "id": "rec-a" } },
+  "rejected": {
+    "success": false,
+    "errors": [
+      {
+        "code": 1000,
+        "message": "Invalid API Token",
+        "error_chain": [{ "code": 6000, "message": "could not read any zones with this token" }]
+      }
+    ],
+    "result": null
+  }
+}

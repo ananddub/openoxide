@@ -1,4 +1,4 @@
-use super::compose::ComposeBuilder;
+use super::builder::ComposeBuilder;
 use crate::utils::builder::shared::mounts::prepare_file_mounts;
 use crate::utils::builder::spec::{MountKind, MountSpec};
 use crate::utils::{builder::compose::spec::ComposeSpec, exec::ExecResult};

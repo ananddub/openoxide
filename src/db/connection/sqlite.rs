@@ -36,8 +36,9 @@ pub async fn connect(config: Arc<Config>) -> SqlitePool {
                 crate::db::reactive::release_realtime_handle();
                 let mut handle = connection.lock_handle().await?;
                 let raw_ptr = handle.as_raw_handle().as_ptr() as *mut std::ffi::c_void;
-                let realtime_handle = sqlite_realtime::RealtimeHandle::attach_if_needed(raw_ptr)
-                    .map_err(|error| sqlx::Error::Configuration(error.into()))?;
+                let realtime_handle =
+                    unsafe { sqlite_realtime::RealtimeHandle::attach_if_needed(raw_ptr) }
+                        .map_err(|error| sqlx::Error::Configuration(error.into()))?;
                 drop(handle);
                 crate::db::reactive::register_realtime_handle(realtime_handle);
                 Ok(())

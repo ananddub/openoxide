@@ -7,8 +7,8 @@ use crate::{
     },
     flash_gen::preview_env_extra::{
         PrevEnvCloneServiceGitParams, PrevEnvCloneServiceParams, PrevEnvCreateDomainParams,
-        PrevEnvSetBitbucketSourceParams, PrevEnvSetGiteaSourceParams, PrevEnvSetGitlabSourceParams,
-        PrevEnvSetGithubSourceParams, PrevEnvSyncServiceParams,
+        PrevEnvSetBitbucketSourceParams, PrevEnvSetGiteaSourceParams, PrevEnvSetGithubSourceParams,
+        PrevEnvSetGitlabSourceParams, PrevEnvSyncServiceParams,
     },
     services::{
         compute::application::{ApplicationOperation, ApplicationRecord, ApplicationService},
@@ -17,8 +17,8 @@ use crate::{
 };
 
 use super::{
-    types::{NewPreviewDeployment, PreviewTarget},
     PreviewDeploymentOutcome, PreviewDeploymentService,
+    types::{NewPreviewDeployment, PreviewTarget},
 };
 
 impl PreviewDeploymentService {
@@ -30,11 +30,13 @@ impl PreviewDeploymentService {
         let provider = event.provider.as_str();
         let existing = match self
             .queries
-            .preview_deployments_find_for_pull_request(&PreviewDeploymentsFindForPullRequestParams {
-                base_service_id: target.base_service_id,
-                provider_type: provider.to_string(),
-                pull_request_number: event.number.clone(),
-            })
+            .preview_deployments_find_for_pull_request(
+                &PreviewDeploymentsFindForPullRequestParams {
+                    base_service_id: target.base_service_id,
+                    provider_type: provider.to_string(),
+                    pull_request_number: event.number.clone(),
+                },
+            )
             .await
         {
             Ok(row) => Some(row),
@@ -102,8 +104,7 @@ impl PreviewDeploymentService {
                 .map_err(|error| error.to_string())?;
             (existing.id, preview_service_id, false)
         } else {
-            let (preview_service_id, domain) =
-                self.create_preview_resources(&base, event).await?;
+            let (preview_service_id, domain) = self.create_preview_resources(&base, event).await?;
             let new = NewPreviewDeployment {
                 base_service_id: target.base_service_id,
                 preview_service_id,
@@ -227,10 +228,11 @@ impl PreviewDeploymentService {
         {
             return Err(format!("Preview domain is already in use: {domain}"));
         }
-        let preview_service_id = self
-            .clone_preview_service(base, event, &app_name)
-            .await?;
-        if let Err(error) = self.create_preview_domain(base, &domain, preview_service_id).await {
+        let preview_service_id = self.clone_preview_service(base, event, &app_name).await?;
+        if let Err(error) = self
+            .create_preview_domain(base, &domain, preview_service_id)
+            .await
+        {
             let _ = self.queries.delete_service(preview_service_id).await;
             return Err(error);
         }
@@ -247,9 +249,8 @@ impl PreviewDeploymentService {
     ) -> Result<i64, String> {
         let now = chrono::Utc::now().timestamp();
         let name = format!("{} · PR #{}", base.name, event.number);
-        let env_var =
-            merge_environment(base.env_var.as_deref(), base.preview_env.as_deref())
-                .unwrap_or_default();
+        let env_var = merge_environment(base.env_var.as_deref(), base.preview_env.as_deref())
+            .unwrap_or_default();
         let preview_service_id = self
             .queries
             .prev_env_clone_service(&PrevEnvCloneServiceParams {
@@ -302,9 +303,8 @@ impl PreviewDeploymentService {
         created_at: i64,
     ) -> Result<(), String> {
         let name = format!("{} · PR #{}", base.name, event.number);
-        let env_var =
-            merge_environment(base.env_var.as_deref(), base.preview_env.as_deref())
-                .unwrap_or_default();
+        let env_var = merge_environment(base.env_var.as_deref(), base.preview_env.as_deref())
+            .unwrap_or_default();
         self.queries
             .prev_env_sync_service(&PrevEnvSyncServiceParams {
                 name,

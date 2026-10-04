@@ -1,4 +1,6 @@
-use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     IncomingWebhookRequest, IncomingWebhookResponse, IncomingWebhookService,
@@ -29,12 +31,12 @@ impl IncomingWebhookService for WebhookController {
             .credentials
             .load(provider, provider_id)
             .await
-            .map_err(|error| ConnectError::unauthenticated(error))?;
+            .map_err(ConnectError::unauthenticated)?;
 
         verify_request(provider, &credential, signature, body)?;
 
         // Extract event name from the payload JSON.
-        let event_value: serde_json::Value = serde_json::from_str(&request.payload)
+        let event_value: serde_json::Value = serde_json::from_str(request.payload)
             .map_err(|e| ConnectError::invalid_argument(format!("invalid payload JSON: {e}")))?;
 
         // For GitHub/Gitea, event name is typically in headers; for ConnectRPC
@@ -47,8 +49,8 @@ impl IncomingWebhookService for WebhookController {
             )));
         }
 
-        let event = parse_event(provider, &event_name, body)
-            .map_err(|error| ConnectError::invalid_argument(error))?;
+        let event =
+            parse_event(provider, &event_name, body).map_err(ConnectError::invalid_argument)?;
 
         let outcome = match event {
             WebhookEvent::Ping => DispatchOutcome {
@@ -56,20 +58,21 @@ impl IncomingWebhookService for WebhookController {
                 provider: Some(provider.as_str().into()),
                 ..Default::default()
             },
-            WebhookEvent::GitRef(ev) => self.dispatcher.dispatch(&ev).await.map_err(|error| {
-                ConnectError::new(ErrorCode::Internal, error)
-            })?,
-            WebhookEvent::PullRequest(ev) => {
-                self.dispatcher.dispatch_pull_request(&ev).await.map_err(|error| {
-                    ConnectError::new(ErrorCode::Internal, error)
-                })?
-            }
+            WebhookEvent::GitRef(ev) => self
+                .dispatcher
+                .dispatch(&ev)
+                .await
+                .map_err(|error| ConnectError::new(ErrorCode::Internal, error))?,
+            WebhookEvent::PullRequest(ev) => self
+                .dispatcher
+                .dispatch_pull_request(&ev)
+                .await
+                .map_err(|error| ConnectError::new(ErrorCode::Internal, error))?,
         };
 
         Response::ok(IncomingWebhookResponse {
             success: true,
             outcome: ::buffa::MessageField::some(outcome_to_proto(outcome)),
-            ..Default::default()
         })
     }
 }

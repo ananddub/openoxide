@@ -1,11 +1,13 @@
 use super::{
-    email::send_email, loader::{ChannelConfig, NotificationConfigLoader},
-    message::NotificationMessage, senders, types::{NotificationScope, NotificationTrigger},
+    email::send_email,
+    loader::{ChannelConfig, NotificationConfigLoader},
+    message::NotificationMessage,
+    senders,
+    types::{NotificationScope, NotificationTrigger},
 };
 use crate::db::queries::FlashQueries;
 use crate::flash_gen::{
-    models::Notifications as Notification,
-    notification_delivery::NotificationDeliveryBeginParams,
+    models::Notifications as Notification, notification_delivery::NotificationDeliveryBeginParams,
 };
 use auto_di::singleton;
 use reqwest::Client;
@@ -98,18 +100,16 @@ impl NotificationService {
 
                 for attempt in 1..=3 {
                     let delivery_id = match queries
-                        .notification_delivery_begin(
-                            &NotificationDeliveryBeginParams {
-                                notification_id: notification.id,
-                                organization_id: notification.organization_id,
-                                trigger_name: trigger_name.to_string(),
-                                correlation_id: correlation_id.clone(),
-                                status: "PENDING".to_string(),
-                                attempt,
-                                title: msg.title.clone(),
-                                body: msg.body.clone(),
-                            },
-                        )
+                        .notification_delivery_begin(&NotificationDeliveryBeginParams {
+                            notification_id: notification.id,
+                            organization_id: notification.organization_id,
+                            trigger_name: trigger_name.to_string(),
+                            correlation_id: correlation_id.clone(),
+                            status: "PENDING".to_string(),
+                            attempt,
+                            title: msg.title.clone(),
+                            body: msg.body.clone(),
+                        })
                         .await
                     {
                         Ok(id) => id,

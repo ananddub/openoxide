@@ -36,10 +36,10 @@ pub async fn build_mysql_stack(
     let mut command: Option<Vec<String>> = None;
     if let Some(c) = &command_row {
         let mut full = c.split_whitespace().map(String::from).collect::<Vec<_>>();
-        if let Some(a_str) = &db.args {
-            if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
-                full.extend(parsed_args);
-            }
+        if let Some(a_str) = &db.args
+            && let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str)
+        {
+            full.extend(parsed_args);
         }
         command = Some(full);
     }
@@ -57,7 +57,10 @@ pub async fn build_mysql_stack(
         resolved_env.insert("MYSQL_USER".to_string(), database_user.clone());
         resolved_env.insert("MYSQL_PASSWORD".to_string(), database_password.clone());
     }
-    resolved_env.insert("MYSQL_ROOT_PASSWORD".to_string(), database_root_password.clone());
+    resolved_env.insert(
+        "MYSQL_ROOT_PASSWORD".to_string(),
+        database_root_password.clone(),
+    );
 
     // Generate stack mounts
     let mut stack_mounts = Vec::new();

@@ -3,9 +3,7 @@ use sha2::{Digest, Sha256};
 use totp_rs::{Algorithm, Secret, TOTP};
 
 use crate::{
-    api::connect::generated::openoxide::api::v1::{
-        RecoveryCodes, TwoFactorSetup, TwoFactorStatus,
-    },
+    api::connect::generated::openoxide::api::v1::{RecoveryCodes, TwoFactorSetup, TwoFactorStatus},
     flash_gen::{
         models::{TwoFactor, Users},
         two_factor::{TwoFactorConsumeRecoveryCodeParams, TwoFactorUpsertParams},
@@ -23,7 +21,6 @@ impl AuthService {
         Ok(TwoFactorStatus {
             enabled: user.two_factor_enable.unwrap_or_default() != 0,
             configured,
-            ..Default::default()
         })
     }
 
@@ -57,7 +54,6 @@ impl AuthService {
             secret,
             otpauth_url,
             recovery_codes,
-            ..Default::default()
         })
     }
 
@@ -74,8 +70,12 @@ impl AuthService {
         )? {
             return Err(AuthError::InvalidSecondFactor);
         }
-        self.queries.users_set_two_factor_enabled(1, user_id).await?;
-        self.queries.jwt_tokens_blacklist_all_by_user(user_id).await?;
+        self.queries
+            .users_set_two_factor_enabled(1, user_id)
+            .await?;
+        self.queries
+            .jwt_tokens_blacklist_all_by_user(user_id)
+            .await?;
         Ok(())
     }
 
@@ -94,8 +94,12 @@ impl AuthService {
         self.verify_stored_second_factor(&user, &setting, code, code)
             .await?;
         self.queries.two_factor_delete_by_user_id(user_id).await?;
-        self.queries.users_set_two_factor_enabled(0, user_id).await?;
-        self.queries.jwt_tokens_blacklist_all_by_user(user_id).await?;
+        self.queries
+            .users_set_two_factor_enabled(0, user_id)
+            .await?;
+        self.queries
+            .jwt_tokens_blacklist_all_by_user(user_id)
+            .await?;
         Ok(())
     }
 
@@ -118,10 +122,7 @@ impl AuthService {
         self.queries
             .two_factor_replace_recovery_codes(&encoded, user_id)
             .await?;
-        Ok(RecoveryCodes {
-            recovery_codes,
-            ..Default::default()
-        })
+        Ok(RecoveryCodes { recovery_codes })
     }
 
     pub(super) async fn verify_login_second_factor(

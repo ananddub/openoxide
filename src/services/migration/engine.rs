@@ -80,9 +80,13 @@ pub enum CopyMode {
 pub enum GateVerdict {
     Pass,
     /// Engine refuses raw copy outright (unknown db_type, no clean path).
-    RefuseRawCopy { reason: String },
+    RefuseRawCopy {
+        reason: String,
+    },
     /// Gate failed at runtime (still running, dirty, version mismatch).
-    Blocked { reason: String },
+    Blocked {
+        reason: String,
+    },
 }
 
 /// Normalise a docker image reference to a comparable version token. Only a
@@ -194,10 +198,13 @@ pub fn decide_copy_mode(
         };
     }
     let clean = match clean_evidence {
-        CleanEvidence::PgControldata(out) => pg_clean_shutdown(&out),
-        CleanEvidence::MySqlLogTail(out) => mysql_clean_shutdown(&out),
-        CleanEvidence::MongoLock(out) => mongo_clean_lock(&out),
-        CleanEvidence::Redis { aof_tail, rdb_present } => redis_persisted(aof_tail, rdb_present),
+        CleanEvidence::PgControldata(out) => pg_clean_shutdown(out),
+        CleanEvidence::MySqlLogTail(out) => mysql_clean_shutdown(out),
+        CleanEvidence::MongoLock(out) => mongo_clean_lock(out),
+        CleanEvidence::Redis {
+            aof_tail,
+            rdb_present,
+        } => redis_persisted(aof_tail, rdb_present),
         CleanEvidence::LibsqlWal(wal_size) => libsql_checkpointed(wal_size),
     };
     if !clean {
@@ -346,9 +353,15 @@ mod tests {
         assert!(pg_clean_shutdown(
             "pg_control version number:            1300\nDatabase cluster state:  shut down\n"
         ));
-        assert!(!pg_clean_shutdown("Database cluster state:  in production\n"));
-        assert!(!pg_clean_shutdown("Database cluster state:           shut down in recovery\n"));
-        assert!(!pg_clean_shutdown("bash: pg_controldata: command not found"));
+        assert!(!pg_clean_shutdown(
+            "Database cluster state:  in production\n"
+        ));
+        assert!(!pg_clean_shutdown(
+            "Database cluster state:           shut down in recovery\n"
+        ));
+        assert!(!pg_clean_shutdown(
+            "bash: pg_controldata: command not found"
+        ));
     }
 
     #[test]

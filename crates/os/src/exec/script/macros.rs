@@ -104,6 +104,12 @@ macro_rules! __pipeline_munch {
         $crate::__pipeline_munch!($p, $($rest)*);
     };
 
+    // 4b. pipefail
+    ($p:ident, pipefail $pf:expr; $($rest:tt)*) => {
+        $p = $p.pipefail($pf);
+        $crate::__pipeline_munch!($p, $($rest)*);
+    };
+
     // 5. verbose_headers
     ($p:ident, verbose_headers $vh:expr; $($rest:tt)*) => {
         $p = $p.verbose_headers($vh);

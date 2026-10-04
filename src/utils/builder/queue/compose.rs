@@ -10,7 +10,7 @@ use crate::{
             compose::{ComposeBuilder, adapter::ComposeSpecAdapter},
             custom_type::IdType,
             hash_state::ApplicationState,
-            queue::queue::BuilderQueue,
+            queue::dispatcher::BuilderQueue,
         },
     },
 };
@@ -32,9 +32,7 @@ impl BuilderQueue {
 
         let q = resolve::<crate::db::queries::FlashQueries>()
             .await
-            .map_err(|e| {
-                BuilderError::Execution(format!("could not resolve FlashQueries: {e}"))
-            })?;
+            .map_err(|e| BuilderError::Execution(format!("could not resolve FlashQueries: {e}")))?;
         let ctx = q
             .compose_get_deployment_context(compose_id)
             .await
@@ -48,9 +46,9 @@ impl BuilderQueue {
         let state = resolve::<ApplicationState>().await.map_err(|e| {
             BuilderError::Execution(format!("could not resolve application state: {e}"))
         })?;
-        state.reset_default(compose_key.clone(), environment_id, project_id);
+        state.reset_default(compose_key, environment_id, project_id);
         let cancel = state
-            .cancellation_token(compose_key.clone())
+            .cancellation_token(compose_key)
             .unwrap_or_else(CancellationToken::new);
 
         let executor = self

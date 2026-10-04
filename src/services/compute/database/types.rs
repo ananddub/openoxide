@@ -1,21 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-use crate::flash_gen::service_database::{
-    DatabaseGetByIdRow, ListDatabasesByEnvironmentFullRow,
-};
+use crate::flash_gen::service_database::{DatabaseGetByIdRow, ListDatabasesByEnvironmentFullRow};
 
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    Serialize,
-    Deserialize,
-    sqlx::Type,
-    ts_rs::TS,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(rename_all = "lowercase")]
 pub enum DatabaseKind {
     Postgres,

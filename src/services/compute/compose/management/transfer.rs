@@ -11,7 +11,7 @@ use crate::{
         ComposeMountCreateParams, ComposePatchCreateParams,
     },
     flash_gen::domains::DomainsCreateAndReturnParams,
-    flash_gen::models::{Domains, Mounts, Patches, ServiceGit, ServiceCompose, Services},
+    flash_gen::models::{Domains, Mounts, Patches, ServiceCompose, ServiceGit, Services},
     flash_gen::service_compose::CreateServiceComposeParams,
     flash_gen::service_git::{
         SetBitbucketSourceParams, SetCustomGitSourceParams, SetGiteaSourceParams,
@@ -174,7 +174,10 @@ impl ComposeTransferService {
         let git = self.queries.get_service_git_by_i_d(id).await.ok();
         let record = ComposeRecord::from((service, ext, git));
         self.cache
-            .insert(CacheKey::Compose(id), CacheEnum::Compose(record.clone()))
+            .insert(
+                CacheKey::Compose(id),
+                CacheEnum::Compose(Box::new(record.clone())),
+            )
             .await;
         Ok(record)
     }
@@ -441,15 +444,13 @@ impl ComposeExportProject {
     ) -> Self {
         // Source type resolution mirrors ComposeGetSpecRow: the service_git
         // row wins, otherwise RAW/DROP derive from the stored compose file.
-        let source_type = git
-            .map(|git| git.source_type.clone())
-            .unwrap_or_else(|| {
-                if ext.compose_file.is_empty() {
-                    "DROP".into()
-                } else {
-                    "RAW".into()
-                }
-            });
+        let source_type = git.map(|git| git.source_type.clone()).unwrap_or_else(|| {
+            if ext.compose_file.is_empty() {
+                "DROP".into()
+            } else {
+                "RAW".into()
+            }
+        });
         Self {
             id: Some(service.id),
             name: service.name.clone(),

@@ -1,4 +1,4 @@
-use super::application::ApplicationBuilder;
+use super::builder::ApplicationBuilder;
 use crate::utils::builder::spec::{ApplicationSpec, BuilderEvent};
 use crate::utils::exec::ExecResult;
 use tokio_util::sync::CancellationToken;

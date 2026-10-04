@@ -1,7 +1,7 @@
 use crate::utils::builder::spec::{
     ApplicationSpec, HealthSpec, MountKind, StructuredMiddlewareSpec,
 };
-use crate::utils::traefik::{middleware::Middleware, traefik::TraefikBuilder};
+use crate::utils::traefik::{builder::TraefikBuilder, middleware::Middleware};
 use serde::Serialize;
 use std::collections::BTreeMap;
 

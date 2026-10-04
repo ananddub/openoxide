@@ -88,9 +88,8 @@ impl ServerController {
                 "selected SSH key has no private key",
             ));
         }
-        let port = u16::try_from(server.port).map_err(|_| {
-            ConnectError::invalid_argument("SSH port must be between 0 and 65535")
-        })?;
+        let port = u16::try_from(server.port)
+            .map_err(|_| ConnectError::invalid_argument("SSH port must be between 0 and 65535"))?;
         let host_policy = host_key_policy(id, host_key);
         let auth = SshAuth::key_pair(key.private_key, key.public_key);
         let is_root = server.username == "root";
@@ -116,10 +115,10 @@ impl ServerController {
     /// overwrites) once a pin exists. Failures are logged but do not abort the
     /// surrounding setup/audit flow.
     pub(super) async fn capture_and_store_host_key(&self, id: i64, executor: &RemoteExecutor) {
-        if let Ok(existing) = self.queries.servers_get_host_key(id).await {
-            if !existing.host_key_fingerprint.trim().is_empty() {
-                return;
-            }
+        if let Ok(existing) = self.queries.servers_get_host_key(id).await
+            && !existing.host_key_fingerprint.trim().is_empty()
+        {
+            return;
         }
         match executor.capture_host_key().await {
             Ok(captured) => {

@@ -121,6 +121,12 @@ flash-apply:
 docker-build-agent:
     docker build -f Dockerfile.agent -t openoxide-agent:latest .
 
+# Publish Agent: build, tag latest+dev, push to Docker Hub, restart local agent
+publish-agent:
+    docker build -f Dockerfile.agent -t dubeyanand/openoxide-agent:latest -t dubeyanand/openoxide-agent:dev .
+    docker push dubeyanand/openoxide-agent:latest
+    docker compose -f docker-compose.dev.yml up -d --no-build openoxide-agent
+
 # Start the Agent container
 up-agent:
     docker compose -f docker-compose.agent.yml up -d --build

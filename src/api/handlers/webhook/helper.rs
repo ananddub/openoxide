@@ -18,7 +18,9 @@ pub fn parse_provider(
         ::buffa::EnumValue::Known(ProtoWebhookProviderType::Bitbucket) => {
             Ok(GitProviderKind::Bitbucket)
         }
-        _ => Err(ConnectError::invalid_argument("unsupported webhook provider")),
+        _ => Err(ConnectError::invalid_argument(
+            "unsupported webhook provider",
+        )),
     }
 }
 
@@ -45,7 +47,6 @@ pub fn outcome_to_proto(outcome: DispatchOutcome) -> IncomingWebhookDispatchOutc
         previews_removed: outcome.previews_removed as i64,
         previews_skipped_permission: outcome.previews_skipped_permission as i64,
         previews_skipped_limit: outcome.previews_skipped_limit as i64,
-        ..Default::default()
     }
 }
 
@@ -112,8 +113,6 @@ pub fn infer_event_name(provider: GitProviderKind, value: &serde_json::Value) ->
         GitProviderKind::Gitlab => {
             if value.get("object_kind").and_then(|v| v.as_str()) == Some("merge_request") {
                 "merge request hook".into()
-            } else if value.get("ref").is_some() {
-                "push hook".into()
             } else {
                 "push hook".into()
             }

@@ -18,7 +18,11 @@ impl ProjectService for ProjectController {
         ctx: RequestContext,
         request: ServiceRequest<'_, GetProjectRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ProjectProto> + Send + use<'a>> {
-        let project = self.service.get_by_id(request.id).await.map_err(map_db_error)?;
+        let project = self
+            .service
+            .get_by_id(request.id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(project_to_proto(project))
     }
 
@@ -36,7 +40,7 @@ impl ProjectService for ProjectController {
             .await
         {
             let projects = cached.into_iter().map(project_to_proto).collect();
-            return Response::ok(ListProjectsResponse { projects, ..Default::default() });
+            return Response::ok(ListProjectsResponse { projects });
         }
 
         let items = self
@@ -53,7 +57,7 @@ impl ProjectService for ProjectController {
             .await;
 
         let projects = items.into_iter().map(project_to_proto).collect();
-        Response::ok(ListProjectsResponse { projects, ..Default::default() })
+        Response::ok(ListProjectsResponse { projects })
     }
 
     #[permission(Project, CanCreate)]
@@ -65,11 +69,7 @@ impl ProjectService for ProjectController {
         let org_id = auth.organization_id;
         let mut input = request.to_owned_message();
         input.organization_id = org_id;
-        let project = self
-            .service
-            .create(input)
-            .await
-            .map_err(map_db_error)?;
+        let project = self.service.create(input).await.map_err(map_db_error)?;
         self.cache.invalidate(&CacheKey::ProjectsList(org_id)).await;
         Response::ok(project_to_proto(project))
     }
@@ -81,7 +81,11 @@ impl ProjectService for ProjectController {
         request: ServiceRequest<'_, UpdateProjectRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ProjectProto> + Send + use<'a>> {
         let dto = request.to_owned_message();
-        let project = self.service.update(dto.id, dto).await.map_err(map_db_error)?;
+        let project = self
+            .service
+            .update(dto.id, dto)
+            .await
+            .map_err(map_db_error)?;
         self.cache.invalidate_all().await;
         Response::ok(project_to_proto(project))
     }
@@ -92,12 +96,16 @@ impl ProjectService for ProjectController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DeleteProjectRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.delete(request.id).await.map_err(map_db_error)?;
+        self.service
+            .delete(request.id)
+            .await
+            .map_err(map_db_error)?;
 
-        if let Ok(runner) = auto_di::resolve::<crate::services::automation::schedule::ScheduleRunner>().await {
-            if let Err(error) = runner.refresh_jobs().await {
-                tracing::error!(%error, "could not refresh scheduler after project deletion");
-            }
+        if let Ok(runner) =
+            auto_di::resolve::<crate::services::automation::schedule::ScheduleRunner>().await
+            && let Err(error) = runner.refresh_jobs().await
+        {
+            tracing::error!(%error, "could not refresh scheduler after project deletion");
         }
 
         self.cache.invalidate_all().await;

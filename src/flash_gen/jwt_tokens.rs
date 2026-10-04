@@ -3,8 +3,8 @@
 
 use chrono::{DateTime, Utc};
 
-use super::models::*;
 use super::db::Queries;
+use super::models::*;
 
 #[derive(Debug, Clone, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct JwtTokensGetAllRow {
@@ -63,9 +63,7 @@ pub struct JwtTokensInsertTokenParams {
 
 impl Queries {
     /// JwtTokensGetAll
-    pub async fn jwt_tokens_get_all(
-        &self,
-    ) -> Result<Vec<JwtTokensGetAllRow>, sqlx::Error> {
+    pub async fn jwt_tokens_get_all(&self) -> Result<Vec<JwtTokensGetAllRow>, sqlx::Error> {
         sqlx::query_as::<_, JwtTokensGetAllRow>(
             "SELECT id AS id, jti AS jti, role AS role, user_id AS user_id, is_blacklist AS is_blacklist, blacklist_at AS blacklist_at, expired_at AS expired_at, created_at AS created_at, updated_at AS updated_at FROM jwt_tokens;"
         )
@@ -74,10 +72,7 @@ impl Queries {
     }
 
     /// JwtTokensGetById
-    pub async fn jwt_tokens_get_by_id(
-        &self,
-        id: i64,
-    ) -> Result<JwtTokensGetByIdRow, sqlx::Error> {
+    pub async fn jwt_tokens_get_by_id(&self, id: i64) -> Result<JwtTokensGetByIdRow, sqlx::Error> {
         sqlx::query_as::<_, JwtTokensGetByIdRow>(
             "SELECT id AS id, jti AS jti, role AS role, user_id AS user_id, is_blacklist AS is_blacklist, blacklist_at AS blacklist_at, expired_at AS expired_at, created_at AS created_at, updated_at AS updated_at FROM jwt_tokens WHERE id = ?;"
         )
@@ -96,12 +91,12 @@ impl Queries {
         )
         .bind(&params.jti)
         .bind(&params.role)
-        .bind(&params.user_id)
-        .bind(&params.is_blacklist)
-        .bind(&params.blacklist_at)
-        .bind(&params.expired_at)
-        .bind(&params.created_at)
-        .bind(&params.updated_at)
+        .bind(params.user_id)
+        .bind(params.is_blacklist)
+        .bind(params.blacklist_at)
+        .bind(params.expired_at)
+        .bind(params.created_at)
+        .bind(params.updated_at)
         .execute(&self.pool)
         .await?;
         Ok(())
@@ -117,37 +112,29 @@ impl Queries {
         )
         .bind(&params.jti)
         .bind(&params.role)
-        .bind(&params.user_id)
-        .bind(&params.is_blacklist)
-        .bind(&params.blacklist_at)
-        .bind(&params.expired_at)
-        .bind(&params.created_at)
-        .bind(&params.updated_at)
-        .bind(&params.id)
+        .bind(params.user_id)
+        .bind(params.is_blacklist)
+        .bind(params.blacklist_at)
+        .bind(params.expired_at)
+        .bind(params.created_at)
+        .bind(params.updated_at)
+        .bind(params.id)
         .execute(&self.pool)
         .await?;
         Ok(())
     }
 
     /// JwtTokensDelete
-    pub async fn jwt_tokens_delete(
-        &self,
-        id: i64,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
-            "DELETE FROM jwt_tokens WHERE id = ?;"
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await?;
+    pub async fn jwt_tokens_delete(&self, id: i64) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM jwt_tokens WHERE id = ?;")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 
     /// JwtTokensBlacklistByJti
-    pub async fn jwt_tokens_blacklist_by_jti(
-        &self,
-        jti: &str,
-    ) -> Result<(), sqlx::Error> {
+    pub async fn jwt_tokens_blacklist_by_jti(&self, jti: &str) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = strftime('%s','now') WHERE jti = ?;"
         )
@@ -158,10 +145,7 @@ impl Queries {
     }
 
     /// JwtTokensBlacklistAllByUser
-    pub async fn jwt_tokens_blacklist_all_by_user(
-        &self,
-        user_id: i64,
-    ) -> Result<(), sqlx::Error> {
+    pub async fn jwt_tokens_blacklist_all_by_user(&self, user_id: i64) -> Result<(), sqlx::Error> {
         sqlx::query(
             "UPDATE jwt_tokens SET is_blacklist = 1, blacklist_at = strftime('%s','now') WHERE user_id = ? AND is_blacklist = 0;"
         )
@@ -181,8 +165,8 @@ impl Queries {
         )
         .bind(&params.jti)
         .bind(&params.role)
-        .bind(&params.user_id)
-        .bind(&params.expired_at)
+        .bind(params.user_id)
+        .bind(params.expired_at)
         .bind(&params.session_id)
         .bind(&params.token_kind)
         .execute(&self.pool)
@@ -196,7 +180,7 @@ impl Queries {
         jti: &str,
     ) -> Result<Option<String>, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, Option<String>>(
-            "SELECT session_id FROM jwt_tokens WHERE jti = ?;"
+            "SELECT session_id FROM jwt_tokens WHERE jti = ?;",
         )
         .bind(jti)
         .fetch_one(&self.pool)
@@ -233,10 +217,7 @@ impl Queries {
     }
 
     /// JwtTokensIsTokenActive
-    pub async fn jwt_tokens_is_token_active(
-        &self,
-        jti: &str,
-    ) -> Result<bool, sqlx::Error> {
+    pub async fn jwt_tokens_is_token_active(&self, jti: &str) -> Result<bool, sqlx::Error> {
         sqlx::query_scalar::<sqlx::Sqlite, bool>(
             "SELECT EXISTS(SELECT 1 FROM jwt_tokens WHERE jti = ? AND COALESCE(is_blacklist, 0) = 0 AND expired_at > strftime('%s','now'));"
         )
@@ -244,5 +225,4 @@ impl Queries {
         .fetch_one(&self.pool)
         .await
     }
-
 }

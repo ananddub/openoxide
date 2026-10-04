@@ -1,0 +1,26 @@
+{
+  "portfolio": [
+    { "id": 90123, "domain": "example.com" },
+    { "id": 90124, "domain": "second.com" }
+  ],
+  "portfolio_data": {
+    "data": [{ "id": 90123, "domain": "example.com" }],
+    "totalPages": 1
+  },
+  "zone": [
+    {
+      "name": "example.com",
+      "type": "A",
+      "ttl": 300,
+      "records": [{ "content": "192.0.2.1" }, { "content": "192.0.2.2" }]
+    },
+    {
+      "name": "smtp.example.com",
+      "type": "MX",
+      "ttl": 300,
+      "records": [{ "content": "mail.example.com", "priority": 10 }]
+    }
+  ],
+  "ack": { "message": "Operation success" },
+  "unauthorized": { "message": "Invalid API token", "error": [{ "code": 401 }] }
+}

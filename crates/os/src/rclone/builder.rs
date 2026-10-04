@@ -66,6 +66,7 @@ pub struct RcloneBuilder {
     log_file: Option<String>,
     log_level: Option<String>,
     stats: Option<String>,
+    progress: bool,
 
     recursive: bool,
     files_only: bool,
@@ -100,6 +101,7 @@ impl RcloneBuilder {
             log_file: None,
             log_level: None,
             stats: None,
+            progress: false,
             recursive: false,
             files_only: false,
             list_format: None,
@@ -224,6 +226,13 @@ impl RcloneBuilder {
         self
     }
 
+    /// Show a live progress meter (`--progress`), useful when streaming output
+    /// to a UI instead of plain logs.
+    pub fn progress(mut self) -> Self {
+        self.progress = true;
+        self
+    }
+
     pub fn recursive(mut self) -> Self {
         self.recursive = true;
         self
@@ -244,7 +253,7 @@ impl RcloneBuilder {
         self
     }
 
-    pub fn build(self) -> (Vec<String>, HashMap<String, String>) {
+    pub fn build(&self) -> (Vec<String>, HashMap<String, String>) {
         let mut args = Vec::new();
         let mut envs = HashMap::new();
 
@@ -316,6 +325,9 @@ impl RcloneBuilder {
         if let Some(ref st) = self.stats {
             args.push(format!("--stats={}", st));
         }
+        if self.progress {
+            args.push("--progress".to_string());
+        }
 
         if self.recursive {
             args.push("--recursive".into());
@@ -345,7 +357,7 @@ impl RcloneBuilder {
         (args, envs)
     }
 
-    pub fn to_command_string(self) -> String {
+    pub fn to_command_string(&self) -> String {
         let (args, envs) = self.build();
         let env_string = envs
             .into_iter()

@@ -18,7 +18,9 @@ impl TerminalService for TerminalController {
         &self,
         ctx: RequestContext,
         request: ServiceRequest<'_, OpenTerminalRequest>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<TerminalEvent> + Send + use<>>> {
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<impl connectrpc::Encodable<TerminalEvent> + Send + use<>>,
+    > {
         let request = request.to_owned_message();
         let kind = match request.kind {
             ::buffa::EnumValue::Known(kind) if kind != TerminalKind::Unspecified => kind,

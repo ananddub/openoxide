@@ -1,4 +1,3 @@
-
 // Required by pipeline! macro — $crate::ScriptPipeline and $crate::shell_single_quote
 pub use utils::exec::script::ScriptPipeline;
 #[doc(hidden)]
@@ -8,6 +7,7 @@ pub mod api;
 pub mod core;
 pub mod db;
 // FlashORM-generated, schema-safe SQLite query layer.
+#[allow(non_snake_case)]
 pub mod flash_gen;
 pub mod services;
 pub mod utils;

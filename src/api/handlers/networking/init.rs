@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 
-use crate::services::networking::diagnostics::{CdnPurgeService, NetworkDiagnosticService, RootNetworkService};
+use crate::services::networking::diagnostics::{
+    CdnPurgeService, NetworkDiagnosticService, RootNetworkService,
+};
 
 pub struct NetworkingController {
     pub(super) diagnostics: Arc<NetworkDiagnosticService>,

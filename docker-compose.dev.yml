@@ -102,11 +102,11 @@ services:
     # The agent shells out to the docker CLI, whose plugin grandchildren re-parent
     # to PID 1 when the shell exits. init gives the container a zombie reaper.
     init: true
-    # Direct host shell: reading the namespace symlinks under /host/proc/1/ns/*
-    # is ptrace-gated (CAP_SYS_PTRACE) and the setns() itself needs CAP_SYS_ADMIN.
-    cap_add:
-      - SYS_ADMIN
-      - SYS_PTRACE
+    # Full privileged: the direct host shell setns()'s into PID 1's namespaces,
+    # which the default seccomp/apparmor profile blocks even with SYS_ADMIN +
+    # SYS_PTRACE. The agent already mounts the Docker socket (host-root
+    # equivalent), so privileged adds no meaningful attack surface.
+    privileged: true
     # The kernel will not setns() upward into an ancestor PID namespace, so the
     # agent has to start in the host's for the shell to see host PIDs.
     pid: host

@@ -32,10 +32,10 @@ pub async fn build_redis_stack(
     let command: Option<Vec<String>>;
     if let Some(c) = &command_row {
         let mut full = c.split_whitespace().map(String::from).collect::<Vec<_>>();
-        if let Some(a_str) = &db.args {
-            if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
-                full.extend(parsed_args);
-            }
+        if let Some(a_str) = &db.args
+            && let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str)
+        {
+            full.extend(parsed_args);
         }
         command = Some(full);
     } else if let Some(a_str) = &db.args {

@@ -41,6 +41,13 @@ impl<'a> ArchiveCreateBuilder<'a> {
         self
     }
 
+    /// Write the archive to stdout (`tar cf -`) instead of a file, for piping
+    /// into another command.
+    pub fn to_stdout(mut self) -> Self {
+        self.archive = "-".into();
+        self
+    }
+
     pub fn entry_from(mut self, base: impl IntoCommand, path: impl IntoCommand) -> Self {
         self.entries
             .push((Some(base.build_str()), path.build_str()));

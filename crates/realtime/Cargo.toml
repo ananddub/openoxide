@@ -2,7 +2,8 @@
 name = "sqlite_realtime"
 version = "0.1.0"
 edition = "2024"
-license = "Apache-2.0"
+license = "MIT"
+description = "Change-notify bridge between SQLite databases and async Rust consumers"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }

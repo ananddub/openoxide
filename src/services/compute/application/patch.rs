@@ -79,7 +79,9 @@ impl PatchService {
 
     pub async fn list(&self, application_id: i64) -> sqlx::Result<Vec<Patches>> {
         self.ensure_application(application_id).await?;
-        self.queries.patches_list_by_application(application_id).await
+        self.queries
+            .patches_list_by_application(application_id)
+            .await
     }
 
     pub async fn create(
@@ -96,9 +98,7 @@ impl PatchService {
             content: input.content,
             service_id: application_id,
         };
-        self.queries
-            .patches_create_for_application(&params)
-            .await
+        self.queries.patches_create_for_application(&params).await
     }
 
     pub async fn update(
@@ -117,9 +117,7 @@ impl PatchService {
             id,
             service_id: application_id,
         };
-        self.queries
-            .patches_update_for_application(&params)
-            .await
+        self.queries.patches_update_for_application(&params).await
     }
 
     pub async fn delete(&self, application_id: i64, id: i64) -> sqlx::Result<bool> {

@@ -179,10 +179,10 @@ impl DeploymentService {
                 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
                 let watcher_res = RecommendedWatcher::new(
                     move |res: Result<notify::Event, notify::Error>| {
-                        if let Ok(event) = res {
-                            if event.kind.is_modify() {
-                                let _ = event_tx.blocking_send(());
-                            }
+                        if let Ok(event) = res
+                            && event.kind.is_modify()
+                        {
+                            let _ = event_tx.blocking_send(());
                         }
                     },
                     notify::Config::default(),
@@ -201,6 +201,14 @@ impl DeploymentService {
             };
 
             loop {
+                // The viewer can disconnect at any time; without this the
+                // file handle, inotify watcher, and buffer stay alive until
+                // the deployment status leaves RUNNING/QUEUED — forever if
+                // the deployment is stuck.
+                if sender.is_closed() {
+                    break;
+                }
+
                 let status = queries
                     .deployments_get_status(deployment_id)
                     .await
@@ -248,10 +256,10 @@ impl DeploymentService {
                 }
             }
 
-            if !buffer.is_empty() {
-                if let Ok(line) = String::from_utf8(buffer) {
-                    let _ = sender.send(line).await;
-                }
+            if !buffer.is_empty()
+                && let Ok(line) = String::from_utf8(buffer)
+            {
+                let _ = sender.send(line).await;
             }
 
             drop(watcher);

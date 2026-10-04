@@ -6,7 +6,7 @@ import {
 	Ban,
 	Terminal,
 	KeyRound,
-	Lock,
+	Pencil,
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {IconTooltip} from '#/components/shared/icon-tooltip';
@@ -156,14 +156,14 @@ export function DatabaseHeaderActions({
 				</IconTooltip>
 			)}
 			{onOpenCredentials && (
-				<IconTooltip label="Credentials">
+				<IconTooltip label="Edit credentials">
 					<Button
 						variant="ghost"
 						size="icon"
-						aria-label="Credentials"
+						aria-label="Edit credentials"
 						onClick={onOpenCredentials}
 						className={iconBtn}>
-						<Lock className="size-4" />
+						<Pencil className="size-4" />
 					</Button>
 				</IconTooltip>
 			)}

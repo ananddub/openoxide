@@ -1,5 +1,5 @@
+use super::builder::TraefikBuilder;
 use super::tls::TlsConfig;
-use super::traefik::TraefikBuilder;
 
 pub struct RouterBuilder {
     pub(crate) builder: TraefikBuilder,

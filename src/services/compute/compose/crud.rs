@@ -49,13 +49,13 @@ impl ComposeService {
                     }
                 }
 
-                Ok::<_, sqlx::Error>(CacheEnum::Compose(record))
+                Ok::<_, sqlx::Error>(CacheEnum::Compose(Box::new(record)))
             })
             .await
             .map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
 
         if let CacheEnum::Compose(record) = res {
-            Ok(record)
+            Ok(*record)
         } else {
             Err(sqlx::Error::RowNotFound)
         }
@@ -160,7 +160,7 @@ impl ComposeService {
             .unwrap_or(&current.compose_file);
         let compose_type = match input.compose_type {
             Some(value) => value.as_str(),
-            None => ComposeType::from_str(&ext.compose_type)
+            None => ComposeType::from_str_opt(&ext.compose_type)
                 .unwrap_or(ComposeType::DockerCompose)
                 .as_str(),
         };
@@ -250,8 +250,7 @@ impl ComposeService {
             .mount_fetch_for_compose(id)
             .await
             .unwrap_or_default();
-        let volume_names =
-            crate::services::compute::cleanup::volume_names_from_mounts(&mounts);
+        let volume_names = crate::services::compute::cleanup::volume_names_from_mounts(&mounts);
 
         // Tear down the running resources in the background before removing the row.
         let app_name = record.app_name.clone();
@@ -412,10 +411,10 @@ pub fn detect_compose_file_content(record: &ComposeRecord) -> String {
     ];
 
     for path in &candidates {
-        if let Ok(content) = std::fs::read_to_string(path) {
-            if !content.trim().is_empty() {
-                return content;
-            }
+        if let Ok(content) = std::fs::read_to_string(path)
+            && !content.trim().is_empty()
+        {
+            return content;
         }
     }
 
@@ -424,17 +423,16 @@ pub fn detect_compose_file_content(record: &ComposeRecord) -> String {
 
 pub fn detect_compose_service_names(record: &ComposeRecord) -> Vec<String> {
     let content = detect_compose_file_content(record);
-    if !content.trim().is_empty() {
-        if let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(&content) {
-            if let Some(services) = value.get("services").and_then(|s| s.as_mapping()) {
-                let keys: Vec<String> = services
-                    .keys()
-                    .filter_map(|k| k.as_str().map(|s| s.to_string()))
-                    .collect();
-                if !keys.is_empty() {
-                    return keys;
-                }
-            }
+    if !content.trim().is_empty()
+        && let Ok(value) = serde_yaml::from_str::<serde_yaml::Value>(&content)
+        && let Some(services) = value.get("services").and_then(|s| s.as_mapping())
+    {
+        let keys: Vec<String> = services
+            .keys()
+            .filter_map(|k| k.as_str().map(|s| s.to_string()))
+            .collect();
+        if !keys.is_empty() {
+            return keys;
         }
     }
 

@@ -6,7 +6,18 @@ use crate::services::observability::monitoring::{
     service::MonitoringService,
 };
 
+/// Upper bound on one server's update/repair pass. A hung SSH executor (a KEX
+/// stall or a wedged remote daemon) would otherwise block this sequential loop
+/// indefinitely, freezing automatic updates for every later server. Kept under
+/// `AGENT_UPDATE_INTERVAL` so one stuck server can never overrun the next tick.
+const AGENT_UPDATE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(4 * 60);
+
 const AGENT_UPDATE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(5 * 60);
+/// One full staggered registry-check cycle: each server's `id % 12` slot is
+/// its five-minute tick within the hour, so a pull probe (the only check that
+/// makes the remote agent contact the registry) fires at most hourly and
+/// different servers never pull in the same tick.
+const REGISTRY_CHECK_SLOTS: i64 = 12;
 
 pub fn start(
     monitoring: Arc<MonitoringService>,
@@ -76,6 +87,7 @@ fn start_agent_updates(
     tokio::spawn(async move {
         let mut ticker = tokio::time::interval(AGENT_UPDATE_INTERVAL);
         ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        let mut tick: i64 = 0;
 
         loop {
             ticker.tick().await;
@@ -89,21 +101,36 @@ fn start_agent_updates(
                     continue;
                 }
             };
+            // Only this tick's slot of servers pay the registry-pull probe cost;
+            // the rest get the cheap self-inspect, which never reaches the
+            // remote registry.
+            let slot = tick.rem_euclid(REGISTRY_CHECK_SLOTS);
 
             for server_id in server_ids {
-                match lifecycle.update_agent_if_needed(server_id).await {
-                    Ok(true) => tracing::info!(
+                let check_registry = server_id.rem_euclid(REGISTRY_CHECK_SLOTS) == slot;
+                match tokio::time::timeout(
+                    AGENT_UPDATE_TIMEOUT,
+                    lifecycle.update_agent_if_needed(server_id, check_registry),
+                )
+                .await
+                {
+                    Err(_elapsed) => tracing::warn!(
+                        server_id,
+                        "automatic monitoring agent update timed out; skipping this tick"
+                    ),
+                    Ok(Ok(true)) => tracing::info!(
                         server_id,
                         "updated OpenOxide monitoring agent to the latest image"
                     ),
-                    Ok(false) => {}
-                    Err(error) => tracing::warn!(
+                    Ok(Ok(false)) => {}
+                    Ok(Err(error)) => tracing::warn!(
                         server_id,
                         %error,
                         "automatic monitoring agent update failed"
                     ),
                 }
             }
+            tick = tick.wrapping_add(1);
         }
     });
 }
@@ -113,6 +140,12 @@ async fn watch_server(
     monitoring: Arc<MonitoringService>,
     reconciler: Arc<MonitoringReconciler>,
 ) {
+    // Reconnect delay doubles per failed cycle up to one minute. Without it a
+    // down or flapping server is hammered every few seconds: each cycle is a
+    // fresh gRPC/TLS connect, a metrics RPC, and — since the agent is
+    // unreachable — a brand-new SSH handshake (KEX + sshd fork) on the remote
+    // host, which is itself a CPU spike generator.
+    let mut retry_delay = std::time::Duration::from_secs(3);
     loop {
         // Stop only if the server row is actually gone. `server_ids()` excludes
         // the local server, so it must not be used here — otherwise the local
@@ -122,6 +155,7 @@ async fn watch_server(
             monitoring.forget_agent(server_id);
             return;
         }
+        let mut healthy = false;
         match tokio::time::timeout(
             std::time::Duration::from_secs(10),
             monitoring.watch_container_states(server_id),
@@ -134,6 +168,7 @@ async fn watch_server(
                         .await
                     {
                         Ok(Ok(Some(snapshot))) => {
+                            healthy = true;
                             if let Err(error) = reconciler
                                 .apply_snapshot(server_id, &snapshot.containers)
                                 .await
@@ -161,21 +196,28 @@ async fn watch_server(
                 tracing::warn!(server_id, %error, "lifecycle stream connection timed out")
             }
         }
-        if agent_is_reachable(&monitoring, server_id).await {
-            tracing::debug!(
-                server_id,
-                "lifecycle stream dropped but agent still answers metrics; keeping server active"
-            );
-            reconciler.update_server_active(server_id).await;
-        } else if server_ssh_is_reachable(server_id).await {
-            tracing::debug!(
-                server_id,
-                "monitoring agent unavailable but SSH server is reachable; keeping server active"
-            );
-        } else if let Err(error) = reconciler.mark_offline(server_id).await {
-            tracing::warn!(server_id, %error, "could not mark disconnected server offline");
+        if healthy {
+            retry_delay = std::time::Duration::from_secs(3);
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        } else {
+            if agent_is_reachable(&monitoring, server_id).await {
+                tracing::debug!(
+                    server_id,
+                    "lifecycle stream dropped but agent still answers metrics; keeping server active"
+                );
+                reconciler.update_server_active(server_id).await;
+            } else if server_ssh_is_reachable(server_id).await {
+                tracing::debug!(
+                    server_id,
+                    "monitoring agent unavailable but SSH server is reachable; keeping server active"
+                );
+            } else if let Err(error) = reconciler.mark_offline(server_id).await {
+                tracing::warn!(server_id, %error, "could not mark disconnected server offline");
+            }
+            let delay = retry_delay;
+            retry_delay = (retry_delay * 2).min(std::time::Duration::from_secs(60));
+            tokio::time::sleep(delay).await;
         }
-        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
     }
 }
 
@@ -196,10 +238,7 @@ async fn server_exists(server_id: i64) -> bool {
 /// True when the agent still answers a metrics query — the surest sign the
 /// host is up, even if the lifecycle stream dropped and SSH is unavailable
 /// (as it always is for the local server).
-async fn agent_is_reachable(
-    monitoring: &Arc<MonitoringService>,
-    server_id: i64,
-) -> bool {
+async fn agent_is_reachable(monitoring: &Arc<MonitoringService>, server_id: i64) -> bool {
     tokio::time::timeout(
         std::time::Duration::from_secs(8),
         monitoring.server_history(server_id, 1),

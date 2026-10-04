@@ -21,7 +21,9 @@ use crate::services::compute::application::redirect::ApplicationRedirectResponse
 use crate::services::compute::application::security::ApplicationSecurityResponseDto;
 use crate::utils::builder::spec::MountType as SpecMountType;
 
-pub fn app_to_proto(value: crate::services::compute::application::ApplicationRecord) -> ApplicationProto {
+pub fn app_to_proto(
+    value: crate::services::compute::application::ApplicationRecord,
+) -> ApplicationProto {
     use crate::services::compute::database::crud::parse_json_string_vec;
     ApplicationProto {
         id: value.id,
@@ -72,7 +74,6 @@ pub fn app_to_proto(value: crate::services::compute::application::ApplicationRec
         args: value.args,
         watch_paths: value.watch_paths,
         enable_submodules: Some(value.enable_submodules),
-        ..Default::default()
     }
 }
 
@@ -135,7 +136,6 @@ pub fn operation_result(
     ApplicationOperation {
         application: app_to_proto(value.application).into(),
         operation: value.operation.as_str().into(),
-        ..Default::default()
     }
 }
 
@@ -166,7 +166,6 @@ pub fn port_to_proto(value: ApplicationPortResponseDto) -> ApplicationPort {
         publish_mode: publish_mode_to_proto(&value.publish_mode),
         application_id: value.application_id,
         created_at: value.created_at,
-        ..Default::default()
     }
 }
 
@@ -191,7 +190,6 @@ pub fn mount_to_proto(value: ApplicationMountResponseDto) -> ApplicationMount {
         application_id: value.application_id,
         created_at: value.created_at,
         updated_at: value.updated_at,
-        ..Default::default()
     }
 }
 
@@ -214,7 +212,6 @@ pub fn patch_to_proto(value: ApplicationPatchResponseDto) -> ApplicationPatch {
         application_id: value.application_id,
         created_at: value.created_at,
         updated_at: value.updated_at,
-        ..Default::default()
     }
 }
 
@@ -241,7 +238,6 @@ pub fn middleware_to_proto(value: ApplicationMiddlewareResponseDto) -> Applicati
             .map(|h| ApplicationMiddlewareHeader {
                 name: h.name,
                 value: h.value,
-                ..Default::default()
             })
             .collect(),
         average: value.average,
@@ -249,7 +245,6 @@ pub fn middleware_to_proto(value: ApplicationMiddlewareResponseDto) -> Applicati
         source_ranges: value.source_ranges,
         created_at: value.created_at,
         updated_at: value.updated_at,
-        ..Default::default()
     }
 }
 
@@ -263,7 +258,6 @@ pub fn redirect_to_proto(value: ApplicationRedirectResponseDto) -> ApplicationRe
         application_id: value.application_id,
         created_at: value.created_at,
         updated_at: value.updated_at,
-        ..Default::default()
     }
 }
 
@@ -274,7 +268,6 @@ pub fn security_to_proto(value: ApplicationSecurityResponseDto) -> ApplicationSe
         has_password: value.has_password,
         application_id: value.application_id,
         created_at: value.created_at,
-        ..Default::default()
     }
 }
 
@@ -287,7 +280,9 @@ pub fn protocol_from_proto(value: buffa::EnumValue<ApplicationPortProtocol>) -> 
     }
 }
 
-pub fn publish_mode_from_proto(value: buffa::EnumValue<ApplicationPortPublishMode>) -> PortPublishMode {
+pub fn publish_mode_from_proto(
+    value: buffa::EnumValue<ApplicationPortPublishMode>,
+) -> PortPublishMode {
     match value {
         buffa::EnumValue::Known(ApplicationPortPublishMode::Ingress) => PortPublishMode::Ingress,
         _ => PortPublishMode::Host,

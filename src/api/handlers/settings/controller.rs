@@ -21,7 +21,6 @@ impl SettingsService for SettingsController {
         let settings = self.service.get().await.map_err(map_error)?;
         Response::ok(SettingsGetSettingsResponse {
             settings: ::buffa::MessageField::some(settings_to_proto(settings)),
-            ..Default::default()
         })
     }
 
@@ -53,7 +52,6 @@ impl SettingsService for SettingsController {
         let settings = self.service.update(dto).await.map_err(map_error)?;
         Response::ok(SettingsUpdateSettingsResponse {
             settings: ::buffa::MessageField::some(settings_to_proto(settings)),
-            ..Default::default()
         })
     }
 }

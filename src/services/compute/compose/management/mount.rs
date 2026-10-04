@@ -120,7 +120,7 @@ fn normalize(
     content: Option<String>,
     mount_path: String,
 ) -> sqlx::Result<NormalizedMount> {
-    let mount_type = crate::utils::builder::spec::MountType::from_str(mount_type)
+    let mount_type = crate::utils::builder::spec::MountType::from_str_opt(mount_type)
         .ok_or_else(|| sqlx::Error::Protocol(format!("invalid mount type: {mount_type}")))?;
     let mut input = NormalizedMount {
         mount_type,

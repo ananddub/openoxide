@@ -404,8 +404,7 @@ impl DomainService {
             .list_by_compose(compose_id)
             .await
             .map_err(|e| format!("could not load domains: {e}"))?;
-        let v = ComposeType::try_from(compose_type.as_str())
-            .map_err(|e| format!("invalid compose type: {e}"))?;
+        let v = ComposeType::from(compose_type.as_str());
         match v {
             ComposeType::Stack => {
                 let labels = build_compose_service_labels(&app_name, &domains);
@@ -472,29 +471,26 @@ impl DomainService {
                 // RAW stacks keep their compose content in the database, so
                 // re-materialize the file when it is gone.
                 let raw_present = os.file(&compose_file_path).exists().run().await.is_ok();
-                if !raw_present {
-                    if let crate::utils::builder::compose::spec::ComposeSource::Raw { content } =
+                if !raw_present
+                    && let crate::utils::builder::compose::spec::ComposeSource::Raw { content } =
                         &spec.source
-                    {
-                        let _ = os.file(&compose_file_path).write(content).execute().await;
-                    }
+                {
+                    let _ = os.file(&compose_file_path).write(content).execute().await;
                 }
 
-                if let Ok(output) = os.file(&compose_file_path).read().execute().await {
-                    if output.status.success() {
-                        if let Ok(updated_yaml) =
-                            crate::utils::builder::compose::labels::inject_compose_yaml_labels(
-                                &output.stdout,
-                                &spec,
-                            )
-                        {
-                            let _ = os
-                                .file(&compose_file_path)
-                                .write(&updated_yaml)
-                                .execute()
-                                .await;
-                        }
-                    }
+                if let Ok(output) = os.file(&compose_file_path).read().execute().await
+                    && output.status.success()
+                    && let Ok(updated_yaml) =
+                        crate::utils::builder::compose::labels::inject_compose_yaml_labels(
+                            &output.stdout,
+                            &spec,
+                        )
+                {
+                    let _ = os
+                        .file(&compose_file_path)
+                        .write(&updated_yaml)
+                        .execute()
+                        .await;
                 }
 
                 // `compose up --env-file` hard-fails on a missing file; the
@@ -600,12 +596,11 @@ fn local_ip_addresses() -> Vec<String> {
         ("0.0.0.0:0", "8.8.8.8:80"),
         ("[::]:0", "[2001:4860:4860::8888]:53"),
     ] {
-        if let Ok(socket) = std::net::UdpSocket::bind(bind) {
-            if socket.connect(probe).is_ok() {
-                if let Ok(addr) = socket.local_addr() {
-                    ips.push(addr.ip().to_string());
-                }
-            }
+        if let Ok(socket) = std::net::UdpSocket::bind(bind)
+            && socket.connect(probe).is_ok()
+            && let Ok(addr) = socket.local_addr()
+        {
+            ips.push(addr.ip().to_string());
         }
     }
     ips

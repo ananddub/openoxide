@@ -1,18 +1,20 @@
 use buffa::MessageView;
-use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    ServerActionResult, ServerBackup, ServerCleanupExecution, ServerCleanupPolicy as CleanupPolicyProto,
-    ServerCleanupStatus, ServerManagement as ServerManagementProto, ServerManagementConfigureGpuRequest,
-    ServerManagementConfigureGpuResponse, ServerManagementGetRequest, ServerManagementGetResponse,
+    ServerActionResult, ServerBackup, ServerCleanupExecution,
+    ServerCleanupPolicy as CleanupPolicyProto, ServerCleanupStatus,
+    ServerManagement as ServerManagementProto, ServerManagementBackupRequest,
+    ServerManagementBackupResponse, ServerManagementConfigureGpuRequest,
+    ServerManagementConfigureGpuResponse, ServerManagementDiagnosticsRequest,
+    ServerManagementDiagnosticsResponse, ServerManagementGetRequest, ServerManagementGetResponse,
     ServerManagementListCleanupHistoryRequest, ServerManagementListCleanupHistoryResponse,
     ServerManagementRepairAuditRequest, ServerManagementRepairAuditResponse,
-    ServerManagementRunCleanupRequest, ServerManagementRunCleanupResponse,
-    ServerManagementService, ServerManagementServiceExt, ServerManagementUpdateRequest,
-    ServerManagementUpdateResponse, ServerManagementUpgradeRequest,
-    ServerManagementUpgradeResponse, ServerManagementBackupRequest,
-    ServerManagementBackupResponse, ServerManagementDiagnosticsRequest,
-    ServerManagementDiagnosticsResponse,
+    ServerManagementRunCleanupRequest, ServerManagementRunCleanupResponse, ServerManagementService,
+    ServerManagementServiceExt, ServerManagementUpdateRequest, ServerManagementUpdateResponse,
+    ServerManagementUpgradeRequest, ServerManagementUpgradeResponse,
 };
 
 use super::init::ServerManagementController;
@@ -68,11 +70,9 @@ macro_rules! management_to_proto {
                 networks: dto.cleanup_policy.networks,
                 volumes: dto.cleanup_policy.volumes,
                 packages: dto.cleanup_policy.packages,
-                ..Default::default()
             }),
             gpu_enabled: dto.gpu_enabled,
             updated_at: dto.updated_at,
-            ..Default::default()
         }
     }};
 }
@@ -84,7 +84,6 @@ macro_rules! action_result_to_proto {
             success: dto.success,
             stdout: dto.stdout,
             stderr: dto.stderr,
-            ..Default::default()
         }
     }};
 }
@@ -101,7 +100,6 @@ macro_rules! execution_to_proto {
             stderr: dto.stderr,
             started_at: dto.started_at,
             finished_at: dto.finished_at,
-            ..Default::default()
         }
     }};
 }
@@ -115,10 +113,13 @@ impl ServerManagementService for ServerManagementController {
         request: ServiceRequest<'_, ServerManagementGetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ServerManagementGetResponse> + Send + use<'a>>
     {
-        let management = self.management.get(request.id).await.map_err(map_db_error)?;
+        let management = self
+            .management
+            .get(request.id)
+            .await
+            .map_err(map_db_error)?;
         Response::ok(ServerManagementGetResponse {
             management: ::buffa::MessageField::some(management_to_proto!(management)),
-            ..Default::default()
         })
     }
 
@@ -127,9 +128,8 @@ impl ServerManagementService for ServerManagementController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, ServerManagementUpdateRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<ServerManagementUpdateResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<ServerManagementUpdateResponse> + Send + use<'a>>
+    {
         // The management service consumes a JSON document; build it from the
         // typed request instead of forwarding a raw envelope payload.
         let policy = request
@@ -166,7 +166,6 @@ impl ServerManagementService for ServerManagementController {
             .map_err(map_db_error)?;
         Response::ok(ServerManagementUpdateResponse {
             management: ::buffa::MessageField::some(management_to_proto!(management)),
-            ..Default::default()
         })
     }
 
@@ -185,7 +184,6 @@ impl ServerManagementService for ServerManagementController {
             .map_err(map_db_error)?;
         Response::ok(ServerManagementRepairAuditResponse {
             result: ::buffa::MessageField::some(action_result_to_proto!(result)),
-            ..Default::default()
         })
     }
 
@@ -204,7 +202,6 @@ impl ServerManagementService for ServerManagementController {
             .map_err(map_db_error)?;
         Response::ok(ServerManagementConfigureGpuResponse {
             result: ::buffa::MessageField::some(action_result_to_proto!(result)),
-            ..Default::default()
         })
     }
 
@@ -213,12 +210,12 @@ impl ServerManagementService for ServerManagementController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, ServerManagementRunCleanupRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ServerManagementRunCleanupResponse> + Send + use<'a>>
-    {
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<ServerManagementRunCleanupResponse> + Send + use<'a>,
+    > {
         let result = self.cleanup.run(request.id).await.map_err(map_db_error)?;
         Response::ok(ServerManagementRunCleanupResponse {
             result: ::buffa::MessageField::some(action_result_to_proto!(result)),
-            ..Default::default()
         })
     }
 
@@ -238,10 +235,7 @@ impl ServerManagementService for ServerManagementController {
             .into_iter()
             .map(|dto| execution_to_proto!(dto))
             .collect();
-        Response::ok(ServerManagementListCleanupHistoryResponse {
-            executions,
-            ..Default::default()
-        })
+        Response::ok(ServerManagementListCleanupHistoryResponse { executions })
     }
 
     #[permission(Server, CanCreate)]
@@ -258,7 +252,6 @@ impl ServerManagementService for ServerManagementController {
             .map_err(map_db_error)?;
         Response::ok(ServerManagementUpgradeResponse {
             result: ::buffa::MessageField::some(action_result_to_proto!(result)),
-            ..Default::default()
         })
     }
 
@@ -278,9 +271,7 @@ impl ServerManagementService for ServerManagementController {
             backup: ::buffa::MessageField::some(ServerBackup {
                 remote_path: backup.remote_path,
                 created_at: backup.created_at,
-                ..Default::default()
             }),
-            ..Default::default()
         })
     }
 
@@ -299,7 +290,6 @@ impl ServerManagementService for ServerManagementController {
             .map_err(map_db_error)?;
         Response::ok(ServerManagementDiagnosticsResponse {
             result: ::buffa::MessageField::some(action_result_to_proto!(result)),
-            ..Default::default()
         })
     }
 }

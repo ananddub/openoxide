@@ -4,8 +4,8 @@ use crate::api::connect::generated::openoxide::api::v1::{
     SwarmNode as SwarmNodeProto, SwarmNodeAvailability as ProtoSwarmNodeAvailability,
     SwarmNodeRole as ProtoSwarmNodeRole, SwarmRole as ProtoSwarmRole,
 };
-use crate::utils::docker::core::types::{NodeRole, SwarmRole};
 use crate::utils::docker::NodeInspect;
+use crate::utils::docker::core::types::{NodeRole, SwarmRole};
 use crate::utils::exec::ExecError;
 
 pub fn map_exec(error: ExecError) -> ConnectError {
@@ -62,6 +62,5 @@ pub fn node_to_proto(n: NodeInspect) -> SwarmNodeProto {
         reachability,
         ip_address: n.status.addr,
         engine_version: n.description.engine.engine_version,
-        ..Default::default()
     }
 }

@@ -1,4 +1,6 @@
-use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, SshKeyCreateKeyRequest, SshKeyCreateKeyResponse, SshKeyDeleteKeyRequest,
@@ -20,12 +22,13 @@ impl SshKeyService for SshKeyController {
         ctx: RequestContext,
         _query: ServiceRequest<'_, SshKeyListKeysRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<SshKeyListKeysResponse> + Send + use<'a>> {
-        let items = self.service.list(auth.organization_id).await.map_err(map_db_error)?;
+        let items = self
+            .service
+            .list(auth.organization_id)
+            .await
+            .map_err(map_db_error)?;
         let keys = items.into_iter().map(key_to_proto).collect();
-        Response::ok(SshKeyListKeysResponse {
-            keys,
-            ..Default::default()
-        })
+        Response::ok(SshKeyListKeysResponse { keys })
     }
 
     #[permission(Server, CanRead)]
@@ -41,7 +44,6 @@ impl SshKeyService for SshKeyController {
             .map_err(map_db_error)?;
         Response::ok(SshKeyGetKeyResponse {
             key: ::buffa::MessageField::some(key_to_proto(key)),
-            ..Default::default()
         })
     }
 
@@ -64,7 +66,6 @@ impl SshKeyService for SshKeyController {
             .map_err(map_db_error)?;
         Response::ok(SshKeyCreateKeyResponse {
             key: ::buffa::MessageField::some(key_to_proto(key)),
-            ..Default::default()
         })
     }
 
@@ -87,7 +88,6 @@ impl SshKeyService for SshKeyController {
             .map_err(map_db_error)?;
         Response::ok(SshKeyGenerateKeyResponse {
             key: ::buffa::MessageField::some(key_to_proto(key)),
-            ..Default::default()
         })
     }
 
@@ -106,7 +106,6 @@ impl SshKeyService for SshKeyController {
         Response::ok(SshKeyGeneratePairResponse {
             private_key,
             public_key,
-            ..Default::default()
         })
     }
 
@@ -129,7 +128,6 @@ impl SshKeyService for SshKeyController {
             .map_err(map_db_error)?;
         Response::ok(SshKeyUpdateKeyResponse {
             key: ::buffa::MessageField::some(key_to_proto(key)),
-            ..Default::default()
         })
     }
 

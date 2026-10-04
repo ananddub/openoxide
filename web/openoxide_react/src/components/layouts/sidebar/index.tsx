@@ -35,8 +35,9 @@ import {AccountSwitcher} from './account-switcher';
 import {SidebarNotifications} from './notification-bell';
 import {triggerSearch} from '#/components/layouts/topbar/search-bus';
 
-/** True only inside a service detail (or settings) — the rail swaps to
- * that context's rows there. Plain project pages keep the global menu. */
+/** True only inside a service detail, settings, or the remote-server
+ * surfaces — the rail swaps to that context's rows there. Plain project
+ * pages keep the global menu. */
 function usePageContextActive(): boolean {
 	const location = useLocation();
 	const seg = location.pathname.split('/').filter(Boolean);
@@ -44,6 +45,7 @@ function usePageContextActive(): boolean {
 		seg[0] === 'settings' ||
 		seg[0] === 'infra' ||
 		seg[0] === 'Deployments' ||
+		seg[0] === 'remote-servers' ||
 		(seg[0] === 'projects' && Boolean(seg[1]) && seg.length >= 4)
 	);
 }

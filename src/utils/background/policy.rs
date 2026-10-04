@@ -14,7 +14,7 @@ fn matches_field(field: &str, value: u32) -> bool {
         if item == "*" {
             true
         } else if let Some(step) = item.strip_prefix("*/").and_then(|v| v.parse::<u32>().ok()) {
-            step > 0 && value % step == 0
+            step > 0 && value.is_multiple_of(step)
         } else {
             item.parse::<u32>().ok() == Some(value)
         }

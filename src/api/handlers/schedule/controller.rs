@@ -1,16 +1,19 @@
-use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, ScheduleCreateScheduleRequest, ScheduleCreateScheduleResponse,
-    ScheduleDeleteScheduleRequest, ScheduleGetExecutionLogsRequest, ScheduleGetExecutionLogsResponse,
-    ScheduleGetLogsRequest, ScheduleGetLogsResponse, ScheduleGetRuntimePolicyRequest,
-    ScheduleGetRuntimePolicyResponse, ScheduleGetScheduleRequest, ScheduleGetScheduleResponse,
-    ScheduleListApplicationSchedulesRequest, ScheduleListApplicationSchedulesResponse,
-    ScheduleListComposeSchedulesRequest, ScheduleListComposeSchedulesResponse,
-    ScheduleListDatabaseSchedulesRequest, ScheduleListDatabaseSchedulesResponse,
-    ScheduleListExecutionsRequest, ScheduleListExecutionsResponse,
-    ScheduleListOrganizationSchedulesRequest, ScheduleListOrganizationSchedulesResponse,
-    ScheduleListSchedulesRequest, ScheduleListSchedulesResponse, ScheduleListServerSchedulesRequest,
+    ScheduleDeleteScheduleRequest, ScheduleGetExecutionLogsRequest,
+    ScheduleGetExecutionLogsResponse, ScheduleGetLogsRequest, ScheduleGetLogsResponse,
+    ScheduleGetRuntimePolicyRequest, ScheduleGetRuntimePolicyResponse, ScheduleGetScheduleRequest,
+    ScheduleGetScheduleResponse, ScheduleListApplicationSchedulesRequest,
+    ScheduleListApplicationSchedulesResponse, ScheduleListComposeSchedulesRequest,
+    ScheduleListComposeSchedulesResponse, ScheduleListDatabaseSchedulesRequest,
+    ScheduleListDatabaseSchedulesResponse, ScheduleListExecutionsRequest,
+    ScheduleListExecutionsResponse, ScheduleListOrganizationSchedulesRequest,
+    ScheduleListOrganizationSchedulesResponse, ScheduleListSchedulesRequest,
+    ScheduleListSchedulesResponse, ScheduleListServerSchedulesRequest,
     ScheduleListServerSchedulesResponse, ScheduleLog, SchedulePauseScheduleRequest,
     SchedulePauseScheduleResponse, ScheduleResumeScheduleRequest, ScheduleResumeScheduleResponse,
     ScheduleRunScheduleRequest, ScheduleRunScheduleResponse, ScheduleService, ScheduleServiceExt,
@@ -19,7 +22,8 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ScheduleUpdateScheduleRequest, ScheduleUpdateScheduleResponse,
 };
 use crate::core::cache::CacheKey;
-use crate::services::automation::schedule::schedule::{CreateScheduleDto, PatchScheduleDto};
+use crate::services::automation::schedule::service::{CreateScheduleDto, PatchScheduleDto};
+use crate::services::automation::schedule::types::RuntimePolicyUpdate;
 
 use super::helper::*;
 use super::init::ScheduleController;
@@ -35,10 +39,7 @@ impl ScheduleService for ScheduleController {
     {
         let items = self.service.list_enabled().await.map_err(map_sqlx_error)?;
         let schedules = items.into_iter().map(schedule_to_proto).collect();
-        Response::ok(ScheduleListSchedulesResponse {
-            schedules,
-            ..Default::default()
-        })
+        Response::ok(ScheduleListSchedulesResponse { schedules })
     }
 
     #[permission(Schedule, CanRead)]
@@ -48,10 +49,13 @@ impl ScheduleService for ScheduleController {
         request: ServiceRequest<'_, ScheduleGetScheduleRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ScheduleGetScheduleResponse> + Send + use<'a>>
     {
-        let schedule = self.service.get_by_id(request.id).await.map_err(map_sqlx_error)?;
+        let schedule = self
+            .service
+            .get_by_id(request.id)
+            .await
+            .map_err(map_sqlx_error)?;
         Response::ok(ScheduleGetScheduleResponse {
             schedule: ::buffa::MessageField::some(schedule_to_proto(schedule)),
-            ..Default::default()
         })
     }
 
@@ -68,8 +72,12 @@ impl ScheduleService for ScheduleController {
             cron_expression: request.cron_expression.to_owned(),
             app_name: request.app_name.map(str::to_owned),
             service_name: request.service_name.map(str::to_owned),
-            shell_type: request.shell_type.map(|v| shell_type_from_proto(v).to_owned()),
-            schedule_type: request.schedule_type.map(|v| schedule_type_from_proto(v).to_owned()),
+            shell_type: request
+                .shell_type
+                .map(|v| shell_type_from_proto(v).to_owned()),
+            schedule_type: request
+                .schedule_type
+                .map(|v| schedule_type_from_proto(v).to_owned()),
             schedule_action: request
                 .schedule_action
                 .map(|v| schedule_action_from_proto(v).to_owned()),
@@ -94,7 +102,6 @@ impl ScheduleService for ScheduleController {
         refresh_schedule_runner().await;
         Response::ok(ScheduleCreateScheduleResponse {
             schedule: ::buffa::MessageField::some(schedule_to_proto(created)),
-            ..Default::default()
         })
     }
 
@@ -111,8 +118,12 @@ impl ScheduleService for ScheduleController {
             cron_expression: request.cron_expression.map(str::to_owned),
             app_name: request.app_name.map(str::to_owned),
             service_name: request.service_name.map(str::to_owned),
-            shell_type: request.shell_type.map(|v| shell_type_from_proto(v).to_owned()),
-            schedule_type: request.schedule_type.map(|v| schedule_type_from_proto(v).to_owned()),
+            shell_type: request
+                .shell_type
+                .map(|v| shell_type_from_proto(v).to_owned()),
+            schedule_type: request
+                .schedule_type
+                .map(|v| schedule_type_from_proto(v).to_owned()),
             schedule_action: request
                 .schedule_action
                 .map(|v| schedule_action_from_proto(v).to_owned()),
@@ -134,7 +145,6 @@ impl ScheduleService for ScheduleController {
         refresh_schedule_runner().await;
         Response::ok(ScheduleUpdateScheduleResponse {
             schedule: ::buffa::MessageField::some(schedule_to_proto(updated)),
-            ..Default::default()
         })
     }
 
@@ -144,7 +154,10 @@ impl ScheduleService for ScheduleController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ScheduleDeleteScheduleRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.delete(request.id).await.map_err(map_sqlx_error)?;
+        self.service
+            .delete(request.id)
+            .await
+            .map_err(map_sqlx_error)?;
         self.cache.invalidate_all().await;
         refresh_schedule_runner().await;
         Response::ok(Empty::default())
@@ -157,10 +170,13 @@ impl ScheduleService for ScheduleController {
         request: ServiceRequest<'_, ScheduleRunScheduleRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ScheduleRunScheduleResponse> + Send + use<'a>>
     {
-        let run = self.service.run_now(request.id).await.map_err(map_sqlx_error)?;
+        let run = self
+            .service
+            .run_now(request.id)
+            .await
+            .map_err(map_sqlx_error)?;
         Response::ok(ScheduleRunScheduleResponse {
             result: ::buffa::MessageField::some(run_result_to_proto(run)),
-            ..Default::default()
         })
     }
 
@@ -180,7 +196,6 @@ impl ScheduleService for ScheduleController {
         refresh_schedule_runner().await;
         Response::ok(SchedulePauseScheduleResponse {
             schedule: ::buffa::MessageField::some(schedule_to_proto(schedule)),
-            ..Default::default()
         })
     }
 
@@ -200,7 +215,6 @@ impl ScheduleService for ScheduleController {
         refresh_schedule_runner().await;
         Response::ok(ScheduleResumeScheduleResponse {
             schedule: ::buffa::MessageField::some(schedule_to_proto(schedule)),
-            ..Default::default()
         })
     }
 
@@ -218,10 +232,7 @@ impl ScheduleService for ScheduleController {
             .await
             .map_err(map_sqlx_error)?;
         let schedules = items.into_iter().map(schedule_to_proto).collect();
-        Response::ok(ScheduleListApplicationSchedulesResponse {
-            schedules,
-            ..Default::default()
-        })
+        Response::ok(ScheduleListApplicationSchedulesResponse { schedules })
     }
 
     #[permission(Schedule, CanRead)]
@@ -238,10 +249,7 @@ impl ScheduleService for ScheduleController {
             .await
             .map_err(map_sqlx_error)?;
         let schedules = items.into_iter().map(schedule_to_proto).collect();
-        Response::ok(ScheduleListComposeSchedulesResponse {
-            schedules,
-            ..Default::default()
-        })
+        Response::ok(ScheduleListComposeSchedulesResponse { schedules })
     }
 
     #[permission(Schedule, CanRead)]
@@ -252,10 +260,7 @@ impl ScheduleService for ScheduleController {
     ) -> ServiceResult<
         impl connectrpc::Encodable<ScheduleListDatabaseSchedulesResponse> + Send + use<'a>,
     > {
-        Response::ok(ScheduleListDatabaseSchedulesResponse {
-            schedules: vec![],
-            ..Default::default()
-        })
+        Response::ok(ScheduleListDatabaseSchedulesResponse { schedules: vec![] })
     }
 
     #[permission(Schedule, CanRead)]
@@ -272,10 +277,7 @@ impl ScheduleService for ScheduleController {
             .await
             .map_err(map_sqlx_error)?;
         let schedules = items.into_iter().map(schedule_to_proto).collect();
-        Response::ok(ScheduleListServerSchedulesResponse {
-            schedules,
-            ..Default::default()
-        })
+        Response::ok(ScheduleListServerSchedulesResponse { schedules })
     }
 
     #[permission(Schedule, CanRead)]
@@ -292,10 +294,7 @@ impl ScheduleService for ScheduleController {
             .await
             .map_err(map_sqlx_error)?;
         let schedules = items.into_iter().map(schedule_to_proto).collect();
-        Response::ok(ScheduleListOrganizationSchedulesResponse {
-            schedules,
-            ..Default::default()
-        })
+        Response::ok(ScheduleListOrganizationSchedulesResponse { schedules })
     }
 
     #[permission(Schedule, CanUpdate)]
@@ -305,10 +304,13 @@ impl ScheduleService for ScheduleController {
         request: ServiceRequest<'_, ScheduleTriggerScheduleRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ScheduleTriggerScheduleResponse> + Send + use<'a>>
     {
-        let run = self.service.run_now(request.id).await.map_err(map_sqlx_error)?;
+        let run = self
+            .service
+            .run_now(request.id)
+            .await
+            .map_err(map_sqlx_error)?;
         Response::ok(ScheduleTriggerScheduleResponse {
             result: ::buffa::MessageField::some(run_result_to_proto(run)),
-            ..Default::default()
         })
     }
 
@@ -317,14 +319,19 @@ impl ScheduleService for ScheduleController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ScheduleGetRuntimePolicyRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<ScheduleGetRuntimePolicyResponse> + Send + use<'a>,
-    > {
-        self.service.get_by_id(request.id).await.map_err(map_sqlx_error)?;
-        let policy = self.service.runtime_policy(request.id).await.map_err(map_sqlx_error)?;
+    ) -> ServiceResult<impl connectrpc::Encodable<ScheduleGetRuntimePolicyResponse> + Send + use<'a>>
+    {
+        self.service
+            .get_by_id(request.id)
+            .await
+            .map_err(map_sqlx_error)?;
+        let policy = self
+            .service
+            .runtime_policy(request.id)
+            .await
+            .map_err(map_sqlx_error)?;
         Response::ok(ScheduleGetRuntimePolicyResponse {
             policy: ::buffa::MessageField::some(runtime_policy_to_proto(policy)),
-            ..Default::default()
         })
     }
 
@@ -340,28 +347,32 @@ impl ScheduleService for ScheduleController {
             || !(1..=86400).contains(&request.retry_delay_seconds)
             || !(30..=86400).contains(&request.lease_seconds)
         {
-            return Err(ConnectError::invalid_argument("invalid schedule runtime policy"));
+            return Err(ConnectError::invalid_argument(
+                "invalid schedule runtime policy",
+            ));
         }
-        self.service.get_by_id(request.id).await.map_err(map_sqlx_error)?;
+        self.service
+            .get_by_id(request.id)
+            .await
+            .map_err(map_sqlx_error)?;
         let missed_run_policy = missed_run_policy_from_proto(request.missed_run_policy);
         let concurrency_policy = concurrency_policy_from_proto(request.concurrency_policy);
         let policy = self
             .service
-            .update_runtime_policy(
-                request.id,
-                request.retry_count,
-                request.retry_delay_seconds,
+            .update_runtime_policy(&RuntimePolicyUpdate {
+                schedule_id: request.id,
+                retry_count: request.retry_count,
+                retry_delay_seconds: request.retry_delay_seconds,
                 missed_run_policy,
                 concurrency_policy,
-                request.lease_seconds,
-                request.notify_on_success,
-                request.notify_on_failure,
-            )
+                lease_seconds: request.lease_seconds,
+                notify_on_success: request.notify_on_success,
+                notify_on_failure: request.notify_on_failure,
+            })
             .await
             .map_err(map_sqlx_error)?;
         Response::ok(ScheduleUpdateRuntimePolicyResponse {
             policy: ::buffa::MessageField::some(runtime_policy_to_proto(policy)),
-            ..Default::default()
         })
     }
 
@@ -373,17 +384,17 @@ impl ScheduleService for ScheduleController {
     ) -> ServiceResult<impl connectrpc::Encodable<ScheduleListExecutionsResponse> + Send + use<'a>>
     {
         let schedule_id = request.schedule_id;
-        self.service.get_by_id(schedule_id).await.map_err(map_sqlx_error)?;
+        self.service
+            .get_by_id(schedule_id)
+            .await
+            .map_err(map_sqlx_error)?;
         let rows = self
             .service
             .list_executions(schedule_id, 200)
             .await
             .map_err(map_sqlx_error)?;
         let executions = rows.into_iter().map(execution_to_proto).collect();
-        Response::ok(ScheduleListExecutionsResponse {
-            executions,
-            ..Default::default()
-        })
+        Response::ok(ScheduleListExecutionsResponse { executions })
     }
 
     #[permission(Schedule, CanRead)]
@@ -392,17 +403,18 @@ impl ScheduleService for ScheduleController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ScheduleGetLogsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ScheduleGetLogsResponse> + Send + use<'a>> {
-        self.service.get_by_id(request.id).await.map_err(map_sqlx_error)?;
-        let content =
-            crate::services::automation::schedule::file_log::read(&format!("schedule-{}", request.id))
-                .await
-                .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
+        self.service
+            .get_by_id(request.id)
+            .await
+            .map_err(map_sqlx_error)?;
+        let content = crate::services::automation::schedule::file_log::read(&format!(
+            "schedule-{}",
+            request.id
+        ))
+        .await
+        .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
         Response::ok(ScheduleGetLogsResponse {
-            log: ::buffa::MessageField::some(ScheduleLog {
-                content,
-                ..Default::default()
-            }),
-            ..Default::default()
+            log: ::buffa::MessageField::some(ScheduleLog { content }),
         })
     }
 
@@ -411,12 +423,14 @@ impl ScheduleService for ScheduleController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ScheduleGetExecutionLogsRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<ScheduleGetExecutionLogsResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<ScheduleGetExecutionLogsResponse> + Send + use<'a>>
+    {
         let schedule_id = request.schedule_id;
         let execution_id = request.execution_id;
-        self.service.get_by_id(schedule_id).await.map_err(map_sqlx_error)?;
+        self.service
+            .get_by_id(schedule_id)
+            .await
+            .map_err(map_sqlx_error)?;
         self.service
             .execution_exists(schedule_id, execution_id)
             .await
@@ -429,11 +443,7 @@ impl ScheduleService for ScheduleController {
         .await
         .map_err(|e| ConnectError::new(ErrorCode::Internal, e.to_string()))?;
         Response::ok(ScheduleGetExecutionLogsResponse {
-            log: ::buffa::MessageField::some(ScheduleLog {
-                content,
-                ..Default::default()
-            }),
-            ..Default::default()
+            log: ::buffa::MessageField::some(ScheduleLog { content }),
         })
     }
 }

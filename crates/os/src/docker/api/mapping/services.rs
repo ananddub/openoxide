@@ -149,7 +149,7 @@ fn node_tasks(args: &[String]) -> Option<ApiRequest> {
     let id = args.get(2)?;
     let filters = args
         .windows(2)
-        .filter_map(|pair| (pair[0] == "--filter" || pair[0] == "-f").then(|| pair[1].clone()))
+        .filter(|&pair| pair[0] == "--filter" || pair[0] == "-f").map(|pair| pair[1].clone())
         .collect::<Vec<_>>();
     let suffix = if filters.is_empty() {
         String::new()

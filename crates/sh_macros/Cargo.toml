@@ -2,6 +2,9 @@
 name = "sh_macros"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+description = "Procedural macros that compile shell-style command scripts into a typed command IR"
+keywords = ["macros", "shell", "proc-macro"]
 
 [lib]
 proc-macro = true

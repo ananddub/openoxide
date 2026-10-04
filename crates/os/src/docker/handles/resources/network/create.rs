@@ -15,7 +15,7 @@ impl<'a> NetworkCreate<'a> {
         }
     }
     pub fn driver(mut self, d: NetworkDriver) -> Self {
-        self.args.pair("--driver", d.as_str().to_string());
+        self.args.pair("--driver", d.as_str());
         self
     }
     pub fn subnet(mut self, v: impl Into<String>) -> Self {

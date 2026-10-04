@@ -1,8 +1,6 @@
 use connectrpc::{ConnectError, ErrorCode};
 
-use crate::api::connect::generated::openoxide::api::v1::{
-    AuditLog as AuditLogProto,
-};
+use crate::api::connect::generated::openoxide::api::v1::AuditLog as AuditLogProto;
 use crate::flash_gen::models::AuditLogs;
 
 pub fn map_db_error(err: sqlx::Error) -> ConnectError {
@@ -27,6 +25,5 @@ pub fn log_to_proto(row: AuditLogs) -> AuditLogProto {
         organization_id: row.organization_id,
         user_id: row.user_id,
         created_at: row.created_at,
-        ..Default::default()
     }
 }

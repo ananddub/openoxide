@@ -11,10 +11,7 @@ pub struct WebhookController {
 
 #[singleton]
 impl WebhookController {
-    fn new(
-        credentials: Arc<WebhookCredentialStore>,
-        dispatcher: Arc<WebhookDispatcher>,
-    ) -> Self {
+    fn new(credentials: Arc<WebhookCredentialStore>, dispatcher: Arc<WebhookDispatcher>) -> Self {
         Self {
             credentials,
             dispatcher,

@@ -50,15 +50,11 @@ impl TryFrom<&str> for NodeAvailability {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, poem_openapi::Enum)]
 #[serde(rename_all = "lowercase")]
 #[oai(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum NodeRole {
+    #[default]
     Worker,
     Manager,
-}
-
-impl Default for NodeRole {
-    fn default() -> Self {
-        Self::Worker
-    }
 }
 
 impl fmt::Display for NodeRole {

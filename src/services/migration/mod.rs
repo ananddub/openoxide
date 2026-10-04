@@ -17,8 +17,8 @@ mod runner;
 mod scope;
 
 pub use cutover::{
-    CertificateAction, CertificateOrigin, HealthVerdict, assert_not_acme_store,
-    classify_health, decide_certificate_action, health_poll_attempts, may_mark_superseded,
+    CertificateAction, CertificateOrigin, HealthVerdict, assert_not_acme_store, classify_health,
+    decide_certificate_action, health_poll_attempts, may_mark_superseded,
 };
 
 pub use engine::{
@@ -29,13 +29,11 @@ pub use engine::{
 };
 
 pub use mounts::{
-    MountIssue, default_volume_path, fetch_mount_rows, plan_service_objects, resolve_volume_paths,
-    volume_inspect_args,
+    MountIssue, MountPlanScope, default_volume_path, fetch_mount_rows, plan_service_objects,
+    resolve_volume_paths, volume_inspect_args,
 };
 
-pub use orchestrator::{
-    MigratedServiceKind, MigrationOrchestrator, StatefulMigrationRequest,
-};
+pub use orchestrator::{MigratedServiceKind, MigrationOrchestrator, StatefulMigrationRequest};
 
 pub use planner::{
     PlanError, PlannedObject, assert_staging_contained, known_hosts_entry, plan_object,
@@ -46,8 +44,8 @@ pub use quiesce::{
     decide_schedule_restore,
 };
 pub use runner::{
-    ObjectCheckpoint, SyncCredentials, SyncOutcome, TempCredentials, has_dirty_delta, ssh_exec_args,
-    sync_and_verify_object,
+    ObjectCheckpoint, SyncCredentials, SyncOutcome, TempCredentials, has_dirty_delta,
+    ssh_exec_args, sync_and_verify_object,
 };
 pub use scope::{
     MigrationObjectKind, MigrationPhase, MigrationScope, derive_obj_key, normalize_ref,

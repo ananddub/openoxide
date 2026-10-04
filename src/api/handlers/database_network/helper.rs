@@ -27,6 +27,5 @@ pub fn network_to_proto(dto: DatabaseNetworkResponseDto) -> DatabaseNetwork {
         server_id: dto.server_id,
         created_at: dto.created_at,
         updated_at: dto.updated_at,
-        ..Default::default()
     }
 }

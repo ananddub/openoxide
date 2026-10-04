@@ -1,5 +1,5 @@
-use super::{compose::ComposeBuilder, spec::ComposeSource};
-use crate::utils::builder::shared::source::fetch_git_repository;
+use super::{builder::ComposeBuilder, spec::ComposeSource};
+use crate::utils::builder::shared::source::{GitRequest, fetch_git_repository};
 use crate::utils::{builder::compose::spec::ComposeSpec, exec::ExecResult};
 use tokio_util::sync::CancellationToken;
 
@@ -18,13 +18,16 @@ impl ComposeBuilder {
                 protocol,
                 auth,
             } => {
-                self.fetch_git_repository(
-                    spec,
-                    url,
-                    branch,
-                    *submodules,
-                    protocol.clone(),
-                    auth.clone(),
+                fetch_git_repository(
+                    &self.ctx,
+                    &spec.work_directory,
+                    GitRequest {
+                        url: url.as_str(),
+                        branch: branch.as_str(),
+                        submodules: *submodules,
+                        protocol: *protocol,
+                        auth: auth.clone(),
+                    },
                     cancel,
                 )
                 .await
@@ -49,28 +52,5 @@ impl ComposeBuilder {
             .write_file_cancelled(&spec.compose_path, content.as_bytes(), cancel)
             .await?;
         Ok(())
-    }
-
-    async fn fetch_git_repository(
-        &self,
-        spec: &ComposeSpec,
-        url: &str,
-        branch: &str,
-        submodules: bool,
-        protocol: crate::utils::provider::CloneProtocol,
-        auth: Option<crate::utils::git::types::GitAuth>,
-        cancel: &CancellationToken,
-    ) -> ExecResult<()> {
-        fetch_git_repository(
-            &self.ctx,
-            &spec.work_directory,
-            url,
-            branch,
-            submodules,
-            protocol,
-            auth,
-            cancel,
-        )
-        .await
     }
 }

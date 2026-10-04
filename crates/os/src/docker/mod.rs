@@ -7,7 +7,6 @@ pub use query::DockerQuery;
 pub use types::*;
 
 #[macro_use]
-
 pub mod client;
 pub mod api;
 pub mod core;

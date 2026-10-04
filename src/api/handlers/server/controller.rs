@@ -41,7 +41,12 @@ impl ServerControllerService for ServerController {
         let host = request.ip_address.trim().to_ascii_lowercase();
         if matches!(
             host.as_str(),
-            "" | "127.0.0.1" | "localhost" | "0.0.0.0" | "::1" | "openoxide-agent" | "openoxide-monitor"
+            "" | "127.0.0.1"
+                | "localhost"
+                | "0.0.0.0"
+                | "::1"
+                | "openoxide-agent"
+                | "openoxide-monitor"
         ) {
             return Err(ConnectError::invalid_argument(
                 "the local server is managed automatically and needs no SSH connection; use a remote server's reachable IP or hostname",
@@ -77,7 +82,6 @@ impl ServerControllerService for ServerController {
 
         Response::ok(ServerControllerTestDirectConnectionResponse {
             connection: ::buffa::MessageField::some(placeholder_connection_info()),
-            ..Default::default()
         })
     }
 
@@ -113,7 +117,6 @@ impl ServerControllerService for ServerController {
 
         Response::ok(ServerControllerTestConnectionResponse {
             connection: ::buffa::MessageField::some(placeholder_connection_info()),
-            ..Default::default()
         })
     }
 
@@ -149,7 +152,6 @@ impl ServerControllerService for ServerController {
 
         Response::ok(ServerControllerAuditResponse {
             audit: ::buffa::MessageField::some(audit_to_proto(audit)),
-            ..Default::default()
         })
     }
 
@@ -173,29 +175,31 @@ impl ServerControllerService for ServerController {
             )
             .await?;
         self.capture_and_store_host_key(id, &executor).await;
-        let mut config = SetupConfig::default();
-        config.build_server = self
-            .service
-            .get_by_id(id)
-            .await
-            .map_err(map_db_error)?
-            .server_type
-            .eq_ignore_ascii_case("BUILD");
-        config.agent_server_id = Some(id);
         let panel_config = resolve::<Config>()
             .await
             .map_err(|_| ConnectError::new(ErrorCode::Internal, "configuration unavailable"))?;
-        config.agent_panel_url = Some(
-            std::env::var("OPENOXIDE_SERVER_URL")
-                .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
-                .unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)),
-        );
-        config.agent_token = Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
-        config.advertise_addr = self
-            .service
-            .setup_advertise_addr(id, request.advertise_addr.map(str::to_owned))
-            .await
-            .map_err(map_db_error)?;
+        let mut config = SetupConfig {
+            build_server: self
+                .service
+                .get_by_id(id)
+                .await
+                .map_err(map_db_error)?
+                .server_type
+                .eq_ignore_ascii_case("BUILD"),
+            agent_server_id: Some(id),
+            agent_panel_url: Some(
+                std::env::var("OPENOXIDE_SERVER_URL")
+                    .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
+                    .unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)),
+            ),
+            agent_token: Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty()),
+            advertise_addr: self
+                .service
+                .setup_advertise_addr(id, request.advertise_addr.map(str::to_owned))
+                .await
+                .map_err(map_db_error)?,
+            ..Default::default()
+        };
         if let Some(email) = request.acme_email {
             config.acme_email = email.to_owned();
         }
@@ -222,7 +226,9 @@ impl ServerControllerService for ServerController {
                     config.agent_mtls_cert = Some(m.agent_cert);
                     config.agent_mtls_key = Some(m.agent_key);
                 }
-                Err(error) => tracing::warn!(server_id = id, %error, "per-server mTLS unavailable; agent stays token-only"),
+                Err(error) => {
+                    tracing::warn!(server_id = id, %error, "per-server mTLS unavailable; agent stays token-only")
+                }
             }
         }
         let outcome = ServerSetup::new_remote(executor, config)
@@ -240,7 +246,6 @@ impl ServerControllerService for ServerController {
 
         Response::ok(ServerControllerSetupResponse {
             outcome: ::buffa::MessageField::some(outcome_to_proto(outcome)),
-            ..Default::default()
         })
     }
 
@@ -270,29 +275,31 @@ impl ServerControllerService for ServerController {
             )
             .await?;
 
-        let mut config = SetupConfig::default();
-        config.build_server = self
-            .service
-            .get_by_id(id)
-            .await
-            .map_err(map_db_error)?
-            .server_type
-            .eq_ignore_ascii_case("BUILD");
-        config.agent_server_id = Some(id);
         let panel_config = resolve::<Config>()
             .await
             .map_err(|_| ConnectError::new(ErrorCode::Internal, "configuration unavailable"))?;
-        config.agent_panel_url = Some(
-            std::env::var("OPENOXIDE_SERVER_URL")
-                .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
-                .unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)),
-        );
-        config.agent_token = Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty());
-        config.advertise_addr = self
-            .service
-            .setup_advertise_addr(id, request.advertise_addr.map(str::to_owned))
-            .await
-            .map_err(map_db_error)?;
+        let mut config = SetupConfig {
+            build_server: self
+                .service
+                .get_by_id(id)
+                .await
+                .map_err(map_db_error)?
+                .server_type
+                .eq_ignore_ascii_case("BUILD"),
+            agent_server_id: Some(id),
+            agent_panel_url: Some(
+                std::env::var("OPENOXIDE_SERVER_URL")
+                    .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
+                    .unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)),
+            ),
+            agent_token: Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty()),
+            advertise_addr: self
+                .service
+                .setup_advertise_addr(id, request.advertise_addr.map(str::to_owned))
+                .await
+                .map_err(map_db_error)?,
+            ..Default::default()
+        };
         if let Some(email) = request.acme_email {
             config.acme_email = email.to_owned();
         }
@@ -302,7 +309,7 @@ impl ServerControllerService for ServerController {
 
         enum SetupEvent {
             Line(String),
-            Done(Result<SetupOutcome, ExecError>),
+            Done(Box<Result<SetupOutcome, ExecError>>),
         }
 
         let (line_tx, mut line_rx) = tokio::sync::mpsc::channel::<String>(256);
@@ -334,7 +341,7 @@ impl ServerControllerService for ServerController {
                     tracing::error!(error = %error, server_id = id, "streamed server setup failed");
                 }
             }
-            let _ = event_tx.send(SetupEvent::Done(result)).await;
+            let _ = event_tx.send(SetupEvent::Done(Box::new(result))).await;
         });
 
         let stream =
@@ -344,12 +351,14 @@ impl ServerControllerService for ServerController {
                     lines: vec![line],
                     ..Default::default()
                 }),
-                SetupEvent::Done(Ok(outcome)) => Ok(ServerControllerStreamSetupLogsResponse {
-                    server_id: id,
-                    outcome: ::buffa::MessageField::some(outcome_to_proto(outcome)),
-                    ..Default::default()
-                }),
-                SetupEvent::Done(Err(error)) => Err(map_exec_error(error)),
+                SetupEvent::Done(result) => match *result {
+                    Ok(outcome) => Ok(ServerControllerStreamSetupLogsResponse {
+                        server_id: id,
+                        outcome: ::buffa::MessageField::some(outcome_to_proto(outcome)),
+                        ..Default::default()
+                    }),
+                    Err(error) => Err(map_exec_error(error)),
+                },
             });
         Response::stream_ok(stream)
     }
@@ -366,7 +375,6 @@ impl ServerControllerService for ServerController {
         // returned a connected response. Preserve that behaviour.
         Response::ok(ServerControllerListSessionsResponse {
             sessions: vec![placeholder_connection_info()],
-            ..Default::default()
         })
     }
 

@@ -10,7 +10,7 @@ const RAW_WIREGUARD_CALLS: [&str; 4] = [
 #[test]
 fn wireguard_commands_cannot_bypass_the_typed_cli() {
     let source_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-    let typed_cli_root = source_root.join("utils/os/wireguard/cli");
+    let typed_cli_root = source_root.join("wireguard/cli");
     let mut violations = Vec::new();
 
     inspect_rust_sources(&source_root, &typed_cli_root, &mut violations);

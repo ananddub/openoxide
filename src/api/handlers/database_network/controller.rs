@@ -24,18 +24,16 @@ impl DatabaseNetworkService for DatabaseNetworkController {
         &'a self,
         ctx: RequestContext,
         _query: ServiceRequest<'_, DatabaseNetworkListNetworksRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<DatabaseNetworkListNetworksResponse> + Send + use<'a>>
-    {
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<DatabaseNetworkListNetworksResponse> + Send + use<'a>,
+    > {
         let items = self.service.list().await.map_err(map_sqlx_error)?;
         let networks = items
             .into_iter()
             .map(crate::services::networking::database_network::DatabaseNetworkResponseDto::from)
             .map(network_to_proto)
             .collect();
-        Response::ok(DatabaseNetworkListNetworksResponse {
-            networks,
-            ..Default::default()
-        })
+        Response::ok(DatabaseNetworkListNetworksResponse { networks })
     }
 
     #[permission(Database, CanRead)]
@@ -43,8 +41,9 @@ impl DatabaseNetworkService for DatabaseNetworkController {
         &'a self,
         ctx: RequestContext,
         query: ServiceRequest<'_, DatabaseNetworkListServerNetworksRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<DatabaseNetworkListServerNetworksResponse> + Send + use<'a>>
-    {
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<DatabaseNetworkListServerNetworksResponse> + Send + use<'a>,
+    > {
         let server_id = query.server_id;
         let items = self
             .service
@@ -56,10 +55,7 @@ impl DatabaseNetworkService for DatabaseNetworkController {
             .map(crate::services::networking::database_network::DatabaseNetworkResponseDto::from)
             .map(network_to_proto)
             .collect();
-        Response::ok(DatabaseNetworkListServerNetworksResponse {
-            networks,
-            ..Default::default()
-        })
+        Response::ok(DatabaseNetworkListServerNetworksResponse { networks })
     }
 
     #[permission(Database, CanRead)]
@@ -80,7 +76,6 @@ impl DatabaseNetworkService for DatabaseNetworkController {
                     network,
                 ),
             )),
-            ..Default::default()
         })
     }
 
@@ -89,8 +84,9 @@ impl DatabaseNetworkService for DatabaseNetworkController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseNetworkCreateNetworkRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<DatabaseNetworkCreateNetworkResponse> + Send + use<'a>>
-    {
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<DatabaseNetworkCreateNetworkResponse> + Send + use<'a>,
+    > {
         let dto = CreateDatabaseNetworkDto {
             name: request.name.to_owned(),
             docker_network_name: request.docker_network_name.to_owned(),
@@ -105,7 +101,6 @@ impl DatabaseNetworkService for DatabaseNetworkController {
                     created,
                 ),
             )),
-            ..Default::default()
         })
     }
 
@@ -114,8 +109,9 @@ impl DatabaseNetworkService for DatabaseNetworkController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseNetworkUpdateNetworkRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<DatabaseNetworkUpdateNetworkResponse> + Send + use<'a>>
-    {
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<DatabaseNetworkUpdateNetworkResponse> + Send + use<'a>,
+    > {
         let dto = PatchDatabaseNetworkDto {
             name: request.name.map(str::to_owned),
             docker_network_name: request.docker_network_name.map(str::to_owned),
@@ -123,14 +119,17 @@ impl DatabaseNetworkService for DatabaseNetworkController {
             external: request.external,
             server_id: request.server_id,
         };
-        let updated = self.service.patch(request.id, dto).await.map_err(map_sqlx_error)?;
+        let updated = self
+            .service
+            .patch(request.id, dto)
+            .await
+            .map_err(map_sqlx_error)?;
         Response::ok(DatabaseNetworkUpdateNetworkResponse {
             network: ::buffa::MessageField::some(network_to_proto(
                 crate::services::networking::database_network::DatabaseNetworkResponseDto::from(
                     updated,
                 ),
             )),
-            ..Default::default()
         })
     }
 
@@ -140,7 +139,10 @@ impl DatabaseNetworkService for DatabaseNetworkController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseNetworkDeleteNetworkRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.delete(request.id).await.map_err(map_sqlx_error)?;
+        self.service
+            .delete(request.id)
+            .await
+            .map_err(map_sqlx_error)?;
         Response::ok(Empty::default())
     }
 
@@ -149,8 +151,9 @@ impl DatabaseNetworkService for DatabaseNetworkController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseNetworkListDependenciesRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<DatabaseNetworkListDependenciesResponse> + Send + use<'a>>
-    {
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<DatabaseNetworkListDependenciesResponse> + Send + use<'a>,
+    > {
         let counts = self
             .service
             .dependencies(request.id)
@@ -161,9 +164,7 @@ impl DatabaseNetworkService for DatabaseNetworkController {
                 applications: counts.applications,
                 compose_services: counts.compose_services,
                 databases: counts.databases,
-                ..Default::default()
             }),
-            ..Default::default()
         })
     }
 }

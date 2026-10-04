@@ -2,26 +2,20 @@ use std::sync::Arc;
 
 use auto_di::singleton;
 use connectrpc::{ConnectError, ErrorCode};
-use sqlx::SqlitePool;
 
 use crate::core::cache::{AppStateCache, CacheKey};
 use crate::services::infrastructure::server::RemoteServerService;
 use crate::utils::docker::DockerCli;
 
 pub struct SwarmController {
-    pub(super) db: Arc<SqlitePool>,
     pub(super) cache: Arc<AppStateCache>,
     pub(super) servers: Arc<RemoteServerService>,
 }
 
 #[singleton]
 impl SwarmController {
-    fn new(
-        db: Arc<SqlitePool>,
-        cache: Arc<AppStateCache>,
-        servers: Arc<RemoteServerService>,
-    ) -> Self {
-        Self { db, cache, servers }
+    fn new(cache: Arc<AppStateCache>, servers: Arc<RemoteServerService>) -> Self {
+        Self { cache, servers }
     }
 }
 
@@ -53,7 +47,9 @@ impl SwarmController {
 
     pub(super) async fn invalidate_swarm(&self, server_id: Option<i64>) {
         self.cache.invalidate(&CacheKey::SwarmInfo(server_id)).await;
-        self.cache.invalidate(&CacheKey::SwarmNodes(server_id)).await;
+        self.cache
+            .invalidate(&CacheKey::SwarmNodes(server_id))
+            .await;
     }
 
     pub(super) async fn executor_for(
@@ -66,6 +62,8 @@ impl SwarmController {
     }
 
     pub(super) async fn docker(&self, server_id: Option<i64>) -> Result<DockerCli, ConnectError> {
-        Ok(DockerCli::from_executor(self.executor_for(server_id).await?))
+        Ok(DockerCli::from_executor(
+            self.executor_for(server_id).await?,
+        ))
     }
 }

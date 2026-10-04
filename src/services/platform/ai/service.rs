@@ -45,7 +45,7 @@ impl AiService {
             queries,
             compose,
             domain,
-            client: AiClient::default(),
+            client: AiClient,
         }
     }
 
@@ -252,9 +252,7 @@ impl AiService {
             .await
         {
             Ok(row) => row,
-            Err(sqlx::Error::RowNotFound) => {
-                return Err("AI generation not found".to_string())
-            }
+            Err(sqlx::Error::RowNotFound) => return Err("AI generation not found".to_string()),
             Err(error) => return Err(db_error(error)),
         };
         generation_view(generation)
@@ -294,7 +292,7 @@ impl AiService {
         {
             Ok(row) => row,
             Err(sqlx::Error::RowNotFound) => {
-                return Err("AI generation not found or already deployed".to_string())
+                return Err("AI generation not found or already deployed".to_string());
             }
             Err(error) => return Err(db_error(error)),
         };
@@ -366,7 +364,9 @@ impl AiService {
             }
         };
 
-        let result = self.finish_compose_setup(compose.id, &suggestion, organization_id).await;
+        let result = self
+            .finish_compose_setup(compose.id, &suggestion, organization_id)
+            .await;
         if let Err(error) = result {
             let _ = self.compose.delete(compose.id).await;
             self.release_deploy(id, organization_id).await;
@@ -407,7 +407,7 @@ impl AiService {
         {
             Ok(row) => row,
             Err(sqlx::Error::RowNotFound) => {
-                return Err("AI generation deployment state changed concurrently".to_string())
+                return Err("AI generation deployment state changed concurrently".to_string());
             }
             Err(error) => return Err(db_error(error)),
         };
@@ -558,7 +558,11 @@ impl AiService {
             Err(sqlx::Error::RowNotFound) => return Err("environment not found".into()),
             Err(error) => return Err(db_error(error)),
         };
-        let project = match self.queries.projects_get_by_id(environment.project_id).await {
+        let project = match self
+            .queries
+            .projects_get_by_id(environment.project_id)
+            .await
+        {
             Ok(row) => row,
             Err(sqlx::Error::RowNotFound) => return Err("environment project not found".into()),
             Err(error) => return Err(db_error(error)),

@@ -116,6 +116,12 @@ impl SystemCollector {
     }
 }
 
+impl Default for SystemCollector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Total and used bytes of the filesystem one path sits on, via `statvfs` —
 /// the same numbers `df` prints, with no device list walk.
 fn statvfs(path: &str) -> Option<(u64, u64)> {

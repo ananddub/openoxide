@@ -18,7 +18,8 @@ impl NetworkingOperationsService for NetworkingController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, NetworkingPurgeCdnRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<NetworkingPurgeCdnResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<NetworkingPurgeCdnResponse> + Send + use<'a>>
+    {
         let provider = proto_to_cdn_provider(request.provider)?;
         let dto = typed_dto(serde_json::json!({
             "provider": provider,
@@ -36,7 +37,6 @@ impl NetworkingOperationsService for NetworkingController {
             status: u32::from(result.status),
             request_id: result.request_id,
             message: result.message,
-            ..Default::default()
         })
     }
 
@@ -63,7 +63,6 @@ impl NetworkingOperationsService for NetworkingController {
         let result = self.diagnostics.diagnose(dto).await;
         Response::ok(NetworkingDiagnoseDomainsResponse {
             diagnostic: ::buffa::MessageField::some(diagnostic_to_proto(&result)),
-            ..Default::default()
         })
     }
 
@@ -76,10 +75,13 @@ impl NetworkingOperationsService for NetworkingController {
         impl connectrpc::Encodable<NetworkingDiagnoseRootNetworkResponse> + Send + use<'a>,
     > {
         let server_id = request.server_id;
-        let result = self.root_network.diagnose(server_id).await.map_err(map_error)?;
+        let result = self
+            .root_network
+            .diagnose(server_id)
+            .await
+            .map_err(map_error)?;
         Response::ok(NetworkingDiagnoseRootNetworkResponse {
             status: ::buffa::MessageField::some(root_network_to_proto(&result)),
-            ..Default::default()
         })
     }
 
@@ -92,10 +94,13 @@ impl NetworkingOperationsService for NetworkingController {
         impl connectrpc::Encodable<NetworkingRepairRootNetworkResponse> + Send + use<'a>,
     > {
         let server_id = request.server_id;
-        let result = self.root_network.repair(server_id).await.map_err(map_error)?;
+        let result = self
+            .root_network
+            .repair(server_id)
+            .await
+            .map_err(map_error)?;
         Response::ok(NetworkingRepairRootNetworkResponse {
             status: ::buffa::MessageField::some(root_network_to_proto(&result)),
-            ..Default::default()
         })
     }
 }

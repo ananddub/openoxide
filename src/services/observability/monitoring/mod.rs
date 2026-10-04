@@ -3,4 +3,4 @@ pub mod lifecycle;
 pub mod reconciler;
 pub mod service;
 
-pub use service::{proto, HealthService, MonitoringService};
+pub use service::{HealthService, MonitoringService, proto};

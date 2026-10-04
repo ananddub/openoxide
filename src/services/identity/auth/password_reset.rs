@@ -3,7 +3,9 @@ use sha2::{Digest, Sha256};
 
 use crate::{
     flash_gen::password_reset_tokens::PasswordResetTokensIssue2Params,
-    services::integrations::notification::{NotificationMessage, email::send_email_to, senders::send_resend_to},
+    services::integrations::notification::{
+        NotificationMessage, email::send_email_to, senders::send_resend_to,
+    },
 };
 
 use super::{AuthError, AuthService, hash_password, notification_configs_for_user};

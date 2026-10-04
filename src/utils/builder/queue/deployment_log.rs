@@ -81,7 +81,9 @@ pub async fn record_builder_events(
     let mut log = match DeploymentLog::open(deployment_id).await {
         Ok(log) => {
             if let Ok(q) = auto_di::resolve::<crate::db::queries::FlashQueries>().await {
-                q.deployments_update_log_path(log.path(), deployment_id).await.ok();
+                q.deployments_update_log_path(log.path(), deployment_id)
+                    .await
+                    .ok();
             }
             Some(log)
         }
@@ -100,10 +102,10 @@ pub async fn record_builder_events(
     };
 
     while let Some(event) = events.recv().await {
-        if let Some(ref mut l) = log {
-            if let Err(e) = l.write_event(&event).await {
-                tracing::error!(deployment_id, error = %e, "could not write to deployment log");
-            }
+        if let Some(ref mut l) = log
+            && let Err(e) = l.write_event(&event).await
+        {
+            tracing::error!(deployment_id, error = %e, "could not write to deployment log");
         }
 
         if let BuilderEvent::Message(message) = &event {

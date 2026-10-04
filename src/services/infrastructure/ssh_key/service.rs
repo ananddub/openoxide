@@ -48,10 +48,16 @@ impl SshKeyService {
     }
 
     pub async fn list(&self, organization_id: i64) -> sqlx::Result<Vec<SshKeys>> {
-        self.queries.ssh_keys_list_by_organization(organization_id).await
+        self.queries
+            .ssh_keys_list_by_organization(organization_id)
+            .await
     }
 
-    pub async fn create(&self, input: CreateSshKeyDto, organization_id: i64) -> sqlx::Result<SshKeys> {
+    pub async fn create(
+        &self,
+        input: CreateSshKeyDto,
+        organization_id: i64,
+    ) -> sqlx::Result<SshKeys> {
         let now = chrono::Utc::now().timestamp();
         self.queries
             .ssh_keys_create_and_return(&SshKeysCreateAndReturnParams {
@@ -86,7 +92,9 @@ impl SshKeyService {
             // would slow every other in-flight request).
             tokio::task::spawn_blocking(move || ssh::generate_keypair(&kt))
                 .await
-                .map_err(|e| sqlx::Error::Configuration(format!("key generation task failed: {e}").into()))?
+                .map_err(|e| {
+                    sqlx::Error::Configuration(format!("key generation task failed: {e}").into())
+                })?
                 .map_err(|e| sqlx::Error::Configuration(e.into()))?
         };
 

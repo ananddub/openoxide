@@ -89,11 +89,7 @@ impl SecurityService {
     }
     pub async fn delete(&self, app: i64, id: i64) -> sqlx::Result<bool> {
         self.ensure_app(app).await?;
-        match self
-            .queries
-            .security_delete_for_application(id, app)
-            .await
-        {
+        match self.queries.security_delete_for_application(id, app).await {
             Ok(_) => Ok(true),
             Err(sqlx::Error::RowNotFound) => Ok(false),
             Err(error) => Err(error),

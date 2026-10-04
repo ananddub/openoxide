@@ -2,6 +2,9 @@
 name = "auto_grpc"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+description = "auto-di powered gRPC service registration and routing for tonic and connectrpc"
+keywords = ["grpc", "di", "tonic", "connectrpc"]
 
 [dependencies]
 auto-di = "0.6.0"
@@ -9,7 +12,7 @@ futures = "0.3"
 inventory = "0.3"
 connectrpc = { version = "0.9.0", default-features = false, optional = true }
 tonic = { version = "0.12.3", optional = true }
-auto_grpc_macros = { path = "../grpc_macros" }
+auto_grpc_macros = { version = "0.1.0", path = "../grpc_macros" }
 
 [features]
 default = ["tonic"]

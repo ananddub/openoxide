@@ -8,7 +8,7 @@ use crate::{
         builder::errors::BuilderError,
         builder::{
             custom_type::IdType, database::builder::DatabaseBuilder, hash_state::ApplicationState,
-            queue::queue::BuilderQueue,
+            queue::dispatcher::BuilderQueue,
         },
     },
 };
@@ -27,9 +27,7 @@ impl BuilderQueue {
 
         let q = resolve::<crate::db::queries::FlashQueries>()
             .await
-            .map_err(|e| {
-                BuilderError::Execution(format!("could not resolve FlashQueries: {e}"))
-            })?;
+            .map_err(|e| BuilderError::Execution(format!("could not resolve FlashQueries: {e}")))?;
 
         let ctx = q
             .database_get_deployment_context(database_id)
@@ -42,9 +40,9 @@ impl BuilderQueue {
         let state = resolve::<ApplicationState>().await.map_err(|e| {
             BuilderError::Execution(format!("could not resolve application state: {e}"))
         })?;
-        state.reset_default(db_key.clone(), environment_id, project_id);
+        state.reset_default(db_key, environment_id, project_id);
         let cancel = state
-            .cancellation_token(db_key.clone())
+            .cancellation_token(db_key)
             .unwrap_or_else(CancellationToken::new);
 
         let executor = self
@@ -74,29 +72,18 @@ impl BuilderQueue {
                     .map(|_| ())
                     .map_err(|e| BuilderError::Execution(e.to_string())),
                 DatabaseOperation::Reload => {
-                    let app_name = q
-                        .services_get_app_name(database_id)
-                        .await
-                        .map_err(|e| {
-                            BuilderError::Execution(format!(
-                                "Failed to query database app_name: {e}"
-                            ))
-                        })?;
+                    let app_name = q.services_get_app_name(database_id).await.map_err(|e| {
+                        BuilderError::Execution(format!("Failed to query database app_name: {e}"))
+                    })?;
                     builder
                         .reload(&app_name, &cancel)
                         .await
                         .map_err(|e| BuilderError::Execution(e.to_string()))
                 }
                 DatabaseOperation::Stop => {
-                    let app_name = q
-                        .services_get_app_name(database_id)
-                        .await
-                        .map_err(|e| {
-                            BuilderError::Execution(format!(
-                                "Failed to query database app_name: {}",
-                                e
-                            ))
-                        })?;
+                    let app_name = q.services_get_app_name(database_id).await.map_err(|e| {
+                        BuilderError::Execution(format!("Failed to query database app_name: {}", e))
+                    })?;
 
                     builder
                         .stop(&app_name, &cancel)

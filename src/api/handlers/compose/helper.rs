@@ -71,7 +71,6 @@ pub fn compose_to_proto(dto: &ComposeResponseDto) -> Compose {
         // secrets) so the GUI env editor can display and edit it instead of
         // showing a blank box.
         env_var: dto.env_var.clone(),
-        ..Default::default()
     }
 }
 
@@ -117,7 +116,6 @@ pub fn mount_to_proto(dto: ComposeMountResponseDto) -> ComposeMount {
         compose_id: dto.compose_id,
         created_at: dto.created_at,
         updated_at: dto.updated_at,
-        ..Default::default()
     }
 }
 
@@ -131,7 +129,6 @@ pub fn patch_to_proto(dto: ComposePatchResponseDto) -> ComposePatch {
         compose_id: dto.compose_id,
         created_at: dto.created_at,
         updated_at: dto.updated_at,
-        ..Default::default()
     }
 }
 

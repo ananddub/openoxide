@@ -4,7 +4,7 @@ use serde_json::Value;
 
 use crate::services::integrations::vault::{VaultSecretListDto, VaultTestResultDto};
 
-/// AWS Systems Manager Parameter Store (mirrors the standard 
+/// AWS Systems Manager Parameter Store (mirrors the standard
 /// `aws-parameter-store` vault type). Config JSON:
 /// `{"region": "...", "accessKeyId": "...", "secretAccessKey": "...",
 ///  "endpoint": "optional", "parameterPath": "/optional/prefix"}`.
@@ -38,7 +38,11 @@ fn parameter_path(config: Option<&str>) -> String {
 
 pub(crate) async fn test(config: Option<&str>) -> Result<VaultTestResultDto, String> {
     let path = parameter_path(config);
-    let root = if path.is_empty() { "/".to_string() } else { path.clone() };
+    let root = if path.is_empty() {
+        "/".to_string()
+    } else {
+        path.clone()
+    };
     client(config)?
         .get_parameters_by_path()
         .path(root)
@@ -61,26 +65,29 @@ pub(crate) async fn list(config: Option<&str>) -> Result<VaultSecretListDto, Str
     loop {
         let mut request = client
             .get_parameters_by_path()
-            .path(if path.is_empty() { "/".to_string() } else { path.clone() })
+            .path(if path.is_empty() {
+                "/".to_string()
+            } else {
+                path.clone()
+            })
             .recursive(true)
             .max_results(10);
         if let Some(token) = next_token.take() {
             request = request.next_token(token);
         }
-        let response = request.send().await.map_err(|e| {
-            format!("AWS Parameter Store list failed: {e}")
-        })?;
-            for parameter in response.parameters() {
-                names.push(parameter.name().unwrap_or_default().to_string());
+        let response = request
+            .send()
+            .await
+            .map_err(|e| format!("AWS Parameter Store list failed: {e}"))?;
+        for parameter in response.parameters() {
+            names.push(parameter.name().unwrap_or_default().to_string());
         }
         next_token = response.next_token().map(str::to_string);
         if next_token.is_none() {
             break;
         }
     }
-    Ok(VaultSecretListDto {
-        secrets: names,
-    })
+    Ok(VaultSecretListDto { secrets: names })
 }
 
 pub(crate) async fn fetch(config: Option<&str>, reference: &str) -> Result<String, String> {

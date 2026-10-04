@@ -7,14 +7,13 @@ use crate::{
         PreviewDeploymentsMatchingTargets3Params, PreviewDeploymentsMatchingTargets4Params,
     },
     services::{
-        integrations::git::GitProviderService,
-        integrations::git::webhooks::PullRequestEvent,
+        integrations::git::GitProviderService, integrations::git::webhooks::PullRequestEvent,
     },
 };
 
 use super::{
-    types::{optional_field, PreviewTarget},
     PreviewDeploymentOutcome, PreviewDeploymentService, PreviewLifecycleOutcome,
+    types::{PreviewTarget, optional_field},
 };
 
 impl PreviewDeploymentService {
@@ -26,12 +25,14 @@ impl PreviewDeploymentService {
         if is_close_action(&event.action) {
             let rows = self
                 .queries
-                .preview_deployments_find_open_for_event(&PreviewDeploymentsFindOpenForEventParams {
-                    provider_type: event.provider.as_str().to_string(),
-                    owner: event.owner.clone(),
-                    repository: event.repository.clone(),
-                    pull_request_number: event.number.clone(),
-                })
+                .preview_deployments_find_open_for_event(
+                    &PreviewDeploymentsFindOpenForEventParams {
+                        provider_type: event.provider.as_str().to_string(),
+                        owner: event.owner.clone(),
+                        repository: event.repository.clone(),
+                        pull_request_number: event.number.clone(),
+                    },
+                )
                 .await
                 .map_err(|error| error.to_string())?;
             let mut outcome = PreviewLifecycleOutcome::default();
@@ -84,11 +85,13 @@ impl PreviewDeploymentService {
 
             let existing = match self
                 .queries
-                .preview_deployments_find_for_pull_request(&PreviewDeploymentsFindForPullRequestParams {
-                    base_service_id: target.base_service_id,
-                    provider_type: event.provider.as_str().to_string(),
-                    pull_request_number: event.number.clone(),
-                })
+                .preview_deployments_find_for_pull_request(
+                    &PreviewDeploymentsFindForPullRequestParams {
+                        base_service_id: target.base_service_id,
+                        provider_type: event.provider.as_str().to_string(),
+                        pull_request_number: event.number.clone(),
+                    },
+                )
                 .await
             {
                 Ok(row) => Some(row),
@@ -138,11 +141,13 @@ impl PreviewDeploymentService {
             .ok_or("Application is not configured for this pull request preview")?;
         let existing = match self
             .queries
-            .preview_deployments_find_for_pull_request(&PreviewDeploymentsFindForPullRequestParams {
-                base_service_id: base_application_id,
-                provider_type: event.provider.as_str().to_string(),
-                pull_request_number: event.number.clone(),
-            })
+            .preview_deployments_find_for_pull_request(
+                &PreviewDeploymentsFindForPullRequestParams {
+                    base_service_id: base_application_id,
+                    provider_type: event.provider.as_str().to_string(),
+                    pull_request_number: event.number.clone(),
+                },
+            )
             .await
         {
             Ok(row) => Some(row),
@@ -186,8 +191,7 @@ impl PreviewDeploymentService {
             commit: optional_field(row.commit_sha),
             author: optional_field(row.author),
         };
-        self.deploy_application(row.base_service_id, &event)
-            .await
+        self.deploy_application(row.base_service_id, &event).await
     }
 
     async fn matching_targets(
@@ -203,11 +207,13 @@ impl PreviewDeploymentService {
             GitProviderKind::Github => {
                 let rows = self
                     .queries
-                    .preview_deployments_matching_targets1(&PreviewDeploymentsMatchingTargets1Params {
-                        repository: repository.to_string(),
-                        owner: owner.to_string(),
-                        branch: target_branch.to_string(),
-                    })
+                    .preview_deployments_matching_targets1(
+                        &PreviewDeploymentsMatchingTargets1Params {
+                            repository: repository.to_string(),
+                            owner: owner.to_string(),
+                            branch: target_branch.to_string(),
+                        },
+                    )
                     .await
                     .map_err(|error| error.to_string())?;
                 rows.into_iter().map(preview_target).collect()
@@ -215,11 +221,13 @@ impl PreviewDeploymentService {
             GitProviderKind::Gitlab => {
                 let rows = self
                     .queries
-                    .preview_deployments_matching_targets2(&PreviewDeploymentsMatchingTargets2Params {
-                        gitlab_repository: repository.to_string(),
-                        gitlab_owner: owner.to_string(),
-                        gitlab_branch: target_branch.to_string(),
-                    })
+                    .preview_deployments_matching_targets2(
+                        &PreviewDeploymentsMatchingTargets2Params {
+                            gitlab_repository: repository.to_string(),
+                            gitlab_owner: owner.to_string(),
+                            gitlab_branch: target_branch.to_string(),
+                        },
+                    )
                     .await
                     .map_err(|error| error.to_string())?;
                 rows.into_iter().map(preview_target).collect()
@@ -227,11 +235,13 @@ impl PreviewDeploymentService {
             GitProviderKind::Gitea => {
                 let rows = self
                     .queries
-                    .preview_deployments_matching_targets3(&PreviewDeploymentsMatchingTargets3Params {
-                        gitea_repository: repository.to_string(),
-                        gitea_owner: owner.to_string(),
-                        gitea_branch: target_branch.to_string(),
-                    })
+                    .preview_deployments_matching_targets3(
+                        &PreviewDeploymentsMatchingTargets3Params {
+                            gitea_repository: repository.to_string(),
+                            gitea_owner: owner.to_string(),
+                            gitea_branch: target_branch.to_string(),
+                        },
+                    )
                     .await
                     .map_err(|error| error.to_string())?;
                 rows.into_iter().map(preview_target).collect()
@@ -239,11 +249,13 @@ impl PreviewDeploymentService {
             GitProviderKind::Bitbucket => {
                 let rows = self
                     .queries
-                    .preview_deployments_matching_targets4(&PreviewDeploymentsMatchingTargets4Params {
-                        bitbucket_repository: repository.to_string(),
-                        bitbucket_owner: owner.to_string(),
-                        bitbucket_branch: target_branch.to_string(),
-                    })
+                    .preview_deployments_matching_targets4(
+                        &PreviewDeploymentsMatchingTargets4Params {
+                            bitbucket_repository: repository.to_string(),
+                            bitbucket_owner: owner.to_string(),
+                            bitbucket_branch: target_branch.to_string(),
+                        },
+                    )
                     .await
                     .map_err(|error| error.to_string())?;
                 rows.into_iter().map(preview_target).collect()
@@ -291,7 +303,9 @@ macro_rules! impl_matching_target_row {
     };
 }
 
-impl_matching_target_row!(crate::flash_gen::preview_deployments::PreviewDeploymentsMatchingTargets1Row);
+impl_matching_target_row!(
+    crate::flash_gen::preview_deployments::PreviewDeploymentsMatchingTargets1Row
+);
 
 fn is_close_action(action: &str) -> bool {
     matches!(
@@ -300,7 +314,9 @@ fn is_close_action(action: &str) -> bool {
     )
 }
 
-fn provider_kind(value: &str) -> Result<crate::services::integrations::git::webhooks::GitProviderKind, String> {
+fn provider_kind(
+    value: &str,
+) -> Result<crate::services::integrations::git::webhooks::GitProviderKind, String> {
     match value.to_ascii_lowercase().as_str() {
         "github" => Ok(crate::services::integrations::git::webhooks::GitProviderKind::Github),
         "gitlab" => Ok(crate::services::integrations::git::webhooks::GitProviderKind::Gitlab),

@@ -42,9 +42,10 @@ impl Drop for TerminalSession {
         let session_id = std::mem::take(&mut self.session_id);
         if let Ok(handle) = tokio::runtime::Handle::try_current() {
             let registry = Arc::clone(&self.registry);
-            let _ = handle.spawn(async move {
+            let task = handle.spawn(async move {
                 registry.remove_and_terminate(&session_id).await;
             });
+            drop(task);
         } else {
             // No runtime (process shutdown): dropping the entry still closes
             // the Agent request channel and the SSH terminal.

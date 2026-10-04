@@ -143,7 +143,7 @@ impl
             source_type: git
                 .map(|g| g.source_type.clone())
                 .unwrap_or_else(|| "RAW".into()),
-            compose_type: ComposeType::from_str(&ext.compose_type)
+            compose_type: ComposeType::from_str_opt(&ext.compose_type)
                 .unwrap_or(ComposeType::DockerCompose),
             compose_status: service.app_status,
             last_error: service.last_error,

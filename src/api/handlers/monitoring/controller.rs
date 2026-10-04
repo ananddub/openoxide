@@ -1,21 +1,24 @@
-use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     Empty, MonitoringContainerState, MonitoringCreateAgentTokenRequest,
-    MonitoringCreateAgentTokenResponse, MonitoringCreateMaintenanceWindowRequest, MonitoringCreateMaintenanceWindowResponse,
-    MonitoringDeleteMaintenanceWindowRequest, MonitoringExportServerMetricsRequest,
-    MonitoringExportServerMetricsResponse, MonitoringGetAgentStatusRequest,
-    MonitoringGetAgentStatusResponse, MonitoringGetContainerMetricsRequest,
-    MonitoringGetContainerMetricsResponse, MonitoringGetContainerStateRequest,
-    MonitoringGetContainerStatesRequest, MonitoringGetContainerStatesResponse,
-    MonitoringGetLocalMetricsRequest, MonitoringGetLocalMetricsResponse, MonitoringGetMetricsRequest,
-    MonitoringGetOverviewRequest, MonitoringGetPrometheusMetricsRequest,
-    MonitoringGetPrometheusMetricsResponse, MonitoringGetServerMetricsRequest,
-    MonitoringGetServerMetricsResponse, MonitoringListMaintenanceWindowsRequest,
-    MonitoringListMaintenanceWindowsResponse, MonitoringReinstallAgentRequest,
-    MonitoringReinstallAgentResponse, MonitoringRestartAgentRequest,
-    MonitoringRestartAgentResponse, MonitoringService, MonitoringServiceExt, MonitoringStartAgentRequest,
-    MonitoringStartAgentResponse, MonitoringStopAgentRequest, MonitoringStopAgentResponse,
+    MonitoringCreateAgentTokenResponse, MonitoringCreateMaintenanceWindowRequest,
+    MonitoringCreateMaintenanceWindowResponse, MonitoringDeleteMaintenanceWindowRequest,
+    MonitoringExportServerMetricsRequest, MonitoringExportServerMetricsResponse,
+    MonitoringGetAgentStatusRequest, MonitoringGetAgentStatusResponse,
+    MonitoringGetContainerMetricsRequest, MonitoringGetContainerMetricsResponse,
+    MonitoringGetContainerStateRequest, MonitoringGetContainerStatesRequest,
+    MonitoringGetContainerStatesResponse, MonitoringGetLocalMetricsRequest,
+    MonitoringGetLocalMetricsResponse, MonitoringGetMetricsRequest, MonitoringGetOverviewRequest,
+    MonitoringGetPrometheusMetricsRequest, MonitoringGetPrometheusMetricsResponse,
+    MonitoringGetServerMetricsRequest, MonitoringGetServerMetricsResponse,
+    MonitoringListMaintenanceWindowsRequest, MonitoringListMaintenanceWindowsResponse,
+    MonitoringReinstallAgentRequest, MonitoringReinstallAgentResponse,
+    MonitoringRestartAgentRequest, MonitoringRestartAgentResponse, MonitoringService,
+    MonitoringServiceExt, MonitoringStartAgentRequest, MonitoringStartAgentResponse,
+    MonitoringStopAgentRequest, MonitoringStopAgentResponse,
 };
 
 use super::helper::*;
@@ -51,9 +54,8 @@ impl MonitoringService for MonitoringController {
         &'a self,
         ctx: RequestContext,
         _request: ServiceRequest<'_, MonitoringGetLocalMetricsRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<MonitoringGetLocalMetricsResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<MonitoringGetLocalMetricsResponse> + Send + use<'a>>
+    {
         Response::ok(MonitoringGetLocalMetricsResponse {
             status: "ok".into(),
             service: "openoxide monitoring service".into(),
@@ -61,7 +63,6 @@ impl MonitoringService for MonitoringController {
                 "/monitoring/server/{id}".into(),
                 "/monitoring/containers/{id}".into(),
             ],
-            ..Default::default()
         })
     }
 
@@ -81,10 +82,7 @@ impl MonitoringService for MonitoringController {
             .await
             .map_err(|e| ConnectError::new(ErrorCode::Unavailable, e))?;
         let metrics = metrics.into_iter().map(server_metric_to_proto).collect();
-        Response::ok(MonitoringGetServerMetricsResponse {
-            metrics,
-            ..Default::default()
-        })
+        Response::ok(MonitoringGetServerMetricsResponse { metrics })
     }
 
     #[permission(Monitoring, CanRead)]
@@ -105,10 +103,7 @@ impl MonitoringService for MonitoringController {
             .await
             .map_err(|e| ConnectError::new(ErrorCode::Internal, e))?;
         let metrics = metrics.into_iter().map(container_metric_to_proto).collect();
-        Response::ok(MonitoringGetContainerMetricsResponse {
-            metrics,
-            ..Default::default()
-        })
+        Response::ok(MonitoringGetContainerMetricsResponse { metrics })
     }
 
     #[permission(Monitoring, CanRead)]
@@ -130,10 +125,7 @@ impl MonitoringService for MonitoringController {
             .into_iter()
             .map(container_state_to_proto)
             .collect::<Vec<MonitoringContainerState>>();
-        Response::ok(MonitoringGetContainerStatesResponse {
-            states,
-            ..Default::default()
-        })
+        Response::ok(MonitoringGetContainerStatesResponse { states })
     }
 
     #[permission(Alert, CanUpdate)]
@@ -172,7 +164,6 @@ impl MonitoringService for MonitoringController {
             server_id,
             organization_id,
             token,
-            ..Default::default()
         })
     }
 
@@ -199,7 +190,6 @@ impl MonitoringService for MonitoringController {
         );
         Response::ok(MonitoringGetAgentStatusResponse {
             status: ::buffa::MessageField::some(status),
-            ..Default::default()
         })
     }
 
@@ -212,10 +202,13 @@ impl MonitoringService for MonitoringController {
     {
         let server_id = request.server_id;
         verify_server_organization(&self.agent_auth, server_id, auth.organization_id).await?;
-        let action = self.lifecycle.start_agent(server_id).await.map_err(internal)?;
+        let action = self
+            .lifecycle
+            .start_agent(server_id)
+            .await
+            .map_err(internal)?;
         Response::ok(MonitoringStartAgentResponse {
             action: ::buffa::MessageField::some(agent_action_to_proto(action)),
-            ..Default::default()
         })
     }
 
@@ -228,10 +221,13 @@ impl MonitoringService for MonitoringController {
     {
         let server_id = request.server_id;
         verify_server_organization(&self.agent_auth, server_id, auth.organization_id).await?;
-        let action = self.lifecycle.stop_agent(server_id).await.map_err(internal)?;
+        let action = self
+            .lifecycle
+            .stop_agent(server_id)
+            .await
+            .map_err(internal)?;
         Response::ok(MonitoringStopAgentResponse {
             action: ::buffa::MessageField::some(agent_action_to_proto(action)),
-            ..Default::default()
         })
     }
 
@@ -244,10 +240,13 @@ impl MonitoringService for MonitoringController {
     {
         let server_id = request.server_id;
         verify_server_organization(&self.agent_auth, server_id, auth.organization_id).await?;
-        let action = self.lifecycle.restart_agent(server_id).await.map_err(internal)?;
+        let action = self
+            .lifecycle
+            .restart_agent(server_id)
+            .await
+            .map_err(internal)?;
         Response::ok(MonitoringRestartAgentResponse {
             action: ::buffa::MessageField::some(agent_action_to_proto(action)),
-            ..Default::default()
         })
     }
 
@@ -256,15 +255,17 @@ impl MonitoringService for MonitoringController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, MonitoringReinstallAgentRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<MonitoringReinstallAgentResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<MonitoringReinstallAgentResponse> + Send + use<'a>>
+    {
         let server_id = request.server_id;
         verify_server_organization(&self.agent_auth, server_id, auth.organization_id).await?;
-        let action = self.lifecycle.reinstall_agent(server_id).await.map_err(internal)?;
+        let action = self
+            .lifecycle
+            .reinstall_agent(server_id)
+            .await
+            .map_err(internal)?;
         Response::ok(MonitoringReinstallAgentResponse {
             action: ::buffa::MessageField::some(agent_action_to_proto(action)),
-            ..Default::default()
         })
     }
 
@@ -300,10 +301,7 @@ impl MonitoringService for MonitoringController {
                 metric.network_out
             ));
         }
-        Response::ok(MonitoringExportServerMetricsResponse {
-            csv,
-            ..Default::default()
-        })
+        Response::ok(MonitoringExportServerMetricsResponse { csv })
     }
 
     #[permission(Monitoring, CanRead)]
@@ -328,10 +326,7 @@ impl MonitoringService for MonitoringController {
             "# TYPE openoxide_server_cpu_percent gauge\nopenoxide_server_cpu_percent{{server_id=\"{}\"}} {}\n# TYPE openoxide_server_memory_used_bytes gauge\nopenoxide_server_memory_used_bytes{{server_id=\"{}\"}} {}\n# TYPE openoxide_server_disk_used_bytes gauge\nopenoxide_server_disk_used_bytes{{server_id=\"{}\"}} {}\n",
             server_id, metric.cpu, server_id, metric.mem_used, server_id, metric.disk_used
         );
-        Response::ok(MonitoringGetPrometheusMetricsResponse {
-            prometheus_text,
-            ..Default::default()
-        })
+        Response::ok(MonitoringGetPrometheusMetricsResponse { prometheus_text })
     }
 
     #[permission(Alert, CanUpdate)]
@@ -359,10 +354,7 @@ impl MonitoringService for MonitoringController {
             )
             .await
             .map_err(internal)?;
-        Response::ok(MonitoringCreateMaintenanceWindowResponse {
-            id,
-            ..Default::default()
-        })
+        Response::ok(MonitoringCreateMaintenanceWindowResponse { id })
     }
 
     #[permission(Monitoring, CanRead)]
@@ -380,11 +372,11 @@ impl MonitoringService for MonitoringController {
             .windows(organization_id)
             .await
             .map_err(internal)?;
-        let windows = windows.into_iter().map(maintenance_window_to_proto).collect();
-        Response::ok(MonitoringListMaintenanceWindowsResponse {
-            windows,
-            ..Default::default()
-        })
+        let windows = windows
+            .into_iter()
+            .map(maintenance_window_to_proto)
+            .collect();
+        Response::ok(MonitoringListMaintenanceWindowsResponse { windows })
     }
 
     #[permission(Alert, CanUpdate)]

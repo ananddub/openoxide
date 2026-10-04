@@ -44,6 +44,15 @@ impl TerminalService {
         let cancel = CancellationToken::new();
 
         let setup = match kind {
+            // Host-root shell goes over SSH (russh) for both local and remote
+            // servers — the Dokploy pattern. The agent's in-process setns host
+            // shell crashed the agent; SSH needs no namespace gymnastics and
+            // yields the real host login shell. Local uses a panel-managed key
+            // injected into the host's authorized_keys. Container shells still
+            // run through the agent (no per-container SSH).
+            TerminalKind::Docker if request.host => {
+                Self::open_host_ssh_session(&request, size).await
+            }
             TerminalKind::Docker => Self::open_agent_session(&request, size).await,
             TerminalKind::RemoteServer => Self::open_russh_session(&request, size).await,
             TerminalKind::Unspecified => Err("terminal kind is required".to_owned()),
@@ -118,9 +127,10 @@ impl TerminalService {
         request: &OpenTerminalRequest,
         size: TerminalSize,
     ) -> Result<(TerminalSessionHandle, TerminalPump, Option<String>), String> {
-        let server_id = crate::services::compute::compose::remote::agent_server_id(request.server_id)
-            .await
-            .map_err(|error| format!("could not resolve Agent server: {error}"))?;
+        let server_id =
+            crate::services::compute::compose::remote::agent_server_id(request.server_id)
+                .await
+                .map_err(|error| format!("could not resolve Agent server: {error}"))?;
         let monitoring = resolve::<MonitoringService>()
             .await
             .map_err(|error| format!("could not resolve Agent service: {error}"))?;
@@ -154,9 +164,54 @@ impl TerminalService {
             TerminalSessionHandle::AgentShell {
                 sender: Arc::new(tokio::sync::Mutex::new(sender)),
             },
-            TerminalPump::Agent { stream },
+            TerminalPump::Agent {
+                stream: Box::new(stream),
+            },
             Some(if request.host { "localhost" } else { "agent" }.to_owned()),
         ))
+    }
+
+    /// Host-root shell over SSH for any server. A server with stored SSH
+    /// credentials (remote) connects with them directly. The local server has
+    /// no credentials, so the panel provisions its own keypair, injects the
+    /// public half into the host's authorized_keys via the local agent, and
+    /// SSHes to the Docker host gateway — the Dokploy local-SSH pattern.
+    /// Host-root shell. Remote servers connect over SSH (russh) with their
+    /// stored key — the agent's in-process setns host shell crashed over the
+    /// wire there. The local host uses the agent's direct setns shell: it works
+    /// in-process (verified: no crash) and needs no host sshd, which is often
+    /// disabled on a developer/panel host. Container shells always use the
+    /// agent.
+    async fn open_host_ssh_session(
+        request: &OpenTerminalRequest,
+        size: TerminalSize,
+    ) -> Result<(TerminalSessionHandle, TerminalPump, Option<String>), String> {
+        // A missing server_id means the local host.
+        let server_id = match request.server_id {
+            Some(id) => id,
+            None => {
+                // Local: the agent runs on this host, so its setns host shell
+                // lands on the real host — no SSH, no host sshd required.
+                return Self::open_agent_session(request, size).await;
+            }
+        };
+        let queries = resolve::<crate::db::queries::FlashQueries>()
+            .await
+            .map_err(|error| format!("could not resolve database queries: {error}"))?;
+        let has_creds =
+            crate::services::infrastructure::server::ssh_credentials(&queries, server_id)
+                .await
+                .map_err(|error| format!("could not load SSH credentials: {error}"))?
+                .is_some();
+        if has_creds {
+            // Remote server: SSH with its stored key (robust; avoids the
+            // over-the-wire agent setns crash).
+            Self::open_russh_session(request, size).await
+        } else {
+            // A server row without SSH creds is the local host (or an agent-only
+            // server): use the agent's setns host shell.
+            Self::open_agent_session(request, size).await
+        }
     }
 
     async fn open_russh_session(
@@ -194,9 +249,10 @@ impl TerminalService {
             }
             Some(command) => Some(command),
         };
-        let terminal = os::ssh::RusshTerminal::connect(&session, size.cols, size.rows, shell_command)
-            .await
-            .map_err(|error| format!("SSH terminal failed to open: {error}"))?;
+        let terminal =
+            os::ssh::RusshTerminal::connect(&session, size.cols, size.rows, shell_command)
+                .await
+                .map_err(|error| format!("SSH terminal failed to open: {error}"))?;
         let terminal = Arc::new(terminal);
         Ok((
             TerminalSessionHandle::RusshShell {

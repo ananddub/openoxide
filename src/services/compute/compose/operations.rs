@@ -59,31 +59,27 @@ impl ComposeService {
         let deployment_id = match compose.server_id {
             Some(server_id) => {
                 self.queries
-                    .compose_queue_deployment_with_server(
-                        &ComposeQueueDeploymentWithServerParams {
-                            title: operation.title().to_string(),
-                            description,
-                            log_path,
-                            operation: operation.as_str().to_string(),
-                            service_id: id,
-                            server_id,
-                            user_id: actor_id,
-                        },
-                    )
+                    .compose_queue_deployment_with_server(&ComposeQueueDeploymentWithServerParams {
+                        title: operation.title().to_string(),
+                        description,
+                        log_path,
+                        operation: operation.as_str().to_string(),
+                        service_id: id,
+                        server_id,
+                        user_id: actor_id,
+                    })
                     .await?
             }
             None => {
                 self.queries
-                    .compose_queue_deployment_no_server(
-                        &ComposeQueueDeploymentNoServerParams {
-                            title: operation.title().to_string(),
-                            description,
-                            log_path,
-                            operation: operation.as_str().to_string(),
-                            service_id: id,
-                            user_id: actor_id,
-                        },
-                    )
+                    .compose_queue_deployment_no_server(&ComposeQueueDeploymentNoServerParams {
+                        title: operation.title().to_string(),
+                        description,
+                        log_path,
+                        operation: operation.as_str().to_string(),
+                        service_id: id,
+                        user_id: actor_id,
+                    })
                     .await?
             }
         };
@@ -122,7 +118,7 @@ impl ComposeService {
         self.cache
             .insert(
                 crate::core::cache::CacheKey::Compose(id),
-                crate::core::cache::CacheEnum::Compose(record.clone()),
+                crate::core::cache::CacheEnum::Compose(Box::new(record.clone())),
             )
             .await;
 
@@ -144,7 +140,7 @@ impl ComposeService {
     pub async fn stop_or_cancel_smart(&self, id: i64) -> sqlx::Result<bool> {
         let compose = self.get_by_id(id).await?;
         let current_status =
-            ComposeStatus::from_str(&compose.compose_status).unwrap_or(ComposeStatus::Idle);
+            ComposeStatus::from_str_opt(&compose.compose_status).unwrap_or(ComposeStatus::Idle);
 
         let (intermediate, final_st) = if current_status.is_building() {
             (
@@ -158,10 +154,7 @@ impl ComposeService {
             )
         };
 
-        let _ = self
-            .queries
-            .update_service_status(intermediate, id)
-            .await;
+        let _ = self.queries.update_service_status(intermediate, id).await;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Compose(id))
             .await;
@@ -236,7 +229,12 @@ pub(super) async fn scale_down_compose(
         ComposeType::DockerCompose => {
             let _ = tokio::time::timeout(
                 std::time::Duration::from_secs(6),
-                docker.compose().down().project(app_name).remove_orphans().run(),
+                docker
+                    .compose()
+                    .down()
+                    .project(app_name)
+                    .remove_orphans()
+                    .run(),
             )
             .await;
             Ok(())

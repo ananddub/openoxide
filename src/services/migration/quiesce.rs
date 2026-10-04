@@ -102,7 +102,10 @@ pub struct SchedulePauseRecord {
 /// Decide the restore value for one schedule. A schedule already re-enabled
 /// (e.g. by a human) stays enabled; one that was never enabled is never
 /// switched on. Returns `Some(true)` only when the caller must write.
-pub fn decide_schedule_restore(record: &SchedulePauseRecord, current_enabled: bool) -> Option<bool> {
+pub fn decide_schedule_restore(
+    record: &SchedulePauseRecord,
+    current_enabled: bool,
+) -> Option<bool> {
     match (record.was_enabled, current_enabled) {
         // Restore required: still paused, was on before QUIESCE.
         (true, false) => Some(true),

@@ -174,8 +174,6 @@ impl<'a> ServiceUpdate<'a> {
         self.force = true;
         self
     }
-    /// Pass any raw flag not yet covered.
-
     fn build_args(&self) -> Vec<String> {
         let mut a = vec!["service".to_string(), "update".to_string()];
 

@@ -8,15 +8,30 @@ import {
 	GalleryVerticalEnd,
 	Globe,
 	HardDrive,
+	LayoutGrid,
 	Network,
+	Pencil,
 	PieChart,
+	Plus,
 	Rocket,
 	ScrollText,
+	Server,
 	Settings2,
+	Terminal as TerminalIcon,
+	Trash2,
 	Wrench,
 	type LucideIcon,
 } from 'lucide-react';
+import {useState} from 'react';
 import {cn} from '#/api/utils';
+import {useRemoteServerGet, useSshKeyItems} from '#/api/live';
+import {CreateServerModal} from '#/components/remote-servers/create-server-modal';
+import {DeleteServerModal} from '#/components/remote-servers/delete-server-modal';
+import {ServerSettingsPanel} from '#/components/remote-servers/server-settings-panel';
+import type {
+	RemoteServerResponse,
+	SshKeyResponse,
+} from '#/types/api-helpers';
 import {
 	SIDEBAR_CENTER_X,
 	SIDEBAR_COLLAPSE,
@@ -26,6 +41,7 @@ import {
 	SidebarGroup,
 	SidebarMenu,
 	SidebarMenuItem,
+	SidebarSeparator,
 } from '#/components/ui/sidebar';
 import {useCan} from '#/hooks/permissions/use-permissions';
 import {useUrlTab} from '#/hooks/ui/use-url-tab';
@@ -90,6 +106,8 @@ type PageContext =
 	| {kind: 'settings'}
 	| {kind: 'infra'}
 	| {kind: 'deployments'}
+	| {kind: 'servers'}
+	| {kind: 'server'; id: string}
 	| {
 			kind: 'service';
 			projectId: number;
@@ -114,6 +132,14 @@ function resolveContext(
 
 	// /Deployments and /Deployments/queue — the two views own the rail.
 	if (seg[0] === 'Deployments') return {kind: 'deployments'};
+
+	// /remote-servers (+ /new) show the list rail; /remote-servers/:id the server rail.
+	if (seg[0] === 'remote-servers') {
+		if (seg.length === 1 || seg[1] === 'new') return {kind: 'servers'};
+		if (seg[1] && /^\d+$/.test(seg[1]))
+			return {kind: 'server', id: seg[1]};
+		return {kind: 'servers'};
+	}
 
 	// Only /projects/:id/family/:resourceId (service detail) — NOT the plain project page.
 	if (seg[0] !== 'projects' || !seg[1] || seg.length < 4) return null;
@@ -319,6 +345,178 @@ function InfraContextNav({collapsed}: {collapsed: boolean}) {
 	);
 }
 
+/* ── Remote Servers context ────────────────────────────────────────── */
+
+const SERVERS_NAV = [
+	{
+		id: 'list',
+		label: 'All Servers',
+		icon: Server,
+		to: '/remote-servers',
+	},
+	{
+		id: 'new',
+		label: 'Add Server',
+		icon: Plus,
+		to: '/remote-servers/new',
+	},
+] as const;
+
+function ServersContextNav({collapsed}: {collapsed: boolean}) {
+	const location = useLocation();
+	const navigate = useNavigate();
+	const path = location.pathname.replace(/\/+$/, '') || '/';
+
+	return (
+		<SidebarGroup className="gap-1 px-2 py-1">
+			<ContextHeader
+				label="Remote Servers"
+				collapsed={collapsed}
+				onBack={() => void navigate({to: '/'})}
+			/>
+			<SidebarMenu className="gap-1">
+				{SERVERS_NAV.map(item => (
+					<ContextRow
+						key={item.id}
+						icon={item.icon}
+						label={item.label}
+						active={path === item.to}
+						collapsed={collapsed}
+						onClick={() => void navigate({to: item.to as never})}
+					/>
+				))}
+			</SidebarMenu>
+		</SidebarGroup>
+	);
+}
+
+/* ── Remote Server detail context ───────────────────────────────────── */
+
+const SERVER_TABS = [
+	{id: 'overview', label: 'Overview', icon: LayoutGrid},
+	{id: 'network', label: 'Private Network', icon: Network},
+	{id: 'terminal', label: 'Terminal', icon: TerminalIcon},
+] as const;
+
+function ServerDetailContextNav({
+	id,
+	collapsed,
+}: {
+	id: string;
+	collapsed: boolean;
+}) {
+	const location = useLocation();
+	const navigate = useNavigate();
+	const currentTab =
+		typeof location.search === 'object' && location.search
+			? (location.search as Record<string, string>).tab
+			: undefined;
+	const activeTab = currentTab ?? 'overview';
+	const {data: server} = useRemoteServerGet(BigInt(id));
+	const {data: sshKeysData} = useSshKeyItems();
+	const [monitoringOpen, setMonitoringOpen] = useState(false);
+	const [editOpen, setEditOpen] = useState(false);
+	const [deleteOpen, setDeleteOpen] = useState(false);
+
+	const row = (server ?? null) as unknown as RemoteServerResponse | null;
+	const sshKeys = (sshKeysData ?? []) as unknown as SshKeyResponse[];
+
+	const actions = [
+		{
+			id: 'monitoring',
+			label: 'Monitoring',
+			icon: Activity,
+			on: monitoringOpen,
+			onClick: () => setMonitoringOpen(true),
+		},
+		{
+			id: 'edit',
+			label: 'Edit Server',
+			icon: Pencil,
+			on: editOpen,
+			onClick: () => setEditOpen(true),
+		},
+		{
+			id: 'remove',
+			label: 'Remove Server',
+			icon: Trash2,
+			on: deleteOpen,
+			onClick: () => setDeleteOpen(true),
+		},
+	];
+
+	return (
+		<>
+			<SidebarGroup className="gap-1 px-2 py-1">
+				<ContextHeader
+					label={server?.name || 'Server'}
+					collapsed={collapsed}
+					onBack={() => void navigate({to: '/remote-servers'})}
+				/>
+				<SidebarMenu className="gap-1">
+					{SERVER_TABS.map(item => (
+						<ContextRow
+							key={item.id}
+							icon={item.icon}
+							label={item.label}
+							active={activeTab === item.id}
+							collapsed={collapsed}
+							onClick={() =>
+								void navigate({
+									to: '/remote-servers/$id',
+									params: {id},
+									search: {
+										tab: item.id === 'overview' ? undefined : item.id,
+									} as never,
+									replace: true,
+								})
+							}
+						/>
+					))}
+				</SidebarMenu>
+				<SidebarSeparator className="my-1" />
+				<SidebarMenu className="gap-1">
+					{actions.map(item => (
+						<ContextRow
+							key={item.id}
+							icon={item.icon}
+							label={item.label}
+							active={item.on}
+							collapsed={collapsed}
+							onClick={item.onClick}
+						/>
+					))}
+				</SidebarMenu>
+			</SidebarGroup>
+			{row && (
+				<>
+					<ServerSettingsPanel
+						isOpen={monitoringOpen}
+						server={row}
+						onClose={() => setMonitoringOpen(false)}
+					/>
+					<CreateServerModal
+						isOpen={editOpen}
+						sshKeys={sshKeys}
+						editingServer={row}
+						onClose={() => setEditOpen(false)}
+						onSuccess={() => setEditOpen(false)}
+					/>
+					<DeleteServerModal
+						isOpen={deleteOpen}
+						server={row}
+						onClose={() => setDeleteOpen(false)}
+						onSuccess={() => {
+							setDeleteOpen(false);
+							void navigate({to: '/remote-servers'});
+						}}
+					/>
+				</>
+			)}
+		</>
+	);
+}
+
 /* ── Service context ───────────────────────────────────────────────── */
 
 /* ── Deployments context ─────────────────────────────────────────── */
@@ -432,6 +630,10 @@ export function PageContextNav({collapsed}: {collapsed: boolean}) {
 			return <InfraContextNav collapsed={collapsed} />;
 		case 'deployments':
 			return <DeploymentsContextNav collapsed={collapsed} />;
+		case 'servers':
+			return <ServersContextNav collapsed={collapsed} />;
+		case 'server':
+			return <ServerDetailContextNav id={ctx.id} collapsed={collapsed} />;
 		case 'service':
 			return (
 				<ServiceContextNav

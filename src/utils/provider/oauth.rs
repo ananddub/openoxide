@@ -114,6 +114,9 @@ mod tests {
 
     #[test]
     fn authorization_url_encodes_all_user_values() {
+        // reqwest is built with `rustls-no-provider`, so a Client panics unless the process
+        // installs one; `main.rs` does that for the binary, a test has to do it itself.
+        let _ = rustls::crypto::ring::default_provider().install_default();
         let config = OAuthConfig {
             base_url: "https://git.example.com/".into(),
             client_id: "client id".into(),

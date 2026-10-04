@@ -48,7 +48,7 @@ impl ServerSetup {
         )
     }
     pub fn new_remote(executor: crate::utils::exec::RemoteExecutor, config: SetupConfig) -> Self {
-        Self::new(CommandExecutor::Remote(executor), config)
+        Self::new(CommandExecutor::Remote(Box::new(executor)), config)
     }
     pub fn executor(&self) -> &CommandExecutor {
         &self.executor
@@ -136,10 +136,11 @@ impl ServerSetup {
                 .await;
         }
 
-        if !overwrite && os.file(path).exists().run().await.is_ok() {
-            if is_valid_yaml_file(&os, path).await {
-                return Ok(());
-            }
+        if !overwrite
+            && os.file(path).exists().run().await.is_ok()
+            && is_valid_yaml_file(&os, path).await
+        {
+            return Ok(());
         }
         os.file(path)
             .write(String::from_utf8_lossy(contents).as_ref())
@@ -287,7 +288,7 @@ impl ServerSetup {
                     tracing::info!("agent mTLS certs rotated; recreating agent to load them");
                 } else {
                     tracing::info!(
-                        "agent container predates the direct host shell; recreating it with pid=host, CAP_SYS_ADMIN, CAP_SYS_PTRACE and the /host bind"
+                        "agent container predates the privileged direct host shell; recreating it with pid=host, privileged and the /host bind"
                     );
                 }
             } else if self.config.agent_server_id.is_none() {
@@ -318,9 +319,9 @@ impl ServerSetup {
         let cgroup_mount = Mount::bind("/sys/fs/cgroup", "/sys/fs/cgroup");
         // Host root, read-only: the live metrics collector resolves container
         // cgroups and per-container network counters through /host/proc, and the
-        // direct host shell enters /host/proc/1/ns/* with setns. Reading those
-        // namespace symlinks is ptrace-gated, so the shell needs CAP_SYS_PTRACE
-        // on top of the CAP_SYS_ADMIN that makes the namespace switch legal.
+        // direct host shell enters /host/proc/1/ns/* with setns. setns is blocked
+        // by the default seccomp profile, so the agent runs --privileged rather
+        // than carrying a CAP_SYS_ADMIN/CAP_SYS_PTRACE pair.
         let host_mount = Mount::bind_ro("/", "/host");
         let workspace_mount = Mount::bind(&self.config.paths.agent, "/app/workspace");
         let traefik_mount = Mount::bind(&self.config.paths.traefik, "/etc/openoxide/traefik");
@@ -347,8 +348,7 @@ impl ServerSetup {
             .mount(docker_socket_mount)
             .mount(cgroup_mount)
             .mount(host_mount)
-            .cap_add("SYS_ADMIN")
-            .cap_add("SYS_PTRACE")
+            .privileged()
             .mount(workspace_mount)
             .mount(apps_mount)
             .mount(compose_mount)
@@ -792,8 +792,7 @@ impl ServerSetup {
             .mount(Mount::bind("/var/run/docker.sock", "/var/run/docker.sock"))
             .mount(Mount::bind("/sys/fs/cgroup", "/sys/fs/cgroup"))
             .mount(Mount::bind_ro("/", "/host"))
-            .cap_add("SYS_ADMIN")
-            .cap_add("SYS_PTRACE")
+            .privileged()
             .mount(Mount::bind(
                 self.config.paths.agent.as_str(),
                 "/app/workspace",
@@ -879,11 +878,11 @@ pub(crate) fn agent_image() -> &'static str {
 
 /// Whether a running agent container can serve the direct host shell: the
 /// read-only host-root bind whose `/proc/1/ns/*` the namespaces are opened
-/// through, CAP_SYS_PTRACE to read those symlinks, CAP_SYS_ADMIN for the
-/// `setns` itself, and `--pid=host`, because the kernel will not let a process
-/// join an ancestor PID namespace. Agents created before any of that are
-/// recreated rather than left answering every shell open with a precondition
-/// error.
+/// through, `--privileged`, because the default seccomp profile refuses the
+/// `setns` to a capable-but-unconfined container, and `--pid=host`, because the
+/// kernel will not let a process join an ancestor PID namespace. Agents created
+/// before any of that are recreated rather than left answering every shell open
+/// with a precondition error.
 pub(crate) fn agent_supports_direct_host_shell(
     mounts: &[crate::utils::docker::core::types::ContainerInspectMount],
     host_config: &serde_json::Value,
@@ -895,16 +894,14 @@ pub(crate) fn agent_supports_direct_host_shell(
             .iter()
             .any(|bind| bind.ends_with(":/host:ro"));
     let host_pid = host_config.get("PidMode").and_then(|mode| mode.as_str()) == Some("host");
-    host_pid && host_shell_caps(&string_array(host_config, "CapAdd")) && host_bind
-}
-
-/// Docker reports `--cap-add SYS_ADMIN` back as `CAP_SYS_ADMIN`, so accept
-/// either spelling of each required capability.
-fn host_shell_caps(caps: &[String]) -> bool {
-    ["SYS_ADMIN", "SYS_PTRACE"].iter().all(|needed| {
-        caps.iter()
-            .any(|cap| cap.strip_prefix("CAP_") == Some(*needed))
-    })
+    // Full privileged: the default seccomp/apparmor profile blocks setns() into
+    // PID 1's namespaces even with SYS_ADMIN+SYS_PTRACE, so a cap-only agent is
+    // treated as outdated and recreated privileged.
+    let privileged = host_config
+        .get("Privileged")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    host_pid && privileged && host_bind
 }
 
 fn string_array(value: &serde_json::Value, field: &str) -> Vec<String> {
@@ -978,13 +975,15 @@ mod tests {
 
     #[test]
     fn oneshot_script_distributes_mtls_when_material_present() {
-        let mut config = SetupConfig::default();
-        config.agent_server_id = Some(7);
-        config.agent_panel_url = Some("http://panel:4000".into());
-        config.agent_token = Some("tok".into());
-        config.agent_mtls_ca_cert = Some("CA-PEM".into());
-        config.agent_mtls_cert = Some("AGENT-PEM".into());
-        config.agent_mtls_key = Some("KEY-PEM".into());
+        let config = SetupConfig {
+            agent_server_id: Some(7),
+            agent_panel_url: Some("http://panel:4000".into()),
+            agent_token: Some("tok".into()),
+            agent_mtls_ca_cert: Some("CA-PEM".into()),
+            agent_mtls_cert: Some("AGENT-PEM".into()),
+            agent_mtls_key: Some("KEY-PEM".into()),
+            ..Default::default()
+        };
         let script = ServerSetup::new_local(config).compile_oneshot_script(false);
 
         assert!(script.contains("/mtls"));
@@ -997,8 +996,10 @@ mod tests {
 
     #[test]
     fn oneshot_script_skips_mtls_when_material_absent() {
-        let mut config = SetupConfig::default();
-        config.agent_server_id = Some(7);
+        let config = SetupConfig {
+            agent_server_id: Some(7),
+            ..Default::default()
+        };
         let script = ServerSetup::new_local(config).compile_oneshot_script(false);
         assert!(!script.contains("AGENT_TLS_CERT"));
     }
@@ -1006,15 +1007,14 @@ mod tests {
     #[test]
     fn agent_create_grants_host_shell_prerequisites() {
         // The direct host shell setns'es into /host/proc/1/ns/* — it needs the
-        // host-root bind mount, CAP_SYS_ADMIN for the switch, CAP_SYS_PTRACE to
-        // read the namespace symlinks, and --pid=host because the kernel refuses
-        // to join an ancestor PID namespace.
+        // host-root bind mount and --pid=host because the kernel refuses to join
+        // an ancestor PID namespace. Caps alone are not enough: the default
+        // seccomp profile blocks setns(), so the agent runs --privileged.
         let setup = ServerSetup::new_local(SetupConfig::default());
         let script = setup.compile_oneshot_script(false);
         // Every argv token is shell-quoted by the builder, so match the
-        // rendered pair rather than a raw `--cap-add SYS_ADMIN`.
-        assert!(script.contains("'--cap-add' 'SYS_ADMIN'"), "{script}");
-        assert!(script.contains("'--cap-add' 'SYS_PTRACE'"), "{script}");
+        // rendered flag rather than a raw `--privileged`.
+        assert!(script.contains("'--privileged'"), "{script}");
         assert!(script.contains("'--pid' 'host'"), "{script}");
         assert!(script.contains("/:/host:ro"), "{script}");
     }
@@ -1028,17 +1028,18 @@ mod tests {
         }
     }
 
-    /// A real agent container: Docker reports added capabilities with their
-    /// `CAP_` prefix, so the predicate has to accept that form.
+    /// A real agent container: Docker reports the privileged flag and added
+    /// capabilities with their `CAP_` prefix.
     fn host_shell_host_config() -> serde_json::Value {
         serde_json::json!({
             "PidMode": "host",
+            "Privileged": true,
             "CapAdd": ["CAP_SYS_ADMIN", "CAP_SYS_PTRACE", "CAP_NET_ADMIN"],
         })
     }
 
     #[test]
-    fn running_agent_with_caps_and_host_bind_is_left_alone() {
+    fn running_privileged_agent_with_host_bind_is_left_alone() {
         assert!(agent_supports_direct_host_shell(
             &[host_mount(false)],
             &host_shell_host_config()
@@ -1047,6 +1048,7 @@ mod tests {
         // `-v /:/host:ro` shows up as a HostConfig bind instead of a Mount entry.
         let binds = serde_json::json!({
             "PidMode": "host",
+            "Privileged": true,
             "CapAdd": ["CAP_SYS_ADMIN", "CAP_SYS_PTRACE"],
             "Binds": ["/var/run/docker.sock:/var/run/docker.sock", "/:/host:ro"]
         });
@@ -1055,12 +1057,15 @@ mod tests {
 
     #[test]
     fn stale_agent_container_is_recreated_for_the_host_shell() {
-        // SYS_ADMIN alone was the first guess; the namespace symlinks are
-        // ptrace-gated, so an agent without SYS_PTRACE still cannot open them.
-        let one_cap = serde_json::json!({ "PidMode": "host", "CapAdd": ["CAP_SYS_ADMIN"] });
+        // The first guess was caps alone; setns() is seccomp-gated, so an agent
+        // without --privileged still cannot open the namespace symlinks.
+        let cap_only = serde_json::json!({
+            "PidMode": "host",
+            "CapAdd": ["CAP_SYS_ADMIN", "CAP_SYS_PTRACE"],
+        });
         assert!(!agent_supports_direct_host_shell(
             &[host_mount(false)],
-            &one_cap
+            &cap_only
         ));
 
         let no_caps = serde_json::json!({ "PidMode": "host", "CapAdd": ["NET_ADMIN"] });
@@ -1081,6 +1086,7 @@ mod tests {
         // would otherwise never look at again.
         let nested_pid = serde_json::json!({
             "PidMode": "",
+            "Privileged": true,
             "CapAdd": ["CAP_SYS_ADMIN", "CAP_SYS_PTRACE"],
         });
         assert!(!agent_supports_direct_host_shell(
@@ -1182,8 +1188,10 @@ mod tests {
 
     #[test]
     fn generated_build_server_setup_stops_before_deploy_only_steps() {
-        let mut config = SetupConfig::default();
-        config.build_server = true;
+        let config = SetupConfig {
+            build_server: true,
+            ..Default::default()
+        };
         let setup = ServerSetup::new_local(config);
         let script = setup.compile_oneshot_script(true);
 

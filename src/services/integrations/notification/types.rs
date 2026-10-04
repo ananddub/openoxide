@@ -3,7 +3,7 @@ use os::string_enum;
 use serde::{Deserialize, Serialize};
 
 string_enum! {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, ts_rs::TS)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
     pub enum NotificationProvider {
         default = Slack;

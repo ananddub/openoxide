@@ -23,6 +23,18 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
                 }
             };
 
+            // Rust constructor calls (`PgDumpBuilder::new`, `OsCli::new`, …)
+            // are typed-builder factories, not shell command names — pass the
+            // call through verbatim and lower it via `IntoCommand`.
+            if func_name.chars().next().is_some_and(|c| c.is_uppercase()) {
+                let pass = crate::convert::dsl::substitute_sh_vars(expr);
+                return Ok(quote! {
+                    (crate::utils::exec::script::dsl::IntoShellIRGeneric::into_shell_ir(
+                        crate::utils::exec::script::dsl::ShellIRWrapper(#pass)
+                    ))
+                });
+            }
+
             if func_name == "cmd" {
                 let first_arg = expr_call.args.first().ok_or_else(|| {
                     syn::Error::new_spanned(
@@ -173,14 +185,14 @@ pub fn convert_expr(expr: &syn::Expr) -> Result<proc_macro2::TokenStream, syn::E
                 });
             }
 
-            return Ok(quote! {
+            Ok(quote! {
                 (crate::utils::exec::script::dsl::ShellIR::Command(
                     crate::utils::exec::script::dsl::Command {
                         name: #func_name.to_string(),
                         args: vec![ #( #args_tokens ),* ],
                     }
                 ))
-            });
+            })
         }
         Expr::Path(expr_path) => {
             let ident = expr_path.path.get_ident().ok_or_else(|| {

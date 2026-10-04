@@ -99,7 +99,10 @@ pub fn expand_env_template(env_block: &str) -> String {
 /// Resolves a `template.toml`. `server_ip` (when known) yields a
 /// reachable `sslip.io` placeholder domain. `None` when the TOML has no env
 /// entries and no domains.
-pub fn resolve_template_toml(template_toml: &str, server_ip: Option<&str>) -> Option<ResolvedTemplate> {
+pub fn resolve_template_toml(
+    template_toml: &str,
+    server_ip: Option<&str>,
+) -> Option<ResolvedTemplate> {
     let parsed: TemplateToml = toml::from_str(template_toml).ok()?;
     let mut ctx = Ctx::new(server_ip.map(str::to_owned));
 
@@ -210,19 +213,21 @@ impl Ctx {
         let mut out = String::with_capacity(input.len());
         let mut i = 0;
         while i < bytes.len() {
-            if bytes[i] == b'$' && i + 1 < bytes.len() && bytes[i + 1] == b'{' {
-                if let Some(end) = find_close_brace(bytes, i + 2) {
-                    let inner = input[i + 2..end].trim();
-                    if let Some(value) = vars.get(inner) {
-                        out.push_str(value);
-                    } else if let Some(value) = self.generate(inner, vars) {
-                        out.push_str(&value);
-                    } else {
-                        out.push_str(&input[i..=end]);
-                    }
-                    i = end + 1;
-                    continue;
+            if bytes[i] == b'$'
+                && i + 1 < bytes.len()
+                && bytes[i + 1] == b'{'
+                && let Some(end) = find_close_brace(bytes, i + 2)
+            {
+                let inner = input[i + 2..end].trim();
+                if let Some(value) = vars.get(inner) {
+                    out.push_str(value);
+                } else if let Some(value) = self.generate(inner, vars) {
+                    out.push_str(&value);
+                } else {
+                    out.push_str(&input[i..=end]);
                 }
+                i = end + 1;
+                continue;
             }
             let ch_len = utf8_len(bytes[i]);
             out.push_str(&input[i..i + ch_len]);
@@ -365,8 +370,8 @@ fn hs256(secret: &str, payload_json: &str) -> String {
     let payload = base64url(payload_json.as_bytes());
     let signing_input = format!("{header}.{payload}");
 
-    let mut mac = <Hmac<Sha256>>::new_from_slice(secret.as_bytes())
-        .expect("HMAC accepts any key length");
+    let mut mac =
+        <Hmac<Sha256>>::new_from_slice(secret.as_bytes()).expect("HMAC accepts any key length");
     mac.update(signing_input.as_bytes());
     let signature = base64url(&mac.finalize().into_bytes());
     format!("{signing_input}.{signature}")
@@ -381,7 +386,9 @@ mod tests {
     use super::*;
 
     fn env_map(env: &str) -> HashMap<&str, &str> {
-        env.lines().filter_map(|line| line.split_once('=')).collect()
+        env.lines()
+            .filter_map(|line| line.split_once('='))
+            .collect()
     }
 
     #[test]
@@ -446,13 +453,25 @@ ALLOW_ACCOUNT_CREATION = "false"
         assert_eq!(lines["ADMIN_PASSWORD"].len(), 16);
 
         // Ports parse as integers: 8_080 -> 8080, 3_000 -> 3000.
-        let alarik = out.domains.iter().find(|d| d.service_name == "alarik").unwrap();
+        let alarik = out
+            .domains
+            .iter()
+            .find(|d| d.service_name == "alarik")
+            .unwrap();
         assert_eq!(alarik.port, 8080);
-        let console = out.domains.iter().find(|d| d.service_name == "console").unwrap();
+        let console = out
+            .domains
+            .iter()
+            .find(|d| d.service_name == "console")
+            .unwrap();
         assert_eq!(console.port, 3000);
 
         // Hosts resolve to a reachable sslip.io host built from the server IP.
-        assert!(alarik.host.ends_with("1-2-3-4.sslip.io"), "host={}", alarik.host);
+        assert!(
+            alarik.host.ends_with("1-2-3-4.sslip.io"),
+            "host={}",
+            alarik.host
+        );
         assert!(!alarik.host.contains("${"));
     }
 
@@ -487,7 +506,10 @@ host = "${console_domain}"
 "#;
         let out = resolve_template_toml(toml, Some("1.2.3.4")).unwrap();
         assert_eq!(out.domains.len(), 2);
-        assert_ne!(out.domains[0].host, out.domains[1].host, "hosts must differ");
+        assert_ne!(
+            out.domains[0].host, out.domains[1].host,
+            "hosts must differ"
+        );
     }
 
     #[test]
@@ -523,7 +545,11 @@ APP_KEY = "${prefix}"
 "#;
         let out = resolve_template_toml(toml, None).unwrap();
         let lines = env_map(&out.env);
-        assert!(!lines["APP_KEY"].contains("${"), "unresolved: {}", lines["APP_KEY"]);
+        assert!(
+            !lines["APP_KEY"].contains("${"),
+            "unresolved: {}",
+            lines["APP_KEY"]
+        );
         assert!(lines["APP_KEY"].ends_with("_akaunting"));
     }
 

@@ -1,5 +1,6 @@
 use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
 
+use crate::api::connect::generated::openoxide::api::v1::__buffa::view::VaultProviderAssignmentView;
 use crate::api::connect::generated::openoxide::api::v1::{
     CreateVaultProviderRequest, CreateVaultProviderResponse, DeleteVaultProviderRequest, Empty,
     GetVaultProviderRequest, GetVaultProviderResponse, ListVaultAssignmentsRequest,
@@ -9,7 +10,6 @@ use crate::api::connect::generated::openoxide::api::v1::{
     UpdateVaultAssignmentsRequest, UpdateVaultAssignmentsResponse, UpdateVaultProviderRequest,
     UpdateVaultProviderResponse, VaultService, VaultServiceExt,
 };
-use crate::api::connect::generated::openoxide::api::v1::__buffa::view::VaultProviderAssignmentView;
 use crate::services::integrations::vault::{
     CreateVaultProviderDto, UpdateVaultProviderDto, VaultProviderAssignmentDto,
 };
@@ -36,7 +36,8 @@ impl VaultService for VaultController {
         &'a self,
         ctx: RequestContext,
         _query: ServiceRequest<'_, ListVaultProvidersRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ListVaultProvidersResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ListVaultProvidersResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let items = self
             .service
@@ -44,10 +45,7 @@ impl VaultService for VaultController {
             .await
             .map_err(map_vault_error)?;
         let providers = items.into_iter().map(provider_to_proto).collect();
-        Response::ok(ListVaultProvidersResponse {
-            providers,
-            ..Default::default()
-        })
+        Response::ok(ListVaultProvidersResponse { providers })
     }
 
     #[permission(Server, CanRead)]
@@ -64,7 +62,6 @@ impl VaultService for VaultController {
             .map_err(map_vault_error)?;
         Response::ok(GetVaultProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
-            ..Default::default()
         })
     }
 
@@ -73,7 +70,8 @@ impl VaultService for VaultController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, CreateVaultProviderRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<CreateVaultProviderResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<CreateVaultProviderResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let dto = CreateVaultProviderDto {
             name: request.name.to_owned(),
@@ -91,7 +89,6 @@ impl VaultService for VaultController {
             .map_err(map_vault_error)?;
         Response::ok(CreateVaultProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
-            ..Default::default()
         })
     }
 
@@ -100,7 +97,8 @@ impl VaultService for VaultController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateVaultProviderRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<UpdateVaultProviderResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<UpdateVaultProviderResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let dto = UpdateVaultProviderDto {
             name: request.name.map(str::to_owned),
@@ -120,7 +118,6 @@ impl VaultService for VaultController {
             .map_err(map_vault_error)?;
         Response::ok(UpdateVaultProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
-            ..Default::default()
         })
     }
 
@@ -153,7 +150,6 @@ impl VaultService for VaultController {
         Response::ok(TestVaultProviderResponse {
             success: result.success,
             message: result.message,
-            ..Default::default()
         })
     }
 
@@ -181,7 +177,6 @@ impl VaultService for VaultController {
         Response::ok(TestVaultConnectionResponse {
             success: result.success,
             message: result.message,
-            ..Default::default()
         })
     }
 
@@ -199,7 +194,6 @@ impl VaultService for VaultController {
             .map_err(map_vault_error)?;
         Response::ok(ListVaultSecretsResponse {
             secrets: result.secrets,
-            ..Default::default()
         })
     }
 
@@ -217,10 +211,7 @@ impl VaultService for VaultController {
             .await
             .map_err(map_vault_error)?;
         let assignments = assignments.into_iter().map(assignment_to_proto).collect();
-        Response::ok(ListVaultAssignmentsResponse {
-            assignments,
-            ..Default::default()
-        })
+        Response::ok(ListVaultAssignmentsResponse { assignments })
     }
 
     #[permission(Server, CanUpdate)]
@@ -228,9 +219,8 @@ impl VaultService for VaultController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateVaultAssignmentsRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<UpdateVaultAssignmentsResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<UpdateVaultAssignmentsResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let assignments = assignments_to_dto(&request.assignments);
         let result = self
@@ -239,9 +229,6 @@ impl VaultService for VaultController {
             .await
             .map_err(map_vault_error)?;
         let assignments = result.into_iter().map(assignment_to_proto).collect();
-        Response::ok(UpdateVaultAssignmentsResponse {
-            assignments,
-            ..Default::default()
-        })
+        Response::ok(UpdateVaultAssignmentsResponse { assignments })
     }
 }

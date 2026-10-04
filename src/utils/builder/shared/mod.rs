@@ -102,15 +102,14 @@ impl BuilderContext {
         }
         if let Some((state, id)) = &self.state
             && let BuilderEvent::Message(message) = &event
+            && let Some(sender) = state.get_broadcast_send(*id)
         {
-            if let Some(sender) = state.get_broadcast_send(id.clone()) {
-                let _ = sender.send(DeployEvent::Message(message.clone()));
-            }
+            let _ = sender.send(DeployEvent::Message(message.clone()));
         }
-        if let Some((state, id)) = &self.state {
-            if let Some(deploy_state) = builder_event_state_opt(&event) {
-                let _ = state.send_state(id.clone(), deploy_state);
-            }
+        if let Some((state, id)) = &self.state
+            && let Some(deploy_state) = builder_event_state_opt(&event)
+        {
+            let _ = state.send_state(*id, deploy_state);
         }
     }
 
@@ -195,4 +194,3 @@ pub mod mapper;
 pub mod mounts;
 pub mod source;
 pub mod traefik;
-

@@ -21,7 +21,8 @@ use crate::{
 };
 
 use super::{
-    crud::{CreateComposeDto, PatchComposeDto}, ComposeRecord, ComposeService, ComposeType,
+    ComposeRecord, ComposeService, ComposeType,
+    crud::{CreateComposeDto, PatchComposeDto},
 };
 
 pub struct ComposeManagementService {
@@ -96,7 +97,7 @@ impl ComposeManagementService {
             return Ok(created);
         };
 
- // Resolve a full template.toml (variables + env + domains).
+        // Resolve a full template.toml (variables + env + domains).
         // Fall back to plain generator expansion for a bare env block.
         let server_ip = self.server_ip(input.server_id).await;
         match template_vars::resolve_template_toml(&template_toml, server_ip.as_deref()) {
@@ -104,8 +105,10 @@ impl ComposeManagementService {
                 if !resolved.env.is_empty() {
                     self.patch_env(created.id, resolved.env).await?;
                 }
-                self.create_template_domains(created.id, &resolved.domains).await;
-                self.create_template_mounts(created.id, &resolved.mounts).await;
+                self.create_template_domains(created.id, &resolved.domains)
+                    .await;
+                self.create_template_mounts(created.id, &resolved.mounts)
+                    .await;
             }
             None => {
                 let env = template_vars::expand_env_template(&template_toml);
@@ -145,12 +148,12 @@ impl ComposeManagementService {
     /// stored IP; local deploys fall back to OPENOXIDE_SERVER_URL's host (if an
     /// IP) or the panel's routable LAN IPv4 — never a bare random host.
     async fn server_ip(&self, server_id: Option<i64>) -> Option<String> {
-        if let Some(server_id) = server_id {
-            if let Ok(server) = self.queries.get_server_by_i_d(server_id).await {
-                let ip = server.ip_address;
-                if !matches!(ip.as_str(), "" | "0.0.0.0" | "localhost" | "127.0.0.1") {
-                    return Some(ip);
-                }
+        if let Some(server_id) = server_id
+            && let Ok(server) = self.queries.get_server_by_i_d(server_id).await
+        {
+            let ip = server.ip_address;
+            if !matches!(ip.as_str(), "" | "0.0.0.0" | "localhost" | "127.0.0.1") {
+                return Some(ip);
             }
         }
         // Local deploy: prefer an explicitly configured public host, then a
@@ -230,7 +233,7 @@ impl ComposeManagementService {
 
     pub async fn remove_service(&self, id: i64, service_name: &str) -> sqlx::Result<ComposeRecord> {
         let current = self.compose.get_by_id(id).await?;
-        if crate::utils::builder::spec::SourceType::from_str(current.source_type.as_str())
+        if crate::utils::builder::spec::SourceType::from_str_opt(current.source_type.as_str())
             .ok_or_else(|| sqlx::Error::Protocol("invalid compose source type".into()))?
             != crate::utils::builder::spec::SourceType::Raw
         {
@@ -251,7 +254,7 @@ impl ComposeManagementService {
         input: UpsertComposeResourceDto,
     ) -> sqlx::Result<ComposeRecord> {
         let current = self.compose.get_by_id(id).await?;
-        if crate::utils::builder::spec::SourceType::from_str(current.source_type.as_str())
+        if crate::utils::builder::spec::SourceType::from_str_opt(current.source_type.as_str())
             .ok_or_else(|| sqlx::Error::Protocol("invalid compose source type".into()))?
             != crate::utils::builder::spec::SourceType::Raw
         {
@@ -279,7 +282,7 @@ impl ComposeManagementService {
         input: DeleteComposeResourceDto,
     ) -> sqlx::Result<ComposeRecord> {
         let current = self.compose.get_by_id(id).await?;
-        if crate::utils::builder::spec::SourceType::from_str(current.source_type.as_str())
+        if crate::utils::builder::spec::SourceType::from_str_opt(current.source_type.as_str())
             .ok_or_else(|| sqlx::Error::Protocol("invalid compose source type".into()))?
             != crate::utils::builder::spec::SourceType::Raw
         {
@@ -407,7 +410,10 @@ impl ComposeManagementService {
 fn env_ip(var: &str) -> Option<String> {
     let value = std::env::var(var).ok()?;
     let value = value.trim();
-    value.parse::<std::net::IpAddr>().ok().map(|_| value.to_owned())
+    value
+        .parse::<std::net::IpAddr>()
+        .ok()
+        .map(|_| value.to_owned())
 }
 
 /// The host of a `scheme://host:port` URL env var when it is a bare IP.
@@ -421,7 +427,9 @@ fn server_url_ip(var: &str) -> Option<String> {
         .next()?
         .split(':')
         .next()?;
-    host.parse::<std::net::IpAddr>().ok().map(|_| host.to_owned())
+    host.parse::<std::net::IpAddr>()
+        .ok()
+        .map(|_| host.to_owned())
 }
 
 /// The panel's routable IPv4 (UDP-connect probe, no packets sent). Skips

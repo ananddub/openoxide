@@ -27,10 +27,7 @@ impl DomainService for DomainController {
             .await
             .map_err(map_error)?;
         let domains = items.into_iter().map(domain_to_proto).collect();
-        Response::ok(ListDomainsResponse {
-            domains,
-            ..Default::default()
-        })
+        Response::ok(ListDomainsResponse { domains })
     }
 
     #[permission(Application, CanRead)]
@@ -46,7 +43,6 @@ impl DomainService for DomainController {
             .map_err(map_error)?;
         Response::ok(GetDomainResponse {
             domain: ::buffa::MessageField::some(domain_to_proto(item)),
-            ..Default::default()
         })
     }
 
@@ -63,10 +59,7 @@ impl DomainService for DomainController {
             .await
             .map_err(map_error)?;
         let domains = items.into_iter().map(domain_to_proto).collect();
-        Response::ok(ListApplicationDomainsResponse {
-            domains,
-            ..Default::default()
-        })
+        Response::ok(ListApplicationDomainsResponse { domains })
     }
 
     #[permission(Application, CanRead)]
@@ -82,10 +75,7 @@ impl DomainService for DomainController {
             .await
             .map_err(map_error)?;
         let domains = items.into_iter().map(domain_to_proto).collect();
-        Response::ok(ListComposeDomainsResponse {
-            domains,
-            ..Default::default()
-        })
+        Response::ok(ListComposeDomainsResponse { domains })
     }
 
     #[permission(Application, CanCreate)]
@@ -142,7 +132,6 @@ impl DomainService for DomainController {
         }
         Response::ok(CreateDomainResponse {
             domain: ::buffa::MessageField::some(domain_to_proto(created)),
-            ..Default::default()
         })
     }
 
@@ -173,7 +162,6 @@ impl DomainService for DomainController {
         self.cache.invalidate_all().await;
         Response::ok(UpdateDomainResponse {
             domain: ::buffa::MessageField::some(domain_to_proto(updated)),
-            ..Default::default()
         })
     }
 
@@ -199,7 +187,7 @@ impl DomainService for DomainController {
     ) -> ServiceResult<impl connectrpc::Encodable<ValidateDomainDnsResponse> + Send + use<'a>> {
         let result = self
             .service
-            .validate_dns(&request.host, request.server_id, auth.organization_id)
+            .validate_dns(request.host, request.server_id, auth.organization_id)
             .await
             .map_err(map_error)?;
         Response::ok(ValidateDomainDnsResponse {
@@ -207,7 +195,6 @@ impl DomainService for DomainController {
             resolved_ips: result.resolved_ips,
             expected_ips: result.expected_ips,
             error: result.error,
-            ..Default::default()
         })
     }
 }

@@ -59,19 +59,15 @@ impl TableWatchStream {
 
         // Drain the notification queue into the pending set. The first
         // batch of a burst opens (or reopens) the coalescing window.
-        loop {
-            match self.receiver.poll_recv(cx) {
-                Poll::Ready(Some(batch)) => {
-                    let window_was_idle = self.pending.is_none();
-                    self.pending.get_or_insert_with(Vec::new).extend(batch.tables);
-                    if window_was_idle {
-                        self.sleep
-                            .as_mut()
-                            .reset(tokio::time::Instant::now() + COALESCE_WINDOW);
-                    }
-                }
-                // Queue empty (waker registered) or sender gone: stop draining.
-                Poll::Pending | Poll::Ready(None) => break,
+        while let Poll::Ready(Some(batch)) = self.receiver.poll_recv(cx) {
+            let window_was_idle = self.pending.is_none();
+            self.pending
+                .get_or_insert_with(Vec::new)
+                .extend(batch.tables);
+            if window_was_idle {
+                self.sleep
+                    .as_mut()
+                    .reset(tokio::time::Instant::now() + COALESCE_WINDOW);
             }
         }
 

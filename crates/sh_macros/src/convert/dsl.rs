@@ -38,7 +38,7 @@ fn is_sh_var(name: &str) -> bool {
 /// identifier declared in the sh! scope with its shell-variable form `"$varname"`.
 /// Identifiers NOT in sh! scope (outer Rust variables) are left as-is so the
 /// Rust compiler can resolve them normally.
-fn substitute_sh_vars(expr: &syn::Expr) -> syn::Expr {
+pub(crate) fn substitute_sh_vars(expr: &syn::Expr) -> syn::Expr {
     match expr {
         syn::Expr::MethodCall(mc) => {
             let new_receiver = Box::new(substitute_sh_vars(&mc.receiver));
@@ -93,12 +93,45 @@ fn substitute_sh_vars(expr: &syn::Expr) -> syn::Expr {
     }
 }
 
+/// True when an expression chain bottoms out in a Rust constructor call
+/// (`PgDumpBuilder::new()`, `OsCli::new(..)`, …) — i.e. the first path
+/// segment of the root call starts with an uppercase letter. Such chains are
+/// typed builders, not shell commands, and are lowered via `IntoCommand`.
+pub(crate) fn is_rust_constructor_chain(expr: &syn::Expr) -> bool {
+    match expr {
+        syn::Expr::Call(call) => match &*call.func {
+            syn::Expr::Path(p) => p
+                .path
+                .segments
+                .first()
+                .is_some_and(|s| s.ident.to_string().starts_with(|c: char| c.is_uppercase())),
+            _ => false,
+        },
+        syn::Expr::MethodCall(mc) => is_rust_constructor_chain(&mc.receiver),
+        _ => false,
+    }
+}
+
 pub fn convert_method_call(
     method_call: &ExprMethodCall,
 ) -> Result<proc_macro2::TokenStream, syn::Error> {
     let receiver = &*method_call.receiver;
     let method_name = method_call.method.to_string();
     let is_special_method = is_special_method_name(&method_name);
+
+    // Typed builder chains rooted at a Rust constructor (`XyBuilder::new()…`)
+    // pass through verbatim and lower via `IntoCommand` → `Raw`; the per-level
+    // `convert_expr` recursion would otherwise emit `.method()` calls on
+    // `ShellIR` tokens and fail to compile.
+    if !is_special_method && is_rust_constructor_chain(receiver) {
+        let whole = syn::Expr::MethodCall(method_call.clone());
+        let subst = substitute_sh_vars(&whole);
+        return Ok(quote! {
+            (crate::utils::exec::script::dsl::IntoShellIRGeneric::into_shell_ir(
+                crate::utils::exec::script::dsl::ShellIRWrapper(#subst)
+            ))
+        });
+    }
 
     let receiver_tokens = if is_special_method {
         if is_special_method_call(receiver) {

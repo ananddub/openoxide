@@ -1,5 +1,5 @@
-use super::application::ApplicationBuilder;
-use crate::utils::builder::shared::source::fetch_git_repository;
+use super::builder::ApplicationBuilder;
+use crate::utils::builder::shared::source::{GitRequest, fetch_git_repository};
 use crate::utils::{
     builder::spec::{ApplicationSpec, BuilderEvent, SourceSpec},
     exec::{ExecError, ExecResult},
@@ -24,13 +24,24 @@ impl ApplicationBuilder {
                 protocol,
                 auth,
             } => {
-                self.fetch_git_repository(
-                    spec,
+                let resolved = resolve_branch(
+                    &GitCli::from_executor(self.ctx.executor.clone()),
                     url,
                     branch,
-                    *submodules,
-                    protocol.clone(),
                     auth.clone(),
+                    cancel,
+                )
+                .await?;
+                fetch_git_repository(
+                    &self.ctx,
+                    &spec.work_directory,
+                    GitRequest {
+                        url: url.as_str(),
+                        branch: &resolved,
+                        submodules: *submodules,
+                        protocol: *protocol,
+                        auth: auth.clone(),
+                    },
                     cancel,
                 )
                 .await
@@ -48,9 +59,7 @@ impl ApplicationBuilder {
         cancel: &CancellationToken,
     ) -> ExecResult<()> {
         self.ctx
-            .emit(BuilderEvent::Message(format!(
-                "Pulling image {image}..."
-            )))
+            .emit(BuilderEvent::Message(format!("Pulling image {image}...")))
             .await;
         if let Some(auth) = registry {
             self.ctx
@@ -79,8 +88,8 @@ impl ApplicationBuilder {
                 .run()
                 .await;
             match (pull, logout) {
-                (Err(error), _) => return Err(error),
-                (Ok(_), Err(error)) => return Err(error),
+                (Err(error), _) => Err(error),
+                (Ok(_), Err(error)) => Err(error),
                 (Ok(output), Ok(_)) => {
                     self.emit_pull_output(&output).await;
                     Ok(())
@@ -111,38 +120,6 @@ impl ApplicationBuilder {
                 .emit(BuilderEvent::Message(output.stderr.clone()))
                 .await;
         }
-    }
-
-    async fn fetch_git_repository(
-        &self,
-        spec: &ApplicationSpec,
-        url: &str,
-        branch_opt: &Option<String>,
-        submodules: bool,
-        protocol: crate::utils::provider::CloneProtocol,
-        auth: Option<crate::utils::git::types::GitAuth>,
-        cancel: &CancellationToken,
-    ) -> ExecResult<()> {
-        let branch = resolve_branch(
-            &GitCli::from_executor(self.ctx.executor.clone()),
-            url,
-            branch_opt,
-            auth.clone(),
-            cancel,
-        )
-        .await?;
-
-        fetch_git_repository(
-            &self.ctx,
-            &spec.work_directory,
-            url,
-            &branch,
-            submodules,
-            protocol,
-            auth,
-            cancel,
-        )
-        .await
     }
 }
 

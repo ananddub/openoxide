@@ -51,7 +51,9 @@ impl DeploymentService {
             .or(filter.database_id);
 
         let rows: Vec<Deployments> = if let Some(service_id) = service_id {
-            self.queries.list_deployments_by_application(service_id).await?
+            self.queries
+                .list_deployments_by_application(service_id)
+                .await?
         } else if let Some(server_id) = filter.server_id {
             self.queries.list_deployments_by_server(server_id).await?
         } else {
@@ -62,7 +64,11 @@ impl DeploymentService {
             .into_iter()
             .filter(|row| status.as_deref().is_none_or(|value| row.status == value))
             .filter(|row| state.as_deref().is_none_or(|value| row.state == value))
-            .filter(|row| filter.server_id.is_none_or(|value| row.server_id == Some(value)))
+            .filter(|row| {
+                filter
+                    .server_id
+                    .is_none_or(|value| row.server_id == Some(value))
+            })
             .collect();
         rows = rows
             .into_iter()
@@ -103,7 +109,11 @@ impl DeploymentService {
             return Ok(CancelDeploymentResult::NotCancellable);
         };
 
-        let target_id = match self.queries.deployments_claim_service_type(service_id).await {
+        let target_id = match self
+            .queries
+            .deployments_claim_service_type(service_id)
+            .await
+        {
             Ok(kind) if kind == "COMPOSE" => IdType::ComposeId(service_id),
             Ok(kind) if kind == "DATABASE" => IdType::DatabaseId(service_id),
             Ok(_) => IdType::AppId(service_id),
@@ -182,7 +192,7 @@ impl DeploymentService {
                     .await?;
                 let targets: Vec<Deployments> = rows
                     .into_iter()
-                    .filter(|row| is_finished(row))
+                    .filter(is_finished)
                     .filter(|row| server_filter.is_none_or(|value| row.server_id == Some(value)))
                     .collect();
                 let paths = targets
@@ -196,8 +206,7 @@ impl DeploymentService {
             }
             (None, Some(server_id)) => {
                 let rows = self.queries.list_deployments_by_server(server_id).await?;
-                let targets: Vec<Deployments> =
-                    rows.into_iter().filter(|row| is_finished(row)).collect();
+                let targets: Vec<Deployments> = rows.into_iter().filter(is_finished).collect();
                 let paths = targets
                     .iter()
                     .map(|row| row.log_path.clone())
@@ -208,10 +217,7 @@ impl DeploymentService {
                 paths
             }
             (None, None) => {
-                let paths = self
-                    .queries
-                    .deployments_delete_filtered_finished1()
-                    .await?;
+                let paths = self.queries.deployments_delete_filtered_finished1().await?;
                 self.queries.deployments_delete_filtered_finished2().await?;
                 paths
             }

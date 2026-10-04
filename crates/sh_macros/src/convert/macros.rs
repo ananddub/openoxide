@@ -236,7 +236,22 @@ pub fn convert_macro(mac: &syn::Macro) -> Result<proc_macro2::TokenStream, syn::
             commands.push(quote! {
                 match #converted {
                     crate::utils::exec::script::dsl::ShellIR::Command(command) => command,
-                    _ => panic!("pipe! accepts command expressions only"),
+                    // Typed `os` builders and bound Rust command values lower
+                    // to `Raw` / `Expr::Literal` — fully shell-quoted strings
+                    // that render verbatim, so they are valid pipeline steps.
+                    crate::utils::exec::script::dsl::ShellIR::Raw(source) => {
+                        crate::utils::exec::script::dsl::Command {
+                            name: source,
+                            args: vec![],
+                        }
+                    }
+                    crate::utils::exec::script::dsl::ShellIR::Expr(
+                        crate::utils::exec::script::dsl::Expr::Literal(source),
+                    ) => crate::utils::exec::script::dsl::Command {
+                        name: source,
+                        args: vec![],
+                    },
+                    _ => panic!("pipe! accepts commands, typed builders and bound command values"),
                 }
             });
         }
@@ -637,37 +652,37 @@ fn validate_grep(
 
     let mut pattern_validated = false;
     for expr in exprs {
-        if let syn::Expr::Lit(expr_lit) = expr {
-            if let syn::Lit::Str(lit_str) = &expr_lit.lit {
-                let val = lit_str.value();
-                if val.starts_with('-') {
-                    if val.starts_with("--") {
-                        let flag_name = val.split('=').next().unwrap();
-                        if !allowed_long.contains(&flag_name) {
-                            return Err(syn::Error::new_spanned(
-                                lit_str,
-                                format!("Invalid grep flag: {}", val),
-                            ));
-                        }
-                    } else {
-                        for c in val.chars().skip(1) {
-                            if c != '=' && !allowed_short.contains(c) {
-                                return Err(syn::Error::new_spanned(
-                                    lit_str,
-                                    format!("Invalid grep short flag '{}' in {}", c, val),
-                                ));
-                            }
-                        }
-                    }
-                } else if !pattern_validated {
-                    if let Err(e) = regex::Regex::new(&val) {
+        if let syn::Expr::Lit(expr_lit) = expr
+            && let syn::Lit::Str(lit_str) = &expr_lit.lit
+        {
+            let val = lit_str.value();
+            if val.starts_with('-') {
+                if val.starts_with("--") {
+                    let flag_name = val.split('=').next().unwrap();
+                    if !allowed_long.contains(&flag_name) {
                         return Err(syn::Error::new_spanned(
                             lit_str,
-                            format!("Invalid regular expression pattern in grep: {}", e),
+                            format!("Invalid grep flag: {}", val),
                         ));
                     }
-                    pattern_validated = true;
+                } else {
+                    for c in val.chars().skip(1) {
+                        if c != '=' && !allowed_short.contains(c) {
+                            return Err(syn::Error::new_spanned(
+                                lit_str,
+                                format!("Invalid grep short flag '{}' in {}", c, val),
+                            ));
+                        }
+                    }
                 }
+            } else if !pattern_validated {
+                if let Err(e) = regex::Regex::new(&val) {
+                    return Err(syn::Error::new_spanned(
+                        lit_str,
+                        format!("Invalid regular expression pattern in grep: {}", e),
+                    ));
+                }
+                pattern_validated = true;
             }
         }
     }
@@ -693,61 +708,58 @@ fn validate_sed(
 
     let mut script_validated = false;
     for expr in exprs {
-        if let syn::Expr::Lit(expr_lit) = expr {
-            if let syn::Lit::Str(lit_str) = &expr_lit.lit {
-                let val = lit_str.value();
-                if val.starts_with('-') {
-                    if val.starts_with("--") {
-                        let flag_name = val.split('=').next().unwrap();
-                        if !allowed_long.contains(&flag_name) {
+        if let syn::Expr::Lit(expr_lit) = expr
+            && let syn::Lit::Str(lit_str) = &expr_lit.lit
+        {
+            let val = lit_str.value();
+            if val.starts_with('-') {
+                if val.starts_with("--") {
+                    let flag_name = val.split('=').next().unwrap();
+                    if !allowed_long.contains(&flag_name) {
+                        return Err(syn::Error::new_spanned(
+                            lit_str,
+                            format!("Invalid sed flag: {}", val),
+                        ));
+                    }
+                } else {
+                    for c in val.chars().skip(1) {
+                        if c != '=' && !allowed_short.contains(c) {
                             return Err(syn::Error::new_spanned(
                                 lit_str,
-                                format!("Invalid sed flag: {}", val),
+                                format!("Invalid sed short flag '{}' in {}", c, val),
                             ));
-                        }
-                    } else {
-                        for c in val.chars().skip(1) {
-                            if c != '=' && !allowed_short.contains(c) {
-                                return Err(syn::Error::new_spanned(
-                                    lit_str,
-                                    format!("Invalid sed short flag '{}' in {}", c, val),
-                                ));
-                            }
                         }
                     }
-                } else if !script_validated {
-                    if val.starts_with('s') || val.starts_with('y') {
-                        if val.len() < 2 {
-                            return Err(syn::Error::new_spanned(
-                                lit_str,
-                                "Invalid sed script: too short",
-                            ));
-                        }
-                        let delim = val.chars().nth(1).unwrap();
-                        let parts = split_sed_script(&val, delim);
-                        if parts.len() < 3 {
-                            return Err(syn::Error::new_spanned(
-                                lit_str,
-                                format!(
-                                    "Invalid sed script structure, expected at least 3 parts separated by '{}'",
-                                    delim
-                                ),
-                            ));
-                        }
-                        if val.starts_with('s') {
-                            if let Err(e) = regex::Regex::new(&parts[0]) {
-                                return Err(syn::Error::new_spanned(
-                                    lit_str,
-                                    format!(
-                                        "Invalid regular expression pattern in sed script: {}",
-                                        e
-                                    ),
-                                ));
-                            }
-                        }
-                    }
-                    script_validated = true;
                 }
+            } else if !script_validated {
+                if val.starts_with('s') || val.starts_with('y') {
+                    if val.len() < 2 {
+                        return Err(syn::Error::new_spanned(
+                            lit_str,
+                            "Invalid sed script: too short",
+                        ));
+                    }
+                    let delim = val.chars().nth(1).unwrap();
+                    let parts = split_sed_script(&val, delim);
+                    if parts.len() < 3 {
+                        return Err(syn::Error::new_spanned(
+                            lit_str,
+                            format!(
+                                "Invalid sed script structure, expected at least 3 parts separated by '{}'",
+                                delim
+                            ),
+                        ));
+                    }
+                    if val.starts_with('s')
+                        && let Err(e) = regex::Regex::new(&parts[0])
+                    {
+                        return Err(syn::Error::new_spanned(
+                            lit_str,
+                            format!("Invalid regular expression pattern in sed script: {}", e),
+                        ));
+                    }
+                }
+                script_validated = true;
             }
         }
     }
@@ -758,8 +770,8 @@ fn split_sed_script(s: &str, delim: char) -> Vec<String> {
     let mut parts = Vec::new();
     let mut current = String::new();
     let mut escaped = false;
-    let mut chars = s.chars().skip(2);
-    while let Some(c) = chars.next() {
+    let chars = s.chars().skip(2);
+    for c in chars {
         if escaped {
             current.push(c);
             escaped = false;
@@ -826,20 +838,18 @@ fn validate_find(
     ];
 
     for expr in exprs {
-        if let syn::Expr::Lit(expr_lit) = expr {
-            if let syn::Lit::Str(lit_str) = &expr_lit.lit {
-                let val = lit_str.value();
-                if val.starts_with('-') {
-                    let suffix = &val[1..];
-                    if !suffix.chars().all(|c| c.is_ascii_digit()) {
-                        if !allowed.contains(&val.as_str()) {
-                            return Err(syn::Error::new_spanned(
-                                lit_str,
-                                format!("Invalid find option/test: {}", val),
-                            ));
-                        }
-                    }
-                }
+        if let syn::Expr::Lit(expr_lit) = expr
+            && let syn::Lit::Str(lit_str) = &expr_lit.lit
+        {
+            let val = lit_str.value();
+            if let Some(suffix) = val.strip_prefix('-')
+                && !suffix.chars().all(|c| c.is_ascii_digit())
+                && !allowed.contains(&val.as_str())
+            {
+                return Err(syn::Error::new_spanned(
+                    lit_str,
+                    format!("Invalid find option/test: {}", val),
+                ));
             }
         }
     }
@@ -882,17 +892,15 @@ fn validate_xargs(
     ];
 
     for expr in exprs {
-        if let syn::Expr::Lit(expr_lit) = expr {
-            if let syn::Lit::Str(lit_str) = &expr_lit.lit {
-                let val = lit_str.value();
-                if val.starts_with('-') {
-                    if !allowed.contains(&val.as_str()) {
-                        return Err(syn::Error::new_spanned(
-                            lit_str,
-                            format!("Invalid xargs option: {}", val),
-                        ));
-                    }
-                }
+        if let syn::Expr::Lit(expr_lit) = expr
+            && let syn::Lit::Str(lit_str) = &expr_lit.lit
+        {
+            let val = lit_str.value();
+            if val.starts_with('-') && !allowed.contains(&val.as_str()) {
+                return Err(syn::Error::new_spanned(
+                    lit_str,
+                    format!("Invalid xargs option: {}", val),
+                ));
             }
         }
     }
@@ -923,34 +931,34 @@ fn validate_tar(
 
     let mut is_first = true;
     for expr in exprs {
-        if let syn::Expr::Lit(expr_lit) = expr {
-            if let syn::Lit::Str(lit_str) = &expr_lit.lit {
-                let val = lit_str.value();
-                if val.starts_with("--") {
-                    let flag_name = val.split('=').next().unwrap();
-                    if !allowed_long.contains(&flag_name) {
+        if let syn::Expr::Lit(expr_lit) = expr
+            && let syn::Lit::Str(lit_str) = &expr_lit.lit
+        {
+            let val = lit_str.value();
+            if val.starts_with("--") {
+                let flag_name = val.split('=').next().unwrap();
+                if !allowed_long.contains(&flag_name) {
+                    return Err(syn::Error::new_spanned(
+                        lit_str,
+                        format!("Invalid tar long option: {}", val),
+                    ));
+                }
+            } else if val.starts_with('-') {
+                for c in val.chars().skip(1) {
+                    if !allowed_short.contains(c) {
                         return Err(syn::Error::new_spanned(
                             lit_str,
-                            format!("Invalid tar long option: {}", val),
+                            format!("Invalid tar short option '{}' in {}", c, val),
                         ));
                     }
-                } else if val.starts_with('-') {
-                    for c in val.chars().skip(1) {
-                        if !allowed_short.contains(c) {
-                            return Err(syn::Error::new_spanned(
-                                lit_str,
-                                format!("Invalid tar short option '{}' in {}", c, val),
-                            ));
-                        }
-                    }
-                } else if is_first {
-                    for c in val.chars() {
-                        if !allowed_short.contains(c) {
-                            return Err(syn::Error::new_spanned(
-                                lit_str,
-                                format!("Invalid tar combined short option '{}' in {}", c, val),
-                            ));
-                        }
+                }
+            } else if is_first {
+                for c in val.chars() {
+                    if !allowed_short.contains(c) {
+                        return Err(syn::Error::new_spanned(
+                            lit_str,
+                            format!("Invalid tar combined short option '{}' in {}", c, val),
+                        ));
                     }
                 }
             }
@@ -1019,17 +1027,15 @@ fn validate_curl(
     ];
 
     for expr in exprs {
-        if let syn::Expr::Lit(expr_lit) = expr {
-            if let syn::Lit::Str(lit_str) = &expr_lit.lit {
-                let val = lit_str.value();
-                if val.starts_with('-') {
-                    if !allowed.contains(&val.as_str()) {
-                        return Err(syn::Error::new_spanned(
-                            lit_str,
-                            format!("Invalid curl option: {}", val),
-                        ));
-                    }
-                }
+        if let syn::Expr::Lit(expr_lit) = expr
+            && let syn::Lit::Str(lit_str) = &expr_lit.lit
+        {
+            let val = lit_str.value();
+            if val.starts_with('-') && !allowed.contains(&val.as_str()) {
+                return Err(syn::Error::new_spanned(
+                    lit_str,
+                    format!("Invalid curl option: {}", val),
+                ));
             }
         }
     }

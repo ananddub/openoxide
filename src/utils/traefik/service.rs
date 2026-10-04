@@ -1,4 +1,4 @@
-use super::traefik::TraefikBuilder;
+use super::builder::TraefikBuilder;
 
 pub struct ServiceBuilder {
     pub(crate) builder: TraefikBuilder,

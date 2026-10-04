@@ -1,22 +1,22 @@
 use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    CreateBitbucketProviderRequest, CreateBitbucketProviderResponse, CreateGithubProviderRequest,
-    CreateGithubProviderResponse, CreateGiteaProviderRequest, CreateGiteaProviderResponse,
-    CreateGitlabProviderRequest, CreateGitlabProviderResponse, DeleteGitProviderRequest,
-    Empty, GetGitProviderRequest, GetGitProviderResponse, GitAuthorizeRequest,
-    GitAuthorizeResponse, GitDeleteWebhookRequest, GitDisconnectRequest,
-    GitGetCollaboratorPermissionRequest, GitGetCollaboratorPermissionResponse,
-    GitGetWebhookStatusRequest, GitGetWebhookStatusResponse, GitInstallWebhookRequest,
-    GitInstallWebhookResponse, GitListRepositoriesRequest, GitListRepositoriesResponse,
-    GitListRepositoryBranchesRequest, GitListRepositoryBranchesResponse, GitListTagsRequest,
-    GitListTagsResponse, GitOAuthCallbackRequest, GitOAuthCallbackResponse,
-    GitProviderService, GitProviderServiceExt, GitRecreateWebhookRequest,
-    GitRecreateWebhookResponse, GitRotateWebhookSecretRequest, GitRotateWebhookSecretResponse,
-    ListGitProvidersRequest, ListGitProvidersResponse, TestGitProviderRequest,
-    TestGitProviderResponse, UpdateBitbucketProviderRequest, UpdateBitbucketProviderResponse,
-    UpdateGithubProviderRequest, UpdateGithubProviderResponse, UpdateGiteaProviderRequest,
-    UpdateGiteaProviderResponse, UpdateGitlabProviderRequest, UpdateGitlabProviderResponse,
+    CreateBitbucketProviderRequest, CreateBitbucketProviderResponse, CreateGiteaProviderRequest,
+    CreateGiteaProviderResponse, CreateGithubProviderRequest, CreateGithubProviderResponse,
+    CreateGitlabProviderRequest, CreateGitlabProviderResponse, DeleteGitProviderRequest, Empty,
+    GetGitProviderRequest, GetGitProviderResponse, GitAuthorizeRequest, GitAuthorizeResponse,
+    GitDeleteWebhookRequest, GitDisconnectRequest, GitGetCollaboratorPermissionRequest,
+    GitGetCollaboratorPermissionResponse, GitGetWebhookStatusRequest, GitGetWebhookStatusResponse,
+    GitInstallWebhookRequest, GitInstallWebhookResponse, GitListRepositoriesRequest,
+    GitListRepositoriesResponse, GitListRepositoryBranchesRequest,
+    GitListRepositoryBranchesResponse, GitListTagsRequest, GitListTagsResponse,
+    GitOAuthCallbackRequest, GitOAuthCallbackResponse, GitProviderService, GitProviderServiceExt,
+    GitRecreateWebhookRequest, GitRecreateWebhookResponse, GitRotateWebhookSecretRequest,
+    GitRotateWebhookSecretResponse, ListGitProvidersRequest, ListGitProvidersResponse,
+    TestGitProviderRequest, TestGitProviderResponse, UpdateBitbucketProviderRequest,
+    UpdateBitbucketProviderResponse, UpdateGiteaProviderRequest, UpdateGiteaProviderResponse,
+    UpdateGithubProviderRequest, UpdateGithubProviderResponse, UpdateGitlabProviderRequest,
+    UpdateGitlabProviderResponse,
 };
 use crate::services::integrations::git::{CreateProvider, ProviderCredentials, UpdateProvider};
 
@@ -32,16 +32,9 @@ impl GitProviderService for GitProviderController {
         _request: ServiceRequest<'_, ListGitProvidersRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListGitProvidersResponse> + Send + use<'a>> {
         let org_id = auth.organization_id;
-        let items = self
-            .service
-            .list(org_id)
-            .await
-            .map_err(map_db_error)?;
+        let items = self.service.list(org_id).await.map_err(map_db_error)?;
         let providers = items.into_iter().map(provider_to_proto).collect();
-        Response::ok(ListGitProvidersResponse {
-            providers,
-            ..Default::default()
-        })
+        Response::ok(ListGitProvidersResponse { providers })
     }
 
     #[permission(Application, CanRead)]
@@ -58,7 +51,6 @@ impl GitProviderService for GitProviderController {
             .map_err(map_db_error)?;
         Response::ok(GetGitProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
-            ..Default::default()
         })
     }
 
@@ -67,7 +59,8 @@ impl GitProviderService for GitProviderController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, CreateGithubProviderRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<CreateGithubProviderResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<CreateGithubProviderResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let (provider, webhook_secret) = self
             .service
@@ -91,7 +84,6 @@ impl GitProviderService for GitProviderController {
         Response::ok(CreateGithubProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
             webhook_secret,
-            ..Default::default()
         })
     }
 
@@ -100,7 +92,8 @@ impl GitProviderService for GitProviderController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, CreateGitlabProviderRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<CreateGitlabProviderResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<CreateGitlabProviderResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let (provider, webhook_secret) = self
             .service
@@ -126,7 +119,6 @@ impl GitProviderService for GitProviderController {
         Response::ok(CreateGitlabProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
             webhook_secret,
-            ..Default::default()
         })
     }
 
@@ -135,7 +127,8 @@ impl GitProviderService for GitProviderController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, CreateGiteaProviderRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<CreateGiteaProviderResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<CreateGiteaProviderResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let (provider, webhook_secret) = self
             .service
@@ -161,7 +154,6 @@ impl GitProviderService for GitProviderController {
         Response::ok(CreateGiteaProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
             webhook_secret,
-            ..Default::default()
         })
     }
 
@@ -194,7 +186,6 @@ impl GitProviderService for GitProviderController {
         Response::ok(CreateBitbucketProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
             webhook_secret,
-            ..Default::default()
         })
     }
 
@@ -203,7 +194,8 @@ impl GitProviderService for GitProviderController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateGithubProviderRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<UpdateGithubProviderResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<UpdateGithubProviderResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let provider = self
             .service
@@ -227,7 +219,6 @@ impl GitProviderService for GitProviderController {
             .map_err(map_db_error)?;
         Response::ok(UpdateGithubProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
-            ..Default::default()
         })
     }
 
@@ -236,7 +227,8 @@ impl GitProviderService for GitProviderController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateGitlabProviderRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<UpdateGitlabProviderResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<UpdateGitlabProviderResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let provider = self
             .service
@@ -262,7 +254,6 @@ impl GitProviderService for GitProviderController {
             .map_err(map_db_error)?;
         Response::ok(UpdateGitlabProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
-            ..Default::default()
         })
     }
 
@@ -271,7 +262,8 @@ impl GitProviderService for GitProviderController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateGiteaProviderRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<UpdateGiteaProviderResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<UpdateGiteaProviderResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let provider = self
             .service
@@ -297,7 +289,6 @@ impl GitProviderService for GitProviderController {
             .map_err(map_db_error)?;
         Response::ok(UpdateGiteaProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
-            ..Default::default()
         })
     }
 
@@ -330,7 +321,6 @@ impl GitProviderService for GitProviderController {
             .map_err(map_db_error)?;
         Response::ok(UpdateBitbucketProviderResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
-            ..Default::default()
         })
     }
 
@@ -362,7 +352,6 @@ impl GitProviderService for GitProviderController {
         Response::ok(TestGitProviderResponse {
             success: true,
             message: "connection test succeeded".into(),
-            ..Default::default()
         })
     }
 
@@ -379,10 +368,7 @@ impl GitProviderService for GitProviderController {
             .rotate_secret(request.id, org_id)
             .await
             .map_err(map_db_error)?;
-        Response::ok(GitRotateWebhookSecretResponse {
-            webhook_secret,
-            ..Default::default()
-        })
+        Response::ok(GitRotateWebhookSecretResponse { webhook_secret })
     }
 
     #[permission(Application, CanRead)]
@@ -390,7 +376,8 @@ impl GitProviderService for GitProviderController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, GitListRepositoriesRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<GitListRepositoriesResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<GitListRepositoriesResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let repos = self
             .service
@@ -398,10 +385,7 @@ impl GitProviderService for GitProviderController {
             .await
             .map_err(provider_error)?;
         let repositories = repos.into_iter().map(repository_to_proto).collect();
-        Response::ok(GitListRepositoriesResponse {
-            repositories,
-            ..Default::default()
-        })
+        Response::ok(GitListRepositoriesResponse { repositories })
     }
 
     #[permission(Application, CanRead)]
@@ -423,10 +407,7 @@ impl GitProviderService for GitProviderController {
             .await
             .map_err(provider_error)?;
         let branches = refs.into_iter().map(reference_to_proto).collect();
-        Response::ok(GitListRepositoryBranchesResponse {
-            branches,
-            ..Default::default()
-        })
+        Response::ok(GitListRepositoryBranchesResponse { branches })
     }
 
     #[permission(Application, CanRead)]
@@ -447,10 +428,7 @@ impl GitProviderService for GitProviderController {
             .await
             .map_err(provider_error)?;
         let tags = refs.into_iter().map(reference_to_proto).collect();
-        Response::ok(GitListTagsResponse {
-            tags,
-            ..Default::default()
-        })
+        Response::ok(GitListTagsResponse { tags })
     }
 
     #[permission(Application, CanCreate)]
@@ -468,7 +446,6 @@ impl GitProviderService for GitProviderController {
         Response::ok(GitAuthorizeResponse {
             url: info.url,
             state: info.state,
-            ..Default::default()
         })
     }
 
@@ -491,7 +468,6 @@ impl GitProviderService for GitProviderController {
             .map_err(provider_error)?;
         Response::ok(GitOAuthCallbackResponse {
             provider: ::buffa::MessageField::some(provider_to_proto(provider)),
-            ..Default::default()
         })
     }
 
@@ -531,7 +507,6 @@ impl GitProviderService for GitProviderController {
             .map_err(provider_error)?;
         Response::ok(GitGetCollaboratorPermissionResponse {
             permission: ::buffa::MessageField::some(permission_to_proto(permission)),
-            ..Default::default()
         })
     }
 
@@ -540,7 +515,8 @@ impl GitProviderService for GitProviderController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, GitGetWebhookStatusRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<GitGetWebhookStatusResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<GitGetWebhookStatusResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let info = self
             .service
@@ -557,10 +533,7 @@ impl GitProviderService for GitProviderController {
             .map(webhook_info_to_proto)
             .map(::buffa::MessageField::some)
             .unwrap_or_default();
-        Response::ok(GitGetWebhookStatusResponse {
-            webhook,
-            ..Default::default()
-        })
+        Response::ok(GitGetWebhookStatusResponse { webhook })
     }
 
     #[permission(Application, CanCreate)]
@@ -583,7 +556,6 @@ impl GitProviderService for GitProviderController {
             .map_err(provider_error)?;
         Response::ok(GitInstallWebhookResponse {
             webhook: ::buffa::MessageField::some(webhook_info_to_proto(info)),
-            ..Default::default()
         })
     }
 
@@ -592,7 +564,8 @@ impl GitProviderService for GitProviderController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, GitRecreateWebhookRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<GitRecreateWebhookResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<GitRecreateWebhookResponse> + Send + use<'a>>
+    {
         let org_id = auth.organization_id;
         let info = self
             .service
@@ -607,7 +580,6 @@ impl GitProviderService for GitProviderController {
             .map_err(provider_error)?;
         Response::ok(GitRecreateWebhookResponse {
             webhook: ::buffa::MessageField::some(webhook_info_to_proto(info)),
-            ..Default::default()
         })
     }
 

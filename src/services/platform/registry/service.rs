@@ -40,7 +40,9 @@ fn validate_registry_url(value: &str) -> sqlx::Result<()> {
         None => value,
     };
     let valid_host = (2..=255).contains(&host.len())
-        && host.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'-' | b'_'))
+        && host
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'-' | b'_'))
         && !host.starts_with('-')
         && !host.ends_with('-');
     if !valid_host {
@@ -58,11 +60,18 @@ fn validate_image_prefix(value: &str) -> sqlx::Result<()> {
         return Ok(());
     }
     let ok = value.len() <= 200
-        && value.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || matches!(b, b'/' | b'.' | b'-' | b'_' | b':' | b'~'))
+        && value.bytes().all(|b| {
+            b.is_ascii_lowercase()
+                || b.is_ascii_digit()
+                || matches!(b, b'/' | b'.' | b'-' | b'_' | b':' | b'~')
+        })
         && !value.starts_with('/')
         && !value.ends_with('/');
     if !ok {
-        return Err(sqlx::Error::Protocol("image prefix must be a lowercase repository path (a-z, 0-9, / . - _ : ~), e.g. myorg".into()));
+        return Err(sqlx::Error::Protocol(
+            "image prefix must be a lowercase repository path (a-z, 0-9, / . - _ : ~), e.g. myorg"
+                .into(),
+        ));
     }
     Ok(())
 }
@@ -82,7 +91,9 @@ impl RegistryService {
     }
 
     pub async fn list(&self, organization_id: i64) -> sqlx::Result<Vec<Registries>> {
-        self.queries.registries_list_by_organization(organization_id).await
+        self.queries
+            .registries_list_by_organization(organization_id)
+            .await
     }
 
     pub async fn create(
@@ -254,7 +265,7 @@ impl RegistryService {
                     Err(format!("Login failed: {}", output.stderr))
                 }
             }
-            Err(e) => Err(format!("Docker execution error: {}", e.to_string())),
+            Err(e) => Err(format!("Docker execution error: {}", e)),
         }
     }
 

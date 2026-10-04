@@ -13,6 +13,12 @@ macro_rules! string_enum {
             $($variant),*
         }
 
+        impl Default for $name {
+            fn default() -> Self {
+                Self::$default
+            }
+        }
+
         impl $name {
             pub fn as_str(self) -> &'static str {
                 match self {
@@ -20,7 +26,7 @@ macro_rules! string_enum {
                 }
             }
 
-            pub fn from_str(value: &str) -> Option<Self> {
+            pub fn from_str_opt(value: &str) -> Option<Self> {
                 match value.trim().to_ascii_uppercase().as_str() {
                     $($value => Some(Self::$variant),)*
                     _ => None,
@@ -32,19 +38,19 @@ macro_rules! string_enum {
             type Err = String;
 
             fn from_str(s: &str) -> Result<Self, Self::Err> {
-                Self::from_str(s).ok_or_else(|| format!("Invalid {}: {s}", stringify!($name)))
+                Self::from_str_opt(s).ok_or_else(|| format!("Invalid {}: {s}", stringify!($name)))
             }
         }
 
         impl From<String> for $name {
             fn from(value: String) -> Self {
-                Self::from_str(&value).unwrap_or(Self::$default)
+                Self::from_str_opt(&value).unwrap_or(Self::$default)
             }
         }
 
         impl From<&str> for $name {
             fn from(value: &str) -> Self {
-                Self::from_str(value).unwrap_or(Self::$default)
+                Self::from_str_opt(value).unwrap_or(Self::$default)
             }
         }
 

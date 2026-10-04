@@ -94,10 +94,8 @@ export function UsageRingsStrip({id, entityType}: UsageRingsProps) {
 	// Container stopped/unreachable — keep the card clean.
 	if (hasError && !metrics) return null;
 
-	const diskPercent =
-		metrics?.dockerDiskPercent || metrics?.diskSpacePercent || 0;
-	const diskSub =
-		metrics?.dockerDiskUsage || metrics?.diskSpaceUsed || '—';
+	const diskPercent = metrics?.diskSpacePercent || 0;
+	const diskSub = metrics?.diskSpaceUsed || '—';
 
 	return (
 		<div className="w-full min-w-0">

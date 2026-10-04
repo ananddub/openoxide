@@ -61,7 +61,10 @@ impl ComposeService {
                     .unwrap_or_default(),
                 gitlab_path_namespace: input
                     .gitlab_path_namespace
-                    .or_else(|| git.as_ref().and_then(|git| git.gitlab_path_namespace.clone()))
+                    .or_else(|| {
+                        git.as_ref()
+                            .and_then(|git| git.gitlab_path_namespace.clone())
+                    })
                     .unwrap_or_default(),
                 gitlab_provider_id: input.gitlab_provider_id.unwrap_or(0),
                 gitlab_provider_id2: input.gitlab_provider_id.unwrap_or(0),
@@ -118,7 +121,10 @@ impl ComposeService {
                 bitbucket_branch: input.bitbucket_branch,
                 bitbucket_build_path: input
                     .bitbucket_build_path
-                    .or_else(|| git.as_ref().and_then(|git| git.bitbucket_build_path.clone()))
+                    .or_else(|| {
+                        git.as_ref()
+                            .and_then(|git| git.bitbucket_build_path.clone())
+                    })
                     .unwrap_or_default(),
                 bitbucket_provider_id: input.bitbucket_provider_id.unwrap_or(0),
                 bitbucket_provider_id2: input.bitbucket_provider_id.unwrap_or(0),
@@ -145,7 +151,10 @@ impl ComposeService {
                 custom_git_branch: input.custom_git_branch,
                 custom_git_build_path: input
                     .custom_git_build_path
-                    .or_else(|| git.as_ref().and_then(|git| git.custom_git_build_path.clone()))
+                    .or_else(|| {
+                        git.as_ref()
+                            .and_then(|git| git.custom_git_build_path.clone())
+                    })
                     .unwrap_or_default(),
                 custom_git_ssh_key_id: input
                     .custom_git_ssh_key_id
@@ -200,8 +209,7 @@ fn current_watch_paths(git: Option<&crate::flash_gen::models::ServiceGit>) -> St
 }
 
 fn current_enable_submodules(git: Option<&crate::flash_gen::models::ServiceGit>) -> i64 {
-    git.map(|git| git.enable_submodules)
-        .unwrap_or(0)
+    git.map(|git| git.enable_submodules).unwrap_or(0)
 }
 
 /// Stream a ZIP to the server agent, then extract it through the same agent.

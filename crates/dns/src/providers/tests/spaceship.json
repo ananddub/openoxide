@@ -1,0 +1,13 @@
+{
+  "domains": { "items": [{ "name": "example.com" }, { "name": "second.com" }], "total": 2 },
+  "records": {
+    "items": [
+      { "type": "A", "name": "www", "ttl": 3600, "address": "192.0.2.1" },
+      { "type": "MX", "name": "@", "ttl": 3600, "exchange": "smtp.example.com", "preference": 10 },
+      { "type": "TXT", "name": "@", "ttl": 3600, "value": "v=spf1 -all" }
+    ],
+    "total": 3
+  },
+  "ack": { "records": [] },
+  "rejected": { "detail": "invalid credentials", "status": 401 }
+}

@@ -1,0 +1,25 @@
+{
+  "products": {
+    "result": "success",
+    "error": {},
+    "data": [{ "id": 4242, "customer_name": "example.com", "service_name": "domain" }],
+    "pages": 1
+  },
+  "records": {
+    "result": "success",
+    "error": {},
+    "data": [
+      { "id": 1001, "type": "A", "source": "www", "target": "192.0.2.1", "ttl": 300 },
+      { "id": "1002", "type": "TXT", "source": ".", "target": "\"v=spf1 -all\"", "ttl": "3600" }
+    ],
+    "pages": 1
+  },
+  "created": { "result": "success", "error": {}, "data": { "id": 1003 } },
+  "updated": { "result": "success", "error": {}, "data": { "id": 1001 } },
+  "deleted": { "result": "success", "error": {}, "data": {} },
+  "rejected": {
+    "result": "error",
+    "error": { "code": "invalid_token", "description": "The token is not valid" },
+    "data": null
+  }
+}

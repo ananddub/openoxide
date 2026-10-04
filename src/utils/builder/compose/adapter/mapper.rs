@@ -1,11 +1,11 @@
 use crate::flash_gen::models::{Domains, Mounts, Patches};
 use crate::flash_gen::service_compose::ComposeGetSpecRowRow;
 use crate::utils::builder::compose::spec::{ComposeRuntime, ComposeSource, ComposeSpec};
+use crate::utils::builder::env::generate_env_app;
 use crate::utils::builder::errors::AdapterError;
 use crate::utils::builder::shared::mapper::{domain, mount_spec};
 use crate::utils::builder::spec::{PatchSpec, RuntimeType, SourceType};
 use crate::utils::git::GitProviderBuilder;
-use crate::utils::builder::env::generate_env_app;
 use crate::utils::paths::openoxide_paths;
 
 pub struct ComposeRowWithRelations {
@@ -31,7 +31,7 @@ impl TryFrom<ComposeRowWithRelations> for ComposeSpec {
             app_name: compose.app_name.clone(),
             stack_name: compose.app_name.clone(),
             source: source(&compose)?,
-            runtime: runtime(&compose.compose_type.as_deref().unwrap_or(""))?,
+            runtime: runtime(compose.compose_type.as_deref().unwrap_or(""))?,
             work_directory: paths.compose_source(&compose.app_name),
             compose_path: if source_type_str(&compose) == "RAW" {
                 format!("{app_dir}/compose.yml")
@@ -117,13 +117,13 @@ fn source(compose: &ComposeGetSpecRowRow) -> Result<ComposeSource, AdapterError>
 
             let auth = match source_type {
                 SourceType::Github => config_token(&compose.github_config, "private_key")
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                    .map(crate::utils::git::types::GitAuth::Token),
                 SourceType::Gitlab => config_token(&compose.gitlab_config, "access_token")
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                    .map(crate::utils::git::types::GitAuth::Token),
                 SourceType::Bitbucket => config_token(&compose.bitbucket_config, "api_token")
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                    .map(crate::utils::git::types::GitAuth::Token),
                 SourceType::Gitea => config_token(&compose.gitea_config, "access_token")
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                    .map(crate::utils::git::types::GitAuth::Token),
                 SourceType::Git => compose
                     .ssh_private_key
                     .as_ref()

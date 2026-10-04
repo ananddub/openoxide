@@ -50,7 +50,7 @@ pub(crate) async fn sanitize_zip_with_executor(
     check_symlinks(input, executor).await?;
 
     // 3. Extract to temp dir (strip __MACOSX)
-    let temp_dir = tempfile::tempdir().map_err(|e| ZipError::Io(e))?;
+    let temp_dir = tempfile::tempdir().map_err(ZipError::Io)?;
     let extract_dir = temp_dir.path();
 
     os.archive(input)

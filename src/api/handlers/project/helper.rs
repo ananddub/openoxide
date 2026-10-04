@@ -11,7 +11,6 @@ pub fn project_to_proto(p: crate::flash_gen::models::Projects) -> ProjectProto {
         organization_id: p.organization_id,
         created_at: p.created_at,
         updated_at: p.updated_at,
-        ..Default::default()
     }
 }
 

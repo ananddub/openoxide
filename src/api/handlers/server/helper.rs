@@ -29,10 +29,16 @@ pub fn map_db_error(err: sqlx::Error) -> ConnectError {
 pub fn map_exec_error(error: ExecError) -> ConnectError {
     tracing::error!(error=%error, "remote server command failed");
     match error {
-        ExecError::CommandFailed { .. } => ConnectError::new(ErrorCode::Unavailable, error.to_string()),
+        ExecError::CommandFailed { .. } => {
+            ConnectError::new(ErrorCode::Unavailable, error.to_string())
+        }
         ExecError::Ssh(_) => ConnectError::new(ErrorCode::Unavailable, error.to_string()),
-        ExecError::StreamCancelled => ConnectError::new(ErrorCode::DeadlineExceeded, error.to_string()),
-        ExecError::Timeout { .. } => ConnectError::new(ErrorCode::DeadlineExceeded, error.to_string()),
+        ExecError::StreamCancelled => {
+            ConnectError::new(ErrorCode::DeadlineExceeded, error.to_string())
+        }
+        ExecError::Timeout { .. } => {
+            ConnectError::new(ErrorCode::DeadlineExceeded, error.to_string())
+        }
         _ => ConnectError::new(ErrorCode::Internal, error.to_string()),
     }
 }
@@ -41,16 +47,17 @@ pub fn map_exec_error(error: ExecError) -> ConnectError {
 /// check. The HTTP response is not held open while the agent is contacted.
 pub fn trigger_monitoring_refresh(server_id: i64) {
     tokio::spawn(async move {
-        let monitoring =
-            match resolve::<crate::services::observability::monitoring::service::MonitoringService>()
-                .await
-            {
-                Ok(service) => service,
-                Err(error) => {
-                    tracing::debug!(server_id, %error, "monitoring refresh service unavailable");
-                    return;
-                }
-            };
+        let monitoring = match resolve::<
+            crate::services::observability::monitoring::service::MonitoringService,
+        >()
+        .await
+        {
+            Ok(service) => service,
+            Err(error) => {
+                tracing::debug!(server_id, %error, "monitoring refresh service unavailable");
+                return;
+            }
+        };
         let reconciler = match resolve::<
             crate::services::observability::monitoring::reconciler::MonitoringReconciler,
         >()
@@ -107,7 +114,6 @@ fn tool_state_to_proto(state: ToolState) -> ServerToolState {
     ServerToolState {
         installed: state.installed,
         version: state.version,
-        ..Default::default()
     }
 }
 
@@ -115,7 +121,6 @@ fn port_to_proto(port: PortAvailability) -> ServerPortAvailability {
     ServerPortAvailability {
         port: u32::from(port.port),
         available: port.available,
-        ..Default::default()
     }
 }
 
@@ -135,7 +140,6 @@ pub fn audit_to_proto(audit: ServerAudit) -> ServerAuditProto {
         base_directory_exists: audit.base_directory_exists,
         docker_group_member: audit.docker_group_member,
         ports: audit.ports.into_iter().map(port_to_proto).collect(),
-        ..Default::default()
     }
 }
 
@@ -160,7 +164,6 @@ pub fn outcome_to_proto(outcome: SetupOutcome) -> ServerSetupOutcome {
             .map(|step| ::buffa::EnumValue::Known(step_to_proto(step)))
             .collect(),
         audit: ::buffa::MessageField::some(audit_to_proto(outcome.audit)),
-        ..Default::default()
     }
 }
 

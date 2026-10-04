@@ -30,6 +30,7 @@ pub struct ScriptPipeline {
     steps: Vec<PipelineStep>,
     trace: bool,
     verbose_headers: bool,
+    pipefail: bool,
 }
 
 impl ScriptPipeline {
@@ -41,6 +42,7 @@ impl ScriptPipeline {
             steps: Vec::new(),
             trace: false,
             verbose_headers: false,
+            pipefail: false,
         }
     }
 
@@ -65,6 +67,12 @@ impl ScriptPipeline {
     /// Enables or disables verbose headers printed before sequential steps.
     pub fn verbose_headers(mut self, enabled: bool) -> Self {
         self.verbose_headers = enabled;
+        self
+    }
+
+    /// Adds `set -o pipefail` so a failure anywhere in a `|` chain aborts the script.
+    pub fn pipefail(mut self, enabled: bool) -> Self {
+        self.pipefail = enabled;
         self
     }
 
@@ -216,7 +224,11 @@ impl ScriptPipeline {
     /// Compiles all commands and settings in the pipeline into a single POSIX-compliant shell script.
     pub fn compile(&self) -> String {
         let mut script = String::new();
-        script.push_str("set -e\n");
+        if self.pipefail {
+            script.push_str("set -eo pipefail\n");
+        } else {
+            script.push_str("set -e\n");
+        }
         if self.trace {
             script.push_str("set -x\n");
         }

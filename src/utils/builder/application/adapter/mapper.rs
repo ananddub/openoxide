@@ -173,7 +173,11 @@ impl TryFrom<AppRowWithRelations> for ApplicationSpec {
             environment,
             build_args: parse_env(app.build_args.as_deref().unwrap_or("")),
             build_secrets: parse_env(app.build_secrets.as_deref().unwrap_or("")),
-            command: app.command.clone().filter(|v| !v.trim().is_empty()).map(|v| shell_words(&v)),
+            command: app
+                .command
+                .clone()
+                .filter(|v| !v.trim().is_empty())
+                .map(|v| shell_words(&v)),
             args: app
                 .args
                 .as_deref()
@@ -317,13 +321,13 @@ fn source(a: &ApplicationGetSpecRowRow) -> Result<SourceSpec, AdapterError> {
 
             let auth = match source_type {
                 SourceType::Github => config_token(&a.github_config, "private_key")
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                    .map(crate::utils::git::types::GitAuth::Token),
                 SourceType::Gitlab => config_token(&a.gitlab_config, "access_token")
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                    .map(crate::utils::git::types::GitAuth::Token),
                 SourceType::Bitbucket => config_token(&a.bitbucket_config, "api_token")
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                    .map(crate::utils::git::types::GitAuth::Token),
                 SourceType::Gitea => config_token(&a.gitea_config, "access_token")
-                    .map(|t| crate::utils::git::types::GitAuth::Token(t)),
+                    .map(crate::utils::git::types::GitAuth::Token),
                 SourceType::Git => a
                     .ssh_private_key
                     .as_ref()
@@ -357,14 +361,8 @@ fn build(a: &ApplicationGetSpecRowRow) -> Result<Option<BuildStrategy>, AdapterE
     let build_path = Some(a.build_path.as_str()).filter(|value| !value.is_empty());
     Ok(Some(match build_type {
         BuildType::Dockerfile => BuildStrategy::Dockerfile {
-            dockerfile: join_relative(
-                build_path,
-                a.dockerfile.as_deref().unwrap_or("Dockerfile"),
-            ),
-            context: join_relative(
-                build_path,
-                a.docker_context_path.as_deref().unwrap_or("."),
-            ),
+            dockerfile: join_relative(build_path, a.dockerfile.as_deref().unwrap_or("Dockerfile")),
+            context: join_relative(build_path, a.docker_context_path.as_deref().unwrap_or(".")),
             target: a.docker_build_stage.clone(),
             no_cache: a.clean_cache.unwrap_or(0) != 0,
         },

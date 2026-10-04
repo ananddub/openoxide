@@ -47,7 +47,9 @@ impl DatabaseService {
         // Same contract as the deleted ServerManagementRepository::assert_deployable:
         // servers in maintenance mode refuse new deployments.
         if let Some(server_id) = server_id {
-            self.queries.server_management_get_or_create1(server_id).await?;
+            self.queries
+                .server_management_get_or_create1(server_id)
+                .await?;
             let row = self
                 .queries
                 .server_management_get_or_create2(server_id)
@@ -161,13 +163,17 @@ impl DatabaseService {
             .map(|d| d.app_status.as_str())
             .unwrap_or("IDLE");
         let current_status =
-            crate::services::compute::database::types::DatabaseRuntimeStatus::from_str(current_st_str)
-                .unwrap_or(crate::services::compute::database::types::DatabaseRuntimeStatus::Idle);
+            crate::services::compute::database::types::DatabaseRuntimeStatus::from_str_opt(
+                current_st_str,
+            )
+            .unwrap_or(crate::services::compute::database::types::DatabaseRuntimeStatus::Idle);
 
         let (intermediate, final_st) = if current_status.is_building() {
             (
-                crate::services::compute::database::types::DatabaseRuntimeStatus::Cancelling.as_str(),
-                crate::services::compute::database::types::DatabaseRuntimeStatus::Cancelled.as_str(),
+                crate::services::compute::database::types::DatabaseRuntimeStatus::Cancelling
+                    .as_str(),
+                crate::services::compute::database::types::DatabaseRuntimeStatus::Cancelled
+                    .as_str(),
             )
         } else {
             (
@@ -176,10 +182,7 @@ impl DatabaseService {
             )
         };
 
-        let _ = self
-            .queries
-            .update_service_status(intermediate, id)
-            .await;
+        let _ = self.queries.update_service_status(intermediate, id).await;
         self.cache
             .invalidate(&crate::core::cache::CacheKey::Database(id))
             .await;
@@ -192,7 +195,10 @@ impl DatabaseService {
             state.cancel_by_id(crate::utils::builder::custom_type::IdType::DatabaseId(id));
         }
 
-        let _ = self.queries.deployments_cancel_queued_for_database(id).await;
+        let _ = self
+            .queries
+            .deployments_cancel_queued_for_database(id)
+            .await;
         let _ = self
             .queries
             .deployments_request_cancel_database_deployment(id)
@@ -207,7 +213,9 @@ impl DatabaseService {
         tokio::spawn(async move {
             if let Some(ref app_name) = app_name {
                 let docker_cli =
-                    match crate::services::compute::compose::remote::agent_executor_for(server_id).await {
+                    match crate::services::compute::compose::remote::agent_executor_for(server_id)
+                        .await
+                    {
                         Ok(executor) => crate::utils::docker::DockerCli::from_executor(executor),
                         Err(error) => {
                             let reason = format!("could not stop database: {error}");

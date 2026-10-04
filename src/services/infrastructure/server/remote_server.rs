@@ -79,7 +79,13 @@ pub async fn ssh_credentials(
     let (Some(private_key), Some(public_key)) = (row.private_key, row.public_key) else {
         return Ok(None);
     };
-    Ok(Some((selected_ip, row.port, row.username, private_key, public_key)))
+    Ok(Some((
+        selected_ip,
+        row.port,
+        row.username,
+        private_key,
+        public_key,
+    )))
 }
 
 /// Resolves the raw public SSH endpoint without private network fallback.
@@ -95,7 +101,13 @@ pub async fn direct_ssh_credentials(
     let (Some(private_key), Some(public_key)) = (row.private_key, row.public_key) else {
         return Ok(None);
     };
-    Ok(Some((row.ip_address, row.port, row.username, private_key, public_key)))
+    Ok(Some((
+        row.ip_address,
+        row.port,
+        row.username,
+        private_key,
+        public_key,
+    )))
 }
 
 #[singleton]
@@ -178,7 +190,12 @@ impl RemoteServerService {
         let host = input.ip_address.trim().to_ascii_lowercase();
         if matches!(
             host.as_str(),
-            "" | "127.0.0.1" | "localhost" | "0.0.0.0" | "::1" | "openoxide-agent" | "openoxide-monitor"
+            "" | "127.0.0.1"
+                | "localhost"
+                | "0.0.0.0"
+                | "::1"
+                | "openoxide-agent"
+                | "openoxide-monitor"
         ) {
             return Err(sqlx::Error::Protocol(
                 "the local server is managed automatically; add a remote server by its reachable IP or hostname instead".into(),
@@ -271,9 +288,7 @@ impl RemoteServerService {
     }
 
     pub async fn set_status(&self, id: i64, status: RemoteServerStatus) -> sqlx::Result<Servers> {
-        self.queries
-            .servers_set_status(status.as_str(), id)
-            .await
+        self.queries.servers_set_status(status.as_str(), id).await
     }
 
     pub async fn touch_test_connection(&self, id: i64) -> sqlx::Result<Servers> {
@@ -332,12 +347,18 @@ impl RemoteServerService {
                 dependencies.schedules,
             )));
         }
-        if let Ok(private_network_service) =
-            auto_di::resolve::<crate::services::infrastructure::server::ServerPrivateNetworkService>().await
+        if let Ok(private_network_service) = auto_di::resolve::<
+            crate::services::infrastructure::server::ServerPrivateNetworkService,
+        >()
+        .await
         {
             let _ = private_network_service.disable(id).await;
         }
-        self.queries.servers_delete(id, organization_id).await
+        self.queries.servers_delete(id, organization_id).await?;
+        if let Ok(store) = auto_di::resolve::<crate::utils::mtls::MtlsCaStore>().await {
+            store.remove_server_files(id);
+        }
+        Ok(())
     }
 
     async fn dependency_counts(&self, id: i64) -> sqlx::Result<ServerDependencyCounts> {
@@ -384,10 +405,7 @@ impl RemoteServerService {
                 .queries
                 .servers_migratable_certificate_ids(source)
                 .await?,
-            schedule_ids: self
-                .queries
-                .servers_migratable_schedule_ids(source)
-                .await?,
+            schedule_ids: self.queries.servers_migratable_schedule_ids(source).await?,
         };
         let migration_id = Uuid::new_v4().simple().to_string();
         self.begin_migration(&migration_id, source, target, &scope)
@@ -494,7 +512,8 @@ impl RemoteServerService {
         if whole_server {
             self.migrate_server_assignments(source, target).await?;
         } else {
-            self.migrate_scoped_assignments(source, target, scope).await?;
+            self.migrate_scoped_assignments(source, target, scope)
+                .await?;
         }
         let mut queued_applications = 0_i64;
         let mut queued_compose = 0_i64;
@@ -575,13 +594,11 @@ impl RemoteServerService {
         }
         if !scope.compose_ids.is_empty() {
             self.queries
-                .servers_migrate_compose_servers_by_ids(
-                    &ServersMigrateComposeServersByIdsParams {
-                        server_id: target,
-                        server_id2: source,
-                        id_list: encode(&scope.compose_ids)?,
-                    },
-                )
+                .servers_migrate_compose_servers_by_ids(&ServersMigrateComposeServersByIdsParams {
+                    server_id: target,
+                    server_id2: source,
+                    id_list: encode(&scope.compose_ids)?,
+                })
                 .await?;
         }
         if !scope.certificate_ids.is_empty() {
@@ -624,10 +641,7 @@ impl RemoteServerService {
         Ok(())
     }
 
-    pub async fn migration_status(
-        &self,
-        id: &str,
-    ) -> sqlx::Result<ServerDependencyMigrationDto> {
+    pub async fn migration_status(&self, id: &str) -> sqlx::Result<ServerDependencyMigrationDto> {
         let migration = self.queries.server_migrations_get(id).await?;
         self.migration_dto(migration, 0).await
     }
@@ -652,10 +666,7 @@ impl RemoteServerService {
         Ok(dto)
     }
 
-    pub async fn rollback_migration(
-        &self,
-        id: &str,
-    ) -> sqlx::Result<ServerDependencyMigrationDto> {
+    pub async fn rollback_migration(&self, id: &str) -> sqlx::Result<ServerDependencyMigrationDto> {
         let migration = self.queries.server_migrations_get(id).await?;
         if migration.status == "ROLLED_BACK" {
             return self.migration_dto(migration, 0).await;
@@ -672,34 +683,34 @@ impl RemoteServerService {
             .queries
             .servers_list_migrated_compose(&migration.service_ids)
             .await?;
-        let build_ids = decode(&migration.build_service_ids)?;
-        let certificate_ids = decode(&migration.certificate_ids)?;
-        let schedule_ids = decode(&migration.schedule_ids)?;
+        let assignments = MigrationScope {
+            application_ids,
+            compose_ids,
+            build_ids: decode(&migration.build_service_ids)?,
+            certificate_ids: decode(&migration.certificate_ids)?,
+            schedule_ids: decode(&migration.schedule_ids)?,
+        };
         self.rollback_server_assignments(
             migration.source_server_id,
             migration.target_server_id,
-            &application_ids,
-            &build_ids,
-            &compose_ids,
-            &certificate_ids,
-            &schedule_ids,
+            &assignments,
         )
         .await?;
         self.queries.server_migrations_mark_rolled_back(id).await?;
         let mut failures = Vec::new();
-        for resource_id in application_ids {
+        for resource_id in &assignments.application_ids {
             if let Err(error) = self
                 .applications
-                .run_operation(resource_id, ApplicationOperation::Redeploy, 0)
+                .run_operation(*resource_id, ApplicationOperation::Redeploy, 0)
                 .await
             {
                 failures.push(format!("application {resource_id}: {error}"));
             }
         }
-        for resource_id in compose_ids {
+        for resource_id in &assignments.compose_ids {
             if let Err(error) = self
                 .compose
-                .run_operation(resource_id, ComposeOperation::Redeploy, 0)
+                .run_operation(*resource_id, ComposeOperation::Redeploy, 0)
                 .await
             {
                 failures.push(format!("compose {resource_id}: {error}"));
@@ -734,7 +745,9 @@ impl RemoteServerService {
                 row.status
             )));
         }
-        self.queries.application_migrations_request_cancel(id).await?;
+        self.queries
+            .application_migrations_request_cancel(id)
+            .await?;
         self.queries.application_migrations_get(id).await
     }
 
@@ -768,9 +781,9 @@ impl RemoteServerService {
                 )));
             }
         };
-        let source = service.server_id.ok_or_else(|| {
-            sqlx::Error::Protocol("service is not assigned to a server".into())
-        })?;
+        let source = service
+            .server_id
+            .ok_or_else(|| sqlx::Error::Protocol("service is not assigned to a server".into()))?;
         if source == target {
             return Err(sqlx::Error::Protocol(
                 "source and target server must differ".into(),
@@ -911,13 +924,9 @@ impl RemoteServerService {
         &self,
         source: i64,
         target: i64,
-        application_ids: &[i64],
-        build_ids: &[i64],
-        compose_ids: &[i64],
-        certificate_ids: &[i64],
-        schedule_ids: &[i64],
+        assignments: &MigrationScope,
     ) -> sqlx::Result<()> {
-        for id in application_ids {
+        for id in &assignments.application_ids {
             self.queries
                 .servers_rollback_application_servers(&ServersRollbackApplicationServersParams {
                     server_id: source,
@@ -926,7 +935,7 @@ impl RemoteServerService {
                 })
                 .await?;
         }
-        for id in compose_ids {
+        for id in &assignments.compose_ids {
             self.queries
                 .servers_rollback_compose_servers(&ServersRollbackComposeServersParams {
                     server_id: source,
@@ -935,7 +944,7 @@ impl RemoteServerService {
                 })
                 .await?;
         }
-        for id in build_ids {
+        for id in &assignments.build_ids {
             self.queries
                 .servers_rollback_build_assignments(&ServersRollbackBuildAssignmentsParams {
                     build_server_id: source,
@@ -944,7 +953,7 @@ impl RemoteServerService {
                 })
                 .await?;
         }
-        for id in certificate_ids {
+        for id in &assignments.certificate_ids {
             self.queries
                 .servers_rollback_certificates(&ServersRollbackCertificatesParams {
                     server_id: source,
@@ -953,7 +962,7 @@ impl RemoteServerService {
                 })
                 .await?;
         }
-        for id in schedule_ids {
+        for id in &assignments.schedule_ids {
             self.queries
                 .servers_rollback_schedules(&ServersRollbackSchedulesParams {
                     server_id: source,
@@ -981,7 +990,10 @@ impl RemoteServerStatus {
     }
 }
 
-fn private_advertise_addr(status: &str, private_host: Option<&str>) -> sqlx::Result<Option<String>> {
+fn private_advertise_addr(
+    status: &str,
+    private_host: Option<&str>,
+) -> sqlx::Result<Option<String>> {
     if !status.eq_ignore_ascii_case("ACTIVE") {
         return Ok(None);
     }
@@ -1210,15 +1222,11 @@ fn default_username() -> String {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[derive(Default)]
 pub enum RemoteServerTypeDto {
+    #[default]
     Deploy,
     Build,
-}
-
-impl Default for RemoteServerTypeDto {
-    fn default() -> Self {
-        Self::Deploy
-    }
 }
 
 impl RemoteServerTypeDto {
@@ -1284,9 +1292,11 @@ mod tests {
 
     #[test]
     fn private_advertise_addr_requires_active_status() {
-        assert!(private_advertise_addr("INACTIVE", Some("10.0.0.5"))
-            .unwrap()
-            .is_none());
+        assert!(
+            private_advertise_addr("INACTIVE", Some("10.0.0.5"))
+                .unwrap()
+                .is_none()
+        );
         assert_eq!(
             private_advertise_addr("ACTIVE", Some("10.0.0.5")).unwrap(),
             Some("10.0.0.5".to_string())

@@ -4,7 +4,9 @@ use sha2::{Digest, Sha256};
 use crate::{
     api::connect::generated::openoxide::api::v1::EmailVerificationStatus,
     flash_gen::email_verification_tokens::EmailVerificationTokensIssue2Params,
-    services::integrations::notification::{NotificationMessage, email::send_email_to, senders::send_resend_to},
+    services::integrations::notification::{
+        NotificationMessage, email::send_email_to, senders::send_resend_to,
+    },
 };
 
 use super::{AuthError, AuthService, notification_configs_for_user};
@@ -18,7 +20,6 @@ impl AuthService {
         Ok(EmailVerificationStatus {
             verified: user.is_email_verify.unwrap_or_default() != 0,
             verified_at: user.email_verify_at,
-            ..Default::default()
         })
     }
 

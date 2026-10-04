@@ -149,11 +149,16 @@ impl ComposeBuilder {
         Ok(())
     }
 
- /// Start an already-deployed project without rebuilding
+    /// Start an already-deployed project without rebuilding
     /// `start`. Compose: `docker compose start`. Stack: scale services back up
     /// via a no-build stack deploy from the rendered file.
     pub async fn start(&self, spec: &ComposeSpec, cancel: &CancellationToken) -> ExecResult<()> {
-        self.ctx.emit(BuilderEvent::Message(format!("starting {}", spec.stack_name))).await;
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "starting {}",
+                spec.stack_name
+            )))
+            .await;
         match spec.runtime {
             ComposeRuntime::Compose => {
                 self.ctx
@@ -162,7 +167,7 @@ impl ComposeBuilder {
                     .start()
                     .project(&spec.stack_name)
                     .env_file(&spec.env_file)
-                    .file(&spec.compose_file_path())
+                    .file(spec.compose_file_path())
                     .run()
                     .await?;
             }
@@ -186,10 +191,15 @@ impl ComposeBuilder {
     }
 
     /// Recreate containers from the existing image without a source rebuild —
- /// `reload`. Compose: `docker compose restart`. Stack: force a
+    /// `reload`. Compose: `docker compose restart`. Stack: force a
     /// task recreate on every service.
     pub async fn reload(&self, spec: &ComposeSpec, cancel: &CancellationToken) -> ExecResult<()> {
-        self.ctx.emit(BuilderEvent::Message(format!("reloading {}", spec.stack_name))).await;
+        self.ctx
+            .emit(BuilderEvent::Message(format!(
+                "reloading {}",
+                spec.stack_name
+            )))
+            .await;
         match spec.runtime {
             ComposeRuntime::Compose => {
                 self.ctx
@@ -198,7 +208,7 @@ impl ComposeBuilder {
                     .restart(std::iter::empty::<&str>())
                     .project(&spec.stack_name)
                     .env_file(&spec.env_file)
-                    .file(&spec.compose_file_path())
+                    .file(spec.compose_file_path())
                     .run()
                     .await?;
             }
@@ -260,14 +270,14 @@ impl ComposeBuilder {
             .build()
             .project(&spec.stack_name)
             .env_file(&spec.env_file)
-            .file(&spec.compose_file_path())
+            .file(spec.compose_file_path())
             .retry(3)
             .cancel_with(cancel.clone());
 
         let config_builder = compose
             .config()
             .env_file(&spec.env_file)
-            .file(&spec.compose_file_path())
+            .file(spec.compose_file_path())
             .retry(3)
             .cancel_with(cancel.clone());
 
@@ -330,7 +340,7 @@ impl ComposeBuilder {
             )))
             .await;
 
- // Command override (`command`): replace the default build+up
+        // Command override (`command`): replace the default build+up
         // invocation with the user's `docker <command>`.
         if let Some(command) = spec.command.as_deref() {
             return self.run_command_override(command, cancel).await;
@@ -341,7 +351,7 @@ impl ComposeBuilder {
             .build()
             .project(&spec.stack_name)
             .env_file(&spec.env_file)
-            .file(&spec.compose_file_path())
+            .file(spec.compose_file_path())
             .retry(3)
             .cancel_with(cancel.clone());
 
@@ -349,7 +359,7 @@ impl ComposeBuilder {
             .up()
             .project(&spec.stack_name)
             .env_file(&spec.env_file)
-            .file(&spec.compose_file_path())
+            .file(spec.compose_file_path())
             .detach()
             .retry(3)
             .cancel_with(cancel.clone());
@@ -379,7 +389,9 @@ impl ComposeBuilder {
     ) -> ExecResult<()> {
         let sanitized = sanitize_compose_command(command)?;
         self.ctx
-            .emit(BuilderEvent::Message(format!("running: docker {sanitized}")))
+            .emit(BuilderEvent::Message(format!(
+                "running: docker {sanitized}"
+            )))
             .await;
         let pipeline = pipeline! {
             format!("docker {sanitized}");
@@ -409,7 +421,7 @@ impl ComposeBuilder {
                     .down()
                     .project(&spec.stack_name)
                     .env_file(&spec.env_file)
-                    .file(&spec.compose_file_path())
+                    .file(spec.compose_file_path())
                     .retry(3)
                     .run()
                     .await
@@ -440,18 +452,19 @@ fn sanitize_compose_command(command: &str) -> ExecResult<String> {
     }
     if command.contains('&') {
         if command.contains("&&&")
-            || command
-                .match_indices('&')
-                .any(|(i, _)| command.as_bytes().get(i + 1) != Some(&b'&') && (i == 0 || command.as_bytes()[i - 1] != b'&'))
+            || command.match_indices('&').any(|(i, _)| {
+                command.as_bytes().get(i + 1) != Some(&b'&')
+                    && (i == 0 || command.as_bytes()[i - 1] != b'&')
+            })
         {
             return Err(reject("single '&' is not allowed; use '&&' for chaining"));
         }
         let chains: Vec<&str> = command.split("&&").map(str::trim).collect();
-        if chains
-            .iter()
-            .skip(1)
-            .any(|c| !(c.starts_with("docker compose ") || c.starts_with("docker-compose ") || c.starts_with("docker ")))
-        {
+        if chains.iter().skip(1).any(|c| {
+            !(c.starts_with("docker compose ")
+                || c.starts_with("docker-compose ")
+                || c.starts_with("docker "))
+        }) {
             return Err(reject("chained commands must start with 'docker '"));
         }
     }

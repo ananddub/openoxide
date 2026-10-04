@@ -18,7 +18,7 @@ use crate::{
         notifications::NotificationsFindForUserParams,
         organization_members::OrganizationMembersAddMemberInTransactionParams,
         organizations::CreateOrganizationParams,
-        users::{UsersCreateOwnerAndReturnRow, UsersCreateOwnerAndReturnParams, UsersUpdateParams},
+        users::{UsersCreateOwnerAndReturnParams, UsersCreateOwnerAndReturnRow, UsersUpdateParams},
     },
     services::integrations::notification::loader::{EmailConfig, ResendConfig},
     utils::jwt::{
@@ -45,8 +45,13 @@ impl AuthService {
         let password = hash_password(input.password).await?;
         let email = input.email.trim().to_lowercase();
 
-        self.queries.groups_create_owner_group_if_not_exists1().await?;
-        let group_id = self.queries.groups_create_owner_group_if_not_exists2().await?;
+        self.queries
+            .groups_create_owner_group_if_not_exists1()
+            .await?;
+        let group_id = self
+            .queries
+            .groups_create_owner_group_if_not_exists2()
+            .await?;
 
         let avatar = input.avatar.unwrap_or_default();
         let user = self
@@ -250,10 +255,10 @@ impl AuthService {
                 error => error.into(),
             })?;
 
-        if let Some(email) = input.email {
-            if !email.trim().is_empty() {
-                user.email = Some(email.trim().to_lowercase());
-            }
+        if let Some(email) = input.email
+            && !email.trim().is_empty()
+        {
+            user.email = Some(email.trim().to_lowercase());
         }
         if let Some(first_name) = input.first_name {
             user.first_name = Some(first_name);
@@ -264,10 +269,10 @@ impl AuthService {
         if let Some(avatar) = input.avatar {
             user.avatar = avatar;
         }
-        if let Some(password) = input.password {
-            if !password.trim().is_empty() {
-                user.password = hash_password(password).await?;
-            }
+        if let Some(password) = input.password
+            && !password.trim().is_empty()
+        {
+            user.password = hash_password(password).await?;
         }
 
         user.updated_at = chrono::Utc::now().timestamp();
@@ -321,7 +326,6 @@ impl AuthService {
                 created_at: row.created_at.map(|at| at.timestamp()).unwrap_or_default(),
                 expires_at: row.expires_at.map(|at| at.timestamp()),
                 active: row.active.map(|at| at.timestamp() != 0).unwrap_or_default(),
-                ..Default::default()
             })
             .collect())
     }
@@ -334,7 +338,11 @@ impl AuthService {
         else {
             return Ok(false);
         };
-        if !target.active.map(|at| at.timestamp() != 0).unwrap_or_default() {
+        if !target
+            .active
+            .map(|at| at.timestamp() != 0)
+            .unwrap_or_default()
+        {
             return Ok(false);
         }
         self.queries

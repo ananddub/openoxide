@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 
-use connectrpc::{ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{
+    ConnectError, ErrorCode, RequestContext, Response, ServiceRequest, ServiceResult,
+};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    CancelDeploymentRequest, ContainerList, ComposeLogsRequest, DeploymentEvent,
-    DeploymentService, DeploymentServiceExt, Empty, GetDeploymentRequest,
-    ListDeploymentsRequest, ListDeploymentsResponse, LogExport, LogTargetRequest,
-    ResourceTargetRequest, SearchLogsRequest, StreamTargetRequest,
+    CancelDeploymentRequest, ComposeLogsRequest, ContainerList, DeploymentEvent, DeploymentService,
+    DeploymentServiceExt, Empty, GetDeploymentRequest, ListDeploymentsRequest,
+    ListDeploymentsResponse, LogExport, LogTargetRequest, ResourceTargetRequest, SearchLogsRequest,
+    StreamTargetRequest,
 };
 use crate::services::compute::engine::{
     CancelDeploymentResult, ComposeLogOptions, DeploymentListFilter, DockerLogOptions,
@@ -54,7 +56,7 @@ impl DeploymentService for DeploymentController {
                 proto
             })
             .collect();
-        Response::ok(ListDeploymentsResponse { deployments, ..Default::default() })
+        Response::ok(ListDeploymentsResponse { deployments })
     }
 
     #[permission(Logs, CanRead)]
@@ -63,7 +65,8 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, SearchLogsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListDeploymentsResponse> + Send + use<'a>> {
-        let items = self.service
+        let items = self
+            .service
             .search_logs(LogSearchOptions {
                 query: Some(request.query.to_owned()),
                 limit: 200,
@@ -74,19 +77,21 @@ impl DeploymentService for DeploymentController {
         // matched line and location ride in `status`/`resource_type`.
         let deployments = items
             .into_iter()
-            .map(|r| crate::api::connect::generated::openoxide::api::v1::Deployment {
-                id: r.deployment_id,
-                resource_type: r.title,
-                resource_id: r.deployment_id,
-                status: r.line,
-                error: None,
-                logs: None,
-                created_at: r.line_number as i64,
-                updated_at: r.line_number as i64,
-                ..Default::default()
-            })
+            .map(
+                |r| crate::api::connect::generated::openoxide::api::v1::Deployment {
+                    id: r.deployment_id,
+                    resource_type: r.title,
+                    resource_id: r.deployment_id,
+                    status: r.line,
+                    error: None,
+                    logs: None,
+                    created_at: r.line_number as i64,
+                    updated_at: r.line_number as i64,
+                    ..Default::default()
+                },
+            )
             .collect();
-        Response::ok(ListDeploymentsResponse { deployments, ..Default::default() })
+        Response::ok(ListDeploymentsResponse { deployments })
     }
 
     #[permission(Deployment, CanRead)]
@@ -95,9 +100,16 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         _request: ServiceRequest<'_, Empty>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListDeploymentsResponse> + Send + use<'a>> {
-        let items = self.service.list_active_components().await.map_err(map_error)?;
-        let deployments = items.into_iter().map(|d| active_to_deployment(&d)).collect();
-        Response::ok(ListDeploymentsResponse { deployments, ..Default::default() })
+        let items = self
+            .service
+            .list_active_components()
+            .await
+            .map_err(map_error)?;
+        let deployments = items
+            .into_iter()
+            .map(|d| active_to_deployment(&d))
+            .collect();
+        Response::ok(ListDeploymentsResponse { deployments })
     }
 
     #[permission(Deployment, CanRead)]
@@ -108,7 +120,7 @@ impl DeploymentService for DeploymentController {
     ) -> ServiceResult<impl connectrpc::Encodable<ListDeploymentsResponse> + Send + use<'a>> {
         let items = self.service.list_running(50, 0).await.map_err(map_error)?;
         let deployments = items.into_iter().map(|d| deployment_to_proto(&d)).collect();
-        Response::ok(ListDeploymentsResponse { deployments, ..Default::default() })
+        Response::ok(ListDeploymentsResponse { deployments })
     }
 
     #[permission(Deployment, CanRead)]
@@ -116,8 +128,16 @@ impl DeploymentService for DeploymentController {
         &'a self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, GetDeploymentRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<crate::api::connect::generated::openoxide::api::v1::Deployment> + Send + use<'a>> {
-        let item = self.service.get_by_id(request.id).await.map_err(map_error)?;
+    ) -> ServiceResult<
+        impl connectrpc::Encodable<crate::api::connect::generated::openoxide::api::v1::Deployment>
+        + Send
+        + use<'a>,
+    > {
+        let item = self
+            .service
+            .get_by_id(request.id)
+            .await
+            .map_err(map_error)?;
         Response::ok(deployment_to_proto(&item))
     }
 
@@ -126,7 +146,9 @@ impl DeploymentService for DeploymentController {
         &self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, StreamTargetRequest>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>,
+    > {
         let receiver = self
             .service
             .stream_application_stats(request.id, true)
@@ -140,7 +162,9 @@ impl DeploymentService for DeploymentController {
         &self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, StreamTargetRequest>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>,
+    > {
         let receiver = self
             .service
             .stream_compose_stats(request.id, true)
@@ -154,7 +178,9 @@ impl DeploymentService for DeploymentController {
         &self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, StreamTargetRequest>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>,
+    > {
         let receiver = self
             .service
             .stream_database_stats(request.id, true)
@@ -168,7 +194,9 @@ impl DeploymentService for DeploymentController {
         &self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, LogTargetRequest>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>,
+    > {
         let receiver = self
             .service
             .stream_docker_container_logs(
@@ -190,7 +218,8 @@ impl DeploymentService for DeploymentController {
         let target = request.target.to_owned();
         let server_id = request.server_id;
         let options = docker_log_options(request.tail, None, Some(false), None, None);
-        let output = self.service
+        let output = self
+            .service
             .docker_container_logs(server_id, target.clone(), options)
             .await
             .map_err(map_error)?;
@@ -198,7 +227,6 @@ impl DeploymentService for DeploymentController {
         Response::ok(LogExport {
             content,
             file_name: format!("{}.log", sanitize_filename(&target)),
-            ..Default::default()
         })
     }
 
@@ -208,16 +236,24 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         _request: ServiceRequest<'_, Empty>,
     ) -> ServiceResult<impl connectrpc::Encodable<ContainerList> + Send + use<'a>> {
-        let containers = self.service.list_docker_containers(None, true).await.map_err(map_error)?;
-        let containers = containers.into_iter().map(|c| crate::api::connect::generated::openoxide::api::v1::Container {
-            id: c.id,
-            name: c.names,
-            image: c.image,
-            state: c.state,
-            status: Some(c.status),
-            ..Default::default()
-        }).collect();
-        Response::ok(ContainerList { containers, ..Default::default() })
+        let containers = self
+            .service
+            .list_docker_containers(None, true)
+            .await
+            .map_err(map_error)?;
+        let containers = containers
+            .into_iter()
+            .map(
+                |c| crate::api::connect::generated::openoxide::api::v1::Container {
+                    id: c.id,
+                    name: c.names,
+                    image: c.image,
+                    state: c.state,
+                    status: Some(c.status),
+                },
+            )
+            .collect();
+        Response::ok(ContainerList { containers })
     }
 
     #[permission(Deployment, CanRead)]
@@ -225,7 +261,9 @@ impl DeploymentService for DeploymentController {
         &self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, LogTargetRequest>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>,
+    > {
         let receiver = self
             .service
             .stream_docker_service_logs(
@@ -247,7 +285,8 @@ impl DeploymentService for DeploymentController {
         let target = request.target.to_owned();
         let server_id = request.server_id;
         let options = docker_log_options(request.tail, None, Some(false), None, None);
-        let output = self.service
+        let output = self
+            .service
             .export_container_logs(server_id, &target, options)
             .await
             .map_err(map_error)?;
@@ -256,7 +295,6 @@ impl DeploymentService for DeploymentController {
         Response::ok(LogExport {
             content: String::from_utf8_lossy(&bytes).into_owned(),
             file_name: format!("{}.log", sanitize_filename(&target)),
-            ..Default::default()
         })
     }
 
@@ -265,16 +303,16 @@ impl DeploymentService for DeploymentController {
         &self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeLogsRequest>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>,
+    > {
         // A compose id resolves to the project name the stack was deployed
         // under; with no id the caller already passed a raw service name.
         let (server_id, project_name, service) = match request.compose_id {
             Some(compose_id) => {
                 let queries = auto_di::resolve::<crate::db::queries::FlashQueries>()
                     .await
-                    .map_err(|error| {
-                        ConnectError::new(ErrorCode::Internal, error.to_string())
-                    })?;
+                    .map_err(|error| ConnectError::new(ErrorCode::Internal, error.to_string()))?;
                 let compose = queries
                     .get_service_by_i_d(compose_id)
                     .await
@@ -285,11 +323,7 @@ impl DeploymentService for DeploymentController {
                     request.service.map(str::to_owned),
                 )
             }
-            None => (
-                request.server_id,
-                None,
-                request.service.map(str::to_owned),
-            ),
+            None => (request.server_id, None, request.service.map(str::to_owned)),
         };
         let options = ComposeLogOptions {
             file: None,
@@ -312,7 +346,10 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeLogsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<LogExport> + Send + use<'a>> {
-        let service_name = request.service.map(str::to_owned).unwrap_or_else(|| "compose".into());
+        let service_name = request
+            .service
+            .map(str::to_owned)
+            .unwrap_or_else(|| "compose".into());
         let server_id = request.server_id;
         let options = ComposeLogOptions {
             file: None,
@@ -327,7 +364,8 @@ impl DeploymentService for DeploymentController {
                 until: None,
             },
         };
-        let output = self.service
+        let output = self
+            .service
             .export_compose_logs(server_id, options)
             .await
             .map_err(map_error)?;
@@ -336,7 +374,6 @@ impl DeploymentService for DeploymentController {
         Response::ok(LogExport {
             content: String::from_utf8_lossy(&bytes).into_owned(),
             file_name: format!("{}.log", sanitize_filename(&service_name)),
-            ..Default::default()
         })
     }
 
@@ -345,7 +382,9 @@ impl DeploymentService for DeploymentController {
         &self,
         _ctx: RequestContext,
         request: ServiceRequest<'_, GetDeploymentRequest>,
-    ) -> ServiceResult<connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>> {
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>,
+    > {
         let receiver = self
             .service
             .stream_deployment_log(request.id)
@@ -397,7 +436,10 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ResourceTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.clear_all(Some(request.id), None, None, None).await.map_err(map_error)?;
+        self.service
+            .clear_all(Some(request.id), None, None, None)
+            .await
+            .map_err(map_error)?;
         Response::ok(Empty::default())
     }
 
@@ -407,7 +449,10 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ResourceTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.clear_all(None, Some(request.id), None, None).await.map_err(map_error)?;
+        self.service
+            .clear_all(None, Some(request.id), None, None)
+            .await
+            .map_err(map_error)?;
         Response::ok(Empty::default())
     }
 
@@ -417,7 +462,10 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ResourceTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.clear_all(None, None, Some(request.id), None).await.map_err(map_error)?;
+        self.service
+            .clear_all(None, None, Some(request.id), None)
+            .await
+            .map_err(map_error)?;
         Response::ok(Empty::default())
     }
 
@@ -427,7 +475,10 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         _request: ServiceRequest<'_, Empty>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
-        self.service.clear_all(None, None, None, None).await.map_err(map_error)?;
+        self.service
+            .clear_all(None, None, None, None)
+            .await
+            .map_err(map_error)?;
         Response::ok(Empty::default())
     }
 }

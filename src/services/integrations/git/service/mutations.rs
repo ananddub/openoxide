@@ -7,8 +7,10 @@ use crate::services::integrations::git::{
     CreateProvider, GitProviderView, ProviderCredentials, UpdateProvider,
 };
 
-use super::{config_to_string, parse_config, BitbucketConfig, GitProviderService, GiteaConfig,
-    GithubConfig, GitlabConfig};
+use super::{
+    BitbucketConfig, GitProviderService, GiteaConfig, GithubConfig, GitlabConfig, config_to_string,
+    parse_config,
+};
 
 impl GitProviderService {
     pub async fn create(
@@ -98,7 +100,9 @@ impl GitProviderService {
                 "Git provider is assigned to an application or compose project".into(),
             ));
         }
-        self.queries.delete_git_provider(id, organization_id).await?;
+        self.queries
+            .delete_git_provider(id, organization_id)
+            .await?;
         Ok(())
     }
 }
@@ -187,7 +191,10 @@ fn initial_config(credentials: &ProviderCredentials) -> sqlx::Result<String> {
     }
 }
 
-fn merged_config(current: &GitProviders, credentials: &ProviderCredentials) -> sqlx::Result<String> {
+fn merged_config(
+    current: &GitProviders,
+    credentials: &ProviderCredentials,
+) -> sqlx::Result<String> {
     match credentials {
         ProviderCredentials::Github {
             app_name,

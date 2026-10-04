@@ -94,6 +94,16 @@ pub async fn resolve_volume_paths(
     resolved
 }
 
+/// The services whose objects one plan covers, with each service id's directory
+/// name on disk.
+#[derive(Debug, Default, Clone)]
+pub struct MountPlanScope {
+    pub application_ids: Vec<i64>,
+    pub compose_ids: Vec<i64>,
+    pub app_names: HashMap<i64, String>,
+    pub compose_names: HashMap<i64, String>,
+}
+
 /// Build the ordered object plan (source dir → volumes → binds) for a scope.
 /// `app_names`/`compose_names` map service id → directory name on disk.
 /// Identical `obj_key`s across services dedupe naturally (same staging dir).
@@ -102,19 +112,20 @@ pub async fn plan_service_objects(
     migration_id: &str,
     queries: &FlashQueries,
     source: &CommandExecutor,
-    application_ids: &[i64],
-    compose_ids: &[i64],
-    app_names: &HashMap<i64, String>,
-    compose_names: &HashMap<i64, String>,
+    scope: &MountPlanScope,
 ) -> Result<(Vec<PlannedObject>, Vec<MountIssue>), PlanError> {
+    let application_ids = &scope.application_ids;
+    let compose_ids = &scope.compose_ids;
+    let app_names = &scope.app_names;
+    let compose_names = &scope.compose_names;
     let mut objects: Vec<PlannedObject> = Vec::new();
     let mut issues = Vec::new();
     let mut seen: HashSet<String> = HashSet::new();
 
     let push = |objects: &mut Vec<PlannedObject>,
-                    seen: &mut HashSet<String>,
-                    kind: MigrationObjectKind,
-                    reference: &str|
+                seen: &mut HashSet<String>,
+                kind: MigrationObjectKind,
+                reference: &str|
      -> Result<(), PlanError> {
         let planned = plan_object(paths, migration_id, kind, reference)?;
         if seen.insert(planned.obj_key.clone()) {
@@ -126,18 +137,24 @@ pub async fn plan_service_objects(
     // 1. Source-code directories (application `code`, compose `source`).
     for id in application_ids {
         if let Some(name) = app_names.get(id) {
-            push(&mut objects, &mut seen, MigrationObjectKind::Src, &paths.application_code(name))
-                .map_err(|_| {
-                    PlanError::InvalidReference(format!("application dir name {name:?}"))
-                })?;
+            push(
+                &mut objects,
+                &mut seen,
+                MigrationObjectKind::Src,
+                &paths.application_code(name),
+            )
+            .map_err(|_| PlanError::InvalidReference(format!("application dir name {name:?}")))?;
         }
     }
     for id in compose_ids {
         if let Some(name) = compose_names.get(id) {
-            push(&mut objects, &mut seen, MigrationObjectKind::Src, &paths.compose_source(name))
-                .map_err(|_| {
-                    PlanError::InvalidReference(format!("compose dir name {name:?}"))
-                })?;
+            push(
+                &mut objects,
+                &mut seen,
+                MigrationObjectKind::Src,
+                &paths.compose_source(name),
+            )
+            .map_err(|_| PlanError::InvalidReference(format!("compose dir name {name:?}")))?;
         }
     }
 
@@ -154,12 +171,11 @@ pub async fn plan_service_objects(
         }
     }
     for row in &rows {
-        if row.mount_type == "VOLUME" {
-            if let Some(volume) = row.volume_name.as_deref().map(str::trim) {
-                if !volume.is_empty() {
-                    volume_names.insert(volume.to_owned());
-                }
-            }
+        if row.mount_type == "VOLUME"
+            && let Some(volume) = row.volume_name.as_deref().map(str::trim)
+            && !volume.is_empty()
+        {
+            volume_names.insert(volume.to_owned());
         }
     }
     let resolved = resolve_volume_paths(source, &volume_names).await;
@@ -228,13 +244,7 @@ mod tests {
         let args = volume_inspect_args("app-data").unwrap();
         assert_eq!(
             args,
-            vec![
-                "volume",
-                "inspect",
-                "-f",
-                "{{.Mountpoint}}",
-                "app-data"
-            ]
+            vec!["volume", "inspect", "-f", "{{.Mountpoint}}", "app-data"]
         );
         assert!(volume_inspect_args("").is_err());
         assert!(volume_inspect_args("app data").is_err());
@@ -258,8 +268,20 @@ mod tests {
         let paths = OpenOxidePaths {
             base: "/etc/openoxide".into(),
         };
-        let a = plan_object(&paths, "m1", MigrationObjectKind::Volume, "/v/app-data/_data").unwrap();
-        let b = plan_object(&paths, "m1", MigrationObjectKind::Volume, "/v/app-data/_data").unwrap();
+        let a = plan_object(
+            &paths,
+            "m1",
+            MigrationObjectKind::Volume,
+            "/v/app-data/_data",
+        )
+        .unwrap();
+        let b = plan_object(
+            &paths,
+            "m1",
+            MigrationObjectKind::Volume,
+            "/v/app-data/_data",
+        )
+        .unwrap();
         assert_eq!(a.obj_key, b.obj_key);
         let mut seen = HashSet::new();
         assert!(seen.insert(a.obj_key.clone()));

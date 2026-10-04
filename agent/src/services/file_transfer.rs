@@ -115,7 +115,8 @@ impl FileTransferService {
         let mut guard = Some(TempUploadGuard::new(temp.clone()));
         let mut hasher = Sha256::new();
         let mut written = 0u64;
-        let result = async {
+
+        async {
             // End-of-stream (rather than a flag) marks completion: the byte
             // count must match the header's declared total.
             while let Some(chunk) = tokio::time::timeout(
@@ -166,8 +167,7 @@ impl FileTransferService {
                 destination: destination.to_string_lossy().into_owned(),
             })
         }
-        .await;
-        result
+        .await
     }
 }
 

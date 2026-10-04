@@ -32,7 +32,10 @@ impl AuthContext {
         organization_id: Option<&str>,
     ) -> Result<Self, AuthError> {
         let token = authorization
-            .and_then(|v| v.strip_prefix("Bearer ").or_else(|| v.strip_prefix("bearer ")))
+            .and_then(|v| {
+                v.strip_prefix("Bearer ")
+                    .or_else(|| v.strip_prefix("bearer "))
+            })
             .filter(|t| !t.is_empty())
             .ok_or(AuthError::MissingToken)?;
 
@@ -46,8 +49,8 @@ impl AuthContext {
             .await
             .map_err(|_| AuthError::InvalidToken)?;
 
-        let organization_id = Self::resolve_organization(organization_id, claims.user.user_id)
-            .await?;
+        let organization_id =
+            Self::resolve_organization(organization_id, claims.user.user_id).await?;
 
         Ok(Self {
             claims,
@@ -63,22 +66,18 @@ impl AuthContext {
     /// workspace was revoked) must never hard-block the session — the user
     /// still needs ListOrganizations to switch workspaces — and the fallback
     /// can only ever resolve to an organization they belong to.
-    async fn resolve_organization(
-        header: Option<&str>,
-        user_id: i64,
-    ) -> Result<i64, AuthError> {
+    async fn resolve_organization(header: Option<&str>, user_id: i64) -> Result<i64, AuthError> {
         let service = resolve::<PermissionService>()
             .await
             .map_err(|_| AuthError::ServiceUnavailable)?
             .clone();
-        if let Some(id) = header.and_then(|v| v.parse::<i64>().ok()) {
-            if service
+        if let Some(id) = header.and_then(|v| v.parse::<i64>().ok())
+            && service
                 .is_organization_member(user_id, id)
                 .await
                 .map_err(|_| AuthError::ServiceUnavailable)?
-            {
-                return Ok(id);
-            }
+        {
+            return Ok(id);
         }
         service
             .resolve_organization(user_id)
@@ -90,12 +89,8 @@ impl AuthContext {
     // ── ConnectRPC adapter ────────────────────────────────────────────
 
     /// Extract [`AuthContext`] from a ConnectRPC [`RequestContext`].
-    pub async fn from_request_context(
-        ctx: &RequestContext,
-    ) -> Result<Self, ConnectError> {
-        let authorization = ctx
-            .header("authorization")
-            .and_then(|v| v.to_str().ok());
+    pub async fn from_request_context(ctx: &RequestContext) -> Result<Self, ConnectError> {
+        let authorization = ctx.header("authorization").and_then(|v| v.to_str().ok());
         let org_id = ctx
             .header("x-organization-id")
             .and_then(|v| v.to_str().ok());
@@ -117,7 +112,11 @@ impl AuthContext {
             .map_err(|_| AuthError::ServiceUnavailable)?
             .clone();
         service
-            .check_permission(self.user_id(), self.organization_id, PolicyAction::new(resource, operation))
+            .check_permission(
+                self.user_id(),
+                self.organization_id,
+                PolicyAction::new(resource, operation),
+            )
             .await
             .map_err(|_| AuthError::EvaluationFailed)
     }
@@ -187,7 +186,10 @@ impl AuthError {
             Self::ServiceUnavailable => "auth service unavailable".into(),
             Self::NoOrganization => "user has no organization membership".into(),
             Self::EvaluationFailed => "failed to evaluate permission".into(),
-            Self::PermissionDenied { resource, operation } => {
+            Self::PermissionDenied {
+                resource,
+                operation,
+            } => {
                 format!("permission denied: {resource}:{operation}")
             }
         }

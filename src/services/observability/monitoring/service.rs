@@ -16,6 +16,9 @@ use std::sync::Arc;
 use tonic::transport::{Certificate, ClientTlsConfig};
 use tonic::{Request, metadata::MetadataValue};
 
+// The generated tonic client echoes the service signatures, whose
+// `Result<T, tonic::Status>` error size is fixed by the codegen.
+#[allow(clippy::result_large_err)]
 pub mod proto {
     tonic::include_proto!("agent");
 }
@@ -57,12 +60,36 @@ pub struct ContainerMetric {
     pub compose_id: Option<i64>,
 }
 
+type StatsFeedSender = tokio::sync::broadcast::Sender<Arc<StatsFeedFrame>>;
+type StatsFeed = (u64, StatsFeedSender);
+
 pub struct MonitoringService {
     server_service: Arc<RemoteServerService>,
     config: Arc<Config>,
     agent_auth: Arc<MonitoringAgentAuth>,
     channels: Arc<dashmap::DashMap<i64, tonic::transport::Channel>>,
     repairs: Arc<dashmap::DashSet<i64>>,
+    /// One shared live-stats feed per server (generation, broadcast sender),
+    /// so N browser views cost ONE agent stream instead of N parallel
+    /// `StreamContainerStats` calls with duplicated dockerd samplers.
+    stats_feeds: Arc<dashmap::DashMap<i64, StatsFeed>>,
+    stats_feed_seq: Arc<std::sync::atomic::AtomicU64>,
+    /// Per-consumer watch targets (consumer id -> selectors) feeding the
+    /// shared stream. The agent samples the union only, so a server with two
+    /// watched apps costs two container samplers — not every container.
+    /// An empty selector list means "every container" (global view).
+    stats_feed_subs: Arc<dashmap::DashMap<i64, dashmap::DashMap<u64, Vec<String>>>>,
+    stats_feed_sub_seq: Arc<std::sync::atomic::AtomicU64>,
+}
+
+/// One parsed `docker stats` JSON frame from a shared feed. `json_line` is
+/// the exact CLI-shaped document the Agent produced; the id/name fields let
+/// consumers filter without re-parsing.
+#[derive(Debug)]
+pub struct StatsFeedFrame {
+    pub id: String,
+    pub name: String,
+    pub json_line: Arc<String>,
 }
 
 #[singleton]
@@ -139,7 +166,10 @@ impl MonitoringService {
             .await?
             .stream_container_stats(request)
             .await
-            .map_err(|error| format!("Agent stats stream failed to open: {error}"))?;
+            .map_err(|error| {
+                self.invalidate_stale_channel(server_id, &error);
+                format!("Agent stats stream failed to open: {error}")
+            })?;
         let _ = self.agent_auth.touch_seen(server_id).await;
         Ok(response.into_inner())
     }
@@ -155,6 +185,156 @@ impl MonitoringService {
             agent_auth,
             channels: Arc::new(dashmap::DashMap::new()),
             repairs: Arc::new(dashmap::DashSet::new()),
+            stats_feeds: Arc::new(dashmap::DashMap::new()),
+            stats_feed_seq: Arc::new(std::sync::atomic::AtomicU64::new(1)),
+            stats_feed_subs: Arc::new(dashmap::DashMap::new()),
+            stats_feed_sub_seq: Arc::new(std::sync::atomic::AtomicU64::new(1)),
+        }
+    }
+
+    /// Subscribes one consumer of the server's shared live-stats feed,
+    /// creating the feed on first use. Each consumer declares the selector
+    /// targets it watches (empty = every container); the feed samples the
+    /// union of those targets through the cached gRPC channel, so dockerd
+    /// samplers never cover more containers than some tab is watching.
+    /// When the last consumer unsubscribes or its receiver drops, the feed
+    /// task exits and the agent stream closes within one tick.
+    pub async fn subscribe_container_stats(
+        self: &Arc<Self>,
+        server_id: i64,
+        targets: Vec<String>,
+    ) -> Result<(tokio::sync::broadcast::Receiver<Arc<StatsFeedFrame>>, u64), String> {
+        let consumer = self
+            .stats_feed_sub_seq
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.stats_feed_subs
+            .entry(server_id)
+            .or_default()
+            .insert(consumer, targets);
+        let (sender, generation, created) = match self.stats_feeds.entry(server_id) {
+            Entry::Occupied(entry) => (entry.get().1.clone(), entry.get().0, false),
+            Entry::Vacant(entry) => {
+                let generation = self
+                    .stats_feed_seq
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                let (sender, _) = tokio::sync::broadcast::channel(512);
+                entry.insert((generation, sender.clone()));
+                (sender, generation, true)
+            }
+        };
+        if created {
+            let service = Arc::clone(self);
+            let pump_sender = sender.clone();
+            tokio::spawn(async move {
+                let outcome = service.run_stats_feed(server_id, &pump_sender).await;
+                match outcome {
+                    Ok(()) => tracing::debug!(server_id, "shared Agent stats feed ended"),
+                    Err(error) => {
+                        tracing::warn!(server_id, %error, "shared Agent stats feed failed")
+                    }
+                }
+                service
+                    .stats_feeds
+                    .remove_if(&server_id, |_, feed| feed.0 == generation);
+            });
+        }
+        Ok((sender.subscribe(), consumer))
+    }
+
+    /// Detaches one consumer; the shared feed re-narrows (or closes) on its
+    /// next frame. Safe to call with a stale id.
+    pub fn unsubscribe_container_stats(&self, server_id: i64, consumer: u64) {
+        if let Some(entry) = self.stats_feed_subs.get(&server_id) {
+            entry.remove(&consumer);
+        }
+    }
+
+    /// The selector union every current consumer watches. `None` means no
+    /// consumers at all (the feed should end); `Some(vec![])` means at least
+    /// one global viewer (sample every container).
+    fn feed_union(&self, server_id: i64) -> Option<Vec<String>> {
+        let entry = self.stats_feed_subs.get(&server_id)?;
+        if entry.is_empty() {
+            return None;
+        }
+        if entry.iter().any(|row| row.value().is_empty()) {
+            return Some(Vec::new());
+        }
+        let mut union: std::collections::BTreeSet<String> = Default::default();
+        for row in entry.iter() {
+            union.extend(row.value().iter().cloned());
+        }
+        Some(union.into_iter().collect())
+    }
+
+    async fn run_stats_feed(&self, server_id: i64, sender: &StatsFeedSender) -> Result<(), String> {
+        let (mut frames, mut last_union) = loop {
+            let union = self.feed_union(server_id).ok_or("no stats consumers")?;
+            match self
+                .stream_container_stats(server_id, union.clone(), true)
+                .await
+            {
+                Ok(frames) => break (frames, union),
+                // The Agent may still be booting while the first tab opens.
+                Err(error) => {
+                    tracing::debug!(server_id, %error, "stats feed open failed; retrying");
+                    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+                }
+            }
+        };
+        loop {
+            // Consumers come and go while this pump runs: re-check the union
+            // every round and reopen the agent stream only when it changed,
+            // so dockerd samplers always cover exactly the watched set.
+            let union = match self.feed_union(server_id) {
+                Some(union) => union,
+                None => return Ok(()),
+            };
+            if last_union != union {
+                frames = self
+                    .stream_container_stats(server_id, union.clone(), true)
+                    .await?;
+                last_union = union;
+            }
+            // An agent that goes quiet (stream alive, no frames) with all
+            // browser receivers dropped would otherwise keep this pump, the
+            // gRPC stream, and the map entry alive forever.
+            let frame =
+                match tokio::time::timeout(std::time::Duration::from_secs(60), frames.message())
+                    .await
+                {
+                    Err(_elapsed) => {
+                        if sender.receiver_count() == 0 {
+                            return Ok(());
+                        }
+                        continue;
+                    }
+                    Ok(result) => result.map_err(|error| error.to_string())?,
+                };
+            let Some(frame) = frame else {
+                return Ok(());
+            };
+            let json_line = Arc::new(frame.json_line);
+            let parsed: serde_json::Value = match serde_json::from_str(&json_line) {
+                Ok(parsed) => parsed,
+                Err(_) => continue,
+            };
+            let feed_frame = Arc::new(StatsFeedFrame {
+                id: parsed
+                    .get("ID")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or_default()
+                    .to_owned(),
+                name: parsed
+                    .get("Name")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or_default()
+                    .to_owned(),
+                json_line,
+            });
+            if sender.send(feed_frame).is_err() {
+                return Ok(());
+            }
         }
     }
 
@@ -164,6 +344,25 @@ impl MonitoringService {
     pub fn forget_agent(&self, server_id: i64) {
         self.channels.remove(&server_id);
         self.repairs.remove(&server_id);
+        self.stats_feed_subs.remove(&server_id);
+        self.stats_feeds.remove(&server_id);
+    }
+
+    /// Drops the cached gRPC channel when an RPC fails with a transport- or
+    /// identity-level status, so the next call rebuilds it from fresh mTLS
+    /// material. The shell/exec paths already repair via SSH on these codes,
+    /// but the read paths (metrics, container states, lifecycle/stats streams)
+    /// do not — so after an agent restart or reinstall (whose cert rotation
+    /// orphans the cached client identity) a stale channel would keep every
+    /// read failing forever and freeze `last_seen_at`. Recoverable application
+    /// errors are left cached.
+    fn invalidate_stale_channel(&self, server_id: i64, error: &tonic::Status) {
+        if matches!(
+            error.code(),
+            tonic::Code::Unavailable | tonic::Code::Unauthenticated | tonic::Code::Aborted
+        ) {
+            self.channels.remove(&server_id);
+        }
     }
 
     fn trigger_agent_repair(self: &Arc<Self>, server_id: i64, reason: &str) -> String {
@@ -183,8 +382,23 @@ impl MonitoringService {
                 .await
                 {
                     Ok(lifecycle) => {
-                        if let Err(error) = lifecycle.reinstall_agent(server_id).await {
-                            tracing::error!(server_id, %error, "automatic Agent reinstall failed");
+                        // Bound the SSH bootstrap repair: a hung executor would
+                        // otherwise keep this task (and its `repairs` marker)
+                        // alive forever, blocking any later repair attempt.
+                        match tokio::time::timeout(
+                            std::time::Duration::from_secs(4 * 60),
+                            lifecycle.reinstall_agent(server_id),
+                        )
+                        .await
+                        {
+                            Err(_elapsed) => tracing::error!(
+                                server_id,
+                                "automatic Agent reinstall timed out"
+                            ),
+                            Ok(Err(error)) => {
+                                tracing::error!(server_id, %error, "automatic Agent reinstall failed")
+                            }
+                            Ok(Ok(_)) => {}
                         }
                     }
                     Err(error) => tracing::error!(
@@ -242,20 +456,21 @@ impl MonitoringService {
         // it the panel would fall back to plain HTTP against a TLS-only agent
         // and the handshake fails with an opaque "h2 protocol error". The DB
         // holds the CA, so this is idempotent (reuse) after the first call.
-        if !ca_file.exists() && !is_local {
-            if let Ok(store) = auto_di::resolve::<crate::utils::mtls::MtlsCaStore>().await {
-                let sans = vec![
-                    "openoxide-agent".to_string(),
-                    "localhost".to_string(),
-                    "127.0.0.1".to_string(),
-                    host.to_string(),
-                ];
-                if let Err(error) = store
-                    .ensure_server(server_id, std::path::Path::new(&mtls_base), &sans)
-                    .await
-                {
-                    tracing::warn!(server_id, %error, "could not provision per-server mTLS");
-                }
+        if !ca_file.exists()
+            && !is_local
+            && let Ok(store) = auto_di::resolve::<crate::utils::mtls::MtlsCaStore>().await
+        {
+            let sans = vec![
+                "openoxide-agent".to_string(),
+                "localhost".to_string(),
+                "127.0.0.1".to_string(),
+                host.to_string(),
+            ];
+            if let Err(error) = store
+                .ensure_server(server_id, std::path::Path::new(&mtls_base), &sans)
+                .await
+            {
+                tracing::warn!(server_id, %error, "could not provision per-server mTLS");
             }
         }
         let use_tls = ca_file.exists();
@@ -263,7 +478,15 @@ impl MonitoringService {
         let mut endpoint =
             tonic::transport::Endpoint::from_shared(format!("{scheme}://{host}:50051"))
                 .map_err(|error| format!("invalid monitoring agent address: {error}"))?
-                .http2_keep_alive_interval(std::time::Duration::from_secs(30));
+                .http2_keep_alive_interval(std::time::Duration::from_secs(30))
+                // Shrink h2 receive buffers. One cached channel carries every
+                // stream to a server (watch, shared stats feed, shell, logs);
+                // the default ~64 KiB window is paid PER STREAM, so several
+                // open streams inflated agent-side memory for no benefit —
+                // these payloads are 1 Hz stat frames and keystroke-rate
+                // shell traffic that flow-control fine at 16 KiB.
+                .initial_stream_window_size(16 * 1024)
+                .initial_connection_window_size(64 * 1024);
         if is_local {
             tracing::debug!(server_id, host, "using local Agent endpoint");
         }
@@ -422,7 +645,10 @@ impl MonitoringService {
             .get_agent_info(request)
             .await
             .map(|response| response.into_inner())
-            .map_err(|error| format!("agent capability negotiation failed: {error}"))
+            .map_err(|error| {
+                self.invalidate_stale_channel(server_id, &error);
+                format!("agent capability negotiation failed: {error}")
+            })
     }
 
     /// Asks the agent to self-inspect and pull `image` through its Docker
@@ -447,7 +673,10 @@ impl MonitoringService {
             .get_agent_info(request)
             .await
             .map(|response| response.into_inner())
-            .map_err(|error| format!("agent update probe failed: {error}"))
+            .map_err(|error| {
+                self.invalidate_stale_channel(server_id, &error);
+                format!("agent update probe failed: {error}")
+            })
     }
 
     async fn authenticated<T>(&self, server_id: i64, message: T) -> Result<Request<T>, String> {
@@ -483,7 +712,10 @@ impl MonitoringService {
         let metrics = client
             .get_server_metrics(request)
             .await
-            .map_err(|error| format!("agent metric query failed: {error}"))?
+            .map_err(|error| {
+                self.invalidate_stale_channel(server_id, &error);
+                format!("agent metric query failed: {error}")
+            })?
             .into_inner();
         let _ = self.agent_auth.touch_seen(server_id).await;
         let host = metrics.host;
@@ -544,7 +776,10 @@ impl MonitoringService {
         let metrics = client
             .get_container_metrics(request)
             .await
-            .map_err(|error| format!("agent container query failed: {error}"))?
+            .map_err(|error| {
+                self.invalidate_stale_channel(server_id, &error);
+                format!("agent container query failed: {error}")
+            })?
             .into_inner()
             .metrics;
         let _ = self.agent_auth.touch_seen(server_id).await;
@@ -590,7 +825,10 @@ impl MonitoringService {
         let states = client
             .get_container_states(request)
             .await
-            .map_err(|error| format!("agent container state query failed: {error}"))?
+            .map_err(|error| {
+                self.invalidate_stale_channel(server_id, &error);
+                format!("agent container state query failed: {error}")
+            })?
             .into_inner()
             .containers;
         let _ = self.agent_auth.touch_seen(server_id).await;
@@ -609,7 +847,10 @@ impl MonitoringService {
             .watch_container_states(request)
             .await
             .map(|response| response.into_inner())
-            .map_err(|error| format!("agent lifecycle stream failed: {error}"))
+            .map_err(|error| {
+                self.invalidate_stale_channel(server_id, &error);
+                format!("agent lifecycle stream failed: {error}")
+            })
     }
 
     pub async fn server_ids(&self) -> Result<Vec<i64>, String> {

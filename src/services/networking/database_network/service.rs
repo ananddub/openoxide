@@ -29,7 +29,9 @@ impl DatabaseNetworkService {
     ) -> sqlx::Result<Vec<DatabaseNetworks>> {
         match server_id {
             Some(server_id) => {
-                self.queries.database_networks_list_by_server(server_id).await
+                self.queries
+                    .database_networks_list_by_server(server_id)
+                    .await
             }
             None => self.queries.database_networks_list_global().await,
         }
@@ -132,10 +134,7 @@ impl DatabaseNetworkService {
             .queries
             .db_network_dependency_compose_services(&key)
             .await?;
-        let databases = self
-            .queries
-            .db_network_dependency_databases(&key)
-            .await?;
+        let databases = self.queries.db_network_dependency_databases(&key).await?;
         Ok(NetworkDependencyCounts {
             applications,
             compose_services,

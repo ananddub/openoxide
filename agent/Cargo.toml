@@ -25,7 +25,7 @@ auto-di = "0.6.0"
 auto_grpc = { path = "../crates/auto/grpc" }
 futures = "0.3"
 async-stream = "0.3"
-os = { path = "../crates/os" }
+os = { package = "oxos", path = "../crates/os" }
 sh_macros = { path = "../crates/sh_macros" }
 
 hyper = { version = "1", features = ["client", "http1"] }

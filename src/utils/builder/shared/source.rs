@@ -1,26 +1,32 @@
 use crate::utils::{builder::shared::BuilderContext, exec::ExecResult, provider::CustomClient};
 use tokio_util::sync::CancellationToken;
 
+/// Everything a single `git clone` needs, so the fetch entry point stays small.
+#[derive(Clone, Debug)]
+pub struct GitRequest<'a> {
+    pub url: &'a str,
+    pub branch: &'a str,
+    pub submodules: bool,
+    pub protocol: crate::utils::provider::CloneProtocol,
+    pub auth: Option<crate::utils::git::types::GitAuth>,
+}
+
 pub async fn fetch_git_repository(
     ctx: &BuilderContext,
     work_directory: &str,
-    url: &str,
-    branch: &str,
-    submodules: bool,
-    protocol: crate::utils::provider::CloneProtocol,
-    auth: Option<crate::utils::git::types::GitAuth>,
+    request: GitRequest<'_>,
     cancel: &CancellationToken,
 ) -> ExecResult<()> {
-    let custom = CustomClient::new(url);
+    let custom = CustomClient::new(request.url);
     let mut builder = custom
         .repository()
-        .sync_into(work_directory, protocol)
-        .branch(branch)
-        .submodules(submodules)
+        .sync_into(work_directory, request.protocol)
+        .branch(request.branch)
+        .submodules(request.submodules)
         .context(ctx)
         .cancel_with(cancel);
 
-    if let Some(auth) = auth {
+    if let Some(auth) = request.auth {
         builder = builder.auth(auth);
     }
 

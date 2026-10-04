@@ -145,8 +145,12 @@ pub struct ApplicationOperationResult {
     pub operation: ApplicationOperation,
 }
 
-impl From<(crate::flash_gen::models::Services, crate::flash_gen::models::ServiceApplication, Option<crate::flash_gen::models::ServiceGit>)>
-    for ApplicationRecord
+impl
+    From<(
+        crate::flash_gen::models::Services,
+        crate::flash_gen::models::ServiceApplication,
+        Option<crate::flash_gen::models::ServiceGit>,
+    )> for ApplicationRecord
 {
     fn from(
         (service, ext, git): (
@@ -159,17 +163,15 @@ impl From<(crate::flash_gen::models::Services, crate::flash_gen::models::Service
         // Source type resolution mirrors ApplicationGetSpecRow: the
         // service_git row wins, otherwise DOCKER/DROP are derived from
         // docker_image / drop_build_path.
-        let source_type = git
-            .map(|g| g.source_type.clone())
-            .unwrap_or_else(|| {
-                if service.docker_image.is_some() {
-                    "DOCKER".into()
-                } else if ext.drop_build_path.is_some() {
-                    "DROP".into()
-                } else {
-                    "NONE".into()
-                }
-            });
+        let source_type = git.map(|g| g.source_type.clone()).unwrap_or_else(|| {
+            if service.docker_image.is_some() {
+                "DOCKER".into()
+            } else if ext.drop_build_path.is_some() {
+                "DROP".into()
+            } else {
+                "NONE".into()
+            }
+        });
         // Flash bind params for nullable TEXT columns are non-Option, so
         // empty strings round-trip where the old table stored NULL.
         let normalize = |value: Option<String>| match value {
@@ -192,7 +194,9 @@ impl From<(crate::flash_gen::models::Services, crate::flash_gen::models::Service
             build_path: normalize(ext.build_path),
             drop_build_path: normalize(ext.drop_build_path),
             clean_cache: ext.clean_cache != 0,
-            auto_deploy: git.map(|g| g.auto_deploy.unwrap_or(1) != 0).unwrap_or(false),
+            auto_deploy: git
+                .map(|g| g.auto_deploy.unwrap_or(1) != 0)
+                .unwrap_or(false),
             build_type: ext.build_type,
             app_status: service.app_status,
             last_error: service.last_error,
@@ -235,8 +239,7 @@ impl From<(crate::flash_gen::models::Services, crate::flash_gen::models::Service
             preview_custom_cert_resolver: ext.preview_custom_cert_resolver,
             preview_limit: ext.preview_limit,
             previews_active: ext.is_preview_deployments_active != 0,
-            preview_require_collaborator_permissions: ext
-                .preview_require_collaborator_permissions
+            preview_require_collaborator_permissions: ext.preview_require_collaborator_permissions
                 != 0,
             memory_reservation: service.memory_reservation,
             memory_limit: service.memory_limit,

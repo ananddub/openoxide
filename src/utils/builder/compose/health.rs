@@ -1,5 +1,5 @@
 use super::{
-    compose::ComposeBuilder,
+    builder::ComposeBuilder,
     spec::{ComposeRuntime, ComposeSpec},
 };
 use crate::utils::docker::query::filter::TaskFilter;
@@ -67,7 +67,7 @@ impl ComposeBuilder {
                         .ps()
                         .project(&spec.stack_name)
                         .env_file(&spec.env_file)
-                        .file(&spec.compose_file_path())
+                        .file(spec.compose_file_path())
                         .list()
                         .await
                     {
@@ -110,8 +110,7 @@ impl ComposeBuilder {
                     !rows.is_empty()
                         && rows.iter().all(|row| {
                             let state = row.state.to_lowercase();
-                            (state == "running"
-                                && !row.health.eq_ignore_ascii_case("starting"))
+                            (state == "running" && !row.health.eq_ignore_ascii_case("starting"))
                                 || (state.contains("exit") && row.exit_code == 0)
                         })
                 }

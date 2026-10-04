@@ -35,10 +35,10 @@ pub async fn build_libsql_stack(
     let command: Option<Vec<String>>;
     if let Some(c) = &command_row {
         let mut full = c.split_whitespace().map(String::from).collect::<Vec<_>>();
-        if let Some(a_str) = &db.args {
-            if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str) {
-                full.extend(parsed_args);
-            }
+        if let Some(a_str) = &db.args
+            && let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(a_str)
+        {
+            full.extend(parsed_args);
         }
         command = Some(full);
     } else {
@@ -215,7 +215,7 @@ pub async fn build_libsql_stack(
 
 fn base64_encode(data: &[u8]) -> String {
     const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut result = String::with_capacity((data.len() + 2) / 3 * 4);
+    let mut result = String::with_capacity(data.len().div_ceil(3) * 4);
     for chunk in data.chunks(3) {
         let n = match chunk.len() {
             3 => ((chunk[0] as u32) << 16) | ((chunk[1] as u32) << 8) | (chunk[2] as u32),

@@ -40,7 +40,7 @@ pub fn to_container_action(
         _ => {
             return Err(ConnectError::invalid_argument(
                 "action must be a defined container lifecycle action",
-            ))
+            ));
         }
     })
 }
@@ -63,7 +63,6 @@ pub fn container_to_proto(value: ContainerSummary) -> ProtoGlobalContainer {
         labels: value.labels,
         mounts: value.mounts,
         networks: value.networks,
-        ..Default::default()
     }
 }
 
@@ -79,7 +78,6 @@ pub fn image_to_proto(value: ImageSummary) -> ProtoGlobalImage {
         shared_size: value.shared_size,
         unique_size: value.unique_size,
         containers: value.containers,
-        ..Default::default()
     }
 }
 
@@ -93,7 +91,6 @@ pub fn network_to_proto(value: NetworkSummary) -> ProtoGlobalNetwork {
         internal: value.internal,
         labels: value.labels,
         created_at: value.created_at,
-        ..Default::default()
     }
 }
 
@@ -108,14 +105,14 @@ pub fn volume_to_proto(value: VolumeSummary) -> ProtoGlobalVolume {
         group: value.group,
         links: value.links,
         size: value.size,
-        ..Default::default()
     }
 }
 
-pub fn output_to_proto(value: crate::services::platform::global_ops::DockerActionResponseDto) -> ProtoGlobalDockerOutput {
+pub fn output_to_proto(
+    value: crate::services::platform::global_ops::DockerActionResponseDto,
+) -> ProtoGlobalDockerOutput {
     ProtoGlobalDockerOutput {
         stdout: value.stdout,
         stderr: value.stderr,
-        ..Default::default()
     }
 }

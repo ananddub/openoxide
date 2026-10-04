@@ -384,10 +384,10 @@ impl SshBuilder {
             Self::push_option(&mut args, "Compression", if comp { "yes" } else { "no" });
         }
 
-        if let Some(q) = self.quiet {
-            if q {
-                args.push("-q".to_string());
-            }
+        if let Some(q) = self.quiet
+            && q
+        {
+            args.push("-q".to_string());
         }
 
         if let Some(v) = self.verbosity {
@@ -553,11 +553,11 @@ mod tests {
     use crate::rclone::{RcloneBuilder, RcloneCommand, RcloneTarget};
 
     fn create_dummy_key_file() -> tempfile::NamedTempFile {
-        if let Ok(td) = std::env::var("TMPDIR") {
-            if !std::path::Path::new(&td).exists() {
-                unsafe {
-                    std::env::set_var("TMPDIR", "/tmp");
-                }
+        if let Ok(td) = std::env::var("TMPDIR")
+            && !std::path::Path::new(&td).exists()
+        {
+            unsafe {
+                std::env::set_var("TMPDIR", "/tmp");
             }
         }
         let mut f = tempfile::Builder::new()
@@ -577,6 +577,31 @@ mod tests {
 
     #[tokio::test]
     async fn test_ssh() {
+        // Integration smoke test: it transfers a file with the local `rclone`
+        // binary into an SSH server that only some development machines run, so
+        // report a skip instead of a failure when either half is missing.
+        if std::process::Command::new("rclone")
+            .arg("--version")
+            .output()
+            .is_err()
+        {
+            eprintln!("skipping rclone/ssh integration test: rclone is not installed");
+            return;
+        }
+        use std::net::ToSocketAddrs;
+        let ssh_addr = ("lima", 22_u16)
+            .to_socket_addrs()
+            .ok()
+            .and_then(|mut addresses| addresses.next());
+        let reachable = ssh_addr.is_some_and(|address| {
+            std::net::TcpStream::connect_timeout(&address, std::time::Duration::from_secs(2))
+                .is_ok()
+        });
+        if !reachable {
+            eprintln!("skipping rclone/ssh integration test: no SSH server reachable at lima:22");
+            return;
+        }
+
         let ssh = RemoteExecutor::new(
             "lima".to_string(),
             22,
@@ -623,11 +648,7 @@ mod tests {
                 );
             }
             Err(e) => {
-                assert!(
-                    false,
-                    "Rclone upload execution attempt finished with: {:?}",
-                    e
-                );
+                panic!("Rclone upload execution attempt finished with: {e:?}");
             }
         }
 
@@ -641,7 +662,7 @@ mod tests {
                 );
             }
             Err(e) => {
-                assert!(false, "Remote verification failed: {:?}", e);
+                panic!("Remote verification failed: {e:?}");
             }
         }
 

@@ -4,109 +4,23 @@ use crate::flash_gen::{
     models::DnsProviders,
 };
 use auto_di::singleton;
-use os::string_enum;
+use dns::DnsError;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use thiserror::Error;
 
 mod dispatch;
-mod dnsupdate_bridge;
-mod providers;
 mod validation;
 
-string_enum! {
-    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-    pub enum DnsProviderType {
-        default = Cloudflare;
+#[cfg(test)]
+mod service_tests;
 
-        Cloudflare => "CLOUDFLARE",
-        Route53 => "ROUTE53",
-        Hetzner => "HETZNER",
-        DigitalOcean => "DIGITALOCEAN",
-        Godaddy => "GODADDY",
-        Porkbun => "PORKBUN",
-        Infomaniak => "INFOMANIAK",
-        Ovh => "OVH",
-        Desec => "DESEC",
-        Bunny => "BUNNY",
-        Constellix => "CONSTELLIX",
-        DnsMadeEasy => "DNSMADEEASY",
-        Exoscale => "EXOSCALE",
-        Nifcloud => "NIFCLOUD",
-        WebSupport => "WEBSUPPORT",
-        Spaceship => "SPACESHIP",
-        Dnsimple => "DNSIMPLE",
-        GandiV5 => "GANDIV5",
-        NameDotCom => "NAMEDOTCOM",
-        NameSilo => "NAMESILO",
-        DuckDns => "DUCKDNS",
-        FreeMyIp => "FREEMYIP",
-        Ipv64 => "IPV64",
-        Ddnss => "DDNSS",
-        Dynu => "DYNU",
-        Plesk => "PLESK",
-        Cpanel => "CPANEL",
-        GoogleCloudDns => "GOOGLECLOUDDNS",
-        Ionos => "IONOS",
-        HostingDe => "HOSTINGDE",
-        Netcup => "NETCUP",
-        Netlify => "NETLIFY",
-        HuaweiCloud => "HUAWEICLOUD",
-        BaiduCloud => "BAIDUCLOUD",
-        AzureDns => "AZUREDNS",
-        IbmCloud => "IBMCLOUD",
-        Hurricane => "HURRICANE",
-        Hostinger => "HOSTINGER",
-        Autodns => "AUTODNS",
-        Lightsail => "LIGHTSAIL",
-        EdgeDns => "EDGEDNS",
-        Scaleway => "SCALEWAY",
-        Gcore => "GCORE",
-        Vercel => "VERCEL",
-        Vultr => "VULTR",
-        BluecatV2 => "BLUECATV2",
-        EasyDns => "EASYDNS",
-        Joker => "JOKER",
-        MythicBeasts => "MYTHICBEASTS",
-        Namecheap => "NAMECHEAP",
-        Transip => "TRANSIP",
-        Ns1 => "NS1",
-        LuaDns => "LUADNS",
-        ClouDns => "CLOUDNS",
-        Glesys => "GLESYS",
-        Dreamhost => "DREAMHOST",
-        Alidns => "ALIDNS",
-        TencentCloud => "TENCENTCLOUD",
-        Volcengine => "VOLCENGINE",
-        YandexCloud => "YANDEXCLOUD",
-        Domeneshop => "DOMENESHOP",
-        Safedns => "SAFEDNS",
-        SimplyCom => "SIMPLYCOM",
-        ArvanCloud => "ARVANCLOUD",
-        Inwx => "INWX",
-        UltraDns => "ULTRADNS",
-        Infoblox => "INFOBLOX",
-        OracleCloud => "ORACLECLOUD",
-        Rfc2136 => "RFC2136",
-    }
-}
-
-// Wire format is the canonical `string_enum` value (SCREAMING_SNAKE but not
-// word-split: `DIGITALOCEAN`, not serde's default `DIGITAL_OCEAN`).
-impl Serialize for DnsProviderType {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(self.as_str())
-    }
-}
-
-impl<'de> Deserialize<'de> for DnsProviderType {
-    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let raw = String::deserialize(deserializer)?;
-        Self::from_str(&raw)
-            .ok_or_else(|| serde::de::Error::custom(format!("unknown DNS provider type '{raw}'")))
-    }
-}
+/// The panel's provider list *is* the crate's: one enum owns the wire code stored in
+/// `dns_providers.provider_type`, the credential schema every form and validation step reads,
+/// and the client that serves the row. Keeping it here rather than in a second list is what
+/// stops the database, the proto enum and the web catalog from drifting apart again.
+pub type DnsProviderType = dns::DnsProviderKind;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DnsProviderDto {
@@ -201,6 +115,14 @@ pub enum DnsServiceError {
     ProviderError(String),
 }
 
+/// A provider or credential failure keeps the crate's own words, which the panel shows
+/// verbatim; the handler maps it to `invalid_argument` like any other `ProviderError`.
+impl From<DnsError> for DnsServiceError {
+    fn from(error: DnsError) -> Self {
+        Self::ProviderError(error.to_string())
+    }
+}
+
 pub struct DnsService {
     queries: Arc<FlashQueries>,
     client: Client,
@@ -224,7 +146,10 @@ impl DnsService {
             .queries
             .dns_providers_list_by_organization(organization_id)
             .await?;
-        Ok(providers.into_iter().map(Self::into_dto).collect())
+        providers
+            .into_iter()
+            .map(Self::into_dto)
+            .collect::<Result<Vec<_>, _>>()
     }
 
     pub async fn get_provider(
@@ -237,7 +162,7 @@ impl DnsService {
             Ok(_) | Err(sqlx::Error::RowNotFound) => return Err(DnsServiceError::NotFound),
             Err(error) => return Err(error.into()),
         };
-        Ok(Self::into_dto(provider))
+        Self::into_dto(provider)
     }
 
     pub async fn create_provider(
@@ -260,7 +185,7 @@ impl DnsService {
             .await?;
         let id = self.queries.dns_providers_get_last_insert_rowid().await?;
         let created = self.queries.dns_providers_get_by_id(id).await?;
-        Ok(Self::into_dto(created))
+        Self::into_dto(created)
     }
 
     pub async fn update_provider(
@@ -279,7 +204,6 @@ impl DnsService {
             existing.name = name;
         }
         if let Some(ptype) = body.provider_type {
-            Self::ensure_supported_provider(ptype)?;
             existing.provider_type = ptype.as_str().to_string();
         }
         if let Some(creds) = body.credentials_json {
@@ -300,7 +224,7 @@ impl DnsService {
                 organization_id,
             })
             .await?;
-        Ok(Self::into_dto(existing))
+        Self::into_dto(existing)
     }
 
     pub async fn delete_provider(
@@ -327,35 +251,20 @@ impl DnsService {
         }
     }
 
-    pub(crate) fn into_dto(p: DnsProviders) -> DnsProviderDto {
-        let p_type: DnsProviderType = p
-            .provider_type
-            .parse()
-            .unwrap_or(DnsProviderType::Cloudflare);
-
-        DnsProviderDto {
+    /// A stored type outside the supported set is a row this build cannot serve — reporting
+    /// it beats dressing it up as the first provider in the list.
+    pub(crate) fn into_dto(p: DnsProviders) -> Result<DnsProviderDto, DnsServiceError> {
+        let kind = Self::parse_provider_type(&p.provider_type)?;
+        Ok(DnsProviderDto {
             id: p.id,
             name: p.name,
-            provider_type: p_type,
-            credentials_json: mask_credentials(&p.credentials_json),
+            provider_type: kind,
+            credentials_json: mask_credentials(kind, &p.credentials_json),
             organization_id: p.organization_id,
             created_at: p.created_at,
             updated_at: p.updated_at,
-        }
+        })
     }
-}
-
-fn extract_credential_field(json_str: &str, field_name: &str) -> String {
-    if let Ok(val) = serde_json::from_str::<serde_json::Value>(json_str) {
-        if let Some(s) = val[field_name].as_str() {
-            return s.trim().to_string();
-        }
-    }
-    json_str
-        .trim()
-        .trim_matches('"')
-        .trim_matches('\'')
-        .to_string()
 }
 
 // The edit form sends back masked secrets as-is; keep the stored value for
@@ -391,30 +300,22 @@ fn merge_masked_credentials(
     Ok(serde_json::to_string(&incoming).unwrap_or_else(|_| incoming_json.to_string()))
 }
 
-fn mask_credentials(json_str: &str) -> String {
-    if let Ok(mut val) = serde_json::from_str::<serde_json::Value>(json_str) {
-        if let Some(obj) = val.as_object_mut() {
-            // Access-key ids and the OVH endpoint are not secrets and stay
-            // visible so edit forms can prefill them.
-            for key in [
-                "apiToken",
-                "secretAccessKey",
-                "apiKey",
-                "authKey",
-                "apiSecret",
-                "secretApiKey",
-                "applicationSecret",
-                "consumerKey",
-            ] {
-                if obj.contains_key(key) {
-                    obj.insert(
-                        key.to_string(),
-                        serde_json::Value::String(DNS_SECRET_MASK.to_string()),
-                    );
-                }
+/// The keys to hide come from the provider's own credential schema, so a secret cannot be
+/// masked by one layer and left visible by another; non-secret fields (an access-key id, the
+/// OVH endpoint) stay readable so an edit form can prefill them.
+fn mask_credentials(kind: DnsProviderType, json_str: &str) -> String {
+    if let Ok(mut val) = serde_json::from_str::<serde_json::Value>(json_str)
+        && let Some(obj) = val.as_object_mut()
+    {
+        for key in kind.secret_keys() {
+            if obj.contains_key(key) {
+                obj.insert(
+                    key.to_string(),
+                    serde_json::Value::String(DNS_SECRET_MASK.to_string()),
+                );
             }
-            return serde_json::to_string(&val).unwrap_or_else(|_| json_str.to_string());
         }
+        return serde_json::to_string(&val).unwrap_or_else(|_| json_str.to_string());
     }
     DNS_SECRET_MASK.to_string()
 }

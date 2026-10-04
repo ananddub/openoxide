@@ -1,15 +1,14 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    CreateNotificationBindingRequest, CreateNotificationBindingResponse,
-    CreateNotificationRequest, CreateNotificationResponse, DeleteNotificationBindingRequest,
-    DeleteNotificationRequest, Empty, GetNotificationRequest, GetNotificationResponse,
-    ListNotificationBindingsRequest, ListNotificationBindingsResponse,
-    ListNotificationDeliveryHistoryRequest, ListNotificationDeliveryHistoryResponse,
-    ListNotificationsRequest, ListNotificationsResponse, NotificationService,
-    NotificationServiceExt, ReplaceNotificationRequest, ReplaceNotificationResponse,
-    TestNotificationRequest, TestNotificationResponse, UpdateNotificationRequest,
-    UpdateNotificationResponse,
+    CreateNotificationBindingRequest, CreateNotificationBindingResponse, CreateNotificationRequest,
+    CreateNotificationResponse, DeleteNotificationBindingRequest, DeleteNotificationRequest, Empty,
+    GetNotificationRequest, GetNotificationResponse, ListNotificationBindingsRequest,
+    ListNotificationBindingsResponse, ListNotificationDeliveryHistoryRequest,
+    ListNotificationDeliveryHistoryResponse, ListNotificationsRequest, ListNotificationsResponse,
+    NotificationService, NotificationServiceExt, ReplaceNotificationRequest,
+    ReplaceNotificationResponse, TestNotificationRequest, TestNotificationResponse,
+    UpdateNotificationRequest, UpdateNotificationResponse,
 };
 use crate::flash_gen::models::Notifications as Notification;
 use crate::flash_gen::notification_delivery::NotificationDeliveryCreateBindingParams;
@@ -39,7 +38,6 @@ impl NotificationService for NotificationController {
             .map_err(internal)?;
         Response::ok(ListNotificationsResponse {
             notifications: items.into_iter().map(notif_to_proto).collect(),
-            ..Default::default()
         })
     }
 
@@ -58,7 +56,6 @@ impl NotificationService for NotificationController {
             .map_err(map_sqlx_not_found)?;
         Response::ok(GetNotificationResponse {
             notification: ::buffa::MessageField::some(notif_to_proto(item)),
-            ..Default::default()
         })
     }
 
@@ -67,7 +64,8 @@ impl NotificationService for NotificationController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, CreateNotificationRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<CreateNotificationResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<CreateNotificationResponse> + Send + use<'a>>
+    {
         verify_scope(auth.organization_id, request.organization_id)?;
         // Exactly one provider config must be set; it also fixes the stored
         // notification_type.
@@ -130,7 +128,6 @@ impl NotificationService for NotificationController {
         notif.id = created.id;
         Response::ok(CreateNotificationResponse {
             notification: ::buffa::MessageField::some(notif_to_proto(notif)),
-            ..Default::default()
         })
     }
 
@@ -139,7 +136,8 @@ impl NotificationService for NotificationController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateNotificationRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<UpdateNotificationResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<UpdateNotificationResponse> + Send + use<'a>>
+    {
         let organization_id = request.organization_id.unwrap_or(auth.organization_id);
         verify_scope(auth.organization_id, organization_id)?;
         let mut notif = self
@@ -249,7 +247,6 @@ impl NotificationService for NotificationController {
             .map_err(internal)?;
         Response::ok(UpdateNotificationResponse {
             notification: ::buffa::MessageField::some(notif_to_proto(notif)),
-            ..Default::default()
         })
     }
 
@@ -258,7 +255,8 @@ impl NotificationService for NotificationController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, ReplaceNotificationRequest>,
-    ) -> ServiceResult<impl connectrpc::Encodable<ReplaceNotificationResponse> + Send + use<'a>> {
+    ) -> ServiceResult<impl connectrpc::Encodable<ReplaceNotificationResponse> + Send + use<'a>>
+    {
         let organization_id = request.organization_id.unwrap_or(auth.organization_id);
         verify_scope(auth.organization_id, organization_id)?;
         let (provider, config) = replace_provider_parts(
@@ -323,7 +321,6 @@ impl NotificationService for NotificationController {
             .map_err(internal)?;
         Response::ok(ReplaceNotificationResponse {
             notification: ::buffa::MessageField::some(notif_to_proto(replacement)),
-            ..Default::default()
         })
     }
 
@@ -369,12 +366,10 @@ impl NotificationService for NotificationController {
             Ok(()) => Response::ok(TestNotificationResponse {
                 success: true,
                 message: "notification delivered".to_owned(),
-                ..Default::default()
             }),
             Err(error) => Response::ok(TestNotificationResponse {
                 success: false,
                 message: error,
-                ..Default::default()
             }),
         }
     }
@@ -396,7 +391,6 @@ impl NotificationService for NotificationController {
             .map_err(internal)?;
         Response::ok(ListNotificationDeliveryHistoryResponse {
             attempts: rows.into_iter().map(delivery_to_proto).collect(),
-            ..Default::default()
         })
     }
 
@@ -405,9 +399,8 @@ impl NotificationService for NotificationController {
         &'a self,
         ctx: RequestContext,
         request: ServiceRequest<'_, CreateNotificationBindingRequest>,
-    ) -> ServiceResult<
-        impl connectrpc::Encodable<CreateNotificationBindingResponse> + Send + use<'a>,
-    > {
+    ) -> ServiceResult<impl connectrpc::Encodable<CreateNotificationBindingResponse> + Send + use<'a>>
+    {
         let organization_id = request.organization_id.unwrap_or(auth.organization_id);
         verify_scope(auth.organization_id, organization_id)?;
         let resource_type = proto_resource_type_name(request.resource_type)?;
@@ -425,10 +418,7 @@ impl NotificationService for NotificationController {
             })
             .await
             .map_err(internal)?;
-        Response::ok(CreateNotificationBindingResponse {
-            id,
-            ..Default::default()
-        })
+        Response::ok(CreateNotificationBindingResponse { id })
     }
 
     #[permission(Notification, CanRead)]
@@ -447,7 +437,6 @@ impl NotificationService for NotificationController {
             .map_err(internal)?;
         Response::ok(ListNotificationBindingsResponse {
             bindings: rows.into_iter().map(binding_to_proto).collect(),
-            ..Default::default()
         })
     }
 

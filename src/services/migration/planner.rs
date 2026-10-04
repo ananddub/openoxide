@@ -18,7 +18,7 @@
 //!    into the destination path; the staging dir name is the deterministic
 //!    hash from [`derive_obj_key`].
 
-use std::path::PathBuf;
+use std::path::Path;
 
 use crate::utils::os::rsync::{RsyncBuilder, RsyncSsh};
 use crate::utils::paths::OpenOxidePaths;
@@ -83,10 +83,8 @@ pub fn plan_object(
     if !is_safe_token(migration_id) {
         return Err(PlanError::UnsafeIdentifier(migration_id.to_owned()));
     }
-    let obj_key =
-        derive_obj_key(kind, source_ref).ok_or_else(|| PlanError::InvalidReference(
-            source_ref.to_owned(),
-        ))?;
+    let obj_key = derive_obj_key(kind, source_ref)
+        .ok_or_else(|| PlanError::InvalidReference(source_ref.to_owned()))?;
     let obj_token = obj_key.replace(':', "-");
     let dest_staging = paths.migration_staging(migration_id, &obj_token);
     assert_staging_contained(paths, migration_id, &dest_staging)?;
@@ -226,8 +224,8 @@ pub fn source_operand(planned: &PlannedObject) -> Result<String, PlanError> {
 pub fn sync_argv(
     planned: &PlannedObject,
     destination: &str,
-    identity_file: &PathBuf,
-    known_hosts_file: &PathBuf,
+    identity_file: &Path,
+    known_hosts_file: &Path,
     ssh_port: u16,
 ) -> Result<Vec<String>, PlanError> {
     let source = source_operand(planned)?;
@@ -239,8 +237,8 @@ pub fn sync_argv(
         .progress()
         .ssh(RsyncSsh {
             port: ssh_port,
-            identity_file: identity_file.clone(),
-            known_hosts_file: known_hosts_file.clone(),
+            identity_file: identity_file.to_path_buf(),
+            known_hosts_file: known_hosts_file.to_path_buf(),
         })
         .source(source)
         .destination(destination)
@@ -253,8 +251,8 @@ pub fn sync_argv(
 pub fn verify_argv(
     planned: &PlannedObject,
     destination: &str,
-    identity_file: &PathBuf,
-    known_hosts_file: &PathBuf,
+    identity_file: &Path,
+    known_hosts_file: &Path,
     ssh_port: u16,
 ) -> Result<Vec<String>, PlanError> {
     let source = source_operand(planned)?;
@@ -265,8 +263,8 @@ pub fn verify_argv(
         .dry_run_itemize()
         .ssh(RsyncSsh {
             port: ssh_port,
-            identity_file: identity_file.clone(),
-            known_hosts_file: known_hosts_file.clone(),
+            identity_file: identity_file.to_path_buf(),
+            known_hosts_file: known_hosts_file.to_path_buf(),
         })
         .source(source)
         .destination(destination)
@@ -334,7 +332,9 @@ mod tests {
     #[test]
     fn containment_guard_refuses_live_paths() {
         let prefix = "/etc/openoxide/migrations/mig-1/staging";
-        assert!(assert_staging_contained(&paths(), "mig-1", &format!("{prefix}/VOLUME-ab")).is_ok());
+        assert!(
+            assert_staging_contained(&paths(), "mig-1", &format!("{prefix}/VOLUME-ab")).is_ok()
+        );
         for bad in [
             "/etc/openoxide/applications/myapp",
             "/etc/openoxide/migrations/mig-1",
@@ -356,17 +356,11 @@ mod tests {
 
     #[test]
     fn known_hosts_entry_formats_and_validates() {
-        let line = known_hosts_entry(
-            "10.0.0.5",
-            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKn示例=",
-        );
+        let line = known_hosts_entry("10.0.0.5", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKn示例=");
         // Non-base64 character in blob → refused.
         assert!(matches!(line, Err(PlanError::UnsafeIdentifier(_))));
-        let ok = known_hosts_entry(
-            "10.0.0.5",
-            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI0v2rQ==",
-        )
-        .unwrap();
+        let ok =
+            known_hosts_entry("10.0.0.5", "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI0v2rQ==").unwrap();
         assert_eq!(ok, "10.0.0.5 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI0v2rQ==");
         assert!(matches!(
             known_hosts_entry("10 0.0.5", "ssh-ed25519 AAAA="),
@@ -441,15 +435,18 @@ mod tests {
         let argv = sync_argv(
             &p,
             &dest,
-            &PathBuf::from("/tmp/mig/key"),
-            &PathBuf::from("/tmp/mig/known_hosts"),
+            Path::new("/tmp/mig/key"),
+            Path::new("/tmp/mig/known_hosts"),
             22,
         )
         .unwrap();
         // The full hostile source is exactly ONE argv token.
-        assert!(argv.contains(&format!(
-            "/var/lib/docker/volumes/dash$(touch pwned)'q;rm -rf /-mount/Ünïcödé dir/_data/"
-        )));
+        assert!(
+            argv.contains(
+                &"/var/lib/docker/volumes/dash$(touch pwned)'q;rm -rf /-mount/Ünïcödé dir/_data/"
+                    .to_string()
+            )
+        );
         assert!(argv.contains(&"--delete".to_string()));
         assert!(argv.contains(&"--append-verify".to_string()));
         assert!(argv.contains(&"--info=progress2".to_string()));
@@ -470,8 +467,8 @@ mod tests {
         let argv = verify_argv(
             &p,
             &dest,
-            &PathBuf::from("/tmp/mig/key"),
-            &PathBuf::from("/tmp/mig/known_hosts"),
+            Path::new("/tmp/mig/key"),
+            Path::new("/tmp/mig/known_hosts"),
             2222,
         )
         .unwrap();
