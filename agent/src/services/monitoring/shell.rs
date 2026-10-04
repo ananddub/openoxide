@@ -311,9 +311,9 @@ impl ShellService {
     /// `/host/proc/1/ns/*` are the host namespace files; the shell child is
     /// `setns`'d into them in its `pre_exec` window (single-threaded after
     /// fork, which the kernel requires for the mount namespace) and lands on
-    /// a host PTY. Requires the agent container to run with `CAP_SYS_ADMIN`;
-    /// without it (or without the `/host` mount) this fails with a clear
-    /// precondition error.
+    /// a host PTY. Requires the agent container to run with `CAP_SYS_ADMIN` and
+    /// `CAP_SYS_PTRACE`; without those (or without the `/host` mount) this
+    /// fails with a clear precondition error.
     async fn open_host_shell(
         input: tonic::Streaming<ShellMessage>,
         open: ShellOpen,
@@ -537,9 +537,17 @@ struct HostNamespaces {
 fn open_host_namespaces() -> Result<HostNamespaces, Status> {
     let open = |kind: &str| {
         std::fs::File::open(format!("/host/proc/1/ns/{kind}")).map_err(|error| {
+            // The kernel reads these symlinks through ptrace_may_access(), so a
+            // container that has /host but not CAP_SYS_PTRACE fails here with a
+            // permission error rather than a missing path.
+            let remedy = match error.kind() {
+                std::io::ErrorKind::PermissionDenied => {
+                    "the agent container needs CAP_SYS_PTRACE to read them and CAP_SYS_ADMIN to setns"
+                }
+                _ => "the agent container needs the host root bind-mounted at /host",
+            };
             Status::failed_precondition(format!(
-                "host namespaces unavailable at /host/proc/1/ns/{kind} ({error}); the agent \
-                 container needs the /host bind mount and CAP_SYS_ADMIN"
+                "host namespaces unavailable at /host/proc/1/ns/{kind} ({error}); {remedy}"
             ))
         })
     };

@@ -16,10 +16,11 @@ services:
     # The agent shells out to the docker CLI, whose plugin grandchildren re-parent
     # to PID 1 when the shell exits. init gives the container a zombie reaper.
     init: true
-    # Direct host shell: setns() into the host namespaces at /host/proc/1/ns/*
-    # requires CAP_SYS_ADMIN.
+    # Direct host shell: reading the namespace symlinks under /host/proc/1/ns/*
+    # is ptrace-gated (CAP_SYS_PTRACE) and the setns() itself needs CAP_SYS_ADMIN.
     cap_add:
       - SYS_ADMIN
+      - SYS_PTRACE
     # Local panel and agent share a private Docker network. The panel reaches
     # this service at openoxide-agent:50051.
     networks:
