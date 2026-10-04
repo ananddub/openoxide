@@ -21,6 +21,9 @@ services:
     cap_add:
       - SYS_ADMIN
       - SYS_PTRACE
+    # The kernel will not setns() upward into an ancestor PID namespace, so the
+    # agent has to start in the host's for the shell to see host PIDs and reaps.
+    pid: host
     # Local panel and agent share a private Docker network. The panel reaches
     # this service at openoxide-agent:50051.
     networks:

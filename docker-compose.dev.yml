@@ -107,6 +107,9 @@ services:
     cap_add:
       - SYS_ADMIN
       - SYS_PTRACE
+    # The kernel will not setns() upward into an ancestor PID namespace, so the
+    # agent has to start in the host's for the shell to see host PIDs.
+    pid: host
 
     networks:
       - openoxide-network

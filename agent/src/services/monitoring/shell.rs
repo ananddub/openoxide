@@ -311,9 +311,10 @@ impl ShellService {
     /// `/host/proc/1/ns/*` are the host namespace files; the shell child is
     /// `setns`'d into them in its `pre_exec` window (single-threaded after
     /// fork, which the kernel requires for the mount namespace) and lands on
-    /// a host PTY. Requires the agent container to run with `CAP_SYS_ADMIN` and
-    /// `CAP_SYS_PTRACE`; without those (or without the `/host` mount) this
-    /// fails with a clear precondition error.
+    /// a host PTY. Requires the agent container to run with `CAP_SYS_ADMIN`,
+    /// `CAP_SYS_PTRACE` and `pid: host` — the PID namespace is the one thing
+    /// `setns` cannot climb into. Without any of those (or without the `/host`
+    /// mount) this fails with a clear precondition error.
     async fn open_host_shell(
         input: tonic::Streaming<ShellMessage>,
         open: ShellOpen,
@@ -551,6 +552,18 @@ fn open_host_namespaces() -> Result<HostNamespaces, Status> {
             ))
         })
     };
+    let same_pid_ns = std::fs::read_link("/proc/self/ns/pid")
+        .ok()
+        .zip(std::fs::read_link("/host/proc/1/ns/pid").ok())
+        .is_some_and(|(mine, host)| mine == host);
+    if !same_pid_ns {
+        // setns() only moves a process down into a descendant PID namespace; the
+        // host's is our ancestor, so the child would die on a bare EINVAL.
+        return Err(Status::failed_precondition(
+            "the agent runs in its own PID namespace and the kernel cannot setns() up into the \
+             host's; recreate the agent container with pid: host (--pid=host)",
+        ));
+    }
     Ok(HostNamespaces {
         pid: open("pid")?,
         mnt: open("mnt")?,

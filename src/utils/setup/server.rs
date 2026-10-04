@@ -287,7 +287,7 @@ impl ServerSetup {
                     tracing::info!("agent mTLS certs rotated; recreating agent to load them");
                 } else {
                     tracing::info!(
-                        "agent container predates the direct host shell; recreating it with CAP_SYS_ADMIN, CAP_SYS_PTRACE and the /host bind"
+                        "agent container predates the direct host shell; recreating it with pid=host, CAP_SYS_ADMIN, CAP_SYS_PTRACE and the /host bind"
                     );
                 }
             } else if self.config.agent_server_id.is_none() {
@@ -338,6 +338,10 @@ impl ServerSetup {
             .detach()
             .name(name)
             .init()
+            // The kernel refuses to setns() upward into an ancestor PID
+            // namespace, so the host shell needs the agent to already live in
+            // the host's — `--pid=host` makes the PID switch a no-op.
+            .pid("host")
             .restart(RestartPolicy::Always)
             .network(self.config.network_name.as_str())
             .mount(docker_socket_mount)
@@ -782,6 +786,7 @@ impl ServerSetup {
             .detach()
             .name(name)
             .init()
+            .pid("host")
             .restart(RestartPolicy::Always)
             .network(self.config.network_name.as_str())
             .mount(Mount::bind("/var/run/docker.sock", "/var/run/docker.sock"))
@@ -874,9 +879,11 @@ pub(crate) fn agent_image() -> &'static str {
 
 /// Whether a running agent container can serve the direct host shell: the
 /// read-only host-root bind whose `/proc/1/ns/*` the namespaces are opened
-/// through, plus CAP_SYS_PTRACE to read those symlinks and CAP_SYS_ADMIN for
-/// the `setns` itself. Agents created before any of that are recreated rather
-/// than left answering every shell open with `failed_precondition`.
+/// through, CAP_SYS_PTRACE to read those symlinks, CAP_SYS_ADMIN for the
+/// `setns` itself, and `--pid=host`, because the kernel will not let a process
+/// join an ancestor PID namespace. Agents created before any of that are
+/// recreated rather than left answering every shell open with a precondition
+/// error.
 pub(crate) fn agent_supports_direct_host_shell(
     mounts: &[crate::utils::docker::core::types::ContainerInspectMount],
     host_config: &serde_json::Value,
@@ -887,7 +894,8 @@ pub(crate) fn agent_supports_direct_host_shell(
         || string_array(host_config, "Binds")
             .iter()
             .any(|bind| bind.ends_with(":/host:ro"));
-    host_shell_caps(&string_array(host_config, "CapAdd")) && host_bind
+    let host_pid = host_config.get("PidMode").and_then(|mode| mode.as_str()) == Some("host");
+    host_pid && host_shell_caps(&string_array(host_config, "CapAdd")) && host_bind
 }
 
 /// Docker reports `--cap-add SYS_ADMIN` back as `CAP_SYS_ADMIN`, so accept
@@ -998,14 +1006,16 @@ mod tests {
     #[test]
     fn agent_create_grants_host_shell_prerequisites() {
         // The direct host shell setns'es into /host/proc/1/ns/* — it needs the
-        // host-root bind mount, CAP_SYS_ADMIN for the switch and CAP_SYS_PTRACE
-        // to read the namespace symlinks, on every provisioning path.
+        // host-root bind mount, CAP_SYS_ADMIN for the switch, CAP_SYS_PTRACE to
+        // read the namespace symlinks, and --pid=host because the kernel refuses
+        // to join an ancestor PID namespace.
         let setup = ServerSetup::new_local(SetupConfig::default());
         let script = setup.compile_oneshot_script(false);
         // Every argv token is shell-quoted by the builder, so match the
         // rendered pair rather than a raw `--cap-add SYS_ADMIN`.
         assert!(script.contains("'--cap-add' 'SYS_ADMIN'"), "{script}");
         assert!(script.contains("'--cap-add' 'SYS_PTRACE'"), "{script}");
+        assert!(script.contains("'--pid' 'host'"), "{script}");
         assert!(script.contains("/:/host:ro"), "{script}");
     }
 
@@ -1018,52 +1028,65 @@ mod tests {
         }
     }
 
+    /// A real agent container: Docker reports added capabilities with their
+    /// `CAP_` prefix, so the predicate has to accept that form.
+    fn host_shell_host_config() -> serde_json::Value {
+        serde_json::json!({
+            "PidMode": "host",
+            "CapAdd": ["CAP_SYS_ADMIN", "CAP_SYS_PTRACE", "CAP_NET_ADMIN"],
+        })
+    }
+
     #[test]
     fn running_agent_with_caps_and_host_bind_is_left_alone() {
-        // A real agent container: Docker reports the added capabilities with
-        // their CAP_ prefix, so the predicate has to accept that form.
-        let host_config =
-            serde_json::json!({ "CapAdd": ["CAP_SYS_ADMIN", "CAP_SYS_PTRACE", "CAP_NET_ADMIN"] });
         assert!(agent_supports_direct_host_shell(
             &[host_mount(false)],
-            &host_config
+            &host_shell_host_config()
         ));
+
+        // `-v /:/host:ro` shows up as a HostConfig bind instead of a Mount entry.
+        let binds = serde_json::json!({
+            "PidMode": "host",
+            "CapAdd": ["CAP_SYS_ADMIN", "CAP_SYS_PTRACE"],
+            "Binds": ["/var/run/docker.sock:/var/run/docker.sock", "/:/host:ro"]
+        });
+        assert!(agent_supports_direct_host_shell(&[], &binds));
     }
 
     #[test]
     fn stale_agent_container_is_recreated_for_the_host_shell() {
-        // Deployed before the direct shell: missing capabilities, missing host
-        // bind, and a writable host bind is not enough either.
-        let no_caps = serde_json::json!({ "CapAdd": ["NET_ADMIN"] });
-        assert!(!agent_supports_direct_host_shell(
-            &[host_mount(false)],
-            &no_caps
-        ));
-
         // SYS_ADMIN alone was the first guess; the namespace symlinks are
         // ptrace-gated, so an agent without SYS_PTRACE still cannot open them.
-        let one_cap = serde_json::json!({ "CapAdd": ["CAP_SYS_ADMIN"] });
+        let one_cap = serde_json::json!({ "PidMode": "host", "CapAdd": ["CAP_SYS_ADMIN"] });
         assert!(!agent_supports_direct_host_shell(
             &[host_mount(false)],
             &one_cap
         ));
 
-        let granted = serde_json::json!({ "CapAdd": ["SYS_ADMIN", "SYS_PTRACE"] });
+        let no_caps = serde_json::json!({ "PidMode": "host", "CapAdd": ["NET_ADMIN"] });
         assert!(!agent_supports_direct_host_shell(
-            &[],
-            &serde_json::json!({})
-        ));
-        assert!(!agent_supports_direct_host_shell(
-            &[host_mount(true)],
-            &granted
+            &[host_mount(false)],
+            &no_caps
         ));
 
-        // `-v /:/host:ro` shows up as a HostConfig bind instead of a Mount entry.
-        let binds = serde_json::json!({
+        // A writable host bind, and no host bind at all, both fail too.
+        let full = host_shell_host_config();
+        assert!(!agent_supports_direct_host_shell(
+            &[host_mount(true)],
+            &full
+        ));
+        assert!(!agent_supports_direct_host_shell(&[], &full));
+
+        // Nested PID namespace: the PID setns returns EINVAL, which the panel
+        // would otherwise never look at again.
+        let nested_pid = serde_json::json!({
+            "PidMode": "",
             "CapAdd": ["CAP_SYS_ADMIN", "CAP_SYS_PTRACE"],
-            "Binds": ["/var/run/docker.sock:/var/run/docker.sock", "/:/host:ro"]
         });
-        assert!(agent_supports_direct_host_shell(&[], &binds));
+        assert!(!agent_supports_direct_host_shell(
+            &[host_mount(false)],
+            &nested_pid
+        ));
     }
 
     #[test]
