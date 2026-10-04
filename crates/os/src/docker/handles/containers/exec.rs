@@ -7,6 +7,7 @@ pub struct ExecBuilder<'a> {
     pub(crate) cli: &'a DockerCli,
     pub(crate) id: String,
     pub(crate) args: ArgBuilder,
+    pub(crate) command: Vec<String>,
 }
 
 impl<'a> ExecBuilder<'a> {
@@ -15,6 +16,7 @@ impl<'a> ExecBuilder<'a> {
             cli,
             id: id.into(),
             args: ArgBuilder::default(),
+            command: Vec::new(),
         }
     }
     pub fn user(mut self, v: impl Into<String>) -> Self {
@@ -41,6 +43,12 @@ impl<'a> ExecBuilder<'a> {
         self.args.flag("-d");
         self
     }
+    /// Store the in-container command so the builder itself becomes a
+    /// composable pipeline step (see `IntoCommand` below).
+    pub fn command(mut self, cmd: impl IntoIterator<Item = impl Into<String>>) -> Self {
+        self.command = cmd.into_iter().map(Into::into).collect();
+        self
+    }
 
     pub fn print(&self, cmd: &[impl AsRef<str>]) -> String {
         let mut a = ArgBuilder::cmd(&["container", "exec"]);
@@ -60,6 +68,22 @@ impl<'a> ExecBuilder<'a> {
         a.push(&self.id);
         a.push_all(cmd.into_iter().map(Into::into));
         self.cli.execute(&a).await
+    }
+
+    /// `docker container exec … <cmd>` with bytes piped to the in-container
+    /// command's stdin (the `-i` flag is implied by the caller via
+    /// [`Self::interactive`]).
+    pub async fn run_with_stdin(
+        self,
+        cmd: impl IntoIterator<Item = impl Into<String>>,
+        stdin: impl AsRef<[u8]>,
+    ) -> DockerResult<DockerOutput> {
+        let mut a = ArgBuilder::cmd(&["container", "exec"]);
+        a.inherit_meta(&self.args);
+        a.push_all(self.args.build());
+        a.push(&self.id);
+        a.push_all(cmd.into_iter().map(Into::into));
+        self.cli.run_with_stdin(a.build(), stdin).await
     }
 
     pub async fn run_stream(
@@ -122,3 +146,23 @@ impl<'a> ExecBuilder<'a> {
     }
 }
 crate::impl_builder_opts!(ExecBuilder);
+
+impl crate::exec::script::IntoCommand for ExecBuilder<'_> {
+    /// Renders `docker container exec <flags> <id> <command…>` with every
+    /// token shell-quoted, so a stored multi-word `sh -c '<inner>'` command
+    /// survives embedding in a [`crate::exec::script::ScriptPipeline`].
+    fn build_str(&self) -> String {
+        use crate::exec::script::shell_single_quote;
+        let mut parts: Vec<String> = vec!["docker".into(), "container".into(), "exec".into()];
+        parts.extend(
+            self.args
+                .clone()
+                .build()
+                .iter()
+                .map(|a| shell_single_quote(a)),
+        );
+        parts.push(shell_single_quote(&self.id));
+        parts.extend(self.command.iter().map(|a| shell_single_quote(a)));
+        parts.join(" ")
+    }
+}

@@ -181,13 +181,12 @@ pub async fn capture_host_key(
     };
     let addr = format!("{host}:{port}");
 
-    let session =
-        tokio::time::timeout(connect_timeout, client::connect(config, &addr, handler))
-            .await
-            .map_err(|_| ExecError::Timeout {
-                seconds: connect_timeout.as_secs(),
-            })?
-            .map_err(|e| ExecError::Ssh(format!("Failed to connect to {addr}: {e}")))?;
+    let session = tokio::time::timeout(connect_timeout, client::connect(config, &addr, handler))
+        .await
+        .map_err(|_| ExecError::Timeout {
+            seconds: connect_timeout.as_secs(),
+        })?
+        .map_err(|e| ExecError::Ssh(format!("Failed to connect to {addr}: {e}")))?;
 
     let captured = observed
         .lock()
@@ -246,6 +245,13 @@ pub async fn execute_russh_cmd_stream(
     let mut stderr = Vec::new();
     let mut exit_code = 0u32;
 
+    // In stream mode the consumer already receives every chunk, so the
+    // mirrored Vec is only error-path context.  Without a cap a long-lived
+    // stream (`docker logs -f` over SSH) accumulates the whole output and
+    // grows until OOM.  Non-streaming callers get the Vec as the only result
+    // and must keep it untruncated.
+    const MIRROR_CAP: usize = 256 * 1024;
+
     while let Some(msg) = channel.wait().await {
         match msg {
             ChannelMsg::Data { data } => {
@@ -253,16 +259,26 @@ pub async fn execute_russh_cmd_stream(
                     let _ = tx
                         .send(crate::exec::ExecStreamEvent::Stdout(data.to_vec()))
                         .await;
+                    if stdout.len() < MIRROR_CAP {
+                        let take = (MIRROR_CAP - stdout.len()).min(data.len());
+                        stdout.extend_from_slice(&data[..take]);
+                    }
+                } else {
+                    stdout.extend_from_slice(&data);
                 }
-                stdout.extend_from_slice(&data);
             }
             ChannelMsg::ExtendedData { data, .. } => {
                 if let Some(tx) = stream {
                     let _ = tx
                         .send(crate::exec::ExecStreamEvent::Stderr(data.to_vec()))
                         .await;
+                    if stderr.len() < MIRROR_CAP {
+                        let take = (MIRROR_CAP - stderr.len()).min(data.len());
+                        stderr.extend_from_slice(&data[..take]);
+                    }
+                } else {
+                    stderr.extend_from_slice(&data);
                 }
-                stderr.extend_from_slice(&data);
             }
             ChannelMsg::ExitStatus { exit_status } => exit_code = exit_status,
             _ => {}
@@ -435,8 +451,17 @@ mod tests {
     #[test]
     fn empty_pin_fails_closed() {
         // An empty / prefix-only stored pin must never accept an arbitrary key.
-        assert!(!fingerprint_matches("", "n9Sl8Zj5FR7A0PBdBrJkoEsD5Kd2kPi07b0E"));
-        assert!(!fingerprint_matches("SHA256:", "n9Sl8Zj5FR7A0PBdBrJkoEsD5Kd2kPi07b0E"));
-        assert!(!fingerprint_matches("   ", "n9Sl8Zj5FR7A0PBdBrJkoEsD5Kd2kPi07b0E"));
+        assert!(!fingerprint_matches(
+            "",
+            "n9Sl8Zj5FR7A0PBdBrJkoEsD5Kd2kPi07b0E"
+        ));
+        assert!(!fingerprint_matches(
+            "SHA256:",
+            "n9Sl8Zj5FR7A0PBdBrJkoEsD5Kd2kPi07b0E"
+        ));
+        assert!(!fingerprint_matches(
+            "   ",
+            "n9Sl8Zj5FR7A0PBdBrJkoEsD5Kd2kPi07b0E"
+        ));
     }
 }

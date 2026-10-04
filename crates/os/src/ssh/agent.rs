@@ -34,6 +34,7 @@ impl SshAgentSession {
 
         let mut add_cmd = Command::new("ssh-add");
         add_cmd.arg("-");
+        add_cmd.kill_on_drop(true);
         add_cmd.env("SSH_AUTH_SOCK", &session.socket_path);
         add_cmd.stdin(std::process::Stdio::piped());
         add_cmd.stdout(std::process::Stdio::piped());

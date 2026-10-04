@@ -122,7 +122,8 @@ impl DockerCopyCommand<'_> {
                     .arg(destination)
                     .stdin(std::process::Stdio::piped())
                     .stdout(std::process::Stdio::null())
-                    .stderr(std::process::Stdio::piped());
+                    .stderr(std::process::Stdio::piped())
+                    .kill_on_drop(true);
                 let mut child = command.spawn()?;
                 if let Some(mut stdin) = child.stdin.take() {
                     stdin.write_all(&archive).await?;
@@ -158,6 +159,7 @@ impl DockerCopyCommand<'_> {
                 .arg("-cf")
                 .arg("-")
                 .arg(name)
+                .kill_on_drop(true)
                 .output()
                 .await?;
             if !archive.status.success() {

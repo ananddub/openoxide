@@ -218,7 +218,21 @@ impl<'a> ContainerCreate<'a> {
 crate::impl_builder_opts!(ContainerCreate);
 
 impl crate::exec::script::IntoCommand for ContainerCreate<'_> {
+    /// Renders `docker container run <flags> <image> <command…>` with every
+    /// token shell-quoted, so mount specs and command strings survive
+    /// embedding in a [`crate::exec::script::ScriptPipeline`].
     fn build_str(&self) -> String {
-        self.print_run()
+        use crate::exec::script::shell_single_quote;
+        let mut parts: Vec<String> = vec!["docker".into(), "container".into(), "run".into()];
+        parts.extend(
+            self.args
+                .clone()
+                .build()
+                .iter()
+                .map(|a| shell_single_quote(a)),
+        );
+        parts.push(shell_single_quote(&self.image));
+        parts.extend(self.command.iter().map(|a| shell_single_quote(a)));
+        parts.join(" ")
     }
 }
