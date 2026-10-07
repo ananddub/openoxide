@@ -11,7 +11,6 @@ import {
 	Network,
 	Pencil,
 	PieChart,
-	Plus,
 	Rocket,
 	ScrollText,
 	Server,
@@ -352,12 +351,6 @@ const SERVERS_NAV = [
 		label: 'All Servers',
 		icon: Server,
 		to: '/remote-servers',
-	},
-	{
-		id: 'new',
-		label: 'Add Server',
-		icon: Plus,
-		to: '/remote-servers/new',
 	},
 ] as const;
 

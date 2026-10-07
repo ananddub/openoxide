@@ -31,7 +31,6 @@ export const routes = rootRoute('_root.tsx', [
 		route('certificates', 'certificates.tsx'),
 		route('ai', 'ai.tsx'),
 		route('remote-servers', 'remote-servers.tsx'),
-		route('remote-servers/new', 'remote-servers/new.tsx'),
 		route('remote-servers/$id', 'remote-servers/detail.tsx'),
 		// Web Server / Traefik / Swarm / Requests are underline tabs of the single infra page (?tab= deep links).
 		route('infra', 'infra.tsx'),

@@ -11,6 +11,12 @@ import {useState} from 'react';
 import {toast} from 'sonner';
 import {Sheet, SheetContent, SheetHeader} from '#/components/ui/sheet';
 import {Button} from '#/components/ui/button';
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from '#/components/ui/tabs';
 import {SheetGroup} from '#/components/shared/field';
 import {cn, serverHostLabel} from '#/api/utils';
 import {
@@ -19,6 +25,7 @@ import {
 	useRestartAgent,
 } from '#/api/live/monitoring';
 import {TrendCell, formatGb} from './server-detail-parts';
+import {SetupServerContent} from './setup-server-content';
 import {UsageRing} from '#/components/projects/compose/detail/cards/architecture-usage-rings';
 
 import type {RemoteServerResponse} from '#/types/api-helpers';
@@ -92,8 +99,8 @@ function NetworkCell({
 }
 
 /**
- * Server monitoring panel: live vitals + recent trends from the agent.
- * Everything else about the server stays off this panel by design.
+ * Server sheet opened by clicking a row: live vitals from the agent on the
+ * Vitals tab, validate / re-setup / GPU configuration on the Setup tab.
  */
 export function ServerSettingsPanel({
 	isOpen,
@@ -178,120 +185,138 @@ export function ServerSettingsPanel({
 					</div>
 				</SheetHeader>
 
-				<div className="flex min-h-0 flex-1 flex-col gap-7 overflow-y-auto px-6 py-6">
-					<SheetGroup
-						title="Vitals"
-						description={
-							latest
-								? 'Live stats from the agent.'
-								: 'Agent is not reporting metrics yet.'
-						}>
-						<div className="grid shrink-0 grid-cols-3 justify-items-center gap-2 rounded-xl border bg-card px-4 py-5">
-							<UsageRing
-								label="CPU"
-								percent={latest?.cpu ?? 0}
-								sub={latest ? `${latest.cpu_cores} cores` : 'no data'}
-								ready={!!latest}
-							/>
-							<UsageRing
-								label="Memory"
-								percent={latest?.mem_used ?? 0}
-								sub={
+				<div className="flex min-h-0 flex-1 flex-col px-6 py-6">
+					<Tabs defaultValue="vitals" className="min-h-0 flex-1 gap-4">
+						<TabsList className="w-full">
+							<TabsTrigger value="vitals">Vitals</TabsTrigger>
+							<TabsTrigger value="setup">Setup</TabsTrigger>
+						</TabsList>
+						<TabsContent
+							value="vitals"
+							className="flex min-h-0 flex-1 flex-col gap-7 overflow-y-auto">
+							<SheetGroup
+								title="Vitals"
+								description={
 									latest
-										? `${Math.round(latest.mem_used_gb)} / ${Math.round(latest.mem_total)} GB`
-										: 'no data'
-								}
-								ready={!!latest}
-							/>
-							<UsageRing
-								label="Disk"
-								percent={latest?.disk_used ?? 0}
-								sub={
-									latest
-										? `${Math.round((latest.disk_used / 100) * latest.total_disk)} / ${Math.round(latest.total_disk)} GB`
-										: 'no data'
-								}
-								ready={!!latest}
-							/>
-						</div>
-					</SheetGroup>
+										? 'Live stats from the agent.'
+										: 'Agent is not reporting metrics yet.'
+								}>
+								<div className="grid shrink-0 grid-cols-3 justify-items-center gap-2 rounded-xl border bg-card px-4 py-5">
+									<UsageRing
+										label="CPU"
+										percent={latest?.cpu ?? 0}
+										sub={latest ? `${latest.cpu_cores} cores` : 'no data'}
+										ready={!!latest}
+									/>
+									<UsageRing
+										label="Memory"
+										percent={latest?.mem_used ?? 0}
+										sub={
+											latest
+												? `${Math.round(latest.mem_used_gb)} / ${Math.round(latest.mem_total)} GB`
+												: 'no data'
+										}
+										ready={!!latest}
+									/>
+									<UsageRing
+										label="Disk"
+										percent={latest?.disk_used ?? 0}
+										sub={
+											latest
+												? `${Math.round((latest.disk_used / 100) * latest.total_disk)} / ${Math.round(latest.total_disk)} GB`
+												: 'no data'
+										}
+										ready={!!latest}
+									/>
+								</div>
+							</SheetGroup>
 
-					<SheetGroup
-						title="Network"
-						description="Agent reports cumulative traffic; the rate comes from the delta between the two newest samples.">
-						<div className="grid shrink-0 grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border">
-							<NetworkCell
-								icon={ArrowDownLeft}
-								label="In"
-								rate={rateIn}
-								totalMb={latest?.network_in ?? 0}
-							/>
-							<NetworkCell
-								icon={ArrowUpRight}
-								label="Out"
-								rate={rateOut}
-								totalMb={latest?.network_out ?? 0}
-							/>
-						</div>
-					</SheetGroup>
+							<SheetGroup
+								title="Network"
+								description="Agent reports cumulative traffic; the rate comes from the delta between the two newest samples.">
+								<div className="grid shrink-0 grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border">
+									<NetworkCell
+										icon={ArrowDownLeft}
+										label="In"
+										rate={rateIn}
+										totalMb={latest?.network_in ?? 0}
+									/>
+									<NetworkCell
+										icon={ArrowUpRight}
+										label="Out"
+										rate={rateOut}
+										totalMb={latest?.network_out ?? 0}
+									/>
+								</div>
+							</SheetGroup>
 
-					<SheetGroup
-						title="Trends"
-						description="Recent history reported by the agent.">
-						<div className="grid shrink-0 grid-cols-1 gap-px overflow-hidden rounded-xl border bg-border">
-							<TrendCell
-								icon={Activity}
-								label="CPU load"
-								values={cpuSeries}
-								meta={windowNote(cpuSeries)}
-							/>
-							<TrendCell
-								icon={Gauge}
-								label="Memory used"
-								values={memSeries}
-								meta={windowNote(memSeries)}
-							/>
-						</div>
-					</SheetGroup>
+							<SheetGroup
+								title="Trends"
+								description="Recent history reported by the agent.">
+								<div className="grid shrink-0 grid-cols-1 gap-px overflow-hidden rounded-xl border bg-border">
+									<TrendCell
+										icon={Activity}
+										label="CPU load"
+										values={cpuSeries}
+										meta={windowNote(cpuSeries)}
+									/>
+									<TrendCell
+										icon={Gauge}
+										label="Memory used"
+										values={memSeries}
+										meta={windowNote(memSeries)}
+									/>
+								</div>
+							</SheetGroup>
 
-					<SheetGroup
-						title="Agent"
-						description="Update pulls the latest agent image and recreates the container; restart just cycles it.">
-						<div className="flex flex-wrap gap-2 rounded-xl border bg-card px-4 py-4">
-							<Button
-								size="sm"
-								variant="default"
-								disabled={busy !== null || serverId === null}
-								onClick={() =>
-									serverId !== null && runAgentAction('update', serverId)
-								}
-								className="h-8 gap-1.5 text-xs">
-								<RefreshCw
-									className={cn(
-										'size-3.5',
-										busy === 'update' && 'animate-spin',
-									)}
-								/>
-								{busy === 'update' ? 'Updating…' : 'Update Agent'}
-							</Button>
-							<Button
-								size="sm"
-								variant="outline"
-								disabled={busy !== null || serverId === null}
-								onClick={() =>
-									serverId !== null && runAgentAction('restart', serverId)
-								}
-								className="h-8 gap-1.5 text-xs">
-								<RotateCw
-									className={cn(
-										'size-3.5',
-										busy === 'restart' && 'animate-spin',
-									)}
-								/>
-								{busy === 'restart' ? 'Restarting…' : 'Restart'}
-							</Button>
-						</div>
-					</SheetGroup>
+							<SheetGroup
+								title="Agent"
+								description="Update pulls the latest agent image and recreates the container; restart just cycles it.">
+								<div className="flex flex-wrap gap-2 rounded-xl border bg-card px-4 py-4">
+									<Button
+										size="sm"
+										variant="default"
+										disabled={busy !== null || serverId === null}
+										onClick={() =>
+											serverId !== null &&
+											runAgentAction('update', serverId)
+										}
+										className="h-8 gap-1.5 text-xs">
+										<RefreshCw
+											className={cn(
+												'size-3.5',
+												busy === 'update' && 'animate-spin',
+											)}
+										/>
+										{busy === 'update' ? 'Updating…' : 'Update Agent'}
+									</Button>
+									<Button
+										size="sm"
+										variant="outline"
+										disabled={busy !== null || serverId === null}
+										onClick={() =>
+											serverId !== null &&
+											runAgentAction('restart', serverId)
+										}
+										className="h-8 gap-1.5 text-xs">
+										<RotateCw
+											className={cn(
+												'size-3.5',
+												busy === 'restart' && 'animate-spin',
+											)}
+										/>
+										{busy === 'restart' ? 'Restarting…' : 'Restart'}
+									</Button>
+								</div>
+							</SheetGroup>
+						</TabsContent>
+
+						<TabsContent
+							value="setup"
+							className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+							<SetupServerContent server={server} />
+						</TabsContent>
+					</Tabs>
 				</div>
 			</SheetContent>
 		</Sheet>
