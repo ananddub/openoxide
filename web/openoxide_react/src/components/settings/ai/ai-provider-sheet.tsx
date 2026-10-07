@@ -5,7 +5,6 @@ import {
 	ChevronDown,
 	Loader2,
 	RefreshCw,
-	Save,
 	Search,
 	Server,
 } from 'lucide-react';
@@ -445,9 +444,8 @@ export function AiProviderSheet({
 						</Button>
 					</section>
 
-					{/* ── Details ── */}
+					{/* ── Name + enable ── */}
 					<section className="flex flex-col gap-4">
-						<SectionLabel>Details</SectionLabel>
 						<WizardField label="Provider Name" required>
 							<Input
 								value={form.name}
@@ -493,13 +491,9 @@ export function AiProviderSheet({
 							!form.api_url.trim() ||
 							!form.model.trim()
 						}
-						className="h-10 gap-1.5 px-5">
-						{saving ? (
-							<Loader2 className="size-3.5 animate-spin" />
-						) : (
-							<Save className="size-3.5" />
-						)}
-						{editing ? 'Save changes' : 'Add provider'}
+						className="h-10 px-5">
+						{saving ? <Loader2 className="size-3.5 animate-spin" /> : null}
+						Save
 					</Button>
 				</SheetFooter>
 			</SheetContent>
