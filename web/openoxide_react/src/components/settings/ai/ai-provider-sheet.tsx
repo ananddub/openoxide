@@ -125,9 +125,11 @@ function ModelSelect({
 				</span>
 				<ChevronDown className="size-4 shrink-0 text-muted-foreground opacity-70" />
 			</PopoverTrigger>
-			<PopoverContent className="p-0" align="start">
-				<div className="flex flex-col">
-					<div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-popover p-2">
+			<PopoverContent
+				className="max-h-72 overflow-hidden p-0"
+				align="start">
+				<div className="flex max-h-72 flex-col">
+					<div className="flex shrink-0 items-center gap-2 border-b border-border p-2">
 						<Search className="size-3.5 shrink-0 text-muted-foreground" />
 						<Input
 							ref={inputRef}
@@ -138,7 +140,7 @@ function ModelSelect({
 							className="h-7 flex-1 border-0 bg-transparent px-0 text-[13px] shadow-none focus-visible:ring-0"
 						/>
 					</div>
-					<div className="flex flex-col gap-px p-1.5">
+					<div className="flex max-h-56 flex-col gap-px overflow-y-auto p-1.5">
 						{customRow && (
 							<button
 								type="button"
@@ -251,9 +253,11 @@ function ProviderSelect({
 				)}
 				<ChevronDown className="size-4 shrink-0 text-muted-foreground opacity-70" />
 			</PopoverTrigger>
-			<PopoverContent className="p-0" align="start">
-				<div className="flex flex-col">
-					<div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-popover p-2">
+			<PopoverContent
+				className="max-h-72 overflow-hidden p-0"
+				align="start">
+				<div className="flex max-h-72 flex-col">
+					<div className="flex shrink-0 items-center gap-2 border-b border-border p-2">
 						<Search className="size-3.5 shrink-0 text-muted-foreground" />
 						<Input
 							ref={inputRef}
@@ -263,7 +267,7 @@ function ProviderSelect({
 							className="h-7 flex-1 border-0 bg-transparent px-0 text-[13px] shadow-none focus-visible:ring-0"
 						/>
 					</div>
-					<div className="flex flex-col gap-px p-1.5">
+					<div className="flex max-h-56 flex-col gap-px overflow-y-auto p-1.5">
 						{filtered.map(p => (
 							<button
 								key={p.name}
