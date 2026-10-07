@@ -28,6 +28,7 @@ import {
 	WizardField,
 	type WizardStep,
 } from '#/components/shared/sheet-wizard';
+import {SearchSelect} from '#/components/shared/search-select';
 import {
 	PROVIDERS,
 	useDestinationForm,
@@ -116,22 +117,26 @@ export function CreateDestinationModal({
 					className="flex-1 overflow-y-auto px-6 py-6">
 					{editing ? (
 						<div className="flex flex-col gap-8">
-							<div className="flex flex-col gap-2">
-								{PROVIDERS.map(p => {
-									const meta = PROVIDER_META[p.id];
-									const Icon = meta?.icon ?? Cloud;
-									return (
-										<OptionRow
-											key={p.id}
-											selected={f.provider === p.id}
-											onClick={() => f.handleProviderChange(p.id)}
-											icon={<Icon className="size-5" />}
-											title={p.name}
-											subtitle={meta?.desc}
-										/>
-									);
-								})}
-							</div>
+							<WizardField
+								label="Provider"
+								hint="Where the backups live — change it if the bucket moves.">
+								<SearchSelect
+									value={f.provider}
+									onChange={id => f.handleProviderChange(id)}
+									placeholder="Pick an S3 provider"
+									searchPlaceholder="Search providers…"
+									options={PROVIDERS.map(p => {
+										const meta = PROVIDER_META[p.id];
+										const Icon = meta?.icon ?? Cloud;
+										return {
+											id: p.id,
+											title: p.name,
+											subtitle: meta?.desc,
+											icon: <Icon />,
+										};
+									})}
+								/>
+							</WizardField>
 
 							<div className="flex flex-col gap-5">
 								<WizardField label="Name" required>

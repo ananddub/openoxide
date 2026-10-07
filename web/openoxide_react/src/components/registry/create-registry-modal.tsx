@@ -26,6 +26,7 @@ import {
 	WizardField,
 	type WizardStep,
 } from '#/components/shared/sheet-wizard';
+import {SearchSelect} from '#/components/shared/search-select';
 
 import type {RegistryResponse} from '#/types/api-helpers';
 
@@ -264,25 +265,30 @@ export function CreateRegistryModal({
 								</button>
 							</div>
 
-							<div className="flex flex-col gap-2">
-								<OptionRow
-									selected={serverId === 'local'}
-									onClick={() => setServerId('local')}
-									icon={<ServerIcon className="size-5" />}
-									title="Local Server"
-									subtitle="Authenticate on this server (default)."
+							<WizardField
+								label="Server"
+								hint="Which server authenticates against this registry.">
+								<SearchSelect
+									value={serverId}
+									onChange={setServerId}
+									placeholder="Pick the authenticating server"
+									searchPlaceholder="Search servers…"
+									options={[
+										{
+											id: 'local',
+											title: 'Local Server',
+											subtitle: 'Authenticate on this server (default).',
+											icon: <ServerIcon />,
+										},
+										...servers.map((s: RemoteServerResponse) => ({
+											id: String(s.id),
+											title: s.name,
+											subtitle: s.ip_address,
+											icon: <ServerIcon />,
+										})),
+									]}
 								/>
-								{servers.map((s: RemoteServerResponse) => (
-									<OptionRow
-										key={String(s.id)}
-										selected={serverId === String(s.id)}
-										onClick={() => setServerId(String(s.id))}
-										icon={<ServerIcon className="size-5" />}
-										title={s.name}
-										subtitle={s.ip_address}
-									/>
-								))}
-							</div>
+							</WizardField>
 						</div>
 					) : (
 						<>
