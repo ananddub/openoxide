@@ -81,6 +81,7 @@ export function DomainDialog({
 	const [state, setState] = useState<DomainFormState>(EMPTY);
 	const [stepIdx, setStepIdx] = useState(0);
 	const [saving, setSaving] = useState(false);
+	const editing = !!editingDomain;
 	const editingId = editingDomain?.id ?? null;
 	const defaultService = services[0] || '';
 
@@ -125,19 +126,25 @@ export function DomainDialog({
 	const step = STEPS[stepIdx].id;
 	const last = stepIdx === STEPS.length - 1;
 
+	const targetReady =
+		!!state.host.trim() &&
+		Number.isInteger(port) &&
+		port >= 1 &&
+		port <= 65535 &&
+		(services.length === 0 || !!state.serviceName);
+	const routingReady =
+		path.startsWith('/') &&
+		internalPath.startsWith('/') &&
+		(!state.stripPath || path !== '/');
+	const tlsReady =
+		state.certificateType !== 'CUSTOM' || !!state.customResolver.trim();
+	const formReady = targetReady && routingReady && tlsReady;
 	const stepReady =
 		step === 'target'
-			? !!state.host.trim() &&
-				Number.isInteger(port) &&
-				port >= 1 &&
-				port <= 65535 &&
-				(services.length === 0 || !!state.serviceName)
+			? targetReady
 			: step === 'routing'
-				? path.startsWith('/') &&
-					internalPath.startsWith('/') &&
-					(!state.stripPath || path !== '/')
-				: state.certificateType !== 'CUSTOM' ||
-					!!state.customResolver.trim();
+				? routingReady
+				: tlsReady;
 
 	const submit = async () => {
 		setSaving(true);
@@ -180,37 +187,75 @@ export function DomainDialog({
 					<SheetTitle className="pr-8">
 						{editingDomain ? 'Edit Domain Route' : 'Add Domain Route'}
 					</SheetTitle>
-					<SheetDescription>{STEP_DESC[step]}</SheetDescription>
-					<StepCheckpoints steps={STEPS} idx={stepIdx} />
+					<SheetDescription>
+						{editing
+							? 'Everything on one page — change only what you need.'
+							: STEP_DESC[step]}
+					</SheetDescription>
+					{!editing && <StepCheckpoints steps={STEPS} idx={stepIdx} />}
 				</SheetHeader>
 
 				<div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-6">
-					<StepBody key={step}>
-						{step === 'target' && (
+					{editing ? (
+						<div className="flex flex-col gap-6">
 							<DomainTargetFields
 								state={state}
 								services={services}
 								onChange={patch}
 							/>
-						)}
-						{step === 'routing' && (
 							<DomainRoutingFields
 								state={state}
 								services={services}
 								onChange={patch}
 							/>
-						)}
-						{step === 'tls' && (
 							<DomainTlsFields
 								state={state}
 								services={services}
 								onChange={patch}
 							/>
-						)}
-					</StepBody>
+						</div>
+					) : (
+						<StepBody key={step}>
+							{step === 'target' && (
+								<DomainTargetFields
+									state={state}
+									services={services}
+									onChange={patch}
+								/>
+							)}
+							{step === 'routing' && (
+								<DomainRoutingFields
+									state={state}
+									services={services}
+									onChange={patch}
+								/>
+							)}
+							{step === 'tls' && (
+								<DomainTlsFields
+									state={state}
+									services={services}
+									onChange={patch}
+								/>
+							)}
+						</StepBody>
+					)}
 				</div>
 
-				{last ? (
+				{editing ? (
+					<SheetFooter className="justify-between">
+						<p className="self-center text-xs text-muted-foreground">
+							{state.host.trim() || 'host'}
+							{path !== '/' ? path : ''}
+						</p>
+						<Button
+							onClick={() => void submit()}
+							disabled={saving || !formReady}
+							className="h-10 gap-1.5 px-5">
+							{saving && <Loader2 className="size-3.5 animate-spin" />}
+							Update Domain
+						</Button>
+					</SheetFooter>
+				) : last ? (
 					<SheetFooter className="justify-between">
 						<Button
 							variant="outline"

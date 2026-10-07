@@ -68,6 +68,12 @@ export function CreateRegistryModal({
 
 	const step = STEPS[stepIdx].id;
 	const last = stepIdx === STEPS.length - 1;
+	const editing = !!initialData;
+	const formReady =
+		!!name.trim() &&
+		!!registryUrl.trim() &&
+		!!username.trim() &&
+		(!!password.trim() || editing);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -177,23 +183,26 @@ export function CreateRegistryModal({
 					<SheetTitle>
 						{initialData ? 'Edit Registry' : 'New External Registry'}
 					</SheetTitle>
-					<SheetDescription>{stepDesc[step]}</SheetDescription>
-					<StepCheckpoints steps={STEPS} idx={stepIdx} />
+					<SheetDescription>
+						{editing
+							? 'Everything on one page — change only what you need.'
+							: stepDesc[step]}
+					</SheetDescription>
+					{!editing && <StepCheckpoints steps={STEPS} idx={stepIdx} />}
 				</SheetHeader>
 
 				<form
 					id={FORM_ID}
 					onSubmit={handleSubmit}
 					className="flex-1 overflow-y-auto px-6 py-6">
-					{step === 'registry' && (
-						<StepBody key="registry">
+					{editing ? (
+						<div className="flex flex-col gap-8">
 							<div className="flex flex-col gap-5">
 								<WizardField label="Registry Name" required>
 									<Input
 										placeholder="e.g. AWS ECR / Docker Hub / GHCR"
 										value={name}
 										onChange={e => setName(e.target.value)}
-										autoFocus
 									/>
 								</WizardField>
 								<WizardField
@@ -220,34 +229,22 @@ export function CreateRegistryModal({
 									/>
 								</WizardField>
 							</div>
-						</StepBody>
-					)}
 
-					{step === 'credentials' && (
-						<StepBody key="credentials">
 							<div className="flex flex-col gap-5">
 								<WizardField label="Username" required>
 									<Input
 										placeholder="AWS / Docker Hub username"
 										value={username}
 										onChange={e => setUsername(e.target.value)}
-										autoFocus
 									/>
 								</WizardField>
 								<WizardField
 									label="Password / Access Token"
-									required={!initialData}
-									optional={!!initialData}
-									hint={
-										initialData
-											? 'Leave blank to keep the stored token.'
-											: undefined
-									}>
+									optional
+									hint="Leave blank to keep the stored token.">
 									<Input
 										type="password"
-										placeholder={
-											initialData ? '••••••••' : 'Access Token / Password'
-										}
+										placeholder="••••••••"
 										value={password}
 										onChange={e => setPassword(e.target.value)}
 										className="font-mono"
@@ -266,11 +263,7 @@ export function CreateRegistryModal({
 									{isTesting ? 'Testing…' : 'Test Connection'}
 								</button>
 							</div>
-						</StepBody>
-					)}
 
-					{step === 'server' && (
-						<StepBody key="server">
 							<div className="flex flex-col gap-2">
 								<OptionRow
 									selected={serverId === 'local'}
@@ -290,11 +283,140 @@ export function CreateRegistryModal({
 									/>
 								))}
 							</div>
-						</StepBody>
+						</div>
+					) : (
+						<>
+							{step === 'registry' && (
+								<StepBody key="registry">
+									<div className="flex flex-col gap-5">
+										<WizardField label="Registry Name" required>
+											<Input
+												placeholder="e.g. AWS ECR / Docker Hub / GHCR"
+												value={name}
+												onChange={e => setName(e.target.value)}
+												autoFocus
+											/>
+										</WizardField>
+										<WizardField
+											label="Image Prefix"
+											required
+											hint={
+												<>
+													Enter only the hostname (e.g.,{' '}
+													<code className="font-mono text-foreground">
+														aws_account_id.dkr.ecr.us-west-2.amazonaws.com
+													</code>{' '}
+													or{' '}
+													<code className="font-mono text-foreground">
+														docker.io
+													</code>
+													).
+												</>
+											}>
+											<Input
+												placeholder="aws_account_id.dkr.ecr.us-west-2.amazonaws.com"
+												value={registryUrl}
+												onChange={e => setRegistryUrl(e.target.value)}
+												className="font-mono"
+											/>
+										</WizardField>
+									</div>
+								</StepBody>
+							)}
+
+							{step === 'credentials' && (
+								<StepBody key="credentials">
+									<div className="flex flex-col gap-5">
+										<WizardField label="Username" required>
+											<Input
+												placeholder="AWS / Docker Hub username"
+												value={username}
+												onChange={e => setUsername(e.target.value)}
+												autoFocus
+											/>
+										</WizardField>
+										<WizardField
+											label="Password / Access Token"
+											required={!initialData}
+											optional={!!initialData}
+											hint={
+												initialData
+													? 'Leave blank to keep the stored token.'
+													: undefined
+											}>
+											<Input
+												type="password"
+												placeholder={
+													initialData
+														? '••••••••'
+														: 'Access Token / Password'
+												}
+												value={password}
+												onChange={e => setPassword(e.target.value)}
+												className="font-mono"
+											/>
+										</WizardField>
+										<button
+											type="button"
+											onClick={handleTestRaw}
+											disabled={isTesting}
+											className="flex items-center justify-center gap-2 rounded-lg border border-border/60 px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-muted/30 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50">
+											{isTesting ? (
+												<RefreshCw className="size-3.5 animate-spin text-amber-500" />
+											) : (
+												<Plug className="size-3.5" />
+											)}
+											{isTesting ? 'Testing…' : 'Test Connection'}
+										</button>
+									</div>
+								</StepBody>
+							)}
+
+							{step === 'server' && (
+								<StepBody key="server">
+									<div className="flex flex-col gap-2">
+										<OptionRow
+											selected={serverId === 'local'}
+											onClick={() => setServerId('local')}
+											icon={<ServerIcon className="size-5" />}
+											title="Local Server"
+											subtitle="Authenticate on this server (default)."
+										/>
+										{servers.map((s: RemoteServerResponse) => (
+											<OptionRow
+												key={String(s.id)}
+												selected={serverId === String(s.id)}
+												onClick={() => setServerId(String(s.id))}
+												icon={<ServerIcon className="size-5" />}
+												title={s.name}
+												subtitle={s.ip_address}
+											/>
+										))}
+									</div>
+								</StepBody>
+							)}
+						</>
 					)}
 				</form>
 
-				{last ? (
+				{editing ? (
+					<SheetFooter className="justify-between">
+						<p className="self-center text-xs text-muted-foreground">
+							Images pull from{' '}
+							<span className="font-semibold text-foreground">
+								{registryUrl.trim() || 'your registry'}
+							</span>
+						</p>
+						<Button
+							type="submit"
+							form={FORM_ID}
+							disabled={!formReady}
+							className="h-10 gap-1.5 px-5">
+							<Save className="size-3.5" />
+							Save Changes
+						</Button>
+					</SheetFooter>
+				) : last ? (
 					<SheetFooter className="justify-between">
 						<p className="self-center text-xs text-muted-foreground">
 							Images pull from{' '}
