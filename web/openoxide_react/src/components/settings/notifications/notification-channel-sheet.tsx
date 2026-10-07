@@ -102,7 +102,8 @@ export function NotificationChannelSheet({
 	const allSelected = selectedTriggers.length === TRIGGERS.length;
 
 	// Shared blocks: the wizard shows them one per step, the edit page shows
-	// them stacked on a single scrollable form.
+	// them stacked on a single scrollable form. Both are guarded on `draft`
+	// being non-null — they run on every render, including while closed.
 	const connectionFields = provider?.fields.length ? (
 		<div className="flex flex-col gap-5">
 			{provider?.fields.map(f => (
@@ -130,7 +131,7 @@ export function NotificationChannelSheet({
 		</p>
 	);
 
-	const eventsSection = (
+	const eventsSection = draft ? (
 		<div className="flex flex-col gap-6">
 			<div className="flex items-center justify-between gap-3">
 				<p className="text-[13px] font-medium text-foreground">
@@ -157,7 +158,7 @@ export function NotificationChannelSheet({
 					</p>
 					<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
 						{TRIGGERS.filter(t => t.group === group).map(t => {
-							const selected = draft!.triggers[t.key] === true;
+							const selected = draft.triggers[t.key] === true;
 							return (
 								<button
 									key={t.key}
@@ -165,7 +166,7 @@ export function NotificationChannelSheet({
 									onClick={() =>
 										patch({
 											triggers: {
-												...draft!.triggers,
+												...draft.triggers,
 												[t.key]: !selected,
 											},
 										})
@@ -188,7 +189,7 @@ export function NotificationChannelSheet({
 				</div>
 			))}
 		</div>
-	);
+	) : null;
 
 	const connectionReady =
 		!provider ||
