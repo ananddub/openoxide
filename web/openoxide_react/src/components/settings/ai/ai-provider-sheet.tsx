@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {
+	Check,
 	CheckCircle2,
 	Cpu,
 	Link2,
@@ -239,45 +240,53 @@ export function AiProviderSheet({
 								</WizardField>
 
 								{models.length > 0 && (
-									<WizardField
-										label={`Discovered Models (${models.length})`}
-										hint="Click a model to use it, or type your own above.">
-										<div className="overflow-hidden rounded-lg border border-border/60">
-											<div className="flex items-center gap-2 border-b border-border/60 p-2">
-												<Search className="size-3.5 shrink-0 text-muted-foreground" />
-												<Input
-													placeholder="Filter models…"
-													value={modelQuery}
-													onChange={e => setModelQuery(e.target.value)}
-													className="h-7 border-0 bg-transparent px-0 text-[13px] shadow-none focus-visible:ring-0"
-												/>
-											</div>
-											<div className="flex max-h-60 flex-col gap-px overflow-y-auto p-1.5">
-												{visibleModels.map(m => (
-													<button
-														key={m}
-														type="button"
-														onClick={() => set('model', m)}
-														className={cn(
-															'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors outline-none hover:bg-accent focus-visible:bg-accent',
-															form.model === m && 'bg-accent',
-														)}>
-														<span className="min-w-0 flex-1 truncate font-mono">
-															{m}
-														</span>
-														{form.model === m && (
-															<CheckCircle2 className="size-3.5 shrink-0 text-foreground" />
-														)}
-													</button>
-												))}
-												{visibleModels.length === 0 && (
-													<p className="px-2 py-5 text-center text-[13px] text-muted-foreground">
-														No model matches &ldquo;{modelQuery}&rdquo;.
-													</p>
-												)}
-											</div>
+									<div className="flex flex-col gap-2">
+										<p className="text-xs font-semibold text-foreground">
+											Discovered models{' '}
+											<span className="font-normal text-muted-foreground">
+												· {models.length} — click to use, or type your own
+												above
+											</span>
+										</p>
+										<div className="relative">
+											<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+											<Input
+												placeholder="Filter models…"
+												value={modelQuery}
+												onChange={e => setModelQuery(e.target.value)}
+												className="h-9 pl-9"
+											/>
 										</div>
-									</WizardField>
+										<div className="flex max-h-64 flex-col gap-2 overflow-y-auto pr-0.5">
+											{visibleModels.map(m => (
+												<button
+													key={m}
+													type="button"
+													onClick={() => set('model', m)}
+													className={cn(
+														'flex w-full cursor-pointer items-center gap-3.5 rounded-xl border px-4 py-2.5 text-start transition-all duration-150',
+														form.model === m
+															? 'border-primary/40 bg-primary/10'
+															: 'border-border/50 hover:border-border hover:bg-muted/30',
+													)}>
+													<Cpu className="size-4 shrink-0 text-muted-foreground" />
+													<span className="min-w-0 flex-1 truncate font-mono text-[13px]">
+														{m}
+													</span>
+													{form.model === m && (
+														<span className="flex size-5 shrink-0 animate-in items-center justify-center rounded-full bg-primary text-primary-foreground duration-150 zoom-in-75">
+															<Check className="size-3" />
+														</span>
+													)}
+												</button>
+											))}
+											{visibleModels.length === 0 && (
+												<p className="py-6 text-center text-[13px] text-muted-foreground">
+													No model matches &ldquo;{modelQuery}&rdquo;.
+												</p>
+											)}
+										</div>
+									</div>
 								)}
 							</div>
 						)}
