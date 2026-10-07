@@ -23,7 +23,7 @@ import type {Message} from '@bufbuild/protobuf';
  * Describes the file openoxide/api/v1/ai.proto.
  */
 export const file_openoxide_api_v1_ai: GenFile /*@__PURE__*/ = fileDesc(
-	'ChlvcGVub3hpZGUvYXBpL3YxL2FpLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIt8BCglBaVNldHRpbmcSCgoCaWQYASABKAMSDAoEbmFtZRgCIAEoCRIPCgdhcGlfdXJsGAMgASgJEg0KBW1vZGVsGAQgASgJEhIKCmlzX2VuYWJsZWQYBSABKAgSLgoIcHJvdmlkZXIYBiABKA4yHC5vcGVub3hpZGUuYXBpLnYxLkFpUHJvdmlkZXISEwoLaGFzX2FwaV9rZXkYByABKAgSFwoPb3JnYW5pemF0aW9uX2lkGAggASgDEhIKCmNyZWF0ZWRfYXQYCSABKAMSEgoKdXBkYXRlZF9hdBgKIAEoAyI0ChVBaUVudmlyb25tZW50VmFyaWFibGUSDAoEbmFtZRgBIAEoCRINCgV2YWx1ZRgCIAEoCSI8CghBaURvbWFpbhIMCgRob3N0GAEgASgJEgwKBHBvcnQYAiABKAMSFAoMc2VydmljZV9uYW1lGAMgASgJIjUKD0FpR2VuZXJhdGVkRmlsZRIRCglmaWxlX3BhdGgYASABKAkSDwoHY29udGVudBgCIAEoCSKdAgoTQWlDb21wb3NlU3VnZ2VzdGlvbhIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhkKEXNob3J0X2Rlc2NyaXB0aW9uGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEhYKDmRvY2tlcl9jb21wb3NlGAUgASgJEj4KDWVudl92YXJpYWJsZXMYBiADKAsyJy5vcGVub3hpZGUuYXBpLnYxLkFpRW52aXJvbm1lbnRWYXJpYWJsZRIrCgdkb21haW5zGAcgAygLMhoub3Blbm94aWRlLmFwaS52MS5BaURvbWFpbhI3Cgxjb25maWdfZmlsZXMYCCADKAsyIS5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGVkRmlsZSJQChJBaUdlbmVyYXRpb25PdXRwdXQSOgoLc3VnZ2VzdGlvbnMYASADKAsyJS5vcGVub3hpZGUuYXBpLnYxLkFpQ29tcG9zZVN1Z2dlc3Rpb24ihAIKDEFpR2VuZXJhdGlvbhIKCgJpZBgBIAEoAxIVCg1haV9zZXR0aW5nX2lkGAIgASgDEhcKD29yZ2FuaXphdGlvbl9pZBgDIAEoAxISCgpjcmVhdGVkX2J5GAQgASgDEg4KBnByb21wdBgFIAEoCRI0CgZvdXRwdXQYBiABKAsyJC5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbk91dHB1dBIOCgZzdGF0dXMYByABKAkSFwoKY29tcG9zZV9pZBgIIAEoA0gAiAEBEhIKCmNyZWF0ZWRfYXQYCSABKAMSEgoKdXBkYXRlZF9hdBgKIAEoA0INCgtfY29tcG9zZV9pZCJSChVBaUxpc3RTZXR0aW5nc1JlcXVlc3QSJQoPb3JnYW5pemF0aW9uX2lkGAEgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCJHChZBaUxpc3RTZXR0aW5nc1Jlc3BvbnNlEi0KCHNldHRpbmdzGAEgAygLMhsub3Blbm94aWRlLmFwaS52MS5BaVNldHRpbmciZgoUQWlHZXRTZXR0aW5nc1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASJQoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCJFChVBaUdldFNldHRpbmdzUmVzcG9uc2USLAoHc2V0dGluZxgBIAEoCzIbLm9wZW5veGlkZS5hcGkudjEuQWlTZXR0aW5nIscBChdBaUNyZWF0ZVNldHRpbmdzUmVxdWVzdBIXCgRuYW1lGAEgASgJQgm6SAZyBBABGGQSGAoHYXBpX3VybBgCIAEoCUIHukgEcgIQARIPCgdhcGlfa2V5GAMgASgJEhkKBW1vZGVsGAQgASgJQgq6SAdyBRABGMgBEhIKCmlzX2VuYWJsZWQYBSABKAgSJQoPb3JnYW5pemF0aW9uX2lkGAYgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCJIChhBaUNyZWF0ZVNldHRpbmdzUmVzcG9uc2USLAoHc2V0dGluZxgBIAEoCzIbLm9wZW5veGlkZS5hcGkudjEuQWlTZXR0aW5nIqICChdBaVVwZGF0ZVNldHRpbmdzUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIaCgRuYW1lGAIgASgJQge6SARyAhhkSACIAQESFAoHYXBpX3VybBgDIAEoCUgBiAEBEhQKB2FwaV9rZXkYBCABKAlIAogBARIcCgVtb2RlbBgFIAEoCUIIukgFcgMYyAFIA4gBARIXCgppc19lbmFibGVkGAYgASgISASIAQESJQoPb3JnYW5pemF0aW9uX2lkGAcgASgDQge6SAQiAiAASAWIAQFCBwoFX25hbWVCCgoIX2FwaV91cmxCCgoIX2FwaV9rZXlCCAoGX21vZGVsQg0KC19pc19lbmFibGVkQhIKEF9vcmdhbml6YXRpb25faWQiSAoYQWlVcGRhdGVTZXR0aW5nc1Jlc3BvbnNlEiwKB3NldHRpbmcYASABKAsyGy5vcGVub3hpZGUuYXBpLnYxLkFpU2V0dGluZyJpChdBaURlbGV0ZVNldHRpbmdzUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIlCg9vcmdhbml6YXRpb25faWQYAiABKANCB7pIBCICIABIAIgBAUISChBfb3JnYW5pemF0aW9uX2lkIm0KE0FpTGlzdE1vZGVsc1JlcXVlc3QSGwoKc2V0dGluZ19pZBgBIAEoA0IHukgEIgIgABIlCg9vcmdhbml6YXRpb25faWQYAiABKANCB7pIBCICIABIAIgBAUISChBfb3JnYW5pemF0aW9uX2lkIiYKFEFpTGlzdE1vZGVsc1Jlc3BvbnNlEg4KBm1vZGVscxgBIAMoCSJnChVBaVRlc3RTZXR0aW5nc1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASJQoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCI6ChZBaVRlc3RTZXR0aW5nc1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCSJEChdBaURpc2NvdmVyTW9kZWxzUmVxdWVzdBIYCgdhcGlfdXJsGAEgASgJQge6SARyAhABEg8KB2FwaV9rZXkYAiABKAkiKgoYQWlEaXNjb3Zlck1vZGVsc1Jlc3BvbnNlEg4KBm1vZGVscxgBIAMoCSJcChdBaVRlc3RDb25uZWN0aW9uUmVxdWVzdBIYCgdhcGlfdXJsGAEgASgJQge6SARyAhABEg8KB2FwaV9rZXkYAiABKAkSFgoFbW9kZWwYAyABKAlCB7pIBHICEAEiPAoYQWlUZXN0Q29ubmVjdGlvblJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCSJ+ChhBaUxpc3RHZW5lcmF0aW9uc1JlcXVlc3QSJQoPb3JnYW5pemF0aW9uX2lkGAEgASgDQge6SAQiAiAASACIAQESHQoFbGltaXQYAiABKANCCbpIBiIEGGQoAUgBiAEBQhIKEF9vcmdhbml6YXRpb25faWRCCAoGX2xpbWl0IlAKGUFpTGlzdEdlbmVyYXRpb25zUmVzcG9uc2USMwoLZ2VuZXJhdGlvbnMYASADKAsyHi5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbiJoChZBaUdldEdlbmVyYXRpb25SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEiUKD29yZ2FuaXphdGlvbl9pZBgCIAEoA0IHukgEIgIgAEgAiAEBQhIKEF9vcmdhbml6YXRpb25faWQiTQoXQWlHZXRHZW5lcmF0aW9uUmVzcG9uc2USMgoKZ2VuZXJhdGlvbhgBIAEoCzIeLm9wZW5veGlkZS5hcGkudjEuQWlHZW5lcmF0aW9uIlgKGUFpQ3JlYXRlR2VuZXJhdGlvblJlcXVlc3QSHgoNYWlfc2V0dGluZ19pZBgBIAEoA0IHukgEIgIgABIbCgdyZXF1ZXN0GAIgASgJQgq6SAdyBRABGMA+IlAKGkFpQ3JlYXRlR2VuZXJhdGlvblJlc3BvbnNlEjIKCmdlbmVyYXRpb24YASABKAsyHi5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbiKhAQoZQWlSZXZpZXdHZW5lcmF0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIlCg9vcmdhbml6YXRpb25faWQYAiABKANCB7pIBCICIABIAIgBARI0CgZvdXRwdXQYAyABKAsyJC5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbk91dHB1dEISChBfb3JnYW5pemF0aW9uX2lkIlAKGkFpUmV2aWV3R2VuZXJhdGlvblJlc3BvbnNlEjIKCmdlbmVyYXRpb24YASABKAsyHi5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbiLvAQoZQWlEZXBsb3lHZW5lcmF0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIlCg9vcmdhbml6YXRpb25faWQYAiABKANCB7pIBCICIABIAIgBARIeCg1zdWdnZXN0aW9uX2lkGAMgASgJQge6SARyAhABEh8KDmVudmlyb25tZW50X2lkGAQgASgDQge6SAQiAiAAEh8KCXNlcnZlcl9pZBgFIAEoA0IHukgEIgIgAEgBiAEBEhIKCmRlcGxveV9ub3cYBiABKAhCEgoQX29yZ2FuaXphdGlvbl9pZEIMCgpfc2VydmVyX2lkIpIBChpBaURlcGxveUdlbmVyYXRpb25SZXNwb25zZRIyCgpnZW5lcmF0aW9uGAEgASgLMh4ub3Blbm94aWRlLmFwaS52MS5BaUdlbmVyYXRpb24SEgoKY29tcG9zZV9pZBgCIAEoAxIaCg1kZXBsb3ltZW50X2lkGAMgASgDSACIAQFCEAoOX2RlcGxveW1lbnRfaWQiigEKFEFpQW5hbHl6ZUxvZ3NSZXF1ZXN0Eh4KDWFpX3NldHRpbmdfaWQYASABKANCB7pIBCICIAASOwoHY29udGV4dBgCIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuQWlMb2dDb250ZXh0Qgq6SAeCAQQQASAAEhUKBGxvZ3MYAyABKAlCB7pIBHICEAEiKQoVQWlBbmFseXplTG9nc1Jlc3BvbnNlEhAKCGFuYWx5c2lzGAEgASgJKq8BCgpBaVByb3ZpZGVyEhsKF0FJX1BST1ZJREVSX1VOU1BFQ0lGSUVEEAASFgoSQUlfUFJPVklERVJfT1BFTkFJEAESGQoVQUlfUFJPVklERVJfQU5USFJPUElDEAISFgoSQUlfUFJPVklERVJfR0VNSU5JEAMSFgoSQUlfUFJPVklERVJfT0xMQU1BEAQSIQodQUlfUFJPVklERVJfT1BFTkFJX0NPTVBBVElCTEUQBSpkCgxBaUxvZ0NvbnRleHQSHgoaQUlfTE9HX0NPTlRFWFRfVU5TUEVDSUZJRUQQABIYChRBSV9MT0dfQ09OVEVYVF9CVUlMRBABEhoKFkFJX0xPR19DT05URVhUX1JVTlRJTUUQAjKHDAoJQWlTZXJ2aWNlEmEKDExpc3RTZXR0aW5ncxInLm9wZW5veGlkZS5hcGkudjEuQWlMaXN0U2V0dGluZ3NSZXF1ZXN0Gigub3Blbm94aWRlLmFwaS52MS5BaUxpc3RTZXR0aW5nc1Jlc3BvbnNlEl4KC0dldFNldHRpbmdzEiYub3Blbm94aWRlLmFwaS52MS5BaUdldFNldHRpbmdzUmVxdWVzdBonLm9wZW5veGlkZS5hcGkudjEuQWlHZXRTZXR0aW5nc1Jlc3BvbnNlEmcKDkNyZWF0ZVNldHRpbmdzEikub3Blbm94aWRlLmFwaS52MS5BaUNyZWF0ZVNldHRpbmdzUmVxdWVzdBoqLm9wZW5veGlkZS5hcGkudjEuQWlDcmVhdGVTZXR0aW5nc1Jlc3BvbnNlEmcKDlVwZGF0ZVNldHRpbmdzEikub3Blbm94aWRlLmFwaS52MS5BaVVwZGF0ZVNldHRpbmdzUmVxdWVzdBoqLm9wZW5veGlkZS5hcGkudjEuQWlVcGRhdGVTZXR0aW5nc1Jlc3BvbnNlElQKDkRlbGV0ZVNldHRpbmdzEikub3Blbm94aWRlLmFwaS52MS5BaURlbGV0ZVNldHRpbmdzUmVxdWVzdBoXLm9wZW5veGlkZS5hcGkudjEuRW1wdHkSWwoKTGlzdE1vZGVscxIlLm9wZW5veGlkZS5hcGkudjEuQWlMaXN0TW9kZWxzUmVxdWVzdBomLm9wZW5veGlkZS5hcGkudjEuQWlMaXN0TW9kZWxzUmVzcG9uc2USYQoMVGVzdFNldHRpbmdzEicub3Blbm94aWRlLmFwaS52MS5BaVRlc3RTZXR0aW5nc1JlcXVlc3QaKC5vcGVub3hpZGUuYXBpLnYxLkFpVGVzdFNldHRpbmdzUmVzcG9uc2USZwoORGlzY292ZXJNb2RlbHMSKS5vcGVub3hpZGUuYXBpLnYxLkFpRGlzY292ZXJNb2RlbHNSZXF1ZXN0Gioub3Blbm94aWRlLmFwaS52MS5BaURpc2NvdmVyTW9kZWxzUmVzcG9uc2USZwoOVGVzdENvbm5lY3Rpb24SKS5vcGVub3hpZGUuYXBpLnYxLkFpVGVzdENvbm5lY3Rpb25SZXF1ZXN0Gioub3Blbm94aWRlLmFwaS52MS5BaVRlc3RDb25uZWN0aW9uUmVzcG9uc2USagoPTGlzdEdlbmVyYXRpb25zEioub3Blbm94aWRlLmFwaS52MS5BaUxpc3RHZW5lcmF0aW9uc1JlcXVlc3QaKy5vcGVub3hpZGUuYXBpLnYxLkFpTGlzdEdlbmVyYXRpb25zUmVzcG9uc2USZAoNR2V0R2VuZXJhdGlvbhIoLm9wZW5veGlkZS5hcGkudjEuQWlHZXRHZW5lcmF0aW9uUmVxdWVzdBopLm9wZW5veGlkZS5hcGkudjEuQWlHZXRHZW5lcmF0aW9uUmVzcG9uc2USbQoQQ3JlYXRlR2VuZXJhdGlvbhIrLm9wZW5veGlkZS5hcGkudjEuQWlDcmVhdGVHZW5lcmF0aW9uUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuQWlDcmVhdGVHZW5lcmF0aW9uUmVzcG9uc2USbQoQUmV2aWV3R2VuZXJhdGlvbhIrLm9wZW5veGlkZS5hcGkudjEuQWlSZXZpZXdHZW5lcmF0aW9uUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuQWlSZXZpZXdHZW5lcmF0aW9uUmVzcG9uc2USbQoQRGVwbG95R2VuZXJhdGlvbhIrLm9wZW5veGlkZS5hcGkudjEuQWlEZXBsb3lHZW5lcmF0aW9uUmVxdWVzdBosLm9wZW5veGlkZS5hcGkudjEuQWlEZXBsb3lHZW5lcmF0aW9uUmVzcG9uc2USXgoLQW5hbHl6ZUxvZ3MSJi5vcGVub3hpZGUuYXBpLnYxLkFpQW5hbHl6ZUxvZ3NSZXF1ZXN0Gicub3Blbm94aWRlLmFwaS52MS5BaUFuYWx5emVMb2dzUmVzcG9uc2ViBnByb3RvMw',
+	'ChlvcGVub3hpZGUvYXBpL3YxL2FpLnByb3RvEhBvcGVub3hpZGUuYXBpLnYxIt8BCglBaVNldHRpbmcSCgoCaWQYASABKAMSDAoEbmFtZRgCIAEoCRIPCgdhcGlfdXJsGAMgASgJEg0KBW1vZGVsGAQgASgJEhIKCmlzX2VuYWJsZWQYBSABKAgSLgoIcHJvdmlkZXIYBiABKA4yHC5vcGVub3hpZGUuYXBpLnYxLkFpUHJvdmlkZXISEwoLaGFzX2FwaV9rZXkYByABKAgSFwoPb3JnYW5pemF0aW9uX2lkGAggASgDEhIKCmNyZWF0ZWRfYXQYCSABKAMSEgoKdXBkYXRlZF9hdBgKIAEoAyI0ChVBaUVudmlyb25tZW50VmFyaWFibGUSDAoEbmFtZRgBIAEoCRINCgV2YWx1ZRgCIAEoCSI8CghBaURvbWFpbhIMCgRob3N0GAEgASgJEgwKBHBvcnQYAiABKAMSFAoMc2VydmljZV9uYW1lGAMgASgJIjUKD0FpR2VuZXJhdGVkRmlsZRIRCglmaWxlX3BhdGgYASABKAkSDwoHY29udGVudBgCIAEoCSKdAgoTQWlDb21wb3NlU3VnZ2VzdGlvbhIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhkKEXNob3J0X2Rlc2NyaXB0aW9uGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEhYKDmRvY2tlcl9jb21wb3NlGAUgASgJEj4KDWVudl92YXJpYWJsZXMYBiADKAsyJy5vcGVub3hpZGUuYXBpLnYxLkFpRW52aXJvbm1lbnRWYXJpYWJsZRIrCgdkb21haW5zGAcgAygLMhoub3Blbm94aWRlLmFwaS52MS5BaURvbWFpbhI3Cgxjb25maWdfZmlsZXMYCCADKAsyIS5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGVkRmlsZSJQChJBaUdlbmVyYXRpb25PdXRwdXQSOgoLc3VnZ2VzdGlvbnMYASADKAsyJS5vcGVub3hpZGUuYXBpLnYxLkFpQ29tcG9zZVN1Z2dlc3Rpb24ihAIKDEFpR2VuZXJhdGlvbhIKCgJpZBgBIAEoAxIVCg1haV9zZXR0aW5nX2lkGAIgASgDEhcKD29yZ2FuaXphdGlvbl9pZBgDIAEoAxISCgpjcmVhdGVkX2J5GAQgASgDEg4KBnByb21wdBgFIAEoCRI0CgZvdXRwdXQYBiABKAsyJC5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbk91dHB1dBIOCgZzdGF0dXMYByABKAkSFwoKY29tcG9zZV9pZBgIIAEoA0gAiAEBEhIKCmNyZWF0ZWRfYXQYCSABKAMSEgoKdXBkYXRlZF9hdBgKIAEoA0INCgtfY29tcG9zZV9pZCJSChVBaUxpc3RTZXR0aW5nc1JlcXVlc3QSJQoPb3JnYW5pemF0aW9uX2lkGAEgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCJHChZBaUxpc3RTZXR0aW5nc1Jlc3BvbnNlEi0KCHNldHRpbmdzGAEgAygLMhsub3Blbm94aWRlLmFwaS52MS5BaVNldHRpbmciZgoUQWlHZXRTZXR0aW5nc1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASJQoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCJFChVBaUdldFNldHRpbmdzUmVzcG9uc2USLAoHc2V0dGluZxgBIAEoCzIbLm9wZW5veGlkZS5hcGkudjEuQWlTZXR0aW5nIscBChdBaUNyZWF0ZVNldHRpbmdzUmVxdWVzdBIXCgRuYW1lGAEgASgJQgm6SAZyBBABGGQSGAoHYXBpX3VybBgCIAEoCUIHukgEcgIQARIPCgdhcGlfa2V5GAMgASgJEhkKBW1vZGVsGAQgASgJQgq6SAdyBRABGMgBEhIKCmlzX2VuYWJsZWQYBSABKAgSJQoPb3JnYW5pemF0aW9uX2lkGAYgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCJIChhBaUNyZWF0ZVNldHRpbmdzUmVzcG9uc2USLAoHc2V0dGluZxgBIAEoCzIbLm9wZW5veGlkZS5hcGkudjEuQWlTZXR0aW5nIqICChdBaVVwZGF0ZVNldHRpbmdzUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIaCgRuYW1lGAIgASgJQge6SARyAhhkSACIAQESFAoHYXBpX3VybBgDIAEoCUgBiAEBEhQKB2FwaV9rZXkYBCABKAlIAogBARIcCgVtb2RlbBgFIAEoCUIIukgFcgMYyAFIA4gBARIXCgppc19lbmFibGVkGAYgASgISASIAQESJQoPb3JnYW5pemF0aW9uX2lkGAcgASgDQge6SAQiAiAASAWIAQFCBwoFX25hbWVCCgoIX2FwaV91cmxCCgoIX2FwaV9rZXlCCAoGX21vZGVsQg0KC19pc19lbmFibGVkQhIKEF9vcmdhbml6YXRpb25faWQiSAoYQWlVcGRhdGVTZXR0aW5nc1Jlc3BvbnNlEiwKB3NldHRpbmcYASABKAsyGy5vcGVub3hpZGUuYXBpLnYxLkFpU2V0dGluZyJpChdBaURlbGV0ZVNldHRpbmdzUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIlCg9vcmdhbml6YXRpb25faWQYAiABKANCB7pIBCICIABIAIgBAUISChBfb3JnYW5pemF0aW9uX2lkIm0KE0FpTGlzdE1vZGVsc1JlcXVlc3QSGwoKc2V0dGluZ19pZBgBIAEoA0IHukgEIgIgABIlCg9vcmdhbml6YXRpb25faWQYAiABKANCB7pIBCICIABIAIgBAUISChBfb3JnYW5pemF0aW9uX2lkIiYKFEFpTGlzdE1vZGVsc1Jlc3BvbnNlEg4KBm1vZGVscxgBIAMoCSJnChVBaVRlc3RTZXR0aW5nc1JlcXVlc3QSEwoCaWQYASABKANCB7pIBCICIAASJQoPb3JnYW5pemF0aW9uX2lkGAIgASgDQge6SAQiAiAASACIAQFCEgoQX29yZ2FuaXphdGlvbl9pZCI6ChZBaVRlc3RTZXR0aW5nc1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCSJEChdBaURpc2NvdmVyTW9kZWxzUmVxdWVzdBIYCgdhcGlfdXJsGAEgASgJQge6SARyAhABEg8KB2FwaV9rZXkYAiABKAkiKgoYQWlEaXNjb3Zlck1vZGVsc1Jlc3BvbnNlEg4KBm1vZGVscxgBIAMoCSJcChdBaVRlc3RDb25uZWN0aW9uUmVxdWVzdBIYCgdhcGlfdXJsGAEgASgJQge6SARyAhABEg8KB2FwaV9rZXkYAiABKAkSFgoFbW9kZWwYAyABKAlCB7pIBHICEAEiPAoYQWlUZXN0Q29ubmVjdGlvblJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCSJ+ChhBaUxpc3RHZW5lcmF0aW9uc1JlcXVlc3QSJQoPb3JnYW5pemF0aW9uX2lkGAEgASgDQge6SAQiAiAASACIAQESHQoFbGltaXQYAiABKANCCbpIBiIEGGQoAUgBiAEBQhIKEF9vcmdhbml6YXRpb25faWRCCAoGX2xpbWl0IlAKGUFpTGlzdEdlbmVyYXRpb25zUmVzcG9uc2USMwoLZ2VuZXJhdGlvbnMYASADKAsyHi5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbiJoChZBaUdldEdlbmVyYXRpb25SZXF1ZXN0EhMKAmlkGAEgASgDQge6SAQiAiAAEiUKD29yZ2FuaXphdGlvbl9pZBgCIAEoA0IHukgEIgIgAEgAiAEBQhIKEF9vcmdhbml6YXRpb25faWQiTQoXQWlHZXRHZW5lcmF0aW9uUmVzcG9uc2USMgoKZ2VuZXJhdGlvbhgBIAEoCzIeLm9wZW5veGlkZS5hcGkudjEuQWlHZW5lcmF0aW9uIlgKGUFpQ3JlYXRlR2VuZXJhdGlvblJlcXVlc3QSHgoNYWlfc2V0dGluZ19pZBgBIAEoA0IHukgEIgIgABIbCgdyZXF1ZXN0GAIgASgJQgq6SAdyBRABGMA+IlAKGkFpQ3JlYXRlR2VuZXJhdGlvblJlc3BvbnNlEjIKCmdlbmVyYXRpb24YASABKAsyHi5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbiKhAQoZQWlSZXZpZXdHZW5lcmF0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIlCg9vcmdhbml6YXRpb25faWQYAiABKANCB7pIBCICIABIAIgBARI0CgZvdXRwdXQYAyABKAsyJC5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbk91dHB1dEISChBfb3JnYW5pemF0aW9uX2lkIlAKGkFpUmV2aWV3R2VuZXJhdGlvblJlc3BvbnNlEjIKCmdlbmVyYXRpb24YASABKAsyHi5vcGVub3hpZGUuYXBpLnYxLkFpR2VuZXJhdGlvbiLvAQoZQWlEZXBsb3lHZW5lcmF0aW9uUmVxdWVzdBITCgJpZBgBIAEoA0IHukgEIgIgABIlCg9vcmdhbml6YXRpb25faWQYAiABKANCB7pIBCICIABIAIgBARIeCg1zdWdnZXN0aW9uX2lkGAMgASgJQge6SARyAhABEh8KDmVudmlyb25tZW50X2lkGAQgASgDQge6SAQiAiAAEh8KCXNlcnZlcl9pZBgFIAEoA0IHukgEIgIgAEgBiAEBEhIKCmRlcGxveV9ub3cYBiABKAhCEgoQX29yZ2FuaXphdGlvbl9pZEIMCgpfc2VydmVyX2lkIpIBChpBaURlcGxveUdlbmVyYXRpb25SZXNwb25zZRIyCgpnZW5lcmF0aW9uGAEgASgLMh4ub3Blbm94aWRlLmFwaS52MS5BaUdlbmVyYXRpb24SEgoKY29tcG9zZV9pZBgCIAEoAxIaCg1kZXBsb3ltZW50X2lkGAMgASgDSACIAQFCEAoOX2RlcGxveW1lbnRfaWQiigEKFEFpQW5hbHl6ZUxvZ3NSZXF1ZXN0Eh4KDWFpX3NldHRpbmdfaWQYASABKANCB7pIBCICIAASOwoHY29udGV4dBgCIAEoDjIeLm9wZW5veGlkZS5hcGkudjEuQWlMb2dDb250ZXh0Qgq6SAeCAQQQASAAEhUKBGxvZ3MYAyABKAlCB7pIBHICEAEiKQoVQWlBbmFseXplTG9nc1Jlc3BvbnNlEhAKCGFuYWx5c2lzGAEgASgJIvABChJBaUFzc2lzdGFudFJlcXVlc3QSGgoGcHJvbXB0GAEgASgJQgq6SAdyBRABGMA+EiMKDWFpX3NldHRpbmdfaWQYAiABKANCB7pIBCICIABIAIgBARItCgdoaXN0b3J5GAMgAygLMhwub3Blbm94aWRlLmFwaS52MS5BaUNoYXRUdXJuEhwKD3BlbmRpbmdfYWN0aW9ucxgEIAEoCUgBiAEBEhcKCnNlc3Npb25faWQYBSABKAlIAogBAUIQCg5fYWlfc2V0dGluZ19pZEISChBfcGVuZGluZ19hY3Rpb25zQg0KC19zZXNzaW9uX2lkIjQKCkFpQ2hhdFR1cm4SFQoEcm9sZRgBIAEoCUIHukgEcgIQARIPCgdjb250ZW50GAIgASgJIqsBChNBaUFzc2lzdGFudFJlc3BvbnNlEg0KBXJlcGx5GAEgASgJEiEKFHBlbmRpbmdfY29uZmlybWF0aW9uGAIgASgJSACIAQESOQoLaW50ZXJhY3Rpb24YAyABKAsyHy5vcGVub3hpZGUuYXBpLnYxLkFpSW50ZXJhY3Rpb25IAYgBAUIXChVfcGVuZGluZ19jb25maXJtYXRpb25CDgoMX2ludGVyYWN0aW9uIkUKE0FpSW50ZXJhY3Rpb25PcHRpb24SCgoCaWQYASABKAkSDQoFbGFiZWwYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkipQEKDUFpSW50ZXJhY3Rpb24SMQoEa2luZBgBIAEoDjIjLm9wZW5veGlkZS5hcGkudjEuQWlJbnRlcmFjdGlvbktpbmQSEAoIcXVlc3Rpb24YAiABKAkSNgoHb3B0aW9ucxgDIAMoCzIlLm9wZW5veGlkZS5hcGkudjEuQWlJbnRlcmFjdGlvbk9wdGlvbhIXCg9wZW5kaW5nX2FjdGlvbnMYBCABKAkiyQEKEEFpQXNzaXN0YW50RXZlbnQSNAoEa2luZBgBIAEoDjImLm9wZW5veGlkZS5hcGkudjEuQWlBc3Npc3RhbnRFdmVudEtpbmQSDAoEdGV4dBgCIAEoCRI5CgtpbnRlcmFjdGlvbhgDIAEoCzIfLm9wZW5veGlkZS5hcGkudjEuQWlJbnRlcmFjdGlvbkgAiAEBEhcKCnNlc3Npb25faWQYBCABKAlIAYgBAUIOCgxfaW50ZXJhY3Rpb25CDQoLX3Nlc3Npb25faWQqrwEKCkFpUHJvdmlkZXISGwoXQUlfUFJPVklERVJfVU5TUEVDSUZJRUQQABIWChJBSV9QUk9WSURFUl9PUEVOQUkQARIZChVBSV9QUk9WSURFUl9BTlRIUk9QSUMQAhIWChJBSV9QUk9WSURFUl9HRU1JTkkQAxIWChJBSV9QUk9WSURFUl9PTExBTUEQBBIhCh1BSV9QUk9WSURFUl9PUEVOQUlfQ09NUEFUSUJMRRAFKmQKDEFpTG9nQ29udGV4dBIeChpBSV9MT0dfQ09OVEVYVF9VTlNQRUNJRklFRBAAEhgKFEFJX0xPR19DT05URVhUX0JVSUxEEAESGgoWQUlfTE9HX0NPTlRFWFRfUlVOVElNRRACKnkKEUFpSW50ZXJhY3Rpb25LaW5kEiMKH0FJX0lOVEVSQUNUSU9OX0tJTkRfVU5TUEVDSUZJRUQQABIfChtBSV9JTlRFUkFDVElPTl9LSU5EX0NPTkZJUk0QARIeChpBSV9JTlRFUkFDVElPTl9LSU5EX0NIT0lDRRACKqICChRBaUFzc2lzdGFudEV2ZW50S2luZBInCiNBSV9BU1NJU1RBTlRfRVZFTlRfS0lORF9VTlNQRUNJRklFRBAAEiQKIEFJX0FTU0lTVEFOVF9FVkVOVF9LSU5EX1RISU5LSU5HEAESIgoeQUlfQVNTSVNUQU5UX0VWRU5UX0tJTkRfU1RBVFVTEAISKQolQUlfQVNTSVNUQU5UX0VWRU5UX0tJTkRfQUNUSU9OX1JFU1VMVBADEiEKHUFJX0FTU0lTVEFOVF9FVkVOVF9LSU5EX1JFUExZEAQSJwojQUlfQVNTSVNUQU5UX0VWRU5UX0tJTkRfSU5URVJBQ1RJT04QBRIgChxBSV9BU1NJU1RBTlRfRVZFTlRfS0lORF9ET05FEAYywA0KCUFpU2VydmljZRJhCgxMaXN0U2V0dGluZ3MSJy5vcGVub3hpZGUuYXBpLnYxLkFpTGlzdFNldHRpbmdzUmVxdWVzdBooLm9wZW5veGlkZS5hcGkudjEuQWlMaXN0U2V0dGluZ3NSZXNwb25zZRJeCgtHZXRTZXR0aW5ncxImLm9wZW5veGlkZS5hcGkudjEuQWlHZXRTZXR0aW5nc1JlcXVlc3QaJy5vcGVub3hpZGUuYXBpLnYxLkFpR2V0U2V0dGluZ3NSZXNwb25zZRJnCg5DcmVhdGVTZXR0aW5ncxIpLm9wZW5veGlkZS5hcGkudjEuQWlDcmVhdGVTZXR0aW5nc1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLkFpQ3JlYXRlU2V0dGluZ3NSZXNwb25zZRJnCg5VcGRhdGVTZXR0aW5ncxIpLm9wZW5veGlkZS5hcGkudjEuQWlVcGRhdGVTZXR0aW5nc1JlcXVlc3QaKi5vcGVub3hpZGUuYXBpLnYxLkFpVXBkYXRlU2V0dGluZ3NSZXNwb25zZRJUCg5EZWxldGVTZXR0aW5ncxIpLm9wZW5veGlkZS5hcGkudjEuQWlEZWxldGVTZXR0aW5nc1JlcXVlc3QaFy5vcGVub3hpZGUuYXBpLnYxLkVtcHR5ElsKCkxpc3RNb2RlbHMSJS5vcGVub3hpZGUuYXBpLnYxLkFpTGlzdE1vZGVsc1JlcXVlc3QaJi5vcGVub3hpZGUuYXBpLnYxLkFpTGlzdE1vZGVsc1Jlc3BvbnNlEmEKDFRlc3RTZXR0aW5ncxInLm9wZW5veGlkZS5hcGkudjEuQWlUZXN0U2V0dGluZ3NSZXF1ZXN0Gigub3Blbm94aWRlLmFwaS52MS5BaVRlc3RTZXR0aW5nc1Jlc3BvbnNlEmcKDkRpc2NvdmVyTW9kZWxzEikub3Blbm94aWRlLmFwaS52MS5BaURpc2NvdmVyTW9kZWxzUmVxdWVzdBoqLm9wZW5veGlkZS5hcGkudjEuQWlEaXNjb3Zlck1vZGVsc1Jlc3BvbnNlEmcKDlRlc3RDb25uZWN0aW9uEikub3Blbm94aWRlLmFwaS52MS5BaVRlc3RDb25uZWN0aW9uUmVxdWVzdBoqLm9wZW5veGlkZS5hcGkudjEuQWlUZXN0Q29ubmVjdGlvblJlc3BvbnNlEmoKD0xpc3RHZW5lcmF0aW9ucxIqLm9wZW5veGlkZS5hcGkudjEuQWlMaXN0R2VuZXJhdGlvbnNSZXF1ZXN0Gisub3Blbm94aWRlLmFwaS52MS5BaUxpc3RHZW5lcmF0aW9uc1Jlc3BvbnNlEmQKDUdldEdlbmVyYXRpb24SKC5vcGVub3hpZGUuYXBpLnYxLkFpR2V0R2VuZXJhdGlvblJlcXVlc3QaKS5vcGVub3hpZGUuYXBpLnYxLkFpR2V0R2VuZXJhdGlvblJlc3BvbnNlEm0KEENyZWF0ZUdlbmVyYXRpb24SKy5vcGVub3hpZGUuYXBpLnYxLkFpQ3JlYXRlR2VuZXJhdGlvblJlcXVlc3QaLC5vcGVub3hpZGUuYXBpLnYxLkFpQ3JlYXRlR2VuZXJhdGlvblJlc3BvbnNlEm0KEFJldmlld0dlbmVyYXRpb24SKy5vcGVub3hpZGUuYXBpLnYxLkFpUmV2aWV3R2VuZXJhdGlvblJlcXVlc3QaLC5vcGVub3hpZGUuYXBpLnYxLkFpUmV2aWV3R2VuZXJhdGlvblJlc3BvbnNlEm0KEERlcGxveUdlbmVyYXRpb24SKy5vcGVub3hpZGUuYXBpLnYxLkFpRGVwbG95R2VuZXJhdGlvblJlcXVlc3QaLC5vcGVub3hpZGUuYXBpLnYxLkFpRGVwbG95R2VuZXJhdGlvblJlc3BvbnNlEl4KC0FuYWx5emVMb2dzEiYub3Blbm94aWRlLmFwaS52MS5BaUFuYWx5emVMb2dzUmVxdWVzdBonLm9wZW5veGlkZS5hcGkudjEuQWlBbmFseXplTG9nc1Jlc3BvbnNlElgKCUFzc2lzdGFudBIkLm9wZW5veGlkZS5hcGkudjEuQWlBc3Npc3RhbnRSZXF1ZXN0GiUub3Blbm94aWRlLmFwaS52MS5BaUFzc2lzdGFudFJlc3BvbnNlEl0KD0Fzc2lzdGFudFN0cmVhbRIkLm9wZW5veGlkZS5hcGkudjEuQWlBc3Npc3RhbnRSZXF1ZXN0GiIub3Blbm94aWRlLmFwaS52MS5BaUFzc2lzdGFudEV2ZW50MAFiBnByb3RvMw',
 	[file_openoxide_api_v1_common, file_buf_validate_validate],
 );
 
@@ -1028,6 +1028,233 @@ export const AiAnalyzeLogsResponseSchema: GenMessage<AiAnalyzeLogsResponse> /*@_
 	messageDesc(file_openoxide_api_v1_ai, 35);
 
 /**
+ * @generated from message openoxide.api.v1.AiAssistantRequest
+ */
+export type AiAssistantRequest =
+	Message<'openoxide.api.v1.AiAssistantRequest'> & {
+		/**
+		 * Natural-language instruction, e.g. "deploy blinko".
+		 *
+		 * @generated from field: string prompt = 1;
+		 */
+		prompt: string;
+
+		/**
+		 * Optional provider override; falls back to the org's first enabled setting.
+		 *
+		 * @generated from field: optional int64 ai_setting_id = 2;
+		 */
+		aiSettingId?: bigint | undefined;
+
+		/**
+		 * Prior turns of this conversation so the assistant keeps context across
+		 * messages (e.g. a "yes" that confirms the previous destructive action).
+		 *
+		 * @generated from field: repeated openoxide.api.v1.AiChatTurn history = 3;
+		 */
+		history: AiChatTurn[];
+
+		/**
+		 * Opaque JSON carried back from a prior CONFIRM interaction's
+		 * `pending_actions`; when the user confirms, the server executes these
+		 * deterministically instead of re-asking the model.
+		 *
+		 * @generated from field: optional string pending_actions = 4;
+		 */
+		pendingActions?: string | undefined;
+
+		/**
+		 * Server-managed conversation session. Empty on the first message; the
+		 * server creates a session and returns its id in the first event. On
+		 * follow-ups, send the session_id back so the server loads history.
+		 *
+		 * @generated from field: optional string session_id = 5;
+		 */
+		sessionId?: string | undefined;
+	};
+
+/**
+ * Describes the message openoxide.api.v1.AiAssistantRequest.
+ * Use `create(AiAssistantRequestSchema)` to create a new message.
+ */
+export const AiAssistantRequestSchema: GenMessage<AiAssistantRequest> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_ai, 36);
+
+/**
+ * One prior conversational turn replayed to the assistant for context.
+ *
+ * @generated from message openoxide.api.v1.AiChatTurn
+ */
+export type AiChatTurn = Message<'openoxide.api.v1.AiChatTurn'> & {
+	/**
+	 * "user" or "assistant".
+	 *
+	 * @generated from field: string role = 1;
+	 */
+	role: string;
+
+	/**
+	 * @generated from field: string content = 2;
+	 */
+	content: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiChatTurn.
+ * Use `create(AiChatTurnSchema)` to create a new message.
+ */
+export const AiChatTurnSchema: GenMessage<AiChatTurn> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_ai, 37);
+
+/**
+ * @generated from message openoxide.api.v1.AiAssistantResponse
+ */
+export type AiAssistantResponse =
+	Message<'openoxide.api.v1.AiAssistantResponse'> & {
+		/**
+		 * Natural-language reply to show the user.
+		 *
+		 * @generated from field: string reply = 1;
+		 */
+		reply: string;
+
+		/**
+		 * Set when the model is asking the user to confirm a destructive action.
+		 *
+		 * @generated from field: optional string pending_confirmation = 2;
+		 */
+		pendingConfirmation?: string | undefined;
+
+		/**
+		 * Structured interaction the UI should render (Yes/No or option cards)
+		 * instead of expecting free text back.
+		 *
+		 * @generated from field: optional openoxide.api.v1.AiInteraction interaction = 3;
+		 */
+		interaction?: AiInteraction | undefined;
+	};
+
+/**
+ * Describes the message openoxide.api.v1.AiAssistantResponse.
+ * Use `create(AiAssistantResponseSchema)` to create a new message.
+ */
+export const AiAssistantResponseSchema: GenMessage<AiAssistantResponse> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_ai, 38);
+
+/**
+ * @generated from message openoxide.api.v1.AiInteractionOption
+ */
+export type AiInteractionOption =
+	Message<'openoxide.api.v1.AiInteractionOption'> & {
+		/**
+		 * Stable value sent back when chosen (id or canonical name).
+		 *
+		 * @generated from field: string id = 1;
+		 */
+		id: string;
+
+		/**
+		 * @generated from field: string label = 2;
+		 */
+		label: string;
+
+		/**
+		 * @generated from field: string description = 3;
+		 */
+		description: string;
+	};
+
+/**
+ * Describes the message openoxide.api.v1.AiInteractionOption.
+ * Use `create(AiInteractionOptionSchema)` to create a new message.
+ */
+export const AiInteractionOptionSchema: GenMessage<AiInteractionOption> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_ai, 39);
+
+/**
+ * @generated from message openoxide.api.v1.AiInteraction
+ */
+export type AiInteraction = Message<'openoxide.api.v1.AiInteraction'> & {
+	/**
+	 * @generated from field: openoxide.api.v1.AiInteractionKind kind = 1;
+	 */
+	kind: AiInteractionKind;
+
+	/**
+	 * Question/summary shown above the controls.
+	 *
+	 * @generated from field: string question = 2;
+	 */
+	question: string;
+
+	/**
+	 * Selectable options (CHOICE only; empty for CONFIRM).
+	 *
+	 * @generated from field: repeated openoxide.api.v1.AiInteractionOption options = 3;
+	 */
+	options: AiInteractionOption[];
+
+	/**
+	 * CONFIRM only: opaque JSON the client echoes back as the request's
+	 * `pending_actions` when the user clicks Yes.
+	 *
+	 * @generated from field: string pending_actions = 4;
+	 */
+	pendingActions: string;
+};
+
+/**
+ * Describes the message openoxide.api.v1.AiInteraction.
+ * Use `create(AiInteractionSchema)` to create a new message.
+ */
+export const AiInteractionSchema: GenMessage<AiInteraction> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_ai, 40);
+
+/**
+ * One live event from the streaming assistant. The web renders each event as
+ * it arrives: thinking/status as ephemeral progress lines, the reply as the
+ * final bubble, and the interaction as buttons/cards.
+ *
+ * @generated from message openoxide.api.v1.AiAssistantEvent
+ */
+export type AiAssistantEvent =
+	Message<'openoxide.api.v1.AiAssistantEvent'> & {
+		/**
+		 * @generated from field: openoxide.api.v1.AiAssistantEventKind kind = 1;
+		 */
+		kind: AiAssistantEventKind;
+
+		/**
+		 * Human-readable text for this event (thinking line, status, result, reply).
+		 *
+		 * @generated from field: string text = 2;
+		 */
+		text: string;
+
+		/**
+		 * Set on INTERACTION events (confirm / choose).
+		 *
+		 * @generated from field: optional openoxide.api.v1.AiInteraction interaction = 3;
+		 */
+		interaction?: AiInteraction | undefined;
+
+		/**
+		 * The server-managed session id. Always present on the first event and on
+		 * DONE so the client can store it.
+		 *
+		 * @generated from field: optional string session_id = 4;
+		 */
+		sessionId?: string | undefined;
+	};
+
+/**
+ * Describes the message openoxide.api.v1.AiAssistantEvent.
+ * Use `create(AiAssistantEventSchema)` to create a new message.
+ */
+export const AiAssistantEventSchema: GenMessage<AiAssistantEvent> /*@__PURE__*/ =
+	messageDesc(file_openoxide_api_v1_ai, 41);
+
+/**
  * Provider detected from the configured api_url (AiProviderKind::detect).
  *
  * @generated from enum openoxide.api.v1.AiProvider
@@ -1099,12 +1326,104 @@ export const AiLogContextSchema: GenEnum<AiLogContext> /*@__PURE__*/ =
 	enumDesc(file_openoxide_api_v1_ai, 1);
 
 /**
+ * @generated from enum openoxide.api.v1.AiInteractionKind
+ */
+export enum AiInteractionKind {
+	/**
+	 * @generated from enum value: AI_INTERACTION_KIND_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
+
+	/**
+	 * Yes/No confirmation of a (usually destructive) action.
+	 *
+	 * @generated from enum value: AI_INTERACTION_KIND_CONFIRM = 1;
+	 */
+	CONFIRM = 1,
+
+	/**
+	 * Pick one of several options (projects, environments, servers, ...).
+	 *
+	 * @generated from enum value: AI_INTERACTION_KIND_CHOICE = 2;
+	 */
+	CHOICE = 2,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.AiInteractionKind.
+ */
+export const AiInteractionKindSchema: GenEnum<AiInteractionKind> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_ai, 2);
+
+/**
+ * Event kind for the streaming assistant.
+ *
+ * @generated from enum openoxide.api.v1.AiAssistantEventKind
+ */
+export enum AiAssistantEventKind {
+	/**
+	 * @generated from enum value: AI_ASSISTANT_EVENT_KIND_UNSPECIFIED = 0;
+	 */
+	UNSPECIFIED = 0,
+
+	/**
+	 * The model is thinking / processing (show a status line).
+	 *
+	 * @generated from enum value: AI_ASSISTANT_EVENT_KIND_THINKING = 1;
+	 */
+	THINKING = 1,
+
+	/**
+	 * A tool search / action was started (e.g. "Running deploy…").
+	 *
+	 * @generated from enum value: AI_ASSISTANT_EVENT_KIND_STATUS = 2;
+	 */
+	STATUS = 2,
+
+	/**
+	 * An action finished and produced a result summary.
+	 *
+	 * @generated from enum value: AI_ASSISTANT_EVENT_KIND_ACTION_RESULT = 3;
+	 */
+	ACTION_RESULT = 3,
+
+	/**
+	 * The model's final text reply.
+	 *
+	 * @generated from enum value: AI_ASSISTANT_EVENT_KIND_REPLY = 4;
+	 */
+	REPLY = 4,
+
+	/**
+	 * A structured confirm / choose interaction.
+	 *
+	 * @generated from enum value: AI_ASSISTANT_EVENT_KIND_INTERACTION = 5;
+	 */
+	INTERACTION = 5,
+
+	/**
+	 * Terminal: the turn is complete. session_id is always set here.
+	 *
+	 * @generated from enum value: AI_ASSISTANT_EVENT_KIND_DONE = 6;
+	 */
+	DONE = 6,
+}
+
+/**
+ * Describes the enum openoxide.api.v1.AiAssistantEventKind.
+ */
+export const AiAssistantEventKindSchema: GenEnum<AiAssistantEventKind> /*@__PURE__*/ =
+	enumDesc(file_openoxide_api_v1_ai, 3);
+
+/**
  * AI provider settings, model discovery, compose generation and log analysis.
  *
  * @generated from service openoxide.api.v1.AiService
  */
 export const AiService: GenService<{
 	/**
+	 * List AI provider settings; optional organization_id scope. API keys are never returned.
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.ListSettings
 	 */
 	listSettings: {
@@ -1113,6 +1432,8 @@ export const AiService: GenService<{
 		output: typeof AiListSettingsResponseSchema;
 	};
 	/**
+	 * Get one AI provider setting by id; optional organization_id scope.
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.GetSettings
 	 */
 	getSettings: {
@@ -1121,6 +1442,8 @@ export const AiService: GenService<{
 		output: typeof AiGetSettingsResponseSchema;
 	};
 	/**
+	 * Create an AI provider setting. Required: name, api_url, model; optional api_key (stored, never echoed), is_enabled, organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.CreateSettings
 	 */
 	createSettings: {
@@ -1129,6 +1452,8 @@ export const AiService: GenService<{
 		output: typeof AiCreateSettingsResponseSchema;
 	};
 	/**
+	 * Update an AI provider setting by id (absent fields unchanged; absent api_key keeps the stored key).
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.UpdateSettings
 	 */
 	updateSettings: {
@@ -1137,6 +1462,8 @@ export const AiService: GenService<{
 		output: typeof AiUpdateSettingsResponseSchema;
 	};
 	/**
+	 * Delete an AI provider setting by id; optional organization_id scope.
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.DeleteSettings
 	 */
 	deleteSettings: {
@@ -1145,6 +1472,8 @@ export const AiService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List model names offered by a stored provider setting (setting_id); optional organization_id scope.
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.ListModels
 	 */
 	listModels: {
@@ -1153,6 +1482,8 @@ export const AiService: GenService<{
 		output: typeof AiListModelsResponseSchema;
 	};
 	/**
+	 * Test a stored AI provider setting by id; optional organization_id scope.
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.TestSettings
 	 */
 	testSettings: {
@@ -1161,6 +1492,8 @@ export const AiService: GenService<{
 		output: typeof AiTestSettingsResponseSchema;
 	};
 	/**
+	 * Discover models against unsaved credentials: required api_url, optional api_key (create-dialog use).
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.DiscoverModels
 	 */
 	discoverModels: {
@@ -1169,6 +1502,8 @@ export const AiService: GenService<{
 		output: typeof AiDiscoverModelsResponseSchema;
 	};
 	/**
+	 * Test connectivity against unsaved credentials: required api_url and model, optional api_key.
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.TestConnection
 	 */
 	testConnection: {
@@ -1177,6 +1512,8 @@ export const AiService: GenService<{
 		output: typeof AiTestConnectionResponseSchema;
 	};
 	/**
+	 * List past generation runs; optional organization_id scope and limit (1-100).
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.ListGenerations
 	 */
 	listGenerations: {
@@ -1185,6 +1522,8 @@ export const AiService: GenService<{
 		output: typeof AiListGenerationsResponseSchema;
 	};
 	/**
+	 * Get one generation run by id; optional organization_id scope.
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.GetGeneration
 	 */
 	getGeneration: {
@@ -1193,6 +1532,8 @@ export const AiService: GenService<{
 		output: typeof AiGetGenerationResponseSchema;
 	};
 	/**
+	 * Create a compose generation from a free-form request prompt using provider ai_setting_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.CreateGeneration
 	 */
 	createGeneration: {
@@ -1201,6 +1542,8 @@ export const AiService: GenService<{
 		output: typeof AiCreateGenerationResponseSchema;
 	};
 	/**
+	 * Replace a generation's output after human review by id (full output); optional organization_id scope.
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.ReviewGeneration
 	 */
 	reviewGeneration: {
@@ -1209,6 +1552,8 @@ export const AiService: GenService<{
 		output: typeof AiReviewGenerationResponseSchema;
 	};
 	/**
+	 * Deploy a reviewed generation by id: pick suggestion_id into environment_id; optional server_id and deploy_now.
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.DeployGeneration
 	 */
 	deployGeneration: {
@@ -1217,11 +1562,34 @@ export const AiService: GenService<{
 		output: typeof AiDeployGenerationResponseSchema;
 	};
 	/**
+	 * Analyze logs with provider ai_setting_id: context (AiLogContext BUILD/RUNTIME) over the given logs; returns markdown analysis.
+	 *
 	 * @generated from rpc openoxide.api.v1.AiService.AnalyzeLogs
 	 */
 	analyzeLogs: {
 		methodKind: 'unary';
 		input: typeof AiAnalyzeLogsRequestSchema;
 		output: typeof AiAnalyzeLogsResponseSchema;
+	};
+	/**
+	 * Agentic assistant: natural-language request → permission-checked actions.
+	 *
+	 * @generated from rpc openoxide.api.v1.AiService.Assistant
+	 */
+	assistant: {
+		methodKind: 'unary';
+		input: typeof AiAssistantRequestSchema;
+		output: typeof AiAssistantResponseSchema;
+	};
+	/**
+	 * Streaming assistant: emits live thinking/action/result events as the agent
+	 * works, ending with the reply (or a confirm/choose interaction).
+	 *
+	 * @generated from rpc openoxide.api.v1.AiService.AssistantStream
+	 */
+	assistantStream: {
+		methodKind: 'server_streaming';
+		input: typeof AiAssistantRequestSchema;
+		output: typeof AiAssistantEventSchema;
 	};
 }> /*@__PURE__*/ = serviceDesc(file_openoxide_api_v1_ai, 0);

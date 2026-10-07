@@ -13,7 +13,10 @@ pub struct ArgBuilder {
 impl ArgBuilder {
     /// Start a new builder, pre-seeded with Docker subcommand tokens.
     /// ```
-    /// ArgBuilder::cmd(&["container", "run"])
+    /// use oxos::exec::ArgBuilder;
+    ///
+    /// let mut args = ArgBuilder::cmd(&["container", "run"]);
+    /// args.flag("--rm");
     /// ```
     pub fn cmd(subcmd: &[&str]) -> Self {
         Self {

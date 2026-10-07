@@ -633,6 +633,8 @@ export const VaultProviderTypeSchema: GenEnum<VaultProviderType> /*@__PURE__*/ =
  */
 export const VaultService: GenService<{
 	/**
+	 * List all saved secret-vault providers for the organization.
+	 *
 	 * @generated from rpc openoxide.api.v1.VaultService.ListProviders
 	 */
 	listProviders: {
@@ -641,6 +643,8 @@ export const VaultService: GenService<{
 		output: typeof ListVaultProvidersResponseSchema;
 	};
 	/**
+	 * Get one vault provider by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.VaultService.GetProvider
 	 */
 	getProvider: {
@@ -649,6 +653,8 @@ export const VaultService: GenService<{
 		output: typeof GetVaultProviderResponseSchema;
 	};
 	/**
+	 * Create a vault provider. Required: name, provider_type (VAULT_PROVIDER_TYPE_*), api_url; auth_token/namespace/config_json/assignments optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.VaultService.CreateProvider
 	 */
 	createProvider: {
@@ -657,6 +663,8 @@ export const VaultService: GenService<{
 		output: typeof CreateVaultProviderResponseSchema;
 	};
 	/**
+	 * Update a vault provider by id (provider_type immutable); absent fields keep stored values, empty auth_token clears it.
+	 *
 	 * @generated from rpc openoxide.api.v1.VaultService.UpdateProvider
 	 */
 	updateProvider: {
@@ -665,6 +673,8 @@ export const VaultService: GenService<{
 		output: typeof UpdateVaultProviderResponseSchema;
 	};
 	/**
+	 * Delete a vault provider by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.VaultService.DeleteProvider
 	 */
 	deleteProvider: {
@@ -673,6 +683,8 @@ export const VaultService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Test a saved vault provider's stored credentials by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.VaultService.TestProvider
 	 */
 	testProvider: {
@@ -681,6 +693,8 @@ export const VaultService: GenService<{
 		output: typeof TestVaultProviderResponseSchema;
 	};
 	/**
+	 * Test unsaved vault credentials before creating a provider. Required: provider_type, api_url.
+	 *
 	 * @generated from rpc openoxide.api.v1.VaultService.TestConnection
 	 */
 	testConnection: {
@@ -689,6 +703,8 @@ export const VaultService: GenService<{
 		output: typeof TestVaultConnectionResponseSchema;
 	};
 	/**
+	 * List secret keys available in a vault provider. Required: provider_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.VaultService.ListSecrets
 	 */
 	listSecrets: {
@@ -697,6 +713,8 @@ export const VaultService: GenService<{
 		output: typeof ListVaultSecretsResponseSchema;
 	};
 	/**
+	 * List a vault provider's project/environment assignments. Required: provider_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.VaultService.ListAssignments
 	 */
 	listAssignments: {
@@ -705,6 +723,8 @@ export const VaultService: GenService<{
 		output: typeof ListVaultAssignmentsResponseSchema;
 	};
 	/**
+	 * Replace a vault provider's assignment list. Required: provider_id, assignments (full replacement).
+	 *
 	 * @generated from rpc openoxide.api.v1.VaultService.UpdateAssignments
 	 */
 	updateAssignments: {

@@ -5,27 +5,49 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service DeploymentService {
+  // List deployments; optional resource_type, resource_id, limit (1..=1000) and offset filters.
   rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+  // Search deployment logs by query text; optional resource_type and resource_id filters.
   rpc SearchLogs(SearchLogsRequest) returns (ListDeploymentsResponse);
+  // List all active (not-finished) deployments. No params.
   rpc ListActiveDeployments(Empty) returns (ListDeploymentsResponse);
+  // List all currently running deployments. No params.
   rpc ListRunningDeployments(Empty) returns (ListDeploymentsResponse);
+  // Get one deployment by id.
   rpc GetDeployment(GetDeploymentRequest) returns (Deployment);
+  // Stream live resource stats for an application by id.
   rpc StreamApplicationStats(StreamTargetRequest) returns (stream DeploymentEvent);
+  // Stream live resource stats for a compose project by id.
   rpc StreamComposeStats(StreamTargetRequest) returns (stream DeploymentEvent);
+  // Stream live resource stats for a database by id.
   rpc StreamDatabaseStats(StreamTargetRequest) returns (stream DeploymentEvent);
+  // Stream container logs for target (container handle); optional server_id, tail, filter, timestamps, follow.
   rpc StreamContainerLogs(LogTargetRequest) returns (stream DeploymentEvent);
+  // Export container logs for target to a file; optional server_id, tail, filter, timestamps.
   rpc ExportContainerLogs(LogTargetRequest) returns (LogExport);
+  // List all containers on the panel host. No params.
   rpc ListContainers(Empty) returns (ContainerList);
+  // Stream Swarm service logs for target; optional server_id, tail, filter, timestamps, follow.
   rpc StreamServiceLogs(LogTargetRequest) returns (stream DeploymentEvent);
+  // Export Swarm service logs for target to a file; optional server_id, tail, filter, timestamps.
   rpc ExportServiceLogs(LogTargetRequest) returns (LogExport);
+  // Stream compose logs for compose_id; optional service, server_id, tail, timestamps, follow.
   rpc StreamComposeLogs(ComposeLogsRequest) returns (stream DeploymentEvent);
+  // Export compose logs for compose_id to a file; optional service, server_id, tail, timestamps.
   rpc ExportComposeLogs(ComposeLogsRequest) returns (LogExport);
+  // Stream live build/deploy logs for a deployment by id.
   rpc StreamDeploymentLogs(GetDeploymentRequest) returns (stream DeploymentEvent);
+  // Cancel an in-progress deployment by id.
   rpc CancelDeployment(CancelDeploymentRequest) returns (Empty);
+  // Delete a single deployment record by id.
   rpc DeleteDeployment(GetDeploymentRequest) returns (Empty);
+  // Delete all deployment records for an application by id.
   rpc DeleteApplicationDeployments(ResourceTargetRequest) returns (Empty);
+  // Delete all deployment records for a compose project by id.
   rpc DeleteComposeDeployments(ResourceTargetRequest) returns (Empty);
+  // Delete all deployment records for a database by id.
   rpc DeleteDatabaseDeployments(ResourceTargetRequest) returns (Empty);
+  // Delete all deployment records across the panel. No params.
   rpc ClearDeployments(Empty) returns (Empty);
 }
 message Deployment {

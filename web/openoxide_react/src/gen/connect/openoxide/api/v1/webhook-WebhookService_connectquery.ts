@@ -5,31 +5,43 @@
 import {WebhookService} from './webhook_pb';
 
 /**
+ * List repository webhooks; optional organization_id scopes the result.
+ *
  * @generated from rpc openoxide.api.v1.WebhookService.ListWebhooks
  */
 export const listWebhooks = WebhookService.method.listWebhooks;
 
 /**
+ * Get one webhook by id; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.WebhookService.GetWebhook
  */
 export const getWebhook = WebhookService.method.getWebhook;
 
 /**
+ * Create a repository webhook. Required: provider (WEBHOOK_PROVIDER_TYPE_*), provider_id, owner, repository, callback_url.
+ *
  * @generated from rpc openoxide.api.v1.WebhookService.CreateWebhook
  */
 export const createWebhook = WebhookService.method.createWebhook;
 
 /**
+ * PATCH a webhook by id: owner/repository/callback_url optional; absent fields keep stored values.
+ *
  * @generated from rpc openoxide.api.v1.WebhookService.UpdateWebhook
  */
 export const updateWebhook = WebhookService.method.updateWebhook;
 
 /**
+ * Delete a webhook by id; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.WebhookService.DeleteWebhook
  */
 export const deleteWebhook = WebhookService.method.deleteWebhook;
 
 /**
+ * Send a test event through a webhook by id; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.WebhookService.TestWebhook
  */
 export const testWebhook = WebhookService.method.testWebhook;

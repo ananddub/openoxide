@@ -5,44 +5,60 @@
 import {CertificateService} from './certificate_pb';
 
 /**
+ * List all TLS certificates.
+ *
  * @generated from rpc openoxide.api.v1.CertificateService.ListCertificates
  */
 export const listCertificates = CertificateService.method.listCertificates;
 
 /**
+ * Get one certificate by id.
+ *
  * @generated from rpc openoxide.api.v1.CertificateService.GetCertificate
  */
 export const getCertificate = CertificateService.method.getCertificate;
 
 /**
+ * Create a certificate. Required: name, certificate_data (PEM), certificate_path; private_key/auto_renew/server_id optional.
+ *
  * @generated from rpc openoxide.api.v1.CertificateService.CreateCertificate
  */
 export const createCertificate =
 	CertificateService.method.createCertificate;
 
 /**
+ * Update a certificate by id; absent fields keep stored values, empty server_id detaches the server.
+ *
  * @generated from rpc openoxide.api.v1.CertificateService.UpdateCertificate
  */
 export const updateCertificate =
 	CertificateService.method.updateCertificate;
 
 /**
+ * Delete a certificate by id.
+ *
  * @generated from rpc openoxide.api.v1.CertificateService.DeleteCertificate
  */
 export const deleteCertificate =
 	CertificateService.method.deleteCertificate;
 
 /**
+ * List dependency counts (renewals, running renewals) for a certificate. Required: certificate_id.
+ *
  * @generated from rpc openoxide.api.v1.CertificateService.ListDependencies
  */
 export const listDependencies = CertificateService.method.listDependencies;
 
 /**
+ * Renew a certificate by id with new PEM material. Required: id, certificate_data, private_key.
+ *
  * @generated from rpc openoxide.api.v1.CertificateService.RenewCertificate
  */
 export const renewCertificate = CertificateService.method.renewCertificate;
 
 /**
+ * List renewal history for a certificate. Required: certificate_id.
+ *
  * @generated from rpc openoxide.api.v1.CertificateService.ListRenewals
  */
 export const listRenewals = CertificateService.method.listRenewals;

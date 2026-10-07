@@ -5,48 +5,66 @@
 import {ServerManagementService} from './server_management_pb';
 
 /**
+ * Get a server's management settings (maintenance, labels, cleanup policy, GPU) by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerManagementService.GetManagement
  */
 export const getManagement = ServerManagementService.method.getManagement;
 
 /**
+ * Replace a server's management settings by id (PUT): maintenance_mode, labels, cleanup_policy, gpu_enabled all required.
+ *
  * @generated from rpc openoxide.api.v1.ServerManagementService.UpdateManagement
  */
 export const updateManagement =
 	ServerManagementService.method.updateManagement;
 
 /**
+ * Re-run the server audit remediation to repair stored audit state by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerManagementService.RepairAudit
  */
 export const repairAudit = ServerManagementService.method.repairAudit;
 
 /**
+ * Configure GPU/container-toolkit support on a server by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerManagementService.ConfigureGpu
  */
 export const configureGpu = ServerManagementService.method.configureGpu;
 
 /**
+ * Run a Docker/host cleanup on a server by id per its stored cleanup policy.
+ *
  * @generated from rpc openoxide.api.v1.ServerManagementService.RunCleanup
  */
 export const runCleanup = ServerManagementService.method.runCleanup;
 
 /**
+ * List past cleanup executions for a server. Required: server_id.
+ *
  * @generated from rpc openoxide.api.v1.ServerManagementService.ListCleanupHistory
  */
 export const listCleanupHistory =
 	ServerManagementService.method.listCleanupHistory;
 
 /**
+ * Upgrade the server's host packages/dependencies by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerManagementService.Upgrade
  */
 export const upgrade = ServerManagementService.method.upgrade;
 
 /**
+ * Trigger a server-side backup and return its remote path by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerManagementService.Backup
  */
 export const backup = ServerManagementService.method.backup;
 
 /**
+ * Run host diagnostics on a server by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerManagementService.Diagnostics
  */
 export const diagnostics = ServerManagementService.method.diagnostics;

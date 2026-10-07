@@ -1351,6 +1351,8 @@ export const RemoteServerMigrationObjectKindSchema: GenEnum<RemoteServerMigratio
  */
 export const RemoteServerService: GenService<{
 	/**
+	 * List all remote servers (no params).
+	 *
 	 * @generated from rpc openoxide.api.v1.RemoteServerService.ListRemoteServers
 	 */
 	listRemoteServers: {
@@ -1359,6 +1361,8 @@ export const RemoteServerService: GenService<{
 		output: typeof RemoteServerListResponseSchema;
 	};
 	/**
+	 * Get one remote server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.RemoteServerService.GetRemoteServer
 	 */
 	getRemoteServer: {
@@ -1367,6 +1371,8 @@ export const RemoteServerService: GenService<{
 		output: typeof RemoteServerGetResponseSchema;
 	};
 	/**
+	 * Create a remote server. Required: name, ip_address, server_type (RemoteServerType DEPLOY/BUILD); port 0=22, empty username=root; optional ssh_key_id and build limits.
+	 *
 	 * @generated from rpc openoxide.api.v1.RemoteServerService.CreateRemoteServer
 	 */
 	createRemoteServer: {
@@ -1375,6 +1381,8 @@ export const RemoteServerService: GenService<{
 		output: typeof RemoteServerCreateResponseSchema;
 	};
 	/**
+	 * Update a remote server by id (PATCH: absent fields unchanged); may change name, ip, port, status, type, cleanup, cron, metrics_config.
+	 *
 	 * @generated from rpc openoxide.api.v1.RemoteServerService.UpdateRemoteServer
 	 */
 	updateRemoteServer: {
@@ -1383,6 +1391,8 @@ export const RemoteServerService: GenService<{
 		output: typeof RemoteServerUpdateResponseSchema;
 	};
 	/**
+	 * Activate (mark ACTIVE) a remote server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.RemoteServerService.Activate
 	 */
 	activate: {
@@ -1391,6 +1401,8 @@ export const RemoteServerService: GenService<{
 		output: typeof RemoteServerActivateResponseSchema;
 	};
 	/**
+	 * Deactivate (mark INACTIVE) a remote server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.RemoteServerService.Deactivate
 	 */
 	deactivate: {
@@ -1399,6 +1411,8 @@ export const RemoteServerService: GenService<{
 		output: typeof RemoteServerDeactivateResponseSchema;
 	};
 	/**
+	 * Test SSH connectivity to a remote server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.RemoteServerService.TestConnection
 	 */
 	testConnection: {
@@ -1407,6 +1421,8 @@ export const RemoteServerService: GenService<{
 		output: typeof RemoteServerTestConnectionResponseSchema;
 	};
 	/**
+	 * Delete a remote server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.RemoteServerService.DeleteRemoteServer
 	 */
 	deleteRemoteServer: {
@@ -1415,6 +1431,8 @@ export const RemoteServerService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Migrate all dependencies from source id to target_server_id; returns a dependency-migration record (UUID).
+	 *
 	 * @generated from rpc openoxide.api.v1.RemoteServerService.MigrateDependencies
 	 */
 	migrateDependencies: {
@@ -1423,6 +1441,8 @@ export const RemoteServerService: GenService<{
 		output: typeof RemoteServerMigrateDependenciesResponseSchema;
 	};
 	/**
+	 * Get a dependency-migration status by migration_id (UUID from MigrateDependencies).
+	 *
 	 * @generated from rpc openoxide.api.v1.RemoteServerService.GetMigration
 	 */
 	getMigration: {
@@ -1431,6 +1451,8 @@ export const RemoteServerService: GenService<{
 		output: typeof RemoteServerGetMigrationResponseSchema;
 	};
 	/**
+	 * Roll back a dependency migration by migration_id (UUID).
+	 *
 	 * @generated from rpc openoxide.api.v1.RemoteServerService.RollbackMigration
 	 */
 	rollbackMigration: {

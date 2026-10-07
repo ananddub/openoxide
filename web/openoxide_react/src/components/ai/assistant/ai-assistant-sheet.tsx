@@ -382,12 +382,7 @@ function FileRows({
 	);
 }
 
-/**
- * "AI Assistant": a natural-language prompt → the model returns
- * up to three deployable Compose stacks → human review/edit → one-click deploy.
- * Drives the backend AiService generation workflow (CreateGeneration →
- * ReviewGeneration → DeployGeneration); all inference runs server-side.
- */
+/** "AI Assistant": prompt → up to three deployable Compose stacks → human review/edit → one-click deploy, all inference server-side. */
 export function AiAssistantSheet({
 	open,
 	projectId,

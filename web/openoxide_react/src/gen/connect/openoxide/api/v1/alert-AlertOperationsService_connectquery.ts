@@ -5,47 +5,65 @@
 import {AlertOperationsService} from './alert_pb';
 
 /**
+ * List alert rules; optional organization_id scopes the result.
+ *
  * @generated from rpc openoxide.api.v1.AlertOperationsService.ListRules
  */
 export const listRules = AlertOperationsService.method.listRules;
 
 /**
+ * List fired alert events; optional organization_id scopes the result.
+ *
  * @generated from rpc openoxide.api.v1.AlertOperationsService.ListEvents
  */
 export const listEvents = AlertOperationsService.method.listEvents;
 
 /**
+ * Get one alert rule by id; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.AlertOperationsService.GetRule
  */
 export const getRule = AlertOperationsService.method.getRule;
 
 /**
+ * Create an alert rule. Required: name, target_kind, target_id, metric, operator, threshold, duration_seconds, organization_id.
+ *
  * @generated from rpc openoxide.api.v1.AlertOperationsService.CreateRule
  */
 export const createRule = AlertOperationsService.method.createRule;
 
 /**
+ * Fully replace an alert rule by id (organization fixed to stored row).
+ *
  * @generated from rpc openoxide.api.v1.AlertOperationsService.UpdateRule
  */
 export const updateRule = AlertOperationsService.method.updateRule;
 
 /**
+ * Delete an alert rule by id; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.AlertOperationsService.DeleteRule
  */
 export const deleteRule = AlertOperationsService.method.deleteRule;
 
 /**
+ * Fire a canned test alert through a notification channel. Required: notification_id.
+ *
  * @generated from rpc openoxide.api.v1.AlertOperationsService.TestRule
  */
 export const testRule = AlertOperationsService.method.testRule;
 
 /**
+ * Acknowledge a firing alert event by id; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.AlertOperationsService.AcknowledgeEvent
  */
 export const acknowledgeEvent =
 	AlertOperationsService.method.acknowledgeEvent;
 
 /**
+ * Silence an alert event's notifications until a time. Required: id, until (unix seconds); optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.AlertOperationsService.SilenceEvent
  */
 export const silenceEvent = AlertOperationsService.method.silenceEvent;

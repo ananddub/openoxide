@@ -8,23 +8,37 @@ import "buf/validate/validate.proto";
 service GlobalService {
   // Client-streaming upload: exactly one header chunk first, then byte chunks.
   rpc UploadFile(stream GlobalUploadFileRequest) returns (GlobalUploadFileResponse);
+  // Download a file from a container by container_id and path; optional server_id selects the engine. Returns raw bytes.
   rpc DownloadFile(GlobalDownloadFileRequest) returns (GlobalDownloadFileResponse);
   // Twin of UploadFile kept for method-name compatibility with the former GlobalOperationsService.
   rpc UploadContainerFile(stream GlobalUploadContainerFileRequest) returns (GlobalUploadContainerFileResponse);
+  // Download a file from a container (compat twin) by container_id and path; optional server_id. Returns raw bytes.
   rpc DownloadContainerFile(GlobalDownloadContainerFileRequest) returns (GlobalDownloadContainerFileResponse);
+  // List Docker containers on an engine; optional server_id (absent means local Agent).
   rpc ListContainers(GlobalListContainersRequest) returns (GlobalListContainersResponse);
+  // List Docker images on an engine; optional server_id (absent means local Agent).
   rpc ListImages(GlobalListImagesRequest) returns (GlobalListImagesResponse);
+  // List Docker networks on an engine; optional server_id (absent means local Agent).
   rpc ListNetworks(GlobalListNetworksRequest) returns (GlobalListNetworksResponse);
+  // List Docker volumes on an engine; optional server_id (absent means local Agent).
   rpc ListVolumes(GlobalListVolumesRequest) returns (GlobalListVolumesResponse);
+  // Inspect a container by container_id; optional server_id. Returns raw `docker inspect` JSON.
   rpc InspectContainer(GlobalInspectContainerRequest) returns (GlobalInspectContainerResponse);
+  // Inspect an image by image_id (id or reference); optional server_id. Returns raw `docker inspect` JSON.
   rpc InspectImage(GlobalInspectImageRequest) returns (GlobalInspectImageResponse);
+  // Inspect a network by network_id; optional server_id. Returns raw `docker inspect` JSON.
   rpc InspectNetwork(GlobalInspectNetworkRequest) returns (GlobalInspectNetworkResponse);
+  // Inspect a volume by volume_id; optional server_id. Returns raw `docker inspect` JSON.
   rpc InspectVolume(GlobalInspectVolumeRequest) returns (GlobalInspectVolumeResponse);
+  // Run a lifecycle action on a container by container_id: action (GlobalContainerAction START/STOP/RESTART/KILL/PAUSE/UNPAUSE); optional server_id.
   rpc ContainerAction(GlobalContainerActionRequest) returns (GlobalContainerActionResponse);
+  // Remove a container by container_id; optional force and volumes flags; optional server_id.
   rpc RemoveContainer(GlobalRemoveContainerRequest) returns (Empty);
   // Twin of RemoveContainer kept for method-name compatibility with the former GlobalOperationsService.
   rpc DeleteContainer(GlobalDeleteContainerRequest) returns (Empty);
+  // Get Docker disk usage (`docker system df`) on an engine; optional server_id. Returns raw JSON.
   rpc DiskUsage(GlobalDiskUsageRequest) returns (GlobalDiskUsageResponse);
+  // Prune Docker resources; booleans select which to prune: containers, images, networks, volumes; optional server_id.
   rpc Prune(GlobalPruneRequest) returns (GlobalPruneResponse);
 }
 
@@ -240,6 +254,7 @@ message GlobalInspectVolumeResponse {
 message GlobalContainerActionRequest {
   string container_id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255, pattern: "^[a-zA-Z0-9._:/@+-]+$"}];
   GlobalContainerAction action = 2 [(buf.validate.field).enum = {defined_only: true, not_in: [0]}];
+  optional int64 server_id = 3 [(buf.validate.field).int64.gt = 0];
 }
 
 message GlobalContainerActionResponse {
@@ -251,12 +266,14 @@ message GlobalRemoveContainerRequest {
   string container_id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255, pattern: "^[a-zA-Z0-9._:/@+-]+$"}];
   bool force = 2;
   bool volumes = 3;
+  optional int64 server_id = 4 [(buf.validate.field).int64.gt = 0];
 }
 
 message GlobalDeleteContainerRequest {
   string container_id = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255, pattern: "^[a-zA-Z0-9._:/@+-]+$"}];
   bool force = 2;
   bool volumes = 3;
+  optional int64 server_id = 4 [(buf.validate.field).int64.gt = 0];
 }
 
 message GlobalDiskUsageRequest {
@@ -273,6 +290,7 @@ message GlobalPruneRequest {
   bool images = 2;
   bool networks = 3;
   bool volumes = 4;
+  optional int64 server_id = 5 [(buf.validate.field).int64.gt = 0];
 }
 
 message GlobalPruneResponse {

@@ -5,34 +5,46 @@
 import {DestinationService} from './destination_pb';
 
 /**
+ * List all backup/storage destinations for the organization.
+ *
  * @generated from rpc openoxide.api.v1.DestinationService.ListDestinations
  */
 export const listDestinations = DestinationService.method.listDestinations;
 
 /**
+ * Get one destination by id (UUID).
+ *
  * @generated from rpc openoxide.api.v1.DestinationService.GetDestination
  */
 export const getDestination = DestinationService.method.getDestination;
 
 /**
+ * Create a storage destination. Required: name, provider (rclone label), bucket; access_key/secret/region/endpoint optional.
+ *
  * @generated from rpc openoxide.api.v1.DestinationService.CreateDestination
  */
 export const createDestination =
 	DestinationService.method.createDestination;
 
 /**
+ * Update a destination by id (UUID); name/provider/bucket/credentials/region/endpoint optional.
+ *
  * @generated from rpc openoxide.api.v1.DestinationService.UpdateDestination
  */
 export const updateDestination =
 	DestinationService.method.updateDestination;
 
 /**
+ * Delete a destination by id (UUID).
+ *
  * @generated from rpc openoxide.api.v1.DestinationService.DeleteDestination
  */
 export const deleteDestination =
 	DestinationService.method.deleteDestination;
 
 /**
+ * Test raw storage credentials before saving. Required: provider, bucket; access_key/secret/region/endpoint as needed.
+ *
  * @generated from rpc openoxide.api.v1.DestinationService.TestDestination
  */
 export const testDestination = DestinationService.method.testDestination;

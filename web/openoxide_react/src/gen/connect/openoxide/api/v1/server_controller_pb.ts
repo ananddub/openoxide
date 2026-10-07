@@ -642,6 +642,8 @@ export const ServerSetupStepSchema: GenEnum<ServerSetupStep> /*@__PURE__*/ =
  */
 export const ServerControllerService: GenService<{
 	/**
+	 * Probe an unsaved SSH endpoint before a server row exists. Required: ip_address, username, ssh_key_id; port optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerControllerService.TestDirectConnection
 	 */
 	testDirectConnection: {
@@ -650,6 +652,8 @@ export const ServerControllerService: GenService<{
 		output: typeof ServerControllerTestDirectConnectionResponseSchema;
 	};
 	/**
+	 * Test SSH connectivity to a saved server by id; optional host_key_fingerprint, sudo_password, pool_size.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerControllerService.TestConnection
 	 */
 	testConnection: {
@@ -658,6 +662,8 @@ export const ServerControllerService: GenService<{
 		output: typeof ServerControllerTestConnectionResponseSchema;
 	};
 	/**
+	 * Audit a server's installed tools, Docker/Swarm, network and ports by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerControllerService.Audit
 	 */
 	audit: {
@@ -666,6 +672,8 @@ export const ServerControllerService: GenService<{
 		output: typeof ServerControllerAuditResponseSchema;
 	};
 	/**
+	 * Run full server setup by id (deps, build tools, dirs, swarm, network, Traefik, agent).
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerControllerService.Setup
 	 */
 	setup: {
@@ -674,6 +682,8 @@ export const ServerControllerService: GenService<{
 		output: typeof ServerControllerSetupResponseSchema;
 	};
 	/**
+	 * Run server setup by id while streaming live log lines, ending with a final outcome event.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerControllerService.StreamSetupLogs
 	 */
 	streamSetupLogs: {
@@ -682,6 +692,8 @@ export const ServerControllerService: GenService<{
 		output: typeof ServerControllerStreamSetupLogsResponseSchema;
 	};
 	/**
+	 * List active SSH connection/pool sessions.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerControllerService.ListSessions
 	 */
 	listSessions: {
@@ -690,6 +702,8 @@ export const ServerControllerService: GenService<{
 		output: typeof ServerControllerListSessionsResponseSchema;
 	};
 	/**
+	 * Close/delete a server's SSH session pool by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerControllerService.DeleteSession
 	 */
 	deleteSession: {

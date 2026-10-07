@@ -5,33 +5,45 @@
 import {ServerControllerService} from './server_controller_pb';
 
 /**
+ * Probe an unsaved SSH endpoint before a server row exists. Required: ip_address, username, ssh_key_id; port optional.
+ *
  * @generated from rpc openoxide.api.v1.ServerControllerService.TestDirectConnection
  */
 export const testDirectConnection =
 	ServerControllerService.method.testDirectConnection;
 
 /**
+ * Test SSH connectivity to a saved server by id; optional host_key_fingerprint, sudo_password, pool_size.
+ *
  * @generated from rpc openoxide.api.v1.ServerControllerService.TestConnection
  */
 export const testConnection =
 	ServerControllerService.method.testConnection;
 
 /**
+ * Audit a server's installed tools, Docker/Swarm, network and ports by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerControllerService.Audit
  */
 export const audit = ServerControllerService.method.audit;
 
 /**
+ * Run full server setup by id (deps, build tools, dirs, swarm, network, Traefik, agent).
+ *
  * @generated from rpc openoxide.api.v1.ServerControllerService.Setup
  */
 export const setup = ServerControllerService.method.setup;
 
 /**
+ * List active SSH connection/pool sessions.
+ *
  * @generated from rpc openoxide.api.v1.ServerControllerService.ListSessions
  */
 export const listSessions = ServerControllerService.method.listSessions;
 
 /**
+ * Close/delete a server's SSH session pool by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerControllerService.DeleteSession
  */
 export const deleteSession = ServerControllerService.method.deleteSession;

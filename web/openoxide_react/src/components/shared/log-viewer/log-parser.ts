@@ -50,7 +50,7 @@ export function cleanLogLine(line: string): string {
 	}
 
 	const tracingMatch = cleaned.match(
-		/.*(?:INFO|ERROR|WARN|DEBUG|TRACE)\s+openoxide::[^\:]+:\s*command\s+output[^\n]*?line=(.*)/i,
+		/.*(?:INFO|ERROR|WARN|DEBUG|TRACE)\s+openoxide::[^:]+:\s*command\s+output[^\n]*?line=(.*)/i,
 	);
 	if (tracingMatch && tracingMatch[1] !== undefined) {
 		cleaned = tracingMatch[1].trim();
@@ -166,7 +166,7 @@ export function parseLogEntry(
 		// Extract container/service name tag e.g. [container:web] or [service:db] or container=app-1
 		const containerMatch =
 			clean.match(/^\[(?:container|service|app):\s*([^\]]+)\]\s*(.*)/i) ||
-			clean.match(/^(?:container|service)=([a-zA-Z0-9_\-]+)\s*(.*)/i);
+			clean.match(/^(?:container|service)=([a-zA-Z0-9_-]+)\s*(.*)/i);
 		if (containerMatch) {
 			containerName = containerMatch[1];
 			clean = containerMatch[2];

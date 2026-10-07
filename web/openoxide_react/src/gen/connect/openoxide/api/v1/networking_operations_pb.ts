@@ -399,6 +399,8 @@ export const NetworkingCdnProviderSchema: GenEnum<NetworkingCdnProvider> /*@__PU
  */
 export const NetworkingOperationsService: GenService<{
 	/**
+	 * Purge CDN cache. Required: provider (NETWORKING_CDN_PROVIDER_*), api_token; zone_id/service_id/pull_zone_id + purge_all/urls per provider.
+	 *
 	 * @generated from rpc openoxide.api.v1.NetworkingOperationsService.PurgeCdn
 	 */
 	purgeCdn: {
@@ -407,6 +409,8 @@ export const NetworkingOperationsService: GenService<{
 		output: typeof NetworkingPurgeCdnResponseSchema;
 	};
 	/**
+	 * Diagnose a domain's DNS/TCP/HTTP reachability. Required: host; port/https/path optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseDomains
 	 */
 	diagnoseDomains: {
@@ -415,6 +419,8 @@ export const NetworkingOperationsService: GenService<{
 		output: typeof NetworkingDiagnoseDomainsResponseSchema;
 	};
 	/**
+	 * Diagnose the root overlay network's existence/health; optional server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseRootNetwork
 	 */
 	diagnoseRootNetwork: {
@@ -423,6 +429,8 @@ export const NetworkingOperationsService: GenService<{
 		output: typeof NetworkingDiagnoseRootNetworkResponseSchema;
 	};
 	/**
+	 * Repair the root overlay network (recreate if missing/unhealthy); optional server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.NetworkingOperationsService.RepairRootNetwork
 	 */
 	repairRootNetwork: {

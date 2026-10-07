@@ -249,6 +249,8 @@ export const DeleteEnvironmentRequestSchema: GenMessage<DeleteEnvironmentRequest
  */
 export const EnvironmentService: GenService<{
 	/**
+	 * Get one environment by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.EnvironmentService.GetEnvironment
 	 */
 	getEnvironment: {
@@ -257,6 +259,8 @@ export const EnvironmentService: GenService<{
 		output: typeof EnvironmentSchema;
 	};
 	/**
+	 * List environments in a project. Required: project_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.EnvironmentService.ListEnvironments
 	 */
 	listEnvironments: {
@@ -265,6 +269,8 @@ export const EnvironmentService: GenService<{
 		output: typeof ListEnvironmentsResponseSchema;
 	};
 	/**
+	 * Create an environment. Required: name, environment_variables, project_id; is_default/description optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.EnvironmentService.CreateEnvironment
 	 */
 	createEnvironment: {
@@ -273,6 +279,8 @@ export const EnvironmentService: GenService<{
 		output: typeof EnvironmentSchema;
 	};
 	/**
+	 * Update an environment by id; name/description/environment_variables/is_default optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.EnvironmentService.UpdateEnvironment
 	 */
 	updateEnvironment: {
@@ -281,6 +289,8 @@ export const EnvironmentService: GenService<{
 		output: typeof EnvironmentSchema;
 	};
 	/**
+	 * Mark an environment as the project's default by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.EnvironmentService.SetDefaultEnvironment
 	 */
 	setDefaultEnvironment: {
@@ -289,6 +299,8 @@ export const EnvironmentService: GenService<{
 		output: typeof EnvironmentSchema;
 	};
 	/**
+	 * Delete an environment by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.EnvironmentService.DeleteEnvironment
 	 */
 	deleteEnvironment: {

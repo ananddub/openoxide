@@ -1070,6 +1070,8 @@ export const PermissionPolicyEffectSchema: GenEnum<PermissionPolicyEffect> /*@__
  */
 export const PermissionService: GenService<{
 	/**
+	 * List all permission groups (roles) in the active organization. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.ListPermissions
 	 */
 	listPermissions: {
@@ -1078,6 +1080,8 @@ export const PermissionService: GenService<{
 		output: typeof ListPermissionsResponseSchema;
 	};
 	/**
+	 * Get one permission group by id. Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.GetPermission
 	 */
 	getPermission: {
@@ -1086,6 +1090,8 @@ export const PermissionService: GenService<{
 		output: typeof GetPermissionResponseSchema;
 	};
 	/**
+	 * Create a permission group. Required: name; actions optional (list of "RESOURCE:action" strings).
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.CreatePermission
 	 */
 	createPermission: {
@@ -1094,6 +1100,8 @@ export const PermissionService: GenService<{
 		output: typeof CreatePermissionResponseSchema;
 	};
 	/**
+	 * Update a permission group by id. Required: id, name; actions fully replaces the stored action list.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.UpdatePermission
 	 */
 	updatePermission: {
@@ -1102,6 +1110,8 @@ export const PermissionService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Delete a permission group by id. Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.DeletePermission
 	 */
 	deletePermission: {
@@ -1110,6 +1120,8 @@ export const PermissionService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List all permission groups (roles) in the active organization. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.ListGroups
 	 */
 	listGroups: {
@@ -1118,6 +1130,8 @@ export const PermissionService: GenService<{
 		output: typeof PermissionListGroupsResponseSchema;
 	};
 	/**
+	 * Get one permission group by id. Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.GetGroup
 	 */
 	getGroup: {
@@ -1126,6 +1140,8 @@ export const PermissionService: GenService<{
 		output: typeof PermissionGetGroupResponseSchema;
 	};
 	/**
+	 * Create a permission group. Required: name; actions optional (list of "RESOURCE:action" strings).
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.CreateGroup
 	 */
 	createGroup: {
@@ -1134,6 +1150,8 @@ export const PermissionService: GenService<{
 		output: typeof PermissionCreateGroupResponseSchema;
 	};
 	/**
+	 * Update a permission group by id. Required: id, name; actions fully replaces the stored action list.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.UpdateGroup
 	 */
 	updateGroup: {
@@ -1142,6 +1160,8 @@ export const PermissionService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Delete a permission group by id. Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.DeleteGroup
 	 */
 	deleteGroup: {
@@ -1150,6 +1170,8 @@ export const PermissionService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List the catalog of addressable policy actions. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.ListPolicies
 	 */
 	listPolicies: {
@@ -1168,6 +1190,8 @@ export const PermissionService: GenService<{
 		output: typeof GetMyPermissionsResponseSchema;
 	};
 	/**
+	 * Assign a permission group to a member. Required: id (member user id); group_id (0 detaches, role-only access).
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.AssignMemberGroup
 	 */
 	assignMemberGroup: {
@@ -1176,6 +1200,8 @@ export const PermissionService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Enable or disable a permission group. Required: id (group id), is_active.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.SetGroupActive
 	 */
 	setGroupActive: {
@@ -1184,6 +1210,8 @@ export const PermissionService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List per-user policy overrides for a member. Required: id (user id).
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.ListUserPolicies
 	 */
 	listUserPolicies: {
@@ -1192,6 +1220,8 @@ export const PermissionService: GenService<{
 		output: typeof PermissionListUserPoliciesResponseSchema;
 	};
 	/**
+	 * List members of the active organization. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.ListMembers
 	 */
 	listMembers: {
@@ -1200,6 +1230,8 @@ export const PermissionService: GenService<{
 		output: typeof PermissionListMembersResponseSchema;
 	};
 	/**
+	 * Add a member to the organization. Required: email, role (ADMIN or MEMBER); password/group_id optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.AddMember
 	 */
 	addMember: {
@@ -1208,6 +1240,8 @@ export const PermissionService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Change a member's role. Required: id (user id), role (ADMIN or MEMBER).
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.UpdateMemberRole
 	 */
 	updateMemberRole: {
@@ -1216,6 +1250,8 @@ export const PermissionService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Remove a member from the organization. Required: id (user id).
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.RemoveMember
 	 */
 	removeMember: {
@@ -1224,6 +1260,8 @@ export const PermissionService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List pending organization invitations. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.ListInvites
 	 */
 	listInvites: {
@@ -1232,6 +1270,8 @@ export const PermissionService: GenService<{
 		output: typeof PermissionListInvitesResponseSchema;
 	};
 	/**
+	 * Create an organization invite, returning a token. Required: email, role (ADMIN or MEMBER); group_id (0 = role-only).
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.CreateInvite
 	 */
 	createInvite: {
@@ -1240,6 +1280,8 @@ export const PermissionService: GenService<{
 		output: typeof PermissionCreateInviteResponseSchema;
 	};
 	/**
+	 * Accept an organization invite. Required: token (opaque invitation token).
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.AcceptInvite
 	 */
 	acceptInvite: {
@@ -1248,6 +1290,8 @@ export const PermissionService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Cancel a pending invite by id. Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.CancelInvite
 	 */
 	cancelInvite: {
@@ -1256,6 +1300,8 @@ export const PermissionService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Replace a user's full policy override list. Required: id (user id), policies (policy_id + effect GRANT/DENY entries).
+	 *
 	 * @generated from rpc openoxide.api.v1.PermissionService.ReplaceUserPolicies
 	 */
 	replaceUserPolicies: {

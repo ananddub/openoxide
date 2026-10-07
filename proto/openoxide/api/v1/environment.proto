@@ -6,11 +6,17 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service EnvironmentService {
+  // Get one environment by id.
   rpc GetEnvironment(GetEnvironmentRequest) returns (Environment);
+  // List environments in a project. Required: project_id.
   rpc ListEnvironments(ListEnvironmentsRequest) returns (ListEnvironmentsResponse);
+  // Create an environment. Required: name, environment_variables, project_id; is_default/description optional.
   rpc CreateEnvironment(CreateEnvironmentRequest) returns (Environment);
+  // Update an environment by id; name/description/environment_variables/is_default optional.
   rpc UpdateEnvironment(UpdateEnvironmentRequest) returns (Environment);
+  // Mark an environment as the project's default by id.
   rpc SetDefaultEnvironment(SetDefaultEnvironmentRequest) returns (Environment);
+  // Delete an environment by id.
   rpc DeleteEnvironment(DeleteEnvironmentRequest) returns (Empty);
 }
 

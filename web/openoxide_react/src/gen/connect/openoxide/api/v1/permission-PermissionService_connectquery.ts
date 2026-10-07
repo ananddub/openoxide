@@ -5,56 +5,78 @@
 import {PermissionService} from './permission_pb';
 
 /**
+ * List all permission groups (roles) in the active organization. No params.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.ListPermissions
  */
 export const listPermissions = PermissionService.method.listPermissions;
 
 /**
+ * Get one permission group by id. Required: id.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.GetPermission
  */
 export const getPermission = PermissionService.method.getPermission;
 
 /**
+ * Create a permission group. Required: name; actions optional (list of "RESOURCE:action" strings).
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.CreatePermission
  */
 export const createPermission = PermissionService.method.createPermission;
 
 /**
+ * Update a permission group by id. Required: id, name; actions fully replaces the stored action list.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.UpdatePermission
  */
 export const updatePermission = PermissionService.method.updatePermission;
 
 /**
+ * Delete a permission group by id. Required: id.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.DeletePermission
  */
 export const deletePermission = PermissionService.method.deletePermission;
 
 /**
+ * List all permission groups (roles) in the active organization. No params.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.ListGroups
  */
 export const listGroups = PermissionService.method.listGroups;
 
 /**
+ * Get one permission group by id. Required: id.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.GetGroup
  */
 export const getGroup = PermissionService.method.getGroup;
 
 /**
+ * Create a permission group. Required: name; actions optional (list of "RESOURCE:action" strings).
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.CreateGroup
  */
 export const createGroup = PermissionService.method.createGroup;
 
 /**
+ * Update a permission group by id. Required: id, name; actions fully replaces the stored action list.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.UpdateGroup
  */
 export const updateGroup = PermissionService.method.updateGroup;
 
 /**
+ * Delete a permission group by id. Required: id.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.DeleteGroup
  */
 export const deleteGroup = PermissionService.method.deleteGroup;
 
 /**
+ * List the catalog of addressable policy actions. No params.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.ListPolicies
  */
 export const listPolicies = PermissionService.method.listPolicies;
@@ -67,62 +89,86 @@ export const listPolicies = PermissionService.method.listPolicies;
 export const getMyPermissions = PermissionService.method.getMyPermissions;
 
 /**
+ * Assign a permission group to a member. Required: id (member user id); group_id (0 detaches, role-only access).
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.AssignMemberGroup
  */
 export const assignMemberGroup =
 	PermissionService.method.assignMemberGroup;
 
 /**
+ * Enable or disable a permission group. Required: id (group id), is_active.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.SetGroupActive
  */
 export const setGroupActive = PermissionService.method.setGroupActive;
 
 /**
+ * List per-user policy overrides for a member. Required: id (user id).
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.ListUserPolicies
  */
 export const listUserPolicies = PermissionService.method.listUserPolicies;
 
 /**
+ * List members of the active organization. No params.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.ListMembers
  */
 export const listMembers = PermissionService.method.listMembers;
 
 /**
+ * Add a member to the organization. Required: email, role (ADMIN or MEMBER); password/group_id optional.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.AddMember
  */
 export const addMember = PermissionService.method.addMember;
 
 /**
+ * Change a member's role. Required: id (user id), role (ADMIN or MEMBER).
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.UpdateMemberRole
  */
 export const updateMemberRole = PermissionService.method.updateMemberRole;
 
 /**
+ * Remove a member from the organization. Required: id (user id).
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.RemoveMember
  */
 export const removeMember = PermissionService.method.removeMember;
 
 /**
+ * List pending organization invitations. No params.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.ListInvites
  */
 export const listInvites = PermissionService.method.listInvites;
 
 /**
+ * Create an organization invite, returning a token. Required: email, role (ADMIN or MEMBER); group_id (0 = role-only).
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.CreateInvite
  */
 export const createInvite = PermissionService.method.createInvite;
 
 /**
+ * Accept an organization invite. Required: token (opaque invitation token).
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.AcceptInvite
  */
 export const acceptInvite = PermissionService.method.acceptInvite;
 
 /**
+ * Cancel a pending invite by id. Required: id.
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.CancelInvite
  */
 export const cancelInvite = PermissionService.method.cancelInvite;
 
 /**
+ * Replace a user's full policy override list. Required: id (user id), policies (policy_id + effect GRANT/DENY entries).
+ *
  * @generated from rpc openoxide.api.v1.PermissionService.ReplaceUserPolicies
  */
 export const replaceUserPolicies =

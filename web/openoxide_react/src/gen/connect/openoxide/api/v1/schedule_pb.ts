@@ -1476,6 +1476,8 @@ export const ScheduleConcurrencyPolicySchema: GenEnum<ScheduleConcurrencyPolicy>
  */
 export const ScheduleService: GenService<{
 	/**
+	 * List all schedules in the active organization. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.ListSchedules
 	 */
 	listSchedules: {
@@ -1484,6 +1486,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleListSchedulesResponseSchema;
 	};
 	/**
+	 * Get one schedule by id. Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.GetSchedule
 	 */
 	getSchedule: {
@@ -1492,6 +1496,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleGetScheduleResponseSchema;
 	};
 	/**
+	 * Create a schedule. Required: name, cron_expression, command; shell_type/schedule_type (ScheduleType)/schedule_action (ScheduleAction)/target ids optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.CreateSchedule
 	 */
 	createSchedule: {
@@ -1500,6 +1506,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleCreateScheduleResponseSchema;
 	};
 	/**
+	 * Update a schedule by id. Required: id; all other fields optional patches (absent keeps stored value).
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.UpdateSchedule
 	 */
 	updateSchedule: {
@@ -1508,6 +1516,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleUpdateScheduleResponseSchema;
 	};
 	/**
+	 * Delete a schedule by id. Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.DeleteSchedule
 	 */
 	deleteSchedule: {
@@ -1516,6 +1526,8 @@ export const ScheduleService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Run a schedule immediately by id. Required: id. Returns run result with stdout/stderr.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.RunSchedule
 	 */
 	runSchedule: {
@@ -1524,6 +1536,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleRunScheduleResponseSchema;
 	};
 	/**
+	 * Pause (disable) a schedule by id. Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.PauseSchedule
 	 */
 	pauseSchedule: {
@@ -1532,6 +1546,8 @@ export const ScheduleService: GenService<{
 		output: typeof SchedulePauseScheduleResponseSchema;
 	};
 	/**
+	 * Resume (enable) a schedule by id. Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.ResumeSchedule
 	 */
 	resumeSchedule: {
@@ -1540,6 +1556,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleResumeScheduleResponseSchema;
 	};
 	/**
+	 * List schedules bound to an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.ListApplicationSchedules
 	 */
 	listApplicationSchedules: {
@@ -1548,6 +1566,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleListApplicationSchedulesResponseSchema;
 	};
 	/**
+	 * List schedules bound to a compose project. Required: compose_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.ListComposeSchedules
 	 */
 	listComposeSchedules: {
@@ -1556,6 +1576,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleListComposeSchedulesResponseSchema;
 	};
 	/**
+	 * List schedules bound to a database. Required: database_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.ListDatabaseSchedules
 	 */
 	listDatabaseSchedules: {
@@ -1564,6 +1586,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleListDatabaseSchedulesResponseSchema;
 	};
 	/**
+	 * List schedules bound to a server. Required: server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.ListServerSchedules
 	 */
 	listServerSchedules: {
@@ -1572,6 +1596,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleListServerSchedulesResponseSchema;
 	};
 	/**
+	 * List schedules bound to an organization. Required: organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.ListOrganizationSchedules
 	 */
 	listOrganizationSchedules: {
@@ -1580,6 +1606,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleListOrganizationSchedulesResponseSchema;
 	};
 	/**
+	 * Manually trigger a schedule run by id. Required: id. Returns run result.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.TriggerSchedule
 	 */
 	triggerSchedule: {
@@ -1588,6 +1616,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleTriggerScheduleResponseSchema;
 	};
 	/**
+	 * Get a schedule's runtime policy (retries, missed-run, concurrency, lease). Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.GetRuntimePolicy
 	 */
 	getRuntimePolicy: {
@@ -1596,6 +1626,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleGetRuntimePolicyResponseSchema;
 	};
 	/**
+	 * Update a schedule's runtime policy. Required: id, retry_count, retry_delay_seconds, missed_run_policy, concurrency_policy, lease_seconds, notify flags.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.UpdateRuntimePolicy
 	 */
 	updateRuntimePolicy: {
@@ -1604,6 +1636,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleUpdateRuntimePolicyResponseSchema;
 	};
 	/**
+	 * List recorded executions for a schedule. Required: schedule_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.ListExecutions
 	 */
 	listExecutions: {
@@ -1612,6 +1646,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleListExecutionsResponseSchema;
 	};
 	/**
+	 * Get a schedule's aggregate log file contents by id. Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.GetLogs
 	 */
 	getLogs: {
@@ -1620,6 +1656,8 @@ export const ScheduleService: GenService<{
 		output: typeof ScheduleGetLogsResponseSchema;
 	};
 	/**
+	 * Get the log file for one execution. Required: schedule_id, execution_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ScheduleService.GetExecutionLogs
 	 */
 	getExecutionLogs: {

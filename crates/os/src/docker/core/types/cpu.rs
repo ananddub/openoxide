@@ -3,8 +3,10 @@ use std::fmt;
 /// Strongly-typed CPU fractional core count.
 ///
 /// ```
-/// Cpu::cores(0.5)       // "0.50"
-/// Cpu::milliscores(500) // "0.50"
+/// use oxos::docker::core::Cpu;
+///
+/// assert_eq!(Cpu::cores(0.5).to_string(), "0.50");
+/// assert_eq!(Cpu::milliscores(500).to_string(), "0.50");
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Cpu(f64);

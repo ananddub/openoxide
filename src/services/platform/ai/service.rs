@@ -419,6 +419,130 @@ impl AiService {
         })
     }
 
+    /// Runs the agentic assistant for the org's enabled provider, dispatching catalog actions through the in-process Connect router under the caller's token.
+    pub async fn assistant(
+        &self,
+        organization_id: i64,
+        user_id: i64,
+        token: String,
+        ai_setting_id: Option<i64>,
+        history: Vec<(String, String)>,
+        pending_actions: String,
+        prompt: String,
+    ) -> Result<super::agent::AgentReply, String> {
+        if prompt.trim().is_empty() || prompt.len() > 8_000 {
+            return Err("assistant prompt must contain 1 to 8000 characters".into());
+        }
+        let setting = match ai_setting_id {
+            Some(id) => self.enabled_setting(id, organization_id).await?,
+            None => self.first_enabled_setting(organization_id).await?,
+        };
+        let config = provider_config(&setting);
+        let ctx = super::agent::UserContext {
+            token,
+            organization_id,
+            user_id,
+        };
+        tracing::info!(
+            organization_id,
+            user_id,
+            prompt_len = prompt.len(),
+            history_turns = history.len(),
+            "ai assistant invoked"
+        );
+        super::agent::run_assistant(&config, &ctx, &history, &pending_actions, &prompt, None).await
+    }
+
+    /// Streaming assistant: resolves provider + session, spawns the agent
+    /// runner in a task, and returns a receiver of live events. The caller
+    /// (controller) forwards each event to the Connect server-stream.
+    pub async fn assistant_stream(
+        &self,
+        organization_id: i64,
+        user_id: i64,
+        token: String,
+        ai_setting_id: Option<i64>,
+        session_id: Option<String>,
+        pending_actions: String,
+        prompt: String,
+    ) -> Result<
+        (
+            String,
+            tokio::sync::mpsc::Receiver<super::agent::AgentEvent>,
+        ),
+        String,
+    > {
+        use super::agent::{session, AgentEvent};
+
+        if prompt.trim().is_empty() || prompt.len() > 8_000 {
+            return Err("assistant prompt must contain 1 to 8000 characters".into());
+        }
+        let setting = match ai_setting_id {
+            Some(id) => self.enabled_setting(id, organization_id).await?,
+            None => self.first_enabled_setting(organization_id).await?,
+        };
+        let config = provider_config(&setting);
+        let ctx = super::agent::UserContext {
+            token,
+            organization_id,
+            user_id,
+        };
+        let sid = session_id
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(session::create_session_id);
+        // Read prior turns from the session file (sliding window).
+        let all_turns = session::read_turns(&sid).await;
+        let history = session::windowed_turns(&all_turns);
+        // Append the user's new message (fire-and-forget).
+        let sid2 = sid.clone();
+        let prompt2 = prompt.clone();
+        tokio::spawn(async move {
+            let _ = session::append_turn(&sid2, "user", &prompt2).await;
+        });
+
+        let (tx, rx) = tokio::sync::mpsc::channel::<AgentEvent>(64);
+
+        let sid_for_task = sid.clone();
+        tokio::spawn(async move {
+            let result = super::agent::run_assistant(
+                &config,
+                &ctx,
+                &history
+                    .iter()
+                    .map(|(r, c)| (r.clone(), c.clone()))
+                    .collect::<Vec<_>>(),
+                &pending_actions,
+                &prompt,
+                Some(tx.clone()),
+            )
+            .await;
+            // Append assistant reply to the session file (fire-and-forget).
+            match &result {
+                Ok(reply) => {
+                    let _ = session::append_turn(&sid_for_task, "assistant", &reply.text).await;
+                }
+                Err(e) => {
+                    let _ = tx.send(AgentEvent::Reply(format!("Error: {e}"))).await;
+                }
+            }
+            let _ = tx.send(AgentEvent::Done).await;
+        });
+
+        Ok((sid, rx))
+    }
+
+    async fn first_enabled_setting(&self, organization_id: i64) -> Result<AiSettings, String> {
+        let items = self
+            .queries
+            .ai_settings_list_by_organization(organization_id)
+            .await
+            .map_err(db_error)?;
+        items
+            .into_iter()
+            .find(|s| s.is_enabled != 0)
+            .ok_or_else(|| "no enabled AI provider is configured".to_string())
+    }
+
     pub async fn analyze_logs(
         &self,
         ai_setting_id: i64,

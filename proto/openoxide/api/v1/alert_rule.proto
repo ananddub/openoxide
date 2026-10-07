@@ -6,11 +6,17 @@ import "buf/validate/validate.proto";
 
 // Rule CRUD surface; the same typed messages are reused by AlertOperationsService (alert.proto), which owns events on top of rules.
 service AlertRuleService {
+  // List alert rules; optional organization_id scopes the result.
   rpc ListRules(ListAlertRulesRequest) returns (ListAlertRulesResponse);
+  // Get one alert rule by id; optional organization_id.
   rpc GetRule(GetAlertRuleRequest) returns (GetAlertRuleResponse);
+  // Create an alert rule. Required: name, target_kind (ALERT_TARGET_KIND_*), target_id, metric, operator, threshold, duration_seconds, organization_id.
   rpc CreateRule(CreateAlertRuleRequest) returns (CreateAlertRuleResponse);
+  // Fully replace an alert rule by id (organization fixed to stored row).
   rpc UpdateRule(UpdateAlertRuleRequest) returns (UpdateAlertRuleResponse);
+  // Delete an alert rule by id; optional organization_id.
   rpc DeleteRule(DeleteAlertRuleRequest) returns (Empty);
+  // Fire a canned test alert through a notification channel. Required: notification_id.
   rpc TestRule(TestAlertRuleRequest) returns (TestAlertRuleResponse);
 }
 

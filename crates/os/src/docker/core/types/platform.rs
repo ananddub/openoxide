@@ -3,9 +3,11 @@ use std::fmt;
 /// Docker target platform for multi-arch images.
 ///
 /// ```
-/// Platform::LinuxAmd64   // "linux/amd64"
-/// Platform::LinuxArm64   // "linux/arm64"
-/// Platform::custom("windows/amd64")
+/// use oxos::docker::core::Platform;
+///
+/// assert_eq!(Platform::LinuxAmd64.to_string(), "linux/amd64");
+/// assert_eq!(Platform::LinuxArm64.to_string(), "linux/arm64");
+/// assert_eq!(Platform::custom("windows/amd64").to_string(), "windows/amd64");
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Platform {

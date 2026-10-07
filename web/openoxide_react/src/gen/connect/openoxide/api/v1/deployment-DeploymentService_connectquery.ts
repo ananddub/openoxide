@@ -5,84 +5,114 @@
 import {DeploymentService} from './deployment_pb';
 
 /**
+ * List deployments; optional resource_type, resource_id, limit (1..=1000) and offset filters.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.ListDeployments
  */
 export const listDeployments = DeploymentService.method.listDeployments;
 
 /**
+ * Search deployment logs by query text; optional resource_type and resource_id filters.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.SearchLogs
  */
 export const searchLogs = DeploymentService.method.searchLogs;
 
 /**
+ * List all active (not-finished) deployments. No params.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.ListActiveDeployments
  */
 export const listActiveDeployments =
 	DeploymentService.method.listActiveDeployments;
 
 /**
+ * List all currently running deployments. No params.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.ListRunningDeployments
  */
 export const listRunningDeployments =
 	DeploymentService.method.listRunningDeployments;
 
 /**
+ * Get one deployment by id.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.GetDeployment
  */
 export const getDeployment = DeploymentService.method.getDeployment;
 
 /**
+ * Export container logs for target to a file; optional server_id, tail, filter, timestamps.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.ExportContainerLogs
  */
 export const exportContainerLogs =
 	DeploymentService.method.exportContainerLogs;
 
 /**
+ * List all containers on the panel host. No params.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.ListContainers
  */
 export const listContainers = DeploymentService.method.listContainers;
 
 /**
+ * Export Swarm service logs for target to a file; optional server_id, tail, filter, timestamps.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.ExportServiceLogs
  */
 export const exportServiceLogs =
 	DeploymentService.method.exportServiceLogs;
 
 /**
+ * Export compose logs for compose_id to a file; optional service, server_id, tail, timestamps.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.ExportComposeLogs
  */
 export const exportComposeLogs =
 	DeploymentService.method.exportComposeLogs;
 
 /**
+ * Cancel an in-progress deployment by id.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.CancelDeployment
  */
 export const cancelDeployment = DeploymentService.method.cancelDeployment;
 
 /**
+ * Delete a single deployment record by id.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.DeleteDeployment
  */
 export const deleteDeployment = DeploymentService.method.deleteDeployment;
 
 /**
+ * Delete all deployment records for an application by id.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.DeleteApplicationDeployments
  */
 export const deleteApplicationDeployments =
 	DeploymentService.method.deleteApplicationDeployments;
 
 /**
+ * Delete all deployment records for a compose project by id.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.DeleteComposeDeployments
  */
 export const deleteComposeDeployments =
 	DeploymentService.method.deleteComposeDeployments;
 
 /**
+ * Delete all deployment records for a database by id.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.DeleteDatabaseDeployments
  */
 export const deleteDatabaseDeployments =
 	DeploymentService.method.deleteDatabaseDeployments;
 
 /**
+ * Delete all deployment records across the panel. No params.
+ *
  * @generated from rpc openoxide.api.v1.DeploymentService.ClearDeployments
  */
 export const clearDeployments = DeploymentService.method.clearDeployments;

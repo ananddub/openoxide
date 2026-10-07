@@ -613,16 +613,22 @@ impl DockerCli {
     ///
     /// # Example
     /// ```rust,no_run
-    /// use crate::docker::query::filter::{ContainerFilter, ContainerStatus};
+    /// use oxos::docker::DockerCli;
+    /// use oxos::docker::query::filter::{ContainerFilter, ContainerStatus};
     ///
-    /// let containers = docker.query()
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let docker = DockerCli::new_local();
+    /// let containers = docker
+    ///     .query()
     ///     .containers()
     ///     .all()
     ///     .filter(ContainerFilter::Status(ContainerStatus::Running))
     ///     .list()
     ///     .await?;
+    /// # let _ = containers;
     ///
-    /// let id = docker.query()
+    /// let id = docker
+    ///     .query()
     ///     .create_container("nginx:latest")
     ///     .name("web")
     ///     .network("bridge")
@@ -630,6 +636,9 @@ impl DockerCli {
     ///     .tty(std::io::IsTerminal::is_terminal(&std::io::stdin()))
     ///     .create()
     ///     .await?;
+    /// # let _ = id;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn query(&self) -> DockerQuery<'_> {
         DockerQuery::new(self)

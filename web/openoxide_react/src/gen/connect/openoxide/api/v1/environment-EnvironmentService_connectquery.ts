@@ -5,34 +5,46 @@
 import {EnvironmentService} from './environment_pb';
 
 /**
+ * Get one environment by id.
+ *
  * @generated from rpc openoxide.api.v1.EnvironmentService.GetEnvironment
  */
 export const getEnvironment = EnvironmentService.method.getEnvironment;
 
 /**
+ * List environments in a project. Required: project_id.
+ *
  * @generated from rpc openoxide.api.v1.EnvironmentService.ListEnvironments
  */
 export const listEnvironments = EnvironmentService.method.listEnvironments;
 
 /**
+ * Create an environment. Required: name, environment_variables, project_id; is_default/description optional.
+ *
  * @generated from rpc openoxide.api.v1.EnvironmentService.CreateEnvironment
  */
 export const createEnvironment =
 	EnvironmentService.method.createEnvironment;
 
 /**
+ * Update an environment by id; name/description/environment_variables/is_default optional.
+ *
  * @generated from rpc openoxide.api.v1.EnvironmentService.UpdateEnvironment
  */
 export const updateEnvironment =
 	EnvironmentService.method.updateEnvironment;
 
 /**
+ * Mark an environment as the project's default by id.
+ *
  * @generated from rpc openoxide.api.v1.EnvironmentService.SetDefaultEnvironment
  */
 export const setDefaultEnvironment =
 	EnvironmentService.method.setDefaultEnvironment;
 
 /**
+ * Delete an environment by id.
+ *
  * @generated from rpc openoxide.api.v1.EnvironmentService.DeleteEnvironment
  */
 export const deleteEnvironment =

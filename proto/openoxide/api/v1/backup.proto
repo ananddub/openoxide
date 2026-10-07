@@ -6,38 +6,71 @@ import "buf/validate/validate.proto";
 
 // Sole backup owner service; absorbs the former BackupOperationsService.
 service BackupService {
+  // List all configured database backup rules. No params.
   rpc ListBackups(BackupListBackupsRequest) returns (BackupListBackupsResponse);
+  // Get one database backup rule by id.
   rpc GetBackup(BackupGetBackupRequest) returns (BackupGetBackupResponse);
+  // Create a database backup rule. Required: app_name, schedule (cron), database_name, prefix, backup_type, database_type, destination_id, organization_id.
   rpc CreateBackup(BackupCreateBackupRequest) returns (BackupCreateBackupResponse);
+  // Update a database backup rule by id; absent fields keep stored values. `enabled` toggles the schedule.
   rpc UpdateBackup(BackupUpdateBackupRequest) returns (BackupUpdateBackupResponse);
+  // Delete a database backup rule by id.
   rpc DeleteBackup(BackupDeleteBackupRequest) returns (Empty);
+  // Trigger a database backup rule to run now by id.
   rpc RunBackup(BackupRunBackupRequest) returns (Empty);
+  // Restore a database backup rule by id from a chosen backup_file.
   rpc RestoreBackup(BackupRestoreBackupRequest) returns (Empty);
+  // Validate connectivity/credentials of a backup destination by destination_id.
   rpc ValidateDestination(BackupValidateDestinationRequest) returns (BackupValidateDestinationResponse);
+  // Run a compose config backup now for compose_id; include_secrets optionally bundles secrets. Returns a local archive.
   rpc RunComposeBackup(BackupRunComposeBackupRequest) returns (BackupRunComposeBackupResponse);
+  // Run a panel backup now (no params). Returns the produced local archive.
   rpc RunPanelBackup(BackupRunPanelBackupRequest) returns (BackupRunPanelBackupResponse);
+  // Stage a panel restore from a .tar.gz archive path (optional checksum_sha256); applies on next restart.
   rpc StageRestore(BackupStageRestoreRequest) returns (BackupStageRestoreResponse);
+  // Get progress of a staged panel restore by restore_id.
   rpc GetRestoreStatus(BackupGetRestoreStatusRequest) returns (BackupGetRestoreStatusResponse);
+  // Stage a rollback of a panel restore using a .pre-restore- recovery_database snapshot path.
   rpc RollbackRestore(BackupRollbackRestoreRequest) returns (BackupRollbackRestoreResponse);
+  // List remote backup objects for destination_id; optional prefix filters by object-key prefix.
   rpc ListFiles(BackupListFilesRequest) returns (BackupListFilesResponse);
+  // Download a backup object by destination_id and object_key; reply reports file metadata.
   rpc DownloadFile(BackupDownloadFileRequest) returns (BackupDownloadFileResponse);
+  // Preview which objects a keep-latest rule would keep/delete. Required: destination_id, keep_latest; optional prefix.
   rpc PreviewRetention(BackupPreviewRetentionRequest) returns (BackupPreviewRetentionResponse);
+  // Verify a backup object's checksum. Required: destination_id, object_key, checksum_sha256.
   rpc VerifyFiles(BackupVerifyFilesRequest) returns (BackupVerifyFilesResponse);
+  // List recorded backup/restore executions; optional limit (clamped 1..=500, default 100).
   rpc ListExecutions(BackupListExecutionsRequest) returns (BackupListExecutionsResponse);
+  // Retry a failed backup execution by id.
   rpc RetryExecution(BackupRetryExecutionRequest) returns (Empty);
+  // List all database backup rules (no params).
   rpc ListDatabaseBackups(BackupListDatabaseBackupsRequest) returns (BackupListDatabaseBackupsResponse);
+  // Get one database backup rule by id.
   rpc GetDatabaseBackup(BackupGetDatabaseBackupRequest) returns (BackupGetDatabaseBackupResponse);
+  // Create a database backup rule. Required: app_name, schedule (cron), database_name, prefix, backup_type, database_type, destination_id, organization_id.
   rpc CreateDatabaseBackup(BackupCreateDatabaseBackupRequest) returns (BackupCreateDatabaseBackupResponse);
+  // Update a database backup rule by id; absent fields keep stored values. `enabled` toggles the schedule.
   rpc UpdateDatabaseBackup(BackupUpdateDatabaseBackupRequest) returns (BackupUpdateDatabaseBackupResponse);
+  // Delete a database backup rule by id.
   rpc DeleteDatabaseBackup(BackupDeleteDatabaseBackupRequest) returns (Empty);
+  // Trigger a database backup rule to run now by id.
   rpc RunDatabaseBackup(BackupRunDatabaseBackupRequest) returns (Empty);
+  // List all volume backup rules (no params).
   rpc ListVolumeBackups(BackupListVolumeBackupsRequest) returns (BackupListVolumeBackupsResponse);
+  // Get one volume backup rule by id.
   rpc GetVolumeBackup(BackupGetVolumeBackupRequest) returns (BackupGetVolumeBackupResponse);
+  // Create a volume backup rule. Required: name, volume_name, prefix, service_type, app_name, cron_expression; one service linkage id must resolve.
   rpc CreateVolumeBackup(BackupCreateVolumeBackupRequest) returns (BackupCreateVolumeBackupResponse);
+  // Update a volume backup rule by id; absent fields keep stored values. `enabled` toggles the schedule.
   rpc UpdateVolumeBackup(BackupUpdateVolumeBackupRequest) returns (BackupUpdateVolumeBackupResponse);
+  // Delete a volume backup rule by id.
   rpc DeleteVolumeBackup(BackupDeleteVolumeBackupRequest) returns (Empty);
+  // Trigger a volume backup rule to run now by id.
   rpc RunVolumeBackup(BackupRunVolumeBackupRequest) returns (Empty);
+  // Restore a database from a backup. Required: id (database backup rule), backup_file.
   rpc RestoreDatabase(BackupRestoreDatabaseRequest) returns (Empty);
+  // Restore a volume from a backup. Required: id (volume backup rule), backup_file.
   rpc RestoreVolume(BackupRestoreVolumeRequest) returns (Empty);
 }
 

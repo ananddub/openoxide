@@ -258,6 +258,8 @@ export const DeletePreviewRequestSchema: GenMessage<DeletePreviewRequest> /*@__P
  */
 export const PreviewDeploymentService: GenService<{
 	/**
+	 * List preview deployments; optional application_id scopes the result.
+	 *
 	 * @generated from rpc openoxide.api.v1.PreviewDeploymentService.ListPreviews
 	 */
 	listPreviews: {
@@ -266,6 +268,8 @@ export const PreviewDeploymentService: GenService<{
 		output: typeof ListPreviewsResponseSchema;
 	};
 	/**
+	 * Get one preview deployment by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.PreviewDeploymentService.GetPreview
 	 */
 	getPreview: {
@@ -274,6 +278,8 @@ export const PreviewDeploymentService: GenService<{
 		output: typeof GetPreviewResponseSchema;
 	};
 	/**
+	 * Create a preview deployment. Required: application_id, branch; commit optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.PreviewDeploymentService.CreatePreview
 	 */
 	createPreview: {
@@ -282,6 +288,8 @@ export const PreviewDeploymentService: GenService<{
 		output: typeof CreatePreviewResponseSchema;
 	};
 	/**
+	 * Redeploy an existing preview by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.PreviewDeploymentService.RedeployPreview
 	 */
 	redeployPreview: {
@@ -290,6 +298,8 @@ export const PreviewDeploymentService: GenService<{
 		output: typeof RedeployPreviewResponseSchema;
 	};
 	/**
+	 * Delete a preview deployment by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.PreviewDeploymentService.DeletePreview
 	 */
 	deletePreview: {

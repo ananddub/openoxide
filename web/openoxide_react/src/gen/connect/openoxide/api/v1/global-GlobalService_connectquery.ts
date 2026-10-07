@@ -5,62 +5,86 @@
 import {GlobalService} from './global_pb';
 
 /**
+ * Download a file from a container by container_id and path; optional server_id selects the engine. Returns raw bytes.
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.DownloadFile
  */
 export const downloadFile = GlobalService.method.downloadFile;
 
 /**
+ * Download a file from a container (compat twin) by container_id and path; optional server_id. Returns raw bytes.
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.DownloadContainerFile
  */
 export const downloadContainerFile =
 	GlobalService.method.downloadContainerFile;
 
 /**
+ * List Docker containers on an engine; optional server_id (absent means local Agent).
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.ListContainers
  */
 export const listContainers = GlobalService.method.listContainers;
 
 /**
+ * List Docker images on an engine; optional server_id (absent means local Agent).
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.ListImages
  */
 export const listImages = GlobalService.method.listImages;
 
 /**
+ * List Docker networks on an engine; optional server_id (absent means local Agent).
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.ListNetworks
  */
 export const listNetworks = GlobalService.method.listNetworks;
 
 /**
+ * List Docker volumes on an engine; optional server_id (absent means local Agent).
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.ListVolumes
  */
 export const listVolumes = GlobalService.method.listVolumes;
 
 /**
+ * Inspect a container by container_id; optional server_id. Returns raw `docker inspect` JSON.
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.InspectContainer
  */
 export const inspectContainer = GlobalService.method.inspectContainer;
 
 /**
+ * Inspect an image by image_id (id or reference); optional server_id. Returns raw `docker inspect` JSON.
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.InspectImage
  */
 export const inspectImage = GlobalService.method.inspectImage;
 
 /**
+ * Inspect a network by network_id; optional server_id. Returns raw `docker inspect` JSON.
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.InspectNetwork
  */
 export const inspectNetwork = GlobalService.method.inspectNetwork;
 
 /**
+ * Inspect a volume by volume_id; optional server_id. Returns raw `docker inspect` JSON.
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.InspectVolume
  */
 export const inspectVolume = GlobalService.method.inspectVolume;
 
 /**
+ * Run a lifecycle action on a container by container_id: action (GlobalContainerAction START/STOP/RESTART/KILL/PAUSE/UNPAUSE); optional server_id.
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.ContainerAction
  */
 export const containerAction = GlobalService.method.containerAction;
 
 /**
+ * Remove a container by container_id; optional force and volumes flags; optional server_id.
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.RemoveContainer
  */
 export const removeContainer = GlobalService.method.removeContainer;
@@ -73,11 +97,15 @@ export const removeContainer = GlobalService.method.removeContainer;
 export const deleteContainer = GlobalService.method.deleteContainer;
 
 /**
+ * Get Docker disk usage (`docker system df`) on an engine; optional server_id. Returns raw JSON.
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.DiskUsage
  */
 export const diskUsage = GlobalService.method.diskUsage;
 
 /**
+ * Prune Docker resources; booleans select which to prune: containers, images, networks, volumes; optional server_id.
+ *
  * @generated from rpc openoxide.api.v1.GlobalService.Prune
  */
 export const prune = GlobalService.method.prune;

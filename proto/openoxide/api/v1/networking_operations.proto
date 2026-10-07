@@ -5,9 +5,13 @@ import "buf/validate/validate.proto";
 
 // Networking utilities: CDN purge plus domain and root-overlay-network diagnostics. Not a domain/certificate/DNS CRUD owner service.
 service NetworkingOperationsService {
+  // Purge CDN cache. Required: provider (NETWORKING_CDN_PROVIDER_*), api_token; zone_id/service_id/pull_zone_id + purge_all/urls per provider.
   rpc PurgeCdn(NetworkingPurgeCdnRequest) returns (NetworkingPurgeCdnResponse);
+  // Diagnose a domain's DNS/TCP/HTTP reachability. Required: host; port/https/path optional.
   rpc DiagnoseDomains(NetworkingDiagnoseDomainsRequest) returns (NetworkingDiagnoseDomainsResponse);
+  // Diagnose the root overlay network's existence/health; optional server_id.
   rpc DiagnoseRootNetwork(NetworkingDiagnoseRootNetworkRequest) returns (NetworkingDiagnoseRootNetworkResponse);
+  // Repair the root overlay network (recreate if missing/unhealthy); optional server_id.
   rpc RepairRootNetwork(NetworkingRepairRootNetworkRequest) returns (NetworkingRepairRootNetworkResponse);
 }
 

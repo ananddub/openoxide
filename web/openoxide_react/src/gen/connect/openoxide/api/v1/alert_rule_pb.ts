@@ -525,6 +525,8 @@ export const AlertOperatorSchema: GenEnum<AlertOperator> /*@__PURE__*/ =
  */
 export const AlertRuleService: GenService<{
 	/**
+	 * List alert rules; optional organization_id scopes the result.
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertRuleService.ListRules
 	 */
 	listRules: {
@@ -533,6 +535,8 @@ export const AlertRuleService: GenService<{
 		output: typeof ListAlertRulesResponseSchema;
 	};
 	/**
+	 * Get one alert rule by id; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertRuleService.GetRule
 	 */
 	getRule: {
@@ -541,6 +545,8 @@ export const AlertRuleService: GenService<{
 		output: typeof GetAlertRuleResponseSchema;
 	};
 	/**
+	 * Create an alert rule. Required: name, target_kind (ALERT_TARGET_KIND_*), target_id, metric, operator, threshold, duration_seconds, organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertRuleService.CreateRule
 	 */
 	createRule: {
@@ -549,6 +555,8 @@ export const AlertRuleService: GenService<{
 		output: typeof CreateAlertRuleResponseSchema;
 	};
 	/**
+	 * Fully replace an alert rule by id (organization fixed to stored row).
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertRuleService.UpdateRule
 	 */
 	updateRule: {
@@ -557,6 +565,8 @@ export const AlertRuleService: GenService<{
 		output: typeof UpdateAlertRuleResponseSchema;
 	};
 	/**
+	 * Delete an alert rule by id; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertRuleService.DeleteRule
 	 */
 	deleteRule: {
@@ -565,6 +575,8 @@ export const AlertRuleService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Fire a canned test alert through a notification channel. Required: notification_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertRuleService.TestRule
 	 */
 	testRule: {

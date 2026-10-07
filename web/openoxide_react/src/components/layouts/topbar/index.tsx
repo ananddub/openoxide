@@ -1,6 +1,8 @@
-import {Fragment, useMemo} from 'react';
+import {Fragment, useMemo, useState} from 'react';
 import {Link, useLocation, useNavigate} from '@tanstack/react-router';
+import {Sparkles} from 'lucide-react';
 import {useSidebar, SidebarTrigger} from '#/components/ui/sidebar';
+import {AiChatSheet} from '#/components/ai/assistant/ai-chat-sheet';
 import {useProjectsList} from '#/hooks/projects/list/use-projects-list';
 import {SETTINGS_TABS} from '#/pages/settings/settings-tabs';
 import {SearchDialog} from './search-bus';
@@ -79,6 +81,7 @@ export function TopBar() {
 	const {isMobile} = useSidebar();
 	const {projects} = useProjectsList();
 	const registeredCrumbs = usePageCrumbs();
+	const [aiOpen, setAiOpen] = useState(false);
 
 	// Scope: a specific project (deep view) or All Projects.
 	const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -154,6 +157,13 @@ export function TopBar() {
 
 				{/* ── Right: product wordmark + mobile drawer trigger ──── */}
 				<div className="flex items-center gap-2 pr-2">
+					<button
+						type="button"
+						aria-label="AI Assistant"
+						onClick={() => setAiOpen(true)}
+						className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+						<Sparkles className="size-4" />
+					</button>
 					<span className="shrink-0 text-[13px] font-medium tracking-tight text-muted-foreground/80 select-none">
 						OpenOxide
 					</span>
@@ -166,6 +176,8 @@ export function TopBar() {
 			</header>
 			{/* Global command palette (Ctrl+K / search icon). */}
 			<SearchDialog />
+			{/* Global agentic AI assistant. */}
+			<AiChatSheet open={aiOpen} onClose={() => setAiOpen(false)} />
 		</>
 	);
 }

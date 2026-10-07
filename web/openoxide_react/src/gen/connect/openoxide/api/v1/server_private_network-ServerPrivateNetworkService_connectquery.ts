@@ -5,48 +5,66 @@
 import {ServerPrivateNetworkService} from './server_private_network_pb';
 
 /**
+ * Get a server's private-network config by server id (network absent if unconfigured).
+ *
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.GetNetwork
  */
 export const getNetwork = ServerPrivateNetworkService.method.getNetwork;
 
 /**
+ * Update a server's private-network config by id. Required: connection_mode (SERVER_CONNECTION_MODE_*); provider/host/addresses optional.
+ *
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.UpdateNetwork
  */
 export const updateNetwork =
 	ServerPrivateNetworkService.method.updateNetwork;
 
 /**
+ * Delete a server's private-network config by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.DeleteNetwork
  */
 export const deleteNetwork =
 	ServerPrivateNetworkService.method.deleteNetwork;
 
 /**
+ * Provision/install the private-network tunnel on a server by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.Setup
  */
 export const setup = ServerPrivateNetworkService.method.setup;
 
 /**
+ * Run a health check on a server's private network by id (interface, reachability, handshake).
+ *
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.Health
  */
 export const health = ServerPrivateNetworkService.method.health;
 
 /**
+ * Repair a degraded/drifted private network on a server by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.Repair
  */
 export const repair = ServerPrivateNetworkService.method.repair;
 
 /**
+ * Tear down and re-provision the private network on a server by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.ReSetup
  */
 export const reSetup = ServerPrivateNetworkService.method.reSetup;
 
 /**
+ * Rotate the WireGuard keys for a server's private network by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.RotateKeys
  */
 export const rotateKeys = ServerPrivateNetworkService.method.rotateKeys;
 
 /**
+ * Tear down the private-network tunnel on a server by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.Teardown
  */
 export const teardown = ServerPrivateNetworkService.method.teardown;

@@ -5,6 +5,8 @@
 import {IncomingWebhookService} from './incoming_webhook_pb';
 
 /**
+ * Receive and dispatch a git provider webhook event. Required: provider (WEBHOOK_PROVIDER_TYPE_*), provider_id, payload, signature.
+ *
  * @generated from rpc openoxide.api.v1.IncomingWebhookService.HandleWebhook
  */
 export const handleWebhook = IncomingWebhookService.method.handleWebhook;

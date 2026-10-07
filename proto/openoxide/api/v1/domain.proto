@@ -6,13 +6,21 @@ import "buf/validate/validate.proto";
 
 // Sole domain owner service; absorbs the former DomainOperationsService.
 service DomainService {
+  // List all domains.
   rpc ListDomains(ListDomainsRequest) returns (ListDomainsResponse);
+  // Get one domain by id.
   rpc GetDomain(GetDomainRequest) returns (GetDomainResponse);
+  // List domains attached to an application. Required: application_id.
   rpc ListApplicationDomains(ListApplicationDomainsRequest) returns (ListApplicationDomainsResponse);
+  // List domains attached to a Compose project. Required: compose_id.
   rpc ListComposeDomains(ListComposeDomainsRequest) returns (ListComposeDomainsResponse);
+  // Create a domain. Required: host; set application_id or compose_id; https/port/path/certificate_type (DOMAIN_CERTIFICATE_TYPE_*) optional.
   rpc CreateDomain(CreateDomainRequest) returns (CreateDomainResponse);
+  // Update a domain by id (domain_type not patchable); host/https/port/path/middlewares/certificate_type optional.
   rpc UpdateDomain(UpdateDomainRequest) returns (UpdateDomainResponse);
+  // Delete a domain by id.
   rpc DeleteDomain(DeleteDomainRequest) returns (Empty);
+  // Validate that a host's DNS resolves to the target server. Required: host; optional server_id (panel host if absent).
   rpc ValidateDomainDns(ValidateDomainDnsRequest) returns (ValidateDomainDnsResponse);
 }
 

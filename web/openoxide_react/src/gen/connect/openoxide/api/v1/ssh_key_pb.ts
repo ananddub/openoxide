@@ -433,6 +433,8 @@ export const SshKeyTypeSchema: GenEnum<SshKeyType> /*@__PURE__*/ =
  */
 export const SshKeyService: GenService<{
 	/**
+	 * List all saved SSH keys.
+	 *
 	 * @generated from rpc openoxide.api.v1.SshKeyService.ListKeys
 	 */
 	listKeys: {
@@ -441,6 +443,8 @@ export const SshKeyService: GenService<{
 		output: typeof SshKeyListKeysResponseSchema;
 	};
 	/**
+	 * Get one SSH key by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.SshKeyService.GetKey
 	 */
 	getKey: {
@@ -449,6 +453,8 @@ export const SshKeyService: GenService<{
 		output: typeof SshKeyGetKeyResponseSchema;
 	};
 	/**
+	 * Create (import) an SSH key. Required: name, public_key; private_key optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.SshKeyService.CreateKey
 	 */
 	createKey: {
@@ -457,6 +463,8 @@ export const SshKeyService: GenService<{
 		output: typeof SshKeyCreateKeyResponseSchema;
 	};
 	/**
+	 * Generate and store a new SSH key. Required: name, key_type (SSH_KEY_TYPE_ED25519/RSA).
+	 *
 	 * @generated from rpc openoxide.api.v1.SshKeyService.GenerateKey
 	 */
 	generateKey: {
@@ -465,6 +473,8 @@ export const SshKeyService: GenService<{
 		output: typeof SshKeyGenerateKeyResponseSchema;
 	};
 	/**
+	 * Generate an SSH key pair without storing it; optional key_type (defaults ed25519).
+	 *
 	 * @generated from rpc openoxide.api.v1.SshKeyService.GeneratePair
 	 */
 	generatePair: {
@@ -473,6 +483,8 @@ export const SshKeyService: GenService<{
 		output: typeof SshKeyGeneratePairResponseSchema;
 	};
 	/**
+	 * Update an SSH key by id; name/description/public_key/private_key optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.SshKeyService.UpdateKey
 	 */
 	updateKey: {
@@ -481,6 +493,8 @@ export const SshKeyService: GenService<{
 		output: typeof SshKeyUpdateKeyResponseSchema;
 	};
 	/**
+	 * Mark an SSH key as recently used by id (updates last_used_at).
+	 *
 	 * @generated from rpc openoxide.api.v1.SshKeyService.MarkUsed
 	 */
 	markUsed: {
@@ -489,6 +503,8 @@ export const SshKeyService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Delete an SSH key by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.SshKeyService.DeleteKey
 	 */
 	deleteKey: {

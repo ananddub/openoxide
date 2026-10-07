@@ -55,10 +55,7 @@ impl ApplicationBuilder {
                     builder = builder.env(k, v);
                 }
                 let pipeline = pipeline! { builder; };
-                let output = pipeline
-                    .execute_cancelled(&self.ctx.executor, cancel)
-                    .await?;
-                self.emit_build_output(&output).await;
+                self.ctx.run_pipeline_streamed(&pipeline, cancel).await?;
             }
             BuildStrategy::Paketo => {
                 self.ctx
@@ -77,10 +74,7 @@ impl ApplicationBuilder {
                     builder = builder.env(k, v);
                 }
                 let pipeline = pipeline! { builder; };
-                let output = pipeline
-                    .execute_cancelled(&self.ctx.executor, cancel)
-                    .await?;
-                self.emit_build_output(&output).await;
+                self.ctx.run_pipeline_streamed(&pipeline, cancel).await?;
             }
             BuildStrategy::Heroku => {
                 self.ctx
@@ -99,10 +93,7 @@ impl ApplicationBuilder {
                     builder = builder.env(k, v);
                 }
                 let pipeline = pipeline! { builder; };
-                let output = pipeline
-                    .execute_cancelled(&self.ctx.executor, cancel)
-                    .await?;
-                self.emit_build_output(&output).await;
+                self.ctx.run_pipeline_streamed(&pipeline, cancel).await?;
             }
             BuildStrategy::Railpack { version } => {
                 self.ctx
@@ -157,10 +148,7 @@ impl ApplicationBuilder {
                     builder;
                     docker_build;
                 };
-                let output = pipeline
-                    .execute_cancelled(&self.ctx.executor, cancel)
-                    .await?;
-                self.emit_build_output(&output).await;
+                self.ctx.run_pipeline_streamed(&pipeline, cancel).await?;
             }
             BuildStrategy::Static {
                 publish_directory,
@@ -289,10 +277,7 @@ impl ApplicationBuilder {
             .cancel_with(cancel.clone());
 
         let pipeline = pipeline! { build_cmd; };
-        let output = pipeline
-            .execute_cancelled(&self.ctx.executor, cancel)
-            .await?;
-        self.emit_build_output(&output).await;
+        self.ctx.run_pipeline_streamed(&pipeline, cancel).await?;
         Ok(())
     }
 

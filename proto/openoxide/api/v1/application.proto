@@ -6,71 +6,137 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service ApplicationService {
+  // Fetch a single application by id.
   rpc GetApplication(GetApplicationRequest) returns (Application);
+  // List all applications in an environment. Required: environment_id.
   rpc ListApplications(ListApplicationsRequest) returns (ListApplicationsResponse);
+  // Create an application. Required: name, environment_id, source_type (APPLICATION_SOURCE_TYPE_*), build_type (APPLICATION_BUILD_TYPE_*); server_id optional.
   rpc CreateApplication(CreateApplicationRequest) returns (Application);
+  // Update application core fields by id: name, description, build_type, trigger_type, env_var, server/build/registry ids, network_ids.
   rpc UpdateApplication(UpdateApplicationRequest) returns (Application);
+  // Delete an application by id.
   rpc DeleteApplication(DeleteApplicationRequest) returns (Empty);
+  // Import an application from a base64/archive blob. Required: archive.
   rpc ImportApplication(ImportApplicationRequest) returns (Application);
+  // Export an application by id as an archive. Required: id; include_secrets toggles secret inclusion.
   rpc ExportApplication(ExportApplicationRequest) returns (ApplicationExport);
+  // Set the app source to a GitHub repo by id. Required: repository, owner; branch, build_path, provider_id, auto_deploy optional.
   rpc SetGithubSource(SetGithubSourceRequest) returns (Application);
+  // Set the app source to a GitLab repo by id. Required: repository, owner; branch, build_path, path_namespace, provider_id, project_id optional.
   rpc SetGitlabSource(SetGitlabSourceRequest) returns (Application);
+  // Set the app source to a Bitbucket repo by id. Required: repository, owner; branch, build_path, repository_slug, provider_id optional.
   rpc SetBitbucketSource(SetBitbucketSourceRequest) returns (Application);
+  // Set the app source to a Gitea repo by id. Required: repository, owner; branch, build_path, provider_id optional.
   rpc SetGiteaSource(SetGiteaSourceRequest) returns (Application);
+  // Set the app source to a custom Git URL by id. Required: url; branch, build_path, ssh_key_id optional.
   rpc SetCustomGitSource(SetCustomGitSourceRequest) returns (Application);
+  // Set the app source to a Docker image by id. Required: image; username, password, registry_url optional for private registries.
   rpc SetDockerSource(SetDockerSourceRequest) returns (Application);
+  // Set the app source to drop/upload mode by id; build_path optional.
   rpc SetDropSource(SetDropSourceRequest) returns (Application);
+  // Stream-upload drop source: first a header (application_id, build_path) then raw file chunks.
   rpc UploadSource(stream UploadSourceRequest) returns (Application);
+  // Update build config by id: build_args/secrets, dockerfile, context/build paths, publish_directory, railpack/heroku versions, auto_deploy, etc.
   rpc UpdateBuildConfig(UpdateBuildConfigRequest) returns (Application);
+  // Update resource limits by id: memory_reservation/limit, cpu_reservation/limit, replicas.
   rpc UpdateResourceConfig(UpdateResourceConfigRequest) returns (Application);
+  // Update preview-environment config by id: preview_env, build args/secrets, wildcard, port, https, path, certificate_type, limit, active flags.
   rpc UpdatePreviewConfig(UpdatePreviewConfigRequest) returns (Application);
+  // Deploy an application by id: builds from its configured source and starts it.
   rpc Deploy(ApplicationOperationRequest) returns (ApplicationOperation);
+  // Redeploy an application by id with its current config.
   rpc Redeploy(ApplicationOperationRequest) returns (ApplicationOperation);
+  // Rebuild an application by id, forcing a fresh build from source.
   rpc Rebuild(ApplicationOperationRequest) returns (ApplicationOperation);
+  // Reload an application by id, applying runtime/config changes without a full rebuild.
   rpc Reload(ApplicationOperationRequest) returns (ApplicationOperation);
+  // Start a stopped application by id.
   rpc Start(ApplicationOperationRequest) returns (ApplicationOperation);
+  // Stop a running application by id (destructive: becomes unavailable until started).
   rpc Stop(ApplicationOperationRequest) returns (ApplicationOperation);
+  // Cancel the in-progress operation/deployment for an application by id.
   rpc Cancel(ApplicationOperationRequest) returns (Empty);
+  // Rotate the deploy-webhook token for an application by id; returns the new token.
   rpc RotateWebhookToken(ApplicationOperationRequest) returns (ApplicationWebhookToken);
+  // Move an application to another environment. Required: id, target_environment_id.
   rpc MoveApplication(MoveApplicationRequest) returns (Application);
+  // Clear the deployment history records for an application by id.
   rpc ClearDeploymentHistory(ApplicationOperationRequest) returns (Empty);
+  // Remove queued (pending) deployments for an application by id.
   rpc CleanupDeploymentQueue(ApplicationOperationRequest) returns (Empty);
+  // Force-kill a stuck deployment for an application by id.
   rpc ForceKillDeployment(ApplicationOperationRequest) returns (Empty);
+  // List available rollback snapshots for an application. Required: application_id.
   rpc ListRollbacks(ListRollbacksRequest) returns (ListRollbacksResponse);
+  // Trigger a rollback to a snapshot. Required: application_id, rollback_id.
   rpc TriggerRollback(TriggerRollbackRequest) returns (RollbackTrigger);
+  // Delete a rollback snapshot. Required: application_id, rollback_id.
   rpc DeleteRollback(DeleteRollbackRequest) returns (Empty);
+  // List resources this application depends on, by id.
   rpc ListDependencies(ApplicationOperationRequest) returns (ApplicationDependencies);
+  // List the port entries for an application. Required: application_id.
   rpc ListApplicationPorts(ResourceListRequest) returns (ApplicationPorts);
+  // List the mount entries for an application. Required: application_id.
   rpc ListApplicationMounts(ResourceListRequest) returns (ApplicationMounts);
+  // List the networks attached to an application. Required: application_id.
   rpc ListApplicationNetworks(ResourceListRequest) returns (ApplicationNetworks);
+  // List the file patches for an application. Required: application_id.
   rpc ListApplicationPatches(ResourceListRequest) returns (ApplicationPatches);
+  // List the middlewares for an application. Required: application_id.
   rpc ListApplicationMiddlewares(ResourceListRequest) returns (ApplicationMiddlewares);
+  // List the redirects for an application. Required: application_id.
   rpc ListApplicationRedirects(ResourceListRequest) returns (ApplicationRedirects);
+  // List the basic-auth security rules for an application. Required: application_id.
   rpc ListApplicationSecurity(ResourceListRequest) returns (ApplicationSecurity);
+  // List structured port rows for an application. Required: application_id.
   rpc ListPorts(ApplicationListPortsRequest) returns (ApplicationListPortsResponse);
+  // Create a port mapping. Required: application_id, published_port, target_port, protocol (ApplicationPortProtocol), publish_mode (ApplicationPortPublishMode).
   rpc CreatePort(ApplicationCreatePortRequest) returns (ApplicationCreatePortResponse);
+  // Update a port mapping. Required: application_id, id, published_port, target_port, protocol, publish_mode.
   rpc UpdatePort(ApplicationUpdatePortRequest) returns (ApplicationUpdatePortResponse);
+  // Delete a port mapping. Required: application_id, id.
   rpc DeletePort(ApplicationDeletePortRequest) returns (Empty);
+  // List structured mount rows for an application. Required: application_id.
   rpc ListMounts(ApplicationListMountsRequest) returns (ApplicationListMountsResponse);
+  // Create a mount. Required: application_id, mount_type (ApplicationMountType), mount_path; host_path/volume_name/file_path/content per type.
   rpc CreateMount(ApplicationCreateMountRequest) returns (ApplicationCreateMountResponse);
+  // Update a mount. Required: application_id, id, mount_type (ApplicationMountType), mount_path; type-specific path/content fields.
   rpc UpdateMount(ApplicationUpdateMountRequest) returns (ApplicationUpdateMountResponse);
+  // Delete a mount. Required: application_id, id.
   rpc DeleteMount(ApplicationDeleteMountRequest) returns (Empty);
+  // List file-patch rows for an application. Required: application_id.
   rpc ListPatches(ApplicationListPatchesRequest) returns (ApplicationListPatchesResponse);
+  // Create a file patch. Required: application_id, patch_type (ApplicationPatchType), file_path, enabled; content holds the patch body.
   rpc CreatePatch(ApplicationCreatePatchRequest) returns (ApplicationCreatePatchResponse);
+  // Update a file patch. Required: application_id, id, patch_type (ApplicationPatchType), file_path, enabled, content.
   rpc UpdatePatch(ApplicationUpdatePatchRequest) returns (ApplicationUpdatePatchResponse);
+  // Delete a file patch. Required: application_id, id.
   rpc DeletePatch(ApplicationDeletePatchRequest) returns (Empty);
+  // List middleware rows for an application. Required: application_id.
   rpc ListMiddlewares(ApplicationListMiddlewaresRequest) returns (ApplicationListMiddlewaresResponse);
+  // Create a middleware. Required: application_id, name, middleware_type (ApplicationMiddlewareType), enabled; headers/average/burst/source_ranges per type.
   rpc CreateMiddleware(ApplicationCreateMiddlewareRequest) returns (ApplicationCreateMiddlewareResponse);
+  // Update a middleware. Required: application_id, id, name, middleware_type (ApplicationMiddlewareType), enabled; type-specific fields.
   rpc UpdateMiddleware(ApplicationUpdateMiddlewareRequest) returns (ApplicationUpdateMiddlewareResponse);
+  // Delete a middleware. Required: application_id, id.
   rpc DeleteMiddleware(ApplicationDeleteMiddlewareRequest) returns (Empty);
+  // List redirect rows for an application. Required: application_id.
   rpc ListRedirects(ApplicationListRedirectsRequest) returns (ApplicationListRedirectsResponse);
+  // Create a redirect. Required: application_id, regex, replacement, permanent; unique_config_key optional.
   rpc CreateRedirect(ApplicationCreateRedirectRequest) returns (ApplicationCreateRedirectResponse);
+  // Update a redirect. Required: application_id, id, regex, replacement, permanent; unique_config_key optional.
   rpc UpdateRedirect(ApplicationUpdateRedirectRequest) returns (ApplicationUpdateRedirectResponse);
+  // Delete a redirect. Required: application_id, id.
   rpc DeleteRedirect(ApplicationDeleteRedirectRequest) returns (Empty);
+  // Get the full basic-auth security rule set for an application. Required: application_id.
   rpc GetSecurity(ApplicationGetSecurityRequest) returns (ApplicationGetSecurityResponse);
+  // Create a basic-auth rule. Required: application_id, username, password.
   rpc CreateSecurity(ApplicationCreateSecurityRequest) returns (ApplicationCreateSecurityResponse);
+  // Update a basic-auth rule. Required: application_id, id, username, password.
   rpc UpdateSecurity(ApplicationUpdateSecurityRequest) returns (ApplicationUpdateSecurityResponse);
+  // Delete a basic-auth rule. Required: application_id, id.
   rpc DeleteSecurity(ApplicationDeleteSecurityRequest) returns (Empty);
+  // Replace an application's attached networks. Required: application_id, network_ids; detach_rustploy_network toggles the shared network.
   rpc UpdateNetworks(ApplicationUpdateNetworksRequest) returns (ApplicationUpdateNetworksResponse);
 }
 

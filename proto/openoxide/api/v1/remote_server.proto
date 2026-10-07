@@ -5,16 +5,27 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service RemoteServerService {
+  // List all remote servers (no params).
   rpc ListRemoteServers(RemoteServerListRequest) returns (RemoteServerListResponse);
+  // Get one remote server by id.
   rpc GetRemoteServer(RemoteServerGetRequest) returns (RemoteServerGetResponse);
+  // Create a remote server. Required: name, ip_address, server_type (RemoteServerType DEPLOY/BUILD); port 0=22, empty username=root; optional ssh_key_id and build limits.
   rpc CreateRemoteServer(RemoteServerCreateRequest) returns (RemoteServerCreateResponse);
+  // Update a remote server by id (PATCH: absent fields unchanged); may change name, ip, port, status, type, cleanup, cron, metrics_config.
   rpc UpdateRemoteServer(RemoteServerUpdateRequest) returns (RemoteServerUpdateResponse);
+  // Activate (mark ACTIVE) a remote server by id.
   rpc Activate(RemoteServerActivateRequest) returns (RemoteServerActivateResponse);
+  // Deactivate (mark INACTIVE) a remote server by id.
   rpc Deactivate(RemoteServerDeactivateRequest) returns (RemoteServerDeactivateResponse);
+  // Test SSH connectivity to a remote server by id.
   rpc TestConnection(RemoteServerTestConnectionRequest) returns (RemoteServerTestConnectionResponse);
+  // Delete a remote server by id.
   rpc DeleteRemoteServer(RemoteServerDeleteRequest) returns (Empty);
+  // Migrate all dependencies from source id to target_server_id; returns a dependency-migration record (UUID).
   rpc MigrateDependencies(RemoteServerMigrateDependenciesRequest) returns (RemoteServerMigrateDependenciesResponse);
+  // Get a dependency-migration status by migration_id (UUID from MigrateDependencies).
   rpc GetMigration(RemoteServerGetMigrationRequest) returns (RemoteServerGetMigrationResponse);
+  // Roll back a dependency migration by migration_id (UUID).
   rpc RollbackMigration(RemoteServerRollbackMigrationRequest) returns (RemoteServerRollbackMigrationResponse);
   // Flags a RUNNING application_migrations row for cooperative cancellation; the runner honours it at the next phase/object boundary.
   rpc CancelMigration(RemoteServerCancelMigrationRequest) returns (RemoteServerCancelMigrationResponse);

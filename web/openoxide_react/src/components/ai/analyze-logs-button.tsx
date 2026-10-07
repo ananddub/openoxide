@@ -25,11 +25,7 @@ import {
 /** only the tail of the corpus goes to the model. */
 const MAX_LOG_LINES = 200;
 
-/**
- * AI log-analysis popover for log surfaces: pick an enabled provider, send the
- * last 200 lines, read the analysis. `context` selects the build-vs-runtime
- * system prompt server-side.
- */
+/** AI log-analysis popover for log surfaces: pick an enabled provider, send the last 200 lines, read the analysis. */
 export function AnalyzeLogsButton({
 	lines,
 	context,

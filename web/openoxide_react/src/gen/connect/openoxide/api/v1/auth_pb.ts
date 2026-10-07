@@ -734,6 +734,8 @@ export const RevokePersonalAccessTokenRequestSchema: GenMessage<RevokePersonalAc
  */
 export const AuthService: GenService<{
 	/**
+	 * Register the first/owner user. Required: email, password (min 8); first_name/last_name/avatar optional. Returns user + tokens.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.Signup
 	 */
 	signup: {
@@ -742,6 +744,8 @@ export const AuthService: GenService<{
 		output: typeof AuthResponseSchema;
 	};
 	/**
+	 * Log in with credentials. Required: email, password; two_factor_code/recovery_code when 2FA enabled. Returns user + tokens.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.Login
 	 */
 	login: {
@@ -750,6 +754,8 @@ export const AuthService: GenService<{
 		output: typeof AuthResponseSchema;
 	};
 	/**
+	 * Exchange a refresh token for new tokens. Required: refresh_token.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.Refresh
 	 */
 	refresh: {
@@ -758,6 +764,8 @@ export const AuthService: GenService<{
 		output: typeof AuthResponseSchema;
 	};
 	/**
+	 * Return the currently authenticated user. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.WhoAmI
 	 */
 	whoAmI: {
@@ -766,6 +774,8 @@ export const AuthService: GenService<{
 		output: typeof UserSchema;
 	};
 	/**
+	 * Log out the current session. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.Logout
 	 */
 	logout: {
@@ -774,6 +784,8 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Report whether an owner account exists yet (initial setup gate). No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.GetSetupStatus
 	 */
 	getSetupStatus: {
@@ -782,6 +794,8 @@ export const AuthService: GenService<{
 		output: typeof SetupStatusSchema;
 	};
 	/**
+	 * Update the current user's profile. All fields optional: email, password (min 8), first_name, last_name, avatar.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.UpdateUser
 	 */
 	updateUser: {
@@ -790,6 +804,8 @@ export const AuthService: GenService<{
 		output: typeof UserSchema;
 	};
 	/**
+	 * Request a password-reset email. Required: email.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.RequestPasswordReset
 	 */
 	requestPasswordReset: {
@@ -798,6 +814,8 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Reset a password using a reset token. Required: token, password (min 8).
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.ResetPassword
 	 */
 	resetPassword: {
@@ -806,6 +824,8 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Report the current user's email verification status. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.GetEmailVerificationStatus
 	 */
 	getEmailVerificationStatus: {
@@ -814,6 +834,8 @@ export const AuthService: GenService<{
 		output: typeof EmailVerificationStatusSchema;
 	};
 	/**
+	 * Send an email-verification message to the current user. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.RequestEmailVerification
 	 */
 	requestEmailVerification: {
@@ -822,6 +844,8 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Confirm email verification using a token. Required: token.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.ConfirmEmailVerification
 	 */
 	confirmEmailVerification: {
@@ -830,6 +854,8 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Report the current user's 2FA status (enabled/configured). No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.GetTwoFactorStatus
 	 */
 	getTwoFactorStatus: {
@@ -838,6 +864,8 @@ export const AuthService: GenService<{
 		output: typeof TwoFactorStatusSchema;
 	};
 	/**
+	 * Begin 2FA setup, returning secret/otpauth URL/recovery codes. Required: password.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.SetupTwoFactor
 	 */
 	setupTwoFactor: {
@@ -846,6 +874,8 @@ export const AuthService: GenService<{
 		output: typeof TwoFactorSetupSchema;
 	};
 	/**
+	 * Enable 2FA by confirming a TOTP code. Required: code (6-10 chars).
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.EnableTwoFactor
 	 */
 	enableTwoFactor: {
@@ -854,6 +884,8 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Disable 2FA. Required: password, code (6-10 chars).
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.DisableTwoFactor
 	 */
 	disableTwoFactor: {
@@ -862,6 +894,8 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Regenerate 2FA recovery codes. Required: password, code (6-10 chars). Returns new codes.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.RegenerateRecoveryCodes
 	 */
 	regenerateRecoveryCodes: {
@@ -870,6 +904,8 @@ export const AuthService: GenService<{
 		output: typeof RecoveryCodesSchema;
 	};
 	/**
+	 * List the current user's active sessions. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.ListSessions
 	 */
 	listSessions: {
@@ -878,6 +914,8 @@ export const AuthService: GenService<{
 		output: typeof ListSessionsResponseSchema;
 	};
 	/**
+	 * Revoke a session by id. Required: session_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.RevokeSession
 	 */
 	revokeSession: {
@@ -886,6 +924,8 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List the current user's personal access tokens. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.ListPersonalAccessTokens
 	 */
 	listPersonalAccessTokens: {
@@ -894,6 +934,8 @@ export const AuthService: GenService<{
 		output: typeof ListPersonalAccessTokensResponseSchema;
 	};
 	/**
+	 * Create a personal access token (returned once). Required: name, password; expires_at optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.CreatePersonalAccessToken
 	 */
 	createPersonalAccessToken: {
@@ -902,6 +944,8 @@ export const AuthService: GenService<{
 		output: typeof CreatedPersonalAccessTokenSchema;
 	};
 	/**
+	 * Revoke a personal access token by id. Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.RevokePersonalAccessToken
 	 */
 	revokePersonalAccessToken: {

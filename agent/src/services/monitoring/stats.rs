@@ -3,11 +3,10 @@ use std::{pin::Pin, sync::Arc, time::Duration};
 use tokio_stream::Stream;
 use tonic::{Response, Status};
 
-use super::cgroup::CgroupCollector;
 use crate::api::proto::StatsFrame;
 use crate::docker::{
     api::DockerApi,
-    types::{ContainerStats, ContainerSummary},
+    types::{ContainerStats, ContainerSummary, CpuStats},
 };
 use serde::Deserialize;
 
@@ -43,10 +42,9 @@ pub struct PidsStats {
 /// out to browser views, so a host runs exactly one sampler set for all tabs.
 pub struct StatsService;
 
-/// Cadence of the relay. Each round does a handful of tiny cgroup/procfs file
-/// reads per watched container — cheap enough to stay live at CLI-refresh speed
-/// without the daemon doing any stats work in between.
-const RELAY_INTERVAL: Duration = Duration::from_secs(3);
+/// Cadence of the relay — one Docker `/stats` read per watched container each
+/// round, matching `docker stats`' ~1s refresh for a realtime feel.
+const RELAY_INTERVAL: Duration = Duration::from_secs(1);
 
 /// How a watched target selects containers. Exact id/name forms are
 /// accepted from the panel; `prefix*` selectors keep matching containers
@@ -100,7 +98,11 @@ impl StatsService {
                 .map(|target| Selector::parse(target))
                 .collect();
             let all = selectors.is_empty();
-            let mut collector = CgroupCollector::new(Arc::clone(&docker));
+            // Previous CPU counters per container, so each round computes a real
+            // delta (dockerd's one-shot `stream=false` sets precpu == cpu, which
+            // would always read 0%). One tiny entry per watched container.
+            let mut prev_cpu: std::collections::HashMap<String, CpuStats> =
+                std::collections::HashMap::new();
             let stream = async_stream::stream! {
                 loop {
                     let summaries: Vec<ContainerSummary> =
@@ -111,6 +113,8 @@ impl StatsService {
                                 Vec::new()
                             }
                         };
+                    let mut seen: std::collections::HashSet<String> =
+                        std::collections::HashSet::new();
                     for summary in &summaries {
                         if !all {
                             let full = summary.id.as_str();
@@ -123,14 +127,20 @@ impl StatsService {
                                 continue;
                             }
                         }
-                        let name = summary.display_name();
-                        match collector.sample(summary.id.as_str(), name.as_str()).await {
-                            Some(doc) => yield Ok(StatsFrame {
-                                json_line: to_cli_line(&doc),
-                            }),
-                            None => continue,
+                        let id = summary.id.to_string();
+                        if let Some(mut doc) = fetch_docker_stats(&docker, &id).await {
+                            // Overlay the previous round's counters as precpu so
+                            // cpu_percent() measures usage over this interval.
+                            if let Some(prev) = prev_cpu.get(&id) {
+                                doc.stats.precpu = prev.clone();
+                            }
+                            prev_cpu.insert(id.clone(), doc.stats.cpu.clone());
+                            seen.insert(id);
+                            yield Ok(StatsFrame { json_line: to_cli_line(&doc) });
                         }
                     }
+                    // Drop counters for containers that went away.
+                    prev_cpu.retain(|k, _| seen.contains(k));
                     tokio::time::sleep(RELAY_INTERVAL).await;
                 }
             };
@@ -164,14 +174,9 @@ impl StatsService {
                 .map(|s| (s.id.to_string(), s.display_name().to_string()))
                 .collect()
         };
-        let mut collector = CgroupCollector::new(Arc::clone(&docker));
         let stream = async_stream::stream! {
-            for (id, name) in &wanted {
-                collector.sample(id, name).await;
-            }
-            tokio::time::sleep(Duration::from_millis(300)).await;
-            for (id, name) in &wanted {
-                if let Some(doc) = collector.sample(id, name).await {
+            for (id, _name) in &wanted {
+                if let Some(doc) = fetch_docker_stats(&docker, id).await {
                     yield Ok(StatsFrame {
                         json_line: to_cli_line(&doc),
                     });
@@ -179,6 +184,21 @@ impl StatsService {
             }
         };
         Ok(Response::new(Box::pin(stream)))
+    }
+}
+
+/// Reads one container's live stats straight from Docker's `/stats` endpoint
+/// (`stream=false` returns a single document whose `precpu_stats` is already
+/// populated, so `cpu_percent()` is correct on the first read). Returns `None`
+/// if the container is gone or the stats call fails.
+pub(super) async fn fetch_docker_stats(docker: &DockerApi, id: &str) -> Option<RawStats> {
+    let path = format!("/containers/{id}/stats?stream=false");
+    match docker.get_json::<RawStats>(&path).await {
+        Ok(doc) => Some(doc),
+        Err(error) => {
+            tracing::debug!(%error, container = id, "docker stats fetch failed");
+            None
+        }
     }
 }
 

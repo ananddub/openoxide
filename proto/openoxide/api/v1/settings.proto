@@ -5,7 +5,9 @@ import "buf/validate/validate.proto";
 
 // Singleton panel settings row.
 service SettingsService {
+  // Get the singleton panel settings row.
   rpc GetSettings(SettingsGetSettingsRequest) returns (SettingsGetSettingsResponse);
+  // PATCH panel settings: all fields optional, absent fields keep stored values (certificate_type is SETTINGS_CERTIFICATE_TYPE_*).
   rpc UpdateSettings(SettingsUpdateSettingsRequest) returns (SettingsUpdateSettingsResponse);
 }
 

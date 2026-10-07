@@ -133,6 +133,20 @@ fn inject_domain_labels(document: &mut Value, spec: &ComposeSpec) -> ExecResult<
 
     if !spec.domains.is_empty() {
         add_network_to_root(root, TRAEFIK_NETWORK);
+        // A service that declares an explicit `networks:` (which the traefik
+        // attach above does for the domain's service) is dropped from the
+        // implicit `default` network, so it can no longer reach siblings that
+        // are still only on `default` (classic symptom: the web container can't
+        // reach its DB — "Can't reach database server"). Put EVERY service on
+        // the shared traefik network so intra-compose networking keeps working.
+        if let Some(services) = root
+            .get_mut(Value::String("services".into()))
+            .and_then(|s| s.as_mapping_mut())
+        {
+            for service in services.values_mut() {
+                add_named_network_to_service(service, TRAEFIK_NETWORK)?;
+            }
+        }
     }
     for service_network in &spec.service_networks {
         for network in &service_network.networks {

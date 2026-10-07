@@ -853,6 +853,8 @@ export const TraefikMiddlewareKindSchema: GenEnum<TraefikMiddlewareKind> /*@__PU
  */
 export const TraefikService: GenService<{
 	/**
+	 * List Traefik config files; optional server_id selects a remote server (else the panel host).
+	 *
 	 * @generated from rpc openoxide.api.v1.TraefikService.ListFiles
 	 */
 	listFiles: {
@@ -861,6 +863,8 @@ export const TraefikService: GenService<{
 		output: typeof TraefikListFilesResponseSchema;
 	};
 	/**
+	 * Get the Traefik config directory as a file tree; optional server_id selects a remote server.
+	 *
 	 * @generated from rpc openoxide.api.v1.TraefikService.GetFileTree
 	 */
 	getFileTree: {
@@ -869,6 +873,8 @@ export const TraefikService: GenService<{
 		output: typeof TraefikGetFileTreeResponseSchema;
 	};
 	/**
+	 * Read one Traefik config file. Required: path; optional server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.TraefikService.GetFileContent
 	 */
 	getFileContent: {
@@ -877,6 +883,8 @@ export const TraefikService: GenService<{
 		output: typeof TraefikGetFileContentResponseSchema;
 	};
 	/**
+	 * Replace a Traefik config file's content. Required: path, content (validated YAML mapping); optional server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.TraefikService.UpdateFileContent
 	 */
 	updateFileContent: {
@@ -885,6 +893,8 @@ export const TraefikService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Report Traefik health (rawdata reachability and config errors).
+	 *
 	 * @generated from rpc openoxide.api.v1.TraefikService.Health
 	 */
 	health: {
@@ -893,6 +903,8 @@ export const TraefikService: GenService<{
 		output: typeof TraefikHealthResponseSchema;
 	};
 	/**
+	 * Get whether Traefik request-access logging is active, with its log path and cron.
+	 *
 	 * @generated from rpc openoxide.api.v1.TraefikService.GetRequestStatus
 	 */
 	getRequestStatus: {
@@ -901,6 +913,8 @@ export const TraefikService: GenService<{
 		output: typeof TraefikGetRequestStatusResponseSchema;
 	};
 	/**
+	 * Enable or disable Traefik request logging. Required: enable; optional server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.TraefikService.ToggleRequests
 	 */
 	toggleRequests: {
@@ -909,6 +923,8 @@ export const TraefikService: GenService<{
 		output: typeof TraefikToggleRequestsResponseSchema;
 	};
 	/**
+	 * Page through Traefik access logs; optional server_id, page, page_size, search, status filter.
+	 *
 	 * @generated from rpc openoxide.api.v1.TraefikService.GetRequestLogs
 	 */
 	getRequestLogs: {
@@ -917,6 +933,8 @@ export const TraefikService: GenService<{
 		output: typeof TraefikGetRequestLogsResponseSchema;
 	};
 	/**
+	 * Get the current and desired Traefik image/version; optional server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.TraefikService.GetVersion
 	 */
 	getVersion: {
@@ -925,6 +943,8 @@ export const TraefikService: GenService<{
 		output: typeof TraefikGetVersionResponseSchema;
 	};
 	/**
+	 * Update Traefik to a target version. Required: version; optional server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.TraefikService.UpdateVersion
 	 */
 	updateVersion: {
@@ -933,6 +953,8 @@ export const TraefikService: GenService<{
 		output: typeof TraefikUpdateVersionResponseSchema;
 	};
 	/**
+	 * Render Traefik middleware Docker labels. Required: kind (TRAEFIK_MIDDLEWARE_KIND_*), name; values/list are kind-specific.
+	 *
 	 * @generated from rpc openoxide.api.v1.TraefikService.RenderMiddleware
 	 */
 	renderMiddleware: {

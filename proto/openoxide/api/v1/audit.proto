@@ -4,7 +4,9 @@ package openoxide.api.v1;
 import "buf/validate/validate.proto";
 
 service AuditService {
+  // List audit logs; optional organization_id, action filter, limit, offset.
   rpc ListAuditLogs(AuditListAuditLogsRequest) returns (AuditListAuditLogsResponse);
+  // Export org-scoped audit logs as CSV (capped at 500 rows); optional action filter.
   rpc ExportAuditLogs(AuditExportAuditLogsRequest) returns (AuditExportAuditLogsResponse);
 }
 

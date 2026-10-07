@@ -22,9 +22,11 @@ impl fmt::Display for Protocol {
 /// Strongly-typed Docker port binding.
 ///
 /// ```
-/// Port::tcp(8080, 80)               // "8080:80/tcp"
-/// Port::udp(53, 53)                 // "53:53/udp"
-/// Port::tcp(80, 80).host_ip("0.0.0.0")  // "0.0.0.0:80:80/tcp"
+/// use oxos::docker::core::Port;
+///
+/// assert_eq!(Port::tcp(8080, 80).to_string(), "8080:80/tcp");
+/// assert_eq!(Port::udp(53, 53).to_string(), "53:53/udp");
+/// assert_eq!(Port::tcp(80, 80).host_ip("0.0.0.0").to_string(), "0.0.0.0:80:80/tcp");
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Port {

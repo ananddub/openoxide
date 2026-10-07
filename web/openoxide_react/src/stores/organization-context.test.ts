@@ -22,7 +22,8 @@ describe('active organization browser context', () => {
 			'3',
 		);
 		expect(listener).toHaveBeenCalledOnce();
-		expect((listener.mock.calls[0]?.[0] as CustomEvent).detail).toBe(3);
+		const [event] = listener.mock.calls[0] as [CustomEvent];
+		expect(event.detail).toBe(3);
 	});
 
 	it('ignores malformed persisted values', () => {

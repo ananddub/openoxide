@@ -545,6 +545,8 @@ export const CertificateRenewalStatusSchema: GenEnum<CertificateRenewalStatus> /
  */
 export const CertificateService: GenService<{
 	/**
+	 * List all TLS certificates.
+	 *
 	 * @generated from rpc openoxide.api.v1.CertificateService.ListCertificates
 	 */
 	listCertificates: {
@@ -553,6 +555,8 @@ export const CertificateService: GenService<{
 		output: typeof ListCertificatesResponseSchema;
 	};
 	/**
+	 * Get one certificate by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.CertificateService.GetCertificate
 	 */
 	getCertificate: {
@@ -561,6 +565,8 @@ export const CertificateService: GenService<{
 		output: typeof GetCertificateResponseSchema;
 	};
 	/**
+	 * Create a certificate. Required: name, certificate_data (PEM), certificate_path; private_key/auto_renew/server_id optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.CertificateService.CreateCertificate
 	 */
 	createCertificate: {
@@ -569,6 +575,8 @@ export const CertificateService: GenService<{
 		output: typeof CreateCertificateResponseSchema;
 	};
 	/**
+	 * Update a certificate by id; absent fields keep stored values, empty server_id detaches the server.
+	 *
 	 * @generated from rpc openoxide.api.v1.CertificateService.UpdateCertificate
 	 */
 	updateCertificate: {
@@ -577,6 +585,8 @@ export const CertificateService: GenService<{
 		output: typeof UpdateCertificateResponseSchema;
 	};
 	/**
+	 * Delete a certificate by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.CertificateService.DeleteCertificate
 	 */
 	deleteCertificate: {
@@ -585,6 +595,8 @@ export const CertificateService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List dependency counts (renewals, running renewals) for a certificate. Required: certificate_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.CertificateService.ListDependencies
 	 */
 	listDependencies: {
@@ -593,6 +605,8 @@ export const CertificateService: GenService<{
 		output: typeof ListCertificateDependenciesResponseSchema;
 	};
 	/**
+	 * Renew a certificate by id with new PEM material. Required: id, certificate_data, private_key.
+	 *
 	 * @generated from rpc openoxide.api.v1.CertificateService.RenewCertificate
 	 */
 	renewCertificate: {
@@ -601,6 +615,8 @@ export const CertificateService: GenService<{
 		output: typeof RenewCertificateResponseSchema;
 	};
 	/**
+	 * List renewal history for a certificate. Required: certificate_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.CertificateService.ListRenewals
 	 */
 	listRenewals: {

@@ -5,189 +5,263 @@
 import {ComposeService} from './compose_pb';
 
 /**
+ * Fetch a single compose project by id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.GetCompose
  */
 export const getCompose = ComposeService.method.getCompose;
 
 /**
+ * List all compose projects in an environment. Required: environment_id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.ListComposes
  */
 export const listComposes = ComposeService.method.listComposes;
 
 /**
+ * Create a compose project. Required: name, environment_id; server_id, compose_file, compose_type ("DOCKER-COMPOSE"|"STACK") optional.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.CreateCompose
  */
 export const createCompose = ComposeService.method.createCompose;
 
 /**
+ * Update compose fields by id: name, description, compose_file, server_id, network_ids, command, randomize, env_var.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.UpdateCompose
  */
 export const updateCompose = ComposeService.method.updateCompose;
 
 /**
+ * Delete a compose project by id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.DeleteCompose
  */
 export const deleteCompose = ComposeService.method.deleteCompose;
 
 /**
+ * Set the compose source to a GitHub repo by id. Required: repository, owner; branch, build_path, provider_id optional.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.SetGithubSource
  */
 export const setGithubSource = ComposeService.method.setGithubSource;
 
 /**
+ * Set the compose source to a GitLab repo by id. Required: repository, owner; branch, build_path, provider_id optional.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.SetGitlabSource
  */
 export const setGitlabSource = ComposeService.method.setGitlabSource;
 
 /**
+ * Set the compose source to a Bitbucket repo by id. Required: repository, owner; branch, build_path, provider_id optional.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.SetBitbucketSource
  */
 export const setBitbucketSource = ComposeService.method.setBitbucketSource;
 
 /**
+ * Set the compose source to a Gitea repo by id. Required: repository, owner; branch, build_path, provider_id optional.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.SetGiteaSource
  */
 export const setGiteaSource = ComposeService.method.setGiteaSource;
 
 /**
+ * Set the compose source to a custom Git repo by id. Required: repository, owner; branch, build_path, ssh_key_id (private clone) optional.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.SetCustomGitSource
  */
 export const setCustomGitSource = ComposeService.method.setCustomGitSource;
 
 /**
+ * Set the compose source to raw inline YAML by id. Required: content; file_name optional.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.SetRawSource
  */
 export const setRawSource = ComposeService.method.setRawSource;
 
 /**
+ * Build and deploy a compose service for the first time or after config changes. Takes the compose id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.Deploy
  */
 export const deploy = ComposeService.method.deploy;
 
 /**
+ * Redeploy an existing compose service with its current config, picking up domain/env changes. Takes the compose id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.Redeploy
  */
 export const redeploy = ComposeService.method.redeploy;
 
 /**
+ * Reload a compose service by id, applying config/env changes without a full redeploy.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.Reload
  */
 export const reload = ComposeService.method.reload;
 
 /**
+ * Start a stopped compose service. Takes the compose id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.Start
  */
 export const start = ComposeService.method.start;
 
 /**
+ * Stop a running compose service (destructive: makes it unavailable until started again). Takes the compose id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.Stop
  */
 export const stop = ComposeService.method.stop;
 
 /**
+ * Cancel the in-progress operation/deployment for a compose project by id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.Cancel
  */
 export const cancel = ComposeService.method.cancel;
 
 /**
+ * Move a compose project to another environment. Required: id, target_environment_id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.MoveCompose
  */
 export const moveCompose = ComposeService.method.moveCompose;
 
 /**
+ * Rotate the deploy-webhook token for a compose project by id; returns the new token.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.RotateWebhookToken
  */
 export const rotateWebhookToken = ComposeService.method.rotateWebhookToken;
 
 /**
+ * List resources this compose project depends on, by id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.ListDependencies
  */
 export const listDependencies = ComposeService.method.listDependencies;
 
 /**
+ * Preview parsed compose YAML and its services without saving. Required: content.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.PreviewCompose
  */
 export const previewCompose = ComposeService.method.previewCompose;
 
 /**
+ * Install a compose from a template. Required: template, environment_id; name, server_id, env_var optional.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.InstallTemplate
  */
 export const installTemplate = ComposeService.method.installTemplate;
 
 /**
+ * Export a compose project by id as an archive. Required: id; include_secrets toggles secret inclusion.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.ExportCompose
  */
 export const exportCompose = ComposeService.method.exportCompose;
 
 /**
+ * Import a compose project into an environment. Required: environment_id, archive.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.ImportCompose
  */
 export const importCompose = ComposeService.method.importCompose;
 
 /**
+ * Remove specific services from a compose project. Required: id, services (1-100 names).
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.RemoveServices
  */
 export const removeServices = ComposeService.method.removeServices;
 
 /**
+ * Update compose resource limits by id: memory_limit, cpu_limit, replicas.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.UpdateResources
  */
 export const updateResources = ComposeService.method.updateResources;
 
 /**
+ * Clear the deployment history records for a compose project by id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.ClearDeploymentHistory
  */
 export const clearDeploymentHistory =
 	ComposeService.method.clearDeploymentHistory;
 
 /**
+ * Remove queued (pending) deployments for a compose project by id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.CleanupDeploymentQueue
  */
 export const cleanupDeploymentQueue =
 	ComposeService.method.cleanupDeploymentQueue;
 
 /**
+ * Force-kill a stuck deployment for a compose project by id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.ForceKillDeployment
  */
 export const forceKillDeployment =
 	ComposeService.method.forceKillDeployment;
 
 /**
+ * List mount rows for a compose project. Required: compose_id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.ListMounts
  */
 export const listMounts = ComposeService.method.listMounts;
 
 /**
+ * Create a mount. Required: compose_id, mount_type (ComposeMountType), mount_path; host_path/volume_name/file_path/content per type.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.CreateMount
  */
 export const createMount = ComposeService.method.createMount;
 
 /**
+ * Update a mount. Required: compose_id, id, mount_type (ComposeMountType), mount_path; type-specific path/content fields.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.UpdateMount
  */
 export const updateMount = ComposeService.method.updateMount;
 
 /**
+ * Delete a mount. Required: compose_id; id of the mount to remove.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.DeleteMount
  */
 export const deleteMount = ComposeService.method.deleteMount;
 
 /**
+ * List file-patch rows for a compose project. Required: compose_id.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.ListPatches
  */
 export const listPatches = ComposeService.method.listPatches;
 
 /**
+ * Create a file patch. Required: compose_id, patch_type (ComposePatchType), file_path, enabled; content holds the patch body.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.CreatePatch
  */
 export const createPatch = ComposeService.method.createPatch;
 
 /**
+ * Update a file patch. Required: compose_id, id, patch_type (ComposePatchType), file_path, enabled, content.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.UpdatePatch
  */
 export const updatePatch = ComposeService.method.updatePatch;
 
 /**
+ * Delete a file patch. Required: compose_id, patch_type, payload; id of the patch to remove.
+ *
  * @generated from rpc openoxide.api.v1.ComposeService.DeletePatch
  */
 export const deletePatch = ComposeService.method.deletePatch;

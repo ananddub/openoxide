@@ -12,8 +12,6 @@ use crate::docker::types::ContainerSummary;
 use crate::telemetry::collector::bytes_to_mb;
 use crate::telemetry::collector::system::{ServerMetric, SystemCollector};
 
-use super::cgroup::CgroupCollector;
-
 /// Every metric is measured live at request time — the agent stores nothing
 /// and runs no background sampling. A server vitals request pays for one
 /// host read (the CPU window needs a short in-request gap to measure
@@ -56,23 +54,13 @@ impl MetricsService {
             return Ok(Response::new(ContainerMetricsResponse { metrics: vec![] }));
         }
 
-        // Read live from cgroup v2 + procfs — dockerd's /stats sampler is never
-        // invoked. CPU% is a rate over two cumulative reads, so prime each
-        // container's window, let a real delta accrue, then take the sample.
-        let mut collector = CgroupCollector::new(Arc::clone(docker));
-        for summary in &matched {
-            collector
-                .sample(summary.id.as_str(), summary.display_name().as_str())
-                .await;
-        }
-        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
-
+        // Read live from Docker's /stats endpoint (stream=false → precpu is
+        // populated, so CPU% is correct in a single read; no priming needed).
         let now = chrono::Utc::now().timestamp();
         let mut metrics = Vec::new();
         for summary in &matched {
-            let Some(doc) = collector
-                .sample(summary.id.as_str(), summary.display_name().as_str())
-                .await
+            let Some(doc) =
+                super::stats::fetch_docker_stats(docker, summary.id.as_str()).await
             else {
                 continue;
             };

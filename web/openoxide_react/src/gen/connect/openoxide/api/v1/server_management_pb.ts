@@ -603,6 +603,8 @@ export const ServerCleanupStatusSchema: GenEnum<ServerCleanupStatus> /*@__PURE__
  */
 export const ServerManagementService: GenService<{
 	/**
+	 * Get a server's management settings (maintenance, labels, cleanup policy, GPU) by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerManagementService.GetManagement
 	 */
 	getManagement: {
@@ -611,6 +613,8 @@ export const ServerManagementService: GenService<{
 		output: typeof ServerManagementGetResponseSchema;
 	};
 	/**
+	 * Replace a server's management settings by id (PUT): maintenance_mode, labels, cleanup_policy, gpu_enabled all required.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerManagementService.UpdateManagement
 	 */
 	updateManagement: {
@@ -619,6 +623,8 @@ export const ServerManagementService: GenService<{
 		output: typeof ServerManagementUpdateResponseSchema;
 	};
 	/**
+	 * Re-run the server audit remediation to repair stored audit state by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerManagementService.RepairAudit
 	 */
 	repairAudit: {
@@ -627,6 +633,8 @@ export const ServerManagementService: GenService<{
 		output: typeof ServerManagementRepairAuditResponseSchema;
 	};
 	/**
+	 * Configure GPU/container-toolkit support on a server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerManagementService.ConfigureGpu
 	 */
 	configureGpu: {
@@ -635,6 +643,8 @@ export const ServerManagementService: GenService<{
 		output: typeof ServerManagementConfigureGpuResponseSchema;
 	};
 	/**
+	 * Run a Docker/host cleanup on a server by id per its stored cleanup policy.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerManagementService.RunCleanup
 	 */
 	runCleanup: {
@@ -643,6 +653,8 @@ export const ServerManagementService: GenService<{
 		output: typeof ServerManagementRunCleanupResponseSchema;
 	};
 	/**
+	 * List past cleanup executions for a server. Required: server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerManagementService.ListCleanupHistory
 	 */
 	listCleanupHistory: {
@@ -651,6 +663,8 @@ export const ServerManagementService: GenService<{
 		output: typeof ServerManagementListCleanupHistoryResponseSchema;
 	};
 	/**
+	 * Upgrade the server's host packages/dependencies by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerManagementService.Upgrade
 	 */
 	upgrade: {
@@ -659,6 +673,8 @@ export const ServerManagementService: GenService<{
 		output: typeof ServerManagementUpgradeResponseSchema;
 	};
 	/**
+	 * Trigger a server-side backup and return its remote path by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerManagementService.Backup
 	 */
 	backup: {
@@ -667,6 +683,8 @@ export const ServerManagementService: GenService<{
 		output: typeof ServerManagementBackupResponseSchema;
 	};
 	/**
+	 * Run host diagnostics on a server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerManagementService.Diagnostics
 	 */
 	diagnostics: {

@@ -42,4 +42,17 @@ impl AiProviderConfig {
     pub fn normalized_url(&self) -> String {
         self.api_url.trim().trim_end_matches('/').to_string()
     }
+
+    /// Base URL for the rig Gemini client. rig's Gemini provider prepends the
+    /// full `/v1beta/...` path itself, so the base must be the bare origin —
+    /// otherwise a configured `.../v1beta` URL becomes `.../v1beta/v1beta/...`
+    /// and every request 404s.
+    pub fn gemini_base_url(&self) -> String {
+        let base = self.normalized_url();
+        base.strip_suffix("/v1beta")
+            .or_else(|| base.strip_suffix("/v1"))
+            .unwrap_or(&base)
+            .trim_end_matches('/')
+            .to_string()
+    }
 }

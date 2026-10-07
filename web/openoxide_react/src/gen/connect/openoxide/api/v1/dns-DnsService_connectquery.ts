@@ -5,61 +5,85 @@
 import {DnsService} from './dns_pb';
 
 /**
+ * List all saved DNS providers for the organization.
+ *
  * @generated from rpc openoxide.api.v1.DnsService.ListProviders
  */
 export const listProviders = DnsService.method.listProviders;
 
 /**
+ * Get one DNS provider by id.
+ *
  * @generated from rpc openoxide.api.v1.DnsService.GetProvider
  */
 export const getProvider = DnsService.method.getProvider;
 
 /**
+ * Create a DNS provider. Required: name, provider_type (DNS_PROVIDER_TYPE_*), credentials_json.
+ *
  * @generated from rpc openoxide.api.v1.DnsService.CreateProvider
  */
 export const createProvider = DnsService.method.createProvider;
 
 /**
+ * Update a DNS provider by id; absent fields keep stored values (name, provider_type, credentials_json optional).
+ *
  * @generated from rpc openoxide.api.v1.DnsService.UpdateProvider
  */
 export const updateProvider = DnsService.method.updateProvider;
 
 /**
+ * Delete a DNS provider by id.
+ *
  * @generated from rpc openoxide.api.v1.DnsService.DeleteProvider
  */
 export const deleteProvider = DnsService.method.deleteProvider;
 
 /**
+ * Test a saved DNS provider's stored credentials by id.
+ *
  * @generated from rpc openoxide.api.v1.DnsService.TestProvider
  */
 export const testProvider = DnsService.method.testProvider;
 
 /**
+ * Test unsaved DNS credentials before creating a provider. Required: provider_type, credentials_json.
+ *
  * @generated from rpc openoxide.api.v1.DnsService.TestConnection
  */
 export const testConnection = DnsService.method.testConnection;
 
 /**
+ * List DNS zones available to a provider. Required: provider_id.
+ *
  * @generated from rpc openoxide.api.v1.DnsService.ListZones
  */
 export const listZones = DnsService.method.listZones;
 
 /**
+ * List DNS records in a zone. Required: provider_id, zone_id.
+ *
  * @generated from rpc openoxide.api.v1.DnsService.ListRecords
  */
 export const listRecords = DnsService.method.listRecords;
 
 /**
+ * Create a DNS record. Required: provider_id, zone_id, record_type (A/AAAA/CNAME/...), name, content; ttl/proxied optional.
+ *
  * @generated from rpc openoxide.api.v1.DnsService.CreateRecord
  */
 export const createRecord = DnsService.method.createRecord;
 
 /**
+ * Edit a DNS record in place. Required: provider_id, zone_id, old_name + new record_type/name/content; id/old_* identify the row.
+ *
  * @generated from rpc openoxide.api.v1.DnsService.UpdateRecord
  */
 export const updateRecord = DnsService.method.updateRecord;
 
 /**
+ * Delete a DNS record. Required: provider_id, zone_id, name; id/record_type/content narrow the match.
+ *
  * @generated from rpc openoxide.api.v1.DnsService.DeleteRecord
  */
 export const deleteRecord = DnsService.method.deleteRecord;

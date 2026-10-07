@@ -6,16 +6,27 @@ import "buf/validate/validate.proto";
 
 // Sole notification owner service; absorbs the former NotificationOperationsService (delivery history and resource bindings included).
 service NotificationService {
+  // List notifications; optional organization_id scopes the result.
   rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsResponse);
+  // Get one notification by id; optional organization_id.
   rpc GetNotification(GetNotificationRequest) returns (GetNotificationResponse);
+  // Create a notification. Required: name, organization_id, exactly one provider config (slack/telegram/email/...); event toggles optional.
   rpc CreateNotification(CreateNotificationRequest) returns (CreateNotificationResponse);
+  // PATCH a notification by id: update name, event toggles, and provider config fields in place (provider kind immutable).
   rpc UpdateNotification(UpdateNotificationRequest) returns (UpdateNotificationResponse);
+  // Fully replace a notification by id, including its provider kind (one provider config required).
   rpc ReplaceNotification(ReplaceNotificationRequest) returns (ReplaceNotificationResponse);
+  // Delete a notification by id; optional organization_id.
   rpc DeleteNotification(DeleteNotificationRequest) returns (Empty);
+  // Send a test message through a notification by id; optional organization_id.
   rpc TestNotification(TestNotificationRequest) returns (TestNotificationResponse);
+  // List notification delivery attempts/history; optional organization_id.
   rpc ListDeliveryHistory(ListNotificationDeliveryHistoryRequest) returns (ListNotificationDeliveryHistoryResponse);
+  // Bind a notification to a resource. Required: notification_id, resource_type (NOTIFICATION_RESOURCE_TYPE_*), resource_id.
   rpc CreateBinding(CreateNotificationBindingRequest) returns (CreateNotificationBindingResponse);
+  // List notification-to-resource bindings; optional organization_id.
   rpc ListBindings(ListNotificationBindingsRequest) returns (ListNotificationBindingsResponse);
+  // Delete a notification binding by id; optional organization_id.
   rpc DeleteBinding(DeleteNotificationBindingRequest) returns (Empty);
 }
 

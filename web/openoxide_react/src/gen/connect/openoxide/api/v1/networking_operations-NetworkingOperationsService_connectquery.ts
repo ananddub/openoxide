@@ -5,23 +5,31 @@
 import {NetworkingOperationsService} from './networking_operations_pb';
 
 /**
+ * Purge CDN cache. Required: provider (NETWORKING_CDN_PROVIDER_*), api_token; zone_id/service_id/pull_zone_id + purge_all/urls per provider.
+ *
  * @generated from rpc openoxide.api.v1.NetworkingOperationsService.PurgeCdn
  */
 export const purgeCdn = NetworkingOperationsService.method.purgeCdn;
 
 /**
+ * Diagnose a domain's DNS/TCP/HTTP reachability. Required: host; port/https/path optional.
+ *
  * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseDomains
  */
 export const diagnoseDomains =
 	NetworkingOperationsService.method.diagnoseDomains;
 
 /**
+ * Diagnose the root overlay network's existence/health; optional server_id.
+ *
  * @generated from rpc openoxide.api.v1.NetworkingOperationsService.DiagnoseRootNetwork
  */
 export const diagnoseRootNetwork =
 	NetworkingOperationsService.method.diagnoseRootNetwork;
 
 /**
+ * Repair the root overlay network (recreate if missing/unhealthy); optional server_id.
+ *
  * @generated from rpc openoxide.api.v1.NetworkingOperationsService.RepairRootNetwork
  */
 export const repairRootNetwork =

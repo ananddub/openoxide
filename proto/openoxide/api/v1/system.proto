@@ -4,7 +4,9 @@ package openoxide.api.v1;
 import "buf/validate/validate.proto";
 
 service SystemService {
+  // Report overall system health (database and Docker dependencies).
   rpc Health(SystemHealthRequest) returns (SystemHealthResponse);
+  // Validate the panel configuration and report errors/warnings.
   rpc TestConfig(SystemTestConfigRequest) returns (SystemTestConfigResponse);
 }
 

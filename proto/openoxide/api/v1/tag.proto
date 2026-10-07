@@ -5,15 +5,25 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service TagService {
+  // List all tags for the organization.
   rpc ListTags(ListTagsRequest) returns (ListTagsResponse);
+  // Get one tag by id.
   rpc GetTag(GetTagRequest) returns (GetTagResponse);
+  // Create a tag. Required: name, color (hex); optional organization_id.
   rpc CreateTag(CreateTagRequest) returns (CreateTagResponse);
+  // Update a tag by id; name/color optional.
   rpc UpdateTag(UpdateTagRequest) returns (UpdateTagResponse);
+  // Delete a tag by id.
   rpc DeleteTag(DeleteTagRequest) returns (Empty);
+  // Attach an existing tag to the current resource by tag id.
   rpc AddTag(AddTagRequest) returns (AddTagResponse);
+  // Detach a tag from the current resource by tag id.
   rpc RemoveTag(RemoveTagRequest) returns (Empty);
+  // List tags attached to a project. Required: project_id.
   rpc ListProjectTags(ListProjectTagsRequest) returns (ListProjectTagsResponse);
+  // Attach a tag to a project. Required: project_id, tag_id.
   rpc AttachProjectTag(AttachProjectTagRequest) returns (AttachProjectTagResponse);
+  // Detach a tag from a project. Required: project_id, tag_id.
   rpc DetachProjectTag(DetachProjectTagRequest) returns (Empty);
 }
 

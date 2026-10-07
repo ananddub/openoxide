@@ -7,22 +7,39 @@ import "openoxide/api/v1/server_private_network.proto";
 import "buf/validate/validate.proto";
 
 service ServerService {
+  // List all managed servers (no params).
   rpc ListServers(ServerListServersRequest) returns (ServerListServersResponse);
+  // Get one server by id.
   rpc GetServer(ServerGetServerRequest) returns (ServerGetServerResponse);
+  // Create a server. Required: name, ip_address, server_type (ServerType DEPLOY/BUILD); port 0=22, empty username=root; optional ssh_key_id and build limits.
   rpc CreateServer(ServerCreateServerRequest) returns (ServerCreateServerResponse);
+  // Update a server by id (PATCH: absent fields unchanged); may change name, ip, port, status, type, cleanup, cron, metrics_config.
   rpc UpdateServer(ServerUpdateServerRequest) returns (ServerUpdateServerResponse);
+  // Delete a server by id.
   rpc DeleteServer(ServerDeleteServerRequest) returns (Empty);
+  // Test SSH connectivity to a server by id; optional host_key_fingerprint pin, sudo_password and pool_size.
   rpc TestConnection(ServerTestConnectionRequest) returns (ServerTestConnectionResponse);
+  // Set up a server by id (install_dependencies, Docker/Swarm, Traefik); optional advertise_addr, acme_email, host_key_fingerprint, sudo_password.
   rpc SetupServer(ServerSetupServerRequest) returns (ServerSetupServerResponse);
+  // Start panel-managed services on a server by id.
   rpc StartServer(ServerStartServerRequest) returns (Empty);
+  // Stop panel-managed services on a server by id.
   rpc StopServer(ServerStopServerRequest) returns (Empty);
+  // Restart panel-managed services on a server by id.
   rpc RestartServer(ServerRestartServerRequest) returns (Empty);
+  // Detach the panel from a server by id without deleting the row.
   rpc RemoveServer(ServerRemoveServerRequest) returns (Empty);
+  // Get recorded setup/connection errors for a server by id.
   rpc GetServerErrors(ServerGetServerErrorsRequest) returns (ServerGetServerErrorsResponse);
+  // List remote (non-local) servers (no params).
   rpc ListRemoteServers(ServerListRemoteServersRequest) returns (ServerListRemoteServersResponse);
+  // List private-network configurations (no params).
   rpc ListPrivateNetworks(ServerListPrivateNetworksRequest) returns (ServerListPrivateNetworksResponse);
+  // Create a private network for server_id with a ServerConnectionMode and optional provider/WireGuard params (public_key, endpoint, routes, ...).
   rpc CreatePrivateNetwork(ServerCreatePrivateNetworkRequest) returns (ServerCreatePrivateNetworkResponse);
+  // Update a private network by id: connection_mode plus optional provider/WireGuard params (public_key, endpoint, routes, ...).
   rpc UpdatePrivateNetwork(ServerUpdatePrivateNetworkRequest) returns (ServerUpdatePrivateNetworkResponse);
+  // Delete a private network by id.
   rpc DeletePrivateNetwork(ServerDeletePrivateNetworkRequest) returns (Empty);
 }
 

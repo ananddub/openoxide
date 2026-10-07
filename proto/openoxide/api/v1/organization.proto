@@ -6,11 +6,17 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service OrganizationService {
+  // Get one organization by id.
   rpc GetOrganization(GetOrganizationRequest) returns (Organization);
+  // List organizations the caller belongs to (each carries the caller's role).
   rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
+  // Leave an organization by id (caller removes their own membership).
   rpc LeaveOrganization(LeaveOrganizationRequest) returns (Empty);
+  // Create an organization. Required: name; logo/slug optional.
   rpc CreateOrganization(CreateOrganizationRequest) returns (Organization);
+  // Update an organization by id; name/logo/slug optional.
   rpc UpdateOrganization(UpdateOrganizationRequest) returns (Organization);
+  // Delete an organization by id.
   rpc DeleteOrganization(DeleteOrganizationRequest) returns (Empty);
 }
 

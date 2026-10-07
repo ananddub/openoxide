@@ -5,11 +5,15 @@
 import {SettingsService} from './settings_pb';
 
 /**
+ * Get the singleton panel settings row.
+ *
  * @generated from rpc openoxide.api.v1.SettingsService.GetSettings
  */
 export const getSettings = SettingsService.method.getSettings;
 
 /**
+ * PATCH panel settings: all fields optional, absent fields keep stored values (certificate_type is SETTINGS_CERTIFICATE_TYPE_*).
+ *
  * @generated from rpc openoxide.api.v1.SettingsService.UpdateSettings
  */
 export const updateSettings = SettingsService.method.updateSettings;

@@ -12,7 +12,6 @@ const OUT = '.artifacts';
 const RAIL = '[data-sidebar="sidebar"]';
 /** Rail rows are the links/buttons that own an icon cell. */
 const ROWS = `${RAIL} :is(a,button):has(> [class*="place-content-center"])`;
-const CELL = '[class*="place-content-center"]';
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
 if (!process.env.CHROME_PATH) {

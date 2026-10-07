@@ -5,63 +5,85 @@
 import {NotificationService} from './notification_pb';
 
 /**
+ * List notifications; optional organization_id scopes the result.
+ *
  * @generated from rpc openoxide.api.v1.NotificationService.ListNotifications
  */
 export const listNotifications =
 	NotificationService.method.listNotifications;
 
 /**
+ * Get one notification by id; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.NotificationService.GetNotification
  */
 export const getNotification = NotificationService.method.getNotification;
 
 /**
+ * Create a notification. Required: name, organization_id, exactly one provider config (slack/telegram/email/...); event toggles optional.
+ *
  * @generated from rpc openoxide.api.v1.NotificationService.CreateNotification
  */
 export const createNotification =
 	NotificationService.method.createNotification;
 
 /**
+ * PATCH a notification by id: update name, event toggles, and provider config fields in place (provider kind immutable).
+ *
  * @generated from rpc openoxide.api.v1.NotificationService.UpdateNotification
  */
 export const updateNotification =
 	NotificationService.method.updateNotification;
 
 /**
+ * Fully replace a notification by id, including its provider kind (one provider config required).
+ *
  * @generated from rpc openoxide.api.v1.NotificationService.ReplaceNotification
  */
 export const replaceNotification =
 	NotificationService.method.replaceNotification;
 
 /**
+ * Delete a notification by id; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.NotificationService.DeleteNotification
  */
 export const deleteNotification =
 	NotificationService.method.deleteNotification;
 
 /**
+ * Send a test message through a notification by id; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.NotificationService.TestNotification
  */
 export const testNotification =
 	NotificationService.method.testNotification;
 
 /**
+ * List notification delivery attempts/history; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.NotificationService.ListDeliveryHistory
  */
 export const listDeliveryHistory =
 	NotificationService.method.listDeliveryHistory;
 
 /**
+ * Bind a notification to a resource. Required: notification_id, resource_type (NOTIFICATION_RESOURCE_TYPE_*), resource_id.
+ *
  * @generated from rpc openoxide.api.v1.NotificationService.CreateBinding
  */
 export const createBinding = NotificationService.method.createBinding;
 
 /**
+ * List notification-to-resource bindings; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.NotificationService.ListBindings
  */
 export const listBindings = NotificationService.method.listBindings;
 
 /**
+ * Delete a notification binding by id; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.NotificationService.DeleteBinding
  */
 export const deleteBinding = NotificationService.method.deleteBinding;

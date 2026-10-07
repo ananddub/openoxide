@@ -5,27 +5,37 @@
 import {PreviewDeploymentService} from './preview_pb';
 
 /**
+ * List preview deployments; optional application_id scopes the result.
+ *
  * @generated from rpc openoxide.api.v1.PreviewDeploymentService.ListPreviews
  */
 export const listPreviews = PreviewDeploymentService.method.listPreviews;
 
 /**
+ * Get one preview deployment by id.
+ *
  * @generated from rpc openoxide.api.v1.PreviewDeploymentService.GetPreview
  */
 export const getPreview = PreviewDeploymentService.method.getPreview;
 
 /**
+ * Create a preview deployment. Required: application_id, branch; commit optional.
+ *
  * @generated from rpc openoxide.api.v1.PreviewDeploymentService.CreatePreview
  */
 export const createPreview = PreviewDeploymentService.method.createPreview;
 
 /**
+ * Redeploy an existing preview by id.
+ *
  * @generated from rpc openoxide.api.v1.PreviewDeploymentService.RedeployPreview
  */
 export const redeployPreview =
 	PreviewDeploymentService.method.redeployPreview;
 
 /**
+ * Delete a preview deployment by id.
+ *
  * @generated from rpc openoxide.api.v1.PreviewDeploymentService.DeletePreview
  */
 export const deletePreview = PreviewDeploymentService.method.deletePreview;

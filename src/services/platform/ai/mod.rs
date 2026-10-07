@@ -1,3 +1,4 @@
+pub mod agent;
 mod prompts;
 mod service;
 mod types;

@@ -13,15 +13,22 @@ use crate::docker::DockerCli;
 ///
 /// # Example
 /// ```rust,no_run
-/// use crate::docker::query::filter::{ContainerFilter, ContainerStatus};
+/// use oxos::docker::DockerCli;
+/// use oxos::docker::query::filter::{ContainerFilter, ContainerStatus};
 ///
-/// let running = docker.query()
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let docker = DockerCli::new_local();
+/// let running = docker
+///     .query()
 ///     .containers()
 ///     .all()
 ///     .filter(ContainerFilter::Status(ContainerStatus::Running))
 ///     .filter(ContainerFilter::label("app", "api"))
 ///     .list()
 ///     .await?;
+/// # let _ = running;
+/// # Ok(())
+/// # }
 /// ```
 pub struct DockerQuery<'a> {
     pub(super) cli: &'a DockerCli,

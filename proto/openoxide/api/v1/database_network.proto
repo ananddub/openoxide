@@ -5,12 +5,19 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service DatabaseNetworkService {
+  // List all database networks. No params.
   rpc ListNetworks(DatabaseNetworkListNetworksRequest) returns (DatabaseNetworkListNetworksResponse);
+  // List database networks scoped to server_id.
   rpc ListServerNetworks(DatabaseNetworkListServerNetworksRequest) returns (DatabaseNetworkListServerNetworksResponse);
+  // Get one database network by id.
   rpc GetNetwork(DatabaseNetworkGetNetworkRequest) returns (DatabaseNetworkGetNetworkResponse);
+  // Create a database network. Required: name, docker_network_name; optional description, external (0/1), server_id.
   rpc CreateNetwork(DatabaseNetworkCreateNetworkRequest) returns (DatabaseNetworkCreateNetworkResponse);
+  // Update a database network by id; absent fields keep stored values (name, docker_network_name, description, external, server_id).
   rpc UpdateNetwork(DatabaseNetworkUpdateNetworkRequest) returns (DatabaseNetworkUpdateNetworkResponse);
+  // Delete a database network by id.
   rpc DeleteNetwork(DatabaseNetworkDeleteNetworkRequest) returns (Empty);
+  // List dependent resource counts (applications, compose services, databases) for a network by id.
   rpc ListDependencies(DatabaseNetworkListDependenciesRequest) returns (DatabaseNetworkListDependenciesResponse);
 }
 

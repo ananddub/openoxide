@@ -5,89 +5,123 @@
 import {ServerService} from './server_pb';
 
 /**
+ * List all managed servers (no params).
+ *
  * @generated from rpc openoxide.api.v1.ServerService.ListServers
  */
 export const listServers = ServerService.method.listServers;
 
 /**
+ * Get one server by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerService.GetServer
  */
 export const getServer = ServerService.method.getServer;
 
 /**
+ * Create a server. Required: name, ip_address, server_type (ServerType DEPLOY/BUILD); port 0=22, empty username=root; optional ssh_key_id and build limits.
+ *
  * @generated from rpc openoxide.api.v1.ServerService.CreateServer
  */
 export const createServer = ServerService.method.createServer;
 
 /**
+ * Update a server by id (PATCH: absent fields unchanged); may change name, ip, port, status, type, cleanup, cron, metrics_config.
+ *
  * @generated from rpc openoxide.api.v1.ServerService.UpdateServer
  */
 export const updateServer = ServerService.method.updateServer;
 
 /**
+ * Delete a server by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerService.DeleteServer
  */
 export const deleteServer = ServerService.method.deleteServer;
 
 /**
+ * Test SSH connectivity to a server by id; optional host_key_fingerprint pin, sudo_password and pool_size.
+ *
  * @generated from rpc openoxide.api.v1.ServerService.TestConnection
  */
 export const testConnection = ServerService.method.testConnection;
 
 /**
+ * Set up a server by id (install_dependencies, Docker/Swarm, Traefik); optional advertise_addr, acme_email, host_key_fingerprint, sudo_password.
+ *
  * @generated from rpc openoxide.api.v1.ServerService.SetupServer
  */
 export const setupServer = ServerService.method.setupServer;
 
 /**
+ * Start panel-managed services on a server by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerService.StartServer
  */
 export const startServer = ServerService.method.startServer;
 
 /**
+ * Stop panel-managed services on a server by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerService.StopServer
  */
 export const stopServer = ServerService.method.stopServer;
 
 /**
+ * Restart panel-managed services on a server by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerService.RestartServer
  */
 export const restartServer = ServerService.method.restartServer;
 
 /**
+ * Detach the panel from a server by id without deleting the row.
+ *
  * @generated from rpc openoxide.api.v1.ServerService.RemoveServer
  */
 export const removeServer = ServerService.method.removeServer;
 
 /**
+ * Get recorded setup/connection errors for a server by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerService.GetServerErrors
  */
 export const getServerErrors = ServerService.method.getServerErrors;
 
 /**
+ * List remote (non-local) servers (no params).
+ *
  * @generated from rpc openoxide.api.v1.ServerService.ListRemoteServers
  */
 export const listRemoteServers = ServerService.method.listRemoteServers;
 
 /**
+ * List private-network configurations (no params).
+ *
  * @generated from rpc openoxide.api.v1.ServerService.ListPrivateNetworks
  */
 export const listPrivateNetworks =
 	ServerService.method.listPrivateNetworks;
 
 /**
+ * Create a private network for server_id with a ServerConnectionMode and optional provider/WireGuard params (public_key, endpoint, routes, ...).
+ *
  * @generated from rpc openoxide.api.v1.ServerService.CreatePrivateNetwork
  */
 export const createPrivateNetwork =
 	ServerService.method.createPrivateNetwork;
 
 /**
+ * Update a private network by id: connection_mode plus optional provider/WireGuard params (public_key, endpoint, routes, ...).
+ *
  * @generated from rpc openoxide.api.v1.ServerService.UpdatePrivateNetwork
  */
 export const updatePrivateNetwork =
 	ServerService.method.updatePrivateNetwork;
 
 /**
+ * Delete a private network by id.
+ *
  * @generated from rpc openoxide.api.v1.ServerService.DeletePrivateNetwork
  */
 export const deletePrivateNetwork =

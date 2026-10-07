@@ -5,30 +5,55 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service DatabaseService {
+  // Get a database by kind (DATABASE_KIND_*) and id.
   rpc GetDatabase(GetDatabaseRequest) returns (Database);
+  // List databases of a given kind (DATABASE_KIND_*) within environment_id.
   rpc ListDatabases(ListDatabasesRequest) returns (ListDatabasesResponse);
+  // Create a database. Required: kind (DATABASE_KIND_*), name, environment_id; image/credentials/port/networks optional.
   rpc CreateDatabase(CreateDatabaseRequest) returns (Database);
+  // Update a database by kind and id; absent fields keep stored values (image, credentials, limits, replicas, networks, etc.).
   rpc UpdateDatabase(UpdateDatabaseRequest) returns (Database);
+  // Delete a database by kind (DATABASE_KIND_*) and id.
   rpc DeleteDatabase(DeleteDatabaseRequest) returns (Empty);
+  // Deploy (create and start) a database by kind and id.
   rpc Deploy(DatabaseOperationRequest) returns (DatabaseOperation);
+  // Redeploy a database by kind and id (rebuild/recreate the container/service).
   rpc Redeploy(DatabaseOperationRequest) returns (DatabaseOperation);
+  // Reload a database's config/service by kind and id.
   rpc Reload(DatabaseOperationRequest) returns (DatabaseOperation);
+  // Start a stopped database by kind and id.
   rpc Start(DatabaseOperationRequest) returns (DatabaseOperation);
+  // Stop a running database by kind and id.
   rpc Stop(DatabaseOperationRequest) returns (DatabaseOperation);
+  // Cancel an in-progress database operation by kind and id.
   rpc Cancel(DatabaseOperationRequest) returns (Empty);
+  // Get Swarm settings for a database by kind and id.
   rpc GetSwarmSettings(SwarmSettingsRequest) returns (SwarmSettings);
+  // Update Swarm settings for a database by kind and id with a SwarmSettings payload.
   rpc UpdateSwarmSettings(UpdateSwarmSettingsRequest) returns (SwarmSettings);
+  // List mounts for a database by kind and id.
   rpc ListMounts(DatabaseTargetRequest) returns (MountList);
+  // Create a mount for a database. Required: kind, database_id, mount_type, mount_path.
   rpc CreateMount(CreateMountRequest) returns (Mount);
+  // Update a database mount. Required: kind, database_id, id (mount), mount_type, mount_path.
   rpc UpdateMount(UpdateMountRequest) returns (Mount);
+  // Delete a database mount by kind, database_id and id (mount).
   rpc DeleteMount(DeleteMountRequest) returns (Empty);
+  // List dependent resources of a database by kind and id.
   rpc ListDependencies(DatabaseTargetRequest) returns (Dependencies);
+  // Export a database to an archive by kind and id; include_secrets optionally bundles secrets.
   rpc ExportDatabase(ExportDatabaseRequest) returns (DatabaseExport);
+  // Import a database from an archive into environment_id for the given kind.
   rpc ImportDatabase(ImportDatabaseRequest) returns (Database);
+  // Get connection details (host, port, database, username) for a database by kind and id.
   rpc GetConnection(DatabaseTargetRequest) returns (DatabaseConnection);
+  // Rotate credentials for a database by kind and id.
   rpc RotateCredentials(DatabaseTargetRequest) returns (Database);
+  // Validate a database's configuration/connectivity by kind and id.
   rpc ValidateDatabase(DatabaseTargetRequest) returns (ValidationResult);
+  // Get advanced Postgres config (replication role, raw config) for a database by kind and id.
   rpc GetPostgresAdvancedConfig(DatabaseTargetRequest) returns (AdvancedConfig);
+  // Update advanced Postgres config for a database by kind and id with an AdvancedConfig payload.
   rpc UpdatePostgresAdvancedConfig(UpdateAdvancedConfigRequest) returns (AdvancedConfig);
 }
 enum DatabaseKind {

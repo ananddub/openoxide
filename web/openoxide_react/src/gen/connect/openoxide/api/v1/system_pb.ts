@@ -105,6 +105,8 @@ export const SystemTestConfigResponseSchema: GenMessage<SystemTestConfigResponse
  */
 export const SystemService: GenService<{
 	/**
+	 * Report overall system health (database and Docker dependencies).
+	 *
 	 * @generated from rpc openoxide.api.v1.SystemService.Health
 	 */
 	health: {
@@ -113,6 +115,8 @@ export const SystemService: GenService<{
 		output: typeof SystemHealthResponseSchema;
 	};
 	/**
+	 * Validate the panel configuration and report errors/warnings.
+	 *
 	 * @generated from rpc openoxide.api.v1.SystemService.TestConfig
 	 */
 	testConfig: {

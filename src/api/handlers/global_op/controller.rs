@@ -232,12 +232,10 @@ impl GlobalService for DockerManagementController {
         request: ServiceRequest<'_, GlobalContainerActionRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<GlobalContainerActionResponse> + Send + use<'a>>
     {
-        // The typed request carries no server_id, matching the old handler
-        // which acted on the local docker host.
         let action = to_container_action(request.action)?;
         let result = self
             .service
-            .container_action(None, request.container_id, action)
+            .container_action(request.server_id, request.container_id, action)
             .await
             .map_err(api_error)?;
         Response::ok(GlobalContainerActionResponse {
@@ -253,7 +251,12 @@ impl GlobalService for DockerManagementController {
         request: ServiceRequest<'_, GlobalRemoveContainerRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         self.service
-            .remove_container(None, request.container_id, request.force, request.volumes)
+            .remove_container(
+                request.server_id,
+                request.container_id,
+                request.force,
+                request.volumes,
+            )
             .await
             .map_err(api_error)?;
         Response::ok(Empty::default())
@@ -266,7 +269,12 @@ impl GlobalService for DockerManagementController {
         request: ServiceRequest<'_, GlobalDeleteContainerRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         self.service
-            .remove_container(None, request.container_id, request.force, request.volumes)
+            .remove_container(
+                request.server_id,
+                request.container_id,
+                request.force,
+                request.volumes,
+            )
             .await
             .map_err(api_error)?;
         Response::ok(Empty::default())
@@ -300,7 +308,11 @@ impl GlobalService for DockerManagementController {
             networks: request.networks,
             volumes: request.volumes,
         };
-        let result = self.service.prune(None, dto).await.map_err(api_error)?;
+        let result = self
+            .service
+            .prune(request.server_id, dto)
+            .await
+            .map_err(api_error)?;
         Response::ok(GlobalPruneResponse {
             operations: result.operations.into_iter().map(output_to_proto).collect(),
         })

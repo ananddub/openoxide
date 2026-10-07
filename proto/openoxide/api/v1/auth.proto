@@ -6,32 +6,54 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service AuthService {
+  // Register the first/owner user. Required: email, password (min 8); first_name/last_name/avatar optional. Returns user + tokens.
   rpc Signup(SignupRequest) returns (AuthResponse);
+  // Log in with credentials. Required: email, password; two_factor_code/recovery_code when 2FA enabled. Returns user + tokens.
   rpc Login(LoginRequest) returns (AuthResponse);
+  // Exchange a refresh token for new tokens. Required: refresh_token.
   rpc Refresh(RefreshRequest) returns (AuthResponse);
+  // Return the currently authenticated user. No params.
   rpc WhoAmI(WhoAmIRequest) returns (User);
+  // Log out the current session. No params.
   rpc Logout(LogoutRequest) returns (Empty);
+  // Report whether an owner account exists yet (initial setup gate). No params.
   rpc GetSetupStatus(GetSetupStatusRequest) returns (SetupStatus);
+  // Update the current user's profile. All fields optional: email, password (min 8), first_name, last_name, avatar.
   rpc UpdateUser(UpdateUserRequest) returns (User);
 
+  // Request a password-reset email. Required: email.
   rpc RequestPasswordReset(RequestPasswordResetRequest) returns (Empty);
+  // Reset a password using a reset token. Required: token, password (min 8).
   rpc ResetPassword(ResetPasswordRequest) returns (Empty);
 
+  // Report the current user's email verification status. No params.
   rpc GetEmailVerificationStatus(GetEmailVerificationStatusRequest) returns (EmailVerificationStatus);
+  // Send an email-verification message to the current user. No params.
   rpc RequestEmailVerification(RequestEmailVerificationRequest) returns (Empty);
+  // Confirm email verification using a token. Required: token.
   rpc ConfirmEmailVerification(ConfirmEmailVerificationRequest) returns (Empty);
 
+  // Report the current user's 2FA status (enabled/configured). No params.
   rpc GetTwoFactorStatus(GetTwoFactorStatusRequest) returns (TwoFactorStatus);
+  // Begin 2FA setup, returning secret/otpauth URL/recovery codes. Required: password.
   rpc SetupTwoFactor(SetupTwoFactorRequest) returns (TwoFactorSetup);
+  // Enable 2FA by confirming a TOTP code. Required: code (6-10 chars).
   rpc EnableTwoFactor(EnableTwoFactorRequest) returns (Empty);
+  // Disable 2FA. Required: password, code (6-10 chars).
   rpc DisableTwoFactor(DisableTwoFactorRequest) returns (Empty);
+  // Regenerate 2FA recovery codes. Required: password, code (6-10 chars). Returns new codes.
   rpc RegenerateRecoveryCodes(RegenerateRecoveryCodesRequest) returns (RecoveryCodes);
 
+  // List the current user's active sessions. No params.
   rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+  // Revoke a session by id. Required: session_id.
   rpc RevokeSession(RevokeSessionRequest) returns (Empty);
 
+  // List the current user's personal access tokens. No params.
   rpc ListPersonalAccessTokens(ListPersonalAccessTokensRequest) returns (ListPersonalAccessTokensResponse);
+  // Create a personal access token (returned once). Required: name, password; expires_at optional.
   rpc CreatePersonalAccessToken(CreatePersonalAccessTokenRequest) returns (CreatedPersonalAccessToken);
+  // Revoke a personal access token by id. Required: id.
   rpc RevokePersonalAccessToken(RevokePersonalAccessTokenRequest) returns (Empty);
 }
 

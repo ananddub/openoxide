@@ -5,98 +5,134 @@
 import {MonitoringService} from './monitoring_pb';
 
 /**
+ * Legacy stub (no server-side impl): overview envelope addressed by server id.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.GetOverview
  */
 export const getOverview = MonitoringService.method.getOverview;
 
 /**
+ * Legacy stub (no server-side impl): metrics envelope addressed by server id.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.GetMetrics
  */
 export const getMetrics = MonitoringService.method.getMetrics;
 
 /**
+ * Legacy stub (no server-side impl): container-state envelope addressed by server id.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerState
  */
 export const getContainerState =
 	MonitoringService.method.getContainerState;
 
 /**
+ * Get the local panel monitoring service health/endpoints (no params).
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.GetLocalMetrics
  */
 export const getLocalMetrics = MonitoringService.method.getLocalMetrics;
 
 /**
+ * Get recent host metric samples for a server by server_id (capped at 50 samples).
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.GetServerMetrics
  */
 export const getServerMetrics = MonitoringService.method.getServerMetrics;
 
 /**
+ * Get per-container metrics by server_id and organization_id; optional app_name filter and limit (1-1000).
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerMetrics
  */
 export const getContainerMetrics =
 	MonitoringService.method.getContainerMetrics;
 
 /**
+ * Get current container states (running/exited, compose project/service) for a server by server_id.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerStates
  */
 export const getContainerStates =
 	MonitoringService.method.getContainerStates;
 
 /**
+ * Rotate and return the agent token (plaintext once) for server_id within organization_id.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.CreateAgentToken
  */
 export const createAgentToken = MonitoringService.method.createAgentToken;
 
 /**
+ * Get agent status (MonitoringAgentState: ONLINE/OFFLINE/NEVER_SEEN, last seen, version) for a server by server_id.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.GetAgentStatus
  */
 export const getAgentStatus = MonitoringService.method.getAgentStatus;
 
 /**
+ * Start the monitoring agent container on a server by server_id.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.StartAgent
  */
 export const startAgent = MonitoringService.method.startAgent;
 
 /**
+ * Stop the monitoring agent container on a server by server_id.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.StopAgent
  */
 export const stopAgent = MonitoringService.method.stopAgent;
 
 /**
+ * Restart the monitoring agent container on a server by server_id.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.RestartAgent
  */
 export const restartAgent = MonitoringService.method.restartAgent;
 
 /**
+ * Reinstall the monitoring agent on a server by server_id.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.ReinstallAgent
  */
 export const reinstallAgent = MonitoringService.method.reinstallAgent;
 
 /**
+ * Export host metrics as CSV (up to 1000 samples) for a server by server_id.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.ExportServerMetrics
  */
 export const exportServerMetrics =
 	MonitoringService.method.exportServerMetrics;
 
 /**
+ * Get the latest host metric sample in Prometheus exposition format for a server by server_id.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.GetPrometheusMetrics
  */
 export const getPrometheusMetrics =
 	MonitoringService.method.getPrometheusMetrics;
 
 /**
+ * Create a maintenance window. Required: starts_at, ends_at (after starts_at), reason; optional server_id/organization_id scope.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.CreateMaintenanceWindow
  */
 export const createMaintenanceWindow =
 	MonitoringService.method.createMaintenanceWindow;
 
 /**
+ * List maintenance windows; optional organization_id scope, limit (1-1000) and offset.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.ListMaintenanceWindows
  */
 export const listMaintenanceWindows =
 	MonitoringService.method.listMaintenanceWindows;
 
 /**
+ * Delete a maintenance window by id; optional organization_id scope.
+ *
  * @generated from rpc openoxide.api.v1.MonitoringService.DeleteMaintenanceWindow
  */
 export const deleteMaintenanceWindow =

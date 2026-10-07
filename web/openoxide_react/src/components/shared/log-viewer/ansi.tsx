@@ -8,6 +8,8 @@ export function renderAnsiText(
 ): React.ReactNode {
 	if (!text) return null;
 
+	// ANSI colour sequences are introduced by the ESC control byte by design.
+	// eslint-disable-next-line no-control-regex
 	const ansiRegex = /\x1B\[([0-9;]*)m/g;
 
 	if (!ansiRegex.test(text)) {

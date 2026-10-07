@@ -260,6 +260,8 @@ export const AlertEventStateSchema: GenEnum<AlertEventState> /*@__PURE__*/ =
  */
 export const AlertOperationsService: GenService<{
 	/**
+	 * List alert rules; optional organization_id scopes the result.
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertOperationsService.ListRules
 	 */
 	listRules: {
@@ -268,6 +270,8 @@ export const AlertOperationsService: GenService<{
 		output: typeof ListAlertRulesResponseSchema;
 	};
 	/**
+	 * List fired alert events; optional organization_id scopes the result.
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertOperationsService.ListEvents
 	 */
 	listEvents: {
@@ -276,6 +280,8 @@ export const AlertOperationsService: GenService<{
 		output: typeof ListAlertEventsResponseSchema;
 	};
 	/**
+	 * Get one alert rule by id; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertOperationsService.GetRule
 	 */
 	getRule: {
@@ -284,6 +290,8 @@ export const AlertOperationsService: GenService<{
 		output: typeof GetAlertRuleResponseSchema;
 	};
 	/**
+	 * Create an alert rule. Required: name, target_kind, target_id, metric, operator, threshold, duration_seconds, organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertOperationsService.CreateRule
 	 */
 	createRule: {
@@ -292,6 +300,8 @@ export const AlertOperationsService: GenService<{
 		output: typeof CreateAlertRuleResponseSchema;
 	};
 	/**
+	 * Fully replace an alert rule by id (organization fixed to stored row).
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertOperationsService.UpdateRule
 	 */
 	updateRule: {
@@ -300,6 +310,8 @@ export const AlertOperationsService: GenService<{
 		output: typeof UpdateAlertRuleResponseSchema;
 	};
 	/**
+	 * Delete an alert rule by id; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertOperationsService.DeleteRule
 	 */
 	deleteRule: {
@@ -308,6 +320,8 @@ export const AlertOperationsService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Fire a canned test alert through a notification channel. Required: notification_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertOperationsService.TestRule
 	 */
 	testRule: {
@@ -316,6 +330,8 @@ export const AlertOperationsService: GenService<{
 		output: typeof TestAlertRuleResponseSchema;
 	};
 	/**
+	 * Acknowledge a firing alert event by id; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertOperationsService.AcknowledgeEvent
 	 */
 	acknowledgeEvent: {
@@ -324,6 +340,8 @@ export const AlertOperationsService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Silence an alert event's notifications until a time. Required: id, until (unix seconds); optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.AlertOperationsService.SilenceEvent
 	 */
 	silenceEvent: {

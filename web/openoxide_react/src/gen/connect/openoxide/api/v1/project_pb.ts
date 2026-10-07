@@ -216,6 +216,8 @@ export const DeleteProjectRequestSchema: GenMessage<DeleteProjectRequest> /*@__P
  */
 export const ProjectService: GenService<{
 	/**
+	 * Get one project by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ProjectService.GetProject
 	 */
 	getProject: {
@@ -224,6 +226,8 @@ export const ProjectService: GenService<{
 		output: typeof ProjectSchema;
 	};
 	/**
+	 * List projects in an organization. Required: organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ProjectService.ListProjects
 	 */
 	listProjects: {
@@ -232,6 +236,8 @@ export const ProjectService: GenService<{
 		output: typeof ListProjectsResponseSchema;
 	};
 	/**
+	 * Create a project. Required: name, environment_variables, organization_id; description optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ProjectService.CreateProject
 	 */
 	createProject: {
@@ -240,6 +246,8 @@ export const ProjectService: GenService<{
 		output: typeof ProjectSchema;
 	};
 	/**
+	 * Update a project by id; name/description/environment_variables optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ProjectService.UpdateProject
 	 */
 	updateProject: {
@@ -248,6 +256,8 @@ export const ProjectService: GenService<{
 		output: typeof ProjectSchema;
 	};
 	/**
+	 * Delete a project by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ProjectService.DeleteProject
 	 */
 	deleteProject: {

@@ -5,102 +5,140 @@
 import {ScheduleService} from './schedule_pb';
 
 /**
+ * List all schedules in the active organization. No params.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.ListSchedules
  */
 export const listSchedules = ScheduleService.method.listSchedules;
 
 /**
+ * Get one schedule by id. Required: id.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.GetSchedule
  */
 export const getSchedule = ScheduleService.method.getSchedule;
 
 /**
+ * Create a schedule. Required: name, cron_expression, command; shell_type/schedule_type (ScheduleType)/schedule_action (ScheduleAction)/target ids optional.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.CreateSchedule
  */
 export const createSchedule = ScheduleService.method.createSchedule;
 
 /**
+ * Update a schedule by id. Required: id; all other fields optional patches (absent keeps stored value).
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.UpdateSchedule
  */
 export const updateSchedule = ScheduleService.method.updateSchedule;
 
 /**
+ * Delete a schedule by id. Required: id.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.DeleteSchedule
  */
 export const deleteSchedule = ScheduleService.method.deleteSchedule;
 
 /**
+ * Run a schedule immediately by id. Required: id. Returns run result with stdout/stderr.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.RunSchedule
  */
 export const runSchedule = ScheduleService.method.runSchedule;
 
 /**
+ * Pause (disable) a schedule by id. Required: id.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.PauseSchedule
  */
 export const pauseSchedule = ScheduleService.method.pauseSchedule;
 
 /**
+ * Resume (enable) a schedule by id. Required: id.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.ResumeSchedule
  */
 export const resumeSchedule = ScheduleService.method.resumeSchedule;
 
 /**
+ * List schedules bound to an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.ListApplicationSchedules
  */
 export const listApplicationSchedules =
 	ScheduleService.method.listApplicationSchedules;
 
 /**
+ * List schedules bound to a compose project. Required: compose_id.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.ListComposeSchedules
  */
 export const listComposeSchedules =
 	ScheduleService.method.listComposeSchedules;
 
 /**
+ * List schedules bound to a database. Required: database_id.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.ListDatabaseSchedules
  */
 export const listDatabaseSchedules =
 	ScheduleService.method.listDatabaseSchedules;
 
 /**
+ * List schedules bound to a server. Required: server_id.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.ListServerSchedules
  */
 export const listServerSchedules =
 	ScheduleService.method.listServerSchedules;
 
 /**
+ * List schedules bound to an organization. Required: organization_id.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.ListOrganizationSchedules
  */
 export const listOrganizationSchedules =
 	ScheduleService.method.listOrganizationSchedules;
 
 /**
+ * Manually trigger a schedule run by id. Required: id. Returns run result.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.TriggerSchedule
  */
 export const triggerSchedule = ScheduleService.method.triggerSchedule;
 
 /**
+ * Get a schedule's runtime policy (retries, missed-run, concurrency, lease). Required: id.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.GetRuntimePolicy
  */
 export const getRuntimePolicy = ScheduleService.method.getRuntimePolicy;
 
 /**
+ * Update a schedule's runtime policy. Required: id, retry_count, retry_delay_seconds, missed_run_policy, concurrency_policy, lease_seconds, notify flags.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.UpdateRuntimePolicy
  */
 export const updateRuntimePolicy =
 	ScheduleService.method.updateRuntimePolicy;
 
 /**
+ * List recorded executions for a schedule. Required: schedule_id.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.ListExecutions
  */
 export const listExecutions = ScheduleService.method.listExecutions;
 
 /**
+ * Get a schedule's aggregate log file contents by id. Required: id.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.GetLogs
  */
 export const getLogs = ScheduleService.method.getLogs;
 
 /**
+ * Get the log file for one execution. Required: schedule_id, execution_id.
+ *
  * @generated from rpc openoxide.api.v1.ScheduleService.GetExecutionLogs
  */
 export const getExecutionLogs = ScheduleService.method.getExecutionLogs;

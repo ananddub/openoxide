@@ -44,7 +44,7 @@ export function GeistSwitch<K extends string>({
 			role="radiogroup"
 			aria-orientation="horizontal"
 			className={cn(
-				'inline-flex w-fit items-center gap-0.5 rounded-full border border-border bg-background p-0.5',
+				'inline-flex w-fit flex-wrap items-center gap-0.5 rounded-full border border-border bg-background p-0.5',
 				fill && 'flex w-full',
 				className,
 			)}>

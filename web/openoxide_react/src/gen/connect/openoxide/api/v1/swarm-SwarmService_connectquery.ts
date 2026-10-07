@@ -5,92 +5,128 @@
 import {SwarmService} from './swarm_pb';
 
 /**
+ * Get the panel-level swarm settings document for an engine; optional server_id selects the target (absent means local Docker).
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.GetSettings
  */
 export const getSettings = SwarmService.method.getSettings;
 
 /**
+ * Replace the swarm settings document (required settings JSON); optional server_id selects the target engine.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.UpdateSettings
  */
 export const updateSettings = SwarmService.method.updateSettings;
 
 /**
+ * List swarm overlay networks on an engine; optional server_id selects the target.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.ListNetworks
  */
 export const listNetworks = SwarmService.method.listNetworks;
 
 /**
+ * Create a swarm overlay network. Required: name; optional config_json (driver/labels) and server_id.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.CreateNetwork
  */
 export const createNetwork = SwarmService.method.createNetwork;
 
 /**
+ * Update a swarm network by network_id with a config_json of fields to replace; optional server_id.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.UpdateNetwork
  */
 export const updateNetwork = SwarmService.method.updateNetwork;
 
 /**
+ * Delete a swarm network by network_id; optional server_id selects the target engine.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.DeleteNetwork
  */
 export const deleteNetwork = SwarmService.method.deleteNetwork;
 
 /**
+ * List swarm services on an engine; optional server_id selects the target.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.ListServices
  */
 export const listServices = SwarmService.method.listServices;
 
 /**
+ * Get one swarm service by service_id; optional server_id selects the target engine.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.GetService
  */
 export const getService = SwarmService.method.getService;
 
 /**
+ * Update a swarm service by service_id with a spec_json of spec fields to replace; optional server_id.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.UpdateService
  */
 export const updateService = SwarmService.method.updateService;
 
 /**
+ * Get swarm cluster info (node id/addr, state, counts) for an engine; optional server_id selects the target.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.Info
  */
 export const info = SwarmService.method.info;
 
 /**
+ * Get the worker/manager join tokens for a cluster; optional server_id selects the target engine.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.GetJoinTokens
  */
 export const getJoinTokens = SwarmService.method.getJoinTokens;
 
 /**
+ * List swarm nodes (hostname, status, role, availability) for a cluster; optional server_id selects the target.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.ListNodes
  */
 export const listNodes = SwarmService.method.listNodes;
 
 /**
+ * Promote a worker node to manager by node_id; optional server_id selects the target engine.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.PromoteNode
  */
 export const promoteNode = SwarmService.method.promoteNode;
 
 /**
+ * Demote a manager node to worker by node_id; optional server_id selects the target engine.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.DemoteNode
  */
 export const demoteNode = SwarmService.method.demoteNode;
 
 /**
+ * Set a node's availability (SwarmNodeAvailability: ACTIVE/PAUSE/DRAIN) by node_id; optional server_id.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.UpdateNodeAvailability
  */
 export const updateNodeAvailability =
 	SwarmService.method.updateNodeAvailability;
 
 /**
+ * Remove a node from the swarm by node_id; optional server_id selects the target engine.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.RemoveNode
  */
 export const removeNode = SwarmService.method.removeNode;
 
 /**
+ * Leave the swarm on an engine; force is required for managers; optional server_id selects the target.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.Leave
  */
 export const leave = SwarmService.method.leave;
 
 /**
+ * Join target_server_id into a cluster (optional manager_server_id, else local) with the given SwarmRole; force-leaves any standalone swarm first.
+ *
  * @generated from rpc openoxide.api.v1.SwarmService.Join
  */
 export const join = SwarmService.method.join;

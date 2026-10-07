@@ -6,10 +6,15 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service ProjectService {
+  // Get one project by id.
   rpc GetProject(GetProjectRequest) returns (Project);
+  // List projects in an organization. Required: organization_id.
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  // Create a project. Required: name, environment_variables, organization_id; description optional.
   rpc CreateProject(CreateProjectRequest) returns (Project);
+  // Update a project by id; name/description/environment_variables optional.
   rpc UpdateProject(UpdateProjectRequest) returns (Project);
+  // Delete a project by id.
   rpc DeleteProject(DeleteProjectRequest) returns (Empty);
 }
 

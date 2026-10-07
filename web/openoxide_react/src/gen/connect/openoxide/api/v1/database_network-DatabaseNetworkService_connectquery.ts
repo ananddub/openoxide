@@ -5,37 +5,51 @@
 import {DatabaseNetworkService} from './database_network_pb';
 
 /**
+ * List all database networks. No params.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListNetworks
  */
 export const listNetworks = DatabaseNetworkService.method.listNetworks;
 
 /**
+ * List database networks scoped to server_id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListServerNetworks
  */
 export const listServerNetworks =
 	DatabaseNetworkService.method.listServerNetworks;
 
 /**
+ * Get one database network by id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseNetworkService.GetNetwork
  */
 export const getNetwork = DatabaseNetworkService.method.getNetwork;
 
 /**
+ * Create a database network. Required: name, docker_network_name; optional description, external (0/1), server_id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseNetworkService.CreateNetwork
  */
 export const createNetwork = DatabaseNetworkService.method.createNetwork;
 
 /**
+ * Update a database network by id; absent fields keep stored values (name, docker_network_name, description, external, server_id).
+ *
  * @generated from rpc openoxide.api.v1.DatabaseNetworkService.UpdateNetwork
  */
 export const updateNetwork = DatabaseNetworkService.method.updateNetwork;
 
 /**
+ * Delete a database network by id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseNetworkService.DeleteNetwork
  */
 export const deleteNetwork = DatabaseNetworkService.method.deleteNetwork;
 
 /**
+ * List dependent resource counts (applications, compose services, databases) for a network by id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListDependencies
  */
 export const listDependencies =

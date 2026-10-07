@@ -5,10 +5,15 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service PreviewDeploymentService {
+  // List preview deployments; optional application_id scopes the result.
   rpc ListPreviews(ListPreviewsRequest) returns (ListPreviewsResponse);
+  // Get one preview deployment by id.
   rpc GetPreview(GetPreviewRequest) returns (GetPreviewResponse);
+  // Create a preview deployment. Required: application_id, branch; commit optional.
   rpc CreatePreview(CreatePreviewRequest) returns (CreatePreviewResponse);
+  // Redeploy an existing preview by id.
   rpc RedeployPreview(RedeployPreviewRequest) returns (RedeployPreviewResponse);
+  // Delete a preview deployment by id.
   rpc DeletePreview(DeletePreviewRequest) returns (Empty);
 }
 

@@ -5,41 +5,57 @@
 import {SshKeyService} from './ssh_key_pb';
 
 /**
+ * List all saved SSH keys.
+ *
  * @generated from rpc openoxide.api.v1.SshKeyService.ListKeys
  */
 export const listKeys = SshKeyService.method.listKeys;
 
 /**
+ * Get one SSH key by id.
+ *
  * @generated from rpc openoxide.api.v1.SshKeyService.GetKey
  */
 export const getKey = SshKeyService.method.getKey;
 
 /**
+ * Create (import) an SSH key. Required: name, public_key; private_key optional.
+ *
  * @generated from rpc openoxide.api.v1.SshKeyService.CreateKey
  */
 export const createKey = SshKeyService.method.createKey;
 
 /**
+ * Generate and store a new SSH key. Required: name, key_type (SSH_KEY_TYPE_ED25519/RSA).
+ *
  * @generated from rpc openoxide.api.v1.SshKeyService.GenerateKey
  */
 export const generateKey = SshKeyService.method.generateKey;
 
 /**
+ * Generate an SSH key pair without storing it; optional key_type (defaults ed25519).
+ *
  * @generated from rpc openoxide.api.v1.SshKeyService.GeneratePair
  */
 export const generatePair = SshKeyService.method.generatePair;
 
 /**
+ * Update an SSH key by id; name/description/public_key/private_key optional.
+ *
  * @generated from rpc openoxide.api.v1.SshKeyService.UpdateKey
  */
 export const updateKey = SshKeyService.method.updateKey;
 
 /**
+ * Mark an SSH key as recently used by id (updates last_used_at).
+ *
  * @generated from rpc openoxide.api.v1.SshKeyService.MarkUsed
  */
 export const markUsed = SshKeyService.method.markUsed;
 
 /**
+ * Delete an SSH key by id.
+ *
  * @generated from rpc openoxide.api.v1.SshKeyService.DeleteKey
  */
 export const deleteKey = SshKeyService.method.deleteKey;

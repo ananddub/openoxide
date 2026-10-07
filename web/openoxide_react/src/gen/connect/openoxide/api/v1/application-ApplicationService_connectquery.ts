@@ -5,347 +5,477 @@
 import {ApplicationService} from './application_pb';
 
 /**
+ * Fetch a single application by id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.GetApplication
  */
 export const getApplication = ApplicationService.method.getApplication;
 
 /**
+ * List all applications in an environment. Required: environment_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplications
  */
 export const listApplications = ApplicationService.method.listApplications;
 
 /**
+ * Create an application. Required: name, environment_id, source_type (APPLICATION_SOURCE_TYPE_*), build_type (APPLICATION_BUILD_TYPE_*); server_id optional.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.CreateApplication
  */
 export const createApplication =
 	ApplicationService.method.createApplication;
 
 /**
+ * Update application core fields by id: name, description, build_type, trigger_type, env_var, server/build/registry ids, network_ids.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdateApplication
  */
 export const updateApplication =
 	ApplicationService.method.updateApplication;
 
 /**
+ * Delete an application by id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.DeleteApplication
  */
 export const deleteApplication =
 	ApplicationService.method.deleteApplication;
 
 /**
+ * Import an application from a base64/archive blob. Required: archive.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ImportApplication
  */
 export const importApplication =
 	ApplicationService.method.importApplication;
 
 /**
+ * Export an application by id as an archive. Required: id; include_secrets toggles secret inclusion.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ExportApplication
  */
 export const exportApplication =
 	ApplicationService.method.exportApplication;
 
 /**
+ * Set the app source to a GitHub repo by id. Required: repository, owner; branch, build_path, provider_id, auto_deploy optional.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.SetGithubSource
  */
 export const setGithubSource = ApplicationService.method.setGithubSource;
 
 /**
+ * Set the app source to a GitLab repo by id. Required: repository, owner; branch, build_path, path_namespace, provider_id, project_id optional.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.SetGitlabSource
  */
 export const setGitlabSource = ApplicationService.method.setGitlabSource;
 
 /**
+ * Set the app source to a Bitbucket repo by id. Required: repository, owner; branch, build_path, repository_slug, provider_id optional.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.SetBitbucketSource
  */
 export const setBitbucketSource =
 	ApplicationService.method.setBitbucketSource;
 
 /**
+ * Set the app source to a Gitea repo by id. Required: repository, owner; branch, build_path, provider_id optional.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.SetGiteaSource
  */
 export const setGiteaSource = ApplicationService.method.setGiteaSource;
 
 /**
+ * Set the app source to a custom Git URL by id. Required: url; branch, build_path, ssh_key_id optional.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.SetCustomGitSource
  */
 export const setCustomGitSource =
 	ApplicationService.method.setCustomGitSource;
 
 /**
+ * Set the app source to a Docker image by id. Required: image; username, password, registry_url optional for private registries.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.SetDockerSource
  */
 export const setDockerSource = ApplicationService.method.setDockerSource;
 
 /**
+ * Set the app source to drop/upload mode by id; build_path optional.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.SetDropSource
  */
 export const setDropSource = ApplicationService.method.setDropSource;
 
 /**
+ * Update build config by id: build_args/secrets, dockerfile, context/build paths, publish_directory, railpack/heroku versions, auto_deploy, etc.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdateBuildConfig
  */
 export const updateBuildConfig =
 	ApplicationService.method.updateBuildConfig;
 
 /**
+ * Update resource limits by id: memory_reservation/limit, cpu_reservation/limit, replicas.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdateResourceConfig
  */
 export const updateResourceConfig =
 	ApplicationService.method.updateResourceConfig;
 
 /**
+ * Update preview-environment config by id: preview_env, build args/secrets, wildcard, port, https, path, certificate_type, limit, active flags.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdatePreviewConfig
  */
 export const updatePreviewConfig =
 	ApplicationService.method.updatePreviewConfig;
 
 /**
+ * Deploy an application by id: builds from its configured source and starts it.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.Deploy
  */
 export const deploy = ApplicationService.method.deploy;
 
 /**
+ * Redeploy an application by id with its current config.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.Redeploy
  */
 export const redeploy = ApplicationService.method.redeploy;
 
 /**
+ * Rebuild an application by id, forcing a fresh build from source.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.Rebuild
  */
 export const rebuild = ApplicationService.method.rebuild;
 
 /**
+ * Reload an application by id, applying runtime/config changes without a full rebuild.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.Reload
  */
 export const reload = ApplicationService.method.reload;
 
 /**
+ * Start a stopped application by id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.Start
  */
 export const start = ApplicationService.method.start;
 
 /**
+ * Stop a running application by id (destructive: becomes unavailable until started).
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.Stop
  */
 export const stop = ApplicationService.method.stop;
 
 /**
+ * Cancel the in-progress operation/deployment for an application by id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.Cancel
  */
 export const cancel = ApplicationService.method.cancel;
 
 /**
+ * Rotate the deploy-webhook token for an application by id; returns the new token.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.RotateWebhookToken
  */
 export const rotateWebhookToken =
 	ApplicationService.method.rotateWebhookToken;
 
 /**
+ * Move an application to another environment. Required: id, target_environment_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.MoveApplication
  */
 export const moveApplication = ApplicationService.method.moveApplication;
 
 /**
+ * Clear the deployment history records for an application by id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ClearDeploymentHistory
  */
 export const clearDeploymentHistory =
 	ApplicationService.method.clearDeploymentHistory;
 
 /**
+ * Remove queued (pending) deployments for an application by id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.CleanupDeploymentQueue
  */
 export const cleanupDeploymentQueue =
 	ApplicationService.method.cleanupDeploymentQueue;
 
 /**
+ * Force-kill a stuck deployment for an application by id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ForceKillDeployment
  */
 export const forceKillDeployment =
 	ApplicationService.method.forceKillDeployment;
 
 /**
+ * List available rollback snapshots for an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListRollbacks
  */
 export const listRollbacks = ApplicationService.method.listRollbacks;
 
 /**
+ * Trigger a rollback to a snapshot. Required: application_id, rollback_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.TriggerRollback
  */
 export const triggerRollback = ApplicationService.method.triggerRollback;
 
 /**
+ * Delete a rollback snapshot. Required: application_id, rollback_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.DeleteRollback
  */
 export const deleteRollback = ApplicationService.method.deleteRollback;
 
 /**
+ * List resources this application depends on, by id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListDependencies
  */
 export const listDependencies = ApplicationService.method.listDependencies;
 
 /**
+ * List the port entries for an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationPorts
  */
 export const listApplicationPorts =
 	ApplicationService.method.listApplicationPorts;
 
 /**
+ * List the mount entries for an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationMounts
  */
 export const listApplicationMounts =
 	ApplicationService.method.listApplicationMounts;
 
 /**
+ * List the networks attached to an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationNetworks
  */
 export const listApplicationNetworks =
 	ApplicationService.method.listApplicationNetworks;
 
 /**
+ * List the file patches for an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationPatches
  */
 export const listApplicationPatches =
 	ApplicationService.method.listApplicationPatches;
 
 /**
+ * List the middlewares for an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationMiddlewares
  */
 export const listApplicationMiddlewares =
 	ApplicationService.method.listApplicationMiddlewares;
 
 /**
+ * List the redirects for an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationRedirects
  */
 export const listApplicationRedirects =
 	ApplicationService.method.listApplicationRedirects;
 
 /**
+ * List the basic-auth security rules for an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationSecurity
  */
 export const listApplicationSecurity =
 	ApplicationService.method.listApplicationSecurity;
 
 /**
+ * List structured port rows for an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListPorts
  */
 export const listPorts = ApplicationService.method.listPorts;
 
 /**
+ * Create a port mapping. Required: application_id, published_port, target_port, protocol (ApplicationPortProtocol), publish_mode (ApplicationPortPublishMode).
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.CreatePort
  */
 export const createPort = ApplicationService.method.createPort;
 
 /**
+ * Update a port mapping. Required: application_id, id, published_port, target_port, protocol, publish_mode.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdatePort
  */
 export const updatePort = ApplicationService.method.updatePort;
 
 /**
+ * Delete a port mapping. Required: application_id, id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.DeletePort
  */
 export const deletePort = ApplicationService.method.deletePort;
 
 /**
+ * List structured mount rows for an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListMounts
  */
 export const listMounts = ApplicationService.method.listMounts;
 
 /**
+ * Create a mount. Required: application_id, mount_type (ApplicationMountType), mount_path; host_path/volume_name/file_path/content per type.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.CreateMount
  */
 export const createMount = ApplicationService.method.createMount;
 
 /**
+ * Update a mount. Required: application_id, id, mount_type (ApplicationMountType), mount_path; type-specific path/content fields.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdateMount
  */
 export const updateMount = ApplicationService.method.updateMount;
 
 /**
+ * Delete a mount. Required: application_id, id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.DeleteMount
  */
 export const deleteMount = ApplicationService.method.deleteMount;
 
 /**
+ * List file-patch rows for an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListPatches
  */
 export const listPatches = ApplicationService.method.listPatches;
 
 /**
+ * Create a file patch. Required: application_id, patch_type (ApplicationPatchType), file_path, enabled; content holds the patch body.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.CreatePatch
  */
 export const createPatch = ApplicationService.method.createPatch;
 
 /**
+ * Update a file patch. Required: application_id, id, patch_type (ApplicationPatchType), file_path, enabled, content.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdatePatch
  */
 export const updatePatch = ApplicationService.method.updatePatch;
 
 /**
+ * Delete a file patch. Required: application_id, id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.DeletePatch
  */
 export const deletePatch = ApplicationService.method.deletePatch;
 
 /**
+ * List middleware rows for an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListMiddlewares
  */
 export const listMiddlewares = ApplicationService.method.listMiddlewares;
 
 /**
+ * Create a middleware. Required: application_id, name, middleware_type (ApplicationMiddlewareType), enabled; headers/average/burst/source_ranges per type.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.CreateMiddleware
  */
 export const createMiddleware = ApplicationService.method.createMiddleware;
 
 /**
+ * Update a middleware. Required: application_id, id, name, middleware_type (ApplicationMiddlewareType), enabled; type-specific fields.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdateMiddleware
  */
 export const updateMiddleware = ApplicationService.method.updateMiddleware;
 
 /**
+ * Delete a middleware. Required: application_id, id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.DeleteMiddleware
  */
 export const deleteMiddleware = ApplicationService.method.deleteMiddleware;
 
 /**
+ * List redirect rows for an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.ListRedirects
  */
 export const listRedirects = ApplicationService.method.listRedirects;
 
 /**
+ * Create a redirect. Required: application_id, regex, replacement, permanent; unique_config_key optional.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.CreateRedirect
  */
 export const createRedirect = ApplicationService.method.createRedirect;
 
 /**
+ * Update a redirect. Required: application_id, id, regex, replacement, permanent; unique_config_key optional.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdateRedirect
  */
 export const updateRedirect = ApplicationService.method.updateRedirect;
 
 /**
+ * Delete a redirect. Required: application_id, id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.DeleteRedirect
  */
 export const deleteRedirect = ApplicationService.method.deleteRedirect;
 
 /**
+ * Get the full basic-auth security rule set for an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.GetSecurity
  */
 export const getSecurity = ApplicationService.method.getSecurity;
 
 /**
+ * Create a basic-auth rule. Required: application_id, username, password.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.CreateSecurity
  */
 export const createSecurity = ApplicationService.method.createSecurity;
 
 /**
+ * Update a basic-auth rule. Required: application_id, id, username, password.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdateSecurity
  */
 export const updateSecurity = ApplicationService.method.updateSecurity;
 
 /**
+ * Delete a basic-auth rule. Required: application_id, id.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.DeleteSecurity
  */
 export const deleteSecurity = ApplicationService.method.deleteSecurity;
 
 /**
+ * Replace an application's attached networks. Required: application_id, network_ids; detach_rustploy_network toggles the shared network.
+ *
  * @generated from rpc openoxide.api.v1.ApplicationService.UpdateNetworks
  */
 export const updateNetworks = ApplicationService.method.updateNetworks;

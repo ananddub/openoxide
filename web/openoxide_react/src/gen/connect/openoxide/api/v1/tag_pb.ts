@@ -398,6 +398,8 @@ export const DetachProjectTagRequestSchema: GenMessage<DetachProjectTagRequest> 
  */
 export const TagService: GenService<{
 	/**
+	 * List all tags for the organization.
+	 *
 	 * @generated from rpc openoxide.api.v1.TagService.ListTags
 	 */
 	listTags: {
@@ -406,6 +408,8 @@ export const TagService: GenService<{
 		output: typeof ListTagsResponseSchema;
 	};
 	/**
+	 * Get one tag by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.TagService.GetTag
 	 */
 	getTag: {
@@ -414,6 +418,8 @@ export const TagService: GenService<{
 		output: typeof GetTagResponseSchema;
 	};
 	/**
+	 * Create a tag. Required: name, color (hex); optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.TagService.CreateTag
 	 */
 	createTag: {
@@ -422,6 +428,8 @@ export const TagService: GenService<{
 		output: typeof CreateTagResponseSchema;
 	};
 	/**
+	 * Update a tag by id; name/color optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.TagService.UpdateTag
 	 */
 	updateTag: {
@@ -430,6 +438,8 @@ export const TagService: GenService<{
 		output: typeof UpdateTagResponseSchema;
 	};
 	/**
+	 * Delete a tag by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.TagService.DeleteTag
 	 */
 	deleteTag: {
@@ -438,6 +448,8 @@ export const TagService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Attach an existing tag to the current resource by tag id.
+	 *
 	 * @generated from rpc openoxide.api.v1.TagService.AddTag
 	 */
 	addTag: {
@@ -446,6 +458,8 @@ export const TagService: GenService<{
 		output: typeof AddTagResponseSchema;
 	};
 	/**
+	 * Detach a tag from the current resource by tag id.
+	 *
 	 * @generated from rpc openoxide.api.v1.TagService.RemoveTag
 	 */
 	removeTag: {
@@ -454,6 +468,8 @@ export const TagService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List tags attached to a project. Required: project_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.TagService.ListProjectTags
 	 */
 	listProjectTags: {
@@ -462,6 +478,8 @@ export const TagService: GenService<{
 		output: typeof ListProjectTagsResponseSchema;
 	};
 	/**
+	 * Attach a tag to a project. Required: project_id, tag_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.TagService.AttachProjectTag
 	 */
 	attachProjectTag: {
@@ -470,6 +488,8 @@ export const TagService: GenService<{
 		output: typeof AttachProjectTagResponseSchema;
 	};
 	/**
+	 * Detach a tag from a project. Required: project_id, tag_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.TagService.DetachProjectTag
 	 */
 	detachProjectTag: {

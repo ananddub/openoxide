@@ -3,13 +3,7 @@ import {
 	useNavigate,
 	useSearch,
 } from '@tanstack/react-router';
-import {
-	LayoutGrid,
-	Network,
-	RefreshCw,
-	Server,
-	Terminal as TerminalIcon,
-} from 'lucide-react';
+import {RefreshCw, Server} from 'lucide-react';
 import {useState} from 'react';
 import {Button} from '#/components/ui/button';
 import {Titlebar} from '#/components/shared/titlebar';
@@ -20,9 +14,23 @@ import {TerminalCard} from '#/components/shared/terminal-card';
 import {PrivateNetworkPanel} from '#/components/remote-servers/private-network';
 import {GeistSwitch} from '#/components/shared/geist-switch';
 import {ServerOverviewTab} from '#/components/remote-servers/server-overview-tab';
+import {
+	SERVER_TABS,
+	SERVER_TAB_SWITCH_LABELS,
+	isServerTabId,
+	type ServerTabId,
+} from '#/components/remote-servers/server-tabs';
+import {
+	ServerContainersPanel,
+	ServerDiskPanel,
+	ServerImagesPanel,
+	ServerNetworksPanel,
+	ServerVolumesPanel,
+} from '#/components/remote-servers/docker';
+import {ServerAgentPanel} from '#/components/remote-servers/agent';
+import {ServerManagementPanel} from '#/components/remote-servers/management';
+import {ServerSettingsTab} from '#/components/remote-servers/settings';
 import type {RemoteServerResponse} from '#/types/api-helpers';
-
-type ServerTabId = 'overview' | 'network' | 'terminal';
 
 export const Route = createFileRoute('/_app/remote-servers/$id')({
 	component: ServerDetailPage,
@@ -30,7 +38,7 @@ export const Route = createFileRoute('/_app/remote-servers/$id')({
 		search: Record<string, unknown>,
 	): {tab?: ServerTabId} => ({
 		tab:
-			search.tab === 'network' || search.tab === 'terminal'
+			isServerTabId(search.tab) && search.tab !== 'overview'
 				? search.tab
 				: undefined,
 	}),
@@ -95,11 +103,11 @@ function ServerDetailPage() {
 					</>
 				}>
 				<GeistSwitch
-					options={[
-						{key: 'overview', label: 'Overview', icon: LayoutGrid},
-						{key: 'network', label: 'Private Network', icon: Network},
-						{key: 'terminal', label: 'Terminal', icon: TerminalIcon},
-					]}
+					options={SERVER_TABS.map(tab => ({
+						key: tab.id,
+						label: SERVER_TAB_SWITCH_LABELS[tab.id],
+						icon: tab.icon,
+					}))}
 					value={tab}
 					onChange={key =>
 						void navigate({
@@ -128,6 +136,28 @@ function ServerDetailPage() {
 				<PrivateNetworkPanel
 					server={server as unknown as RemoteServerResponse}
 				/>
+			)}
+
+			{tab === 'containers' && (
+				<ServerContainersPanel serverId={serverId} />
+			)}
+
+			{tab === 'images' && <ServerImagesPanel serverId={serverId} />}
+
+			{tab === 'volumes' && <ServerVolumesPanel serverId={serverId} />}
+
+			{tab === 'networks' && <ServerNetworksPanel serverId={serverId} />}
+
+			{tab === 'disk' && <ServerDiskPanel serverId={serverId} />}
+
+			{tab === 'agent' && <ServerAgentPanel serverId={serverId} />}
+
+			{tab === 'management' && (
+				<ServerManagementPanel serverId={serverId} />
+			)}
+
+			{tab === 'settings' && server && (
+				<ServerSettingsTab server={server} />
 			)}
 
 			{tab === 'terminal' && server && (

@@ -5,11 +5,17 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service DestinationService {
+  // List all backup/storage destinations for the organization.
   rpc ListDestinations(ListDestinationsRequest) returns (ListDestinationsResponse);
+  // Get one destination by id (UUID).
   rpc GetDestination(GetDestinationRequest) returns (GetDestinationResponse);
+  // Create a storage destination. Required: name, provider (rclone label), bucket; access_key/secret/region/endpoint optional.
   rpc CreateDestination(CreateDestinationRequest) returns (CreateDestinationResponse);
+  // Update a destination by id (UUID); name/provider/bucket/credentials/region/endpoint optional.
   rpc UpdateDestination(UpdateDestinationRequest) returns (UpdateDestinationResponse);
+  // Delete a destination by id (UUID).
   rpc DeleteDestination(DeleteDestinationRequest) returns (Empty);
+  // Test raw storage credentials before saving. Required: provider, bucket; access_key/secret/region/endpoint as needed.
   rpc TestDestination(TestDestinationRequest) returns (TestDestinationResponse);
 }
 

@@ -5,26 +5,36 @@
 import {ProjectService} from './project_pb';
 
 /**
+ * Get one project by id.
+ *
  * @generated from rpc openoxide.api.v1.ProjectService.GetProject
  */
 export const getProject = ProjectService.method.getProject;
 
 /**
+ * List projects in an organization. Required: organization_id.
+ *
  * @generated from rpc openoxide.api.v1.ProjectService.ListProjects
  */
 export const listProjects = ProjectService.method.listProjects;
 
 /**
+ * Create a project. Required: name, environment_variables, organization_id; description optional.
+ *
  * @generated from rpc openoxide.api.v1.ProjectService.CreateProject
  */
 export const createProject = ProjectService.method.createProject;
 
 /**
+ * Update a project by id; name/description/environment_variables optional.
+ *
  * @generated from rpc openoxide.api.v1.ProjectService.UpdateProject
  */
 export const updateProject = ProjectService.method.updateProject;
 
 /**
+ * Delete a project by id.
+ *
  * @generated from rpc openoxide.api.v1.ProjectService.DeleteProject
  */
 export const deleteProject = ProjectService.method.deleteProject;

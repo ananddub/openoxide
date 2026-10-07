@@ -979,6 +979,8 @@ export const ServerTypeSchema: GenEnum<ServerType> /*@__PURE__*/ =
  */
 export const ServerService: GenService<{
 	/**
+	 * List all managed servers (no params).
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.ListServers
 	 */
 	listServers: {
@@ -987,6 +989,8 @@ export const ServerService: GenService<{
 		output: typeof ServerListServersResponseSchema;
 	};
 	/**
+	 * Get one server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.GetServer
 	 */
 	getServer: {
@@ -995,6 +999,8 @@ export const ServerService: GenService<{
 		output: typeof ServerGetServerResponseSchema;
 	};
 	/**
+	 * Create a server. Required: name, ip_address, server_type (ServerType DEPLOY/BUILD); port 0=22, empty username=root; optional ssh_key_id and build limits.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.CreateServer
 	 */
 	createServer: {
@@ -1003,6 +1009,8 @@ export const ServerService: GenService<{
 		output: typeof ServerCreateServerResponseSchema;
 	};
 	/**
+	 * Update a server by id (PATCH: absent fields unchanged); may change name, ip, port, status, type, cleanup, cron, metrics_config.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.UpdateServer
 	 */
 	updateServer: {
@@ -1011,6 +1019,8 @@ export const ServerService: GenService<{
 		output: typeof ServerUpdateServerResponseSchema;
 	};
 	/**
+	 * Delete a server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.DeleteServer
 	 */
 	deleteServer: {
@@ -1019,6 +1029,8 @@ export const ServerService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Test SSH connectivity to a server by id; optional host_key_fingerprint pin, sudo_password and pool_size.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.TestConnection
 	 */
 	testConnection: {
@@ -1027,6 +1039,8 @@ export const ServerService: GenService<{
 		output: typeof ServerTestConnectionResponseSchema;
 	};
 	/**
+	 * Set up a server by id (install_dependencies, Docker/Swarm, Traefik); optional advertise_addr, acme_email, host_key_fingerprint, sudo_password.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.SetupServer
 	 */
 	setupServer: {
@@ -1035,6 +1049,8 @@ export const ServerService: GenService<{
 		output: typeof ServerSetupServerResponseSchema;
 	};
 	/**
+	 * Start panel-managed services on a server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.StartServer
 	 */
 	startServer: {
@@ -1043,6 +1059,8 @@ export const ServerService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Stop panel-managed services on a server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.StopServer
 	 */
 	stopServer: {
@@ -1051,6 +1069,8 @@ export const ServerService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Restart panel-managed services on a server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.RestartServer
 	 */
 	restartServer: {
@@ -1059,6 +1079,8 @@ export const ServerService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Detach the panel from a server by id without deleting the row.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.RemoveServer
 	 */
 	removeServer: {
@@ -1067,6 +1089,8 @@ export const ServerService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Get recorded setup/connection errors for a server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.GetServerErrors
 	 */
 	getServerErrors: {
@@ -1075,6 +1099,8 @@ export const ServerService: GenService<{
 		output: typeof ServerGetServerErrorsResponseSchema;
 	};
 	/**
+	 * List remote (non-local) servers (no params).
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.ListRemoteServers
 	 */
 	listRemoteServers: {
@@ -1083,6 +1109,8 @@ export const ServerService: GenService<{
 		output: typeof ServerListRemoteServersResponseSchema;
 	};
 	/**
+	 * List private-network configurations (no params).
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.ListPrivateNetworks
 	 */
 	listPrivateNetworks: {
@@ -1091,6 +1119,8 @@ export const ServerService: GenService<{
 		output: typeof ServerListPrivateNetworksResponseSchema;
 	};
 	/**
+	 * Create a private network for server_id with a ServerConnectionMode and optional provider/WireGuard params (public_key, endpoint, routes, ...).
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.CreatePrivateNetwork
 	 */
 	createPrivateNetwork: {
@@ -1099,6 +1129,8 @@ export const ServerService: GenService<{
 		output: typeof ServerCreatePrivateNetworkResponseSchema;
 	};
 	/**
+	 * Update a private network by id: connection_mode plus optional provider/WireGuard params (public_key, endpoint, routes, ...).
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.UpdatePrivateNetwork
 	 */
 	updatePrivateNetwork: {
@@ -1107,6 +1139,8 @@ export const ServerService: GenService<{
 		output: typeof ServerUpdatePrivateNetworkResponseSchema;
 	};
 	/**
+	 * Delete a private network by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerService.DeletePrivateNetwork
 	 */
 	deletePrivateNetwork: {

@@ -5,35 +5,47 @@
 import {OrganizationService} from './organization_pb';
 
 /**
+ * Get one organization by id.
+ *
  * @generated from rpc openoxide.api.v1.OrganizationService.GetOrganization
  */
 export const getOrganization = OrganizationService.method.getOrganization;
 
 /**
+ * List organizations the caller belongs to (each carries the caller's role).
+ *
  * @generated from rpc openoxide.api.v1.OrganizationService.ListOrganizations
  */
 export const listOrganizations =
 	OrganizationService.method.listOrganizations;
 
 /**
+ * Leave an organization by id (caller removes their own membership).
+ *
  * @generated from rpc openoxide.api.v1.OrganizationService.LeaveOrganization
  */
 export const leaveOrganization =
 	OrganizationService.method.leaveOrganization;
 
 /**
+ * Create an organization. Required: name; logo/slug optional.
+ *
  * @generated from rpc openoxide.api.v1.OrganizationService.CreateOrganization
  */
 export const createOrganization =
 	OrganizationService.method.createOrganization;
 
 /**
+ * Update an organization by id; name/logo/slug optional.
+ *
  * @generated from rpc openoxide.api.v1.OrganizationService.UpdateOrganization
  */
 export const updateOrganization =
 	OrganizationService.method.updateOrganization;
 
 /**
+ * Delete an organization by id.
+ *
  * @generated from rpc openoxide.api.v1.OrganizationService.DeleteOrganization
  */
 export const deleteOrganization =

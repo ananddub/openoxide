@@ -5,11 +5,15 @@
 import {PublicService} from './public_pb';
 
 /**
+ * List the branches of a public Git repository. Required: repository_url.
+ *
  * @generated from rpc openoxide.api.v1.PublicService.ListGitBranches
  */
 export const listGitBranches = PublicService.method.listGitBranches;
 
 /**
+ * Generate an auto subdomain for a service from a base name. Required: name (hostname label).
+ *
  * @generated from rpc openoxide.api.v1.PublicService.GenerateDomain
  */
 export const generateDomain = PublicService.method.generateDomain;

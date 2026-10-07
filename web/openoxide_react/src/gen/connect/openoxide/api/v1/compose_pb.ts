@@ -1400,6 +1400,8 @@ export const ComposePatchTypeSchema: GenEnum<ComposePatchType> /*@__PURE__*/ =
  */
 export const ComposeService: GenService<{
 	/**
+	 * Fetch a single compose project by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.GetCompose
 	 */
 	getCompose: {
@@ -1408,6 +1410,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * List all compose projects in an environment. Required: environment_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.ListComposes
 	 */
 	listComposes: {
@@ -1416,6 +1420,8 @@ export const ComposeService: GenService<{
 		output: typeof ListComposesResponseSchema;
 	};
 	/**
+	 * Create a compose project. Required: name, environment_id; server_id, compose_file, compose_type ("DOCKER-COMPOSE"|"STACK") optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.CreateCompose
 	 */
 	createCompose: {
@@ -1424,6 +1430,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * Update compose fields by id: name, description, compose_file, server_id, network_ids, command, randomize, env_var.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.UpdateCompose
 	 */
 	updateCompose: {
@@ -1432,6 +1440,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * Delete a compose project by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.DeleteCompose
 	 */
 	deleteCompose: {
@@ -1440,6 +1450,8 @@ export const ComposeService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Set the compose source to a GitHub repo by id. Required: repository, owner; branch, build_path, provider_id optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.SetGithubSource
 	 */
 	setGithubSource: {
@@ -1448,6 +1460,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * Set the compose source to a GitLab repo by id. Required: repository, owner; branch, build_path, provider_id optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.SetGitlabSource
 	 */
 	setGitlabSource: {
@@ -1456,6 +1470,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * Set the compose source to a Bitbucket repo by id. Required: repository, owner; branch, build_path, provider_id optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.SetBitbucketSource
 	 */
 	setBitbucketSource: {
@@ -1464,6 +1480,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * Set the compose source to a Gitea repo by id. Required: repository, owner; branch, build_path, provider_id optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.SetGiteaSource
 	 */
 	setGiteaSource: {
@@ -1472,6 +1490,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * Set the compose source to a custom Git repo by id. Required: repository, owner; branch, build_path, ssh_key_id (private clone) optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.SetCustomGitSource
 	 */
 	setCustomGitSource: {
@@ -1480,6 +1500,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * Set the compose source to raw inline YAML by id. Required: content; file_name optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.SetRawSource
 	 */
 	setRawSource: {
@@ -1488,6 +1510,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * Stream-upload compose source: first compose_id then raw file chunks.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.UploadSource
 	 */
 	uploadSource: {
@@ -1496,6 +1520,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * Build and deploy a compose service for the first time or after config changes. Takes the compose id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.Deploy
 	 */
 	deploy: {
@@ -1504,6 +1530,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeOperationSchema;
 	};
 	/**
+	 * Redeploy an existing compose service with its current config, picking up domain/env changes. Takes the compose id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.Redeploy
 	 */
 	redeploy: {
@@ -1512,6 +1540,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeOperationSchema;
 	};
 	/**
+	 * Reload a compose service by id, applying config/env changes without a full redeploy.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.Reload
 	 */
 	reload: {
@@ -1520,6 +1550,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeOperationSchema;
 	};
 	/**
+	 * Start a stopped compose service. Takes the compose id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.Start
 	 */
 	start: {
@@ -1528,6 +1560,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeOperationSchema;
 	};
 	/**
+	 * Stop a running compose service (destructive: makes it unavailable until started again). Takes the compose id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.Stop
 	 */
 	stop: {
@@ -1536,6 +1570,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeOperationSchema;
 	};
 	/**
+	 * Cancel the in-progress operation/deployment for a compose project by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.Cancel
 	 */
 	cancel: {
@@ -1544,6 +1580,8 @@ export const ComposeService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Move a compose project to another environment. Required: id, target_environment_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.MoveCompose
 	 */
 	moveCompose: {
@@ -1552,6 +1590,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * Rotate the deploy-webhook token for a compose project by id; returns the new token.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.RotateWebhookToken
 	 */
 	rotateWebhookToken: {
@@ -1560,6 +1600,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeWebhookTokenSchema;
 	};
 	/**
+	 * List resources this compose project depends on, by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.ListDependencies
 	 */
 	listDependencies: {
@@ -1568,6 +1610,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeDependenciesSchema;
 	};
 	/**
+	 * Preview parsed compose YAML and its services without saving. Required: content.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.PreviewCompose
 	 */
 	previewCompose: {
@@ -1576,6 +1620,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposePreviewSchema;
 	};
 	/**
+	 * Install a compose from a template. Required: template, environment_id; name, server_id, env_var optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.InstallTemplate
 	 */
 	installTemplate: {
@@ -1584,6 +1630,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * Export a compose project by id as an archive. Required: id; include_secrets toggles secret inclusion.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.ExportCompose
 	 */
 	exportCompose: {
@@ -1592,6 +1640,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeExportSchema;
 	};
 	/**
+	 * Import a compose project into an environment. Required: environment_id, archive.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.ImportCompose
 	 */
 	importCompose: {
@@ -1600,6 +1650,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * Remove specific services from a compose project. Required: id, services (1-100 names).
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.RemoveServices
 	 */
 	removeServices: {
@@ -1608,6 +1660,8 @@ export const ComposeService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Update compose resource limits by id: memory_limit, cpu_limit, replicas.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.UpdateResources
 	 */
 	updateResources: {
@@ -1616,6 +1670,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
+	 * Clear the deployment history records for a compose project by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.ClearDeploymentHistory
 	 */
 	clearDeploymentHistory: {
@@ -1624,6 +1680,8 @@ export const ComposeService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Remove queued (pending) deployments for a compose project by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.CleanupDeploymentQueue
 	 */
 	cleanupDeploymentQueue: {
@@ -1632,6 +1690,8 @@ export const ComposeService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Force-kill a stuck deployment for a compose project by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.ForceKillDeployment
 	 */
 	forceKillDeployment: {
@@ -1640,6 +1700,8 @@ export const ComposeService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List mount rows for a compose project. Required: compose_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.ListMounts
 	 */
 	listMounts: {
@@ -1648,6 +1710,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeListMountsResponseSchema;
 	};
 	/**
+	 * Create a mount. Required: compose_id, mount_type (ComposeMountType), mount_path; host_path/volume_name/file_path/content per type.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.CreateMount
 	 */
 	createMount: {
@@ -1656,6 +1720,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeCreateMountResponseSchema;
 	};
 	/**
+	 * Update a mount. Required: compose_id, id, mount_type (ComposeMountType), mount_path; type-specific path/content fields.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.UpdateMount
 	 */
 	updateMount: {
@@ -1664,6 +1730,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeUpdateMountResponseSchema;
 	};
 	/**
+	 * Delete a mount. Required: compose_id; id of the mount to remove.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.DeleteMount
 	 */
 	deleteMount: {
@@ -1672,6 +1740,8 @@ export const ComposeService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List file-patch rows for a compose project. Required: compose_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.ListPatches
 	 */
 	listPatches: {
@@ -1680,6 +1750,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeListPatchesResponseSchema;
 	};
 	/**
+	 * Create a file patch. Required: compose_id, patch_type (ComposePatchType), file_path, enabled; content holds the patch body.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.CreatePatch
 	 */
 	createPatch: {
@@ -1688,6 +1760,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeCreatePatchResponseSchema;
 	};
 	/**
+	 * Update a file patch. Required: compose_id, id, patch_type (ComposePatchType), file_path, enabled, content.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.UpdatePatch
 	 */
 	updatePatch: {
@@ -1696,6 +1770,8 @@ export const ComposeService: GenService<{
 		output: typeof ComposeUpdatePatchResponseSchema;
 	};
 	/**
+	 * Delete a file patch. Required: compose_id, patch_type, payload; id of the patch to remove.
+	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.DeletePatch
 	 */
 	deletePatch: {

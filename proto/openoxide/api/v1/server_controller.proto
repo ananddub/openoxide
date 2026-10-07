@@ -5,12 +5,19 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service ServerControllerService {
+  // Probe an unsaved SSH endpoint before a server row exists. Required: ip_address, username, ssh_key_id; port optional.
   rpc TestDirectConnection(ServerControllerTestDirectConnectionRequest) returns (ServerControllerTestDirectConnectionResponse);
+  // Test SSH connectivity to a saved server by id; optional host_key_fingerprint, sudo_password, pool_size.
   rpc TestConnection(ServerControllerTestConnectionRequest) returns (ServerControllerTestConnectionResponse);
+  // Audit a server's installed tools, Docker/Swarm, network and ports by id.
   rpc Audit(ServerControllerAuditRequest) returns (ServerControllerAuditResponse);
+  // Run full server setup by id (deps, build tools, dirs, swarm, network, Traefik, agent).
   rpc Setup(ServerControllerSetupRequest) returns (ServerControllerSetupResponse);
+  // Run server setup by id while streaming live log lines, ending with a final outcome event.
   rpc StreamSetupLogs(ServerControllerStreamSetupLogsRequest) returns (stream ServerControllerStreamSetupLogsResponse);
+  // List active SSH connection/pool sessions.
   rpc ListSessions(ServerControllerListSessionsRequest) returns (ServerControllerListSessionsResponse);
+  // Close/delete a server's SSH session pool by id.
   rpc DeleteSession(ServerControllerDeleteSessionRequest) returns (Empty);
 }
 

@@ -5,128 +5,178 @@
 import {DatabaseService} from './database_pb';
 
 /**
+ * Get a database by kind (DATABASE_KIND_*) and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.GetDatabase
  */
 export const getDatabase = DatabaseService.method.getDatabase;
 
 /**
+ * List databases of a given kind (DATABASE_KIND_*) within environment_id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.ListDatabases
  */
 export const listDatabases = DatabaseService.method.listDatabases;
 
 /**
+ * Create a database. Required: kind (DATABASE_KIND_*), name, environment_id; image/credentials/port/networks optional.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.CreateDatabase
  */
 export const createDatabase = DatabaseService.method.createDatabase;
 
 /**
+ * Update a database by kind and id; absent fields keep stored values (image, credentials, limits, replicas, networks, etc.).
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.UpdateDatabase
  */
 export const updateDatabase = DatabaseService.method.updateDatabase;
 
 /**
+ * Delete a database by kind (DATABASE_KIND_*) and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.DeleteDatabase
  */
 export const deleteDatabase = DatabaseService.method.deleteDatabase;
 
 /**
+ * Deploy (create and start) a database by kind and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.Deploy
  */
 export const deploy = DatabaseService.method.deploy;
 
 /**
+ * Redeploy a database by kind and id (rebuild/recreate the container/service).
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.Redeploy
  */
 export const redeploy = DatabaseService.method.redeploy;
 
 /**
+ * Reload a database's config/service by kind and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.Reload
  */
 export const reload = DatabaseService.method.reload;
 
 /**
+ * Start a stopped database by kind and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.Start
  */
 export const start = DatabaseService.method.start;
 
 /**
+ * Stop a running database by kind and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.Stop
  */
 export const stop = DatabaseService.method.stop;
 
 /**
+ * Cancel an in-progress database operation by kind and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.Cancel
  */
 export const cancel = DatabaseService.method.cancel;
 
 /**
+ * Get Swarm settings for a database by kind and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.GetSwarmSettings
  */
 export const getSwarmSettings = DatabaseService.method.getSwarmSettings;
 
 /**
+ * Update Swarm settings for a database by kind and id with a SwarmSettings payload.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.UpdateSwarmSettings
  */
 export const updateSwarmSettings =
 	DatabaseService.method.updateSwarmSettings;
 
 /**
+ * List mounts for a database by kind and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.ListMounts
  */
 export const listMounts = DatabaseService.method.listMounts;
 
 /**
+ * Create a mount for a database. Required: kind, database_id, mount_type, mount_path.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.CreateMount
  */
 export const createMount = DatabaseService.method.createMount;
 
 /**
+ * Update a database mount. Required: kind, database_id, id (mount), mount_type, mount_path.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.UpdateMount
  */
 export const updateMount = DatabaseService.method.updateMount;
 
 /**
+ * Delete a database mount by kind, database_id and id (mount).
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.DeleteMount
  */
 export const deleteMount = DatabaseService.method.deleteMount;
 
 /**
+ * List dependent resources of a database by kind and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.ListDependencies
  */
 export const listDependencies = DatabaseService.method.listDependencies;
 
 /**
+ * Export a database to an archive by kind and id; include_secrets optionally bundles secrets.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.ExportDatabase
  */
 export const exportDatabase = DatabaseService.method.exportDatabase;
 
 /**
+ * Import a database from an archive into environment_id for the given kind.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.ImportDatabase
  */
 export const importDatabase = DatabaseService.method.importDatabase;
 
 /**
+ * Get connection details (host, port, database, username) for a database by kind and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.GetConnection
  */
 export const getConnection = DatabaseService.method.getConnection;
 
 /**
+ * Rotate credentials for a database by kind and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.RotateCredentials
  */
 export const rotateCredentials = DatabaseService.method.rotateCredentials;
 
 /**
+ * Validate a database's configuration/connectivity by kind and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.ValidateDatabase
  */
 export const validateDatabase = DatabaseService.method.validateDatabase;
 
 /**
+ * Get advanced Postgres config (replication role, raw config) for a database by kind and id.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.GetPostgresAdvancedConfig
  */
 export const getPostgresAdvancedConfig =
 	DatabaseService.method.getPostgresAdvancedConfig;
 
 /**
+ * Update advanced Postgres config for a database by kind and id with an AdvancedConfig payload.
+ *
  * @generated from rpc openoxide.api.v1.DatabaseService.UpdatePostgresAdvancedConfig
  */
 export const updatePostgresAdvancedConfig =

@@ -6,21 +6,41 @@ import "buf/validate/validate.proto";
 
 // AI provider settings, model discovery, compose generation and log analysis.
 service AiService {
+  // List AI provider settings; optional organization_id scope. API keys are never returned.
   rpc ListSettings(AiListSettingsRequest) returns (AiListSettingsResponse);
+  // Get one AI provider setting by id; optional organization_id scope.
   rpc GetSettings(AiGetSettingsRequest) returns (AiGetSettingsResponse);
+  // Create an AI provider setting. Required: name, api_url, model; optional api_key (stored, never echoed), is_enabled, organization_id.
   rpc CreateSettings(AiCreateSettingsRequest) returns (AiCreateSettingsResponse);
+  // Update an AI provider setting by id (absent fields unchanged; absent api_key keeps the stored key).
   rpc UpdateSettings(AiUpdateSettingsRequest) returns (AiUpdateSettingsResponse);
+  // Delete an AI provider setting by id; optional organization_id scope.
   rpc DeleteSettings(AiDeleteSettingsRequest) returns (Empty);
+  // List model names offered by a stored provider setting (setting_id); optional organization_id scope.
   rpc ListModels(AiListModelsRequest) returns (AiListModelsResponse);
+  // Test a stored AI provider setting by id; optional organization_id scope.
   rpc TestSettings(AiTestSettingsRequest) returns (AiTestSettingsResponse);
+  // Discover models against unsaved credentials: required api_url, optional api_key (create-dialog use).
   rpc DiscoverModels(AiDiscoverModelsRequest) returns (AiDiscoverModelsResponse);
+  // Test connectivity against unsaved credentials: required api_url and model, optional api_key.
   rpc TestConnection(AiTestConnectionRequest) returns (AiTestConnectionResponse);
+  // List past generation runs; optional organization_id scope and limit (1-100).
   rpc ListGenerations(AiListGenerationsRequest) returns (AiListGenerationsResponse);
+  // Get one generation run by id; optional organization_id scope.
   rpc GetGeneration(AiGetGenerationRequest) returns (AiGetGenerationResponse);
+  // Create a compose generation from a free-form request prompt using provider ai_setting_id.
   rpc CreateGeneration(AiCreateGenerationRequest) returns (AiCreateGenerationResponse);
+  // Replace a generation's output after human review by id (full output); optional organization_id scope.
   rpc ReviewGeneration(AiReviewGenerationRequest) returns (AiReviewGenerationResponse);
+  // Deploy a reviewed generation by id: pick suggestion_id into environment_id; optional server_id and deploy_now.
   rpc DeployGeneration(AiDeployGenerationRequest) returns (AiDeployGenerationResponse);
+  // Analyze logs with provider ai_setting_id: context (AiLogContext BUILD/RUNTIME) over the given logs; returns markdown analysis.
   rpc AnalyzeLogs(AiAnalyzeLogsRequest) returns (AiAnalyzeLogsResponse);
+  // Agentic assistant: natural-language request → permission-checked actions.
+  rpc Assistant(AiAssistantRequest) returns (AiAssistantResponse);
+  // Streaming assistant: emits live thinking/action/result events as the agent
+  // works, ending with the reply (or a confirm/choose interaction).
+  rpc AssistantStream(AiAssistantRequest) returns (stream AiAssistantEvent);
 }
 
 // Provider detected from the configured api_url (AiProviderKind::detect).
@@ -265,4 +285,96 @@ message AiAnalyzeLogsRequest {
 message AiAnalyzeLogsResponse {
   // Model-authored analysis text (markdown; not structured JSON).
   string analysis = 1;
+}
+
+message AiAssistantRequest {
+  // Natural-language instruction, e.g. "deploy blinko".
+  string prompt = 1 [(buf.validate.field).string.min_len = 1, (buf.validate.field).string.max_len = 8000];
+  // Optional provider override; falls back to the org's first enabled setting.
+  optional int64 ai_setting_id = 2 [(buf.validate.field).int64.gt = 0];
+  // Prior turns of this conversation so the assistant keeps context across
+  // messages (e.g. a "yes" that confirms the previous destructive action).
+  repeated AiChatTurn history = 3;
+  // Opaque JSON carried back from a prior CONFIRM interaction's
+  // `pending_actions`; when the user confirms, the server executes these
+  // deterministically instead of re-asking the model.
+  optional string pending_actions = 4;
+  // Server-managed conversation session. Empty on the first message; the
+  // server creates a session and returns its id in the first event. On
+  // follow-ups, send the session_id back so the server loads history.
+  optional string session_id = 5;
+}
+
+// One prior conversational turn replayed to the assistant for context.
+message AiChatTurn {
+  // "user" or "assistant".
+  string role = 1 [(buf.validate.field).string.min_len = 1];
+  string content = 2;
+}
+
+message AiAssistantResponse {
+  // Natural-language reply to show the user.
+  string reply = 1;
+  // Set when the model is asking the user to confirm a destructive action.
+  optional string pending_confirmation = 2;
+  // Structured interaction the UI should render (Yes/No or option cards)
+  // instead of expecting free text back.
+  optional AiInteraction interaction = 3;
+}
+
+enum AiInteractionKind {
+  AI_INTERACTION_KIND_UNSPECIFIED = 0;
+  // Yes/No confirmation of a (usually destructive) action.
+  AI_INTERACTION_KIND_CONFIRM = 1;
+  // Pick one of several options (projects, environments, servers, ...).
+  AI_INTERACTION_KIND_CHOICE = 2;
+}
+
+message AiInteractionOption {
+  // Stable value sent back when chosen (id or canonical name).
+  string id = 1;
+  string label = 2;
+  string description = 3;
+}
+
+message AiInteraction {
+  AiInteractionKind kind = 1;
+  // Question/summary shown above the controls.
+  string question = 2;
+  // Selectable options (CHOICE only; empty for CONFIRM).
+  repeated AiInteractionOption options = 3;
+  // CONFIRM only: opaque JSON the client echoes back as the request's
+  // `pending_actions` when the user clicks Yes.
+  string pending_actions = 4;
+}
+
+// Event kind for the streaming assistant.
+enum AiAssistantEventKind {
+  AI_ASSISTANT_EVENT_KIND_UNSPECIFIED = 0;
+  // The model is thinking / processing (show a status line).
+  AI_ASSISTANT_EVENT_KIND_THINKING = 1;
+  // A tool search / action was started (e.g. "Running deploy…").
+  AI_ASSISTANT_EVENT_KIND_STATUS = 2;
+  // An action finished and produced a result summary.
+  AI_ASSISTANT_EVENT_KIND_ACTION_RESULT = 3;
+  // The model's final text reply.
+  AI_ASSISTANT_EVENT_KIND_REPLY = 4;
+  // A structured confirm / choose interaction.
+  AI_ASSISTANT_EVENT_KIND_INTERACTION = 5;
+  // Terminal: the turn is complete. session_id is always set here.
+  AI_ASSISTANT_EVENT_KIND_DONE = 6;
+}
+
+// One live event from the streaming assistant. The web renders each event as
+// it arrives: thinking/status as ephemeral progress lines, the reply as the
+// final bubble, and the interaction as buttons/cards.
+message AiAssistantEvent {
+  AiAssistantEventKind kind = 1;
+  // Human-readable text for this event (thinking line, status, result, reply).
+  string text = 2;
+  // Set on INTERACTION events (confirm / choose).
+  optional AiInteraction interaction = 3;
+  // The server-managed session id. Always present on the first event and on
+  // DONE so the client can store it.
+  optional string session_id = 4;
 }

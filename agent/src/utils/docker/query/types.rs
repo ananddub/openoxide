@@ -111,7 +111,7 @@ pub struct ContainerStats {
     pub blkio: BlkioStats,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Clone, Deserialize)]
 pub struct CpuStats {
     #[serde(rename = "cpu_usage", default)]
     pub usage: CpuUsage,
@@ -121,7 +121,7 @@ pub struct CpuStats {
     pub online_cpus: u64,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Clone, Deserialize)]
 pub struct CpuUsage {
     #[serde(rename = "total_usage", default)]
     pub total: u64,

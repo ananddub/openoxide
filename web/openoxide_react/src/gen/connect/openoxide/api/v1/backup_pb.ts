@@ -2103,6 +2103,8 @@ export const BackupExecutionStatusSchema: GenEnum<BackupExecutionStatus> /*@__PU
  */
 export const BackupService: GenService<{
 	/**
+	 * List all configured database backup rules. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.ListBackups
 	 */
 	listBackups: {
@@ -2111,6 +2113,8 @@ export const BackupService: GenService<{
 		output: typeof BackupListBackupsResponseSchema;
 	};
 	/**
+	 * Get one database backup rule by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.GetBackup
 	 */
 	getBackup: {
@@ -2119,6 +2123,8 @@ export const BackupService: GenService<{
 		output: typeof BackupGetBackupResponseSchema;
 	};
 	/**
+	 * Create a database backup rule. Required: app_name, schedule (cron), database_name, prefix, backup_type, database_type, destination_id, organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.CreateBackup
 	 */
 	createBackup: {
@@ -2127,6 +2133,8 @@ export const BackupService: GenService<{
 		output: typeof BackupCreateBackupResponseSchema;
 	};
 	/**
+	 * Update a database backup rule by id; absent fields keep stored values. `enabled` toggles the schedule.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.UpdateBackup
 	 */
 	updateBackup: {
@@ -2135,6 +2143,8 @@ export const BackupService: GenService<{
 		output: typeof BackupUpdateBackupResponseSchema;
 	};
 	/**
+	 * Delete a database backup rule by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.DeleteBackup
 	 */
 	deleteBackup: {
@@ -2143,6 +2153,8 @@ export const BackupService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Trigger a database backup rule to run now by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.RunBackup
 	 */
 	runBackup: {
@@ -2151,6 +2163,8 @@ export const BackupService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Restore a database backup rule by id from a chosen backup_file.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.RestoreBackup
 	 */
 	restoreBackup: {
@@ -2159,6 +2173,8 @@ export const BackupService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Validate connectivity/credentials of a backup destination by destination_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.ValidateDestination
 	 */
 	validateDestination: {
@@ -2167,6 +2183,8 @@ export const BackupService: GenService<{
 		output: typeof BackupValidateDestinationResponseSchema;
 	};
 	/**
+	 * Run a compose config backup now for compose_id; include_secrets optionally bundles secrets. Returns a local archive.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.RunComposeBackup
 	 */
 	runComposeBackup: {
@@ -2175,6 +2193,8 @@ export const BackupService: GenService<{
 		output: typeof BackupRunComposeBackupResponseSchema;
 	};
 	/**
+	 * Run a panel backup now (no params). Returns the produced local archive.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.RunPanelBackup
 	 */
 	runPanelBackup: {
@@ -2183,6 +2203,8 @@ export const BackupService: GenService<{
 		output: typeof BackupRunPanelBackupResponseSchema;
 	};
 	/**
+	 * Stage a panel restore from a .tar.gz archive path (optional checksum_sha256); applies on next restart.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.StageRestore
 	 */
 	stageRestore: {
@@ -2191,6 +2213,8 @@ export const BackupService: GenService<{
 		output: typeof BackupStageRestoreResponseSchema;
 	};
 	/**
+	 * Get progress of a staged panel restore by restore_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.GetRestoreStatus
 	 */
 	getRestoreStatus: {
@@ -2199,6 +2223,8 @@ export const BackupService: GenService<{
 		output: typeof BackupGetRestoreStatusResponseSchema;
 	};
 	/**
+	 * Stage a rollback of a panel restore using a .pre-restore- recovery_database snapshot path.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.RollbackRestore
 	 */
 	rollbackRestore: {
@@ -2207,6 +2233,8 @@ export const BackupService: GenService<{
 		output: typeof BackupRollbackRestoreResponseSchema;
 	};
 	/**
+	 * List remote backup objects for destination_id; optional prefix filters by object-key prefix.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.ListFiles
 	 */
 	listFiles: {
@@ -2215,6 +2243,8 @@ export const BackupService: GenService<{
 		output: typeof BackupListFilesResponseSchema;
 	};
 	/**
+	 * Download a backup object by destination_id and object_key; reply reports file metadata.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.DownloadFile
 	 */
 	downloadFile: {
@@ -2223,6 +2253,8 @@ export const BackupService: GenService<{
 		output: typeof BackupDownloadFileResponseSchema;
 	};
 	/**
+	 * Preview which objects a keep-latest rule would keep/delete. Required: destination_id, keep_latest; optional prefix.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.PreviewRetention
 	 */
 	previewRetention: {
@@ -2231,6 +2263,8 @@ export const BackupService: GenService<{
 		output: typeof BackupPreviewRetentionResponseSchema;
 	};
 	/**
+	 * Verify a backup object's checksum. Required: destination_id, object_key, checksum_sha256.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.VerifyFiles
 	 */
 	verifyFiles: {
@@ -2239,6 +2273,8 @@ export const BackupService: GenService<{
 		output: typeof BackupVerifyFilesResponseSchema;
 	};
 	/**
+	 * List recorded backup/restore executions; optional limit (clamped 1..=500, default 100).
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.ListExecutions
 	 */
 	listExecutions: {
@@ -2247,6 +2283,8 @@ export const BackupService: GenService<{
 		output: typeof BackupListExecutionsResponseSchema;
 	};
 	/**
+	 * Retry a failed backup execution by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.RetryExecution
 	 */
 	retryExecution: {
@@ -2255,6 +2293,8 @@ export const BackupService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List all database backup rules (no params).
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.ListDatabaseBackups
 	 */
 	listDatabaseBackups: {
@@ -2263,6 +2303,8 @@ export const BackupService: GenService<{
 		output: typeof BackupListDatabaseBackupsResponseSchema;
 	};
 	/**
+	 * Get one database backup rule by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.GetDatabaseBackup
 	 */
 	getDatabaseBackup: {
@@ -2271,6 +2313,8 @@ export const BackupService: GenService<{
 		output: typeof BackupGetDatabaseBackupResponseSchema;
 	};
 	/**
+	 * Create a database backup rule. Required: app_name, schedule (cron), database_name, prefix, backup_type, database_type, destination_id, organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.CreateDatabaseBackup
 	 */
 	createDatabaseBackup: {
@@ -2279,6 +2323,8 @@ export const BackupService: GenService<{
 		output: typeof BackupCreateDatabaseBackupResponseSchema;
 	};
 	/**
+	 * Update a database backup rule by id; absent fields keep stored values. `enabled` toggles the schedule.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.UpdateDatabaseBackup
 	 */
 	updateDatabaseBackup: {
@@ -2287,6 +2333,8 @@ export const BackupService: GenService<{
 		output: typeof BackupUpdateDatabaseBackupResponseSchema;
 	};
 	/**
+	 * Delete a database backup rule by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.DeleteDatabaseBackup
 	 */
 	deleteDatabaseBackup: {
@@ -2295,6 +2343,8 @@ export const BackupService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Trigger a database backup rule to run now by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.RunDatabaseBackup
 	 */
 	runDatabaseBackup: {
@@ -2303,6 +2353,8 @@ export const BackupService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List all volume backup rules (no params).
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.ListVolumeBackups
 	 */
 	listVolumeBackups: {
@@ -2311,6 +2363,8 @@ export const BackupService: GenService<{
 		output: typeof BackupListVolumeBackupsResponseSchema;
 	};
 	/**
+	 * Get one volume backup rule by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.GetVolumeBackup
 	 */
 	getVolumeBackup: {
@@ -2319,6 +2373,8 @@ export const BackupService: GenService<{
 		output: typeof BackupGetVolumeBackupResponseSchema;
 	};
 	/**
+	 * Create a volume backup rule. Required: name, volume_name, prefix, service_type, app_name, cron_expression; one service linkage id must resolve.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.CreateVolumeBackup
 	 */
 	createVolumeBackup: {
@@ -2327,6 +2383,8 @@ export const BackupService: GenService<{
 		output: typeof BackupCreateVolumeBackupResponseSchema;
 	};
 	/**
+	 * Update a volume backup rule by id; absent fields keep stored values. `enabled` toggles the schedule.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.UpdateVolumeBackup
 	 */
 	updateVolumeBackup: {
@@ -2335,6 +2393,8 @@ export const BackupService: GenService<{
 		output: typeof BackupUpdateVolumeBackupResponseSchema;
 	};
 	/**
+	 * Delete a volume backup rule by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.DeleteVolumeBackup
 	 */
 	deleteVolumeBackup: {
@@ -2343,6 +2403,8 @@ export const BackupService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Trigger a volume backup rule to run now by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.RunVolumeBackup
 	 */
 	runVolumeBackup: {
@@ -2351,6 +2413,8 @@ export const BackupService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Restore a database from a backup. Required: id (database backup rule), backup_file.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.RestoreDatabase
 	 */
 	restoreDatabase: {
@@ -2359,6 +2423,8 @@ export const BackupService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Restore a volume from a backup. Required: id (volume backup rule), backup_file.
+	 *
 	 * @generated from rpc openoxide.api.v1.BackupService.RestoreVolume
 	 */
 	restoreVolume: {

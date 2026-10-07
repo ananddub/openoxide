@@ -605,6 +605,8 @@ export const DomainCertificateTypeSchema: GenEnum<DomainCertificateType> /*@__PU
  */
 export const DomainService: GenService<{
 	/**
+	 * List all domains.
+	 *
 	 * @generated from rpc openoxide.api.v1.DomainService.ListDomains
 	 */
 	listDomains: {
@@ -613,6 +615,8 @@ export const DomainService: GenService<{
 		output: typeof ListDomainsResponseSchema;
 	};
 	/**
+	 * Get one domain by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DomainService.GetDomain
 	 */
 	getDomain: {
@@ -621,6 +625,8 @@ export const DomainService: GenService<{
 		output: typeof GetDomainResponseSchema;
 	};
 	/**
+	 * List domains attached to an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DomainService.ListApplicationDomains
 	 */
 	listApplicationDomains: {
@@ -629,6 +635,8 @@ export const DomainService: GenService<{
 		output: typeof ListApplicationDomainsResponseSchema;
 	};
 	/**
+	 * List domains attached to a Compose project. Required: compose_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DomainService.ListComposeDomains
 	 */
 	listComposeDomains: {
@@ -637,6 +645,8 @@ export const DomainService: GenService<{
 		output: typeof ListComposeDomainsResponseSchema;
 	};
 	/**
+	 * Create a domain. Required: host; set application_id or compose_id; https/port/path/certificate_type (DOMAIN_CERTIFICATE_TYPE_*) optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.DomainService.CreateDomain
 	 */
 	createDomain: {
@@ -645,6 +655,8 @@ export const DomainService: GenService<{
 		output: typeof CreateDomainResponseSchema;
 	};
 	/**
+	 * Update a domain by id (domain_type not patchable); host/https/port/path/middlewares/certificate_type optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.DomainService.UpdateDomain
 	 */
 	updateDomain: {
@@ -653,6 +665,8 @@ export const DomainService: GenService<{
 		output: typeof UpdateDomainResponseSchema;
 	};
 	/**
+	 * Delete a domain by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DomainService.DeleteDomain
 	 */
 	deleteDomain: {
@@ -661,6 +675,8 @@ export const DomainService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Validate that a host's DNS resolves to the target server. Required: host; optional server_id (panel host if absent).
+	 *
 	 * @generated from rpc openoxide.api.v1.DomainService.ValidateDomainDns
 	 */
 	validateDomainDns: {

@@ -10,10 +10,18 @@ enum MountKind {
 /// Strongly-typed Docker mount specification.
 ///
 /// ```
-/// Mount::volume("pg-data", "/var/lib/postgresql/data")
-/// Mount::bind("/etc/nginx.conf", "/etc/nginx/nginx.conf")
-/// Mount::bind_ro("/etc/ssl", "/etc/ssl")
-/// Mount::tmpfs("/tmp")
+/// use oxos::docker::core::Mount;
+///
+/// assert_eq!(
+///     Mount::volume("pg-data", "/var/lib/postgresql/data").to_string(),
+///     "pg-data:/var/lib/postgresql/data",
+/// );
+/// assert_eq!(
+///     Mount::bind("/etc/nginx.conf", "/etc/nginx/nginx.conf").to_string(),
+///     "/etc/nginx.conf:/etc/nginx/nginx.conf",
+/// );
+/// assert_eq!(Mount::bind_ro("/etc/ssl", "/etc/ssl").to_string(), "/etc/ssl:/etc/ssl:ro");
+/// assert_eq!(Mount::tmpfs("/tmp").to_string(), "type=tmpfs,target=/tmp");
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Mount {

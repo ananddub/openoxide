@@ -217,6 +217,8 @@ export const IncomingWebhookResponseSchema: GenMessage<IncomingWebhookResponse> 
  */
 export const IncomingWebhookService: GenService<{
 	/**
+	 * Receive and dispatch a git provider webhook event. Required: provider (WEBHOOK_PROVIDER_TYPE_*), provider_id, payload, signature.
+	 *
 	 * @generated from rpc openoxide.api.v1.IncomingWebhookService.HandleWebhook
 	 */
 	handleWebhook: {

@@ -11,6 +11,7 @@ export * from './databases';
 export * from './deployments';
 export * from './destinations';
 export * from './dns';
+export * from './docker';
 export * from './domains';
 export * from './environments';
 export * from './monitoring';

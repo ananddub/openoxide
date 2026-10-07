@@ -4,14 +4,23 @@ package openoxide.api.v1;
 import "buf/validate/validate.proto";
 
 service ServerManagementService {
+  // Get a server's management settings (maintenance, labels, cleanup policy, GPU) by id.
   rpc GetManagement(ServerManagementGetRequest) returns (ServerManagementGetResponse);
+  // Replace a server's management settings by id (PUT): maintenance_mode, labels, cleanup_policy, gpu_enabled all required.
   rpc UpdateManagement(ServerManagementUpdateRequest) returns (ServerManagementUpdateResponse);
+  // Re-run the server audit remediation to repair stored audit state by id.
   rpc RepairAudit(ServerManagementRepairAuditRequest) returns (ServerManagementRepairAuditResponse);
+  // Configure GPU/container-toolkit support on a server by id.
   rpc ConfigureGpu(ServerManagementConfigureGpuRequest) returns (ServerManagementConfigureGpuResponse);
+  // Run a Docker/host cleanup on a server by id per its stored cleanup policy.
   rpc RunCleanup(ServerManagementRunCleanupRequest) returns (ServerManagementRunCleanupResponse);
+  // List past cleanup executions for a server. Required: server_id.
   rpc ListCleanupHistory(ServerManagementListCleanupHistoryRequest) returns (ServerManagementListCleanupHistoryResponse);
+  // Upgrade the server's host packages/dependencies by id.
   rpc Upgrade(ServerManagementUpgradeRequest) returns (ServerManagementUpgradeResponse);
+  // Trigger a server-side backup and return its remote path by id.
   rpc Backup(ServerManagementBackupRequest) returns (ServerManagementBackupResponse);
+  // Run host diagnostics on a server by id.
   rpc Diagnostics(ServerManagementDiagnosticsRequest) returns (ServerManagementDiagnosticsResponse);
 }
 

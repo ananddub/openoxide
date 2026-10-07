@@ -6,11 +6,17 @@ import "buf/validate/validate.proto";
 
 // Management surface for repository webhooks (the receive side lives in IncomingWebhookService.HandleWebhook).
 service WebhookService {
+  // List repository webhooks; optional organization_id scopes the result.
   rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse);
+  // Get one webhook by id; optional organization_id.
   rpc GetWebhook(GetWebhookRequest) returns (GetWebhookResponse);
+  // Create a repository webhook. Required: provider (WEBHOOK_PROVIDER_TYPE_*), provider_id, owner, repository, callback_url.
   rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse);
+  // PATCH a webhook by id: owner/repository/callback_url optional; absent fields keep stored values.
   rpc UpdateWebhook(UpdateWebhookRequest) returns (UpdateWebhookResponse);
+  // Delete a webhook by id; optional organization_id.
   rpc DeleteWebhook(DeleteWebhookRequest) returns (Empty);
+  // Send a test event through a webhook by id; optional organization_id.
   rpc TestWebhook(TestWebhookRequest) returns (TestWebhookResponse);
 }
 

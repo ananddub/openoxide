@@ -6,13 +6,21 @@ import "buf/validate/validate.proto";
 
 // Sole certificate owner service; replaces CertificateOperationsService.
 service CertificateService {
+  // List all TLS certificates.
   rpc ListCertificates(ListCertificatesRequest) returns (ListCertificatesResponse);
+  // Get one certificate by id.
   rpc GetCertificate(GetCertificateRequest) returns (GetCertificateResponse);
+  // Create a certificate. Required: name, certificate_data (PEM), certificate_path; private_key/auto_renew/server_id optional.
   rpc CreateCertificate(CreateCertificateRequest) returns (CreateCertificateResponse);
+  // Update a certificate by id; absent fields keep stored values, empty server_id detaches the server.
   rpc UpdateCertificate(UpdateCertificateRequest) returns (UpdateCertificateResponse);
+  // Delete a certificate by id.
   rpc DeleteCertificate(DeleteCertificateRequest) returns (Empty);
+  // List dependency counts (renewals, running renewals) for a certificate. Required: certificate_id.
   rpc ListDependencies(ListCertificateDependenciesRequest) returns (ListCertificateDependenciesResponse);
+  // Renew a certificate by id with new PEM material. Required: id, certificate_data, private_key.
   rpc RenewCertificate(RenewCertificateRequest) returns (RenewCertificateResponse);
+  // List renewal history for a certificate. Required: certificate_id.
   rpc ListRenewals(ListCertificateRenewalsRequest) returns (ListCertificateRenewalsResponse);
 }
 

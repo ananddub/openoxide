@@ -231,6 +231,8 @@ export const DeleteOrganizationRequestSchema: GenMessage<DeleteOrganizationReque
  */
 export const OrganizationService: GenService<{
 	/**
+	 * Get one organization by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.OrganizationService.GetOrganization
 	 */
 	getOrganization: {
@@ -239,6 +241,8 @@ export const OrganizationService: GenService<{
 		output: typeof OrganizationSchema;
 	};
 	/**
+	 * List organizations the caller belongs to (each carries the caller's role).
+	 *
 	 * @generated from rpc openoxide.api.v1.OrganizationService.ListOrganizations
 	 */
 	listOrganizations: {
@@ -247,6 +251,8 @@ export const OrganizationService: GenService<{
 		output: typeof ListOrganizationsResponseSchema;
 	};
 	/**
+	 * Leave an organization by id (caller removes their own membership).
+	 *
 	 * @generated from rpc openoxide.api.v1.OrganizationService.LeaveOrganization
 	 */
 	leaveOrganization: {
@@ -255,6 +261,8 @@ export const OrganizationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Create an organization. Required: name; logo/slug optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.OrganizationService.CreateOrganization
 	 */
 	createOrganization: {
@@ -263,6 +271,8 @@ export const OrganizationService: GenService<{
 		output: typeof OrganizationSchema;
 	};
 	/**
+	 * Update an organization by id; name/logo/slug optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.OrganizationService.UpdateOrganization
 	 */
 	updateOrganization: {
@@ -271,6 +281,8 @@ export const OrganizationService: GenService<{
 		output: typeof OrganizationSchema;
 	};
 	/**
+	 * Delete an organization by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.OrganizationService.DeleteOrganization
 	 */
 	deleteOrganization: {

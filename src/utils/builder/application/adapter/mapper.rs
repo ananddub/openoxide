@@ -335,14 +335,26 @@ fn source(a: &ApplicationGetSpecRowRow) -> Result<SourceSpec, AdapterError> {
                 _ => None,
             };
 
-            let protocol = if let Some(crate::utils::git::types::GitAuth::SshKey(_)) = auth {
+            let url = provider.repository_url();
+            // The clone protocol MUST match the URL scheme. An SSH key is only
+            // usable with an SSH URL (git@host:…/ssh://…); attaching a key to an
+            // https:// URL previously forced the SSH protocol and produced a
+            // malformed command ("unknown option: -i"). Derive from the URL and
+            // ignore an unusable key.
+            let url_is_ssh = url.starts_with("git@") || url.starts_with("ssh://");
+            let auth = if auth_is_ssh_key(&auth) && !url_is_ssh {
+                None
+            } else {
+                auth
+            };
+            let protocol = if url_is_ssh {
                 crate::utils::provider::CloneProtocol::Ssh
             } else {
                 crate::utils::provider::CloneProtocol::Https
             };
 
             Ok(SourceSpec::Git {
-                url: provider.repository_url(),
+                url,
                 branch: branch_val(branch),
                 submodules: a.enable_submodules.unwrap_or(0) != 0,
                 protocol,
@@ -351,6 +363,10 @@ fn source(a: &ApplicationGetSpecRowRow) -> Result<SourceSpec, AdapterError> {
         }
     }
 }
+fn auth_is_ssh_key(auth: &Option<crate::utils::git::types::GitAuth>) -> bool {
+    matches!(auth, Some(crate::utils::git::types::GitAuth::SshKey(_)))
+}
+
 fn build(a: &ApplicationGetSpecRowRow) -> Result<Option<BuildStrategy>, AdapterError> {
     let source_type = source_type(a);
     if source_type == SourceType::Docker {

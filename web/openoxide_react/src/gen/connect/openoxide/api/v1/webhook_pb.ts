@@ -384,6 +384,8 @@ export const WebhookProviderTypeSchema: GenEnum<WebhookProviderType> /*@__PURE__
  */
 export const WebhookService: GenService<{
 	/**
+	 * List repository webhooks; optional organization_id scopes the result.
+	 *
 	 * @generated from rpc openoxide.api.v1.WebhookService.ListWebhooks
 	 */
 	listWebhooks: {
@@ -392,6 +394,8 @@ export const WebhookService: GenService<{
 		output: typeof ListWebhooksResponseSchema;
 	};
 	/**
+	 * Get one webhook by id; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.WebhookService.GetWebhook
 	 */
 	getWebhook: {
@@ -400,6 +404,8 @@ export const WebhookService: GenService<{
 		output: typeof GetWebhookResponseSchema;
 	};
 	/**
+	 * Create a repository webhook. Required: provider (WEBHOOK_PROVIDER_TYPE_*), provider_id, owner, repository, callback_url.
+	 *
 	 * @generated from rpc openoxide.api.v1.WebhookService.CreateWebhook
 	 */
 	createWebhook: {
@@ -408,6 +414,8 @@ export const WebhookService: GenService<{
 		output: typeof CreateWebhookResponseSchema;
 	};
 	/**
+	 * PATCH a webhook by id: owner/repository/callback_url optional; absent fields keep stored values.
+	 *
 	 * @generated from rpc openoxide.api.v1.WebhookService.UpdateWebhook
 	 */
 	updateWebhook: {
@@ -416,6 +424,8 @@ export const WebhookService: GenService<{
 		output: typeof UpdateWebhookResponseSchema;
 	};
 	/**
+	 * Delete a webhook by id; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.WebhookService.DeleteWebhook
 	 */
 	deleteWebhook: {
@@ -424,6 +434,8 @@ export const WebhookService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Send a test event through a webhook by id; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.WebhookService.TestWebhook
 	 */
 	testWebhook: {

@@ -87,10 +87,20 @@ impl<'a> VolumeCreate<'a> {
     /// Pass a driver-specific option (`--opt key=value`).
     ///
     /// Common uses for the built-in `local` driver:
-    /// ```
-    /// .opt("type", "nfs")
-    /// .opt("o", "addr=192.168.1.10,rw")
-    /// .opt("device", ":/export/data")
+    /// ```rust,no_run
+    /// # use oxos::docker::DockerCli;
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let docker = DockerCli::new_local();
+    /// docker
+    ///     .query()
+    ///     .create_volume("shared-data")
+    ///     .opt("type", "nfs")
+    ///     .opt("o", "addr=192.168.1.10,rw")
+    ///     .opt("device", ":/export/data")
+    ///     .run()
+    ///     .await?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn opt(mut self, k: impl Into<String>, v: impl Into<String>) -> Self {
         self.opts.push((k.into(), v.into()));

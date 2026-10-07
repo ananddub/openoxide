@@ -11,7 +11,7 @@ use super::{AiProviderConfig, AiProviderKind};
 
 /// AgentRouter gateways reject generic HTTP clients with a 401
 /// "unauthorized client" error unless the request looks like QwenCode.
-fn provider_headers(base: &str) -> Option<HeaderMap> {
+pub(crate) fn provider_headers(base: &str) -> Option<HeaderMap> {
     let host = Url::parse(base).ok()?.host_str()?.to_string();
     host.contains("agentrouter").then(|| {
         let mut headers = HeaderMap::new();
@@ -44,7 +44,7 @@ impl AiClient {
             AiProviderKind::Gemini => {
                 gemini::Client::builder()
                     .api_key(&config.api_key)
-                    .base_url(&base)
+                    .base_url(&config.gemini_base_url())
                     .build()
                     .map_err(rig_error)?
                     .list_models()
@@ -134,7 +134,7 @@ impl AiClient {
             AiProviderKind::Gemini => {
                 let client = gemini::Client::builder()
                     .api_key(&config.api_key)
-                    .base_url(&base)
+                    .base_url(&config.gemini_base_url())
                     .build()
                     .map_err(rig_error)?;
                 complete_with_model(
@@ -174,16 +174,39 @@ async fn complete_with_model<M: CompletionModel>(
     prompt: String,
     additional_params: Option<Value>,
 ) -> Result<String, String> {
-    let mut request = model
-        .completion_request(prompt)
-        .temperature(0.2)
-        // Reasoning models (GLM/DeepSeek "v4"-style) spend part of the budget on
-        // hidden thinking; a 3-variant compose JSON can exceed 16k visible tokens alone.
-        .max_tokens(32768);
-    if let Some(params) = additional_params {
-        request = request.additional_params(params);
-    }
-    let response = model.completion(request.build()).await.map_err(rig_error)?;
+    // Reasoning models (GLM/DeepSeek "v4"-style) spend part of the budget on
+    // hidden thinking; a 3-variant compose JSON can exceed 16k visible tokens.
+    const TOKEN_BUDGET: u64 = 32768;
+
+    // Build a request using the chosen token-limit parameter. Newer OpenAI
+    // reasoning models reject `max_tokens` and require `max_completion_tokens`;
+    // older models/providers only accept `max_tokens`.
+    let build = |use_completion_tokens: bool| {
+        let mut request = model.completion_request(prompt.clone()).temperature(0.2);
+        request = if use_completion_tokens {
+            let extra = json!({ "max_completion_tokens": TOKEN_BUDGET });
+            let merged = match &additional_params {
+                Some(existing) => merge_json(existing.clone(), extra),
+                None => extra,
+            };
+            request.additional_params(merged)
+        } else {
+            let request = request.max_tokens(TOKEN_BUDGET);
+            match &additional_params {
+                Some(params) => request.additional_params(params.clone()),
+                None => request,
+            }
+        };
+        request.build()
+    };
+
+    let response = match model.completion(build(false)).await {
+        Ok(r) => r,
+        Err(e) if wants_completion_tokens(&e.to_string()) => {
+            model.completion(build(true)).await.map_err(rig_error)?
+        }
+        Err(e) => return Err(rig_error(e)),
+    };
     let text = response
         .choice
         .iter()
@@ -196,6 +219,26 @@ async fn complete_with_model<M: CompletionModel>(
         Err("AI provider response did not contain generated text".into())
     } else {
         Ok(text)
+    }
+}
+
+/// True if the provider rejected `max_tokens` and wants `max_completion_tokens`.
+fn wants_completion_tokens(err: &str) -> bool {
+    let e = err.to_ascii_lowercase();
+    e.contains("max_completion_tokens")
+        || (e.contains("max_tokens") && e.contains("unsupported"))
+}
+
+/// Shallow-merge two JSON objects (b wins on key clash); non-objects return b.
+fn merge_json(a: Value, b: Value) -> Value {
+    match (a, b) {
+        (Value::Object(mut ao), Value::Object(bo)) => {
+            for (k, v) in bo {
+                ao.insert(k, v);
+            }
+            Value::Object(ao)
+        }
+        (_, b) => b,
     }
 }
 
@@ -252,5 +295,76 @@ mod tests {
             strip_json_fence("```json\n{\"ok\":true}\n```"),
             "{\"ok\":true}"
         );
+    }
+
+    #[test]
+    fn detects_completion_tokens_requirement() {
+        let body = "Unsupported parameter: 'max_tokens' is not supported with \
+                    this model. Use 'max_completion_tokens' instead.";
+        assert!(wants_completion_tokens(body));
+        assert!(wants_completion_tokens("please use max_completion_tokens"));
+        assert!(!wants_completion_tokens("rate limit exceeded"));
+        assert!(!wants_completion_tokens("invalid api key"));
+    }
+
+    #[test]
+    fn gemini_base_url_strips_version_suffix() {
+        let mk = |u: &str| AiProviderConfig {
+            api_url: u.into(),
+            api_key: "k".into(),
+            model: "m".into(),
+        };
+        let origin = "https://generativelanguage.googleapis.com";
+        assert_eq!(mk(&format!("{origin}/v1beta")).gemini_base_url(), origin);
+        assert_eq!(mk(&format!("{origin}/v1beta/")).gemini_base_url(), origin);
+        assert_eq!(mk(&format!("{origin}/v1")).gemini_base_url(), origin);
+        assert_eq!(mk(origin).gemini_base_url(), origin);
+    }
+
+    /// Live Gemini smoke test. Ignored by default (hits the network); run with:
+    ///   GEMINI_API_KEY=... cargo test -p openoxide --lib \
+    ///     utils::ai::client::tests::gemini_live -- --ignored --nocapture
+    #[tokio::test]
+    #[ignore = "network: needs GEMINI_API_KEY"]
+    async fn gemini_live() {
+        // Mirror main.rs: reqwest's rustls build needs a crypto provider
+        // installed once before any TLS client is built.
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        let key = std::env::var("GEMINI_API_KEY")
+            .expect("set GEMINI_API_KEY to run this ignored test");
+        let config = AiProviderConfig {
+            api_url: "https://generativelanguage.googleapis.com/v1beta".into(),
+            api_key: key,
+            model: "gemini-flash-latest".into(),
+        };
+        assert_eq!(config.kind(), AiProviderKind::Gemini, "url must detect Gemini");
+
+        let client = AiClient;
+
+        // 1. discover_models must return a non-empty, de-prefixed list.
+        let models = client
+            .discover_models(&config)
+            .await
+            .expect("discover_models should succeed against live Gemini");
+        println!("discovered {} models, sample: {:?}", models.len(), &models[..models.len().min(5)]);
+        assert!(!models.is_empty(), "Gemini returned no models");
+        assert!(
+            models.iter().all(|m| !m.starts_with("models/")),
+            "model ids should be de-prefixed"
+        );
+
+        // 2. test_connection (a real completion) must succeed.
+        client
+            .test_connection(&config)
+            .await
+            .expect("test_connection should succeed against live Gemini");
+
+        // 3. a plain completion returns non-empty text.
+        let text = client
+            .complete_text(&config, "Reply with exactly: ok")
+            .await
+            .expect("complete_text should succeed");
+        println!("gemini reply: {text:?}");
+        assert!(!text.trim().is_empty(), "empty completion text");
     }
 }

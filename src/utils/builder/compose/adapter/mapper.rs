@@ -131,14 +131,25 @@ fn source(compose: &ComposeGetSpecRowRow) -> Result<ComposeSource, AdapterError>
                 _ => None,
             };
 
-            let protocol = if let Some(crate::utils::git::types::GitAuth::SshKey(_)) = auth {
+            let url = provider.repository_url();
+            // Protocol must match the URL scheme; an SSH key only applies to an
+            // SSH URL. Ignore a key mismatched with an https:// URL.
+            let url_is_ssh = url.starts_with("git@") || url.starts_with("ssh://");
+            let auth = if matches!(auth, Some(crate::utils::git::types::GitAuth::SshKey(_)))
+                && !url_is_ssh
+            {
+                None
+            } else {
+                auth
+            };
+            let protocol = if url_is_ssh {
                 crate::utils::provider::CloneProtocol::Ssh
             } else {
                 crate::utils::provider::CloneProtocol::Https
             };
 
             Ok(ComposeSource::Git {
-                url: provider.repository_url(),
+                url,
                 branch: branch(branch_val),
                 submodules: compose.enable_submodules.unwrap_or(0) != 0,
                 protocol,

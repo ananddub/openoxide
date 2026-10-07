@@ -6,24 +6,43 @@ import "buf/validate/validate.proto";
 
 // Sole schedule owner service; absorbs the former ScheduleOperationsService.
 service ScheduleService {
+  // List all schedules in the active organization. No params.
   rpc ListSchedules(ScheduleListSchedulesRequest) returns (ScheduleListSchedulesResponse);
+  // Get one schedule by id. Required: id.
   rpc GetSchedule(ScheduleGetScheduleRequest) returns (ScheduleGetScheduleResponse);
+  // Create a schedule. Required: name, cron_expression, command; shell_type/schedule_type (ScheduleType)/schedule_action (ScheduleAction)/target ids optional.
   rpc CreateSchedule(ScheduleCreateScheduleRequest) returns (ScheduleCreateScheduleResponse);
+  // Update a schedule by id. Required: id; all other fields optional patches (absent keeps stored value).
   rpc UpdateSchedule(ScheduleUpdateScheduleRequest) returns (ScheduleUpdateScheduleResponse);
+  // Delete a schedule by id. Required: id.
   rpc DeleteSchedule(ScheduleDeleteScheduleRequest) returns (Empty);
+  // Run a schedule immediately by id. Required: id. Returns run result with stdout/stderr.
   rpc RunSchedule(ScheduleRunScheduleRequest) returns (ScheduleRunScheduleResponse);
+  // Pause (disable) a schedule by id. Required: id.
   rpc PauseSchedule(SchedulePauseScheduleRequest) returns (SchedulePauseScheduleResponse);
+  // Resume (enable) a schedule by id. Required: id.
   rpc ResumeSchedule(ScheduleResumeScheduleRequest) returns (ScheduleResumeScheduleResponse);
+  // List schedules bound to an application. Required: application_id.
   rpc ListApplicationSchedules(ScheduleListApplicationSchedulesRequest) returns (ScheduleListApplicationSchedulesResponse);
+  // List schedules bound to a compose project. Required: compose_id.
   rpc ListComposeSchedules(ScheduleListComposeSchedulesRequest) returns (ScheduleListComposeSchedulesResponse);
+  // List schedules bound to a database. Required: database_id.
   rpc ListDatabaseSchedules(ScheduleListDatabaseSchedulesRequest) returns (ScheduleListDatabaseSchedulesResponse);
+  // List schedules bound to a server. Required: server_id.
   rpc ListServerSchedules(ScheduleListServerSchedulesRequest) returns (ScheduleListServerSchedulesResponse);
+  // List schedules bound to an organization. Required: organization_id.
   rpc ListOrganizationSchedules(ScheduleListOrganizationSchedulesRequest) returns (ScheduleListOrganizationSchedulesResponse);
+  // Manually trigger a schedule run by id. Required: id. Returns run result.
   rpc TriggerSchedule(ScheduleTriggerScheduleRequest) returns (ScheduleTriggerScheduleResponse);
+  // Get a schedule's runtime policy (retries, missed-run, concurrency, lease). Required: id.
   rpc GetRuntimePolicy(ScheduleGetRuntimePolicyRequest) returns (ScheduleGetRuntimePolicyResponse);
+  // Update a schedule's runtime policy. Required: id, retry_count, retry_delay_seconds, missed_run_policy, concurrency_policy, lease_seconds, notify flags.
   rpc UpdateRuntimePolicy(ScheduleUpdateRuntimePolicyRequest) returns (ScheduleUpdateRuntimePolicyResponse);
+  // List recorded executions for a schedule. Required: schedule_id.
   rpc ListExecutions(ScheduleListExecutionsRequest) returns (ScheduleListExecutionsResponse);
+  // Get a schedule's aggregate log file contents by id. Required: id.
   rpc GetLogs(ScheduleGetLogsRequest) returns (ScheduleGetLogsResponse);
+  // Get the log file for one execution. Required: schedule_id, execution_id.
   rpc GetExecutionLogs(ScheduleGetExecutionLogsRequest) returns (ScheduleGetExecutionLogsResponse);
 }
 

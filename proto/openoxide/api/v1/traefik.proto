@@ -6,16 +6,27 @@ import "buf/validate/validate.proto";
 
 // Sole Traefik owner service; absorbs the former TraefikOperationsService.
 service TraefikService {
+  // List Traefik config files; optional server_id selects a remote server (else the panel host).
   rpc ListFiles(TraefikListFilesRequest) returns (TraefikListFilesResponse);
+  // Get the Traefik config directory as a file tree; optional server_id selects a remote server.
   rpc GetFileTree(TraefikGetFileTreeRequest) returns (TraefikGetFileTreeResponse);
+  // Read one Traefik config file. Required: path; optional server_id.
   rpc GetFileContent(TraefikGetFileContentRequest) returns (TraefikGetFileContentResponse);
+  // Replace a Traefik config file's content. Required: path, content (validated YAML mapping); optional server_id.
   rpc UpdateFileContent(TraefikUpdateFileContentRequest) returns (Empty);
+  // Report Traefik health (rawdata reachability and config errors).
   rpc Health(TraefikHealthRequest) returns (TraefikHealthResponse);
+  // Get whether Traefik request-access logging is active, with its log path and cron.
   rpc GetRequestStatus(TraefikGetRequestStatusRequest) returns (TraefikGetRequestStatusResponse);
+  // Enable or disable Traefik request logging. Required: enable; optional server_id.
   rpc ToggleRequests(TraefikToggleRequestsRequest) returns (TraefikToggleRequestsResponse);
+  // Page through Traefik access logs; optional server_id, page, page_size, search, status filter.
   rpc GetRequestLogs(TraefikGetRequestLogsRequest) returns (TraefikGetRequestLogsResponse);
+  // Get the current and desired Traefik image/version; optional server_id.
   rpc GetVersion(TraefikGetVersionRequest) returns (TraefikGetVersionResponse);
+  // Update Traefik to a target version. Required: version; optional server_id.
   rpc UpdateVersion(TraefikUpdateVersionRequest) returns (TraefikUpdateVersionResponse);
+  // Render Traefik middleware Docker labels. Required: kind (TRAEFIK_MIDDLEWARE_KIND_*), name; values/list are kind-specific.
   rpc RenderMiddleware(TraefikRenderMiddlewareRequest) returns (TraefikRenderMiddlewareResponse);
 }
 

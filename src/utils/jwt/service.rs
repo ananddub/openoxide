@@ -36,6 +36,12 @@ impl JwtService {
         })
     }
 
+    /// Mint only a fresh access token (used by refresh, which keeps the
+    /// existing refresh token valid instead of rotating it).
+    pub fn generate_access_token(&self, subject: &JwtSubject) -> Result<String, TokenError> {
+        self.generate_token(subject, TokenType::Access)
+    }
+
     fn generate_token(
         &self,
         subject: &JwtSubject,

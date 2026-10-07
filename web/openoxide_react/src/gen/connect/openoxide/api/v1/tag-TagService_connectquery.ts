@@ -5,51 +5,71 @@
 import {TagService} from './tag_pb';
 
 /**
+ * List all tags for the organization.
+ *
  * @generated from rpc openoxide.api.v1.TagService.ListTags
  */
 export const listTags = TagService.method.listTags;
 
 /**
+ * Get one tag by id.
+ *
  * @generated from rpc openoxide.api.v1.TagService.GetTag
  */
 export const getTag = TagService.method.getTag;
 
 /**
+ * Create a tag. Required: name, color (hex); optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.TagService.CreateTag
  */
 export const createTag = TagService.method.createTag;
 
 /**
+ * Update a tag by id; name/color optional.
+ *
  * @generated from rpc openoxide.api.v1.TagService.UpdateTag
  */
 export const updateTag = TagService.method.updateTag;
 
 /**
+ * Delete a tag by id.
+ *
  * @generated from rpc openoxide.api.v1.TagService.DeleteTag
  */
 export const deleteTag = TagService.method.deleteTag;
 
 /**
+ * Attach an existing tag to the current resource by tag id.
+ *
  * @generated from rpc openoxide.api.v1.TagService.AddTag
  */
 export const addTag = TagService.method.addTag;
 
 /**
+ * Detach a tag from the current resource by tag id.
+ *
  * @generated from rpc openoxide.api.v1.TagService.RemoveTag
  */
 export const removeTag = TagService.method.removeTag;
 
 /**
+ * List tags attached to a project. Required: project_id.
+ *
  * @generated from rpc openoxide.api.v1.TagService.ListProjectTags
  */
 export const listProjectTags = TagService.method.listProjectTags;
 
 /**
+ * Attach a tag to a project. Required: project_id, tag_id.
+ *
  * @generated from rpc openoxide.api.v1.TagService.AttachProjectTag
  */
 export const attachProjectTag = TagService.method.attachProjectTag;
 
 /**
+ * Detach a tag from a project. Required: project_id, tag_id.
+ *
  * @generated from rpc openoxide.api.v1.TagService.DetachProjectTag
  */
 export const detachProjectTag = TagService.method.detachProjectTag;

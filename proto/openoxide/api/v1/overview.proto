@@ -5,11 +5,17 @@ import "buf/validate/validate.proto";
 
 // Sole overview owner service; absorbs the former OverviewOperationsService.
 service OverviewService {
+  // List services (apps/compose/databases) across environments; optional organization_id, environment_id, limit, offset.
   rpc ListServices(OverviewListServicesRequest) returns (OverviewListServicesResponse);
+  // List domains across the panel; optional organization_id, environment_id, limit, offset.
   rpc ListDomains(OverviewListDomainsRequest) returns (OverviewListDomainsResponse);
+  // List backups (database/volume) across the panel; optional organization_id, environment_id, limit, offset.
   rpc ListBackups(OverviewListBackupsRequest) returns (OverviewListBackupsResponse);
+  // List services for an organization; optional organization_id, limit, offset.
   rpc ListOrganizationServices(OverviewListOrganizationServicesRequest) returns (OverviewListOrganizationServicesResponse);
+  // List domains for an organization; optional organization_id, limit, offset.
   rpc ListOrganizationDomains(OverviewListOrganizationDomainsRequest) returns (OverviewListOrganizationDomainsResponse);
+  // List backups for an organization; optional organization_id, limit, offset.
   rpc ListOrganizationBackups(OverviewListOrganizationBackupsRequest) returns (OverviewListOrganizationBackupsResponse);
 }
 

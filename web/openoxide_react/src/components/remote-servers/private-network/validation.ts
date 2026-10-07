@@ -23,9 +23,18 @@ export function validatePrivateNetworkForm(
 		) {
 			return 'Remote WireGuard UDP listen port must be between 1 and 65535';
 		}
+		// An absent or placeholder endpoint is legal: the panel substitutes
+		// {remote server IP}:{listen port} when it applies the profile.
 		if (form.endpoint.trim() && form.endpoint.trim().includes(':')) {
 			const endpointPort = Number(form.endpoint.trim().split(':').at(-1));
-			if (Number.isInteger(endpointPort) && endpointPort !== listenPort) {
+			if (
+				!Number.isInteger(endpointPort) ||
+				endpointPort < 1 ||
+				endpointPort > 65535
+			) {
+				return 'Remote WireGuard endpoint port must be between 1 and 65535';
+			}
+			if (endpointPort !== listenPort) {
 				return 'Remote endpoint port must match the remote WireGuard UDP listen port';
 			}
 		}

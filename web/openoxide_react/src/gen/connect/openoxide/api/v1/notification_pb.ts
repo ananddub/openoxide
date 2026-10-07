@@ -1604,6 +1604,8 @@ export const NotificationResourceTypeSchema: GenEnum<NotificationResourceType> /
  */
 export const NotificationService: GenService<{
 	/**
+	 * List notifications; optional organization_id scopes the result.
+	 *
 	 * @generated from rpc openoxide.api.v1.NotificationService.ListNotifications
 	 */
 	listNotifications: {
@@ -1612,6 +1614,8 @@ export const NotificationService: GenService<{
 		output: typeof ListNotificationsResponseSchema;
 	};
 	/**
+	 * Get one notification by id; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.NotificationService.GetNotification
 	 */
 	getNotification: {
@@ -1620,6 +1624,8 @@ export const NotificationService: GenService<{
 		output: typeof GetNotificationResponseSchema;
 	};
 	/**
+	 * Create a notification. Required: name, organization_id, exactly one provider config (slack/telegram/email/...); event toggles optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.NotificationService.CreateNotification
 	 */
 	createNotification: {
@@ -1628,6 +1634,8 @@ export const NotificationService: GenService<{
 		output: typeof CreateNotificationResponseSchema;
 	};
 	/**
+	 * PATCH a notification by id: update name, event toggles, and provider config fields in place (provider kind immutable).
+	 *
 	 * @generated from rpc openoxide.api.v1.NotificationService.UpdateNotification
 	 */
 	updateNotification: {
@@ -1636,6 +1644,8 @@ export const NotificationService: GenService<{
 		output: typeof UpdateNotificationResponseSchema;
 	};
 	/**
+	 * Fully replace a notification by id, including its provider kind (one provider config required).
+	 *
 	 * @generated from rpc openoxide.api.v1.NotificationService.ReplaceNotification
 	 */
 	replaceNotification: {
@@ -1644,6 +1654,8 @@ export const NotificationService: GenService<{
 		output: typeof ReplaceNotificationResponseSchema;
 	};
 	/**
+	 * Delete a notification by id; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.NotificationService.DeleteNotification
 	 */
 	deleteNotification: {
@@ -1652,6 +1664,8 @@ export const NotificationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Send a test message through a notification by id; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.NotificationService.TestNotification
 	 */
 	testNotification: {
@@ -1660,6 +1674,8 @@ export const NotificationService: GenService<{
 		output: typeof TestNotificationResponseSchema;
 	};
 	/**
+	 * List notification delivery attempts/history; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.NotificationService.ListDeliveryHistory
 	 */
 	listDeliveryHistory: {
@@ -1668,6 +1684,8 @@ export const NotificationService: GenService<{
 		output: typeof ListNotificationDeliveryHistoryResponseSchema;
 	};
 	/**
+	 * Bind a notification to a resource. Required: notification_id, resource_type (NOTIFICATION_RESOURCE_TYPE_*), resource_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.NotificationService.CreateBinding
 	 */
 	createBinding: {
@@ -1676,6 +1694,8 @@ export const NotificationService: GenService<{
 		output: typeof CreateNotificationBindingResponseSchema;
 	};
 	/**
+	 * List notification-to-resource bindings; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.NotificationService.ListBindings
 	 */
 	listBindings: {
@@ -1684,6 +1704,8 @@ export const NotificationService: GenService<{
 		output: typeof ListNotificationBindingsResponseSchema;
 	};
 	/**
+	 * Delete a notification binding by id; optional organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.NotificationService.DeleteBinding
 	 */
 	deleteBinding: {

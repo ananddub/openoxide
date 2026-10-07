@@ -6,30 +6,53 @@ import "buf/validate/validate.proto";
 
 // Group, policy, member and invite management for the active organization; `ListPermissions`/`GetPermission`/`CreatePermission`/`UpdatePermission`/`DeletePermission` are aliases of the corresponding `*Group` rpcs and share the `PermissionGroup` payload.
 service PermissionService {
+  // List all permission groups (roles) in the active organization. No params.
   rpc ListPermissions(ListPermissionsRequest) returns (ListPermissionsResponse);
+  // Get one permission group by id. Required: id.
   rpc GetPermission(GetPermissionRequest) returns (GetPermissionResponse);
+  // Create a permission group. Required: name; actions optional (list of "RESOURCE:action" strings).
   rpc CreatePermission(CreatePermissionRequest) returns (CreatePermissionResponse);
+  // Update a permission group by id. Required: id, name; actions fully replaces the stored action list.
   rpc UpdatePermission(UpdatePermissionRequest) returns (Empty);
+  // Delete a permission group by id. Required: id.
   rpc DeletePermission(DeletePermissionRequest) returns (Empty);
+  // List all permission groups (roles) in the active organization. No params.
   rpc ListGroups(PermissionListGroupsRequest) returns (PermissionListGroupsResponse);
+  // Get one permission group by id. Required: id.
   rpc GetGroup(PermissionGetGroupRequest) returns (PermissionGetGroupResponse);
+  // Create a permission group. Required: name; actions optional (list of "RESOURCE:action" strings).
   rpc CreateGroup(PermissionCreateGroupRequest) returns (PermissionCreateGroupResponse);
+  // Update a permission group by id. Required: id, name; actions fully replaces the stored action list.
   rpc UpdateGroup(PermissionUpdateGroupRequest) returns (Empty);
+  // Delete a permission group by id. Required: id.
   rpc DeleteGroup(PermissionDeleteGroupRequest) returns (Empty);
+  // List the catalog of addressable policy actions. No params.
   rpc ListPolicies(PermissionListPoliciesRequest) returns (PermissionListPoliciesResponse);
   // Effective actions for the calling user inside the active organization (auth-only: every member may inspect their own grants to gate the UI).
   rpc GetMyPermissions(GetMyPermissionsRequest) returns (GetMyPermissionsResponse);
+  // Assign a permission group to a member. Required: id (member user id); group_id (0 detaches, role-only access).
   rpc AssignMemberGroup(PermissionAssignMemberGroupRequest) returns (Empty);
+  // Enable or disable a permission group. Required: id (group id), is_active.
   rpc SetGroupActive(PermissionSetGroupActiveRequest) returns (Empty);
+  // List per-user policy overrides for a member. Required: id (user id).
   rpc ListUserPolicies(PermissionListUserPoliciesRequest) returns (PermissionListUserPoliciesResponse);
+  // List members of the active organization. No params.
   rpc ListMembers(PermissionListMembersRequest) returns (PermissionListMembersResponse);
+  // Add a member to the organization. Required: email, role (ADMIN or MEMBER); password/group_id optional.
   rpc AddMember(PermissionAddMemberRequest) returns (Empty);
+  // Change a member's role. Required: id (user id), role (ADMIN or MEMBER).
   rpc UpdateMemberRole(PermissionUpdateMemberRoleRequest) returns (Empty);
+  // Remove a member from the organization. Required: id (user id).
   rpc RemoveMember(PermissionRemoveMemberRequest) returns (Empty);
+  // List pending organization invitations. No params.
   rpc ListInvites(PermissionListInvitesRequest) returns (PermissionListInvitesResponse);
+  // Create an organization invite, returning a token. Required: email, role (ADMIN or MEMBER); group_id (0 = role-only).
   rpc CreateInvite(PermissionCreateInviteRequest) returns (PermissionCreateInviteResponse);
+  // Accept an organization invite. Required: token (opaque invitation token).
   rpc AcceptInvite(PermissionAcceptInviteRequest) returns (Empty);
+  // Cancel a pending invite by id. Required: id.
   rpc CancelInvite(PermissionCancelInviteRequest) returns (Empty);
+  // Replace a user's full policy override list. Required: id (user id), policies (policy_id + effect GRANT/DENY entries).
   rpc ReplaceUserPolicies(PermissionReplaceUserPoliciesRequest) returns (Empty);
 }
 

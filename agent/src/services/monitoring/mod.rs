@@ -5,7 +5,6 @@ use tokio::sync::Mutex;
 
 use crate::{docker::api::DockerApi, telemetry::collector::system::SystemCollector};
 
-pub mod cgroup;
 pub mod lifecycle;
 pub mod metrics;
 pub mod shell;

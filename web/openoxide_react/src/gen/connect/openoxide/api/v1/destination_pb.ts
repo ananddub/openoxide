@@ -389,6 +389,8 @@ export const TestDestinationResponseSchema: GenMessage<TestDestinationResponse> 
  */
 export const DestinationService: GenService<{
 	/**
+	 * List all backup/storage destinations for the organization.
+	 *
 	 * @generated from rpc openoxide.api.v1.DestinationService.ListDestinations
 	 */
 	listDestinations: {
@@ -397,6 +399,8 @@ export const DestinationService: GenService<{
 		output: typeof ListDestinationsResponseSchema;
 	};
 	/**
+	 * Get one destination by id (UUID).
+	 *
 	 * @generated from rpc openoxide.api.v1.DestinationService.GetDestination
 	 */
 	getDestination: {
@@ -405,6 +409,8 @@ export const DestinationService: GenService<{
 		output: typeof GetDestinationResponseSchema;
 	};
 	/**
+	 * Create a storage destination. Required: name, provider (rclone label), bucket; access_key/secret/region/endpoint optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.DestinationService.CreateDestination
 	 */
 	createDestination: {
@@ -413,6 +419,8 @@ export const DestinationService: GenService<{
 		output: typeof CreateDestinationResponseSchema;
 	};
 	/**
+	 * Update a destination by id (UUID); name/provider/bucket/credentials/region/endpoint optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.DestinationService.UpdateDestination
 	 */
 	updateDestination: {
@@ -421,6 +429,8 @@ export const DestinationService: GenService<{
 		output: typeof UpdateDestinationResponseSchema;
 	};
 	/**
+	 * Delete a destination by id (UUID).
+	 *
 	 * @generated from rpc openoxide.api.v1.DestinationService.DeleteDestination
 	 */
 	deleteDestination: {
@@ -429,6 +439,8 @@ export const DestinationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Test raw storage credentials before saving. Required: provider, bucket; access_key/secret/region/endpoint as needed.
+	 *
 	 * @generated from rpc openoxide.api.v1.DestinationService.TestDestination
 	 */
 	testDestination: {

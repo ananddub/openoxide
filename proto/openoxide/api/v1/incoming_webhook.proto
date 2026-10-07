@@ -5,6 +5,7 @@ import "openoxide/api/v1/webhook.proto";
 import "buf/validate/validate.proto";
 
 service IncomingWebhookService {
+  // Receive and dispatch a git provider webhook event. Required: provider (WEBHOOK_PROVIDER_TYPE_*), provider_id, payload, signature.
   rpc HandleWebhook(IncomingWebhookRequest) returns (IncomingWebhookResponse);
 }
 

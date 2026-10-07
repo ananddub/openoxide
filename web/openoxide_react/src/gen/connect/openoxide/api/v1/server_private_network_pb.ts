@@ -734,6 +734,8 @@ export const ServerPrivateNetworkRotationStateSchema: GenEnum<ServerPrivateNetwo
  */
 export const ServerPrivateNetworkService: GenService<{
 	/**
+	 * Get a server's private-network config by server id (network absent if unconfigured).
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.GetNetwork
 	 */
 	getNetwork: {
@@ -742,6 +744,8 @@ export const ServerPrivateNetworkService: GenService<{
 		output: typeof ServerPrivateNetworkGetResponseSchema;
 	};
 	/**
+	 * Update a server's private-network config by id. Required: connection_mode (SERVER_CONNECTION_MODE_*); provider/host/addresses optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.UpdateNetwork
 	 */
 	updateNetwork: {
@@ -750,6 +754,8 @@ export const ServerPrivateNetworkService: GenService<{
 		output: typeof ServerPrivateNetworkUpdateResponseSchema;
 	};
 	/**
+	 * Delete a server's private-network config by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.DeleteNetwork
 	 */
 	deleteNetwork: {
@@ -758,6 +764,8 @@ export const ServerPrivateNetworkService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Provision/install the private-network tunnel on a server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.Setup
 	 */
 	setup: {
@@ -766,6 +774,8 @@ export const ServerPrivateNetworkService: GenService<{
 		output: typeof ServerPrivateNetworkSetupResponseSchema;
 	};
 	/**
+	 * Run a health check on a server's private network by id (interface, reachability, handshake).
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.Health
 	 */
 	health: {
@@ -774,6 +784,8 @@ export const ServerPrivateNetworkService: GenService<{
 		output: typeof ServerPrivateNetworkHealthResponseSchema;
 	};
 	/**
+	 * Repair a degraded/drifted private network on a server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.Repair
 	 */
 	repair: {
@@ -782,6 +794,8 @@ export const ServerPrivateNetworkService: GenService<{
 		output: typeof ServerPrivateNetworkRepairResponseSchema;
 	};
 	/**
+	 * Tear down and re-provision the private network on a server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.ReSetup
 	 */
 	reSetup: {
@@ -790,6 +804,8 @@ export const ServerPrivateNetworkService: GenService<{
 		output: typeof ServerPrivateNetworkReSetupResponseSchema;
 	};
 	/**
+	 * Rotate the WireGuard keys for a server's private network by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.RotateKeys
 	 */
 	rotateKeys: {
@@ -798,6 +814,8 @@ export const ServerPrivateNetworkService: GenService<{
 		output: typeof ServerPrivateNetworkRotateKeysResponseSchema;
 	};
 	/**
+	 * Tear down the private-network tunnel on a server by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.Teardown
 	 */
 	teardown: {

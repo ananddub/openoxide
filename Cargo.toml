@@ -85,6 +85,8 @@ aws-sdk-ssm = "1.76"
 [build-dependencies]
 tonic-build = "0.12.3"
 prost-build = "0.13.5"
+prost = "0.13.5"
+prost-types = "0.13.5"
 protoc-bin-vendored = "3.0.0"
 connectrpc-build = "0.9.0"
 buffa-codegen = "0.9.1"

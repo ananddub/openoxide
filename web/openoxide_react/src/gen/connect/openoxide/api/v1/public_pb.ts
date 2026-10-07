@@ -101,6 +101,8 @@ export const GenerateDomainResponseSchema: GenMessage<GenerateDomainResponse> /*
  */
 export const PublicService: GenService<{
 	/**
+	 * List the branches of a public Git repository. Required: repository_url.
+	 *
 	 * @generated from rpc openoxide.api.v1.PublicService.ListGitBranches
 	 */
 	listGitBranches: {
@@ -109,6 +111,8 @@ export const PublicService: GenService<{
 		output: typeof ListGitBranchesResponseSchema;
 	};
 	/**
+	 * Generate an auto subdomain for a service from a base name. Required: name (hostname label).
+	 *
 	 * @generated from rpc openoxide.api.v1.PublicService.GenerateDomain
 	 */
 	generateDomain: {

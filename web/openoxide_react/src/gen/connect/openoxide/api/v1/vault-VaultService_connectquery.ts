@@ -5,51 +5,71 @@
 import {VaultService} from './vault_pb';
 
 /**
+ * List all saved secret-vault providers for the organization.
+ *
  * @generated from rpc openoxide.api.v1.VaultService.ListProviders
  */
 export const listProviders = VaultService.method.listProviders;
 
 /**
+ * Get one vault provider by id.
+ *
  * @generated from rpc openoxide.api.v1.VaultService.GetProvider
  */
 export const getProvider = VaultService.method.getProvider;
 
 /**
+ * Create a vault provider. Required: name, provider_type (VAULT_PROVIDER_TYPE_*), api_url; auth_token/namespace/config_json/assignments optional.
+ *
  * @generated from rpc openoxide.api.v1.VaultService.CreateProvider
  */
 export const createProvider = VaultService.method.createProvider;
 
 /**
+ * Update a vault provider by id (provider_type immutable); absent fields keep stored values, empty auth_token clears it.
+ *
  * @generated from rpc openoxide.api.v1.VaultService.UpdateProvider
  */
 export const updateProvider = VaultService.method.updateProvider;
 
 /**
+ * Delete a vault provider by id.
+ *
  * @generated from rpc openoxide.api.v1.VaultService.DeleteProvider
  */
 export const deleteProvider = VaultService.method.deleteProvider;
 
 /**
+ * Test a saved vault provider's stored credentials by id.
+ *
  * @generated from rpc openoxide.api.v1.VaultService.TestProvider
  */
 export const testProvider = VaultService.method.testProvider;
 
 /**
+ * Test unsaved vault credentials before creating a provider. Required: provider_type, api_url.
+ *
  * @generated from rpc openoxide.api.v1.VaultService.TestConnection
  */
 export const testConnection = VaultService.method.testConnection;
 
 /**
+ * List secret keys available in a vault provider. Required: provider_id.
+ *
  * @generated from rpc openoxide.api.v1.VaultService.ListSecrets
  */
 export const listSecrets = VaultService.method.listSecrets;
 
 /**
+ * List a vault provider's project/environment assignments. Required: provider_id.
+ *
  * @generated from rpc openoxide.api.v1.VaultService.ListAssignments
  */
 export const listAssignments = VaultService.method.listAssignments;
 
 /**
+ * Replace a vault provider's assignment list. Required: provider_id, assignments (full replacement).
+ *
  * @generated from rpc openoxide.api.v1.VaultService.UpdateAssignments
  */
 export const updateAssignments = VaultService.method.updateAssignments;

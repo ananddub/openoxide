@@ -5,76 +5,113 @@
 import {AiService} from './ai_pb';
 
 /**
+ * List AI provider settings; optional organization_id scope. API keys are never returned.
+ *
  * @generated from rpc openoxide.api.v1.AiService.ListSettings
  */
 export const listSettings = AiService.method.listSettings;
 
 /**
+ * Get one AI provider setting by id; optional organization_id scope.
+ *
  * @generated from rpc openoxide.api.v1.AiService.GetSettings
  */
 export const getSettings = AiService.method.getSettings;
 
 /**
+ * Create an AI provider setting. Required: name, api_url, model; optional api_key (stored, never echoed), is_enabled, organization_id.
+ *
  * @generated from rpc openoxide.api.v1.AiService.CreateSettings
  */
 export const createSettings = AiService.method.createSettings;
 
 /**
+ * Update an AI provider setting by id (absent fields unchanged; absent api_key keeps the stored key).
+ *
  * @generated from rpc openoxide.api.v1.AiService.UpdateSettings
  */
 export const updateSettings = AiService.method.updateSettings;
 
 /**
+ * Delete an AI provider setting by id; optional organization_id scope.
+ *
  * @generated from rpc openoxide.api.v1.AiService.DeleteSettings
  */
 export const deleteSettings = AiService.method.deleteSettings;
 
 /**
+ * List model names offered by a stored provider setting (setting_id); optional organization_id scope.
+ *
  * @generated from rpc openoxide.api.v1.AiService.ListModels
  */
 export const listModels = AiService.method.listModels;
 
 /**
+ * Test a stored AI provider setting by id; optional organization_id scope.
+ *
  * @generated from rpc openoxide.api.v1.AiService.TestSettings
  */
 export const testSettings = AiService.method.testSettings;
 
 /**
+ * Discover models against unsaved credentials: required api_url, optional api_key (create-dialog use).
+ *
  * @generated from rpc openoxide.api.v1.AiService.DiscoverModels
  */
 export const discoverModels = AiService.method.discoverModels;
 
 /**
+ * Test connectivity against unsaved credentials: required api_url and model, optional api_key.
+ *
  * @generated from rpc openoxide.api.v1.AiService.TestConnection
  */
 export const testConnection = AiService.method.testConnection;
 
 /**
+ * List past generation runs; optional organization_id scope and limit (1-100).
+ *
  * @generated from rpc openoxide.api.v1.AiService.ListGenerations
  */
 export const listGenerations = AiService.method.listGenerations;
 
 /**
+ * Get one generation run by id; optional organization_id scope.
+ *
  * @generated from rpc openoxide.api.v1.AiService.GetGeneration
  */
 export const getGeneration = AiService.method.getGeneration;
 
 /**
+ * Create a compose generation from a free-form request prompt using provider ai_setting_id.
+ *
  * @generated from rpc openoxide.api.v1.AiService.CreateGeneration
  */
 export const createGeneration = AiService.method.createGeneration;
 
 /**
+ * Replace a generation's output after human review by id (full output); optional organization_id scope.
+ *
  * @generated from rpc openoxide.api.v1.AiService.ReviewGeneration
  */
 export const reviewGeneration = AiService.method.reviewGeneration;
 
 /**
+ * Deploy a reviewed generation by id: pick suggestion_id into environment_id; optional server_id and deploy_now.
+ *
  * @generated from rpc openoxide.api.v1.AiService.DeployGeneration
  */
 export const deployGeneration = AiService.method.deployGeneration;
 
 /**
+ * Analyze logs with provider ai_setting_id: context (AiLogContext BUILD/RUNTIME) over the given logs; returns markdown analysis.
+ *
  * @generated from rpc openoxide.api.v1.AiService.AnalyzeLogs
  */
 export const analyzeLogs = AiService.method.analyzeLogs;
+
+/**
+ * Agentic assistant: natural-language request → permission-checked actions.
+ *
+ * @generated from rpc openoxide.api.v1.AiService.Assistant
+ */
+export const assistant = AiService.method.assistant;

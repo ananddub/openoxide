@@ -684,6 +684,8 @@ export const OverviewBackupStatusSchema: GenEnum<OverviewBackupStatus> /*@__PURE
  */
 export const OverviewService: GenService<{
 	/**
+	 * List services (apps/compose/databases) across environments; optional organization_id, environment_id, limit, offset.
+	 *
 	 * @generated from rpc openoxide.api.v1.OverviewService.ListServices
 	 */
 	listServices: {
@@ -692,6 +694,8 @@ export const OverviewService: GenService<{
 		output: typeof OverviewListServicesResponseSchema;
 	};
 	/**
+	 * List domains across the panel; optional organization_id, environment_id, limit, offset.
+	 *
 	 * @generated from rpc openoxide.api.v1.OverviewService.ListDomains
 	 */
 	listDomains: {
@@ -700,6 +704,8 @@ export const OverviewService: GenService<{
 		output: typeof OverviewListDomainsResponseSchema;
 	};
 	/**
+	 * List backups (database/volume) across the panel; optional organization_id, environment_id, limit, offset.
+	 *
 	 * @generated from rpc openoxide.api.v1.OverviewService.ListBackups
 	 */
 	listBackups: {
@@ -708,6 +714,8 @@ export const OverviewService: GenService<{
 		output: typeof OverviewListBackupsResponseSchema;
 	};
 	/**
+	 * List services for an organization; optional organization_id, limit, offset.
+	 *
 	 * @generated from rpc openoxide.api.v1.OverviewService.ListOrganizationServices
 	 */
 	listOrganizationServices: {
@@ -716,6 +724,8 @@ export const OverviewService: GenService<{
 		output: typeof OverviewListOrganizationServicesResponseSchema;
 	};
 	/**
+	 * List domains for an organization; optional organization_id, limit, offset.
+	 *
 	 * @generated from rpc openoxide.api.v1.OverviewService.ListOrganizationDomains
 	 */
 	listOrganizationDomains: {
@@ -724,6 +734,8 @@ export const OverviewService: GenService<{
 		output: typeof OverviewListOrganizationDomainsResponseSchema;
 	};
 	/**
+	 * List backups for an organization; optional organization_id, limit, offset.
+	 *
 	 * @generated from rpc openoxide.api.v1.OverviewService.ListOrganizationBackups
 	 */
 	listOrganizationBackups: {

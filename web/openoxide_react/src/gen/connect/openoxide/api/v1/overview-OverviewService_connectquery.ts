@@ -5,33 +5,45 @@
 import {OverviewService} from './overview_pb';
 
 /**
+ * List services (apps/compose/databases) across environments; optional organization_id, environment_id, limit, offset.
+ *
  * @generated from rpc openoxide.api.v1.OverviewService.ListServices
  */
 export const listServices = OverviewService.method.listServices;
 
 /**
+ * List domains across the panel; optional organization_id, environment_id, limit, offset.
+ *
  * @generated from rpc openoxide.api.v1.OverviewService.ListDomains
  */
 export const listDomains = OverviewService.method.listDomains;
 
 /**
+ * List backups (database/volume) across the panel; optional organization_id, environment_id, limit, offset.
+ *
  * @generated from rpc openoxide.api.v1.OverviewService.ListBackups
  */
 export const listBackups = OverviewService.method.listBackups;
 
 /**
+ * List services for an organization; optional organization_id, limit, offset.
+ *
  * @generated from rpc openoxide.api.v1.OverviewService.ListOrganizationServices
  */
 export const listOrganizationServices =
 	OverviewService.method.listOrganizationServices;
 
 /**
+ * List domains for an organization; optional organization_id, limit, offset.
+ *
  * @generated from rpc openoxide.api.v1.OverviewService.ListOrganizationDomains
  */
 export const listOrganizationDomains =
 	OverviewService.method.listOrganizationDomains;
 
 /**
+ * List backups for an organization; optional organization_id, limit, offset.
+ *
  * @generated from rpc openoxide.api.v1.OverviewService.ListOrganizationBackups
  */
 export const listOrganizationBackups =

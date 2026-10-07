@@ -192,6 +192,8 @@ export const AuditExportAuditLogsResponseSchema: GenMessage<AuditExportAuditLogs
  */
 export const AuditService: GenService<{
 	/**
+	 * List audit logs; optional organization_id, action filter, limit, offset.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuditService.ListAuditLogs
 	 */
 	listAuditLogs: {
@@ -200,6 +202,8 @@ export const AuditService: GenService<{
 		output: typeof AuditListAuditLogsResponseSchema;
 	};
 	/**
+	 * Export org-scoped audit logs as CSV (capped at 500 rows); optional action filter.
+	 *
 	 * @generated from rpc openoxide.api.v1.AuditService.ExportAuditLogs
 	 */
 	exportAuditLogs: {

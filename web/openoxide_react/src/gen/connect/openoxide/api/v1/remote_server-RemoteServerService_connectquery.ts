@@ -5,61 +5,83 @@
 import {RemoteServerService} from './remote_server_pb';
 
 /**
+ * List all remote servers (no params).
+ *
  * @generated from rpc openoxide.api.v1.RemoteServerService.ListRemoteServers
  */
 export const listRemoteServers =
 	RemoteServerService.method.listRemoteServers;
 
 /**
+ * Get one remote server by id.
+ *
  * @generated from rpc openoxide.api.v1.RemoteServerService.GetRemoteServer
  */
 export const getRemoteServer = RemoteServerService.method.getRemoteServer;
 
 /**
+ * Create a remote server. Required: name, ip_address, server_type (RemoteServerType DEPLOY/BUILD); port 0=22, empty username=root; optional ssh_key_id and build limits.
+ *
  * @generated from rpc openoxide.api.v1.RemoteServerService.CreateRemoteServer
  */
 export const createRemoteServer =
 	RemoteServerService.method.createRemoteServer;
 
 /**
+ * Update a remote server by id (PATCH: absent fields unchanged); may change name, ip, port, status, type, cleanup, cron, metrics_config.
+ *
  * @generated from rpc openoxide.api.v1.RemoteServerService.UpdateRemoteServer
  */
 export const updateRemoteServer =
 	RemoteServerService.method.updateRemoteServer;
 
 /**
+ * Activate (mark ACTIVE) a remote server by id.
+ *
  * @generated from rpc openoxide.api.v1.RemoteServerService.Activate
  */
 export const activate = RemoteServerService.method.activate;
 
 /**
+ * Deactivate (mark INACTIVE) a remote server by id.
+ *
  * @generated from rpc openoxide.api.v1.RemoteServerService.Deactivate
  */
 export const deactivate = RemoteServerService.method.deactivate;
 
 /**
+ * Test SSH connectivity to a remote server by id.
+ *
  * @generated from rpc openoxide.api.v1.RemoteServerService.TestConnection
  */
 export const testConnection = RemoteServerService.method.testConnection;
 
 /**
+ * Delete a remote server by id.
+ *
  * @generated from rpc openoxide.api.v1.RemoteServerService.DeleteRemoteServer
  */
 export const deleteRemoteServer =
 	RemoteServerService.method.deleteRemoteServer;
 
 /**
+ * Migrate all dependencies from source id to target_server_id; returns a dependency-migration record (UUID).
+ *
  * @generated from rpc openoxide.api.v1.RemoteServerService.MigrateDependencies
  */
 export const migrateDependencies =
 	RemoteServerService.method.migrateDependencies;
 
 /**
+ * Get a dependency-migration status by migration_id (UUID from MigrateDependencies).
+ *
  * @generated from rpc openoxide.api.v1.RemoteServerService.GetMigration
  */
 export const getMigration = RemoteServerService.method.getMigration;
 
 /**
+ * Roll back a dependency migration by migration_id (UUID).
+ *
  * @generated from rpc openoxide.api.v1.RemoteServerService.RollbackMigration
  */
 export const rollbackMigration =

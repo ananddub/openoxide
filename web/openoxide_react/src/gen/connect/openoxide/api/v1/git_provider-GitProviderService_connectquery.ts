@@ -5,132 +5,180 @@
 import {GitProviderService} from './git_provider_pb';
 
 /**
+ * List all configured git providers. No params.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.ListGitProviders
  */
 export const listGitProviders = GitProviderService.method.listGitProviders;
 
 /**
+ * Get one git provider by id. Required: id.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.GetGitProvider
  */
 export const getGitProvider = GitProviderService.method.getGitProvider;
 
 /**
+ * Create a GitHub provider. Required: name; app/client credentials and private_key optional; shared defaults true.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.CreateGithubProvider
  */
 export const createGithubProvider =
 	GitProviderService.method.createGithubProvider;
 
 /**
+ * Create a GitLab provider. Required: name, url; application_id/secret/tokens optional; shared defaults true.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.CreateGitlabProvider
  */
 export const createGitlabProvider =
 	GitProviderService.method.createGitlabProvider;
 
 /**
+ * Create a Gitea provider. Required: name, url; client credentials/tokens/scopes optional; shared defaults true.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.CreateGiteaProvider
  */
 export const createGiteaProvider =
 	GitProviderService.method.createGiteaProvider;
 
 /**
+ * Create a Bitbucket provider. Required: name; username/email/app_password/api_token/workspace optional; shared defaults true.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.CreateBitbucketProvider
  */
 export const createBitbucketProvider =
 	GitProviderService.method.createBitbucketProvider;
 
 /**
+ * Update a GitHub provider by id. Required: id, name; other credential fields are optional patches (absent keeps stored value).
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGithubProvider
  */
 export const updateGithubProvider =
 	GitProviderService.method.updateGithubProvider;
 
 /**
+ * Update a GitLab provider by id. Required: id, name; other credential fields are optional patches (absent keeps stored value).
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGitlabProvider
  */
 export const updateGitlabProvider =
 	GitProviderService.method.updateGitlabProvider;
 
 /**
+ * Update a Gitea provider by id. Required: id, name; other credential fields are optional patches (absent keeps stored value).
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGiteaProvider
  */
 export const updateGiteaProvider =
 	GitProviderService.method.updateGiteaProvider;
 
 /**
+ * Update a Bitbucket provider by id. Required: id, name; other credential fields are optional patches (absent keeps stored value).
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.UpdateBitbucketProvider
  */
 export const updateBitbucketProvider =
 	GitProviderService.method.updateBitbucketProvider;
 
 /**
+ * Delete a git provider by id. Required: id.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.DeleteGitProvider
  */
 export const deleteGitProvider =
 	GitProviderService.method.deleteGitProvider;
 
 /**
+ * Test a git provider's credentials/connectivity by id. Required: id. Returns success + message.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.TestGitProvider
  */
 export const testGitProvider = GitProviderService.method.testGitProvider;
 
 /**
+ * Rotate a provider's webhook signing secret by id. Required: id. Returns the new secret.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.RotateWebhookSecret
  */
 export const rotateWebhookSecret =
 	GitProviderService.method.rotateWebhookSecret;
 
 /**
+ * List repositories visible to a provider. Required: provider_id.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.ListRepositories
  */
 export const listRepositories = GitProviderService.method.listRepositories;
 
 /**
+ * List branches of a repository. Required: provider_id, owner, repository.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.ListBranches
  */
 export const listBranches = GitProviderService.method.listBranches;
 
 /**
+ * List tags of a repository. Required: provider_id, owner, repository.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.ListTags
  */
 export const listTags = GitProviderService.method.listTags;
 
 /**
+ * Begin OAuth authorization for a provider. Required: provider_id. Returns a browser URL and signed state.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.Authorize
  */
 export const authorize = GitProviderService.method.authorize;
 
 /**
+ * Complete OAuth by exchanging the callback. Required: provider_id, state; code/installation_id optional.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.OAuthCallback
  */
 export const oAuthCallback = GitProviderService.method.oAuthCallback;
 
 /**
+ * Disconnect a provider's OAuth connection. Required: provider_id.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.Disconnect
  */
 export const disconnect = GitProviderService.method.disconnect;
 
 /**
+ * Get a user's access level on a repository. Required: provider_id, owner, repository, username.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.GetCollaboratorPermission
  */
 export const getCollaboratorPermission =
 	GitProviderService.method.getCollaboratorPermission;
 
 /**
+ * Get the registered webhook (if any) for a repository. Required: provider_id, owner, repository, callback_url.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.GetWebhookStatus
  */
 export const getWebhookStatus = GitProviderService.method.getWebhookStatus;
 
 /**
+ * Install a webhook on a repository. Required: provider_id, owner, repository, callback_url.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.InstallWebhook
  */
 export const installWebhook = GitProviderService.method.installWebhook;
 
 /**
+ * Recreate (delete + reinstall) a repository webhook. Required: provider_id, owner, repository, callback_url.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.RecreateWebhook
  */
 export const recreateWebhook = GitProviderService.method.recreateWebhook;
 
 /**
+ * Delete a repository webhook. Required: provider_id, owner, repository, callback_url.
+ *
  * @generated from rpc openoxide.api.v1.GitProviderService.DeleteWebhook
  */
 export const deleteWebhook = GitProviderService.method.deleteWebhook;

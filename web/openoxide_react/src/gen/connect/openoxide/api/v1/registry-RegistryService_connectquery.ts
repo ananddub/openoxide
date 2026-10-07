@@ -5,51 +5,71 @@
 import {RegistryService} from './registry_pb';
 
 /**
+ * List all saved container registries.
+ *
  * @generated from rpc openoxide.api.v1.RegistryService.ListRegistries
  */
 export const listRegistries = RegistryService.method.listRegistries;
 
 /**
+ * Get one registry by id.
+ *
  * @generated from rpc openoxide.api.v1.RegistryService.GetRegistry
  */
 export const getRegistry = RegistryService.method.getRegistry;
 
 /**
+ * Create a registry. Required: registry_name, registry_url, registry_type; username/password/image_prefix optional.
+ *
  * @generated from rpc openoxide.api.v1.RegistryService.CreateRegistry
  */
 export const createRegistry = RegistryService.method.createRegistry;
 
 /**
+ * Update a registry by id; absent fields keep stored values, empty image_prefix clears it.
+ *
  * @generated from rpc openoxide.api.v1.RegistryService.UpdateRegistry
  */
 export const updateRegistry = RegistryService.method.updateRegistry;
 
 /**
+ * Delete a registry by id.
+ *
  * @generated from rpc openoxide.api.v1.RegistryService.DeleteRegistry
  */
 export const deleteRegistry = RegistryService.method.deleteRegistry;
 
 /**
+ * Test registry login: with id uses stored creds, else raw registry_url/username/password (create dialog).
+ *
  * @generated from rpc openoxide.api.v1.RegistryService.TestRegistry
  */
 export const testRegistry = RegistryService.method.testRegistry;
 
 /**
+ * List repositories in a registry. Required: registry_id.
+ *
  * @generated from rpc openoxide.api.v1.RegistryService.ListRepositories
  */
 export const listRepositories = RegistryService.method.listRepositories;
 
 /**
+ * List image tags for a repository. Required: registry_id, repository.
+ *
  * @generated from rpc openoxide.api.v1.RegistryService.ListTags
  */
 export const listTags = RegistryService.method.listTags;
 
 /**
+ * Rotate a registry's stored credentials. Required: registry_id, username, password.
+ *
  * @generated from rpc openoxide.api.v1.RegistryService.RotateCredentials
  */
 export const rotateCredentials = RegistryService.method.rotateCredentials;
 
 /**
+ * List resources referencing a registry. Required: registry_id.
+ *
  * @generated from rpc openoxide.api.v1.RegistryService.GetUsage
  */
 export const getUsage = RegistryService.method.getUsage;

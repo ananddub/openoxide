@@ -5,17 +5,29 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service DnsService {
+  // List all saved DNS providers for the organization.
   rpc ListProviders(ListDnsProvidersRequest) returns (ListDnsProvidersResponse);
+  // Get one DNS provider by id.
   rpc GetProvider(GetDnsProviderRequest) returns (GetDnsProviderResponse);
+  // Create a DNS provider. Required: name, provider_type (DNS_PROVIDER_TYPE_*), credentials_json.
   rpc CreateProvider(CreateDnsProviderRequest) returns (CreateDnsProviderResponse);
+  // Update a DNS provider by id; absent fields keep stored values (name, provider_type, credentials_json optional).
   rpc UpdateProvider(UpdateDnsProviderRequest) returns (UpdateDnsProviderResponse);
+  // Delete a DNS provider by id.
   rpc DeleteProvider(DeleteDnsProviderRequest) returns (Empty);
+  // Test a saved DNS provider's stored credentials by id.
   rpc TestProvider(TestDnsProviderRequest) returns (TestDnsProviderResponse);
+  // Test unsaved DNS credentials before creating a provider. Required: provider_type, credentials_json.
   rpc TestConnection(TestDnsConnectionRequest) returns (TestDnsConnectionResponse);
+  // List DNS zones available to a provider. Required: provider_id.
   rpc ListZones(ListDnsZonesRequest) returns (ListDnsZonesResponse);
+  // List DNS records in a zone. Required: provider_id, zone_id.
   rpc ListRecords(ListDnsRecordsRequest) returns (ListDnsRecordsResponse);
+  // Create a DNS record. Required: provider_id, zone_id, record_type (A/AAAA/CNAME/...), name, content; ttl/proxied optional.
   rpc CreateRecord(CreateDnsRecordRequest) returns (CreateDnsRecordResponse);
+  // Edit a DNS record in place. Required: provider_id, zone_id, old_name + new record_type/name/content; id/old_* identify the row.
   rpc UpdateRecord(UpdateDnsRecordRequest) returns (UpdateDnsRecordResponse);
+  // Delete a DNS record. Required: provider_id, zone_id, name; id/record_type/content narrow the match.
   rpc DeleteRecord(DeleteDnsRecordRequest) returns (Empty);
 }
 

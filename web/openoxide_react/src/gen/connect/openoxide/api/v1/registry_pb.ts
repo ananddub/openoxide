@@ -554,6 +554,8 @@ export const GetRegistryUsageResponseSchema: GenMessage<GetRegistryUsageResponse
  */
 export const RegistryService: GenService<{
 	/**
+	 * List all saved container registries.
+	 *
 	 * @generated from rpc openoxide.api.v1.RegistryService.ListRegistries
 	 */
 	listRegistries: {
@@ -562,6 +564,8 @@ export const RegistryService: GenService<{
 		output: typeof ListRegistriesResponseSchema;
 	};
 	/**
+	 * Get one registry by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.RegistryService.GetRegistry
 	 */
 	getRegistry: {
@@ -570,6 +574,8 @@ export const RegistryService: GenService<{
 		output: typeof GetRegistryResponseSchema;
 	};
 	/**
+	 * Create a registry. Required: registry_name, registry_url, registry_type; username/password/image_prefix optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.RegistryService.CreateRegistry
 	 */
 	createRegistry: {
@@ -578,6 +584,8 @@ export const RegistryService: GenService<{
 		output: typeof CreateRegistryResponseSchema;
 	};
 	/**
+	 * Update a registry by id; absent fields keep stored values, empty image_prefix clears it.
+	 *
 	 * @generated from rpc openoxide.api.v1.RegistryService.UpdateRegistry
 	 */
 	updateRegistry: {
@@ -586,6 +594,8 @@ export const RegistryService: GenService<{
 		output: typeof UpdateRegistryResponseSchema;
 	};
 	/**
+	 * Delete a registry by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.RegistryService.DeleteRegistry
 	 */
 	deleteRegistry: {
@@ -594,6 +604,8 @@ export const RegistryService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Test registry login: with id uses stored creds, else raw registry_url/username/password (create dialog).
+	 *
 	 * @generated from rpc openoxide.api.v1.RegistryService.TestRegistry
 	 */
 	testRegistry: {
@@ -602,6 +614,8 @@ export const RegistryService: GenService<{
 		output: typeof TestRegistryResponseSchema;
 	};
 	/**
+	 * List repositories in a registry. Required: registry_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.RegistryService.ListRepositories
 	 */
 	listRepositories: {
@@ -610,6 +624,8 @@ export const RegistryService: GenService<{
 		output: typeof ListRegistryRepositoriesResponseSchema;
 	};
 	/**
+	 * List image tags for a repository. Required: registry_id, repository.
+	 *
 	 * @generated from rpc openoxide.api.v1.RegistryService.ListTags
 	 */
 	listTags: {
@@ -618,6 +634,8 @@ export const RegistryService: GenService<{
 		output: typeof ListRegistryTagsResponseSchema;
 	};
 	/**
+	 * Rotate a registry's stored credentials. Required: registry_id, username, password.
+	 *
 	 * @generated from rpc openoxide.api.v1.RegistryService.RotateCredentials
 	 */
 	rotateCredentials: {
@@ -626,6 +644,8 @@ export const RegistryService: GenService<{
 		output: typeof RotateRegistryCredentialsResponseSchema;
 	};
 	/**
+	 * List resources referencing a registry. Required: registry_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.RegistryService.GetUsage
 	 */
 	getUsage: {

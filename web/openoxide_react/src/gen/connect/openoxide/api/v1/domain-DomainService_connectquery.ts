@@ -5,42 +5,58 @@
 import {DomainService} from './domain_pb';
 
 /**
+ * List all domains.
+ *
  * @generated from rpc openoxide.api.v1.DomainService.ListDomains
  */
 export const listDomains = DomainService.method.listDomains;
 
 /**
+ * Get one domain by id.
+ *
  * @generated from rpc openoxide.api.v1.DomainService.GetDomain
  */
 export const getDomain = DomainService.method.getDomain;
 
 /**
+ * List domains attached to an application. Required: application_id.
+ *
  * @generated from rpc openoxide.api.v1.DomainService.ListApplicationDomains
  */
 export const listApplicationDomains =
 	DomainService.method.listApplicationDomains;
 
 /**
+ * List domains attached to a Compose project. Required: compose_id.
+ *
  * @generated from rpc openoxide.api.v1.DomainService.ListComposeDomains
  */
 export const listComposeDomains = DomainService.method.listComposeDomains;
 
 /**
+ * Create a domain. Required: host; set application_id or compose_id; https/port/path/certificate_type (DOMAIN_CERTIFICATE_TYPE_*) optional.
+ *
  * @generated from rpc openoxide.api.v1.DomainService.CreateDomain
  */
 export const createDomain = DomainService.method.createDomain;
 
 /**
+ * Update a domain by id (domain_type not patchable); host/https/port/path/middlewares/certificate_type optional.
+ *
  * @generated from rpc openoxide.api.v1.DomainService.UpdateDomain
  */
 export const updateDomain = DomainService.method.updateDomain;
 
 /**
+ * Delete a domain by id.
+ *
  * @generated from rpc openoxide.api.v1.DomainService.DeleteDomain
  */
 export const deleteDomain = DomainService.method.deleteDomain;
 
 /**
+ * Validate that a host's DNS resolves to the target server. Required: host; optional server_id (panel host if absent).
+ *
  * @generated from rpc openoxide.api.v1.DomainService.ValidateDomainDns
  */
 export const validateDomainDns = DomainService.method.validateDomainDns;

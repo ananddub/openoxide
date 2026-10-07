@@ -1,5 +1,8 @@
 {
 	"include": ["**/*.ts", "**/*.tsx"],
+	/* Parked pages: their routes are commented out of src/routes.ts, so their
+	   /_app/* paths are absent from the generated route tree and can't type-check. */
+	"exclude": ["src/pages/docker.tsx", "src/pages/overview.tsx"],
 	"compilerOptions": {
 		"target": "ES2022",
 		"jsx": "react-jsx",

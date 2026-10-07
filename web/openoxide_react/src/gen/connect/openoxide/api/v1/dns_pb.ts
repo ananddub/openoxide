@@ -764,6 +764,8 @@ export const DnsProviderTypeSchema: GenEnum<DnsProviderType> /*@__PURE__*/ =
  */
 export const DnsService: GenService<{
 	/**
+	 * List all saved DNS providers for the organization.
+	 *
 	 * @generated from rpc openoxide.api.v1.DnsService.ListProviders
 	 */
 	listProviders: {
@@ -772,6 +774,8 @@ export const DnsService: GenService<{
 		output: typeof ListDnsProvidersResponseSchema;
 	};
 	/**
+	 * Get one DNS provider by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DnsService.GetProvider
 	 */
 	getProvider: {
@@ -780,6 +784,8 @@ export const DnsService: GenService<{
 		output: typeof GetDnsProviderResponseSchema;
 	};
 	/**
+	 * Create a DNS provider. Required: name, provider_type (DNS_PROVIDER_TYPE_*), credentials_json.
+	 *
 	 * @generated from rpc openoxide.api.v1.DnsService.CreateProvider
 	 */
 	createProvider: {
@@ -788,6 +794,8 @@ export const DnsService: GenService<{
 		output: typeof CreateDnsProviderResponseSchema;
 	};
 	/**
+	 * Update a DNS provider by id; absent fields keep stored values (name, provider_type, credentials_json optional).
+	 *
 	 * @generated from rpc openoxide.api.v1.DnsService.UpdateProvider
 	 */
 	updateProvider: {
@@ -796,6 +804,8 @@ export const DnsService: GenService<{
 		output: typeof UpdateDnsProviderResponseSchema;
 	};
 	/**
+	 * Delete a DNS provider by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DnsService.DeleteProvider
 	 */
 	deleteProvider: {
@@ -804,6 +814,8 @@ export const DnsService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Test a saved DNS provider's stored credentials by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DnsService.TestProvider
 	 */
 	testProvider: {
@@ -812,6 +824,8 @@ export const DnsService: GenService<{
 		output: typeof TestDnsProviderResponseSchema;
 	};
 	/**
+	 * Test unsaved DNS credentials before creating a provider. Required: provider_type, credentials_json.
+	 *
 	 * @generated from rpc openoxide.api.v1.DnsService.TestConnection
 	 */
 	testConnection: {
@@ -820,6 +834,8 @@ export const DnsService: GenService<{
 		output: typeof TestDnsConnectionResponseSchema;
 	};
 	/**
+	 * List DNS zones available to a provider. Required: provider_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DnsService.ListZones
 	 */
 	listZones: {
@@ -828,6 +844,8 @@ export const DnsService: GenService<{
 		output: typeof ListDnsZonesResponseSchema;
 	};
 	/**
+	 * List DNS records in a zone. Required: provider_id, zone_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DnsService.ListRecords
 	 */
 	listRecords: {
@@ -836,6 +854,8 @@ export const DnsService: GenService<{
 		output: typeof ListDnsRecordsResponseSchema;
 	};
 	/**
+	 * Create a DNS record. Required: provider_id, zone_id, record_type (A/AAAA/CNAME/...), name, content; ttl/proxied optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.DnsService.CreateRecord
 	 */
 	createRecord: {
@@ -844,6 +864,8 @@ export const DnsService: GenService<{
 		output: typeof CreateDnsRecordResponseSchema;
 	};
 	/**
+	 * Edit a DNS record in place. Required: provider_id, zone_id, old_name + new record_type/name/content; id/old_* identify the row.
+	 *
 	 * @generated from rpc openoxide.api.v1.DnsService.UpdateRecord
 	 */
 	updateRecord: {
@@ -852,6 +874,8 @@ export const DnsService: GenService<{
 		output: typeof UpdateDnsRecordResponseSchema;
 	};
 	/**
+	 * Delete a DNS record. Required: provider_id, zone_id, name; id/record_type/content narrow the match.
+	 *
 	 * @generated from rpc openoxide.api.v1.DnsService.DeleteRecord
 	 */
 	deleteRecord: {

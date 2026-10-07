@@ -5,14 +5,23 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service ServerPrivateNetworkService {
+  // Get a server's private-network config by server id (network absent if unconfigured).
   rpc GetNetwork(ServerPrivateNetworkGetRequest) returns (ServerPrivateNetworkGetResponse);
+  // Update a server's private-network config by id. Required: connection_mode (SERVER_CONNECTION_MODE_*); provider/host/addresses optional.
   rpc UpdateNetwork(ServerPrivateNetworkUpdateRequest) returns (ServerPrivateNetworkUpdateResponse);
+  // Delete a server's private-network config by id.
   rpc DeleteNetwork(ServerPrivateNetworkDeleteRequest) returns (Empty);
+  // Provision/install the private-network tunnel on a server by id.
   rpc Setup(ServerPrivateNetworkSetupRequest) returns (ServerPrivateNetworkSetupResponse);
+  // Run a health check on a server's private network by id (interface, reachability, handshake).
   rpc Health(ServerPrivateNetworkHealthRequest) returns (ServerPrivateNetworkHealthResponse);
+  // Repair a degraded/drifted private network on a server by id.
   rpc Repair(ServerPrivateNetworkRepairRequest) returns (ServerPrivateNetworkRepairResponse);
+  // Tear down and re-provision the private network on a server by id.
   rpc ReSetup(ServerPrivateNetworkReSetupRequest) returns (ServerPrivateNetworkReSetupResponse);
+  // Rotate the WireGuard keys for a server's private network by id.
   rpc RotateKeys(ServerPrivateNetworkRotateKeysRequest) returns (ServerPrivateNetworkRotateKeysResponse);
+  // Tear down the private-network tunnel on a server by id.
   rpc Teardown(ServerPrivateNetworkTeardownRequest) returns (Empty);
 }
 

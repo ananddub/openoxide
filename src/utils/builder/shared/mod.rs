@@ -154,7 +154,18 @@ impl BuilderContext {
 
         let run = pipeline.execute_stream_cancelled(&self.executor, tx, cancel);
         let (status, ()) = tokio::join!(run, drain);
-        status.map(|_| ())
+        // The streaming executor returns the raw exit status without failing on
+        // a non-zero code, so a failed build (e.g. nixpacks "no build plan")
+        // would otherwise look successful and let the deploy continue. Treat any
+        // non-zero exit as an error so the pipeline stops here.
+        let status = status?;
+        if !status.success() {
+            return Err(ExecError::CommandFailed {
+                code: status.code(),
+                stderr: "build command failed — see the build log above for details".into(),
+            });
+        }
+        Ok(())
     }
 }
 

@@ -17,11 +17,14 @@ export function getAccessToken(): string {
 		return '';
 	}
 }
-export const getApiBaseUrl = () => {
+// A declaration, not a const arrow: connect.ts calls this while evaluating its
+// module-scope transport, and the client.ts ↔ connect.ts ↔ query.ts cycle means
+// that can happen before client.ts's body has run.
+export function getApiBaseUrl() {
 	if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
 	// Same-origin by default (the Caddy proxy in the dev stack and the embedded serving in production both expose the panel API on the UI origin) — mirrors the prototype's `baseUrl: ""` pattern. Cross-origin direct-panel callers can still pin VITE_API_URL.
 	return '';
-};
+}
 
 let refreshPromise: Promise<RefreshResult> | null = null;
 let refreshRetryAfter = 0;

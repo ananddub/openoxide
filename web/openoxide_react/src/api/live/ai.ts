@@ -277,3 +277,60 @@ export function useAiAnalyzeLogs() {
 			),
 	);
 }
+
+/** One prior turn sent back for context. */
+export type AiChatTurnInput = {
+	role: 'user' | 'assistant';
+	content: string;
+};
+
+/** Agentic assistant: sends the prompt plus prior turns so the model keeps context; the reply may carry a CONFIRM / CHOICE interaction for the UI. */
+export function useAiAssistant() {
+	return useConnectMutation(
+		(input: {
+			prompt: string;
+			aiSettingId?: number;
+			history?: AiChatTurnInput[];
+			pendingActions?: string;
+		}) =>
+			aiClient.assistant(
+				{
+					prompt: input.prompt,
+					aiSettingId:
+						input.aiSettingId !== undefined
+							? BigInt(input.aiSettingId)
+							: undefined,
+					history: (input.history ?? []).map(t => ({
+						role: t.role,
+						content: t.content,
+					})),
+					pendingActions: input.pendingActions,
+				},
+				AI_CALL_OPTIONS,
+			),
+	);
+}
+
+/** Streaming assistant: returns an async-iterable of live events (thinking,
+ *  status, action_result, reply, interaction, done). The web renders each
+ *  event as it arrives for a "ChatGPT-like" live feel. */
+export function streamAssistant(input: {
+	prompt: string;
+	aiSettingId?: number;
+	pendingActions?: string;
+	sessionId?: string;
+	signal?: AbortSignal;
+}) {
+	return aiClient.assistantStream(
+		{
+			prompt: input.prompt,
+			aiSettingId:
+				input.aiSettingId !== undefined
+					? BigInt(input.aiSettingId)
+					: undefined,
+			pendingActions: input.pendingActions,
+			sessionId: input.sessionId,
+		},
+		{...AI_CALL_OPTIONS, signal: input.signal},
+	);
+}

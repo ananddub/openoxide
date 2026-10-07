@@ -8,7 +8,6 @@ import {
 	GalleryVerticalEnd,
 	Globe,
 	HardDrive,
-	LayoutGrid,
 	Network,
 	Pencil,
 	PieChart,
@@ -17,7 +16,6 @@ import {
 	ScrollText,
 	Server,
 	Settings2,
-	Terminal as TerminalIcon,
 	Trash2,
 	Wrench,
 	type LucideIcon,
@@ -28,6 +26,7 @@ import {useRemoteServerGet, useSshKeyItems} from '#/api/live';
 import {CreateServerModal} from '#/components/remote-servers/create-server-modal';
 import {DeleteServerModal} from '#/components/remote-servers/delete-server-modal';
 import {ServerSettingsPanel} from '#/components/remote-servers/server-settings-panel';
+import {SERVER_TABS} from '#/components/remote-servers/server-tabs';
 import type {
 	RemoteServerResponse,
 	SshKeyResponse,
@@ -391,12 +390,6 @@ function ServersContextNav({collapsed}: {collapsed: boolean}) {
 }
 
 /* ── Remote Server detail context ───────────────────────────────────── */
-
-const SERVER_TABS = [
-	{id: 'overview', label: 'Overview', icon: LayoutGrid},
-	{id: 'network', label: 'Private Network', icon: Network},
-	{id: 'terminal', label: 'Terminal', icon: TerminalIcon},
-] as const;
 
 function ServerDetailContextNav({
 	id,

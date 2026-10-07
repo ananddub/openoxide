@@ -388,6 +388,8 @@ export const DatabaseNetworkListDependenciesResponseSchema: GenMessage<DatabaseN
  */
 export const DatabaseNetworkService: GenService<{
 	/**
+	 * List all database networks. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListNetworks
 	 */
 	listNetworks: {
@@ -396,6 +398,8 @@ export const DatabaseNetworkService: GenService<{
 		output: typeof DatabaseNetworkListNetworksResponseSchema;
 	};
 	/**
+	 * List database networks scoped to server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListServerNetworks
 	 */
 	listServerNetworks: {
@@ -404,6 +408,8 @@ export const DatabaseNetworkService: GenService<{
 		output: typeof DatabaseNetworkListServerNetworksResponseSchema;
 	};
 	/**
+	 * Get one database network by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.GetNetwork
 	 */
 	getNetwork: {
@@ -412,6 +418,8 @@ export const DatabaseNetworkService: GenService<{
 		output: typeof DatabaseNetworkGetNetworkResponseSchema;
 	};
 	/**
+	 * Create a database network. Required: name, docker_network_name; optional description, external (0/1), server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.CreateNetwork
 	 */
 	createNetwork: {
@@ -420,6 +428,8 @@ export const DatabaseNetworkService: GenService<{
 		output: typeof DatabaseNetworkCreateNetworkResponseSchema;
 	};
 	/**
+	 * Update a database network by id; absent fields keep stored values (name, docker_network_name, description, external, server_id).
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.UpdateNetwork
 	 */
 	updateNetwork: {
@@ -428,6 +438,8 @@ export const DatabaseNetworkService: GenService<{
 		output: typeof DatabaseNetworkUpdateNetworkResponseSchema;
 	};
 	/**
+	 * Delete a database network by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.DeleteNetwork
 	 */
 	deleteNetwork: {
@@ -436,6 +448,8 @@ export const DatabaseNetworkService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List dependent resource counts (applications, compose services, databases) for a network by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseNetworkService.ListDependencies
 	 */
 	listDependencies: {

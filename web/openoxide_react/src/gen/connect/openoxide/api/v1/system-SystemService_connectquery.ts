@@ -5,11 +5,15 @@
 import {SystemService} from './system_pb';
 
 /**
+ * Report overall system health (database and Docker dependencies).
+ *
  * @generated from rpc openoxide.api.v1.SystemService.Health
  */
 export const health = SystemService.method.health;
 
 /**
+ * Validate the panel configuration and report errors/warnings.
+ *
  * @generated from rpc openoxide.api.v1.SystemService.TestConfig
  */
 export const testConfig = SystemService.method.testConfig;

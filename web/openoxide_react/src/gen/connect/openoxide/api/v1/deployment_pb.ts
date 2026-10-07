@@ -461,6 +461,8 @@ export const ContainerSchema: GenMessage<Container> /*@__PURE__*/ =
  */
 export const DeploymentService: GenService<{
 	/**
+	 * List deployments; optional resource_type, resource_id, limit (1..=1000) and offset filters.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.ListDeployments
 	 */
 	listDeployments: {
@@ -469,6 +471,8 @@ export const DeploymentService: GenService<{
 		output: typeof ListDeploymentsResponseSchema;
 	};
 	/**
+	 * Search deployment logs by query text; optional resource_type and resource_id filters.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.SearchLogs
 	 */
 	searchLogs: {
@@ -477,6 +481,8 @@ export const DeploymentService: GenService<{
 		output: typeof ListDeploymentsResponseSchema;
 	};
 	/**
+	 * List all active (not-finished) deployments. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.ListActiveDeployments
 	 */
 	listActiveDeployments: {
@@ -485,6 +491,8 @@ export const DeploymentService: GenService<{
 		output: typeof ListDeploymentsResponseSchema;
 	};
 	/**
+	 * List all currently running deployments. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.ListRunningDeployments
 	 */
 	listRunningDeployments: {
@@ -493,6 +501,8 @@ export const DeploymentService: GenService<{
 		output: typeof ListDeploymentsResponseSchema;
 	};
 	/**
+	 * Get one deployment by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.GetDeployment
 	 */
 	getDeployment: {
@@ -501,6 +511,8 @@ export const DeploymentService: GenService<{
 		output: typeof DeploymentSchema;
 	};
 	/**
+	 * Stream live resource stats for an application by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamApplicationStats
 	 */
 	streamApplicationStats: {
@@ -509,6 +521,8 @@ export const DeploymentService: GenService<{
 		output: typeof DeploymentEventSchema;
 	};
 	/**
+	 * Stream live resource stats for a compose project by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamComposeStats
 	 */
 	streamComposeStats: {
@@ -517,6 +531,8 @@ export const DeploymentService: GenService<{
 		output: typeof DeploymentEventSchema;
 	};
 	/**
+	 * Stream live resource stats for a database by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamDatabaseStats
 	 */
 	streamDatabaseStats: {
@@ -525,6 +541,8 @@ export const DeploymentService: GenService<{
 		output: typeof DeploymentEventSchema;
 	};
 	/**
+	 * Stream container logs for target (container handle); optional server_id, tail, filter, timestamps, follow.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamContainerLogs
 	 */
 	streamContainerLogs: {
@@ -533,6 +551,8 @@ export const DeploymentService: GenService<{
 		output: typeof DeploymentEventSchema;
 	};
 	/**
+	 * Export container logs for target to a file; optional server_id, tail, filter, timestamps.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.ExportContainerLogs
 	 */
 	exportContainerLogs: {
@@ -541,6 +561,8 @@ export const DeploymentService: GenService<{
 		output: typeof LogExportSchema;
 	};
 	/**
+	 * List all containers on the panel host. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.ListContainers
 	 */
 	listContainers: {
@@ -549,6 +571,8 @@ export const DeploymentService: GenService<{
 		output: typeof ContainerListSchema;
 	};
 	/**
+	 * Stream Swarm service logs for target; optional server_id, tail, filter, timestamps, follow.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamServiceLogs
 	 */
 	streamServiceLogs: {
@@ -557,6 +581,8 @@ export const DeploymentService: GenService<{
 		output: typeof DeploymentEventSchema;
 	};
 	/**
+	 * Export Swarm service logs for target to a file; optional server_id, tail, filter, timestamps.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.ExportServiceLogs
 	 */
 	exportServiceLogs: {
@@ -565,6 +591,8 @@ export const DeploymentService: GenService<{
 		output: typeof LogExportSchema;
 	};
 	/**
+	 * Stream compose logs for compose_id; optional service, server_id, tail, timestamps, follow.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamComposeLogs
 	 */
 	streamComposeLogs: {
@@ -573,6 +601,8 @@ export const DeploymentService: GenService<{
 		output: typeof DeploymentEventSchema;
 	};
 	/**
+	 * Export compose logs for compose_id to a file; optional service, server_id, tail, timestamps.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.ExportComposeLogs
 	 */
 	exportComposeLogs: {
@@ -581,6 +611,8 @@ export const DeploymentService: GenService<{
 		output: typeof LogExportSchema;
 	};
 	/**
+	 * Stream live build/deploy logs for a deployment by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.StreamDeploymentLogs
 	 */
 	streamDeploymentLogs: {
@@ -589,6 +621,8 @@ export const DeploymentService: GenService<{
 		output: typeof DeploymentEventSchema;
 	};
 	/**
+	 * Cancel an in-progress deployment by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.CancelDeployment
 	 */
 	cancelDeployment: {
@@ -597,6 +631,8 @@ export const DeploymentService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Delete a single deployment record by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.DeleteDeployment
 	 */
 	deleteDeployment: {
@@ -605,6 +641,8 @@ export const DeploymentService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Delete all deployment records for an application by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.DeleteApplicationDeployments
 	 */
 	deleteApplicationDeployments: {
@@ -613,6 +651,8 @@ export const DeploymentService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Delete all deployment records for a compose project by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.DeleteComposeDeployments
 	 */
 	deleteComposeDeployments: {
@@ -621,6 +661,8 @@ export const DeploymentService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Delete all deployment records for a database by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.DeleteDatabaseDeployments
 	 */
 	deleteDatabaseDeployments: {
@@ -629,6 +671,8 @@ export const DeploymentService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Delete all deployment records across the panel. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.DeploymentService.ClearDeployments
 	 */
 	clearDeployments: {

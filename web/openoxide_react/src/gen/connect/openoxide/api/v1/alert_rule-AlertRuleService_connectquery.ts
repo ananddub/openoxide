@@ -5,31 +5,43 @@
 import {AlertRuleService} from './alert_rule_pb';
 
 /**
+ * List alert rules; optional organization_id scopes the result.
+ *
  * @generated from rpc openoxide.api.v1.AlertRuleService.ListRules
  */
 export const listRules = AlertRuleService.method.listRules;
 
 /**
+ * Get one alert rule by id; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.AlertRuleService.GetRule
  */
 export const getRule = AlertRuleService.method.getRule;
 
 /**
+ * Create an alert rule. Required: name, target_kind (ALERT_TARGET_KIND_*), target_id, metric, operator, threshold, duration_seconds, organization_id.
+ *
  * @generated from rpc openoxide.api.v1.AlertRuleService.CreateRule
  */
 export const createRule = AlertRuleService.method.createRule;
 
 /**
+ * Fully replace an alert rule by id (organization fixed to stored row).
+ *
  * @generated from rpc openoxide.api.v1.AlertRuleService.UpdateRule
  */
 export const updateRule = AlertRuleService.method.updateRule;
 
 /**
+ * Delete an alert rule by id; optional organization_id.
+ *
  * @generated from rpc openoxide.api.v1.AlertRuleService.DeleteRule
  */
 export const deleteRule = AlertRuleService.method.deleteRule;
 
 /**
+ * Fire a canned test alert through a notification channel. Required: notification_id.
+ *
  * @generated from rpc openoxide.api.v1.AlertRuleService.TestRule
  */
 export const testRule = AlertRuleService.method.testRule;

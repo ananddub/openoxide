@@ -3,8 +3,10 @@ use std::fmt;
 /// Strongly-typed memory value. Internally stored as bytes.
 ///
 /// ```
-/// Memory::mb(512)  // "512m"
-/// Memory::gb(2)    // "2g"
+/// use oxos::docker::core::Memory;
+///
+/// assert_eq!(Memory::mb(512).to_string(), "512m");
+/// assert_eq!(Memory::gb(2).to_string(), "2g");
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Memory(u64);

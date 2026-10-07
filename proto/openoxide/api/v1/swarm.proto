@@ -6,23 +6,41 @@ import "buf/validate/validate.proto";
 
 // Sole swarm owner service; absorbs the former SwarmOperationsService; `server_id` selects the target engine, absent means the panel's local Docker daemon.
 service SwarmService {
+  // Get the panel-level swarm settings document for an engine; optional server_id selects the target (absent means local Docker).
   rpc GetSettings(SwarmGetSettingsRequest) returns (SwarmGetSettingsResponse);
+  // Replace the swarm settings document (required settings JSON); optional server_id selects the target engine.
   rpc UpdateSettings(SwarmUpdateSettingsRequest) returns (SwarmUpdateSettingsResponse);
+  // List swarm overlay networks on an engine; optional server_id selects the target.
   rpc ListNetworks(SwarmListNetworksRequest) returns (SwarmListNetworksResponse);
+  // Create a swarm overlay network. Required: name; optional config_json (driver/labels) and server_id.
   rpc CreateNetwork(SwarmCreateNetworkRequest) returns (SwarmCreateNetworkResponse);
+  // Update a swarm network by network_id with a config_json of fields to replace; optional server_id.
   rpc UpdateNetwork(SwarmUpdateNetworkRequest) returns (SwarmUpdateNetworkResponse);
+  // Delete a swarm network by network_id; optional server_id selects the target engine.
   rpc DeleteNetwork(SwarmDeleteNetworkRequest) returns (Empty);
+  // List swarm services on an engine; optional server_id selects the target.
   rpc ListServices(SwarmListServicesRequest) returns (SwarmListServicesResponse);
+  // Get one swarm service by service_id; optional server_id selects the target engine.
   rpc GetService(SwarmGetServiceRequest) returns (SwarmGetServiceResponse);
+  // Update a swarm service by service_id with a spec_json of spec fields to replace; optional server_id.
   rpc UpdateService(SwarmUpdateServiceRequest) returns (SwarmUpdateServiceResponse);
+  // Get swarm cluster info (node id/addr, state, counts) for an engine; optional server_id selects the target.
   rpc Info(SwarmInfoRequest) returns (SwarmInfoResponse);
+  // Get the worker/manager join tokens for a cluster; optional server_id selects the target engine.
   rpc GetJoinTokens(SwarmGetJoinTokensRequest) returns (SwarmGetJoinTokensResponse);
+  // List swarm nodes (hostname, status, role, availability) for a cluster; optional server_id selects the target.
   rpc ListNodes(SwarmListNodesRequest) returns (SwarmListNodesResponse);
+  // Promote a worker node to manager by node_id; optional server_id selects the target engine.
   rpc PromoteNode(SwarmPromoteNodeRequest) returns (Empty);
+  // Demote a manager node to worker by node_id; optional server_id selects the target engine.
   rpc DemoteNode(SwarmDemoteNodeRequest) returns (Empty);
+  // Set a node's availability (SwarmNodeAvailability: ACTIVE/PAUSE/DRAIN) by node_id; optional server_id.
   rpc UpdateNodeAvailability(SwarmUpdateNodeAvailabilityRequest) returns (Empty);
+  // Remove a node from the swarm by node_id; optional server_id selects the target engine.
   rpc RemoveNode(SwarmRemoveNodeRequest) returns (Empty);
+  // Leave the swarm on an engine; force is required for managers; optional server_id selects the target.
   rpc Leave(SwarmLeaveRequest) returns (Empty);
+  // Join target_server_id into a cluster (optional manager_server_id, else local) with the given SwarmRole; force-leaves any standalone swarm first.
   rpc Join(SwarmJoinRequest) returns (Empty);
 }
 

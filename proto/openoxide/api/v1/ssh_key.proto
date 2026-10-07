@@ -5,13 +5,21 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service SshKeyService {
+  // List all saved SSH keys.
   rpc ListKeys(SshKeyListKeysRequest) returns (SshKeyListKeysResponse);
+  // Get one SSH key by id.
   rpc GetKey(SshKeyGetKeyRequest) returns (SshKeyGetKeyResponse);
+  // Create (import) an SSH key. Required: name, public_key; private_key optional.
   rpc CreateKey(SshKeyCreateKeyRequest) returns (SshKeyCreateKeyResponse);
+  // Generate and store a new SSH key. Required: name, key_type (SSH_KEY_TYPE_ED25519/RSA).
   rpc GenerateKey(SshKeyGenerateKeyRequest) returns (SshKeyGenerateKeyResponse);
+  // Generate an SSH key pair without storing it; optional key_type (defaults ed25519).
   rpc GeneratePair(SshKeyGeneratePairRequest) returns (SshKeyGeneratePairResponse);
+  // Update an SSH key by id; name/description/public_key/private_key optional.
   rpc UpdateKey(SshKeyUpdateKeyRequest) returns (SshKeyUpdateKeyResponse);
+  // Mark an SSH key as recently used by id (updates last_used_at).
   rpc MarkUsed(SshKeyMarkUsedRequest) returns (Empty);
+  // Delete an SSH key by id.
   rpc DeleteKey(SshKeyDeleteKeyRequest) returns (Empty);
 }
 

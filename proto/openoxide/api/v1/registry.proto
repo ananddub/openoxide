@@ -5,15 +5,25 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service RegistryService {
+  // List all saved container registries.
   rpc ListRegistries(ListRegistriesRequest) returns (ListRegistriesResponse);
+  // Get one registry by id.
   rpc GetRegistry(GetRegistryRequest) returns (GetRegistryResponse);
+  // Create a registry. Required: registry_name, registry_url, registry_type; username/password/image_prefix optional.
   rpc CreateRegistry(CreateRegistryRequest) returns (CreateRegistryResponse);
+  // Update a registry by id; absent fields keep stored values, empty image_prefix clears it.
   rpc UpdateRegistry(UpdateRegistryRequest) returns (UpdateRegistryResponse);
+  // Delete a registry by id.
   rpc DeleteRegistry(DeleteRegistryRequest) returns (Empty);
+  // Test registry login: with id uses stored creds, else raw registry_url/username/password (create dialog).
   rpc TestRegistry(TestRegistryRequest) returns (TestRegistryResponse);
+  // List repositories in a registry. Required: registry_id.
   rpc ListRepositories(ListRegistryRepositoriesRequest) returns (ListRegistryRepositoriesResponse);
+  // List image tags for a repository. Required: registry_id, repository.
   rpc ListTags(ListRegistryTagsRequest) returns (ListRegistryTagsResponse);
+  // Rotate a registry's stored credentials. Required: registry_id, username, password.
   rpc RotateCredentials(RotateRegistryCredentialsRequest) returns (RotateRegistryCredentialsResponse);
+  // List resources referencing a registry. Required: registry_id.
   rpc GetUsage(GetRegistryUsageRequest) returns (GetRegistryUsageResponse);
 }
 

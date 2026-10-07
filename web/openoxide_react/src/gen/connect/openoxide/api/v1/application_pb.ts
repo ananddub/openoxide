@@ -3260,6 +3260,8 @@ export const ApplicationMiddlewareTypeSchema: GenEnum<ApplicationMiddlewareType>
  */
 export const ApplicationService: GenService<{
 	/**
+	 * Fetch a single application by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.GetApplication
 	 */
 	getApplication: {
@@ -3268,6 +3270,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * List all applications in an environment. Required: environment_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListApplications
 	 */
 	listApplications: {
@@ -3276,6 +3280,8 @@ export const ApplicationService: GenService<{
 		output: typeof ListApplicationsResponseSchema;
 	};
 	/**
+	 * Create an application. Required: name, environment_id, source_type (APPLICATION_SOURCE_TYPE_*), build_type (APPLICATION_BUILD_TYPE_*); server_id optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.CreateApplication
 	 */
 	createApplication: {
@@ -3284,6 +3290,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Update application core fields by id: name, description, build_type, trigger_type, env_var, server/build/registry ids, network_ids.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.UpdateApplication
 	 */
 	updateApplication: {
@@ -3292,6 +3300,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Delete an application by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.DeleteApplication
 	 */
 	deleteApplication: {
@@ -3300,6 +3310,8 @@ export const ApplicationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Import an application from a base64/archive blob. Required: archive.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ImportApplication
 	 */
 	importApplication: {
@@ -3308,6 +3320,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Export an application by id as an archive. Required: id; include_secrets toggles secret inclusion.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ExportApplication
 	 */
 	exportApplication: {
@@ -3316,6 +3330,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationExportSchema;
 	};
 	/**
+	 * Set the app source to a GitHub repo by id. Required: repository, owner; branch, build_path, provider_id, auto_deploy optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.SetGithubSource
 	 */
 	setGithubSource: {
@@ -3324,6 +3340,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Set the app source to a GitLab repo by id. Required: repository, owner; branch, build_path, path_namespace, provider_id, project_id optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.SetGitlabSource
 	 */
 	setGitlabSource: {
@@ -3332,6 +3350,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Set the app source to a Bitbucket repo by id. Required: repository, owner; branch, build_path, repository_slug, provider_id optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.SetBitbucketSource
 	 */
 	setBitbucketSource: {
@@ -3340,6 +3360,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Set the app source to a Gitea repo by id. Required: repository, owner; branch, build_path, provider_id optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.SetGiteaSource
 	 */
 	setGiteaSource: {
@@ -3348,6 +3370,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Set the app source to a custom Git URL by id. Required: url; branch, build_path, ssh_key_id optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.SetCustomGitSource
 	 */
 	setCustomGitSource: {
@@ -3356,6 +3380,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Set the app source to a Docker image by id. Required: image; username, password, registry_url optional for private registries.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.SetDockerSource
 	 */
 	setDockerSource: {
@@ -3364,6 +3390,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Set the app source to drop/upload mode by id; build_path optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.SetDropSource
 	 */
 	setDropSource: {
@@ -3372,6 +3400,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Stream-upload drop source: first a header (application_id, build_path) then raw file chunks.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.UploadSource
 	 */
 	uploadSource: {
@@ -3380,6 +3410,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Update build config by id: build_args/secrets, dockerfile, context/build paths, publish_directory, railpack/heroku versions, auto_deploy, etc.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.UpdateBuildConfig
 	 */
 	updateBuildConfig: {
@@ -3388,6 +3420,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Update resource limits by id: memory_reservation/limit, cpu_reservation/limit, replicas.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.UpdateResourceConfig
 	 */
 	updateResourceConfig: {
@@ -3396,6 +3430,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Update preview-environment config by id: preview_env, build args/secrets, wildcard, port, https, path, certificate_type, limit, active flags.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.UpdatePreviewConfig
 	 */
 	updatePreviewConfig: {
@@ -3404,6 +3440,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Deploy an application by id: builds from its configured source and starts it.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.Deploy
 	 */
 	deploy: {
@@ -3412,6 +3450,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationOperationSchema;
 	};
 	/**
+	 * Redeploy an application by id with its current config.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.Redeploy
 	 */
 	redeploy: {
@@ -3420,6 +3460,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationOperationSchema;
 	};
 	/**
+	 * Rebuild an application by id, forcing a fresh build from source.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.Rebuild
 	 */
 	rebuild: {
@@ -3428,6 +3470,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationOperationSchema;
 	};
 	/**
+	 * Reload an application by id, applying runtime/config changes without a full rebuild.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.Reload
 	 */
 	reload: {
@@ -3436,6 +3480,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationOperationSchema;
 	};
 	/**
+	 * Start a stopped application by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.Start
 	 */
 	start: {
@@ -3444,6 +3490,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationOperationSchema;
 	};
 	/**
+	 * Stop a running application by id (destructive: becomes unavailable until started).
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.Stop
 	 */
 	stop: {
@@ -3452,6 +3500,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationOperationSchema;
 	};
 	/**
+	 * Cancel the in-progress operation/deployment for an application by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.Cancel
 	 */
 	cancel: {
@@ -3460,6 +3510,8 @@ export const ApplicationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Rotate the deploy-webhook token for an application by id; returns the new token.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.RotateWebhookToken
 	 */
 	rotateWebhookToken: {
@@ -3468,6 +3520,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationWebhookTokenSchema;
 	};
 	/**
+	 * Move an application to another environment. Required: id, target_environment_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.MoveApplication
 	 */
 	moveApplication: {
@@ -3476,6 +3530,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSchema;
 	};
 	/**
+	 * Clear the deployment history records for an application by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ClearDeploymentHistory
 	 */
 	clearDeploymentHistory: {
@@ -3484,6 +3540,8 @@ export const ApplicationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Remove queued (pending) deployments for an application by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.CleanupDeploymentQueue
 	 */
 	cleanupDeploymentQueue: {
@@ -3492,6 +3550,8 @@ export const ApplicationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Force-kill a stuck deployment for an application by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ForceKillDeployment
 	 */
 	forceKillDeployment: {
@@ -3500,6 +3560,8 @@ export const ApplicationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List available rollback snapshots for an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListRollbacks
 	 */
 	listRollbacks: {
@@ -3508,6 +3570,8 @@ export const ApplicationService: GenService<{
 		output: typeof ListRollbacksResponseSchema;
 	};
 	/**
+	 * Trigger a rollback to a snapshot. Required: application_id, rollback_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.TriggerRollback
 	 */
 	triggerRollback: {
@@ -3516,6 +3580,8 @@ export const ApplicationService: GenService<{
 		output: typeof RollbackTriggerSchema;
 	};
 	/**
+	 * Delete a rollback snapshot. Required: application_id, rollback_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.DeleteRollback
 	 */
 	deleteRollback: {
@@ -3524,6 +3590,8 @@ export const ApplicationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List resources this application depends on, by id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListDependencies
 	 */
 	listDependencies: {
@@ -3532,6 +3600,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationDependenciesSchema;
 	};
 	/**
+	 * List the port entries for an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationPorts
 	 */
 	listApplicationPorts: {
@@ -3540,6 +3610,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationPortsSchema;
 	};
 	/**
+	 * List the mount entries for an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationMounts
 	 */
 	listApplicationMounts: {
@@ -3548,6 +3620,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationMountsSchema;
 	};
 	/**
+	 * List the networks attached to an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationNetworks
 	 */
 	listApplicationNetworks: {
@@ -3556,6 +3630,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationNetworksSchema;
 	};
 	/**
+	 * List the file patches for an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationPatches
 	 */
 	listApplicationPatches: {
@@ -3564,6 +3640,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationPatchesSchema;
 	};
 	/**
+	 * List the middlewares for an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationMiddlewares
 	 */
 	listApplicationMiddlewares: {
@@ -3572,6 +3650,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationMiddlewaresSchema;
 	};
 	/**
+	 * List the redirects for an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationRedirects
 	 */
 	listApplicationRedirects: {
@@ -3580,6 +3660,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationRedirectsSchema;
 	};
 	/**
+	 * List the basic-auth security rules for an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListApplicationSecurity
 	 */
 	listApplicationSecurity: {
@@ -3588,6 +3670,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationSecuritySchema;
 	};
 	/**
+	 * List structured port rows for an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListPorts
 	 */
 	listPorts: {
@@ -3596,6 +3680,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationListPortsResponseSchema;
 	};
 	/**
+	 * Create a port mapping. Required: application_id, published_port, target_port, protocol (ApplicationPortProtocol), publish_mode (ApplicationPortPublishMode).
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.CreatePort
 	 */
 	createPort: {
@@ -3604,6 +3690,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationCreatePortResponseSchema;
 	};
 	/**
+	 * Update a port mapping. Required: application_id, id, published_port, target_port, protocol, publish_mode.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.UpdatePort
 	 */
 	updatePort: {
@@ -3612,6 +3700,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationUpdatePortResponseSchema;
 	};
 	/**
+	 * Delete a port mapping. Required: application_id, id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.DeletePort
 	 */
 	deletePort: {
@@ -3620,6 +3710,8 @@ export const ApplicationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List structured mount rows for an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListMounts
 	 */
 	listMounts: {
@@ -3628,6 +3720,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationListMountsResponseSchema;
 	};
 	/**
+	 * Create a mount. Required: application_id, mount_type (ApplicationMountType), mount_path; host_path/volume_name/file_path/content per type.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.CreateMount
 	 */
 	createMount: {
@@ -3636,6 +3730,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationCreateMountResponseSchema;
 	};
 	/**
+	 * Update a mount. Required: application_id, id, mount_type (ApplicationMountType), mount_path; type-specific path/content fields.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.UpdateMount
 	 */
 	updateMount: {
@@ -3644,6 +3740,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationUpdateMountResponseSchema;
 	};
 	/**
+	 * Delete a mount. Required: application_id, id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.DeleteMount
 	 */
 	deleteMount: {
@@ -3652,6 +3750,8 @@ export const ApplicationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List file-patch rows for an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListPatches
 	 */
 	listPatches: {
@@ -3660,6 +3760,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationListPatchesResponseSchema;
 	};
 	/**
+	 * Create a file patch. Required: application_id, patch_type (ApplicationPatchType), file_path, enabled; content holds the patch body.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.CreatePatch
 	 */
 	createPatch: {
@@ -3668,6 +3770,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationCreatePatchResponseSchema;
 	};
 	/**
+	 * Update a file patch. Required: application_id, id, patch_type (ApplicationPatchType), file_path, enabled, content.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.UpdatePatch
 	 */
 	updatePatch: {
@@ -3676,6 +3780,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationUpdatePatchResponseSchema;
 	};
 	/**
+	 * Delete a file patch. Required: application_id, id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.DeletePatch
 	 */
 	deletePatch: {
@@ -3684,6 +3790,8 @@ export const ApplicationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List middleware rows for an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListMiddlewares
 	 */
 	listMiddlewares: {
@@ -3692,6 +3800,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationListMiddlewaresResponseSchema;
 	};
 	/**
+	 * Create a middleware. Required: application_id, name, middleware_type (ApplicationMiddlewareType), enabled; headers/average/burst/source_ranges per type.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.CreateMiddleware
 	 */
 	createMiddleware: {
@@ -3700,6 +3810,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationCreateMiddlewareResponseSchema;
 	};
 	/**
+	 * Update a middleware. Required: application_id, id, name, middleware_type (ApplicationMiddlewareType), enabled; type-specific fields.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.UpdateMiddleware
 	 */
 	updateMiddleware: {
@@ -3708,6 +3820,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationUpdateMiddlewareResponseSchema;
 	};
 	/**
+	 * Delete a middleware. Required: application_id, id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.DeleteMiddleware
 	 */
 	deleteMiddleware: {
@@ -3716,6 +3830,8 @@ export const ApplicationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List redirect rows for an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.ListRedirects
 	 */
 	listRedirects: {
@@ -3724,6 +3840,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationListRedirectsResponseSchema;
 	};
 	/**
+	 * Create a redirect. Required: application_id, regex, replacement, permanent; unique_config_key optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.CreateRedirect
 	 */
 	createRedirect: {
@@ -3732,6 +3850,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationCreateRedirectResponseSchema;
 	};
 	/**
+	 * Update a redirect. Required: application_id, id, regex, replacement, permanent; unique_config_key optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.UpdateRedirect
 	 */
 	updateRedirect: {
@@ -3740,6 +3860,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationUpdateRedirectResponseSchema;
 	};
 	/**
+	 * Delete a redirect. Required: application_id, id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.DeleteRedirect
 	 */
 	deleteRedirect: {
@@ -3748,6 +3870,8 @@ export const ApplicationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Get the full basic-auth security rule set for an application. Required: application_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.GetSecurity
 	 */
 	getSecurity: {
@@ -3756,6 +3880,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationGetSecurityResponseSchema;
 	};
 	/**
+	 * Create a basic-auth rule. Required: application_id, username, password.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.CreateSecurity
 	 */
 	createSecurity: {
@@ -3764,6 +3890,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationCreateSecurityResponseSchema;
 	};
 	/**
+	 * Update a basic-auth rule. Required: application_id, id, username, password.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.UpdateSecurity
 	 */
 	updateSecurity: {
@@ -3772,6 +3900,8 @@ export const ApplicationService: GenService<{
 		output: typeof ApplicationUpdateSecurityResponseSchema;
 	};
 	/**
+	 * Delete a basic-auth rule. Required: application_id, id.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.DeleteSecurity
 	 */
 	deleteSecurity: {
@@ -3780,6 +3910,8 @@ export const ApplicationService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Replace an application's attached networks. Required: application_id, network_ids; detach_rustploy_network toggles the shared network.
+	 *
 	 * @generated from rpc openoxide.api.v1.ApplicationService.UpdateNetworks
 	 */
 	updateNetworks: {

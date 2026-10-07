@@ -5,7 +5,7 @@ use connectrpc::{ConnectRpcBody, ConnectRpcService};
 use http_body_util::{BodyExt, Full, combinators::UnsyncBoxBody};
 use hyper::{HeaderMap, Request, Response, body::Incoming, server::conn::http2};
 use hyper_util::{
-    rt::{TokioExecutor, TokioIo},
+    rt::{TokioExecutor, TokioIo, TokioTimer},
     service::TowerToHyperService,
 };
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
@@ -73,7 +73,16 @@ pub async fn serve(
             let io = TokioIo::new(tls_stream);
             // Explicit http2 builder: even post-TLS, HTTP/1.1 is rejected —
             // the connection only speaks h2.
-            let builder = http2::Builder::new(TokioExecutor::new());
+            let mut builder = http2::Builder::new(TokioExecutor::new());
+            // Keepalive PINGs so long-running unary calls (the AI assistant's
+            // multi-step tool loop can take 30-60s with no bytes flowing until
+            // the final frame) don't look idle and get dropped by the client /
+            // OS as a dead connection — the symptom was a browser "Failed to
+            // fetch" mid-chat.
+            builder
+                .timer(TokioTimer::new())
+                .keep_alive_interval(std::time::Duration::from_secs(20))
+                .keep_alive_timeout(std::time::Duration::from_secs(60));
 
             if let Err(error) = builder
                 .serve_connection(io, TowerToHyperService::new(app))

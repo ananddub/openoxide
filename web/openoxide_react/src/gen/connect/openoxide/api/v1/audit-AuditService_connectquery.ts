@@ -5,11 +5,15 @@
 import {AuditService} from './audit_pb';
 
 /**
+ * List audit logs; optional organization_id, action filter, limit, offset.
+ *
  * @generated from rpc openoxide.api.v1.AuditService.ListAuditLogs
  */
 export const listAuditLogs = AuditService.method.listAuditLogs;
 
 /**
+ * Export org-scoped audit logs as CSV (capped at 500 rows); optional action filter.
+ *
  * @generated from rpc openoxide.api.v1.AuditService.ExportAuditLogs
  */
 export const exportAuditLogs = AuditService.method.exportAuditLogs;

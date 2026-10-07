@@ -5,43 +5,81 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service ComposeService {
+  // Fetch a single compose project by id.
   rpc GetCompose(GetComposeRequest) returns (Compose);
+  // List all compose projects in an environment. Required: environment_id.
   rpc ListComposes(ListComposesRequest) returns (ListComposesResponse);
+  // Create a compose project. Required: name, environment_id; server_id, compose_file, compose_type ("DOCKER-COMPOSE"|"STACK") optional.
   rpc CreateCompose(CreateComposeRequest) returns (Compose);
+  // Update compose fields by id: name, description, compose_file, server_id, network_ids, command, randomize, env_var.
   rpc UpdateCompose(UpdateComposeRequest) returns (Compose);
+  // Delete a compose project by id.
   rpc DeleteCompose(DeleteComposeRequest) returns (Empty);
+  // Set the compose source to a GitHub repo by id. Required: repository, owner; branch, build_path, provider_id optional.
   rpc SetGithubSource(SetComposeSourceRequest) returns (Compose);
+  // Set the compose source to a GitLab repo by id. Required: repository, owner; branch, build_path, provider_id optional.
   rpc SetGitlabSource(SetComposeSourceRequest) returns (Compose);
+  // Set the compose source to a Bitbucket repo by id. Required: repository, owner; branch, build_path, provider_id optional.
   rpc SetBitbucketSource(SetComposeSourceRequest) returns (Compose);
+  // Set the compose source to a Gitea repo by id. Required: repository, owner; branch, build_path, provider_id optional.
   rpc SetGiteaSource(SetComposeSourceRequest) returns (Compose);
+  // Set the compose source to a custom Git repo by id. Required: repository, owner; branch, build_path, ssh_key_id (private clone) optional.
   rpc SetCustomGitSource(SetComposeSourceRequest) returns (Compose);
+  // Set the compose source to raw inline YAML by id. Required: content; file_name optional.
   rpc SetRawSource(SetRawSourceRequest) returns (Compose);
+  // Stream-upload compose source: first compose_id then raw file chunks.
   rpc UploadSource(stream UploadComposeRequest) returns (Compose);
+  // Build and deploy a compose service for the first time or after config changes. Takes the compose id.
   rpc Deploy(ComposeOperationRequest) returns (ComposeOperation);
+  // Redeploy an existing compose service with its current config, picking up domain/env changes. Takes the compose id.
   rpc Redeploy(ComposeOperationRequest) returns (ComposeOperation);
+  // Reload a compose service by id, applying config/env changes without a full redeploy.
   rpc Reload(ComposeOperationRequest) returns (ComposeOperation);
+  // Start a stopped compose service. Takes the compose id.
   rpc Start(ComposeOperationRequest) returns (ComposeOperation);
+  // Stop a running compose service (destructive: makes it unavailable until started again). Takes the compose id.
   rpc Stop(ComposeOperationRequest) returns (ComposeOperation);
+  // Cancel the in-progress operation/deployment for a compose project by id.
   rpc Cancel(ComposeOperationRequest) returns (Empty);
+  // Move a compose project to another environment. Required: id, target_environment_id.
   rpc MoveCompose(MoveComposeRequest) returns (Compose);
+  // Rotate the deploy-webhook token for a compose project by id; returns the new token.
   rpc RotateWebhookToken(ComposeOperationRequest) returns (ComposeWebhookToken);
+  // List resources this compose project depends on, by id.
   rpc ListDependencies(ComposeOperationRequest) returns (ComposeDependencies);
+  // Preview parsed compose YAML and its services without saving. Required: content.
   rpc PreviewCompose(PreviewComposeRequest) returns (ComposePreview);
+  // Install a compose from a template. Required: template, environment_id; name, server_id, env_var optional.
   rpc InstallTemplate(InstallTemplateRequest) returns (Compose);
+  // Export a compose project by id as an archive. Required: id; include_secrets toggles secret inclusion.
   rpc ExportCompose(ExportComposeRequest) returns (ComposeExport);
+  // Import a compose project into an environment. Required: environment_id, archive.
   rpc ImportCompose(ImportComposeRequest) returns (Compose);
+  // Remove specific services from a compose project. Required: id, services (1-100 names).
   rpc RemoveServices(ServiceMutationRequest) returns (Empty);
+  // Update compose resource limits by id: memory_limit, cpu_limit, replicas.
   rpc UpdateResources(UpdateComposeResourcesRequest) returns (Compose);
+  // Clear the deployment history records for a compose project by id.
   rpc ClearDeploymentHistory(ComposeOperationRequest) returns (Empty);
+  // Remove queued (pending) deployments for a compose project by id.
   rpc CleanupDeploymentQueue(ComposeOperationRequest) returns (Empty);
+  // Force-kill a stuck deployment for a compose project by id.
   rpc ForceKillDeployment(ComposeOperationRequest) returns (Empty);
+  // List mount rows for a compose project. Required: compose_id.
   rpc ListMounts(ComposeListMountsRequest) returns (ComposeListMountsResponse);
+  // Create a mount. Required: compose_id, mount_type (ComposeMountType), mount_path; host_path/volume_name/file_path/content per type.
   rpc CreateMount(ComposeCreateMountRequest) returns (ComposeCreateMountResponse);
+  // Update a mount. Required: compose_id, id, mount_type (ComposeMountType), mount_path; type-specific path/content fields.
   rpc UpdateMount(ComposeUpdateMountRequest) returns (ComposeUpdateMountResponse);
+  // Delete a mount. Required: compose_id; id of the mount to remove.
   rpc DeleteMount(ComposeMountRequest) returns (Empty);
+  // List file-patch rows for a compose project. Required: compose_id.
   rpc ListPatches(ComposeListPatchesRequest) returns (ComposeListPatchesResponse);
+  // Create a file patch. Required: compose_id, patch_type (ComposePatchType), file_path, enabled; content holds the patch body.
   rpc CreatePatch(ComposeCreatePatchRequest) returns (ComposeCreatePatchResponse);
+  // Update a file patch. Required: compose_id, id, patch_type (ComposePatchType), file_path, enabled, content.
   rpc UpdatePatch(ComposeUpdatePatchRequest) returns (ComposeUpdatePatchResponse);
+  // Delete a file patch. Required: compose_id, patch_type, payload; id of the patch to remove.
   rpc DeletePatch(ComposePatchRequest) returns (Empty);
 }
 message Compose {

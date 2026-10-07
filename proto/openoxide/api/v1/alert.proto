@@ -7,14 +7,23 @@ import "buf/validate/validate.proto";
 
 // Operations surface: rule CRUD (shared messages with AlertRuleService) plus the fired-event stream and its lifecycle actions.
 service AlertOperationsService {
+  // List alert rules; optional organization_id scopes the result.
   rpc ListRules(ListAlertRulesRequest) returns (ListAlertRulesResponse);
+  // List fired alert events; optional organization_id scopes the result.
   rpc ListEvents(ListAlertEventsRequest) returns (ListAlertEventsResponse);
+  // Get one alert rule by id; optional organization_id.
   rpc GetRule(GetAlertRuleRequest) returns (GetAlertRuleResponse);
+  // Create an alert rule. Required: name, target_kind, target_id, metric, operator, threshold, duration_seconds, organization_id.
   rpc CreateRule(CreateAlertRuleRequest) returns (CreateAlertRuleResponse);
+  // Fully replace an alert rule by id (organization fixed to stored row).
   rpc UpdateRule(UpdateAlertRuleRequest) returns (UpdateAlertRuleResponse);
+  // Delete an alert rule by id; optional organization_id.
   rpc DeleteRule(DeleteAlertRuleRequest) returns (Empty);
+  // Fire a canned test alert through a notification channel. Required: notification_id.
   rpc TestRule(TestAlertRuleRequest) returns (TestAlertRuleResponse);
+  // Acknowledge a firing alert event by id; optional organization_id.
   rpc AcknowledgeEvent(AcknowledgeAlertEventRequest) returns (Empty);
+  // Silence an alert event's notifications until a time. Required: id, until (unix seconds); optional organization_id.
   rpc SilenceEvent(SilenceAlertEventRequest) returns (Empty);
 }
 

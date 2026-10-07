@@ -1672,6 +1672,8 @@ export const GitProviderTypeSchema: GenEnum<GitProviderType> /*@__PURE__*/ =
  */
 export const GitProviderService: GenService<{
 	/**
+	 * List all configured git providers. No params.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.ListGitProviders
 	 */
 	listGitProviders: {
@@ -1680,6 +1682,8 @@ export const GitProviderService: GenService<{
 		output: typeof ListGitProvidersResponseSchema;
 	};
 	/**
+	 * Get one git provider by id. Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.GetGitProvider
 	 */
 	getGitProvider: {
@@ -1688,6 +1692,8 @@ export const GitProviderService: GenService<{
 		output: typeof GetGitProviderResponseSchema;
 	};
 	/**
+	 * Create a GitHub provider. Required: name; app/client credentials and private_key optional; shared defaults true.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.CreateGithubProvider
 	 */
 	createGithubProvider: {
@@ -1696,6 +1702,8 @@ export const GitProviderService: GenService<{
 		output: typeof CreateGithubProviderResponseSchema;
 	};
 	/**
+	 * Create a GitLab provider. Required: name, url; application_id/secret/tokens optional; shared defaults true.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.CreateGitlabProvider
 	 */
 	createGitlabProvider: {
@@ -1704,6 +1712,8 @@ export const GitProviderService: GenService<{
 		output: typeof CreateGitlabProviderResponseSchema;
 	};
 	/**
+	 * Create a Gitea provider. Required: name, url; client credentials/tokens/scopes optional; shared defaults true.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.CreateGiteaProvider
 	 */
 	createGiteaProvider: {
@@ -1712,6 +1722,8 @@ export const GitProviderService: GenService<{
 		output: typeof CreateGiteaProviderResponseSchema;
 	};
 	/**
+	 * Create a Bitbucket provider. Required: name; username/email/app_password/api_token/workspace optional; shared defaults true.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.CreateBitbucketProvider
 	 */
 	createBitbucketProvider: {
@@ -1720,6 +1732,8 @@ export const GitProviderService: GenService<{
 		output: typeof CreateBitbucketProviderResponseSchema;
 	};
 	/**
+	 * Update a GitHub provider by id. Required: id, name; other credential fields are optional patches (absent keeps stored value).
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGithubProvider
 	 */
 	updateGithubProvider: {
@@ -1728,6 +1742,8 @@ export const GitProviderService: GenService<{
 		output: typeof UpdateGithubProviderResponseSchema;
 	};
 	/**
+	 * Update a GitLab provider by id. Required: id, name; other credential fields are optional patches (absent keeps stored value).
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGitlabProvider
 	 */
 	updateGitlabProvider: {
@@ -1736,6 +1752,8 @@ export const GitProviderService: GenService<{
 		output: typeof UpdateGitlabProviderResponseSchema;
 	};
 	/**
+	 * Update a Gitea provider by id. Required: id, name; other credential fields are optional patches (absent keeps stored value).
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.UpdateGiteaProvider
 	 */
 	updateGiteaProvider: {
@@ -1744,6 +1762,8 @@ export const GitProviderService: GenService<{
 		output: typeof UpdateGiteaProviderResponseSchema;
 	};
 	/**
+	 * Update a Bitbucket provider by id. Required: id, name; other credential fields are optional patches (absent keeps stored value).
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.UpdateBitbucketProvider
 	 */
 	updateBitbucketProvider: {
@@ -1752,6 +1772,8 @@ export const GitProviderService: GenService<{
 		output: typeof UpdateBitbucketProviderResponseSchema;
 	};
 	/**
+	 * Delete a git provider by id. Required: id.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.DeleteGitProvider
 	 */
 	deleteGitProvider: {
@@ -1760,6 +1782,8 @@ export const GitProviderService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Test a git provider's credentials/connectivity by id. Required: id. Returns success + message.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.TestGitProvider
 	 */
 	testGitProvider: {
@@ -1768,6 +1792,8 @@ export const GitProviderService: GenService<{
 		output: typeof TestGitProviderResponseSchema;
 	};
 	/**
+	 * Rotate a provider's webhook signing secret by id. Required: id. Returns the new secret.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.RotateWebhookSecret
 	 */
 	rotateWebhookSecret: {
@@ -1776,6 +1802,8 @@ export const GitProviderService: GenService<{
 		output: typeof GitRotateWebhookSecretResponseSchema;
 	};
 	/**
+	 * List repositories visible to a provider. Required: provider_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.ListRepositories
 	 */
 	listRepositories: {
@@ -1784,6 +1812,8 @@ export const GitProviderService: GenService<{
 		output: typeof GitListRepositoriesResponseSchema;
 	};
 	/**
+	 * List branches of a repository. Required: provider_id, owner, repository.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.ListBranches
 	 */
 	listBranches: {
@@ -1792,6 +1822,8 @@ export const GitProviderService: GenService<{
 		output: typeof GitListRepositoryBranchesResponseSchema;
 	};
 	/**
+	 * List tags of a repository. Required: provider_id, owner, repository.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.ListTags
 	 */
 	listTags: {
@@ -1800,6 +1832,8 @@ export const GitProviderService: GenService<{
 		output: typeof GitListTagsResponseSchema;
 	};
 	/**
+	 * Begin OAuth authorization for a provider. Required: provider_id. Returns a browser URL and signed state.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.Authorize
 	 */
 	authorize: {
@@ -1808,6 +1842,8 @@ export const GitProviderService: GenService<{
 		output: typeof GitAuthorizeResponseSchema;
 	};
 	/**
+	 * Complete OAuth by exchanging the callback. Required: provider_id, state; code/installation_id optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.OAuthCallback
 	 */
 	oAuthCallback: {
@@ -1816,6 +1852,8 @@ export const GitProviderService: GenService<{
 		output: typeof GitOAuthCallbackResponseSchema;
 	};
 	/**
+	 * Disconnect a provider's OAuth connection. Required: provider_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.Disconnect
 	 */
 	disconnect: {
@@ -1824,6 +1862,8 @@ export const GitProviderService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Get a user's access level on a repository. Required: provider_id, owner, repository, username.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.GetCollaboratorPermission
 	 */
 	getCollaboratorPermission: {
@@ -1832,6 +1872,8 @@ export const GitProviderService: GenService<{
 		output: typeof GitGetCollaboratorPermissionResponseSchema;
 	};
 	/**
+	 * Get the registered webhook (if any) for a repository. Required: provider_id, owner, repository, callback_url.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.GetWebhookStatus
 	 */
 	getWebhookStatus: {
@@ -1840,6 +1882,8 @@ export const GitProviderService: GenService<{
 		output: typeof GitGetWebhookStatusResponseSchema;
 	};
 	/**
+	 * Install a webhook on a repository. Required: provider_id, owner, repository, callback_url.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.InstallWebhook
 	 */
 	installWebhook: {
@@ -1848,6 +1892,8 @@ export const GitProviderService: GenService<{
 		output: typeof GitInstallWebhookResponseSchema;
 	};
 	/**
+	 * Recreate (delete + reinstall) a repository webhook. Required: provider_id, owner, repository, callback_url.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.RecreateWebhook
 	 */
 	recreateWebhook: {
@@ -1856,6 +1902,8 @@ export const GitProviderService: GenService<{
 		output: typeof GitRecreateWebhookResponseSchema;
 	};
 	/**
+	 * Delete a repository webhook. Required: provider_id, owner, repository, callback_url.
+	 *
 	 * @generated from rpc openoxide.api.v1.GitProviderService.DeleteWebhook
 	 */
 	deleteWebhook: {

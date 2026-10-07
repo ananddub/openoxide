@@ -5,171 +5,237 @@
 import {BackupService} from './backup_pb';
 
 /**
+ * List all configured database backup rules. No params.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.ListBackups
  */
 export const listBackups = BackupService.method.listBackups;
 
 /**
+ * Get one database backup rule by id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.GetBackup
  */
 export const getBackup = BackupService.method.getBackup;
 
 /**
+ * Create a database backup rule. Required: app_name, schedule (cron), database_name, prefix, backup_type, database_type, destination_id, organization_id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.CreateBackup
  */
 export const createBackup = BackupService.method.createBackup;
 
 /**
+ * Update a database backup rule by id; absent fields keep stored values. `enabled` toggles the schedule.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.UpdateBackup
  */
 export const updateBackup = BackupService.method.updateBackup;
 
 /**
+ * Delete a database backup rule by id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.DeleteBackup
  */
 export const deleteBackup = BackupService.method.deleteBackup;
 
 /**
+ * Trigger a database backup rule to run now by id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.RunBackup
  */
 export const runBackup = BackupService.method.runBackup;
 
 /**
+ * Restore a database backup rule by id from a chosen backup_file.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.RestoreBackup
  */
 export const restoreBackup = BackupService.method.restoreBackup;
 
 /**
+ * Validate connectivity/credentials of a backup destination by destination_id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.ValidateDestination
  */
 export const validateDestination =
 	BackupService.method.validateDestination;
 
 /**
+ * Run a compose config backup now for compose_id; include_secrets optionally bundles secrets. Returns a local archive.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.RunComposeBackup
  */
 export const runComposeBackup = BackupService.method.runComposeBackup;
 
 /**
+ * Run a panel backup now (no params). Returns the produced local archive.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.RunPanelBackup
  */
 export const runPanelBackup = BackupService.method.runPanelBackup;
 
 /**
+ * Stage a panel restore from a .tar.gz archive path (optional checksum_sha256); applies on next restart.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.StageRestore
  */
 export const stageRestore = BackupService.method.stageRestore;
 
 /**
+ * Get progress of a staged panel restore by restore_id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.GetRestoreStatus
  */
 export const getRestoreStatus = BackupService.method.getRestoreStatus;
 
 /**
+ * Stage a rollback of a panel restore using a .pre-restore- recovery_database snapshot path.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.RollbackRestore
  */
 export const rollbackRestore = BackupService.method.rollbackRestore;
 
 /**
+ * List remote backup objects for destination_id; optional prefix filters by object-key prefix.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.ListFiles
  */
 export const listFiles = BackupService.method.listFiles;
 
 /**
+ * Download a backup object by destination_id and object_key; reply reports file metadata.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.DownloadFile
  */
 export const downloadFile = BackupService.method.downloadFile;
 
 /**
+ * Preview which objects a keep-latest rule would keep/delete. Required: destination_id, keep_latest; optional prefix.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.PreviewRetention
  */
 export const previewRetention = BackupService.method.previewRetention;
 
 /**
+ * Verify a backup object's checksum. Required: destination_id, object_key, checksum_sha256.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.VerifyFiles
  */
 export const verifyFiles = BackupService.method.verifyFiles;
 
 /**
+ * List recorded backup/restore executions; optional limit (clamped 1..=500, default 100).
+ *
  * @generated from rpc openoxide.api.v1.BackupService.ListExecutions
  */
 export const listExecutions = BackupService.method.listExecutions;
 
 /**
+ * Retry a failed backup execution by id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.RetryExecution
  */
 export const retryExecution = BackupService.method.retryExecution;
 
 /**
+ * List all database backup rules (no params).
+ *
  * @generated from rpc openoxide.api.v1.BackupService.ListDatabaseBackups
  */
 export const listDatabaseBackups =
 	BackupService.method.listDatabaseBackups;
 
 /**
+ * Get one database backup rule by id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.GetDatabaseBackup
  */
 export const getDatabaseBackup = BackupService.method.getDatabaseBackup;
 
 /**
+ * Create a database backup rule. Required: app_name, schedule (cron), database_name, prefix, backup_type, database_type, destination_id, organization_id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.CreateDatabaseBackup
  */
 export const createDatabaseBackup =
 	BackupService.method.createDatabaseBackup;
 
 /**
+ * Update a database backup rule by id; absent fields keep stored values. `enabled` toggles the schedule.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.UpdateDatabaseBackup
  */
 export const updateDatabaseBackup =
 	BackupService.method.updateDatabaseBackup;
 
 /**
+ * Delete a database backup rule by id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.DeleteDatabaseBackup
  */
 export const deleteDatabaseBackup =
 	BackupService.method.deleteDatabaseBackup;
 
 /**
+ * Trigger a database backup rule to run now by id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.RunDatabaseBackup
  */
 export const runDatabaseBackup = BackupService.method.runDatabaseBackup;
 
 /**
+ * List all volume backup rules (no params).
+ *
  * @generated from rpc openoxide.api.v1.BackupService.ListVolumeBackups
  */
 export const listVolumeBackups = BackupService.method.listVolumeBackups;
 
 /**
+ * Get one volume backup rule by id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.GetVolumeBackup
  */
 export const getVolumeBackup = BackupService.method.getVolumeBackup;
 
 /**
+ * Create a volume backup rule. Required: name, volume_name, prefix, service_type, app_name, cron_expression; one service linkage id must resolve.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.CreateVolumeBackup
  */
 export const createVolumeBackup = BackupService.method.createVolumeBackup;
 
 /**
+ * Update a volume backup rule by id; absent fields keep stored values. `enabled` toggles the schedule.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.UpdateVolumeBackup
  */
 export const updateVolumeBackup = BackupService.method.updateVolumeBackup;
 
 /**
+ * Delete a volume backup rule by id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.DeleteVolumeBackup
  */
 export const deleteVolumeBackup = BackupService.method.deleteVolumeBackup;
 
 /**
+ * Trigger a volume backup rule to run now by id.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.RunVolumeBackup
  */
 export const runVolumeBackup = BackupService.method.runVolumeBackup;
 
 /**
+ * Restore a database from a backup. Required: id (database backup rule), backup_file.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.RestoreDatabase
  */
 export const restoreDatabase = BackupService.method.restoreDatabase;
 
 /**
+ * Restore a volume from a backup. Required: id (volume backup rule), backup_file.
+ *
  * @generated from rpc openoxide.api.v1.BackupService.RestoreVolume
  */
 export const restoreVolume = BackupService.method.restoreVolume;

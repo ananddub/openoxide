@@ -29,6 +29,8 @@ const STAGE_TONES: Array<[RegExp, string]> = [
 const CMD_RE = /^\s*>/;
 /** Asset lines: dist/index.html, foo-Ba1x.js */
 const FILE_RE = /\S+\.(?:js|css|html|jpg|jpeg|png|svg|woff2?|ts|map)\b/;
+/** ANSI CSI sequences start with the ESC control byte by design. */
+// eslint-disable-next-line no-control-regex
 const ANSI_RE = /\u001B\[[0-?]*[ -/]*[@-~]/g;
 /** Leading clock timestamp — bare or bracketed (15:27:25.154 or [2026-09-22T15:27:25Z]). */
 const TS_RE =

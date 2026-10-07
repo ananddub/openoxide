@@ -4,7 +4,9 @@ package openoxide.api.v1;
 import "buf/validate/validate.proto";
 
 service PublicService {
+  // List the branches of a public Git repository. Required: repository_url.
   rpc ListGitBranches(ListGitBranchesRequest) returns (ListGitBranchesResponse);
+  // Generate an auto subdomain for a service from a base name. Required: name (hostname label).
   rpc GenerateDomain(GenerateDomainRequest) returns (GenerateDomainResponse);
 }
 

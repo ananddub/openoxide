@@ -1119,6 +1119,8 @@ export const MonitoringAgentStateSchema: GenEnum<MonitoringAgentState> /*@__PURE
  */
 export const MonitoringService: GenService<{
 	/**
+	 * Legacy stub (no server-side impl): overview envelope addressed by server id.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.GetOverview
 	 */
 	getOverview: {
@@ -1127,6 +1129,8 @@ export const MonitoringService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Legacy stub (no server-side impl): metrics envelope addressed by server id.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.GetMetrics
 	 */
 	getMetrics: {
@@ -1135,6 +1139,8 @@ export const MonitoringService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Legacy stub (no server-side impl): container-state envelope addressed by server id.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerState
 	 */
 	getContainerState: {
@@ -1143,6 +1149,8 @@ export const MonitoringService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Get the local panel monitoring service health/endpoints (no params).
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.GetLocalMetrics
 	 */
 	getLocalMetrics: {
@@ -1151,6 +1159,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringGetLocalMetricsResponseSchema;
 	};
 	/**
+	 * Get recent host metric samples for a server by server_id (capped at 50 samples).
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.GetServerMetrics
 	 */
 	getServerMetrics: {
@@ -1159,6 +1169,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringGetServerMetricsResponseSchema;
 	};
 	/**
+	 * Get per-container metrics by server_id and organization_id; optional app_name filter and limit (1-1000).
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerMetrics
 	 */
 	getContainerMetrics: {
@@ -1167,6 +1179,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringGetContainerMetricsResponseSchema;
 	};
 	/**
+	 * Get current container states (running/exited, compose project/service) for a server by server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.GetContainerStates
 	 */
 	getContainerStates: {
@@ -1175,6 +1189,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringGetContainerStatesResponseSchema;
 	};
 	/**
+	 * Rotate and return the agent token (plaintext once) for server_id within organization_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.CreateAgentToken
 	 */
 	createAgentToken: {
@@ -1183,6 +1199,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringCreateAgentTokenResponseSchema;
 	};
 	/**
+	 * Get agent status (MonitoringAgentState: ONLINE/OFFLINE/NEVER_SEEN, last seen, version) for a server by server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.GetAgentStatus
 	 */
 	getAgentStatus: {
@@ -1191,6 +1209,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringGetAgentStatusResponseSchema;
 	};
 	/**
+	 * Start the monitoring agent container on a server by server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.StartAgent
 	 */
 	startAgent: {
@@ -1199,6 +1219,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringStartAgentResponseSchema;
 	};
 	/**
+	 * Stop the monitoring agent container on a server by server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.StopAgent
 	 */
 	stopAgent: {
@@ -1207,6 +1229,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringStopAgentResponseSchema;
 	};
 	/**
+	 * Restart the monitoring agent container on a server by server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.RestartAgent
 	 */
 	restartAgent: {
@@ -1215,6 +1239,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringRestartAgentResponseSchema;
 	};
 	/**
+	 * Reinstall the monitoring agent on a server by server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.ReinstallAgent
 	 */
 	reinstallAgent: {
@@ -1223,6 +1249,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringReinstallAgentResponseSchema;
 	};
 	/**
+	 * Export host metrics as CSV (up to 1000 samples) for a server by server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.ExportServerMetrics
 	 */
 	exportServerMetrics: {
@@ -1231,6 +1259,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringExportServerMetricsResponseSchema;
 	};
 	/**
+	 * Get the latest host metric sample in Prometheus exposition format for a server by server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.GetPrometheusMetrics
 	 */
 	getPrometheusMetrics: {
@@ -1239,6 +1269,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringGetPrometheusMetricsResponseSchema;
 	};
 	/**
+	 * Create a maintenance window. Required: starts_at, ends_at (after starts_at), reason; optional server_id/organization_id scope.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.CreateMaintenanceWindow
 	 */
 	createMaintenanceWindow: {
@@ -1247,6 +1279,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringCreateMaintenanceWindowResponseSchema;
 	};
 	/**
+	 * List maintenance windows; optional organization_id scope, limit (1-1000) and offset.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.ListMaintenanceWindows
 	 */
 	listMaintenanceWindows: {
@@ -1255,6 +1289,8 @@ export const MonitoringService: GenService<{
 		output: typeof MonitoringListMaintenanceWindowsResponseSchema;
 	};
 	/**
+	 * Delete a maintenance window by id; optional organization_id scope.
+	 *
 	 * @generated from rpc openoxide.api.v1.MonitoringService.DeleteMaintenanceWindow
 	 */
 	deleteMaintenanceWindow: {

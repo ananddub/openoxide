@@ -144,16 +144,37 @@ impl AuthService {
 
         let user = self.get_user_by_id(old_claims.user.user_id).await?;
         let subject = subject_from_user(&user)?;
-        let tokens = self.jwt.generate_token_pair(&subject)?;
 
+        // Reissue ONLY the access token; keep the caller's refresh token valid
+        // until its own expiry. Rotating (and blacklisting) the refresh token
+        // on every refresh caused spurious logouts: any slightly stale copy of
+        // the refresh token (concurrent requests, a second tab) would hit the
+        // just-revoked token and end the session. Non-rotating refresh avoids
+        // that race while the refresh token's own expiry still bounds its life.
+        let access_token = self.jwt.generate_access_token(&subject)?;
+        let access_claims = self.jwt.validate_access_token(&access_token)?;
         self.queries
-            .jwt_tokens_blacklist_by_jti(&old_claims.jti)
+            .jwt_tokens_insert_token(&JwtTokensInsertTokenParams {
+                jti: access_claims.jti,
+                role: access_claims
+                    .user
+                    .role
+                    .as_deref()
+                    .unwrap_or("MEMBER")
+                    .to_string(),
+                user_id: access_claims.user.user_id,
+                expired_at: access_claims.exp as i64,
+                session_id,
+                token_kind: "ACCESS".to_string(),
+            })
             .await?;
-        self.store_token_pair(&tokens, &session_id).await?;
 
         Ok(AuthResponseDto {
             user: subject,
-            tokens,
+            tokens: TokenPair {
+                access_token,
+                refresh_token: refresh_token.to_string(),
+            },
         })
     }
 

@@ -961,6 +961,8 @@ export const SwarmNodeAvailabilitySchema: GenEnum<SwarmNodeAvailability> /*@__PU
  */
 export const SwarmService: GenService<{
 	/**
+	 * Get the panel-level swarm settings document for an engine; optional server_id selects the target (absent means local Docker).
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.GetSettings
 	 */
 	getSettings: {
@@ -969,6 +971,8 @@ export const SwarmService: GenService<{
 		output: typeof SwarmGetSettingsResponseSchema;
 	};
 	/**
+	 * Replace the swarm settings document (required settings JSON); optional server_id selects the target engine.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.UpdateSettings
 	 */
 	updateSettings: {
@@ -977,6 +981,8 @@ export const SwarmService: GenService<{
 		output: typeof SwarmUpdateSettingsResponseSchema;
 	};
 	/**
+	 * List swarm overlay networks on an engine; optional server_id selects the target.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.ListNetworks
 	 */
 	listNetworks: {
@@ -985,6 +991,8 @@ export const SwarmService: GenService<{
 		output: typeof SwarmListNetworksResponseSchema;
 	};
 	/**
+	 * Create a swarm overlay network. Required: name; optional config_json (driver/labels) and server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.CreateNetwork
 	 */
 	createNetwork: {
@@ -993,6 +1001,8 @@ export const SwarmService: GenService<{
 		output: typeof SwarmCreateNetworkResponseSchema;
 	};
 	/**
+	 * Update a swarm network by network_id with a config_json of fields to replace; optional server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.UpdateNetwork
 	 */
 	updateNetwork: {
@@ -1001,6 +1011,8 @@ export const SwarmService: GenService<{
 		output: typeof SwarmUpdateNetworkResponseSchema;
 	};
 	/**
+	 * Delete a swarm network by network_id; optional server_id selects the target engine.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.DeleteNetwork
 	 */
 	deleteNetwork: {
@@ -1009,6 +1021,8 @@ export const SwarmService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List swarm services on an engine; optional server_id selects the target.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.ListServices
 	 */
 	listServices: {
@@ -1017,6 +1031,8 @@ export const SwarmService: GenService<{
 		output: typeof SwarmListServicesResponseSchema;
 	};
 	/**
+	 * Get one swarm service by service_id; optional server_id selects the target engine.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.GetService
 	 */
 	getService: {
@@ -1025,6 +1041,8 @@ export const SwarmService: GenService<{
 		output: typeof SwarmGetServiceResponseSchema;
 	};
 	/**
+	 * Update a swarm service by service_id with a spec_json of spec fields to replace; optional server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.UpdateService
 	 */
 	updateService: {
@@ -1033,6 +1051,8 @@ export const SwarmService: GenService<{
 		output: typeof SwarmUpdateServiceResponseSchema;
 	};
 	/**
+	 * Get swarm cluster info (node id/addr, state, counts) for an engine; optional server_id selects the target.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.Info
 	 */
 	info: {
@@ -1041,6 +1061,8 @@ export const SwarmService: GenService<{
 		output: typeof SwarmInfoResponseSchema;
 	};
 	/**
+	 * Get the worker/manager join tokens for a cluster; optional server_id selects the target engine.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.GetJoinTokens
 	 */
 	getJoinTokens: {
@@ -1049,6 +1071,8 @@ export const SwarmService: GenService<{
 		output: typeof SwarmGetJoinTokensResponseSchema;
 	};
 	/**
+	 * List swarm nodes (hostname, status, role, availability) for a cluster; optional server_id selects the target.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.ListNodes
 	 */
 	listNodes: {
@@ -1057,6 +1081,8 @@ export const SwarmService: GenService<{
 		output: typeof SwarmListNodesResponseSchema;
 	};
 	/**
+	 * Promote a worker node to manager by node_id; optional server_id selects the target engine.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.PromoteNode
 	 */
 	promoteNode: {
@@ -1065,6 +1091,8 @@ export const SwarmService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Demote a manager node to worker by node_id; optional server_id selects the target engine.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.DemoteNode
 	 */
 	demoteNode: {
@@ -1073,6 +1101,8 @@ export const SwarmService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Set a node's availability (SwarmNodeAvailability: ACTIVE/PAUSE/DRAIN) by node_id; optional server_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.UpdateNodeAvailability
 	 */
 	updateNodeAvailability: {
@@ -1081,6 +1111,8 @@ export const SwarmService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Remove a node from the swarm by node_id; optional server_id selects the target engine.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.RemoveNode
 	 */
 	removeNode: {
@@ -1089,6 +1121,8 @@ export const SwarmService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Leave the swarm on an engine; force is required for managers; optional server_id selects the target.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.Leave
 	 */
 	leave: {
@@ -1097,6 +1131,8 @@ export const SwarmService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Join target_server_id into a cluster (optional manager_server_id, else local) with the given SwarmRole; force-leaves any standalone swarm first.
+	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.Join
 	 */
 	join: {

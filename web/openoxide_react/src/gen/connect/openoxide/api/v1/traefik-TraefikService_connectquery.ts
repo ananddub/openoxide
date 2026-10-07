@@ -5,56 +5,78 @@
 import {TraefikService} from './traefik_pb';
 
 /**
+ * List Traefik config files; optional server_id selects a remote server (else the panel host).
+ *
  * @generated from rpc openoxide.api.v1.TraefikService.ListFiles
  */
 export const listFiles = TraefikService.method.listFiles;
 
 /**
+ * Get the Traefik config directory as a file tree; optional server_id selects a remote server.
+ *
  * @generated from rpc openoxide.api.v1.TraefikService.GetFileTree
  */
 export const getFileTree = TraefikService.method.getFileTree;
 
 /**
+ * Read one Traefik config file. Required: path; optional server_id.
+ *
  * @generated from rpc openoxide.api.v1.TraefikService.GetFileContent
  */
 export const getFileContent = TraefikService.method.getFileContent;
 
 /**
+ * Replace a Traefik config file's content. Required: path, content (validated YAML mapping); optional server_id.
+ *
  * @generated from rpc openoxide.api.v1.TraefikService.UpdateFileContent
  */
 export const updateFileContent = TraefikService.method.updateFileContent;
 
 /**
+ * Report Traefik health (rawdata reachability and config errors).
+ *
  * @generated from rpc openoxide.api.v1.TraefikService.Health
  */
 export const health = TraefikService.method.health;
 
 /**
+ * Get whether Traefik request-access logging is active, with its log path and cron.
+ *
  * @generated from rpc openoxide.api.v1.TraefikService.GetRequestStatus
  */
 export const getRequestStatus = TraefikService.method.getRequestStatus;
 
 /**
+ * Enable or disable Traefik request logging. Required: enable; optional server_id.
+ *
  * @generated from rpc openoxide.api.v1.TraefikService.ToggleRequests
  */
 export const toggleRequests = TraefikService.method.toggleRequests;
 
 /**
+ * Page through Traefik access logs; optional server_id, page, page_size, search, status filter.
+ *
  * @generated from rpc openoxide.api.v1.TraefikService.GetRequestLogs
  */
 export const getRequestLogs = TraefikService.method.getRequestLogs;
 
 /**
+ * Get the current and desired Traefik image/version; optional server_id.
+ *
  * @generated from rpc openoxide.api.v1.TraefikService.GetVersion
  */
 export const getVersion = TraefikService.method.getVersion;
 
 /**
+ * Update Traefik to a target version. Required: version; optional server_id.
+ *
  * @generated from rpc openoxide.api.v1.TraefikService.UpdateVersion
  */
 export const updateVersion = TraefikService.method.updateVersion;
 
 /**
+ * Render Traefik middleware Docker labels. Required: kind (TRAEFIK_MIDDLEWARE_KIND_*), name; values/list are kind-specific.
+ *
  * @generated from rpc openoxide.api.v1.TraefikService.RenderMiddleware
  */
 export const renderMiddleware = TraefikService.method.renderMiddleware;

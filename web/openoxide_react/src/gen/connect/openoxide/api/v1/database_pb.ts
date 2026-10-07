@@ -1089,6 +1089,8 @@ export const DatabaseKindSchema: GenEnum<DatabaseKind> /*@__PURE__*/ =
  */
 export const DatabaseService: GenService<{
 	/**
+	 * Get a database by kind (DATABASE_KIND_*) and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.GetDatabase
 	 */
 	getDatabase: {
@@ -1097,6 +1099,8 @@ export const DatabaseService: GenService<{
 		output: typeof DatabaseSchema;
 	};
 	/**
+	 * List databases of a given kind (DATABASE_KIND_*) within environment_id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.ListDatabases
 	 */
 	listDatabases: {
@@ -1105,6 +1109,8 @@ export const DatabaseService: GenService<{
 		output: typeof ListDatabasesResponseSchema;
 	};
 	/**
+	 * Create a database. Required: kind (DATABASE_KIND_*), name, environment_id; image/credentials/port/networks optional.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.CreateDatabase
 	 */
 	createDatabase: {
@@ -1113,6 +1119,8 @@ export const DatabaseService: GenService<{
 		output: typeof DatabaseSchema;
 	};
 	/**
+	 * Update a database by kind and id; absent fields keep stored values (image, credentials, limits, replicas, networks, etc.).
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.UpdateDatabase
 	 */
 	updateDatabase: {
@@ -1121,6 +1129,8 @@ export const DatabaseService: GenService<{
 		output: typeof DatabaseSchema;
 	};
 	/**
+	 * Delete a database by kind (DATABASE_KIND_*) and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.DeleteDatabase
 	 */
 	deleteDatabase: {
@@ -1129,6 +1139,8 @@ export const DatabaseService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Deploy (create and start) a database by kind and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.Deploy
 	 */
 	deploy: {
@@ -1137,6 +1149,8 @@ export const DatabaseService: GenService<{
 		output: typeof DatabaseOperationSchema;
 	};
 	/**
+	 * Redeploy a database by kind and id (rebuild/recreate the container/service).
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.Redeploy
 	 */
 	redeploy: {
@@ -1145,6 +1159,8 @@ export const DatabaseService: GenService<{
 		output: typeof DatabaseOperationSchema;
 	};
 	/**
+	 * Reload a database's config/service by kind and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.Reload
 	 */
 	reload: {
@@ -1153,6 +1169,8 @@ export const DatabaseService: GenService<{
 		output: typeof DatabaseOperationSchema;
 	};
 	/**
+	 * Start a stopped database by kind and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.Start
 	 */
 	start: {
@@ -1161,6 +1179,8 @@ export const DatabaseService: GenService<{
 		output: typeof DatabaseOperationSchema;
 	};
 	/**
+	 * Stop a running database by kind and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.Stop
 	 */
 	stop: {
@@ -1169,6 +1189,8 @@ export const DatabaseService: GenService<{
 		output: typeof DatabaseOperationSchema;
 	};
 	/**
+	 * Cancel an in-progress database operation by kind and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.Cancel
 	 */
 	cancel: {
@@ -1177,6 +1199,8 @@ export const DatabaseService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * Get Swarm settings for a database by kind and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.GetSwarmSettings
 	 */
 	getSwarmSettings: {
@@ -1185,6 +1209,8 @@ export const DatabaseService: GenService<{
 		output: typeof SwarmSettingsSchema;
 	};
 	/**
+	 * Update Swarm settings for a database by kind and id with a SwarmSettings payload.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.UpdateSwarmSettings
 	 */
 	updateSwarmSettings: {
@@ -1193,6 +1219,8 @@ export const DatabaseService: GenService<{
 		output: typeof SwarmSettingsSchema;
 	};
 	/**
+	 * List mounts for a database by kind and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.ListMounts
 	 */
 	listMounts: {
@@ -1201,6 +1229,8 @@ export const DatabaseService: GenService<{
 		output: typeof MountListSchema;
 	};
 	/**
+	 * Create a mount for a database. Required: kind, database_id, mount_type, mount_path.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.CreateMount
 	 */
 	createMount: {
@@ -1209,6 +1239,8 @@ export const DatabaseService: GenService<{
 		output: typeof MountSchema;
 	};
 	/**
+	 * Update a database mount. Required: kind, database_id, id (mount), mount_type, mount_path.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.UpdateMount
 	 */
 	updateMount: {
@@ -1217,6 +1249,8 @@ export const DatabaseService: GenService<{
 		output: typeof MountSchema;
 	};
 	/**
+	 * Delete a database mount by kind, database_id and id (mount).
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.DeleteMount
 	 */
 	deleteMount: {
@@ -1225,6 +1259,8 @@ export const DatabaseService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
+	 * List dependent resources of a database by kind and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.ListDependencies
 	 */
 	listDependencies: {
@@ -1233,6 +1269,8 @@ export const DatabaseService: GenService<{
 		output: typeof DependenciesSchema;
 	};
 	/**
+	 * Export a database to an archive by kind and id; include_secrets optionally bundles secrets.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.ExportDatabase
 	 */
 	exportDatabase: {
@@ -1241,6 +1279,8 @@ export const DatabaseService: GenService<{
 		output: typeof DatabaseExportSchema;
 	};
 	/**
+	 * Import a database from an archive into environment_id for the given kind.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.ImportDatabase
 	 */
 	importDatabase: {
@@ -1249,6 +1289,8 @@ export const DatabaseService: GenService<{
 		output: typeof DatabaseSchema;
 	};
 	/**
+	 * Get connection details (host, port, database, username) for a database by kind and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.GetConnection
 	 */
 	getConnection: {
@@ -1257,6 +1299,8 @@ export const DatabaseService: GenService<{
 		output: typeof DatabaseConnectionSchema;
 	};
 	/**
+	 * Rotate credentials for a database by kind and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.RotateCredentials
 	 */
 	rotateCredentials: {
@@ -1265,6 +1309,8 @@ export const DatabaseService: GenService<{
 		output: typeof DatabaseSchema;
 	};
 	/**
+	 * Validate a database's configuration/connectivity by kind and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.ValidateDatabase
 	 */
 	validateDatabase: {
@@ -1273,6 +1319,8 @@ export const DatabaseService: GenService<{
 		output: typeof ValidationResultSchema;
 	};
 	/**
+	 * Get advanced Postgres config (replication role, raw config) for a database by kind and id.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.GetPostgresAdvancedConfig
 	 */
 	getPostgresAdvancedConfig: {
@@ -1281,6 +1329,8 @@ export const DatabaseService: GenService<{
 		output: typeof AdvancedConfigSchema;
 	};
 	/**
+	 * Update advanced Postgres config for a database by kind and id with an AdvancedConfig payload.
+	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.UpdatePostgresAdvancedConfig
 	 */
 	updatePostgresAdvancedConfig: {

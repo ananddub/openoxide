@@ -5,29 +5,53 @@ import "openoxide/api/v1/common.proto";
 import "buf/validate/validate.proto";
 
 service GitProviderService {
+  // List all configured git providers. No params.
   rpc ListGitProviders(ListGitProvidersRequest) returns (ListGitProvidersResponse);
+  // Get one git provider by id. Required: id.
   rpc GetGitProvider(GetGitProviderRequest) returns (GetGitProviderResponse);
+  // Create a GitHub provider. Required: name; app/client credentials and private_key optional; shared defaults true.
   rpc CreateGithubProvider(CreateGithubProviderRequest) returns (CreateGithubProviderResponse);
+  // Create a GitLab provider. Required: name, url; application_id/secret/tokens optional; shared defaults true.
   rpc CreateGitlabProvider(CreateGitlabProviderRequest) returns (CreateGitlabProviderResponse);
+  // Create a Gitea provider. Required: name, url; client credentials/tokens/scopes optional; shared defaults true.
   rpc CreateGiteaProvider(CreateGiteaProviderRequest) returns (CreateGiteaProviderResponse);
+  // Create a Bitbucket provider. Required: name; username/email/app_password/api_token/workspace optional; shared defaults true.
   rpc CreateBitbucketProvider(CreateBitbucketProviderRequest) returns (CreateBitbucketProviderResponse);
+  // Update a GitHub provider by id. Required: id, name; other credential fields are optional patches (absent keeps stored value).
   rpc UpdateGithubProvider(UpdateGithubProviderRequest) returns (UpdateGithubProviderResponse);
+  // Update a GitLab provider by id. Required: id, name; other credential fields are optional patches (absent keeps stored value).
   rpc UpdateGitlabProvider(UpdateGitlabProviderRequest) returns (UpdateGitlabProviderResponse);
+  // Update a Gitea provider by id. Required: id, name; other credential fields are optional patches (absent keeps stored value).
   rpc UpdateGiteaProvider(UpdateGiteaProviderRequest) returns (UpdateGiteaProviderResponse);
+  // Update a Bitbucket provider by id. Required: id, name; other credential fields are optional patches (absent keeps stored value).
   rpc UpdateBitbucketProvider(UpdateBitbucketProviderRequest) returns (UpdateBitbucketProviderResponse);
+  // Delete a git provider by id. Required: id.
   rpc DeleteGitProvider(DeleteGitProviderRequest) returns (Empty);
+  // Test a git provider's credentials/connectivity by id. Required: id. Returns success + message.
   rpc TestGitProvider(TestGitProviderRequest) returns (TestGitProviderResponse);
+  // Rotate a provider's webhook signing secret by id. Required: id. Returns the new secret.
   rpc RotateWebhookSecret(GitRotateWebhookSecretRequest) returns (GitRotateWebhookSecretResponse);
+  // List repositories visible to a provider. Required: provider_id.
   rpc ListRepositories(GitListRepositoriesRequest) returns (GitListRepositoriesResponse);
+  // List branches of a repository. Required: provider_id, owner, repository.
   rpc ListBranches(GitListRepositoryBranchesRequest) returns (GitListRepositoryBranchesResponse);
+  // List tags of a repository. Required: provider_id, owner, repository.
   rpc ListTags(GitListTagsRequest) returns (GitListTagsResponse);
+  // Begin OAuth authorization for a provider. Required: provider_id. Returns a browser URL and signed state.
   rpc Authorize(GitAuthorizeRequest) returns (GitAuthorizeResponse);
+  // Complete OAuth by exchanging the callback. Required: provider_id, state; code/installation_id optional.
   rpc OAuthCallback(GitOAuthCallbackRequest) returns (GitOAuthCallbackResponse);
+  // Disconnect a provider's OAuth connection. Required: provider_id.
   rpc Disconnect(GitDisconnectRequest) returns (Empty);
+  // Get a user's access level on a repository. Required: provider_id, owner, repository, username.
   rpc GetCollaboratorPermission(GitGetCollaboratorPermissionRequest) returns (GitGetCollaboratorPermissionResponse);
+  // Get the registered webhook (if any) for a repository. Required: provider_id, owner, repository, callback_url.
   rpc GetWebhookStatus(GitGetWebhookStatusRequest) returns (GitGetWebhookStatusResponse);
+  // Install a webhook on a repository. Required: provider_id, owner, repository, callback_url.
   rpc InstallWebhook(GitInstallWebhookRequest) returns (GitInstallWebhookResponse);
+  // Recreate (delete + reinstall) a repository webhook. Required: provider_id, owner, repository, callback_url.
   rpc RecreateWebhook(GitRecreateWebhookRequest) returns (GitRecreateWebhookResponse);
+  // Delete a repository webhook. Required: provider_id, owner, repository, callback_url.
   rpc DeleteWebhook(GitDeleteWebhookRequest) returns (Empty);
 }
 

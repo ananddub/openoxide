@@ -1,11 +1,13 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    AiAnalyzeLogsRequest, AiAnalyzeLogsResponse, AiCreateGenerationRequest,
-    AiCreateGenerationResponse, AiCreateSettingsRequest, AiCreateSettingsResponse,
-    AiDeleteSettingsRequest, AiDeployGenerationRequest, AiDeployGenerationResponse,
-    AiDiscoverModelsRequest, AiDiscoverModelsResponse, AiGetGenerationRequest,
-    AiGetGenerationResponse, AiGetSettingsRequest, AiGetSettingsResponse, AiListGenerationsRequest,
+    AiAnalyzeLogsRequest, AiAnalyzeLogsResponse, AiAssistantEvent, AiAssistantEventKind,
+    AiAssistantRequest, AiAssistantResponse,
+    AiCreateGenerationRequest, AiCreateGenerationResponse, AiCreateSettingsRequest,
+    AiCreateSettingsResponse, AiDeleteSettingsRequest, AiDeployGenerationRequest,
+    AiDeployGenerationResponse, AiDiscoverModelsRequest, AiDiscoverModelsResponse,
+    AiGetGenerationRequest, AiGetGenerationResponse, AiGetSettingsRequest, AiGetSettingsResponse,
+    AiInteraction, AiInteractionKind, AiInteractionOption, AiListGenerationsRequest,
     AiListGenerationsResponse, AiListModelsRequest, AiListModelsResponse, AiListSettingsRequest,
     AiListSettingsResponse, AiLogContext, AiReviewGenerationRequest, AiReviewGenerationResponse,
     AiService, AiServiceExt, AiTestConnectionRequest, AiTestConnectionResponse,
@@ -318,13 +320,183 @@ impl AiService for AiController {
             .map_err(map_error)?;
         Response::ok(AiAnalyzeLogsResponse { analysis })
     }
+
+    #[permission(Application, CanCreate)]
+    async fn assistant<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, AiAssistantRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiAssistantResponse> + Send + use<'a>> {
+        let organization_id = auth.organization_id;
+        // Forward the caller's own bearer token so the assistant's action calls run under the same identity.
+        let token = ctx
+            .header("authorization")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| {
+                v.strip_prefix("Bearer ")
+                    .or_else(|| v.strip_prefix("bearer "))
+            })
+            .map(str::to_owned)
+            .ok_or_else(|| ConnectError::unauthenticated("missing bearer token"))?;
+        let history: Vec<(String, String)> = request
+            .history
+            .iter()
+            .map(|t| (t.role.to_owned(), t.content.to_owned()))
+            .collect();
+        let reply = self
+            .service
+            .assistant(
+                organization_id,
+                auth.user_id(),
+                token,
+                request.ai_setting_id,
+                history,
+                request
+                    .pending_actions
+                    .map(str::to_owned)
+                    .unwrap_or_default(),
+                request.prompt.to_owned(),
+            )
+            .await
+            .map_err(map_error)?;
+        let interaction = reply.interaction.map(|i| {
+            use crate::services::platform::ai::agent::InteractionKind;
+            AiInteraction {
+                kind: match i.kind {
+                    InteractionKind::Confirm => AiInteractionKind::Confirm,
+                    InteractionKind::Choice => AiInteractionKind::Choice,
+                }
+                .into(),
+                question: i.question,
+                options: i
+                    .options
+                    .into_iter()
+                    .map(|o| AiInteractionOption {
+                        id: o.id,
+                        label: o.label,
+                        description: o.description,
+                    })
+                    .collect(),
+                pending_actions: i.pending_actions,
+            }
+        });
+        // Keep the legacy field populated for a CONFIRM so older clients still work.
+        let pending_confirmation = interaction.as_ref().and_then(|i| {
+            matches!(
+                i.kind,
+                ::buffa::EnumValue::Known(AiInteractionKind::Confirm)
+            )
+            .then(|| i.question.clone())
+        });
+        Response::ok(AiAssistantResponse {
+            reply: reply.text,
+            pending_confirmation,
+            interaction: interaction.into(),
+        })
+    }
+
+    #[permission(Application, CanCreate)]
+    async fn assistant_stream(
+        &self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, AiAssistantRequest>,
+    ) -> ServiceResult<
+        connectrpc::ServiceStream<impl connectrpc::Encodable<AiAssistantEvent> + Send + use<>>,
+    > {
+        let auth = Self::extract_auth(&ctx).await?;
+        let organization_id = auth.organization_id;
+        let token = ctx
+            .header("authorization")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|v| {
+                v.strip_prefix("Bearer ")
+                    .or_else(|| v.strip_prefix("bearer "))
+            })
+            .map(str::to_owned)
+            .ok_or_else(|| ConnectError::unauthenticated("missing bearer token"))?;
+
+        let (session_id, mut rx) = self
+            .service
+            .assistant_stream(
+                organization_id,
+                auth.user_id(),
+                token,
+                request.ai_setting_id,
+                request.session_id.map(str::to_owned),
+                request.pending_actions.map(str::to_owned).unwrap_or_default(),
+                request.prompt.to_owned(),
+            )
+            .await
+            .map_err(map_error)?;
+
+        // Bridge the agent's AgentEvent channel to the proto event stream.
+        let (out_tx, out_rx) = tokio::sync::mpsc::channel::<Result<AiAssistantEvent, ConnectError>>(64);
+        let sid = session_id.clone();
+        tokio::spawn(async move {
+            // First event carries the session id so the client can store it.
+            let _ = out_tx
+                .send(Ok(AiAssistantEvent {
+                    kind: AiAssistantEventKind::Thinking.into(),
+                    text: String::new(),
+                    interaction: ::buffa::MessageField::none(),
+                    session_id: Some(sid.clone()),
+                }))
+                .await;
+            while let Some(event) = rx.recv().await {
+                let proto = agent_event_to_proto(event, &sid);
+                if out_tx.send(Ok(proto)).await.is_err() {
+                    break;
+                }
+            }
+        });
+
+        Response::stream_ok(tokio_stream::wrappers::ReceiverStream::new(out_rx))
+    }
 }
 
-/// Wire `AiGenerationOutput` view → service DTO for the review mutation.
-///
-/// The service inner suggestion types (`AiComposeSuggestion` et al.) are not
-/// re-exported from `services::platform::ai`, so the DTO is reconstructed via
-/// its `Deserialize` impl from JSON built field-by-field off the zero-copy view.
+/// Map a runner AgentEvent to the proto streaming event.
+fn agent_event_to_proto(
+    event: crate::services::platform::ai::agent::AgentEvent,
+    session_id: &str,
+) -> AiAssistantEvent {
+    use crate::services::platform::ai::agent::{AgentEvent, InteractionKind};
+    let (kind, text, interaction) = match event {
+        AgentEvent::Thinking(t) => (AiAssistantEventKind::Thinking, t, None),
+        AgentEvent::Status(t) => (AiAssistantEventKind::Status, t, None),
+        AgentEvent::ActionResult(t) => (AiAssistantEventKind::ActionResult, t, None),
+        AgentEvent::Reply(t) => (AiAssistantEventKind::Reply, t, None),
+        AgentEvent::Done => (AiAssistantEventKind::Done, String::new(), None),
+        AgentEvent::Interaction(i) => {
+            let proto = AiInteraction {
+                kind: match i.kind {
+                    InteractionKind::Confirm => AiInteractionKind::Confirm,
+                    InteractionKind::Choice => AiInteractionKind::Choice,
+                }
+                .into(),
+                question: i.question.clone(),
+                options: i
+                    .options
+                    .into_iter()
+                    .map(|o| AiInteractionOption {
+                        id: o.id,
+                        label: o.label,
+                        description: o.description,
+                    })
+                    .collect(),
+                pending_actions: i.pending_actions,
+            };
+            (AiAssistantEventKind::Interaction, i.question, Some(proto))
+        }
+    };
+    AiAssistantEvent {
+        kind: kind.into(),
+        text,
+        interaction: interaction.into(),
+        session_id: Some(session_id.to_owned()),
+    }
+}
+
+/// Rebuilds the review DTO via its `Deserialize` impl, since the service's inner suggestion types aren't re-exported from `services::platform::ai`.
 fn output_view_to_dto(
     view: &crate::api::connect::generated::openoxide::api::v1::__buffa::view::AiGenerationOutputView<'_>,
 ) -> AppAiGenerationOutput {

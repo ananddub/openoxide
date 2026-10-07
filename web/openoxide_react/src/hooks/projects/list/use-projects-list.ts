@@ -62,9 +62,9 @@ export function useProjectsList() {
 			const projectTags = getTagsFromDescription(
 				project.description || '',
 			);
-			const matchesTags =
-				selectedTags.length === 0 ||
-				selectedTags.every(t => projectTags.includes(t.toLowerCase()));
+			const matchesTags = selectedTags.every(t =>
+				projectTags.includes(t.toLowerCase()),
+			);
 
 			return matchesSearch && matchesTags;
 		});

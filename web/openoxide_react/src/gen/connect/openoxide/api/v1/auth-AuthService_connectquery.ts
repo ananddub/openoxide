@@ -5,118 +5,162 @@
 import {AuthService} from './auth_pb';
 
 /**
+ * Register the first/owner user. Required: email, password (min 8); first_name/last_name/avatar optional. Returns user + tokens.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.Signup
  */
 export const signup = AuthService.method.signup;
 
 /**
+ * Log in with credentials. Required: email, password; two_factor_code/recovery_code when 2FA enabled. Returns user + tokens.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.Login
  */
 export const login = AuthService.method.login;
 
 /**
+ * Exchange a refresh token for new tokens. Required: refresh_token.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.Refresh
  */
 export const refresh = AuthService.method.refresh;
 
 /**
+ * Return the currently authenticated user. No params.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.WhoAmI
  */
 export const whoAmI = AuthService.method.whoAmI;
 
 /**
+ * Log out the current session. No params.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.Logout
  */
 export const logout = AuthService.method.logout;
 
 /**
+ * Report whether an owner account exists yet (initial setup gate). No params.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.GetSetupStatus
  */
 export const getSetupStatus = AuthService.method.getSetupStatus;
 
 /**
+ * Update the current user's profile. All fields optional: email, password (min 8), first_name, last_name, avatar.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.UpdateUser
  */
 export const updateUser = AuthService.method.updateUser;
 
 /**
+ * Request a password-reset email. Required: email.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.RequestPasswordReset
  */
 export const requestPasswordReset =
 	AuthService.method.requestPasswordReset;
 
 /**
+ * Reset a password using a reset token. Required: token, password (min 8).
+ *
  * @generated from rpc openoxide.api.v1.AuthService.ResetPassword
  */
 export const resetPassword = AuthService.method.resetPassword;
 
 /**
+ * Report the current user's email verification status. No params.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.GetEmailVerificationStatus
  */
 export const getEmailVerificationStatus =
 	AuthService.method.getEmailVerificationStatus;
 
 /**
+ * Send an email-verification message to the current user. No params.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.RequestEmailVerification
  */
 export const requestEmailVerification =
 	AuthService.method.requestEmailVerification;
 
 /**
+ * Confirm email verification using a token. Required: token.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.ConfirmEmailVerification
  */
 export const confirmEmailVerification =
 	AuthService.method.confirmEmailVerification;
 
 /**
+ * Report the current user's 2FA status (enabled/configured). No params.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.GetTwoFactorStatus
  */
 export const getTwoFactorStatus = AuthService.method.getTwoFactorStatus;
 
 /**
+ * Begin 2FA setup, returning secret/otpauth URL/recovery codes. Required: password.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.SetupTwoFactor
  */
 export const setupTwoFactor = AuthService.method.setupTwoFactor;
 
 /**
+ * Enable 2FA by confirming a TOTP code. Required: code (6-10 chars).
+ *
  * @generated from rpc openoxide.api.v1.AuthService.EnableTwoFactor
  */
 export const enableTwoFactor = AuthService.method.enableTwoFactor;
 
 /**
+ * Disable 2FA. Required: password, code (6-10 chars).
+ *
  * @generated from rpc openoxide.api.v1.AuthService.DisableTwoFactor
  */
 export const disableTwoFactor = AuthService.method.disableTwoFactor;
 
 /**
+ * Regenerate 2FA recovery codes. Required: password, code (6-10 chars). Returns new codes.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.RegenerateRecoveryCodes
  */
 export const regenerateRecoveryCodes =
 	AuthService.method.regenerateRecoveryCodes;
 
 /**
+ * List the current user's active sessions. No params.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.ListSessions
  */
 export const listSessions = AuthService.method.listSessions;
 
 /**
+ * Revoke a session by id. Required: session_id.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.RevokeSession
  */
 export const revokeSession = AuthService.method.revokeSession;
 
 /**
+ * List the current user's personal access tokens. No params.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.ListPersonalAccessTokens
  */
 export const listPersonalAccessTokens =
 	AuthService.method.listPersonalAccessTokens;
 
 /**
+ * Create a personal access token (returned once). Required: name, password; expires_at optional.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.CreatePersonalAccessToken
  */
 export const createPersonalAccessToken =
 	AuthService.method.createPersonalAccessToken;
 
 /**
+ * Revoke a personal access token by id. Required: id.
+ *
  * @generated from rpc openoxide.api.v1.AuthService.RevokePersonalAccessToken
  */
 export const revokePersonalAccessToken =

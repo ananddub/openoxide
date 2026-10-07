@@ -6,23 +6,41 @@ import "buf/validate/validate.proto";
 
 // Sole monitoring owner service; absorbs the former MonitoringOperationsService.
 service MonitoringService {
+  // Legacy stub (no server-side impl): overview envelope addressed by server id.
   rpc GetOverview(MonitoringGetOverviewRequest) returns (Empty);
+  // Legacy stub (no server-side impl): metrics envelope addressed by server id.
   rpc GetMetrics(MonitoringGetMetricsRequest) returns (Empty);
+  // Legacy stub (no server-side impl): container-state envelope addressed by server id.
   rpc GetContainerState(MonitoringGetContainerStateRequest) returns (Empty);
+  // Get the local panel monitoring service health/endpoints (no params).
   rpc GetLocalMetrics(MonitoringGetLocalMetricsRequest) returns (MonitoringGetLocalMetricsResponse);
+  // Get recent host metric samples for a server by server_id (capped at 50 samples).
   rpc GetServerMetrics(MonitoringGetServerMetricsRequest) returns (MonitoringGetServerMetricsResponse);
+  // Get per-container metrics by server_id and organization_id; optional app_name filter and limit (1-1000).
   rpc GetContainerMetrics(MonitoringGetContainerMetricsRequest) returns (MonitoringGetContainerMetricsResponse);
+  // Get current container states (running/exited, compose project/service) for a server by server_id.
   rpc GetContainerStates(MonitoringGetContainerStatesRequest) returns (MonitoringGetContainerStatesResponse);
+  // Rotate and return the agent token (plaintext once) for server_id within organization_id.
   rpc CreateAgentToken(MonitoringCreateAgentTokenRequest) returns (MonitoringCreateAgentTokenResponse);
+  // Get agent status (MonitoringAgentState: ONLINE/OFFLINE/NEVER_SEEN, last seen, version) for a server by server_id.
   rpc GetAgentStatus(MonitoringGetAgentStatusRequest) returns (MonitoringGetAgentStatusResponse);
+  // Start the monitoring agent container on a server by server_id.
   rpc StartAgent(MonitoringStartAgentRequest) returns (MonitoringStartAgentResponse);
+  // Stop the monitoring agent container on a server by server_id.
   rpc StopAgent(MonitoringStopAgentRequest) returns (MonitoringStopAgentResponse);
+  // Restart the monitoring agent container on a server by server_id.
   rpc RestartAgent(MonitoringRestartAgentRequest) returns (MonitoringRestartAgentResponse);
+  // Reinstall the monitoring agent on a server by server_id.
   rpc ReinstallAgent(MonitoringReinstallAgentRequest) returns (MonitoringReinstallAgentResponse);
+  // Export host metrics as CSV (up to 1000 samples) for a server by server_id.
   rpc ExportServerMetrics(MonitoringExportServerMetricsRequest) returns (MonitoringExportServerMetricsResponse);
+  // Get the latest host metric sample in Prometheus exposition format for a server by server_id.
   rpc GetPrometheusMetrics(MonitoringGetPrometheusMetricsRequest) returns (MonitoringGetPrometheusMetricsResponse);
+  // Create a maintenance window. Required: starts_at, ends_at (after starts_at), reason; optional server_id/organization_id scope.
   rpc CreateMaintenanceWindow(MonitoringCreateMaintenanceWindowRequest) returns (MonitoringCreateMaintenanceWindowResponse);
+  // List maintenance windows; optional organization_id scope, limit (1-1000) and offset.
   rpc ListMaintenanceWindows(MonitoringListMaintenanceWindowsRequest) returns (MonitoringListMaintenanceWindowsResponse);
+  // Delete a maintenance window by id; optional organization_id scope.
   rpc DeleteMaintenanceWindow(MonitoringDeleteMaintenanceWindowRequest) returns (Empty);
 }
 
