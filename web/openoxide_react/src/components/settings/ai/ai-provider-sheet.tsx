@@ -61,7 +61,8 @@ function SectionLabel({
 	);
 }
 
-/** Searchable model dropdown — popover + filter box, same grammar as the template server select. */
+/** The one model field — a searchable dropdown that also accepts a custom
+ *  name: whatever you type that isn't in the list shows as “Use …”. */
 function ModelSelect({
 	value,
 	options,
@@ -81,6 +82,9 @@ function ModelSelect({
 		return options.filter(model => model.toLowerCase().includes(q));
 	}, [options, query]);
 
+	const custom = query.trim();
+	const customRow = custom && !options.includes(custom) ? custom : null;
+
 	useEffect(() => {
 		if (open) inputRef.current?.focus({preventScroll: true});
 	}, [open]);
@@ -88,6 +92,14 @@ function ModelSelect({
 	const pick = (model: string) => {
 		onChange(model);
 		setOpen(false);
+	};
+
+	const onSearchKey = (event: React.KeyboardEvent) => {
+		if (event.key !== 'Enter') return;
+		event.preventDefault();
+		const first = filtered[0];
+		// Enter takes the best match, or the typed name when nothing matches.
+		pick(first ?? (custom || ''));
 	};
 
 	return (
@@ -99,13 +111,18 @@ function ModelSelect({
 			}}>
 			<PopoverTrigger
 				type="button"
-				className="flex h-9 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-card px-3 text-xs shadow-[0_1px_1px_rgba(0,0,0,0.02)] transition-colors duration-150 outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring/30">
+				className={cn(
+					'flex h-9 w-full cursor-pointer items-center gap-2 rounded-md border px-3 text-xs shadow-[0_1px_1px_rgba(0,0,0,0.02)] transition-colors duration-150 outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring/30',
+					value
+						? 'border-input bg-card'
+						: 'border-input bg-card text-muted-foreground',
+				)}>
 				<span
 					className={cn(
 						'min-w-0 flex-1 truncate text-left',
 						value ? 'font-mono' : 'text-muted-foreground',
 					)}>
-					{value || 'Choose a discovered model'}
+					{value || 'Pick a model — search, or type your own'}
 				</span>
 				<ChevronDown className="size-4 shrink-0 text-muted-foreground opacity-70" />
 			</PopoverTrigger>
@@ -118,17 +135,27 @@ function ModelSelect({
 							placeholder="Search models…"
 							value={query}
 							onChange={event => setQuery(event.target.value)}
-							onKeyDown={event => {
-								const [first] = filtered;
-								if (event.key === 'Enter' && first) {
-									event.preventDefault();
-									pick(first);
-								}
-							}}
+							onKeyDown={onSearchKey}
 							className="h-7 flex-1 border-0 bg-transparent px-0 text-[13px] shadow-none focus-visible:ring-0"
 						/>
 					</div>
 					<div className="flex max-h-60 flex-col gap-px overflow-y-auto p-1.5">
+						{customRow && (
+							<button
+								type="button"
+								onClick={() => pick(customRow)}
+								className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors outline-none hover:bg-accent focus-visible:bg-accent">
+								<span className="min-w-0 flex-1 truncate">
+									Use{' '}
+									<span className="font-mono font-medium">
+										{customRow}
+									</span>
+								</span>
+								{customRow === value && (
+									<Check className="size-3.5 shrink-0 text-foreground" />
+								)}
+							</button>
+						)}
 						{filtered.map(model => (
 							<button
 								key={model}
@@ -146,9 +173,10 @@ function ModelSelect({
 								)}
 							</button>
 						))}
-						{filtered.length === 0 && (
+						{filtered.length === 0 && !customRow && (
 							<p className="px-2 py-5 text-center text-[13px] text-muted-foreground">
-								No model matches &ldquo;{query}&rdquo;.
+								No models yet — run Discover above, or type a name and
+								press Enter.
 							</p>
 						)}
 					</div>
@@ -291,14 +319,11 @@ export function AiProviderSheet({
 						<SectionLabel note="Discover lists what the endpoint serves">
 							Model
 						</SectionLabel>
-						<WizardField label="Model Name" required>
-							<Input
-								value={form.model}
-								onChange={e => set('model', e.target.value)}
-								placeholder="e.g. gpt-4o, claude-3-5-sonnet, llama3.2"
-								className="font-mono"
-							/>
-						</WizardField>
+						<ModelSelect
+							value={form.model}
+							options={models}
+							onChange={m => set('model', m)}
+						/>
 						<Button
 							type="button"
 							variant="outline"
@@ -312,18 +337,6 @@ export function AiProviderSheet({
 								? 'Discovering…'
 								: `Discover models${models.length ? ` (${models.length})` : ''}`}
 						</Button>
-
-						{models.length > 0 && (
-							<WizardField
-								label="Discovered models"
-								hint="Pick from the dropdown, or type a custom name above.">
-								<ModelSelect
-									value={form.model}
-									options={models}
-									onChange={m => set('model', m)}
-								/>
-							</WizardField>
-						)}
 					</section>
 
 					{/* ── Details ── */}
