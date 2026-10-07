@@ -6,16 +6,10 @@ import {
 	Loader2,
 	RefreshCw,
 	Save,
+	Search,
 	Server,
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '#/components/ui/select';
 import {
 	Sheet,
 	SheetContent,
@@ -33,6 +27,7 @@ import {
 	WizardField,
 	type WizardStep,
 } from '#/components/shared/sheet-wizard';
+import {cn} from '#/api/utils';
 import {AI_PRESETS, EMPTY_AI_FORM, type AiSetting} from './ai-types';
 import {AiProviderIcon} from './ai-provider-icon';
 import {useAiProviderForm} from './use-ai-provider-form';
@@ -84,6 +79,8 @@ export function AiProviderSheet({
 
 	const [stepIdx, setStepIdx] = useState(0);
 	const [picked, setPicked] = useState<string | null>(null);
+	const [providerQuery, setProviderQuery] = useState('');
+	const [modelQuery, setModelQuery] = useState('');
 	const step = STEPS[stepIdx].id;
 	const last = stepIdx === STEPS.length - 1;
 
@@ -99,6 +96,20 @@ export function AiProviderSheet({
 		setPicked(name);
 		selectPreset(name, url, defaultModel);
 	};
+
+	const q = providerQuery.trim().toLowerCase();
+	const visiblePresets = q
+		? AI_PRESETS.filter(
+				p =>
+					p.name.toLowerCase().includes(q) ||
+					p.description.toLowerCase().includes(q),
+			)
+		: AI_PRESETS;
+
+	const mq = modelQuery.trim().toLowerCase();
+	const visibleModels = mq
+		? models.filter(m => m.toLowerCase().includes(mq))
+		: models;
 
 	const canContinue =
 		step === 'provider'
@@ -127,7 +138,16 @@ export function AiProviderSheet({
 					<StepBody key={step}>
 						{step === 'provider' && (
 							<div className="flex flex-col gap-2">
-								{AI_PRESETS.map(p => (
+								<div className="relative mb-1">
+									<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+									<Input
+										placeholder="Search providers…"
+										value={providerQuery}
+										onChange={e => setProviderQuery(e.target.value)}
+										className="pl-9"
+									/>
+								</div>
+								{visiblePresets.map(p => (
 									<OptionRow
 										key={p.name}
 										selected={picked === p.name}
@@ -148,6 +168,11 @@ export function AiProviderSheet({
 									title="Custom endpoint"
 									subtitle="Any OpenAI-compatible base URL."
 								/>
+								{visiblePresets.length === 0 && (
+									<p className="py-4 text-center text-[13px] text-muted-foreground">
+										No preset matches — pick Custom endpoint below.
+									</p>
+								)}
 							</div>
 						)}
 
@@ -214,23 +239,44 @@ export function AiProviderSheet({
 								</WizardField>
 
 								{models.length > 0 && (
-									<WizardField label="Discovered Models">
-										<Select
-											value={form.model}
-											onValueChange={v => v && set('model', v)}>
-											<SelectTrigger className="font-mono">
-												<SelectValue placeholder="Choose a model" />
-											</SelectTrigger>
-											<SelectContent className="bg-card">
-												{models.map(m => (
-													<SelectItem key={m} value={m}>
-														<span className="font-mono text-[13px]">
+									<WizardField
+										label={`Discovered Models (${models.length})`}
+										hint="Click a model to use it, or type your own above.">
+										<div className="overflow-hidden rounded-lg border border-border/60">
+											<div className="flex items-center gap-2 border-b border-border/60 p-2">
+												<Search className="size-3.5 shrink-0 text-muted-foreground" />
+												<Input
+													placeholder="Filter models…"
+													value={modelQuery}
+													onChange={e => setModelQuery(e.target.value)}
+													className="h-7 border-0 bg-transparent px-0 text-[13px] shadow-none focus-visible:ring-0"
+												/>
+											</div>
+											<div className="flex max-h-60 flex-col gap-px overflow-y-auto p-1.5">
+												{visibleModels.map(m => (
+													<button
+														key={m}
+														type="button"
+														onClick={() => set('model', m)}
+														className={cn(
+															'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors outline-none hover:bg-accent focus-visible:bg-accent',
+															form.model === m && 'bg-accent',
+														)}>
+														<span className="min-w-0 flex-1 truncate font-mono">
 															{m}
 														</span>
-													</SelectItem>
+														{form.model === m && (
+															<CheckCircle2 className="size-3.5 shrink-0 text-foreground" />
+														)}
+													</button>
 												))}
-											</SelectContent>
-										</Select>
+												{visibleModels.length === 0 && (
+													<p className="px-2 py-5 text-center text-[13px] text-muted-foreground">
+														No model matches &ldquo;{modelQuery}&rdquo;.
+													</p>
+												)}
+											</div>
+										</div>
 									</WizardField>
 								)}
 							</div>
