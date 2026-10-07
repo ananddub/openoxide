@@ -1,8 +1,8 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {
 	Check,
 	CheckCircle2,
-	Cpu,
+	ChevronDown,
 	Loader2,
 	RefreshCw,
 	Save,
@@ -10,6 +10,11 @@ import {
 	Server,
 } from 'lucide-react';
 import {Button} from '#/components/ui/button';
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from '#/components/ui/popover';
 import {
 	Sheet,
 	SheetContent,
@@ -56,6 +61,103 @@ function SectionLabel({
 	);
 }
 
+/** Searchable model dropdown — popover + filter box, same grammar as the template server select. */
+function ModelSelect({
+	value,
+	options,
+	onChange,
+}: {
+	value: string;
+	options: string[];
+	onChange: (model: string) => void;
+}) {
+	const [open, setOpen] = useState(false);
+	const [query, setQuery] = useState('');
+	const inputRef = useRef<HTMLInputElement>(null);
+
+	const filtered = useMemo(() => {
+		const q = query.trim().toLowerCase();
+		if (!q) return options;
+		return options.filter(model => model.toLowerCase().includes(q));
+	}, [options, query]);
+
+	useEffect(() => {
+		if (open) inputRef.current?.focus({preventScroll: true});
+	}, [open]);
+
+	const pick = (model: string) => {
+		onChange(model);
+		setOpen(false);
+	};
+
+	return (
+		<Popover
+			open={open}
+			onOpenChange={next => {
+				setOpen(next);
+				if (!next) setQuery('');
+			}}>
+			<PopoverTrigger
+				type="button"
+				className="flex h-9 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-card px-3 text-xs shadow-[0_1px_1px_rgba(0,0,0,0.02)] transition-colors duration-150 outline-none focus-visible:border-foreground/40 focus-visible:ring-2 focus-visible:ring-ring/30">
+				<span
+					className={cn(
+						'min-w-0 flex-1 truncate text-left',
+						value ? 'font-mono' : 'text-muted-foreground',
+					)}>
+					{value || 'Choose a discovered model'}
+				</span>
+				<ChevronDown className="size-4 shrink-0 text-muted-foreground opacity-70" />
+			</PopoverTrigger>
+			<PopoverContent className="p-0" align="start">
+				<div className="flex flex-col">
+					<div className="flex items-center gap-2 border-b border-border p-2">
+						<Search className="size-3.5 shrink-0 text-muted-foreground" />
+						<Input
+							ref={inputRef}
+							placeholder="Search models…"
+							value={query}
+							onChange={event => setQuery(event.target.value)}
+							onKeyDown={event => {
+								const [first] = filtered;
+								if (event.key === 'Enter' && first) {
+									event.preventDefault();
+									pick(first);
+								}
+							}}
+							className="h-7 flex-1 border-0 bg-transparent px-0 text-[13px] shadow-none focus-visible:ring-0"
+						/>
+					</div>
+					<div className="flex max-h-60 flex-col gap-px overflow-y-auto p-1.5">
+						{filtered.map(model => (
+							<button
+								key={model}
+								type="button"
+								onClick={() => pick(model)}
+								className={cn(
+									'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors outline-none hover:bg-accent focus-visible:bg-accent',
+									model === value && 'bg-accent',
+								)}>
+								<span className="min-w-0 flex-1 truncate font-mono">
+									{model}
+								</span>
+								{model === value && (
+									<Check className="size-3.5 shrink-0 text-foreground" />
+								)}
+							</button>
+						))}
+						{filtered.length === 0 && (
+							<p className="px-2 py-5 text-center text-[13px] text-muted-foreground">
+								No model matches &ldquo;{query}&rdquo;.
+							</p>
+						)}
+					</div>
+				</div>
+			</PopoverContent>
+		</Popover>
+	);
+}
+
 /** Add / edit an LLM provider — everything on one page, no steps. */
 export function AiProviderSheet({
 	editing,
@@ -78,7 +180,6 @@ export function AiProviderSheet({
 
 	const [picked, setPicked] = useState<string | null>(null);
 	const [providerQuery, setProviderQuery] = useState('');
-	const [modelQuery, setModelQuery] = useState('');
 
 	// Sync the chosen provider each time the sheet opens — derived from the editing target / defaults, not the (async) form state, to avoid a stale read.
 	useEffect(() => {
@@ -100,11 +201,6 @@ export function AiProviderSheet({
 					p.description.toLowerCase().includes(q),
 			)
 		: AI_PRESETS;
-
-	const mq = modelQuery.trim().toLowerCase();
-	const visibleModels = mq
-		? models.filter(m => m.toLowerCase().includes(mq))
-		: models;
 
 	return (
 		<Sheet open={open} onOpenChange={onOpenChange}>
@@ -218,46 +314,15 @@ export function AiProviderSheet({
 						</Button>
 
 						{models.length > 0 && (
-							<div className="flex flex-col gap-2">
-								<div className="relative">
-									<Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-									<Input
-										placeholder="Filter models…"
-										value={modelQuery}
-										onChange={e => setModelQuery(e.target.value)}
-										className="h-9 pl-9"
-									/>
-								</div>
-								<div className="flex max-h-64 flex-col gap-2 overflow-y-auto pr-0.5">
-									{visibleModels.map(m => (
-										<button
-											key={m}
-											type="button"
-											onClick={() => set('model', m)}
-											className={cn(
-												'flex w-full cursor-pointer items-center gap-3.5 rounded-xl border px-4 py-2.5 text-start transition-all duration-150',
-												form.model === m
-													? 'border-primary/40 bg-primary/10'
-													: 'border-border/50 hover:border-border hover:bg-muted/30',
-											)}>
-											<Cpu className="size-4 shrink-0 text-muted-foreground" />
-											<span className="min-w-0 flex-1 truncate font-mono text-[13px]">
-												{m}
-											</span>
-											{form.model === m && (
-												<span className="flex size-5 shrink-0 animate-in items-center justify-center rounded-full bg-primary text-primary-foreground duration-150 zoom-in-75">
-													<Check className="size-3" />
-												</span>
-											)}
-										</button>
-									))}
-									{visibleModels.length === 0 && (
-										<p className="py-6 text-center text-[13px] text-muted-foreground">
-											No model matches &ldquo;{modelQuery}&rdquo;.
-										</p>
-									)}
-								</div>
-							</div>
+							<WizardField
+								label="Discovered models"
+								hint="Pick from the dropdown, or type a custom name above.">
+								<ModelSelect
+									value={form.model}
+									options={models}
+									onChange={m => set('model', m)}
+								/>
+							</WizardField>
 						)}
 					</section>
 
