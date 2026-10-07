@@ -128,7 +128,7 @@ function ModelSelect({
 			</PopoverTrigger>
 			<PopoverContent className="p-0" align="start">
 				<div className="flex flex-col">
-					<div className="flex items-center gap-2 border-b border-border p-2">
+					<div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-popover p-2">
 						<Search className="size-3.5 shrink-0 text-muted-foreground" />
 						<Input
 							ref={inputRef}
@@ -139,7 +139,7 @@ function ModelSelect({
 							className="h-7 flex-1 border-0 bg-transparent px-0 text-[13px] shadow-none focus-visible:ring-0"
 						/>
 					</div>
-					<div className="flex max-h-60 flex-col gap-px overflow-y-auto p-1.5">
+					<div className="flex flex-col gap-px p-1.5">
 						{customRow && (
 							<button
 								type="button"
@@ -254,7 +254,7 @@ function ProviderSelect({
 			</PopoverTrigger>
 			<PopoverContent className="p-0" align="start">
 				<div className="flex flex-col">
-					<div className="flex items-center gap-2 border-b border-border p-2">
+					<div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-popover p-2">
 						<Search className="size-3.5 shrink-0 text-muted-foreground" />
 						<Input
 							ref={inputRef}
@@ -264,7 +264,7 @@ function ProviderSelect({
 							className="h-7 flex-1 border-0 bg-transparent px-0 text-[13px] shadow-none focus-visible:ring-0"
 						/>
 					</div>
-					<div className="flex max-h-60 flex-col gap-px overflow-y-auto p-1.5">
+					<div className="flex flex-col gap-px p-1.5">
 						{filtered.map(p => (
 							<button
 								key={p.name}
@@ -389,9 +389,8 @@ export function AiProviderSheet({
 						/>
 					</section>
 
-					{/* ── Connection ── */}
+					{/* ── Connection (presets fill it; edit for custom gateways) ── */}
 					<section className="flex flex-col gap-4">
-						<SectionLabel>Connection</SectionLabel>
 						<WizardField
 							label="API Base URL"
 							required
