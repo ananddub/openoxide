@@ -1061,7 +1061,7 @@ export const SwarmService: GenService<{
 		output: typeof SwarmInfoResponseSchema;
 	};
 	/**
-	 * Get the worker/manager join tokens for a cluster; optional server_id selects the target engine.
+	 * @internal Get the worker/manager join tokens for a cluster; optional server_id selects the target engine.
 	 *
 	 * @generated from rpc openoxide.api.v1.SwarmService.GetJoinTokens
 	 */

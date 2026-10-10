@@ -9,9 +9,9 @@ service RegistryService {
   rpc ListRegistries(ListRegistriesRequest) returns (ListRegistriesResponse);
   // Get one registry by id.
   rpc GetRegistry(GetRegistryRequest) returns (GetRegistryResponse);
-  // Create a registry. Required: registry_name, registry_url, registry_type; username/password/image_prefix optional.
+  // @internal Create a registry. Required: registry_name, registry_url, registry_type; username/password/image_prefix optional.
   rpc CreateRegistry(CreateRegistryRequest) returns (CreateRegistryResponse);
-  // Update a registry by id; absent fields keep stored values, empty image_prefix clears it.
+  // @internal Update a registry by id; absent fields keep stored values, empty image_prefix clears it.
   rpc UpdateRegistry(UpdateRegistryRequest) returns (UpdateRegistryResponse);
   // Delete a registry by id.
   rpc DeleteRegistry(DeleteRegistryRequest) returns (Empty);
@@ -21,7 +21,7 @@ service RegistryService {
   rpc ListRepositories(ListRegistryRepositoriesRequest) returns (ListRegistryRepositoriesResponse);
   // List image tags for a repository. Required: registry_id, repository.
   rpc ListTags(ListRegistryTagsRequest) returns (ListRegistryTagsResponse);
-  // Rotate a registry's stored credentials. Required: registry_id, username, password.
+  // @internal Rotate a registry's stored credentials. Required: registry_id, username, password.
   rpc RotateCredentials(RotateRegistryCredentialsRequest) returns (RotateRegistryCredentialsResponse);
   // List resources referencing a registry. Required: registry_id.
   rpc GetUsage(GetRegistryUsageRequest) returns (GetRegistryUsageResponse);

@@ -365,6 +365,23 @@ impl MonitoringService {
         }
     }
 
+    /// Public entry so the background lifecycle watcher can self-heal an agent
+    /// whose mTLS cert / token has drifted out of sync (BadSignature /
+    /// invalid-token). Debounced + SSH-bootstrapped exactly like the on-demand
+    /// repair, so no manual delete/restart is ever needed in production.
+    pub fn request_agent_repair(self: &Arc<Self>, server_id: i64, reason: &str) {
+        let _ = self.trigger_agent_repair(server_id, reason);
+    }
+
+    /// Drops the cached gRPC channel unconditionally. The lifecycle watcher
+    /// calls this when an RPC *hangs* (deadline elapsed): a hang produces no
+    /// tonic status, so `invalidate_stale_channel` never fires and the stale
+    /// channel would be reused forever — the agent shows "offline" even though
+    /// a fresh connection works (verified via mTLS handshake + grpcurl).
+    pub fn drop_channel(&self, server_id: i64) {
+        self.channels.remove(&server_id);
+    }
+
     fn trigger_agent_repair(self: &Arc<Self>, server_id: i64, reason: &str) -> String {
         self.channels.remove(&server_id);
         let started = self.repairs.insert(server_id);
@@ -478,15 +495,17 @@ impl MonitoringService {
         let mut endpoint =
             tonic::transport::Endpoint::from_shared(format!("{scheme}://{host}:50051"))
                 .map_err(|error| format!("invalid monitoring agent address: {error}"))?
-                .http2_keep_alive_interval(std::time::Duration::from_secs(30))
-                // Shrink h2 receive buffers. One cached channel carries every
-                // stream to a server (watch, shared stats feed, shell, logs);
-                // the default ~64 KiB window is paid PER STREAM, so several
-                // open streams inflated agent-side memory for no benefit —
-                // these payloads are 1 Hz stat frames and keystroke-rate
-                // shell traffic that flow-control fine at 16 KiB.
-                .initial_stream_window_size(16 * 1024)
-                .initial_connection_window_size(64 * 1024);
+                // A half-dead cached channel's RPCs hang until the watcher's
+                // deadline; the connect itself must fail fast so a recreated
+                // agent (new container, new IP) is detected on the next cycle.
+                .connect_timeout(std::time::Duration::from_secs(5))
+                .http2_keep_alive_interval(std::time::Duration::from_secs(30));
+        // NOTE: do NOT shrink the h2 stream/connection windows here. A 16 KiB
+        // stream window deadlocks the lifecycle watch: the first
+        // ContainerStatesResponse easily exceeds it, and with the watch, stats
+        // feed, shell, and logs all sharing one cached channel the flow-control
+        // window fills and the first message never arrives — the watcher then
+        // marks a perfectly healthy agent offline (regression from 2026-10-04).
         if is_local {
             tracing::debug!(server_id, host, "using local Agent endpoint");
         }

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/src/logs/log_buffer.dart';
-import 'package:mobile/src/logs/log_model.dart';
-import 'package:mobile/src/ui/log_view.dart';
-import 'package:mobile/src/ui/theme.dart';
-import 'package:mobile/src/ui/tokens.dart';
+import 'package:mobile/src/core/logs/log_buffer.dart';
+import 'package:mobile/src/core/logs/log_model.dart';
+import 'package:mobile/src/core/theme/app_theme.dart';
+import 'package:mobile/src/core/tokens/motion.dart';
+import 'package:mobile/src/core/ui/widgets/log_view/log_view.dart';
 
 import 'harness.dart';
 

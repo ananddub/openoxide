@@ -226,13 +226,27 @@ fn generate_ai_catalog() -> Result<(), Box<dyn std::error::Error>> {
                         format!("{{ {} }}", parts.join(", "))
                     })
                     .unwrap_or_else(|| "{}".to_string());
-                // Prefer the human-written proto comment on the rpc; fall back
-                // to the generic "<Method> on <Service>" when none is authored.
-                let desc = rpc_comments
+                // The proto RPC comment is the opt-in signal for AI tooling:
+                // only actions a human deliberately documented with a leading
+                // `//` are exposed to the assistant. RPCs with no comment
+                // (and anything explicitly marked internal) are intentionally
+                // NOT registered as tools — e.g. login, logout, refresh-token,
+                // 2FA and other credential/session endpoints the AI must never
+                // drive on the user's behalf. Mark such an rpc by starting its
+                // comment with `@internal` (or `internal:`) to keep the docs
+                // while excluding it from the catalog.
+                let desc = match rpc_comments
                     .get(&connect_path)
-                    .cloned()
-                    .filter(|c| !c.trim().is_empty())
-                    .unwrap_or_else(|| format!("{} on {}", method.name(), svc.name()));
+                    .map(|c| c.trim())
+                    .filter(|c| !c.is_empty())
+                {
+                    Some(c) => c.to_string(),
+                    None => continue,
+                };
+                let lower = desc.to_ascii_lowercase();
+                if lower.starts_with("@internal") || lower.starts_with("internal:") {
+                    continue;
+                }
                 out.push_str(&format!(
                     "    GeneratedAction {{ name: {:?}, connect_path: {:?}, description: {:?}, params: {:?} }},\n",
                     action, connect_path, desc, params

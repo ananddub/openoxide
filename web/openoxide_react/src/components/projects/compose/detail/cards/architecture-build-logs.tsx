@@ -263,7 +263,18 @@ export function BuildLogsSection({entityId, kind}: BuildLogsSectionProps) {
 									Ctrl+F
 								</kbd>
 							</div>
-							<AnalyzeLogsButton lines={lines} context="BUILD" />
+							<AnalyzeLogsButton
+								lines={lines}
+								context="BUILD"
+								deploymentId={deploymentId}
+								failed={/ERROR|FAIL|CRASH/i.test(
+									String(
+										(latest as any)?.status ||
+											(latest as any)?.state ||
+											'',
+									),
+								)}
+							/>
 						</div>
 
 						{/* Theme-aware log surface — bordered, no inset */}

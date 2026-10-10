@@ -10,7 +10,7 @@ SELECT server_id, connection_mode, provider, private_host, tunnel_address, publi
 SELECT server_id, connection_mode, provider, private_host, tunnel_address, public_key, endpoint, listen_port, persistent_keepalive, status, last_handshake_at, config_version, dns_name, routes, health_status, health_error, last_health_check_at, consecutive_failures, operation, operation_lease_until, config_hash, rotation_state, created_at, updated_at FROM server_private_networks WHERE dns_name IS NOT NULL AND dns_name != '' AND status = ? ORDER BY dns_name;
 
 -- name: ServerPrivateNetworksInsert :exec
-INSERT INTO server_private_networks (server_id, connection_mode, provider, private_host, tunnel_address, public_key, endpoint, listen_port, persistent_keepalive, dns_name, routes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO server_private_networks (server_id, connection_mode, provider, private_host, tunnel_address, public_key, endpoint, listen_port, persistent_keepalive, dns_name, routes, status, config_version, health_status, consecutive_failures, rotation_state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'UNKNOWN', 0, 'IDLE');
 
 -- name: ServerPrivateNetworksUpdateConfig :exec
 UPDATE server_private_networks SET connection_mode = ?, provider = NULLIF(?, ''), private_host = NULLIF(?, ''), tunnel_address = NULLIF(?, ''), public_key = NULLIF(?, ''), endpoint = NULLIF(?, ''), listen_port = ?, persistent_keepalive = ?, dns_name = NULLIF(?, ''), routes = ?, status = ?, config_version = config_version + 1, updated_at = unixepoch() WHERE server_id = ?;

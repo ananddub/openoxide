@@ -56,7 +56,7 @@ service ApplicationService {
   rpc Stop(ApplicationOperationRequest) returns (ApplicationOperation);
   // Cancel the in-progress operation/deployment for an application by id.
   rpc Cancel(ApplicationOperationRequest) returns (Empty);
-  // Rotate the deploy-webhook token for an application by id; returns the new token.
+  // @internal Rotate the deploy-webhook token for an application by id; returns the new token.
   rpc RotateWebhookToken(ApplicationOperationRequest) returns (ApplicationWebhookToken);
   // Move an application to another environment. Required: id, target_environment_id.
   rpc MoveApplication(MoveApplicationRequest) returns (Application);
@@ -159,6 +159,7 @@ enum ApplicationBuildType {
   APPLICATION_BUILD_TYPE_PAKETO = 5;
   APPLICATION_BUILD_TYPE_RAILPACK = 6;
   APPLICATION_BUILD_TYPE_STATIC = 7;
+  APPLICATION_BUILD_TYPE_AI_DOCKERFILE = 8;
 }
 
 message Application {

@@ -180,11 +180,13 @@ export function TrendCell({
 
 export function ConnectionRow({
 	icon: Icon,
+	tile,
 	label,
 	value,
 	mono = false,
 }: {
-	icon: typeof Cpu;
+	icon?: typeof Cpu;
+	tile?: React.ReactNode;
 	label: string;
 	value: React.ReactNode;
 	mono?: boolean;
@@ -192,9 +194,11 @@ export function ConnectionRow({
 	return (
 		<ListRow
 			icon={
-				<RowTile>
-					<Icon className="size-4" strokeWidth={2} />
-				</RowTile>
+				tile ?? (
+					<RowTile>
+						{Icon ? <Icon className="size-4" strokeWidth={2} /> : null}
+					</RowTile>
+				)
 			}
 			title={
 				<span className={mono ? 'font-mono text-[13px]' : undefined}>

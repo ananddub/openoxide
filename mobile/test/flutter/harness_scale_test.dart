@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/src/ui/tokens.dart';
+import 'package:mobile/src/core/tokens/motion.dart';
 
 import '../fakes.dart';
 import 'harness.dart';
@@ -17,7 +17,7 @@ Future<double> _heightOfScaledLine(WidgetTester tester, double scaler) async {
   await tester.pumpWidget(
     appScope(
       child: const Center(child: Text('rhythm', style: TextStyle(fontSize: 20))),
-      auth: scope.controller,
+      auth: scope.bloc,
     ),
   );
   return tester.getRect(find.text('rhythm')).height;

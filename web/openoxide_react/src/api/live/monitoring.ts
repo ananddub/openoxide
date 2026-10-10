@@ -113,7 +113,11 @@ function toServerMetricPayload(
 }
 
 /** Newest-first server metric samples for one server (agent history via the panel's MonitoringService.GetServerMetrics — the agent's get_last_n returns the newest point FIRST). The typed request has no limit field, so the page is trimmed client-side. `null` server id disables the query. */
-export function useServerMetrics(serverId: bigint | null, limit = 50) {
+export function useServerMetrics(
+	serverId: bigint | null,
+	limit = 50,
+	refetchMs = 15_000,
+) {
 	return useConnectQuery<ServerMetricPayload[]>(
 		['monitoring', 'server-metrics', (serverId ?? 0n).toString(), limit],
 		async () => {
@@ -122,7 +126,7 @@ export function useServerMetrics(serverId: bigint | null, limit = 50) {
 			});
 			return response.metrics.slice(0, limit).map(toServerMetricPayload);
 		},
-		{enabled: serverId !== null, refetchInterval: 15_000},
+		{enabled: serverId !== null, refetchInterval: refetchMs},
 	);
 }
 

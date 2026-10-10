@@ -25,6 +25,7 @@ export const RAILPACK_VERSIONS = [
 export const BUILD_TYPES: {id: string; label: string; isNew?: boolean}[] =
 	[
 		{id: 'DOCKERFILE', label: 'Dockerfile'},
+		{id: 'AI_DOCKERFILE', label: 'AI Dockerfile (auto)', isNew: true},
 		{id: 'RAILPACK', label: 'Railpack', isNew: true},
 		{id: 'NIXPACKS', label: 'Nixpacks'},
 		{id: 'HEROKU', label: 'Heroku Buildpacks'},

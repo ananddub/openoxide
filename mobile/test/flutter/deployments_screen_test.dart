@@ -1,34 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/src/core/grpc/app_error.dart';
+import 'package:mobile/src/core/tokens/motion.dart';
+import 'package:mobile/src/features/deployments/screens/deployments_screen.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/deployment.pb.dart';
-import 'package:mobile/src/grpc/app_error.dart';
-import 'package:mobile/src/session/session.dart';
-import 'package:mobile/src/state/auth_controller.dart';
-import 'package:mobile/src/ui/deployments_screen.dart';
-import 'package:mobile/src/ui/tokens.dart';
 
 import '../fakes.dart';
 import 'harness.dart';
 
 /// A signed-in session with a deploy queue. The screen asks for the running set
 /// and the table's history as two calls, so a test fills each one separately.
-Future<({AuthController controller, FakePanelApi api})> queue({
+AuthScope queue({
   List<Deployment> active = const [],
   List<Deployment> recent = const [],
   Object? error,
-}) async {
-  final scope = authScope(
+}) {
+  final scope = bootedScope(
     initial: const StoredSession(
       accessToken: 'access',
       refreshToken: 'refresh',
       userId: 7,
     ),
     organizations: [organization(3, 'Acme')],
-  )
-    ..api.activeDeployments = active
-    ..api.deployments = recent
-    ..api.deploymentsError = error;
-  await scope.controller.boot();
+  );
+  scope.api
+    ..activeDeployments = active
+    ..deployments = recent
+    ..deploymentsError = error;
   return scope;
 }
 
@@ -36,7 +34,7 @@ void main() {
   setUp(Motion.install);
 
   testWidgets('lays the queue out at every size', (tester) async {
-    final scope = await queue(
+    final scope = queue(
       active: [
         deployment(
           9,
@@ -60,8 +58,8 @@ void main() {
       tester,
       () => appScope(
         child: const DeploymentsScreen(),
-        auth: scope.controller,
-        deps: fakeDeps(scope.api, scope.controller.session),
+        auth: scope.bloc,
+        deps: fakeDeps(scope.api, scope.session),
       ),
       // Headings are upper-cased by the shared label, so this is the text on
       // screen rather than the word in the source.
@@ -71,15 +69,15 @@ void main() {
   });
 
   testWidgets('the running deploy sits above the history', (tester) async {
-    final scope = await queue(
+    final scope = queue(
       active: [deployment(9, status: 'BUILDING', resourceType: 'api')],
       recent: [deployment(8, status: 'DEPLOYED', resourceType: 'website')],
     );
     await tester.pumpWidget(
       appScope(
         child: const DeploymentsScreen(),
-        auth: scope.controller,
-        deps: fakeDeps(scope.api, scope.controller.session),
+        auth: scope.bloc,
+        deps: fakeDeps(scope.api, scope.session),
       ),
     );
     await pumpEntrance(tester);
@@ -94,17 +92,22 @@ void main() {
   testWidgets('an age is read whatever unit the panel wrote it in', (
     tester,
   ) async {
-    final scope = await queue(
+    final scope = queue(
       recent: [
         deployment(8, resourceType: 'seconds-row', ageSeconds: 120),
-        deployment(7, resourceType: 'millis-row', ageSeconds: 300, milliseconds: true),
+        deployment(
+          7,
+          resourceType: 'millis-row',
+          ageSeconds: 300,
+          milliseconds: true,
+        ),
       ],
     );
     await tester.pumpWidget(
       appScope(
         child: const DeploymentsScreen(),
-        auth: scope.controller,
-        deps: fakeDeps(scope.api, scope.controller.session),
+        auth: scope.bloc,
+        deps: fakeDeps(scope.api, scope.session),
       ),
     );
     await pumpEntrance(tester);
@@ -114,12 +117,12 @@ void main() {
   });
 
   testWidgets('an empty queue says what to wait for', (tester) async {
-    final scope = await queue();
+    final scope = queue();
     await tester.pumpWidget(
       appScope(
         child: const DeploymentsScreen(),
-        auth: scope.controller,
-        deps: fakeDeps(scope.api, scope.controller.session),
+        auth: scope.bloc,
+        deps: fakeDeps(scope.api, scope.session),
       ),
     );
     await pumpEntrance(tester);
@@ -133,12 +136,12 @@ void main() {
   testWidgets('a queue that never came back offers a retry that works', (
     tester,
   ) async {
-    final scope = await queue(error: const PanelUnreachable('no answer'));
+    final scope = queue(error: const PanelUnreachable('no answer'));
     await tester.pumpWidget(
       appScope(
         child: const DeploymentsScreen(),
-        auth: scope.controller,
-        deps: fakeDeps(scope.api, scope.controller.session),
+        auth: scope.bloc,
+        deps: fakeDeps(scope.api, scope.session),
       ),
     );
     await pumpEntrance(tester);

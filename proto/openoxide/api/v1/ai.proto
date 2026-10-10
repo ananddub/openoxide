@@ -41,6 +41,11 @@ service AiService {
   // Streaming assistant: emits live thinking/action/result events as the agent
   // works, ending with the reply (or a confirm/choose interaction).
   rpc AssistantStream(AiAssistantRequest) returns (stream AiAssistantEvent);
+  // Get the AI diagnosis of a failed deployment (why it failed + whether a
+  // config-only fix is available).
+  rpc GetBuildDiagnosis(AiGetBuildDiagnosisRequest) returns (AiGetBuildDiagnosisResponse);
+  // Apply the AI's config fix for a failed deployment and redeploy.
+  rpc ApplyAiFix(AiApplyFixRequest) returns (AiApplyFixResponse);
 }
 
 // Provider detected from the configured api_url (AiProviderKind::detect).
@@ -377,4 +382,33 @@ message AiAssistantEvent {
   // The server-managed session id. Always present on the first event and on
   // DONE so the client can store it.
   optional string session_id = 4;
+}
+
+message AiGetBuildDiagnosisRequest {
+  int64 deployment_id = 1 [(buf.validate.field).int64.gt = 0];
+  // Recompute the diagnosis even when one is already stored (and bypass the
+  // cross-deployment error-signature cache).
+  bool force = 2;
+}
+
+message AiGetBuildDiagnosisResponse {
+  // True when a diagnosis exists for this deployment.
+  bool available = 1;
+  // "fixable" | "code_error" | "unknown".
+  string classification = 2;
+  string root_cause = 3;
+  string explanation = 4;
+  // True when a config-only fix is available (show "Fix with AI").
+  bool fixable = 5;
+  // What the fix would change: "compose" | "dockerfile" | "env".
+  string fix_target = 6;
+}
+
+message AiApplyFixRequest {
+  int64 deployment_id = 1 [(buf.validate.field).int64.gt = 0];
+}
+
+message AiApplyFixResponse {
+  bool applied = 1;
+  string message = 2;
 }

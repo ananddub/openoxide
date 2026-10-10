@@ -1299,7 +1299,7 @@ export const DatabaseService: GenService<{
 		output: typeof DatabaseConnectionSchema;
 	};
 	/**
-	 * Rotate credentials for a database by kind and id.
+	 * @internal Rotate credentials for a database by kind and id.
 	 *
 	 * @generated from rpc openoxide.api.v1.DatabaseService.RotateCredentials
 	 */

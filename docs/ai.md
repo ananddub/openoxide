@@ -280,11 +280,46 @@ connect_path, description, params }` for **every unary RPC**:
   `{ id!:number, env_var?:string }`.
 - `description` — **the proto `//` comment above the rpc** (a second protoc pass
   with `--include_source_info` extracts them, since connectrpc strips comments
-  from its own descriptor). No comment → a generic fallback.
+  from its own descriptor).
+
+### The comment is the opt-in signal
+
+An RPC is exposed to the assistant **only if it has a leading `//` comment**.
+This is deliberate:
+
+- **No comment → not a tool.** The comment is how a human says "this action is
+  intended for the AI". Undocumented RPCs are skipped entirely.
+- **`@internal` (or `internal:`) prefix → not a tool, but keeps its docs.** Use
+  this for credential/session endpoints the assistant must never drive on the
+  user's behalf — login, logout, refresh-token, signup, password reset, email
+  verification, 2FA, sessions, personal access tokens. The whole `AuthService`
+  is marked this way, so the agent cannot log the user out, mint tokens, or
+  change 2FA; asked to, it politely redirects to the UI.
+
+Beyond `AuthService`, every RPC that **accepts, reveals, or rotates secret
+material** is also `@internal`, while read-only/wiring RPCs on the same service
+stay available:
+
+| Service | Excluded (`@internal`) | Kept |
+| --- | --- | --- |
+| SshKey | CreateKey, GenerateKey, GeneratePair, UpdateKey | ListKeys, GetKey, MarkUsed, DeleteKey |
+| Registry | CreateRegistry, UpdateRegistry, RotateCredentials | List/Get/Delete/Test, ListRepositories, ListTags, GetUsage |
+| Vault | CreateProvider, UpdateProvider | List/Get/Delete/Test, ListSecrets, assignments |
+| GitProvider | Create*/Update* providers, RotateWebhookSecret, Authorize, OAuthCallback | List/Get/Delete/Test, repos/branches/tags, webhook status/install |
+| Application / Compose | RotateWebhookToken | everything else |
+| Database | RotateCredentials | everything else |
+| Monitoring | CreateAgentToken | everything else |
+| Swarm | GetJoinTokens | everything else |
+| ServerPrivateNetwork | RotateKeys | everything else |
+
+Env-var updates are intentionally **kept** — the assistant needs them to deploy
+(and the AI build-fix applies env changes), and they set values rather than
+revealing stored secrets.
 
 **To improve an action's guidance, edit its `//` comment in the `.proto`** — the
-catalog picks it up on the next build. Adding a new RPC automatically adds an
-assistant action.
+catalog picks it up on the next build. Adding a new (commented, non-`@internal`)
+RPC automatically adds an assistant action; omitting the comment or marking it
+`@internal` keeps it out of the catalog.
 
 ## 4. Streaming protocol
 
@@ -395,3 +430,54 @@ No extra env vars are required. The session store writes under the existing
 - `build.rs` — catalog + proto-comment description generation.
 - `web/openoxide_react/src/components/ai/assistant/ai-chat-sheet.tsx` — the chat UI.
 - `web/openoxide_react/src/api/live/ai.ts` — `streamAssistant` client.
+
+## 10. MCP server (external AI clients)
+
+Any external AI client (Claude Desktop, Cursor, Cline, Zed, …) can drive the
+panel through the **Model Context Protocol**. It reuses the exact same pieces as
+the built-in assistant — the auto catalog and the in-process Connect/gRPC
+dispatch — so there is no second action list and no HTTP self-call.
+
+- **Endpoint:** `POST /mcp` (JSON-RPC 2.0, MCP Streamable HTTP).
+- **Transport note:** the panel speaks **HTTP/2 only** (ALPN `h2`). Clients that
+  only do HTTP/1.1 should front it with a stdio↔HTTP bridge such as
+  [`mcp-remote`](https://www.npmjs.com/package/mcp-remote).
+- **Auth:** send the user's access token / PAT as `Authorization: Bearer <token>`
+  (and optionally `x-organization-id`). Every `tools/call` runs under that
+  identity, so permission + validation + audit apply exactly like a manual call.
+- **Tools:** every registered, non-`@internal` catalog action is exposed as a
+  tool (name = action, description = its proto `//` comment, `inputSchema`
+  derived from the action params). Credential/session actions (login, tokens,
+  2FA, key/secret rotation, …) are **never** exposed. A `search_actions` helper
+  lets the client find the right action in the large catalog.
+
+Methods: `initialize`, `tools/list`, `tools/call`, `ping`, and
+`notifications/*` (no response).
+
+Example client config (via `mcp-remote`):
+
+```json
+{
+  "mcpServers": {
+    "openoxide": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "https://your-panel:4000/mcp",
+        "--header", "Authorization: Bearer YOUR_ACCESS_TOKEN"
+      ]
+    }
+  }
+}
+```
+
+Raw handshake (h2):
+
+```bash
+curl --http2-prior-knowledge https://panel:4000/mcp \
+  -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+```
+
+Source: `src/api/mcp/mod.rs` (JSON-RPC handler + params→JSON-Schema), route in
+`src/api/connect/server.rs` (`/mcp` → `mcp_response`).

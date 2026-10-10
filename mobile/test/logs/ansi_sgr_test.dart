@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/src/logs/ansi_sgr.dart';
+import 'package:mobile/src/core/logs/ansi_sgr.dart';
 
 const esc = '\x1B';
 

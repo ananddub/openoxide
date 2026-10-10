@@ -56,7 +56,7 @@ export const repair = ServerPrivateNetworkService.method.repair;
 export const reSetup = ServerPrivateNetworkService.method.reSetup;
 
 /**
- * Rotate the WireGuard keys for a server's private network by id.
+ * @internal Rotate the WireGuard keys for a server's private network by id.
  *
  * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.RotateKeys
  */

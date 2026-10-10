@@ -1,12 +1,16 @@
-import type {ReactNode} from 'react';
+import {useLayoutEffect, useRef, useState, type ReactNode} from 'react';
+import gsap from 'gsap';
 import {Check, Loader, X} from 'lucide-react';
 import {Label} from '#/components/ui/label';
 import {cn} from '#/api/utils';
 
-/** Building blocks for the "Add Service" sheet grammar: a checkpoint row that tells you what is being asked, radio-style choice rows, and a field that gives its control room to breathe. */
+/** Building blocks for the "Add Service" sheet grammar: a vertical step timeline that tells you where you are, radio-style choice rows, and a field that gives its control room to breathe. */
 
 export type WizardStep = {id: string; label: string};
 
+/** Horizontal checkpoint strip — used by full pages (e.g. the create-service
+ *  page) where a vertical timeline would waste the width; sheets use
+ *  {@link StepTimeline} instead. */
 export function StepCheckpoints({
 	steps,
 	idx,
@@ -37,9 +41,9 @@ export function StepCheckpoints({
 							className={cn(
 								'size-1.5 rounded-full',
 								i < idx
-									? 'bg-primary'
+									? 'bg-blue-500'
 									: i === idx
-										? 'bg-primary ring-2 ring-primary/25'
+										? 'bg-blue-500 ring-2 ring-blue-500/25'
 										: 'bg-muted-foreground/40',
 							)}
 						/>
@@ -53,12 +57,10 @@ export function StepCheckpoints({
 
 /** Wrapper so each step slides in; the step itself owns its spacing. */
 export function StepBody({children}: {children: ReactNode}) {
-	return (
-		<div className="animate-in duration-200 ease-out fade-in-0 slide-in-from-right-4">
-			{children}
-		</div>
-	);
+	return <div>{children}</div>;
 }
+
+const LINE_MS = 400;
 
 /** Vertical timeline of wizard steps — nodes with connector lines; the
  *  active node carries the step's content directly beneath its label.
@@ -74,11 +76,67 @@ export function StepTimeline({
 	nodeState?: 'running' | 'success' | 'failed';
 	children: ReactNode;
 }) {
+	const lineRefs = useRef<(HTMLSpanElement | null)[]>([]);
+	const contentRef = useRef<HTMLDivElement>(null);
+	const prevIdx = useRef(idx);
+	const advanced = useRef(false);
+	// The active node only lights up once the line has drawn down to it.
+	const [settled, setSettled] = useState(true);
+
+	// Newly-completed connector lines draw themselves downward.
+	useLayoutEffect(() => {
+		const from = prevIdx.current;
+		advanced.current = idx > from;
+		if (idx > from) {
+			for (let i = from; i < idx; i++) {
+				const line = lineRefs.current[i];
+				if (line) {
+					gsap.fromTo(
+						line,
+						{scaleY: 0, transformOrigin: 'top center'},
+						{
+							scaleY: 1,
+							duration: LINE_MS / 1000,
+							ease: 'power2.inOut',
+						},
+					);
+				}
+			}
+			setSettled(false);
+			const tid = setTimeout(() => setSettled(true), LINE_MS);
+			prevIdx.current = idx;
+			return () => clearTimeout(tid);
+		}
+		prevIdx.current = idx;
+		setSettled(true);
+	}, [idx]);
+
+	// GSAP owns the step transition (useLayoutEffect = pre-paint, so the
+	// remounting content never flashes blank mid-swap). On advance it waits
+	// for the line to arrive before sliding in.
+	useLayoutEffect(() => {
+		if (contentRef.current) {
+			gsap.fromTo(
+				contentRef.current,
+				{autoAlpha: 0, x: 24},
+				{
+					autoAlpha: 1,
+					x: 0,
+					duration: 0.32,
+					ease: 'power2.out',
+					delay: advanced.current ? LINE_MS / 1000 : 0,
+				},
+			);
+		}
+	}, [idx, nodeState]);
+
 	return (
 		<div className="flex flex-col">
 			{steps.map((s, i) => {
 				const done = i < idx;
 				const active = i === idx;
+				// Mid-draw the newly-active node stays muted until the line reaches it.
+				const activeVisual = active && settled;
 				const lastRow = i === steps.length - 1;
 				return (
 					<div key={s.id} className="flex gap-3">
@@ -87,28 +145,30 @@ export function StepTimeline({
 								className={cn(
 									'flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold transition-colors duration-200',
 									done &&
-										'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-									active &&
+										'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+									activeVisual &&
 										nodeState === 'success' &&
-										'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-									active &&
+										'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+									activeVisual &&
 										nodeState === 'failed' &&
 										'bg-red-500/15 text-red-600 dark:text-red-400',
-									active &&
+									activeVisual &&
 										!nodeState &&
 										'bg-primary text-primary-foreground ring-4 ring-primary/15',
-									active &&
+									activeVisual &&
 										nodeState === 'running' &&
 										'bg-primary text-primary-foreground ring-4 ring-primary/15',
-									!done && !active && 'border text-muted-foreground/50',
+									!done &&
+										!activeVisual &&
+										'border text-muted-foreground/50',
 								)}>
 								{done ? (
 									<Check className="size-3" />
-								) : active && nodeState === 'running' ? (
+								) : activeVisual && nodeState === 'running' ? (
 									<Loader className="size-3 animate-spin" />
-								) : active && nodeState === 'success' ? (
+								) : activeVisual && nodeState === 'success' ? (
 									<Check className="size-3" />
-								) : active && nodeState === 'failed' ? (
+								) : activeVisual && nodeState === 'failed' ? (
 									<X className="size-3" />
 								) : (
 									i + 1
@@ -116,9 +176,12 @@ export function StepTimeline({
 							</span>
 							{!lastRow && (
 								<span
+									ref={el => {
+										lineRefs.current[i] = el;
+									}}
 									className={cn(
 										'w-px grow',
-										done ? 'bg-emerald-500/40' : 'bg-border',
+										done ? 'bg-blue-500/40' : 'bg-border',
 									)}
 								/>
 							)}
@@ -127,15 +190,19 @@ export function StepTimeline({
 							<p
 								className={cn(
 									'text-sm leading-5',
-									active
+									activeVisual
 										? 'font-medium text-foreground'
 										: done
-											? 'text-emerald-600 dark:text-emerald-400'
+											? 'text-blue-600 dark:text-blue-400'
 											: 'text-muted-foreground/70',
 								)}>
 								{s.label}
 							</p>
-							{active && <div className="pt-3">{children}</div>}
+							{active && (
+								<div className="pt-3" ref={contentRef}>
+									{children}
+								</div>
+							)}
 						</div>
 					</div>
 				);

@@ -40,7 +40,7 @@ const STEP_DESCRIPTIONS: Record<string, string> = {
 	details: 'Describe it and tag it so it stays findable.',
 };
 
-/** New Project — checkpoint wizard: Identity → Details, the same StepTimeline grammar as the new-server sheet. */
+/** New Project — checkpoint wizard: Identity → Details, the same vertical StepTimeline grammar as the new-server sheet. */
 export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 	isOpen,
 	onOpenChange,
@@ -91,9 +91,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 					className="flex min-h-0 flex-1 flex-col">
 					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-6">
 						<StepTimeline steps={STEPS} idx={stepIdx}>
-							<div
-								key={step}
-								className="animate-in duration-200 ease-out fade-in-0 slide-in-from-right-4">
+							<div key={step}>
 								{step === 'identity' ? (
 									<div className="flex flex-col gap-1.5">
 										<Label

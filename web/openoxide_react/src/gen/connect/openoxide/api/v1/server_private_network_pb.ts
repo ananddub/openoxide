@@ -804,7 +804,7 @@ export const ServerPrivateNetworkService: GenService<{
 		output: typeof ServerPrivateNetworkReSetupResponseSchema;
 	};
 	/**
-	 * Rotate the WireGuard keys for a server's private network by id.
+	 * @internal Rotate the WireGuard keys for a server's private network by id.
 	 *
 	 * @generated from rpc openoxide.api.v1.ServerPrivateNetworkService.RotateKeys
 	 */

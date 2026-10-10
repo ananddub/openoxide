@@ -2,28 +2,27 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/src/core/di/deps.dart';
+import 'package:mobile/src/core/grpc/app_error.dart';
+import 'package:mobile/src/core/tokens/motion.dart';
+import 'package:mobile/src/features/projects/screens/projects_screen.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/project.pb.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/realtime.pb.dart'
+
     show WatchTablesEvent;
 import 'package:mobile/src/gen/openoxide/api/v1/realtime.pbenum.dart';
-import 'package:mobile/src/grpc/app_error.dart';
-import 'package:mobile/src/session/session.dart';
-import 'package:mobile/src/state/auth_controller.dart';
-import 'package:mobile/src/state/deps.dart';
-import 'package:mobile/src/ui/projects_screen.dart';
-import 'package:mobile/src/ui/tokens.dart';
 
 import '../fakes.dart';
 import 'harness.dart';
 
 /// A session already inside the first organization, which is the state the shell
-/// hands this screen: [AuthController.boot] resolves an organization before the
-/// signed-in screens make their first list call.
-Future<({AuthController controller, FakePanelApi api})> inOrganization({
+/// hands this screen: the boot resolves an organization before the signed-in
+/// screens make their first list call.
+AuthScope inOrganization({
   List<Project> projects = const [],
   Object? projectsError,
-}) async {
-  final scope = authScope(
+}) {
+  final scope = bootedScope(
     initial: const StoredSession(
       accessToken: 'access',
       refreshToken: 'refresh',
@@ -31,14 +30,13 @@ Future<({AuthController controller, FakePanelApi api})> inOrganization({
     ),
     organizations: [organization(3, 'Acme')],
     projects: projects,
-  )..api.projectsError = projectsError;
-  await scope.controller.boot();
-  expect(scope.controller.organizationId, 3);
+  );
+  scope.api.projectsError = projectsError;
   return scope;
 }
 
 /// Drives the screen the way the panel does: open the watch stream and hand back
-/// the controller a test moves a table on.
+/// the deps a test moves a table on.
 ({Deps deps, StreamController<WatchTablesEvent> ticks}) watchProjects(
   FakePanelApi api,
   Session session,
@@ -72,7 +70,7 @@ void main() {
   setUp(Motion.install);
 
   testWidgets('lays the list out at every size', (tester) async {
-    final scope = await inOrganization(
+    final scope = inOrganization(
       projects: [
         project(
           11,
@@ -84,15 +82,12 @@ void main() {
         ),
       ],
     );
-    final deps = fakeDeps(scope.api, scope.controller.session);
+    final deps = fakeDeps(scope.api, scope.session);
 
     await pumpAtSizes(
       tester,
-      () => appScope(
-        child: const ProjectsScreen(),
-        auth: scope.controller,
-        deps: deps,
-      ),
+      () =>
+          appScope(child: const ProjectsScreen(), auth: scope.bloc, deps: deps),
       finds: [find.text('alpha')],
     );
   });
@@ -100,14 +95,14 @@ void main() {
   testWidgets('counts the variables, not the characters of the blob', (
     tester,
   ) async {
-    final scope = await inOrganization(
+    final scope = inOrganization(
       projects: [project(11, 'alpha', env: 'A=1\n# a comment\n\nB=2\n')],
     );
     await tester.pumpWidget(
       appScope(
         child: const ProjectsScreen(),
-        auth: scope.controller,
-        deps: fakeDeps(scope.api, scope.controller.session),
+        auth: scope.bloc,
+        deps: fakeDeps(scope.api, scope.session),
       ),
     );
     await pumpEntrance(tester);
@@ -116,12 +111,12 @@ void main() {
   });
 
   testWidgets('an organization with no projects says so', (tester) async {
-    final scope = await inOrganization();
+    final scope = inOrganization();
     await tester.pumpWidget(
       appScope(
         child: const ProjectsScreen(),
-        auth: scope.controller,
-        deps: fakeDeps(scope.api, scope.controller.session),
+        auth: scope.bloc,
+        deps: fakeDeps(scope.api, scope.session),
       ),
     );
     await pumpEntrance(tester);
@@ -133,14 +128,14 @@ void main() {
   testWidgets('a first load that never came back offers a retry that works', (
     tester,
   ) async {
-    final scope = await inOrganization(
+    final scope = inOrganization(
       projectsError: const PanelUnreachable('no answer'),
     );
     await tester.pumpWidget(
       appScope(
         child: const ProjectsScreen(),
-        auth: scope.controller,
-        deps: fakeDeps(scope.api, scope.controller.session),
+        auth: scope.bloc,
+        deps: fakeDeps(scope.api, scope.session),
       ),
     );
     await pumpEntrance(tester);
@@ -159,12 +154,12 @@ void main() {
   testWidgets('a tick refetches, and a failed refetch keeps the rows', (
     tester,
   ) async {
-    final scope = await inOrganization(projects: [project(11, 'alpha')]);
-    final watch = watchProjects(scope.api, scope.controller.session);
+    final scope = inOrganization(projects: [project(11, 'alpha')]);
+    final watch = watchProjects(scope.api, scope.session);
     await tester.pumpWidget(
       appScope(
         child: const ProjectsScreen(),
-        auth: scope.controller,
+        auth: scope.bloc,
         deps: watch.deps,
       ),
     );

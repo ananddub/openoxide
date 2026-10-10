@@ -45,7 +45,9 @@ function usePageContextActive(): boolean {
 		seg[0] === 'settings' ||
 		seg[0] === 'infra' ||
 		seg[0] === 'Deployments' ||
-		seg[0] === 'remote-servers' ||
+		// Only a server DETAIL page owns the rail — the plain list keeps the
+		// global menu (its "Remote Servers" entry is already there).
+		(seg[0] === 'remote-servers' && /^\d+$/.test(seg[1] ?? '')) ||
 		(seg[0] === 'projects' && Boolean(seg[1]) && seg.length >= 4)
 	);
 }

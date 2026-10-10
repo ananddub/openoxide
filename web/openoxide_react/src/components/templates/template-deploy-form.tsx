@@ -180,8 +180,9 @@ function ServerSelect({
 
 /**
  * One-click deploy as a checkpoint wizard: Destination → Server → Service
- * name walk the same StepTimeline grammar as the new-server sheet, with
- * Install live in the middle and Ready closing the flow. Rendered inline as
+ * name walk the same vertical StepTimeline grammar as the new-server sheet,
+ * with Install live in the middle and Ready closing the flow.
+ * Rendered inline as
  * the third view of the panel that showed the template — no second sheet
  * stacks on top. When the panel was opened from inside a project (create
  * page / dashboard), `projectId`/`environmentId` are pinned and those
@@ -366,9 +367,7 @@ export function TemplateDeployForm({
 					steps={TIMELINE}
 					idx={activeIdx}
 					nodeState={nodeState}>
-					<div
-						key={phase === 'idle' ? `step-${stepIdx}` : phase}
-						className="animate-in duration-200 ease-out fade-in-0 slide-in-from-right-4">
+					<div key={phase === 'idle' ? `step-${stepIdx}` : phase}>
 						{installing ? (
 							<p className="flex items-center gap-2 text-xs text-muted-foreground">
 								<Loader2 className="size-3.5 animate-spin text-primary" />

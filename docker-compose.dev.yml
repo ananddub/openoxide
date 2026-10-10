@@ -16,7 +16,8 @@ services:
 
     ports:
       - "4000:4000"
-      - "51820:51820/udp"
+      # WireGuard UDP ports are published by the agent service (it runs the
+      # managed-WireGuard interfaces, wg-easy style), not the panel.
 
     cap_add:
       - NET_ADMIN
@@ -70,6 +71,10 @@ services:
       METRICS_TOKEN: "${METRICS_TOKEN:-change_me_metrics_token}"
       OPENOXIDE_LOCAL_SERVER_ID: "${OPENOXIDE_LOCAL_SERVER_ID:-0}"
       OPENOXIDE_SERVER_URL: "https://openoxide:4000"
+      # Routable address remote agents call back on (the internal
+      # SERVER_URL above only resolves on the compose network). Override
+      # per-machine via the OPENOXIDE_PUBLIC_URL env/.env.
+      OPENOXIDE_PUBLIC_URL: "${OPENOXIDE_PUBLIC_URL:-https://192.168.1.9:4000}"
 
       SOCKET_PATH: "/var/run/docker.sock"
       BUILD_MEMORY_LIMIT: "8G"
@@ -110,11 +115,27 @@ services:
     # The kernel will not setns() upward into an ancestor PID namespace, so the
     # agent has to start in the host's for the shell to see host PIDs.
     pid: host
+    # Kernel knobs for managed WireGuard inside the container (wg-easy recipe):
+    # forwarding lets the container route tunnel traffic to its host (SSH over
+    # the tunnel), src_valid_mark is the fix wg-quick normally applies itself.
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.forwarding=1
+    # Userspace-TUN fallback for WireGuard.
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    # Managed-WireGuard UDP listen ports are auto-allocated from 51820 up;
+    # publish a range so each tunnel's port reaches this host.
+    ports:
+      - "51820-51839:51820-51839/udp"
 
     networks:
       - openoxide-network
 
     volumes:
+      # WireGuard kernel module access (load wg from inside the container).
+      - /lib/modules:/lib/modules:ro
       # The agent is the host Docker executor for monitoring, compose,
       # deployment, backup and maintenance tasks.
       - /var/run/docker.sock:/var/run/docker.sock

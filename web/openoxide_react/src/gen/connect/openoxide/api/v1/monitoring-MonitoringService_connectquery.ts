@@ -57,7 +57,7 @@ export const getContainerStates =
 	MonitoringService.method.getContainerStates;
 
 /**
- * Rotate and return the agent token (plaintext once) for server_id within organization_id.
+ * @internal Rotate and return the agent token (plaintext once) for server_id within organization_id.
  *
  * @generated from rpc openoxide.api.v1.MonitoringService.CreateAgentToken
  */

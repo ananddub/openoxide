@@ -36,7 +36,7 @@ const STEP_DESCRIPTIONS: Record<string, string> = {
 	access: 'Finish the account — credentials or an email invite.',
 };
 
-/** New User / Invitation — checkpoint wizard: Account (mode + email + role) → Access, the same StepTimeline grammar as the new-server sheet. */
+/** New User / Invitation — checkpoint wizard: Account (mode + email + role) → Access, the same vertical StepTimeline grammar as the new-server sheet. */
 export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [mode, setMode] = useState<'invitation' | 'credentials'>(
@@ -126,9 +126,7 @@ export function AddInvitationModal({onSuccess}: AddInvitationModalProps) {
 					className="flex min-h-0 flex-1 flex-col">
 					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-6">
 						<StepTimeline steps={STEPS} idx={stepIdx}>
-							<div
-								key={STEPS[stepIdx].id}
-								className="animate-in duration-200 ease-out fade-in-0 slide-in-from-right-4">
+							<div key={STEPS[stepIdx].id}>
 								{stepIdx === 0 ? (
 									<div className="flex flex-col gap-4">
 										<Field label="Mode">

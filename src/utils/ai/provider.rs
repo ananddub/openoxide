@@ -27,7 +27,7 @@ impl AiProviderKind {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AiProviderConfig {
     pub api_url: String,
     pub api_key: String,

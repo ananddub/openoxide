@@ -19,7 +19,7 @@ service ServerPrivateNetworkService {
   rpc Repair(ServerPrivateNetworkRepairRequest) returns (ServerPrivateNetworkRepairResponse);
   // Tear down and re-provision the private network on a server by id.
   rpc ReSetup(ServerPrivateNetworkReSetupRequest) returns (ServerPrivateNetworkReSetupResponse);
-  // Rotate the WireGuard keys for a server's private network by id.
+  // @internal Rotate the WireGuard keys for a server's private network by id.
   rpc RotateKeys(ServerPrivateNetworkRotateKeysRequest) returns (ServerPrivateNetworkRotateKeysResponse);
   // Tear down the private-network tunnel on a server by id.
   rpc Teardown(ServerPrivateNetworkTeardownRequest) returns (Empty);

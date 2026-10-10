@@ -102,6 +102,7 @@ pub fn build_type_to_proto(s: &str) -> buffa::EnumValue<ApplicationBuildType> {
         "PAKETO_BUILDPACKS" => ApplicationBuildType::Paketo,
         "RAILPACK" => ApplicationBuildType::Railpack,
         "STATIC" => ApplicationBuildType::Static,
+        "AI_DOCKERFILE" => ApplicationBuildType::AiDockerfile,
         _ => ApplicationBuildType::Unspecified,
     }
     .into()

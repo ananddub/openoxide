@@ -153,7 +153,7 @@ export const importDatabase = DatabaseService.method.importDatabase;
 export const getConnection = DatabaseService.method.getConnection;
 
 /**
- * Rotate credentials for a database by kind and id.
+ * @internal Rotate credentials for a database by kind and id.
  *
  * @generated from rpc openoxide.api.v1.DatabaseService.RotateCredentials
  */

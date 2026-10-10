@@ -46,6 +46,7 @@ import {NotificationChannelSheet} from '#/components/settings/notifications/noti
 import {
 	DELIVERY_STATUSES,
 	NotificationDeliveriesList,
+	groupDeliveries,
 	type DeliveryStatusId,
 } from '#/components/settings/notifications/notification-deliveries';
 import {
@@ -147,12 +148,12 @@ export function NotificationsPage() {
 		[channels, providerFilter, query],
 	);
 
-	const visibleDeliveries = useMemo(
+	const visibleAlerts = useMemo(
 		() =>
-			deliveries.filter(d => {
-				if (status !== 'all' && d.status !== status) return false;
+			groupDeliveries(deliveries).filter(a => {
+				if (status !== 'all' && a.status !== status) return false;
 				if (!query) return true;
-				return `${d.title} ${d.body} ${channelName(d.notification_id)} ${d.error ?? ''}`
+				return `${a.title} ${a.body} ${channelName(a.notification_id)} ${a.error ?? ''}`
 					.toLowerCase()
 					.includes(query);
 			}),
@@ -197,8 +198,13 @@ export function NotificationsPage() {
 	const test = async (n: NotificationPayload) => {
 		setTestingId(n.id);
 		try {
-			await testMutation.mutateAsync(n.id);
-			toast.success(`Test sent to ${n.name}`);
+			const res = await testMutation.mutateAsync(n.id);
+			// The RPC resolves even when the dispatch failed — success carries the verdict.
+			if (res.success) {
+				toast.success(`Test sent to ${n.name}`);
+			} else {
+				toast.error(res.message || `Test to ${n.name} failed`);
+			}
 		} catch (err) {
 			toast.error(formatApiError(err));
 		} finally {
@@ -382,7 +388,7 @@ export function NotificationsPage() {
 				</ListRegion>
 			) : (
 				<NotificationDeliveriesList
-					rows={visibleDeliveries}
+					rows={visibleAlerts}
 					isLoading={deliveriesLoading}
 					channelName={channelName}
 					filtered={filtering}

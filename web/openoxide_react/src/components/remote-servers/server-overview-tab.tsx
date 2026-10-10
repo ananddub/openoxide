@@ -18,11 +18,13 @@ import {Skeleton} from '#/components/ui/skeleton';
 import {
 	ListCard,
 	ListEmpty,
+	RowTile,
 	SectionLabel,
 } from '#/components/settings/list-card';
 import {cn} from '#/api/utils';
 import {describeCron} from '#/utils/cron';
 import type {ServerMetricPayload} from '#/api/live/monitoring';
+import {OsGlyph} from './os-icon';
 import {
 	ConnectionRow,
 	TrendCell,
@@ -170,7 +172,16 @@ export function ServerOverviewTab({
 								value={`${latest.cpu_model || '-'} · ${latest.cpu_cores} vCPU`}
 							/>
 							<ConnectionRow
-								icon={Server}
+								tile={
+									<RowTile>
+										<OsGlyph
+											distro={latest.distro}
+											os={latest.os}
+											kernel={latest.kernel}
+											className="size-4"
+										/>
+									</RowTile>
+								}
 								label="Operating system"
 								value={latest.distro || latest.os || '-'}
 							/>

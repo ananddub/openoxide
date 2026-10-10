@@ -16,7 +16,6 @@ import {
 	Eye,
 	EyeOff,
 	Leaf,
-	Save,
 	Server as ServerIcon,
 	Wind,
 } from 'lucide-react';
@@ -24,7 +23,7 @@ import {DestinationTestButton} from '#/components/destinations/destination-test-
 import {
 	OptionRow,
 	StepBody,
-	StepCheckpoints,
+	StepTimeline,
 	WizardField,
 	type WizardStep,
 } from '#/components/shared/sheet-wizard';
@@ -108,7 +107,6 @@ export function CreateDestinationModal({
 							? 'Everything on one page — change only what you need.'
 							: stepDesc[step]}
 					</SheetDescription>
-					{!editing && <StepCheckpoints steps={STEPS} idx={stepIdx} />}
 				</SheetHeader>
 
 				<form
@@ -231,7 +229,7 @@ export function CreateDestinationModal({
 							</div>
 						</div>
 					) : (
-						<>
+						<StepTimeline steps={STEPS} idx={stepIdx}>
 							{step === 'provider' && (
 								<StepBody key="provider">
 									<div className="flex flex-col gap-2">
@@ -356,7 +354,7 @@ export function CreateDestinationModal({
 									</div>
 								</StepBody>
 							)}
-						</>
+						</StepTimeline>
 					)}
 				</form>
 
@@ -373,8 +371,8 @@ export function CreateDestinationModal({
 							form={FORM_ID}
 							disabled={f.submitting || !formReady}
 							className="h-10 gap-1.5 px-5">
-							<Save className="size-3.5" />
-							Save Changes
+							{/* <Save className="size-3.5" /> */}
+							Save
 						</Button>
 					</SheetFooter>
 				) : last ? (
@@ -398,12 +396,12 @@ export function CreateDestinationModal({
 								form={FORM_ID}
 								disabled={f.submitting || !canContinue}
 								className="h-10 gap-1.5 px-5">
-								<Save className="size-3.5" />
+								{/* <Save className="size-3.5" /> */}
 								{f.submitting
 									? 'Saving…'
 									: editingDestination
-										? 'Save Changes'
-										: 'Add Destination'}
+										? 'Save'
+										: 'Save'}
 							</Button>
 						</div>
 					</SheetFooter>

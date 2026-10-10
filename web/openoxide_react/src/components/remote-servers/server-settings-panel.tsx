@@ -1,12 +1,4 @@
-import {
-	Activity,
-	ArrowDownLeft,
-	ArrowUpRight,
-	Gauge,
-	Server,
-	RefreshCw,
-	RotateCw,
-} from 'lucide-react';
+import {Server, RefreshCw, RotateCw} from 'lucide-react';
 import {useState} from 'react';
 import {toast} from 'sonner';
 import {Sheet, SheetContent, SheetHeader} from '#/components/ui/sheet';
@@ -24,79 +16,17 @@ import {
 	useReinstallAgent,
 	useRestartAgent,
 } from '#/api/live/monitoring';
-import {TrendCell, formatGb} from './server-detail-parts';
-import {SetupServerContent} from './setup-server-content';
+import {OsGlyph} from './os-icon';
+import {LiveVitals, useLiveMetrics} from './live-vitals';
+import {
+	GpuSetupContent,
+	SetupRunContent,
+	SetupValidationContent,
+} from './setup-server-content';
+import {PrivateNetworkCard} from './private-network/network-card';
 import {UsageRing} from '#/components/projects/compose/detail/cards/architecture-usage-rings';
 
 import type {RemoteServerResponse} from '#/types/api-helpers';
-import type {ServerMetricPayload} from '#/api/live/monitoring';
-
-/** "avg 34% · peak 71%" over the sample window. */
-function windowNote(values: number[]): string | undefined {
-	if (values.length < 2) return undefined;
-	const avg = values.reduce((a, b) => a + b, 0) / values.length;
-	return `avg ${Math.round(avg)}% · peak ${Math.round(Math.max(...values))}%`;
-}
-
-/** Agent ships cumulative MB since boot; sample deltas give an MB/s rate. */
-function formatRate(mbPerSec: number): string {
-	if (mbPerSec >= 1024) return `${(mbPerSec / 1024).toFixed(2)} GB/s`;
-	if (mbPerSec < 1) return `${Math.round(mbPerSec * 1024)} KB/s`;
-	return `${mbPerSec.toFixed(2)} MB/s`;
-}
-
-function sampleSeconds(m: ServerMetricPayload): number | null {
-	if (m.timestamp === undefined) return null;
-	const n = Number(m.timestamp);
-	if (!Number.isFinite(n) || n <= 0) return null;
-	return n < 1e11 ? n : n / 1000;
-}
-
-/** Rate over the last two chronological samples. Counter resets (agent
- * restart, NIC swap) show as a decrease, so they read as unknown. */
-function rateBetween(
-	chronological: ServerMetricPayload[],
-	key: 'network_in' | 'network_out',
-): number | null {
-	const cur = chronological.at(-1);
-	const prev = chronological.at(-2);
-	if (!cur || !prev) return null;
-	const ts = sampleSeconds(cur);
-	const pts = sampleSeconds(prev);
-	if (ts === null || pts === null) return null;
-	const dt = ts - pts;
-	if (dt <= 0) return null;
-	const delta = Number(cur[key]) - Number(prev[key]);
-	if (!Number.isFinite(delta) || delta < 0) return null;
-	return delta / dt;
-}
-
-function NetworkCell({
-	icon: Icon,
-	label,
-	rate,
-	totalMb,
-}: {
-	icon: typeof ArrowDownLeft;
-	label: string;
-	rate: number | null;
-	totalMb: number;
-}) {
-	return (
-		<div className="flex flex-col gap-1.5 bg-card px-4 py-4">
-			<span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-				<Icon className="size-3.5" strokeWidth={2} />
-				{label}
-			</span>
-			<p className="text-lg leading-none font-semibold text-foreground tabular-nums">
-				{rate === null ? '—' : formatRate(rate)}
-			</p>
-			<p className="text-[11px] text-muted-foreground tabular-nums">
-				{formatGb(totalMb / 1024)} since boot
-			</p>
-		</div>
-	);
-}
 
 /**
  * Server sheet opened by clicking a row: live vitals from the agent on the
@@ -113,6 +43,10 @@ export function ServerSettingsPanel({
 }) {
 	const serverId = isOpen && server ? BigInt(server.id) : null;
 	const metricsQuery = useServerMetrics(serverId);
+	// Live graphs sample the agent from the panel itself — the stored
+	// history is too sparse for anything drawn on a 15s cadence.
+	const {samples: liveSamples, latest: liveLatest} =
+		useLiveMetrics(serverId);
 	const reinstall = useReinstallAgent();
 	const restart = useRestartAgent();
 	const [busy, setBusy] = useState<'update' | 'restart' | null>(null);
@@ -140,22 +74,25 @@ export function ServerSettingsPanel({
 	const isActive =
 		(server.server_status || 'INACTIVE').toUpperCase() === 'ACTIVE';
 	const host = serverHostLabel(server.ip_address);
-	const samples = metricsQuery.data ?? [];
-	const latest = samples[0];
-	// Agent hands over newest-first; trends read left → right in time order.
-	const chronological = [...samples].reverse();
-	const cpuSeries = chronological.map(m => Number(m.cpu) || 0);
-	const memSeries = chronological.map(m => Number(m.mem_used) || 0);
-	const rateIn = rateBetween(chronological, 'network_in');
-	const rateOut = rateBetween(chronological, 'network_out');
+	// Rings read the live sample first, stored history until the first one lands.
+	const latest = liveLatest ?? (metricsQuery.data ?? [])[0];
 
 	return (
 		<Sheet open={isOpen} onOpenChange={open => !open && onClose()}>
-			<SheetContent className="sm:data-[side=right]:w-[560px]">
+			<SheetContent className="sm:data-[side=right]:w-[720px]">
 				<SheetHeader className="border-b">
 					<div className="flex items-center gap-3">
 						<span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-							<Server className="size-5" />
+							{latest ? (
+								<OsGlyph
+									distro={latest.distro}
+									os={latest.os}
+									kernel={latest.kernel}
+									className="size-5"
+								/>
+							) : (
+								<Server className="size-5" />
+							)}
 						</span>
 						<div className="min-w-0 flex-1 text-start">
 							<div className="flex min-w-0 items-center gap-2">
@@ -189,7 +126,10 @@ export function ServerSettingsPanel({
 					<Tabs defaultValue="vitals" className="min-h-0 flex-1 gap-4">
 						<TabsList className="w-full">
 							<TabsTrigger value="vitals">Vitals</TabsTrigger>
+							<TabsTrigger value="network">Private Network</TabsTrigger>
 							<TabsTrigger value="setup">Setup</TabsTrigger>
+							<TabsTrigger value="validation">Validation</TabsTrigger>
+							<TabsTrigger value="gpu">GPU</TabsTrigger>
 						</TabsList>
 						<TabsContent
 							value="vitals"
@@ -232,41 +172,9 @@ export function ServerSettingsPanel({
 							</SheetGroup>
 
 							<SheetGroup
-								title="Network"
-								description="Agent reports cumulative traffic; the rate comes from the delta between the two newest samples.">
-								<div className="grid shrink-0 grid-cols-2 gap-px overflow-hidden rounded-xl border bg-border">
-									<NetworkCell
-										icon={ArrowDownLeft}
-										label="In"
-										rate={rateIn}
-										totalMb={latest?.network_in ?? 0}
-									/>
-									<NetworkCell
-										icon={ArrowUpRight}
-										label="Out"
-										rate={rateOut}
-										totalMb={latest?.network_out ?? 0}
-									/>
-								</div>
-							</SheetGroup>
-
-							<SheetGroup
-								title="Trends"
-								description="Recent history reported by the agent.">
-								<div className="grid shrink-0 grid-cols-1 gap-px overflow-hidden rounded-xl border bg-border">
-									<TrendCell
-										icon={Activity}
-										label="CPU load"
-										values={cpuSeries}
-										meta={windowNote(cpuSeries)}
-									/>
-									<TrendCell
-										icon={Gauge}
-										label="Memory used"
-										values={memSeries}
-										meta={windowNote(memSeries)}
-									/>
-								</div>
+								title="Live"
+								description="Sampled by this panel every 2s — the graph starts drawing from the first two points.">
+								<LiveVitals samples={liveSamples} />
 							</SheetGroup>
 
 							<SheetGroup
@@ -311,10 +219,30 @@ export function ServerSettingsPanel({
 							</SheetGroup>
 						</TabsContent>
 
+						{/* Only mounted once opened, so the panel does not
+						    fetch a network config nobody asked for. */}
+						<TabsContent
+							value="network"
+							className="flex min-h-0 flex-1 flex-col">
+							<PrivateNetworkCard server={server} />
+						</TabsContent>
+
 						<TabsContent
 							value="setup"
 							className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-							<SetupServerContent server={server} />
+							<SetupRunContent server={server} />
+						</TabsContent>
+
+						<TabsContent
+							value="validation"
+							className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+							<SetupValidationContent server={server} />
+						</TabsContent>
+
+						<TabsContent
+							value="gpu"
+							className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+							<GpuSetupContent server={server} />
 						</TabsContent>
 					</Tabs>
 				</div>

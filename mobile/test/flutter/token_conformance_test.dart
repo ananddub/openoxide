@@ -42,7 +42,7 @@ void main() {
     // that re-declares it is a fourth teal the app does not want. The log
     // palette in `lib/src/logs` is excluded — those are eleven phase hues
     // matching the web's, not the app's chrome.
-    final ui = Directory('lib/src/ui')
+    final ui = Directory('lib/src/core/theme')
         .listSync(recursive: true)
         .whereType<File>()
         .where((f) => f.path.endsWith('.dart'));
@@ -51,11 +51,9 @@ void main() {
         if (file.readAsStringSync().contains(_teal)) _basename(file.path),
     ];
 
-    expect(
-      offenders,
-      ['tokens.dart'],
-      reason: '$_teal may only appear in the colour tokens',
-    );
+    expect(offenders, [
+      'openoxide_colors.dart',
+    ], reason: '$_teal may only appear in the colour tokens');
   });
 
   test('the guard fails on exactly what it claims to own', () {
@@ -98,17 +96,29 @@ void main() {
   });
 }
 
-_Source _ui(String body) => _Source('lib/src/ui/probe_screen.dart', body);
+_Source _ui(String body) => _Source('lib/src/core/ui/probe_screen.dart', body);
 
 const _teal = '0xFF0D9488';
 
 /// Files that may name any value, because they are the definitions.
-const _owners = {'tokens.dart', 'theme.dart'};
+const _owners = {
+  'spacing.dart',
+  'radii.dart',
+  'layout.dart',
+  'mark.dart',
+  'fonts.dart',
+  'motion.dart',
+  'openoxide_colors.dart',
+  'app_theme.dart',
+  'control_styles.dart',
+  'log_colors.dart',
+  'phase_colors.dart',
+};
 
 /// Sites where a raw alpha is the right expression: a status tint derived from
 /// whichever status it is, which no token can pre-bake. Extending this map is
 /// how a new legitimate case gets admitted; deleting this test is not.
-const _derivedAlpha = {'health_screen.dart'};
+const _derivedAlpha = {'container_chip.dart', 'status_notices.dart'};
 
 /// Match any call's opening, then inspect its own argument list for a number —
 /// however the call is wrapped across lines.
@@ -150,7 +160,7 @@ class _Source {
   final String text;
 
   bool get isOwner => _owners.contains(_basename(path));
-  bool get isUi => path.contains('/src/ui/');
+  bool get isUi => path.contains('/src/core/ui/');
   bool get allowsDerivedAlpha => _derivedAlpha.contains(_basename(path));
 
   late final List<int> _lineStarts = () {
@@ -196,12 +206,32 @@ String _normalise(String path) => path.replaceAll(r'\', '/');
 List<_Problem> _problemsIn(_Source source) {
   if (source.isOwner) return const [];
   final problems = <_Problem>[
-    ..._scan(source, RegExp(r'Color\(0x'), 'raw colour — use context.ox or a theme role'),
-    ..._scan(source, RegExp(r'\bfontSize: *-?\d'), 'font size — use a text style or Fonts'),
-    ..._scan(source, RegExp(r'\bheight: *-?\d*\.\d'), 'line height — belongs in Fonts'),
-    ..._scan(source, RegExp(r'withOpacity\('), 'withOpacity is deprecated and names a raw alpha'),
+    ..._scan(
+      source,
+      RegExp(r'Color\(0x'),
+      'raw colour — use context.ox or a theme role',
+    ),
+    ..._scan(
+      source,
+      RegExp(r'\bfontSize: *-?\d'),
+      'font size — use a text style or Fonts',
+    ),
+    ..._scan(
+      source,
+      RegExp(r'\bheight: *-?\d*\.\d'),
+      'line height — belongs in Fonts',
+    ),
+    ..._scan(
+      source,
+      RegExp(r'withOpacity\('),
+      'withOpacity is deprecated and names a raw alpha',
+    ),
     if (!source.allowsDerivedAlpha) //
-      ..._scan(source, RegExp(r'withValues\(alpha:'), 'raw alpha — take a colour token'),
+      ..._scan(
+        source,
+        RegExp(r'withValues\(alpha:'),
+        'raw alpha — take a colour token',
+      ),
     for (final rule in _calls)
       if (!rule.uiOnly || source.isUi) ..._scanCalls(source, rule),
   ];

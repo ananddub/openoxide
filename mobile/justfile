@@ -1,0 +1,63 @@
+# ── Mobile (Flutter) ─────────────────────────────────────────────────────────
+#
+# The panel's dev stack serves a TLS certificate issued for `localhost` only,
+# while the emulator reaches the host machine as `10.0.2.2` — so every dev run
+# needs the two defines in DEV_DEFINES or the boot gate answers with
+# CERTIFICATE_VERIFY_FAILED. `just run` carries them by default; a release
+# build compiles the bypass out entirely, so it needs no flag and accepts only
+# a pinned certificate.
+
+# Emulator serial, as `flutter devices` prints it. Override for a physical
+# phone: just run DEVICE=<id>
+EMULATOR := "emulator-5554"
+DEVICE := EMULATOR
+
+# Host + port of the panel's gRPC listener, as the emulator routes to it.
+PANEL_URL := "10.0.2.2"
+PANEL_PORT := "4000"
+
+# Dev-only certificate bypass; folds to `false` in release builds.
+DEV_DEFINES := "--dart-define=PANEL_URL=" + PANEL_URL + " --dart-define=PANEL_PORT=" + PANEL_PORT + " --dart-define=DEV_ALLOW_ANY_CERT=true"
+
+
+# List the recipes.
+default:
+    @just --list
+
+# Run on the emulator with the dev defines.
+run DEVICE=EMULATOR:
+    flutter run -d {{DEVICE}} {{DEV_DEFINES}}
+
+# Run and print the Dart Tooling Daemon address for the dart MCP tools.
+dtd DEVICE=EMULATOR:
+    flutter run -d {{DEVICE}} --print-dtd {{DEV_DEFINES}}
+
+# Run against a physical phone instead of the emulator.
+device DEVICE:
+    just run {{DEVICE}}
+
+# Analyzer, then mechanical lint fixes, then analyzer again.
+check:
+    flutter analyze
+    dart fix --apply
+    flutter analyze
+
+# Full test suite (state, logs, grpc, ui, and the widget/layout suites).
+test:
+    flutter test
+
+# Regenerate the gRPC stubs into lib/src/gen after a proto/ change.
+gen:
+    cd .. && buf generate --path proto/openoxide/api/v1 --template mobile/buf.gen.dart.yaml
+
+# Rebuild the bundled Inter + JetBrains Mono subsets (committed output).
+fonts:
+    sh tool/build-fonts.sh
+
+# Debug APK with the dev defines baked in.
+apk:
+    flutter build apk --debug {{DEV_DEFINES}}
+
+# Release APK: the certificate bypass is compiled out of release builds.
+apk-release:
+    flutter build apk --release

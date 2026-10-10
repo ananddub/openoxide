@@ -2,7 +2,14 @@ import 'dart:async';
 
 import 'package:fixnum/fixnum.dart';
 import 'package:grpc/grpc.dart' show ClientChannel;
-import 'package:mobile/src/api/panel_api.dart';
+import 'package:mobile/src/core/api/panel_api.dart';
+import 'package:mobile/src/core/di/deps.dart';
+import 'package:mobile/src/core/grpc/app_error.dart';
+import 'package:mobile/src/core/grpc/auth_coordinator.dart';
+import 'package:mobile/src/core/grpc/auth_retry.dart';
+import 'package:mobile/src/core/realtime/realtime_watch.dart';
+import 'package:mobile/src/core/session/session.dart';
+import 'package:mobile/src/features/auth/bloc/auth_bloc.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/auth.pb.dart' show SetupStatus;
 import 'package:mobile/src/gen/openoxide/api/v1/deployment.pb.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/monitoring.pb.dart';
@@ -10,37 +17,40 @@ import 'package:mobile/src/gen/openoxide/api/v1/organization.pb.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/overview.pb.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/project.pb.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/realtime.pb.dart'
+
     show WatchTablesEvent;
 import 'package:mobile/src/gen/openoxide/api/v1/remote_server.pb.dart';
-import 'package:mobile/src/grpc/app_error.dart';
-import 'package:mobile/src/grpc/auth_coordinator.dart';
-import 'package:mobile/src/grpc/auth_retry.dart';
-import 'package:mobile/src/session/session.dart';
-import 'package:mobile/src/state/auth_controller.dart';
-import 'package:mobile/src/state/deps.dart';
-import 'package:mobile/src/state/realtime_watch.dart';
+
+export 'package:mobile/src/core/realtime/realtime_watch.dart';
+export 'package:mobile/src/core/session/session.dart';
+export 'package:mobile/src/features/auth/bloc/auth_bloc.dart';
 
 /// One login the screen asked for, exactly as it was sent.
-typedef SignInAttempt = ({String email, String password, String? twoFactorCode});
+typedef SignInAttempt = ({
+  String email,
+  String password,
+  String? twoFactorCode,
+});
 
 /// The panel, replaced by a function the test controls.
 ///
 /// It subclasses the real [PanelApi] rather than inventing an interface because
-/// the screens — and [AuthController] — are written against it, and only the
-/// calls a test actually exercises are intercepted. Anything the fake has no
-/// answer for throws instead of quietly reaching a socket, so a test that asks a
-/// question the fake was not told about fails loudly rather than hanging.
+/// the screens — and [AuthBloc] — are written against it, and only the calls a
+/// test actually exercises are intercepted. Anything the fake has no answer for
+/// throws instead of quietly reaching a socket, so a test that asks a question
+/// the fake was not told about fails loudly rather than hanging.
 class FakePanelApi extends PanelApi {
   FakePanelApi._(Session session, ClientChannel channel)
-    : super(session: session, calls: _neverRefreshes(session), channel: channel);
+    : super(
+        session: session,
+        calls: _neverRefreshes(session),
+        channel: channel,
+      );
 
   factory FakePanelApi.attached(Session session) =>
       FakePanelApi._(session, _deadChannel);
 
-  static final ClientChannel _deadChannel = ClientChannel(
-    '127.0.0.1',
-    port: 1,
-  );
+  static final ClientChannel _deadChannel = ClientChannel('127.0.0.1', port: 1);
 
   final List<SignInAttempt> attempts = [];
 
@@ -155,7 +165,9 @@ class FakePanelApi extends PanelApi {
     final error = detailError;
     if (error != null) throw error;
     final row = projectRow;
-    if (row == null) throw StateError('the fake panel has no project to return');
+    if (row == null) {
+      throw StateError('the fake panel has no project to return');
+    }
     return row;
   }
 
@@ -173,7 +185,9 @@ class FakePanelApi extends PanelApi {
     int organizationId,
   ) async {
     final error = detailError;
-    if (error != null) throw error;
+    if (error != null) {
+      throw error;
+    }
     return OverviewListOrganizationDomainsResponse(domains: domains);
   }
 
@@ -223,7 +237,8 @@ class FakePanelApi extends PanelApi {
   }
 
   @override
-  Stream<DeploymentEvent> streamDeploymentLogs(int deploymentId) => _logStream();
+  Stream<DeploymentEvent> streamDeploymentLogs(int deploymentId) =>
+      _logStream();
 
   @override
   Stream<DeploymentEvent> streamServiceLogs({
@@ -300,7 +315,8 @@ OverviewServiceItem serviceItem(
   String status = 'running',
   int serverId = 5,
   String serverName = 'build-01',
-  OverviewServiceType serviceType = OverviewServiceType.OVERVIEW_SERVICE_TYPE_APP,
+  OverviewServiceType serviceType =
+      OverviewServiceType.OVERVIEW_SERVICE_TYPE_APP,
 }) => OverviewServiceItem(
   id: Int64(id),
   name: name,
@@ -337,7 +353,8 @@ RemoteServer remoteServer(
   int id,
   String name, {
   String ipAddress = '10.0.0.4',
-  RemoteServerStatus serverStatus = RemoteServerStatus.REMOTE_SERVER_STATUS_ACTIVE,
+  RemoteServerStatus serverStatus =
+      RemoteServerStatus.REMOTE_SERVER_STATUS_ACTIVE,
 }) => RemoteServer(
   id: Int64(id),
   name: name,
@@ -366,11 +383,8 @@ MonitoringServerMetric serverMetric({
 MonitoringContainerState containerState(
   String name, {
   String state = 'running',
-}) => MonitoringContainerState(
-  containerId: 'c-$name',
-  name: name,
-  state: state,
-);
+}) =>
+    MonitoringContainerState(containerId: 'c-$name', name: name, state: state);
 
 /// A deployment row, [ageSeconds] old.
 ///
@@ -407,8 +421,18 @@ Deployment deployment(
 DeploymentEvent logLine(String payload, {String stage = ''}) =>
     DeploymentEvent(type: stage, payload: payload);
 
-/// The controller under test, wired to the fake panel.
-({AuthController controller, FakePanelApi api}) authScope({
+/// The scope a screen under test runs in: the bloc the UI reads, the fake
+/// panel behind it, and the session both share.
+final class AuthScope {
+  AuthScope(this.bloc, this.api, this.session);
+
+  final AuthBloc bloc;
+  final FakePanelApi api;
+  final Session session;
+}
+
+/// A bloc wired to the fake panel, not yet booted.
+AuthScope authScope({
   StoredSession? initial,
   List<Organization> organizations = const [],
   List<Project> projects = const [],
@@ -417,7 +441,26 @@ DeploymentEvent logLine(String payload, {String stage = ''}) =>
   final api = FakePanelApi.attached(session)
     ..organizations = organizations
     ..projects = projects;
-  return (controller: AuthController(session: session, api: api), api: api);
+  return AuthScope(AuthBloc(session: session, api: api), api, session);
+}
+
+/// A scope whose boot has been requested but not yet run.
+///
+/// Inside a widget test pending futures only advance on `tester.pump`, so the
+/// tests pump first and assert on the settled state afterwards; nothing here
+/// awaits.
+AuthScope bootedScope({
+  StoredSession? initial,
+  List<Organization> organizations = const [],
+  List<Project> projects = const [],
+}) {
+  final scope = authScope(
+    initial: initial,
+    organizations: organizations,
+    projects: projects,
+  );
+  scope.bloc.add(const AuthBootRequested());
+  return scope;
 }
 
 /// A [Deps] for screens that read it. The channel is a socket address no test
@@ -425,12 +468,15 @@ DeploymentEvent logLine(String payload, {String stage = ''}) =>
 ///
 /// `ticks` is what the watch stream yields, so a test can move a table exactly
 /// the way the panel does and see the screen refetch. Leaving it out means a
-/// stream that never emits and, since nothing calls [RealtimeWatch.start] either,
-/// no reconnect timer that can outlive a test.
-Deps fakeDeps(FakePanelApi api, Session session, {Stream<WatchTablesEvent>? ticks}) =>
-    Deps(
-      session: session,
-      api: api,
-      realtime: RealtimeWatch(open: () => ticks ?? const Stream<Never>.empty()),
-      channel: ClientChannel('127.0.0.1', port: 1),
-    );
+/// stream that never emits and, since nothing calls [RealtimeWatch.start]
+/// either, no reconnect timer that can outlive a test.
+Deps fakeDeps(
+  FakePanelApi api,
+  Session session, {
+  Stream<WatchTablesEvent>? ticks,
+}) => Deps(
+  session: session,
+  api: api,
+  realtime: RealtimeWatch(open: () => ticks ?? const Stream<Never>.empty()),
+  channel: ClientChannel('127.0.0.1', port: 1),
+);

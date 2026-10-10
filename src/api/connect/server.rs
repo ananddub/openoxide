@@ -157,7 +157,14 @@ async fn dispatch(
         outcome
             .map(|response| response.map(box_connect_body))
             .unwrap_or_else(|error| match error {})
-    } else if uri.path().starts_with("/api/") {
+    } else if uri.path() == "/mcp" {
+        mcp_response(request).await
+    		} else if uri.path() == "/git-providers/github/manifest/callback" {
+    			// GitHub App manifest flow: the browser lands here with ?code= after
+    			// creating the app on GitHub — exchange it, store the provider, and
+    			// send the user back to the git providers page.
+    			github_manifest_callback(&uri).await
+    		} else if uri.path().starts_with("/api/") {
         // The legacy REST surface was fully retired: every former `/api/*`
         // consumer now streams through ConnectRPC. 404 explicitly so stale
         // clients fail fast instead of silently getting the SPA shell.
@@ -213,6 +220,63 @@ async fn dispatch(
     response
 }
 
+/// MCP Streamable-HTTP endpoint: a single JSON-RPC request in, a JSON-RPC
+/// response (or 204 for notifications) out. The caller's `Authorization` +
+/// `x-organization-id` headers are forwarded so each `tools/call` runs under
+/// their identity through the same in-process dispatch the assistant uses.
+async fn mcp_response(request: Request<Incoming>) -> Response<ResponseBody> {
+    let (parts, body) = request.into_parts();
+    let authorization = parts
+        .headers
+        .get("authorization")
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_owned);
+    let organization = parts
+        .headers
+        .get("x-organization-id")
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_owned);
+
+    let bytes = match body.collect().await {
+        Ok(c) => c.to_bytes(),
+        Err(_) => {
+            return json_response(
+                400,
+                br#"{"jsonrpc":"2.0","id":null,"error":{"code":-32600,"message":"could not read request body"}}"#
+                    .to_vec(),
+            );
+        }
+    };
+
+    let result = crate::api::mcp::handle_jsonrpc(
+        &bytes,
+        authorization.as_deref(),
+        organization.as_deref(),
+    )
+    .await;
+
+    match result {
+        // Notifications produce no body.
+        None => Response::builder()
+            .status(202)
+            .body(Full::<Bytes>::default().map_err(|e| match e {}).boxed_unsync())
+            .expect("static 202 response is always valid"),
+        Some(value) => {
+            let payload = serde_json::to_vec(&value)
+                .unwrap_or_else(|_| b"{\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{\"code\":-32603,\"message\":\"encode error\"}}".to_vec());
+            json_response(200, payload)
+        }
+    }
+}
+
+fn json_response(status: u16, body: Vec<u8>) -> Response<ResponseBody> {
+    Response::builder()
+        .status(status)
+        .header("content-type", "application/json")
+        .body(Full::new(Bytes::from(body)).map_err(|e| match e {}).boxed_unsync())
+        .expect("json response is always valid")
+}
+
 fn apply_cors_headers(headers: &mut HeaderMap) {
     use hyper::header::{
         ACCESS_CONTROL_ALLOW_HEADERS, ACCESS_CONTROL_ALLOW_METHODS, ACCESS_CONTROL_ALLOW_ORIGIN,
@@ -241,5 +305,129 @@ fn preflight() -> Response<ResponseBody> {
 }
 
 fn box_connect_body(body: ConnectRpcBody) -> ResponseBody {
-    body.map_err(|error| match error {}).boxed_unsync()
+	body.map_err(|error| match error {}).boxed_unsync()
+}
+
+/// GitHub App manifest callback: `POST {api}/app-manifests/{code}/conversions`
+/// turns the temporary code into the app's credentials; we persist them as a
+/// GITHUB git provider and redirect the browser back to the providers page.
+async fn github_manifest_callback(uri: &hyper::Uri) -> Response<ResponseBody> {
+	use crate::services::integrations::git::{CreateProvider, GitProviderService, ProviderCredentials};
+
+	let fail = |message: &str| -> Response<ResponseBody> {
+		json_response(
+			400,
+			format!("{{\"code\":\"github_manifest\",\"message\":{}}}", serde_json::to_string(message).unwrap_or_default()).into_bytes(),
+		)
+	};
+
+	let query: std::collections::HashMap<String, String> = url::form_urlencoded::parse(
+		uri.query().unwrap_or_default().as_bytes(),
+	)
+	.map(|(key, value)| (key.into_owned(), value.into_owned()))
+	.collect();
+
+	let Some(code) = query.get("code").filter(|value| !value.is_empty()) else {
+		return fail("missing manifest code");
+	};
+	let Some(organization_id) = query
+		.get("organization_id")
+		.and_then(|value| value.parse::<i64>().ok())
+	else {
+		return fail("missing organization_id");
+	};
+	let github_base = query
+		.get("gh")
+		.map(|value| value.trim_end_matches('/').to_string())
+		.filter(|value| !value.is_empty())
+		.unwrap_or_else(|| "https://github.com".to_string());
+	let api_base = if github_base == "https://github.com" {
+		"https://api.github.com".to_string()
+	} else {
+		format!("{github_base}/api/v3")
+	};
+
+	#[derive(serde::Deserialize)]
+	struct Conversion {
+		id: i64,
+		slug: Option<String>,
+		name: Option<String>,
+		client_id: Option<String>,
+		client_secret: Option<String>,
+		// GitHub's webhook_secret is ignored — the panel issues its own per-provider secret.
+		pem: Option<String>,
+	}
+
+	let response = match reqwest::Client::new()
+		.post(format!("{api_base}/app-manifests/{code}/conversions"))
+		.header("accept", "application/vnd.github+json")
+		.header("user-agent", "openoxide")
+		.send()
+		.await
+	{
+		Ok(response) => response,
+		Err(error) => {
+			tracing::error!(%error, "GitHub manifest exchange request failed");
+			return fail("could not reach GitHub");
+		}
+	};
+	if !response.status().is_success() {
+		let status = response.status();
+		let body = response.text().await.unwrap_or_default();
+		tracing::error!(%status, %body, "GitHub manifest exchange rejected");
+		return fail("GitHub rejected the manifest code");
+	}
+	let conversion: Conversion = match response.json().await {
+		Ok(conversion) => conversion,
+		Err(error) => {
+			tracing::error!(%error, "GitHub manifest exchange returned unreadable JSON");
+			return fail("could not read GitHub's response");
+		}
+	};
+
+	let service = match auto_di::resolve::<GitProviderService>().await {
+		Ok(service) => service,
+		Err(error) => {
+			tracing::error!(%error, "git provider service unavailable");
+			return fail("git provider service unavailable");
+		}
+	};
+	let app_name = conversion
+		.slug
+		.clone()
+		.or_else(|| conversion.name.clone())
+		.unwrap_or_else(|| "github-app".to_string());
+	let created = service
+		.create(
+			CreateProvider {
+				name: conversion.name.unwrap_or_else(|| app_name.clone()),
+				shared: false,
+				credentials: ProviderCredentials::Github {
+					app_name: Some(app_name),
+					app_id: Some(conversion.id),
+					client_id: conversion.client_id,
+					client_secret: conversion.client_secret,
+					installation_id: None,
+					private_key: conversion.pem,
+				},
+			},
+			organization_id,
+		)
+		.await;
+
+	match created {
+		Ok(_) => Response::builder()
+			.status(302)
+			.header("location", "/git-providers")
+			.body(
+				Full::<Bytes>::default()
+					.map_err(|error| match error {})
+					.boxed_unsync(),
+			)
+			.expect("static 302 response is always valid"),
+		Err(error) => {
+			tracing::error!(%error, "could not store the GitHub provider");
+			fail("could not store the GitHub provider")
+		}
+	}
 }

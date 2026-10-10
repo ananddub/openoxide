@@ -31,6 +31,15 @@ fn map_db_error(err: sqlx::Error) -> ConnectError {
             tracing::warn!(error = %e.message(), "unique constraint violation");
             ConnectError::new(ErrorCode::AlreadyExists, e.message())
         }
+        // Domain validation surfaces as a Protocol error carrying a
+        // user-facing message (e.g. "listen port is required"). Those are
+        // bad input, not DB failures — return the real message as
+        // invalid_argument (400) instead of a generic "database operation
+        // failed" 500 that hides the actual reason from the user.
+        sqlx::Error::Protocol(message) => {
+            tracing::warn!(%message, "private network validation rejected");
+            ConnectError::invalid_argument(message.clone())
+        }
         other => {
             tracing::error!(error = %other, "server private network database operation failed");
             ConnectError::new(ErrorCode::Internal, "database operation failed")

@@ -135,7 +135,7 @@ impl Queries {
         params: &ServerPrivateNetworksInsertParams,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "INSERT INTO server_private_networks (server_id, connection_mode, provider, private_host, tunnel_address, public_key, endpoint, listen_port, persistent_keepalive, dns_name, routes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+            "INSERT INTO server_private_networks (server_id, connection_mode, provider, private_host, tunnel_address, public_key, endpoint, listen_port, persistent_keepalive, dns_name, routes, status, config_version, health_status, consecutive_failures, rotation_state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'UNKNOWN', 0, 'IDLE');"
         )
         .bind(params.server_id)
         .bind(&params.connection_mode)

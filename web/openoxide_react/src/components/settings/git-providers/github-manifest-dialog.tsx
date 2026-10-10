@@ -1,5 +1,6 @@
 import {useState} from 'react';
 import {GithubIcon} from '#/components/icons/data-tools-icons';
+import {useActiveOrgId} from '#/api/live';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
 import {
@@ -30,9 +31,16 @@ export function GithubManifestDialog({
 			: '';
 	});
 
+	const orgId = useActiveOrgId();
 	const githubCallbackBaseUrl = getGithubCallbackBaseUrl();
 	const randomSuffix = Math.random().toString(36).slice(2, 6);
 	const appName = `OpenOxide-${new Date().toISOString().slice(0, 10)}-${randomSuffix}`;
+	const cleanBase = githubUrl.replace(/\/$/, '');
+	// The panel's HTTP callback (server.rs) exchanges the manifest code and
+	// stores the provider for this org, then redirects to /git-providers.
+	const callbackUrl =
+		`${githubCallbackBaseUrl}/git-providers/github/manifest/callback` +
+		`?organization_id=${orgId}&gh=${encodeURIComponent(cleanBase)}`;
 
 	const manifest = JSON.stringify({
 		name: appName,
@@ -40,10 +48,8 @@ export function GithubManifestDialog({
 		hook_attributes: {
 			url: hookUrl.trim(),
 		},
-		redirect_url: `${githubCallbackBaseUrl}/git-providers/github/manifest/callback`,
-		callback_urls: [
-			`${githubCallbackBaseUrl}/git-providers/github/manifest/callback`,
-		],
+		redirect_url: callbackUrl,
+		callback_urls: [callbackUrl],
 		public: false,
 		request_oauth_on_install: true,
 		default_permissions: {
@@ -55,7 +61,6 @@ export function GithubManifestDialog({
 		default_events: ['push', 'pull_request'],
 	});
 
-	const cleanBase = githubUrl.replace(/\/$/, '');
 	const targetAction = orgName.trim()
 		? `${cleanBase}/organizations/${orgName.trim()}/settings/apps/new`
 		: `${cleanBase}/settings/apps/new`;
@@ -102,6 +107,12 @@ export function GithubManifestDialog({
 							GitHub must reach this URL over public HTTPS. Localhost and
 							private IPs are rejected.
 						</p>
+						{!hookIsValid && (
+							<p className="text-[11px] font-medium text-amber-600 dark:text-amber-500">
+								Enter a public HTTPS webhook URL above to enable “Continue
+								on GitHub”.
+							</p>
+						)}
 					</div>
 
 					<div className="space-y-1.5">

@@ -20,7 +20,7 @@ service MonitoringService {
   rpc GetContainerMetrics(MonitoringGetContainerMetricsRequest) returns (MonitoringGetContainerMetricsResponse);
   // Get current container states (running/exited, compose project/service) for a server by server_id.
   rpc GetContainerStates(MonitoringGetContainerStatesRequest) returns (MonitoringGetContainerStatesResponse);
-  // Rotate and return the agent token (plaintext once) for server_id within organization_id.
+  // @internal Rotate and return the agent token (plaintext once) for server_id within organization_id.
   rpc CreateAgentToken(MonitoringCreateAgentTokenRequest) returns (MonitoringCreateAgentTokenResponse);
   // Get agent status (MonitoringAgentState: ONLINE/OFFLINE/NEVER_SEEN, last seen, version) for a server by server_id.
   rpc GetAgentStatus(MonitoringGetAgentStatusRequest) returns (MonitoringGetAgentStatusResponse);

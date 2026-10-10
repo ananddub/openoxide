@@ -4,7 +4,6 @@ import {ArrowLeft, FolderOpen} from 'lucide-react';
 import {Titlebar} from '#/components/shared/titlebar';
 import {Button} from '#/components/ui/button';
 import {
-	StepBody,
 	StepCheckpoints,
 	type WizardStep,
 } from '#/components/shared/sheet-wizard';
@@ -70,7 +69,9 @@ function CreateServicePage() {
 
 			<StepCheckpoints steps={STEPS} idx={idx} />
 
-			<StepBody key={step}>
+			<div
+				key={step}
+				className="animate-in duration-200 ease-out fade-in-0 slide-in-from-right-4">
 				{step === 'type' ? (
 					<div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
 						<div className="space-y-1">
@@ -114,7 +115,7 @@ function CreateServicePage() {
 						</div>
 					</div>
 				)}
-			</StepBody>
+			</div>
 
 			<TemplateGallerySheet
 				open={form.templateGalleryOpen}

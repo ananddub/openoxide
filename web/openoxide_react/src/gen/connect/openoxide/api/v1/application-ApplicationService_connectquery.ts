@@ -183,7 +183,7 @@ export const stop = ApplicationService.method.stop;
 export const cancel = ApplicationService.method.cancel;
 
 /**
- * Rotate the deploy-webhook token for an application by id; returns the new token.
+ * @internal Rotate the deploy-webhook token for an application by id; returns the new token.
  *
  * @generated from rpc openoxide.api.v1.ApplicationService.RotateWebhookToken
  */

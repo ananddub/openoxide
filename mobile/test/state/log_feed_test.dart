@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grpc/grpc.dart';
+import 'package:mobile/src/core/grpc/app_error.dart';
+import 'package:mobile/src/features/logs/bloc/log_feed_bloc.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/deployment.pb.dart';
-import 'package:mobile/src/grpc/app_error.dart';
-import 'package:mobile/src/state/log_feed.dart';
 
 DeploymentEvent _event(String payload, {String type = ''}) =>
     DeploymentEvent(type: type, payload: payload);
@@ -17,151 +17,167 @@ Stream<DeploymentEvent> _linesThenDrop() async* {
   throw GrpcError.unavailable('agent went away');
 }
 
+/// Lets a bloc run its event queue out, including the batch timers a stream
+/// burst schedules.
+Future<void> _settled(LogFeedBloc bloc) async {
+  for (var i = 0; i < 10; i++) {
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+  }
+}
+
 void main() {
-  group('LogFeed', () {
-    test('collects whole lines and labels them with the pipeline stage', () async {
-      final source = StreamController<DeploymentEvent>();
-      final feed = LogFeed(open: () => source.stream);
-      final repaints = <int>[];
-      feed.addListener(() => repaints.add(feed.buffer.entries.length));
+  group('LogFeedBloc', () {
+    test(
+      'collects whole lines and labels them with the pipeline stage',
+      () async {
+        final source = StreamController<DeploymentEvent>();
+        final bloc = LogFeedBloc(open: () => source.stream);
+        final lengths = <int>[];
+        final subscription = bloc.stream.listen(
+          (state) => lengths.add(state.entries.length),
+        );
 
-      await feed.start();
-      source.add(_event('building started\nstep two\n', type: 'BUILDING'));
-      source.add(_event('pushed image\n', type: 'DEPLOYING'));
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+        bloc.start();
+        await _settled(bloc);
+        source.add(_event('building started\nstep two\n', type: 'BUILDING'));
+        source.add(_event('pushed image\n', type: 'DEPLOYING'));
+        await _settled(bloc);
 
-      expect(
-        feed.buffer.entries.map((entry) => entry.clean),
-        ['building started', 'step two', 'pushed image'],
-      );
-      expect(
-        feed.buffer.entries.map((entry) => entry.stage),
-        ['BUILDING', 'BUILDING', 'DEPLOYING'],
-      );
-      expect(feed.isRunning, isTrue);
-      expect(repaints, isNotEmpty);
+        expect(bloc.buffer.entries.map((entry) => entry.clean), [
+          'building started',
+          'step two',
+          'pushed image',
+        ]);
+        expect(bloc.buffer.entries.map((entry) => entry.stage), [
+          'BUILDING',
+          'BUILDING',
+          'DEPLOYING',
+        ]);
+        expect(bloc.state.isRunning, isTrue);
+        expect(bloc.state.entries, hasLength(3));
+        expect(lengths, isNotEmpty);
 
-      await feed.stop();
-      feed.dispose();
-      await source.close();
-    });
+        await subscription.cancel();
+        await bloc.close();
+        await source.close();
+      },
+    );
 
     test('repaints a burst of lines once, not once per line', () async {
       final lines = List<String>.generate(60, (i) => 'line $i');
-      final feed = LogFeed(
+      final bloc = LogFeedBloc(
         open: () => Stream<DeploymentEvent>.fromIterable(
           lines.map((line) => _event('$line\n')),
         ),
       );
       var repaints = 0;
-      feed.addListener(() => repaints++);
+      final subscription = bloc.stream.listen((_) => repaints++);
 
-      await feed.start();
-      await Future<void>.delayed(const Duration(milliseconds: 300));
+      bloc.start();
+      await _settled(bloc);
 
-      expect(feed.buffer.entries.length, 60);
+      expect(bloc.buffer.entries.length, 60);
       expect(repaints, lessThan(10));
 
-      feed.dispose();
+      await subscription.cancel();
+      await bloc.close();
     });
 
-    test('a line without its newline lands when the panel closes the channel',
-        () async {
-      var ended = 0;
-      final feed = LogFeed(
-        open: () => Stream<DeploymentEvent>.fromIterable([
-          _event('build output\nlast word without a newline'),
-        ]),
-        onEnded: () => ended++,
-      );
+    test(
+      'a line without its newline lands when the panel closes the channel',
+      () async {
+        final bloc = LogFeedBloc(
+          open: () => Stream<DeploymentEvent>.fromIterable([
+            _event('build output\nlast word without a newline'),
+          ]),
+        );
 
-      await feed.start();
-      await Future<void>.delayed(Duration.zero);
+        bloc.start();
+        await _settled(bloc);
 
-      expect(feed.isDone, isTrue);
-      expect(feed.isRunning, isFalse);
-      expect(
-        feed.buffer.entries.map((entry) => entry.clean),
-        ['build output', 'last word without a newline'],
-      );
-      expect(ended, 1);
+        expect(bloc.state.isDone, isTrue);
+        expect(bloc.state.isRunning, isFalse);
+        expect(bloc.buffer.entries.map((entry) => entry.clean), [
+          'build output',
+          'last word without a newline',
+        ]);
 
-      feed.dispose();
-    });
+        await bloc.close();
+      },
+    );
 
     test('an error payload becomes a line and keeps the raw text', () async {
-      final feed = LogFeed(
+      final bloc = LogFeedBloc(
         open: () => Stream<DeploymentEvent>.value(
           DeploymentEvent(type: 'BUILDING', error: 'ERROR: build failed'),
         ),
       );
 
-      await feed.start();
-      await Future<void>.delayed(Duration.zero);
+      bloc.start();
+      await _settled(bloc);
 
-      expect(feed.buffer.entries.single.clean, 'build failed');
-      expect(feed.buffer.entries.single.raw, contains('ERROR'));
-      expect(feed.buffer.entries.single.stage, 'BUILDING');
+      expect(bloc.buffer.entries.single.clean, 'build failed');
+      expect(bloc.buffer.entries.single.raw, contains('ERROR'));
+      expect(bloc.buffer.entries.single.stage, 'BUILDING');
 
-      feed.dispose();
+      await bloc.close();
     });
 
-    test('a dropped connection leaves the lines and reports an outage', () async {
-      final feed = LogFeed(open: _linesThenDrop);
+    test(
+      'a dropped connection leaves the lines and reports an outage',
+      () async {
+        final bloc = LogFeedBloc(open: _linesThenDrop);
 
-      await feed.start();
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+        bloc.start();
+        await _settled(bloc);
 
-      expect(feed.error, isA<PanelUnreachable>());
-      expect(feed.isRunning, isFalse);
-      expect(feed.isDone, isFalse);
-      expect(feed.buffer.entries.map((entry) => entry.clean), ['one', 'two']);
+        expect(bloc.state.error, isA<PanelUnreachable>());
+        expect(bloc.state.isRunning, isFalse);
+        expect(bloc.state.isDone, isFalse);
+        expect(bloc.buffer.entries.map((entry) => entry.clean), ['one', 'two']);
 
-      feed.dispose();
-    });
+        await bloc.close();
+      },
+    );
 
     test('stop is idempotent and silences a stream that ends later', () async {
       final source = StreamController<DeploymentEvent>();
-      var ended = 0;
-      final feed = LogFeed(open: () => source.stream, onEnded: () => ended++);
+      final bloc = LogFeedBloc(open: () => source.stream);
 
-      await feed.start();
+      bloc.start();
+      await _settled(bloc);
       source.add(_event('mid-build\n'));
-      await Future<void>.delayed(const Duration(milliseconds: 20));
-      await feed.stop();
+      await _settled(bloc);
+      await bloc.close();
       await source.close();
 
-      expect(feed.buffer.entries.map((entry) => entry.clean), ['mid-build']);
-      expect(ended, 0);
-      await feed.stop();
-      expect(ended, 0);
-
-      feed.dispose();
+      expect(bloc.buffer.entries.map((entry) => entry.clean), ['mid-build']);
+      // Closed blocs ignore further events; the lines stay as they were.
+      expect(bloc.state.entries.map((entry) => entry.clean), ['mid-build']);
     });
 
-    test('restart after the channel closed follows the stream again', () async {
+    test('restart after the channel closed clears and follows again', () async {
       var opens = 0;
-      final feed = LogFeed(
+      final bloc = LogFeedBloc(
         open: () {
           opens++;
           return Stream<DeploymentEvent>.value(_event('run $opens\n'));
         },
       );
 
-      await feed.start();
-      await Future<void>.delayed(const Duration(milliseconds: 20));
-      expect(feed.isDone, isTrue);
+      bloc.start();
+      await _settled(bloc);
+      expect(bloc.state.isDone, isTrue);
       expect(opens, 1);
 
-      await feed.stop();
-      await feed.start();
-      await Future<void>.delayed(const Duration(milliseconds: 20));
+      bloc.restart();
+      await _settled(bloc);
 
       expect(opens, 2);
-      expect(feed.isDone, isTrue);
-      expect(feed.buffer.entries.map((entry) => entry.clean), ['run 1', 'run 2']);
+      expect(bloc.state.isDone, isTrue);
+      expect(bloc.buffer.entries.map((entry) => entry.clean), ['run 2']);
 
-      feed.dispose();
+      await bloc.close();
     });
   });
 }

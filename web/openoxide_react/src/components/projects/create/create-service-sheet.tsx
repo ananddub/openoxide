@@ -20,6 +20,7 @@ import {
 } from '#/components/ui/sheet';
 import {Button} from '#/components/ui/button';
 import {Input} from '#/components/ui/input';
+import {StepTimeline} from '#/components/shared/sheet-wizard';
 import {
 	useApplicationUpdateResourceConfig,
 	useDatabaseUpdate,
@@ -82,44 +83,6 @@ const STEP_LABEL: Record<Step, string> = {
 	resources: 'Resources',
 	details: 'Details',
 };
-
-function Checkpoints({steps, idx}: {steps: Step[]; idx: number}) {
-	return (
-		<div className="flex items-center gap-x-3 pt-1">
-			{steps.map((s, i) => (
-				<span key={s} className="flex items-center gap-x-3">
-					{i > 0 && (
-						<span
-							className={cn(
-								'h-px w-4 shrink-0',
-								i <= idx ? 'bg-primary/50' : 'bg-border',
-							)}
-						/>
-					)}
-					<span
-						className={cn(
-							'flex items-center gap-1.5 text-[11px] whitespace-nowrap',
-							i === idx
-								? 'font-medium text-foreground'
-								: 'text-muted-foreground',
-						)}>
-						<span
-							className={cn(
-								'size-1.5 rounded-full',
-								i < idx
-									? 'bg-primary'
-									: i === idx
-										? 'bg-primary ring-2 ring-primary/25'
-										: 'bg-muted-foreground/40',
-							)}
-						/>
-						{STEP_LABEL[s]}
-					</span>
-				</span>
-			))}
-		</div>
-	);
-}
 
 function SelectRow({
 	selected,
@@ -357,168 +320,169 @@ export function CreateServiceSheet({
 				<SheetHeader>
 					<SheetTitle>New {option?.title || 'Service'}</SheetTitle>
 					<SheetDescription>{stepDesc[step]}</SheetDescription>
-					{steps.length > 1 && <Checkpoints steps={steps} idx={stepIdx} />}
 				</SheetHeader>
 
 				<div className="flex-1 overflow-y-auto px-6 py-6">
-					<div
-						key={step}
-						className="animate-in duration-200 ease-out fade-in-0 slide-in-from-right-4">
-						{step === 'stack' && (
-							<div className="flex flex-col gap-2">
-								<SelectRow
-									selected={stackPicked === 'DOCKER-COMPOSE'}
-									onClick={() => setStackPicked('DOCKER-COMPOSE')}
-									icon={<Boxes className="size-5" />}
-									title="Docker Compose"
-									subtitle="Run the stack on a single server."
-								/>
-								<SelectRow
-									selected={stackPicked === 'STACK'}
-									onClick={() => setStackPicked('STACK')}
-									icon={<Network className="size-5" />}
-									title="Docker Stack (Swarm)"
-									subtitle="Run the stack across your cluster nodes."
-								/>
-							</div>
-						)}
-
-						{step === 'engine' && (
-							<div className="flex flex-col gap-3">
-								<div className="flex justify-end gap-0.5">
-									{(
-										[
-											['list', ListIcon],
-											['grid', LayoutGrid],
-										] as const
-									).map(([v, VIcon]) => (
-										<button
-											key={v}
-											type="button"
-											aria-label={`${v} view`}
-											onClick={() => setEngineView(v)}
-											className={cn(
-												'flex size-7 items-center justify-center rounded-md transition-colors',
-												engineView === v
-													? 'bg-muted/60 text-foreground'
-													: 'text-muted-foreground hover:bg-muted/30 hover:text-foreground',
-											)}>
-											<VIcon className="size-4" />
-										</button>
-									))}
-								</div>
-								<DbEngineList
-									selected={picked ?? ''}
-									onSelect={k => setPicked(k.id)}
-									view={engineView}
-								/>
-							</div>
-						)}
-
-						{step === 'server' && (
-							<div className="flex flex-col gap-2">
-								{/* Servers are dynamic — search keeps long fleets usable. */}
-								<div className="relative mb-1">
-									<SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-									<Input
-										placeholder="Search servers…"
-										value={serverQuery}
-										onChange={e => setServerQuery(e.target.value)}
-										className="pl-9"
+					<StepTimeline
+						steps={steps.map(s => ({id: s, label: STEP_LABEL[s]}))}
+						idx={stepIdx}>
+						<div key={step}>
+							{step === 'stack' && (
+								<div className="flex flex-col gap-2">
+									<SelectRow
+										selected={stackPicked === 'DOCKER-COMPOSE'}
+										onClick={() => setStackPicked('DOCKER-COMPOSE')}
+										icon={<Boxes className="size-5" />}
+										title="Docker Compose"
+										subtitle="Run the stack on a single server."
+									/>
+									<SelectRow
+										selected={stackPicked === 'STACK'}
+										onClick={() => setStackPicked('STACK')}
+										icon={<Network className="size-5" />}
+										title="Docker Stack (Swarm)"
+										subtitle="Run the stack across your cluster nodes."
 									/>
 								</div>
-								<div className="flex max-h-[min(55vh,480px)] flex-col gap-2 overflow-y-auto pr-0.5">
-									{showLocal && (
-										<SelectRow
-											selected={serverId === 'local'}
-											onClick={() => setServerId('local')}
-											icon={<ServerIcon className="size-5" />}
-											title="Local"
-											subtitle="This server"
-										/>
-									)}
-									{visibleServers.map((s: any) => (
-										<SelectRow
-											key={String(s.id)}
-											selected={serverId === String(s.id)}
-											onClick={() => setServerId(String(s.id))}
-											icon={<ServerIcon className="size-5" />}
-											title={s.name}
-											subtitle={s.ip_address}
-										/>
-									))}
-									{!showLocal && visibleServers.length === 0 && (
-										<p className="py-6 text-center text-[13px] text-muted-foreground">
-											No servers match "{serverQuery.trim()}".
-										</p>
-									)}
-								</div>
-							</div>
-						)}
+							)}
 
-						{step === 'resources' && (
-							<div className="flex flex-col gap-2">
-								{PRESETS.map(p => (
-									<PlanCard
-										key={p.id}
-										selected={plan === p.id}
-										onClick={() => setPlan(p.id)}
-										title={p.label}
-										meta={`${p.cpu} vCPU · ${p.mem}`}
-										desc={p.desc}
-									/>
-								))}
-								<PlanCard
-									selected={plan === 'custom'}
-									onClick={() => setPlan('custom')}
-									title="Custom"
-									desc="Set your own CPU and memory limits."
-								/>
-								{plan === 'custom' && (
-									<div className="mt-1 grid animate-in grid-cols-2 gap-3 duration-200 fade-in-0 slide-in-from-top-2">
-										<div className="flex flex-col gap-1.5">
-											<span className="text-xs font-semibold text-foreground">
-												vCPU
-											</span>
-											<Input
-												placeholder="0.5"
-												value={customCpu}
-												onChange={e => setCustomCpu(e.target.value)}
-											/>
-										</div>
-										<div className="flex flex-col gap-1.5">
-											<span className="text-xs font-semibold text-foreground">
-												Memory
-											</span>
-											<Input
-												placeholder="512m"
-												value={customMem}
-												onChange={e => setCustomMem(e.target.value)}
-											/>
-										</div>
+							{step === 'engine' && (
+								<div className="flex flex-col gap-3">
+									<div className="flex justify-end gap-0.5">
+										{(
+											[
+												['list', ListIcon],
+												['grid', LayoutGrid],
+											] as const
+										).map(([v, VIcon]) => (
+											<button
+												key={v}
+												type="button"
+												aria-label={`${v} view`}
+												onClick={() => setEngineView(v)}
+												className={cn(
+													'flex size-7 items-center justify-center rounded-md transition-colors',
+													engineView === v
+														? 'bg-muted/60 text-foreground'
+														: 'text-muted-foreground hover:bg-muted/30 hover:text-foreground',
+												)}>
+												<VIcon className="size-4" />
+											</button>
+										))}
 									</div>
-								)}
-								<PlanCard
-									selected={plan === 'default'}
-									onClick={() => setPlan('default')}
-									title="No limits"
-									desc="Use the server defaults. Change anytime in Advanced."
-								/>
-							</div>
-						)}
+									<DbEngineList
+										selected={picked ?? ''}
+										onSelect={k => setPicked(k.id)}
+										view={engineView}
+									/>
+								</div>
+							)}
 
-						{step === 'details' && (
-							<div className="flex flex-col gap-5">
-								{kind === 'database' && <DbEngineCard kind={dbKind} />}
-								<ServiceForm
-									form={form}
-									sheet
-									hideServer
-									formId={FORM_ID}
-								/>
-							</div>
-						)}
-					</div>
+							{step === 'server' && (
+								<div className="flex flex-col gap-2">
+									{/* Servers are dynamic — search keeps long fleets usable. */}
+									<div className="relative mb-1">
+										<SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+										<Input
+											placeholder="Search servers…"
+											value={serverQuery}
+											onChange={e => setServerQuery(e.target.value)}
+											className="pl-9"
+										/>
+									</div>
+									<div className="flex max-h-[min(55vh,480px)] flex-col gap-2 overflow-y-auto pr-0.5">
+										{showLocal && (
+											<SelectRow
+												selected={serverId === 'local'}
+												onClick={() => setServerId('local')}
+												icon={<ServerIcon className="size-5" />}
+												title="Local"
+												subtitle="This server"
+											/>
+										)}
+										{visibleServers.map((s: any) => (
+											<SelectRow
+												key={String(s.id)}
+												selected={serverId === String(s.id)}
+												onClick={() => setServerId(String(s.id))}
+												icon={<ServerIcon className="size-5" />}
+												title={s.name}
+												subtitle={s.ip_address}
+											/>
+										))}
+										{!showLocal && visibleServers.length === 0 && (
+											<p className="py-6 text-center text-[13px] text-muted-foreground">
+												No servers match "{serverQuery.trim()}".
+											</p>
+										)}
+									</div>
+								</div>
+							)}
+
+							{step === 'resources' && (
+								<div className="flex flex-col gap-2">
+									{PRESETS.map(p => (
+										<PlanCard
+											key={p.id}
+											selected={plan === p.id}
+											onClick={() => setPlan(p.id)}
+											title={p.label}
+											meta={`${p.cpu} vCPU · ${p.mem}`}
+											desc={p.desc}
+										/>
+									))}
+									<PlanCard
+										selected={plan === 'custom'}
+										onClick={() => setPlan('custom')}
+										title="Custom"
+										desc="Set your own CPU and memory limits."
+									/>
+									{plan === 'custom' && (
+										<div className="mt-1 grid animate-in grid-cols-2 gap-3 duration-200 fade-in-0 slide-in-from-top-2">
+											<div className="flex flex-col gap-1.5">
+												<span className="text-xs font-semibold text-foreground">
+													vCPU
+												</span>
+												<Input
+													placeholder="0.5"
+													value={customCpu}
+													onChange={e => setCustomCpu(e.target.value)}
+												/>
+											</div>
+											<div className="flex flex-col gap-1.5">
+												<span className="text-xs font-semibold text-foreground">
+													Memory
+												</span>
+												<Input
+													placeholder="512m"
+													value={customMem}
+													onChange={e => setCustomMem(e.target.value)}
+												/>
+											</div>
+										</div>
+									)}
+									<PlanCard
+										selected={plan === 'default'}
+										onClick={() => setPlan('default')}
+										title="No limits"
+										desc="Use the server defaults. Change anytime in Advanced."
+									/>
+								</div>
+							)}
+
+							{step === 'details' && (
+								<div className="flex flex-col gap-5">
+									{kind === 'database' && <DbEngineCard kind={dbKind} />}
+									<ServiceForm
+										form={form}
+										sheet
+										hideServer
+										formId={FORM_ID}
+									/>
+								</div>
+							)}
+						</div>
+					</StepTimeline>
 				</div>
 
 				{last ? (

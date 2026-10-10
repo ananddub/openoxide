@@ -12,6 +12,60 @@ import {
 } from '#/components/settings/list-card';
 import {triggerEventLabel} from './notification-triggers';
 
+/** One alert = all delivery attempts sharing a `correlation_id`, collapsed to
+ *  its latest attempt. The backend records every retry as its own row, so
+ *  without this grouping a single alert with 3 attempts shows up 3 times. */
+export type DeliveryAlert = {
+	/** Latest attempt's id — the panel's read-receipt key for the alert. */
+	id: number;
+	notification_id: number;
+	correlation_id: string;
+	trigger_name: string;
+	title: string;
+	body: string;
+	/** Status of the latest attempt (the alert's final known outcome). */
+	status: string;
+	attempt: number;
+	/** How many attempts the alert has so far. */
+	attempts: number;
+	error: string | null;
+	/** When the alert first fired (oldest attempt). */
+	started_at: number;
+	finished_at: number | null;
+};
+
+/** Collapse raw delivery attempts (newest-first) into one alert per
+ *  `correlation_id`, keeping insertion order (newest alert first). */
+export function groupDeliveries(
+	rows: NotificationDeliveryPayload[],
+): DeliveryAlert[] {
+	const byCorrelation = new Map<string, DeliveryAlert>();
+	for (const d of rows) {
+		const existing = byCorrelation.get(d.correlation_id);
+		if (!existing) {
+			byCorrelation.set(d.correlation_id, {
+				id: d.id,
+				notification_id: d.notification_id,
+				correlation_id: d.correlation_id,
+				trigger_name: d.trigger_name,
+				title: d.title,
+				body: d.body,
+				status: d.status,
+				attempt: d.attempt,
+				attempts: 1,
+				error: d.error,
+				started_at: d.created_at,
+				finished_at: d.finished_at,
+			});
+		} else {
+			// Rows arrive newest-first, so every later hit is an older attempt.
+			existing.attempts += 1;
+			existing.started_at = d.created_at;
+		}
+	}
+	return [...byCorrelation.values()];
+}
+
 export type DeliveryStatusId = 'all' | 'DELIVERED' | 'FAILED' | 'PENDING';
 
 export const DELIVERY_STATUSES: {id: DeliveryStatusId; label: string}[] = [
@@ -56,7 +110,7 @@ export function NotificationDeliveriesList({
 	channelName,
 	onClear,
 }: {
-	rows: NotificationDeliveryPayload[];
+	rows: DeliveryAlert[];
 	isLoading: boolean;
 	/** Filters are on, so an empty list means "no match", not "never sent". */
 	filtered: boolean;
@@ -93,9 +147,10 @@ export function NotificationDeliveriesList({
 			{rows.map(d => {
 				const meta = STATUS_META[d.status] ?? UNKNOWN;
 				const Icon = meta.icon;
+				const subtitle = `${channelName(d.notification_id)} · ${triggerEventLabel(d.trigger_name)} · ${timeAgo(d.started_at)}`;
 				return (
 					<ListRow
-						key={d.id}
+						key={d.correlation_id}
 						icon={
 							<RowTile className={meta.tile}>
 								<Icon className="size-4" />
@@ -104,13 +159,20 @@ export function NotificationDeliveriesList({
 						title={d.title || triggerEventLabel(d.trigger_name)}
 						subtitle={
 							d.status === 'FAILED' && d.error
-								? `${channelName(d.notification_id)} · ${d.error}`
-								: `${channelName(d.notification_id)} · ${triggerEventLabel(d.trigger_name)} · ${timeAgo(d.created_at)}`
+								? `${subtitle} · ${d.error}`
+								: subtitle
 						}
 						badges={
-							<span className="rounded-md bg-foreground/[0.05] px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-								{meta.label}
-							</span>
+							<>
+								{d.attempts > 1 && (
+									<span className="rounded-md bg-foreground/[0.05] px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+										{d.attempts} attempts
+									</span>
+								)}
+								<span className="rounded-md bg-foreground/[0.05] px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+									{meta.label}
+								</span>
+							</>
 						}
 					/>
 				);

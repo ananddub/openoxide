@@ -1,11 +1,4 @@
-import {
-	Activity,
-	KeyRound,
-	RefreshCw,
-	Save,
-	Shield,
-	Wrench,
-} from 'lucide-react';
+import {Activity, KeyRound, RefreshCw, Wrench} from 'lucide-react';
 import {Button} from '#/components/ui/button';
 import {privateNetworkApi} from './api';
 import type {ConnectionMode} from './types';
@@ -57,25 +50,28 @@ const OPS: Array<{
 	},
 ];
 
-/** Card footer: maintenance actions + save / save & setup. */
-export function PanelActions({
-	serverId,
-	hasConfig,
-	mode,
-	busy,
-	onRun,
-	onSave,
-}: {
+type ActionProps = {
 	serverId: number;
 	hasConfig: boolean;
 	mode: ConnectionMode;
 	busy: boolean;
 	onRun: Run;
 	onSave: () => void;
-}) {
+};
+
+/** The maintenance + save buttons themselves, chrome-free — the parent's flex
+ *  row must exist (Save sits at the right via `ml-auto`). */
+export function NetworkActionButtons({
+	serverId,
+	hasConfig,
+	mode,
+	busy,
+	onRun,
+	onSave,
+}: ActionProps) {
 	const managed = mode === 'MANAGED_WIREGUARD';
 	return (
-		<div className="flex flex-wrap items-center gap-2 border-t px-5 py-3.5">
+		<>
 			{hasConfig &&
 				mode !== 'DIRECT_SSH' &&
 				OPS.filter(op => !op.managedOnly || managed).map(op => (
@@ -96,15 +92,18 @@ export function PanelActions({
 				onClick={onSave}
 				disabled={busy}
 				className="ml-auto cursor-pointer gap-1.5 text-xs">
-				{busy ? (
-					<RefreshCw className="size-3.5 animate-spin" />
-				) : managed ? (
-					<Shield className="size-3.5" />
-				) : (
-					<Save className="size-3.5" />
-				)}
+				{busy && <RefreshCw className="size-3.5 animate-spin" />}
 				{managed ? 'Save & Setup' : 'Save'}
 			</Button>
+		</>
+	);
+}
+
+/** Card footer: maintenance actions + save / save & setup. */
+export function PanelActions(props: ActionProps) {
+	return (
+		<div className="flex flex-wrap items-center gap-2 border-t px-5 py-3.5">
+			<NetworkActionButtons {...props} />
 		</div>
 	);
 }

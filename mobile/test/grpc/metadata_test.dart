@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grpc/service_api.dart' show MetadataProvider;
-import 'package:mobile/src/grpc/metadata.dart';
-import 'package:mobile/src/session/session.dart';
+import 'package:mobile/src/core/grpc/metadata.dart';
+import 'package:mobile/src/core/session/session.dart';
 
 Session _session({int? organizationId}) => Session(
   vault: InMemorySessionVault(),

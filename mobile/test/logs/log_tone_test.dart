@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/src/logs/log_tone.dart';
+import 'package:mobile/src/core/logs/log_tone.dart';
 
 void main() {
   group('lineTone', () {

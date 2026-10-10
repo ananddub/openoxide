@@ -3,7 +3,7 @@
 # That repository ships Inter and JetBrains Mono as variable fonts only, so a
 # static weight has to be instantiated before it can be subsetted, and the whole
 # Latin+CJK outline set is far too heavy for a phone app that draws a few hundred
-# distinct strings. Run this with `make -C mobile fonts`; the result is committed,
+# distinct strings. Run this with `just -d mobile fonts`; the result is committed,
 # so a normal build needs neither python nor network.
 set -eu
 

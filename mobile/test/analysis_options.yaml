@@ -1,0 +1,6 @@
+# Widget tests address their own helpers (fakes, harness) relatively: package
+# URIs resolve against `lib/` only, and the lint that enforces that convention
+# in lib/ does not apply here.
+linter:
+  rules:
+    always_use_package_imports: false

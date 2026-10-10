@@ -1,6 +1,7 @@
 pub use builder::ApplicationBuilder;
 
 pub mod adapter;
+pub mod ai_dockerfile;
 pub mod build;
 pub mod builder;
 pub mod distribution;

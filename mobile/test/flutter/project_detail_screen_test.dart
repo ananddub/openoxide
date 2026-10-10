@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/src/core/grpc/app_error.dart';
+import 'package:mobile/src/core/tokens/motion.dart';
+import 'package:mobile/src/features/projects/screens/project_detail_screen.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/overview.pb.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/project.pb.dart';
-import 'package:mobile/src/grpc/app_error.dart';
-import 'package:mobile/src/session/session.dart';
-import 'package:mobile/src/state/auth_controller.dart';
-import 'package:mobile/src/ui/project_detail_screen.dart';
-import 'package:mobile/src/ui/tokens.dart';
 
 import '../fakes.dart';
 import 'harness.dart';
@@ -14,25 +12,25 @@ import 'harness.dart';
 /// A signed-in session on one project. The detail screen asks for the project and
 /// then for the organization's whole service and domain lists, so a test says
 /// which rows belong to it and which belong to something else.
-Future<({AuthController controller, FakePanelApi api})> openProject({
+AuthScope openProject({
   required Project row,
   List<OverviewServiceItem> services = const [],
   List<OverviewDomainItem> domains = const [],
   Object? detailError,
-}) async {
-  final scope = authScope(
+}) {
+  final scope = bootedScope(
     initial: const StoredSession(
       accessToken: 'access',
       refreshToken: 'refresh',
       userId: 7,
     ),
     organizations: [organization(3, 'Acme')],
-  )
-    ..api.projectRow = row
-    ..api.services = services
-    ..api.domains = domains
-    ..api.detailError = detailError;
-  await scope.controller.boot();
+  );
+  scope.api
+    ..projectRow = row
+    ..services = services
+    ..domains = domains
+    ..detailError = detailError;
   return scope;
 }
 
@@ -40,7 +38,7 @@ void main() {
   setUp(Motion.install);
 
   testWidgets('lays the detail out at every size', (tester) async {
-    final scope = await openProject(
+    final scope = openProject(
       row: project(
         11,
         'alpha',
@@ -66,8 +64,8 @@ void main() {
       tester,
       () => appScope(
         child: const ProjectDetailScreen(projectId: 11),
-        auth: scope.controller,
-        deps: fakeDeps(scope.api, scope.controller.session),
+        auth: scope.bloc,
+        deps: fakeDeps(scope.api, scope.session),
       ),
       finds: [find.text('alpha')],
     );
@@ -76,7 +74,7 @@ void main() {
   testWidgets('shows only this project, and counts its variables', (
     tester,
   ) async {
-    final scope = await openProject(
+    final scope = openProject(
       row: project(11, 'alpha', env: 'A=1\n# a comment\n\nB=2\n'),
       services: [serviceItem(1, 'api', 11), serviceItem(2, 'not-mine', 12)],
       domains: [
@@ -87,8 +85,8 @@ void main() {
     await tester.pumpWidget(
       appScope(
         child: const ProjectDetailScreen(projectId: 11),
-        auth: scope.controller,
-        deps: fakeDeps(scope.api, scope.controller.session),
+        auth: scope.bloc,
+        deps: fakeDeps(scope.api, scope.session),
       ),
     );
     await pumpEntrance(tester);
@@ -101,12 +99,12 @@ void main() {
   });
 
   testWidgets('a project with nothing running says so twice', (tester) async {
-    final scope = await openProject(row: project(11, 'alpha'));
+    final scope = openProject(row: project(11, 'alpha'));
     await tester.pumpWidget(
       appScope(
         child: const ProjectDetailScreen(projectId: 11),
-        auth: scope.controller,
-        deps: fakeDeps(scope.api, scope.controller.session),
+        auth: scope.bloc,
+        deps: fakeDeps(scope.api, scope.session),
       ),
     );
     await pumpEntrance(tester);
@@ -117,15 +115,15 @@ void main() {
   });
 
   testWidgets('a domain row hands over the whole address', (tester) async {
-    final scope = await openProject(
+    final scope = openProject(
       row: project(11, 'alpha'),
       domains: [domainItem(1, 'alpha.example.com', 'alpha', path: '/v1')],
     );
     await tester.pumpWidget(
       appScope(
         child: const ProjectDetailScreen(projectId: 11),
-        auth: scope.controller,
-        deps: fakeDeps(scope.api, scope.controller.session),
+        auth: scope.bloc,
+        deps: fakeDeps(scope.api, scope.session),
       ),
     );
     await pumpEntrance(tester);
@@ -146,15 +144,15 @@ void main() {
   testWidgets('a detail load that never came back offers a retry that works', (
     tester,
   ) async {
-    final scope = await openProject(
+    final scope = openProject(
       row: project(11, 'alpha'),
       detailError: const PanelUnreachable('no answer'),
     );
     await tester.pumpWidget(
       appScope(
         child: const ProjectDetailScreen(projectId: 11),
-        auth: scope.controller,
-        deps: fakeDeps(scope.api, scope.controller.session),
+        auth: scope.bloc,
+        deps: fakeDeps(scope.api, scope.session),
       ),
     );
     await pumpEntrance(tester);

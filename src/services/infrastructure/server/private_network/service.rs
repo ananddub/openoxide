@@ -17,7 +17,7 @@ use crate::{
             ServerPrivateNetworksUpdateConfigParams,
         },
     },
-    utils::exec::{CommandExecutor, RemoteExecutor, SshAuth, SshHostKey},
+    utils::exec::CommandExecutor,
 };
 
 use super::{
@@ -61,6 +61,16 @@ impl ServerPrivateNetworkService {
         input: UpdatePrivateNetworkDto,
     ) -> sqlx::Result<ServerPrivateNetworkDto> {
         self.assert_server(server_id).await?;
+        // For managed WireGuard, fill any missing tunnel address / derived
+        // private host / UDP listen port / endpoint with safe non-overlapping
+        // values BEFORE validation. The UI only has to pick "Managed
+        // WireGuard"; the user may still override any field, but blank fields
+        // never produce "private_host must be X" / "listen port required" /
+        // "already exists" errors.
+        let mut input = input;
+        if input.connection_mode == ServerConnectionModeDto::ManagedWireguard {
+            self.autofill_managed_defaults(server_id, &mut input).await?;
+        }
         validate(&input)?;
         if input.connection_mode == ServerConnectionModeDto::ManagedWireguard {
             self.assert_unique_managed_network(server_id, &input)
@@ -712,36 +722,154 @@ impl ServerPrivateNetworkService {
         self.queries.servers_get_by_id(server_id).await.map(|_| ())
     }
 
+    /// Fill blank managed-WireGuard fields with safe, non-overlapping values so
+    /// the user only has to choose "Managed WireGuard". Any field the user
+    /// already set is preserved (so they can still customise).
+    async fn autofill_managed_defaults(
+        &self,
+        server_id: i64,
+        input: &mut UpdatePrivateNetworkDto,
+    ) -> sqlx::Result<()> {
+        // Provider is always WIREGUARD for managed mode.
+        if input.provider.is_none() {
+            input.provider = Some(PrivateNetworkProviderDto::Wireguard);
+        }
+
+        // Gather tunnel CIDRs + listen ports already used by other managed
+        // networks so we never collide.
+        let existing = self
+            .queries
+            .server_private_networks_list_managed("MANAGED_WIREGUARD", "DISABLED")
+            .await
+            .unwrap_or_default();
+        let used_cidrs: std::collections::HashSet<String> = existing
+            .iter()
+            .filter(|n| n.server_id != server_id)
+            .filter_map(|n| n.tunnel_address.clone())
+            .collect();
+        let used_ports: std::collections::HashSet<i64> = existing
+            .iter()
+            .filter(|n| n.server_id != server_id)
+            .filter_map(|n| n.listen_port)
+            .collect();
+
+        // Allocate a free /24 inside 10.100.0.0/16. We re-pick not only when
+        // the tunnel is blank but also when the supplied CIDR is already
+        // assigned to a DIFFERENT server — so a stale/duplicate value from the
+        // UI self-corrects instead of surfacing "already assigned to server N".
+        let needs_cidr = match input
+            .tunnel_address
+            .as_deref()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+        {
+            None => true,
+            Some(given) => used_cidrs.contains(given),
+        };
+        if needs_cidr {
+            let mut chosen = None;
+            for octet in 0..=255u32 {
+                let candidate = format!("10.100.{octet}.0/24");
+                if !used_cidrs.contains(&candidate) {
+                    chosen = Some(candidate);
+                    break;
+                }
+            }
+            input.tunnel_address = Some(chosen.ok_or_else(|| {
+                sqlx::Error::Protocol("no free tunnel network available in 10.100.0.0/16".into())
+            })?);
+            // The derived host must follow the new CIDR, so clear a stale one.
+            input.private_host = None;
+        }
+
+        // Derive the private host (.2) from the tunnel CIDR when blank or wrong.
+        if let Some(cidr) = input.tunnel_address.as_deref() {
+            let (_, _, expected_host) = tunnel_addresses(cidr)?;
+            let host_ok = input
+                .private_host
+                .as_deref()
+                .map(str::trim)
+                .is_some_and(|h| h == expected_host);
+            if !host_ok {
+                input.private_host = Some(expected_host);
+            }
+        }
+
+        // Allocate a free UDP listen port starting at 51820.
+        let port_taken = input
+            .listen_port
+            .is_some_and(|p| used_ports.contains(&i64::from(p)));
+        if input.listen_port.is_none() || port_taken {
+            let mut port = 51820u16;
+            while used_ports.contains(&i64::from(port)) {
+                port = port.checked_add(1).ok_or_else(|| {
+                    sqlx::Error::Protocol("no free WireGuard UDP port available".into())
+                })?;
+            }
+            input.listen_port = Some(port);
+            // A re-picked port invalidates a user/UI endpoint built on the old
+            // one; let the endpoint block below rebuild it.
+            if port_taken {
+                input.endpoint = None;
+            }
+        }
+
+        // Default endpoint to the server's own IP + the listen port when blank,
+        // so validation (endpoint port must match listen port) passes.
+        if input
+            .endpoint
+            .as_deref()
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+            .is_none()
+            && let Ok(server) = self.queries.servers_get_by_id(server_id).await
+        {
+            let ip = server.ip_address;
+            if !ip.trim().is_empty() {
+                input.endpoint = Some(format!("{ip}:{}", input.listen_port.unwrap_or(51820)));
+            }
+        }
+
+        // Sensible keepalive default for NAT traversal.
+        if input.persistent_keepalive.is_none() {
+            input.persistent_keepalive = Some(25);
+        }
+
+        Ok(())
+    }
+
     async fn verify_private_ssh(&self, server_id: i64, host: &str) -> sqlx::Result<()> {
-        let (_, port, username, private_key, public_key) =
+        let (_, port, _username, _private_key, _public_key) =
             crate::services::infrastructure::server::direct_ssh_credentials(
                 &self.queries,
                 server_id,
             )
             .await?
             .ok_or(sqlx::Error::RowNotFound)?;
-        let port = port
+        let port: u16 = port
             .try_into()
             .map_err(|error: std::num::TryFromIntError| sqlx::Error::Protocol(error.to_string()))?;
+
+        // The WireGuard interface lives inside the LOCAL AGENT container, not
+        // the panel process — so the reachability check must run from the agent
+        // (which can route the tunnel IP), otherwise the panel, having no route
+        // to 10.x.x.x, always times out. Run a TCP-connect probe to the tunnel
+        // IP's SSH port from the agent's netns.
+        let agent = crate::services::compute::compose::remote::agent_executor_for(None)
+            .await
+            .map_err(sqlx::Error::Protocol)?;
+        let probe = format!(
+            // Try bash /dev/tcp first (no extra tooling), fall back to nc.
+            "timeout 5 bash -c 'exec 3<>/dev/tcp/{host}/{port}' 2>/dev/null || timeout 5 nc -z {host} {port} 2>/dev/null"
+        );
         RetryPolicy::fast_network()
             .run(|attempt| {
-                let executor = RemoteExecutor::new(
-                    host,
-                    port,
-                    username.clone(),
-                    SshAuth::key_pair(private_key.clone(), public_key.clone()),
-                    SshHostKey::InsecureAcceptAny,
-                );
+                let agent = agent.clone();
+                let probe = probe.clone();
                 async move {
-                    let result = tokio::time::timeout(
-                        std::time::Duration::from_secs(3),
-                        executor.run("true", std::iter::empty::<&str>()),
-                    )
-                    .await
-                    .unwrap_or(Err(crate::utils::exec::ExecError::Timeout { seconds: 3 }));
-
+                    let result = agent.run("sh", ["-c", probe.as_str()]).await;
                     if let Err(ref error) = result {
-                        tracing::debug!(attempt, %error, "private-network SSH verification attempt failed");
+                        tracing::debug!(attempt, %error, "private-network tunnel reachability attempt failed");
                     }
                     result
                 }

@@ -54,62 +54,70 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
         let local = OsCli::new(self.local);
         let remote = OsCli::new(self.remote);
 
-        // Auto-install wireguard-tools on local panel host if 'wg' is missing
+        // WireGuard runs through the OpenOxide agent container, which ships
+        // `wireguard-tools` pre-installed — there is nothing to install on the
+        // host root. If `wg` is still missing here, the agent is unreachable or
+        // an outdated image, so surface that instead of a host apt command.
         if local.has_command("wg").run().await.is_err() {
-            let _ = local
-                .package("wireguard-tools")
-                .install()
-                .update(true)
-                .run()
-                .await;
+            return Err(Self::protocol(
+                "WireGuard tooling is unavailable on the local panel agent. Update/restart the panel agent (its image bundles wireguard-tools) and retry.",
+            ));
         }
-
-        // Auto-install wireguard-tools on remote server if 'wg' is missing
-        if remote.has_command("wg").run().await.is_err() {
-            let _ = remote
-                .package("wireguard-tools")
-                .install()
-                .update(true)
-                .run()
-                .await;
-        }
-
         if remote.has_command("wg").run().await.is_err() {
             return Err(Self::protocol(
-                "wireguard-tools (wg) is not installed on the remote server. Please run 'apt-get update && apt-get install -y wireguard-tools' on your target server and retry.",
+                "WireGuard tooling is unavailable on the target server's agent. Make sure the OpenOxide agent is deployed and reachable on that server (its image bundles wireguard-tools), then retry.",
             ));
         }
 
-        OsCli::new(self.remote)
+        // Opening the WireGuard UDP port in the host firewall is best-effort:
+        // many servers have no `ufw` (cloud-provider firewall, raw iptables, or
+        // none at all), so a missing tool or a failed rule must NOT abort the
+        // whole setup — WireGuard still works, the port just isn't managed by
+        // us. Only log it so the user can open it manually if their firewall
+        // actually blocks it.
+        if let Err(error) = OsCli::new(self.remote)
             .firewall()
             .allow_port(plan.port)
             .protocol(os::firewall::NetworkProtocol::Udp)
             .run()
             .await
-            .map_err(|error| {
-                Self::protocol(format!(
-                    "Could not allow UDP port {} on the remote server firewall: {error}. Open this port manually and retry",
-                    plan.port
-                ))
-            })?;
+        {
+            tracing::warn!(
+                port = plan.port,
+                %error,
+                "could not open the WireGuard UDP port in the remote firewall (no ufw / rule failed); continuing — open it manually if your firewall blocks it"
+            );
+        }
 
-        if local
+        // Self-heal orphaned state: a previous setup attempt may have created
+        // the interface on one or both hosts and then failed a later step
+        // (firewall, DB, validation), leaving an interface the panel never
+        // recorded as active. Blocking the retry with "already exists" traps
+        // the user in a loop they can't escape (repair/rotate aren't offered
+        // for a network that was never activated). Since the caller explicitly
+        // asked to set up, tear any stale interface down on both hosts first,
+        // then install fresh.
+        let local_exists = local
             .wireguard()
             .interface(plan.interface)
             .exists()
             .await
-            .map_err(Self::protocol)?
-            || remote
-                .wireguard()
-                .interface(plan.interface)
-                .exists()
-                .await
-                .map_err(Self::protocol)?
-        {
-            return Err(sqlx::Error::Protocol(
-                "WireGuard interface already exists; use repair or rotate instead of replacing it"
-                    .into(),
-            ));
+            .map_err(Self::protocol)?;
+        let remote_exists = remote
+            .wireguard()
+            .interface(plan.interface)
+            .exists()
+            .await
+            .map_err(Self::protocol)?;
+        if local_exists || remote_exists {
+            tracing::warn!(
+                interface = plan.interface,
+                local_exists,
+                remote_exists,
+                "stale WireGuard interface found before setup; tearing it down and reinstalling"
+            );
+            let _ = local.wireguard().interface(plan.interface).remove().await;
+            let _ = remote.wireguard().interface(plan.interface).remove().await;
         }
 
         let panel_private = local
@@ -182,6 +190,18 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
                 plan.endpoint, plan.port
             )));
         }
+
+        // Make the remote agent container a gateway for its host: forward
+        // tunnel traffic out of the WireGuard interface and MASQUERADE it, so
+        // packets arriving over the tunnel (e.g. SSH to the host) are routed on
+        // to the host network. Best-effort — our direct ip/wg bring-up skips
+        // wg-quick's PostUp hooks, and some hosts lack iptables; a failure here
+        // must not fail the whole setup (the tunnel itself is already up).
+        // Make the remote agent a gateway: forward + NAT so tunnel traffic
+        // reaches the host, and DNAT the tunnel IP's SSH to the host's sshd.
+        let host_ip = plan.endpoint.rsplit_once(':').map(|(h, _)| h).unwrap_or("");
+        Self::enable_gateway(self.remote, plan.interface, &plan.remote_host, host_ip).await;
+
         Ok(remote_public)
     }
 
@@ -268,6 +288,53 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
 }
 
 impl KernelWireGuardBackend<'_> {
+    /// Enable in-container forwarding + NAT so the agent routes tunnel traffic
+    /// to its host. The remote agent interface holds the tunnel IP (e.g.
+    /// 10.100.1.2); SSH to that IP must reach the host's sshd, so we DNAT the
+    /// tunnel IP's TCP 22 to the host's real IP and MASQUERADE the forwarded
+    /// traffic. Idempotent and best-effort (ignores already-exists / no
+    /// iptables).
+    async fn enable_gateway(
+        exec: &CommandExecutor,
+        interface: &str,
+        tunnel_ip: &str,
+        host_ip: &str,
+    ) {
+        let _ = exec
+            .run("sh", ["-c", "sysctl -w net.ipv4.ip_forward=1 2>/dev/null || true"])
+            .await;
+        let mut rules = vec![
+            // Forwarding to/from the WireGuard interface only. (We must NOT
+            // broadly MASQUERADE 10.0.0.0/8 — Docker's own networks here are
+            // 10.0.0.0/24 (swarm ingress) and 10.0.1.0/24 (panel↔agent); a
+            // blanket rule mangles their source IPs and kills ALL container
+            // networking, which looked like "the whole server lost access".)
+            format!(
+                "iptables -C FORWARD -i {interface} -j ACCEPT 2>/dev/null || iptables -A FORWARD -i {interface} -j ACCEPT"
+            ),
+            format!(
+                "iptables -C FORWARD -o {interface} -j ACCEPT 2>/dev/null || iptables -A FORWARD -o {interface} -j ACCEPT"
+            ),
+        ];
+        // DNAT: SSH to the tunnel IP → the host's sshd, and MASQUERADE ONLY
+        // that forwarded SSH flow (so return packets come back through us).
+        // Scoped to host_ip:22 — never the broad 10/8.
+        if !host_ip.is_empty() && host_ip != tunnel_ip && !tunnel_ip.is_empty() {
+            rules.push(format!(
+                "iptables -t nat -C PREROUTING -d {tunnel_ip} -p tcp --dport 22 -j DNAT --to-destination {host_ip}:22 2>/dev/null || iptables -t nat -A PREROUTING -d {tunnel_ip} -p tcp --dport 22 -j DNAT --to-destination {host_ip}:22"
+            ));
+            rules.push(format!(
+                "iptables -t nat -C OUTPUT -d {tunnel_ip} -p tcp --dport 22 -j DNAT --to-destination {host_ip}:22 2>/dev/null || iptables -t nat -A OUTPUT -d {tunnel_ip} -p tcp --dport 22 -j DNAT --to-destination {host_ip}:22"
+            ));
+            rules.push(format!(
+                "iptables -t nat -C POSTROUTING -d {host_ip} -p tcp --dport 22 -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -d {host_ip} -p tcp --dport 22 -j MASQUERADE"
+            ));
+        }
+        for rule in rules {
+            let _ = exec.run("sh", ["-c", &rule]).await;
+        }
+    }
+
     pub(super) async fn restore_pair(
         &self,
         interface: &str,

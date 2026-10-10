@@ -11,8 +11,7 @@ import {
 } from '#/components/ui/sheet';
 import {
 	OptionRow,
-	StepBody,
-	StepCheckpoints,
+	StepTimeline,
 	WizardField,
 	type WizardStep,
 } from '#/components/shared/sheet-wizard';
@@ -147,14 +146,13 @@ export function VaultProviderFormDialog({
 						{provider ? 'Update Vault Provider' : 'New Vault Provider'}
 					</SheetTitle>
 					<SheetDescription>{STEP_DESC[step]}</SheetDescription>
-					<StepCheckpoints steps={STEPS} idx={stepIdx} />
 				</SheetHeader>
 
 				<form
 					onSubmit={handleSubmit}
 					className="flex min-h-0 flex-1 flex-col">
 					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-6 pb-6">
-						<StepBody key={step}>
+						<StepTimeline steps={STEPS} idx={stepIdx}>
 							{step === 'provider' && (
 								<div className="flex flex-col gap-5">
 									<WizardField label="Name" required>
@@ -305,7 +303,7 @@ export function VaultProviderFormDialog({
 									</div>
 								</div>
 							)}
-						</StepBody>
+						</StepTimeline>
 					</div>
 
 					<div className="flex items-center justify-end gap-3 border-t border-border px-6 py-5">

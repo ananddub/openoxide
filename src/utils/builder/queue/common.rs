@@ -133,6 +133,20 @@ impl BuilderQueue {
             "ERROR"
         };
 
+        // Persist the failure reason into the deployment log file. A job that
+        // returns an Err (e.g. "invalid compose yaml ...") only surfaces that
+        // text to tracing + DB status; without this the log stops at the last
+        // streamed stage (e.g. [SOURCE_READY]) and the user never sees why it
+        // failed. Append it as an [ERROR] line, matching the streamed format.
+        if final_status == "ERROR"
+            && let Some(ref err) = error_message
+            && let Ok(mut log) =
+                crate::utils::builder::queue::deployment_log::DeploymentLog::open(deployment_id)
+                    .await
+        {
+            let _ = log.write_line(&format!("[ERROR] {err}")).await;
+        }
+
         let is_stop = operation.eq_ignore_ascii_case("stop");
         let target_status = if final_status == "DONE" {
             if is_stop {
@@ -159,6 +173,7 @@ impl BuilderQueue {
         {
             tracing::error!(deployment_id, error = %e, "builder queue: could not persist deployment outcome");
         }
+
 
         if let Some(app_id) = application_id {
             self.cache

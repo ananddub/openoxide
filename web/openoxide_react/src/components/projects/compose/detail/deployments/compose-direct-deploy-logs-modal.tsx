@@ -133,6 +133,14 @@ export function ComposeDirectDeployLogsModal({
 						loadingText="Connecting to deployment logs..."
 						emptyText="No deployment logs recorded."
 						aiContext="BUILD"
+						deploymentId={Number(latestId ?? 0)}
+						failed={/ERROR|FAIL|CRASH/i.test(
+							String(
+								(latestDeployment as any)?.status ||
+									(latestDeployment as any)?.state ||
+									'',
+							),
+						)}
 					/>
 				</div>
 			</div>

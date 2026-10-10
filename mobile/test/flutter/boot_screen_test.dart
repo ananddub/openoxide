@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/src/core/grpc/app_error.dart';
+import 'package:mobile/src/core/tokens/motion.dart';
+import 'package:mobile/src/features/auth/screens/boot_gate.dart';
+import 'package:mobile/src/features/auth/screens/sign_in_screen.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/auth.pb.dart' show SetupStatus;
-import 'package:mobile/src/grpc/app_error.dart';
-import 'package:mobile/src/state/auth_controller.dart';
-import 'package:mobile/src/ui/boot_screen.dart';
-import 'package:mobile/src/ui/sign_in_screen.dart';
-import 'package:mobile/src/ui/tokens.dart';
 
 import '../fakes.dart';
 import 'harness.dart';
@@ -25,66 +24,62 @@ void main() {
   testWidgets('the unreachable gate lays out at every size', (tester) async {
     final scope = authScope()
       ..api.setupError = PanelUnreachable(_handshakeNoise);
-    await scope.controller.boot();
-    expect(scope.controller.stage, AppStage.unreachable);
-
+    scope.bloc.add(const AuthBootRequested());
     await pumpAtSizes(
       tester,
-      () => appScope(
-        child: BootScreen(controller: scope.controller),
-        auth: scope.controller,
-      ),
+      () => appScope(child: const BootGate(), auth: scope.bloc),
       finds: [find.text('Cannot reach the panel')],
     );
+    expect(scope.bloc.state.stage, AppStage.unreachable);
   });
 
   testWidgets('a transport failure is shown under a sentence, not as one', (
     tester,
   ) async {
-    final scope = authScope()..api.setupError = PanelUnreachable(_handshakeNoise);
-    await scope.controller.boot();
+    final scope = authScope()
+      ..api.setupError = PanelUnreachable(_handshakeNoise);
+    scope.bloc.add(const AuthBootRequested());
     await tester.pumpWidget(
-      appScope(
-        child: BootScreen(controller: scope.controller),
-        auth: scope.controller,
-      ),
+      appScope(child: const BootGate(), auth: scope.bloc),
     );
     await pumpEntrance(tester);
 
+    expect(scope.bloc.state.stage, AppStage.unreachable);
     expect(
       find.textContaining('Nothing answered at the configured address'),
       findsOneWidget,
     );
-    final detail = tester.widget<Text>(find.textContaining('HandshakeException'));
+    final detail = tester.widget<Text>(
+      find.textContaining('HandshakeException'),
+    );
     expect(detail.maxLines, 3);
     expect(detail.overflow, TextOverflow.ellipsis);
+    // A handshake failure names a fix: the run flag that trusts the dev
+    // certificate, since the dev stack's certificate is issued for localhost
+    // and the emulator dials 10.0.2.2.
+    expect(find.textContaining('DEV_ALLOW_ANY_CERT'), findsOneWidget);
   });
 
   testWidgets('the empty panel sends the reader to the web dashboard', (
     tester,
   ) async {
-    final scope = authScope()..api.setupStatus = SetupStatus(ownerPresent: false);
-    await scope.controller.boot();
-    expect(scope.controller.stage, AppStage.needsSetup);
-
+    final scope = authScope()
+      ..api.setupStatus = SetupStatus(ownerPresent: false);
+    scope.bloc.add(const AuthBootRequested());
     await pumpAtSizes(
       tester,
-      () => appScope(
-        child: BootScreen(controller: scope.controller),
-        auth: scope.controller,
-      ),
+      () => appScope(child: const BootGate(), auth: scope.bloc),
       finds: [find.text('This panel has no owner yet')],
     );
+    expect(scope.bloc.state.stage, AppStage.needsSetup);
   });
 
   testWidgets('trying again reaches the panel once it answers', (tester) async {
-    final scope = authScope()..api.setupError = PanelUnreachable(_handshakeNoise);
-    await scope.controller.boot();
+    final scope = authScope()
+      ..api.setupError = PanelUnreachable(_handshakeNoise);
+    scope.bloc.add(const AuthBootRequested());
     await tester.pumpWidget(
-      appScope(
-        child: BootScreen(controller: scope.controller),
-        auth: scope.controller,
-      ),
+      appScope(child: const BootGate(), auth: scope.bloc),
     );
     await pumpEntrance(tester);
 
@@ -92,7 +87,7 @@ void main() {
     await tester.tap(find.text('Try again'));
     await pumpEntrance(tester);
 
-    expect(scope.controller.stage, AppStage.signedOut);
+    expect(scope.bloc.state.stage, AppStage.signedOut);
     expect(find.byType(SignInScreen), findsOneWidget);
   });
 }

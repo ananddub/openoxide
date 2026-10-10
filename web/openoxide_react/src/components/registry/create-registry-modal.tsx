@@ -22,7 +22,7 @@ import type {RemoteServerResponse} from '#/types/api-helpers';
 import {
 	OptionRow,
 	StepBody,
-	StepCheckpoints,
+	StepTimeline,
 	WizardField,
 	type WizardStep,
 } from '#/components/shared/sheet-wizard';
@@ -189,7 +189,6 @@ export function CreateRegistryModal({
 							? 'Everything on one page — change only what you need.'
 							: stepDesc[step]}
 					</SheetDescription>
-					{!editing && <StepCheckpoints steps={STEPS} idx={stepIdx} />}
 				</SheetHeader>
 
 				<form
@@ -291,7 +290,7 @@ export function CreateRegistryModal({
 							</WizardField>
 						</div>
 					) : (
-						<>
+						<StepTimeline steps={STEPS} idx={stepIdx}>
 							{step === 'registry' && (
 								<StepBody key="registry">
 									<div className="flex flex-col gap-5">
@@ -401,7 +400,7 @@ export function CreateRegistryModal({
 									</div>
 								</StepBody>
 							)}
-						</>
+						</StepTimeline>
 					)}
 				</form>
 

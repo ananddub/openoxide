@@ -1,5 +1,5 @@
 version: v2
-# Dart gRPC stubs for the mobile client. Run from the repo root via `make -C mobile gen`.
+# Dart gRPC stubs for the mobile client. Run via `just -d mobile gen`.
 # `--path proto/openoxide/api/v1` is the same selector the web client uses
 # (web/openoxide_react/package.json "gen:connect"), so proto/agent.proto and
 # proto/buf/** are excluded by construction.

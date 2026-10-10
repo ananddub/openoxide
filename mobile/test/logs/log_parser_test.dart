@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/src/logs/log_model.dart';
-import 'package:mobile/src/logs/log_parser.dart';
+import 'package:mobile/src/core/logs/log_model.dart';
+import 'package:mobile/src/core/logs/log_parser.dart';
 
 void main() {
   group('cleanLogLine', () {

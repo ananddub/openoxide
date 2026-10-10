@@ -734,7 +734,7 @@ export const RevokePersonalAccessTokenRequestSchema: GenMessage<RevokePersonalAc
  */
 export const AuthService: GenService<{
 	/**
-	 * Register the first/owner user. Required: email, password (min 8); first_name/last_name/avatar optional. Returns user + tokens.
+	 * @internal Register the first/owner user. Required: email, password (min 8); first_name/last_name/avatar optional. Returns user + tokens.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.Signup
 	 */
@@ -744,7 +744,7 @@ export const AuthService: GenService<{
 		output: typeof AuthResponseSchema;
 	};
 	/**
-	 * Log in with credentials. Required: email, password; two_factor_code/recovery_code when 2FA enabled. Returns user + tokens.
+	 * @internal Log in with credentials. Required: email, password; two_factor_code/recovery_code when 2FA enabled. Returns user + tokens.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.Login
 	 */
@@ -754,7 +754,7 @@ export const AuthService: GenService<{
 		output: typeof AuthResponseSchema;
 	};
 	/**
-	 * Exchange a refresh token for new tokens. Required: refresh_token.
+	 * @internal Exchange a refresh token for new tokens. Required: refresh_token.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.Refresh
 	 */
@@ -764,7 +764,7 @@ export const AuthService: GenService<{
 		output: typeof AuthResponseSchema;
 	};
 	/**
-	 * Return the currently authenticated user. No params.
+	 * @internal Return the currently authenticated user. No params.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.WhoAmI
 	 */
@@ -774,7 +774,7 @@ export const AuthService: GenService<{
 		output: typeof UserSchema;
 	};
 	/**
-	 * Log out the current session. No params.
+	 * @internal Log out the current session. No params.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.Logout
 	 */
@@ -784,7 +784,7 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
-	 * Report whether an owner account exists yet (initial setup gate). No params.
+	 * @internal Report whether an owner account exists yet (initial setup gate). No params.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.GetSetupStatus
 	 */
@@ -794,7 +794,7 @@ export const AuthService: GenService<{
 		output: typeof SetupStatusSchema;
 	};
 	/**
-	 * Update the current user's profile. All fields optional: email, password (min 8), first_name, last_name, avatar.
+	 * @internal Update the current user's profile. All fields optional: email, password (min 8), first_name, last_name, avatar.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.UpdateUser
 	 */
@@ -804,7 +804,7 @@ export const AuthService: GenService<{
 		output: typeof UserSchema;
 	};
 	/**
-	 * Request a password-reset email. Required: email.
+	 * @internal Request a password-reset email. Required: email.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.RequestPasswordReset
 	 */
@@ -814,7 +814,7 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
-	 * Reset a password using a reset token. Required: token, password (min 8).
+	 * @internal Reset a password using a reset token. Required: token, password (min 8).
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.ResetPassword
 	 */
@@ -824,7 +824,7 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
-	 * Report the current user's email verification status. No params.
+	 * @internal Report the current user's email verification status. No params.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.GetEmailVerificationStatus
 	 */
@@ -834,7 +834,7 @@ export const AuthService: GenService<{
 		output: typeof EmailVerificationStatusSchema;
 	};
 	/**
-	 * Send an email-verification message to the current user. No params.
+	 * @internal Send an email-verification message to the current user. No params.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.RequestEmailVerification
 	 */
@@ -844,7 +844,7 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
-	 * Confirm email verification using a token. Required: token.
+	 * @internal Confirm email verification using a token. Required: token.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.ConfirmEmailVerification
 	 */
@@ -854,7 +854,7 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
-	 * Report the current user's 2FA status (enabled/configured). No params.
+	 * @internal Report the current user's 2FA status (enabled/configured). No params.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.GetTwoFactorStatus
 	 */
@@ -864,7 +864,7 @@ export const AuthService: GenService<{
 		output: typeof TwoFactorStatusSchema;
 	};
 	/**
-	 * Begin 2FA setup, returning secret/otpauth URL/recovery codes. Required: password.
+	 * @internal Begin 2FA setup, returning secret/otpauth URL/recovery codes. Required: password.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.SetupTwoFactor
 	 */
@@ -874,7 +874,7 @@ export const AuthService: GenService<{
 		output: typeof TwoFactorSetupSchema;
 	};
 	/**
-	 * Enable 2FA by confirming a TOTP code. Required: code (6-10 chars).
+	 * @internal Enable 2FA by confirming a TOTP code. Required: code (6-10 chars).
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.EnableTwoFactor
 	 */
@@ -884,7 +884,7 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
-	 * Disable 2FA. Required: password, code (6-10 chars).
+	 * @internal Disable 2FA. Required: password, code (6-10 chars).
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.DisableTwoFactor
 	 */
@@ -894,7 +894,7 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
-	 * Regenerate 2FA recovery codes. Required: password, code (6-10 chars). Returns new codes.
+	 * @internal Regenerate 2FA recovery codes. Required: password, code (6-10 chars). Returns new codes.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.RegenerateRecoveryCodes
 	 */
@@ -904,7 +904,7 @@ export const AuthService: GenService<{
 		output: typeof RecoveryCodesSchema;
 	};
 	/**
-	 * List the current user's active sessions. No params.
+	 * @internal List the current user's active sessions. No params.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.ListSessions
 	 */
@@ -914,7 +914,7 @@ export const AuthService: GenService<{
 		output: typeof ListSessionsResponseSchema;
 	};
 	/**
-	 * Revoke a session by id. Required: session_id.
+	 * @internal Revoke a session by id. Required: session_id.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.RevokeSession
 	 */
@@ -924,7 +924,7 @@ export const AuthService: GenService<{
 		output: typeof EmptySchema;
 	};
 	/**
-	 * List the current user's personal access tokens. No params.
+	 * @internal List the current user's personal access tokens. No params.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.ListPersonalAccessTokens
 	 */
@@ -934,7 +934,7 @@ export const AuthService: GenService<{
 		output: typeof ListPersonalAccessTokensResponseSchema;
 	};
 	/**
-	 * Create a personal access token (returned once). Required: name, password; expires_at optional.
+	 * @internal Create a personal access token (returned once). Required: name, password; expires_at optional.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.CreatePersonalAccessToken
 	 */
@@ -944,7 +944,7 @@ export const AuthService: GenService<{
 		output: typeof CreatedPersonalAccessTokenSchema;
 	};
 	/**
-	 * Revoke a personal access token by id. Required: id.
+	 * @internal Revoke a personal access token by id. Required: id.
 	 *
 	 * @generated from rpc openoxide.api.v1.AuthService.RevokePersonalAccessToken
 	 */

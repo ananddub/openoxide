@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/src/core/tokens/motion.dart';
+import 'package:mobile/src/core/ui/widgets/action_button.dart';
+import 'package:mobile/src/features/shell/shell_screen.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/organization.pb.dart';
-import 'package:mobile/src/session/session.dart';
-import 'package:mobile/src/state/auth_controller.dart';
-import 'package:mobile/src/ui/common.dart';
-import 'package:mobile/src/ui/shell_screen.dart';
-import 'package:mobile/src/ui/tokens.dart';
 
 import '../fakes.dart';
 import 'harness.dart';
@@ -13,10 +11,8 @@ import 'harness.dart';
 /// A signed-in shell. All three tabs live in the widget tree at once, so a test
 /// has to give every screen an answer: the project list, an empty deploy queue
 /// and no servers.
-Future<({AuthController controller, FakePanelApi api})> shell({
-  List<Organization> organizations = const [],
-}) async {
-  final scope = authScope(
+AuthScope shell({List<Organization> organizations = const []}) {
+  final scope = bootedScope(
     initial: const StoredSession(
       accessToken: 'access',
       refreshToken: 'refresh',
@@ -27,22 +23,20 @@ Future<({AuthController controller, FakePanelApi api})> shell({
         : organizations,
     projects: [project(11, 'alpha')],
   );
-  await scope.controller.boot();
   return scope;
 }
 
-Widget _opened(({AuthController controller, FakePanelApi api}) scope) =>
-    appScope(
-      child: const ShellScreen(),
-      auth: scope.controller,
-      deps: fakeDeps(scope.api, scope.controller.session),
-    );
+Widget _opened(AuthScope scope) => appScope(
+  child: const ShellScreen(),
+  auth: scope.bloc,
+  deps: fakeDeps(scope.api, scope.session),
+);
 
 void main() {
   setUp(Motion.install);
 
   testWidgets('lays the shell out at every size', (tester) async {
-    final scope = await shell();
+    final scope = shell();
     await pumpAtSizes(
       tester,
       () => _opened(scope),
@@ -51,7 +45,7 @@ void main() {
   });
 
   testWidgets('the sign-out control is a real touch target', (tester) async {
-    final scope = await shell();
+    final scope = shell();
     await tester.pumpWidget(_opened(scope));
     await pumpEntrance(tester);
 
@@ -63,7 +57,7 @@ void main() {
   });
 
   testWidgets('switching tabs keeps each screen loaded', (tester) async {
-    final scope = await shell();
+    final scope = shell();
     await tester.pumpWidget(_opened(scope));
     await pumpEntrance(tester);
 
@@ -87,13 +81,13 @@ void main() {
   testWidgets('the menu switches the organization every screen reads', (
     tester,
   ) async {
-    final scope = await shell(
+    final scope = shell(
       organizations: [organization(3, 'Acme'), organization(9, 'Beta')],
     );
-    expect(scope.controller.currentOrganization?.name, 'Acme');
 
     await tester.pumpWidget(_opened(scope));
     await pumpEntrance(tester);
+    expect(scope.bloc.currentOrganization?.name, 'Acme');
 
     await tester.tap(find.byType(PopupMenuButton<int>));
     await pumpEntrance(tester);
@@ -102,8 +96,8 @@ void main() {
     await tester.tap(find.text('Beta'));
     await pumpEntrance(tester);
 
-    expect(scope.controller.currentOrganization?.name, 'Beta');
-    expect(scope.controller.session.organizationId, 9);
+    expect(scope.bloc.currentOrganization?.name, 'Beta');
+    expect(scope.session.organizationId, 9);
     // The tab stays mounted when the organization changes, so nothing would
     // refetch unless the screen re-reads the organization it lists inside of.
     expect(scope.api.projectListRequests, [3, 9]);
@@ -112,7 +106,7 @@ void main() {
   testWidgets('an account with no organization can reload into one', (
     tester,
   ) async {
-    final scope = authScope(
+    final scope = bootedScope(
       initial: const StoredSession(
         accessToken: 'access',
         refreshToken: 'refresh',
@@ -120,11 +114,10 @@ void main() {
       ),
       projects: [project(11, 'alpha')],
     );
-    await scope.controller.boot();
-    expect(scope.controller.organizationId, isNull);
 
     await tester.pumpWidget(_opened(scope));
     await pumpEntrance(tester);
+    expect(scope.bloc.organizationId, isNull);
 
     expect(
       find.text('You are not a member of any organization on this panel yet.'),
@@ -147,14 +140,14 @@ void main() {
   });
 
   testWidgets('the floating button signs the session out', (tester) async {
-    final scope = await shell();
+    final scope = shell();
     await tester.pumpWidget(_opened(scope));
     await pumpEntrance(tester);
 
     await tester.tap(find.byType(FloatingActionButton));
     await pumpEntrance(tester);
 
-    expect(scope.controller.stage, AppStage.signedOut);
-    expect(scope.controller.session.isSignedIn, isFalse);
+    expect(scope.bloc.state.stage, AppStage.signedOut);
+    expect(scope.session.isSignedIn, isFalse);
   });
 }

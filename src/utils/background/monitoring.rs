@@ -182,18 +182,28 @@ async fn watch_server(
                         }
                         Ok(Err(error)) => {
                             tracing::warn!(server_id, %error, "monitoring lifecycle stream failed");
+                            maybe_repair_auth(&monitoring, server_id, &error.to_string()).await;
                             break;
                         }
-                        Err(error) => {
-                            tracing::warn!(server_id, %error, "monitoring lifecycle stream timed out");
+                        Err(_elapsed) => {
+                            // Hang, not error: drop the cached channel so the
+                            // next cycle dials fresh (a recreated agent with a
+                            // new IP otherwise stays unreachable forever).
+                            monitoring.drop_channel(server_id);
+                            tracing::warn!(server_id, "monitoring lifecycle stream timed out; channel dropped");
                             break;
                         }
                     }
                 },
-                Err(error) => tracing::warn!(server_id, %error, "lifecycle stream unavailable"),
+                Err(error) => {
+                    tracing::warn!(server_id, %error, "lifecycle stream unavailable");
+                    maybe_repair_auth(&monitoring, server_id, &error.to_string()).await;
+                }
             },
             Err(error) => {
-                tracing::warn!(server_id, %error, "lifecycle stream connection timed out")
+                // The open itself hung: same stale-channel hazard.
+                monitoring.drop_channel(server_id);
+                tracing::warn!(server_id, %error, "lifecycle stream connection timed out; channel dropped")
             }
         }
         if healthy {
@@ -233,6 +243,32 @@ async fn server_exists(server_id: i64) -> bool {
         .await
         .map(|row| row.is_some())
         .unwrap_or(true)
+}
+
+/// Self-heal an agent whose mTLS cert / token drifted out of sync. When a
+/// lifecycle stream fails with an authentication/certificate error
+/// (BadSignature, invalid token, unauthenticated), trigger the debounced
+/// SSH-bootstrap repair which re-issues a fresh cert + token and recreates the
+/// container — so operators never delete/recreate agents by hand in production.
+/// Skipped when the host isn't SSH-reachable (a down server; repair can't run).
+async fn maybe_repair_auth(monitoring: &Arc<MonitoringService>, server_id: i64, error: &str) {
+    let e = error.to_ascii_lowercase();
+    let auth_class = e.contains("badsignature")
+        || e.contains("certificate")
+        || e.contains("invalid agent token")
+        || e.contains("unauthenticated")
+        || e.contains("authentication");
+    if !auth_class {
+        return;
+    }
+    if !server_ssh_is_reachable(server_id).await {
+        return;
+    }
+    tracing::warn!(
+        server_id,
+        "lifecycle auth/cert out of sync; triggering automatic agent repair"
+    );
+    monitoring.request_agent_repair(server_id, "authentication is out of sync");
 }
 
 /// True when the agent still answers a metrics query — the surest sign the

@@ -115,3 +115,18 @@ export const analyzeLogs = AiService.method.analyzeLogs;
  * @generated from rpc openoxide.api.v1.AiService.Assistant
  */
 export const assistant = AiService.method.assistant;
+
+/**
+ * Get the AI diagnosis of a failed deployment (why it failed + whether a
+ * config-only fix is available).
+ *
+ * @generated from rpc openoxide.api.v1.AiService.GetBuildDiagnosis
+ */
+export const getBuildDiagnosis = AiService.method.getBuildDiagnosis;
+
+/**
+ * Apply the AI's config fix for a failed deployment and redeploy.
+ *
+ * @generated from rpc openoxide.api.v1.AiService.ApplyAiFix
+ */
+export const applyAiFix = AiService.method.applyAiFix;

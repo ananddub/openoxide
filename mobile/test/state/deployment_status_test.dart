@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/src/state/deployment_status.dart';
+import 'package:mobile/src/core/domain/deployment_status.dart';
 
 void main() {
   group('isFinalDeploymentStatus', () {

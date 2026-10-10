@@ -27,6 +27,13 @@ export function DeploymentInlineLogs({
 		deployment?.description;
 	const logs = useDeploymentLogStream(id, fallback);
 	const isLive = isBuildActive(deployment);
+	const statusStr = String(
+		deployment?.status || deployment?.state || '',
+	).toUpperCase();
+	const failed =
+		statusStr.includes('ERROR') ||
+		statusStr.includes('FAIL') ||
+		statusStr.includes('CRASH');
 
 	const [height, setHeight] = useState(300);
 	const scrollRef = useRef<HTMLDivElement>(null);
@@ -44,7 +51,12 @@ export function DeploymentInlineLogs({
 					{lines.length} line{lines.length === 1 ? '' : 's'}
 				</span>
 				<div className="ml-auto">
-					<AnalyzeLogsButton lines={lines} context="BUILD" />
+					<AnalyzeLogsButton
+						lines={lines}
+						context="BUILD"
+						deploymentId={id}
+						failed={failed}
+					/>
 				</div>
 			</div>
 			<div ref={scrollRef} style={{height}} className={LOG_SURFACE_CLS}>

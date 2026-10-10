@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/src/logs/log_buffer.dart';
+import 'package:mobile/src/core/logs/log_buffer.dart';
 
 void main() {
   group('LogChunker', () {

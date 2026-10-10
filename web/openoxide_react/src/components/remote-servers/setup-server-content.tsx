@@ -120,21 +120,17 @@ function SectionHeader({
 }
 
 /**
- * Agent-based setup section for one server: live validation from the agent
- * container's own reporting, re-run setup (confirm + live logs), and GPU
- * configuration. Lives inside the server sheet's Setup tab.
+ * Live validation for one server: everything reads what the agent itself
+ * reports over gRPC — no SSH round-trip. The agent running as a container IS
+ * the check. The sheet's Validation tab.
  */
-export function SetupServerContent({
+export function SetupValidationContent({
 	server,
 }: {
 	server: RemoteServerResponse;
 }) {
-	const {can} = usePermissions();
-	const canAct = can('server:create');
 	const serverId = BigInt(server.id);
 
-	// Validate: everything reads what the agent itself reports over gRPC —
-	// no SSH round-trip. The agent running as a container IS the check.
 	const agentStatus = useAgentStatus(serverId);
 	const containers = useMonitoringContainerStates(serverId);
 	const metrics = useServerMetrics(serverId, 1);
@@ -145,43 +141,6 @@ export function SetupServerContent({
 		void agentStatus.refetch();
 		void containers.refetch();
 		void metrics.refetch();
-	};
-
-	// Re-setup: streamed over SSH; a failed SSH test gates the run.
-	const {
-		testingConn,
-		testConnection,
-		settingUp,
-		setupState,
-		connOk,
-		setupLogs,
-		setup,
-	} = useServerSetup(server);
-	const [advertiseAddr, setAdvertiseAddr] = useState('');
-	const [sudoPassword, setSudoPassword] = useState('');
-	const [setupConfirmOpen, setSetupConfirmOpen] = useState(false);
-
-	// GPU: read current support state, run the toolkit configuration on demand.
-	const management = useServerManagement(serverId);
-	const gpuAction = useServerManagementAction(serverId);
-	const [gpuConfirmOpen, setGpuConfirmOpen] = useState(false);
-	const [gpuResult, setGpuResult] = useState<ServerActionPayload | null>(
-		null,
-	);
-
-	const runGpu = () => {
-		setGpuConfirmOpen(false);
-		gpuAction.mutate('configureGpu', {
-			onSuccess: payload => {
-				setGpuResult(payload);
-				if (payload.success) {
-					toast.success('GPU support configured');
-				} else {
-					toast.error(payload.stderr || 'GPU configuration failed');
-				}
-			},
-			onError: error => toast.error(formatApiError(error)),
-		});
 	};
 
 	// The agent's own state is the verdict: ONLINE means the container is up
@@ -225,69 +184,88 @@ export function SetupServerContent({
 			: {ok: undefined, text: 'checking…'};
 
 	return (
-		<div className="flex flex-col gap-4">
-			{/* ── Validate (agent-reported, live) ── */}
-			<div className="rounded-lg border border-border/60 bg-card p-4">
-				<SectionHeader
-					title="Setup Validation"
-					caption="Live state reported by the agent container on this server — no SSH involved."
-					action={
-						<Button
-							size="sm"
-							variant="outline"
-							disabled={refreshing}
-							onClick={refresh}
-							className="h-8 gap-1.5 text-xs">
-							{refreshing ? (
-								<Loader2 className="size-3.5 animate-spin" />
-							) : (
-								<RefreshCw className="size-3.5" />
-							)}
-							Refresh
-						</Button>
-					}
-				/>
-				<div className="mt-3 flex flex-col gap-3">
-					<CheckSection
-						title="Agent"
-						caption="The agent container the panel talks to over gRPC.">
-						<StatusRow
-							label="Agent reporting"
-							isEnabled={agentRow.ok}
-							description={agentRow.text}
-						/>
-					</CheckSection>
-					<CheckSection
-						title="Engine"
-						caption="Docker state as seen through the agent's own socket.">
-						<StatusRow
-							label="Docker engine"
-							isEnabled={dockerRow.ok}
-							description={dockerRow.text}
-						/>
-					</CheckSection>
-					<CheckSection
-						title="Host"
-						caption="Host facts the agent reads directly from the machine.">
-						<StatusRow
-							label="Operating system"
-							value={latest?.distro || latest?.os}
-						/>
-						<StatusRow label="Architecture" value={latest?.arch} />
-						<StatusRow label="Kernel" value={latest?.kernel} />
-						<StatusRow
-							label="CPU"
-							value={
-								latest
-									? `${latest.cpu_model} · ${latest.cpu_cores} cores`
-									: undefined
-							}
-						/>
-					</CheckSection>
-				</div>
+		<div className="rounded-lg border border-border/60 bg-card p-4">
+			<SectionHeader
+				title="Setup Validation"
+				caption="Live state reported by the agent container on this server — no SSH involved."
+				action={
+					<Button
+						size="sm"
+						variant="outline"
+						disabled={refreshing}
+						onClick={refresh}
+						className="h-8 gap-1.5 text-xs">
+						{refreshing ? (
+							<Loader2 className="size-3.5 animate-spin" />
+						) : (
+							<RefreshCw className="size-3.5" />
+						)}
+						Refresh
+					</Button>
+				}
+			/>
+			<div className="mt-3 flex flex-col gap-3">
+				<CheckSection
+					title="Agent"
+					caption="The agent container the panel talks to over gRPC.">
+					<StatusRow
+						label="Agent reporting"
+						isEnabled={agentRow.ok}
+						description={agentRow.text}
+					/>
+				</CheckSection>
+				<CheckSection
+					title="Engine"
+					caption="Docker state as seen through the agent's own socket.">
+					<StatusRow
+						label="Docker engine"
+						isEnabled={dockerRow.ok}
+						description={dockerRow.text}
+					/>
+				</CheckSection>
+				<CheckSection
+					title="Host"
+					caption="Host facts the agent reads directly from the machine.">
+					<StatusRow
+						label="Operating system"
+						value={latest?.distro || latest?.os}
+					/>
+					<StatusRow label="Architecture" value={latest?.arch} />
+					<StatusRow label="Kernel" value={latest?.kernel} />
+					<StatusRow
+						label="CPU"
+						value={
+							latest
+								? `${latest.cpu_model} · ${latest.cpu_cores} cores`
+								: undefined
+						}
+					/>
+				</CheckSection>
 			</div>
+		</div>
+	);
+}
 
-			{/* ── Re-setup ── */}
+/**
+ * Re-run the server setup over SSH (Docker, Swarm, Traefik, agent), with a
+ * confirm dialog and live streamed logs. The sheet's Setup tab.
+ */
+export function SetupRunContent({server}: {server: RemoteServerResponse}) {
+	const {
+		testingConn,
+		testConnection,
+		settingUp,
+		setupState,
+		connOk,
+		setupLogs,
+		setup,
+	} = useServerSetup(server);
+	const [advertiseAddr, setAdvertiseAddr] = useState('');
+	const [sudoPassword, setSudoPassword] = useState('');
+	const [setupConfirmOpen, setSetupConfirmOpen] = useState(false);
+
+	return (
+		<div className="flex flex-col gap-4">
 			<div className="rounded-lg border border-border/60 bg-card p-4">
 				<SectionHeader
 					title="Setup Server"
@@ -323,11 +301,7 @@ export function SetupServerContent({
 						disabled={testingConn || settingUp}
 						onClick={() => void testConnection()}
 						className="h-8 gap-1.5 text-xs">
-						{testingConn ? (
-							<Loader2 className="size-3.5 animate-spin" />
-						) : (
-							<RefreshCw className="size-3.5" />
-						)}
+						{testingConn && <Loader2 className="size-3.5 animate-spin" />}
 						{testingConn ? 'Testing…' : 'Test Connection'}
 					</Button>
 					<Button
@@ -335,12 +309,12 @@ export function SetupServerContent({
 						disabled={settingUp || connOk === false}
 						onClick={() => setSetupConfirmOpen(true)}
 						className="h-8 cursor-pointer gap-1.5 text-xs">
-						{settingUp ? (
-							<Loader2 className="size-3.5 animate-spin" />
-						) : (
-							<RefreshCw className="size-3.5" />
-						)}
-						{setupState === 'failed' ? 'Retry Setup' : 'Setup Server'}
+						{settingUp && <Loader2 className="size-3.5 animate-spin" />}
+						{settingUp
+							? 'Setting up…'
+							: setupState === 'failed'
+								? 'Retry Setup'
+								: 'Setup Server'}
 					</Button>
 					{connOk === false && (
 						<p className="text-xs text-amber-600 dark:text-amber-500">
@@ -360,7 +334,69 @@ export function SetupServerContent({
 				/>
 			)}
 
-			{/* ── GPU ── */}
+			<AlertDialog
+				open={setupConfirmOpen}
+				onOpenChange={setSetupConfirmOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							Run setup on {server.name}?
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							This re-runs the full setup over SSH — installing
+							dependencies and configuring Docker Swarm, Traefik, and the
+							agent. It can take a few minutes.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={() => {
+								setSetupConfirmOpen(false);
+								void setup(advertiseAddr, sudoPassword);
+							}}>
+							Run Setup
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</div>
+	);
+}
+
+/**
+ * GPU configuration: read the current support state and install the NVIDIA
+ * container toolkit on demand. The sheet's GPU tab.
+ */
+export function GpuSetupContent({server}: {server: RemoteServerResponse}) {
+	const {can} = usePermissions();
+	const canAct = can('server:create');
+	const serverId = BigInt(server.id);
+
+	const management = useServerManagement(serverId);
+	const gpuAction = useServerManagementAction(serverId);
+	const [gpuConfirmOpen, setGpuConfirmOpen] = useState(false);
+	const [gpuResult, setGpuResult] = useState<ServerActionPayload | null>(
+		null,
+	);
+
+	const runGpu = () => {
+		setGpuConfirmOpen(false);
+		gpuAction.mutate('configureGpu', {
+			onSuccess: payload => {
+				setGpuResult(payload);
+				if (payload.success) {
+					toast.success('GPU support configured');
+				} else {
+					toast.error(payload.stderr || 'GPU configuration failed');
+				}
+			},
+			onError: error => toast.error(formatApiError(error)),
+		});
+	};
+
+	return (
+		<div className="flex flex-col gap-4">
 			<div className="rounded-lg border border-border/60 bg-card p-4">
 				<SectionHeader
 					title="GPU Setup"
@@ -410,34 +446,6 @@ export function SetupServerContent({
 					</div>
 				)}
 			</div>
-
-			{/* ── Confirms ── */}
-			<AlertDialog
-				open={setupConfirmOpen}
-				onOpenChange={setSetupConfirmOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							Run setup on {server.name}?
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							This re-runs the full setup over SSH — installing
-							dependencies and configuring Docker Swarm, Traefik, and the
-							agent. It can take a few minutes.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={() => {
-								setSetupConfirmOpen(false);
-								void setup(advertiseAddr, sudoPassword);
-							}}>
-							Run Setup
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
 
 			<AlertDialog open={gpuConfirmOpen} onOpenChange={setGpuConfirmOpen}>
 				<AlertDialogContent>

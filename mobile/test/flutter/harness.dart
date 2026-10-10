@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/src/session/session.dart';
-import 'package:mobile/src/state/auth_controller.dart';
-import 'package:mobile/src/state/deps.dart';
-import 'package:mobile/src/ui/theme.dart';
-import 'package:mobile/src/ui/tokens.dart';
-import 'package:provider/provider.dart';
+import 'package:mobile/src/core/di/deps.dart';
+import 'package:mobile/src/core/session/session.dart';
+import 'package:mobile/src/core/theme/app_theme.dart';
+import 'package:mobile/src/core/tokens/motion.dart';
+import 'package:mobile/src/features/auth/bloc/auth_bloc.dart';
 
 /// Every width the app is expected to survive, from the smallest handset the
 /// panel supports up to a tablet and a landscape phone — the two places a row
@@ -17,24 +17,23 @@ const List<Size> kLayoutSizes = [
   Size(873, 393),
 ];
 
-/// The provider set `main.dart` installs, so a screen under test reads its
+/// The provider set `OpenoxideApp` installs, so a screen under test reads its
 /// state exactly the way it does at runtime.
-Widget appScope({
-  required Widget child,
-  required AuthController auth,
-  Deps? deps,
-}) {
-  return MultiProvider(
+Widget appScope({required Widget child, required AuthBloc auth, Deps? deps}) {
+  final scopeDeps = deps;
+  return MultiRepositoryProvider(
     providers: [
-      if (deps != null) Provider<Deps>.value(value: deps),
-      ChangeNotifierProvider<AuthController>.value(value: auth),
-      ChangeNotifierProvider<Session>.value(value: auth.session),
+      if (scopeDeps != null) RepositoryProvider<Deps>.value(value: scopeDeps),
+      RepositoryProvider<Session>.value(value: auth.session),
     ],
-    child: MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: appTheme(Brightness.light),
-      darkTheme: appTheme(Brightness.dark),
-      home: child,
+    child: MultiBlocProvider(
+      providers: [BlocProvider<AuthBloc>.value(value: auth)],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: appTheme(Brightness.light),
+        darkTheme: appTheme(Brightness.dark),
+        home: child,
+      ),
     ),
   );
 }
@@ -110,13 +109,13 @@ Future<void> pumpEntrance(
 /// Fail with every layout error the frames produced, if there were any.
 void expectLayoutIntact(WidgetTester tester, String where) {
   final problems = <Object>[];
-  for (Object? error = tester.takeException();
-      error != null;
-      error = tester.takeException()) {
+  for (
+    Object? error = tester.takeException();
+    error != null;
+    error = tester.takeException()
+  ) {
     problems.add(error);
   }
   if (problems.isEmpty) return;
-  fail(
-    'layout broke $where:\n${problems.map((p) => p.toString()).join('\n')}',
-  );
+  fail('layout broke $where:\n${problems.map((p) => p.toString()).join('\n')}');
 }

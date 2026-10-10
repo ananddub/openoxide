@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:grpc/grpc.dart';
-import 'package:mobile/src/grpc/app_error.dart';
-import 'package:mobile/src/grpc/auth_coordinator.dart';
-import 'package:mobile/src/grpc/auth_retry.dart';
-import 'package:mobile/src/session/session.dart';
+import 'package:mobile/src/core/grpc/app_error.dart';
+import 'package:mobile/src/core/grpc/auth_coordinator.dart';
+import 'package:mobile/src/core/grpc/auth_retry.dart';
+import 'package:mobile/src/core/session/session.dart';
 
 /// A coordinator whose refresh endpoint and clock are both under the test's
 /// control, so token expiry can be exercised even though the dev panel runs with

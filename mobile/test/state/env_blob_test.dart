@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/src/state/env_blob.dart';
+import 'package:mobile/src/core/domain/env_blob.dart';
 
 void main() {
   group('envVariableCount', () {

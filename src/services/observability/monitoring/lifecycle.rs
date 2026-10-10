@@ -325,11 +325,7 @@ impl MonitoringLifecycleService {
             let mut config = SetupConfig {
                 agent_server_id: Some(server_id),
                 agent_token: Some(self.agent_auth_token_fallback()),
-                agent_panel_url: Some(
-                    std::env::var("OPENOXIDE_SERVER_URL")
-                        .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
-                        .unwrap_or_else(|_| "http://127.0.0.1:4000".into()),
-                ),
+                agent_panel_url: Some(agent_panel_url(true)),
                 ..Default::default()
             };
             self.apply_agent_mtls(server_id, &mut config).await;
@@ -524,11 +520,7 @@ impl MonitoringLifecycleService {
         let config = SetupConfig {
             agent_server_id: Some(server_id),
             agent_token: Some(self.agent_auth_token_fallback()),
-            agent_panel_url: Some(
-                std::env::var("OPENOXIDE_SERVER_URL")
-                    .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
-                    .unwrap_or_else(|_| "http://openoxide:4000".into()),
-            ),
+            agent_panel_url: Some(agent_panel_url(false)),
             ..Default::default()
         };
         ServerSetup::new_local(config)
@@ -605,11 +597,7 @@ impl MonitoringLifecycleService {
             agent_server_id: Some(server_id),
             agent_token: Some(token),
             agent_retention_days: policy.retention_days,
-            agent_panel_url: Some(
-                std::env::var("OPENOXIDE_SERVER_URL")
-                    .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
-                    .unwrap_or_else(|_| "http://127.0.0.1:4000".into()),
-            ),
+            agent_panel_url: Some(agent_panel_url(true)),
             ..Default::default()
         };
         self.apply_agent_mtls(server_id, &mut config).await;
@@ -842,6 +830,41 @@ fn local_docker_api() -> crate::utils::docker::DockerApi {
     crate::utils::docker::DockerApi::new(
         std::env::var("SOCKET_PATH").unwrap_or_else(|_| "/var/run/docker.sock".into()),
     )
+}
+
+/// Panel URL an agent should call back on.
+///
+/// `OPENOXIDE_SERVER_URL` is often a Docker-internal name (`https://openoxide:4000`)
+/// that only resolves on the panel's own compose network — a REMOTE agent can
+/// never reach it, so its gRPC calls fail with "invalid agent token" forever
+/// and auto-repair can't recover. For remote agents we therefore prefer
+/// `OPENOXIDE_PUBLIC_URL` (the routable public/LAN address). The local agent
+/// keeps using the internal URL (it shares the network).
+pub(crate) fn agent_panel_url(is_remote: bool) -> String {
+    let internal = std::env::var("OPENOXIDE_SERVER_URL")
+        .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
+        .unwrap_or_else(|_| "http://127.0.0.1:4000".into());
+    if !is_remote {
+        return internal;
+    }
+    // Remote: a public/routable URL is required. Fall back to the internal one
+    // only if no public URL is configured (and warn, since it likely won't
+    // resolve off the panel host).
+    if let Ok(public) = std::env::var("OPENOXIDE_PUBLIC_URL")
+        && !public.trim().is_empty()
+    {
+        return public;
+    }
+    let host_looks_internal = internal.contains("://openoxide")
+        || internal.contains("://127.0.0.1")
+        || internal.contains("://localhost");
+    if host_looks_internal {
+        tracing::warn!(
+            url = %internal,
+            "remote agent panel URL looks non-routable (Docker-internal/localhost); set OPENOXIDE_PUBLIC_URL to the panel's reachable address or the agent cannot authenticate back"
+        );
+    }
+    internal
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

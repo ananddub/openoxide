@@ -36,7 +36,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   grpc: ^5.1.0
   protobuf: ^6.1.0
-  provider: ^6.1.5+1
+  flutter_bloc: ^9.1.0
+  equatable: ^2.0.7
   flutter_secure_storage: ^11.2.0
   intl: ^0.20.3
   fixnum: ^1.1.1
@@ -70,7 +71,7 @@ flutter:
   assets:
     - assets/licences/
 
-  # Built by `make -C mobile fonts`: static instances of the Inter and JetBrains
+  # Built by `just -d mobile fonts`: static instances of the Inter and JetBrains
   # Mono variable fonts, subsetted to the ranges this app draws. Inter is the
   # panel's own UI face; JetBrains Mono is for log panes, where it keeps Box
   # Drawing and Block Elements so a container's progress bar is not tofu.

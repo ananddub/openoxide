@@ -472,7 +472,7 @@ impl AiService {
         ),
         String,
     > {
-        use super::agent::{session, AgentEvent};
+        use super::agent::{AgentEvent, session};
 
         if prompt.trim().is_empty() || prompt.len() > 8_000 {
             return Err("assistant prompt must contain 1 to 8000 characters".into());
@@ -529,6 +529,89 @@ impl AiService {
         });
 
         Ok((sid, rx))
+    }
+
+    /// Fetch the AI diagnosis for a failed deployment; `force` recomputes it
+    /// even when a diagnosis is already stored.
+    pub async fn get_build_diagnosis(
+        &self,
+        deployment_id: i64,
+        force: bool,
+    ) -> Option<super::diagnosis::StoredDiagnosis> {
+        super::diagnosis::diagnose_on_demand(deployment_id, force).await
+    }
+
+    /// Apply the AI's config fix for a failed deployment, then redeploy.
+    /// Only touches compose_file / env — never repo source.
+    pub async fn apply_ai_fix(&self, deployment_id: i64, user_id: i64) -> Result<String, String> {
+        let diag = super::diagnosis::get(deployment_id)
+            .await
+            .ok_or_else(|| "no diagnosis available for this deployment".to_string())?;
+        if !diag.is_fixable() {
+            return Err("this failure is not fixable by a config change".into());
+        }
+        let fix_content = diag
+            .fix_content
+            .ok_or_else(|| "diagnosis has no fix content".to_string())?;
+        let target = diag.fix_target.unwrap_or_default();
+
+        let deployment = self
+            .queries
+            .get_deployment_by_i_d(deployment_id)
+            .await
+            .map_err(db_error)?;
+        let service_id = deployment
+            .service_id
+            .ok_or_else(|| "deployment has no service".to_string())?;
+        let service_type = self
+            .queries
+            .get_service_by_i_d(service_id)
+            .await
+            .map_err(db_error)?
+            .service_type;
+
+        // Apply the fix to the appropriate config.
+        match target.as_str() {
+            "compose" => {
+                self.queries
+                    .update_compose_file(&fix_content, service_id)
+                    .await
+                    .map_err(db_error)?;
+            }
+            "env" => {
+                self.queries
+                    .update_service_env_var(&fix_content, service_id)
+                    .await
+                    .map_err(db_error)?;
+            }
+            other => {
+                return Err(format!("fix target '{other}' cannot be auto-applied yet"));
+            }
+        }
+
+        // Redeploy via the owning service.
+        if service_type.eq_ignore_ascii_case("compose") {
+            self.compose
+                .run_operation(service_id, ComposeOperation::Redeploy, user_id)
+                .await
+                .map_err(db_error)?;
+        } else {
+            let app =
+                auto_di::resolve::<crate::services::compute::application::ApplicationService>()
+                    .await
+                    .map_err(|e| format!("application service unavailable: {e}"))?;
+            app.run_operation(
+                service_id,
+                crate::services::compute::application::ApplicationOperation::Redeploy,
+                user_id,
+            )
+            .await
+            .map_err(db_error)?;
+        }
+
+        Ok(format!(
+            "Applied the fix to {target} and started a redeploy."
+        ))
     }
 
     async fn first_enabled_setting(&self, organization_id: i64) -> Result<AiSettings, String> {

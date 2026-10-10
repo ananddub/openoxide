@@ -333,6 +333,13 @@ impl ServerSetup {
 
         let p_grpc = Port::tcp(50051, 50051);
 
+        // Guarantee the name is free right before (re)creating: earlier removal
+        // only runs inside the inspect/spec branches, so a container left by a
+        // prior partial run would otherwise cause a `docker run` name conflict
+        // (exit 125 "name is already in use"). Force-remove is idempotent.
+        let _ = docker.container(name).stop().run().await;
+        let _ = docker.container(name).remove().force().run().await;
+
         let containers = docker.containers();
         let mut create = containers
             .create(image)
@@ -353,7 +360,20 @@ impl ServerSetup {
             .mount(apps_mount)
             .mount(compose_mount)
             .mount(traefik_mount)
+            // Managed WireGuard runs inside this agent container (wg-easy
+            // model, host untouched): mount the host kernel modules, add the
+            // TUN device, and set the forwarding sysctls so the container can
+            // route tunnel traffic to its host (SSH over the tunnel).
+            .mount(Mount::bind_ro("/lib/modules", "/lib/modules"))
+            .device("/dev/net/tun")
+            .sysctl("net.ipv4.ip_forward", "1")
+            .sysctl("net.ipv4.conf.all.src_valid_mark", "1")
             .publish(p_grpc);
+        // Publish the managed-WireGuard UDP port range so each tunnel's
+        // auto-allocated listen port (51820 upward) reaches this host.
+        for port in 51820u16..=51839 {
+            create = create.publish(Port::udp(port, port));
+        }
         if mtls_ready {
             create = create
                 .mount(Mount::bind_ro(&mtls_dir, "/etc/openoxide/mtls"))
@@ -494,8 +514,8 @@ impl ServerSetup {
             }
             if os.has_command("systemctl") {
                 info!("Ensuring Docker service is enabled and running");
-                os.service("docker").enable().now().non_fatal();
-                os.service("docker").start().non_fatal();
+                os.service("docker").enable().now();
+                os.service("docker").start();
             }
             cmd("docker", "info");
         ));
@@ -835,7 +855,18 @@ impl ServerSetup {
                 .env("AGENT_TLS_KEY", "/etc/openoxide/mtls/agent.key")
                 .env("AGENT_TLS_CLIENT_CA", "/etc/openoxide/mtls/ca.crt");
         }
-        let create_cmd = create_cmd.publish(Port::tcp(50051, 50051));
+        let mut create_cmd = create_cmd
+            .mount(Mount::bind_ro("/lib/modules", "/lib/modules"))
+            .device("/dev/net/tun")
+            .sysctl("net.ipv4.ip_forward", "1")
+            .sysctl("net.ipv4.conf.all.src_valid_mark", "1")
+            .publish(Port::tcp(50051, 50051));
+        // Publish the managed-WireGuard UDP port range (auto-allocated from
+        // 51820 upward) so each tunnel reaches this host.
+        for port in 51820u16..=51839 {
+            create_cmd = create_cmd.publish(Port::udp(port, port));
+        }
+        let create_cmd = create_cmd;
         steps.extend(sh!(
             let _openoxide_arch = capture_stdout! {
                 cmd("uname", "-m");
@@ -849,6 +880,8 @@ impl ServerSetup {
             } else {
                 info!("Pulling OpenOxide agent image");
                 docker.images().pull(image);
+                info!("Removing any previous OpenOxide agent container");
+                docker.container(name).remove().force();
                 info!("Creating OpenOxide agent container");
                 create_cmd;
             }
@@ -901,7 +934,21 @@ pub(crate) fn agent_supports_direct_host_shell(
         .get("Privileged")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    host_pid && privileged && host_bind
+    // Managed WireGuard needs the host kernel modules bound in and the UDP
+    // listen-port range published to the host. An agent created before this
+    // spec lacks them, so treat it as outdated and recreate it — otherwise the
+    // tunnel's UDP packets never reach the host and SSH-over-tunnel times out.
+    let has_modules = mounts
+        .iter()
+        .any(|mount| mount.destination == "/lib/modules")
+        || string_array(host_config, "Binds")
+            .iter()
+            .any(|bind| bind.contains(":/lib/modules"));
+    let wireguard_ports = host_config
+        .get("PortBindings")
+        .and_then(|v| v.as_object())
+        .is_some_and(|ports| ports.keys().any(|k| k.ends_with("/udp")));
+    host_pid && privileged && host_bind && has_modules && wireguard_ports
 }
 
 fn string_array(value: &serde_json::Value, field: &str) -> Vec<String> {
@@ -1035,6 +1082,8 @@ mod tests {
             "PidMode": "host",
             "Privileged": true,
             "CapAdd": ["CAP_SYS_ADMIN", "CAP_SYS_PTRACE", "CAP_NET_ADMIN"],
+            "Binds": ["/lib/modules:/lib/modules:ro"],
+            "PortBindings": {"51820/udp": [{}]}
         })
     }
 
@@ -1050,7 +1099,8 @@ mod tests {
             "PidMode": "host",
             "Privileged": true,
             "CapAdd": ["CAP_SYS_ADMIN", "CAP_SYS_PTRACE"],
-            "Binds": ["/var/run/docker.sock:/var/run/docker.sock", "/:/host:ro"]
+            "Binds": ["/var/run/docker.sock:/var/run/docker.sock", "/:/host:ro", "/lib/modules:/lib/modules:ro"],
+            "PortBindings": {"51820/udp": [{}]}
         });
         assert!(agent_supports_direct_host_shell(&[], &binds));
     }

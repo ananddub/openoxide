@@ -399,6 +399,9 @@ fn build(a: &ApplicationGetSpecRowRow) -> Result<Option<BuildStrategy>, AdapterE
                 .ok_or(AdapterError::MissingField("publish_directory"))?,
             spa: a.is_static_spa.unwrap_or(0) != 0,
         },
+        // Provider is resolved asynchronously in the spec adapter's load(),
+        // which has DI/DB access; the sync mapper leaves it None.
+        BuildType::AiDockerfile => BuildStrategy::AiDockerfile { provider: None },
     }))
 }
 fn registry_auth(a: &ApplicationGetSpecRowRow) -> Option<RegistryAuth> {

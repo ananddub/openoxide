@@ -157,8 +157,123 @@ impl ApplicationBuilder {
                 self.build_static(spec, publish_directory, *spa, cancel)
                     .await?
             }
+            BuildStrategy::AiDockerfile { provider } => {
+                self.build_ai_dockerfile(spec, provider.as_ref(), cancel)
+                    .await?
+            }
         }
         Ok(())
+    }
+
+    /// AI-generated Dockerfile build: read the repo, ask the model for a
+    /// Dockerfile, build it, and on failure feed the error back for a revised
+    /// Dockerfile — up to a small retry cap. Never edits repo source.
+    async fn build_ai_dockerfile(
+        &self,
+        spec: &ApplicationSpec,
+        provider: Option<&crate::utils::ai::AiProviderConfig>,
+        cancel: &CancellationToken,
+    ) -> ExecResult<()> {
+        use crate::utils::builder::application::ai_dockerfile as aidf;
+
+        const MAX_ATTEMPTS: usize = 3;
+        let fail = |m: String| ExecError::CommandFailed { code: None, stderr: m };
+
+        let provider = provider.ok_or_else(|| {
+            fail("AI Dockerfile build needs an enabled AI provider in this organization.".into())
+        })?;
+
+        self.ctx
+            .emit(BuilderEvent::Message(
+                "AI Dockerfile: reading repository…".into(),
+            ))
+            .await;
+        let repo = aidf::read_repo_context(&self.ctx.executor, &spec.work_directory)
+            .await
+            .map_err(fail)?;
+
+        // Try a cached working Dockerfile for this repo signature first.
+        let cached = aidf::cache_lookup(&repo.signature).await;
+        let mut dockerfile = match cached {
+            Some(df) => {
+                self.ctx
+                    .emit(BuilderEvent::Message(
+                        "AI Dockerfile: reusing a previously working Dockerfile for this repo.".into(),
+                    ))
+                    .await;
+                df
+            }
+            None => {
+                self.ctx
+                    .emit(BuilderEvent::Message(
+                        "AI Dockerfile: generating a Dockerfile…".into(),
+                    ))
+                    .await;
+                aidf::generate_dockerfile(provider, &repo, None, None)
+                    .await
+                    .map_err(fail)?
+            }
+        };
+
+        let mut last_error = String::new();
+        for attempt in 1..=MAX_ATTEMPTS {
+            self.ctx
+                .emit(BuilderEvent::Message(format!(
+                    "AI Dockerfile: build attempt {attempt}/{MAX_ATTEMPTS}\n{dockerfile}"
+                )))
+                .await;
+
+            let df_path = format!("{}/Dockerfile.openoxide", spec.work_directory);
+            self.ctx
+                .write_file_cancelled(&df_path, dockerfile.as_bytes(), cancel)
+                .await?;
+
+            let images = self.ctx.docker.images();
+            let mut builder = images
+                .build(spec.work_directory.clone())
+                .tag(spec.image.clone())
+                .dockerfile(df_path.clone());
+            for (k, v) in &spec.build_args {
+                builder = builder.build_arg(k.clone(), v.clone());
+            }
+            let build_cmd = builder.cancel_with(cancel.clone());
+            let pipeline = pipeline! { build_cmd; };
+
+            match self.ctx.run_pipeline_streamed(&pipeline, cancel).await {
+                Ok(()) => {
+                    // Success — remember this Dockerfile for next time.
+                    aidf::cache_store(&repo.signature, &dockerfile).await;
+                    self.ctx
+                        .emit(BuilderEvent::Message(
+                            "AI Dockerfile: build succeeded.".into(),
+                        ))
+                        .await;
+                    return Ok(());
+                }
+                Err(e) => {
+                    last_error = e.to_string();
+                    if attempt == MAX_ATTEMPTS {
+                        break;
+                    }
+                    self.ctx
+                        .emit(BuilderEvent::Message(format!(
+                            "AI Dockerfile: attempt {attempt} failed; asking the model to fix it…"
+                        )))
+                        .await;
+                    dockerfile = aidf::generate_dockerfile(
+                        provider,
+                        &repo,
+                        Some(&dockerfile),
+                        Some(&last_error),
+                    )
+                    .await
+                    .map_err(fail)?;
+                }
+            }
+        }
+        Err(fail(format!(
+            "AI Dockerfile build failed after {MAX_ATTEMPTS} attempts. Last error:\n{last_error}"
+        )))
     }
 
     async fn build_dockerfile(

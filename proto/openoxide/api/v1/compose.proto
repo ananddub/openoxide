@@ -43,7 +43,7 @@ service ComposeService {
   rpc Cancel(ComposeOperationRequest) returns (Empty);
   // Move a compose project to another environment. Required: id, target_environment_id.
   rpc MoveCompose(MoveComposeRequest) returns (Compose);
-  // Rotate the deploy-webhook token for a compose project by id; returns the new token.
+  // @internal Rotate the deploy-webhook token for a compose project by id; returns the new token.
   rpc RotateWebhookToken(ComposeOperationRequest) returns (ComposeWebhookToken);
   // List resources this compose project depends on, by id.
   rpc ListDependencies(ComposeOperationRequest) returns (ComposeDependencies);

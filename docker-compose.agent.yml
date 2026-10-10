@@ -18,17 +18,40 @@ services:
     init: true
     # Direct host shell: reading the namespace symlinks under /host/proc/1/ns/*
     # is ptrace-gated (CAP_SYS_PTRACE) and the setns() itself needs CAP_SYS_ADMIN.
+    # NET_ADMIN + SYS_MODULE additionally let the agent run managed WireGuard
+    # inside the container (interface lives in the agent's own netns, the host
+    # stays untouched) — the same capability set wg-easy uses.
     cap_add:
       - SYS_ADMIN
       - SYS_PTRACE
+      - NET_ADMIN
+      - SYS_MODULE
+    # Load the host's WireGuard kernel module from inside the container, and a
+    # userspace-TUN fallback — exactly how wg-easy brings WireGuard up without
+    # installing anything on the host.
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    # Kernel knobs WireGuard needs: forwarding (so the container can route
+    # tunnel traffic to its host, enabling SSH over the tunnel) and the
+    # src_valid_mark fix wg-quick normally sets itself.
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.forwarding=1
     # The kernel will not setns() upward into an ancestor PID namespace, so the
     # agent has to start in the host's for the shell to see host PIDs and reaps.
     pid: host
+    # Managed-WireGuard UDP listen ports are auto-allocated by the panel from
+    # 51820 upward; publish a range so each tunnel's port reaches this host.
+    ports:
+      - "51820-51839:51820-51839/udp"
     # Local panel and agent share a private Docker network. The panel reaches
     # this service at openoxide-agent:50051.
     networks:
       - openoxide-network
     volumes:
+      # WireGuard kernel module access (load wg on the host from the container).
+      - /lib/modules:/lib/modules:ro
       # The agent is the host Docker executor for monitoring, compose,
       # deployment, backup and maintenance tasks. Keep this mount read-write;
       # Docker authorizes operations through the socket itself.

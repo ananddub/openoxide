@@ -94,35 +94,37 @@ export function PrivateNetworkPanel({server}: PrivateNetworkPanelProps) {
 				{/* Mode tiles */}
 				<ModeTiles mode={mode} disabled={busy} onSelect={setMode} />
 
-				{/* Contextual configuration */}
-				{mode === 'MANAGED_WIREGUARD' && (
-					<WireGuardFields
-						server={server}
-						listenPort={listenPort}
-						tunnelAddress={tunnelAddress}
-						managedHost={managedHost}
-						keepalive={keepalive}
-						onListenPort={setListenPort}
-						onTunnelAddress={setTunnelAddress}
-						onKeepalive={setKeepalive}
-					/>
-				)}
+				{/* Contextual configuration (card padding lives here, not in the field blocks) */}
+				<div className="px-5 pb-5">
+					{mode === 'MANAGED_WIREGUARD' && (
+						<WireGuardFields
+							server={server}
+							listenPort={listenPort}
+							tunnelAddress={tunnelAddress}
+							managedHost={managedHost}
+							keepalive={keepalive}
+							onListenPort={setListenPort}
+							onTunnelAddress={setTunnelAddress}
+							onKeepalive={setKeepalive}
+						/>
+					)}
 
-				{mode === 'EXTERNAL_PRIVATE_NETWORK' && (
-					<ExternalVpnFields
-						provider={provider}
-						privateHost={privateHost}
-						dnsName={dnsName}
-						routes={routes}
-						busy={busy}
-						onProvider={setProvider}
-						onPrivateHost={setPrivateHost}
-						onDnsName={setDnsName}
-						onRoutes={setRoutes}
-					/>
-				)}
+					{mode === 'EXTERNAL_PRIVATE_NETWORK' && (
+						<ExternalVpnFields
+							provider={provider}
+							privateHost={privateHost}
+							dnsName={dnsName}
+							routes={routes}
+							busy={busy}
+							onProvider={setProvider}
+							onPrivateHost={setPrivateHost}
+							onDnsName={setDnsName}
+							onRoutes={setRoutes}
+						/>
+					)}
 
-				{mode === 'DIRECT_SSH' && <DirectSshNote server={server} />}
+					{mode === 'DIRECT_SSH' && <DirectSshNote server={server} />}
+				</div>
 
 				{/* Footer actions */}
 				<PanelActions

@@ -1,18 +1,18 @@
 use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
-    AiAnalyzeLogsRequest, AiAnalyzeLogsResponse, AiAssistantEvent, AiAssistantEventKind,
-    AiAssistantRequest, AiAssistantResponse,
+    AiAnalyzeLogsRequest, AiAnalyzeLogsResponse, AiApplyFixRequest, AiApplyFixResponse,
+    AiAssistantEvent, AiAssistantEventKind, AiAssistantRequest, AiAssistantResponse,
     AiCreateGenerationRequest, AiCreateGenerationResponse, AiCreateSettingsRequest,
     AiCreateSettingsResponse, AiDeleteSettingsRequest, AiDeployGenerationRequest,
     AiDeployGenerationResponse, AiDiscoverModelsRequest, AiDiscoverModelsResponse,
-    AiGetGenerationRequest, AiGetGenerationResponse, AiGetSettingsRequest, AiGetSettingsResponse,
-    AiInteraction, AiInteractionKind, AiInteractionOption, AiListGenerationsRequest,
-    AiListGenerationsResponse, AiListModelsRequest, AiListModelsResponse, AiListSettingsRequest,
-    AiListSettingsResponse, AiLogContext, AiReviewGenerationRequest, AiReviewGenerationResponse,
-    AiService, AiServiceExt, AiTestConnectionRequest, AiTestConnectionResponse,
-    AiTestSettingsRequest, AiTestSettingsResponse, AiUpdateSettingsRequest,
-    AiUpdateSettingsResponse, Empty,
+    AiGetBuildDiagnosisRequest, AiGetBuildDiagnosisResponse, AiGetGenerationRequest,
+    AiGetGenerationResponse, AiGetSettingsRequest, AiGetSettingsResponse, AiInteraction,
+    AiInteractionKind, AiInteractionOption, AiListGenerationsRequest, AiListGenerationsResponse,
+    AiListModelsRequest, AiListModelsResponse, AiListSettingsRequest, AiListSettingsResponse,
+    AiLogContext, AiReviewGenerationRequest, AiReviewGenerationResponse, AiService, AiServiceExt,
+    AiTestConnectionRequest, AiTestConnectionResponse, AiTestSettingsRequest,
+    AiTestSettingsResponse, AiUpdateSettingsRequest, AiUpdateSettingsResponse, Empty,
 };
 use crate::services::platform::ai::{
     AiDeployInput, AiGenerationOutput as AppAiGenerationOutput, AiLogContext as AppAiLogContext,
@@ -188,6 +188,61 @@ impl AiService for AiController {
             success: true,
             message: "connection successful".into(),
         })
+    }
+
+    #[permission(Application, CanRead)]
+    async fn get_build_diagnosis<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, AiGetBuildDiagnosisRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiGetBuildDiagnosisResponse> + Send + use<'a>>
+    {
+        let _ = &ctx;
+        match self
+            .service
+            .get_build_diagnosis(request.deployment_id, request.force)
+            .await
+        {
+            Some(d) => Response::ok(AiGetBuildDiagnosisResponse {
+                available: true,
+                classification: d.classification.as_str().to_string(),
+                root_cause: d.root_cause.clone(),
+                explanation: d.explanation.clone(),
+                fixable: d.is_fixable(),
+                fix_target: d.fix_target.clone().unwrap_or_default(),
+            }),
+            None => Response::ok(AiGetBuildDiagnosisResponse {
+                available: false,
+                classification: String::new(),
+                root_cause: String::new(),
+                explanation: String::new(),
+                fixable: false,
+                fix_target: String::new(),
+            }),
+        }
+    }
+
+    #[permission(Application, CanUpdate)]
+    async fn apply_ai_fix<'a>(
+        &'a self,
+        ctx: RequestContext,
+        request: ServiceRequest<'_, AiApplyFixRequest>,
+    ) -> ServiceResult<impl connectrpc::Encodable<AiApplyFixResponse> + Send + use<'a>> {
+        let auth = Self::extract_auth(&ctx).await?;
+        match self
+            .service
+            .apply_ai_fix(request.deployment_id, auth.user_id())
+            .await
+        {
+            Ok(message) => Response::ok(AiApplyFixResponse {
+                applied: true,
+                message,
+            }),
+            Err(message) => Response::ok(AiApplyFixResponse {
+                applied: false,
+                message,
+            }),
+        }
     }
 
     #[permission(Application, CanRead)]
@@ -423,14 +478,18 @@ impl AiService for AiController {
                 token,
                 request.ai_setting_id,
                 request.session_id.map(str::to_owned),
-                request.pending_actions.map(str::to_owned).unwrap_or_default(),
+                request
+                    .pending_actions
+                    .map(str::to_owned)
+                    .unwrap_or_default(),
                 request.prompt.to_owned(),
             )
             .await
             .map_err(map_error)?;
 
         // Bridge the agent's AgentEvent channel to the proto event stream.
-        let (out_tx, out_rx) = tokio::sync::mpsc::channel::<Result<AiAssistantEvent, ConnectError>>(64);
+        let (out_tx, out_rx) =
+            tokio::sync::mpsc::channel::<Result<AiAssistantEvent, ConnectError>>(64);
         let sid = session_id.clone();
         tokio::spawn(async move {
             // First event carries the session id so the client can store it.

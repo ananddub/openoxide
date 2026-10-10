@@ -13,7 +13,7 @@ analyzer:
   exclude:
     - build/**
     - android/**
-    # Machine output from `make -C mobile gen`; regenerated, never hand-edited,
+    # Machine output from `just -d mobile gen`; regenerated, never hand-edited,
     # and the only real check on it is that the app compiles against it.
     - lib/src/gen/**
 
@@ -29,6 +29,10 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
+    # The app addresses its own code by package path, never by `../` chains:
+    # files move between feature folders often, and a moved file's imports
+    # should survive the move untouched.
+    always_use_package_imports: true
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
 

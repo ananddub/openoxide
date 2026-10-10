@@ -19,28 +19,28 @@ export const listKeys = SshKeyService.method.listKeys;
 export const getKey = SshKeyService.method.getKey;
 
 /**
- * Create (import) an SSH key. Required: name, public_key; private_key optional.
+ * @internal Create (import) an SSH key. Required: name, public_key; private_key optional.
  *
  * @generated from rpc openoxide.api.v1.SshKeyService.CreateKey
  */
 export const createKey = SshKeyService.method.createKey;
 
 /**
- * Generate and store a new SSH key. Required: name, key_type (SSH_KEY_TYPE_ED25519/RSA).
+ * @internal Generate and store a new SSH key. Required: name, key_type (SSH_KEY_TYPE_ED25519/RSA).
  *
  * @generated from rpc openoxide.api.v1.SshKeyService.GenerateKey
  */
 export const generateKey = SshKeyService.method.generateKey;
 
 /**
- * Generate an SSH key pair without storing it; optional key_type (defaults ed25519).
+ * @internal Generate an SSH key pair without storing it; optional key_type (defaults ed25519).
  *
  * @generated from rpc openoxide.api.v1.SshKeyService.GeneratePair
  */
 export const generatePair = SshKeyService.method.generatePair;
 
 /**
- * Update an SSH key by id; name/description/public_key/private_key optional.
+ * @internal Update an SSH key by id; name/description/public_key/private_key optional.
  *
  * @generated from rpc openoxide.api.v1.SshKeyService.UpdateKey
  */

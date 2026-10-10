@@ -67,6 +67,39 @@ impl ApplicationSpecAdapter {
             middlewares,
             networks,
         };
-        ApplicationSpec::try_from(data).map_err(|e| sqlx::Error::Protocol(e.to_string()))
+        let mut spec =
+            ApplicationSpec::try_from(data).map_err(|e| sqlx::Error::Protocol(e.to_string()))?;
+
+        // For the AI-Dockerfile strategy, resolve the org's enabled AI provider
+        // now (we have DI/DB access here; the sync mapper did not) so the
+        // builder can call the model without a DB round-trip.
+        if let Some(crate::utils::builder::spec::BuildStrategy::AiDockerfile { provider }) =
+            spec.build.as_mut()
+            && provider.is_none()
+        {
+            *provider = resolve_ai_provider(&self.queries, application_id).await;
+        }
+
+        Ok(spec)
     }
+}
+
+/// Resolve the organization's first enabled AI provider for an application.
+async fn resolve_ai_provider(
+    queries: &FlashQueries,
+    application_id: i64,
+) -> Option<crate::utils::ai::AiProviderConfig> {
+    let ctx = queries
+        .services_get_deployment_context(application_id)
+        .await
+        .ok()?;
+    let project = queries.get_project_by_i_d(ctx.project_id).await.ok()?;
+    let org_id = project.organization_id;
+    let settings = queries.ai_settings_list_by_organization(org_id).await.ok()?;
+    let s = settings.into_iter().find(|s| s.is_enabled != 0)?;
+    Some(crate::utils::ai::AiProviderConfig {
+        api_url: s.api_url,
+        api_key: s.api_key,
+        model: s.model,
+    })
 }

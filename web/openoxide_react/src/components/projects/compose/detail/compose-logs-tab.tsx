@@ -35,12 +35,18 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 
 	// ConnectRPC log streams. Container mode tails the compose project's service logs; build mode streams the latest deployment's build log (the old REST build endpoint never worked).
 	const {data: allDeployments = []} = useDeploymentItems();
-	const latestBuildDeploymentId = useMemo(() => {
+	const latestBuild = useMemo(() => {
 		const mine = allDeployments.filter(
 			(d: any) => String(d.compose_id) === String(compose?.id),
 		);
-		return mine.length > 0 ? Number(mine[0].id) : null;
+		return mine.length > 0 ? mine[0] : null;
 	}, [allDeployments, compose?.id]);
+	const latestBuildDeploymentId = latestBuild
+		? Number(latestBuild.id)
+		: null;
+	const latestBuildFailed = /ERROR|FAIL|CRASH/i.test(
+		String(latestBuild?.status || latestBuild?.state || ''),
+	);
 
 	useEffect(() => {
 		let isMounted = true;
@@ -153,6 +159,10 @@ export function ComposeLogsTab({compose}: ComposeLogsTabProps) {
 			<DeploymentViewer
 				heightClass="h-[calc(100dvh_-_310px)] min-h-[360px]"
 				aiContext={logMode === 'build' ? 'BUILD' : 'RUNTIME'}
+				deploymentId={
+					logMode === 'build' ? (latestBuildDeploymentId ?? 0) : undefined
+				}
+				failed={logMode === 'build' && latestBuildFailed}
 				logs={streamedLogs}
 				isLoading={isLoading}
 				isLive={isLive}

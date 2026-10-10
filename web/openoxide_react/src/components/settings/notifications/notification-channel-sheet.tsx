@@ -14,8 +14,7 @@ import {
 import type {NotificationPayload} from '#/api/live';
 import {
 	OptionRow,
-	StepBody,
-	StepCheckpoints,
+	StepTimeline,
 	WizardField,
 	type WizardStep,
 } from '#/components/shared/sheet-wizard';
@@ -47,13 +46,6 @@ const STEP_DESC: Record<string, string> = {
 	events: 'Pick the events that fire a message to this channel.',
 	review:
 		'Name the channel — that is all that is stored besides the events.',
-};
-
-const STEP_DESC_EDIT: Record<string, string> = {
-	...STEP_DESC,
-	connection:
-		'Optional — fill only what you want to change. Blank fields keep their current values.',
-	review: 'Rename the channel or leave it as is.',
 };
 
 /** Add / edit a notification channel as a checkpoint wizard. */
@@ -151,6 +143,12 @@ export function NotificationChannelSheet({
 				</button>
 			</div>
 
+			{selectedTriggers.length === 0 && (
+				<p className="-mt-3 text-[13px] text-amber-600 dark:text-amber-500">
+					Pick at least one event — a channel with none never fires.
+				</p>
+			)}
+
 			{TRIGGER_GROUPS.map(group => (
 				<div key={group} className="flex flex-col gap-2">
 					<p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
@@ -221,28 +219,47 @@ export function NotificationChannelSheet({
 					</SheetTitle>
 					<SheetDescription>
 						{editing
-							? 'Everything on one page — blanks keep their stored values.'
-							: (editing ? STEP_DESC_EDIT : STEP_DESC)[step]}
+							? 'Rename, re-pick events, or rotate credentials — blank connection fields keep their stored values.'
+							: STEP_DESC[step]}
 					</SheetDescription>
-					{!editing && <StepCheckpoints steps={steps} idx={stepIdx} />}
 				</SheetHeader>
 
 				{draft && (
 					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-6">
 						{editing ? (
 							<div className="flex flex-col gap-8">
-								{connectionFields}
-								{eventsSection}
+								{/* Provider is immutable — show which one this channel is. */}
+								<div className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/20 px-4 py-3">
+									<span
+										className={cn(
+											'flex size-9 shrink-0 items-center justify-center rounded-lg',
+											provider?.tile ?? 'bg-muted text-muted-foreground',
+										)}>
+										<ProviderIcon className="size-4" />
+									</span>
+									<div className="min-w-0 flex-1">
+										<p className="truncate text-sm font-medium text-foreground">
+											{provider?.label ?? draft.provider}
+										</p>
+										<p className="text-xs text-muted-foreground">
+											Provider type can’t be changed after creation.
+										</p>
+									</div>
+								</div>
+
 								<WizardField label="Channel Name" required>
 									<Input
 										placeholder="e.g. Ops alerts"
 										value={draft.name}
 										onChange={e => patch({name: e.target.value})}
+										autoFocus
 									/>
 								</WizardField>
+								{connectionFields}
+								{eventsSection}
 							</div>
 						) : (
-							<StepBody key={step}>
+							<StepTimeline steps={steps} idx={stepIdx}>
 								{step === 'provider' && (
 									<div className="flex flex-col gap-2">
 										{PROVIDERS.map(p => {
@@ -303,7 +320,7 @@ export function NotificationChannelSheet({
 										</WizardField>
 									</div>
 								)}
-							</StepBody>
+							</StepTimeline>
 						)}
 					</div>
 				)}

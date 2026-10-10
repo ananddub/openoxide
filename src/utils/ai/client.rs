@@ -180,9 +180,14 @@ async fn complete_with_model<M: CompletionModel>(
 
     // Build a request using the chosen token-limit parameter. Newer OpenAI
     // reasoning models reject `max_tokens` and require `max_completion_tokens`;
-    // older models/providers only accept `max_tokens`.
-    let build = |use_completion_tokens: bool| {
-        let mut request = model.completion_request(prompt.clone()).temperature(0.2);
+    // older models/providers only accept `max_tokens`. The same models also
+    // reject any non-default `temperature` (only the default 1 is allowed), so
+    // temperature is applied conditionally and dropped on retry.
+    let build = |use_completion_tokens: bool, with_temperature: bool| {
+        let mut request = model.completion_request(prompt.clone());
+        if with_temperature {
+            request = request.temperature(0.2);
+        }
         request = if use_completion_tokens {
             let extra = json!({ "max_completion_tokens": TOKEN_BUDGET });
             let merged = match &additional_params {
@@ -200,12 +205,30 @@ async fn complete_with_model<M: CompletionModel>(
         request.build()
     };
 
-    let response = match model.completion(build(false)).await {
-        Ok(r) => r,
-        Err(e) if wants_completion_tokens(&e.to_string()) => {
-            model.completion(build(true)).await.map_err(rig_error)?
+    // Try the broadest-compatible request first, then progressively drop the
+    // parameters a strict reasoning model rejects (max_tokens → completion
+    // tokens, temperature → default). Each retry only fires on the matching
+    // provider error so we never silently change behaviour for models that
+    // accepted the original request.
+    let mut use_completion_tokens = false;
+    let mut with_temperature = true;
+    let response = loop {
+        match model
+            .completion(build(use_completion_tokens, with_temperature))
+            .await
+        {
+            Ok(r) => break r,
+            Err(e) => {
+                let msg = e.to_string();
+                if !use_completion_tokens && wants_completion_tokens(&msg) {
+                    use_completion_tokens = true;
+                } else if with_temperature && rejects_temperature(&msg) {
+                    with_temperature = false;
+                } else {
+                    return Err(rig_error(e));
+                }
+            }
         }
-        Err(e) => return Err(rig_error(e)),
     };
     let text = response
         .choice
@@ -229,6 +252,18 @@ fn wants_completion_tokens(err: &str) -> bool {
         || (e.contains("max_tokens") && e.contains("unsupported"))
 }
 
+/// True if the provider rejected a non-default `temperature`. Newer OpenAI
+/// reasoning models (o-series, gpt-5/6 reasoning) only accept the default
+/// temperature and 400 on anything else; we retry without the field.
+fn rejects_temperature(err: &str) -> bool {
+    let e = err.to_ascii_lowercase();
+    e.contains("temperature")
+        && (e.contains("unsupported")
+            || e.contains("does not support")
+            || e.contains("only the default")
+            || e.contains("default (1)"))
+}
+
 /// Shallow-merge two JSON objects (b wins on key clash); non-objects return b.
 fn merge_json(a: Value, b: Value) -> Value {
     match (a, b) {
@@ -246,11 +281,29 @@ fn rig_error(error: impl std::fmt::Display) -> String {
     format!("AI provider request failed: {error}")
 }
 
+/// Resolve the base URL an OpenAI-compatible client should call.
+///
+/// rig's OpenAI client appends `/chat/completions` (and `/models`) to this
+/// base, so the base must already point at the provider's API root. Providers
+/// disagree on that root:
+///   - OpenAI / OpenRouter / Perplexity / MiniMax → `.../v1`
+///   - DeepInfra                                   → `.../v1/openai`
+///   - GLM (z.ai / BigModel)                       → `.../api/paas/v4`
+///   - Ollama's OpenAI shim                        → `.../v1`
+///
+/// So we only append `/v1` when the user gave a bare host with NO path. If the
+/// URL already carries a path segment (any version or vendor path), we trust it
+/// verbatim — blindly appending `/v1` was turning `.../api/paas/v4` into
+/// `.../api/paas/v4/v1` and 404ing every GLM/DeepInfra request.
 fn openai_base_url(base: &str) -> String {
-    if base.ends_with("/v1") {
-        base.to_string()
+    let trimmed = base.trim_end_matches('/');
+    let has_path = Url::parse(trimmed)
+        .map(|u| !u.path().trim_matches('/').is_empty())
+        .unwrap_or(false);
+    if has_path {
+        trimmed.to_string()
     } else {
-        format!("{base}/v1")
+        format!("{trimmed}/v1")
     }
 }
 
@@ -305,6 +358,58 @@ mod tests {
         assert!(wants_completion_tokens("please use max_completion_tokens"));
         assert!(!wants_completion_tokens("rate limit exceeded"));
         assert!(!wants_completion_tokens("invalid api key"));
+    }
+
+    #[test]
+    fn openai_base_url_per_provider() {
+        // bare host → append /v1
+        assert_eq!(
+            openai_base_url("https://api.openai.com"),
+            "https://api.openai.com/v1"
+        );
+        assert_eq!(
+            openai_base_url("https://api.openai.com/"),
+            "https://api.openai.com/v1"
+        );
+        // already /v1 → preserved
+        assert_eq!(
+            openai_base_url("https://api.openai.com/v1"),
+            "https://api.openai.com/v1"
+        );
+        assert_eq!(
+            openai_base_url("https://openrouter.ai/api/v1"),
+            "https://openrouter.ai/api/v1"
+        );
+        // vendor version paths → preserved verbatim (the old code broke these
+        // by appending /v1 → /api/paas/v4/v1 and /v1/openai/v1).
+        assert_eq!(
+            openai_base_url("https://api.z.ai/api/paas/v4"),
+            "https://api.z.ai/api/paas/v4"
+        );
+        assert_eq!(
+            openai_base_url("https://api.z.ai/api/paas/v4/"),
+            "https://api.z.ai/api/paas/v4"
+        );
+        assert_eq!(
+            openai_base_url("https://api.deepinfra.com/v1/openai"),
+            "https://api.deepinfra.com/v1/openai"
+        );
+        assert_eq!(
+            openai_base_url("https://api.perplexity.ai/v1"),
+            "https://api.perplexity.ai/v1"
+        );
+    }
+
+    #[test]
+    fn detects_temperature_rejection() {
+        let body = "Unsupported value: 'temperature' does not support 0.2 with \
+                    this model. Only the default (1) value is supported.";
+        assert!(rejects_temperature(body));
+        assert!(rejects_temperature(
+            "temperature is unsupported with this model"
+        ));
+        assert!(!rejects_temperature("rate limit exceeded"));
+        assert!(!rejects_temperature("invalid api key"));
     }
 
     #[test]

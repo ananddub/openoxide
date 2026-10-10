@@ -17,6 +17,12 @@ import {
 } from '#/components/ui/sheet';
 import {Button} from '#/components/ui/button';
 import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from '#/components/ui/tabs';
+import {
 	Select,
 	SelectContent,
 	SelectItem,
@@ -44,6 +50,7 @@ import {
 	EXTERNAL_PROVIDERS,
 	remoteHostFromTunnel,
 } from '#/components/remote-servers/private-network/panel-parts';
+import {PrivateNetworkCard} from '#/components/remote-servers/private-network/network-card';
 import type {
 	ConnectionMode,
 	PrivateNetworkProvider,
@@ -121,6 +128,9 @@ export function CreateServerModal({
 	const [testResult, setTestResult] = useState<TestResult>('idle');
 
 	const [stepIdx, setStepIdx] = useState(0);
+	// Edit mode splits into tabs — the footer below only belongs to General;
+	// the Private Network tab owns its own save inside the card.
+	const [editTab, setEditTab] = useState<'general' | 'network'>('general');
 	const [sudoPassword, setSudoPassword] = useState('');
 	// No default — the Network step is a real question that must be answered.
 	const [networkMode, setNetworkMode] = useState<ConnectionMode | null>(
@@ -148,6 +158,7 @@ export function CreateServerModal({
 	useEffect(() => {
 		if (!isOpen) return;
 		setStepIdx(0);
+		setEditTab('general');
 		setNetworkMode(null);
 		setWgPort('51820');
 		setWgKeepalive('25');
@@ -169,7 +180,7 @@ export function CreateServerModal({
 	const canContinue =
 		testResult !== 'failed' &&
 		(stepIdx === 0 ? credentialsReady : networkReady);
-	// Saving walks the timeline forward: Provision (live logs) in the middle, Ready at the end.
+	// Saving walks the checkpoints forward: Provision (live logs) in the middle, Ready at the end.
 	const readyView = phase === 'done' && setupState !== 'failed';
 	const provisionView = phase !== 'idle' && !readyView;
 	const activeIdx =
@@ -405,9 +416,29 @@ export function CreateServerModal({
 					className="flex min-h-0 flex-1 flex-col">
 					<div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-6">
 						{editingServer ? (
-							<div className="flex flex-col gap-4">
-								<ServerFormFields {...form} sshKeys={sshKeys} />
-							</div>
+							<Tabs
+								value={editTab}
+								onValueChange={v => setEditTab(v as 'general' | 'network')}
+								className="min-h-0 flex-1 gap-4">
+								<TabsList className="w-full">
+									<TabsTrigger value="general">General</TabsTrigger>
+									<TabsTrigger value="network">
+										Private Network
+									</TabsTrigger>
+								</TabsList>
+								<TabsContent
+									value="general"
+									className="flex flex-col gap-4">
+									<ServerFormFields {...form} sshKeys={sshKeys} />
+								</TabsContent>
+								{/* Only mounted once opened, so the dialog does not
+								    fetch a network config nobody asked for. */}
+								<TabsContent
+									value="network"
+									className="flex min-h-0 flex-1 flex-col">
+									<PrivateNetworkCard server={editingServer} />
+								</TabsContent>
+							</Tabs>
 						) : (
 							<StepTimeline
 								steps={TIMELINE}
@@ -420,8 +451,7 @@ export function CreateServerModal({
 											: provisionView
 												? 'provision'
 												: stepIdx
-									}
-									className="animate-in duration-200 ease-out fade-in-0 slide-in-from-right-4">
+									}>
 									{provisionView || readyView ? (
 										<div className="flex flex-col gap-3">
 											<p className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -598,7 +628,7 @@ export function CreateServerModal({
 						)}
 					</div>
 
-					{editingServer ? (
+					{editingServer && editTab === 'general' ? (
 						<SheetFooter className="justify-between">
 							<TestConnectionButton
 								testing={testingConn}
@@ -613,7 +643,7 @@ export function CreateServerModal({
 								{submitting ? 'Saving...' : 'Save Changes'}
 							</Button>
 						</SheetFooter>
-					) : (
+					) : editingServer ? null : (
 						<SheetFooter>
 							<div className="mr-auto flex items-center gap-3">
 								{stepIdx > 0 && phase === 'idle' && (

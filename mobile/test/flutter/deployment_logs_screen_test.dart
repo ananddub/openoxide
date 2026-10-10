@@ -1,55 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/src/core/domain/deployment_status.dart';
+import 'package:mobile/src/core/theme/phase_colors.dart';
+import 'package:mobile/src/core/tokens/motion.dart';
+import 'package:mobile/src/features/deployments/screens/deployment_logs_screen.dart';
 import 'package:mobile/src/gen/openoxide/api/v1/deployment.pb.dart';
-import 'package:mobile/src/session/session.dart';
-import 'package:mobile/src/state/auth_controller.dart';
-import 'package:mobile/src/state/deployment_status.dart';
-import 'package:mobile/src/ui/deployment_logs_screen.dart';
-import 'package:mobile/src/ui/theme.dart';
-import 'package:mobile/src/ui/tokens.dart';
 
 import '../fakes.dart';
 import 'harness.dart';
 
-Future<({AuthController controller, FakePanelApi api})> deploy({
+AuthScope deploy({
   Deployment? row,
   List<DeploymentEvent> lines = const [],
-}) async {
-  final scope = authScope(
+}) {
+  final scope = bootedScope(
     initial: const StoredSession(
       accessToken: 'access',
       refreshToken: 'refresh',
       userId: 7,
     ),
     organizations: [organization(3, 'Acme')],
-  )
-    ..api.deploymentRow = row
-    ..api.logEvents = lines;
-  await scope.controller.boot();
+  );
+  scope.api
+    ..deploymentRow = row
+    ..logEvents = lines;
   return scope;
 }
 
-Widget _screen(
-  ({AuthController controller, FakePanelApi api}) scope,
-) => appScope(
+Widget _screen(AuthScope scope) => appScope(
   // A title that is not any of the row's own strings, so a finder on the
   // resource type cannot also match the app bar.
   child: const DeploymentLogsScreen(deploymentId: 4, title: 'Deploy 4'),
-  auth: scope.controller,
-  deps: fakeDeps(scope.api, scope.controller.session),
+  auth: scope.bloc,
+  deps: fakeDeps(scope.api, scope.session),
 );
 
 void main() {
   setUp(Motion.install);
 
   testWidgets('lays a deploy log out at every size', (tester) async {
-    final scope = await deploy(
+    final scope = deploy(
       row: deployment(
         4,
         status: 'BUILDING',
         resourceType: 'a-resource-type-long-enough-to-need-ellipsizing',
       ),
-      lines: [logLine('#7 3.241 fetching go.mod for a dependency graph that is\n', stage: 'build')],
+      lines: [
+        logLine(
+          '#7 3.241 fetching go.mod for a dependency graph that is\n',
+          stage: 'build',
+        ),
+      ],
     );
     await pumpAtSizes(
       tester,
@@ -61,7 +62,7 @@ void main() {
   testWidgets('the bar carries the status, the resource and the failure', (
     tester,
   ) async {
-    final scope = await deploy(
+    final scope = deploy(
       row: deployment(
         4,
         status: 'FAILED',
@@ -79,7 +80,7 @@ void main() {
   });
 
   testWidgets('the status colour is the one the queue uses', (tester) async {
-    final scope = await deploy(
+    final scope = deploy(
       row: deployment(4, status: 'FAILED', resourceType: 'website'),
     );
     await tester.pumpWidget(_screen(scope));
@@ -92,7 +93,7 @@ void main() {
   testWidgets('a deploy that produced nothing says the stream ended', (
     tester,
   ) async {
-    final scope = await deploy(row: deployment(4, status: 'DEPLOYED'));
+    final scope = deploy(row: deployment(4, status: 'DEPLOYED'));
     await tester.pumpWidget(_screen(scope));
     await pumpEntrance(tester);
 

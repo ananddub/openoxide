@@ -40,6 +40,7 @@ fn proto_to_build_type(value: &buffa::EnumValue<ApplicationBuildType>) -> String
         Some(ApplicationBuildType::Paketo) => "PAKETO_BUILDPACKS".into(),
         Some(ApplicationBuildType::Railpack) => "RAILPACK".into(),
         Some(ApplicationBuildType::Static) => "STATIC".into(),
+        Some(ApplicationBuildType::AiDockerfile) => "AI_DOCKERFILE".into(),
         _ => "NIXPACKS".into(),
     }
 }

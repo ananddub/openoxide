@@ -33,7 +33,7 @@ export function WireGuardFields({
 	onKeepalive: (v: string) => void;
 }) {
 	return (
-		<div className="grid gap-3 px-5 pb-5">
+		<div className="grid gap-3">
 			<div className="rounded-lg bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
 				OpenOxide installs WireGuard on the remote server using its
 				configured IP ({serverHostLabel(server.ip_address)}) and the UDP
@@ -94,7 +94,7 @@ export function ExternalVpnFields({
 	onRoutes: (v: string) => void;
 }) {
 	return (
-		<div className="grid gap-3 px-5 pb-5 sm:grid-cols-2">
+		<div className="grid gap-3 sm:grid-cols-2">
 			<Field label="VPN provider">
 				<Select
 					value={provider}
@@ -145,7 +145,7 @@ export function ExternalVpnFields({
 /** Direct-mode explainer. */
 export function DirectSshNote({server}: {server: RemoteServerResponse}) {
 	return (
-		<p className="px-5 pb-5 text-xs leading-relaxed text-muted-foreground">
+		<p className="text-xs leading-relaxed text-muted-foreground">
 			Deployments and SSH connect to{' '}
 			<span className="font-mono text-foreground/80">
 				{serverHostLabel(server.ip_address)}

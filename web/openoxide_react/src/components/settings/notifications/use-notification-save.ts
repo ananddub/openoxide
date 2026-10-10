@@ -27,7 +27,15 @@ function buildConfig(
 			continue;
 		}
 		if (f.type === 'number') config[f.key] = Number(raw);
-		else if (f.key === 'to_addresses')
+		else if (f.key.endsWith('_url') || f.key === 'endpoint') {
+			// Webhook/server URLs must be absolute — a relative string like
+			// "test" would only surface as a cryptic dispatcher error later.
+			if (!/^https?:\/\//i.test(raw)) {
+				toast.error(`${f.label} must be an absolute http(s) URL`);
+				return null;
+			}
+			config[f.key] = raw;
+		} else if (f.key === 'to_addresses')
 			config[f.key] = raw
 				.split(',')
 				.map(s => s.trim())

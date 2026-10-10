@@ -653,7 +653,7 @@ export const VaultService: GenService<{
 		output: typeof GetVaultProviderResponseSchema;
 	};
 	/**
-	 * Create a vault provider. Required: name, provider_type (VAULT_PROVIDER_TYPE_*), api_url; auth_token/namespace/config_json/assignments optional.
+	 * @internal Create a vault provider. Required: name, provider_type (VAULT_PROVIDER_TYPE_*), api_url; auth_token/namespace/config_json/assignments optional.
 	 *
 	 * @generated from rpc openoxide.api.v1.VaultService.CreateProvider
 	 */
@@ -663,7 +663,7 @@ export const VaultService: GenService<{
 		output: typeof CreateVaultProviderResponseSchema;
 	};
 	/**
-	 * Update a vault provider by id (provider_type immutable); absent fields keep stored values, empty auth_token clears it.
+	 * @internal Update a vault provider by id (provider_type immutable); absent fields keep stored values, empty auth_token clears it.
 	 *
 	 * @generated from rpc openoxide.api.v1.VaultService.UpdateProvider
 	 */

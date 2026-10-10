@@ -11,8 +11,7 @@ import {
 } from '#/components/ui/sheet';
 import {toast} from 'sonner';
 import {
-	StepBody,
-	StepCheckpoints,
+	StepTimeline,
 	type WizardStep,
 } from '#/components/shared/sheet-wizard';
 import {
@@ -192,7 +191,6 @@ export function DomainDialog({
 							? 'Everything on one page — change only what you need.'
 							: STEP_DESC[step]}
 					</SheetDescription>
-					{!editing && <StepCheckpoints steps={STEPS} idx={stepIdx} />}
 				</SheetHeader>
 
 				<div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-6">
@@ -215,29 +213,31 @@ export function DomainDialog({
 							/>
 						</div>
 					) : (
-						<StepBody key={step}>
-							{step === 'target' && (
-								<DomainTargetFields
-									state={state}
-									services={services}
-									onChange={patch}
-								/>
-							)}
-							{step === 'routing' && (
-								<DomainRoutingFields
-									state={state}
-									services={services}
-									onChange={patch}
-								/>
-							)}
-							{step === 'tls' && (
-								<DomainTlsFields
-									state={state}
-									services={services}
-									onChange={patch}
-								/>
-							)}
-						</StepBody>
+						<StepTimeline steps={STEPS} idx={stepIdx}>
+							<div key={step}>
+								{step === 'target' && (
+									<DomainTargetFields
+										state={state}
+										services={services}
+										onChange={patch}
+									/>
+								)}
+								{step === 'routing' && (
+									<DomainRoutingFields
+										state={state}
+										services={services}
+										onChange={patch}
+									/>
+								)}
+								{step === 'tls' && (
+									<DomainTlsFields
+										state={state}
+										services={services}
+										onChange={patch}
+									/>
+								)}
+							</div>
+						</StepTimeline>
 					)}
 				</div>
 

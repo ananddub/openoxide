@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/src/ui/common.dart';
+import 'package:mobile/src/core/ui/widgets/wire_label.dart';
 
 void main() {
   group('wireLabel', () {

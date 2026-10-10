@@ -334,3 +334,70 @@ export function streamAssistant(input: {
 		{...AI_CALL_OPTIONS, signal: input.signal},
 	);
 }
+
+export type AiBuildDiagnosis = {
+	available: boolean;
+	classification: string;
+	rootCause: string;
+	explanation: string;
+	fixable: boolean;
+	fixTarget: string;
+};
+
+/** Fetch the AI diagnosis of a failed deployment (why it failed + whether a
+ *  config-only fix is available). Only call this for failed deployments. */
+export function useAiBuildDiagnosis(
+	deploymentId: number,
+	enabled: boolean,
+) {
+	return useConnectQuery<AiBuildDiagnosis>(
+		['ai_build_diagnosis', deploymentId],
+		async () => {
+			const r = await aiClient.getBuildDiagnosis({
+				deploymentId: BigInt(deploymentId),
+				force: false,
+			});
+			return {
+				available: r.available,
+				classification: r.classification,
+				rootCause: r.rootCause,
+				explanation: r.explanation,
+				fixable: r.fixable,
+				fixTarget: r.fixTarget,
+			};
+		},
+		{enabled: enabled && deploymentId > 0},
+	);
+}
+
+/** One-shot fetch of a deployment's AI diagnosis (not a hook) — call this after
+ *  the user clicks Analyze to decide whether to offer "Fix with AI". With
+ *  `force` the backend recomputes the diagnosis instead of reusing a stored
+ *  one (needed after re-analyzing: an old "code_error" verdict shouldn't
+ *  permanently hide the fix option). */
+export async function fetchBuildDiagnosis(
+	deploymentId: number,
+	force = false,
+): Promise<AiBuildDiagnosis> {
+	const r = await aiClient.getBuildDiagnosis({
+		deploymentId: BigInt(deploymentId),
+		force,
+	});
+	return {
+		available: r.available,
+		classification: r.classification,
+		rootCause: r.rootCause,
+		explanation: r.explanation,
+		fixable: r.fixable,
+		fixTarget: r.fixTarget,
+	};
+}
+
+/** Apply the AI's config fix for a failed deployment, then redeploy. */
+export function useAiApplyFix() {
+	return useConnectMutation((deploymentId: number) =>
+		aiClient
+			.applyAiFix({deploymentId: BigInt(deploymentId)})
+			.then(r => ({applied: r.applied, message: r.message})),
+	);
+}

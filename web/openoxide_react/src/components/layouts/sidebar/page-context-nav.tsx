@@ -13,7 +13,6 @@ import {
 	PieChart,
 	Rocket,
 	ScrollText,
-	Server,
 	Settings2,
 	Trash2,
 	Wrench,
@@ -104,7 +103,6 @@ type PageContext =
 	| {kind: 'settings'}
 	| {kind: 'infra'}
 	| {kind: 'deployments'}
-	| {kind: 'servers'}
 	| {kind: 'server'; id: string}
 	| {
 			kind: 'service';
@@ -131,12 +129,12 @@ function resolveContext(
 	// /Deployments and /Deployments/queue — the two views own the rail.
 	if (seg[0] === 'Deployments') return {kind: 'deployments'};
 
-	// /remote-servers (+ /new) show the list rail; /remote-servers/:id the server rail.
+	// /remote-servers/:id shows the server rail; the plain list keeps the
+	// global menu (nothing to go "back" from there).
 	if (seg[0] === 'remote-servers') {
-		if (seg.length === 1 || seg[1] === 'new') return {kind: 'servers'};
 		if (seg[1] && /^\d+$/.test(seg[1]))
 			return {kind: 'server', id: seg[1]};
-		return {kind: 'servers'};
+		return null;
 	}
 
 	// Only /projects/:id/family/:resourceId (service detail) — NOT the plain project page.
@@ -338,45 +336,6 @@ function InfraContextNav({collapsed}: {collapsed: boolean}) {
 						/>
 					);
 				})}
-			</SidebarMenu>
-		</SidebarGroup>
-	);
-}
-
-/* ── Remote Servers context ────────────────────────────────────────── */
-
-const SERVERS_NAV = [
-	{
-		id: 'list',
-		label: 'All Servers',
-		icon: Server,
-		to: '/remote-servers',
-	},
-] as const;
-
-function ServersContextNav({collapsed}: {collapsed: boolean}) {
-	const location = useLocation();
-	const navigate = useNavigate();
-	const path = location.pathname.replace(/\/+$/, '') || '/';
-
-	return (
-		<SidebarGroup className="gap-1 px-2 py-1">
-			<ContextHeader
-				label="Remote Servers"
-				collapsed={collapsed}
-				onBack={() => void navigate({to: '/'})}
-			/>
-			<SidebarMenu className="gap-1">
-				{SERVERS_NAV.map(item => (
-					<ContextRow
-						key={item.id}
-						icon={item.icon}
-						label={item.label}
-						active={path === item.to}
-						collapsed={collapsed}
-						onClick={() => void navigate({to: item.to as never})}
-					/>
-				))}
 			</SidebarMenu>
 		</SidebarGroup>
 	);
@@ -616,8 +575,6 @@ export function PageContextNav({collapsed}: {collapsed: boolean}) {
 			return <InfraContextNav collapsed={collapsed} />;
 		case 'deployments':
 			return <DeploymentsContextNav collapsed={collapsed} />;
-		case 'servers':
-			return <ServersContextNav collapsed={collapsed} />;
 		case 'server':
 			return <ServerDetailContextNav id={ctx.id} collapsed={collapsed} />;
 		case 'service':

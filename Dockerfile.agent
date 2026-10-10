@@ -52,12 +52,16 @@ RUN apk add --no-cache \
     git \
     git-lfs \
     gzip \
+    iproute2 \
+    iptables \
     jq \
+    openresolv \
     openssh-client \
     openssl \
     rclone \
     tar \
     unzip \
+    wireguard-tools \
     zip \
     && git lfs install --system
 

@@ -92,7 +92,7 @@ impl SystemCollector {
             cpu_physical_cores: system.physical_core_count().unwrap_or(logical_cores) as i32,
             cpu_speed,
             os: System::name().unwrap_or_else(|| "unknown".to_string()),
-            distro: System::long_os_version().unwrap_or_else(|| "unknown".to_string()),
+            distro: host_distro(),
             kernel: System::kernel_version().unwrap_or_else(|| "unknown".to_string()),
             arch: System::cpu_arch(),
             mem_used: mem_percent,
@@ -120,6 +120,32 @@ impl Default for SystemCollector {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// Host distro name. The agent ships as an Alpine container with the host
+/// root bind-mounted read-only at `/host`, so the container's own
+/// `/etc/os-release` always says "Alpine Linux" — read the host's first,
+/// then the plain path for agents running directly on the host, then
+/// sysinfo as the final fallback.
+fn host_distro() -> String {
+    for path in ["/host/etc/os-release", "/etc/os-release"] {
+        if let Ok(text) = std::fs::read_to_string(path) {
+            if let Some(name) = parse_pretty_name(&text) {
+                return name;
+            }
+        }
+    }
+    System::long_os_version().unwrap_or_else(|| "unknown".to_string())
+}
+
+/// PRETTY_NAME value from os-release contents, quotes stripped.
+fn parse_pretty_name(text: &str) -> Option<String> {
+    let value = text
+        .lines()
+        .find_map(|line| line.strip_prefix("PRETTY_NAME="))?
+        .trim();
+    let name = value.trim_matches('"').trim();
+    (!name.is_empty()).then(|| name.to_string())
 }
 
 /// Total and used bytes of the filesystem one path sits on, via `statvfs` —
@@ -165,6 +191,17 @@ mod tests {
     fn converts_units() {
         assert!((bytes_to_gb(1_073_741_824.0) - 1.0).abs() < f64::EPSILON);
         assert!((bytes_to_mb(1_048_576.0) - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn pretty_name_prefers_host_os_release() {
+        let text = "NAME=\"Ubuntu\"\nPRETTY_NAME=\"Ubuntu 24.04.1 LTS\"\nID=ubuntu\n";
+        assert_eq!(
+            parse_pretty_name(text).as_deref(),
+            Some("Ubuntu 24.04.1 LTS")
+        );
+        assert_eq!(parse_pretty_name("NAME=Debian\n"), None);
+        assert_eq!(parse_pretty_name("PRETTY_NAME=\"\"\n"), None);
     }
 
     #[test]

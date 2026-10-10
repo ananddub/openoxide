@@ -9,9 +9,9 @@ service VaultService {
   rpc ListProviders(ListVaultProvidersRequest) returns (ListVaultProvidersResponse);
   // Get one vault provider by id.
   rpc GetProvider(GetVaultProviderRequest) returns (GetVaultProviderResponse);
-  // Create a vault provider. Required: name, provider_type (VAULT_PROVIDER_TYPE_*), api_url; auth_token/namespace/config_json/assignments optional.
+  // @internal Create a vault provider. Required: name, provider_type (VAULT_PROVIDER_TYPE_*), api_url; auth_token/namespace/config_json/assignments optional.
   rpc CreateProvider(CreateVaultProviderRequest) returns (CreateVaultProviderResponse);
-  // Update a vault provider by id (provider_type immutable); absent fields keep stored values, empty auth_token clears it.
+  // @internal Update a vault provider by id (provider_type immutable); absent fields keep stored values, empty auth_token clears it.
   rpc UpdateProvider(UpdateVaultProviderRequest) returns (UpdateVaultProviderResponse);
   // Delete a vault provider by id.
   rpc DeleteProvider(DeleteVaultProviderRequest) returns (Empty);

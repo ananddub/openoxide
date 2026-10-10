@@ -28,6 +28,10 @@ export interface DeploymentViewerProps {
 	borderless?: boolean;
 	/** When set, shows an AI analyze button in the toolbar for this log corpus. */
 	aiContext?: AiLogAnalysisKind;
+	/** When set + failed, shows the AI build-diagnosis panel ("Fix with AI"). */
+	deploymentId?: number;
+	/** True when this deployment failed (gates the diagnosis panel). */
+	failed?: boolean;
 }
 
 const ICON_BTN =
@@ -46,6 +50,8 @@ export function DeploymentViewer({
 	isLive = true,
 	borderless = false,
 	aiContext,
+	deploymentId,
+	failed = false,
 }: DeploymentViewerProps) {
 	const [query, setQuery] = useState('');
 	const searchRef = useRef<HTMLInputElement>(null);
@@ -109,7 +115,12 @@ export function DeploymentViewer({
 				</div>
 
 				{aiContext && (
-					<AnalyzeLogsButton lines={lines} context={aiContext} />
+					<AnalyzeLogsButton
+						lines={lines}
+						context={aiContext}
+						deploymentId={deploymentId}
+						failed={failed}
+					/>
 				)}
 
 				{onToggleLive && (

@@ -81,6 +81,13 @@ impl<'a> ContainerCreate<'a> {
         self
     }
 
+    /// Set a kernel sysctl inside the container (e.g. `net.ipv4.ip_forward=1`).
+    pub fn sysctl(mut self, key: impl AsRef<str>, value: impl AsRef<str>) -> Self {
+        self.args
+            .pair("--sysctl", format!("{}={}", key.as_ref(), value.as_ref()));
+        self
+    }
+
     pub fn memory(mut self, m: Memory) -> Self {
         self.args.pair("--memory", m.to_string());
         self

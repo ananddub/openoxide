@@ -1,4 +1,5 @@
 pub mod agent;
+pub mod diagnosis;
 mod prompts;
 mod service;
 mod types;

@@ -1590,7 +1590,7 @@ export const ComposeService: GenService<{
 		output: typeof ComposeSchema;
 	};
 	/**
-	 * Rotate the deploy-webhook token for a compose project by id; returns the new token.
+	 * @internal Rotate the deploy-webhook token for a compose project by id; returns the new token.
 	 *
 	 * @generated from rpc openoxide.api.v1.ComposeService.RotateWebhookToken
 	 */

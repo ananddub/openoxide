@@ -13,7 +13,6 @@ import {
 	useActiveOrgId,
 	useNotificationDeliveries,
 	useNotificationListByOrganization,
-	type NotificationDeliveryPayload,
 } from '#/api/live';
 import {cn} from '#/api/utils';
 import {timeAgo} from '#/components/activity/activity-model';
@@ -24,6 +23,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
+import {groupDeliveries} from '#/components/settings/notifications/notification-deliveries';
 import {triggerEventLabel} from '#/components/settings/notifications/notification-triggers';
 
 const STATUS_DOT: Record<string, string> = {
@@ -74,16 +74,17 @@ export function SidebarNotifications({collapsed}: {collapsed: boolean}) {
 	const {readIds, markRead, markAllRead} = useReadDeliveries(orgId);
 	const [expanded, setExpanded] = useState<string | number | null>(null);
 
-	const recent = deliveries.slice(0, ROWS);
+	// One entry per alert — raw rows would repeat an alert once per retry.
+	const alerts = useMemo(() => groupDeliveries(deliveries), [deliveries]);
+	const recent = alerts.slice(0, ROWS);
 	const unread = useMemo(
-		() => deliveries.filter(d => !readIds.has(d.id)),
-		[deliveries, readIds],
+		() => alerts.filter(a => !readIds.has(a.id)),
+		[alerts, readIds],
 	);
 	const unreadCount = unread.length;
 
-	const channelName = (delivery: NotificationDeliveryPayload) =>
-		channels.find(c => c.id === Number(delivery.notification_id))?.name ||
-		'Channel removed';
+	const channelName = (id: number) =>
+		channels.find(c => c.id === id)?.name || 'Channel removed';
 
 	const openSettings = (view?: 'deliveries') =>
 		void navigate({
@@ -125,7 +126,7 @@ export function SidebarNotifications({collapsed}: {collapsed: boolean}) {
 					{unreadCount > 0 && (
 						<button
 							type="button"
-							onClick={() => markAllRead(deliveries.map(d => d.id))}
+							onClick={() => markAllRead(alerts.map(a => a.id))}
 							className="flex cursor-pointer items-center gap-1 text-[11px] font-medium text-primary hover:underline">
 							<CheckCheck className="size-3.5" />
 							Mark all read
@@ -141,16 +142,16 @@ export function SidebarNotifications({collapsed}: {collapsed: boolean}) {
 					</p>
 				) : (
 					<div className="flex max-h-80 flex-col gap-px overflow-y-auto">
-						{recent.map(delivery => {
-							const isRead = readIds.has(delivery.id);
-							const isOpen = expanded === delivery.id;
+						{recent.map(alert => {
+							const isRead = readIds.has(alert.id);
+							const isOpen = expanded === alert.id;
 							return (
 								<button
-									key={delivery.id}
+									key={alert.correlation_id}
 									type="button"
 									onClick={() => {
-										if (!isRead) markRead(delivery.id);
-										setExpanded(isOpen ? null : delivery.id);
+										if (!isRead) markRead(alert.id);
+										setExpanded(isOpen ? null : alert.id);
 									}}
 									className={cn(
 										'flex w-full cursor-pointer items-start gap-2 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-accent/60',
@@ -161,7 +162,7 @@ export function SidebarNotifications({collapsed}: {collapsed: boolean}) {
 											'mt-1.5 size-1.5 shrink-0 rounded-full',
 											isRead
 												? 'bg-muted-foreground/25'
-												: (STATUS_DOT[delivery.status] ??
+												: (STATUS_DOT[alert.status] ??
 														'bg-muted-foreground'),
 										)}
 									/>
@@ -172,36 +173,38 @@ export function SidebarNotifications({collapsed}: {collapsed: boolean}) {
 													'truncate text-[13px] leading-tight text-foreground',
 													isRead ? 'font-normal' : 'font-semibold',
 												)}>
-												{delivery.title ||
-													triggerEventLabel(delivery.trigger_name)}
+												{alert.title ||
+													triggerEventLabel(alert.trigger_name)}
 											</span>
-											{delivery.status === 'FAILED' ? (
+											{alert.status === 'FAILED' ? (
 												<X className="ml-auto size-3.5 shrink-0 text-rose-500/80" />
-											) : delivery.status === 'PENDING' ? (
+											) : alert.status === 'PENDING' ? (
 												<Clock className="ml-auto size-3.5 shrink-0 text-amber-500/80" />
 											) : (
 												<Check className="ml-auto size-3.5 shrink-0 text-emerald-500/80" />
 											)}
 										</span>
 										<span className="mt-0.5 block truncate text-[11px] leading-tight text-muted-foreground">
-											{channelName(delivery)} ·{' '}
-											{timeAgo(delivery.created_at)}
+											{channelName(alert.notification_id)} ·{' '}
+											{timeAgo(alert.started_at)}
 										</span>
 										{isOpen && (
 											<span className="mt-1.5 flex flex-col gap-1 rounded-md bg-muted/40 px-2 py-1.5">
 												<span className="text-[11px] leading-snug break-words text-foreground/80">
-													{delivery.body || '(no message body)'}
+													{alert.body || '(no message body)'}
 												</span>
-												{delivery.error && (
+												{alert.error && (
 													<span className="text-[11px] leading-snug break-words text-rose-500">
-														{delivery.error}
+														{alert.error}
 													</span>
 												)}
 												<span className="font-mono text-[10px] text-muted-foreground">
-													{delivery.status} · attempt {delivery.attempt}
-													{delivery.finished_at
-														? ` · ${timeAgo(delivery.finished_at)}`
+													{alert.status} · attempt {alert.attempt}
+													{alert.attempts > 1
+														? ` of ${alert.attempts}`
 														: ''}
+													·{' '}
+													{timeAgo(alert.finished_at ?? alert.started_at)}
 												</span>
 											</span>
 										)}

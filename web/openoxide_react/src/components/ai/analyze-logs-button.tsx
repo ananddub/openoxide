@@ -1,10 +1,13 @@
 import {useState} from 'react';
-import {Copy, Loader, Sparkles} from 'lucide-react';
+import {Copy, Loader, Sparkles, Wrench} from 'lucide-react';
 import {Link} from '@tanstack/react-router';
 import {toast} from 'sonner';
 import {
+	fetchBuildDiagnosis,
 	useAiAnalyzeLogs,
+	useAiApplyFix,
 	useAiEnabledSettings,
+	type AiBuildDiagnosis,
 	type AiLogAnalysisKind,
 } from '#/api/live/ai';
 import {formatApiError} from '#/api/utils';
@@ -29,22 +32,38 @@ const MAX_LOG_LINES = 200;
 export function AnalyzeLogsButton({
 	lines,
 	context,
+	deploymentId,
+	failed = false,
 }: {
 	lines: string[];
 	context: AiLogAnalysisKind;
+	/** When set + failed, Analyze also fetches a build diagnosis so a
+	 *  "Fix with AI" button can appear next to Re-analyze when fixable. */
+	deploymentId?: number;
+	failed?: boolean;
 }) {
 	const {settings, isPending} = useAiEnabledSettings();
 	const analyze = useAiAnalyzeLogs();
+	const applyFix = useAiApplyFix();
 	const [open, setOpen] = useState(false);
 	const [pickedId, setPickedId] = useState<string | null>(null);
 	const [analysis, setAnalysis] = useState('');
+	const [diagnosis, setDiagnosis] = useState<AiBuildDiagnosis | null>(
+		null,
+	);
+	const [fixResult, setFixResult] = useState<string | null>(null);
 
 	const selected =
 		settings.find(s => String(s.id) === pickedId) ?? settings[0];
 	const canAnalyze = !!selected && lines.length > 0;
+	const canOfferFix = failed && !!deploymentId && deploymentId > 0;
 
 	const run = async () => {
 		if (!selected || !canAnalyze) return;
+		// Reset per-run state so a previous fix result can't permanently hide
+		// the "Fix with AI" button on the next Analyze.
+		setFixResult(null);
+		setDiagnosis(null);
 		try {
 			const result = await analyze.mutateAsync({
 				aiSettingId: selected.id,
@@ -52,6 +71,17 @@ export function AnalyzeLogsButton({
 				logs: lines.slice(-MAX_LOG_LINES).join('\n'),
 			});
 			setAnalysis(result.analysis);
+			// Force a fresh diagnosis on every Analyze of a failed deploy: a
+			// stale stored verdict (e.g. from before a provider was enabled,
+			// or a wrong "code_error" call) used to hide "Fix with AI"
+			// forever, since the backend reused stored diagnoses.
+			if (canOfferFix) {
+				try {
+					setDiagnosis(await fetchBuildDiagnosis(deploymentId!, true));
+				} catch {
+					setDiagnosis(null);
+				}
+			}
 		} catch (error) {
 			toast.error(formatApiError(error));
 		}
@@ -132,7 +162,55 @@ export function AnalyzeLogsButton({
 										? 'Re-analyze'
 										: 'Analyze'}
 							</Button>
+							{diagnosis?.fixable && !fixResult && (
+								<Button
+									size="sm"
+									disabled={applyFix.isPending}
+									title={`Apply the AI fix to the ${diagnosis.fixTarget || 'config'} and redeploy`}
+									onClick={() => {
+										// Close the popover first so the redeploy's
+										// re-render can't tear it down mid-request
+										// (that left the panel visually "hung").
+										setOpen(false);
+										setFixResult('applying');
+										toast.promise(applyFix.mutateAsync(deploymentId!), {
+											loading: 'Applying AI fix…',
+											success: r =>
+												r.applied
+													? r.message
+													: `Could not apply: ${r.message}`,
+											error: e => `Fix failed: ${e.message}`,
+										});
+									}}
+									className="h-8 shrink-0 gap-1.5 border border-violet-500/40 bg-violet-500/10 text-xs text-violet-400 hover:bg-violet-500/20">
+									{applyFix.isPending ? (
+										<Loader className="size-3.5 animate-spin" />
+									) : (
+										<Wrench className="size-3.5" />
+									)}
+									{applyFix.isPending ? 'Fixing…' : 'Fix with AI'}
+								</Button>
+							)}
 						</div>
+						{fixResult && (
+							<p className="text-[12px] text-emerald-400">{fixResult}</p>
+						)}
+						{diagnosis && !diagnosis.available && (
+							<p className="text-[11px] text-amber-400">
+								No AI diagnosis available for this deployment — check that
+								an AI provider is enabled and the deploy recorded an error.
+							</p>
+						)}
+						{diagnosis?.available && !diagnosis.fixable && (
+							<div className="rounded-lg border border-border bg-muted/20 p-2.5">
+								<p className="text-[11px] font-medium text-foreground">
+									Diagnosis: {diagnosis.classification.replace('_', ' ')}
+								</p>
+								<p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+									{diagnosis.rootCause || diagnosis.explanation}
+								</p>
+							</div>
+						)}
 						<p className="text-[11px] text-muted-foreground">
 							{Math.min(lines.length, MAX_LOG_LINES)} of {lines.length}{' '}
 							lines · {context === 'BUILD' ? 'build' : 'runtime'} context

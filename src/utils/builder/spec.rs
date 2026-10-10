@@ -15,6 +15,7 @@ string_enum! {
         Heroku => "HEROKU",
         Railpack => "RAILPACK",
         Static => "STATIC",
+        AiDockerfile => "AI_DOCKERFILE",
     }
 }
 
@@ -80,6 +81,12 @@ pub enum BuildStrategy {
     Static {
         publish_directory: String,
         spa: bool,
+    },
+    /// AI generates a Dockerfile from the repo, builds it, and self-corrects on
+    /// failure (retry loop). `provider` is the org's enabled AI provider,
+    /// resolved at spec-build time; None means no provider configured.
+    AiDockerfile {
+        provider: Option<crate::utils::ai::AiProviderConfig>,
     },
 }
 

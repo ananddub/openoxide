@@ -19,14 +19,14 @@ export const listRegistries = RegistryService.method.listRegistries;
 export const getRegistry = RegistryService.method.getRegistry;
 
 /**
- * Create a registry. Required: registry_name, registry_url, registry_type; username/password/image_prefix optional.
+ * @internal Create a registry. Required: registry_name, registry_url, registry_type; username/password/image_prefix optional.
  *
  * @generated from rpc openoxide.api.v1.RegistryService.CreateRegistry
  */
 export const createRegistry = RegistryService.method.createRegistry;
 
 /**
- * Update a registry by id; absent fields keep stored values, empty image_prefix clears it.
+ * @internal Update a registry by id; absent fields keep stored values, empty image_prefix clears it.
  *
  * @generated from rpc openoxide.api.v1.RegistryService.UpdateRegistry
  */
@@ -61,7 +61,7 @@ export const listRepositories = RegistryService.method.listRepositories;
 export const listTags = RegistryService.method.listTags;
 
 /**
- * Rotate a registry's stored credentials. Required: registry_id, username, password.
+ * @internal Rotate a registry's stored credentials. Required: registry_id, username, password.
  *
  * @generated from rpc openoxide.api.v1.RegistryService.RotateCredentials
  */

@@ -27,13 +27,34 @@ impl LifecycleService {
         if request.server_id <= 0 {
             return Err(Status::invalid_argument("server_id is required"));
         }
-        let initial = state::StateService::current(&docker).await?;
-        let events = docker
-            .get_stream("/events?filters=%7B%7D")
-            .await
-            .map_err(|error| Status::unavailable(error.to_string()))?;
+        tracing::info!(server_id = request.server_id, "watch: request received");
+        let initial = match state::StateService::current(&docker).await {
+            Ok(snapshot) => {
+                tracing::info!(
+                    server_id = request.server_id,
+                    containers = snapshot.containers.len(),
+                    "watch: initial snapshot ready"
+                );
+                snapshot
+            }
+            Err(error) => {
+                tracing::warn!(server_id = request.server_id, %error, "watch: initial snapshot failed");
+                return Err(error);
+            }
+        };
+        let events = match docker.get_stream("/events?filters=%7B%7D").await {
+            Ok(events) => {
+                tracing::info!(server_id = request.server_id, "watch: /events stream open");
+                events
+            }
+            Err(error) => {
+                tracing::warn!(server_id = request.server_id, %error, "watch: /events open failed");
+                return Err(Status::unavailable(error.to_string()));
+            }
+        };
 
         let stream = async_stream::stream! {
+            tracing::info!(server_id = request.server_id, "watch: polling — yielding initial snapshot");
             yield Ok(initial);
             let mut events = events;
             // Docker emits several events per container operation, and three
@@ -46,28 +67,52 @@ impl LifecycleService {
             // state after the burst settles.
             const DEBOUNCE: std::time::Duration = std::time::Duration::from_millis(2_000);
             const MAX_WAIT: std::time::Duration = std::time::Duration::from_millis(10_000);
-            loop {
-                // Wait for the first event; quiet means no state change.
-                match events.next().await {
-                    Some(Ok(_payload)) => {}
-                    // Stream ended or errored: the watcher ends with it.
-                    _ => return,
+            // Idle keepalive refresh. The panel times a stream out if no frame
+            // arrives for 30s — on a quiet host (no container ops, no
+            // healthchecks) `/events` can stay silent far longer, so without
+            // this tick a perfectly healthy agent was marked offline and the
+            // watcher reconnected in an endless loop. 15s stays well inside
+            // that budget even with jitter.
+            const IDLE_REFRESH: std::time::Duration = std::time::Duration::from_secs(15);
+            enum Wake {
+                Event,
+                EventsEnded,
+                Idle,
+            }
+            impl Wake {
+                fn is_event(&self) -> bool {
+                    matches!(self, Wake::Event)
                 }
-                let burst_start = std::time::Instant::now();
-                let mut ended = false;
-                loop {
-                    let remaining = MAX_WAIT.saturating_sub(burst_start.elapsed());
-                    if remaining.is_zero() {
-                        break;
-                    }
-                    match tokio::time::timeout(DEBOUNCE.min(remaining), events.next()).await {
-                        Ok(Some(Ok(_payload))) => continue,
-                        Ok(None) | Ok(Some(Err(_))) => {
-                            ended = true;
+            }
+            loop {
+                // Block until a docker event arrives or the idle tick fires.
+                let wake = tokio::select! {
+                    payload = events.next() => match payload {
+                        Some(Ok(_payload)) => Wake::Event,
+                        // Stream ended or errored: the watcher ends with it.
+                        _ => Wake::EventsEnded,
+                    },
+                    _ = tokio::time::sleep(IDLE_REFRESH) => Wake::Idle,
+                };
+                let mut ended = matches!(wake, Wake::EventsEnded);
+                if wake.is_event() {
+                    // A burst started: drain it until a short quiet gap (or
+                    // the staleness cap) closes it, then refresh once.
+                    let burst_start = std::time::Instant::now();
+                    loop {
+                        let remaining = MAX_WAIT.saturating_sub(burst_start.elapsed());
+                        if remaining.is_zero() {
                             break;
                         }
-                        // Quiet gap: the burst settled.
-                        Err(_elapsed) => break,
+                        match tokio::time::timeout(DEBOUNCE.min(remaining), events.next()).await {
+                            Ok(Some(Ok(_payload))) => continue,
+                            Ok(None) | Ok(Some(Err(_))) => {
+                                ended = true;
+                                break;
+                            }
+                            // Quiet gap: the burst settled.
+                            Err(_elapsed) => break,
+                        }
                     }
                 }
                 if let Ok(snapshot) = state::StateService::current(&docker).await {

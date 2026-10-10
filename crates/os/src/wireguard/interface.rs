@@ -48,16 +48,90 @@ impl<'a> WireGuardInterfaceBuilder<'a> {
         rendered.zeroize();
         write_result?;
         os.file(&path).chmod(FileMode::OwnerReadWrite).run().await?;
-        match WireGuardQuickBuilder::new(self.executor, WireGuardQuickAction::Up, self.name.clone())
-            .run()
-            .await
-        {
+        // Bring the interface up with direct `ip`/`wg` commands instead of the
+        // `wg-quick` wrapper. `wg-quick` shells out to `readlink` on startup,
+        // which on hosts shipping uutils (Rust) coreutils tries to open a
+        // locale file that the distro's AppArmor `wg-quick` profile denies —
+        // aborting the whole bring-up with a confusing exit 126. The low-level
+        // commands below are portable and immune to that. If this host has no
+        // conf-aware tooling we still fall back to `wg-quick up`.
+        match self.bring_up_direct(&os, config).await {
             Ok(output) => Ok(output),
-            Err(error) => {
-                let _ = os.file(&path).delete().run().await;
-                Err(error)
+            Err(direct_error) => {
+                tracing::debug!(%direct_error, "direct WireGuard bring-up failed; trying wg-quick");
+                match WireGuardQuickBuilder::new(
+                    self.executor,
+                    WireGuardQuickAction::Up,
+                    self.name.clone(),
+                )
+                .run()
+                .await
+                {
+                    Ok(output) => Ok(output),
+                    Err(error) => {
+                        let _ = self.bring_down_direct().await;
+                        let _ = os.file(&path).delete().run().await;
+                        Err(error)
+                    }
+                }
             }
         }
+    }
+
+    /// Bring the interface up with explicit `ip`/`wg` commands (no wg-quick).
+    async fn bring_up_direct(
+        &self,
+        _os: &OsCli<'_>,
+        config: &WireGuardConfig,
+    ) -> ExecResult<ExecOutput> {
+        let name = &self.name;
+        let conf = format!("/etc/wireguard/{name}.conf");
+        // Clean any half-up interface first (idempotent).
+        let _ = self.bring_down_direct().await;
+
+        // 1. Create the WireGuard link.
+        self.executor
+            .run("ip", ["link", "add", "dev", name, "type", "wireguard"])
+            .await?;
+
+        // 2. Load keys + peers via `wg setconf` from a stripped conf (only the
+        //    [Interface] PrivateKey/ListenPort + [Peer] blocks — no Address/DNS/
+        //    MTU, which `wg` rejects). Strip with sed, no readlink involved.
+        let strip = format!(
+            "sed -e '/^Address/d' -e '/^DNS/d' -e '/^MTU/d' -e '/^Table/d' -e '/^Pre/d' -e '/^Post/d' -e '/^SaveConfig/d' {conf}"
+        );
+        if let Err(error) = self
+            .executor
+            .run("bash", ["-c", &format!("wg setconf {name} <({strip})")])
+            .await
+        {
+            let _ = self.bring_down_direct().await;
+            return Err(error);
+        }
+
+        // 3. Assign the tunnel addresses.
+        for address in &config.addresses {
+            if let Err(error) = self
+                .executor
+                .run("ip", ["address", "add", address, "dev", name])
+                .await
+            {
+                let _ = self.bring_down_direct().await;
+                return Err(error);
+            }
+        }
+
+        // 4. Bring the link up (with MTU when configured).
+        let mtu = config.mtu.unwrap_or(1420).to_string();
+        self.executor
+            .run("ip", ["link", "set", "mtu", mtu.as_str(), "up", "dev", name])
+            .await
+    }
+
+    async fn bring_down_direct(&self) -> ExecResult<ExecOutput> {
+        self.executor
+            .run("ip", ["link", "del", "dev", self.name.as_str()])
+            .await
     }
 
     pub async fn remove(self) -> ExecResult<ExecOutput> {
