@@ -1,491 +1,321 @@
 # OpenOxide
 
-OpenOxide is a self-hosted deployment and infrastructure control panel written in Rust, with a React dashboard and a standalone Rust monitoring agent. It manages applications, Docker Compose projects, databases, domains, certificates, backups, remote servers, private networking, notifications, schedules, logs, and container operations from one panel.
+OpenOxide is a high-performance, self-hosted infrastructure and application deployment control panel built with **Rust** (nightly, edition 2024), **ConnectRPC / Protobuf**, **React 19**, and a standalone **monitoring agent**. It provides a unified control plane for managing containers, Docker Compose stacks, multi-engine databases, Traefik edge routing, TLS certificates, WireGuard private networks, backups, live host monitoring, and interactive terminal sessions.
 
-The repository is organized as a Rust workspace. Reusable operating-system and command integrations live in dedicated crates, while the panel keeps API, business, persistence, and background-runtime responsibilities separate.
+OpenOxide also includes an **Agentic AI Assistant** capable of autonomously discovering ~550+ panel operations, searching actions, safely orchestrating resources with explicit confirmation guards, and generating verified Docker Compose stacks from natural language.
 
-> Project status: active development. The backend and monitoring agent are functional, but APIs, migrations, and deployment behavior can still change between commits.
+---
 
-## Main capabilities
+## Architecture Overview
 
-- Application deployment from Git repositories, Dockerfiles, Nixpacks, Railpack, Paketo/Cloud Native Buildpacks, Heroku buildpacks, and static sources.
-- Docker Compose deployment, service management, mounts, patches, configs, secrets, imports, exports, and isolated deployments.
-- PostgreSQL, MySQL, MariaDB, MongoDB, Redis, and LibSQL database lifecycle management.
-- Remote server setup and auditing over SSH.
-- Managed WireGuard private networking and support for external private-network providers.
-- Docker Swarm and shared overlay-network management.
-- Traefik routing, domains, redirects, middleware, TLS certificates, and ACME workflows.
-- Deployment queues, live build streams, container logs, terminal sessions, rollback, and migration workflows.
-- Database, volume, Compose configuration, and panel backup workflows.
-- Standalone host/container monitoring agent with remote metric storage, retention, filtering, rollups, and gRPC queries.
-- Alert rules and notification providers including email, webhook, Discord, Slack, Telegram, Teams, Gotify, ntfy, Pushover, Mattermost, Lark, and Resend.
-- Authentication, sessions, 2FA, password reset, email verification, API tokens, organizations, permissions, and audit foundations.
-- Scheduled jobs and centralized background runners.
-- AI provider settings, generation workflows, structured validation, and log-analysis foundations.
+```mermaid
+flowchart TD
+    subgraph Client ["Frontend & Clients"]
+        WEB["React 19 SPA (Vite + TanStack Router/Query)<br/>Connect-Web / Tailwind CSS v4"]
+        CLI["CLI / External Clients (gRPC / ConnectRPC)"]
+    end
 
-## Architecture
+    subgraph Panel ["OpenOxide Core Panel (gRPC + ConnectRPC / Hyper)"]
+        ROUTER["ConnectRPC Router (Buffa Codegen)"]
+        AUTH["Auth & Permission Engine (JWT / 2FA / Orgs)"]
+        AI["Agentic AI Assistant (Rig Multi-Provider Runner)"]
+        
+        subgraph Services ["Domain Services"]
+            COMPUTE["Compute: Apps, Compose, DBs, Previews"]
+            NET["Networking: Traefik, Domains, DNS"]
+            INFRA["Infra: Servers, WireGuard, SSH, Terminal"]
+        end
 
-```text
-React dashboard
-    │ HTTP / OpenAPI / SSE / Socket.IO
-    ▼
-OpenOxide panel (Axum + Tokio)
-    ├── API handlers and DTOs
-    ├── business services
-    ├── SQLx repositories and SQLite
-    ├── deployment/build queue
-    ├── background runners
-    └── typed OS/Docker/SSH facade
-            │
-            ├── local Docker host
-            └── remote servers over SSH/private networking
+        subgraph Storage ["Persistence & Realtime"]
+            FLASH["FlashORM Typed Queries (src/flash_gen)"]
+            DB[("SQLite Database (WAL Mode)")]
+            CDC["Reactive CDC Bridge & Event Bus (crates/realtime)"]
+        end
+    end
 
-Monitoring agent (one per monitored host)
-    ├── host and container collectors
-    ├── local SQLite metric store
-    ├── retention and rollups
-    ├── panel event/summary pushes
-    └── gRPC historical queries from the panel
+    subgraph HostInfra ["Managed Infrastructure"]
+        DOCKER["Local Docker / Docker Swarm Engine"]
+        REMOTE["Remote Hosts via SSH / WireGuard Mesh"]
+        AGENT["Monitoring Agent (Rust / C++)<br/>cgroup v2 • SQLite Rollups • Direct Host Shell"]
+    end
+
+    WEB -->|HTTP/2 ConnectRPC & Server Streaming| ROUTER
+    CLI -->|gRPC / Connect Protocol| ROUTER
+    ROUTER --> AUTH --> Services
+    AI -->|In-Process Connect Calls with User Token| ROUTER
+    Services --> FLASH --> DB
+    DB -.->|WAL Changes| CDC -.->|Streaming Events| ROUTER
+    Services --> DOCKER
+    Services --> REMOTE
+    Panel <-->|gRPC Stream & Direct Host Shell| AGENT
 ```
 
-### Request flow
+---
 
-```text
-HTTP request
-  → auto-registered controller
-  → validated DTO and permission middleware
-  → domain service
-  → repository or typed OS/Docker operation
-  → database/runtime result
-  → JSON, SSE, WebSocket, or Socket.IO response
+## Main Capabilities
+
+- **Application Orchestration**: Deploy applications from Git repositories (GitHub, GitLab, Gitea, Bitbucket), Dockerfiles, Nixpacks, Railpack, Cloud Native Buildpacks (Paketo), Heroku buildpacks, and static assets.
+- **Docker Compose Stacks**: Full Compose lifecycle orchestration, programmatic `ComposeBuilder`, volume mounts, environment variable interpolation, configuration patches, secrets, imports/exports, and isolated preview environments.
+- **Multi-Database Management**: Automated provisioning and lifecycle management for PostgreSQL, MySQL, MariaDB, MongoDB, Redis, and LibSQL with native connection builders.
+- **Agentic AI Assistant**: Autonomous conversational assistant driven by [Rig](https://github.com/0xPlayground/rig). Automatically extracts ~550+ actions from `.proto` doc comments at build time, performs keyword action discovery, enforces destructive operation confirmations, and executes operations via in-process ConnectRPC endpoints under the user's authentic permissions.
+- **AI Stack Generator**: Multi-provider LLM engine (OpenAI, Anthropic Claude, Google Gemini, Ollama, OpenAI-compatible) that generates verified Docker Compose stacks with strict YAML syntax checks, port collision prevention, and security validations.
+- **ConnectRPC Contract**: 100% type-safe API communication between backend and frontend powered by Protobuf definitions (`proto/openoxide/api/v1/*.proto`) and Connect-Web.
+- **Realtime Reactive CDC Engine**: SQLite change-data-capture (CDC) bridge and event bus (`crates/realtime`) that pushes live database updates straight to frontend TanStack Query hooks without polling.
+- **Standalone Monitoring Agent (Rust & C++)**: Deployed once per host. Collects host and container statistics (cgroup v2 / streaming), stores historical rollups in a local SQLite database, and serves historical telemetry to the panel over gRPC.
+- **Direct Host Shell**: Agent enters host namespaces (`mnt`, `pid`, `net`) directly with `CAP_SYS_PTRACE`, providing native, frictionless web terminal access to the host.
+- **Traefik Edge & TLS**: Automatic Traefik reverse proxy configuration, HTTP/HTTPS routers, middleware chains, rate limiting, and Let's Encrypt / ACME TLS certificate lifecycle.
+- **Networking & WireGuard**: Automated WireGuard mesh creation, key rotation, route configuration, and support for external providers (Tailscale, NetBird, ZeroTier).
+- **Disaster Recovery**: Automated, scheduled backups for databases, volumes, Compose configurations, and the panel database with S3/Rclone support.
+
+---
+
+## Request & Communication Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User / Browser
+    participant Web as React 19 (Connect-Web)
+    participant Router as ConnectRPC Router
+    participant Service as Domain Service
+    participant OS as crates/os & Builders
+    participant DB as SQLite (FlashORM)
+    participant CDC as Reactive CDC Bus
+    participant Host as Docker / Host System
+
+    User->>Web: Action (e.g. Deploy Compose / Start DB)
+    Web->>Router: ConnectRPC Request (Typed Protobuf)
+    Router->>Router: Authenticate & Validate Permissions
+    Router->>Service: Call Domain Handler
+    Service->>OS: Invoke Typed Facade (e.g. ComposeBuilder)
+    OS->>Host: Execute Docker / OS Commands
+    Host-->>OS: Process Output & Status
+    Service->>DB: Write State Mutation via FlashORM
+    DB-->>CDC: Commit WAL Event
+    CDC-->>Router: Broadcast Table Invalidation
+    Router-->>Web: Realtime Event Stream Update
+    Service-->>Router: Return Protobuf Response
+    Router-->>Web: Typed Response / UI Updated
 ```
 
-The intended responsibility boundaries are:
+---
 
-- `api/dto`: transport types, validation, and OpenAPI types.
-- `api/handlers`: HTTP extraction, authorization, status mapping, and service calls.
-- `services`: business rules and lifecycle orchestration.
-- `db/repository`: database queries and persistence only.
-- `utils/background`: long-running panel jobs and scheduling entry points.
-- `crates/os`: reusable, typed operating-system, Docker, SSH, Git, WireGuard, and command builders.
+## AI Assistant Architecture
 
-## Workspace layout
+The OpenOxide AI Assistant automatically synchronizes with the API. When an RPC method and leading doc comments are written in `.proto`, the assistant automatically learns the action at build time with zero manual catalog maintenance.
+
+```mermaid
+flowchart TD
+    P1["1. Proto Doc Comments"] -->|protoc source_info| P2["2. Comments Descriptor fds"]
+    P2 -->|extract_rpc_comments| P3["3. AST Comments Map"]
+    P3 -->|generate_ai_catalog| P4["4. ai_catalog_generated.rs"]
+    P4 -->|include! macro| P5["5. Action Catalog (550+ RPCs)"]
+    P5 -->|search_actions| P6["6. Rig Agent Runner"]
+    P6 -->|Safety check| P7{"Destructive?"}
+    P7 -->|Yes| P8["User Confirmation"]
+    P7 -->|No / Confirmed| P9["In-Process gRPC Invoke"]
+    P8 --> P9
+    P9 -->|Server Stream| P10["Live Response Stream"]
+```
+
+---
+
+## Workspace Layout
 
 ```text
 openoxide/
-├── agent/                       # Standalone monitoring agent
+├── agent/                         # Standalone Rust monitoring agent (cgroup v2, gRPC, host shell)
+├── agent-cpp/                     # Lightweight C++ monitoring agent alternative
 ├── crates/
-│   ├── os/                      # Typed OS, Docker, Git, SSH and WireGuard facade
-│   ├── sh_macros/               # Typed shell/script macros
-│   └── auto/
-│       ├── route/               # Controller registration/runtime
-│       ├── route_macros/        # Route procedural macros
-│       ├── socket/              # Socket handler registration/runtime
-│       └── socket_macros/       # Socket procedural macros
+│   ├── os/                        # Typed OS, Docker, Git, SSH, WireGuard & DB client builders
+│   ├── realtime/                  # SQLite CDC / WAL watcher & reactive event bus
+│   ├── sh_macros/                 # Typed shell script macros
+│   └── auto/                      # Procedural macros for routing and sockets
 ├── db/
-│   ├── migrations/              # Ordered runtime migrations
-│   ├── schema/                  # Current schema representation
-│   └── queries/                 # Sources for generated typed queries
-├── proto/                       # Monitoring gRPC definitions
+│   ├── schema/                    # FlashORM schema definitions (*.sql)
+│   ├── queries/                   # FlashORM SQL queries (*.sql)
+│   └── migrations/                # Ordered runtime SQL migrations
+├── proto/                         # Protocol Buffer definitions for ConnectRPC and gRPC
+│   └── openoxide/api/v1/          # 40+ panel service contracts (.proto)
 ├── src/
-│   ├── api/
-│   │   ├── dto/                 # Request/response/OpenAPI types
-│   │   ├── handlers/            # Auto-registered controllers
-│   │   └── routes/              # Router, OpenAPI and Socket.IO wiring
-│   ├── core/                    # Config, cache, errors, middleware and state
-│   ├── db/
-│   │   ├── connection/          # SQLite connection and migrations
-│   │   ├── models/              # Generated/persisted models
-│   │   └── repository/          # SQLx repositories
-│   ├── services/                # Domain services and lifecycle orchestration
-│   ├── utils/
-│   │   ├── background/          # Background system startup and runners
-│   │   ├── builder/             # Application, Compose, database and queue builders
-│   │   ├── setup/               # Remote server setup/audit workflows
-│   │   └── traefik/             # Traefik configuration builders
-│   └── websocket/               # Terminal and streaming socket handlers
-├── web/openoxide_react/          # React 19 dashboard
-├── Dockerfile                   # Panel image definition
-├── Dockerfile.agent             # Static Agent image
-├── docker-compose.agent.yml     # Agent deployment example
-├── flake.nix                    # Reproducible Nix development shell
-└── justfile                     # Common development commands
+│   ├── api/                       # ConnectRPC service implementations & HTTP handlers
+│   ├── core/                      # Configuration, JWT authentication, permissions, state
+│   ├── db/                        # SQLite connection pool and reactive bus wiring
+│   ├── flash_gen/                 # Generated FlashORM queries & models (DO NOT EDIT DIRECTLY)
+│   ├── services/
+│   │   ├── compute/               # Applications, Compose, databases, preview environments
+│   │   ├── infrastructure/        # Servers, WireGuard, SSH keys, terminal sessions
+│   │   ├── networking/            # Traefik configuration, domains, DNS providers
+│   │   ├── platform/              # AI Assistant/Agent, settings, overview, registry
+│   │   └── migration/             # Workload and database migration runners
+│   └── utils/
+│       ├── builder/               # Programmatic ComposeBuilder & database client builders
+│       ├── setup/                 # Remote server provisioning and audit workflows
+│       └── traefik/               # Dynamic Traefik YAML/file configuration builders
+├── web/openoxide_react/            # Modern React 19 SPA (Vite, TanStack, Tailwind v4, Bun)
+├── Dockerfile                     # Multi-stage production panel Dockerfile
+├── Dockerfile.agent               # Static musl agent container definition
+├── docker-compose.dev.yml         # Local Docker development stack
+└── justfile                       # Task automation recipes
 ```
 
-## Core backend domains
+---
 
-The `src/services` tree contains the product domains:
+## Core Backend Domains
+
+The `src/services` directory houses domain logic:
 
 | Domain | Responsibility |
 | --- | --- |
-| `application` | Application CRUD, sources, deployment operations, ports, mounts, redirects, middleware, security, patches, networks, rollback and transfer |
-| `compose` | Compose CRUD, source loading, deployment operations, service-level management and transfer |
-| `database` | Database creation, configuration, credentials, import/export and runtime operations |
-| `deployment` | Deployment records, Docker execution, logs, streams and lifecycle state |
-| `server` | Remote server CRUD, SSH setup, maintenance, cleanup, migrations and private networking |
-| `monitoring` | Agent authentication, lifecycle, health and panel-side monitoring access |
-| `networking` | CDN operations, diagnostics and root-network repair |
-| `traefik` | Traefik files, middleware, logs, health and version management |
-| `certificate` | Certificate lifecycle, renewal and TLS integration |
-| `backup` | Panel, database, volume, remote-file and Compose configuration backups |
-| `notification` | Provider loading, message creation, delivery guards, scopes and triggers |
-| `alert` | Metric readings, rule evaluation, state and incidents |
-| `schedule` | Scheduled execution, retries, locking and notification integration |
-| `git_provider` | GitHub/GitLab/Gitea/Bitbucket discovery, OAuth and webhooks |
-| `preview` | Preview environment creation, queries, cleanup and lifecycle |
-| `auth` | Login support services, sessions, 2FA, tokens, password reset and email verification |
-| `organization` / `permission` | Membership, invitations, policies and resource access |
-| `ai` | Provider settings, prompts, structured generation and analysis workflows |
+| `compute/application` | Git/Docker deployments, buildpacks, port bindings, mounts, redirects, middleware, rollback |
+| `compute/compose` | Compose stack deployment, lifecycle, templating, transfers, and `ComposeBuilder` |
+| `compute/database` | PostgreSQL, MySQL, MariaDB, MongoDB, Redis, LibSQL lifecycle and client builders |
+| `compute/preview` | Ephemeral preview environment lifecycle, pull-request webhooks, automatic teardown |
+| `platform/ai` | Agentic AI Assistant, Rig completion loop, automated catalog discovery, Compose stack generator |
+| `platform/realtime` | Streaming database state changes to connected web clients via ConnectRPC |
+| `infrastructure/server` | Remote server provisioning, SSH keys, WireGuard private networks, and direct host shell |
+| `networking/traefik` | Traefik reverse proxy dynamic config, middlewares, routing rules, health checks |
+| `networking/domain` | Custom domains, DNS providers (Cloudflare, Route53, etc.), and ACME SSL certificates |
+| `backup` | Scheduled and manual backups for databases, volumes, Compose configs, and panel state |
+| `notification` | Multi-channel alert dispatch (Discord, Slack, Telegram, Email, Webhooks, etc.) |
 
-## The `os` crate
+---
 
-`crates/os` is the reusable infrastructure layer. Product services should use its typed builders instead of assembling shell flags or Docker arguments directly.
+## The `crates/os` Infrastructure Layer
 
-Major modules include:
+`crates/os` provides a strongly-typed, safe facade over low-level system and container operations:
 
-- `docker`: typed clients and handles for containers, Compose, images, networks, volumes, services, Swarm, system operations and queries.
-- `exec`: local/remote command execution, cancellation, streaming, SSH authentication, host-key policy and script IR.
-- `ssh`: typed SSH configuration and connection builders.
-- `wireguard`: typed `wg`/`wg-quick` configuration, keys, interfaces, health and command builders.
-- `git`: repositories and provider operations.
-- `archive`: tar and zip creation, extraction, listing and sanitization.
-- `file`, `dir`, `mount`, `symlink`: filesystem operations.
-- `network`, `dns`, `firewall`, `port`: network and connectivity operations.
-- `package`, `service`, `process`, `system`: host lifecycle operations.
-- `gpu`, `cgroup`, `disk`, `resource`, `diagnostics`: host capability and resource management.
-- `rclone`, `crypto`, `http`: remote storage, certificate/key utilities and HTTP operations.
+- **Docker & Swarm**: Typed builders for containers, Compose, networks, volumes, Swarm services, and exec sessions.
+- **ComposeBuilder**: Programmatic Docker Compose file and stack management with environment variable overrides and volume definitions.
+- **Database Client Builders**: Reusable, typed connection builders for MySQL, PostgreSQL, and Redis.
+- **Direct Host Shell**: Enters host namespaces (`mnt`, `pid`, `net`) directly for zero-latency interactive terminal sessions from the dashboard.
+- **WireGuard**: Typed `wg` and `wg-quick` configuration, key generation, handshake monitoring, and route management.
+- **Exec & SSH**: Local and remote command runners with output streaming, host-key verification, and cancel-on-drop semantics.
+- **System**: Cgroup v2 resource limits, disk diagnostics, package management, and GPU inspection.
 
-The raw process invocation required to launch a binary belongs inside the relevant typed CLI implementation. Domain services should only select typed actions, values, and policies.
+---
 
-## Database and migrations
+## Persistence & Realtime CDC
 
-OpenOxide uses SQLite through SQLx.
+OpenOxide combines **SQLite**, **FlashORM**, and a **Reactive CDC Bus**:
 
-For typed React live hooks and automatic refresh after committed SQLite writes, see [Typed realtime endpoints](docs/realtime.md).
-
-- Runtime migrations live in `db/migrations` and must remain append-only after release.
-- `db/schema` is the current expected schema. The earlier `.flash/` copy was removed.
-- Compile-time SQLx macros use the database configured by `DATABASE_URL`.
-- Generated models live in `src/db/models`.
-- Generated and handwritten repositories live in `src/db/repository`.
-
-When adding a database feature:
-
-1. Add a new ordered migration; never rewrite a migration already used by installations.
-2. Update the corresponding current-schema file.
-3. Apply the migration to the local compile-time database.
-4. Update or regenerate models/repositories if the persisted shape changed.
-5. Use `sqlx::query!`, `query_as!`, or another compile-time checked macro where the query is static.
-6. Run migration validation and the full Rust checks.
-
-Useful commands:
-
-```bash
-atlas migrate hash --dir file://db/migrations
-atlas migrate validate --dir file://db/migrations
-just db-gen
+```mermaid
+flowchart LR
+    A["API Service / Mutation"] -->|Type-safe Query| B["FlashORM (src/flash_gen)"]
+    B -->|Runtime SQLx Exec| C[("SQLite Database")]
+    C -->|WAL Invalidation| D["CDC Bridge (crates/realtime)"]
+    D -->|Publish Table Event| E["Reactive Event Bus"]
+    E -->|Server-Sent Stream| F["React 19 Hooks (TanStack Query)"]
 ```
 
-`just db-gen` regenerates code and can modify many files. Review its diff before committing.
+- **FlashORM (`src/flash_gen/`)**: Query code is generated at development time via `flash gen` (`just gen`) from `db/schema/*.sql` and `db/queries/*.sql`. Generated queries use runtime SQLx (`macros=false`), meaning **`cargo build`, `cargo check`, and `cargo test` do NOT require a live `DATABASE_URL`**.
+- **Reactive CDC**: Database writes emit table-level invalidations across the reactive event bus so the dashboard refreshes automatically without polling.
 
-## Background systems
+---
 
-`BackgroundManager::start_all` starts the panel's long-running systems after dependency injection and before the HTTP listener begins serving:
+## Development & Workflow
 
-- schedule runner;
-- deployment/build queue;
-- alert engine;
-- deployment-log cleanup;
-- scheduled panel backup;
-- private-network reconciliation/health work;
-- startup notification dispatch.
+### Prerequisites
 
-Background entry points live in `src/utils/background`; business behavior stays in the corresponding service.
+- **Rust**: Nightly toolchain pinned via `rust-toolchain.toml` (edition 2024).
+- **Bun**: Package manager and runtime for the frontend (`web/openoxide_react`). Do not use npm/yarn.
+- **Docker**: For local container orchestration and dev stack.
+- **Just**: Task runner (`cargo install just`).
+- **FlashORM CLI** (optional, only when editing SQL queries): `go install github.com/Lumos-Labs-HQ/flash@latest`.
+- **Buf** (optional, only when editing `.proto` files): for ConnectRPC stub generation.
 
-## Remote servers and private networking
-
-Remote servers are managed through SSH credentials stored by the panel. Server setup can audit and configure dependencies, Docker/Swarm, the shared network, Traefik, build tools, and monitoring.
-
-Supported connection modes include:
-
-- direct SSH;
-- managed WireGuard;
-- externally managed private networking such as Tailscale, NetBird, ZeroTier, or a custom provider.
-
-Managed WireGuard lifecycle includes typed configuration generation, interface installation, health checks, route validation, repair, teardown, key rotation, rollback, and background reconciliation. Reusable `wg`/`wg-quick` behavior belongs in `crates/os/src/wireguard`; server-specific decisions belong in `src/services/server/private_network`.
-
-## Monitoring architecture
-
-The monitoring agent is the `agent` workspace package and is designed to run once per monitored host.
-
-It performs four concurrent tasks:
-
-1. Collect host metrics.
-2. Collect Docker container metrics using cgroup or streaming mode.
-3. Store metrics in the agent's local SQLite database.
-4. Serve historical queries over gRPC while pruning expired metrics.
-
-The remote agent database is the metric-history source. The panel authenticates agent traffic with `METRICS_TOKEN` and accesses summaries/history through monitoring services rather than duplicating the full metric history in the panel database.
-
-### Agent collection modes
-
-- `auto`: selects the best available collector.
-- `cgroup`: reads cgroup data directly; suitable for hosts with many containers.
-- `stream`: uses Docker streaming stats; provides fresher network I/O for smaller hosts.
-
-Container filters support exact values and `*` wildcard patterns through `INCLUDE_CONTAINERS` and `EXCLUDE_CONTAINERS`.
-
-## API and realtime interfaces
-
-Controllers are registered through the `auto_route` macros. The router additionally exposes:
-
-- OpenAPI document: `/openapi.json`
-- Swagger UI: `/swagger-ui`
-- Scalar API reference: `/scalar`
-- Socket.IO layer for realtime events
-- SSE endpoints for deployment and server-setup streams
-- WebSocket terminal sessions
-
-Request-duration middleware logs every request and promotes server errors or requests taking at least one second to warning-level logs.
-
-## Configuration
-
-Create a local `.env` file. Do not commit production secrets.
-
-### Panel variables
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | `sqlite:///db.sqlite3` | Panel SQLite database |
-| `HOST` | `0.0.0.0` | HTTP bind address |
-| `PORT` | `4000` | HTTP port |
-| `SECRET_KEY` | development fallback | Legacy/general application secret; replace in production |
-| `SOCKET_PATH` | `/var/run/docker.sock` | Docker socket |
-| `BUILD_MEMORY_LIMIT` | `4G` | Default build memory limit |
-| `BUILD_CPU_LIMIT` | `4` | Default build CPU limit |
-| `METRICS_TOKEN` | empty | Shared monitoring-agent secret; empty disables authenticated ingestion |
-| `OPENOXIDE_PUBLIC_URL` | unset | Public URL used in email/reset links |
-| `OPENOXIDE_SERVER_URL` | `http://127.0.0.1:4000` in agent-related flows | URL agents and remote setup use to reach the panel |
-| `TRAEFIK_BASE_PATH` | OpenOxide data path + `/traefik` | Traefik configuration root |
-| `DEPLOYMENT_PER_SERVER_CONCURRENCY` | code default | Parallel deployments allowed per server |
-| `DEPLOYMENT_QUEUE_MAX_SIZE` | code default | Maximum queued deployment count |
-| `JWT_ACCESS_SECRET` | application fallback/config | Access-token signing secret |
-| `JWT_REFRESH_SECRET` | application fallback/config | Refresh-token signing secret |
-| `JWT_ACCESS_EXPIRY_MINS` | code default | Access-token lifetime |
-| `JWT_REFRESH_EXPIRY_DAYS` | code default | Refresh-token lifetime |
-
-Production must use strong, different application/JWT secrets and a non-empty `METRICS_TOKEN`.
-
-### Monitoring-agent variables
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `SERVER_ID` | `1` | Existing panel server ID represented by this agent |
-| `MONITOR_DATABASE_URL` | `sqlite://monitor.db` | Agent-local metric database |
-| `GRPC_PORT` | `50051` | Historical-query gRPC port |
-| `REFRESH_RATE` | `60` | Collection interval in seconds |
-| `RETENTION_DAYS` | `7` | Local metric retention |
-| `OPENOXIDE_SERVER_URL` | `http://127.0.0.1:4000` | Panel URL |
-| `METRICS_TOKEN` | required | Must match the panel token |
-| `DOCKER_SOCKET` | `/var/run/docker.sock` | Docker API socket |
-| `COLLECTION_MODE` | `auto` | `auto`, `cgroup`, or `stream` |
-| `INCLUDE_CONTAINERS` | empty | Optional comma-separated allow patterns |
-| `EXCLUDE_CONTAINERS` | empty | Optional comma-separated deny patterns |
-| `ROLLUP_SAMPLES` | `1` | Samples aggregated into one stored rollup |
-| `RUST_LOG` | `agent=info` | Agent log filter |
-
-The agent rejects invalid URLs, non-SQLite database URLs, non-positive retention/refresh values, invalid collection modes, and empty metric tokens at startup.
-
-## Development setup
-
-### Nix development shell
-
-The recommended environment is the repository flake:
+### Common `just` Commands
 
 ```bash
-nix develop
+# Start full local dev stack (Panel :4000, Agent :50051, Traefik edge :80/443)
+just up
+
+# Run panel natively on host (builds web bundle first)
+just run
+
+# Run frontend Vite dev server standalone (:3001)
+just web
+
+# Instantaneous web redeploy to running dev container without Rust recompile
+just web-deploy
+just web-deploy-watch
+
+# Regenerate FlashORM query code after editing db/schema or db/queries
+just gen
+
+# Tail logs of the dev stack
+just logs
+
+# Stop dev stack
+just down
 ```
 
-It provides Rust, rustfmt, Clippy, rust-analyzer, SQLx CLI, Atlas, Docker CLI, WireGuard tools, DNS tools, Node.js, and other build dependencies. The shell also ensures a BuildKit container is available.
-
-### Manual prerequisites
-
-If not using Nix, install:
-
-- current stable Rust toolchain with edition 2024 support;
-- SQLite and SQLx CLI;
-- Docker Engine and Docker CLI;
-- Git;
-- WireGuard/IPRoute2/DNS utilities for private-network development;
-- Bun for the React dashboard;
-- Atlas for migration validation;
-- optional build tools used by the deployment drivers.
-
-### Backend
-
-```bash
-export DATABASE_URL="sqlite://$(pwd)/data/db.sqlite3"
-export METRICS_TOKEN="development-monitoring-token"
-cargo run -p openoxide
-```
-
-The panel listens on `http://localhost:4000` unless `HOST` or `PORT` is changed.
-
-With file watching:
-
-```bash
-just dev
-```
-
-### React dashboard
-
-```bash
-cd web/openoxide_react
-bun install
-bun run dev
-```
-
-The Vite development server listens on `http://localhost:3001`. Its current proxy target is configured in `web/openoxide_react/vite.config.ts`; update that target for your local panel when required.
-
-Useful frontend commands:
-
-```bash
-bun run build
-bun run test
-bun run check:oxc
-bun run check:tsc
-bun run gen:api
-```
-
-### Monitoring agent
-
-```bash
-export SERVER_ID=1
-export METRICS_TOKEN="development-monitoring-token"
-export OPENOXIDE_SERVER_URL="http://127.0.0.1:4000"
-cargo run -p agent
-```
-
-Or run the container example after editing its server ID and token:
-
-```bash
-docker compose -f docker-compose.agent.yml up -d --build
-docker compose -f docker-compose.agent.yml logs -f
-```
-
-## Build and test
-
-Run focused checks while developing and the workspace checks before merging:
+### Backend Quality Checks
 
 ```bash
 cargo check --workspace --all-targets
 cargo test --workspace
 cargo clippy --workspace --all-targets
-git diff --check
 ```
 
-Common targeted commands:
+### Frontend Workflow (`web/openoxide_react`)
 
 ```bash
-cargo test -p os
-cargo test -p agent
-cargo test --lib server -- --nocapture
-cargo test --lib wireguard -- --nocapture
+cd web/openoxide_react
+
+# Install dependencies (Bun only)
+bun install
+
+# Start Vite dev server
+bun run dev
+
+# Run type check and oxlint/oxfmt
+bun run check:tsc
+bun run check:oxc
+
+# Regenerate ConnectRPC stubs from .proto definitions
+bun run gen:connect
 ```
 
-Build release artifacts:
+---
 
-```bash
-cargo build --release -p openoxide
-cargo build --release -p agent
-docker build -f Dockerfile.agent -t openoxide-agent:latest .
-```
+## Configuration Reference
 
-The root release profile optimizes for small binaries using size optimization, LTO, one codegen unit, abort-on-panic, and symbol stripping.
+Set these environment variables in your `.env` file or container environment.
 
-## Docker notes
+### Panel Variables
 
-The monitoring image is a static musl binary copied into a `scratch` image. It needs access to the Docker socket, cgroups for the scalable collector, persistent storage for its SQLite database, and network reachability to the panel.
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `DATABASE_URL` | `sqlite://data/db.sqlite3` | Panel SQLite database location |
+| `HOST` | `0.0.0.0` | HTTP bind address |
+| `PORT` | `4000` | HTTP listening port |
+| `METRICS_TOKEN` | required | Shared authentication token between Panel and Monitoring Agents |
+| `SECRET_KEY` | required | Application encryption secret |
+| `JWT_ACCESS_SECRET` | required | Secret for signing JWT access tokens |
+| `JWT_REFRESH_SECRET` | required | Secret for signing JWT refresh tokens |
+| `SOCKET_PATH` | `/var/run/docker.sock` | Local Docker daemon socket |
+| `TRAEFIK_BASE_PATH` | `./data/traefik` | Traefik configuration root directory |
+| `OPENOXIDE_SERVER_URL` | `http://127.0.0.1:4000` | URL used by agents and remote setup to reach panel |
 
-`docker-compose.agent.yml` connects the Agent to the OpenOxide network and publishes its gRPC port.
+### Monitoring Agent Variables
 
-The panel image needs persistent database/data storage and Docker socket access. Docker socket access is equivalent to high privilege over the Docker host; only run OpenOxide on trusted infrastructure and protect the panel with authentication and network controls.
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SERVER_ID` | `1` | ID of the server record in OpenOxide represented by this agent |
+| `METRICS_TOKEN` | required | Must match the panel's `METRICS_TOKEN` |
+| `OPENOXIDE_SERVER_URL` | `http://127.0.0.1:4000` | Reachable URL of the OpenOxide panel |
+| `GRPC_PORT` | `50051` | Historical telemetry gRPC listening port |
+| `REFRESH_RATE` | `60` | Metric collection interval in seconds |
+| `RETENTION_DAYS` | `7` | Retention period for local SQLite metrics |
+| `COLLECTION_MODE` | `auto` | Metric collector mode: `auto`, `cgroup`, or `stream` |
+| `DOCKER_SOCKET` | `/var/run/docker.sock` | Host Docker socket |
 
-> The root `Dockerfile` still references the previous frontend directory (`web/openoxide`). The active dashboard is `web/openoxide_react`; align the frontend build stage before using that Dockerfile for a production panel image.
-
-## Development rules
-
-These conventions keep the codebase maintainable:
-
-- Keep `mod.rs` focused on declarations and re-exports.
-- Split a domain into a folder when multiple responsibilities/files emerge.
-- Keep handlers thin; database access belongs in repositories and lifecycle logic belongs in services.
-- Prefer enums and typed builders over raw string states, actions, command names, and flags.
-- Use `crates/os` for reusable operating-system and command behavior.
-- Never assemble user-controlled shell command fragments directly.
-- Prefer compile-time checked SQLx macros for static queries.
-- Keep runtime migrations append-only and keep `db/schema` synchronized with the current schema.
-- Keep background entry points together under `src/utils/background`.
-- Preserve API serialization compatibility when replacing strings with enums.
-- Add focused tests for validation, builders, state transitions, rollback, retry, and reconciliation logic.
-
-## Security model
-
-- The panel is self-hosted and stores operational state in SQLite.
-- SSH connections support key authentication and host-key pinning; accepting unknown host keys should only be used during controlled setup.
-- Monitoring ingestion requires a shared token.
-- WireGuard private keys and temporary configuration content are handled through typed lifecycle code and zeroized where applicable.
-- Core dumps are disabled at panel startup to reduce secret leakage from process memory.
-- Paths used by archive, Traefik, backup, and file operations are validated before execution.
-- Docker socket access is inherently privileged and must be treated as host-root-equivalent access.
-
-## Troubleshooting
-
-### SQLx reports `no such table`
-
-Compile-time SQLx macros inspect the database referenced by `DATABASE_URL`. Apply the missing migration to the local development database, verify the table exists, and rerun the build. Do not rewrite an already released migration to solve a local database mismatch.
-
-### Migration `VersionMismatch`
-
-The local database migration history does not match the migration files. Determine whether the database or migration directory is stale before changing anything. Back up the database before repairing migration history.
-
-### Monitoring agent cannot reach the panel
-
-- Do not use `127.0.0.1` from a normal bridge-network container to reach a panel on the host.
-- Use host networking, a host-gateway address, or a routable panel URL.
-- Confirm `METRICS_TOKEN` matches on both sides.
-- Confirm the configured `SERVER_ID` exists.
-- Check panel ingestion logs and agent startup validation output.
-
-### Monitoring endpoints return `500`
-
-Verify migrations, the referenced server row, authentication token, and panel/agent version compatibility. The agent's historical metric database and the panel's product database have different responsibilities.
-
-### WireGuard hostname does not resolve
-
-WireGuard routes IP packets; it does not automatically provide DNS names. Configure the selected private-network provider's DNS, an explicit private DNS record, or use the tunnel IP directly.
-
-## API discovery
-
-With the panel running locally:
-
-- OpenAPI JSON: `http://localhost:4000/openapi.json`
-- Swagger UI: `http://localhost:4000/swagger-ui`
-- Scalar: `http://localhost:4000/scalar`
-
-The React client types can be regenerated from the OpenAPI document with `bun run gen:api` after pointing its script at the correct panel URL.
+---
 
 ## Contributing
 
-Before submitting a change:
-
-1. Keep the change inside the correct architectural layer.
-2. Add or update migrations and current schema together when persistence changes.
-3. Add focused tests.
-4. Run Rust and frontend checks relevant to the change.
-5. Review generated or bulk-formatted diffs carefully.
-6. Avoid committing local databases, secrets, build artifacts, or environment-specific proxy URLs.
-
-## License
-
-Add the project's chosen license file before public distribution. The previous README claimed MIT, but no repository license file is currently present, so this README does not make a license claim.
+1. Adhere to **Conventional Commits** (`feat(web):`, `fix(agent):`, `refactor(ai):`).
+2. Frontend code must follow `oxfmt` and `oxlint` rules (`bun run format` / `bun run check:oxc`).
+3. Never hand-edit files in generated directories (`src/flash_gen/`, `web/openoxide_react/src/gen/`).
+4. Run `cargo clippy --workspace --all-targets` and `bun run check:tsc` before submitting changes.
