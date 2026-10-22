@@ -373,6 +373,14 @@ impl MonitoringService {
         let _ = self.trigger_agent_repair(server_id, reason);
     }
 
+    /// Refreshes `last_seen_at` from a lifecycle frame. The agent yields a
+    /// snapshot every 15 s even on an idle host, so a received frame is the
+    /// primary liveness signal; without this the status API reports the agent
+    /// offline 30 s after the last metrics query.
+    pub async fn touch_agent_seen(&self, server_id: i64) {
+        let _ = self.agent_auth.touch_seen(server_id).await;
+    }
+
     /// Drops the cached gRPC channel unconditionally. The lifecycle watcher
     /// calls this when an RPC *hangs* (deadline elapsed): a hang produces no
     /// tonic status, so `invalidate_stale_channel` never fires and the stale

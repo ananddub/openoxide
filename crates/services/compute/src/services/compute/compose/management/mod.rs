@@ -32,6 +32,23 @@ pub struct ComposeManagementService {
     cache: Arc<AppStateCache>,
 }
 
+#[cfg(test)]
+impl ComposeManagementService {
+    pub(crate) fn for_tests(
+        compose: Arc<ComposeService>,
+        queries: Arc<FlashQueries>,
+        deployment_service: Arc<DeploymentService>,
+        cache: Arc<AppStateCache>,
+    ) -> Self {
+        Self {
+            compose,
+            queries,
+            deployment_service,
+            cache,
+        }
+    }
+}
+
 #[singleton]
 impl ComposeManagementService {
     fn new(

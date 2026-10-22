@@ -2,9 +2,70 @@ use connectrpc::{ConnectError, ErrorCode};
 use serde::Deserialize;
 
 use crate::api::connect::generated::openoxide::api::v1::DeploymentEvent;
+use crate::db::queries::FlashQueries;
 use crate::flash_gen::models::Deployments;
-use crate::services::compute::engine::DockerLogOptions;
+use crate::services::compute::engine::{DeploymentService, DockerLogOptions};
 use crate::utils::builder::custom_type::{ActiveDeploySnapshot, IdType};
+
+/// Deployments, services (application/compose/database), and servers are all
+/// addressed by global ids. Every RPC that takes one of those ids must first
+/// confirm it belongs to the caller's organization; mismatches report
+/// not-found so id existence is not disclosed across tenants.
+pub async fn ensure_deployment_org(
+    deployment_id: i64,
+    organization_id: i64,
+) -> Result<(), ConnectError> {
+    let deployments = resolve_deployments().await?;
+    deployments
+        .ensure_organization_access(deployment_id, organization_id)
+        .await
+        .map_err(map_error)
+}
+
+pub async fn ensure_service_org(service_id: i64, organization_id: i64) -> Result<(), ConnectError> {
+    let deployments = resolve_deployments().await?;
+    match deployments
+        .ensure_service_organization_access(service_id, organization_id)
+        .await
+    {
+        Ok(()) => Ok(()),
+        Err(sqlx::Error::RowNotFound) => Err(ConnectError::not_found("service not found")),
+        Err(other) => {
+            tracing::error!(error = %other, "service ownership lookup failed");
+            Err(ConnectError::new(
+                ErrorCode::Internal,
+                "database operation failed",
+            ))
+        }
+    }
+}
+
+pub async fn ensure_server_org(server_id: i64, organization_id: i64) -> Result<(), ConnectError> {
+    let queries = auto_di::resolve::<FlashQueries>().await.map_err(|error| {
+        tracing::error!(%error, "database queries unavailable");
+        ConnectError::new(ErrorCode::Internal, "database unavailable")
+    })?;
+    match queries.get_server_by_i_d(server_id).await {
+        Ok(server) if server.organization_id == organization_id => Ok(()),
+        Ok(_) | Err(sqlx::Error::RowNotFound) => Err(ConnectError::not_found("server not found")),
+        Err(other) => {
+            tracing::error!(error = %other, "server ownership lookup failed");
+            Err(ConnectError::new(
+                ErrorCode::Internal,
+                "database operation failed",
+            ))
+        }
+    }
+}
+
+async fn resolve_deployments() -> Result<std::sync::Arc<DeploymentService>, ConnectError> {
+    auto_di::resolve::<DeploymentService>()
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "deployment service unavailable");
+            ConnectError::new(ErrorCode::Internal, "deployment service unavailable")
+        })
+}
 
 #[derive(Debug, Clone, Copy, Default, Deserialize)]
 pub enum DockerLogStream {

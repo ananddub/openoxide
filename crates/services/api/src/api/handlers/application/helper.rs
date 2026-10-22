@@ -7,6 +7,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     ApplicationPortProtocol, ApplicationPortPublishMode, ApplicationRedirect,
     ApplicationSecurityRule, ApplicationSourceType,
 };
+use crate::services::compute::application::ApplicationService;
 use crate::services::compute::application::middleware::{
     ApplicationMiddlewareResponseDto, ApplicationMiddlewareType as AppMiddlewareType,
 };
@@ -20,6 +21,26 @@ use crate::services::compute::application::port::{
 use crate::services::compute::application::redirect::ApplicationRedirectResponseDto;
 use crate::services::compute::application::security::ApplicationSecurityResponseDto;
 use crate::utils::builder::spec::MountType as SpecMountType;
+
+/// Applications (and every sub-resource addressed through them) are keyed by
+/// global ids, so each RPC must confirm the row sits in the caller's
+/// organization. Mismatches report not-found to avoid confirming that another
+/// tenant's ids exist.
+pub async fn ensure_application_org(
+    application_id: i64,
+    organization_id: i64,
+) -> Result<(), ConnectError> {
+    let applications = auto_di::resolve::<ApplicationService>()
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "application service unavailable");
+            ConnectError::new(ErrorCode::Internal, "application service unavailable")
+        })?;
+    applications
+        .ensure_organization_access(application_id, organization_id)
+        .await
+        .map_err(map_db_error)
+}
 
 pub fn app_to_proto(
     value: crate::services::compute::application::ApplicationRecord,

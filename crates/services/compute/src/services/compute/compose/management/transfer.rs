@@ -28,6 +28,13 @@ pub struct ComposeTransferService {
     cache: Arc<AppStateCache>,
 }
 
+#[cfg(test)]
+impl ComposeTransferService {
+    pub(crate) fn for_tests(queries: Arc<FlashQueries>, cache: Arc<AppStateCache>) -> Self {
+        Self { queries, cache }
+    }
+}
+
 #[singleton]
 impl ComposeTransferService {
     fn new(queries: Arc<FlashQueries>, cache: Arc<AppStateCache>) -> Self {

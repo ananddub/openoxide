@@ -22,12 +22,17 @@ RUN rustup toolchain install nightly-2026-08-30 --profile minimal \
 WORKDIR /usr/src/openoxide
 
 # Build profile: `release-fast` (no LTO, many codegen units) for quick
-# iteration; pass `--build-arg BUILD_PROFILE=release` for the smallest
-# production binary. The cargo `--profile` name and its target/ output dir differ,
-# so both are derived here.
+# iteration; `--build-arg BUILD_PROFILE=release` is the normal production
+# build (thin LTO); `BUILD_PROFILE=release-size` gives the smallest binary
+# (fat LTO, one codegen unit). The cargo `--profile` name and its target/
+# output dir differ, so both are derived here.
 ARG BUILD_PROFILE=release-fast
 
 # ── 1. Dependency manifest pre-cache ──────────────────────────────────────────
+# Real sources are copied before the pre-build on purpose: cargo's artifacts
+# for unchanged workspace crates are then reused by the final build. A
+# manifest-only layer with dummy roots was measured and is slower (203 s vs
+# 148 s per source edit) because every workspace crate must recompile twice.
 COPY Cargo.toml Cargo.lock ./
 COPY crates/ crates/
 COPY agent/   agent/
@@ -85,7 +90,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/src/openoxide/target \
     touch src/main.rs crates/db/src/db/connection/sqlite.rs crates/services/api/src/api/dashboard.rs && \
     cargo build --profile ${BUILD_PROFILE} --target x86_64-unknown-linux-musl -p openoxide && \
-    _outdir=$([ "${BUILD_PROFILE}" = "release-fast" ] && echo release-fast || echo release) && \
+    _outdir=$([ "${BUILD_PROFILE}" = "release" ] && echo release || echo "${BUILD_PROFILE}") && \
     cp target/x86_64-unknown-linux-musl/${_outdir}/openoxide /usr/src/openoxide/openoxide-binary && \
     strip /usr/src/openoxide/openoxide-binary
 

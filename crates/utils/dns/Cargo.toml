@@ -8,7 +8,7 @@ description = "Managed DNS provider clients: one trait, one thin client per prov
 [dependencies]
 async-trait = "0.1"
 aws-credential-types = "1.2"
-aws-sdk-route53 = "1.76"
+aws-sdk-route53 = { version = "1.76", default-features = false, features = ["rt-tokio", "rustls"] }
 chrono = { version = "0.4.45", features = ["serde"] }
 futures = "0.3.32"
 reqwest = { version = "0.13.4", default-features = false, features = ["json", "query", "form", "rustls-no-provider"] }

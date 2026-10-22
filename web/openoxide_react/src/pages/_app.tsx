@@ -2,15 +2,28 @@ import {
 	createFileRoute,
 	Navigate,
 	Outlet,
+	redirect,
 	useLocation,
 } from '@tanstack/react-router';
 import {SidebarProvider} from '#/components/ui/sidebar';
 import {AppSidebar} from '#/components/layouts/sidebar';
 import {TopBar} from '#/components/layouts/topbar';
 import {useTableWatch} from '#/hooks/table/use-table-watch';
-import {useAuthSession} from '#/stores/session-context';
+import {getSessionUser} from '#/stores/session-context';
 
 export const Route = createFileRoute('/_app')({
+	beforeLoad: ({location}) => {
+		// Keep the invite link (or any deep link) so sign-in can return there.
+		// Router-level redirect: rendering <Navigate> with a location-derived
+		// search re-fires on every render and loops until React gives up.
+		if (!getSessionUser()) {
+			throw redirect({
+				to: '/singin',
+				search: {redirect: location.href},
+				replace: true,
+			});
+		}
+	},
 	component: AppLayout,
 	notFoundComponent: AppNotFoundPlaceholder,
 });
@@ -38,9 +51,6 @@ function AppNotFoundPlaceholder() {
 /** Dashboard shell, laid out like the Vercel dashboard: the nav rail runs the FULL viewport height on the left (top to bottom, no offsets), and the slim top bar (workspace switcher · page title · search) sits only over the content column, pinned above a single scrolling main area. */
 function AppLayout() {
 	useTableWatch();
-	const {isAuth} = useAuthSession();
-
-	if (!isAuth) return <Navigate to="/singin" replace />;
 
 	return (
 		<SidebarProvider className="h-dvh">

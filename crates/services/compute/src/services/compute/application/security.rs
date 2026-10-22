@@ -38,6 +38,13 @@ impl From<Security> for ApplicationSecurityResponseDto {
 pub struct SecurityService {
     queries: Arc<FlashQueries>,
 }
+
+#[cfg(test)]
+impl SecurityService {
+    pub(crate) fn for_tests(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
+    }
+}
 #[singleton]
 impl SecurityService {
     fn new(queries: Arc<FlashQueries>) -> Self {

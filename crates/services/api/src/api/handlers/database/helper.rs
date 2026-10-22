@@ -10,6 +10,25 @@ use crate::services::compute::database::{
     DatabaseKind, DatabaseOperation, DatabaseService as AppDatabaseService,
 };
 
+/// Databases (and their mounts/swarm settings) are keyed by global service
+/// ids, so each RPC must confirm the row sits in the caller's organization.
+/// Mismatches report not-found to avoid leaking another tenant's ids.
+pub async fn ensure_database_org(
+    database_id: i64,
+    organization_id: i64,
+) -> Result<(), ConnectError> {
+    let databases = auto_di::resolve::<AppDatabaseService>()
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "database service unavailable");
+            ConnectError::new(ErrorCode::Internal, "database service unavailable")
+        })?;
+    databases
+        .ensure_organization_access(database_id, organization_id)
+        .await
+        .map_err(map_db_error)
+}
+
 pub fn kind_to_proto(kind: DatabaseKind) -> ProtoDatabaseKind {
     match kind {
         DatabaseKind::Postgres => ProtoDatabaseKind::Postgres,

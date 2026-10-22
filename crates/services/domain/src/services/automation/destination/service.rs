@@ -104,6 +104,7 @@ impl DestinationService {
         let provider = DestinationsProviderEnum::from_preset(&input.provider)
             .as_str()
             .to_string();
+        let now = chrono::Utc::now().timestamp();
         self.queries
             .destinations_create_and_return(&DestinationsCreateAndReturnParams {
                 name: input.name,
@@ -114,10 +115,8 @@ impl DestinationService {
                 region: input.region,
                 endpoint: input.endpoint,
                 organization_id: input.organization_id,
-                // The old repository insert persisted the service-supplied
-                // zero-initialized timestamps.
-                created_at: 0,
-                updated_at: 0,
+                created_at: now,
+                updated_at: now,
             })
             .await
     }
@@ -230,5 +229,243 @@ impl DestinationService {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_support::fixture;
+
+    async fn service(tag: &str) -> (DestinationService, sqlx::SqlitePool) {
+        let (queries, pool) = fixture(tag).await;
+        (DestinationService { queries }, pool)
+    }
+
+    fn destination(name: &str, provider: &str, organization_id: i64) -> CreateDestinationDto {
+        CreateDestinationDto {
+            name: name.into(),
+            provider: provider.into(),
+            access_key: "access".into(),
+            secret_access_key: "secret".into(),
+            bucket: "backups".into(),
+            region: "auto".into(),
+            endpoint: "https://s3.example.com".into(),
+            organization_id,
+        }
+    }
+
+    #[test]
+    fn provider_presets_collapse_to_canonical_values() {
+        for (input, expected) in [
+            ("AWS", "S3"),
+            ("aws", "S3"),
+            ("S3", "S3"),
+            ("CLOUDFLARE_R2", "R2"),
+            ("R2", "R2"),
+            ("B2", "BACKBLAZE"),
+            ("BACKBLAZE", "BACKBLAZE"),
+            ("GOOGLE", "GCS"),
+            ("GCP", "GCS"),
+            ("SPACES", "DO_SPACES"),
+            ("DIGITALOCEAN", "DO_SPACES"),
+            ("MINIO", "MINIO"),
+            ("WASABI", "WASABI"),
+            ("CUSTOM", "CUSTOM"),
+        ] {
+            assert_eq!(
+                DestinationsProviderEnum::from_preset(input).as_str(),
+                expected,
+                "{input}"
+            );
+        }
+        assert_eq!(
+            DestinationsProviderEnum::from_preset("not-a-provider").as_str(),
+            "S3",
+            "an unknown preset should fall back to the default provider"
+        );
+    }
+
+    #[tokio::test]
+    async fn create_canonicalizes_provider_and_scopes_to_the_organization() {
+        let (service, _pool) = service("destination-create").await;
+
+        let created = service
+            .create(destination("nightly", "B2", 7))
+            .await
+            .unwrap();
+
+        assert_eq!(created.name, "nightly");
+        assert_eq!(
+            created.provider, "BACKBLAZE",
+            "the B2 alias must be stored as its canonical provider"
+        );
+        assert_eq!(created.organization_id, 7);
+        assert_eq!(created.bucket, "backups");
+        assert_eq!(created.secret_access_key, "secret");
+
+        let read = service.get_by_id(&created.id.to_string(), 7).await.unwrap();
+        assert_eq!(read.name, "nightly");
+
+        assert!(
+            matches!(
+                service.get_by_id(&created.id.to_string(), 8).await,
+                Err(sqlx::Error::RowNotFound)
+            ),
+            "another organization must not read this destination"
+        );
+        assert!(service.list(8).await.unwrap().is_empty());
+        assert_eq!(service.list(7).await.unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn get_by_id_rejects_malformed_and_missing_ids() {
+        let (service, _pool) = service("destination-missing").await;
+
+        assert!(matches!(
+            service.get_by_id("not-a-number", 1).await,
+            Err(sqlx::Error::RowNotFound)
+        ));
+        assert!(matches!(
+            service.get_by_id("999", 1).await,
+            Err(sqlx::Error::RowNotFound)
+        ));
+    }
+
+    #[tokio::test]
+    async fn create_stamps_real_timestamps() {
+        let (service, _pool) = service("destination-create-time").await;
+
+        let created = service
+            .create(destination("nightly", "S3", 1))
+            .await
+            .unwrap();
+
+        assert!(
+            created.created_at > 0,
+            "created_at must be a real timestamp, got {}",
+            created.created_at
+        );
+        assert!(
+            created.updated_at > 0,
+            "updated_at must be a real timestamp, got {}",
+            created.updated_at
+        );
+    }
+
+    #[tokio::test]
+    async fn patch_updates_only_the_fields_that_were_sent() {
+        let (service, _pool) = service("destination-patch").await;
+        let created = service
+            .create(destination("nightly", "S3", 1))
+            .await
+            .unwrap();
+
+        let patched = service
+            .patch(
+                &created.id.to_string(),
+                PatchDestinationDto {
+                    name: Some("weekly".into()),
+                    provider: Some("MINIO".into()),
+                    access_key: None,
+                    secret_access_key: None,
+                    bucket: None,
+                    region: None,
+                    endpoint: None,
+                },
+                1,
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(patched.name, "weekly");
+        assert_eq!(patched.provider, "MINIO");
+        assert_eq!(
+            patched.access_key, "access",
+            "an omitted secret must survive"
+        );
+        assert_eq!(patched.bucket, "backups");
+        assert_eq!(patched.endpoint, "https://s3.example.com");
+    }
+
+    #[tokio::test]
+    async fn patch_bumps_updated_at() {
+        let (service, _pool) = service("destination-patch-time").await;
+        let created = service
+            .create(destination("nightly", "S3", 1))
+            .await
+            .unwrap();
+        // The column is second-granular; wait so a bump is observable even if
+        // the create timestamp is real to begin with.
+        tokio::time::sleep(std::time::Duration::from_millis(1_100)).await;
+
+        let patched = service
+            .patch(
+                &created.id.to_string(),
+                PatchDestinationDto {
+                    name: Some("weekly".into()),
+                    provider: None,
+                    access_key: None,
+                    secret_access_key: None,
+                    bucket: None,
+                    region: None,
+                    endpoint: None,
+                },
+                1,
+            )
+            .await
+            .unwrap();
+
+        assert!(
+            patched.updated_at > created.updated_at,
+            "a patch must bump updated_at: before={} after={}",
+            created.updated_at,
+            patched.updated_at
+        );
+    }
+
+    #[tokio::test]
+    async fn patch_of_a_missing_destination_is_row_not_found() {
+        let (service, _pool) = service("destination-patch-missing").await;
+
+        let error = service
+            .patch(
+                "999",
+                PatchDestinationDto {
+                    name: Some("ghost".into()),
+                    provider: None,
+                    access_key: None,
+                    secret_access_key: None,
+                    bucket: None,
+                    region: None,
+                    endpoint: None,
+                },
+                1,
+            )
+            .await
+            .unwrap_err();
+        assert!(matches!(error, sqlx::Error::RowNotFound), "{error}");
+    }
+
+    #[tokio::test]
+    async fn delete_removes_the_row_but_respects_organization_scope() {
+        let (service, _pool) = service("destination-delete").await;
+        let created = service
+            .create(destination("nightly", "S3", 1))
+            .await
+            .unwrap();
+
+        assert!(
+            matches!(
+                service.delete(&created.id.to_string(), 2).await,
+                Err(sqlx::Error::RowNotFound)
+            ),
+            "another organization must not delete this destination"
+        );
+        assert!(service.get_by_id(&created.id.to_string(), 1).await.is_ok());
+
+        service.delete(&created.id.to_string(), 1).await.unwrap();
+
+        assert!(service.list(1).await.unwrap().is_empty());
     }
 }

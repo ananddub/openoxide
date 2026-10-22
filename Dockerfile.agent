@@ -29,7 +29,9 @@ ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-C target-feature=+crt-sta
     CARGO_BUILD_JOBS=8 \
     CARGO_TARGET_DIR=/usr/src/openoxide/target
 # The target dir is a cache mount, so its contents never land in this layer —
-# the binary is copied out to a plain path for stage 2 to pick up.
+# the binary is copied out to a plain path for stage 2 to pick up. `release`
+# uses thin LTO, which parallelizes and is much faster than release-size.
+
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/usr/src/openoxide/target \

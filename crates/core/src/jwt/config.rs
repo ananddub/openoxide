@@ -47,6 +47,20 @@ impl JwtConfig {
                 .unwrap_or(7),
             debug_skip_time_check,
         }
+        .with_default_secret_warning()
+    }
+
+    fn with_default_secret_warning(self) -> Self {
+        let defaults = Self::default();
+        if self.access_secret == defaults.access_secret
+            || self.refresh_secret == defaults.refresh_secret
+        {
+            tracing::warn!(
+                "JWT secrets are using the built-in development defaults — set \
+                 JWT_ACCESS_SECRET and JWT_REFRESH_SECRET before exposing this panel"
+            );
+        }
+        self
     }
 }
 

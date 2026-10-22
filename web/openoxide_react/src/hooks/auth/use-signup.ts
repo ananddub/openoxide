@@ -6,7 +6,10 @@ import type {SignUpSchema} from '#/schema/signup.schema';
 
 const authClient = createServiceClient(AuthService);
 
-export function useSignup(onErrorCallback?: (msg: string) => void) {
+export function useSignup(
+	onErrorCallback?: (msg: string) => void,
+	redirect?: string,
+) {
 	const applyReply = useApplyAuthReply();
 
 	return useMutation({
@@ -19,7 +22,11 @@ export function useSignup(onErrorCallback?: (msg: string) => void) {
 			}),
 		onSuccess: res => {
 			if (
-				!applyReply(res, 'Owner registered and logged in successfully!')
+				!applyReply(
+					res,
+					'Owner registered and logged in successfully!',
+					redirect,
+				)
 			) {
 				onErrorCallback?.(
 					'An unexpected error occurred. Please try again.',

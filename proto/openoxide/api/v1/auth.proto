@@ -18,7 +18,7 @@ service AuthService {
   rpc Logout(LogoutRequest) returns (Empty);
   // @internal Report whether an owner account exists yet (initial setup gate). No params.
   rpc GetSetupStatus(GetSetupStatusRequest) returns (SetupStatus);
-  // @internal Update the current user's profile. All fields optional: email, password (min 8), first_name, last_name, avatar.
+  // @internal Update the current user's profile. All fields optional: email, password (min 8), first_name, last_name, avatar; current_password is required when email or password changes.
   rpc UpdateUser(UpdateUserRequest) returns (User);
 
   // @internal Request a password-reset email. Required: email.
@@ -95,6 +95,7 @@ message UpdateUserRequest {
   optional string first_name = 3 [(buf.validate.field).string.max_len = 255];
   optional string last_name = 4 [(buf.validate.field).string.max_len = 255];
   optional string avatar = 5 [(buf.validate.field).string.uri = true];
+  optional string current_password = 6 [(buf.validate.field).string.min_len = 1];
 }
 
 message RequestPasswordResetRequest {

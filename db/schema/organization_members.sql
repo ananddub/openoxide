@@ -5,5 +5,6 @@ CREATE TABLE organization_members (
     organization_id BIGINT NOT NULL,
     created_at BIGINT NOT NULL,
     updated_at BIGINT NOT NULL,
-    group_id BIGINT
+    group_id BIGINT,
+    UNIQUE (user_id, organization_id)
 );

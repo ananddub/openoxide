@@ -56,8 +56,10 @@ async-trait = "0.1"
 bcrypt = "0.19.3"
 argon2 = { version = "0.6.0-rc.8", features = ["getrandom"] }
 aws-credential-types = "1.2"
-aws-sdk-secretsmanager = "1.76"
-aws-sdk-ssm = "1.76"
+# `default-https-client` would pull aws-lc-sys (C/asm). The legacy rustls
+# feature reuses ring, which the rest of the graph already builds.
+aws-sdk-secretsmanager = { version = "1.76", default-features = false, features = ["rt-tokio", "rustls"] }
+aws-sdk-ssm = { version = "1.76", default-features = false, features = ["rt-tokio", "rustls"] }
 base64 = "0.22"
 getrandom = "0.3"
 hmac = "0.12"
@@ -126,22 +128,31 @@ tracing = { workspace = true }
 
 [profile.dev]
 opt-level = 0          # zero optimization — fastest compile
-debug = 1              # minimal debug info (full=2, par slow hota hai)
+debug = 1              # line tables only (same as "line-tables-only"; full=2 is slow)
 incremental = true     # sirf changed files recompile karo
 codegen-units = 256    # maximize dev codegen parallelism; runtime quality irrelevant here
 
+# Normal optimized build. Thin LTO is parallel, so an edit costs ~1–2 min instead
+# of the multi-minute whole-program fat-LTO pass. `release-size` keeps the old
+# smallest-artifact behaviour.
 [profile.release]
 opt-level = "z"        # size ke liye optimize
-lto = "fat"            # whole-program optimization for the smallest binary
-codegen-units = 1      # enables maximum cross-crate size optimization
+lto = "thin"           # parallel whole-crate optimization
+codegen-units = 8      # parallel codegen across the 8-core cap
 panic = "abort"        # unwinding code remove karta hai
 strip = true           # debug symbols remove karta hai
 overflow-checks = false
 
-# Fast image/dev builds: skip the LTO + single-codegen-unit cost that makes
-# `release` take many minutes. Inherits release but flips the expensive knobs,
-# so iterating (docker build / just restart) is minutes → tens of seconds while
-# still producing an optimized, shippable binary. Use `--profile release-fast`.
+# Smallest possible artifact (previous `release` behaviour: fat LTO, 1 CGU).
+# Final artifacts only — every edit re-runs single-threaded whole-program LTO.
+[profile.release-size]
+inherits = "release"
+lto = "fat"
+codegen-units = 1
+
+# Fast optimized local builds: no LTO, light optimization. Iterating
+# (docker build / just restart) stays in the tens of seconds while still
+# producing a shippable binary. Use `cargo build-fast` / `cargo run-fast`.
 [profile.release-fast]
 inherits = "release"
 opt-level = 1          # light optimization — big compile-time win vs "z"

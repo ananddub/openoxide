@@ -36,7 +36,11 @@ impl DeploymentService for DeploymentController {
             limit: request.limit.unwrap_or(50),
             offset: request.offset.unwrap_or(0),
         };
-        let items = self.service.list(filter).await.map_err(map_error)?;
+        let items = self
+            .service
+            .list_for_organization(_auth.organization_id, filter)
+            .await
+            .map_err(map_error)?;
         // Resolve actor emails once per distinct user; unknown/0 → None,
         // which the UI renders as "System".
         let mut emails: HashMap<i64, Option<String>> = HashMap::new();
@@ -67,10 +71,13 @@ impl DeploymentService for DeploymentController {
     ) -> ServiceResult<impl connectrpc::Encodable<ListDeploymentsResponse> + Send + use<'a>> {
         let items = self
             .service
-            .search_logs(LogSearchOptions {
-                query: Some(request.query.to_owned()),
-                limit: 200,
-            })
+            .search_logs_for_organization(
+                _auth.organization_id,
+                LogSearchOptions {
+                    query: Some(request.query.to_owned()),
+                    limit: 200,
+                },
+            )
             .await
             .map_err(map_error)?;
         // Map log search results to the proto Deployment envelope; the
@@ -102,7 +109,7 @@ impl DeploymentService for DeploymentController {
     ) -> ServiceResult<impl connectrpc::Encodable<ListDeploymentsResponse> + Send + use<'a>> {
         let items = self
             .service
-            .list_active_components()
+            .list_active_components_for_organization(_auth.organization_id)
             .await
             .map_err(map_error)?;
         let deployments = items
@@ -118,7 +125,11 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         _request: ServiceRequest<'_, Empty>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListDeploymentsResponse> + Send + use<'a>> {
-        let items = self.service.list_running(50, 0).await.map_err(map_error)?;
+        let items = self
+            .service
+            .list_running_for_organization(_auth.organization_id, 50, 0)
+            .await
+            .map_err(map_error)?;
         let deployments = items.into_iter().map(|d| deployment_to_proto(&d)).collect();
         Response::ok(ListDeploymentsResponse { deployments })
     }
@@ -133,6 +144,7 @@ impl DeploymentService for DeploymentController {
         + Send
         + use<'a>,
     > {
+        ensure_deployment_org(request.id, _auth.organization_id).await?;
         let item = self
             .service
             .get_by_id(request.id)
@@ -149,6 +161,7 @@ impl DeploymentService for DeploymentController {
     ) -> ServiceResult<
         connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>,
     > {
+        ensure_service_org(request.id, _auth.organization_id).await?;
         let receiver = self
             .service
             .stream_application_stats(request.id, true)
@@ -165,6 +178,7 @@ impl DeploymentService for DeploymentController {
     ) -> ServiceResult<
         connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>,
     > {
+        ensure_service_org(request.id, _auth.organization_id).await?;
         let receiver = self
             .service
             .stream_compose_stats(request.id, true)
@@ -181,6 +195,7 @@ impl DeploymentService for DeploymentController {
     ) -> ServiceResult<
         connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>,
     > {
+        ensure_service_org(request.id, _auth.organization_id).await?;
         let receiver = self
             .service
             .stream_database_stats(request.id, true)
@@ -197,6 +212,9 @@ impl DeploymentService for DeploymentController {
     ) -> ServiceResult<
         connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>,
     > {
+        if let Some(server_id) = request.server_id {
+            ensure_server_org(server_id, _auth.organization_id).await?;
+        }
         let receiver = self
             .service
             .stream_docker_container_logs(
@@ -217,6 +235,9 @@ impl DeploymentService for DeploymentController {
     ) -> ServiceResult<impl connectrpc::Encodable<LogExport> + Send + use<'a>> {
         let target = request.target.to_owned();
         let server_id = request.server_id;
+        if let Some(server_id) = server_id {
+            ensure_server_org(server_id, _auth.organization_id).await?;
+        }
         let options = docker_log_options(request.tail, None, Some(false), None, None);
         let output = self
             .service
@@ -264,6 +285,9 @@ impl DeploymentService for DeploymentController {
     ) -> ServiceResult<
         connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>,
     > {
+        if let Some(server_id) = request.server_id {
+            ensure_server_org(server_id, _auth.organization_id).await?;
+        }
         let receiver = self
             .service
             .stream_docker_service_logs(
@@ -284,6 +308,9 @@ impl DeploymentService for DeploymentController {
     ) -> ServiceResult<impl connectrpc::Encodable<LogExport> + Send + use<'a>> {
         let target = request.target.to_owned();
         let server_id = request.server_id;
+        if let Some(server_id) = server_id {
+            ensure_server_org(server_id, _auth.organization_id).await?;
+        }
         let options = docker_log_options(request.tail, None, Some(false), None, None);
         let output = self
             .service
@@ -308,6 +335,12 @@ impl DeploymentService for DeploymentController {
     > {
         // A compose id resolves to the project name the stack was deployed
         // under; with no id the caller already passed a raw service name.
+        if let Some(compose_id) = request.compose_id {
+            ensure_service_org(compose_id, _auth.organization_id).await?;
+        }
+        if let Some(server_id) = request.server_id {
+            ensure_server_org(server_id, _auth.organization_id).await?;
+        }
         let (server_id, project_name, service) = match request.compose_id {
             Some(compose_id) => {
                 let queries = auto_di::resolve::<crate::db::queries::FlashQueries>()
@@ -351,6 +384,12 @@ impl DeploymentService for DeploymentController {
             .map(str::to_owned)
             .unwrap_or_else(|| "compose".into());
         let server_id = request.server_id;
+        if let Some(compose_id) = request.compose_id {
+            ensure_service_org(compose_id, _auth.organization_id).await?;
+        }
+        if let Some(server_id) = server_id {
+            ensure_server_org(server_id, _auth.organization_id).await?;
+        }
         let options = ComposeLogOptions {
             file: None,
             project_directory: None,
@@ -385,6 +424,7 @@ impl DeploymentService for DeploymentController {
     ) -> ServiceResult<
         connectrpc::ServiceStream<impl connectrpc::Encodable<DeploymentEvent> + Send + use<>>,
     > {
+        ensure_deployment_org(request.id, _auth.organization_id).await?;
         let receiver = self
             .service
             .stream_deployment_log(request.id)
@@ -399,6 +439,7 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, CancelDeploymentRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_deployment_org(request.id, _auth.organization_id).await?;
         match self.service.cancel(request.id).await {
             Ok(CancelDeploymentResult::CancelRequested) => Response::ok(Empty::default()),
             Ok(CancelDeploymentResult::NotRunning) => Err(ConnectError::new(
@@ -422,6 +463,7 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, GetDeploymentRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_deployment_org(request.id, _auth.organization_id).await?;
         let deleted = self.service.delete(request.id).await.map_err(map_error)?;
         if deleted {
             Response::ok(Empty::default())
@@ -436,6 +478,7 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ResourceTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_service_org(request.id, _auth.organization_id).await?;
         self.service
             .clear_all(Some(request.id), None, None, None)
             .await
@@ -449,6 +492,7 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ResourceTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_service_org(request.id, _auth.organization_id).await?;
         self.service
             .clear_all(None, Some(request.id), None, None)
             .await
@@ -462,6 +506,7 @@ impl DeploymentService for DeploymentController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ResourceTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_service_org(request.id, _auth.organization_id).await?;
         self.service
             .clear_all(None, None, Some(request.id), None)
             .await
@@ -476,7 +521,7 @@ impl DeploymentService for DeploymentController {
         _request: ServiceRequest<'_, Empty>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         self.service
-            .clear_all(None, None, None, None)
+            .clear_all_for_organization(_auth.organization_id)
             .await
             .map_err(map_error)?;
         Response::ok(Empty::default())

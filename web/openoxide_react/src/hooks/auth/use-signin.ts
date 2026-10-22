@@ -6,17 +6,27 @@ import type {SignInSchema} from '#/schema/signin.schema';
 
 const authClient = createServiceClient(AuthService);
 
-export function useSignin(onErrorCallback?: (msg: string) => void) {
+export type SignInData = SignInSchema & {
+	twoFactorCode?: string;
+	recoveryCode?: string;
+};
+
+export function useSignin(
+	onErrorCallback?: (msg: string) => void,
+	redirect?: string,
+) {
 	const applyReply = useApplyAuthReply();
 
 	return useMutation({
-		mutationFn: (data: SignInSchema) =>
+		mutationFn: (data: SignInData) =>
 			authClient.login({
 				email: data.email,
 				password: data.password,
+				twoFactorCode: data.twoFactorCode || undefined,
+				recoveryCode: data.recoveryCode || undefined,
 			}),
 		onSuccess: res => {
-			if (!applyReply(res, 'Successfully logged in!')) {
+			if (!applyReply(res, 'Successfully logged in!', redirect)) {
 				onErrorCallback?.('Invalid email or password. Please try again.');
 			}
 		},

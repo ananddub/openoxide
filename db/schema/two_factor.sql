@@ -2,5 +2,5 @@ CREATE TABLE two_factor (
     id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
     secret TEXT NOT NULL,
     backup_codes TEXT NOT NULL,
-    user_id BIGINT NOT NULL
+    user_id BIGINT NOT NULL UNIQUE
 );

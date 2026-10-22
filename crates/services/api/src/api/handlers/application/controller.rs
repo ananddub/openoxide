@@ -34,6 +34,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     TriggerRollbackRequest, UpdateApplicationRequest, UpdateBuildConfigRequest,
     UpdatePreviewConfigRequest, UpdateResourceConfigRequest, UploadSourceRequest,
 };
+use crate::api::handlers::environment::helper::ensure_environment_id_org;
 use crate::flash_gen::models::Mounts;
 use crate::services::compute::application::ApplicationOperation as AppApplicationOperation;
 use crate::services::compute::application::import_export::ImportApplicationDto;
@@ -95,6 +96,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, GetApplicationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let app = self
             .service
             .get_by_id(request.id)
@@ -109,6 +111,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ListApplicationsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListApplicationsResponse> + Send + use<'a>> {
+        ensure_environment_id_org(request.environment_id, auth.organization_id).await?;
         let items = self
             .service
             .list_by_environment(request.environment_id)
@@ -124,6 +127,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, CreateApplicationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_environment_id_org(request.environment_id, auth.organization_id).await?;
         let app = self
             .service
             .create(request.to_owned_message())
@@ -138,6 +142,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateApplicationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let app = self
             .service
             .patch(request.id, request.to_owned_message())
@@ -152,6 +157,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DeleteApplicationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         self.service
             .delete(request.id)
             .await
@@ -180,6 +186,7 @@ impl ApplicationService for ApplicationController {
                 ));
             }
         };
+        ensure_environment_id_org(dto.target_environment_id, auth.organization_id).await?;
         let app = self.transfer.import(dto).await.map_err(map_db_error)?;
         Response::ok(app_to_proto(app))
     }
@@ -190,6 +197,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ExportApplicationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationExport> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let bundle = self
             .transfer
             .export(request.id, request.include_secrets)
@@ -217,6 +225,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, SetGithubSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let app = self
             .service
             .set_github_source(request.id, request.to_owned_message())
@@ -231,6 +240,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, SetGitlabSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let app = self
             .service
             .set_gitlab_source(request.id, request.to_owned_message())
@@ -245,6 +255,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, SetBitbucketSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let app = self
             .service
             .set_bitbucket_source(request.id, request.to_owned_message())
@@ -259,6 +270,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, SetGiteaSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let app = self
             .service
             .set_gitea_source(request.id, request.to_owned_message())
@@ -273,6 +285,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, SetCustomGitSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let app = self
             .service
             .set_custom_git_source(request.id, request.to_owned_message())
@@ -287,6 +300,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, SetDockerSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let app = self
             .service
             .set_docker_source(request.id, request.to_owned_message())
@@ -301,6 +315,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, SetDropSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let app = self
             .service
             .set_drop_source(request.id, request.to_owned_message())
@@ -342,6 +357,7 @@ impl ApplicationService for ApplicationController {
 
         const MAX_UPLOAD_BYTES: u64 = 512 * 1024 * 1024;
         let application_id = header.application_id;
+        ensure_application_org(application_id, _auth.organization_id).await?;
         let _app = self
             .service
             .get_by_id(application_id)
@@ -428,6 +444,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateBuildConfigRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let app = self
             .service
             .patch_build_config(request.id, request.to_owned_message())
@@ -442,6 +459,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateResourceConfigRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let app = self
             .service
             .patch_resource_config(request.id, request.to_owned_message())
@@ -456,6 +474,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdatePreviewConfigRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         self.service
             .patch_preview_config(request.id, request.to_owned_message())
             .await
@@ -476,6 +495,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationOperation> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let result = self
             .service
             .run_operation(request.id, AppApplicationOperation::Deploy, auth.user_id())
@@ -490,6 +510,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationOperation> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let result = self
             .service
             .run_operation(
@@ -508,6 +529,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationOperation> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let result = self
             .service
             .run_operation(request.id, AppApplicationOperation::Rebuild, auth.user_id())
@@ -522,6 +544,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationOperation> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let result = self
             .service
             .run_operation(request.id, AppApplicationOperation::Reload, auth.user_id())
@@ -536,6 +559,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationOperation> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let result = self
             .service
             .run_operation(request.id, AppApplicationOperation::Start, auth.user_id())
@@ -550,6 +574,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationOperation> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         self.service
             .stop_operation(request.id)
             .await
@@ -571,6 +596,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         self.service
             .cancel_operation(request.id)
             .await
@@ -584,6 +610,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationWebhookToken> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let token = self
             .service
             .rotate_webhook_token(request.id)
@@ -598,6 +625,8 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, MoveApplicationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationProto> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
+        ensure_environment_id_org(request.target_environment_id, auth.organization_id).await?;
         let app = self
             .service
             .move_to_environment(request.id, request.target_environment_id)
@@ -614,6 +643,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         self.service
             .clear_deployment_history(request.id)
             .await
@@ -627,6 +657,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         self.service
             .cleanup_deployment_queue(request.id)
             .await
@@ -640,6 +671,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         self.service
             .force_kill_deployment(request.id)
             .await
@@ -655,6 +687,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ListRollbacksRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListRollbacksResponse> + Send + use<'a>> {
+        ensure_application_org(request.application_id, auth.organization_id).await?;
         let items = self
             .service
             .list_rollbacks(request.application_id)
@@ -679,6 +712,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, TriggerRollbackRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<RollbackTrigger> + Send + use<'a>> {
+        ensure_application_org(request.application_id, auth.organization_id).await?;
         let _result = self
             .service
             .trigger_rollback(request.application_id, request.rollback_id)
@@ -696,6 +730,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DeleteRollbackRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_application_org(request.application_id, auth.organization_id).await?;
         self.service
             .delete_rollback(request.application_id, request.rollback_id)
             .await
@@ -711,6 +746,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationDependencies> + Send + use<'a>> {
+        ensure_application_org(request.id, auth.organization_id).await?;
         let counts = self
             .service
             .dependencies(request.id)
@@ -770,6 +806,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceListRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationPorts> + Send + use<'a>> {
+        ensure_application_org(request.application_id, auth.organization_id).await?;
         let items = self
             .ports
             .list(request.application_id)
@@ -795,6 +832,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceListRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationMounts> + Send + use<'a>> {
+        ensure_application_org(request.application_id, auth.organization_id).await?;
         let items = self
             .mounts
             .list(request.application_id)
@@ -813,6 +851,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceListRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationNetworks> + Send + use<'a>> {
+        ensure_application_org(request.application_id, auth.organization_id).await?;
         let (_detach, networks) = self
             .networks
             .get(request.application_id)
@@ -847,6 +886,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceListRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationPatches> + Send + use<'a>> {
+        ensure_application_org(request.application_id, auth.organization_id).await?;
         let items = self
             .patches
             .list(request.application_id)
@@ -865,6 +905,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceListRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationMiddlewares> + Send + use<'a>> {
+        ensure_application_org(request.application_id, auth.organization_id).await?;
         let items = self
             .middles
             .list(request.application_id)
@@ -883,6 +924,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceListRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationRedirects> + Send + use<'a>> {
+        ensure_application_org(request.application_id, auth.organization_id).await?;
         let items = self
             .redirects
             .list(request.application_id)
@@ -901,6 +943,7 @@ impl ApplicationService for ApplicationController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ResourceListRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationSecurity> + Send + use<'a>> {
+        ensure_application_org(request.application_id, auth.organization_id).await?;
         let items = self
             .securities
             .list(request.application_id)
@@ -922,6 +965,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationListPortsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListPortsResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let items = self
             .ports
             .list(request.application_id)
@@ -947,6 +991,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationCreatePortRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreatePortResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let dto = crate::services::compute::application::port::UpsertApplicationPortDto {
             published_port: request.published_port,
             target_port: request.target_port,
@@ -972,6 +1017,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationUpdatePortRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdatePortResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let dto = crate::services::compute::application::port::UpsertApplicationPortDto {
             published_port: request.published_port,
             target_port: request.target_port,
@@ -996,6 +1042,7 @@ impl ApplicationService for ApplicationController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationDeletePortRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         self.ports
             .delete(request.application_id, request.id)
             .await
@@ -1012,6 +1059,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationListMountsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListMountsResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let items = self
             .mounts
             .list(request.application_id)
@@ -1038,6 +1086,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationCreateMountRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreateMountResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let dto = crate::services::compute::application::mount::UpsertApplicationMountDto {
             mount_type: mount_type_from_proto(request.mount_type),
             host_path: request.host_path.map(str::to_owned),
@@ -1067,6 +1116,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationUpdateMountRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdateMountResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let dto = crate::services::compute::application::mount::UpsertApplicationMountDto {
             mount_type: mount_type_from_proto(request.mount_type),
             host_path: request.host_path.map(str::to_owned),
@@ -1095,6 +1145,7 @@ impl ApplicationService for ApplicationController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationDeleteMountRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         self.mounts
             .delete(request.application_id, request.id)
             .await
@@ -1111,6 +1162,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationListPatchesRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListPatchesResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let items = self
             .patches
             .list(request.application_id)
@@ -1136,6 +1188,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationCreatePatchRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreatePatchResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let dto = crate::services::compute::application::patch::UpsertApplicationPatchDto {
             patch_type: patch_type_from_proto(request.patch_type),
             file_path: request.file_path.to_owned(),
@@ -1163,6 +1216,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationUpdatePatchRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdatePatchResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let dto = crate::services::compute::application::patch::UpsertApplicationPatchDto {
             patch_type: patch_type_from_proto(request.patch_type),
             file_path: request.file_path.to_owned(),
@@ -1189,6 +1243,7 @@ impl ApplicationService for ApplicationController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationDeletePatchRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         self.patches
             .delete(request.application_id, request.id)
             .await
@@ -1206,6 +1261,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<
         impl connectrpc::Encodable<ApplicationListMiddlewaresResponse> + Send + use<'a>,
     > {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let items = self
             .middles
             .list(request.application_id)
@@ -1223,6 +1279,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<
         impl connectrpc::Encodable<ApplicationCreateMiddlewareResponse> + Send + use<'a>,
     > {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let dto = build_middleware_dto(
             request.name.to_owned(),
             middleware_type_from_proto(request.middleware_type),
@@ -1258,6 +1315,7 @@ impl ApplicationService for ApplicationController {
     ) -> ServiceResult<
         impl connectrpc::Encodable<ApplicationUpdateMiddlewareResponse> + Send + use<'a>,
     > {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let dto = build_middleware_dto(
             request.name.to_owned(),
             middleware_type_from_proto(request.middleware_type),
@@ -1291,6 +1349,7 @@ impl ApplicationService for ApplicationController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationDeleteMiddlewareRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         self.middles
             .delete(request.application_id, request.id)
             .await
@@ -1307,6 +1366,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationListRedirectsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationListRedirectsResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let items = self
             .redirects
             .list(request.application_id)
@@ -1330,6 +1390,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationCreateRedirectRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreateRedirectResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let dto = crate::services::compute::application::redirect::UpsertApplicationRedirectDto {
             regex: request.regex.to_owned(),
             replacement: request.replacement.to_owned(),
@@ -1355,6 +1416,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationUpdateRedirectRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdateRedirectResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let dto = crate::services::compute::application::redirect::UpsertApplicationRedirectDto {
             regex: request.regex.to_owned(),
             replacement: request.replacement.to_owned(),
@@ -1379,6 +1441,7 @@ impl ApplicationService for ApplicationController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationDeleteRedirectRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         self.redirects
             .delete(request.application_id, request.id)
             .await
@@ -1395,6 +1458,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationGetSecurityRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationGetSecurityResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let items = self
             .securities
             .list(request.application_id)
@@ -1418,6 +1482,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationCreateSecurityRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationCreateSecurityResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let dto = crate::services::compute::application::security::UpsertApplicationSecurityDto {
             username: request.username.to_owned(),
             password: request.password.to_owned(),
@@ -1441,6 +1506,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationUpdateSecurityRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdateSecurityResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let dto = crate::services::compute::application::security::UpsertApplicationSecurityDto {
             username: request.username.to_owned(),
             password: request.password.to_owned(),
@@ -1463,6 +1529,7 @@ impl ApplicationService for ApplicationController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ApplicationDeleteSecurityRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         self.securities
             .delete(request.application_id, request.id)
             .await
@@ -1479,6 +1546,7 @@ impl ApplicationService for ApplicationController {
         request: ServiceRequest<'_, ApplicationUpdateNetworksRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ApplicationUpdateNetworksResponse> + Send + use<'a>>
     {
+        ensure_application_org(request.application_id, _auth.organization_id).await?;
         let dto = crate::services::compute::application::network::UpdateApplicationNetworksDto {
             network_ids: request.network_ids.iter().copied().collect(),
             detach_rustploy_network: request.detach_rustploy_network,

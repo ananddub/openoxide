@@ -57,7 +57,12 @@ impl AuthService {
         })
     }
 
-    pub async fn enable_two_factor(&self, user_id: i64, code: &str) -> Result<(), AuthError> {
+    pub async fn enable_two_factor(
+        &self,
+        user_id: i64,
+        code: &str,
+        keep_jti: Option<&str>,
+    ) -> Result<(), AuthError> {
         let user = self.get_user_by_id(user_id).await?;
         let setting = self
             .stored_second_factor(user_id)
@@ -73,9 +78,7 @@ impl AuthService {
         self.queries
             .users_set_two_factor_enabled(1, user_id)
             .await?;
-        self.queries
-            .jwt_tokens_blacklist_all_by_user(user_id)
-            .await?;
+        self.revoke_other_sessions(user_id, keep_jti).await?;
         Ok(())
     }
 
@@ -84,6 +87,7 @@ impl AuthService {
         user_id: i64,
         password: String,
         code: &str,
+        keep_jti: Option<&str>,
     ) -> Result<(), AuthError> {
         let user = self.get_user_by_id(user_id).await?;
         verify_password(password, user.password.clone()).await?;
@@ -97,9 +101,7 @@ impl AuthService {
         self.queries
             .users_set_two_factor_enabled(0, user_id)
             .await?;
-        self.queries
-            .jwt_tokens_blacklist_all_by_user(user_id)
-            .await?;
+        self.revoke_other_sessions(user_id, keep_jti).await?;
         Ok(())
     }
 

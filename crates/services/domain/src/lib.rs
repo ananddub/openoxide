@@ -1,5 +1,8 @@
 pub mod services;
 
+#[cfg(test)]
+pub(crate) mod test_support;
+
 // migration façades: keep the moved code on its original crate:: paths.
 pub mod core {
     pub use openoxide_core::*;

@@ -105,7 +105,7 @@ impl<'a> ExecBuilder<'a> {
         cmd: impl IntoIterator<Item = impl Into<String>>,
     ) -> DockerResult<super::socat::ContainerSocketExecStream> {
         if !self.args.api {
-            return Err(crate::docker::DockerError::Ssh(
+            return Err(crate::docker::DockerError::Docker(
                 "ExecBuilder::shell requires .api(); use socket_stream() for the separate raw socket transport".into(),
             ));
         }

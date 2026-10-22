@@ -35,6 +35,12 @@ pub fn map_db_error(err: sqlx::Error) -> ConnectError {
         sqlx::Error::Database(e) if e.is_unique_violation() => {
             ConnectError::new(ErrorCode::AlreadyExists, e.message())
         }
+        // Service-level guards (e.g. an owner trying to leave instead of
+        // deleting the organization) surface as Protocol errors; without
+        // this they became an opaque 500 "database operation failed".
+        sqlx::Error::Protocol(message) => {
+            ConnectError::new(ErrorCode::FailedPrecondition, message.clone())
+        }
         other => {
             tracing::error!(error = %other, "organization database operation failed");
             ConnectError::new(ErrorCode::Internal, "database operation failed")

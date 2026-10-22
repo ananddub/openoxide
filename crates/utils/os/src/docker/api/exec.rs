@@ -126,5 +126,5 @@ fn required<'a>(value: Option<&'a String>, name: &str) -> DockerResult<&'a Strin
 }
 
 fn api_error(message: impl Into<String>) -> DockerError {
-    DockerError::Ssh(message.into())
+    DockerError::Docker(message.into())
 }

@@ -18,11 +18,10 @@ UPDATE tags SET name = ?, color = ?, organization_id = ?, created_at = ? WHERE i
 -- name: TagsDelete :exec
 DELETE FROM tags WHERE id = ?;
 
--- project_tags link table (i64 binds; project_tags has no unique
--- constraint, so plain INSERT matches the old INSERT OR IGNORE).
-
+-- project_tags link table (i64 binds). The unique (project_id, tag_id)
+-- index makes re-attaching an existing tag a no-op instead of a duplicate.
 -- name: TagsAddToProject :exec
-INSERT INTO project_tags (project_id, tag_id) VALUES (?, ?);
+INSERT INTO project_tags (project_id, tag_id) VALUES (?, ?) ON CONFLICT (project_id, tag_id) DO NOTHING;
 
 -- name: TagsRemoveFromProject :exec
 DELETE FROM project_tags WHERE project_id = ? AND tag_id = ?;

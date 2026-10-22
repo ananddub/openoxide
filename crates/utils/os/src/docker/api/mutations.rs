@@ -281,5 +281,5 @@ fn parse_duration_ns(value: &str) -> u64 {
         .unwrap_or(0)
 }
 fn error(message: impl Into<String>) -> DockerError {
-    DockerError::Ssh(message.into())
+    DockerError::Docker(message.into())
 }

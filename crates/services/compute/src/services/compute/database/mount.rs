@@ -24,6 +24,13 @@ pub struct DatabaseMountService {
     queries: Arc<FlashQueries>,
 }
 
+#[cfg(test)]
+impl DatabaseMountService {
+    pub(crate) fn for_tests(databases: Arc<DatabaseService>, queries: Arc<FlashQueries>) -> Self {
+        Self { databases, queries }
+    }
+}
+
 #[singleton]
 impl DatabaseMountService {
     fn new(databases: Arc<DatabaseService>, queries: Arc<FlashQueries>) -> Self {

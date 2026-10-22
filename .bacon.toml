@@ -1,5 +1,5 @@
 default_job = "run"
 
 [jobs.run]
-command = ["sh", "-c", "just gen-mod && cargo run"]
+command = ["cargo", "check-fast"]
 need_stdout = true

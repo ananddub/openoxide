@@ -5,7 +5,24 @@ use crate::api::connect::generated::openoxide::api::v1::{
     Compose, ComposeMount, ComposeMountType, ComposePatch, ComposePatchType,
 };
 use crate::flash_gen::models::{Mounts, Patches};
+use crate::services::compute::compose::ComposeService;
 use crate::services::compute::compose::crud::ComposeResponseDto;
+
+/// Compose projects (and their mounts/patches) use global service ids, so
+/// every RPC must confirm the row belongs to the caller's organization.
+/// Mismatches report not-found to avoid leaking another tenant's ids.
+pub async fn ensure_compose_org(compose_id: i64, organization_id: i64) -> Result<(), ConnectError> {
+    let composes = auto_di::resolve::<ComposeService>()
+        .await
+        .map_err(|error| {
+            tracing::error!(%error, "compose service unavailable");
+            ConnectError::new(ErrorCode::Internal, "compose service unavailable")
+        })?;
+    composes
+        .ensure_organization_access(compose_id, organization_id)
+        .await
+        .map_err(map_error)
+}
 
 pub fn map_error(err: sqlx::Error) -> ConnectError {
     match &err {

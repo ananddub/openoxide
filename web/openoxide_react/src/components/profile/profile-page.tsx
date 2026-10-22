@@ -7,6 +7,7 @@ import {usePermissions} from '#/hooks/permissions/use-permissions';
 import {Button} from '#/components/ui/button';
 import {ListCard, RowTile} from '#/components/settings/list-card';
 import {ProfileEditorSheet} from './profile-editor-sheet';
+import {TwoFactorCard} from './two-factor-card';
 
 /** Settings → Account — a quiet identity card up top, the facts below, and editing that opens the shared right-side sheet. */
 export function ProfilePage() {
@@ -103,6 +104,8 @@ export function ProfilePage() {
 					icon={<Palette className="size-4" />}
 				/>
 			</ListCard>
+
+			<TwoFactorCard />
 
 			<ProfileEditorSheet
 				open={editOpen}

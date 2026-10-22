@@ -22,6 +22,13 @@ pub struct ComposeMountService {
     queries: Arc<FlashQueries>,
 }
 
+#[cfg(test)]
+impl ComposeMountService {
+    pub(crate) fn for_tests(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
+    }
+}
+
 #[singleton]
 impl ComposeMountService {
     fn new(queries: Arc<FlashQueries>) -> Self {

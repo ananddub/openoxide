@@ -83,6 +83,13 @@ pub struct ApplicationTransferService {
     cache: Arc<AppStateCache>,
 }
 
+#[cfg(test)]
+impl ApplicationTransferService {
+    pub(crate) fn for_tests(queries: Arc<FlashQueries>, cache: Arc<AppStateCache>) -> Self {
+        Self { queries, cache }
+    }
+}
+
 #[singleton]
 impl ApplicationTransferService {
     fn new(queries: Arc<FlashQueries>, cache: Arc<AppStateCache>) -> Self {

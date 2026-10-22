@@ -73,6 +73,13 @@ pub struct ApplicationMiddlewareService {
     queries: Arc<FlashQueries>,
 }
 
+#[cfg(test)]
+impl ApplicationMiddlewareService {
+    pub(crate) fn for_tests(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
+    }
+}
+
 #[singleton]
 impl ApplicationMiddlewareService {
     fn new(queries: Arc<FlashQueries>) -> Self {

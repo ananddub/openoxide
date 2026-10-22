@@ -169,6 +169,7 @@ async fn watch_server(
                     {
                         Ok(Ok(Some(snapshot))) => {
                             healthy = true;
+                            monitoring.touch_agent_seen(server_id).await;
                             if let Err(error) = reconciler
                                 .apply_snapshot(server_id, &snapshot.containers)
                                 .await
@@ -251,9 +252,11 @@ async fn server_exists(server_id: i64) -> bool {
 /// Self-heal an agent whose mTLS cert / token drifted out of sync. When a
 /// lifecycle stream fails with an authentication/certificate error
 /// (BadSignature, invalid token, unauthenticated), trigger the debounced
-/// SSH-bootstrap repair which re-issues a fresh cert + token and recreates the
-/// container — so operators never delete/recreate agents by hand in production.
-/// Skipped when the host isn't SSH-reachable (a down server; repair can't run).
+/// repair which re-issues a fresh cert + token and recreates the container —
+/// so operators never delete/recreate agents by hand in production.
+/// Remote servers are gated on SSH reachability (a down server can't be
+/// repaired); the local server is repaired over the panel's Docker socket and
+/// has no SSH credentials by design.
 async fn maybe_repair_auth(monitoring: &Arc<MonitoringService>, server_id: i64, error: &str) {
     let e = error.to_ascii_lowercase();
     let auth_class = e.contains("badsignature")
@@ -264,7 +267,7 @@ async fn maybe_repair_auth(monitoring: &Arc<MonitoringService>, server_id: i64, 
     if !auth_class {
         return;
     }
-    if !server_ssh_is_reachable(server_id).await {
+    if !is_local_server(server_id).await && !server_ssh_is_reachable(server_id).await {
         return;
     }
     tracing::warn!(
@@ -284,6 +287,22 @@ async fn agent_is_reachable(monitoring: &Arc<MonitoringService>, server_id: i64)
     )
     .await
     .is_ok_and(|result| result.is_ok())
+}
+
+async fn is_local_server(server_id: i64) -> bool {
+    let Ok(queries) = resolve::<crate::db::queries::FlashQueries>().await else {
+        return false;
+    };
+    match sqlx::query_scalar::<_, String>("SELECT ip_address FROM servers WHERE id=?")
+        .bind(server_id)
+        .fetch_optional(&queries.pool)
+        .await
+    {
+        Ok(Some(ip)) => {
+            crate::services::observability::monitoring::lifecycle::is_local_server_address(&ip)
+        }
+        _ => false,
+    }
 }
 
 async fn server_ssh_is_reachable(server_id: i64) -> bool {

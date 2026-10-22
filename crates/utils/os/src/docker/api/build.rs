@@ -80,5 +80,5 @@ async fn request_parts(args: &[String], context: &str) -> DockerResult<(String, 
 }
 
 fn error(message: impl Into<String>) -> DockerError {
-    DockerError::Ssh(message.into())
+    DockerError::Docker(message.into())
 }

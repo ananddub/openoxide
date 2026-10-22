@@ -15,15 +15,11 @@ use crate::flash_gen::{
         OrganizationMembersAddMemberWithGroupParams,
         OrganizationMembersListWithUserForOrganizationRow, OrganizationMembersUpdateRoleParams,
     },
-    permission_groups::{
-        PermissionGroupsAssignGroupParams, PermissionGroupsInsertUserPolicyParams,
-        PermissionGroupsSetGroupActiveParams, PermissionGroupsUpdateGroupNameParams,
-    },
-    users::UsersCreateParams,
+    permission_groups::{PermissionGroupsAssignGroupParams, PermissionGroupsSetGroupActiveParams},
 };
 
 use super::{PermissionService, UserRole};
-use crate::services::identity::auth::{hash_password, notification_configs_for_user};
+use crate::services::identity::auth::notification_configs_for_user;
 use crate::services::integrations::notification::senders::send_resend_to;
 use crate::services::integrations::notification::{
     email::send_email_to, message::NotificationMessage,
@@ -176,9 +172,13 @@ impl PermissionGroupService {
                 "role must be ADMIN or MEMBER".into(),
             ));
         }
-        if role == "ADMIN" && !self.actor_is_privileged(actor_id, organization_id).await? {
+        if role == "ADMIN"
+            && !self
+                .is_organization_owner(actor_id, organization_id)
+                .await?
+        {
             return Err(PermissionGroupError::Escalation(
-                "only admins can invite another admin".into(),
+                "only the organization owner can invite another admin".into(),
             ));
         }
         if !self.actor_is_privileged(actor_id, organization_id).await? {
@@ -297,10 +297,19 @@ impl PermissionGroupService {
         user_id: i64,
         token: String,
     ) -> Result<(), PermissionGroupError> {
-        let invite = self
+        let invite = match self
             .queries
             .organization_invites_find_pending_by_token(&hash_token(&token))
-            .await?;
+            .await
+        {
+            Ok(invite) => invite,
+            Err(sqlx::Error::RowNotFound) => {
+                return Err(PermissionGroupError::Invalid(
+                    "invitation is invalid or expired".into(),
+                ));
+            }
+            Err(error) => return Err(error.into()),
+        };
         let user = self.queries.get_user_by_i_d(user_id).await?;
         if user
             .email
@@ -416,35 +425,26 @@ impl PermissionGroupService {
                 "role must be ADMIN or MEMBER".into(),
             ));
         }
+        if role == "ADMIN"
+            && !self
+                .is_organization_owner(actor_id, organization_id)
+                .await?
+        {
+            return Err(PermissionGroupError::Escalation(
+                "only the organization owner can add another admin".into(),
+            ));
+        }
 
         let user_id = match self.queries.get_user_by_email(&email).await {
             Ok(user) => user.id,
+            // Never mint an account here: the old fallback created users
+            // with a shared default password and pre-verified them. New
+            // people must go through the invitation flow, where the token
+            // proves control of the email before joining.
             Err(sqlx::Error::RowNotFound) => {
-                let password_raw = body.password.unwrap_or_else(|| "ChangeMe123!".to_string());
-                let password_hash = hash_password(password_raw)
-                    .await
-                    .map_err(|_| PermissionGroupError::Invalid("failed to hash password".into()))?;
-                let now = chrono::Utc::now().timestamp();
-                self.queries
-                    .users_create(&UsersCreateParams {
-                        email: email.clone(),
-                        last_name: String::new(),
-                        first_name: String::new(),
-                        avatar: String::new(),
-                        role: "member".into(),
-                        about_me: String::new(),
-                        password: password_hash,
-                        is_email_verify: 1,
-                        email_verify_at: now,
-                        two_factor_enable: 0,
-                        is_registered: 1,
-                        added_by: 0,
-                        group_id: 1,
-                        created_at: now,
-                        updated_at: now,
-                    })
-                    .await?;
-                self.queries.get_user_by_email(&email).await?.id
+                return Err(PermissionGroupError::Invalid(
+                    "no account exists for this email; send an invitation instead".into(),
+                ));
             }
             Err(error) => return Err(error.into()),
         };
@@ -515,8 +515,35 @@ impl PermissionGroupService {
                 "you cannot demote yourself".into(),
             ));
         }
-        if self.member_role(user_id, organization_id).await?.is_none() {
-            return Err(PermissionGroupError::NotFound);
+        let target_role = self
+            .member_role(user_id, organization_id)
+            .await?
+            .ok_or(PermissionGroupError::NotFound)?;
+        if self.organization_owner_id(organization_id).await? == Some(user_id) {
+            return Err(PermissionGroupError::Invalid(
+                "the organization owner's role cannot be changed".into(),
+            ));
+        }
+        // An admin must not be able to demote peers (or an owner) — only the
+        // organization owner / platform owner outranks another admin.
+        let target_is_admin =
+            target_role.eq_ignore_ascii_case("ADMIN") || target_role.eq_ignore_ascii_case("OWNER");
+        if target_is_admin
+            && !self
+                .is_organization_owner(actor_id, organization_id)
+                .await?
+        {
+            return Err(PermissionGroupError::Escalation(
+                "only the organization owner can change another admin's role".into(),
+            ));
+        }
+        if target_is_admin
+            && role != "ADMIN"
+            && self.active_admin_count(organization_id).await? <= 1
+        {
+            return Err(PermissionGroupError::Invalid(
+                "cannot demote the last admin of this organization".into(),
+            ));
         }
         self.queries
             .organization_members_update_role(&OrganizationMembersUpdateRoleParams {
@@ -553,8 +580,30 @@ impl PermissionGroupService {
                 "you cannot remove yourself".into(),
             ));
         }
-        if self.member_role(user_id, organization_id).await?.is_none() {
-            return Err(PermissionGroupError::NotFound);
+        let target_role = self
+            .member_role(user_id, organization_id)
+            .await?
+            .ok_or(PermissionGroupError::NotFound)?;
+        if self.organization_owner_id(organization_id).await? == Some(user_id) {
+            return Err(PermissionGroupError::Invalid(
+                "the organization owner cannot be removed".into(),
+            ));
+        }
+        let target_is_admin =
+            target_role.eq_ignore_ascii_case("ADMIN") || target_role.eq_ignore_ascii_case("OWNER");
+        if target_is_admin
+            && !self
+                .is_organization_owner(actor_id, organization_id)
+                .await?
+        {
+            return Err(PermissionGroupError::Escalation(
+                "only the organization owner can remove another admin".into(),
+            ));
+        }
+        if target_is_admin && self.active_admin_count(organization_id).await? <= 1 {
+            return Err(PermissionGroupError::Invalid(
+                "cannot remove the last admin of this organization".into(),
+            ));
         }
         self.queries
             .organization_members_remove_member(user_id, organization_id)
@@ -624,28 +673,33 @@ impl PermissionGroupService {
         let policy_ids = self
             .validated_policy_ids(actor_id, organization_id, &body.actions)
             .await?;
-        let updated = self
-            .queries
-            .permission_groups_update_group_name(&PermissionGroupsUpdateGroupNameParams {
-                name: body.name.trim().to_string(),
-                id: group_id,
-                organization_id,
-            })
-            .await?;
-        if updated.is_empty() {
+        // Name and policies move together: a mid-way failure must not leave
+        // the group renamed with its old policies wiped.
+        let mut tx = self.queries.pool.begin().await?;
+        let updated = sqlx::query(
+            "UPDATE groups SET name = ?
+             WHERE id = ? AND organization_id = ? AND is_system = 0",
+        )
+        .bind(body.name.trim())
+        .bind(group_id)
+        .bind(organization_id)
+        .execute(&mut *tx)
+        .await?;
+        if updated.rows_affected() == 0 {
             return Err(PermissionGroupError::NotFound);
         }
-        self.queries
-            .permission_groups_clear_group_policies(group_id)
+        sqlx::query("DELETE FROM group_policy WHERE group_id = ?")
+            .bind(group_id)
+            .execute(&mut *tx)
             .await?;
         for policy_id in &policy_ids {
-            self.queries
-                .permission_groups_add_policy_to_group(
-                    &group_id.to_string(),
-                    &policy_id.to_string(),
-                )
+            sqlx::query("INSERT OR IGNORE INTO group_policy (group_id, policy_id) VALUES (?, ?)")
+                .bind(group_id)
+                .bind(policy_id)
+                .execute(&mut *tx)
                 .await?;
         }
+        tx.commit().await?;
         self.audit(
             actor_id,
             organization_id,
@@ -849,19 +903,27 @@ impl PermissionGroupService {
         if member == 0 {
             return Err(PermissionGroupError::NotFound);
         }
-        self.queries
-            .permission_groups_delete_user_policies(user_id, organization_id)
+        // Wipe + insert in one transaction; otherwise a failed insert leaves
+        // the member with no overrides at all.
+        let mut tx = self.queries.pool.begin().await?;
+        sqlx::query("DELETE FROM user_policy WHERE user_id = ? AND org_id = ?")
+            .bind(user_id)
+            .bind(organization_id)
+            .execute(&mut *tx)
             .await?;
         for (policy_id, effect) in &policies {
-            self.queries
-                .permission_groups_insert_user_policy(&PermissionGroupsInsertUserPolicyParams {
-                    user_id,
-                    org_id: organization_id,
-                    policy_id: *policy_id,
-                    effect: effect.clone(),
-                })
-                .await?;
+            sqlx::query(
+                "INSERT INTO user_policy (user_id, org_id, policy_id, effect)
+                 VALUES (?, ?, ?, ?)",
+            )
+            .bind(user_id)
+            .bind(organization_id)
+            .bind(policy_id)
+            .bind(effect)
+            .execute(&mut *tx)
+            .await?;
         }
+        tx.commit().await?;
         self.audit(
             actor_id,
             organization_id,
@@ -955,6 +1017,37 @@ impl PermissionGroupService {
             Err(sqlx::Error::RowNotFound) => Ok(None),
             Err(error) => Err(error),
         }
+    }
+
+    async fn organization_owner_id(
+        &self,
+        organization_id: i64,
+    ) -> Result<Option<i64>, sqlx::Error> {
+        sqlx::query_scalar("SELECT owner_id FROM organization WHERE id = ?")
+            .bind(organization_id)
+            .fetch_optional(&self.queries.pool)
+            .await
+    }
+
+    async fn is_organization_owner(
+        &self,
+        user_id: i64,
+        organization_id: i64,
+    ) -> Result<bool, sqlx::Error> {
+        if self.permission_service.is_platform_owner(user_id).await? {
+            return Ok(true);
+        }
+        Ok(self.organization_owner_id(organization_id).await? == Some(user_id))
+    }
+
+    async fn active_admin_count(&self, organization_id: i64) -> Result<i64, sqlx::Error> {
+        sqlx::query_scalar(
+            "SELECT COUNT(*) FROM organization_members
+             WHERE organization_id = ? AND upper(role) IN ('ADMIN', 'OWNER')",
+        )
+        .bind(organization_id)
+        .fetch_one(&self.queries.pool)
+        .await
     }
 
     async fn ensure_manageable_target(

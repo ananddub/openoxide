@@ -21,6 +21,13 @@ pub struct ApplicationNetworkService {
     cache: Arc<AppStateCache>,
 }
 
+#[cfg(test)]
+impl ApplicationNetworkService {
+    pub(crate) fn for_tests(queries: Arc<FlashQueries>, cache: Arc<AppStateCache>) -> Self {
+        Self { queries, cache }
+    }
+}
+
 #[singleton]
 impl ApplicationNetworkService {
     fn new(queries: Arc<FlashQueries>, cache: Arc<AppStateCache>) -> Self {

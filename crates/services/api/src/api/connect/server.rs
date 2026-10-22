@@ -20,6 +20,7 @@ type ResponseBody = UnsyncBoxBody<Bytes, Infallible>;
 #[derive(Clone)]
 struct DispatchService {
     connect: Arc<ConnectRpcService>,
+    peer: std::net::SocketAddr,
 }
 
 impl Service<Request<Incoming>> for DispatchService {
@@ -38,7 +39,8 @@ impl Service<Request<Incoming>> for DispatchService {
 
     fn call(&mut self, request: Request<Incoming>) -> Self::Future {
         let connect = Arc::clone(&self.connect);
-        Box::pin(async move { Ok(dispatch(request, connect).await) })
+        let peer = self.peer;
+        Box::pin(async move { Ok(dispatch(request, connect, peer).await) })
     }
 }
 
@@ -51,14 +53,18 @@ pub async fn serve(
     connect: ConnectRpcService,
     tls: Arc<rustls::ServerConfig>,
 ) -> std::io::Result<()> {
-    let app = DispatchService {
-        connect: Arc::new(connect),
-    };
     let acceptor = TlsAcceptor::from(tls);
+    let connect = Arc::new(connect);
 
     loop {
         let (stream, peer) = listener.accept().await?;
-        let app = app.clone();
+        // Peer identity is stamped into request extensions so handlers can
+        // read `ctx.peer_addr()` (used for auth rate limiting). hyper owns
+        // the stream after this point, so capture it per connection.
+        let app = DispatchService {
+            connect: Arc::clone(&connect),
+            peer,
+        };
         let acceptor = acceptor.clone();
 
         tokio::spawn(async move {
@@ -140,9 +146,11 @@ pub fn tls_config(cert_path: &str, key_path: &str) -> std::io::Result<Arc<rustls
 }
 
 async fn dispatch(
-    request: Request<Incoming>,
+    mut request: Request<Incoming>,
     connect: Arc<ConnectRpcService>,
+    peer: std::net::SocketAddr,
 ) -> Response<ResponseBody> {
+    request.extensions_mut().insert(connectrpc::PeerAddr(peer));
     let start = std::time::Instant::now();
     let method = request.method().clone();
     let uri = request.uri().clone();

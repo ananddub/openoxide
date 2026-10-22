@@ -53,9 +53,15 @@ export function SessionProvider({children}: {children: ReactNode}) {
 	});
 
 	const session = useMemo<SessionState>(() => {
-		const setAuth = (next: User) => setUser(next);
+		// Mirror synchronous auth changes into the module ref: router guards read
+		// it in beforeLoad, before React has re-rendered the provider.
+		const setAuth = (next: User) => {
+			if (sessionRef) sessionRef.user = next;
+			setUser(next);
+		};
 		const logout = () => {
 			localStorage.removeItem('openoxide-auth-session');
+			if (sessionRef) sessionRef.user = null;
 			setUser(null);
 		};
 
@@ -118,7 +124,11 @@ export function SessionProvider({children}: {children: ReactNode}) {
 		};
 	}, [user, organizations, activeOrg]);
 
-	setSessionRef({setAuth: session.setAuth, logout: session.logout});
+	setSessionRef({
+		user,
+		setAuth: session.setAuth,
+		logout: session.logout,
+	});
 
 	return (
 		<SessionContext.Provider value={session}>
@@ -138,16 +148,23 @@ function useSession(): SessionState {
 // ── Imperative bridge: a module-level ref serves code that runs before React renders.
 
 let sessionRef: {
+	user: User | null;
 	setAuth: (user: User) => void;
 	logout: () => void;
 } | null = null;
 
 /** Called by SessionProvider on every render to keep the ref fresh. */
 function setSessionRef(ref: {
+	user: User | null;
 	setAuth: (user: User) => void;
 	logout: () => void;
 }) {
 	sessionRef = ref;
+}
+
+/** Synchronous session read for router guards, including the pre-provider first load. */
+export function getSessionUser(): User | null {
+	return sessionRef ? sessionRef.user : pendingUser;
 }
 
 // Null until the provider mounts — callers fall back to setPendingUser.

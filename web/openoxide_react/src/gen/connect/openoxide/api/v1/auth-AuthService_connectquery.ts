@@ -47,7 +47,7 @@ export const logout = AuthService.method.logout;
 export const getSetupStatus = AuthService.method.getSetupStatus;
 
 /**
- * @internal Update the current user's profile. All fields optional: email, password (min 8), first_name, last_name, avatar.
+ * @internal Update the current user's profile. All fields optional: email, password (min 8), first_name, last_name, avatar; current_password is required when email or password changes.
  *
  * @generated from rpc openoxide.api.v1.AuthService.UpdateUser
  */

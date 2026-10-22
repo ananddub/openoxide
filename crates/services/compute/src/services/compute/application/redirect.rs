@@ -62,6 +62,13 @@ impl From<Redirect> for ApplicationRedirectResponseDto {
 pub struct RedirectService {
     queries: Arc<FlashQueries>,
 }
+
+#[cfg(test)]
+impl RedirectService {
+    pub(crate) fn for_tests(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
+    }
+}
 #[singleton]
 impl RedirectService {
     fn new(queries: Arc<FlashQueries>) -> Self {

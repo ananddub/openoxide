@@ -15,7 +15,7 @@ INSERT INTO destinations (name, provider, access_key, secret_access_key, bucket,
                RETURNING *;
 
 -- name: DestinationsUpdateAndReturn :one
-UPDATE destinations SET name = ?, provider = ?, access_key = ?, secret_access_key = ?, bucket = ?, region = ?, endpoint = ?
+UPDATE destinations SET name = ?, provider = ?, access_key = ?, secret_access_key = ?, bucket = ?, region = ?, endpoint = ?, updated_at = unixepoch()
                WHERE id = ? AND organization_id = ?
                RETURNING *;
 

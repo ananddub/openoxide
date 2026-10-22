@@ -402,3 +402,210 @@ fn api_url(base: &str, path: &str) -> String {
     };
     format!("{base}{path}")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_support::fixture;
+
+    async fn service(tag: &str) -> (RegistryService, sqlx::SqlitePool) {
+        let (queries, pool) = fixture(tag).await;
+        (RegistryService { queries }, pool)
+    }
+
+    fn registry(name: &str, url: &str) -> CreateRegistryDto {
+        CreateRegistryDto {
+            registry_name: name.into(),
+            image_prefix: Some("team".into()),
+            username: "deployer".into(),
+            password: "secret".into(),
+            registry_url: url.into(),
+            registry_type: "GENERIC".into(),
+        }
+    }
+
+    #[test]
+    fn registry_url_accepts_bare_hosts_only() {
+        for good in ["", "ghcr.io", "localhost:5000", "registry.example.com:443"] {
+            assert!(validate_registry_url(good).is_ok(), "{good:?} should pass");
+        }
+        for bad in [
+            "https://ghcr.io",
+            "ghcr.io/v2",
+            "ghcr.io:notaport",
+            ":5000",
+            "ghcr io",
+            "ghcr.io;rm -rf /",
+        ] {
+            assert!(validate_registry_url(bad).is_err(), "{bad:?} should fail");
+        }
+    }
+
+    #[test]
+    fn image_prefix_must_be_a_lowercase_repository_path() {
+        for good in ["", "team", "registry.local:5000/team", "a-b_c.d~e"] {
+            assert!(validate_image_prefix(good).is_ok(), "{good:?} should pass");
+        }
+        for bad in ["Team", "/team", "team/", "team space", "team?x"] {
+            assert!(validate_image_prefix(bad).is_err(), "{bad:?} should fail");
+        }
+    }
+
+    #[tokio::test]
+    async fn create_round_trips_and_scopes_to_the_organization() {
+        let (service, _pool) = service("registry-create").await;
+
+        let created = service
+            .create(registry("ghcr", "ghcr.io"), 7)
+            .await
+            .unwrap();
+
+        assert_eq!(created.registry_name, "ghcr");
+        assert_eq!(created.registry_url, "ghcr.io");
+        assert_eq!(created.image_prefix.as_deref(), Some("team"));
+        assert_eq!(created.organization_id, 7);
+        assert!(created.created_at > 0, "created_at should be a timestamp");
+        assert!(created.updated_at > 0, "updated_at should be a timestamp");
+
+        let read = service.get_by_id(created.id, 7).await.unwrap();
+        assert_eq!(
+            read.password, "secret",
+            "the stored password must round-trip"
+        );
+
+        assert!(
+            matches!(
+                service.get_by_id(created.id, 8).await,
+                Err(sqlx::Error::RowNotFound)
+            ),
+            "another organization must not read this registry"
+        );
+        assert!(service.list(8).await.unwrap().is_empty());
+        assert_eq!(service.list(7).await.unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn create_rejects_invalid_urls_without_persisting() {
+        let (service, _pool) = service("registry-reject").await;
+
+        for (name, url) in [
+            ("scheme", "https://ghcr.io"),
+            ("path", "ghcr.io/v2"),
+            ("space", "ghcr io"),
+            ("shell", "ghcr.io;id"),
+        ] {
+            let error = service
+                .create(registry(name, url), 1)
+                .await
+                .expect_err(name);
+            assert!(matches!(error, sqlx::Error::Protocol(_)), "{name}: {error}");
+        }
+
+        assert!(
+            service.list(1).await.unwrap().is_empty(),
+            "a rejected create must not leave a row behind"
+        );
+    }
+
+    #[tokio::test]
+    async fn patch_updates_only_the_fields_that_were_sent() {
+        let (service, _pool) = service("registry-patch").await;
+        let created = service
+            .create(registry("ghcr", "ghcr.io"), 1)
+            .await
+            .unwrap();
+
+        let patched = service
+            .patch(
+                created.id,
+                PatchRegistryDto {
+                    registry_name: Some("dockerhub".into()),
+                    image_prefix: None,
+                    username: None,
+                    password: Some("rotated".into()),
+                    registry_url: None,
+                    registry_type: None,
+                },
+                1,
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(patched.registry_name, "dockerhub");
+        assert_eq!(patched.password, "rotated");
+        assert_eq!(
+            patched.image_prefix.as_deref(),
+            Some("team"),
+            "an omitted image_prefix must keep its value"
+        );
+        assert_eq!(patched.registry_url, "ghcr.io");
+        assert!(patched.updated_at >= created.updated_at);
+    }
+
+    #[tokio::test]
+    async fn delete_removes_an_unused_registry() {
+        let (service, _pool) = service("registry-delete").await;
+        let created = service
+            .create(registry("ghcr", "ghcr.io"), 1)
+            .await
+            .unwrap();
+
+        service.delete(created.id, 1).await.unwrap();
+
+        assert!(
+            matches!(
+                service.get_by_id(created.id, 1).await,
+                Err(sqlx::Error::RowNotFound)
+            ),
+            "the row must be gone"
+        );
+    }
+
+    #[tokio::test]
+    async fn delete_refuses_a_registry_still_used_by_an_application() {
+        let (service, pool) = service("registry-used").await;
+        let created = service
+            .create(registry("ghcr", "ghcr.io"), 1)
+            .await
+            .unwrap();
+
+        sqlx::raw_sql(
+            "INSERT INTO organization (name, slug, owner_id, created_at, updated_at)
+                 VALUES ('org', 'org', 1, 0, 0);
+             INSERT INTO projects (name, env_var, organization_id, created_at, updated_at)
+                 VALUES ('site', '', 1, 0, 0);
+             INSERT INTO environments (name, env_var, is_default, project_id, created_at, updated_at)
+                 VALUES ('production', '', 1, 1, 0, 0);
+             INSERT INTO services
+                 (id, service_type, name, app_name, app_status, replicas, network_ids,
+                  detach_rustploy_network, environment_id, created_at, updated_at)
+                 VALUES (1, 'APPLICATION', 'app', 'app', 'IDLE', 1, '[]', 0, 1, 0, 0);",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            "INSERT INTO service_application
+                 (service_id, build_type, create_env_file, clean_cache, rollback_active,
+                  preview_https, preview_certificate_type,
+                  is_preview_deployments_active, preview_require_collaborator_permissions,
+                  registry_id)
+             VALUES (1, 'NIXPACKS', 0, 0, 0, 0, 'NONE', 0, 0, ?)",
+        )
+        .bind(created.id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let error = service.delete(created.id, 1).await.unwrap_err();
+        assert!(
+            error.to_string().contains("used by 1 application"),
+            "{error}"
+        );
+        assert!(
+            service.get_by_id(created.id, 1).await.is_ok(),
+            "a refused delete must keep the registry"
+        );
+        assert_eq!(service.usage(created.id, 1).await.unwrap().len(), 1);
+    }
+}

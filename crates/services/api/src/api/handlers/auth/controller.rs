@@ -1,4 +1,4 @@
-use connectrpc::{RequestContext, Response, ServiceRequest, ServiceResult};
+use connectrpc::{ConnectError, RequestContext, Response, ServiceRequest, ServiceResult};
 
 use crate::api::connect::generated::openoxide::api::v1::{
     AuthResponse, AuthService, AuthServiceExt, ConfirmEmailVerificationRequest,
@@ -24,28 +24,55 @@ impl AuthService for AuthController {
     #[public]
     async fn signup<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, SignupRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AuthResponse> + Send + use<'a>> {
-        let result = self
-            .service
-            .signup(request.to_owned_message())
-            .await
-            .map_err(map_auth_error)?;
+        let mut input = request.to_owned_message();
+        input.email = validated_email(&input.email)?;
+        validated_new_password(&input.password)?;
+        let email = input.email.to_ascii_lowercase();
+        let ip = client_ip(&ctx);
+        enforce_rate_limit(
+            &self.limiter,
+            format!("signup:ip:{ip}"),
+            SIGNUP_IP_LIMIT,
+            SIGNUP_WINDOW,
+        )?;
+        enforce_rate_limit(
+            &self.limiter,
+            format!("signup:email:{email}"),
+            SIGNUP_EMAIL_LIMIT,
+            SIGNUP_WINDOW,
+        )?;
+        let result = self.service.signup(input).await.map_err(map_auth_error)?;
         Response::ok(auth_response_proto(result.user, result.tokens))
     }
 
     #[public]
     async fn login<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, LoginRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AuthResponse> + Send + use<'a>> {
-        let result = self
-            .service
-            .login(request.to_owned_message())
-            .await
-            .map_err(map_auth_error)?;
+        let mut input = request.to_owned_message();
+        input.email = validated_email(&input.email)?;
+        validated_login_password(&input.password)?;
+        let email = input.email.to_ascii_lowercase();
+        let ip = client_ip(&ctx);
+        enforce_rate_limit(
+            &self.limiter,
+            format!("login:ip:{ip}"),
+            LOGIN_IP_LIMIT,
+            LOGIN_WINDOW,
+        )?;
+        enforce_rate_limit(
+            &self.limiter,
+            format!("login:account:{email}"),
+            LOGIN_ACCOUNT_LIMIT,
+            LOGIN_WINDOW,
+        )?;
+        let result = self.service.login(input).await.map_err(map_auth_error)?;
+        self.limiter.clear(&format!("login:account:{email}"));
         Response::ok(auth_response_proto(result.user, result.tokens))
     }
 
@@ -82,11 +109,25 @@ impl AuthService for AuthController {
     #[public]
     async fn request_password_reset<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, RequestPasswordResetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        let email = validated_email(request.email)?;
+        let ip = client_ip(&ctx);
+        enforce_rate_limit(
+            &self.limiter,
+            format!("reset:ip:{ip}"),
+            RESET_IP_LIMIT,
+            RESET_WINDOW,
+        )?;
+        enforce_rate_limit(
+            &self.limiter,
+            format!("reset:email:{}", email.to_ascii_lowercase()),
+            RESET_EMAIL_LIMIT,
+            RESET_WINDOW,
+        )?;
         self.service
-            .request_password_reset(request.email)
+            .request_password_reset(&email)
             .await
             .map_err(map_auth_error)?;
         Response::ok(Empty::default())
@@ -95,9 +136,16 @@ impl AuthService for AuthController {
     #[public]
     async fn reset_password<'a>(
         &'a self,
-        _ctx: RequestContext,
+        ctx: RequestContext,
         request: ServiceRequest<'_, ResetPasswordRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        validated_new_password(request.password)?;
+        enforce_rate_limit(
+            &self.limiter,
+            format!("reset-submit:ip:{}", client_ip(&ctx)),
+            RESET_IP_LIMIT,
+            RESET_WINDOW,
+        )?;
         self.service
             .reset_password(request.token, request.password.to_owned())
             .await
@@ -137,9 +185,21 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateUserRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<User> + Send + use<'a>> {
+        let mut input = request.to_owned_message();
+        if let Some(email) = input.email.as_deref() {
+            input.email = Some(validated_email(email)?);
+        }
+        if let Some(password) = input.password.as_deref() {
+            validated_new_password(password)?;
+        }
+        if input.current_password.as_deref().is_some_and(str::is_empty) {
+            return Err(ConnectError::invalid_argument(
+                "current password is required when changing email or password",
+            ));
+        }
         let subject = self
             .service
-            .update_user(auth.user_id(), request.to_owned_message())
+            .update_user(auth.user_id(), input, Some(auth.claims.jti.as_str()))
             .await
             .map_err(map_auth_error)?;
         Response::ok(subject_to_user(subject))
@@ -205,11 +265,19 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         request: ServiceRequest<'_, SetupTwoFactorRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<TwoFactorSetup> + Send + use<'a>> {
+        let key = format!("two-factor:{}", auth.user_id());
+        enforce_rate_limit(
+            &self.limiter,
+            key.clone(),
+            TWO_FACTOR_LIMIT,
+            TWO_FACTOR_WINDOW,
+        )?;
         let result = self
             .service
             .setup_two_factor(auth.user_id(), request.password.to_owned())
             .await
             .map_err(map_auth_error)?;
+        self.limiter.clear(&key);
         Response::ok(result)
     }
 
@@ -218,10 +286,18 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         request: ServiceRequest<'_, EnableTwoFactorRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        let key = format!("two-factor:{}", auth.user_id());
+        enforce_rate_limit(
+            &self.limiter,
+            key.clone(),
+            TWO_FACTOR_LIMIT,
+            TWO_FACTOR_WINDOW,
+        )?;
         self.service
-            .enable_two_factor(auth.user_id(), request.code)
+            .enable_two_factor(auth.user_id(), request.code, Some(auth.claims.jti.as_str()))
             .await
             .map_err(map_auth_error)?;
+        self.limiter.clear(&key);
         Response::ok(Empty::default())
     }
 
@@ -230,10 +306,23 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DisableTwoFactorRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        let key = format!("two-factor:{}", auth.user_id());
+        enforce_rate_limit(
+            &self.limiter,
+            key.clone(),
+            TWO_FACTOR_LIMIT,
+            TWO_FACTOR_WINDOW,
+        )?;
         self.service
-            .disable_two_factor(auth.user_id(), request.password.to_owned(), request.code)
+            .disable_two_factor(
+                auth.user_id(),
+                request.password.to_owned(),
+                request.code,
+                Some(auth.claims.jti.as_str()),
+            )
             .await
             .map_err(map_auth_error)?;
+        self.limiter.clear(&key);
         Response::ok(Empty::default())
     }
 
@@ -242,11 +331,19 @@ impl AuthService for AuthController {
         ctx: RequestContext,
         request: ServiceRequest<'_, RegenerateRecoveryCodesRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<RecoveryCodes> + Send + use<'a>> {
+        let key = format!("two-factor:{}", auth.user_id());
+        enforce_rate_limit(
+            &self.limiter,
+            key.clone(),
+            TWO_FACTOR_LIMIT,
+            TWO_FACTOR_WINDOW,
+        )?;
         let result = self
             .service
             .regenerate_recovery_codes(auth.user_id(), request.password.to_owned(), request.code)
             .await
             .map_err(map_auth_error)?;
+        self.limiter.clear(&key);
         Response::ok(result)
     }
 

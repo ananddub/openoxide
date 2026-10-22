@@ -13,12 +13,8 @@ use crate::{
     },
     db::queries::FlashQueries,
     flash_gen::{
-        jwt_tokens::JwtTokensInsertTokenParams,
-        models::Users,
-        notifications::NotificationsFindForUserParams,
-        organization_members::OrganizationMembersAddMemberInTransactionParams,
-        organizations::CreateOrganizationParams,
-        users::{UsersCreateOwnerAndReturnParams, UsersCreateOwnerAndReturnRow, UsersUpdateParams},
+        jwt_tokens::JwtTokensInsertTokenParams, models::Users,
+        notifications::NotificationsFindForUserParams, users::UsersUpdateParams,
     },
     services::integrations::notification::loader::{EmailConfig, ResendConfig},
     utils::jwt::{
@@ -44,60 +40,127 @@ impl AuthService {
     pub async fn signup(&self, input: SignupRequest) -> Result<AuthResponseDto, AuthError> {
         let password = hash_password(input.password).await?;
         let email = input.email.trim().to_lowercase();
-
-        self.queries
-            .groups_create_owner_group_if_not_exists1()
-            .await?;
-        let group_id = self
-            .queries
-            .groups_create_owner_group_if_not_exists2()
-            .await?;
+        if email.is_empty() {
+            return Err(AuthError::InvalidOperation("email is required".into()));
+        }
 
         let avatar = input.avatar.unwrap_or_default();
-        let user = self
-            .queries
-            .users_create_owner_and_return(&UsersCreateOwnerAndReturnParams {
-                email,
-                first_name: input.first_name.unwrap_or_default(),
-                last_name: input.last_name.unwrap_or_default(),
-                avatar,
-                password,
-                group_id,
-            })
-            .await
-            .map(user_from_owner_row)?;
+        let first_name = input.first_name.unwrap_or_default();
+        let last_name = input.last_name.unwrap_or_default();
 
-        let first_name = user
-            .first_name
-            .clone()
-            .unwrap_or_else(|| "Default".to_string());
-        let org_name = format!("{}'s Organization", first_name);
-        let org_slug = format!("{}-organization", first_name.to_lowercase());
+        // One transaction: a failure in any step must never leave a
+        // half-created account (user without organization, membership
+        // without owner, tokens without user). The unique indexes added in
+        // 20261022120000 are what make concurrent signups safe.
+        let mut tx = self.db.begin().await?;
 
-        let org = self
-            .queries
-            .create_organization(&CreateOrganizationParams {
-                name: org_name,
-                logo: String::new(),
-                slug: org_slug,
-                owner_id: user.id,
-            })
+        sqlx::query(
+            "INSERT INTO groups (name, is_system, organization_id)
+             SELECT 'owner', 1, NULL
+             WHERE NOT EXISTS (SELECT 1 FROM groups WHERE name = 'owner')",
+        )
+        .execute(&mut *tx)
+        .await?;
+        let group_id: i64 = sqlx::query_scalar("SELECT id FROM groups WHERE name = 'owner'")
+            .fetch_one(&mut *tx)
             .await?;
 
-        self.queries
-            .organization_members_add_member_in_transaction(
-                &OrganizationMembersAddMemberInTransactionParams {
-                    role: "ADMIN".into(),
-                    user_id: user.id,
-                    organization_id: org.id,
-                },
+        let user_id: i64 = sqlx::query_scalar(
+            "INSERT INTO users (email, first_name, last_name, avatar, role, password, is_registered, group_id, added_by)
+             VALUES (?, ?, ?, ?, 'OWNER', ?, 1, ?, NULL)
+             RETURNING id",
+        )
+        .bind(&email)
+        .bind(&first_name)
+        .bind(&last_name)
+        .bind(&avatar)
+        .bind(&password)
+        .bind(group_id)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(map_user_write_error)?;
+
+        let display_name = if first_name.trim().is_empty() {
+            "Default".to_string()
+        } else {
+            first_name.trim().to_string()
+        };
+        let org_name = format!("{display_name}'s Organization");
+        let base_slug = normalize_slug(&format!("{display_name}-organization"));
+        let base_slug = if base_slug.is_empty() {
+            "organization".to_string()
+        } else {
+            base_slug
+        };
+
+        // Same first name → same base slug; pick the first free suffix
+        // instead of failing the whole signup.
+        let mut slug = base_slug.clone();
+        let mut suffix = 2;
+        let organization_id: i64 = loop {
+            let inserted: Option<i64> = sqlx::query_scalar(
+                "INSERT INTO organization (name, logo, slug, owner_id)
+                 VALUES (?, '', ?, ?)
+                 ON CONFLICT DO NOTHING
+                 RETURNING id",
             )
+            .bind(&org_name)
+            .bind(&slug)
+            .bind(user_id)
+            .fetch_optional(&mut *tx)
             .await?;
+            if let Some(id) = inserted {
+                break id;
+            }
+            if suffix > 100 {
+                return Err(AuthError::Internal);
+            }
+            slug = format!("{base_slug}-{suffix}");
+            suffix += 1;
+        };
 
-        let subject = subject_from_user(&user)?;
+        sqlx::query(
+            "INSERT INTO organization_members (role, user_id, organization_id)
+             VALUES ('ADMIN', ?, ?)",
+        )
+        .bind(user_id)
+        .bind(organization_id)
+        .execute(&mut *tx)
+        .await?;
+
+        let subject = JwtSubject {
+            user_id,
+            email: Some(email),
+            first_name: Some(first_name),
+            last_name: Some(last_name),
+            avatar: if avatar.starts_with("data:") {
+                "custom".to_string()
+            } else {
+                avatar
+            },
+            role: Some("OWNER".to_string()),
+            group_id,
+        };
         let tokens = self.jwt.generate_token_pair(&subject)?;
         let session_id = uuid::Uuid::new_v4().to_string();
-        self.store_token_pair(&tokens, &session_id).await?;
+        let access = self.jwt.validate_access_token(&tokens.access_token)?;
+        let refresh = self.jwt.validate_refresh_token(&tokens.refresh_token)?;
+        for (claims, token_kind) in [(access, "ACCESS"), (refresh, "REFRESH")] {
+            sqlx::query(
+                "INSERT INTO jwt_tokens (jti, role, user_id, is_blacklist, expired_at, session_id, token_kind)
+                 VALUES (?, ?, ?, 0, ?, ?, ?)",
+            )
+            .bind(&claims.jti)
+            .bind(claims.user.role.as_deref().unwrap_or("MEMBER"))
+            .bind(claims.user.user_id)
+            .bind(claims.exp as i64)
+            .bind(&session_id)
+            .bind(token_kind)
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        tx.commit().await?;
 
         Ok(AuthResponseDto {
             user: subject,
@@ -267,6 +330,7 @@ impl AuthService {
         &self,
         user_id: i64,
         input: UpdateUserRequest,
+        keep_jti: Option<&str>,
     ) -> Result<JwtSubject, AuthError> {
         let mut user = self
             .get_user_by_id(user_id)
@@ -276,10 +340,34 @@ impl AuthService {
                 error => error.into(),
             })?;
 
-        if let Some(email) = input.email
-            && !email.trim().is_empty()
-        {
-            user.email = Some(email.trim().to_lowercase());
+        let next_email = input
+            .email
+            .as_deref()
+            .map(|email| email.trim().to_lowercase())
+            .filter(|email| !email.is_empty());
+        let email_changed = next_email
+            .as_deref()
+            .is_some_and(|email| user.email.as_deref() != Some(email));
+        let next_password = input
+            .password
+            .filter(|password| !password.trim().is_empty());
+        let password_changed = next_password.is_some();
+
+        // Changing the address or password is a credential operation: prove
+        // the current password first so a stolen access token cannot silently
+        // take over the account.
+        if email_changed || password_changed {
+            let current = input.current_password.unwrap_or_default();
+            if current.trim().is_empty() {
+                return Err(AuthError::InvalidOperation(
+                    "current password is required to change email or password".into(),
+                ));
+            }
+            verify_password(current, user.password.clone()).await?;
+        }
+
+        if let Some(email) = next_email {
+            user.email = Some(email);
         }
         if let Some(first_name) = input.first_name {
             user.first_name = Some(first_name);
@@ -290,9 +378,7 @@ impl AuthService {
         if let Some(avatar) = input.avatar {
             user.avatar = avatar;
         }
-        if let Some(password) = input.password
-            && !password.trim().is_empty()
-        {
+        if let Some(password) = next_password {
             user.password = hash_password(password).await?;
         }
 
@@ -316,8 +402,53 @@ impl AuthService {
                 updated_at: user.updated_at,
                 id: user_id,
             })
-            .await?;
+            .await
+            .map_err(map_user_write_error)?;
+        if password_changed {
+            // Every other session was authenticated with the old password and
+            // must sign in again; the caller's own session stays usable.
+            self.revoke_other_sessions(user_id, keep_jti).await?;
+        }
         subject_from_user(&user)
+    }
+
+    /// Revoke every token for the user except the session that owns
+    /// `keep_jti`. Credential changes (password, 2FA) must drop other
+    /// sessions without logging the user out of the one they just proved.
+    pub(crate) async fn revoke_other_sessions(
+        &self,
+        user_id: i64,
+        keep_jti: Option<&str>,
+    ) -> Result<(), AuthError> {
+        let session_id = match keep_jti {
+            Some(jti) => match self.queries.jwt_tokens_session_id_for_jti(jti).await {
+                Ok(session_id) => session_id,
+                Err(sqlx::Error::RowNotFound) => None,
+                Err(error) => return Err(error.into()),
+            },
+            None => None,
+        };
+        match session_id {
+            Some(session_id) => {
+                sqlx::query(
+                    "UPDATE jwt_tokens
+                     SET is_blacklist = 1, blacklist_at = strftime('%s','now')
+                     WHERE user_id = ? AND session_id != ? AND is_blacklist = 0;",
+                )
+                .bind(user_id)
+                .bind(session_id)
+                .execute(self.db.as_ref())
+                .await?;
+            }
+            // No usable jti (e.g. a token minted before sessions were
+            // tracked): fall back to revoking everything.
+            None => {
+                self.queries
+                    .jwt_tokens_blacklist_all_by_user(user_id)
+                    .await?
+            }
+        }
+        Ok(())
     }
 }
 
@@ -391,26 +522,25 @@ pub(crate) fn subject_from_user(user: &Users) -> Result<JwtSubject, AuthError> {
     })
 }
 
-fn user_from_owner_row(row: UsersCreateOwnerAndReturnRow) -> Users {
-    Users {
-        id: row.id,
-        email: row.email,
-        last_name: row.last_name,
-        first_name: row.first_name,
-        avatar: row.avatar,
-        role: row.role,
-        about_me: row.about_me,
-        password: row.password,
-        is_email_verify: row.is_email_verify,
-        email_verify_at: row.email_verify_at,
-        two_factor_enable: row.two_factor_enable,
-        is_registered: row.is_registered,
-        added_by: row.added_by,
-        group_id: row.group_id,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-        is_owner: None,
-    }
+fn normalize_slug(value: &str) -> String {
+    value
+        .trim()
+        .to_ascii_lowercase()
+        .chars()
+        .fold((String::new(), false), |(mut output, separator), ch| {
+            if ch.is_ascii_alphanumeric() {
+                output.push(ch);
+                (output, false)
+            } else if !output.is_empty() && !separator {
+                output.push('-');
+                (output, true)
+            } else {
+                (output, separator)
+            }
+        })
+        .0
+        .trim_end_matches('-')
+        .to_owned()
 }
 
 pub(crate) async fn notification_configs_for_user(
@@ -510,4 +640,17 @@ pub(crate) async fn verify_password(password: String, encoded: String) -> Result
     })
     .await
     .map_err(|_| AuthError::Internal)?
+}
+
+/// Turn the users.email unique-index violation into a clean client error
+/// instead of leaking a 500 from SQLite.
+fn map_user_write_error(error: sqlx::Error) -> AuthError {
+    if let sqlx::Error::Database(database_error) = &error
+        && database_error
+            .message()
+            .contains("UNIQUE constraint failed")
+    {
+        return AuthError::InvalidOperation("an account with this email already exists".into());
+    }
+    error.into()
 }

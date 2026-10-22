@@ -192,7 +192,7 @@ impl ServerControllerService for ServerController {
                     .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
                     .unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)),
             ),
-            agent_token: Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty()),
+            agent_token: None,
             advertise_addr: self
                 .service
                 .setup_advertise_addr(id, request.advertise_addr.map(str::to_owned))
@@ -203,34 +203,9 @@ impl ServerControllerService for ServerController {
         if let Some(email) = request.acme_email {
             config.acme_email = email.to_owned();
         }
-        // Per-server isolated mTLS: generate (once) this server's own CA +
-        // agent cert/key and hand them to setup for distribution to the host.
-        if let Ok(store) = resolve::<crate::utils::mtls::MtlsCaStore>().await {
-            let sans = {
-                let mut s = vec![
-                    "openoxide-agent".to_string(),
-                    "localhost".to_string(),
-                    "127.0.0.1".to_string(),
-                ];
-                if let Ok(server) = self.service.get_by_id(id).await {
-                    let ip = server.ip_address.trim().to_string();
-                    if !ip.is_empty() && !s.contains(&ip) {
-                        s.push(ip);
-                    }
-                }
-                s
-            };
-            match store.load_or_create(id, &sans).await {
-                Ok(m) => {
-                    config.agent_mtls_ca_cert = Some(m.ca_cert);
-                    config.agent_mtls_cert = Some(m.agent_cert);
-                    config.agent_mtls_key = Some(m.agent_key);
-                }
-                Err(error) => {
-                    tracing::warn!(server_id = id, %error, "per-server mTLS unavailable; agent stays token-only")
-                }
-            }
-        }
+        self.apply_agent_mtls(id, &mut config).await;
+        self.apply_agent_token(id, &mut config, &panel_config.metrics_token)
+            .await;
         let outcome = ServerSetup::new_remote(executor, config)
             .setup_all_oneshot(request.install_dependencies)
             .await
@@ -292,7 +267,7 @@ impl ServerControllerService for ServerController {
                     .or_else(|_| std::env::var("RUSTPLOY_SERVER_URL"))
                     .unwrap_or_else(|_| format!("http://127.0.0.1:{}", panel_config.port)),
             ),
-            agent_token: Some(panel_config.metrics_token.clone()).filter(|v| !v.is_empty()),
+            agent_token: None,
             advertise_addr: self
                 .service
                 .setup_advertise_addr(id, request.advertise_addr.map(str::to_owned))
@@ -303,6 +278,9 @@ impl ServerControllerService for ServerController {
         if let Some(email) = request.acme_email {
             config.acme_email = email.to_owned();
         }
+        self.apply_agent_mtls(id, &mut config).await;
+        self.apply_agent_token(id, &mut config, &panel_config.metrics_token)
+            .await;
 
         let install_dependencies = request.install_dependencies;
         let service = Arc::clone(&self.service);
@@ -386,5 +364,60 @@ impl ServerControllerService for ServerController {
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
         // Original handler returned NO_CONTENT — in ConnectRPC we return Empty.
         Response::ok(Empty::default())
+    }
+}
+
+impl ServerController {
+    /// Loads (creating on first use) this server's isolated mTLS material so
+    /// every setup path hands the agent the same CA/cert/key the monitoring
+    /// client uses. Without this the streamed setup creates a token-only agent
+    /// and the panel's TLS handshake fails with an opaque protocol error.
+    async fn apply_agent_mtls(&self, server_id: i64, config: &mut SetupConfig) {
+        let Ok(store) = resolve::<crate::utils::mtls::MtlsCaStore>().await else {
+            return;
+        };
+        let sans = {
+            let mut s = vec![
+                "openoxide-agent".to_string(),
+                "localhost".to_string(),
+                "127.0.0.1".to_string(),
+            ];
+            if let Ok(server) = self.service.get_by_id(server_id).await {
+                let ip = server.ip_address.trim().to_string();
+                if !ip.is_empty() && !s.contains(&ip) {
+                    s.push(ip);
+                }
+            }
+            s
+        };
+        match store.load_or_create(server_id, &sans).await {
+            Ok(material) => {
+                config.agent_mtls_ca_cert = Some(material.ca_cert);
+                config.agent_mtls_cert = Some(material.agent_cert);
+                config.agent_mtls_key = Some(material.agent_key);
+            }
+            Err(error) => tracing::warn!(
+                server_id,
+                %error,
+                "per-server mTLS unavailable; agent stays token-only"
+            ),
+        }
+    }
+
+    /// Hands the agent the token the monitoring client will actually send.
+    /// Once a per-server token exists (token rotation), the panel no longer
+    /// authenticates with the global METRICS_TOKEN; reinstalling the agent
+    /// with the global token would make monitoring fail until auto-repair.
+    async fn apply_agent_token(&self, server_id: i64, config: &mut SetupConfig, fallback: &str) {
+        let stored = match resolve::<
+            crate::services::observability::monitoring::agent_auth::MonitoringAgentAuth,
+        >()
+        .await
+        {
+            Ok(agent_auth) => agent_auth.query_token(server_id).await.ok().flatten(),
+            Err(_) => None,
+        };
+        config.agent_token =
+            Some(stored.unwrap_or_else(|| fallback.to_string())).filter(|token| !token.is_empty());
     }
 }

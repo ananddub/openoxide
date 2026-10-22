@@ -15,6 +15,13 @@ pub struct ComposePatchService {
     queries: Arc<FlashQueries>,
 }
 
+#[cfg(test)]
+impl ComposePatchService {
+    pub(crate) fn for_tests(compose: Arc<ComposeService>, queries: Arc<FlashQueries>) -> Self {
+        Self { compose, queries }
+    }
+}
+
 #[singleton]
 impl ComposePatchService {
     fn new(compose: Arc<ComposeService>, queries: Arc<FlashQueries>) -> Self {

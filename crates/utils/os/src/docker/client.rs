@@ -34,10 +34,10 @@ impl DockerCli {
     pub(crate) fn api_socket_path(&self) -> DockerResult<&str> {
         match &self.executor {
             crate::exec::CommandExecutor::Local(_) => Ok("/var/run/docker.sock"),
-            crate::exec::CommandExecutor::Remote(_) => Err(DockerError::Ssh(
+            crate::exec::CommandExecutor::Remote(_) => Err(DockerError::Docker(
                 "remote Docker API tunneling was removed; use an Agent executor".into(),
             )),
-            crate::exec::CommandExecutor::Agent(_) => Err(DockerError::Ssh(
+            crate::exec::CommandExecutor::Agent(_) => Err(DockerError::Docker(
                 "direct Docker API access is local-only; run the Docker command through the Agent executor".into(),
             )),
         }
@@ -168,10 +168,10 @@ impl DockerCli {
                 let arguments = self.arguments(args);
                 Ok(local.command(&self.executable, arguments))
             }
-            CommandExecutor::Remote(_) => Err(DockerError::Ssh(
+            CommandExecutor::Remote(_) => Err(DockerError::Docker(
                 "a local process cannot be created for a remote client; use run_stream".into(),
             )),
-            CommandExecutor::Agent(_) => Err(DockerError::Ssh(
+            CommandExecutor::Agent(_) => Err(DockerError::Docker(
                 "a local process cannot be created for an agent client; use run_stream".into(),
             )),
         }
@@ -333,7 +333,7 @@ impl DockerCli {
 
     async fn execute_api(&self, args: &[String]) -> DockerResult<DockerOutput> {
         if !super::api::supports_command(args) {
-            return Err(crate::docker::DockerError::Ssh(format!(
+            return Err(crate::docker::DockerError::Docker(format!(
                 "Docker Engine API v1.52 does not support: docker {} (use the default CLI mode)",
                 args.join(" ")
             )));
@@ -353,7 +353,7 @@ impl DockerCli {
             return super::api::mutations::execute(&api, args).await;
         }
         let request = super::api::map_cli_args(args).ok_or_else(|| {
-            crate::docker::DockerError::Ssh(format!(
+            crate::docker::DockerError::Docker(format!(
                 "no Docker API v1.52 mapping for: docker {}",
                 args.join(" ")
             ))
@@ -371,7 +371,7 @@ impl DockerCli {
             {
                 for file in files {
                     let path = file.as_str().ok_or_else(|| {
-                        crate::docker::DockerError::Ssh("invalid env file path".into())
+                        crate::docker::DockerError::Docker("invalid env file path".into())
                     })?;
                     let content = tokio::fs::read_to_string(path)
                         .await
@@ -411,13 +411,15 @@ impl DockerCli {
             .await?;
         if request.start_created {
             let created: serde_json::Value = serde_json::from_slice(&payload).map_err(|e| {
-                crate::docker::DockerError::Ssh(format!("Docker create returned invalid JSON: {e}"))
+                crate::docker::DockerError::Docker(format!(
+                    "Docker create returned invalid JSON: {e}"
+                ))
             })?;
             let id = created
                 .get("Id")
                 .and_then(serde_json::Value::as_str)
                 .ok_or_else(|| {
-                    crate::docker::DockerError::Ssh(
+                    crate::docker::DockerError::Docker(
                         "Docker create response did not include container Id".into(),
                     )
                 })?;
@@ -429,7 +431,7 @@ impl DockerCli {
             super::api::ResponseShape::Raw => String::from_utf8_lossy(&payload).into_owned(),
             super::api::ResponseShape::CreatedId => {
                 let value: serde_json::Value = serde_json::from_slice(&payload).map_err(|e| {
-                    crate::docker::DockerError::Ssh(format!(
+                    crate::docker::DockerError::Docker(format!(
                         "Docker create returned invalid JSON: {e}"
                     ))
                 })?;
@@ -453,7 +455,7 @@ impl DockerCli {
         args: &[String],
     ) -> DockerResult<DockerOutput> {
         let context = args.last().ok_or_else(|| {
-            crate::docker::DockerError::Ssh("image build requires context".into())
+            crate::docker::DockerError::Docker("image build requires context".into())
         })?;
         let mut query = Vec::new();
         for pair in args.windows(2) {
@@ -497,7 +499,7 @@ impl DockerCli {
             .await
             .map_err(crate::docker::DockerError::Io)?;
         if !archive.status.success() {
-            return Err(crate::docker::DockerError::Ssh(
+            return Err(crate::docker::DockerError::Docker(
                 "failed to archive image build context".into(),
             ));
         }
@@ -524,7 +526,7 @@ impl DockerCli {
         if builder.api {
             let args = builder.clone().build();
             if !super::api::supports_command(&args) {
-                return Err(crate::docker::DockerError::Ssh(format!(
+                return Err(crate::docker::DockerError::Docker(format!(
                     "Docker Engine API v1.52 does not support: docker {} (use the default CLI mode)",
                     args.join(" ")
                 )));
@@ -541,7 +543,7 @@ impl DockerCli {
                 return super::api::build::execute_stream(&api, &args, sender).await;
             }
             let request = super::api::map_cli_args(&args).ok_or_else(|| {
-                crate::docker::DockerError::Ssh(format!(
+                crate::docker::DockerError::Docker(format!(
                     "no Docker API v1.52 stream mapping for: docker {}",
                     args.join(" ")
                 ))

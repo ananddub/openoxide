@@ -21,6 +21,16 @@ impl PreviewDeploymentService {
     }
 }
 
+#[cfg(test)]
+impl PreviewDeploymentService {
+    pub(crate) fn for_tests(queries: Arc<FlashQueries>) -> Self {
+        Self {
+            queries,
+            lifecycle_lock: tokio::sync::Mutex::new(()),
+        }
+    }
+}
+
 impl PreviewDeploymentService {
     pub async fn list(&self, active_only: bool) -> sqlx::Result<Vec<PreviewDeploymentView>> {
         let views = if active_only {

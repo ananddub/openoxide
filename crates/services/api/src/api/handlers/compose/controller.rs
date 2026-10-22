@@ -17,6 +17,7 @@ use crate::api::connect::generated::openoxide::api::v1::{
     SetComposeSourceRequest, SetRawSourceRequest, UpdateComposeRequest,
     UpdateComposeResourcesRequest, UploadComposeRequest,
 };
+use crate::api::handlers::environment::helper::ensure_environment_id_org;
 use crate::services::compute::compose::crud::{
     ComposeOperationResponseDto, ComposeResponseDto, CreateComposeDto, PatchComposeDto,
 };
@@ -39,6 +40,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, GetComposeRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         let item = self
             .service
             .get_by_id(request.id)
@@ -53,6 +55,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ListComposesRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListComposesResponse> + Send + use<'a>> {
+        ensure_environment_id_org(request.environment_id, _auth.organization_id).await?;
         let items = self
             .service
             .list_by_environment(request.environment_id)
@@ -72,6 +75,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, CreateComposeRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
+        ensure_environment_id_org(request.environment_id, _auth.organization_id).await?;
         // Canonical spelling comes from the wire or the enum default; the
         // DTO is typed so no caller can smuggle a non-canonical string in.
         let compose_type = match request.compose_type {
@@ -99,6 +103,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, UpdateComposeRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         let dto: PatchComposeDto = serde_json::from_str(
             &serde_json::json!({
                 "name": request.name,
@@ -126,6 +131,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, DeleteComposeRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         self.service.delete(request.id).await.map_err(map_error)?;
         Response::ok(Empty::default())
     }
@@ -136,6 +142,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, SetComposeSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         let dto = PatchComposeGithubSourceDto {
             repository: request.repository.to_owned(),
             owner: request.owner.to_owned(),
@@ -160,6 +167,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, SetComposeSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         let dto = PatchComposeGitlabSourceDto {
             gitlab_project_id: None,
             gitlab_repository: request.repository.to_owned(),
@@ -186,6 +194,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, SetComposeSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         let dto = PatchComposeBitbucketSourceDto {
             bitbucket_repository: request.repository.to_owned(),
             bitbucket_repository_slug: None,
@@ -211,6 +220,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, SetComposeSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         let dto = PatchComposeGiteaSourceDto {
             gitea_repository: request.repository.to_owned(),
             gitea_owner: request.owner.to_owned(),
@@ -235,6 +245,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, SetComposeSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         let dto = PatchComposeCustomGitSourceDto {
             custom_git_url: request.repository.to_owned(),
             custom_git_branch: request
@@ -258,6 +269,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, SetRawSourceRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         let dto = PatchComposeRawSourceDto {
             compose_file: request.content.to_owned(),
         };
@@ -290,6 +302,7 @@ impl ComposeService for ComposeController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
+        ensure_compose_org(request.id, auth.organization_id).await?;
         let result = self
             .service
             .run_operation(request.id, AppComposeOperation::Deploy, auth.user_id())
@@ -308,6 +321,7 @@ impl ComposeService for ComposeController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
+        ensure_compose_org(request.id, auth.organization_id).await?;
         let result = self
             .service
             .run_operation(request.id, AppComposeOperation::Redeploy, auth.user_id())
@@ -326,6 +340,7 @@ impl ComposeService for ComposeController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
+        ensure_compose_org(request.id, auth.organization_id).await?;
         let result = self
             .service
             .run_operation(request.id, AppComposeOperation::Reload, auth.user_id())
@@ -344,6 +359,7 @@ impl ComposeService for ComposeController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
+        ensure_compose_org(request.id, auth.organization_id).await?;
         let result = self
             .service
             .run_operation(request.id, AppComposeOperation::Start, auth.user_id())
@@ -362,6 +378,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeOperation> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         self.service
             .stop_operation(request.id)
             .await
@@ -384,6 +401,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         self.service
             .cancel_operation(request.id)
             .await
@@ -397,6 +415,8 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, MoveComposeRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
+        ensure_environment_id_org(request.target_environment_id, _auth.organization_id).await?;
         let item = self
             .management
             .move_to_environment(request.id, request.target_environment_id)
@@ -411,6 +431,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeWebhookToken> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         let token = self
             .management
             .rotate_webhook_token(request.id)
@@ -425,6 +446,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeDependencies> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         let deps = self
             .service
             .dependencies(request.id)
@@ -516,6 +538,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, InstallTemplateRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
+        ensure_environment_id_org(request.environment_id, _auth.organization_id).await?;
         let dto = InstallComposeTemplateDto {
             name: request
                 .name
@@ -541,6 +564,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ExportComposeRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeExport> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         let bundle = self
             .transfer
             .export(request.id, request.include_secrets)
@@ -573,6 +597,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ServiceMutationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         let service_name = request.services.first().cloned().unwrap_or_default();
         let _ = self
             .management
@@ -588,6 +613,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, UpdateComposeResourcesRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Compose> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         // The proto UpdateComposeResourcesRequest has simplified fields;
         // for full resource upsert, the payload JSON carries the DTO.
         let payload_json = serde_json::json!({
@@ -612,6 +638,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         self.management
             .clear_history(request.id)
             .await
@@ -625,6 +652,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         self.management
             .cleanup_queue(request.id)
             .await
@@ -638,6 +666,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_compose_org(request.id, _auth.organization_id).await?;
         self.management
             .force_kill(request.id)
             .await
@@ -651,6 +680,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeListMountsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeListMountsResponse> + Send + use<'a>> {
+        ensure_compose_org(request.compose_id, _auth.organization_id).await?;
         let items = self
             .mounts
             .list(request.compose_id)
@@ -671,6 +701,7 @@ impl ComposeService for ComposeController {
         request: ServiceRequest<'_, ComposeCreateMountRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeCreateMountResponse> + Send + use<'a>>
     {
+        ensure_compose_org(request.compose_id, _auth.organization_id).await?;
         let input = mount_request_from_create(&request);
         let item = self
             .mounts
@@ -689,6 +720,7 @@ impl ComposeService for ComposeController {
         request: ServiceRequest<'_, ComposeUpdateMountRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeUpdateMountResponse> + Send + use<'a>>
     {
+        ensure_compose_org(request.compose_id, _auth.organization_id).await?;
         let input = mount_request_from_update(&request);
         let item = self
             .mounts
@@ -706,6 +738,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposeMountRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_compose_org(request.compose_id, _auth.organization_id).await?;
         let id = request
             .id
             .ok_or_else(|| ConnectError::invalid_argument("mount id is required"))?;
@@ -728,6 +761,7 @@ impl ComposeService for ComposeController {
         request: ServiceRequest<'_, ComposeListPatchesRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeListPatchesResponse> + Send + use<'a>>
     {
+        ensure_compose_org(request.compose_id, _auth.organization_id).await?;
         let items = self
             .patches
             .list(request.compose_id)
@@ -748,6 +782,7 @@ impl ComposeService for ComposeController {
         request: ServiceRequest<'_, ComposeCreatePatchRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeCreatePatchResponse> + Send + use<'a>>
     {
+        ensure_compose_org(request.compose_id, _auth.organization_id).await?;
         let dto = patch_dto_from_request(&request)?;
         let item = self
             .patches
@@ -766,6 +801,7 @@ impl ComposeService for ComposeController {
         request: ServiceRequest<'_, ComposeUpdatePatchRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ComposeUpdatePatchResponse> + Send + use<'a>>
     {
+        ensure_compose_org(request.compose_id, _auth.organization_id).await?;
         let dto = patch_dto_from_request(&request)?;
         let item = self
             .patches
@@ -783,6 +819,7 @@ impl ComposeService for ComposeController {
         _ctx: RequestContext,
         request: ServiceRequest<'_, ComposePatchRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_compose_org(request.compose_id, _auth.organization_id).await?;
         let id = request
             .id
             .ok_or_else(|| ConnectError::invalid_argument("patch id is required"))?;

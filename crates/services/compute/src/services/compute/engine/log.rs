@@ -1,5 +1,7 @@
+use crate::flash_gen::models::Deployments;
 use crate::services::compute::engine::{
-    ComposeLogOptions, DeploymentService, DockerLogOptions, LogSearchOptions, LogSearchResult,
+    ComposeLogOptions, DeploymentListFilter, DeploymentService, DockerLogOptions, LogSearchOptions,
+    LogSearchResult,
 };
 use tokio::sync::mpsc;
 
@@ -9,36 +11,29 @@ impl DeploymentService {
         options: LogSearchOptions,
     ) -> sqlx::Result<Vec<LogSearchResult>> {
         let deployments = self
-            .list(crate::services::compute::engine::DeploymentListFilter {
+            .list(DeploymentListFilter {
                 limit: 200,
                 ..Default::default()
             })
             .await?;
-        let needle = options.query.map(|value| value.to_ascii_lowercase());
-        let mut results = Vec::new();
-        for deployment in deployments {
-            let id = deployment.id;
-            let Ok(content) = tokio::fs::read_to_string(&deployment.log_path).await else {
-                continue;
-            };
-            for (index, line) in content.lines().enumerate() {
-                if needle
-                    .as_ref()
-                    .is_none_or(|value| line.to_ascii_lowercase().contains(value))
-                {
-                    results.push(LogSearchResult {
-                        deployment_id: id,
-                        title: deployment.title.clone(),
-                        line_number: index + 1,
-                        line: line.to_owned(),
-                    });
-                    if results.len() >= options.limit {
-                        return Ok(results);
-                    }
-                }
-            }
-        }
-        Ok(results)
+        Ok(scan_logs(deployments, options).await)
+    }
+
+    pub async fn search_logs_for_organization(
+        &self,
+        organization_id: i64,
+        options: LogSearchOptions,
+    ) -> sqlx::Result<Vec<LogSearchResult>> {
+        let deployments = self
+            .list_for_organization(
+                organization_id,
+                DeploymentListFilter {
+                    limit: 200,
+                    ..Default::default()
+                },
+            )
+            .await?;
+        Ok(scan_logs(deployments, options).await)
     }
 
     pub async fn cleanup_logs_before(&self, cutoff: i64) -> sqlx::Result<u64> {
@@ -303,6 +298,37 @@ impl DeploymentService {
 
         self.stream_deployment_log(deployment_id).await
     }
+}
+
+async fn scan_logs(
+    deployments: Vec<Deployments>,
+    options: LogSearchOptions,
+) -> Vec<LogSearchResult> {
+    let needle = options.query.map(|value| value.to_ascii_lowercase());
+    let mut results = Vec::new();
+    for deployment in deployments {
+        let id = deployment.id;
+        let Ok(content) = tokio::fs::read_to_string(&deployment.log_path).await else {
+            continue;
+        };
+        for (index, line) in content.lines().enumerate() {
+            if needle
+                .as_ref()
+                .is_none_or(|value| line.to_ascii_lowercase().contains(value))
+            {
+                results.push(LogSearchResult {
+                    deployment_id: id,
+                    title: deployment.title.clone(),
+                    line_number: index + 1,
+                    line: line.to_owned(),
+                });
+                if results.len() >= options.limit {
+                    return results;
+                }
+            }
+        }
+    }
+    results
 }
 
 async fn send_lines(buffer: &mut Vec<u8>, sender: &tokio::sync::mpsc::Sender<String>) {

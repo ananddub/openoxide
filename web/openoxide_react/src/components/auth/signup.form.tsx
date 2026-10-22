@@ -9,9 +9,9 @@ import {AuthInput, AuthPasswordInput} from './fields';
 import {signUpSchema, type SignUpSchema} from '#/schema/signup.schema';
 import {useSignup} from '#/hooks/auth/use-signup';
 
-export function SignUpForm() {
+export function SignUpForm({redirect}: {redirect?: string}) {
 	const [apiError, setApiError] = React.useState<string | null>(null);
-	const {mutate, isPending: isLoading} = useSignup(setApiError);
+	const {mutate, isPending: isLoading} = useSignup(setApiError, redirect);
 
 	const {
 		register,

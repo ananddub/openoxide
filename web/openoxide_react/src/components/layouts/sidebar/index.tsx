@@ -1,4 +1,4 @@
-import {useLocation} from '@tanstack/react-router';
+import {useLocation, useNavigate} from '@tanstack/react-router';
 import {
 	SIDEBAR_CENTER_X,
 	SIDEBAR_COLLAPSE,
@@ -24,6 +24,7 @@ import {
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
 import {useTheme} from '#/hooks/ui/use-theme';
+import {usePermissions} from '#/hooks/permissions/use-permissions';
 import {useAuthSession} from '#/stores/session-context';
 import {useProfile} from '#/api/live';
 import {getAvatarInitials, isSolidColorAvatar} from '#/lib/avatar-utils';
@@ -64,7 +65,9 @@ export function AppSidebar() {
 	const {state, isMobile} = useSidebar();
 	const collapsed = state === 'collapsed' && !isMobile;
 	const {theme, toggleTheme} = useTheme();
+	const {can} = usePermissions();
 	const {user: authUser, logout} = useAuthSession();
+	const navigate = useNavigate();
 	const {data: profile} = useProfile();
 	const displayName =
 		profile?.name ||
@@ -229,6 +232,7 @@ export function AppSidebar() {
 									onClick={() => {
 										logout();
 										toast.success('Signed out');
+										navigate({to: '/singin', replace: true});
 									}}>
 									Log out
 								</DropdownMenuItem>
@@ -252,7 +256,9 @@ export function AppSidebar() {
 									<Moon className="size-4" />
 								)}
 							</button>
-							<SidebarNotifications collapsed={collapsed} />
+							{can('notification:read') && (
+								<SidebarNotifications collapsed={collapsed} />
+							)}
 						</div>
 					</div>
 				</SidebarFooter>

@@ -90,7 +90,7 @@ impl Queries {
         project_id: i64,
         tag_id: i64,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query("INSERT INTO project_tags (project_id, tag_id) VALUES (?, ?);")
+        sqlx::query("INSERT INTO project_tags (project_id, tag_id) VALUES (?, ?) ON CONFLICT (project_id, tag_id) DO NOTHING;")
             .bind(project_id)
             .bind(tag_id)
             .execute(&self.pool)

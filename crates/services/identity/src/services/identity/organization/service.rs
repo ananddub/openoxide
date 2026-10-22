@@ -166,7 +166,39 @@ impl OrganizationService {
 
     pub async fn delete(&self, id: i64) -> sqlx::Result<()> {
         self.get_by_id(id).await?;
-        self.queries.delete_organization(id).await
+        // Identity rows hang off the organization and there are no FK
+        // cascades; clear them in one transaction so a delete never leaves
+        // memberships, invites or permission groups pointing at a dead org.
+        let mut tx = self.queries.pool.begin().await?;
+        sqlx::query(
+            "DELETE FROM group_policy
+             WHERE group_id IN (SELECT id FROM groups WHERE organization_id = ?)",
+        )
+        .bind(id)
+        .execute(&mut *tx)
+        .await?;
+        sqlx::query("DELETE FROM user_policy WHERE org_id = ?")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        sqlx::query("DELETE FROM organization_members WHERE organization_id = ?")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        sqlx::query("DELETE FROM organization_invites WHERE organization_id = ?")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        sqlx::query("DELETE FROM groups WHERE organization_id = ?")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        sqlx::query("DELETE FROM organization WHERE id = ?")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        tx.commit().await?;
+        Ok(())
     }
 
     async fn seed_organization_defaults(&self, organization_id: i64) -> sqlx::Result<i64> {

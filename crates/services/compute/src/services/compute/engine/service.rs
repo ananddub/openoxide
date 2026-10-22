@@ -6,11 +6,18 @@ use sqlx::SqlitePool;
 use super::types::{CancelDeploymentResult, DeploymentListFilter};
 use crate::db::queries::FlashQueries;
 use crate::flash_gen::models::Deployments;
-use crate::utils::builder::custom_type::IdType;
+use crate::utils::builder::custom_type::{ActiveDeploySnapshot, IdType};
 
 pub struct DeploymentService {
     db: Arc<SqlitePool>,
     pub(super) queries: Arc<FlashQueries>,
+}
+
+#[cfg(test)]
+impl DeploymentService {
+    pub(crate) fn for_tests(db: Arc<SqlitePool>, queries: Arc<FlashQueries>) -> Self {
+        Self { db, queries }
+    }
 }
 
 #[singleton]
@@ -41,8 +48,6 @@ impl DeploymentService {
     }
 
     pub async fn list(&self, filter: DeploymentListFilter) -> sqlx::Result<Vec<Deployments>> {
-        let status = normalize_filter_text(filter.status);
-        let state = normalize_filter_text(filter.state);
         let limit = filter.limit.clamp(1, 200);
         let offset = filter.offset.max(0);
         let service_id = filter
@@ -60,22 +65,100 @@ impl DeploymentService {
             self.queries.list_recent_deployments(limit + offset).await?
         };
 
-        let mut rows: Vec<Deployments> = rows
-            .into_iter()
-            .filter(|row| status.as_deref().is_none_or(|value| row.status == value))
-            .filter(|row| state.as_deref().is_none_or(|value| row.state == value))
-            .filter(|row| {
-                filter
-                    .server_id
-                    .is_none_or(|value| row.server_id == Some(value))
-            })
-            .collect();
-        rows = rows
-            .into_iter()
-            .skip(offset as usize)
-            .take(limit as usize)
-            .collect();
-        Ok(rows)
+        Ok(apply_filter(rows, &filter, service_id))
+    }
+
+    /// Loads a deployment and rejects it unless it belongs to the caller's
+    /// organization. Deployments inherit tenancy from their service's
+    /// environment → project chain, or — for standalone server jobs — from
+    /// the server row.
+    pub async fn ensure_organization_access(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> sqlx::Result<()> {
+        let deployment = self.get_by_id(id).await?;
+        if self
+            .deployment_belongs_to_organization(&deployment, organization_id)
+            .await?
+        {
+            Ok(())
+        } else {
+            Err(sqlx::Error::RowNotFound)
+        }
+    }
+
+    /// Rejects service ids (application/compose/database rows share the
+    /// `services` table) outside the caller's organization.
+    pub async fn ensure_service_organization_access(
+        &self,
+        service_id: i64,
+        organization_id: i64,
+    ) -> sqlx::Result<()> {
+        if self
+            .queries
+            .services_belongs_to_organization(service_id, organization_id)
+            .await?
+            > 0
+        {
+            Ok(())
+        } else {
+            Err(sqlx::Error::RowNotFound)
+        }
+    }
+
+    async fn deployment_belongs_to_organization(
+        &self,
+        deployment: &Deployments,
+        organization_id: i64,
+    ) -> sqlx::Result<bool> {
+        if let Some(service_id) = deployment.service_id {
+            return Ok(self
+                .queries
+                .services_belongs_to_organization(service_id, organization_id)
+                .await?
+                > 0);
+        }
+        if let Some(server_id) = deployment.server_id {
+            let server = self.queries.get_server_by_i_d(server_id).await?;
+            return Ok(server.organization_id == organization_id);
+        }
+        Ok(false)
+    }
+
+    /// Lists deployments visible to an organization. Rows owned by another
+    /// tenant are never returned; explicit service/server filters pointing
+    /// outside the organization report not-found.
+    pub async fn list_for_organization(
+        &self,
+        organization_id: i64,
+        filter: DeploymentListFilter,
+    ) -> sqlx::Result<Vec<Deployments>> {
+        if let Some(service_id) = filter
+            .application_id
+            .or(filter.compose_id)
+            .or(filter.database_id)
+        {
+            let owned = self
+                .queries
+                .services_belongs_to_organization(service_id, organization_id)
+                .await?;
+            if owned == 0 {
+                return Err(sqlx::Error::RowNotFound);
+            }
+        }
+        if let Some(server_id) = filter.server_id {
+            let server = self.queries.get_server_by_i_d(server_id).await?;
+            if server.organization_id != organization_id {
+                return Err(sqlx::Error::RowNotFound);
+            }
+        }
+        let service_id = filter
+            .application_id
+            .or(filter.compose_id)
+            .or(filter.database_id);
+        let rows = self.list_organization_deployments(organization_id).await?;
+        Ok(apply_filter(rows, &filter, service_id))
     }
 
     pub async fn list_running(&self, limit: i64, offset: i64) -> sqlx::Result<Vec<Deployments>> {
@@ -85,6 +168,47 @@ impl DeploymentService {
             offset,
             ..Default::default()
         })
+        .await
+    }
+
+    pub async fn list_running_for_organization(
+        &self,
+        organization_id: i64,
+        limit: i64,
+        offset: i64,
+    ) -> sqlx::Result<Vec<Deployments>> {
+        self.list_for_organization(
+            organization_id,
+            DeploymentListFilter {
+                status: Some("RUNNING".into()),
+                limit,
+                offset,
+                ..Default::default()
+            },
+        )
+        .await
+    }
+
+    async fn list_organization_deployments(
+        &self,
+        organization_id: i64,
+    ) -> sqlx::Result<Vec<Deployments>> {
+        sqlx::query_as::<_, Deployments>(
+            // Service-owned rows follow the service's tenant even when they
+            // run on a shared server (e.g. the panel host); only standalone
+            // server jobs fall back to the server's organization.
+            "SELECT d.* FROM deployments d \
+             WHERE d.service_id IN (SELECT s.id FROM services s \
+                                    JOIN environments e ON e.id = s.environment_id \
+                                    JOIN projects p ON p.id = e.project_id \
+                                    WHERE p.organization_id = ?) \
+                OR (d.service_id IS NULL AND d.server_id IN \
+                    (SELECT id FROM servers WHERE organization_id = ?)) \
+             ORDER BY d.created_at DESC, d.id DESC",
+        )
+        .bind(organization_id)
+        .bind(organization_id)
+        .fetch_all(self.database())
         .await
     }
 
@@ -141,6 +265,30 @@ impl DeploymentService {
             .await
             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
         Ok(state.active_deployments())
+    }
+
+    pub async fn list_active_components_for_organization(
+        &self,
+        organization_id: i64,
+    ) -> sqlx::Result<Vec<ActiveDeploySnapshot>> {
+        let state = auto_di::resolve::<crate::utils::builder::hash_state::ApplicationState>()
+            .await
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
+        let mut visible = Vec::new();
+        for component in state.active_deployments() {
+            let service_id = match component.id {
+                IdType::AppId(id) | IdType::ComposeId(id) | IdType::DatabaseId(id) => id,
+            };
+            if self
+                .queries
+                .services_belongs_to_organization(service_id, organization_id)
+                .await?
+                > 0
+            {
+                visible.push(component);
+            }
+        }
+        Ok(visible)
     }
 
     pub async fn subscribe_component(
@@ -225,15 +373,56 @@ impl DeploymentService {
 
         let count = log_paths.len() as u64;
         for log_path in log_paths {
-            if !log_path.is_empty() {
-                let path = std::path::Path::new(&log_path);
-                if path.exists() {
-                    let _ = tokio::fs::remove_file(path).await;
-                }
-            }
+            remove_log_file(&log_path).await;
         }
 
         Ok(count)
+    }
+
+    /// Deletes finished deployments (and their log files) that belong to an
+    /// organization. Running and queued deployments are never touched.
+    pub async fn clear_all_for_organization(&self, organization_id: i64) -> sqlx::Result<u64> {
+        let rows = self.list_organization_deployments(organization_id).await?;
+        let targets: Vec<Deployments> = rows.into_iter().filter(is_finished).collect();
+        let count = targets.len() as u64;
+        for row in targets {
+            self.queries.deployments_delete(row.id).await?;
+            remove_log_file(&row.log_path).await;
+        }
+        Ok(count)
+    }
+}
+
+fn apply_filter(
+    rows: Vec<Deployments>,
+    filter: &DeploymentListFilter,
+    service_id: Option<i64>,
+) -> Vec<Deployments> {
+    let status = normalize_filter_text(filter.status.clone());
+    let state = normalize_filter_text(filter.state.clone());
+    let limit = filter.limit.clamp(1, 200);
+    let offset = filter.offset.max(0);
+    rows.into_iter()
+        .filter(|row| status.as_deref().is_none_or(|value| row.status == value))
+        .filter(|row| state.as_deref().is_none_or(|value| row.state == value))
+        .filter(|row| service_id.is_none_or(|value| row.service_id == Some(value)))
+        .filter(|row| {
+            filter
+                .server_id
+                .is_none_or(|value| row.server_id == Some(value))
+        })
+        .skip(offset as usize)
+        .take(limit as usize)
+        .collect()
+}
+
+async fn remove_log_file(log_path: &str) {
+    if log_path.is_empty() {
+        return;
+    }
+    let path = std::path::Path::new(log_path);
+    if path.exists() {
+        let _ = tokio::fs::remove_file(path).await;
     }
 }
 

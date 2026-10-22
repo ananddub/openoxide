@@ -50,6 +50,7 @@ export const SETTINGS_TABS: SettingsTab[] = [
 		label: 'Notifications',
 		icon: Bell,
 		component: NotificationsPage,
+		permission: 'notification:read',
 	},
 ];
 

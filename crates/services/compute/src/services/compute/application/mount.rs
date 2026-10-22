@@ -71,6 +71,13 @@ pub struct MountService {
     queries: Arc<FlashQueries>,
 }
 
+#[cfg(test)]
+impl MountService {
+    pub(crate) fn for_tests(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
+    }
+}
+
 #[singleton]
 impl MountService {
     fn new(queries: Arc<FlashQueries>) -> Self {

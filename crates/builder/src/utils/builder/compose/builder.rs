@@ -161,15 +161,28 @@ impl ComposeBuilder {
             .await;
         match spec.runtime {
             ComposeRuntime::Compose => {
-                self.ctx
-                    .docker
-                    .compose()
+                let compose = self.ctx.docker.compose();
+                let started = compose
                     .start()
                     .project(&spec.stack_name)
                     .env_file(&spec.env_file)
                     .file(spec.compose_file_path())
                     .run()
-                    .await?;
+                    .await;
+                if started.is_err() {
+                    // `stop` brings the project down, so no stopped containers
+                    // remain for `start` to resume; recreate them from the
+                    // existing image instead of rebuilding.
+                    compose
+                        .up()
+                        .project(&spec.stack_name)
+                        .env_file(&spec.env_file)
+                        .file(spec.compose_file_path())
+                        .detach()
+                        .no_build()
+                        .run()
+                        .await?;
+                }
             }
             ComposeRuntime::Stack => {
                 // Re-deploy from the already-rendered stack file (no build) so

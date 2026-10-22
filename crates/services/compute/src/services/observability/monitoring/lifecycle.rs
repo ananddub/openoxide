@@ -174,13 +174,8 @@ impl MonitoringLifecycleService {
             .bind(server_id)
             .fetch_optional(&self.queries.pool)
             .await?;
-        let is_local = ip
-            .as_deref()
-            .is_some_and(|value| {
-                matches!(value, "openoxide-agent" | "localhost" | "127.0.0.1" | "openoxide-monitor")
-            })
-            // A missing server row can only be the local sentinel.
-            || ip.is_none();
+        // A missing server row can only be the local sentinel.
+        let is_local = ip.as_deref().is_none_or(is_local_server_address);
         if is_local {
             Ok(OutOfBandDocker::Local)
         } else {
@@ -565,6 +560,9 @@ impl MonitoringLifecycleService {
                 }
             }
         };
+        if self.is_local_server(server_id).await? {
+            return self.repair_local_agent(server_id, organization_id).await;
+        }
         let policy = self.policy(organization_id).await?;
         let token = if self.agent_auth.organization_id(server_id).await?.is_some() {
             self.agent_auth.rotate(server_id, organization_id).await?
@@ -611,6 +609,96 @@ impl MonitoringLifecycleService {
                 "monitoring agent reinstalled; configured retention policy is {} days",
                 policy.retention_days
             ),
+        ))
+    }
+
+    async fn is_local_server(&self, server_id: i64) -> sqlx::Result<bool> {
+        let ip: Option<String> = sqlx::query_scalar("SELECT ip_address FROM servers WHERE id = ?")
+            .bind(server_id)
+            .fetch_optional(&self.queries.pool)
+            .await?;
+        Ok(ip.as_deref().is_none_or(is_local_server_address))
+    }
+
+    /// Repairs the panel's own agent out-of-band over the Docker socket.
+    ///
+    /// Rotating the token here is unsafe: the local agent is normally managed
+    /// by the deployment (compose env), so the panel cannot push a new token
+    /// into it. Rotating first and then failing to SSH-reinstall (the local
+    /// row has no SSH credentials) locks the agent out permanently, and every
+    /// retry rotates again. Instead, adopt the token the container already
+    /// runs with, then restart it so the new database hash takes effect.
+    async fn repair_local_agent(
+        &self,
+        server_id: i64,
+        organization_id: i64,
+    ) -> sqlx::Result<MonitoringActionDto> {
+        let api = local_docker_api();
+        let inspect_path = format!("/containers/{AGENT_CONTAINER_NAME}/json");
+        let inspected = match api
+            .get_json::<crate::utils::docker::ContainerInspect>(&inspect_path)
+            .await
+        {
+            Ok(container) => Some(container),
+            Err(error) if is_missing_container_error(&error.to_string()) => None,
+            Err(error) => {
+                return Err(sqlx::Error::Protocol(format!(
+                    "cannot inspect the local monitoring agent: {error}"
+                )));
+            }
+        };
+
+        let container_token = inspected.as_ref().and_then(|container| {
+            container
+                .config
+                .env
+                .iter()
+                .find_map(|entry| entry.strip_prefix("METRICS_TOKEN="))
+                .map(str::trim)
+                .filter(|token| !token.is_empty())
+                .map(str::to_owned)
+        });
+        let fallback_token = self.agent_auth_token_fallback();
+        let token = match (&inspected, container_token) {
+            (Some(_), Some(token)) => token,
+            (Some(_), None) => {
+                return Err(sqlx::Error::Protocol(
+                    "cannot repair the local monitoring agent: its container has no METRICS_TOKEN; recreate it from the current deployment manifest".into(),
+                ));
+            }
+            (None, _) if !fallback_token.is_empty() => {
+                self.agent_auth
+                    .register_token(server_id, organization_id, &fallback_token)
+                    .await?;
+                return Err(sqlx::Error::Protocol(
+                    "monitoring agent container not found; start it (docker compose up -d openoxide-agent) and retry".into(),
+                ));
+            }
+            (None, _) => {
+                return Err(sqlx::Error::Protocol(
+                    "cannot repair the local monitoring agent: METRICS_TOKEN is not configured"
+                        .into(),
+                ));
+            }
+        };
+
+        self.agent_auth
+            .register_token(server_id, organization_id, &token)
+            .await?;
+        api.request(
+            "POST",
+            &format!("/containers/{AGENT_CONTAINER_NAME}/restart"),
+            None,
+        )
+        .await
+        .map_err(|error| {
+            sqlx::Error::Protocol(format!(
+                "monitoring agent credentials were synchronized but the container restart failed: {error}"
+            ))
+        })?;
+        Ok(action(
+            "reinstall",
+            "monitoring agent credentials synchronized with the running container; agent restarted",
         ))
     }
 
@@ -824,6 +912,18 @@ impl OutOfBandDocker {
             }
         }
     }
+}
+
+/// Addresses that identify the panel's own host rather than a remote server.
+pub fn is_local_server_address(value: &str) -> bool {
+    matches!(
+        value,
+        "openoxide-agent" | "localhost" | "127.0.0.1" | "openoxide-monitor"
+    )
+}
+
+fn is_missing_container_error(error: &str) -> bool {
+    error.contains("404") || error.contains("No such container")
 }
 
 fn local_docker_api() -> crate::utils::docker::DockerApi {

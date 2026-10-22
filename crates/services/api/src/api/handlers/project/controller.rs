@@ -23,6 +23,7 @@ impl ProjectService for ProjectController {
             .get_by_id(request.id)
             .await
             .map_err(map_db_error)?;
+        ensure_project_org(&project, auth.organization_id)?;
         Response::ok(project_to_proto(project))
     }
 
@@ -30,9 +31,9 @@ impl ProjectService for ProjectController {
     async fn list_projects<'a>(
         &'a self,
         ctx: RequestContext,
-        request: ServiceRequest<'_, ListProjectsRequest>,
+        _request: ServiceRequest<'_, ListProjectsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListProjectsResponse> + Send + use<'a>> {
-        let organization_id = request.organization_id;
+        let organization_id = auth.organization_id;
 
         if let Some(CacheEnum::ProjectsList(cached)) = self
             .cache
@@ -69,6 +70,7 @@ impl ProjectService for ProjectController {
         let org_id = auth.organization_id;
         let mut input = request.to_owned_message();
         input.organization_id = org_id;
+        input.name = validated_project_name(&input.name)?;
         let project = self.service.create(input).await.map_err(map_db_error)?;
         self.cache.invalidate(&CacheKey::ProjectsList(org_id)).await;
         Response::ok(project_to_proto(project))
@@ -80,7 +82,12 @@ impl ProjectService for ProjectController {
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateProjectRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ProjectProto> + Send + use<'a>> {
-        let dto = request.to_owned_message();
+        let mut dto = request.to_owned_message();
+        let current = self.service.get_by_id(dto.id).await.map_err(map_db_error)?;
+        ensure_project_org(&current, auth.organization_id)?;
+        if let Some(name) = dto.name.as_deref() {
+            dto.name = Some(validated_project_name(name)?);
+        }
         let project = self
             .service
             .update(dto.id, dto)
@@ -96,6 +103,12 @@ impl ProjectService for ProjectController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DeleteProjectRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        let project = self
+            .service
+            .get_by_id(request.id)
+            .await
+            .map_err(map_db_error)?;
+        ensure_project_org(&project, auth.organization_id)?;
         self.service
             .delete(request.id)
             .await

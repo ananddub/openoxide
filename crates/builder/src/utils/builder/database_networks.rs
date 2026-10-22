@@ -10,7 +10,6 @@ pub struct ExternalNetwork {
     pub name: String,
 }
 
-
 pub async fn resolve_database_networks(
     network_ids: Option<&str>,
     detach_rustploy_network: i64,

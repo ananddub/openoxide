@@ -1,6 +1,6 @@
 CREATE TABLE users (
     id BIGINT NOT NULL PRIMARY KEY AUTOINCREMENT,
-    email TEXT,
+    email TEXT UNIQUE,
     last_name TEXT,
     first_name TEXT,
     avatar TEXT NOT NULL,

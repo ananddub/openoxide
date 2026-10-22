@@ -1,6 +1,7 @@
 pub mod api_tokens;
 pub mod email_verification;
 pub mod password_reset;
+pub mod rate_limit;
 pub mod service;
 pub mod two_factor;
 pub mod types;

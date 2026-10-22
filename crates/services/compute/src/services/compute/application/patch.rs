@@ -64,6 +64,13 @@ pub struct PatchService {
     queries: Arc<FlashQueries>,
 }
 
+#[cfg(test)]
+impl PatchService {
+    pub(crate) fn for_tests(queries: Arc<FlashQueries>) -> Self {
+        Self { queries }
+    }
+}
+
 #[singleton]
 impl PatchService {
     fn new(queries: Arc<FlashQueries>) -> Self {

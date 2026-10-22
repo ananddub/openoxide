@@ -19,6 +19,26 @@ use super::{
 };
 
 impl ComposeService {
+    /// Returns `RowNotFound` when the service row does not belong to the
+    /// caller's organization, so cross-tenant ids stay indistinguishable
+    /// from missing ones.
+    pub async fn ensure_organization_access(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> sqlx::Result<()> {
+        if self
+            .queries
+            .services_belongs_to_organization(id, organization_id)
+            .await?
+            > 0
+        {
+            Ok(())
+        } else {
+            Err(sqlx::Error::RowNotFound)
+        }
+    }
+
     pub async fn get_by_id(&self, id: i64) -> sqlx::Result<ComposeRecord> {
         let key = CacheKey::Compose(id);
         let res = self

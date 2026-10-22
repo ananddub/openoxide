@@ -21,6 +21,7 @@ use crate::services::compute::database::management::{
 
 use super::helper::*;
 use super::init::DatabaseController;
+use crate::api::handlers::environment::helper::ensure_environment_id_org;
 
 #[auto_grpc::service(connect = true, auth = true)]
 impl DatabaseService for DatabaseController {
@@ -30,6 +31,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, GetDatabaseRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseProto> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let record = self
             .service
@@ -45,6 +47,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ListDatabasesRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ListDatabasesResponse> + Send + use<'a>> {
+        ensure_environment_id_org(request.environment_id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let items = self
             .service
@@ -65,6 +68,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, CreateDatabaseRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseProto> + Send + use<'a>> {
+        ensure_environment_id_org(request.environment_id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let dto = CreateDatabaseDto {
             name: request.name.to_owned(),
@@ -105,6 +109,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateDatabaseRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseProto> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let dto = PatchDatabaseDto {
             name: request.name.map(String::from),
@@ -153,6 +158,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DeleteDatabaseRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         self.service
             .delete(kind, request.id)
@@ -167,6 +173,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let result = run_operation(
             &self.service,
@@ -185,6 +192,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let result = run_operation(
             &self.service,
@@ -203,6 +211,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let result = run_operation(
             &self.service,
@@ -221,6 +230,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let result = run_operation(
             &self.service,
@@ -239,6 +249,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseOperationProto> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let result = run_operation(
             &self.service,
@@ -257,6 +268,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseOperationRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         self.service
             .cancel_operation(kind, request.id)
@@ -271,6 +283,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, SwarmSettingsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<SwarmSettings> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let dto = self
             .swarm
@@ -287,6 +300,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateSwarmSettingsRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<SwarmSettings> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let owned = request
             .settings
@@ -310,6 +324,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<MountList> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let items = self
             .mounts
@@ -326,6 +341,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, CreateMountRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<MountProto> + Send + use<'a>> {
+        ensure_database_org(request.database_id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let mount = self
             .mounts
@@ -341,6 +357,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateMountRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<MountProto> + Send + use<'a>> {
+        ensure_database_org(request.database_id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let mount = self
             .mounts
@@ -361,6 +378,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DeleteMountRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Empty> + Send + use<'a>> {
+        ensure_database_org(request.database_id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let deleted = self
             .mounts
@@ -380,6 +398,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<Dependencies> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let counts = self
             .service
@@ -438,6 +457,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ExportDatabaseRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseExport> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let bundle = self
             .service
@@ -455,6 +475,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, ImportDatabaseRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseProto> + Send + use<'a>> {
+        ensure_environment_id_org(request.environment_id, auth.organization_id).await?;
         let dto = ImportDatabaseDto {
             archive: request.archive.to_owned(),
             environment_id: request.environment_id,
@@ -471,6 +492,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseConnection> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let conn = self
             .service
@@ -492,6 +514,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<DatabaseProto> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let _result = self
             .service
@@ -513,6 +536,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<ValidationResult> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let kind = proto_to_kind(request.kind)?;
         let result = self
             .service
@@ -544,6 +568,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, DatabaseTargetRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AdvancedConfig> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let config = self
             .service
             .get_postgres_advanced_config(request.id)
@@ -576,6 +601,7 @@ impl DatabaseService for DatabaseController {
         ctx: RequestContext,
         request: ServiceRequest<'_, UpdateAdvancedConfigRequest>,
     ) -> ServiceResult<impl connectrpc::Encodable<AdvancedConfig> + Send + use<'a>> {
+        ensure_database_org(request.id, auth.organization_id).await?;
         let config = request
             .config
             .as_option()

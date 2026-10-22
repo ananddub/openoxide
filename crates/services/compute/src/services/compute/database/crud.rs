@@ -83,6 +83,26 @@ pub fn parse_json_string_vec(value: &str) -> Vec<String> {
 }
 
 impl DatabaseService {
+    /// Returns `RowNotFound` when the service row does not belong to the
+    /// caller's organization, so cross-tenant ids stay indistinguishable
+    /// from missing ones.
+    pub async fn ensure_organization_access(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> sqlx::Result<()> {
+        if self
+            .queries
+            .services_belongs_to_organization(id, organization_id)
+            .await?
+            > 0
+        {
+            Ok(())
+        } else {
+            Err(sqlx::Error::RowNotFound)
+        }
+    }
+
     pub async fn list_by_environment(
         &self,
         environment_id: i64,
@@ -495,13 +515,15 @@ impl DatabaseService {
             )));
         }
 
-        // Read exact volume names before the mount rows cascade-delete.
+        // Read exact volume names before the mount rows cascade-delete. A
+        // database with no mounts still owns the builder-generated data volume.
         let mounts = self
             .queries
             .mount_fetch_for_database(id)
             .await
             .unwrap_or_default();
-        let volume_names = crate::services::compute::cleanup::volume_names_from_mounts(&mounts);
+        let volume_names =
+            crate::services::compute::cleanup::database_volume_names(&record.app_name, &mounts);
 
         // Tear down the runtime in the background before removing the row.
         let app_name = record.app_name.clone();

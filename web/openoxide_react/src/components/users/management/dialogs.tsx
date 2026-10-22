@@ -30,7 +30,7 @@ const ACTIONS = [
 		id: 'direct',
 		icon: Users,
 		title: 'Add a member',
-		subtitle: 'They join with this role immediately',
+		subtitle: 'They must already have an account on this panel',
 	},
 	{
 		id: 'invite',
