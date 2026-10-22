@@ -6,96 +6,129 @@ license = "Apache-2.0"
 
 [workspace]
 members = [
-    "crates/auto/grpc",
-    "crates/auto/grpc_macros",
-    "crates/sh_macros",
-    "crates/os",
-    "crates/realtime",
-    "crates/dns",
+    "crates/utils/auto/grpc",
+    "crates/utils/auto/grpc_macros",
+    "crates/utils/sh_macros",
+    "crates/utils/os",
+    "crates/utils/realtime",
+    "crates/utils/dns",
+    "crates/core",
+    "crates/proto",
+    "crates/db",
+    "crates/platform",
+    "crates/builder",
+    "crates/services/compute",
+    "crates/services/identity",
+    "crates/services/domain",
+    "crates/services/api",
+    "crates/services/runtime",
     "agent",
 ]
+resolver = "3"
+# Plain `cargo build` builds only the panel binary, not the standalone agent.
+default-members = ["."]
 
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
 
-[dependencies]
-tokio = { version = "1", features = ["full"] }
-
-auto-di = "0.6.0"
-async-trait = "0.1"
-auto_grpc = { path = "crates/auto/grpc", default-features = false, features = ["connect"] }
-os = { package = "oxos", path = "crates/os" }
-sqlite_realtime = { path = "crates/realtime" }
-dns = { path = "crates/dns" }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-toml = "0.8"
-urlencoding = "2.1"
-serde_yaml = "0.9"
-validator = { version = "0.20", features = ["derive"] }
-sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "sqlite", "sqlite-preupdate-hook", "macros", "migrate", "chrono", "uuid", "json"] }
-chrono = { version = "0.4.45", features = ["serde"] }
-chrono-tz = "0.10.4"
-argon2 = { version = "0.6.0-rc.8", features = ["getrandom"] }
-bcrypt = "0.19.3"
-tracing = "0.1.44"
+[workspace.dependencies]
+openoxide-core = { path = "crates/core", version = "0.1.0" }
+openoxide-proto = { path = "crates/proto", version = "0.1.0" }
+openoxide-db = { path = "crates/db", version = "0.1.0" }
+openoxide-platform = { path = "crates/platform", version = "0.1.0" }
+openoxide-builder = { path = "crates/builder", version = "0.1.0" }
+openoxide-compute = { path = "crates/services/compute", version = "0.1.0" }
+openoxide-identity = { path = "crates/services/identity", version = "0.1.0" }
+openoxide-domain = { path = "crates/services/domain", version = "0.1.0" }
+openoxide-api = { path = "crates/services/api", version = "0.1.0" }
+openoxide-runtime = { path = "crates/services/runtime", version = "0.1.0" }
 jsonwebtoken = { version = "10", default-features = false, features = ["rust_crypto", "use_pem"] }
-zeroize = "1.9.0"
-getrandom = "0.3"
-libc = "0.2"
-tracing-subscriber = "0.3.23"
-uuid = { version = "1.2.2", features = ["v4", "serde"] }
-sha2 = "0.10"
-hmac = "0.12"
-dashmap = "6.2.1"
-dotenvy = "0.15.7"
-futures = "0.3.32"
-thiserror = "2.0.18"
-tempfile = "3.27.0"
+tokio = { version = "1", features = ["full"] }
 tokio-stream = { version = "0.1.18", features = ["sync"] }
 tokio-util = "0.7.11"
-tokio-cron-scheduler = "0.13"
-croner = "2.2"
-reqwest = { version = "0.13.4", default-features = false, features = ["json", "query", "form", "rustls-no-provider"] }
-rig-core = { version = "0.41.0", default-features = false, features = ["derive", "reqwest"] }
-rustls = { version = "0.23.42", default-features = false, features = ["ring", "std", "tls12"] }
-rust-embed = { version = "8", features = ["compression"] }
-rustls-pemfile = "2"
-url = "2.5"
-rcgen = { version = "0.13", default-features = false, features = ["pem", "ring", "x509-parser"] }
-tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+thiserror = "2.0.18"
+async-trait = "0.1"
+bcrypt = "0.19.3"
+argon2 = { version = "0.6.0-rc.8", features = ["getrandom"] }
+aws-credential-types = "1.2"
+aws-sdk-secretsmanager = "1.76"
+aws-sdk-ssm = "1.76"
+base64 = "0.22"
+getrandom = "0.3"
+hmac = "0.12"
+ipnet = "2.12"
 lettre = { version = "0.11", default-features = false, features = ["smtp-transport", "tokio1-rustls-tls", "builder", "hostname"] }
-totp-rs = { version = "5.6", features = ["gen_secret", "otpauth"] }
 notify = "8.1.0"
+sha2 = "0.10"
+tempfile = "3.27.0"
+tokio-cron-scheduler = "0.13"
+totp-rs = { version = "5.6", features = ["gen_secret", "otpauth"] }
+validator = { version = "0.20", features = ["derive"] }
+zeroize = "1.9.0"
+tracing = "0.1.44"
+tracing-subscriber = "0.3.23"
+chrono = { version = "0.4.45", features = ["serde"] }
+chrono-tz = "0.10.4"
+croner = "2.2"
+toml = "0.8"
+urlencoding = "2.1"
+dashmap = "6.2.1"
 minijinja = "2.21.0"
-tonic = { version = "0.12.3", features = ["transport", "tls"] }
-prost = "0.13.5"
-connectrpc = { version = "0.9.0", default-features = false, features = ["json", "server"] }
-connectrpc-reflection = { version = "0.9.0", default-features = false }
-buffa = { version = "0.9.1", default-features = false, features = ["std", "fast-utf8"] }
+url = "2.5"
+uuid = { version = "1.2.2", features = ["v4", "serde"] }
+futures = "0.3.32"
 bytes = "1"
 http-body-util = "0.1"
 hyper = { version = "1", features = ["server", "http1", "http2"] }
 hyper-util = { version = "0.1", features = ["server-auto", "tokio"] }
 tower = { version = "0.5", features = ["util"] }
-ipnet = "2.12"
-base64 = "0.22"
-aws-credential-types = "1.2"
-aws-sdk-secretsmanager = "1.76"
-aws-sdk-ssm = "1.76"
-
-[build-dependencies]
-tonic-build = "0.12.3"
-prost-build = "0.13.5"
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "sqlite", "sqlite-preupdate-hook", "macros", "migrate", "chrono", "uuid", "json"] }
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "query", "form", "rustls-no-provider"] }
+rig-core = { version = "0.41.0", default-features = false, features = ["derive", "reqwest"] }
+rcgen = { version = "0.13", default-features = false, features = ["pem", "ring", "x509-parser"] }
+connectrpc = { version = "0.9.0", default-features = false, features = ["json", "server"] }
+connectrpc-reflection = { version = "0.9.0", default-features = false }
+buffa = { version = "0.9.1", default-features = false, features = ["std", "fast-utf8"] }
+dotenvy = "0.15.7"
+libc = "0.2"
+tonic = { version = "0.12.3", features = ["transport", "tls"] }
 prost = "0.13.5"
-prost-types = "0.13.5"
-protoc-bin-vendored = "3.0.0"
-connectrpc-build = "0.9.0"
-buffa-codegen = "0.9.1"
+auto-di = "0.6.0"
+rust-embed = { version = "8", features = ["compression"] }
+rustls = { version = "0.23.42", default-features = false, features = ["ring", "std", "tls12"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+rustls-pemfile = "2"
+
+[dependencies]
+openoxide-core = { workspace = true }
+openoxide-proto = { workspace = true }
+openoxide-db = { workspace = true }
+openoxide-compute = { workspace = true }
+openoxide-identity = { workspace = true }
+openoxide-domain = { workspace = true }
+openoxide-api = { workspace = true }
+openoxide-runtime = { workspace = true }
+os = { package = "oxos", path = "crates/utils/os" }
+auto_grpc = { path = "crates/utils/auto/grpc", default-features = false, features = ["connect"] }
+auto-di = { workspace = true }
+connectrpc = { workspace = true }
+connectrpc-reflection = { workspace = true }
+dotenvy = { workspace = true }
+libc = { workspace = true }
+rustls = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
 
 [profile.dev]
 opt-level = 0          # zero optimization — fastest compile
 debug = 1              # minimal debug info (full=2, par slow hota hai)
 incremental = true     # sirf changed files recompile karo
-codegen-units = 8      # 8 parallel codegen units — tera 8-core pura use karega
+codegen-units = 256    # maximize dev codegen parallelism; runtime quality irrelevant here
 
 [profile.release]
 opt-level = "z"        # size ke liye optimize

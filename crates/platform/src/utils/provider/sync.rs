@@ -1,10 +1,17 @@
 use crate::utils::{
-    builder::{shared::BuilderContext, spec::BuilderEvent},
     exec::{CommandExecutor, ExecResult, LocalExecutor, ScriptPipeline},
     git::{client::GitCli, types::GitAuth},
 };
+use std::future::Future;
 use std::path::Path;
+use std::pin::Pin;
 use tokio_util::sync::CancellationToken;
+
+/// Progress sink for clone/fetch messages. Kept independent of the builder
+/// crate so platform does not depend on builder.
+pub trait BuildMessageSink: Send + Sync {
+    fn message<'a>(&'a self, message: String) -> Pin<Box<dyn Future<Output = ()> + Send + 'a>>;
+}
 
 pub struct ProviderSyncBuilder<'a> {
     url: String,
@@ -14,7 +21,7 @@ pub struct ProviderSyncBuilder<'a> {
     auth: Option<GitAuth>,
     submodules: bool,
     cancel: Option<&'a CancellationToken>,
-    ctx: Option<&'a BuilderContext>,
+    ctx: Option<&'a dyn BuildMessageSink>,
 }
 
 impl<'a> ProviderSyncBuilder<'a> {
@@ -56,9 +63,8 @@ impl<'a> ProviderSyncBuilder<'a> {
         self
     }
 
-    pub fn context(mut self, ctx: &'a BuilderContext) -> Self {
+    pub fn context(mut self, ctx: &'a dyn BuildMessageSink) -> Self {
         self.ctx = Some(ctx);
-        self.executor = Some(ctx.executor.clone());
         self
     }
 
@@ -150,16 +156,16 @@ impl<'a> ProviderSyncBuilder<'a> {
                 .await
                 .is_ok()
             {
-                ctx.emit(BuilderEvent::Message(format!(
+                ctx.message(format!(
                     "fetching source {} branch {} into {}",
                     self.url, branch, self.destination
-                )))
+                ))
                 .await;
             } else {
-                ctx.emit(BuilderEvent::Message(format!(
+                ctx.message(format!(
                     "cloning source {} branch {} into {}",
                     self.url, branch, self.destination
-                )))
+                ))
                 .await;
             }
         }
@@ -171,10 +177,10 @@ impl<'a> ProviderSyncBuilder<'a> {
 
         if let Some(ctx) = self.ctx {
             if !output.stdout.is_empty() {
-                ctx.emit(BuilderEvent::Message(output.stdout.clone())).await;
+                ctx.message(output.stdout.clone()).await;
             }
             if !output.stderr.is_empty() {
-                ctx.emit(BuilderEvent::Message(output.stderr.clone())).await;
+                ctx.message(output.stderr.clone()).await;
             }
         }
 

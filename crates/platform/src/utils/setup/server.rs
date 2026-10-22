@@ -889,7 +889,7 @@ impl ServerSetup {
     }
 }
 
-pub(crate) const AGENT_CONTAINER_NAME: &str = "openoxide-agent";
+pub const AGENT_CONTAINER_NAME: &str = "openoxide-agent";
 
 fn guarded_by_absent_container(docker: &DockerCli, name: &str, body: Vec<ShellIR>) -> ShellIR {
     use crate::utils::exec::script::dsl::{IntoShellIRGeneric, ShellIRWrapper};
@@ -905,7 +905,7 @@ fn guarded_by_absent_container(docker: &DockerCli, name: &str, body: Vec<ShellIR
     }
 }
 
-pub(crate) fn agent_image() -> &'static str {
+pub fn agent_image() -> &'static str {
     "dubeyanand/openoxide-agent:latest"
 }
 
@@ -916,7 +916,7 @@ pub(crate) fn agent_image() -> &'static str {
 /// kernel will not let a process join an ancestor PID namespace. Agents created
 /// before any of that are recreated rather than left answering every shell open
 /// with a precondition error.
-pub(crate) fn agent_supports_direct_host_shell(
+pub fn agent_supports_direct_host_shell(
     mounts: &[crate::utils::docker::core::types::ContainerInspectMount],
     host_config: &serde_json::Value,
 ) -> bool {

@@ -1,8 +1,15 @@
 use auto_di::resolve;
-use openoxide::{
-    core::config::Config, core::logs::init_logs, utils::background::BackgroundManager,
-};
+use openoxide_core::{config::Config, logs::init_logs};
+use openoxide_runtime::utils::background::BackgroundManager;
 use tokio::net::TcpListener;
+
+// Link anchors: inventory/auto-di registrations live in these crates, so the
+// binary must reference them or the linker may drop their statics.
+use openoxide_api as _;
+use openoxide_compute as _;
+use openoxide_db as _;
+use openoxide_identity as _;
+use openoxide_domain as _;
 
 #[tokio::main]
 async fn main() {
@@ -23,13 +30,13 @@ async fn main() {
     }
 
     // 2. Orphaned agent socket cleanup on server boot
-    openoxide::utils::ssh::agent::sweep_orphaned_agent_sockets();
+    os::ssh::agent::sweep_orphaned_agent_sockets();
 
     let connect_router = auto_grpc::connect_routes().await.unwrap();
 
-    let reflector = connectrpc_reflection::Reflector::from_descriptor_set_bytes(include_bytes!(
-        concat!(env!("OUT_DIR"), "/openoxide.fds.bin")
-    ))
+    let reflector = connectrpc_reflection::Reflector::from_descriptor_set_bytes(
+        openoxide_proto::DESCRIPTOR_SET,
+    )
     .expect("embedded openoxide descriptor set should parse");
     let connect_router = connectrpc_reflection::install(connect_router, reflector);
     let connect_service = connectrpc::ConnectRpcService::new(connect_router);
@@ -44,23 +51,34 @@ async fn main() {
         .await
         .unwrap();
 
-    let tls = openoxide::api::connect::tls_config(
-        &config.tls_cert_path,
-        &config.tls_key_path,
-    )
-    .unwrap_or_else(|error| {
-        panic!(
-            "TLS setup failed (cert: {}, key: {}): {} — the panel is HTTPS/HTTP-2 only, no cleartext fallback",
-            config.tls_cert_path, config.tls_key_path, error
-        )
-    });
+    let tls = openoxide_api::api::connect::tls_config(&config.tls_cert_path, &config.tls_key_path)
+        .unwrap_or_else(|error| {
+            panic!(
+                "TLS setup failed (cert: {}, key: {}): {} — the panel is HTTPS/HTTP-2 only, no cleartext fallback",
+                config.tls_cert_path, config.tls_key_path, error
+            )
+        });
 
     tracing::info!(
         "Listening on https://{}:{} (HTTP/2 only, ALPN [h2])",
         host,
         port
     );
-    openoxide::api::connect::serve(listener, connect_service, tls)
+    openoxide_api::api::connect::serve(listener, connect_service, tls)
         .await
         .unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn controllers_are_linked() {
+        let count = auto_grpc::__private::inventory::iter::<auto_grpc::ConnectDescriptor>
+            .into_iter()
+            .count();
+        assert!(
+            count >= 30,
+            "expected Connect controllers to be linked, found {count}"
+        );
+    }
 }

@@ -1,0 +1,17 @@
+[package]
+name = "openoxide-db"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+openoxide-core = { workspace = true }
+os = { package = "oxos", path = "../utils/os" }
+sqlite_realtime = { path = "../utils/realtime" }
+auto-di = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }

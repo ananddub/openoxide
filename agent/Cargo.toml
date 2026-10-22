@@ -22,11 +22,10 @@ tonic = { version = "0.12.3", features = ["transport", "tls"] }
 prost = "0.13.5"
 tokio-util = "0.7"
 auto-di = "0.6.0"
-auto_grpc = { path = "../crates/auto/grpc" }
+auto_grpc = { path = "../crates/utils/auto/grpc" }
 futures = "0.3"
 async-stream = "0.3"
-os = { package = "oxos", path = "../crates/os" }
-sh_macros = { path = "../crates/sh_macros" }
+os = { package = "oxos", path = "../crates/utils/os" }
 
 hyper = { version = "1", features = ["client", "http1"] }
 hyper-util = { version = "0.1", features = ["tokio"] }

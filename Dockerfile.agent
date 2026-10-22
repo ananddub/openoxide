@@ -20,7 +20,7 @@ COPY proto ./proto
 # the manifest — but the agent never compiles them. A stub keeps this layer
 # (and the dependency cache below) alive when panel sources change; copying
 # real src/ re-linked the whole agent binary on every backend edit.
-RUN mkdir -p src && echo "fn main() {}" > src/main.rs && echo "" > src/lib.rs
+RUN mkdir -p src && echo "fn main() {}" > src/main.rs
 
 # Static musl build. The flag is scoped to the target triple rather than set via
 # RUSTFLAGS, which would also apply to proc-macro crates — those are host

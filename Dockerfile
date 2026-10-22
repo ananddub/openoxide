@@ -32,14 +32,11 @@ COPY Cargo.toml Cargo.lock ./
 COPY crates/ crates/
 COPY agent/   agent/
 COPY proto/   proto/
-COPY build.rs build.rs
 COPY db/      db/
 COPY data/db.sqlite3 data/db.sqlite3
 
-# Create dummy main.rs and lib.rs to pre-compile all dependencies
-RUN mkdir -p src && \
-    echo "fn main() {}" > src/main.rs && \
-    echo "" > src/lib.rs
+# Create a dummy main.rs to pre-compile all dependencies
+RUN mkdir -p src && echo "fn main() {}" > src/main.rs
 
 ENV DATABASE_URL="sqlite:///usr/src/openoxide/data/db.sqlite3" \
     CARGO_BUILD_JOBS=8 \
@@ -86,7 +83,7 @@ COPY src/ src/
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/usr/src/openoxide/target \
-    touch src/main.rs src/lib.rs src/db/connection/sqlite.rs && \
+    touch src/main.rs crates/db/src/db/connection/sqlite.rs crates/services/api/src/api/dashboard.rs && \
     cargo build --profile ${BUILD_PROFILE} --target x86_64-unknown-linux-musl -p openoxide && \
     _outdir=$([ "${BUILD_PROFILE}" = "release-fast" ] && echo release-fast || echo release) && \
     cp target/x86_64-unknown-linux-musl/${_outdir}/openoxide /usr/src/openoxide/openoxide-binary && \

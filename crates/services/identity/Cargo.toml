@@ -1,0 +1,29 @@
+[package]
+name = "openoxide-identity"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+openoxide-core = { workspace = true }
+openoxide-proto = { workspace = true }
+openoxide-db = { workspace = true }
+openoxide-platform = { workspace = true }
+openoxide-compute = { workspace = true }
+os = { package = "oxos", path = "../../utils/os" }
+auto-di = { workspace = true }
+argon2 = { workspace = true }
+buffa = { workspace = true }
+chrono = { workspace = true }
+connectrpc = { workspace = true }
+getrandom = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+sqlx = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+totp-rs = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }

@@ -107,7 +107,6 @@ dependencies = [
  "protoc-bin-vendored",
  "serde",
  "serde_json",
- "sh_macros",
  "sha2 0.10.9",
  "sysinfo",
  "thiserror 2.0.20",
@@ -306,7 +305,6 @@ dependencies = [
  "auto-di",
  "auto_grpc_macros",
  "connectrpc",
- "futures",
  "inventory",
  "tonic",
 ]
@@ -3413,75 +3411,293 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 name = "openoxide"
 version = "0.1.0"
 dependencies = [
- "argon2",
- "async-trait",
  "auto-di",
  "auto_grpc",
+ "connectrpc",
+ "connectrpc-reflection",
+ "dotenvy",
+ "libc",
+ "openoxide-api",
+ "openoxide-compute",
+ "openoxide-core",
+ "openoxide-db",
+ "openoxide-domain",
+ "openoxide-identity",
+ "openoxide-proto",
+ "openoxide-runtime",
+ "oxos",
+ "rustls 0.23.45",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "openoxide-api"
+version = "0.1.0"
+dependencies = [
+ "auto-di",
+ "auto_grpc",
+ "buffa",
+ "bytes",
+ "chrono",
+ "connectrpc",
+ "futures",
+ "http-body-util",
+ "hyper 1.11.1",
+ "hyper-util",
+ "openoxide-builder",
+ "openoxide-compute",
+ "openoxide-core",
+ "openoxide-db",
+ "openoxide-domain",
+ "openoxide-identity",
+ "openoxide-platform",
+ "openoxide-proto",
+ "oxos",
+ "reqwest",
+ "rust-embed",
+ "rustls 0.23.45",
+ "rustls-pemfile",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "tokio-rustls 0.26.5",
+ "tokio-stream",
+ "tower 0.5.3",
+ "tracing",
+ "url",
+ "uuid",
+ "validator",
+]
+
+[[package]]
+name = "openoxide-builder"
+version = "0.1.0"
+dependencies = [
+ "auto-di",
+ "bcrypt",
+ "chrono",
+ "dashmap",
+ "minijinja",
+ "openoxide-core",
+ "openoxide-db",
+ "openoxide-platform",
+ "oxos",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "url",
+]
+
+[[package]]
+name = "openoxide-compute"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "auto-di",
  "aws-credential-types",
  "aws-sdk-secretsmanager",
  "aws-sdk-ssm",
  "base64 0.22.1",
  "bcrypt",
  "buffa",
- "buffa-codegen",
  "bytes",
  "chrono",
- "chrono-tz",
- "connectrpc",
- "connectrpc-build",
- "connectrpc-reflection",
- "croner",
  "dashmap",
- "dns",
- "dotenvy",
  "futures",
  "getrandom 0.3.4",
  "hmac 0.12.1",
- "http-body-util",
- "hyper 1.11.1",
- "hyper-util",
  "ipnet",
- "jsonwebtoken",
  "lettre",
- "libc",
- "minijinja",
  "notify",
+ "openoxide-builder",
+ "openoxide-core",
+ "openoxide-db",
+ "openoxide-platform",
+ "openoxide-proto",
  "oxos",
- "prost",
- "prost-build",
- "prost-types",
- "protoc-bin-vendored",
- "rcgen",
  "reqwest",
- "rig-core",
- "rust-embed",
- "rustls 0.23.45",
- "rustls-pemfile",
  "serde",
  "serde_json",
  "serde_yaml",
  "sha2 0.10.9",
+ "sqlx",
+ "tempfile",
+ "thiserror 2.0.20",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "toml",
+ "tonic",
+ "tracing",
+ "urlencoding",
+ "uuid",
+ "validator",
+ "zeroize",
+]
+
+[[package]]
+name = "openoxide-core"
+version = "0.1.0"
+dependencies = [
+ "auto-di",
+ "chrono",
+ "jsonwebtoken",
+ "serde",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
+name = "openoxide-db"
+version = "0.1.0"
+dependencies = [
+ "auto-di",
+ "chrono",
+ "openoxide-core",
+ "oxos",
+ "serde",
+ "serde_json",
  "sqlite_realtime",
+ "sqlx",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "openoxide-domain"
+version = "0.1.0"
+dependencies = [
+ "auto-di",
+ "auto_grpc",
+ "buffa",
+ "bytes",
+ "chrono",
+ "chrono-tz",
+ "connectrpc",
+ "croner",
+ "dashmap",
+ "dns",
+ "futures",
+ "http-body-util",
+ "hyper 1.11.1",
+ "openoxide-builder",
+ "openoxide-compute",
+ "openoxide-core",
+ "openoxide-db",
+ "openoxide-platform",
+ "openoxide-proto",
+ "oxos",
+ "reqwest",
+ "rig-core",
+ "rustls 0.23.45",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sha2 0.10.9",
  "sqlx",
  "tempfile",
  "thiserror 2.0.20",
  "tokio",
  "tokio-cron-scheduler",
- "tokio-rustls 0.26.5",
- "tokio-stream",
  "tokio-util",
- "toml",
- "tonic",
- "tonic-build",
- "totp-rs",
  "tower 0.5.3",
  "tracing",
- "tracing-subscriber",
- "url",
  "urlencoding",
  "uuid",
- "validator",
- "zeroize",
+]
+
+[[package]]
+name = "openoxide-identity"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "auto-di",
+ "buffa",
+ "chrono",
+ "connectrpc",
+ "getrandom 0.3.4",
+ "openoxide-compute",
+ "openoxide-core",
+ "openoxide-db",
+ "openoxide-platform",
+ "openoxide-proto",
+ "oxos",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "totp-rs",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "openoxide-platform"
+version = "0.1.0"
+dependencies = [
+ "auto-di",
+ "chrono",
+ "jsonwebtoken",
+ "openoxide-core",
+ "openoxide-db",
+ "oxos",
+ "rcgen",
+ "reqwest",
+ "rig-core",
+ "rustls 0.23.45",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sqlx",
+ "tokio",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
+name = "openoxide-proto"
+version = "0.1.0"
+dependencies = [
+ "buffa",
+ "buffa-codegen",
+ "bytes",
+ "connectrpc",
+ "connectrpc-build",
+ "prost",
+ "prost-build",
+ "prost-types",
+ "protoc-bin-vendored",
+ "serde",
+ "tonic",
+ "tonic-build",
+]
+
+[[package]]
+name = "openoxide-runtime"
+version = "0.1.0"
+dependencies = [
+ "auto-di",
+ "chrono",
+ "openoxide-compute",
+ "openoxide-core",
+ "openoxide-db",
+ "openoxide-domain",
+ "openoxide-platform",
+ "oxos",
+ "sqlx",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -3510,12 +3726,9 @@ name = "oxos"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "auto-di",
  "base64 0.22.1",
  "bytes",
  "chrono",
- "dashmap",
- "futures",
  "getrandom 0.3.4",
  "http-body-util",
  "hyper 1.11.1",
@@ -3527,14 +3740,11 @@ dependencies = [
  "russh-keys",
  "serde",
  "serde_json",
- "serde_yaml",
  "sh_macros",
- "sqlx",
  "ssh-key 0.7.0-rc.11",
  "tempfile",
  "thiserror 2.0.20",
  "tokio",
- "tokio-stream",
  "tokio-util",
  "tracing",
  "uuid",

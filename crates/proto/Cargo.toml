@@ -1,0 +1,22 @@
+[package]
+name = "openoxide-proto"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+buffa = { workspace = true }
+bytes = { workspace = true }
+connectrpc = { workspace = true }
+prost = { workspace = true }
+serde = { workspace = true }
+tonic = { workspace = true }
+
+[build-dependencies]
+buffa-codegen = "0.9.1"
+connectrpc-build = "0.9.0"
+prost = "0.13.5"
+prost-build = "0.13.5"
+prost-types = "0.13.5"
+protoc-bin-vendored = "3.0.0"
+tonic-build = "0.12.3"

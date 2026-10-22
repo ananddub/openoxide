@@ -1,0 +1,28 @@
+[package]
+name = "openoxide-platform"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+openoxide-core = { workspace = true }
+openoxide-db = { workspace = true }
+os = { package = "oxos", path = "../utils/os" }
+auto-di = { workspace = true }
+chrono = { workspace = true }
+jsonwebtoken = { workspace = true }
+rcgen = { workspace = true }
+reqwest = { workspace = true }
+rig-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+sqlx = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+# reqwest is built with rustls-no-provider; cfg(test) clients install the ring
+# provider themselves (the binary does it in main.rs).
+rustls = { workspace = true }

@@ -29,7 +29,7 @@ flowchart TD
         subgraph Storage ["Persistence & Realtime"]
             FLASH["FlashORM Typed Queries (src/flash_gen)"]
             DB[("SQLite Database (WAL Mode)")]
-            CDC["Reactive CDC Bridge & Event Bus (crates/realtime)"]
+            CDC["Reactive CDC Bridge & Event Bus (crates/utils/realtime)"]
         end
     end
 
@@ -60,7 +60,7 @@ flowchart TD
 - **Agentic AI Assistant**: Autonomous conversational assistant driven by [Rig](https://github.com/0xPlayground/rig). Automatically extracts ~550+ actions from `.proto` doc comments at build time, performs keyword action discovery, enforces destructive operation confirmations, and executes operations via in-process ConnectRPC endpoints under the user's authentic permissions.
 - **AI Stack Generator**: Multi-provider LLM engine (OpenAI, Anthropic Claude, Google Gemini, Ollama, OpenAI-compatible) that generates verified Docker Compose stacks with strict YAML syntax checks, port collision prevention, and security validations.
 - **ConnectRPC Contract**: 100% type-safe API communication between backend and frontend powered by Protobuf definitions (`proto/openoxide/api/v1/*.proto`) and Connect-Web.
-- **Realtime Reactive CDC Engine**: SQLite change-data-capture (CDC) bridge and event bus (`crates/realtime`) that pushes live database updates straight to frontend TanStack Query hooks without polling.
+- **Realtime Reactive CDC Engine**: SQLite change-data-capture (CDC) bridge and event bus (`crates/utils/realtime`) that pushes live database updates straight to frontend TanStack Query hooks without polling.
 - **Standalone Monitoring Agent (Rust & C++)**: Deployed once per host. Collects host and container statistics (cgroup v2 / streaming), stores historical rollups in a local SQLite database, and serves historical telemetry to the panel over gRPC.
 - **Direct Host Shell**: Agent enters host namespaces (`mnt`, `pid`, `net`) directly with `CAP_SYS_PTRACE`, providing native, frictionless web terminal access to the host.
 - **Traefik Edge & TLS**: Automatic Traefik reverse proxy configuration, HTTP/HTTPS routers, middleware chains, rate limiting, and Let's Encrypt / ACME TLS certificate lifecycle.
@@ -78,7 +78,7 @@ sequenceDiagram
     participant Web as React 19 (Connect-Web)
     participant Router as ConnectRPC Router
     participant Service as Domain Service
-    participant OS as crates/os & Builders
+    participant OS as crates/utils/os & Builders
     participant DB as SQLite (FlashORM)
     participant CDC as Reactive CDC Bus
     participant Host as Docker / Host System
@@ -181,9 +181,9 @@ The `src/services` directory houses domain logic:
 
 ---
 
-## The `crates/os` Infrastructure Layer
+## The `crates/utils/os` Infrastructure Layer
 
-`crates/os` provides a strongly-typed, safe facade over low-level system and container operations:
+`crates/utils/os` provides a strongly-typed, safe facade over low-level system and container operations:
 
 - **Docker & Swarm**: Typed builders for containers, Compose, networks, volumes, Swarm services, and exec sessions.
 - **ComposeBuilder**: Programmatic Docker Compose file and stack management with environment variable overrides and volume definitions.
@@ -203,7 +203,7 @@ OpenOxide combines **SQLite**, **FlashORM**, and a **Reactive CDC Bus**:
 flowchart LR
     A["API Service / Mutation"] -->|Type-safe Query| B["FlashORM (src/flash_gen)"]
     B -->|Runtime SQLx Exec| C[("SQLite Database")]
-    C -->|WAL Invalidation| D["CDC Bridge (crates/realtime)"]
+    C -->|WAL Invalidation| D["CDC Bridge (crates/utils/realtime)"]
     D -->|Publish Table Event| E["Reactive Event Bus"]
     E -->|Server-Sent Stream| F["React 19 Hooks (TanStack Query)"]
 ```

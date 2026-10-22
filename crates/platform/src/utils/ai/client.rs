@@ -11,7 +11,7 @@ use super::{AiProviderConfig, AiProviderKind};
 
 /// AgentRouter gateways reject generic HTTP clients with a 401
 /// "unauthorized client" error unless the request looks like QwenCode.
-pub(crate) fn provider_headers(base: &str) -> Option<HeaderMap> {
+pub fn provider_headers(base: &str) -> Option<HeaderMap> {
     let host = Url::parse(base).ok()?.host_str()?.to_string();
     host.contains("agentrouter").then(|| {
         let mut headers = HeaderMap::new();
@@ -44,7 +44,7 @@ impl AiClient {
             AiProviderKind::Gemini => {
                 gemini::Client::builder()
                     .api_key(&config.api_key)
-                    .base_url(&config.gemini_base_url())
+                    .base_url(config.gemini_base_url())
                     .build()
                     .map_err(rig_error)?
                     .list_models()
@@ -134,7 +134,7 @@ impl AiClient {
             AiProviderKind::Gemini => {
                 let client = gemini::Client::builder()
                     .api_key(&config.api_key)
-                    .base_url(&config.gemini_base_url())
+                    .base_url(config.gemini_base_url())
                     .build()
                     .map_err(rig_error)?;
                 complete_with_model(
@@ -248,8 +248,7 @@ async fn complete_with_model<M: CompletionModel>(
 /// True if the provider rejected `max_tokens` and wants `max_completion_tokens`.
 fn wants_completion_tokens(err: &str) -> bool {
     let e = err.to_ascii_lowercase();
-    e.contains("max_completion_tokens")
-        || (e.contains("max_tokens") && e.contains("unsupported"))
+    e.contains("max_completion_tokens") || (e.contains("max_tokens") && e.contains("unsupported"))
 }
 
 /// True if the provider rejected a non-default `temperature`. Newer OpenAI
@@ -435,14 +434,18 @@ mod tests {
         // Mirror main.rs: reqwest's rustls build needs a crypto provider
         // installed once before any TLS client is built.
         let _ = rustls::crypto::ring::default_provider().install_default();
-        let key = std::env::var("GEMINI_API_KEY")
-            .expect("set GEMINI_API_KEY to run this ignored test");
+        let key =
+            std::env::var("GEMINI_API_KEY").expect("set GEMINI_API_KEY to run this ignored test");
         let config = AiProviderConfig {
             api_url: "https://generativelanguage.googleapis.com/v1beta".into(),
             api_key: key,
             model: "gemini-flash-latest".into(),
         };
-        assert_eq!(config.kind(), AiProviderKind::Gemini, "url must detect Gemini");
+        assert_eq!(
+            config.kind(),
+            AiProviderKind::Gemini,
+            "url must detect Gemini"
+        );
 
         let client = AiClient;
 
@@ -451,7 +454,11 @@ mod tests {
             .discover_models(&config)
             .await
             .expect("discover_models should succeed against live Gemini");
-        println!("discovered {} models, sample: {:?}", models.len(), &models[..models.len().min(5)]);
+        println!(
+            "discovered {} models, sample: {:?}",
+            models.len(),
+            &models[..models.len().min(5)]
+        );
         assert!(!models.is_empty(), "Gemini returned no models");
         assert!(
             models.iter().all(|m| !m.starts_with("models/")),

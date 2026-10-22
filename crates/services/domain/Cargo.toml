@@ -1,0 +1,48 @@
+[package]
+name = "openoxide-domain"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+openoxide-core = { workspace = true }
+openoxide-proto = { workspace = true }
+openoxide-db = { workspace = true }
+openoxide-platform = { workspace = true }
+openoxide-builder = { workspace = true }
+openoxide-compute = { workspace = true }
+os = { package = "oxos", path = "../../utils/os" }
+dns = { path = "../../utils/dns" }
+auto_grpc = { path = "../../utils/auto/grpc", default-features = false, features = ["connect"] }
+auto-di = { workspace = true }
+buffa = { workspace = true }
+bytes = { workspace = true }
+chrono = { workspace = true }
+chrono-tz = { workspace = true }
+connectrpc = { workspace = true }
+croner = { workspace = true }
+dashmap = { workspace = true }
+futures = { workspace = true }
+http-body-util = { workspace = true }
+hyper = { workspace = true }
+reqwest = { workspace = true }
+rig-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+sha2 = { workspace = true }
+sqlx = { workspace = true }
+tempfile = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tokio-cron-scheduler = { workspace = true }
+tokio-util = { workspace = true }
+tower = { workspace = true }
+tracing = { workspace = true }
+urlencoding = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+# reqwest is built with rustls-no-provider; cfg(test) clients install the ring
+# provider themselves (the binary does it in main.rs).
+rustls = { workspace = true }

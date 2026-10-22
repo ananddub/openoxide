@@ -12,7 +12,7 @@ run: web-build
 
 web-build:
     cd web/openoxide_react && bun run build
-    touch src/api/dashboard.rs
+    touch crates/services/api/src/api/dashboard.rs
 
 # Fast web-only deploy: build the SPA on the host and stream the bundle
 # (tar over stdin) into the openoxide_web_dist volume the panel serves
@@ -76,37 +76,41 @@ restart: prepare-dev build-images
 	docker compose -f docker-compose.dev.yml up -d --force-recreate
 
 # ── Code generation (FlashORM) ──────────────────────────────────────────────
-# Type-safe query code is generated into src/flash_gen (flash.toml ->
+# Type-safe query code is generated into crates/db/src/flash_gen (flash.toml ->
 # [gen.rust].out). NEVER hand-edit files there — they are overwritten on every
 # `flash gen`. Requires the FlashORM `flash` CLI (https://github.com/Lumos-Labs-HQ/flash),
 # installed via: `go install github.com/Lumos-Labs-HQ/flash@latest` (verified
 # against v2.8.23); it is not vendored in this repo.
 # Workflow after editing db/schema/*.sql or db/queries/*.sql:
 #   1. just gen          (or `just gen-force` to ignore the incremental cache)
-#   2. commit the regenerated src/flash_gen/*.rs alongside the .sql sources
+#   2. commit the regenerated crates/db/src/flash_gen/*.rs alongside the .sql sources
 # Generated code uses runtime sqlx::query (macros=false), so `cargo build`
 # does NOT need a live DATABASE_URL.
 #
 # Known toolchain caveats with flash v2.8.23 (re-apply after a full regen):
-#   * src/flash_gen/migrations.rs is emitted as `sqlx::query(statement)`, which
-#     does NOT compile against this repo's sqlx (it needs `sqlx::AssertSqlSafe`).
-#     Keep the committed version: `git checkout src/flash_gen/migrations.rs`.
+#   * crates/db/src/flash_gen/migrations.rs is emitted as `sqlx::query(statement)`,
+#     which does NOT compile against this repo's sqlx (it needs `sqlx::AssertSqlSafe`).
+#     Keep the committed version: `git checkout crates/db/src/flash_gen/migrations.rs`.
 #   * db/queries/traffic_stats.sql uses `LIKE ? ESCAPE '\'`, which flash cannot
 #     parse (and whose generated code needs an un-added `rust_decimal` dep). That
 #     feature is unwired WIP; move the file aside before a full `flash gen`.
+#   * flash emits `Queries::pool` as `pub(crate)`; other crates need it public.
+#     The gen recipes re-apply the visibility with sed.
 
-# Regenerate query code from db/schema + db/queries into src/flash_gen.
+# Regenerate query code from db/schema + db/queries into crates/db/src/flash_gen.
 gen:
 	flash gen
-	git checkout -- src/flash_gen/migrations.rs
+	git checkout -- crates/db/src/flash_gen/migrations.rs
+	sed -i 's/pub(crate) pool: sqlx::SqlitePool/pub pool: sqlx::SqlitePool/' crates/db/src/flash_gen/db.rs
 
 # Force a full regeneration, ignoring flash's incremental checksum cache.
 gen-force:
 	flash gen -f
+	sed -i 's/pub(crate) pool: sqlx::SqlitePool/pub pool: sqlx::SqlitePool/' crates/db/src/flash_gen/db.rs
 
-# Fail if src/flash_gen is out of sync with the committed .sql sources.
+# Fail if crates/db/src/flash_gen is out of sync with the committed .sql sources.
 gen-check: gen-force
-	git diff --exit-code src/flash_gen
+	git diff --exit-code crates/db/src/flash_gen
 
 # Create a migration capturing pending schema changes, then apply it.
 flash-migrate msg:
