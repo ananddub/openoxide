@@ -17,12 +17,15 @@ use crate::{
             ServerPrivateNetworksUpdateConfigParams,
         },
     },
+    services::observability::monitoring::lifecycle::is_local_server_address,
     utils::exec::CommandExecutor,
 };
 
 use super::{
     addressing::{interface_name, panel_host, tunnel_addresses},
-    backend::{KernelWireGuardBackend, ManagedWireGuardBackend, WireGuardInstallPlan},
+    backend::{
+        KernelWireGuardBackend, ManagedWireGuardBackend, WireGuardGateway, WireGuardInstallPlan,
+    },
     enums::{
         PrivateNetworkConnectionMode, PrivateNetworkHealthStatus, PrivateNetworkOperation,
         PrivateNetworkProvider, PrivateNetworkRotationState, PrivateNetworkStatus,
@@ -78,7 +81,7 @@ impl ServerPrivateNetworkService {
                 .await?;
         }
         if input.connection_mode == ServerConnectionModeDto::DirectSsh {
-            self.networks_disable(server_id).await?;
+            self.disable(server_id).await?;
             return Ok(direct_network(server_id));
         }
         let status = if input.connection_mode == ServerConnectionModeDto::ExternalPrivateNetwork {
@@ -113,30 +116,55 @@ impl ServerPrivateNetworkService {
 
     pub async fn disable(&self, server_id: i64) -> sqlx::Result<()> {
         self.assert_server(server_id).await?;
+        // Resolve the persisted config before deleting the row: teardown needs
+        // the tunnel address and SSH port to remove the remote gateway rules.
+        let gateway = match self.networks_get(server_id).await? {
+            Some(network) => Some(self.gateway_target(server_id, &network).await),
+            None => None,
+        };
         let iface = interface_name(server_id);
-        let local_exec = crate::services::compute::compose::remote::agent_executor_for(None)
-            .await
-            .map_err(sqlx::Error::Protocol)?;
-        let local_os = crate::utils::os::OsCli::new(&local_exec);
-        let _ = local_os
-            .wireguard()
-            .quick(os::wireguard::WireGuardQuickAction::Down, &iface)
-            .run()
-            .await;
 
-        if let Ok(executor) = crate::services::compute::compose::remote::remote_executor(
-            &self.queries.pool,
-            server_id,
-        )
-        .await
-        {
-            let remote_exec = CommandExecutor::Remote(Box::new(executor));
-            let remote_os = crate::utils::os::OsCli::new(&remote_exec);
-            let _ = remote_os
-                .wireguard()
-                .quick(os::wireguard::WireGuardQuickAction::Down, &iface)
-                .run()
-                .await;
+        // WireGuard lives in the monitoring Agent's network namespace, so the
+        // teardown must run through the Agent. SSH would look at the host
+        // namespace instead and leave the interface and gateway rules orphaned.
+        match self.executors(server_id).await {
+            Ok((local, remote)) => {
+                let _ = KernelWireGuardBackend::new(&local, &remote)
+                    .teardown(&iface, gateway.as_ref())
+                    .await;
+            }
+            Err(error) => {
+                tracing::warn!(
+                    server_id,
+                    %error,
+                    "Agent unavailable during private-network disable; falling back to SSH/local cleanup"
+                );
+                if let Ok(local) =
+                    crate::services::compute::compose::remote::agent_executor_for(None).await
+                {
+                    let _ = os::OsCli::new(&local)
+                        .wireguard()
+                        .interface(&iface)
+                        .remove()
+                        .await;
+                }
+                if let Ok(executor) = crate::services::compute::compose::remote::remote_executor(
+                    &self.queries.pool,
+                    server_id,
+                )
+                .await
+                {
+                    let remote_exec = CommandExecutor::Remote(Box::new(executor));
+                    let _ = os::OsCli::new(&remote_exec)
+                        .wireguard()
+                        .interface(&iface)
+                        .remove()
+                        .await;
+                    if let Some(gateway) = gateway.as_ref() {
+                        KernelWireGuardBackend::disable_gateway(&remote_exec, gateway).await;
+                    }
+                }
+            }
         }
 
         self.networks_disable(server_id).await
@@ -167,10 +195,9 @@ impl ServerPrivateNetworkService {
             return self.get_required(server_id).await;
         }
         self.with_operation(server_id, PrivateNetworkOperation::Repair, async {
-            let (local, remote) = self.executors(server_id).await?;
-            let backend = KernelWireGuardBackend::new(&local, &remote);
-            let interface = interface_name(server_id);
-            let _ = backend.teardown(&interface).await;
+            // Do not tear down before reinstalling: the backend self-heals the
+            // stale interface and reuses the existing keypair, so repair keeps
+            // the remote public key stable.
             self.networks_set_runtime_state(
                 server_id,
                 PrivateNetworkStatus::Configuring,
@@ -190,10 +217,12 @@ impl ServerPrivateNetworkService {
         self.require_managed_wireguard(server_id).await?;
         let _ = self.networks_force_release_operation(server_id).await;
         self.with_operation(server_id, PrivateNetworkOperation::Setup, async {
+            let network = self.get_model(server_id).await?;
+            let gateway = self.gateway_target(server_id, &network).await;
             let (local, remote) = self.executors(server_id).await?;
             let backend = KernelWireGuardBackend::new(&local, &remote);
             let interface = interface_name(server_id);
-            let _ = backend.teardown(&interface).await;
+            let _ = backend.teardown(&interface, Some(&gateway)).await;
             self.networks_set_runtime_state(
                 server_id,
                 PrivateNetworkStatus::Configuring,
@@ -215,6 +244,8 @@ impl ServerPrivateNetworkService {
                 let cidr = required(network.tunnel_address.as_deref(), "tunnel_address")?;
                 let endpoint = required(network.endpoint.as_deref(), "endpoint")?;
                 let (panel_address, remote_address, remote_host) = tunnel_addresses(cidr)?;
+                let ssh_port = self.direct_ssh_port(server_id).await?;
+                let gateway_host = self.server_gateway_host(server_id).await;
                 let (local, remote) = self.executors(server_id).await?;
                 let backend = KernelWireGuardBackend::new(&local, &remote);
                 let interface = interface_name(server_id);
@@ -236,14 +267,28 @@ impl ServerPrivateNetworkService {
                             .unwrap_or(20),
                         routes: serde_json::from_str(&network.routes)
                             .map_err(|error| sqlx::Error::Protocol(error.to_string()))?,
+                        ssh_port,
+                        gateway_host,
                     })
                     .await?;
                 self.verify_private_ssh(server_id, &remote_host).await?;
+                let latest_handshake = backend
+                    .health(&interface)
+                    .await
+                    .ok()
+                    .and_then(|health| health.latest_handshake);
                 self.networks_set_runtime_state(
                     server_id,
                     PrivateNetworkStatus::Active,
                     Some(&public_key),
+                    latest_handshake,
+                )
+                .await?;
+                self.networks_set_health(
+                    server_id,
+                    PrivateNetworkHealthStatus::Healthy,
                     None,
+                    latest_handshake,
                 )
                 .await?;
                 self.get_required(server_id).await
@@ -394,10 +439,11 @@ impl ServerPrivateNetworkService {
         {
             return self.networks_disable(server_id).await;
         }
+        let gateway = self.gateway_target(server_id, &network).await;
         self.with_operation(server_id, PrivateNetworkOperation::Teardown, async {
             let (local, remote) = self.executors(server_id).await?;
             KernelWireGuardBackend::new(&local, &remote)
-                .teardown(&interface_name(server_id))
+                .teardown(&interface_name(server_id), Some(&gateway))
                 .await?;
             self.networks_disable(server_id).await?;
             Ok(())
@@ -449,6 +495,19 @@ impl ServerPrivateNetworkService {
             self.record_setup_failure(server_id, None, &message).await?;
             return Err(error);
         }
+        // The gateway DNAT target is the server's management address, not the
+        // possibly NAT-ed WireGuard endpoint.
+        let gateway_host = self.server_gateway_host(server_id).await;
+        let ssh_port = match self.direct_ssh_port(server_id).await {
+            Ok(port) => port,
+            Err(error) => {
+                let message = format!(
+                    "Managed WireGuard setup failed: the server's SSH port is unavailable: {error}"
+                );
+                self.record_setup_failure(server_id, None, &message).await?;
+                return Err(sqlx::Error::Protocol(message));
+            }
+        };
 
         let (panel_address, remote_address, remote_host) = tunnel_addresses(cidr)?;
         let (local, remote) = self.executors(server_id).await?;
@@ -470,6 +529,8 @@ impl ServerPrivateNetworkService {
                     .unwrap_or(20),
                 routes: serde_json::from_str(&network.routes)
                     .map_err(|error| sqlx::Error::Protocol(error.to_string()))?,
+                ssh_port,
+                gateway_host,
             })
             .await;
         match public_key {
@@ -839,7 +900,7 @@ impl ServerPrivateNetworkService {
         Ok(())
     }
 
-    async fn verify_private_ssh(&self, server_id: i64, host: &str) -> sqlx::Result<()> {
+    async fn direct_ssh_port(&self, server_id: i64) -> sqlx::Result<u16> {
         let (_, port, _username, _private_key, _public_key) =
             crate::services::infrastructure::server::direct_ssh_credentials(
                 &self.queries,
@@ -847,9 +908,45 @@ impl ServerPrivateNetworkService {
             )
             .await?
             .ok_or(sqlx::Error::RowNotFound)?;
-        let port: u16 = port
-            .try_into()
-            .map_err(|error: std::num::TryFromIntError| sqlx::Error::Protocol(error.to_string()))?;
+        port.try_into()
+            .map_err(|error: std::num::TryFromIntError| sqlx::Error::Protocol(error.to_string()))
+    }
+
+    /// Address of the remote Docker host as seen from inside the Agent
+    /// container, used as the DNAT target for SSH over the tunnel. This is the
+    /// server's management address, not the WireGuard endpoint: a NAT/public
+    /// endpoint points at the router, so DNAT-ing SSH to it blackholes.
+    async fn server_gateway_host(&self, server_id: i64) -> Option<String> {
+        let address = self
+            .queries
+            .servers_get_by_id(server_id)
+            .await
+            .ok()?
+            .ip_address;
+        if is_local_server_address(&address) {
+            return None;
+        }
+        resolve_gateway_host(&address).await
+    }
+
+    /// Remote gateway state used to clean up forwarding/NAT rules. Resolution
+    /// is best-effort so teardown still proceeds when DNS is unavailable.
+    async fn gateway_target(
+        &self,
+        server_id: i64,
+        network: &ServerPrivateNetworks,
+    ) -> WireGuardGateway {
+        let host_ip = self.server_gateway_host(server_id).await;
+        WireGuardGateway {
+            interface: interface_name(server_id),
+            tunnel_ip: network.private_host.clone().unwrap_or_default(),
+            host_ip,
+            ssh_port: self.direct_ssh_port(server_id).await.unwrap_or(22),
+        }
+    }
+
+    async fn verify_private_ssh(&self, server_id: i64, host: &str) -> sqlx::Result<()> {
+        let port = self.direct_ssh_port(server_id).await?;
 
         // The WireGuard interface lives inside the LOCAL AGENT container, not
         // the panel process — so the reachability check must run from the agent
@@ -1150,26 +1247,49 @@ fn orphaned_managed_interfaces(
         .collect()
 }
 
-async fn resolve_wireguard_endpoint(endpoint: &str) -> sqlx::Result<()> {
+/// Resolve the endpoint and return its IPv4 address, if any. The tunnel's SSH
+/// gateway rules are IPv4-only, so a DNS-only endpoint still needs an A record
+/// to be DNAT-able.
+async fn resolve_wireguard_endpoint(endpoint: &str) -> sqlx::Result<Option<String>> {
     let target = if endpoint.contains(':') {
         endpoint.to_string()
     } else {
         format!("{endpoint}:51820")
     };
-    tokio::net::lookup_host(&target)
+    let addresses = tokio::net::lookup_host(&target)
         .await
         .map_err(|error| {
             sqlx::Error::Protocol(format!(
                 "Remote WireGuard endpoint '{endpoint}' could not be resolved: {error}. Enter the remote server's reachable public IP or DNS name with its UDP port, for example 163.44.122.248:51820"
             ))
         })?
-        .next()
-        .ok_or_else(|| {
-            sqlx::Error::Protocol(format!(
-                "Remote WireGuard endpoint '{endpoint}' resolved to no addresses. Check the hostname and DNS configuration"
-            ))
-        })?;
-    Ok(())
+        .collect::<Vec<_>>();
+    if addresses.is_empty() {
+        return Err(sqlx::Error::Protocol(format!(
+            "Remote WireGuard endpoint '{endpoint}' resolved to no addresses. Check the hostname and DNS configuration"
+        )));
+    }
+    Ok(addresses
+        .into_iter()
+        .find(|address| address.is_ipv4())
+        .map(|address| address.ip().to_string()))
+}
+
+async fn resolve_gateway_host(endpoint: &str) -> Option<String> {
+    match resolve_wireguard_endpoint(endpoint).await {
+        Ok(Some(host)) => Some(host),
+        _ => endpoint_ipv4(endpoint),
+    }
+}
+
+fn endpoint_ipv4(endpoint: &str) -> Option<String> {
+    if let Ok(address) = endpoint.parse::<std::net::SocketAddr>() {
+        return address.ip().is_ipv4().then(|| address.ip().to_string());
+    }
+    let (host, _) = endpoint.rsplit_once(':')?;
+    host.parse::<std::net::Ipv4Addr>()
+        .ok()
+        .map(|address| address.to_string())
 }
 
 fn should_auto_repair(status: PrivateNetworkHealthStatusDto, consecutive_failures: i64) -> bool {

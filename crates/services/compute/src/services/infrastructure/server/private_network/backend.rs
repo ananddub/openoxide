@@ -17,6 +17,20 @@ pub struct WireGuardInstallPlan<'a> {
     pub port: u16,
     pub keepalive: u16,
     pub routes: Vec<String>,
+    pub ssh_port: u16,
+    /// Resolved IPv4 of the endpoint, used as the DNAT target for SSH over
+    /// the tunnel. `None` when the endpoint has no IPv4 record.
+    pub gateway_host: Option<String>,
+}
+
+/// Remote-side forwarding/NAT state that must be removed alongside the
+/// WireGuard interface.
+#[derive(Debug, Clone)]
+pub struct WireGuardGateway {
+    pub interface: String,
+    pub tunnel_ip: String,
+    pub host_ip: Option<String>,
+    pub ssh_port: u16,
 }
 
 #[derive(Debug, Clone)]
@@ -29,7 +43,11 @@ pub struct KernelWireGuardHealth {
 
 pub(super) trait ManagedWireGuardBackend {
     async fn install(&self, plan: &WireGuardInstallPlan<'_>) -> sqlx::Result<String>;
-    async fn teardown(&self, interface: &str) -> sqlx::Result<()>;
+    async fn teardown(
+        &self,
+        interface: &str,
+        gateway: Option<&WireGuardGateway>,
+    ) -> sqlx::Result<()>;
     async fn health(&self, interface: &str) -> sqlx::Result<KernelWireGuardHealth>;
     async fn rotate(&self, plan: &WireGuardInstallPlan<'_>) -> sqlx::Result<String>;
 }
@@ -89,6 +107,24 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
             );
         }
 
+        // Reuse the keypair from a previous install when its config survived,
+        // so repair/retry keeps the remote public key stable. Rotation removes
+        // the configs first, so it still gets fresh keys.
+        let local_private = local
+            .wireguard()
+            .interface(plan.interface)
+            .snapshot_config()
+            .await
+            .ok()
+            .and_then(|config| private_key_from_config(&config));
+        let remote_private = remote
+            .wireguard()
+            .interface(plan.interface)
+            .snapshot_config()
+            .await
+            .ok()
+            .and_then(|config| private_key_from_config(&config));
+
         // Self-heal orphaned state: a previous setup attempt may have created
         // the interface on one or both hosts and then failed a later step
         // (firewall, DB, validation), leaving an interface the panel never
@@ -120,24 +156,30 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
             let _ = remote.wireguard().interface(plan.interface).remove().await;
         }
 
-        let panel_private = local
-            .wireguard()
-            .key()
-            .generate()
-            .await
-            .map_err(Self::protocol)?;
+        let panel_private = match local_private {
+            Some(key) => key,
+            None => local
+                .wireguard()
+                .key()
+                .generate()
+                .await
+                .map_err(Self::protocol)?,
+        };
         let panel_public = local
             .wireguard()
             .key()
             .public_from_private(&panel_private)
             .await
             .map_err(Self::protocol)?;
-        let remote_private = remote
-            .wireguard()
-            .key()
-            .generate()
-            .await
-            .map_err(Self::protocol)?;
+        let remote_private = match remote_private {
+            Some(key) => key,
+            None => remote
+                .wireguard()
+                .key()
+                .generate()
+                .await
+                .map_err(Self::protocol)?,
+        };
         let remote_public = remote
             .wireguard()
             .key()
@@ -199,13 +241,31 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
         // must not fail the whole setup (the tunnel itself is already up).
         // Make the remote agent a gateway: forward + NAT so tunnel traffic
         // reaches the host, and DNAT the tunnel IP's SSH to the host's sshd.
-        let host_ip = plan.endpoint.rsplit_once(':').map(|(h, _)| h).unwrap_or("");
-        Self::enable_gateway(self.remote, plan.interface, &plan.remote_host, host_ip).await;
+        Self::enable_gateway(
+            self.remote,
+            &WireGuardGateway {
+                interface: plan.interface.to_owned(),
+                tunnel_ip: plan.remote_host.clone(),
+                host_ip: plan.gateway_host.clone(),
+                ssh_port: plan.ssh_port,
+            },
+        )
+        .await;
 
         Ok(remote_public)
     }
 
-    async fn teardown(&self, interface: &str) -> sqlx::Result<()> {
+    async fn teardown(
+        &self,
+        interface: &str,
+        gateway: Option<&WireGuardGateway>,
+    ) -> sqlx::Result<()> {
+        // Remove the gateway rules first: they are independent of the
+        // interface and would otherwise survive teardown, silently forwarding
+        // tunnel traffic after the network was deleted.
+        if let Some(gateway) = gateway {
+            Self::disable_gateway(self.remote, gateway).await;
+        }
         let local = OsCli::new(self.local);
         let remote = OsCli::new(self.remote);
         let local_result = local.wireguard().interface(interface).remove().await;
@@ -258,7 +318,9 @@ impl ManagedWireGuardBackend for KernelWireGuardBackend<'_> {
             .snapshot_config()
             .await
             .map_err(Self::protocol)?;
-        self.teardown(plan.interface).await?;
+        // Keep the gateway rules: rotation only changes keys, so the existing
+        // SSH forwarding stays valid and survives a rollback untouched.
+        self.teardown(plan.interface, None).await?;
         match self.install(plan).await {
             Ok(public_key) => {
                 if let Err(error) = local.network().ping(&plan.remote_host).run().await {
@@ -291,49 +353,25 @@ impl KernelWireGuardBackend<'_> {
     /// Enable in-container forwarding + NAT so the agent routes tunnel traffic
     /// to its host. The remote agent interface holds the tunnel IP (e.g.
     /// 10.100.1.2); SSH to that IP must reach the host's sshd, so we DNAT the
-    /// tunnel IP's TCP 22 to the host's real IP and MASQUERADE the forwarded
-    /// traffic. Idempotent and best-effort (ignores already-exists / no
-    /// iptables).
-    async fn enable_gateway(
-        exec: &CommandExecutor,
-        interface: &str,
-        tunnel_ip: &str,
-        host_ip: &str,
-    ) {
+    /// tunnel IP's configured SSH port to the host's real IP and MASQUERADE the
+    /// forwarded traffic. Idempotent and best-effort (ignores already-exists /
+    /// no iptables).
+    async fn enable_gateway(exec: &CommandExecutor, gateway: &WireGuardGateway) {
         let _ = exec
             .run(
                 "sh",
                 ["-c", "sysctl -w net.ipv4.ip_forward=1 2>/dev/null || true"],
             )
             .await;
-        let mut rules = vec![
-            // Forwarding to/from the WireGuard interface only. (We must NOT
-            // broadly MASQUERADE 10.0.0.0/8 — Docker's own networks here are
-            // 10.0.0.0/24 (swarm ingress) and 10.0.1.0/24 (panel↔agent); a
-            // blanket rule mangles their source IPs and kills ALL container
-            // networking, which looked like "the whole server lost access".)
-            format!(
-                "iptables -C FORWARD -i {interface} -j ACCEPT 2>/dev/null || iptables -A FORWARD -i {interface} -j ACCEPT"
-            ),
-            format!(
-                "iptables -C FORWARD -o {interface} -j ACCEPT 2>/dev/null || iptables -A FORWARD -o {interface} -j ACCEPT"
-            ),
-        ];
-        // DNAT: SSH to the tunnel IP → the host's sshd, and MASQUERADE ONLY
-        // that forwarded SSH flow (so return packets come back through us).
-        // Scoped to host_ip:22 — never the broad 10/8.
-        if !host_ip.is_empty() && host_ip != tunnel_ip && !tunnel_ip.is_empty() {
-            rules.push(format!(
-                "iptables -t nat -C PREROUTING -d {tunnel_ip} -p tcp --dport 22 -j DNAT --to-destination {host_ip}:22 2>/dev/null || iptables -t nat -A PREROUTING -d {tunnel_ip} -p tcp --dport 22 -j DNAT --to-destination {host_ip}:22"
-            ));
-            rules.push(format!(
-                "iptables -t nat -C OUTPUT -d {tunnel_ip} -p tcp --dport 22 -j DNAT --to-destination {host_ip}:22 2>/dev/null || iptables -t nat -A OUTPUT -d {tunnel_ip} -p tcp --dport 22 -j DNAT --to-destination {host_ip}:22"
-            ));
-            rules.push(format!(
-                "iptables -t nat -C POSTROUTING -d {host_ip} -p tcp --dport 22 -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -d {host_ip} -p tcp --dport 22 -j MASQUERADE"
-            ));
+        for rule in gateway_install_rules(gateway) {
+            let _ = exec.run("sh", ["-c", &rule]).await;
         }
-        for rule in rules {
+    }
+
+    /// Undo [`Self::enable_gateway`]. Best-effort: a missing rule (or a host
+    /// without iptables) must not block deleting the network.
+    pub(super) async fn disable_gateway(exec: &CommandExecutor, gateway: &WireGuardGateway) {
+        for rule in gateway_remove_rules(gateway) {
             let _ = exec.run("sh", ["-c", &rule]).await;
         }
     }
@@ -379,9 +417,144 @@ impl KernelWireGuardBackend<'_> {
     }
 }
 
+fn gateway_nat_host(gateway: &WireGuardGateway) -> Option<&str> {
+    let host_ip = gateway.host_ip.as_deref()?;
+    (!host_ip.is_empty() && host_ip != gateway.tunnel_ip.as_str() && !gateway.tunnel_ip.is_empty())
+        .then_some(host_ip)
+}
+
+fn gateway_install_rules(gateway: &WireGuardGateway) -> Vec<String> {
+    let interface = &gateway.interface;
+    // Forwarding to/from the WireGuard interface only. (We must NOT broadly
+    // MASQUERADE 10.0.0.0/8 — Docker's own networks here are 10.0.0.0/24
+    // (swarm ingress) and 10.0.1.0/24 (panel↔agent); a blanket rule mangles
+    // their source IPs and kills ALL container networking.)
+    let mut rules = vec![
+        format!(
+            "iptables -C FORWARD -i {interface} -j ACCEPT 2>/dev/null || iptables -A FORWARD -i {interface} -j ACCEPT"
+        ),
+        format!(
+            "iptables -C FORWARD -o {interface} -j ACCEPT 2>/dev/null || iptables -A FORWARD -o {interface} -j ACCEPT"
+        ),
+    ];
+    if let Some(host_ip) = gateway_nat_host(gateway) {
+        let tunnel_ip = &gateway.tunnel_ip;
+        let port = gateway.ssh_port;
+        rules.push(format!(
+            "iptables -t nat -C PREROUTING -d {tunnel_ip} -p tcp --dport {port} -j DNAT --to-destination {host_ip}:{port} 2>/dev/null || iptables -t nat -A PREROUTING -d {tunnel_ip} -p tcp --dport {port} -j DNAT --to-destination {host_ip}:{port}"
+        ));
+        rules.push(format!(
+            "iptables -t nat -C OUTPUT -d {tunnel_ip} -p tcp --dport {port} -j DNAT --to-destination {host_ip}:{port} 2>/dev/null || iptables -t nat -A OUTPUT -d {tunnel_ip} -p tcp --dport {port} -j DNAT --to-destination {host_ip}:{port}"
+        ));
+        rules.push(format!(
+            "iptables -t nat -C POSTROUTING -d {host_ip} -p tcp --dport {port} -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -d {host_ip} -p tcp --dport {port} -j MASQUERADE"
+        ));
+    }
+    rules
+}
+
+fn gateway_remove_rules(gateway: &WireGuardGateway) -> Vec<String> {
+    let interface = &gateway.interface;
+    let mut rules = vec![
+        format!("iptables -D FORWARD -i {interface} -j ACCEPT 2>/dev/null || true"),
+        format!("iptables -D FORWARD -o {interface} -j ACCEPT 2>/dev/null || true"),
+    ];
+    if let Some(host_ip) = gateway_nat_host(gateway) {
+        let tunnel_ip = &gateway.tunnel_ip;
+        let port = gateway.ssh_port;
+        rules.push(format!(
+            "iptables -t nat -D PREROUTING -d {tunnel_ip} -p tcp --dport {port} -j DNAT --to-destination {host_ip}:{port} 2>/dev/null || true"
+        ));
+        rules.push(format!(
+            "iptables -t nat -D OUTPUT -d {tunnel_ip} -p tcp --dport {port} -j DNAT --to-destination {host_ip}:{port} 2>/dev/null || true"
+        ));
+        rules.push(format!(
+            "iptables -t nat -D POSTROUTING -d {host_ip} -p tcp --dport {port} -j MASQUERADE 2>/dev/null || true"
+        ));
+    }
+    rules
+}
+
+fn private_key_from_config(config: &str) -> Option<String> {
+    config.lines().find_map(|line| {
+        let (name, value) = line.split_once('=')?;
+        if name.trim() != "PrivateKey" {
+            return None;
+        }
+        let value = value.trim();
+        (!value.is_empty() && !value.chars().any(char::is_whitespace)).then(|| value.to_owned())
+    })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::KernelWireGuardBackend;
+    use super::{
+        KernelWireGuardBackend, WireGuardGateway, gateway_install_rules, gateway_remove_rules,
+        private_key_from_config,
+    };
+
+    const PRIVATE_KEY: &str = "DM5qhLAE20PG9BbfBCger+Ac9D2NDOwCtY1rbYDLf34=";
+
+    fn gateway() -> WireGuardGateway {
+        WireGuardGateway {
+            interface: "openoxide2".into(),
+            tunnel_ip: "10.77.2.2".into(),
+            host_ip: Some("203.0.113.10".into()),
+            ssh_port: 2222,
+        }
+    }
+
+    #[test]
+    fn gateway_rules_use_the_configured_ssh_port() {
+        let rules = gateway_install_rules(&gateway());
+        assert!(
+            rules.iter().any(
+                |rule| rule.contains("--dport 2222 -j DNAT --to-destination 203.0.113.10:2222")
+            )
+        );
+        assert!(rules.iter().any(|rule| rule.contains("-A POSTROUTING")));
+        assert!(rules.iter().all(|rule| !rule.contains("--dport 22 ")));
+
+        let cleanup = gateway_remove_rules(&gateway());
+        assert!(cleanup.iter().all(|rule| rule.contains("-D ")));
+        assert!(
+            cleanup
+                .iter()
+                .any(|rule| rule.contains("--dport 2222 -j DNAT"))
+        );
+    }
+
+    #[test]
+    fn gateway_rules_skip_nat_without_a_host_ip() {
+        let gateway = WireGuardGateway {
+            host_ip: None,
+            ..gateway()
+        };
+        let rules = gateway_install_rules(&gateway);
+        assert!(rules.iter().all(|rule| !rule.contains("-t nat")));
+        assert_eq!(rules.len(), 2);
+    }
+
+    #[test]
+    fn reads_private_keys_from_existing_configs() {
+        let config = concat!(
+            "[Interface]\nPrivateKey = DM5qhLAE20PG9BbfBCger+Ac9D2NDOwCtY1rbYDLf34=\n",
+            "Address = 10.77.2.1/24\n\n[Peer]\n",
+            "PublicKey = nwQHKWewX3F+JSitCr3JSYVfwJg1Gc9kU12xjz5HpmM=\n"
+        );
+        assert_eq!(
+            private_key_from_config(&config).as_deref(),
+            Some(PRIVATE_KEY)
+        );
+        assert_eq!(
+            private_key_from_config("[Interface]\nAddress = 10.77.2.1/24\n"),
+            None
+        );
+        assert_eq!(
+            private_key_from_config("[Interface]\nPrivateKey = \n"),
+            None
+        );
+    }
 
     #[test]
     fn rotation_error_reports_incomplete_rollback() {

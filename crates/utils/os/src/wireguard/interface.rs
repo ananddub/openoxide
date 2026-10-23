@@ -123,9 +123,36 @@ impl<'a> WireGuardInterfaceBuilder<'a> {
 
         // 4. Bring the link up (with MTU when configured).
         let mtu = config.mtu.unwrap_or(1420).to_string();
-        self.executor
-            .run("ip", ["link", "set", "mtu", mtu.as_str(), "up", "dev", name])
+        let output = match self
+            .executor
+            .run(
+                "ip",
+                ["link", "set", "mtu", mtu.as_str(), "up", "dev", name],
+            )
             .await
+        {
+            Ok(output) => output,
+            Err(error) => {
+                let _ = self.bring_down_direct().await;
+                return Err(error);
+            }
+        };
+
+        // 5. Install the peer routes. wg-quick does this implicitly from
+        //    AllowedIPs; the direct path must do it explicitly or only the
+        //    interface subnet is reachable and custom routes silently do
+        //    nothing. `replace` keeps retries idempotent.
+        for route in route_destinations(config) {
+            if let Err(error) = self
+                .executor
+                .run("ip", ["route", "replace", route, "dev", name])
+                .await
+            {
+                let _ = self.bring_down_direct().await;
+                return Err(error);
+            }
+        }
+        Ok(output)
     }
 
     async fn bring_down_direct(&self) -> ExecResult<ExecOutput> {
@@ -136,13 +163,19 @@ impl<'a> WireGuardInterfaceBuilder<'a> {
 
     pub async fn remove(self) -> ExecResult<ExecOutput> {
         validate_interface_name(&self.name)?;
-        let _ = WireGuardQuickBuilder::new(
+        let quick = WireGuardQuickBuilder::new(
             self.executor,
             WireGuardQuickAction::Down,
             self.name.clone(),
         )
         .run()
         .await;
+        // `wg-quick down` needs the rendered conf; an interface created
+        // directly (or whose conf is already gone) would otherwise survive
+        // teardown. Fall back to deleting the link itself.
+        if quick.is_err() {
+            let _ = self.bring_down_direct().await;
+        }
         OsCli::new(self.executor)
             .file(format!("/etc/wireguard/{}.conf", self.name))
             .delete()
@@ -265,6 +298,14 @@ impl<'a> WireGuardInterfaceBuilder<'a> {
     }
 }
 
+fn route_destinations(config: &WireGuardConfig) -> Vec<&str> {
+    config
+        .peers
+        .iter()
+        .flat_map(|peer| peer.allowed_ips.iter().map(String::as_str))
+        .collect()
+}
+
 fn parse_handshakes(value: &str) -> ExecResult<Vec<WireGuardHandshake>> {
     let mut keys = HashSet::new();
     value
@@ -349,10 +390,30 @@ fn command_error(message: &str) -> crate::exec::ExecError {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_allowed_ips, parse_handshakes, parse_peer_public_keys};
+    use super::{parse_allowed_ips, parse_handshakes, parse_peer_public_keys, route_destinations};
+    use crate::wireguard::{WireGuardConfig, WireGuardPeer};
 
     const KEY_ONE: &str = "DM5qhLAE20PG9BbfBCger+Ac9D2NDOwCtY1rbYDLf34=";
     const KEY_TWO: &str = "nwQHKWewX3F+JSitCr3JSYVfwJg1Gc9kU12xjz5HpmM=";
+
+    #[test]
+    fn installs_routes_for_every_peer_allowed_ip() {
+        let config = WireGuardConfig {
+            private_key: KEY_ONE.into(),
+            addresses: vec!["10.77.8.1/24".into()],
+            peers: vec![WireGuardPeer {
+                public_key: KEY_TWO.into(),
+                allowed_ips: vec!["10.77.8.2/32".into(), "192.168.1.0/24".into()],
+                endpoint: None,
+                persistent_keepalive: None,
+            }],
+            ..Default::default()
+        };
+        assert_eq!(
+            route_destinations(&config),
+            ["10.77.8.2/32", "192.168.1.0/24"]
+        );
+    }
 
     #[test]
     fn parses_latest_handshakes() {
