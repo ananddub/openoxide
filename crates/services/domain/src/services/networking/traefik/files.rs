@@ -257,8 +257,11 @@ impl TraefikService {
             let _ = os.dir(&parent_str).create().run().await;
         }
 
+        let existed_before = os.file(&path_str).exists().run().await.is_ok();
         let backup_path = format!("{}.bak", path_str);
-        let _ = os.file(&path_str).copy(&backup_path).execute().await;
+        if existed_before {
+            let _ = os.file(&path_str).copy(&backup_path).execute().await;
+        }
 
         let tmp_path = format!("{}.tmp", path_str);
         let write_out = os
@@ -288,9 +291,27 @@ impl TraefikService {
         tokio::time::sleep(std::time::Duration::from_millis(750)).await;
         let health = self.check_health(payload.server_id).await?;
         if !health.is_healthy {
-            let rollback = os.file(&backup_path).copy(&path_str).execute().await;
+            // A new file has nothing to restore; deleting it is the rollback.
+            // Forcing the copy makes a missing/stale backup an error instead
+            // of a silent no-op that claims the old content is back.
+            let (restored, rollback) = if existed_before {
+                (
+                    "previous file restored",
+                    os.file(&backup_path)
+                        .copy(&path_str)
+                        .force(false)
+                        .execute()
+                        .await
+                        .map(|_| ()),
+                )
+            } else {
+                (
+                    "new file removed",
+                    os.file(&path_str).delete().run().await.map(|_| ()),
+                )
+            };
             return Err(format!(
-                "Traefik rejected the configuration; previous file restored: {}{}",
+                "Traefik rejected the configuration; {restored}: {}{}",
                 health.configuration_errors.join("; "),
                 rollback
                     .err()

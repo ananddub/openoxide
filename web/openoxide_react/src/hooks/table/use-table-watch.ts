@@ -67,6 +67,9 @@ export function useTableWatch(): void {
 					error.code === Code.Unauthenticated
 				) {
 					const refresh = await refreshAccessToken().catch(() => null);
+					// Session is dead: the app shell drops the user and routes to
+					// sign-in — reconnecting would just loop against a 401.
+					if (refresh?.status === 'expired') return;
 					authHealed = refresh?.status === 'ok';
 				}
 				if (!closed && !abort.signal.aborted) {

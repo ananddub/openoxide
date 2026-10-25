@@ -53,6 +53,19 @@ function isSessionRejected(error: unknown): boolean {
 	);
 }
 
+/** Drops the persisted session as well as the in-memory one. The provider's
+ *  logout clears storage too, but during the first-load bootstrap it has not
+ *  mounted yet (getSessionActions() is null), and a rejected refresh there
+ *  must still not leave dead tokens behind for the next reload to retry. */
+function endSession(logout: () => void) {
+	try {
+		localStorage.removeItem(AUTH_STORAGE_KEY);
+	} catch {
+		/* storage unavailable — the router guard still drops the in-memory user */
+	}
+	logout();
+}
+
 // NOTE: created lazily inside refreshAccessToken(), never at module scope.
 // client.ts ↔ connect.ts ↔ query.ts is an import cycle; a module-level
 // createServiceClient() runs while connect.ts's transport is still
@@ -62,7 +75,12 @@ function isSessionRejected(error: unknown): boolean {
 export async function refreshAccessToken(): Promise<RefreshResult> {
 	if (refreshPromise) return refreshPromise;
 
-	refreshPromise = (async () => {
+	// The in-flight promise must be assigned here, not inside the IIFE: an
+	// early return (missing session, retry cooldown) settles synchronously, so
+	// the old `finally { refreshPromise = null }` ran BEFORE the assignment and
+	// the settled promise was then cached forever — every later call replayed
+	// that stale result instead of retrying the backend.
+	const attempt = (async (): Promise<RefreshResult> => {
 		let refreshToken = '';
 		// The api layer may load before the provider mounts; fall back to no-ops so token refresh never crashes on early calls.
 		const {logout, setAuth} = getSessionActions() ?? {
@@ -72,14 +90,14 @@ export async function refreshAccessToken(): Promise<RefreshResult> {
 		try {
 			const sessionRaw = localStorage.getItem(AUTH_STORAGE_KEY);
 			if (!sessionRaw || sessionRaw === 'undefined') {
-				logout();
+				endSession(logout);
 				return {status: 'expired'};
 			}
 
 			const session = JSON.parse(sessionRaw);
 			refreshToken = session?.tokens?.refreshToken || '';
 			if (!refreshToken) {
-				logout();
+				endSession(logout);
 				return {status: 'expired'};
 			}
 			if (
@@ -92,7 +110,7 @@ export async function refreshAccessToken(): Promise<RefreshResult> {
 				refreshToken,
 			});
 			if (!response.user || !response.tokens) {
-				logout();
+				endSession(logout);
 				return {status: 'expired'};
 			}
 
@@ -125,7 +143,7 @@ export async function refreshAccessToken(): Promise<RefreshResult> {
 				// or revoked. End the session now.
 				refreshRetryToken = '';
 				refreshRetryAfter = 0;
-				logout();
+				endSession(logout);
 				return {status: 'expired'};
 			}
 			// Network/transport/server failure: keep the session so the next
@@ -134,10 +152,13 @@ export async function refreshAccessToken(): Promise<RefreshResult> {
 			refreshRetryToken = refreshToken;
 			refreshRetryAfter = Date.now() + REFRESH_RETRY_COOLDOWN_MS;
 			return {status: 'transient'};
-		} finally {
-			refreshPromise = null;
 		}
 	})();
 
-	return refreshPromise;
+	refreshPromise = attempt;
+	try {
+		return await attempt;
+	} finally {
+		if (refreshPromise === attempt) refreshPromise = null;
+	}
 }

@@ -71,7 +71,7 @@ export type DeliveryStatusId = 'all' | 'DELIVERED' | 'FAILED' | 'PENDING';
 export const DELIVERY_STATUSES: {id: DeliveryStatusId; label: string}[] = [
 	{id: 'all', label: 'All Alerts'},
 	{id: 'DELIVERED', label: 'Delivered'},
-	{id: 'FAILED', label: 'Failed'},
+	{id: 'FAILED', label: 'Not delivered'},
 	{id: 'PENDING', label: 'Pending'},
 ];
 
@@ -85,7 +85,7 @@ const STATUS_META: Record<
 		icon: Check,
 	},
 	FAILED: {
-		label: 'Failed',
+		label: 'Not delivered',
 		tile: 'bg-rose-500/10 text-rose-400',
 		icon: X,
 	},

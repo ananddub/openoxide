@@ -4,7 +4,7 @@ import {
 	Bell,
 	Check,
 	CheckCheck,
-	Clock,
+	Info,
 	ListChecks,
 	Settings2,
 	X,
@@ -24,12 +24,32 @@ import {
 	DropdownMenuTrigger,
 } from '#/components/ui/dropdown';
 import {groupDeliveries} from '#/components/settings/notifications/notification-deliveries';
-import {triggerEventLabel} from '#/components/settings/notifications/notification-triggers';
+import {
+	type EventOutcome,
+	triggerEventLabel,
+	triggerOutcome,
+} from '#/components/settings/notifications/notification-triggers';
 
-const STATUS_DOT: Record<string, string> = {
-	DELIVERED: 'bg-emerald-500',
-	FAILED: 'bg-rose-500',
-	PENDING: 'bg-amber-500',
+/** Row colour/icon follow the event outcome (deploy succeeded, build failed),
+ *  not the channel delivery result — a green deploy whose Slack post failed is
+ *  still a successful deploy. Delivery problems are shown as secondary text. */
+const OUTCOME_META: Record<
+	EventOutcome,
+	{icon: typeof Check; iconClass: string; dot: string}
+> = {
+	success: {
+		icon: Check,
+		iconClass: 'text-emerald-500/80',
+		dot: 'bg-emerald-500',
+	},
+	failure: {icon: X, iconClass: 'text-rose-500/80', dot: 'bg-rose-500'},
+	info: {icon: Info, iconClass: 'text-sky-500/80', dot: 'bg-sky-500'},
+};
+
+const DELIVERY_LABEL: Record<string, string> = {
+	DELIVERED: 'delivered',
+	FAILED: 'delivery failed',
+	PENDING: 'delivery pending',
 };
 
 const ROWS = 8;
@@ -145,6 +165,9 @@ export function SidebarNotifications({collapsed}: {collapsed: boolean}) {
 						{recent.map(alert => {
 							const isRead = readIds.has(alert.id);
 							const isOpen = expanded === alert.id;
+							const meta =
+								OUTCOME_META[triggerOutcome(alert.trigger_name)];
+							const Icon = meta.icon;
 							return (
 								<button
 									key={alert.correlation_id}
@@ -160,10 +183,7 @@ export function SidebarNotifications({collapsed}: {collapsed: boolean}) {
 									<span
 										className={cn(
 											'mt-1.5 size-1.5 shrink-0 rounded-full',
-											isRead
-												? 'bg-muted-foreground/25'
-												: (STATUS_DOT[alert.status] ??
-														'bg-muted-foreground'),
+											isRead ? 'bg-muted-foreground/25' : meta.dot,
 										)}
 									/>
 									<span className="min-w-0 flex-1">
@@ -176,17 +196,28 @@ export function SidebarNotifications({collapsed}: {collapsed: boolean}) {
 												{alert.title ||
 													triggerEventLabel(alert.trigger_name)}
 											</span>
-											{alert.status === 'FAILED' ? (
-												<X className="ml-auto size-3.5 shrink-0 text-rose-500/80" />
-											) : alert.status === 'PENDING' ? (
-												<Clock className="ml-auto size-3.5 shrink-0 text-amber-500/80" />
-											) : (
-												<Check className="ml-auto size-3.5 shrink-0 text-emerald-500/80" />
-											)}
+											<Icon
+												className={cn(
+													'ml-auto size-3.5 shrink-0',
+													meta.iconClass,
+												)}
+											/>
 										</span>
 										<span className="mt-0.5 block truncate text-[11px] leading-tight text-muted-foreground">
 											{channelName(alert.notification_id)} ·{' '}
 											{timeAgo(alert.started_at)}
+											{alert.status === 'FAILED' && (
+												<span className="text-rose-500">
+													{' '}
+													· delivery failed
+												</span>
+											)}
+											{alert.status === 'PENDING' && (
+												<span className="text-amber-500">
+													{' '}
+													· delivery pending
+												</span>
+											)}
 										</span>
 										{isOpen && (
 											<span className="mt-1.5 flex flex-col gap-1 rounded-md bg-muted/40 px-2 py-1.5">
@@ -195,11 +226,13 @@ export function SidebarNotifications({collapsed}: {collapsed: boolean}) {
 												</span>
 												{alert.error && (
 													<span className="text-[11px] leading-snug break-words text-rose-500">
-														{alert.error}
+														Delivery error: {alert.error}
 													</span>
 												)}
 												<span className="font-mono text-[10px] text-muted-foreground">
-													{alert.status} · attempt {alert.attempt}
+													{DELIVERY_LABEL[alert.status] ??
+														alert.status.toLowerCase()}{' '}
+													· attempt {alert.attempt}
 													{alert.attempts > 1
 														? ` of ${alert.attempts}`
 														: ''}

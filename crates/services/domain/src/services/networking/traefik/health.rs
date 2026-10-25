@@ -13,18 +13,31 @@ impl TraefikService {
     ) -> Result<TraefikHealthResponseDto, String> {
         let executor = self.get_executor(server_id).await?;
         let os = OsCli::new(&executor);
+        let traefik_name = crate::utils::setup::SetupConfig::default().traefik_name;
 
-        let output = os
-            .http()
-            .get("http://127.0.0.1:8080/api/rawdata")
-            .timeout(5)
-            .execute()
-            .await;
-
-        let raw = match output {
-            Ok(out) if out.status.success() => out.stdout.trim().to_string(),
-            _ => String::new(),
-        };
+        // The agent executes commands inside its own container, where
+        // `127.0.0.1:8080` is the agent's loopback — not the Traefik dashboard
+        // published on the host. Try loopback first (bare-metal/host-network
+        // executors) and then the Traefik container name on the shared
+        // OpenOxide network, which is how the default containerized install is
+        // reachable. Without the fallback every file edit rolls back as
+        // "API unreachable".
+        let mut raw = String::new();
+        for url in [
+            "http://127.0.0.1:8080/api/rawdata".to_owned(),
+            format!("http://{traefik_name}:8080/api/rawdata"),
+        ] {
+            let output = os.http().get(url.as_str()).timeout(3).execute().await;
+            if let Ok(out) = output {
+                if out.status.success() {
+                    let body = out.stdout.trim().to_string();
+                    if !body.is_empty() {
+                        raw = body;
+                        break;
+                    }
+                }
+            }
+        }
 
         if raw.is_empty() {
             return Ok(TraefikHealthResponseDto {

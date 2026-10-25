@@ -91,6 +91,23 @@ export function triggerEventLabel(event: string): string {
 	);
 }
 
+/** Whether the event itself reports a success or a failure — independent of
+ *  whether the external channel accepted the message. */
+export type EventOutcome = 'success' | 'failure' | 'info';
+
+export function triggerOutcome(event: string): EventOutcome {
+	switch (event) {
+		case 'APP_DEPLOY':
+		case 'SCHEDULE_SUCCESS':
+			return 'success';
+		case 'APP_BUILD_ERROR':
+		case 'SCHEDULE_FAILURE':
+			return 'failure';
+		default:
+			return 'info';
+	}
+}
+
 export function triggerSummary(n: NotificationPayload): string {
 	const on = TRIGGERS.filter(t => n[t.key] === true).map(t => t.label);
 	if (on.length === 0) return 'No events selected';

@@ -1,15 +1,18 @@
+import {useEffect} from 'react';
 import {
 	createFileRoute,
 	Navigate,
 	Outlet,
 	redirect,
 	useLocation,
+	useNavigate,
 } from '@tanstack/react-router';
 import {SidebarProvider} from '#/components/ui/sidebar';
 import {AppSidebar} from '#/components/layouts/sidebar';
 import {TopBar} from '#/components/layouts/topbar';
 import {useTableWatch} from '#/hooks/table/use-table-watch';
-import {getSessionUser} from '#/stores/session-context';
+import {useSessionExpiry} from '#/hooks/auth/use-session-expiry';
+import {getSessionUser, useAuthSession} from '#/stores/session-context';
 
 export const Route = createFileRoute('/_app')({
 	beforeLoad: ({location}) => {
@@ -51,6 +54,16 @@ function AppNotFoundPlaceholder() {
 /** Dashboard shell, laid out like the Vercel dashboard: the nav rail runs the FULL viewport height on the left (top to bottom, no offsets), and the slim top bar (workspace switcher · page title · search) sits only over the content column, pinned above a single scrolling main area. */
 function AppLayout() {
 	useTableWatch();
+	useSessionExpiry();
+	const navigate = useNavigate();
+	const {isAuth} = useAuthSession();
+
+	// The router guard only runs on navigation. When the session dies while the
+	// user is sitting on a page (refresh token expired), logout() clears the
+	// user without a route change — without this the shell stays on screen.
+	useEffect(() => {
+		if (!isAuth) void navigate({to: '/singin', replace: true});
+	}, [isAuth, navigate]);
 
 	return (
 		<SidebarProvider className="h-dvh">
