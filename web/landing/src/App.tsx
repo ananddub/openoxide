@@ -5,6 +5,7 @@ import {Stats} from './components/stats';
 import {Features} from './components/features';
 import {Capabilities} from './components/capabilities';
 import {Install} from './components/install';
+import {CygInstall} from './components/cyg-install';
 import {FinalCta} from './components/final-cta';
 import {Footer} from './components/footer';
 import {useScrollRefresh} from './lib/motion';
@@ -23,6 +24,7 @@ export function App() {
 				<Features />
 				<Capabilities />
 				<Install />
+				<CygInstall />
 				<FinalCta />
 			</main>
 			<Footer />
