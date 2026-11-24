@@ -179,6 +179,17 @@ impl RemoteServerService {
         Ok((server, key))
     }
 
+    /// Returns the target host IP for a server, preferring an active managed
+    /// WireGuard or private network IP over the public IP.
+    pub async fn resolved_host(&self, server_id: i64) -> sqlx::Result<String> {
+        let creds = ssh_credentials(&self.queries, server_id).await?;
+        if let Some((ip, _, _, _, _)) = creds {
+            return Ok(ip);
+        }
+        let server = self.get_by_id(server_id).await?;
+        Ok(server.ip_address)
+    }
+
     pub async fn create(
         &self,
         input: CreateRemoteServerDto,

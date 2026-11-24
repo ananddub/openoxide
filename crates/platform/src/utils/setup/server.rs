@@ -97,6 +97,22 @@ impl ServerSetup {
                     .into(),
             ));
         }
+
+        if matches!(self.executor, CommandExecutor::Remote(_))
+            && let Some(ref url) = self.config.agent_panel_url
+        {
+            let u = url.to_lowercase();
+            if u.contains("127.0.0.1") || u.contains("localhost") {
+                return Err(crate::utils::exec::ExecError::InvalidData(
+                    format!(
+                        "OPENOXIDE_SERVER_URL is configured as '{url}', which is a loopback address. \
+                         Remote agents on a separate VPS cannot reach 127.0.0.1 on the remote host. \
+                         Please set OPENOXIDE_SERVER_URL in your .env to the reachable public IP or domain of this panel."
+                    ),
+                ));
+            }
+        }
+
         Ok(())
     }
 
@@ -423,7 +439,7 @@ impl ServerSetup {
         self.append_swarm_step(&mut steps, &docker);
         self.append_network_step(&mut steps, &docker);
         self.append_traefik_config_steps(&mut steps, &os);
-        self.append_traefik_step(&mut steps, &docker);
+        self.append_traefik_step(&mut steps, &os, &docker);
         self.append_agent_step(&mut steps, &docker);
 
         ScriptPipeline::new().cmd(steps)
@@ -508,6 +524,12 @@ impl ServerSetup {
     fn append_dependency_steps(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>) {
         steps.extend(sh!(
             info!("Checking Docker installation");
+            if os.has_command("fuser") {
+                while cmd("fuser", "/var/lib/dpkg/lock-frontend") {
+                    info!("Waiting for package manager lock to be released...");
+                    sleep(2);
+                }
+            }
             if !os.has_command("docker") {
                 info!("Installing Docker");
                 os.shell_installer("https://get.docker.com").shell("sh");
@@ -664,9 +686,26 @@ impl ServerSetup {
         ));
     }
 
-    fn append_traefik_step(&self, steps: &mut Vec<ShellIR>, docker: &DockerCli) {
+    fn append_traefik_step(&self, steps: &mut Vec<ShellIR>, os: &OsCli<'_>, docker: &DockerCli) {
         let name = self.config.traefik_name.as_str();
         steps.extend(sh!(
+            if os.has_command("systemctl") {
+                if os.service("apache2").running() {
+                    info!("Stopping conflicting host apache2 service");
+                    os.service("apache2").stop();
+                    os.service("apache2").disable();
+                }
+                if os.service("nginx").running() {
+                    info!("Stopping conflicting host nginx service");
+                    os.service("nginx").stop();
+                    os.service("nginx").disable();
+                }
+                if os.service("httpd").running() {
+                    info!("Stopping conflicting host httpd service");
+                    os.service("httpd").stop();
+                    os.service("httpd").disable();
+                }
+            }
             info!("Checking Traefik container");
             if docker
                 .containers()

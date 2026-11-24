@@ -462,7 +462,15 @@ impl MonitoringService {
             server.ip_address.as_str(),
             "" | "0.0.0.0" | "localhost" | "127.0.0.1" | "openoxide-agent" | "openoxide-monitor"
         );
-        let host = match server.ip_address.as_str() {
+        let resolved_host = if !is_local {
+            self.server_service
+                .resolved_host(server_id)
+                .await
+                .unwrap_or_else(|_| server.ip_address.clone())
+        } else {
+            server.ip_address.clone()
+        };
+        let host = match resolved_host.as_str() {
             "" | "0.0.0.0" | "localhost" | "127.0.0.1" | "openoxide-agent"
             | "openoxide-monitor" => {
                 if std::path::Path::new("/.dockerenv").exists() {
@@ -485,12 +493,15 @@ impl MonitoringService {
             && !is_local
             && let Ok(store) = auto_di::resolve::<crate::utils::mtls::MtlsCaStore>().await
         {
-            let sans = vec![
+            let mut sans = vec![
                 "openoxide-agent".to_string(),
                 "localhost".to_string(),
                 "127.0.0.1".to_string(),
                 host.to_string(),
             ];
+            if !server.ip_address.is_empty() && !sans.contains(&server.ip_address) {
+                sans.push(server.ip_address.clone());
+            }
             if let Err(error) = store
                 .ensure_server(server_id, std::path::Path::new(&mtls_base), &sans)
                 .await
