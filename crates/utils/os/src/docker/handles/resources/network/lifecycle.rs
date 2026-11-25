@@ -78,6 +78,15 @@ impl<'a> NetworkConnectBuilder<'a> {
 }
 crate::impl_builder_opts!(NetworkConnectBuilder);
 
+impl crate::exec::script::IntoCommand for NetworkConnectBuilder<'_> {
+    fn build_str(&self) -> String {
+        let mut a = self.args.clone();
+        a.push(&self.network);
+        a.push(&self.container);
+        a.preview()
+    }
+}
+
 pub struct NetworkDisconnectBuilder<'a> {
     pub(crate) cli: &'a DockerCli,
     pub(crate) network: String,

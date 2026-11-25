@@ -67,6 +67,14 @@ pub(crate) fn supported_os(os_id: &str) -> bool {
     )
 }
 
+/// Whether a running container already publishes host `port`, judged from
+/// `docker ps --format '{{.Ports}}'` (`0.0.0.0:80->80/tcp, ...`). A container
+/// holding the port makes Traefik start "successfully" with nothing bound.
+pub(crate) fn port_held_by_docker(docker_ps_ports: &str, port: u16) -> bool {
+    let needle = format!(":{port}->");
+    docker_ps_ports.contains(&needle)
+}
+
 fn port_is_listening(ss_output: &str, port: u16) -> bool {
     let suffix = format!(":{port}");
     ss_output.lines().any(|line| {
@@ -182,6 +190,15 @@ pub(crate) async fn audit(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn detects_docker_published_ports() {
+        let ps = "0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/udp";
+        assert!(super::port_held_by_docker(ps, 80));
+        assert!(super::port_held_by_docker(ps, 443));
+        assert!(!super::port_held_by_docker(ps, 8080));
+        assert!(!super::port_held_by_docker("0.0.0.0:8080->8080/tcp", 80));
+    }
+
     use super::*;
 
     #[test]

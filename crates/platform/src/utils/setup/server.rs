@@ -215,7 +215,6 @@ impl ServerSetup {
                 .detach()
                 .name(name)
                 .restart(RestartPolicy::Always)
-                .network(self.config.network_name.as_str())
                 .mount(static_mount)
                 .mount(dynamic_mount)
                 .mount(docker_socket_mount)
@@ -223,6 +222,13 @@ impl ServerSetup {
                 .publish(p_https)
                 .publish(p_http3)
                 .publish(p_dashboard)
+                .run()
+                .await?;
+            // See the oneshot script: join the network after the ports are
+            // published (overlay-only standalone containers bind nothing).
+            docker
+                .networks()
+                .connect(self.config.network_name.as_str(), name)
                 .run()
                 .await?;
         }
@@ -420,6 +426,68 @@ impl ServerSetup {
         Ok(())
     }
 
+    /// Fail fast, before pulling images, when another container already
+    /// publishes the HTTP/HTTPS ports Traefik needs (e.g. a Dokploy Traefik).
+    /// Docker then happily "starts" our Traefik with nothing bound, and the
+    /// setup used to report success.
+    async fn ensure_traefik_ports_free(&self) -> ExecResult<()> {
+        let name = self.config.traefik_name.as_str();
+        let running = self
+            .executor
+            .run("docker", ["inspect", "-f", "{{.State.Running}}", name])
+            .await
+            .map(|o| o.stdout_trimmed() == "true")
+            .unwrap_or(false);
+        if running {
+            return Ok(());
+        }
+        let listening = self
+            .executor
+            .run("docker", ["ps", "--format", "{{.Ports}}"])
+            .await
+            .map(|o| o.stdout)
+            .unwrap_or_default();
+        let held: Vec<String> = [self.config.http_port, self.config.https_port]
+            .into_iter()
+            .filter(|p| validation::port_held_by_docker(&listening, *p))
+            .map(|p| p.to_string())
+            .collect();
+        if held.is_empty() {
+            return Ok(());
+        }
+        Err(crate::utils::exec::ExecError::InvalidData(format!(
+            "port(s) {} are already published by another Docker container (for example Dokploy's Traefik); stop it or choose different HTTP/HTTPS ports before setting up OpenOxide",
+            held.join(", ")
+        )))
+    }
+
+    /// After setup, confirm Traefik is running *and* has its ports published.
+    async fn verify_traefik_bound(&self) -> ExecResult<()> {
+        let name = self.config.traefik_name.as_str();
+        let out = self
+            .executor
+            .run(
+                "docker",
+                [
+                    "inspect",
+                    "-f",
+                    "{{.State.Running}} {{len .NetworkSettings.Ports}}",
+                    name,
+                ],
+            )
+            .await?;
+        let text = out.stdout_trimmed().to_owned();
+        let mut parts = text.split_whitespace();
+        let running = parts.next() == Some("true");
+        let ports: usize = parts.next().and_then(|v| v.parse().ok()).unwrap_or(0);
+        if running && ports > 0 {
+            return Ok(());
+        }
+        Err(crate::utils::exec::ExecError::InvalidData(format!(
+            "Traefik container '{name}' is not serving (running={running}, published ports={ports}); a port it needs is probably in use"
+        )))
+    }
+
     pub fn oneshot_script(&self, install_dependencies: bool) -> ScriptPipeline {
         let os = OsCli::new(&self.executor);
         let docker = DockerCli::from_executor(self.executor.clone());
@@ -451,9 +519,15 @@ impl ServerSetup {
 
     pub async fn setup_all_oneshot(&self, install_dependencies: bool) -> ExecResult<SetupOutcome> {
         self.preflight().await?;
+        if !self.config.build_server {
+            self.ensure_traefik_ports_free().await?;
+        }
         self.oneshot_script(install_dependencies)
             .execute(&self.executor)
             .await?;
+        if !self.config.build_server {
+            self.verify_traefik_bound().await?;
+        }
         let audit = self.audit().await?;
         Ok(SetupOutcome {
             completed: setup_steps(install_dependencies, self.config.build_server),
@@ -467,6 +541,9 @@ impl ServerSetup {
         sender: tokio::sync::mpsc::Sender<String>,
     ) -> ExecResult<SetupOutcome> {
         self.preflight().await?;
+        if !self.config.build_server {
+            self.ensure_traefik_ports_free().await?;
+        }
         let script = self.compile_oneshot_script(install_dependencies);
         let (exec_tx, mut exec_rx) = tokio::sync::mpsc::channel::<ExecStreamEvent>(128);
         let log_tx = sender.clone();
@@ -513,6 +590,9 @@ impl ServerSetup {
             .await;
         let _ = forward_logs.await;
         result?;
+        if !self.config.build_server {
+            self.verify_traefik_bound().await?;
+        }
 
         let audit = self.audit().await?;
         Ok(SetupOutcome {
@@ -765,7 +845,6 @@ impl ServerSetup {
                 .detach()
                 .name(name)
                 .restart(RestartPolicy::Always)
-                .network(self.config.network_name.as_str())
                 .mount(static_mount)
                 .mount(dynamic_mount)
                 .mount(docker_socket_mount)
@@ -773,6 +852,11 @@ impl ServerSetup {
                 .publish(Port::tcp(self.config.https_port, self.config.https_port))
                 .publish(Port::udp(self.config.http3_port, self.config.http3_port))
                 .publish(Port::tcp(self.config.dashboard_port, 8080));
+            // Start on the default bridge so the host ports really get
+            // published, then join the OpenOxide network. A standalone
+            // container created directly on a Swarm overlay network (any host
+            // with Swarm active, e.g. Dokploy) is "running" but binds nothing.
+            docker.networks().connect(self.config.network_name.as_str(), name);
         ));
     }
 
