@@ -225,7 +225,7 @@ impl ServerSetup {
                 .run()
                 .await?;
             // See the oneshot script: join the network after the ports are
-            // published (overlay-only standalone containers bind nothing).
+            // published.
             docker
                 .networks()
                 .connect(self.config.network_name.as_str(), name)
@@ -432,14 +432,36 @@ impl ServerSetup {
     /// setup used to report success.
     async fn ensure_traefik_ports_free(&self) -> ExecResult<()> {
         let name = self.config.traefik_name.as_str();
-        let running = self
+        let state = self
             .executor
-            .run("docker", ["inspect", "-f", "{{.State.Running}}", name])
+            .run(
+                "docker",
+                [
+                    "inspect",
+                    "-f",
+                    "{{.State.Running}} {{len .NetworkSettings.Ports}}",
+                    name,
+                ],
+            )
             .await
-            .map(|o| o.stdout_trimmed() == "true")
-            .unwrap_or(false);
-        if running {
+            .map(|o| o.stdout_trimmed().to_owned())
+            .unwrap_or_default();
+        let mut parts = state.split_whitespace();
+        let running = parts.next() == Some("true");
+        let published: usize = parts.next().and_then(|v| v.parse().ok()).unwrap_or(0);
+        if running && published > 0 {
             return Ok(());
+        }
+        if !state.is_empty() {
+            // A container left half-created by an earlier failed setup (e.g.
+            // a port conflict while joining the network) can later be started
+            // by `docker start` yet bind nothing. Remove it so the setup
+            // script recreates it from scratch.
+            tracing::warn!(
+                container = name,
+                "removing Traefik container that publishes no ports"
+            );
+            let _ = self.executor.run("docker", ["rm", "-f", name]).await;
         }
         let listening = self
             .executor
@@ -852,10 +874,9 @@ impl ServerSetup {
                 .publish(Port::tcp(self.config.https_port, self.config.https_port))
                 .publish(Port::udp(self.config.http3_port, self.config.http3_port))
                 .publish(Port::tcp(self.config.dashboard_port, 8080));
-            // Start on the default bridge so the host ports really get
-            // published, then join the OpenOxide network. A standalone
-            // container created directly on a Swarm overlay network (any host
-            // with Swarm active, e.g. Dokploy) is "running" but binds nothing.
+            // Publish the ports on the default bridge first, then join the
+            // OpenOxide network (keeps port publishing independent of the
+            // overlay network's gateway endpoint).
             docker.networks().connect(self.config.network_name.as_str(), name);
         ));
     }
