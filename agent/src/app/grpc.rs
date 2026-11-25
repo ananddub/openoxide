@@ -87,7 +87,13 @@ impl GrpcServerTask {
         // otherwise charge that to this process's RSS.
         let mut server = server
             .initial_stream_window_size(16 * 1024)
-            .initial_connection_window_size(64 * 1024);
+            .initial_connection_window_size(64 * 1024)
+            // Probe idle peers so half-open connections (panel restarted, NAT
+            // entry expired) are reaped instead of lingering forever, and so
+            // traffic keeps the path's conntrack entry alive.
+            .http2_keepalive_interval(Some(std::time::Duration::from_secs(30)))
+            .http2_keepalive_timeout(Some(std::time::Duration::from_secs(10)))
+            .tcp_keepalive(Some(std::time::Duration::from_secs(30)));
         if let Err(error) = server
             .add_routes(routes.routes())
             .serve_with_shutdown(addr, shutdown.cancelled_owned())

@@ -103,7 +103,36 @@ pub async fn connect_russh(
     host_key: &SshHostKey,
     connect_timeout: Duration,
 ) -> ExecResult<RusshSession> {
-    let config = Arc::new(client::Config::default());
+    // `connect_timeout` only bounded the TCP+KEX handshake; authentication
+    // (a stalled sshd, PAM, a slow key check) could still block forever.
+    // Bound the whole connect+auth sequence.
+    let budget = connect_timeout.saturating_mul(2);
+    tokio::time::timeout(
+        budget,
+        connect_russh_inner(host, port, username, auth, host_key, connect_timeout),
+    )
+    .await
+    .map_err(|_| ExecError::Timeout {
+        seconds: budget.as_secs(),
+    })?
+}
+
+async fn connect_russh_inner(
+    host: &str,
+    port: u16,
+    username: &str,
+    auth: &SshAuth,
+    host_key: &SshHostKey,
+    connect_timeout: Duration,
+) -> ExecResult<RusshSession> {
+    let config = Arc::new(client::Config {
+        // Keep long-running sessions (log follows, deploys) alive through
+        // idle NAT/firewall timeouts and never drop them for inactivity.
+        keepalive_interval: Some(Duration::from_secs(15)),
+        keepalive_max: 3,
+        inactivity_timeout: None,
+        ..Default::default()
+    });
     let pinned = match host_key {
         SshHostKey::InsecureAcceptAny => None,
         SshHostKey::PinnedSha256(fingerprint) => Some(fingerprint.clone()),
@@ -226,7 +255,7 @@ pub async fn execute_russh_cmd_stream(
     let mut channel = session
         .channel_open_session()
         .await
-        .map_err(|e| ExecError::Ssh(format!("Failed to open SSH channel: {e}")))?;
+        .map_err(|e| ExecError::ChannelOpen(format!("Failed to open SSH channel: {e}")))?;
 
     channel
         .exec(true, command)
@@ -244,6 +273,10 @@ pub async fn execute_russh_cmd_stream(
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();
     let mut exit_code = 0u32;
+    // A channel that closes without an exit status means the connection died
+    // (keepalive failure, sshd killed, network drop) — not that the command
+    // succeeded. Defaulting to 0 turned a truncated command into a success.
+    let mut exit_seen = false;
 
     // In stream mode the consumer already receives every chunk, so the
     // mirrored Vec is only error-path context.  Without a cap a long-lived
@@ -280,9 +313,23 @@ pub async fn execute_russh_cmd_stream(
                     stderr.extend_from_slice(&data);
                 }
             }
-            ChannelMsg::ExitStatus { exit_status } => exit_code = exit_status,
+            ChannelMsg::ExitStatus { exit_status } => {
+                exit_code = exit_status;
+                exit_seen = true;
+            }
+            ChannelMsg::ExitSignal { .. } => {
+                // Killed by a signal: a definite (non-zero) outcome.
+                exit_code = 255;
+                exit_seen = true;
+            }
             _ => {}
         }
+    }
+
+    if !exit_seen {
+        return Err(ExecError::Ssh(format!(
+            "SSH connection closed before '{command}' reported an exit status"
+        )));
     }
 
     Ok((exit_code, stdout, stderr))

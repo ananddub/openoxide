@@ -9,6 +9,26 @@ use tokio::{sync::mpsc, task::JoinHandle};
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
+/// Shared, lazily-opened SSH session reused by every command of one executor
+/// (and its clones). Opening a session costs a full key exchange plus
+/// authentication (~3.5 s on a 300 ms link), so a flow that runs a dozen small
+/// commands — a setup audit, a status probe — used to spend most of its time
+/// reconnecting.
+#[derive(Clone)]
+struct SessionCache {
+    slot: Arc<tokio::sync::Mutex<Option<Arc<crate::ssh::RusshSession>>>>,
+    /// sshd caps channels per session (`MaxSessions`, default 10); stay under it.
+    channels: Arc<tokio::sync::Semaphore>,
+}
+
+impl std::fmt::Debug for SessionCache {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SessionCache").finish_non_exhaustive()
+    }
+}
+
+const MAX_CONCURRENT_CHANNELS: usize = 8;
+
 #[derive(Clone, Debug)]
 pub struct RemoteExecutor {
     host: String,
@@ -22,6 +42,7 @@ pub struct RemoteExecutor {
     terminal_timeout: Duration,
     job_pid_file: Option<String>,
     multiplexing: bool,
+    cache: SessionCache,
 }
 
 #[derive(Debug)]
@@ -65,6 +86,10 @@ impl RemoteExecutor {
             terminal_timeout: Duration::from_secs(30 * 60),
             job_pid_file: None,
             multiplexing: true,
+            cache: SessionCache {
+                slot: Arc::default(),
+                channels: Arc::new(tokio::sync::Semaphore::new(MAX_CONCURRENT_CHANNELS)),
+            },
         }
     }
 
@@ -119,8 +144,31 @@ impl RemoteExecutor {
         self.connect_timeout
     }
 
+    /// The executor's shared session, reconnecting when it is missing or has
+    /// been closed (keepalive failure, sshd restart, network drop). With
+    /// multiplexing disabled every call is a fresh, private session.
     pub async fn connect_session(&self) -> ExecResult<Arc<crate::ssh::RusshSession>> {
-        self.connect_fresh_session().await
+        if !self.multiplexing {
+            return self.connect_fresh_session().await;
+        }
+        let mut slot = self.cache.slot.lock().await;
+        if let Some(session) = slot.as_ref()
+            && !session.is_closed()
+        {
+            return Ok(session.clone());
+        }
+        let session = self.connect_fresh_session().await?;
+        *slot = Some(session.clone());
+        Ok(session)
+    }
+
+    /// Forget the shared session (only if it is still `stale`), so the next
+    /// command dials a new one.
+    async fn discard_session(&self, stale: &Arc<crate::ssh::RusshSession>) {
+        let mut slot = self.cache.slot.lock().await;
+        if slot.as_ref().is_some_and(|s| Arc::ptr_eq(s, stale)) {
+            *slot = None;
+        }
     }
 
     pub async fn connect_fresh_session(&self) -> ExecResult<Arc<crate::ssh::RusshSession>> {
@@ -362,8 +410,6 @@ impl RemoteExecutor {
         stream: Option<mpsc::Sender<ExecStreamEvent>>,
         cancel: Option<&CancellationToken>,
     ) -> ExecResult<ExecOutput> {
-        let session = self.connect_session().await?;
-
         let has_pwd = self
             .sudo_password
             .as_deref()
@@ -387,9 +433,57 @@ impl RemoteExecutor {
         };
 
         let full_command = format!("sh -c {}", quote(&command_to_run));
-        let (code, stdout_bytes, stderr_bytes) =
-            crate::ssh::execute_russh_cmd_stream(&session, &full_command, stdin, stream.as_ref())
-                .await?;
+        // Stay under sshd's per-session channel cap when many commands overlap.
+        let _slot = self
+            .cache
+            .channels
+            .acquire()
+            .await
+            .map_err(|_| ExecError::Ssh("SSH channel limiter closed".into()))?;
+        let mut session = self.connect_session().await?;
+        let mut retried = false;
+        let run = async {
+            loop {
+                match crate::ssh::execute_russh_cmd_stream(
+                    &session,
+                    &full_command,
+                    stdin,
+                    stream.as_ref(),
+                )
+                .await
+                {
+                    Err(ExecError::ChannelOpen(reason)) if self.multiplexing && !retried => {
+                        // The command never started, so redialing and retrying
+                        // cannot run it twice (a cached session can die between
+                        // commands without any notice).
+                        tracing::debug!(%reason, "cached SSH session unusable; reconnecting");
+                        retried = true;
+                        self.discard_session(&session).await;
+                        session = self.connect_session().await?;
+                    }
+                    Err(error) => {
+                        if matches!(error, ExecError::Ssh(_)) && self.multiplexing {
+                            // Died mid-command: do not reuse this session.
+                            self.discard_session(&session).await;
+                        }
+                        return Err(error);
+                    }
+                    Ok(done) => return Ok(done),
+                }
+            }
+        };
+        // `command_timeout` was stored but never enforced, so a command on a
+        // dead connection waited forever. Streams (`logs -f`) are open-ended by
+        // design and rely on SSH keepalive to notice a dead peer instead.
+        let (code, stdout_bytes, stderr_bytes) = if stream.is_some() {
+            run.await?
+        } else {
+            tokio::time::timeout(self.command_timeout, run)
+                .await
+                .map_err(|_| ExecError::Timeout {
+                    seconds: self.command_timeout.as_secs(),
+                })??
+        };
 
         let status = ExecExitStatus::Remote(code);
         let result = ExecOutput {

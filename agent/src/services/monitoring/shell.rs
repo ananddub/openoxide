@@ -64,6 +64,11 @@ impl ShellService {
         if request.container.is_empty() && !request.working_directory.is_empty() {
             command.current_dir(&request.working_directory);
         }
+        // Own process group, so a timeout or a dropped client can take the whole
+        // tree down. Killing only the direct child (`sh -lc "a; sleep 150"`)
+        // orphaned everything the shell had spawned, which kept running after
+        // the panel's connection was gone.
+        command.process_group(0);
         let mut child = command
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
@@ -85,6 +90,7 @@ impl ShellService {
         let (tx, rx) = tokio::sync::mpsc::channel(32);
         let timeout = request.timeout_seconds;
         let stdin_data = request.stdin;
+        let group = child.id();
         tokio::spawn(async move {
             let stdout_task = tokio::spawn(stream_task_output(
                 stdout,
@@ -105,6 +111,7 @@ impl ShellService {
             let status = tokio::select! {
                 status = child.wait() => status,
                 _ = tokio::time::sleep(std::time::Duration::from_secs(timeout.max(1) as u64)), if timeout > 0 => {
+                    kill_process_group(group);
                     let _ = child.kill().await;
                     let status = child.wait().await;
                     let _ = tx.send(Ok(ExecTaskOutput {
@@ -115,6 +122,7 @@ impl ShellService {
                     status
                 },
                 _ = tx.closed() => {
+                    kill_process_group(group);
                     let _ = child.kill().await;
                     child.wait().await
                 }
@@ -690,5 +698,66 @@ async fn stream_task_output<R>(
                 break;
             }
         }
+    }
+}
+
+/// SIGKILL every process in the task's group (the task was spawned as its own
+/// group leader, so its pid is the group id).
+fn kill_process_group(group: Option<u32>) {
+    if let Some(pid) = group {
+        // SAFETY: plain syscall; a stale or already-reaped group just returns ESRCH.
+        unsafe {
+            libc::killpg(pid as i32, libc::SIGKILL);
+        }
+    }
+}
+
+#[cfg(test)]
+mod process_group_tests {
+    use super::*;
+    use tokio_stream::StreamExt;
+
+    fn alive(marker: &str) -> bool {
+        std::process::Command::new("pgrep")
+            .args(["-f", marker])
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+    }
+
+    #[tokio::test]
+    async fn dropping_the_client_kills_the_whole_task_tree() {
+        let request = ExecTaskRequest {
+            server_id: 1,
+            command: "echo up; sleep 4242; echo never".into(),
+            timeout_seconds: 0,
+            ..Default::default()
+        };
+        let mut stream = Box::pin(ShellService::execute(1, request).await.unwrap());
+        let first = stream.next().await.unwrap().unwrap();
+        assert_eq!(first.kind, ExecTaskOutputKind::ExecTaskOutputStdout as i32);
+        assert!(alive("sleep 4242"), "task should be running");
+        drop(stream); // the panel's connection went away
+        for _ in 0..40 {
+            if !alive("sleep 4242") {
+                return;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        }
+        panic!("`sleep 4242` was orphaned after the client disconnected");
+    }
+
+    #[tokio::test]
+    async fn timeout_kills_the_whole_task_tree() {
+        let request = ExecTaskRequest {
+            server_id: 1,
+            command: "sleep 4343; echo never".into(),
+            timeout_seconds: 1,
+            ..Default::default()
+        };
+        let mut stream = Box::pin(ShellService::execute(1, request).await.unwrap());
+        while stream.next().await.is_some() {}
+        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+        assert!(!alive("sleep 4343"), "`sleep 4343` survived the timeout");
     }
 }

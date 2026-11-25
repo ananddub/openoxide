@@ -518,7 +518,14 @@ impl MonitoringService {
                 // deadline; the connect itself must fail fast so a recreated
                 // agent (new container, new IP) is detected on the next cycle.
                 .connect_timeout(std::time::Duration::from_secs(5))
-                .http2_keep_alive_interval(std::time::Duration::from_secs(30));
+                .http2_keep_alive_interval(std::time::Duration::from_secs(30))
+                .keep_alive_timeout(std::time::Duration::from_secs(10))
+                // Without this tonic only pings while a request is in flight, so
+                // an idle cached channel is never probed: a NAT/firewall/conntrack
+                // entry expires silently and the next RPC hangs on a dead socket.
+                .keep_alive_while_idle(true)
+                .tcp_keepalive(Some(std::time::Duration::from_secs(30)))
+                .tcp_nodelay(true);
         // NOTE: do NOT shrink the h2 stream/connection windows here. A 16 KiB
         // stream window deadlocks the lifecycle watch: the first
         // ContainerStatesResponse easily exceeds it, and with the watch, stats

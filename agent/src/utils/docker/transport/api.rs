@@ -18,7 +18,13 @@ pub type ByteStream = Pin<Box<dyn Stream<Item = Result<Bytes, DockerError>> + Se
 type Sender = hyper::client::conn::http1::SendRequest<Empty<Bytes>>;
 type Connection = hyper::client::conn::http1::Connection<TokioIo<UnixStream>, Empty<Bytes>>;
 
-const API_VERSION: &str = "v1.41";
+/// Highest Engine API version this agent targets. Docker 29 dropped support for
+/// anything below v1.44 (it answers HTTP 400 "client version 1.41 is too old"),
+/// while older daemons reject versions above their own maximum — so the real
+/// version is negotiated per daemon and capped here.
+const MAX_API_VERSION: (u32, u32) = (1, 44);
+/// Used only when the daemon's version cannot be parsed.
+const FALLBACK_API_VERSION: &str = "v1.44";
 const MAX_RESPONSE_BYTES: usize = 32 * 1024 * 1024;
 
 /// One persistent connection to the Docker Engine, serialized behind a mutex:
@@ -33,6 +39,8 @@ pub struct DockerApi {
 struct Inner {
     socket_path: String,
     shared: Mutex<Option<Sender>>,
+    /// Negotiated once; a failure (daemon not up yet) is retried next call.
+    api_version: tokio::sync::OnceCell<String>,
 }
 
 /// Borrows the shared sender; returns it to the slot on drop unless the
@@ -73,6 +81,7 @@ impl DockerApi {
             inner: Arc::new(Inner {
                 socket_path: socket_path.into(),
                 shared: Mutex::new(None),
+                api_version: tokio::sync::OnceCell::new(),
             }),
         }
     }
@@ -88,8 +97,9 @@ impl DockerApi {
     }
 
     async fn request(&self, method: hyper::Method, path: &str) -> Result<Bytes, DockerError> {
+        let uri = self.versioned(path).await?;
         let mut guard = self.checkout().await?;
-        let response = match self.send(guard.sender(), method, path).await {
+        let response = match self.send(guard.sender(), method, &uri).await {
             Ok(response) => response,
             Err(error) => {
                 guard.discard();
@@ -98,7 +108,6 @@ impl DockerApi {
         };
         let keep_alive = !is_close(&response);
         let status = response.status();
-        let uri = uri_for(path);
         let body = match collect_limited(response.into_body()).await {
             Ok(body) => body,
             Err(error) => {
@@ -151,6 +160,7 @@ impl DockerApi {
         method: hyper::Method,
         path: &str,
     ) -> Result<ByteStream, DockerError> {
+        let uri = self.versioned(path).await?;
         let (mut sender, connection) = self.open().await?;
         let driver = tokio::spawn(async move {
             if let Err(error) = connection.await {
@@ -158,7 +168,7 @@ impl DockerApi {
             }
         });
 
-        match self.send(&mut sender, method, path).await {
+        match self.send(&mut sender, method, &uri).await {
             Ok(response) => {
                 let status = response.status();
                 if !status.is_success() {
@@ -166,7 +176,7 @@ impl DockerApi {
                     let detail = String::from_utf8_lossy(&body).trim().to_string();
                     return Err(DockerError::ApiStatus {
                         status,
-                        uri: uri_for(path),
+                        uri,
                         detail,
                     });
                 }
@@ -239,9 +249,9 @@ impl DockerApi {
         &self,
         sender: &mut Sender,
         method: hyper::Method,
-        path: &str,
+        uri: &str,
     ) -> Result<hyper::Response<hyper::body::Incoming>, DockerError> {
-        let uri = uri_for(path);
+        let uri = uri.to_string();
         let request = Request::builder()
             .method(method)
             .uri(&uri)
@@ -281,8 +291,66 @@ impl DockerApi {
     }
 }
 
-fn uri_for(path: &str) -> String {
-    format!("/{API_VERSION}{path}")
+impl DockerApi {
+    /// `/v1.xx/<path>` for the negotiated API version.
+    async fn versioned(&self, path: &str) -> Result<String, DockerError> {
+        let version = self
+            .inner
+            .api_version
+            .get_or_try_init(|| self.negotiate_version())
+            .await?;
+        Ok(format!("/{version}{path}"))
+    }
+
+    /// Ask the daemon for its API version over an unversioned `/version` (the
+    /// one endpoint every Engine answers regardless of version) on a throwaway
+    /// connection, so a failure never poisons the shared sender.
+    async fn negotiate_version(&self) -> Result<String, DockerError> {
+        let (mut sender, connection) = self.open().await?;
+        let driver = tokio::spawn(async move {
+            let _ = connection.await;
+        });
+        let result = async {
+            let response = self
+                .send(&mut sender, hyper::Method::GET, "/version")
+                .await?;
+            let status = response.status();
+            let body = collect_limited(response.into_body()).await?;
+            if !status.is_success() {
+                return Err(DockerError::ApiStatus {
+                    status,
+                    uri: "/version".to_string(),
+                    detail: String::from_utf8_lossy(&body).trim().to_string(),
+                });
+            }
+            Ok(serde_json::from_slice::<serde_json::Value>(&body)
+                .ok()
+                .and_then(|value| value.get("ApiVersion")?.as_str().map(str::to_owned)))
+        }
+        .await;
+        driver.abort();
+        let version = match result? {
+            Some(server) => clamp_api_version(&server),
+            None => FALLBACK_API_VERSION.to_string(),
+        };
+        tracing::info!(api_version = %version, "negotiated Docker Engine API version");
+        Ok(version)
+    }
+}
+
+fn clamp_api_version(server: &str) -> String {
+    let parsed = server
+        .trim()
+        .trim_start_matches('v')
+        .split_once('.')
+        .and_then(|(major, minor)| Some((major.parse::<u32>().ok()?, minor.parse::<u32>().ok()?)));
+    match parsed {
+        Some(server) => {
+            let chosen = server.min(MAX_API_VERSION);
+            format!("v{}.{}", chosen.0, chosen.1)
+        }
+        None => FALLBACK_API_VERSION.to_string(),
+    }
 }
 
 fn is_close(response: &hyper::Response<hyper::body::Incoming>) -> bool {
@@ -319,6 +387,15 @@ async fn collect_limited(body: hyper::body::Incoming) -> Result<Bytes, DockerErr
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn api_version_is_capped_to_what_the_daemon_supports() {
+        assert_eq!(clamp_api_version("1.52"), "v1.44"); // Docker 29
+        assert_eq!(clamp_api_version("1.44"), "v1.44");
+        assert_eq!(clamp_api_version("v1.41"), "v1.41"); // old daemon: never above it
+        assert_eq!(clamp_api_version("1.24"), "v1.24");
+        assert_eq!(clamp_api_version("garbage"), "v1.44");
+    }
 
     #[tokio::test]
     async fn missing_socket_is_a_clear_error() {

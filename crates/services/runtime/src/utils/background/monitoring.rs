@@ -19,6 +19,31 @@ const AGENT_UPDATE_INTERVAL: std::time::Duration = std::time::Duration::from_sec
 /// different servers never pull in the same tick.
 const REGISTRY_CHECK_SLOTS: i64 = 12;
 
+/// The agent emits a lifecycle frame at least every 15s; allow three missed
+/// frames (and a slow Docker refresh) before declaring the stream hung. A hang
+/// drops the whole shared gRPC channel, taking live shells/log streams with it,
+/// so the threshold must not trip on ordinary load.
+const STREAM_FRAME_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(45);
+
+/// Consecutive fully-unreachable reconnect cycles before a server is marked
+/// offline (about 3 × the backoff, i.e. well over ten seconds).
+const OFFLINE_AFTER_CYCLES: u32 = 3;
+
+/// Spread reconnect attempts by ±20% so many servers that fail together (a
+/// panel-side network blip) do not retry in lock-step against their agents.
+/// Deterministic per server + clock, avoiding a rand dependency.
+fn with_jitter(base: std::time::Duration, server_id: i64) -> std::time::Duration {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.subsec_nanos() as u64)
+        .unwrap_or(0);
+    let mix = nanos
+        .wrapping_mul(6364136223846793005)
+        .wrapping_add(server_id as u64);
+    let permille = 800 + (mix >> 33) % 401; // 800..=1200
+    base.mul_f64(permille as f64 / 1000.0)
+}
+
 pub fn start(
     monitoring: Arc<MonitoringService>,
     reconciler: Arc<MonitoringReconciler>,
@@ -146,6 +171,10 @@ async fn watch_server(
     // unreachable — a brand-new SSH handshake (KEX + sshd fork) on the remote
     // host, which is itself a CPU spike generator.
     let mut retry_delay = std::time::Duration::from_secs(3);
+    // Consecutive cycles in which neither the agent nor SSH answered. A single
+    // blip (route flap, agent restart) must not flip a server offline, which
+    // fires alerts and notifications.
+    let mut unreachable_cycles: u32 = 0;
     loop {
         // Stop only if the server row is actually gone. `server_ids()` excludes
         // the local server, so it must not be used here — otherwise the local
@@ -164,11 +193,10 @@ async fn watch_server(
         {
             Ok(result) => match result {
                 Ok(mut stream) => loop {
-                    match tokio::time::timeout(std::time::Duration::from_secs(30), stream.message())
-                        .await
-                    {
+                    match tokio::time::timeout(STREAM_FRAME_TIMEOUT, stream.message()).await {
                         Ok(Ok(Some(snapshot))) => {
                             healthy = true;
+                            unreachable_cycles = 0;
                             monitoring.touch_agent_seen(server_id).await;
                             if let Err(error) = reconciler
                                 .apply_snapshot(server_id, &snapshot.containers)
@@ -225,10 +253,21 @@ async fn watch_server(
                     server_id,
                     "monitoring agent unavailable but SSH server is reachable; keeping server active"
                 );
-            } else if let Err(error) = reconciler.mark_offline(server_id).await {
-                tracing::warn!(server_id, %error, "could not mark disconnected server offline");
+            } else {
+                unreachable_cycles += 1;
+                if unreachable_cycles >= OFFLINE_AFTER_CYCLES {
+                    if let Err(error) = reconciler.mark_offline(server_id).await {
+                        tracing::warn!(server_id, %error, "could not mark disconnected server offline");
+                    }
+                } else {
+                    tracing::debug!(
+                        server_id,
+                        unreachable_cycles,
+                        "server unreachable; waiting before marking offline"
+                    );
+                }
             }
-            let delay = retry_delay;
+            let delay = with_jitter(retry_delay, server_id);
             retry_delay = (retry_delay * 2).min(std::time::Duration::from_secs(60));
             tokio::time::sleep(delay).await;
         }
@@ -331,4 +370,27 @@ async fn server_ssh_is_reachable(server_id: i64) -> bool {
     )
     .await
     .is_ok_and(|result| result.is_ok())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn jitter_stays_within_twenty_percent() {
+        let base = std::time::Duration::from_secs(10);
+        for id in 0..500 {
+            let d = with_jitter(base, id);
+            assert!(d >= base.mul_f64(0.8) && d <= base.mul_f64(1.2), "{d:?}");
+        }
+    }
+
+    #[test]
+    fn jitter_actually_varies_between_servers() {
+        let base = std::time::Duration::from_secs(10);
+        let set: std::collections::HashSet<u128> = (0..50)
+            .map(|id| with_jitter(base, id).as_millis())
+            .collect();
+        assert!(set.len() > 10);
+    }
 }

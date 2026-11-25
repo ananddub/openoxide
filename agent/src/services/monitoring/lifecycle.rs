@@ -84,6 +84,7 @@ impl LifecycleService {
                     matches!(self, Wake::Event)
                 }
             }
+            let mut failures: u32 = 0;
             loop {
                 // Block until a docker event arrives or the idle tick fires.
                 let wake = tokio::select! {
@@ -115,8 +116,33 @@ impl LifecycleService {
                         }
                     }
                 }
-                if let Ok(snapshot) = state::StateService::current(&docker).await {
-                    yield Ok(snapshot);
+                // Bound the Docker call and never swallow its failure: a wedged
+                // dockerd used to stall (or silently skip) frames until the panel's
+                // 30s watchdog dropped the whole shared channel. Retry a couple
+                // of times, then end the stream with a real status so the panel
+                // reconnects cleanly instead of guessing.
+                match tokio::time::timeout(
+                    std::time::Duration::from_secs(10),
+                    state::StateService::current(&docker),
+                )
+                .await
+                {
+                    Ok(Ok(snapshot)) => {
+                        failures = 0;
+                        yield Ok(snapshot);
+                    }
+                    outcome => {
+                        failures += 1;
+                        let reason = match outcome {
+                            Ok(Err(error)) => error.message().to_string(),
+                            _ => "docker did not answer within 10s".to_string(),
+                        };
+                        tracing::warn!(server_id = request.server_id, failures, %reason, "watch: snapshot refresh failed");
+                        if failures >= 3 {
+                            yield Err(Status::unavailable(format!("container state refresh failed: {reason}")));
+                            return;
+                        }
+                    }
                 }
                 if ended {
                     return;

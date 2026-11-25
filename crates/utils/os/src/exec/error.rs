@@ -14,6 +14,10 @@ pub enum ExecError {
     CommandFailed { code: Option<i32>, stderr: String },
     #[error("remote SSH execution failed: {0}")]
     Ssh(String),
+    /// The SSH channel could not be opened, so the command never started
+    /// (safe to retry on a fresh session).
+    #[error("remote SSH execution failed: {0}")]
+    ChannelOpen(String),
     #[error("docker error: {0}")]
     Docker(String),
     #[error("agent execution failed: {0}")]
