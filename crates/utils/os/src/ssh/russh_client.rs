@@ -131,6 +131,11 @@ async fn connect_russh_inner(
         keepalive_interval: Some(Duration::from_secs(15)),
         keepalive_max: 3,
         inactivity_timeout: None,
+        // Larger flow-control window and packets: the 2 MiB / 32 KiB defaults
+        // cap single-channel throughput at window/RTT on high-latency links
+        // (uploads, image pulls, big command output).
+        window_size: 8 * 1024 * 1024,
+        maximum_packet_size: 65535,
         ..Default::default()
     });
     let pinned = match host_key {
@@ -143,13 +148,23 @@ async fn connect_russh_inner(
     };
     let addr = format!("{host}:{port}");
 
-    let mut session =
-        tokio::time::timeout(connect_timeout, client::connect(config, &addr, handler))
+    // russh's own `connect` leaves Nagle on: every small request/response
+    // (one per SSH channel round trip) then waits on delayed ACKs (~40 ms).
+    // Open the socket ourselves so we can disable Nagle and enable TCP
+    // keepalive at the OS level as a second line of defence.
+    let mut session = tokio::time::timeout(connect_timeout, async {
+        let stream = tokio::net::TcpStream::connect(&addr)
             .await
-            .map_err(|_| ExecError::Timeout {
-                seconds: connect_timeout.as_secs(),
-            })?
             .map_err(|e| ExecError::Ssh(format!("Failed to connect to {addr}: {e}")))?;
+        let _ = stream.set_nodelay(true);
+        client::connect_stream(config, stream, handler)
+            .await
+            .map_err(|e| ExecError::Ssh(format!("Failed to connect to {addr}: {e}")))
+    })
+    .await
+    .map_err(|_| ExecError::Timeout {
+        seconds: connect_timeout.as_secs(),
+    })??;
 
     let authed = match auth {
         SshAuth::Password(password) => session.authenticate_password(username, password).await,
@@ -257,8 +272,12 @@ pub async fn execute_russh_cmd_stream(
         .await
         .map_err(|e| ExecError::ChannelOpen(format!("Failed to open SSH channel: {e}")))?;
 
+    // `want_reply = false`: do not stall a full round trip waiting for the
+    // server to acknowledge the exec request. stdin/EOF are pipelined right
+    // behind it and a refused exec still surfaces as a channel that closes
+    // without an exit status (reported as an error below).
     channel
-        .exec(true, command)
+        .exec(false, command)
         .await
         .map_err(|e| ExecError::Ssh(format!("Failed to exec command '{command}': {e}")))?;
 

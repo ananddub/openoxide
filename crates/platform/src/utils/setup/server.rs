@@ -69,19 +69,23 @@ impl ServerSetup {
 
     pub async fn preflight(&self) -> ExecResult<()> {
         let os = OsCli::new(&self.executor);
-        let uid = self
-            .executor
-            .run("id", ["-u"])
-            .await?
-            .stdout_trimmed()
-            .to_owned();
+        // The three probes are independent; overlap their network round trips.
+        let (uid, os_release, snap_docker) = tokio::join!(
+            self.executor.run("id", ["-u"]),
+            os.file("/etc/os-release").read().execute(),
+            async {
+                os.has_command("snap").run().await.is_ok()
+                    && self.executor.run("snap", ["list", "docker"]).await.is_ok()
+            },
+        );
+        let uid = uid?.stdout_trimmed().to_owned();
         if uid != "0" {
             return Err(crate::utils::exec::ExecError::InvalidData(
                 "remote setup requires root or working sudo credentials".into(),
             ));
         }
 
-        let os_release = os.file("/etc/os-release").read().execute().await?.stdout;
+        let os_release = os_release?.stdout;
         let os_id = validation::normalized_os_id(&os_release);
         if !validation::supported_os(&os_id) {
             return Err(crate::utils::exec::ExecError::InvalidData(format!(
@@ -89,9 +93,7 @@ impl ServerSetup {
             )));
         }
 
-        if os.has_command("snap").run().await.is_ok()
-            && self.executor.run("snap", ["list", "docker"]).await.is_ok()
-        {
+        if snap_docker {
             return Err(crate::utils::exec::ExecError::InvalidData(
                 "Docker installed through Snap is unsupported; install Docker Engine instead"
                     .into(),
@@ -103,13 +105,11 @@ impl ServerSetup {
         {
             let u = url.to_lowercase();
             if u.contains("127.0.0.1") || u.contains("localhost") {
-                return Err(crate::utils::exec::ExecError::InvalidData(
-                    format!(
-                        "OPENOXIDE_SERVER_URL is configured as '{url}', which is a loopback address. \
+                return Err(crate::utils::exec::ExecError::InvalidData(format!(
+                    "OPENOXIDE_SERVER_URL is configured as '{url}', which is a loopback address. \
                          Remote agents on a separate VPS cannot reach 127.0.0.1 on the remote host. \
                          Please set OPENOXIDE_SERVER_URL in your .env to the reachable public IP or domain of this panel."
-                    ),
-                ));
+                )));
             }
         }
 

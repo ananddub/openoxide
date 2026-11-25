@@ -433,6 +433,7 @@ impl RemoteExecutor {
         };
 
         let full_command = format!("sh -c {}", quote(&command_to_run));
+        let _timing = CommandTiming::start(&full_command);
         // Stay under sshd's per-session channel cap when many commands overlap.
         let _slot = self
             .cache
@@ -600,4 +601,28 @@ fi
 rm -f {pid_file}"#,
         pid_file = quote(pid_file),
     )
+}
+
+/// Logs how long each remote command took (debug level) so slow setup steps
+/// are easy to find with `RUST_LOG=oxos=debug`.
+struct CommandTiming<'a> {
+    command: &'a str,
+    started: std::time::Instant,
+}
+
+impl<'a> CommandTiming<'a> {
+    fn start(command: &'a str) -> Self {
+        Self {
+            command,
+            started: std::time::Instant::now(),
+        }
+    }
+}
+
+impl Drop for CommandTiming<'_> {
+    fn drop(&mut self) {
+        let ms = self.started.elapsed().as_millis();
+        let head: String = self.command.chars().take(120).collect();
+        tracing::debug!(elapsed_ms = ms as u64, command = %head, "remote command finished");
+    }
 }

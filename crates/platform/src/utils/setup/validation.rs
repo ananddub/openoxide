@@ -103,29 +103,47 @@ pub(crate) async fn audit(
     }
 
     let os = crate::utils::os::OsCli::new(executor);
-    let os_release = os.file("/etc/os-release").read().execute().await?.stdout;
-    let os_id = normalized_os_id(&os_release);
-    let architecture = os.system().arch().run().await?.stdout_trimmed().to_owned();
-    let docker_state = tool(executor, "docker").await;
-    let git = tool(executor, "git").await;
-    let rclone = tool(executor, "rclone").await;
-    let rsync = tool(executor, "rsync").await;
-    let nixpacks = tool(executor, "nixpacks").await;
-    let railpack = tool(executor, "railpack").await;
-    let buildpacks = tool(executor, "pack").await;
     let docker = crate::utils::docker::DockerCli::from_executor(executor.clone());
-    let swarm_active = docker
-        .swarm()
-        .active()
-        .run()
-        .await
+    // Every probe is independent, and the remote executor multiplexes
+    // channels over one SSH session: run them concurrently instead of paying
+    // two network round trips per probe back to back.
+    let (
+        os_release,
+        architecture,
+        docker_state,
+        git,
+        rclone,
+        rsync,
+        nixpacks,
+        railpack,
+        buildpacks,
+        swarm,
+        groups,
+        network_inspect,
+        base_dir,
+        listening,
+    ) = tokio::join!(
+        async { os.file("/etc/os-release").read().execute().await },
+        async { os.system().arch().run().await },
+        tool(executor, "docker"),
+        tool(executor, "git"),
+        tool(executor, "rclone"),
+        tool(executor, "rsync"),
+        tool(executor, "nixpacks"),
+        tool(executor, "railpack"),
+        tool(executor, "pack"),
+        async { docker.swarm().active().run().await },
+        async { os.system().current_groups().run().await },
+        async { docker.networks().inspect(network).await },
+        async { os.dir(base).exists().run().await },
+        async { os.network().listen_ports_detailed().run().await },
+    );
+    let os_id = normalized_os_id(&os_release?.stdout);
+    let architecture = architecture?.stdout_trimmed().to_owned();
+    let swarm_active = swarm
         .map(|output| output.stdout_trimmed() == "active")
         .unwrap_or(false);
-    let docker_group_member = os
-        .system()
-        .current_groups()
-        .run()
-        .await
+    let docker_group_member = groups
         .map(|output| {
             output
                 .stdout
@@ -133,15 +151,9 @@ pub(crate) async fn audit(
                 .any(|group| group == "docker")
         })
         .unwrap_or(false);
-    let network_exists = docker.networks().inspect(network).await.is_ok();
-    let base_directory_exists = os.dir(base).exists().run().await.is_ok();
-    let listening = os
-        .network()
-        .listen_ports_detailed()
-        .run()
-        .await
-        .map(|output| output.stdout)
-        .unwrap_or_default();
+    let network_exists = network_inspect.is_ok();
+    let base_directory_exists = base_dir.is_ok();
+    let listening = listening.map(|output| output.stdout).unwrap_or_default();
     let mut checked_ports = Vec::new();
     for port in ports {
         let in_use = port_is_listening(&listening, *port);
